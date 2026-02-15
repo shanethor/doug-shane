@@ -9,9 +9,11 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { AlertCircle, Loader2, FileText, CheckSquare } from "lucide-react";
+import { AlertCircle, Loader2, FileText, CheckSquare, Download } from "lucide-react";
 import { toast } from "sonner";
-import { ACORD_FORM_LIST } from "@/lib/acord-forms";
+import { ACORD_FORMS, ACORD_FORM_LIST } from "@/lib/acord-forms";
+import { generateAcordPdf } from "@/lib/pdf-generator";
+import { buildAutofilledData } from "@/lib/acord-autofill";
 
 type Gap = {
   field: string;
@@ -246,16 +248,43 @@ export default function ApplicationReview() {
         </div>
 
         {selectedForms.size > 0 && (
-          <div className="space-y-3 mb-12">
+          <div className="space-y-4 mb-12">
             <p className="text-sm font-sans text-muted-foreground">
-              {selectedForms.size} form{selectedForms.size !== 1 ? "s" : ""} selected — fill each one below:
+              {selectedForms.size} form{selectedForms.size !== 1 ? "s" : ""} selected
             </p>
+
+            {/* Batch download all selected forms */}
+            <Button
+              className="w-full h-12 gap-2"
+              onClick={async () => {
+                if (!user || !application) return;
+                const aiData = (application.form_data || {}) as Record<string, any>;
+                const { data: profile } = await supabase
+                  .from("profiles")
+                  .select("full_name, agency_name, phone")
+                  .eq("user_id", user.id)
+                  .single();
+
+                const selected = ACORD_FORM_LIST.filter((f) => selectedForms.has(f.id));
+                for (const form of selected) {
+                  const filled = buildAutofilledData(form, aiData, profile);
+                  const pdf = generateAcordPdf(form, filled);
+                  pdf.save(`${form.name.replace(/\s/g, "_")}_${new Date().toISOString().slice(0, 10)}.pdf`);
+                }
+                toast.success(`Downloaded ${selected.length} PDF${selected.length !== 1 ? "s" : ""}!`);
+              }}
+            >
+              <Download className="h-4 w-4" />
+              Download All {selectedForms.size} PDFs (Pre-filled)
+            </Button>
+
+            {/* Individual form links */}
             <div className="flex flex-wrap gap-2">
               {ACORD_FORM_LIST.filter((f) => selectedForms.has(f.id)).map((form) => (
                 <Link key={form.id} to={`/acord/${form.id}/${submissionId}`}>
-                  <Button size="sm" className="gap-2">
+                  <Button size="sm" variant="outline" className="gap-2">
                     <FileText className="h-3.5 w-3.5" />
-                    Fill {form.name}
+                    Edit {form.name}
                   </Button>
                 </Link>
               ))}
