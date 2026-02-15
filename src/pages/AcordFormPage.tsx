@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -26,7 +26,7 @@ export default function AcordFormPage() {
   const [loadedFromAI, setLoadedFromAI] = useState(false);
 
   // Load AI-extracted data if available
-  useState(() => {
+  useEffect(() => {
     if (!submissionId || !user) return;
     supabase
       .from("insurance_applications")
@@ -37,7 +37,6 @@ export default function AcordFormPage() {
       .single()
       .then(({ data }) => {
         if (data?.form_data) {
-          // Map AI-extracted fields to ACORD form fields
           const aiData = data.form_data as Record<string, any>;
           const mapped: Record<string, any> = {};
           for (const field of form?.fields || []) {
@@ -45,7 +44,6 @@ export default function AcordFormPage() {
               mapped[field.key] = aiData[field.key];
             }
           }
-          // Also try common field name mappings
           if (aiData.applicant_name && !mapped.applicant_name) mapped.applicant_name = aiData.applicant_name;
           if (aiData.applicant_name && !mapped.insured_name) mapped.insured_name = aiData.applicant_name;
           if (aiData.mailing_address && !mapped.mailing_address) mapped.mailing_address = aiData.mailing_address;
@@ -66,7 +64,7 @@ export default function AcordFormPage() {
           setLoadedFromAI(true);
         }
       });
-  });
+  }, [submissionId, user]);
 
   if (!form) {
     return (
