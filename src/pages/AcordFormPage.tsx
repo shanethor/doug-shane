@@ -25,9 +25,51 @@ export default function AcordFormPage() {
   const [saving, setSaving] = useState(false);
   const [loadedFromAI, setLoadedFromAI] = useState(false);
 
-  // Comprehensive mapping from AI-extracted keys to form field keys (handles aliases across all ACORD forms)
+  // ── Smart parsing utilities ──────────────────────────────────────
+
+  /** Parse natural-language dates ("March 1, 2026", "3/1/2026", etc.) into YYYY-MM-DD */
+  const parseDate = (raw: string): string => {
+    if (!raw) return "";
+    // Already YYYY-MM-DD
+    if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+    const d = new Date(raw);
+    if (!isNaN(d.getTime())) {
+      return d.toISOString().slice(0, 10);
+    }
+    return raw; // fallback unchanged
+  };
+
+  /** Auto-calculate expiration = effective + 1 year */
+  const calcExpiration = (effDateStr: string): string => {
+    const d = new Date(effDateStr);
+    if (isNaN(d.getTime())) return "";
+    d.setFullYear(d.getFullYear() + 1);
+    return d.toISOString().slice(0, 10);
+  };
+
+  /** Clean currency strings: "$600,000" → "600000" */
+  const cleanCurrency = (raw: string): string => {
+    if (!raw) return "";
+    return String(raw).replace(/[$,\s]/g, "");
+  };
+
+  /** Split "9 (2 Full Time, 7 Part Time)" into { full_time: "2", part_time: "7", total: "9" } */
+  const splitEmployees = (raw: string): { full_time: string; part_time: string; total: string } => {
+    const s = String(raw);
+    const ftMatch = s.match(/(\d+)\s*full[\s-]?time/i);
+    const ptMatch = s.match(/(\d+)\s*part[\s-]?time/i);
+    const totalMatch = s.match(/^(\d+)/);
+    return {
+      full_time: ftMatch?.[1] || "",
+      part_time: ptMatch?.[1] || "",
+      total: totalMatch?.[1] || s.replace(/\D/g, "") || "",
+    };
+  };
+
+  // Comprehensive mapping from AI-extracted keys to form field keys
   const AI_TO_FORM_ALIASES: Record<string, string[]> = {
     applicant_name: ["applicant_name", "insured_name", "named_insured"],
+    dba_name: ["dba_name"],
     mailing_address: ["mailing_address", "premises_address"],
     city: ["city", "premises_city", "garaging_city"],
     state: ["state", "premises_state", "state_of_operation", "garaging_state"],
@@ -41,7 +83,6 @@ export default function AcordFormPage() {
     business_type: ["business_type"],
     year_established: ["date_business_started"],
     annual_revenue: ["annual_revenues", "annual_revenue", "gross_sales"],
-    number_of_employees: ["full_time_employees", "num_employees_1", "ebl_num_employees", "total_employees"],
     nature_of_business: ["nature_of_business", "business_category"],
     description_of_operations: ["description_of_operations", "operations_description"],
     effective_date: ["effective_date", "proposed_eff_date"],
@@ -54,7 +95,37 @@ export default function AcordFormPage() {
     prior_losses_last_5_years: ["loss_history"],
     claims_description: ["loss_history"],
     coverage_types_needed: ["lines_of_business"],
-    dba_name: ["dba_name"],
+  };
+
+  // Fields that should be treated as dates
+  const DATE_FIELDS = new Set([
+    "proposed_eff_date", "proposed_exp_date", "effective_date", "expiration_date",
+    "date_business_started", "prior_eff_date", "prior_exp_date", "retroactive_date",
+    "pending_litigation_date", "signature_date",
+  ]);
+
+  // Fields that should be treated as currency
+  const CURRENCY_FIELDS = new Set([
+    "annual_revenues", "annual_revenue", "gross_sales", "current_premium",
+    "cgl_premium", "property_premium", "auto_premium", "umbrella_premium",
+    "crime_premium", "cyber_premium", "general_aggregate", "products_aggregate",
+    "each_occurrence", "personal_adv_injury", "fire_damage", "medical_payments",
+    "deductible_amount", "prior_gl_premium", "prior_auto_premium", "prior_property_premium",
+    "total_losses", "ebl_each_employee", "ebl_aggregate", "ebl_deductible",
+    "annual_remuneration_1", "annual_remuneration_2", "est_premium_1", "est_premium_2",
+    "hazard_premium_1", "hazard_premium_2",
+  ]);
+
+  // Fields that are employee counts
+  const EMPLOYEE_FIELDS = new Set(["full_time_employees", "part_time_employees", "num_employees_1", "ebl_num_employees", "total_employees"]);
+
+  /** Apply smart normalisation to a value based on its target field */
+  const normalizeValue = (fieldKey: string, value: any): any => {
+    const s = String(value ?? "");
+    if (!s) return s;
+    if (DATE_FIELDS.has(fieldKey)) return parseDate(s);
+    if (CURRENCY_FIELDS.has(fieldKey)) return cleanCurrency(s);
+    return Array.isArray(value) ? value.join(", ") : s;
   };
 
   // Load AI-extracted data and agent profile to auto-fill as much as possible
@@ -79,7 +150,7 @@ export default function AcordFormPage() {
     ]).then(([appResult, profileResult]) => {
       const mapped: Record<string, any> = {};
 
-      // 1. Auto-fill agent profile data into agency fields
+      // 1. Auto-fill agent profile data
       const profile = profileResult.data;
       if (profile) {
         if (profile.agency_name && formFieldKeys.has("agency_name")) mapped.agency_name = profile.agency_name;
@@ -87,22 +158,55 @@ export default function AcordFormPage() {
         if (profile.phone && formFieldKeys.has("agency_phone")) mapped.agency_phone = profile.phone;
       }
 
-      // 2. Map AI-extracted data to all matching form fields
+      // 2. Map AI-extracted data with smart normalisation
       const aiData = (appResult.data?.form_data || {}) as Record<string, any>;
+
+      // Handle employee count splitting specially
+      const rawEmployees = aiData.number_of_employees;
+      if (rawEmployees) {
+        const emp = splitEmployees(String(rawEmployees));
+        if (formFieldKeys.has("full_time_employees") && emp.full_time) mapped.full_time_employees = emp.full_time;
+        if (formFieldKeys.has("part_time_employees") && emp.part_time) mapped.part_time_employees = emp.part_time;
+        if (formFieldKeys.has("num_employees_1") && emp.total) mapped.num_employees_1 = emp.total;
+        if (formFieldKeys.has("ebl_num_employees") && emp.total) mapped.ebl_num_employees = emp.total;
+        if (formFieldKeys.has("total_employees") && emp.total) mapped.total_employees = emp.total;
+      }
+
+      // Alias mapping with normalisation
       for (const [aiKey, formKeys] of Object.entries(AI_TO_FORM_ALIASES)) {
         const value = aiData[aiKey];
         if (!value) continue;
         for (const formKey of formKeys) {
           if (formFieldKeys.has(formKey) && !mapped[formKey]) {
-            mapped[formKey] = Array.isArray(value) ? value.join(", ") : value;
+            mapped[formKey] = normalizeValue(formKey, value);
           }
         }
       }
 
-      // 3. Direct matches — any AI field that exactly matches a form field
+      // Direct matches
       for (const [aiKey, value] of Object.entries(aiData)) {
         if (formFieldKeys.has(aiKey) && !mapped[aiKey] && value) {
-          mapped[aiKey] = Array.isArray(value) ? value.join(", ") : value;
+          mapped[aiKey] = normalizeValue(aiKey, value);
+        }
+      }
+
+      // 3. Auto-calculate expiration date if we have effective but not expiration
+      const effKey = formFieldKeys.has("proposed_exp_date") ? "proposed_eff_date" : "effective_date";
+      const expKey = formFieldKeys.has("proposed_exp_date") ? "proposed_exp_date" : "expiration_date";
+      if (mapped[effKey] && !mapped[expKey] && formFieldKeys.has(expKey)) {
+        mapped[expKey] = calcExpiration(mapped[effKey]);
+      }
+
+      // 4. Auto-set signature date to today
+      if (formFieldKeys.has("signature_date") && !mapped.signature_date) {
+        mapped.signature_date = new Date().toISOString().slice(0, 10);
+      }
+
+      // 5. Default "no losses" based on prior_losses
+      if (formFieldKeys.has("no_losses") && aiData.prior_losses_last_5_years) {
+        const loss = String(aiData.prior_losses_last_5_years).toLowerCase();
+        if (loss === "no" || loss === "none" || loss === "n/a") {
+          mapped.no_losses = true;
         }
       }
 

@@ -67,11 +67,27 @@ serve(async (req) => {
 
     const prompt = `You are an insurance application data extractor. Given the following business plan/description, extract as much information as possible to fill out a commercial insurance application (ACORD 125 style).
 
+IMPORTANT EXTRACTION RULES:
+- Dates MUST be returned in YYYY-MM-DD format (e.g. "2026-03-01" not "March 1, 2026")
+- If you find an effective_date but no expiration_date, calculate expiration as effective_date + 1 year
+- Currency values must be plain numbers without $ signs or commas (e.g. "600000" not "$600,000")
+- If employee counts mention full-time and part-time separately, split them: set full_time_employees and part_time_employees as separate numeric fields, AND set number_of_employees to the total
+- For business_type, use one of: Corporation, LLC, Partnership, Sole Proprietor, Joint Venture, Not For Profit, Subchapter S Corp, Trust, Individual
+
 Business information provided:
 ${description || ""}
 ${file_contents ? `\nAdditional file contents:\n${file_contents}` : ""}
 
-Extract the data and also identify any GAPS — important fields that are missing and need to be asked about.`;
+Extract the data and identify GAPS — important fields that are MISSING and need to be asked about. Focus gap questions on fields required for ACORD 125, 126, and 130 forms. The most critical gaps to identify are:
+- Coverage limits (general aggregate, each occurrence, deductible)
+- Workers compensation class codes and remuneration
+- Prior carrier details (name, policy number, premium)
+- Building construction type and year built for each location
+- Whether the business has any: hazardous materials, professional services, products sold, alcohol served, swimming pools, foreign operations
+- Loss history details (or confirmation of no losses)
+- Desired billing/payment plan
+
+Do NOT ask about fields that can be inferred or auto-calculated (like expiration date).`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -114,6 +130,8 @@ Extract the data and also identify any GAPS — important fields that are missin
                       year_established: { type: "string" },
                       annual_revenue: { type: "string" },
                       number_of_employees: { type: "string" },
+                      full_time_employees: { type: "string" },
+                      part_time_employees: { type: "string" },
                       nature_of_business: { type: "string" },
                       description_of_operations: { type: "string" },
                       coverage_types_needed: { type: "array", items: { type: "string" } },
