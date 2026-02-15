@@ -10,8 +10,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
 
   const navItems = [
-    { to: "/", label: "Dashboard", icon: LayoutDashboard },
-    { to: "/chat", label: "Chat", icon: MessageCircle },
+    { to: "/", label: "Chat", icon: MessageCircle },
+    { to: "/clients", label: "Clients", icon: LayoutDashboard },
     { to: "/submit-plan", label: "New Client", icon: FilePlus },
     ...(isAdmin ? [{ to: "/admin", label: "Admin", icon: ShieldCheck }] : []),
   ];
