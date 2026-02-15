@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { AppLayout } from "@/components/AppLayout";
@@ -8,9 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
-import { CheckCircle, AlertCircle, Loader2 } from "lucide-react";
+import { AlertCircle, Loader2, FileText } from "lucide-react";
 import { toast } from "sonner";
+import { ACORD_FORM_LIST } from "@/lib/acord-forms";
 
 type Gap = {
   field: string;
@@ -18,75 +18,14 @@ type Gap = {
   priority: "required" | "recommended" | "optional";
 };
 
-const FIELD_LABELS: Record<string, string> = {
-  applicant_name: "Applicant Name",
-  dba_name: "DBA Name",
-  mailing_address: "Mailing Address",
-  city: "City",
-  state: "State",
-  zip: "ZIP Code",
-  phone: "Phone",
-  email: "Email",
-  website: "Website",
-  fein: "FEIN",
-  sic_code: "SIC Code",
-  naics_code: "NAICS Code",
-  business_type: "Business Type",
-  year_established: "Year Established",
-  annual_revenue: "Annual Revenue",
-  number_of_employees: "Number of Employees",
-  nature_of_business: "Nature of Business",
-  description_of_operations: "Description of Operations",
-  coverage_types_needed: "Coverage Types Needed",
-  effective_date: "Effective Date",
-  expiration_date: "Expiration Date",
-  current_carrier: "Current Carrier",
-  current_premium: "Current Premium",
-  premises_address: "Premises Address",
-  premises_owned_or_leased: "Owned or Leased",
-  square_footage: "Square Footage",
-  building_construction: "Building Construction",
-  year_built: "Year Built",
-  prior_losses_last_5_years: "Prior Losses (5 Years)",
-  claims_description: "Claims Description",
-  additional_insureds: "Additional Insureds",
-  special_conditions: "Special Conditions",
-};
-
-const SECTIONS = [
-  {
-    title: "Applicant Information",
-    fields: ["applicant_name", "dba_name", "mailing_address", "city", "state", "zip", "phone", "email", "website", "fein", "sic_code", "naics_code"],
-  },
-  {
-    title: "Business Information",
-    fields: ["business_type", "year_established", "annual_revenue", "number_of_employees", "nature_of_business", "description_of_operations"],
-  },
-  {
-    title: "Coverage Information",
-    fields: ["coverage_types_needed", "effective_date", "expiration_date", "current_carrier", "current_premium"],
-  },
-  {
-    title: "Location Information",
-    fields: ["premises_address", "premises_owned_or_leased", "square_footage", "building_construction", "year_built"],
-  },
-  {
-    title: "Loss History & Additional",
-    fields: ["prior_losses_last_5_years", "claims_description", "additional_insureds", "special_conditions"],
-  },
-];
-
 export default function ApplicationReview() {
   const { submissionId } = useParams();
   const { user } = useAuth();
   const [application, setApplication] = useState<any>(null);
-  const [formData, setFormData] = useState<Record<string, any>>({});
   const [gaps, setGaps] = useState<Gap[]>([]);
   const [gapAnswers, setGapAnswers] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [fillingGaps, setFillingGaps] = useState(false);
-  const [showGaps, setShowGaps] = useState(true);
 
   useEffect(() => {
     if (!user || !submissionId) return;
@@ -104,30 +43,9 @@ export default function ApplicationReview() {
 
     if (data) {
       setApplication(data);
-      setFormData(data.form_data as Record<string, any>);
       setGaps((data.gaps as Gap[]) || []);
     }
     setLoading(false);
-  };
-
-  const handleFieldChange = (field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const saveForm = async () => {
-    if (!application) return;
-    setSaving(true);
-    const { error } = await supabase
-      .from("insurance_applications")
-      .update({ form_data: formData })
-      .eq("id", application.id);
-
-    if (error) {
-      toast.error("Failed to save");
-    } else {
-      toast.success("Application saved");
-    }
-    setSaving(false);
   };
 
   const submitGapAnswers = async () => {
@@ -141,18 +59,31 @@ export default function ApplicationReview() {
     }
 
     setFillingGaps(true);
-    const { data, error } = await supabase.functions.invoke("fill-gaps", {
-      body: { application_id: application.id, answers: nonEmpty },
-    });
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/fill-gaps`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({ application_id: application.id, answers: nonEmpty }),
+        }
+      );
 
-    if (error) {
-      toast.error("Failed to update application");
-    } else {
-      setFormData(data.form_data);
-      setGaps(data.gaps);
+      if (!response.ok) {
+        throw new Error(`Failed: ${response.status}`);
+      }
+
+      const result = await response.json();
+      setGaps(result.gaps);
       setGapAnswers({});
-      setApplication((prev: any) => ({ ...prev, status: data.status }));
+      setApplication((prev: any) => ({ ...prev, status: result.status, form_data: result.form_data }));
       toast.success("Answers applied!");
+    } catch (err: any) {
+      console.error("fill-gaps error:", err);
+      toast.error("Failed to update application");
     }
     setFillingGaps(false);
   };
@@ -188,9 +119,9 @@ export default function ApplicationReview() {
       <div className="max-w-3xl mx-auto">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-4xl">Insurance Application</h1>
+            <h1 className="text-4xl">Application Overview</h1>
             <p className="text-muted-foreground font-sans text-sm mt-1">
-              AI-prefilled from your business plan
+              AI-extracted data from your business plan
             </p>
           </div>
           <Badge
@@ -206,7 +137,7 @@ export default function ApplicationReview() {
         </div>
 
         {/* Gap filling section */}
-        {gaps.length > 0 && showGaps && (
+        {gaps.length > 0 && (
           <Card className="mb-8 border-warning/30 bg-warning/5">
             <CardHeader>
               <CardTitle className="text-lg font-sans flex items-center gap-2">
@@ -261,52 +192,37 @@ export default function ApplicationReview() {
           </Card>
         )}
 
-        {/* Form sections */}
-        {SECTIONS.map((section) => (
-          <Card key={section.title} className="mb-4">
-            <CardHeader>
-              <CardTitle className="text-lg font-sans">{section.title}</CardTitle>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {section.fields.map((field) => {
-                const value = formData[field];
-                const isArray = Array.isArray(value);
-                const isFilled = isArray ? value.length > 0 : !!value;
-                const isLongField = ["description_of_operations", "claims_description", "special_conditions"].includes(field);
-
-                return (
-                  <div key={field} className={`space-y-1.5 ${isLongField ? "md:col-span-2" : ""}`}>
-                    <Label className="text-xs uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                      {isFilled ? (
-                        <CheckCircle className="h-3 w-3 text-success" />
-                      ) : (
-                        <div className="h-3 w-3 rounded-full border border-muted-foreground/30" />
-                      )}
-                      {FIELD_LABELS[field] || field}
-                    </Label>
-                    {isLongField ? (
-                      <Textarea
-                        value={isArray ? value.join(", ") : value || ""}
-                        onChange={(e) => handleFieldChange(field, e.target.value)}
-                        rows={3}
-                      />
-                    ) : (
-                      <Input
-                        value={isArray ? value.join(", ") : value || ""}
-                        onChange={(e) => handleFieldChange(field, e.target.value)}
-                      />
-                    )}
+        {/* ACORD Form Selection */}
+        <h2 className="text-2xl mb-4">Fill ACORD Forms</h2>
+        <p className="text-muted-foreground font-sans text-sm mb-6">
+          Select a form to fill out. Your business plan data will be automatically mapped to the form fields.
+        </p>
+        <div className="grid gap-3 mb-12">
+          {ACORD_FORM_LIST.map((form) => (
+            <Link
+              key={form.id}
+              to={`/acord/${form.id}/${submissionId}`}
+              className="flex items-center justify-between rounded-lg border bg-card p-4 hover:shadow-sm transition-shadow"
+            >
+              <div className="flex items-center gap-4">
+                <div className="rounded-full bg-primary/10 p-2.5">
+                  <FileText className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <span className="font-medium text-sm font-sans">{form.name}</span>
+                    <span className="text-xs text-muted-foreground font-sans">— {form.fullName}</span>
                   </div>
-                );
-              })}
-            </CardContent>
-          </Card>
-        ))}
-
-        <div className="flex gap-3 mt-6 mb-12">
-          <Button onClick={saveForm} disabled={saving} className="flex-1 h-12">
-            {saving ? "Saving…" : "Save Application"}
-          </Button>
+                  <p className="text-xs text-muted-foreground font-sans">
+                    {form.fields.length} fields · {form.description.slice(0, 80)}…
+                  </p>
+                </div>
+              </div>
+              <Button variant="ghost" size="sm" className="text-xs">
+                Fill Form →
+              </Button>
+            </Link>
+          ))}
         </div>
       </div>
     </AppLayout>
