@@ -1,20 +1,22 @@
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { Shield, LayoutDashboard, FilePlus, LogOut } from "lucide-react";
+import { useAdmin } from "@/hooks/useAdmin";
+import { Shield, LayoutDashboard, FilePlus, LogOut, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
-  const { signOut, user } = useAuth();
+  const { signOut } = useAuth();
+  const { isAdmin } = useAdmin();
   const location = useLocation();
 
   const navItems = [
     { to: "/", label: "Dashboard", icon: LayoutDashboard },
-    { to: "/new-quote", label: "New Quote", icon: FilePlus },
+    { to: "/submit-plan", label: "New Submission", icon: FilePlus },
+    ...(isAdmin ? [{ to: "/admin", label: "Admin", icon: ShieldCheck }] : []),
   ];
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Top nav */}
       <header className="border-b bg-card">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
           <Link to="/" className="flex items-center gap-2">
