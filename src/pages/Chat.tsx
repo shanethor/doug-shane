@@ -284,7 +284,7 @@ export default function Chat() {
                       className={`rounded-xl px-4 py-3 max-w-[85%] text-sm leading-relaxed ${
                         m.role === "user"
                           ? "bg-primary text-primary-foreground whitespace-pre-wrap"
-                          : "bg-muted text-foreground prose prose-sm prose-headings:text-foreground prose-strong:text-foreground prose-p:my-1.5 prose-li:my-0.5 prose-ol:my-1 prose-ul:my-1 max-w-none [&_li]:animate-in [&_li]:fade-in [&_li]:slide-in-from-bottom-2 [&_li]:duration-500 [&_li:nth-child(1)]:delay-0 [&_li:nth-child(2)]:delay-150 [&_li:nth-child(3)]:delay-300 [&_li:nth-child(4)]:delay-500 [&_li:nth-child(5)]:delay-700"
+                          : "bg-muted text-foreground prose prose-sm prose-headings:text-foreground prose-strong:text-foreground prose-p:my-1.5 prose-li:my-0.5 prose-ol:my-1 prose-ul:my-1 max-w-none"
                       }`}
                     >
                       {m.role === "assistant" ? (
