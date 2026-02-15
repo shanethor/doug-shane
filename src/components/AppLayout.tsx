@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useAdmin } from "@/hooks/useAdmin";
-import { LayoutDashboard, FilePlus, LogOut, ShieldCheck } from "lucide-react";
+import { LayoutDashboard, FilePlus, LogOut, ShieldCheck, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
@@ -11,6 +11,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   const navItems = [
     { to: "/", label: "Dashboard", icon: LayoutDashboard },
+    { to: "/chat", label: "Chat", icon: MessageCircle },
     { to: "/submit-plan", label: "New Client", icon: FilePlus },
     ...(isAdmin ? [{ to: "/admin", label: "Admin", icon: ShieldCheck }] : []),
   ];
