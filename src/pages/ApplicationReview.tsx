@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { AlertCircle, Loader2, FileText, CheckSquare, Download } from "lucide-react";
+import { AlertCircle, Loader2, FileText, CheckSquare, Download, Settings2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { ACORD_FORMS, ACORD_FORM_LIST } from "@/lib/acord-forms";
 import { generateAcordPdf } from "@/lib/pdf-generator";
@@ -21,6 +21,16 @@ type Gap = {
   priority: "required" | "recommended" | "optional";
 };
 
+const DEFAULT_FIELDS = [
+  { key: "agency_name", label: "Agency Name" },
+  { key: "agency_phone", label: "Agency Phone" },
+  { key: "agency_email", label: "Agency Email" },
+  { key: "billing_plan", label: "Default Billing Plan" },
+  { key: "payment_plan", label: "Default Payment Plan" },
+  { key: "producer_name", label: "Producer Name" },
+  { key: "producer_license_no", label: "Producer License No." },
+];
+
 export default function ApplicationReview() {
   const { submissionId } = useParams();
   const { user } = useAuth();
@@ -30,10 +40,15 @@ export default function ApplicationReview() {
   const [loading, setLoading] = useState(true);
   const [fillingGaps, setFillingGaps] = useState(false);
   const [selectedForms, setSelectedForms] = useState<Set<string>>(new Set());
+  const [downloading, setDownloading] = useState(false);
+  const [showDefaults, setShowDefaults] = useState(false);
+  const [agentDefaults, setAgentDefaults] = useState<Record<string, string>>({});
+  const [savingDefaults, setSavingDefaults] = useState(false);
 
   useEffect(() => {
     if (!user || !submissionId) return;
     loadApplication();
+    loadAgentDefaults();
   }, [user, submissionId]);
 
   const loadApplication = async () => {
@@ -50,6 +65,37 @@ export default function ApplicationReview() {
       setGaps((data.gaps as Gap[]) || []);
     }
     setLoading(false);
+  };
+
+  const loadAgentDefaults = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from("profiles")
+      .select("form_defaults, full_name, agency_name, phone")
+      .eq("user_id", user.id)
+      .single();
+    if (data?.form_defaults) {
+      setAgentDefaults(data.form_defaults as Record<string, string>);
+    } else if (data) {
+      // Pre-populate from profile
+      const defaults: Record<string, string> = {};
+      if (data.agency_name) defaults.agency_name = data.agency_name;
+      if (data.phone) defaults.agency_phone = data.phone;
+      if (data.full_name) defaults.producer_name = data.full_name;
+      setAgentDefaults(defaults);
+    }
+  };
+
+  const saveAgentDefaults = async () => {
+    if (!user) return;
+    setSavingDefaults(true);
+    const { error } = await supabase
+      .from("profiles")
+      .update({ form_defaults: agentDefaults })
+      .eq("user_id", user.id);
+    if (error) toast.error("Failed to save defaults");
+    else toast.success("Defaults saved! These will apply to all future forms.");
+    setSavingDefaults(false);
   };
 
   const submitGapAnswers = async () => {
@@ -76,15 +122,12 @@ export default function ApplicationReview() {
         }
       );
 
-      if (!response.ok) {
-        throw new Error(`Failed: ${response.status}`);
-      }
+      if (!response.ok) throw new Error(`Failed: ${response.status}`);
 
       const result = await response.json();
       setGaps(result.gaps);
       setGapAnswers({});
-      
-      // Count how many fields the AI inferred vs what user provided
+
       const previousFieldCount = Object.keys(application.form_data || {}).filter(
         (k) => (application.form_data as Record<string, any>)[k]
       ).length;
@@ -92,9 +135,9 @@ export default function ApplicationReview() {
         (k) => result.form_data[k]
       ).length;
       const inferredCount = newFieldCount - previousFieldCount - Object.keys(nonEmpty).length;
-      
+
       setApplication((prev: any) => ({ ...prev, status: result.status, form_data: result.form_data }));
-      
+
       if (result.gaps.length > 0) {
         toast.success(
           `Answers applied! ${inferredCount > 0 ? `AI inferred ${inferredCount} additional fields. ` : ""}${result.gaps.length} question${result.gaps.length !== 1 ? "s" : ""} remaining.`
@@ -107,6 +150,78 @@ export default function ApplicationReview() {
       toast.error("Failed to update application");
     }
     setFillingGaps(false);
+  };
+
+  const auditAndDownload = async () => {
+    if (!user || !application) return;
+    setDownloading(true);
+
+    try {
+      const aiData = (application.form_data || {}) as Record<string, any>;
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("full_name, agency_name, phone")
+        .eq("user_id", user.id)
+        .single();
+
+      const selected = ACORD_FORM_LIST.filter((f) => selectedForms.has(f.id));
+
+      for (let i = 0; i < selected.length; i++) {
+        const form = selected[i];
+        let filled = buildAutofilledData(form, aiData, profile);
+
+        // Apply agent defaults
+        for (const [k, v] of Object.entries(agentDefaults)) {
+          if (v && (!filled[k] || (typeof filled[k] === "string" && !filled[k].trim()))) {
+            filled[k] = v;
+          }
+        }
+
+        // Run AI audit for this form
+        try {
+          const auditResponse = await fetch(
+            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/audit-form`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+              },
+              body: JSON.stringify({
+                form_data: filled,
+                form_id: form.id,
+                agent_defaults: agentDefaults,
+              }),
+            }
+          );
+
+          if (auditResponse.ok) {
+            const auditResult = await auditResponse.json();
+            // Merge audited data
+            filled = { ...filled, ...auditResult.audited_data };
+            if (auditResult.audit_notes) {
+              console.log(`${form.name} audit:`, auditResult.audit_notes);
+            }
+          }
+        } catch (auditErr) {
+          console.warn("Audit failed for", form.name, auditErr);
+          // Continue with non-audited data
+        }
+
+        const pdf = generateAcordPdf(form, filled);
+        pdf.save(`${form.name.replace(/\s/g, "_")}_${new Date().toISOString().slice(0, 10)}.pdf`);
+
+        if (i < selected.length - 1) {
+          await new Promise((r) => setTimeout(r, 800));
+        }
+      }
+
+      toast.success(`Downloaded ${selected.length} AI-audited PDF${selected.length !== 1 ? "s" : ""}!`);
+    } catch (err) {
+      console.error("Download error:", err);
+      toast.error("Failed to download forms");
+    }
+    setDownloading(false);
   };
 
   if (loading) {
@@ -145,17 +260,64 @@ export default function ApplicationReview() {
               AI-extracted data from the client's business plan
             </p>
           </div>
-          <Badge
-            variant="outline"
-            className={`text-xs uppercase tracking-wider font-sans ${
-              application.status === "complete"
-                ? "bg-success/20 text-success"
-                : "bg-warning/20 text-warning"
-            }`}
-          >
-            {application.status}
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowDefaults(!showDefaults)}
+              className="gap-1.5 text-xs"
+            >
+              <Settings2 className="h-3.5 w-3.5" />
+              Agent Defaults
+            </Button>
+            <Badge
+              variant="outline"
+              className={`text-xs uppercase tracking-wider font-sans ${
+                application.status === "complete"
+                  ? "bg-success/20 text-success"
+                  : "bg-warning/20 text-warning"
+              }`}
+            >
+              {application.status}
+            </Badge>
+          </div>
         </div>
+
+        {/* Agent Defaults Panel */}
+        {showDefaults && (
+          <Card className="mb-8 border-primary/20 bg-primary/5">
+            <CardHeader>
+              <CardTitle className="text-lg font-sans flex items-center gap-2">
+                <Settings2 className="h-5 w-5 text-primary" />
+                Agent Defaults
+              </CardTitle>
+              <p className="text-xs text-muted-foreground font-sans">
+                Set values that auto-fill on every form you generate.
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {DEFAULT_FIELDS.map((df) => (
+                  <div key={df.key} className="space-y-1">
+                    <Label className="text-xs uppercase tracking-wider text-muted-foreground">{df.label}</Label>
+                    <Input
+                      value={agentDefaults[df.key] || ""}
+                      onChange={(e) =>
+                        setAgentDefaults((prev) => ({ ...prev, [df.key]: e.target.value }))
+                      }
+                      placeholder={df.label}
+                      className="h-9 text-sm"
+                    />
+                  </div>
+                ))}
+              </div>
+              <Button onClick={saveAgentDefaults} disabled={savingDefaults} size="sm" className="mt-2">
+                {savingDefaults ? <Loader2 className="h-3 w-3 mr-1.5 animate-spin" /> : null}
+                Save Defaults
+              </Button>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Gap filling section */}
         {gaps.length > 0 && (
@@ -216,7 +378,7 @@ export default function ApplicationReview() {
         {/* ACORD Form Selection */}
         <h2 className="text-2xl mb-4">Select ACORD Forms</h2>
         <p className="text-muted-foreground font-sans text-sm mb-6">
-          Choose the forms you need for this client. The extracted data will be automatically mapped to each form.
+          Choose the forms you need. An AI audit fills remaining gaps, estimates rates, and explains Yes answers before download.
         </p>
         <div className="grid gap-3 mb-6">
           {ACORD_FORM_LIST.map((form) => {
@@ -270,37 +432,25 @@ export default function ApplicationReview() {
               {selectedForms.size} form{selectedForms.size !== 1 ? "s" : ""} selected
             </p>
 
-            {/* Batch download all selected forms */}
             <Button
               className="w-full h-12 gap-2"
-              onClick={async () => {
-                if (!user || !application) return;
-                const aiData = (application.form_data || {}) as Record<string, any>;
-                const { data: profile } = await supabase
-                  .from("profiles")
-                  .select("full_name, agency_name, phone")
-                  .eq("user_id", user.id)
-                  .single();
-
-                const selected = ACORD_FORM_LIST.filter((f) => selectedForms.has(f.id));
-                for (let i = 0; i < selected.length; i++) {
-                  const form = selected[i];
-                  const filled = buildAutofilledData(form, aiData, profile);
-                  const pdf = generateAcordPdf(form, filled);
-                  pdf.save(`${form.name.replace(/\s/g, "_")}_${new Date().toISOString().slice(0, 10)}.pdf`);
-                  // Delay between saves so browsers don't block multiple downloads
-                  if (i < selected.length - 1) {
-                    await new Promise((r) => setTimeout(r, 800));
-                  }
-                }
-                toast.success(`Downloaded ${selected.length} PDF${selected.length !== 1 ? "s" : ""}!`);
-              }}
+              onClick={auditAndDownload}
+              disabled={downloading}
             >
-              <Download className="h-4 w-4" />
-              Download All {selectedForms.size} PDFs (Pre-filled)
+              {downloading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  AI Auditing & Generating…
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4" />
+                  <Download className="h-4 w-4" />
+                  AI Audit & Download {selectedForms.size} PDF{selectedForms.size !== 1 ? "s" : ""}
+                </>
+              )}
             </Button>
 
-            {/* Individual form links */}
             <div className="flex flex-wrap gap-2">
               {ACORD_FORM_LIST.filter((f) => selectedForms.has(f.id)).map((form) => (
                 <Link key={form.id} to={`/acord/${form.id}/${submissionId}`}>

@@ -172,6 +172,7 @@ export type Database = {
         Row: {
           agency_name: string | null
           created_at: string
+          form_defaults: Json | null
           full_name: string | null
           id: string
           phone: string | null
@@ -181,6 +182,7 @@ export type Database = {
         Insert: {
           agency_name?: string | null
           created_at?: string
+          form_defaults?: Json | null
           full_name?: string | null
           id?: string
           phone?: string | null
@@ -190,6 +192,7 @@ export type Database = {
         Update: {
           agency_name?: string | null
           created_at?: string
+          form_defaults?: Json | null
           full_name?: string | null
           id?: string
           phone?: string | null
