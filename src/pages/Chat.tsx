@@ -99,8 +99,11 @@ export default function Chat() {
   const [dragActive, setDragActive] = useState(false);
   const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
   const [fieldValues, setFieldValues] = useState<Record<string, string>>({});
+  const [displayedText, setDisplayedText] = useState(""); // typewriter buffer
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const fullTextRef = useRef(""); // full streamed text so far
+  const typewriterRef = useRef<number | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -108,7 +111,34 @@ export default function Chat() {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, []);
 
-  useEffect(() => { scrollToBottom(); }, [messages, scrollToBottom]);
+  useEffect(() => { scrollToBottom(); }, [messages, displayedText, scrollToBottom]);
+
+  // Typewriter: drains fullTextRef into displayedText char-by-char
+  const startTypewriter = useCallback(() => {
+    if (typewriterRef.current) return;
+    const tick = () => {
+      const full = fullTextRef.current;
+      setDisplayedText((prev) => {
+        if (prev.length >= full.length) {
+          // caught up — pause and check again soon
+          typewriterRef.current = window.setTimeout(tick, 30);
+          return prev;
+        }
+        // Reveal a few chars at a time for smoothness
+        const step = Math.min(3, full.length - prev.length);
+        const next = full.slice(0, prev.length + step);
+        return next;
+      });
+      typewriterRef.current = window.setTimeout(tick, 18);
+    };
+    tick();
+  }, []);
+
+  const stopTypewriter = useCallback(() => {
+    if (typewriterRef.current) { clearTimeout(typewriterRef.current); typewriterRef.current = null; }
+    // flush remaining text
+    setDisplayedText(fullTextRef.current);
+  }, []);
 
   const handleFiles = (files: FileList | null) => {
     if (!files) return;
@@ -132,32 +162,50 @@ export default function Chat() {
     setAttachedFiles([]);
     setIsLoading(true);
 
-    let assistantSoFar = "";
+    fullTextRef.current = "";
+    setDisplayedText("");
+
     const upsert = (chunk: string) => {
-      assistantSoFar += chunk;
-      const fields = parseFields(assistantSoFar);
+      fullTextRef.current += chunk;
+      // Ensure an assistant message exists in the list
       setMessages((prev) => {
         const last = prev[prev.length - 1];
-        if (last?.role === "assistant") {
-          return prev.map((m, i) =>
-            i === prev.length - 1 ? { ...m, content: assistantSoFar, fields } : m
-          );
-        }
-        return [...prev, { role: "assistant", content: assistantSoFar, fields }];
+        if (last?.role === "assistant") return prev;
+        return [...prev, { role: "assistant", content: "" }];
       });
     };
+
+    // Start typewriter after a tiny delay so the assistant bubble is mounted
+    setTimeout(() => startTypewriter(), 50);
 
     try {
       await streamChat({
         messages: [...messages, userMsg].map((m) => ({ role: m.role, content: m.content })),
         onDelta: upsert,
-        onDone: () => setIsLoading(false),
+        onDone: () => {
+          stopTypewriter();
+          // Finalize the assistant message with fields
+          const finalText = fullTextRef.current;
+          const fields = parseFields(finalText);
+          setMessages((prev) => {
+            const last = prev[prev.length - 1];
+            if (last?.role === "assistant") {
+              return prev.map((m, i) =>
+                i === prev.length - 1 ? { ...m, content: finalText, fields } : m
+              );
+            }
+            return [...prev, { role: "assistant", content: finalText, fields }];
+          });
+          setIsLoading(false);
+        },
         onError: (err) => {
+          stopTypewriter();
           toast({ variant: "destructive", title: "Error", description: err });
           setIsLoading(false);
         },
       });
     } catch {
+      stopTypewriter();
       toast({ variant: "destructive", title: "Connection error", description: "Could not reach the assistant." });
       setIsLoading(false);
     }
@@ -277,7 +325,10 @@ export default function Chat() {
             </div>
           ) : (
             <div className="max-w-3xl mx-auto py-6 px-4 space-y-6">
-              {messages.map((m, i) => (
+              {messages.map((m, i) => {
+                const isLastAssistant = m.role === "assistant" && i === messages.length - 1;
+                const textToShow = isLastAssistant && isLoading ? displayedText : m.content;
+                return (
                 <div key={i}>
                   <div className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
                     <div
@@ -288,7 +339,7 @@ export default function Chat() {
                       }`}
                     >
                       {m.role === "assistant" ? (
-                        <ReactMarkdown>{stripFieldMarkers(m.content)}</ReactMarkdown>
+                        <ReactMarkdown>{stripFieldMarkers(textToShow)}</ReactMarkdown>
                       ) : m.content}
                     </div>
                   </div>
@@ -323,8 +374,9 @@ export default function Chat() {
                     </div>
                   )}
                 </div>
-              ))}
-              {isLoading && messages[messages.length - 1]?.role !== "assistant" && (
+                );
+              })}
+              {isLoading && displayedText === "" && (
                 <div className="flex justify-start">
                   <div className="bg-muted rounded-xl px-4 py-3">
                     <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
