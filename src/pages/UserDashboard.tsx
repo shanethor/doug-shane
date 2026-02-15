@@ -48,7 +48,7 @@ export default function UserDashboard() {
         <div>
           <h1 className="text-4xl">My Clients</h1>
           <p className="text-muted-foreground font-sans text-sm mt-1">
-            {submissions.length} client{submissions.length !== 1 ? "s" : ""}
+            Upload business plans, auto-fill ACORD forms, and manage submissions — {submissions.length} client{submissions.length !== 1 ? "s" : ""} total.
           </p>
         </div>
         <Link to="/submit-plan">

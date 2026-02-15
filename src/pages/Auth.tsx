@@ -54,7 +54,8 @@ export default function Auth() {
       {/* Left panel */}
       <div className="hidden lg:flex lg:w-1/2 flex-col justify-between bg-primary p-12">
         <div className="flex items-center gap-3">
-          <img src={epochLogo} alt="EPOCH Risk Group" className="h-10" />
+          <span className="text-2xl font-bold tracking-tight text-primary-foreground" style={{ fontFamily: "'Instrument Serif', serif" }}>EPOCH</span>
+          <span className="text-sm text-primary-foreground/50 font-sans">Risk Group</span>
         </div>
         <div className="max-w-md">
           <h1 className="text-5xl text-primary-foreground leading-tight">
@@ -71,7 +72,8 @@ export default function Auth() {
       <div className="flex flex-1 items-center justify-center p-8">
         <div className="w-full max-w-sm">
           <div className="mb-8 lg:hidden flex items-center gap-2">
-            <img src={epochLogo} alt="EPOCH Risk Group" className="h-8" />
+            <span className="text-2xl font-bold tracking-tight text-foreground" style={{ fontFamily: "'Instrument Serif', serif" }}>EPOCH</span>
+            <span className="text-sm text-muted-foreground font-sans">Risk Group</span>
           </div>
 
           <h2 className="text-3xl mb-2">{isSignUp ? "Create account" : "Welcome back"}</h2>
