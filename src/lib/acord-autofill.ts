@@ -146,7 +146,8 @@ export function buildAutofilledData(
     }
   }
 
-  // Direct matches
+  // Direct matches — this handles AI-inferred fields that use exact form field keys
+  // (e.g., class_description_1, officer_1_title, sic_code, etc.)
   for (const [aiKey, value] of Object.entries(aiData)) {
     if (formFieldKeys.has(aiKey) && !mapped[aiKey] && value) {
       mapped[aiKey] = normalizeValue(aiKey, value);

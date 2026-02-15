@@ -83,8 +83,25 @@ export default function ApplicationReview() {
       const result = await response.json();
       setGaps(result.gaps);
       setGapAnswers({});
+      
+      // Count how many fields the AI inferred vs what user provided
+      const previousFieldCount = Object.keys(application.form_data || {}).filter(
+        (k) => (application.form_data as Record<string, any>)[k]
+      ).length;
+      const newFieldCount = Object.keys(result.form_data || {}).filter(
+        (k) => result.form_data[k]
+      ).length;
+      const inferredCount = newFieldCount - previousFieldCount - Object.keys(nonEmpty).length;
+      
       setApplication((prev: any) => ({ ...prev, status: result.status, form_data: result.form_data }));
-      toast.success("Answers applied!");
+      
+      if (result.gaps.length > 0) {
+        toast.success(
+          `Answers applied! ${inferredCount > 0 ? `AI inferred ${inferredCount} additional fields. ` : ""}${result.gaps.length} question${result.gaps.length !== 1 ? "s" : ""} remaining.`
+        );
+      } else {
+        toast.success(`All fields complete!${inferredCount > 0 ? ` AI inferred ${inferredCount} additional fields.` : ""} Ready to download forms.`);
+      }
     } catch (err: any) {
       console.error("fill-gaps error:", err);
       toast.error("Failed to update application");
