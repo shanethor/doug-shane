@@ -204,7 +204,7 @@ export default function Chat() {
         {/* Messages area */}
         <div ref={scrollRef} className="flex-1 overflow-y-auto">
           {isEmpty ? (
-            <div className="flex flex-col items-center justify-center h-full gap-8 px-4">
+            <div className="flex flex-col items-center justify-center h-full gap-6 px-4">
               <div className="text-center space-y-2">
                 <h1 className="text-4xl tracking-tight" style={{ fontFamily: "'Instrument Serif', serif" }}>
                   How can I help you?
@@ -213,6 +213,54 @@ export default function Chat() {
                   I can guide you through client submissions, ACORD forms, and coverage reviews.
                 </p>
               </div>
+
+              {/* Chat input inline */}
+              <div className="w-full max-w-2xl">
+                {attachedFiles.length > 0 && (
+                  <div className="mb-2 flex flex-wrap gap-2">
+                    {attachedFiles.map((f, i) => (
+                      <div key={i} className="flex items-center gap-1.5 rounded-md bg-card border px-2.5 py-1.5 text-xs">
+                        <Paperclip className="h-3 w-3 text-muted-foreground" />
+                        <span className="max-w-[120px] truncate">{f.name}</span>
+                        <button onClick={() => removeFile(i)} className="text-muted-foreground hover:text-foreground">
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <div className="flex items-end gap-2 rounded-xl border bg-card p-3 shadow-sm focus-within:ring-2 focus-within:ring-ring">
+                  <input type="file" ref={fileInputRef} className="hidden" multiple onChange={(e) => handleFiles(e.target.files)} />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="shrink-0 h-9 w-9 text-muted-foreground hover:text-foreground"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <Paperclip className="h-4 w-4" />
+                  </Button>
+                  <textarea
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder="Ask me anything about your clients..."
+                    rows={2}
+                    className="flex-1 resize-none bg-transparent border-0 outline-none text-sm placeholder:text-muted-foreground min-h-[52px] max-h-40 py-2"
+                  />
+                  <Button
+                    onClick={() => send(input)}
+                    disabled={!input.trim() || isLoading}
+                    size="icon"
+                    className="shrink-0 h-9 w-9"
+                  >
+                    <Send className="h-4 w-4" />
+                  </Button>
+                </div>
+                <p className="text-[10px] text-muted-foreground text-center mt-2">
+                  Drop files anywhere or click <Paperclip className="inline h-3 w-3" /> to attach
+                </p>
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full max-w-xl">
                 {SUGGESTIONS.map((s) => (
                   <button
@@ -280,8 +328,8 @@ export default function Chat() {
           )}
         </div>
 
-        {/* Attached files preview */}
-        {attachedFiles.length > 0 && (
+        {/* Attached files preview — only when conversation active */}
+        {!isEmpty && attachedFiles.length > 0 && (
           <div className="border-t bg-muted/30 px-4 py-2">
             <div className="max-w-3xl mx-auto flex flex-wrap gap-2">
               {attachedFiles.map((f, i) => (
@@ -297,41 +345,43 @@ export default function Chat() {
           </div>
         )}
 
-        {/* Input area — bigger */}
-        <div className="border-t bg-background p-4">
-          <div className="max-w-3xl mx-auto">
-            <div className="flex items-end gap-2 rounded-xl border bg-card p-3 shadow-sm focus-within:ring-2 focus-within:ring-ring">
-              <input type="file" ref={fileInputRef} className="hidden" multiple onChange={(e) => handleFiles(e.target.files)} />
-              <Button
-                variant="ghost"
-                size="icon"
-                className="shrink-0 h-9 w-9 text-muted-foreground hover:text-foreground"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <Paperclip className="h-4 w-4" />
-              </Button>
-              <textarea
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Ask me anything about your clients..."
-                rows={2}
-                className="flex-1 resize-none bg-transparent border-0 outline-none text-sm placeholder:text-muted-foreground min-h-[52px] max-h-40 py-2"
-              />
-              <Button
-                onClick={() => send(input)}
-                disabled={!input.trim() || isLoading}
-                size="icon"
-                className="shrink-0 h-9 w-9"
-              >
-                <Send className="h-4 w-4" />
-              </Button>
+        {/* Input area — only when conversation active */}
+        {!isEmpty && (
+          <div className="border-t bg-background p-4">
+            <div className="max-w-3xl mx-auto">
+              <div className="flex items-end gap-2 rounded-xl border bg-card p-3 shadow-sm focus-within:ring-2 focus-within:ring-ring">
+                <input type="file" ref={fileInputRef} className="hidden" multiple onChange={(e) => handleFiles(e.target.files)} />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="shrink-0 h-9 w-9 text-muted-foreground hover:text-foreground"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <Paperclip className="h-4 w-4" />
+                </Button>
+                <textarea
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Ask me anything about your clients..."
+                  rows={2}
+                  className="flex-1 resize-none bg-transparent border-0 outline-none text-sm placeholder:text-muted-foreground min-h-[52px] max-h-40 py-2"
+                />
+                <Button
+                  onClick={() => send(input)}
+                  disabled={!input.trim() || isLoading}
+                  size="icon"
+                  className="shrink-0 h-9 w-9"
+                >
+                  <Send className="h-4 w-4" />
+                </Button>
+              </div>
+              <p className="text-[10px] text-muted-foreground text-center mt-2">
+                Drop files anywhere or click <Paperclip className="inline h-3 w-3" /> to attach
+              </p>
             </div>
-            <p className="text-[10px] text-muted-foreground text-center mt-2">
-              Drop files anywhere or click <Paperclip className="inline h-3 w-3" /> to attach
-            </p>
           </div>
-        </div>
+        )}
       </div>
     </AppLayout>
   );
