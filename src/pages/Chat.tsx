@@ -104,6 +104,8 @@ export default function Chat() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const fullTextRef = useRef(""); // full streamed text so far
   const typewriterRef = useRef<number | null>(null);
+  const streamDoneRef = useRef(false); // true once SSE finishes
+  const onFinishRef = useRef<(() => void) | null>(null); // callback when typewriter catches up
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -120,24 +122,30 @@ export default function Chat() {
       const full = fullTextRef.current;
       setDisplayedText((prev) => {
         if (prev.length >= full.length) {
-          // caught up — pause and check again soon
+          if (streamDoneRef.current) {
+            // Typewriter caught up and stream is done — finalize
+            if (typewriterRef.current) { clearTimeout(typewriterRef.current); typewriterRef.current = null; }
+            if (onFinishRef.current) { setTimeout(onFinishRef.current, 0); onFinishRef.current = null; }
+            return prev;
+          }
+          // Stream still going — wait for more text
           typewriterRef.current = window.setTimeout(tick, 30);
           return prev;
         }
         // Reveal a few chars at a time for smoothness
         const step = Math.min(3, full.length - prev.length);
-        const next = full.slice(0, prev.length + step);
-        return next;
+        typewriterRef.current = window.setTimeout(tick, 18);
+        return full.slice(0, prev.length + step);
       });
-      typewriterRef.current = window.setTimeout(tick, 18);
     };
     tick();
   }, []);
 
-  const stopTypewriter = useCallback(() => {
+  const killTypewriter = useCallback(() => {
     if (typewriterRef.current) { clearTimeout(typewriterRef.current); typewriterRef.current = null; }
-    // flush remaining text
     setDisplayedText(fullTextRef.current);
+    streamDoneRef.current = false;
+    onFinishRef.current = null;
   }, []);
 
   const handleFiles = (files: FileList | null) => {
@@ -164,10 +172,10 @@ export default function Chat() {
 
     fullTextRef.current = "";
     setDisplayedText("");
+    streamDoneRef.current = false;
 
     const upsert = (chunk: string) => {
       fullTextRef.current += chunk;
-      // Ensure an assistant message exists in the list
       setMessages((prev) => {
         const last = prev[prev.length - 1];
         if (last?.role === "assistant") return prev;
@@ -175,7 +183,21 @@ export default function Chat() {
       });
     };
 
-    // Start typewriter after a tiny delay so the assistant bubble is mounted
+    const finalizeMessage = () => {
+      const finalText = fullTextRef.current;
+      const fields = parseFields(finalText);
+      setMessages((prev) => {
+        const last = prev[prev.length - 1];
+        if (last?.role === "assistant") {
+          return prev.map((m, i) =>
+            i === prev.length - 1 ? { ...m, content: finalText, fields } : m
+          );
+        }
+        return [...prev, { role: "assistant", content: finalText, fields }];
+      });
+      setIsLoading(false);
+    };
+
     setTimeout(() => startTypewriter(), 50);
 
     try {
@@ -183,29 +205,18 @@ export default function Chat() {
         messages: [...messages, userMsg].map((m) => ({ role: m.role, content: m.content })),
         onDelta: upsert,
         onDone: () => {
-          stopTypewriter();
-          // Finalize the assistant message with fields
-          const finalText = fullTextRef.current;
-          const fields = parseFields(finalText);
-          setMessages((prev) => {
-            const last = prev[prev.length - 1];
-            if (last?.role === "assistant") {
-              return prev.map((m, i) =>
-                i === prev.length - 1 ? { ...m, content: finalText, fields } : m
-              );
-            }
-            return [...prev, { role: "assistant", content: finalText, fields }];
-          });
-          setIsLoading(false);
+          // Signal stream done — typewriter will call finalizeMessage when it catches up
+          streamDoneRef.current = true;
+          onFinishRef.current = finalizeMessage;
         },
         onError: (err) => {
-          stopTypewriter();
+          killTypewriter();
           toast({ variant: "destructive", title: "Error", description: err });
           setIsLoading(false);
         },
       });
     } catch {
-      stopTypewriter();
+      killTypewriter();
       toast({ variant: "destructive", title: "Connection error", description: "Could not reach the assistant." });
       setIsLoading(false);
     }
