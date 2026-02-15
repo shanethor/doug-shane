@@ -1,8 +1,9 @@
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useAdmin } from "@/hooks/useAdmin";
-import { Shield, LayoutDashboard, FilePlus, LogOut, ShieldCheck } from "lucide-react";
+import { LayoutDashboard, FilePlus, LogOut, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import epochLogo from "@/assets/epoch-risk-logo.png";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { signOut } = useAuth();
@@ -20,8 +21,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       <header className="border-b bg-card">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
           <Link to="/" className="flex items-center gap-2">
-            <Shield className="h-5 w-5 text-foreground" />
-            <span className="font-semibold tracking-tight text-sm">ShieldQuote</span>
+            <img src={epochLogo} alt="EPOCH Risk Group" className="h-6" />
           </Link>
 
           <nav className="flex items-center gap-1">
