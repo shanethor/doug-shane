@@ -46,15 +46,15 @@ export default function UserDashboard() {
     <AppLayout>
       <div className="flex items-end justify-between mb-8">
         <div>
-          <h1 className="text-4xl">My Submissions</h1>
+          <h1 className="text-4xl">My Clients</h1>
           <p className="text-muted-foreground font-sans text-sm mt-1">
-            {submissions.length} submission{submissions.length !== 1 ? "s" : ""}
+            {submissions.length} client{submissions.length !== 1 ? "s" : ""}
           </p>
         </div>
         <Link to="/submit-plan">
           <Button size="sm" className="gap-2">
             <FilePlus className="h-4 w-4" />
-            New Submission
+            Add New Client
           </Button>
         </Link>
       </div>
@@ -64,12 +64,12 @@ export default function UserDashboard() {
           <div className="rounded-full bg-muted p-4 mb-4">
             <FileText className="h-8 w-8 text-muted-foreground" />
           </div>
-          <h3 className="text-xl mb-1">No submissions yet</h3>
+          <h3 className="text-xl mb-1">No clients yet</h3>
           <p className="text-muted-foreground text-sm font-sans mb-4">
-            Submit your business plan to get started with insurance applications.
+            Submit a client's business plan to start prefilling their ACORD applications.
           </p>
           <Link to="/submit-plan">
-            <Button size="sm">Submit Business Plan</Button>
+            <Button size="sm">Add New Client</Button>
           </Link>
         </div>
       ) : (
