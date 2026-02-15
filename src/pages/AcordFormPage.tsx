@@ -25,6 +25,7 @@ export default function AcordFormPage() {
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [saving, setSaving] = useState(false);
   const [loadedFromAI, setLoadedFromAI] = useState(false);
+  const [originalData] = useState<Record<string, any>>({});
 
   useEffect(() => {
     if (!submissionId || !user) return;
@@ -66,6 +67,20 @@ export default function AcordFormPage() {
   }
 
   const handleChange = (key: string, value: any) => {
+    // Track overrides for learning component
+    if (loadedFromAI && user && formId) {
+      const original = originalData[key] || formData[key];
+      if (original !== undefined && original !== value && value) {
+        supabase.from("field_overrides").insert({
+          user_id: user.id,
+          form_id: formId,
+          field_key: key,
+          ai_value: String(original || ""),
+          override_value: String(value),
+          submission_id: submissionId || null,
+        }).then(() => {});
+      }
+    }
     setFormData((prev) => ({ ...prev, [key]: value }));
   };
 

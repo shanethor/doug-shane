@@ -10,13 +10,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { AlertCircle, Loader2, FileText, CheckSquare, Download, Settings2, Sparkles, BookOpen, Package } from "lucide-react";
+import { AlertCircle, Loader2, FileText, CheckSquare, Download, Settings2, Sparkles, BookOpen, Package, AlertTriangle, Info } from "lucide-react";
 import { toast } from "sonner";
 import { ACORD_FORMS, ACORD_FORM_LIST } from "@/lib/acord-forms";
 import { COVERAGE_LINES, getFormsForCoverageLines } from "@/lib/coverage-form-map";
 import { generateAcordPdf } from "@/lib/pdf-generator";
 import { buildAutofilledData } from "@/lib/acord-autofill";
 import { generateSubmissionPackage } from "@/lib/submission-package";
+import { runConsistencyChecks, type ConsistencyWarning } from "@/lib/consistency-checks";
 
 type Gap = {
   field: string;
@@ -49,6 +50,7 @@ export default function ApplicationReview() {
   const [agentDefaults, setAgentDefaults] = useState<Record<string, string>>({});
   const [savingDefaults, setSavingDefaults] = useState(false);
   const [narrative, setNarrative] = useState("");
+  const [consistencyWarnings, setConsistencyWarnings] = useState<ConsistencyWarning[]>([]);
 
   useEffect(() => {
     if (!user || !submissionId) return;
@@ -247,6 +249,18 @@ export default function ApplicationReview() {
       const { results, profile } = await auditAllForms();
       const aiData = (application.form_data || {}) as Record<string, any>;
       const companyName = aiData.applicant_name || aiData.insured_name || aiData.company_name || "Submission";
+
+      // Save narrative and coverage lines to submission
+      if (submissionId) {
+        supabase
+          .from("business_submissions")
+          .update({
+            narrative: narrative || null,
+            coverage_lines: Array.from(selectedCoverageLines),
+          })
+          .eq("id", submissionId)
+          .then(() => {});
+      }
 
       const pkg = generateSubmissionPackage({
         companyName,
@@ -458,9 +472,13 @@ export default function ApplicationReview() {
                     const next = new Set(prev);
                     if (next.has(line)) next.delete(line);
                     else next.add(line);
-                    // Auto-select forms
                     const formIds = getFormsForCoverageLines(Array.from(next));
                     setSelectedForms(new Set(formIds));
+                    if (application?.form_data) {
+                      setConsistencyWarnings(
+                        runConsistencyChecks(application.form_data as Record<string, any>, formIds)
+                      );
+                    }
                     return next;
                   });
                 }}
@@ -526,6 +544,34 @@ export default function ApplicationReview() {
             );
           })}
         </div>
+
+        {/* Consistency Warnings */}
+        {consistencyWarnings.length > 0 && (
+          <Card className="mb-6 border-warning/30 bg-warning/5">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-sans flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 text-warning" />
+                Consistency Check ({consistencyWarnings.length} issue{consistencyWarnings.length !== 1 ? "s" : ""})
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {consistencyWarnings.map((w, i) => (
+                <div key={i} className="flex items-start gap-2 text-xs font-sans">
+                  {w.severity === "error" ? (
+                    <AlertCircle className="h-3.5 w-3.5 text-destructive mt-0.5 shrink-0" />
+                  ) : w.severity === "warning" ? (
+                    <AlertTriangle className="h-3.5 w-3.5 text-warning mt-0.5 shrink-0" />
+                  ) : (
+                    <Info className="h-3.5 w-3.5 text-muted-foreground mt-0.5 shrink-0" />
+                  )}
+                  <span className={w.severity === "error" ? "text-destructive" : "text-muted-foreground"}>
+                    {w.message}
+                  </span>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
 
         {selectedForms.size > 0 && (
           <div className="space-y-4 mb-12">

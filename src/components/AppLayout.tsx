@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useAdmin } from "@/hooks/useAdmin";
-import { LayoutDashboard, FilePlus, LogOut, ShieldCheck, MessageCircle } from "lucide-react";
+import { LayoutDashboard, FilePlus, LogOut, ShieldCheck, MessageCircle, FileStack } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
@@ -13,6 +13,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     { to: "/", label: "Chat", icon: MessageCircle },
     { to: "/clients", label: "Clients", icon: LayoutDashboard },
     { to: "/submit-plan", label: "New Client", icon: FilePlus },
+    { to: "/templates", label: "Templates", icon: FileStack },
     ...(isAdmin ? [{ to: "/admin", label: "Admin", icon: ShieldCheck }] : []),
   ];
 
