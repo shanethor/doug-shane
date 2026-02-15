@@ -124,8 +124,7 @@ export default function CustomerSubmit() {
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card">
         <div className="mx-auto flex h-14 max-w-2xl items-center px-4">
-          <Shield className="h-5 w-5 text-foreground mr-2" />
-          <span className="font-semibold tracking-tight text-sm">ShieldQuote</span>
+          <span className="font-semibold tracking-tight text-sm">EPOCH Risk Group</span>
           <span className="ml-2 text-xs text-muted-foreground font-sans">Secure Submission</span>
         </div>
       </header>
