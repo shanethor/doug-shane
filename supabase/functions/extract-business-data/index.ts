@@ -65,7 +65,7 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
-    const prompt = `You are an insurance application data extractor. Given the following business plan/description, extract as much information as possible to fill out a commercial insurance application (ACORD 125 style).
+    const prompt = `You are an insurance application data extractor. Given the following business plan/description, extract as much information as possible to fill out commercial insurance applications (ACORD 125, 126, 130, 131, 140).
 
 IMPORTANT EXTRACTION RULES:
 - Dates MUST be returned in YYYY-MM-DD format (e.g. "2026-03-01" not "March 1, 2026")
@@ -78,16 +78,37 @@ Business information provided:
 ${description || ""}
 ${file_contents ? `\nAdditional file contents:\n${file_contents}` : ""}
 
-Extract the data and identify GAPS — important fields that are MISSING and need to be asked about. Focus gap questions on fields required for ACORD 125, 126, and 130 forms. The most critical gaps to identify are:
-- Coverage limits (general aggregate, each occurrence, deductible)
-- Workers compensation class codes and remuneration
-- Prior carrier details (name, policy number, premium)
-- Building construction type and year built for each location
-- Whether the business has any: hazardous materials, professional services, products sold, alcohol served, swimming pools, foreign operations
-- Loss history details (or confirmation of no losses)
+Extract the data and identify GAPS — important fields that are MISSING and need to be asked. You MUST ask about ALL of these critical fields if they cannot be found in the business plan:
+
+ACORD 125 (General Application):
+- Coverage limits: general aggregate, each occurrence, deductible amounts
+- Prior carrier name, policy number, and premium
+- Whether applicant has: safety program, exposure to flammables, policies declined/cancelled, foreign operations
 - Desired billing/payment plan
 
-Do NOT ask about fields that can be inferred or auto-calculated (like expiration date).`;
+ACORD 126 (GL):
+- Coverage type: Occurrence or Claims-Made
+- GL classification code(s) and description(s)
+- Whether business involves: hazardous waste, products sold/manufactured, alcohol served, professional services
+
+ACORD 130 (Workers Comp) — CRITICAL, ask ALL of these if missing:
+- Workers compensation class code(s) and description(s) for each job classification
+- Annual payroll/remuneration for each class code
+- Owner/officer names, titles, ownership %, and whether included or excluded from coverage
+- Whether subcontractors are used (and if certs of insurance are obtained)
+- Whether employees are seasonal or travel out of state
+- Whether a workplace safety program is in effect
+- Prior workers comp carrier name
+- WC loss history for last 5 years (or confirm no losses)
+
+ACORD 140 (Property):
+- Building construction type (Frame, Joisted Masonry, Non-Combustible, etc.) and year built
+- Building/property value amounts
+- Protective devices (sprinkler, fire alarm, burglar alarm)
+- Roof type and condition
+
+Do NOT ask about fields that can be inferred or auto-calculated (like expiration date from effective date).
+Mark WC-related gaps as "required" priority since ACORD 130 needs them for submission.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -148,6 +169,26 @@ Do NOT ask about fields that can be inferred or auto-calculated (like expiration
                       claims_description: { type: "string" },
                       additional_insureds: { type: "string" },
                       special_conditions: { type: "string" },
+                      // WC-specific fields
+                      wc_class_code: { type: "string", description: "Workers comp class code" },
+                      wc_class_description: { type: "string", description: "Workers comp class description" },
+                      annual_remuneration: { type: "string", description: "Annual payroll/remuneration" },
+                      officer_name: { type: "string", description: "Owner/officer name" },
+                      officer_title: { type: "string", description: "Owner/officer title" },
+                      officer_ownership: { type: "string", description: "Owner/officer % ownership" },
+                      subcontractors_used: { type: "string", description: "Yes or No" },
+                      safety_program: { type: "string", description: "Yes or No" },
+                      seasonal_employees: { type: "string", description: "Yes or No" },
+                      prior_wc_carrier: { type: "string", description: "Prior workers comp carrier" },
+                      // GL-specific fields
+                      coverage_type: { type: "string", description: "Occurrence or Claims-Made" },
+                      general_aggregate: { type: "string" },
+                      each_occurrence: { type: "string" },
+                      // Property-specific fields
+                      construction_type: { type: "string" },
+                      num_stories: { type: "string" },
+                      sprinkler_system: { type: "string" },
+                      fire_alarm: { type: "string" },
                     },
                   },
                   gaps: {

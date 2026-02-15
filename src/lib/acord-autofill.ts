@@ -56,14 +56,26 @@ const AI_TO_FORM_ALIASES: Record<string, string[]> = {
   description_of_operations: ["description_of_operations", "operations_description"],
   effective_date: ["effective_date", "proposed_eff_date"],
   expiration_date: ["expiration_date", "proposed_exp_date"],
-  current_carrier: ["prior_carrier_name", "current_carrier", "carrier"],
+  current_carrier: ["prior_carrier_name", "current_carrier", "carrier", "prior_workers_comp_carrier"],
   current_premium: ["current_premium"],
   premises_address: ["premises_address"],
   premises_owned_or_leased: ["premises_interest"],
   square_footage: ["occupied_sq_ft", "total_building_sq_ft", "total_area_sq_ft"],
-  prior_losses_last_5_years: ["loss_history"],
+  prior_losses_last_5_years: ["loss_history", "wc_loss_history"],
   claims_description: ["loss_history"],
   coverage_types_needed: ["lines_of_business"],
+  // WC-specific aliases
+  wc_class_code: ["class_code_1"],
+  wc_class_description: ["class_description_1"],
+  annual_remuneration: ["annual_remuneration_1"],
+  officer_name: ["officer_1_name"],
+  officer_title: ["officer_1_title"],
+  officer_ownership: ["officer_1_ownership"],
+  building_construction: ["construction_type"],
+  year_built: ["year_built"],
+  safety_program: ["workplace_safety_program", "safety_program"],
+  subcontractors_used: ["subcontractors_used"],
+  seasonal_employees: ["seasonal_employees"],
 };
 
 const DATE_FIELDS = new Set([

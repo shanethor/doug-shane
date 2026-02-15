@@ -266,10 +266,15 @@ export default function ApplicationReview() {
                   .single();
 
                 const selected = ACORD_FORM_LIST.filter((f) => selectedForms.has(f.id));
-                for (const form of selected) {
+                for (let i = 0; i < selected.length; i++) {
+                  const form = selected[i];
                   const filled = buildAutofilledData(form, aiData, profile);
                   const pdf = generateAcordPdf(form, filled);
                   pdf.save(`${form.name.replace(/\s/g, "_")}_${new Date().toISOString().slice(0, 10)}.pdf`);
+                  // Delay between saves so browsers don't block multiple downloads
+                  if (i < selected.length - 1) {
+                    await new Promise((r) => setTimeout(r, 800));
+                  }
                 }
                 toast.success(`Downloaded ${selected.length} PDF${selected.length !== 1 ? "s" : ""}!`);
               }}
