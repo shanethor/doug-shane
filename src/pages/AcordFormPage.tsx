@@ -25,45 +25,92 @@ export default function AcordFormPage() {
   const [saving, setSaving] = useState(false);
   const [loadedFromAI, setLoadedFromAI] = useState(false);
 
-  // Load AI-extracted data if available
+  // Comprehensive mapping from AI-extracted keys to form field keys (handles aliases across all ACORD forms)
+  const AI_TO_FORM_ALIASES: Record<string, string[]> = {
+    applicant_name: ["applicant_name", "insured_name", "named_insured"],
+    mailing_address: ["mailing_address", "premises_address"],
+    city: ["city", "premises_city", "garaging_city"],
+    state: ["state", "premises_state", "state_of_operation", "garaging_state"],
+    zip: ["zip", "premises_zip", "garaging_zip"],
+    phone: ["business_phone", "phone", "contact_phone"],
+    email: ["email", "agency_email", "contact_email"],
+    website: ["website"],
+    fein: ["fein"],
+    sic_code: ["sic_code"],
+    naics_code: ["naics_code"],
+    business_type: ["business_type"],
+    year_established: ["date_business_started"],
+    annual_revenue: ["annual_revenues", "annual_revenue", "gross_sales"],
+    number_of_employees: ["full_time_employees", "num_employees_1", "ebl_num_employees", "total_employees"],
+    nature_of_business: ["nature_of_business", "business_category"],
+    description_of_operations: ["description_of_operations", "operations_description"],
+    effective_date: ["effective_date", "proposed_eff_date"],
+    expiration_date: ["expiration_date", "proposed_exp_date"],
+    current_carrier: ["prior_carrier_name", "current_carrier", "carrier"],
+    current_premium: ["current_premium"],
+    premises_address: ["premises_address"],
+    premises_owned_or_leased: ["premises_interest"],
+    square_footage: ["occupied_sq_ft", "total_building_sq_ft"],
+    prior_losses_last_5_years: ["loss_history"],
+    claims_description: ["loss_history"],
+    coverage_types_needed: ["lines_of_business"],
+    dba_name: ["dba_name"],
+  };
+
+  // Load AI-extracted data and agent profile to auto-fill as much as possible
   useEffect(() => {
     if (!submissionId || !user) return;
-    supabase
-      .from("insurance_applications")
-      .select("form_data")
-      .eq("submission_id", submissionId)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .single()
-      .then(({ data }) => {
-        if (data?.form_data) {
-          const aiData = data.form_data as Record<string, any>;
-          const mapped: Record<string, any> = {};
-          for (const field of form?.fields || []) {
-            if (aiData[field.key]) {
-              mapped[field.key] = aiData[field.key];
-            }
+
+    const formFieldKeys = new Set((form?.fields || []).map((f) => f.key));
+
+    Promise.all([
+      supabase
+        .from("insurance_applications")
+        .select("form_data")
+        .eq("submission_id", submissionId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single(),
+      supabase
+        .from("profiles")
+        .select("full_name, agency_name, phone")
+        .eq("user_id", user.id)
+        .single(),
+    ]).then(([appResult, profileResult]) => {
+      const mapped: Record<string, any> = {};
+
+      // 1. Auto-fill agent profile data into agency fields
+      const profile = profileResult.data;
+      if (profile) {
+        if (profile.agency_name && formFieldKeys.has("agency_name")) mapped.agency_name = profile.agency_name;
+        if (profile.full_name && formFieldKeys.has("producer_name")) mapped.producer_name = profile.full_name;
+        if (profile.phone && formFieldKeys.has("agency_phone")) mapped.agency_phone = profile.phone;
+      }
+
+      // 2. Map AI-extracted data to all matching form fields
+      const aiData = (appResult.data?.form_data || {}) as Record<string, any>;
+      for (const [aiKey, formKeys] of Object.entries(AI_TO_FORM_ALIASES)) {
+        const value = aiData[aiKey];
+        if (!value) continue;
+        for (const formKey of formKeys) {
+          if (formFieldKeys.has(formKey) && !mapped[formKey]) {
+            mapped[formKey] = Array.isArray(value) ? value.join(", ") : value;
           }
-          if (aiData.applicant_name && !mapped.applicant_name) mapped.applicant_name = aiData.applicant_name;
-          if (aiData.applicant_name && !mapped.insured_name) mapped.insured_name = aiData.applicant_name;
-          if (aiData.mailing_address && !mapped.mailing_address) mapped.mailing_address = aiData.mailing_address;
-          if (aiData.city && !mapped.city) mapped.city = aiData.city;
-          if (aiData.state && !mapped.state) mapped.state = aiData.state;
-          if (aiData.zip && !mapped.zip) mapped.zip = aiData.zip;
-          if (aiData.fein && !mapped.fein) mapped.fein = aiData.fein;
-          if (aiData.business_type && !mapped.business_type) mapped.business_type = aiData.business_type;
-          if (aiData.description_of_operations && !mapped.description_of_operations) mapped.description_of_operations = aiData.description_of_operations;
-          if (aiData.nature_of_business && !mapped.nature_of_business) mapped.nature_of_business = aiData.nature_of_business;
-          if (aiData.number_of_employees && !mapped.full_time_employees) mapped.full_time_employees = aiData.number_of_employees;
-          if (aiData.annual_revenue && !mapped.annual_revenues) mapped.annual_revenues = aiData.annual_revenue;
-          if (aiData.website && !mapped.website) mapped.website = aiData.website;
-          if (aiData.phone && !mapped.business_phone) mapped.business_phone = aiData.phone;
-          if (aiData.effective_date && !mapped.effective_date) mapped.effective_date = aiData.effective_date;
-          if (aiData.effective_date && !mapped.proposed_eff_date) mapped.proposed_eff_date = aiData.effective_date;
-          setFormData(mapped);
-          setLoadedFromAI(true);
         }
-      });
+      }
+
+      // 3. Direct matches — any AI field that exactly matches a form field
+      for (const [aiKey, value] of Object.entries(aiData)) {
+        if (formFieldKeys.has(aiKey) && !mapped[aiKey] && value) {
+          mapped[aiKey] = Array.isArray(value) ? value.join(", ") : value;
+        }
+      }
+
+      if (Object.keys(mapped).length > 0) {
+        setFormData(mapped);
+        setLoadedFromAI(true);
+      }
+    });
   }, [submissionId, user]);
 
   if (!form) {
