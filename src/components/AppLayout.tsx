@@ -11,7 +11,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   const navItems = [
     { to: "/", label: "Dashboard", icon: LayoutDashboard },
-    { to: "/submit-plan", label: "New Submission", icon: FilePlus },
+    { to: "/submit-plan", label: "New Client", icon: FilePlus },
     ...(isAdmin ? [{ to: "/admin", label: "Admin", icon: ShieldCheck }] : []),
   ];
 

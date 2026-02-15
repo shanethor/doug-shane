@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { AlertCircle, Loader2, FileText } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { AlertCircle, Loader2, FileText, CheckSquare } from "lucide-react";
 import { toast } from "sonner";
 import { ACORD_FORM_LIST } from "@/lib/acord-forms";
 
@@ -26,6 +27,7 @@ export default function ApplicationReview() {
   const [gapAnswers, setGapAnswers] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [fillingGaps, setFillingGaps] = useState(false);
+  const [selectedForms, setSelectedForms] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (!user || !submissionId) return;
@@ -119,9 +121,9 @@ export default function ApplicationReview() {
       <div className="max-w-3xl mx-auto">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-4xl">Application Overview</h1>
+            <h1 className="text-4xl">Client Application</h1>
             <p className="text-muted-foreground font-sans text-sm mt-1">
-              AI-extracted data from your business plan
+              AI-extracted data from the client's business plan
             </p>
           </div>
           <Badge
@@ -193,37 +195,73 @@ export default function ApplicationReview() {
         )}
 
         {/* ACORD Form Selection */}
-        <h2 className="text-2xl mb-4">Fill ACORD Forms</h2>
+        <h2 className="text-2xl mb-4">Select ACORD Forms</h2>
         <p className="text-muted-foreground font-sans text-sm mb-6">
-          Select a form to fill out. Your business plan data will be automatically mapped to the form fields.
+          Choose the forms you need for this client. The extracted data will be automatically mapped to each form.
         </p>
-        <div className="grid gap-3 mb-12">
-          {ACORD_FORM_LIST.map((form) => (
-            <Link
-              key={form.id}
-              to={`/acord/${form.id}/${submissionId}`}
-              className="flex items-center justify-between rounded-lg border bg-card p-4 hover:shadow-sm transition-shadow"
-            >
-              <div className="flex items-center gap-4">
-                <div className="rounded-full bg-primary/10 p-2.5">
-                  <FileText className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <span className="font-medium text-sm font-sans">{form.name}</span>
-                    <span className="text-xs text-muted-foreground font-sans">— {form.fullName}</span>
+        <div className="grid gap-3 mb-6">
+          {ACORD_FORM_LIST.map((form) => {
+            const isSelected = selectedForms.has(form.id);
+            return (
+              <div
+                key={form.id}
+                onClick={() => {
+                  setSelectedForms((prev) => {
+                    const next = new Set(prev);
+                    if (next.has(form.id)) next.delete(form.id);
+                    else next.add(form.id);
+                    return next;
+                  });
+                }}
+                className={`flex items-center justify-between rounded-lg border p-4 cursor-pointer transition-all ${
+                  isSelected
+                    ? "border-primary bg-primary/5 shadow-sm"
+                    : "bg-card hover:shadow-sm"
+                }`}
+              >
+                <div className="flex items-center gap-4">
+                  <Checkbox checked={isSelected} className="pointer-events-none" />
+                  <div className="rounded-full bg-primary/10 p-2.5">
+                    <FileText className="h-5 w-5 text-primary" />
                   </div>
-                  <p className="text-xs text-muted-foreground font-sans">
-                    {form.fields.length} fields · {form.description.slice(0, 80)}…
-                  </p>
+                  <div>
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <span className="font-medium text-sm font-sans">{form.name}</span>
+                      <span className="text-xs text-muted-foreground font-sans">— {form.fullName}</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground font-sans">
+                      {form.fields.length} fields · {form.description.slice(0, 80)}…
+                    </p>
+                  </div>
                 </div>
+                {isSelected && (
+                  <Badge className="bg-primary/10 text-primary text-[10px] border-0">
+                    <CheckSquare className="h-3 w-3 mr-1" />
+                    Selected
+                  </Badge>
+                )}
               </div>
-              <Button variant="ghost" size="sm" className="text-xs">
-                Fill Form →
-              </Button>
-            </Link>
-          ))}
+            );
+          })}
         </div>
+
+        {selectedForms.size > 0 && (
+          <div className="space-y-3 mb-12">
+            <p className="text-sm font-sans text-muted-foreground">
+              {selectedForms.size} form{selectedForms.size !== 1 ? "s" : ""} selected — fill each one below:
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {ACORD_FORM_LIST.filter((f) => selectedForms.has(f.id)).map((form) => (
+                <Link key={form.id} to={`/acord/${form.id}/${submissionId}`}>
+                  <Button size="sm" className="gap-2">
+                    <FileText className="h-3.5 w-3.5" />
+                    Fill {form.name}
+                  </Button>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </AppLayout>
   );

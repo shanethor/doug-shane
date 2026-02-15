@@ -95,9 +95,9 @@ export default function SubmitPlan() {
   return (
     <AppLayout>
       <div className="max-w-2xl mx-auto">
-        <h1 className="text-4xl mb-2">Submit Business Plan</h1>
+        <h1 className="text-4xl mb-2">New Client Submission</h1>
         <p className="text-muted-foreground font-sans text-sm mb-8">
-          Upload your business plan and we'll prefill your insurance application automatically.
+          Upload your client's business plan and we'll prefill their ACORD applications automatically.
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -121,17 +121,17 @@ export default function SubmitPlan() {
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg font-sans">Business Description</CardTitle>
+              <CardTitle className="text-lg font-sans">Client Business Description</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label className="text-xs uppercase tracking-wider text-muted-foreground">
-                  Describe Your Business
+                  Describe the Client's Business
                 </Label>
                 <Textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Tell us about your business — what you do, how many employees, annual revenue, locations, etc. The more detail, the better we can prefill your application."
+                  placeholder="Describe the client's business — what they do, number of employees, annual revenue, locations, etc. The more detail, the better we can prefill their ACORD forms."
                   rows={8}
                 />
               </div>
@@ -140,13 +140,13 @@ export default function SubmitPlan() {
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-lg font-sans">Upload Documents</CardTitle>
+              <CardTitle className="text-lg font-sans">Upload Client Documents</CardTitle>
             </CardHeader>
             <CardContent>
               <label className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-border p-8 cursor-pointer hover:border-primary/50 transition-colors">
                 <Upload className="h-8 w-8 text-muted-foreground mb-3" />
                 <span className="text-sm font-sans text-muted-foreground">
-                  Drop your business plan, pitch deck, or documents here
+                  Drop the client's business plan, pitch deck, or documents here
                 </span>
                 <span className="text-xs font-sans text-muted-foreground mt-1">
                   Supports PDF, TXT, DOC, images
