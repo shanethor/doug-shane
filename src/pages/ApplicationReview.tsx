@@ -6,12 +6,14 @@ import { AppLayout } from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { AlertCircle, Loader2, FileText, CheckSquare, Download, Settings2, Sparkles } from "lucide-react";
+import { AlertCircle, Loader2, FileText, CheckSquare, Download, Settings2, Sparkles, BookOpen } from "lucide-react";
 import { toast } from "sonner";
 import { ACORD_FORMS, ACORD_FORM_LIST } from "@/lib/acord-forms";
+import { COVERAGE_LINES, getFormsForCoverageLines } from "@/lib/coverage-form-map";
 import { generateAcordPdf } from "@/lib/pdf-generator";
 import { buildAutofilledData } from "@/lib/acord-autofill";
 
@@ -40,10 +42,12 @@ export default function ApplicationReview() {
   const [loading, setLoading] = useState(true);
   const [fillingGaps, setFillingGaps] = useState(false);
   const [selectedForms, setSelectedForms] = useState<Set<string>>(new Set());
+  const [selectedCoverageLines, setSelectedCoverageLines] = useState<Set<string>>(new Set());
   const [downloading, setDownloading] = useState(false);
   const [showDefaults, setShowDefaults] = useState(false);
   const [agentDefaults, setAgentDefaults] = useState<Record<string, string>>({});
   const [savingDefaults, setSavingDefaults] = useState(false);
+  const [narrative, setNarrative] = useState("");
 
   useEffect(() => {
     if (!user || !submissionId) return;
@@ -175,6 +179,11 @@ export default function ApplicationReview() {
           if (v && (!filled[k] || (typeof filled[k] === "string" && !filled[k].trim()))) {
             filled[k] = v;
           }
+        }
+
+        // Inject narrative into remarks for ACORD 125
+        if (form.id === "acord-125" && narrative.trim()) {
+          filled.remarks = narrative.trim() + (filled.remarks ? `\n\n${filled.remarks}` : "");
         }
 
         // Run AI audit for this form
@@ -375,10 +384,67 @@ export default function ApplicationReview() {
           </Card>
         )}
 
+        {/* Underwriter Narrative */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle className="text-lg font-sans flex items-center gap-2">
+              <BookOpen className="h-5 w-5 text-primary" />
+              Underwriter Narrative
+            </CardTitle>
+            <p className="text-xs text-muted-foreground font-sans">
+              Tell the story of this business for the underwriter. Describe operations, risk profile, and why this is a good account.
+            </p>
+          </CardHeader>
+          <CardContent>
+            <Textarea
+              value={narrative}
+              onChange={(e) => setNarrative(e.target.value)}
+              placeholder="e.g. ABC Plumbing is a 15-year-old residential and light commercial plumbing contractor based in Phoenix, AZ. They employ 9 field technicians and 3 office staff. Revenue has grown 12% YoY with zero claims in the last 3 years…"
+              rows={6}
+              className="text-sm"
+            />
+          </CardContent>
+        </Card>
+
+        {/* Coverage Line Selection → Auto-selects ACORD Forms */}
+        <h2 className="text-2xl mb-4">Lines of Coverage</h2>
+        <p className="text-muted-foreground font-sans text-sm mb-4">
+          Select the coverage lines needed — the correct ACORD forms will be selected automatically.
+        </p>
+        <div className="flex flex-wrap gap-2 mb-6">
+          {COVERAGE_LINES.map((line) => {
+            const isActive = selectedCoverageLines.has(line);
+            return (
+              <button
+                key={line}
+                type="button"
+                onClick={() => {
+                  setSelectedCoverageLines((prev) => {
+                    const next = new Set(prev);
+                    if (next.has(line)) next.delete(line);
+                    else next.add(line);
+                    // Auto-select forms
+                    const formIds = getFormsForCoverageLines(Array.from(next));
+                    setSelectedForms(new Set(formIds));
+                    return next;
+                  });
+                }}
+                className={`px-3 py-1.5 rounded-full text-xs font-sans font-medium border transition-all ${
+                  isActive
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "bg-card text-muted-foreground border-border hover:border-foreground/30"
+                }`}
+              >
+                {line}
+              </button>
+            );
+          })}
+        </div>
+
         {/* ACORD Form Selection */}
-        <h2 className="text-2xl mb-4">Select ACORD Forms</h2>
+        <h2 className="text-2xl mb-4">ACORD Forms</h2>
         <p className="text-muted-foreground font-sans text-sm mb-6">
-          Choose the forms you need. An AI audit fills remaining gaps, estimates rates, and explains Yes answers before download.
+          Auto-selected based on coverage lines above. You can also manually add or remove forms.
         </p>
         <div className="grid gap-3 mb-6">
           {ACORD_FORM_LIST.map((form) => {

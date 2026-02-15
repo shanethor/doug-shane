@@ -377,6 +377,79 @@ const acord140Fields: AcordFormField[] = [
 ];
 
 // ============================================================
+// ACORD 127 — Business Auto Section
+// ============================================================
+const acord127Fields: AcordFormField[] = [
+  // Header
+  { key: "agency_name", label: "Agency Name", type: "text", section: "Header", required: true },
+  { key: "agency_customer_id", label: "Agency Customer ID", type: "text", section: "Header" },
+  { key: "carrier", label: "Carrier", type: "text", section: "Header" },
+  { key: "naic_code", label: "NAIC Code", type: "text", section: "Header" },
+  { key: "policy_number", label: "Policy Number", type: "text", section: "Header" },
+  { key: "insured_name", label: "Named Insured", type: "text", section: "Header", required: true },
+  { key: "effective_date", label: "Effective Date", type: "date", section: "Header", required: true },
+
+  // Driver Information
+  { key: "driver_1_name", label: "Driver 1 Name", type: "text", section: "Driver Information" },
+  { key: "driver_1_sex", label: "Driver 1 Sex", type: "select", options: ["M", "F"], section: "Driver Information" },
+  { key: "driver_1_marital", label: "Driver 1 Marital Status", type: "select", options: ["S", "M", "D", "W"], section: "Driver Information" },
+  { key: "driver_1_dob", label: "Driver 1 Date of Birth", type: "date", section: "Driver Information" },
+  { key: "driver_1_license_number", label: "Driver 1 License Number", type: "text", section: "Driver Information" },
+  { key: "driver_1_license_state", label: "Driver 1 License State", type: "text", section: "Driver Information" },
+  { key: "driver_2_name", label: "Driver 2 Name", type: "text", section: "Driver Information" },
+  { key: "driver_2_sex", label: "Driver 2 Sex", type: "select", options: ["M", "F"], section: "Driver Information" },
+  { key: "driver_2_marital", label: "Driver 2 Marital Status", type: "select", options: ["S", "M", "D", "W"], section: "Driver Information" },
+  { key: "driver_2_dob", label: "Driver 2 Date of Birth", type: "date", section: "Driver Information" },
+  { key: "driver_2_license_number", label: "Driver 2 License Number", type: "text", section: "Driver Information" },
+  { key: "driver_2_license_state", label: "Driver 2 License State", type: "text", section: "Driver Information" },
+  { key: "driver_3_name", label: "Driver 3 Name", type: "text", section: "Driver Information" },
+  { key: "driver_3_dob", label: "Driver 3 Date of Birth", type: "date", section: "Driver Information" },
+  { key: "driver_3_license_number", label: "Driver 3 License Number", type: "text", section: "Driver Information" },
+  { key: "driver_3_license_state", label: "Driver 3 License State", type: "text", section: "Driver Information" },
+
+  // Vehicle Schedule
+  { key: "vehicle_1_year", label: "Vehicle 1 Year", type: "text", section: "Vehicle Schedule" },
+  { key: "vehicle_1_make", label: "Vehicle 1 Make", type: "text", section: "Vehicle Schedule" },
+  { key: "vehicle_1_model", label: "Vehicle 1 Model", type: "text", section: "Vehicle Schedule" },
+  { key: "vehicle_1_vin", label: "Vehicle 1 VIN", type: "text", section: "Vehicle Schedule" },
+  { key: "vehicle_1_cost_new", label: "Vehicle 1 Cost New", type: "currency", section: "Vehicle Schedule" },
+  { key: "vehicle_1_garaging_city", label: "Vehicle 1 Garaging City", type: "text", section: "Vehicle Schedule" },
+  { key: "vehicle_1_garaging_state", label: "Vehicle 1 Garaging State", type: "text", section: "Vehicle Schedule" },
+  { key: "vehicle_1_garaging_zip", label: "Vehicle 1 Garaging ZIP", type: "text", section: "Vehicle Schedule" },
+  { key: "vehicle_1_radius", label: "Vehicle 1 Radius of Operations", type: "select", options: ["Local (0-50)", "Intermediate (51-200)", "Long Distance (200+)"], section: "Vehicle Schedule" },
+  { key: "vehicle_2_year", label: "Vehicle 2 Year", type: "text", section: "Vehicle Schedule" },
+  { key: "vehicle_2_make", label: "Vehicle 2 Make", type: "text", section: "Vehicle Schedule" },
+  { key: "vehicle_2_model", label: "Vehicle 2 Model", type: "text", section: "Vehicle Schedule" },
+  { key: "vehicle_2_vin", label: "Vehicle 2 VIN", type: "text", section: "Vehicle Schedule" },
+  { key: "vehicle_2_cost_new", label: "Vehicle 2 Cost New", type: "currency", section: "Vehicle Schedule" },
+
+  // General Information
+  { key: "auto_vehicles_solely_owned", label: "Are all vehicles solely owned by and registered to the applicant?", type: "select", options: ["Yes", "No"], section: "General Information" },
+  { key: "auto_50pct_employees_use", label: "Do over 50% of employees use their autos in the business?", type: "select", options: ["Yes", "No"], section: "General Information" },
+  { key: "auto_maintenance_program", label: "Is there a vehicle maintenance program in operation?", type: "select", options: ["Yes", "No"], section: "General Information" },
+  { key: "auto_vehicles_leased_to_others", label: "Are any vehicles leased to others?", type: "select", options: ["Yes", "No"], section: "General Information" },
+  { key: "auto_modified_vehicles", label: "Any car modified / special equipment?", type: "select", options: ["Yes", "No"], section: "General Information" },
+  { key: "auto_icc_filings_required", label: "Are ICC, PUC or other filings required?", type: "select", options: ["Yes", "No"], section: "General Information" },
+  { key: "auto_hazardous_material", label: "Do operations involve transporting hazardous material?", type: "select", options: ["Yes", "No"], section: "General Information" },
+  { key: "auto_hold_harmless", label: "Any hold harmless agreements?", type: "select", options: ["Yes", "No"], section: "General Information" },
+  { key: "auto_family_member_use", label: "Any vehicles used by family members?", type: "select", options: ["Yes", "No"], section: "General Information" },
+  { key: "auto_mvr_verification", label: "Does the applicant obtain MVR verifications?", type: "select", options: ["Yes", "No"], section: "General Information" },
+  { key: "auto_driver_recruiting", label: "Does the applicant have a specific driver recruiting method?", type: "select", options: ["Yes", "No"], section: "General Information" },
+  { key: "auto_drivers_not_wc", label: "Are any drivers not covered by Workers Compensation?", type: "select", options: ["Yes", "No"], section: "General Information" },
+  { key: "auto_unscheduled_vehicles", label: "Any vehicles owned but not scheduled on this application?", type: "select", options: ["Yes", "No"], section: "General Information" },
+  { key: "auto_driver_violations", label: "Any drivers with convictions for moving traffic violations?", type: "select", options: ["Yes", "No"], section: "General Information" },
+  { key: "auto_general_remarks", label: "Explain all Yes responses", type: "textarea", section: "General Information" },
+
+  // Loss History
+  { key: "auto_loss_history", label: "Auto Loss History (5 Years)", type: "textarea", section: "Loss History" },
+  { key: "auto_total_claims", label: "Total Auto Claims (5 years)", type: "number", section: "Loss History" },
+  { key: "auto_total_incurred", label: "Total Auto Incurred (5 years)", type: "currency", section: "Loss History" },
+
+  // Remarks
+  { key: "remarks", label: "Remarks", type: "textarea", section: "Remarks" },
+];
+
+// ============================================================
 // Export all form definitions
 // ============================================================
 export const ACORD_FORMS: Record<string, AcordFormDefinition> = {
@@ -393,6 +466,13 @@ export const ACORD_FORMS: Record<string, AcordFormDefinition> = {
     fullName: "Commercial General Liability Section",
     description: "CGL section covering occurrence/claims-made coverage, schedule of hazards, employee benefits liability, and liability-specific questions.",
     fields: acord126Fields,
+  },
+  "acord-127": {
+    id: "acord-127",
+    name: "ACORD 127",
+    fullName: "Business Auto Section",
+    description: "Business auto section covering driver information, vehicle schedules, coverages/limits, and auto-specific general information questions.",
+    fields: acord127Fields,
   },
   "acord-130": {
     id: "acord-130",
