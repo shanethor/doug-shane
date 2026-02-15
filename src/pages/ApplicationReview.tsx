@@ -10,12 +10,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { AlertCircle, Loader2, FileText, CheckSquare, Download, Settings2, Sparkles, BookOpen } from "lucide-react";
+import { AlertCircle, Loader2, FileText, CheckSquare, Download, Settings2, Sparkles, BookOpen, Package } from "lucide-react";
 import { toast } from "sonner";
 import { ACORD_FORMS, ACORD_FORM_LIST } from "@/lib/acord-forms";
 import { COVERAGE_LINES, getFormsForCoverageLines } from "@/lib/coverage-form-map";
 import { generateAcordPdf } from "@/lib/pdf-generator";
 import { buildAutofilledData } from "@/lib/acord-autofill";
+import { generateSubmissionPackage } from "@/lib/submission-package";
 
 type Gap = {
   field: string;
@@ -156,79 +157,113 @@ export default function ApplicationReview() {
     setFillingGaps(false);
   };
 
-  const auditAndDownload = async () => {
-    if (!user || !application) return;
-    setDownloading(true);
+  /** Shared helper: audit all selected forms and return filled data */
+  const auditAllForms = async () => {
+    const aiData = (application.form_data || {}) as Record<string, any>;
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("full_name, agency_name, phone")
+      .eq("user_id", user.id)
+      .single();
 
-    try {
-      const aiData = (application.form_data || {}) as Record<string, any>;
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("full_name, agency_name, phone")
-        .eq("user_id", user.id)
-        .single();
+    const selected = ACORD_FORM_LIST.filter((f) => selectedForms.has(f.id));
+    const results: { form: typeof selected[0]; data: Record<string, any> }[] = [];
 
-      const selected = ACORD_FORM_LIST.filter((f) => selectedForms.has(f.id));
+    for (const form of selected) {
+      let filled = buildAutofilledData(form, aiData, profile);
 
-      for (let i = 0; i < selected.length; i++) {
-        const form = selected[i];
-        let filled = buildAutofilledData(form, aiData, profile);
-
-        // Apply agent defaults
-        for (const [k, v] of Object.entries(agentDefaults)) {
-          if (v && (!filled[k] || (typeof filled[k] === "string" && !filled[k].trim()))) {
-            filled[k] = v;
-          }
-        }
-
-        // Inject narrative into remarks for ACORD 125
-        if (form.id === "acord-125" && narrative.trim()) {
-          filled.remarks = narrative.trim() + (filled.remarks ? `\n\n${filled.remarks}` : "");
-        }
-
-        // Run AI audit for this form
-        try {
-          const auditResponse = await fetch(
-            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/audit-form`,
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-              },
-              body: JSON.stringify({
-                form_data: filled,
-                form_id: form.id,
-                agent_defaults: agentDefaults,
-              }),
-            }
-          );
-
-          if (auditResponse.ok) {
-            const auditResult = await auditResponse.json();
-            // Merge audited data
-            filled = { ...filled, ...auditResult.audited_data };
-            if (auditResult.audit_notes) {
-              console.log(`${form.name} audit:`, auditResult.audit_notes);
-            }
-          }
-        } catch (auditErr) {
-          console.warn("Audit failed for", form.name, auditErr);
-          // Continue with non-audited data
-        }
-
-        const pdf = generateAcordPdf(form, filled);
-        pdf.save(`${form.name.replace(/\s/g, "_")}_${new Date().toISOString().slice(0, 10)}.pdf`);
-
-        if (i < selected.length - 1) {
-          await new Promise((r) => setTimeout(r, 800));
+      // Apply agent defaults
+      for (const [k, v] of Object.entries(agentDefaults)) {
+        if (v && (!filled[k] || (typeof filled[k] === "string" && !filled[k].trim()))) {
+          filled[k] = v;
         }
       }
 
-      toast.success(`Downloaded ${selected.length} AI-audited PDF${selected.length !== 1 ? "s" : ""}!`);
+      // Inject narrative into remarks for ACORD 125
+      if (form.id === "acord-125" && narrative.trim()) {
+        filled.remarks = narrative.trim() + (filled.remarks ? `\n\n${filled.remarks}` : "");
+      }
+
+      // Run AI audit
+      try {
+        const auditResponse = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/audit-form`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+            },
+            body: JSON.stringify({
+              form_data: filled,
+              form_id: form.id,
+              agent_defaults: agentDefaults,
+            }),
+          }
+        );
+
+        if (auditResponse.ok) {
+          const auditResult = await auditResponse.json();
+          filled = { ...filled, ...auditResult.audited_data };
+          if (auditResult.audit_notes) {
+            console.log(`${form.name} audit:`, auditResult.audit_notes);
+          }
+        }
+      } catch (auditErr) {
+        console.warn("Audit failed for", form.name, auditErr);
+      }
+
+      results.push({ form, data: filled });
+    }
+
+    return { results, profile };
+  };
+
+  /** Download individual PDFs */
+  const auditAndDownload = async () => {
+    if (!user || !application) return;
+    setDownloading(true);
+    try {
+      const { results } = await auditAllForms();
+      for (let i = 0; i < results.length; i++) {
+        const { form, data } = results[i];
+        const pdf = generateAcordPdf(form, data);
+        pdf.save(`${form.name.replace(/\s/g, "_")}_${new Date().toISOString().slice(0, 10)}.pdf`);
+        if (i < results.length - 1) await new Promise((r) => setTimeout(r, 800));
+      }
+      toast.success(`Downloaded ${results.length} AI-audited PDF${results.length !== 1 ? "s" : ""}!`);
     } catch (err) {
       console.error("Download error:", err);
       toast.error("Failed to download forms");
+    }
+    setDownloading(false);
+  };
+
+  /** Download single bundled submission package */
+  const downloadSubmissionPackage = async () => {
+    if (!user || !application) return;
+    setDownloading(true);
+    try {
+      const { results, profile } = await auditAllForms();
+      const aiData = (application.form_data || {}) as Record<string, any>;
+      const companyName = aiData.applicant_name || aiData.insured_name || aiData.company_name || "Submission";
+
+      const pkg = generateSubmissionPackage({
+        companyName,
+        narrative,
+        agencyName: profile?.agency_name || agentDefaults.agency_name || "",
+        producerName: profile?.full_name || agentDefaults.producer_name || "",
+        coverageLines: Array.from(selectedCoverageLines),
+        forms: results.map((r) => ({ form: r.form, data: r.data })),
+        effectiveDate: aiData.effective_date || aiData.proposed_eff_date || "",
+      });
+
+      const safeName = companyName.replace(/[^a-zA-Z0-9]/g, "_").slice(0, 40);
+      pkg.save(`Submission_${safeName}_${new Date().toISOString().slice(0, 10)}.pdf`);
+      toast.success("Submission package downloaded!");
+    } catch (err) {
+      console.error("Package error:", err);
+      toast.error("Failed to generate submission package");
     }
     setDownloading(false);
   };
@@ -496,25 +531,41 @@ export default function ApplicationReview() {
           <div className="space-y-4 mb-12">
             <p className="text-sm font-sans text-muted-foreground">
               {selectedForms.size} form{selectedForms.size !== 1 ? "s" : ""} selected
+              {selectedCoverageLines.size > 0 && ` · ${selectedCoverageLines.size} coverage line${selectedCoverageLines.size !== 1 ? "s" : ""}`}
             </p>
 
+            {/* Primary: Submission Package */}
             <Button
-              className="w-full h-12 gap-2"
-              onClick={auditAndDownload}
+              className="w-full h-14 gap-2 text-base"
+              onClick={downloadSubmissionPackage}
               disabled={downloading}
             >
               {downloading ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  AI Auditing & Generating…
+                  Building Submission Package…
                 </>
               ) : (
                 <>
-                  <Sparkles className="h-4 w-4" />
-                  <Download className="h-4 w-4" />
-                  AI Audit & Download {selectedForms.size} PDF{selectedForms.size !== 1 ? "s" : ""}
+                  <Package className="h-5 w-5" />
+                  Download Submission Package
                 </>
               )}
+            </Button>
+            <p className="text-xs text-muted-foreground font-sans text-center -mt-2">
+              Single PDF with cover page, narrative, and all {selectedForms.size} ACORD form{selectedForms.size !== 1 ? "s" : ""}
+            </p>
+
+            {/* Secondary: Individual PDFs */}
+            <Button
+              variant="outline"
+              className="w-full h-12 gap-2"
+              onClick={auditAndDownload}
+              disabled={downloading}
+            >
+              <Sparkles className="h-4 w-4" />
+              <Download className="h-4 w-4" />
+              Download {selectedForms.size} Individual PDF{selectedForms.size !== 1 ? "s" : ""}
             </Button>
 
             <div className="flex flex-wrap gap-2">
