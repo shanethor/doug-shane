@@ -3,7 +3,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { useAdmin } from "@/hooks/useAdmin";
 import { LayoutDashboard, FilePlus, LogOut, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import epochLogo from "@/assets/epoch-risk-logo.png";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { signOut } = useAuth();
@@ -20,8 +19,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
-          <Link to="/" className="flex items-center gap-2">
-            <img src={epochLogo} alt="EPOCH Risk Group" className="h-6" />
+          <Link to="/" className="flex items-center gap-1.5">
+            <span className="text-lg font-bold tracking-tight text-foreground" style={{ fontFamily: "'Instrument Serif', serif" }}>EPOCH</span>
+            <span className="text-[11px] text-muted-foreground font-sans hidden sm:inline">Risk Group</span>
           </Link>
 
           <nav className="flex items-center gap-1">
