@@ -1,11 +1,19 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { AppLayout } from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { FilePlus, FileText } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { FilePlus, FileText, MoreVertical, Copy, Pencil, Trash2, Search } from "lucide-react";
+import { toast } from "sonner";
 
 const statusColor: Record<string, string> = {
   pending: "bg-muted text-muted-foreground",
@@ -16,21 +24,115 @@ const statusColor: Record<string, string> = {
 
 export default function UserDashboard() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [submissions, setSubmissions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     if (!user) return;
-    supabase
+    loadSubmissions();
+  }, [user]);
+
+  const loadSubmissions = async () => {
+    if (!user) return;
+    const { data } = await supabase
       .from("business_submissions")
       .select("*")
       .eq("user_id", user.id)
-      .order("created_at", { ascending: false })
-      .then(({ data }) => {
-        setSubmissions(data ?? []);
-        setLoading(false);
-      });
-  }, [user]);
+      .order("created_at", { ascending: false });
+    setSubmissions(data ?? []);
+    setLoading(false);
+  };
+
+  const duplicateSubmission = async (submission: any) => {
+    if (!user) return;
+    try {
+      // 1. Duplicate the submission
+      const { data: newSub, error: subError } = await supabase
+        .from("business_submissions")
+        .insert({
+          user_id: user.id,
+          company_name: `${submission.company_name || "Untitled"} (Copy)`,
+          description: submission.description,
+          file_urls: submission.file_urls,
+          status: submission.status,
+          narrative: submission.narrative,
+          coverage_lines: submission.coverage_lines,
+        })
+        .select()
+        .single();
+
+      if (subError) throw subError;
+
+      // 2. Duplicate the associated application data
+      const { data: appData } = await supabase
+        .from("insurance_applications")
+        .select("*")
+        .eq("submission_id", submission.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single();
+
+      if (appData) {
+        await supabase.from("insurance_applications").insert({
+          user_id: user.id,
+          submission_id: newSub.id,
+          form_data: appData.form_data,
+          gaps: appData.gaps,
+          status: appData.status,
+        });
+      }
+
+      toast.success("Account duplicated!");
+      loadSubmissions();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to duplicate");
+    }
+  };
+
+  const deleteSubmission = async (id: string) => {
+    const { error } = await supabase
+      .from("business_submissions")
+      .delete()
+      .eq("id", id)
+      .eq("user_id", user.id);
+
+    if (error) {
+      toast.error("Failed to delete");
+    } else {
+      toast.success("Submission deleted");
+      setSubmissions((prev) => prev.filter((s) => s.id !== id));
+    }
+  };
+
+  const renameSubmission = async (id: string, currentName: string) => {
+    const newName = prompt("Rename client:", currentName || "");
+    if (!newName || newName === currentName) return;
+    const { error } = await supabase
+      .from("business_submissions")
+      .update({ company_name: newName })
+      .eq("id", id)
+      .eq("user_id", user.id);
+
+    if (error) toast.error("Failed to rename");
+    else {
+      toast.success("Renamed!");
+      setSubmissions((prev) =>
+        prev.map((s) => (s.id === id ? { ...s, company_name: newName } : s))
+      );
+    }
+  };
+
+  const filtered = submissions.filter((s) => {
+    if (!search) return true;
+    const q = search.toLowerCase();
+    return (
+      (s.company_name || "").toLowerCase().includes(q) ||
+      (s.description || "").toLowerCase().includes(q) ||
+      s.status.toLowerCase().includes(q)
+    );
+  });
 
   if (loading) {
     return (
@@ -44,20 +146,33 @@ export default function UserDashboard() {
 
   return (
     <AppLayout>
-      <div className="flex items-end justify-between mb-8">
+      <div className="flex items-end justify-between mb-6">
         <div>
           <h1 className="text-4xl">My Clients</h1>
           <p className="text-muted-foreground font-sans text-sm mt-1">
-            Upload business plans, auto-fill ACORD forms, and manage submissions — {submissions.length} client{submissions.length !== 1 ? "s" : ""} total.
+            {submissions.length} account{submissions.length !== 1 ? "s" : ""} — save, duplicate, and manage submissions.
           </p>
         </div>
         <Link to="/submit-plan">
           <Button size="sm" className="gap-2">
             <FilePlus className="h-4 w-4" />
-            Add New Client
+            Add Client
           </Button>
         </Link>
       </div>
+
+      {/* Search */}
+      {submissions.length > 0 && (
+        <div className="relative mb-6">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search clients…"
+            className="pl-9 h-10"
+          />
+        </div>
+      )}
 
       {submissions.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center">
@@ -74,13 +189,15 @@ export default function UserDashboard() {
         </div>
       ) : (
         <div className="grid gap-3">
-          {submissions.map((s) => (
-            <Link
+          {filtered.map((s) => (
+            <div
               key={s.id}
-              to={`/application/${s.id}`}
               className="flex items-center justify-between rounded-lg border bg-card p-4 hover:shadow-sm transition-shadow"
             >
-              <div className="flex-1 min-w-0">
+              <Link
+                to={`/application/${s.id}`}
+                className="flex-1 min-w-0"
+              >
                 <div className="flex items-center gap-3 mb-1">
                   <span className="font-medium text-sm font-sans truncate">
                     {s.company_name || "Untitled Submission"}
@@ -91,17 +208,56 @@ export default function UserDashboard() {
                   >
                     {s.status}
                   </Badge>
+                  {s.coverage_lines && (s.coverage_lines as string[]).length > 0 && (
+                    <span className="text-[10px] text-muted-foreground font-sans">
+                      {(s.coverage_lines as string[]).join(", ")}
+                    </span>
+                  )}
                 </div>
                 <p className="text-xs text-muted-foreground font-sans">
                   {new Date(s.created_at).toLocaleDateString()}
                   {s.description && ` · ${s.description.slice(0, 60)}…`}
                 </p>
+              </Link>
+
+              <div className="flex items-center gap-1 ml-4">
+                <Link to={`/application/${s.id}`}>
+                  <Button variant="ghost" size="sm" className="text-xs">
+                    {s.status === "extracted" || s.status === "complete" ? "Review" : "View"}
+                  </Button>
+                </Link>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => duplicateSubmission(s)} className="gap-2">
+                      <Copy className="h-3.5 w-3.5" />
+                      Duplicate
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => renameSubmission(s.id, s.company_name)} className="gap-2">
+                      <Pencil className="h-3.5 w-3.5" />
+                      Rename
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => deleteSubmission(s.id)}
+                      className="gap-2 text-destructive focus:text-destructive"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                      Delete
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
-              <Button variant="ghost" size="sm" className="text-xs ml-4">
-                {s.status === "extracted" || s.status === "complete" ? "Review" : "View"}
-              </Button>
-            </Link>
+            </div>
           ))}
+          {filtered.length === 0 && search && (
+            <p className="text-center text-sm text-muted-foreground py-8 font-sans">
+              No clients matching "{search}"
+            </p>
+          )}
         </div>
       )}
     </AppLayout>

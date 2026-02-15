@@ -17,31 +17,73 @@ export type Database = {
       business_submissions: {
         Row: {
           company_name: string | null
+          coverage_lines: string[] | null
           created_at: string
           description: string | null
           file_urls: Json | null
           id: string
+          narrative: string | null
           status: string
           updated_at: string
           user_id: string
         }
         Insert: {
           company_name?: string | null
+          coverage_lines?: string[] | null
           created_at?: string
           description?: string | null
           file_urls?: Json | null
           id?: string
+          narrative?: string | null
           status?: string
           updated_at?: string
           user_id: string
         }
         Update: {
           company_name?: string | null
+          coverage_lines?: string[] | null
           created_at?: string
           description?: string | null
           file_urls?: Json | null
           id?: string
+          narrative?: string | null
           status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      custom_form_templates: {
+        Row: {
+          created_at: string
+          description: string | null
+          fields: Json
+          form_id: string
+          full_name: string
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          fields?: Json
+          form_id: string
+          full_name: string
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          fields?: Json
+          form_id?: string
+          full_name?: string
+          id?: string
+          name?: string
           updated_at?: string
           user_id?: string
         }
@@ -123,6 +165,47 @@ export type Database = {
             columns: ["quote_id"]
             isOneToOne: false
             referencedRelation: "quote_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      field_overrides: {
+        Row: {
+          ai_value: string | null
+          created_at: string
+          field_key: string
+          form_id: string
+          id: string
+          override_value: string
+          submission_id: string | null
+          user_id: string
+        }
+        Insert: {
+          ai_value?: string | null
+          created_at?: string
+          field_key: string
+          form_id: string
+          id?: string
+          override_value: string
+          submission_id?: string | null
+          user_id: string
+        }
+        Update: {
+          ai_value?: string | null
+          created_at?: string
+          field_key?: string
+          form_id?: string
+          id?: string
+          override_value?: string
+          submission_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "field_overrides_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "business_submissions"
             referencedColumns: ["id"]
           },
         ]
