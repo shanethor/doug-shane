@@ -293,15 +293,19 @@ export default function Chat() {
                     </div>
                   </div>
 
-                  {/* Pop-out field bubbles */}
-                  {m.role === "assistant" && m.fields && m.fields.length > 0 && (
-                    <div className="mt-3 ml-0 max-w-[85%] space-y-2 animate-in slide-in-from-bottom-2 duration-300">
+                  {/* Pop-out field bubbles with slide-up animation */}
+                  {m.role === "assistant" && m.fields && m.fields.length > 0 && !isLoading && (
+                    <div className="mt-3 ml-0 max-w-[85%] opacity-0 animate-[slideUpFadeIn_0.5s_ease-out_0.3s_forwards]">
                       <div className="rounded-xl border bg-card p-4 shadow-sm space-y-3">
                         <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                           Please fill in the following
                         </p>
-                        {m.fields.map((f) => (
-                          <div key={f.key} className="space-y-1">
+                        {m.fields.map((f, fIdx) => (
+                          <div
+                            key={f.key}
+                            className="space-y-1 opacity-0 animate-[slideUpFadeIn_0.4s_ease-out_forwards]"
+                            style={{ animationDelay: `${0.5 + fIdx * 0.1}s` }}
+                          >
                             <label className="text-xs font-medium text-foreground">{f.label}</label>
                             <Input
                               placeholder={f.placeholder}
@@ -311,7 +315,7 @@ export default function Chat() {
                             />
                           </div>
                         ))}
-                        <Button size="sm" className="w-full mt-1" onClick={() => submitFields(m.fields!)}>
+                        <Button size="sm" className="w-full mt-1 opacity-0 animate-[slideUpFadeIn_0.4s_ease-out_forwards]" style={{ animationDelay: `${0.5 + (m.fields?.length || 0) * 0.1 + 0.1}s` }} onClick={() => submitFields(m.fields!)}>
                           <Send className="h-3.5 w-3.5 mr-2" />
                           Submit details
                         </Button>
