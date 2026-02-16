@@ -101,6 +101,17 @@ export default function FormFillingView({ submissionId, initialMessages, initial
 
   useEffect(() => { scrollChatToBottom(); }, [messages, scrollChatToBottom]);
 
+  // Auto-send an initial message when the 3-column view loads
+  const hasAutoSent = useRef(false);
+  useEffect(() => {
+    if (hasAutoSent.current || loading) return;
+    hasAutoSent.current = true;
+    const companyName = formData.applicant_name || formData.insured_name || formData.company_name || "this client";
+    const filledKeys = ACORD_FORM_LIST.flatMap(f => f.fields).filter(f => formData[f.key] && String(formData[f.key]).trim());
+    const prompt = `I've loaded the submission for ${companyName} with ${filledKeys.length} fields pre-filled. What industry codes (SIC/NAICS) and coverage lines should we focus on? Are there any gaps or missing fields I should address first?`;
+    sendMessage(prompt);
+  }, [loading, formData]);
+
   const handleFieldChange = (key: string, value: any) => {
     setFormData((prev) => ({ ...prev, [key]: value }));
   };

@@ -134,6 +134,7 @@ export default function Chat() {
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [activeSubmissionId, setActiveSubmissionId] = useState<string | null>(null);
   const [activeFormId, setActiveFormId] = useState<string | undefined>(undefined);
+  const [submittingFields, setSubmittingFields] = useState(false);
 
   const downloadSubmission = async (subId: string, mode: "individual" | "package" = "package") => {
     if (!user) return;
@@ -325,6 +326,7 @@ export default function Chat() {
 
   const submitFields = async (fields: FieldBubble[]) => {
     if (!user) return;
+    setSubmittingFields(true);
     const filled = fields.map((f) => `${f.label}: ${fieldValues[f.key] || "(empty)"}`).join("\n");
     
     // Build a description from field values for extraction
@@ -375,6 +377,7 @@ export default function Chat() {
     }
 
     setFieldValues({});
+    setSubmittingFields(false);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -539,9 +542,9 @@ export default function Chat() {
                             />
                           </div>
                         ))}
-                        <Button size="sm" className="w-full mt-1 opacity-0 animate-[slideUpFadeIn_0.4s_ease-out_forwards]" style={{ animationDelay: `${0.5 + (m.fields?.length || 0) * 0.1 + 0.1}s` }} onClick={() => submitFields(m.fields!)}>
-                          <Send className="h-3.5 w-3.5 mr-2" />
-                          Submit details
+                        <Button size="sm" className="w-full mt-1 opacity-0 animate-[slideUpFadeIn_0.4s_ease-out_forwards]" style={{ animationDelay: `${0.5 + (m.fields?.length || 0) * 0.1 + 0.1}s` }} onClick={() => submitFields(m.fields!)} disabled={submittingFields}>
+                          {submittingFields ? <Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" /> : <Send className="h-3.5 w-3.5 mr-2" />}
+                          {submittingFields ? "Processing…" : "Submit details"}
                         </Button>
                       </div>
                     </div>
