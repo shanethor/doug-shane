@@ -109,7 +109,7 @@ function parseButtons(text: string): ButtonMarker[] {
 }
 
 function stripMarkers(text: string): string {
-  return text.replace(/\[FIELD:[^\]]+\]/g, "").replace(/\[BUTTON:[^\]]+\]/g, "").trim();
+  return text.replace(/\[FIELD:[^\]]+\]/g, "").replace(/\[BUTTON:[^\]]+\]/g, "").replace(/\[SUBMISSION_ID:[^\]]+\]/g, "").trim();
 }
 
 export default function Chat() {
@@ -142,8 +142,8 @@ export default function Chat() {
         .eq("submission_id", subId)
         .order("created_at", { ascending: false })
         .limit(1)
-        .single();
-      if (!app) { toast({ variant: "destructive", title: "Error", description: "Application not found" }); return; }
+        .maybeSingle();
+      if (!app) { toast({ variant: "destructive", title: "Error", description: "Application not found. Data may still be processing — try again in a moment." }); return; }
 
       const { data: profile } = await supabase
         .from("profiles")
@@ -320,9 +320,52 @@ export default function Chat() {
     }
   };
 
-  const submitFields = (fields: FieldBubble[]) => {
+  const submitFields = async (fields: FieldBubble[]) => {
+    if (!user) return;
     const filled = fields.map((f) => `${f.label}: ${fieldValues[f.key] || "(empty)"}`).join("\n");
-    send(`Here are the details:\n${filled}`);
+    
+    // Build a description from field values for extraction
+    const description = fields.map((f) => `${f.label}: ${fieldValues[f.key] || ""}`).filter(l => !l.endsWith(": ")).join("\n");
+    const companyName = fieldValues["company_name"] || fieldValues["applicant_name"] || "New Client";
+
+    // Create business_submissions record
+    try {
+      const { data: sub, error: subErr } = await supabase
+        .from("business_submissions")
+        .insert({
+          user_id: user.id,
+          company_name: companyName,
+          description,
+          status: "processing",
+        })
+        .select()
+        .single();
+
+      if (subErr) throw subErr;
+
+      // Call extract-business-data to create insurance_applications record
+      const extractResp = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/extract-business-data`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({ description, submission_id: sub.id }),
+        }
+      );
+
+      if (!extractResp.ok) console.warn("Extract failed:", extractResp.status);
+
+      // Send the message with the real submission ID embedded
+      send(`Here are the details:\n${filled}\n\n[SUBMISSION_ID:${sub.id}]`);
+    } catch (err) {
+      console.error("Failed to create submission:", err);
+      // Still send the message even if DB creation fails
+      send(`Here are the details:\n${filled}`);
+    }
+
     setFieldValues({});
   };
 
