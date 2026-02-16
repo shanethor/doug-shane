@@ -14,6 +14,7 @@ export function useVoiceInput(onTranscript: (text: string) => void) {
   const contextRef = useRef<AudioContext | null>(null);
   const committedRef = useRef("");
   const partialRef = useRef("");
+  const stoppingRef = useRef(false);
 
   const cleanup = useCallback(() => {
     if (processorRef.current) {
@@ -37,17 +38,23 @@ export function useVoiceInput(onTranscript: (text: string) => void) {
   }, []);
 
   const stop = useCallback(() => {
+    if (stoppingRef.current) return;
+    stoppingRef.current = true;
     // Capture final text before cleanup
     const final = (committedRef.current + " " + partialRef.current).trim();
     cleanup();
     if (final) {
       onTranscript(final);
+      toast({ title: "✅ Voice captured", description: final.length > 60 ? final.slice(0, 60) + "…" : final });
+    } else {
+      toast({ title: "No speech detected", description: "Try speaking louder or closer to your mic." });
     }
     committedRef.current = "";
     partialRef.current = "";
     setLiveText("");
     setState("idle");
-  }, [onTranscript, cleanup]);
+    stoppingRef.current = false;
+  }, [onTranscript, cleanup, toast]);
 
   const startAudioCapture = useCallback((stream: MediaStream, ws: WebSocket) => {
     try {
@@ -59,11 +66,11 @@ export function useVoiceInput(onTranscript: (text: string) => void) {
 
       processor.onaudioprocess = (e) => {
         if (ws.readyState !== WebSocket.OPEN) return;
-        const input = e.inputBuffer.getChannelData(0);
-        // Convert float32 to int16
-        const int16 = new Int16Array(input.length);
-        for (let i = 0; i < input.length; i++) {
-          const s = Math.max(-1, Math.min(1, input[i]));
+        const inputData = e.inputBuffer.getChannelData(0);
+        // Convert float32 to int16 PCM
+        const int16 = new Int16Array(inputData.length);
+        for (let i = 0; i < inputData.length; i++) {
+          const s = Math.max(-1, Math.min(1, inputData[i]));
           int16[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
         }
         // Convert to base64
@@ -91,7 +98,7 @@ export function useVoiceInput(onTranscript: (text: string) => void) {
     setLiveText("");
 
     try {
-      // Get microphone
+      // Get microphone first
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
           echoCancellation: true,
@@ -107,20 +114,20 @@ export function useVoiceInput(onTranscript: (text: string) => void) {
         throw new Error(error?.message || "Failed to get voice token");
       }
 
-      // Connect WebSocket
-      const ws = new WebSocket(
-        `wss://api.elevenlabs.io/v1/speech-to-text/realtime?model_id=scribe_v2_realtime&language_code=en`
-      );
+      // Connect WebSocket — token goes in the query parameter, audio_format specified
+      const wsUrl = `wss://api.elevenlabs.io/v1/speech-to-text/realtime?model_id=scribe_v2_realtime&language_code=en&token=${encodeURIComponent(data.token)}&audio_format=pcm_16000`;
+      const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
 
       ws.onopen = () => {
-        // Send auth message
-        ws.send(JSON.stringify({ type: "auth", token: data.token }));
+        console.log("ElevenLabs STT WebSocket connected");
       };
 
       ws.onmessage = (event) => {
         try {
           const msg = JSON.parse(event.data);
+          console.log("STT message:", msg.type, msg.text || "");
+          
           if (msg.type === "session_started") {
             setState("listening");
             toast({ title: "🎙️ Listening…", description: "Speak now. Click the mic again when done." });
@@ -151,7 +158,7 @@ export function useVoiceInput(onTranscript: (text: string) => void) {
 
       ws.onclose = (e) => {
         console.log("WebSocket closed:", e.code, e.reason);
-        // Only auto-stop if we were actively listening (not if user manually stopped)
+        // Only auto-stop if we were actively listening
         if (wsRef.current) {
           stop();
         }
