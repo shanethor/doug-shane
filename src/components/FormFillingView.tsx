@@ -67,7 +67,10 @@ export default function FormFillingView({ submissionId, initialMessages, initial
   const handleFormVoiceTranscript = useCallback((text: string) => {
     setInput((prev) => (prev ? prev + " " + text : text));
   }, []);
-  const formVoice = useVoiceInput(handleFormVoiceTranscript);
+  const handleFormVoiceAutoSend = useCallback((text: string) => {
+    sendMessage(text);
+  }, []);
+  const formVoice = useVoiceInput(handleFormVoiceTranscript, handleFormVoiceAutoSend);
   const chatScrollRef = useRef<HTMLDivElement>(null);
   const [downloading, setDownloading] = useState(false);
   const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
