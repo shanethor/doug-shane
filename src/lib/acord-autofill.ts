@@ -3,6 +3,9 @@ import type { AcordFormDefinition } from "./acord-forms";
 /** Parse natural-language dates into YYYY-MM-DD */
 export const parseDate = (raw: string): string => {
   if (!raw) return "";
+  // Handle MM/DD/YYYY
+  const mdyMatch = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (mdyMatch) return `${mdyMatch[3]}-${mdyMatch[1].padStart(2, '0')}-${mdyMatch[2].padStart(2, '0')}`;
   if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
   const d = new Date(raw);
   if (!isNaN(d.getTime())) return d.toISOString().slice(0, 10);

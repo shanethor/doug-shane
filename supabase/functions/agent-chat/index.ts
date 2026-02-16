@@ -23,7 +23,7 @@ When an agent wants to start a new client submission, you MUST ALWAYS use EXACTL
 
 [FIELD:Company Name:e.g. Aloha Tea and Acai:company_name]
 [FIELD:FEIN:XX-XXXXXXX:fein]
-[FIELD:Effective Date:YYYY-MM-DD:effective_date]
+[FIELD:Effective Date:MM/DD/YYYY:effective_date]
 [FIELD:State of Operations:e.g. CA, NY, TX:state]
 [FIELD:Business Description:What does the business do day to day?:description]
 
