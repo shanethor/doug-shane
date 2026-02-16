@@ -67,7 +67,7 @@ export default function SubmissionReviewPanel({ submissionId }: SubmissionReview
       .eq("submission_id", submissionId)
       .order("created_at", { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle();
 
     if (data) {
       setApplication(data);
