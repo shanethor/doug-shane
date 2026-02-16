@@ -543,6 +543,37 @@ export default function FormFillingView({ submissionId, initialMessages, initial
             </button>
           ))}
         </div>
+        {isAllForms && (
+          <div className="space-y-1.5 pt-1">
+            {ACORD_FORM_LIST.map((f) => {
+              const fFilled = f.fields.filter((fd) => formData[fd.key] && String(formData[fd.key]).trim()).length;
+              const fTotal = f.fields.length;
+              const fPct = fTotal > 0 ? Math.round((fFilled / fTotal) * 100) : 0;
+              return (
+                <button
+                  key={f.id}
+                  onClick={() => setActiveFormId(f.id)}
+                  className="w-full text-left group"
+                >
+                  <div className="flex items-center justify-between mb-0.5">
+                    <span className="text-[10px] text-muted-foreground group-hover:text-foreground transition-colors truncate">
+                      {f.name}
+                    </span>
+                    <span className="text-[10px] font-mono text-muted-foreground">
+                      {fFilled}/{fTotal}
+                    </span>
+                  </div>
+                  <div className="h-1 bg-muted rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-primary/70 rounded-full transition-all duration-500"
+                      style={{ width: `${fPct}%` }}
+                    />
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
         <div className="flex gap-1">
           {(["all", "filled", "empty"] as FieldFilter[]).map((filter) => (
             <button
