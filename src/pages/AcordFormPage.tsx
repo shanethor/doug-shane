@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { AppLayout } from "@/components/AppLayout";
 import { ACORD_FORMS, type AcordFormField } from "@/lib/acord-forms";
-import { generateAcordPdf } from "@/lib/pdf-generator";
+import { generateAcordPdfAsync } from "@/lib/pdf-generator";
 import { buildAutofilledData } from "@/lib/acord-autofill";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -95,8 +95,8 @@ export default function AcordFormPage() {
   }).length;
   const allRequiredFilled = requiredFilled === requiredFields.length;
 
-  const downloadPdf = () => {
-    const pdf = generateAcordPdf(form, formData);
+  const downloadPdf = async () => {
+    const pdf = await generateAcordPdfAsync(form, formData);
     pdf.save(`${form.name.replace(/\s/g, "_")}_${new Date().toISOString().slice(0, 10)}.pdf`);
     toast.success("PDF downloaded!");
   };

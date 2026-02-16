@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { ACORD_FORMS, ACORD_FORM_LIST, type AcordFormField, type AcordFormDefinition } from "@/lib/acord-forms";
 import { buildAutofilledData } from "@/lib/acord-autofill";
-import { generateAcordPdf } from "@/lib/pdf-generator";
+import { generateAcordPdf, generateAcordPdfAsync } from "@/lib/pdf-generator";
 import { generateSubmissionPackage } from "@/lib/submission-package";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Download, Send, Paperclip, Loader2, FileText, CheckCircle, X, Filter } from "lucide-react";
+import { Download, Send, Paperclip, Loader2, FileText, CheckCircle, X, Filter, Eye, Image } from "lucide-react";
 import { toast } from "sonner";
 
 type Msg = { role: "user" | "assistant"; content: string };
@@ -29,6 +29,7 @@ interface FormFillingViewProps {
 }
 
 type FieldFilter = "all" | "filled" | "empty";
+type CenterView = "form" | "data";
 
 export default function FormFillingView({ submissionId, initialMessages, onBack }: FormFillingViewProps) {
   const { user } = useAuth();
@@ -36,6 +37,7 @@ export default function FormFillingView({ submissionId, initialMessages, onBack 
   const [loading, setLoading] = useState(true);
   const [activeFormId, setActiveFormId] = useState("acord-125");
   const [fieldFilter, setFieldFilter] = useState<FieldFilter>("all");
+  const [centerView, setCenterView] = useState<CenterView>("form");
 
   // Chat state
   const [messages, setMessages] = useState<Msg[]>(initialMessages);
@@ -175,11 +177,13 @@ export default function FormFillingView({ submissionId, initialMessages, onBack 
     const updates: Record<string, string> = {};
 
     for (const line of lines) {
-      const match = line.match(/^\s*[-•*]?\s*\*?([a-z_]+)\*?\s*[:=]\s*(.+)/i);
+      // Match: - **field_key**: value, field_key: value, field_key = value, * field_key: value
+      const match = line.match(/^\s*[-•*]?\s*\*{0,2}([a-z_][a-z0-9_]*)\*{0,2}\s*[:=]\s*(.+)/i);
       if (match) {
         const key = match[1].toLowerCase().replace(/\s+/g, "_");
         if (allKeys.has(key)) {
-          updates[key] = match[2].trim().replace(/^["']|["']$/g, "");
+          let val = match[2].trim().replace(/^["'`]|["'`]$/g, "").replace(/\*{1,2}$/g, "").trim();
+          if (val) updates[key] = val;
         }
       }
     }
@@ -225,7 +229,7 @@ export default function FormFillingView({ submissionId, initialMessages, onBack 
       if (mode === "individual") {
         for (let i = 0; i < results.length; i++) {
           const { form, data } = results[i];
-          const pdf = generateAcordPdf(form, data);
+          const pdf = await generateAcordPdfAsync(form, data);
           pdf.save(`${form.name.replace(/\s/g, "_")}_${new Date().toISOString().slice(0, 10)}.pdf`);
           if (i < results.length - 1) await new Promise((r) => setTimeout(r, 600));
         }
@@ -454,15 +458,37 @@ export default function FormFillingView({ submissionId, initialMessages, onBack 
             <h2 className="text-sm font-semibold">{activeForm?.name}</h2>
             <p className="text-[10px] text-muted-foreground">{activeForm?.fullName}</p>
           </div>
-          {filledCount === totalCount && totalCount > 0 && (
-            <Badge variant="secondary" className="text-[10px]">
-              <CheckCircle className="h-3 w-3 mr-1" />Complete
-            </Badge>
-          )}
+          <div className="flex items-center gap-2">
+            {filledCount === totalCount && totalCount > 0 && (
+              <Badge variant="secondary" className="text-[10px]">
+                <CheckCircle className="h-3 w-3 mr-1" />Complete
+              </Badge>
+            )}
+            {activeForm?.pages && activeForm.pages.length > 0 && (
+              <div className="flex rounded-md border overflow-hidden">
+                <button
+                  onClick={() => setCenterView("form")}
+                  className={`flex items-center gap-1 text-[10px] px-2 py-1 transition-colors ${
+                    centerView === "form" ? "bg-primary text-primary-foreground" : "bg-card hover:bg-accent/50"
+                  }`}
+                >
+                  <Image className="h-3 w-3" />Form
+                </button>
+                <button
+                  onClick={() => setCenterView("data")}
+                  className={`flex items-center gap-1 text-[10px] px-2 py-1 transition-colors ${
+                    centerView === "data" ? "bg-primary text-primary-foreground" : "bg-card hover:bg-accent/50"
+                  }`}
+                >
+                  <Eye className="h-3 w-3" />Live Data
+                </button>
+              </div>
+            )}
+          </div>
         </div>
         <ScrollArea className="flex-1">
           <div className="p-4">
-            {activeForm?.pages && activeForm.pages.length > 0 ? (
+            {activeForm?.pages && activeForm.pages.length > 0 && centerView === "form" ? (
               <div className="space-y-4 max-w-4xl mx-auto">
                 {activeForm.pages.map((pageSrc, idx) => (
                   <div key={idx} className="bg-background border rounded shadow-sm overflow-hidden">
@@ -472,6 +498,9 @@ export default function FormFillingView({ submissionId, initialMessages, onBack 
                       className="w-full h-auto"
                       loading="lazy"
                     />
+                    <div className="bg-muted/50 text-center py-1">
+                      <span className="text-[10px] text-muted-foreground">Page {idx + 1} of {activeForm.pages!.length}</span>
+                    </div>
                   </div>
                 ))}
               </div>
