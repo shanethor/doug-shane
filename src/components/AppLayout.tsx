@@ -12,8 +12,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const navItems = [
     { to: "/", label: "Chat", icon: MessageCircle },
     { to: "/clients", label: "Clients", icon: LayoutDashboard },
-    { to: "/submit-plan", label: "New Client", icon: FilePlus },
-    { to: "/templates", label: "Templates", icon: FileStack },
     ...(isAdmin ? [{ to: "/admin", label: "Admin", icon: ShieldCheck }] : []),
   ];
 
