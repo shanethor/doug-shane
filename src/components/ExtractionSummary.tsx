@@ -18,7 +18,7 @@ interface FormStat {
 
 interface ExtractionSummaryProps {
   submissionId: string;
-  onContinue: () => void;
+  onContinue: (formId?: string) => void;
 }
 
 export default function ExtractionSummary({ submissionId, onContinue }: ExtractionSummaryProps) {
@@ -150,7 +150,8 @@ export default function ExtractionSummary({ submissionId, onContinue }: Extracti
           return (
             <Card
               key={s.form.id}
-              className={`transition-all ${hasData ? "border-primary/30 bg-card" : "opacity-50 bg-muted/30"}`}
+              onClick={() => hasData && onContinue(s.form.id)}
+              className={`transition-all ${hasData ? "border-primary/30 bg-card cursor-pointer hover:border-primary/60 hover:shadow-md" : "opacity-50 bg-muted/30"}`}
             >
               <CardContent className="p-4 space-y-2">
                 <div className="flex items-center justify-between">
@@ -158,9 +159,12 @@ export default function ExtractionSummary({ submissionId, onContinue }: Extracti
                     <FileText className={`h-4 w-4 ${hasData ? "text-primary" : "text-muted-foreground"}`} />
                     <span className="text-sm font-medium">{s.form.name}</span>
                   </div>
-                  <span className={`text-sm font-mono ${hasData ? "text-foreground" : "text-muted-foreground"}`}>
-                    {s.filled}/{s.total}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-sm font-mono ${hasData ? "text-foreground" : "text-muted-foreground"}`}>
+                      {s.filled}/{s.total}
+                    </span>
+                    {hasData && <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" />}
+                  </div>
                 </div>
                 <Progress value={s.pct} className="h-2" />
                 <p className="text-[11px] text-muted-foreground">{s.form.description}</p>
@@ -181,7 +185,7 @@ export default function ExtractionSummary({ submissionId, onContinue }: Extracti
           {filling ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
           {filling ? "Filling gaps…" : "Fill Remaining Gaps"}
         </Button>
-        <Button size="lg" onClick={onContinue} className="gap-2">
+        <Button size="lg" onClick={() => onContinue()} className="gap-2">
           Continue to Forms <ArrowRight className="h-4 w-4" />
         </Button>
       </div>
