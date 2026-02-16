@@ -1,5 +1,7 @@
 import jsPDF from "jspdf";
 import type { AcordFormDefinition } from "./acord-forms";
+import { FIELD_POSITION_MAP } from "./acord-field-positions";
+import { formatUSD, CURRENCY_FIELDS } from "./acord-autofill";
 
 /**
  * Load an image from a URL and return as base64 data URL
@@ -22,9 +24,29 @@ async function loadImageAsBase64(url: string): Promise<string> {
   });
 }
 
+/** Format a date string as MM/DD/YYYY for PDF display */
+function formatDateForPdf(val: string): string {
+  if (!val) return "";
+  // Handle YYYY-MM-DD
+  const isoMatch = val.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (isoMatch) return `${isoMatch[2]}/${isoMatch[3]}/${isoMatch[1]}`;
+  return val;
+}
+
+/** Format a value for PDF overlay display */
+function formatFieldValue(key: string, val: any): string {
+  if (val === null || val === undefined || val === "") return "";
+  const s = String(val);
+  if (s === "true") return "✓";
+  if (s === "false") return "";
+  if (CURRENCY_FIELDS.has(key)) return formatUSD(s);
+  if (key.includes("date") || key.includes("eff_") || key.includes("exp_")) return formatDateForPdf(s);
+  return s;
+}
+
 /**
- * Generate an ACORD PDF that embeds the actual form page images first,
- * then appends structured data pages so the output visually matches the real forms.
+ * Generate an ACORD PDF that embeds actual form page images
+ * and overlays filled field values at correct positions.
  */
 export async function generateAcordPdfAsync(
   form: AcordFormDefinition,
@@ -33,8 +55,8 @@ export async function generateAcordPdfAsync(
   const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "letter" });
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
-  const margin = 40;
-  const contentWidth = pageWidth - margin * 2;
+
+  const positions = FIELD_POSITION_MAP[form.id] || {};
 
   // Phase 1: Embed actual ACORD form page images
   if (form.pages && form.pages.length > 0) {
@@ -42,11 +64,9 @@ export async function generateAcordPdfAsync(
       if (i > 0) doc.addPage();
       try {
         const imgData = await loadImageAsBase64(form.pages[i]);
-        // Fit image to page with proper aspect ratio
         doc.addImage(imgData, "JPEG", 0, 0, pageWidth, pageHeight);
       } catch (err) {
         console.warn(`Could not load page image ${form.pages[i]}:`, err);
-        // Fallback: blank page with form name
         doc.setFontSize(14);
         doc.setTextColor(150);
         doc.text(`${form.name} — Page ${i + 1}`, pageWidth / 2, pageHeight / 2, { align: "center" });
@@ -55,8 +75,36 @@ export async function generateAcordPdfAsync(
     }
   }
 
-  // No structured data pages — the ACORD form images ARE the compliant output.
-  // Data is shown in the left-panel fields; the PDF must match the official template.
+  // Phase 2: Overlay field data at mapped positions
+  doc.setTextColor(0, 0, 140); // Dark blue for filled values
+  for (const [key, pos] of Object.entries(positions)) {
+    const raw = data[key];
+    if (raw === undefined || raw === null || raw === "") continue;
 
+    const display = formatFieldValue(key, raw);
+    if (!display) continue;
+
+    const pageIdx = pos.page;
+    if (pageIdx >= (form.pages?.length || 0)) continue;
+
+    doc.setPage(pageIdx + 1);
+    const fontSize = pos.fontSize || 8;
+    doc.setFontSize(fontSize);
+    doc.setFont("helvetica", "normal");
+
+    if (pos.checkbox) {
+      // Render check mark
+      if (display === "✓" || raw === true || raw === "Yes") {
+        doc.setFontSize(12);
+        doc.text("✓", pos.x, pos.y);
+      }
+    } else {
+      const maxW = pos.maxWidth || 200;
+      const lines = doc.splitTextToSize(display, maxW);
+      doc.text(lines, pos.x, pos.y);
+    }
+  }
+
+  doc.setTextColor(0);
   return doc;
 }

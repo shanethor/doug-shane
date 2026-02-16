@@ -6,7 +6,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const SYSTEM_PROMPT = `You are EPOCH, an AI assistant for insurance agents at EPOCH Risk Group. Your role is to guide agents through the client submission and coverage process.
+const SYSTEM_PROMPT = `You are AURA, an AI assistant for insurance agents at AURA Risk Group. Your role is to guide agents through the client submission and coverage process.
 
 You help agents:
 1. Start a new client submission — collecting business plans, documents, and key information

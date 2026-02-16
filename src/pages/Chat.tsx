@@ -434,10 +434,10 @@ export default function Chat() {
             <div className="flex flex-col items-center justify-center h-full gap-6 px-4">
               <div className="text-center space-y-2">
                 <h1 className="text-4xl tracking-tight" style={{ fontFamily: "'Instrument Serif', serif" }}>
-                  How can I help you?
+                  What are we working on?
                 </h1>
                 <p className="text-muted-foreground text-sm max-w-md">
-                  I can guide you through client submissions, ACORD forms, and coverage reviews.
+                  I'm AURA — your AI co-pilot for submissions, ACORD forms, and coverage reviews.
                 </p>
               </div>
 
