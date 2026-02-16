@@ -76,7 +76,8 @@ export default function Auth() {
       <div className="flex flex-1 items-center justify-center p-8 aura-subtle-mesh">
         <div className="w-full max-w-sm">
           <div className="mb-8 lg:hidden">
-            <img src={auraLogo} alt="AURA Risk Group" className="h-9" />
+            <span className="text-2xl font-bold tracking-tight aura-gradient-text">AURA</span>
+            <span className="ml-1.5 text-xs text-muted-foreground tracking-widest uppercase">Risk Group</span>
           </div>
 
           <h2 className="text-3xl mb-2 tracking-tight">{isSignUp ? "Create account" : "Welcome back"}</h2>
