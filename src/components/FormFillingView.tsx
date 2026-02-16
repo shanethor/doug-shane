@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { ACORD_FORMS, ACORD_FORM_LIST, type AcordFormField, type AcordFormDefinition } from "@/lib/acord-forms";
 import { buildAutofilledData, formatUSD } from "@/lib/acord-autofill";
 import { CURRENCY_FIELDS } from "@/lib/acord-autofill";
-import { generateAcordPdf, generateAcordPdfAsync } from "@/lib/pdf-generator";
+import { generateAcordPdfAsync } from "@/lib/pdf-generator";
 import { generateSubmissionPackage } from "@/lib/submission-package";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -251,7 +251,7 @@ export default function FormFillingView({ submissionId, initialMessages, initial
         toast.success(`${results.length} form(s) downloaded.`);
       } else {
         const companyName = formData.applicant_name || formData.insured_name || "Submission";
-        const pkg = generateSubmissionPackage({
+        const pkg = await generateSubmissionPackage({
           companyName,
           narrative: "",
           agencyName: profile?.agency_name || "",

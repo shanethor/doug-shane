@@ -13,7 +13,7 @@ import { AlertCircle, Loader2, FileText, CheckSquare, Download, Settings2, Spark
 import { toast } from "sonner";
 import { ACORD_FORMS, ACORD_FORM_LIST } from "@/lib/acord-forms";
 import { COVERAGE_LINES, getFormsForCoverageLines } from "@/lib/coverage-form-map";
-import { generateAcordPdf } from "@/lib/pdf-generator";
+import { generateAcordPdfAsync } from "@/lib/pdf-generator";
 import { buildAutofilledData } from "@/lib/acord-autofill";
 import { generateSubmissionPackage } from "@/lib/submission-package";
 import { runConsistencyChecks, type ConsistencyWarning } from "@/lib/consistency-checks";
@@ -222,7 +222,7 @@ export default function SubmissionReviewPanel({ submissionId }: SubmissionReview
       const { results } = await auditAllForms();
       for (let i = 0; i < results.length; i++) {
         const { form, data } = results[i];
-        const pdf = generateAcordPdf(form, data);
+        const pdf = await generateAcordPdfAsync(form, data);
         pdf.save(`${form.name.replace(/\s/g, "_")}_${new Date().toISOString().slice(0, 10)}.pdf`);
         if (i < results.length - 1) await new Promise((r) => setTimeout(r, 800));
       }
@@ -253,7 +253,7 @@ export default function SubmissionReviewPanel({ submissionId }: SubmissionReview
           .then(() => {});
       }
 
-      const pkg = generateSubmissionPackage({
+      const pkg = await generateSubmissionPackage({
         companyName,
         narrative,
         agencyName: profile?.agency_name || agentDefaults.agency_name || "",

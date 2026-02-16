@@ -13,7 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { ACORD_FORM_LIST } from "@/lib/acord-forms";
 import { buildAutofilledData } from "@/lib/acord-autofill";
-import { generateAcordPdf, generateAcordPdfAsync } from "@/lib/pdf-generator";
+import { generateAcordPdfAsync } from "@/lib/pdf-generator";
 import { generateSubmissionPackage } from "@/lib/submission-package";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -189,7 +189,7 @@ export default function Chat() {
         toast({ title: "Downloaded", description: `${results.length} form(s) downloaded.` });
       } else {
         const companyName = aiData.applicant_name || aiData.insured_name || aiData.company_name || "Submission";
-        const pkg = generateSubmissionPackage({
+        const pkg = await generateSubmissionPackage({
           companyName,
           narrative: (app as any).narrative || "",
           agencyName: profile?.agency_name || defaults.agency_name || "",
