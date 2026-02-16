@@ -461,59 +461,70 @@ export default function FormFillingView({ submissionId, initialMessages, onBack 
           )}
         </div>
         <ScrollArea className="flex-1">
-          <div className="p-6">
-            {/* Form preview styled like a document */}
-            <div className="bg-background border rounded-lg shadow-sm p-6 max-w-2xl mx-auto">
-              {/* Document header */}
-              <div className="text-center border-b pb-4 mb-6">
-                <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground mb-1">ACORD®</p>
-                <h1 className="text-lg font-bold">{activeForm?.fullName?.toUpperCase()}</h1>
-                <p className="text-[10px] text-muted-foreground mt-1">
-                  Generated {new Date().toLocaleDateString()}
-                </p>
-              </div>
-
-              {/* Sections */}
-              {activeForm && (() => {
-                const sections: { name: string; fields: AcordFormField[] }[] = [];
-                const seen = new Set<string>();
-                for (const field of activeForm.fields) {
-                  if (!seen.has(field.section)) {
-                    seen.add(field.section);
-                    sections.push({ name: field.section, fields: activeForm.fields.filter((f) => f.section === field.section) });
-                  }
-                }
-                return sections.map((section) => (
-                  <div key={section.name} className="mb-6">
-                    <h3 className="text-[10px] font-bold uppercase tracking-wider text-primary border-b border-primary/30 pb-1 mb-3">
-                      {section.name}
-                    </h3>
-                    <div className="grid grid-cols-2 gap-x-6 gap-y-2">
-                      {section.fields.map((field) => {
-                        const value = formData[field.key];
-                        const hasValue = value && String(value).trim();
-                        const isFullWidth = field.type === "textarea";
-                        return (
-                          <div key={field.key} className={`${isFullWidth ? "col-span-2" : ""}`}>
-                            <p className="text-[8px] uppercase tracking-wider text-muted-foreground font-medium">
-                              {field.label}
-                            </p>
-                            <p className={`text-xs border-b pb-1 min-h-[1.25rem] ${
-                              hasValue ? "text-foreground" : "text-muted-foreground/40 italic"
-                            }`}>
-                              {hasValue
-                                ? (Array.isArray(value) ? value.join(", ") : String(value))
-                                : "—"
-                              }
-                            </p>
-                          </div>
-                        );
-                      })}
-                    </div>
+          <div className="p-4">
+            {activeForm?.pages && activeForm.pages.length > 0 ? (
+              <div className="space-y-4 max-w-4xl mx-auto">
+                {activeForm.pages.map((pageSrc, idx) => (
+                  <div key={idx} className="bg-background border rounded shadow-sm overflow-hidden">
+                    <img
+                      src={pageSrc}
+                      alt={`${activeForm.name} Page ${idx + 1}`}
+                      className="w-full h-auto"
+                      loading="lazy"
+                    />
                   </div>
-                ));
-              })()}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div className="bg-background border rounded-lg shadow-sm p-6 max-w-2xl mx-auto">
+                <div className="text-center border-b pb-4 mb-6">
+                  <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground mb-1">ACORD®</p>
+                  <h1 className="text-lg font-bold">{activeForm?.fullName?.toUpperCase()}</h1>
+                  <p className="text-[10px] text-muted-foreground mt-1">
+                    Generated {new Date().toLocaleDateString()}
+                  </p>
+                </div>
+                {activeForm && (() => {
+                  const sections: { name: string; fields: AcordFormField[] }[] = [];
+                  const seen = new Set<string>();
+                  for (const field of activeForm.fields) {
+                    if (!seen.has(field.section)) {
+                      seen.add(field.section);
+                      sections.push({ name: field.section, fields: activeForm.fields.filter((f) => f.section === field.section) });
+                    }
+                  }
+                  return sections.map((section) => (
+                    <div key={section.name} className="mb-6">
+                      <h3 className="text-[10px] font-bold uppercase tracking-wider text-primary border-b border-primary/30 pb-1 mb-3">
+                        {section.name}
+                      </h3>
+                      <div className="grid grid-cols-2 gap-x-6 gap-y-2">
+                        {section.fields.map((field) => {
+                          const value = formData[field.key];
+                          const hasValue = value && String(value).trim();
+                          const isFullWidth = field.type === "textarea";
+                          return (
+                            <div key={field.key} className={`${isFullWidth ? "col-span-2" : ""}`}>
+                              <p className="text-[8px] uppercase tracking-wider text-muted-foreground font-medium">
+                                {field.label}
+                              </p>
+                              <p className={`text-xs border-b pb-1 min-h-[1.25rem] ${
+                                hasValue ? "text-foreground" : "text-muted-foreground/40 italic"
+                              }`}>
+                                {hasValue
+                                  ? (Array.isArray(value) ? value.join(", ") : String(value))
+                                  : "—"
+                                }
+                              </p>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ));
+                })()}
+              </div>
+            )}
           </div>
         </ScrollArea>
       </div>

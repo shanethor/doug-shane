@@ -15,6 +15,7 @@ export type AcordFormDefinition = {
   fullName: string;
   description: string;
   fields: AcordFormField[];
+  pages?: string[]; // paths to page images in /public/acord-pages/
 };
 
 // ============================================================
@@ -714,6 +715,7 @@ export const ACORD_FORMS: Record<string, AcordFormDefinition> = {
     fullName: "Commercial Insurance Application (2016/03)",
     description: "Applicant information, lines of business, premises, nature of business, general information, prior carrier info, and loss history.",
     fields: acord125Fields,
+    pages: ["/acord-pages/125-page1.jpg", "/acord-pages/125-page2.jpg", "/acord-pages/125-page3.jpg", "/acord-pages/125-page4.jpg"],
   },
   "acord-126": {
     id: "acord-126",
@@ -721,6 +723,7 @@ export const ACORD_FORMS: Record<string, AcordFormDefinition> = {
     fullName: "Commercial General Liability Section (2016/09)",
     description: "CGL coverages/limits, schedule of hazards, claims-made, employee benefits liability, contractors, products/completed ops, and general information.",
     fields: acord126Fields,
+    pages: ["/acord-pages/126-page1.jpg", "/acord-pages/126-page2.jpg", "/acord-pages/126-page3.jpg", "/acord-pages/126-page4.jpg"],
   },
   "acord-127": {
     id: "acord-127",
@@ -728,6 +731,7 @@ export const ACORD_FORMS: Record<string, AcordFormDefinition> = {
     fullName: "Business Auto Section (2010/05)",
     description: "Driver information, vehicle descriptions, garaging addresses, general information, and coverages/limits.",
     fields: acord127Fields,
+    pages: ["/acord-pages/127-page1.jpg", "/acord-pages/127-page2.jpg", "/acord-pages/127-page3.jpg"],
   },
   "acord-130": {
     id: "acord-130",
@@ -735,6 +739,7 @@ export const ACORD_FORMS: Record<string, AcordFormDefinition> = {
     fullName: "Workers Compensation Application (2010/05)",
     description: "WC coverages, state rating information, individuals included/excluded, prior carrier/loss history, and 24 general information questions.",
     fields: acord130Fields,
+    pages: ["/acord-pages/130-page1.jpg", "/acord-pages/130-page2.jpg", "/acord-pages/130-page3.jpg", "/acord-pages/130-page4.jpg"],
   },
   "acord-131": {
     id: "acord-131",
@@ -742,6 +747,7 @@ export const ACORD_FORMS: Record<string, AcordFormDefinition> = {
     fullName: "Umbrella / Excess Liability Section (2016/04)",
     description: "Umbrella/excess policy information, underlying insurance details, coverage/exposure checklist, vehicles, and additional exposures.",
     fields: acord131Fields,
+    pages: ["/acord-pages/131-page1.jpg", "/acord-pages/131-page2.jpg", "/acord-pages/131-page3.jpg", "/acord-pages/131-page4.jpg", "/acord-pages/131-page5.jpg"],
   },
   "acord-140": {
     id: "acord-140",
@@ -749,6 +755,7 @@ export const ACORD_FORMS: Record<string, AcordFormDefinition> = {
     fullName: "Property Section (2016/03)",
     description: "Building construction, subject of insurance, protective devices, building improvements, heating source, and special coverages.",
     fields: acord140Fields,
+    pages: ["/acord-pages/140-page1.jpg", "/acord-pages/140-page2.jpg", "/acord-pages/140-page3.jpg"],
   },
 };
 
