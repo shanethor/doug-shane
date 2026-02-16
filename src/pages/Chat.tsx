@@ -334,10 +334,13 @@ export default function Chat() {
       const isIntakeFields = fields.length >= 4 && fields.some(f => f.key === "company_name");
       
       if (isIntakeFields && lastUserMsg) {
+        const userText = lastUserMsg.content.toLowerCase();
+        const wantsSkip = /skip|straight to form|go to form|jump to form|skip intake|no intake|skip questions/i.test(userText);
         const extracted = tryExtractIntakeFromMessage(lastUserMsg.content);
-        if (extracted) {
-          // Auto-fill and auto-submit
-          const autoFilled = autoFillFieldsFromExtracted(fields, extracted);
+        
+        if (wantsSkip || extracted) {
+          // Auto-fill whatever we can extract (may be empty if skipping)
+          const autoFilled = extracted ? autoFillFieldsFromExtracted(fields, extracted) : {};
           setFieldValues(autoFilled);
           setMessages((prev) => {
             const last = prev[prev.length - 1];
@@ -349,16 +352,14 @@ export default function Chat() {
             return [...prev, { role: "assistant", content: finalText, fields, buttons }];
           });
           setIsLoading(false);
-          // Auto-submit after a brief delay so user sees what happened
+          // Auto-submit after a brief delay
           setTimeout(() => {
-            const filledFields = fields.map(f => ({ ...f }));
             const filledVals: Record<string, string> = {};
             for (const f of fields) {
               filledVals[f.key] = autoFilled[f.key] || "";
             }
             setFieldValues(filledVals);
-            // Trigger auto-submit
-            submitFieldsWithValues(filledFields, filledVals);
+            submitFieldsWithValues(fields, filledVals);
           }, 800);
           return;
         }
