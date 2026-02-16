@@ -3,7 +3,8 @@ import ReactMarkdown from "react-markdown";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { ACORD_FORMS, ACORD_FORM_LIST, type AcordFormField, type AcordFormDefinition } from "@/lib/acord-forms";
-import { buildAutofilledData } from "@/lib/acord-autofill";
+import { buildAutofilledData, formatUSD } from "@/lib/acord-autofill";
+import { CURRENCY_FIELDS } from "@/lib/acord-autofill";
 import { generateAcordPdf, generateAcordPdfAsync } from "@/lib/pdf-generator";
 import { generateSubmissionPackage } from "@/lib/submission-package";
 import { Button } from "@/components/ui/button";
@@ -303,12 +304,25 @@ export default function FormFillingView({ submissionId, initialMessages, initial
           </div>
         );
       default:
+        if (field.type === "currency") {
+          return (
+            <Input
+              type="text"
+              value={value ? formatUSD(value) : ""}
+              onChange={(e) => {
+                const raw = e.target.value.replace(/[$,\s]/g, "");
+                handleFieldChange(field.key, raw);
+              }}
+              placeholder="$0"
+              className="h-8 text-xs"
+            />
+          );
+        }
         return (
           <Input
             type={field.type === "date" ? "date" : field.type === "number" ? "number" : "text"}
             value={value || ""}
             onChange={(e) => handleFieldChange(field.key, e.target.value)}
-            placeholder={field.type === "currency" ? "$0.00" : ""}
             className="h-8 text-xs"
           />
         );
@@ -544,7 +558,7 @@ export default function FormFillingView({ submissionId, initialMessages, initial
                                 hasValue ? "text-foreground" : "text-muted-foreground/40 italic"
                               }`}>
                                 {hasValue
-                                  ? (Array.isArray(value) ? value.join(", ") : String(value))
+                                  ? (field.type === "currency" ? formatUSD(value) : Array.isArray(value) ? value.join(", ") : String(value))
                                   : "—"
                                 }
                               </p>
