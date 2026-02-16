@@ -588,14 +588,14 @@ export default function Chat() {
                     className="flex-1 resize-none bg-transparent border-0 outline-none text-sm placeholder:text-muted-foreground min-h-[52px] max-h-40 py-2"
                   />
                   <Button
-                    variant="ghost"
+                    variant={voice.isListening ? "destructive" : "ghost"}
                     size="icon"
-                    className={`shrink-0 h-9 w-9 transition-colors ${voice.isListening ? "text-red-500 animate-pulse" : "text-muted-foreground hover:text-foreground"}`}
+                    className={`shrink-0 h-9 w-9 transition-all ${voice.isListening ? "animate-pulse ring-2 ring-red-400/50" : "text-muted-foreground hover:text-foreground"}`}
                     onClick={voice.toggle}
                     disabled={voice.isConnecting}
                     title={voice.isListening ? "Stop recording" : "Voice input"}
                   >
-                    {voice.isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                    {voice.isConnecting ? <Loader2 className="h-4 w-4 animate-spin" /> : voice.isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
                   </Button>
                   <Button
                     onClick={() => send(input)}
@@ -606,9 +606,19 @@ export default function Chat() {
                     <Send className="h-4 w-4" />
                   </Button>
                 </div>
-                <p className="text-[10px] text-muted-foreground text-center mt-2">
-                  Drop files anywhere or click <Paperclip className="inline h-3 w-3" /> to attach
-                </p>
+                {voice.isListening && voice.liveText ? (
+                  <p className="text-xs text-primary text-center mt-2 animate-pulse">
+                    🎙️ "{voice.liveText}"
+                  </p>
+                ) : voice.isListening ? (
+                  <p className="text-xs text-primary text-center mt-2 animate-pulse">
+                    🎙️ Listening… speak now
+                  </p>
+                ) : (
+                  <p className="text-[10px] text-muted-foreground text-center mt-2">
+                    Drop files anywhere or click <Paperclip className="inline h-3 w-3" /> to attach
+                  </p>
+                )}
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full max-w-xl">
@@ -784,14 +794,14 @@ export default function Chat() {
                   className="flex-1 resize-none bg-transparent border-0 outline-none text-sm placeholder:text-muted-foreground min-h-[52px] max-h-40 py-2"
                 />
                 <Button
-                  variant="ghost"
+                  variant={voice.isListening ? "destructive" : "ghost"}
                   size="icon"
-                  className={`shrink-0 h-9 w-9 transition-colors ${voice.isListening ? "text-red-500 animate-pulse" : "text-muted-foreground hover:text-foreground"}`}
+                  className={`shrink-0 h-9 w-9 transition-all ${voice.isListening ? "animate-pulse ring-2 ring-red-400/50" : "text-muted-foreground hover:text-foreground"}`}
                   onClick={voice.toggle}
                   disabled={voice.isConnecting}
                   title={voice.isListening ? "Stop recording" : "Voice input"}
                 >
-                  {voice.isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                  {voice.isConnecting ? <Loader2 className="h-4 w-4 animate-spin" /> : voice.isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
                 </Button>
                 <Button
                   onClick={() => send(input)}
@@ -802,9 +812,19 @@ export default function Chat() {
                   <Send className="h-4 w-4" />
                 </Button>
               </div>
-              <p className="text-[10px] text-muted-foreground text-center mt-2">
-                Drop files anywhere or click <Paperclip className="inline h-3 w-3" /> to attach
-              </p>
+              {voice.isListening && voice.liveText ? (
+                <p className="text-xs text-primary text-center mt-2 animate-pulse">
+                  🎙️ "{voice.liveText}"
+                </p>
+              ) : voice.isListening ? (
+                <p className="text-xs text-primary text-center mt-2 animate-pulse">
+                  🎙️ Listening… speak now
+                </p>
+              ) : (
+                <p className="text-[10px] text-muted-foreground text-center mt-2">
+                  Drop files anywhere or click <Paperclip className="inline h-3 w-3" /> to attach
+                </p>
+              )}
             </div>
           </div>
         )}
