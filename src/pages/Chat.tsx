@@ -444,13 +444,20 @@ export default function Chat() {
     const description = fields.map((f) => `${f.label}: ${vals[f.key] || ""}`).filter(l => !l.endsWith(": ")).join("\n");
     const companyName = vals["company_name"] || vals["applicant_name"] || "New Client";
 
+    // Build full context from ALL chat messages + current intake fields
+    // This ensures every detail the user provided in conversation gets extracted
+    const fullChatContext = messages
+      .map((m) => `${m.role === "user" ? "Agent" : "AURA"}: ${m.content}`)
+      .join("\n\n");
+    const fullDescription = `${fullChatContext}\n\n--- Current Intake Fields ---\n${description}`;
+
     try {
       const { data: sub, error: subErr } = await supabase
         .from("business_submissions")
         .insert({
           user_id: user.id,
           company_name: companyName,
-          description,
+          description: fullDescription,
           status: "processing",
         })
         .select()
@@ -466,7 +473,7 @@ export default function Chat() {
             "Content-Type": "application/json",
             Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
           },
-          body: JSON.stringify({ description, submission_id: sub.id }),
+          body: JSON.stringify({ description: fullDescription, submission_id: sub.id }),
         }
       );
 
