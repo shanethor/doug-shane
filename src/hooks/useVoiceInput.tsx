@@ -80,7 +80,7 @@ export function useVoiceInput(onTranscript: (text: string) => void) {
           binary += String.fromCharCode(bytes[i]);
         }
         const base64 = btoa(binary);
-        ws.send(JSON.stringify({ type: "audio", data: base64 }));
+        ws.send(JSON.stringify({ message_type: "input_audio_chunk", audio: base64 }));
       };
 
       source.connect(processor);
@@ -126,20 +126,21 @@ export function useVoiceInput(onTranscript: (text: string) => void) {
       ws.onmessage = (event) => {
         try {
           const msg = JSON.parse(event.data);
-          console.log("STT message:", msg.type, msg.text || "");
+          const msgType = msg.message_type || msg.type;
+          console.log("STT message:", msgType, msg.text || "");
           
-          if (msg.type === "session_started") {
+          if (msgType === "session_started") {
             setState("listening");
             toast({ title: "🎙️ Listening…", description: "Speak now. Click the mic again when done." });
             startAudioCapture(stream, ws);
-          } else if (msg.type === "partial_transcript" && msg.text) {
+          } else if (msgType === "partial_transcript" && msg.text) {
             partialRef.current = msg.text;
             setLiveText((committedRef.current + " " + msg.text).trim());
-          } else if (msg.type === "committed_transcript" && msg.text) {
+          } else if (msgType === "committed_transcript" && msg.text) {
             committedRef.current = (committedRef.current + " " + msg.text).trim();
             partialRef.current = "";
             setLiveText(committedRef.current);
-          } else if (msg.type === "error") {
+          } else if (msgType === "error") {
             console.error("ElevenLabs STT error:", msg);
             toast({ variant: "destructive", title: "Voice Error", description: msg.message || "Transcription error" });
             stop();
