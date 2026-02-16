@@ -4,6 +4,9 @@ import ReactMarkdown from "react-markdown";
 import { AppLayout } from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import SubmissionReviewPanel from "@/components/SubmissionReviewPanel";
 import { Send, FileUp, ClipboardList, Search, Loader2, Paperclip, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -119,6 +122,7 @@ export default function Chat() {
   const onFinishRef = useRef<(() => void) | null>(null); // callback when typewriter catches up
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [reviewSubmissionId, setReviewSubmissionId] = useState<string | null>(null);
 
   const scrollToBottom = useCallback(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -405,10 +409,12 @@ export default function Chat() {
                           <Button
                             key={bIdx}
                             onClick={() => {
-                              if (b.action.startsWith("/") || b.action.startsWith("http")) {
+                              const appMatch = b.action.match(/^\/application\/(.+)/);
+                              if (appMatch) {
+                                setReviewSubmissionId(appMatch[1]);
+                              } else if (b.action.startsWith("/") || b.action.startsWith("http")) {
                                 navigate(b.action);
                               } else {
-                                // Treat as a known action key — e.g. "submission_link" navigates to /application/:id
                                 send(b.label);
                               }
                             }}
@@ -491,6 +497,17 @@ export default function Chat() {
           </div>
         )}
       </div>
+
+      {/* Submission Review Dialog */}
+      <Dialog open={!!reviewSubmissionId} onOpenChange={(open) => { if (!open) setReviewSubmissionId(null); }}>
+        <DialogContent className="max-w-4xl h-[90vh] p-0 gap-0">
+          <ScrollArea className="h-full p-6">
+            {reviewSubmissionId && (
+              <SubmissionReviewPanel submissionId={reviewSubmissionId} />
+            )}
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 }
