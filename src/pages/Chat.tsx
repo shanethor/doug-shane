@@ -397,12 +397,14 @@ export default function Chat() {
   if (activeSubmissionId) {
     return (
       <AppLayout>
-        <FormFillingView
-          submissionId={activeSubmissionId}
-          initialMessages={messages.map((m) => ({ role: m.role, content: m.content }))}
-          initialFormId={activeFormId}
-          onBack={() => setActiveSubmissionId(null)}
-        />
+        <div className="animate-slide-in-right">
+          <FormFillingView
+            submissionId={activeSubmissionId}
+            initialMessages={messages.map((m) => ({ role: m.role, content: m.content }))}
+            initialFormId={activeFormId}
+            onBack={() => setActiveSubmissionId(null)}
+          />
+        </div>
       </AppLayout>
     );
   }
@@ -491,7 +493,7 @@ export default function Chat() {
                   <button
                     key={s.label}
                     onClick={() => send(s.message)}
-                    className="flex flex-col items-start gap-2 rounded-lg border bg-card p-4 text-left hover:bg-accent/50 transition-colors"
+                    className="flex flex-col items-start gap-2 rounded-lg border bg-card p-4 text-left hover:bg-accent/50 hover-lift transition-colors"
                   >
                     <s.icon className="h-5 w-5 text-primary" />
                     <span className="text-sm font-medium">{s.label}</span>
@@ -508,10 +510,10 @@ export default function Chat() {
                 <div key={i}>
                   <div className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
                     <div
-                      className={`rounded-xl px-4 py-3 max-w-[85%] text-sm leading-relaxed ${
+                      className={`rounded-xl px-4 py-3 max-w-[85%] text-sm leading-relaxed transition-smooth ${
                         m.role === "user"
-                          ? "bg-primary text-primary-foreground whitespace-pre-wrap"
-                          : "bg-muted text-foreground prose prose-sm prose-headings:text-foreground prose-strong:text-foreground prose-p:my-1.5 prose-li:my-0.5 prose-ol:my-1 prose-ul:my-1 max-w-none"
+                          ? "bg-primary text-primary-foreground whitespace-pre-wrap animate-slide-in-right"
+                          : "bg-muted text-foreground prose prose-sm prose-headings:text-foreground prose-strong:text-foreground prose-p:my-1.5 prose-li:my-0.5 prose-ol:my-1 prose-ul:my-1 max-w-none animate-slide-in-left"
                       }`}
                     >
                       {m.role === "assistant" ? (
@@ -601,9 +603,12 @@ export default function Chat() {
                 );
               })}
               {isLoading && displayedText === "" && (
-                <div className="flex justify-start">
+                <div className="flex justify-start animate-page-enter">
                   <div className="bg-muted rounded-xl px-4 py-3">
-                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                    <div className="flex items-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                      <span className="text-xs text-muted-foreground" style={{ animation: 'subtlePulse 1.5s ease-in-out infinite' }}>Thinking…</span>
+                    </div>
                   </div>
                 </div>
               )}
