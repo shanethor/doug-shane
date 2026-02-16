@@ -256,6 +256,7 @@ export type Database = {
           agency_name: string | null
           created_at: string
           form_defaults: Json | null
+          from_email: string | null
           full_name: string | null
           id: string
           phone: string | null
@@ -266,6 +267,7 @@ export type Database = {
           agency_name?: string | null
           created_at?: string
           form_defaults?: Json | null
+          from_email?: string | null
           full_name?: string | null
           id?: string
           phone?: string | null
@@ -276,6 +278,7 @@ export type Database = {
           agency_name?: string | null
           created_at?: string
           form_defaults?: Json | null
+          from_email?: string | null
           full_name?: string | null
           id?: string
           phone?: string | null
