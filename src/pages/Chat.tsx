@@ -133,6 +133,7 @@ export default function Chat() {
   const [reviewSubmissionId, setReviewSubmissionId] = useState<string | null>(null);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [activeSubmissionId, setActiveSubmissionId] = useState<string | null>(null);
+  const [activeFormId, setActiveFormId] = useState<string | undefined>(undefined);
 
   const downloadSubmission = async (subId: string, mode: "individual" | "package" = "package") => {
     if (!user) return;
@@ -362,8 +363,10 @@ export default function Chat() {
 
       // Send the message with the real submission ID embedded
       send(`Here are the details:\n${filled}\n\n[SUBMISSION_ID:${sub.id}]`);
-
-      // Switch to 3-panel form filling view
+      // Detect which form was discussed and switch to 3-panel view
+      const allText = messages.map(m => m.content).join(" ").toLowerCase();
+      const formMatch = ACORD_FORM_LIST.find(f => allText.includes(f.name.toLowerCase()));
+      setActiveFormId(formMatch?.id);
       setTimeout(() => setActiveSubmissionId(sub.id), 1500);
     } catch (err) {
       console.error("Failed to create submission:", err);
@@ -394,6 +397,7 @@ export default function Chat() {
         <FormFillingView
           submissionId={activeSubmissionId}
           initialMessages={messages.map((m) => ({ role: m.role, content: m.content }))}
+          initialFormId={activeFormId}
           onBack={() => setActiveSubmissionId(null)}
         />
       </AppLayout>
