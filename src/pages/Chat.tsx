@@ -7,8 +7,14 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import SubmissionReviewPanel from "@/components/SubmissionReviewPanel";
-import { Send, FileUp, ClipboardList, Search, Loader2, Paperclip, X } from "lucide-react";
+import { Send, FileUp, ClipboardList, Search, Loader2, Paperclip, X, Download, Package } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { ACORD_FORM_LIST } from "@/lib/acord-forms";
+import { buildAutofilledData } from "@/lib/acord-autofill";
+import { generateAcordPdf } from "@/lib/pdf-generator";
+import { generateSubmissionPackage } from "@/lib/submission-package";
+import { useAuth } from "@/hooks/useAuth";
 
 type ButtonMarker = { label: string; action: string };
 type Msg = { role: "user" | "assistant"; content: string; fields?: FieldBubble[]; buttons?: ButtonMarker[] };
@@ -121,8 +127,84 @@ export default function Chat() {
   const streamDoneRef = useRef(false); // true once SSE finishes
   const onFinishRef = useRef<(() => void) | null>(null); // callback when typewriter catches up
   const { toast } = useToast();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [reviewSubmissionId, setReviewSubmissionId] = useState<string | null>(null);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+
+  const downloadSubmission = async (subId: string, mode: "individual" | "package" = "package") => {
+    if (!user) return;
+    setDownloadingId(subId);
+    try {
+      const { data: app } = await supabase
+        .from("insurance_applications")
+        .select("*")
+        .eq("submission_id", subId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single();
+      if (!app) { toast({ variant: "destructive", title: "Error", description: "Application not found" }); return; }
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("full_name, agency_name, phone, form_defaults")
+        .eq("user_id", user.id)
+        .single();
+
+      const aiData = (app.form_data || {}) as Record<string, any>;
+      const defaults = (profile?.form_defaults || {}) as Record<string, string>;
+
+      // Use all forms for download
+      const forms = ACORD_FORM_LIST;
+      const results: { form: typeof forms[0]; data: Record<string, any> }[] = [];
+
+      for (const form of forms) {
+        let filled = buildAutofilledData(form, aiData, profile);
+        for (const [k, v] of Object.entries(defaults)) {
+          if (v && (!filled[k] || (typeof filled[k] === "string" && !filled[k].trim()))) {
+            filled[k] = v;
+          }
+        }
+        // Only include forms that have meaningful data
+        const filledCount = Object.values(filled).filter(v => v && String(v).trim()).length;
+        if (filledCount > 3) results.push({ form, data: filled });
+      }
+
+      if (results.length === 0) {
+        toast({ variant: "destructive", title: "No forms", description: "No forms have enough data to download." });
+        return;
+      }
+
+      if (mode === "individual") {
+        for (let i = 0; i < results.length; i++) {
+          const { form, data } = results[i];
+          const pdf = generateAcordPdf(form, data);
+          pdf.save(`${form.name.replace(/\s/g, "_")}_${new Date().toISOString().slice(0, 10)}.pdf`);
+          if (i < results.length - 1) await new Promise(r => setTimeout(r, 600));
+        }
+        toast({ title: "Downloaded", description: `${results.length} form(s) downloaded.` });
+      } else {
+        const companyName = aiData.applicant_name || aiData.insured_name || aiData.company_name || "Submission";
+        const pkg = generateSubmissionPackage({
+          companyName,
+          narrative: (app as any).narrative || "",
+          agencyName: profile?.agency_name || defaults.agency_name || "",
+          producerName: profile?.full_name || defaults.producer_name || "",
+          coverageLines: [],
+          forms: results,
+          effectiveDate: aiData.effective_date || aiData.proposed_eff_date || "",
+        });
+        const safeName = companyName.replace(/[^a-zA-Z0-9]/g, "_").slice(0, 40);
+        pkg.save(`Submission_${safeName}_${new Date().toISOString().slice(0, 10)}.pdf`);
+        toast({ title: "Downloaded", description: "Submission package downloaded!" });
+      }
+    } catch (err) {
+      console.error("Download error:", err);
+      toast({ variant: "destructive", title: "Error", description: "Failed to download" });
+    } finally {
+      setDownloadingId(null);
+    }
+  };
 
   const scrollToBottom = useCallback(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -405,26 +487,46 @@ export default function Chat() {
                   {m.role === "assistant" && m.buttons && m.buttons.length > 0 && !isLoading && (
                     <div className="mt-3 ml-0 max-w-[85%] opacity-0 animate-[slideUpFadeIn_0.5s_ease-out_0.3s_forwards]">
                       <div className="flex flex-wrap gap-2">
-                        {m.buttons.map((b, bIdx) => (
-                          <Button
-                            key={bIdx}
-                            onClick={() => {
-                              const appMatch = b.action.match(/^\/application\/(.+)/);
-                              if (appMatch) {
-                                setReviewSubmissionId(appMatch[1]);
-                              } else if (b.action.startsWith("/") || b.action.startsWith("http")) {
-                                navigate(b.action);
-                              } else {
-                                send(b.label);
-                              }
-                            }}
-                            className="opacity-0 animate-[slideUpFadeIn_0.4s_ease-out_forwards]"
-                            style={{ animationDelay: `${0.5 + bIdx * 0.1}s` }}
-                          >
-                            <ClipboardList className="h-4 w-4 mr-2" />
-                            {b.label}
-                          </Button>
-                        ))}
+                        {m.buttons.map((b, bIdx) => {
+                          const appMatch = b.action.match(/^\/application\/(.+)/);
+                          const downloadMatch = b.action.match(/^download:(.+)/);
+                          const downloadPkgMatch = b.action.match(/^download-pkg:(.+)/);
+                          const isDownloading = downloadingId && (downloadMatch?.[1] === downloadingId || downloadPkgMatch?.[1] === downloadingId);
+
+                          return (
+                            <Button
+                              key={bIdx}
+                              variant={downloadMatch || downloadPkgMatch ? "default" : "outline"}
+                              disabled={!!isDownloading}
+                              onClick={() => {
+                                if (downloadPkgMatch) {
+                                  downloadSubmission(downloadPkgMatch[1], "package");
+                                } else if (downloadMatch) {
+                                  downloadSubmission(downloadMatch[1], "individual");
+                                } else if (appMatch) {
+                                  setReviewSubmissionId(appMatch[1]);
+                                } else if (b.action.startsWith("/") || b.action.startsWith("http")) {
+                                  navigate(b.action);
+                                } else {
+                                  send(b.label);
+                                }
+                              }}
+                              className="opacity-0 animate-[slideUpFadeIn_0.4s_ease-out_forwards]"
+                              style={{ animationDelay: `${0.5 + bIdx * 0.1}s` }}
+                            >
+                              {isDownloading ? (
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              ) : downloadMatch || downloadPkgMatch ? (
+                                <Download className="h-4 w-4 mr-2" />
+                              ) : appMatch ? (
+                                <ClipboardList className="h-4 w-4 mr-2" />
+                              ) : (
+                                <ClipboardList className="h-4 w-4 mr-2" />
+                              )}
+                              {b.label}
+                            </Button>
+                          );
+                        })}
                       </div>
                     </div>
                   )}

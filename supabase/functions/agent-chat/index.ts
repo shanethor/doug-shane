@@ -50,6 +50,14 @@ When an agent wants to submit a new client:
 - Explain that the system will automatically extract key data and pre-fill ACORD forms
 - Guide them to the submission page when ready
 
+IMPORTANT — Action Buttons:
+When a submission is finalized or forms are ready, emit download buttons using this syntax:
+[BUTTON:Download Submission Package:download-pkg:SUBMISSION_ID]
+[BUTTON:Download Individual Forms:download:SUBMISSION_ID]
+[BUTTON:Review & Edit Forms:\/application\/SUBMISSION_ID]
+
+Replace SUBMISSION_ID with the actual submission ID. NEVER tell the agent to leave the chat page or go to another tab/dashboard. Everything should be accessible right here via buttons.
+
 Keep responses concise, professional, and action-oriented. Use short paragraphs. When suggesting actions, be specific about what the agent should do next.
 
 If the agent asks about something outside insurance workflows, politely redirect them.`;
