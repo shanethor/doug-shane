@@ -17,7 +17,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b bg-card">
+      <header className="border-b bg-card animate-page-fade">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
           <Link to="/" className="flex items-center gap-1.5">
             <span className="text-lg font-bold tracking-tight text-foreground" style={{ fontFamily: "'Instrument Serif', serif" }}>EPOCH</span>
@@ -46,7 +46,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-4 py-8">
+      <main className="mx-auto max-w-6xl px-4 py-8 animate-page-enter">
         {children}
       </main>
     </div>
