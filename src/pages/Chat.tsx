@@ -539,7 +539,8 @@ export default function Chat() {
       <AppLayout>
         <ExtractionSummary
           submissionId={pendingSubmissionId}
-          onContinue={() => {
+          onContinue={(formId) => {
+            if (formId) setActiveFormId(formId);
             setActiveSubmissionId(pendingSubmissionId);
             setPendingSubmissionId(null);
           }}
