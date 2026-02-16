@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Send, FileUp, ClipboardList, Search, Loader2, Paperclip, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-type Msg = { role: "user" | "assistant"; content: string; fields?: FieldBubble[] };
+type ButtonMarker = { label: string; action: string };
+type Msg = { role: "user" | "assistant"; content: string; fields?: FieldBubble[]; buttons?: ButtonMarker[] };
 type FieldBubble = { label: string; placeholder: string; key: string };
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/agent-chat`;
@@ -88,8 +89,18 @@ function parseFields(text: string): FieldBubble[] {
   return fields;
 }
 
-function stripFieldMarkers(text: string): string {
-  return text.replace(/\[FIELD:[^\]]+\]/g, "").trim();
+function parseButtons(text: string): ButtonMarker[] {
+  const regex = /\[BUTTON:([^:]+):([^\]]+)\]/g;
+  const buttons: ButtonMarker[] = [];
+  let m: RegExpExecArray | null;
+  while ((m = regex.exec(text)) !== null) {
+    buttons.push({ label: m[1], action: m[2] });
+  }
+  return buttons;
+}
+
+function stripMarkers(text: string): string {
+  return text.replace(/\[FIELD:[^\]]+\]/g, "").replace(/\[BUTTON:[^\]]+\]/g, "").trim();
 }
 
 export default function Chat() {
@@ -186,14 +197,15 @@ export default function Chat() {
     const finalizeMessage = () => {
       const finalText = fullTextRef.current;
       const fields = parseFields(finalText);
+      const buttons = parseButtons(finalText);
       setMessages((prev) => {
         const last = prev[prev.length - 1];
         if (last?.role === "assistant") {
           return prev.map((m, i) =>
-            i === prev.length - 1 ? { ...m, content: finalText, fields } : m
+            i === prev.length - 1 ? { ...m, content: finalText, fields, buttons } : m
           );
         }
-        return [...prev, { role: "assistant", content: finalText, fields }];
+        return [...prev, { role: "assistant", content: finalText, fields, buttons }];
       });
       setIsLoading(false);
     };
@@ -350,7 +362,7 @@ export default function Chat() {
                       }`}
                     >
                       {m.role === "assistant" ? (
-                        <ReactMarkdown>{stripFieldMarkers(textToShow)}</ReactMarkdown>
+                        <ReactMarkdown>{stripMarkers(textToShow)}</ReactMarkdown>
                       ) : m.content}
                     </div>
                   </div>
@@ -381,6 +393,32 @@ export default function Chat() {
                           <Send className="h-3.5 w-3.5 mr-2" />
                           Submit details
                         </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Action buttons */}
+                  {m.role === "assistant" && m.buttons && m.buttons.length > 0 && !isLoading && (
+                    <div className="mt-3 ml-0 max-w-[85%] opacity-0 animate-[slideUpFadeIn_0.5s_ease-out_0.3s_forwards]">
+                      <div className="flex flex-wrap gap-2">
+                        {m.buttons.map((b, bIdx) => (
+                          <Button
+                            key={bIdx}
+                            onClick={() => {
+                              if (b.action.startsWith("/") || b.action.startsWith("http")) {
+                                navigate(b.action);
+                              } else {
+                                // Treat as a known action key — e.g. "submission_link" navigates to /application/:id
+                                send(b.label);
+                              }
+                            }}
+                            className="opacity-0 animate-[slideUpFadeIn_0.4s_ease-out_forwards]"
+                            style={{ animationDelay: `${0.5 + bIdx * 0.1}s` }}
+                          >
+                            <ClipboardList className="h-4 w-4 mr-2" />
+                            {b.label}
+                          </Button>
+                        ))}
                       </div>
                     </div>
                   )}
