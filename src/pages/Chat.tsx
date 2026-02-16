@@ -8,6 +8,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import SubmissionReviewPanel from "@/components/SubmissionReviewPanel";
 import FormFillingView from "@/components/FormFillingView";
+import ExtractionSummary from "@/components/ExtractionSummary";
 import { Send, FileUp, ClipboardList, Search, Loader2, Paperclip, X, Download, Package, Mic, MicOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -198,6 +199,7 @@ export default function Chat() {
   const [reviewSubmissionId, setReviewSubmissionId] = useState<string | null>(null);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [activeSubmissionId, setActiveSubmissionId] = useState<string | null>(null);
+  const [pendingSubmissionId, setPendingSubmissionId] = useState<string | null>(null);
   const [activeFormId, setActiveFormId] = useState<string | undefined>(undefined);
   const [submittingFields, setSubmittingFields] = useState(false);
   const skipAutoDetectRef = useRef(false);
@@ -484,7 +486,7 @@ export default function Chat() {
       const allText = messages.map(m => m.content).join(" ") + " " + filled;
       const detectedFormId = detectRequestedForm(allText);
       setActiveFormId(detectedFormId);
-      setTimeout(() => setActiveSubmissionId(sub.id), 1500);
+      setTimeout(() => setPendingSubmissionId(sub.id), 1500);
     } catch (err) {
       console.error("Failed to create submission:", err);
       send(`Here are the details:\n${filled}`);
@@ -528,6 +530,20 @@ export default function Chat() {
             onBack={() => setActiveSubmissionId(null)}
           />
         </div>
+      </AppLayout>
+    );
+  }
+
+  if (pendingSubmissionId) {
+    return (
+      <AppLayout>
+        <ExtractionSummary
+          submissionId={pendingSubmissionId}
+          onContinue={() => {
+            setActiveSubmissionId(pendingSubmissionId);
+            setPendingSubmissionId(null);
+          }}
+        />
       </AppLayout>
     );
   }
