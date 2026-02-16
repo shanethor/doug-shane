@@ -17,8 +17,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
-import { Download, Send, Paperclip, Loader2, FileText, CheckCircle, X, Filter, Eye, Image, Mail, ChevronLeft, ChevronRight, ClipboardList, MessageSquare } from "lucide-react";
+import { Download, Send, Paperclip, Loader2, FileText, CheckCircle, X, Filter, Eye, Image, Mail, ChevronLeft, ChevronRight, ClipboardList, MessageSquare, Mic, MicOff } from "lucide-react";
 import { toast } from "sonner";
+import { useVoiceInput } from "@/hooks/useVoiceInput";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
@@ -62,6 +63,11 @@ export default function FormFillingView({ submissionId, initialMessages, initial
   const [messages, setMessages] = useState<Msg[]>(initialMessages);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  const handleFormVoiceTranscript = useCallback((text: string) => {
+    setInput((prev) => (prev ? prev + " " + text : text));
+  }, []);
+  const formVoice = useVoiceInput(handleFormVoiceTranscript);
   const chatScrollRef = useRef<HTMLDivElement>(null);
   const [downloading, setDownloading] = useState(false);
   const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
@@ -777,6 +783,16 @@ export default function FormFillingView({ submissionId, initialMessages, initial
             className="flex-1 resize-none bg-transparent border-0 outline-none text-xs placeholder:text-muted-foreground min-h-[56px] max-h-28 py-1"
           />
           <Button
+            variant={formVoice.isListening ? "destructive" : "ghost"}
+            size="icon"
+            className={`shrink-0 h-7 w-7 transition-all ${formVoice.isListening ? "animate-pulse ring-2 ring-red-400/50" : "text-muted-foreground hover:text-foreground"}`}
+            onClick={formVoice.toggle}
+            disabled={formVoice.isConnecting}
+            title={formVoice.isListening ? "Stop recording" : "Voice input"}
+          >
+            {formVoice.isConnecting ? <Loader2 className="h-3 w-3 animate-spin" /> : formVoice.isListening ? <MicOff className="h-3 w-3" /> : <Mic className="h-3 w-3" />}
+          </Button>
+          <Button
             onClick={() => {
               let content = input.trim();
               if (attachedFiles.length > 0) {
@@ -792,6 +808,11 @@ export default function FormFillingView({ submissionId, initialMessages, initial
             <Send className="h-3 w-3" />
           </Button>
         </div>
+        {formVoice.isListening && (
+          <p className="text-[10px] text-primary text-center animate-pulse mt-1">
+            🎙️ {formVoice.liveText || "Listening… speak now"}
+          </p>
+        )}
       </div>
     </div>
   );
