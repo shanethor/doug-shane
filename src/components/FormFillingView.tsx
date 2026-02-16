@@ -288,7 +288,8 @@ export default function FormFillingView({ submissionId, initialMessages, initial
         .eq("user_id", user.id)
         .single();
 
-      const formsToProcess = mode === "individual"
+      // "package" always uses ALL forms; "individual" uses active form only
+      const formsToProcess = mode === "individual" && !isAllForms
         ? ACORD_FORM_LIST.filter(f => f.id === activeFormId)
         : ACORD_FORM_LIST;
       const results: { form: AcordFormDefinition; data: Record<string, any> }[] = [];
@@ -343,11 +344,18 @@ export default function FormFillingView({ submissionId, initialMessages, initial
     if (!emailTo.trim() || !user) return;
     setSendingEmail(true);
     try {
-      // Generate the PDF as base64
-      const formsToProcess = emailMode === "individual"
-        ? ACORD_FORM_LIST.filter(f => f.id === activeFormId)
-        : ACORD_FORM_LIST;
+      // Get user's from_email from profile defaults
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("full_name, agency_name, phone, form_defaults")
+        .eq("user_id", user.id)
+        .single();
 
+      const defaults = (profile?.form_defaults || {}) as Record<string, string>;
+      const fromEmail = defaults.from_email || undefined;
+
+      // Generate PDFs as base64 attachments
+      const formsToProcess = ACORD_FORM_LIST;
       const results: { form: AcordFormDefinition; data: Record<string, any> }[] = [];
       for (const form of formsToProcess) {
         const data: Record<string, any> = {};
@@ -364,44 +372,49 @@ export default function FormFillingView({ submissionId, initialMessages, initial
         return;
       }
 
-      // For now, generate & download + copy email address
-      // (Full email sending would require an edge function with an email provider)
-      if (emailMode === "individual") {
-        for (const { form, data } of results) {
-          const pdf = await generateAcordPdfAsync(form, data);
-          pdf.save(`${form.name.replace(/\s/g, "_")}_${new Date().toISOString().slice(0, 10)}.pdf`);
-        }
-      } else {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("full_name, agency_name, phone")
-          .eq("user_id", user.id)
-          .single();
-        const companyName = formData.applicant_name || formData.insured_name || "Submission";
-        const pkg = await generateSubmissionPackage({
-          companyName,
-          narrative: "",
-          agencyName: profile?.agency_name || "",
-          producerName: profile?.full_name || "",
-          coverageLines: [],
-          forms: results,
-          effectiveDate: formData.effective_date || formData.proposed_eff_date || "",
-        });
-        const safeName = companyName.replace(/[^a-zA-Z0-9]/g, "_").slice(0, 40);
-        pkg.save(`Submission_${safeName}_${new Date().toISOString().slice(0, 10)}.pdf`);
-      }
+      // Generate package PDF as base64
+      const companyName = formData.applicant_name || formData.insured_name || "Submission";
+      const pkg = await generateSubmissionPackage({
+        companyName,
+        narrative: "",
+        agencyName: profile?.agency_name || "",
+        producerName: profile?.full_name || "",
+        coverageLines: [],
+        forms: results,
+        effectiveDate: formData.effective_date || formData.proposed_eff_date || "",
+      });
 
-      // Open mailto link so user can attach the downloaded file
-      const subject = encodeURIComponent(`ACORD Forms - ${formData.applicant_name || "Submission"}`);
-      const body = encodeURIComponent(`Please find the attached ACORD form(s) for ${formData.applicant_name || "the submission"}.\n\nPlease review and let me know if you need any changes.`);
-      window.open(`mailto:${emailTo}?subject=${subject}&body=${body}`, "_blank");
+      const pdfBase64 = pkg.output("datauristring").split(",")[1];
+      const safeName = companyName.replace(/[^a-zA-Z0-9]/g, "_").slice(0, 40);
+      const filename = `Submission_${safeName}_${new Date().toISOString().slice(0, 10)}.pdf`;
 
-      toast.success("PDF downloaded — attach it to the email that just opened.");
+      const subject = `ACORD Forms - ${companyName}`;
+      const html = `<p>Please find the attached ACORD form package for <strong>${companyName}</strong>.</p><p>Please review and let me know if you need any changes.</p><p style="color:#888;font-size:12px;">Sent via AURA</p>`;
+
+      const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-email`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({
+          to: emailTo,
+          from_email: fromEmail,
+          subject,
+          html,
+          attachments: [{ filename, content: pdfBase64 }],
+        }),
+      });
+
+      const result = await resp.json();
+      if (!resp.ok) throw new Error(result.error || "Failed to send email");
+
+      toast.success("Email sent successfully!");
       setEmailDialogOpen(false);
       setEmailTo("");
-    } catch (err) {
+    } catch (err: any) {
       console.error("Email error:", err);
-      toast.error("Failed to prepare email");
+      toast.error(err.message || "Failed to send email");
     }
     setSendingEmail(false);
   };
@@ -696,7 +709,7 @@ export default function FormFillingView({ submissionId, initialMessages, initial
               <CheckCircle className="h-3 w-3 mr-1" />Complete
             </Badge>
           )}
-          {!isAllForms && activeForm?.pages && activeForm.pages.length > 0 && (
+          {((!isAllForms && activeForm?.pages && activeForm.pages.length > 0) || isAllForms) && (
             <div className="flex rounded-md border overflow-hidden">
               <button
                 onClick={() => setCenterView("form")}
@@ -704,7 +717,7 @@ export default function FormFillingView({ submissionId, initialMessages, initial
                   centerView === "form" ? "bg-primary text-primary-foreground" : "bg-card hover:bg-accent/50"
                 }`}
               >
-                <Image className="h-3 w-3" />Form
+                <Image className="h-3 w-3" />Forms
               </button>
               <button
                 onClick={() => setCenterView("data")}
@@ -712,7 +725,7 @@ export default function FormFillingView({ submissionId, initialMessages, initial
                   centerView === "data" ? "bg-primary text-primary-foreground" : "bg-card hover:bg-accent/50"
                 }`}
               >
-                <Eye className="h-3 w-3" />Live Data
+                <Eye className="h-3 w-3" />Data
               </button>
             </div>
           )}
@@ -720,21 +733,39 @@ export default function FormFillingView({ submissionId, initialMessages, initial
       </div>
       <ScrollArea className="flex-1">
         <div className="p-4">
-          {!isAllForms && activeForm?.pages && activeForm.pages.length > 0 && centerView === "form" ? (
+          {centerView === "form" && (isAllForms || (activeForm?.pages && activeForm.pages.length > 0)) ? (
             <div className="space-y-4 max-w-4xl mx-auto">
-              {activeForm.pages.map((pageSrc, idx) => (
-                <div key={idx} className="bg-background border rounded shadow-sm overflow-hidden">
-                  <img
-                    src={pageSrc}
-                    alt={`${activeForm.name} Page ${idx + 1}`}
-                    className="w-full h-auto"
-                    loading="lazy"
-                  />
-                  <div className="bg-muted/50 text-center py-1">
-                    <span className="text-[10px] text-muted-foreground">Page {idx + 1} of {activeForm.pages!.length}</span>
+              {isAllForms ? (
+                ACORD_FORM_LIST.map((form) =>
+                  form.pages?.map((pageSrc, idx) => (
+                    <div key={`${form.id}-${idx}`} className="bg-background border rounded shadow-sm overflow-hidden">
+                      <img
+                        src={pageSrc}
+                        alt={`${form.name} Page ${idx + 1}`}
+                        className="w-full h-auto"
+                        loading="lazy"
+                      />
+                      <div className="bg-muted/50 text-center py-1">
+                        <span className="text-[10px] text-muted-foreground">{form.name} — Page {idx + 1}</span>
+                      </div>
+                    </div>
+                  ))
+                )
+              ) : (
+                activeForm!.pages!.map((pageSrc, idx) => (
+                  <div key={idx} className="bg-background border rounded shadow-sm overflow-hidden">
+                    <img
+                      src={pageSrc}
+                      alt={`${activeForm!.name} Page ${idx + 1}`}
+                      className="w-full h-auto"
+                      loading="lazy"
+                    />
+                    <div className="bg-muted/50 text-center py-1">
+                      <span className="text-[10px] text-muted-foreground">Page {idx + 1} of {activeForm!.pages!.length}</span>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           ) : (
             <div className="bg-background border rounded-lg shadow-sm p-6 max-w-2xl mx-auto">
@@ -962,9 +993,9 @@ export default function FormFillingView({ submissionId, initialMessages, initial
     <Dialog open={emailDialogOpen} onOpenChange={setEmailDialogOpen}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-sm">Email PDF</DialogTitle>
+          <DialogTitle className="text-sm">Send Submission Package</DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground">
-            Download the PDF and open your email client with a pre-filled message.
+            Email the full submission package (all forms with data) directly to a recipient.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3 py-2">
@@ -978,24 +1009,9 @@ export default function FormFillingView({ submissionId, initialMessages, initial
               className="h-8 text-xs mt-1"
             />
           </div>
-          <div className="flex gap-2">
-            <Button
-              size="sm"
-              variant={emailMode === "individual" ? "default" : "outline"}
-              className="flex-1 text-xs h-8"
-              onClick={() => setEmailMode("individual")}
-            >
-              Current Form
-            </Button>
-            <Button
-              size="sm"
-              variant={emailMode === "package" ? "default" : "outline"}
-              className="flex-1 text-xs h-8"
-              onClick={() => setEmailMode("package")}
-            >
-              Full Package
-            </Button>
-          </div>
+          <p className="text-[10px] text-muted-foreground">
+            Sent from your configured send-from address (set in Agent Defaults).
+          </p>
         </div>
         <DialogFooter>
           <Button size="sm" variant="outline" onClick={() => setEmailDialogOpen(false)}>Cancel</Button>
@@ -1005,7 +1021,7 @@ export default function FormFillingView({ submissionId, initialMessages, initial
             disabled={!emailTo.trim() || sendingEmail}
           >
             {sendingEmail ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Mail className="h-3 w-3 mr-1" />}
-            Download & Email
+            Send Email
           </Button>
         </DialogFooter>
       </DialogContent>

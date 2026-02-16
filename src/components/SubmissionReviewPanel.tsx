@@ -28,6 +28,7 @@ const DEFAULT_FIELDS = [
   { key: "agency_name", label: "Agency Name" },
   { key: "agency_phone", label: "Agency Phone" },
   { key: "agency_email", label: "Agency Email" },
+  { key: "from_email", label: "Send-From Email (for outbound emails)" },
   { key: "billing_plan", label: "Default Billing Plan" },
   { key: "payment_plan", label: "Default Payment Plan" },
   { key: "producer_name", label: "Producer Name" },
