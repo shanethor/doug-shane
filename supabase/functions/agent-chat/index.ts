@@ -73,20 +73,28 @@ field_key: value
 
 The system will automatically parse these and update the form. Use the EXACT field keys listed below. Always output the key-value pairs in addition to your conversational response.
 
-Common field keys you can update:
+Common field keys you can update (IMPORTANT — output ALL relevant fields across ALL forms, not just the form being discussed):
 - Agency: agency_name, agency_phone, agency_fax, agency_email, agency_customer_id
 - Carrier: carrier, naic_code, policy_number
 - Applicant: applicant_name, insured_name, mailing_address, city, state, zip, fein, business_phone, website, business_type
-- Dates: proposed_eff_date, proposed_exp_date, effective_date, transaction_date, date_business_started
+- Dates: proposed_eff_date, proposed_exp_date, effective_date, expiration_date, transaction_date, date_business_started
 - Industry: sic_code, naics_code, gl_code, business_category
-- Employees: full_time_employees, part_time_employees
-- Operations: description_of_operations, annual_revenues, premises_address, premises_city, premises_state, premises_zip
-- CGL Limits: general_aggregate, products_aggregate, each_occurrence, personal_adv_injury, fire_damage, medical_payments, coverage_type
-- Auto: driver_1_name, vehicle_1_year, vehicle_1_make, vehicle_1_model, vehicle_1_vin
-- WC: class_code_1, class_description_1, annual_remuneration_1, officer_1_name, officer_1_title, officer_1_ownership
-- Property: construction_type, year_built, num_stories, total_area_sq_ft, building_amount, bpp_amount
-- General info questions: subsidiary_of_another, has_subsidiaries, safety_program, exposure_flammables, policy_declined_cancelled, bankruptcy
-- Remarks: remarks, general_info_remarks, remarks_126
+- Employees: full_time_employees, part_time_employees, total_employees, num_employees_1
+- Operations: description_of_operations, annual_revenues, premises_address, premises_city, premises_state, premises_zip, occupied_sq_ft
+- CGL (126) Limits: general_aggregate, products_aggregate, each_occurrence, personal_adv_injury, fire_damage, medical_payments, coverage_type, hazard_code_1, hazard_classification_1, hazard_exposure_1
+- CGL Questions: draws_plans_for_others, blasting_explosives, installs_services_products, alcohol_served, products_sold, professional_services
+- Auto (127): driver_1_name, driver_1_dob, driver_1_license, vehicle_1_year, vehicle_1_make, vehicle_1_model, vehicle_1_vin, vehicle_1_body_type, vehicle_1_radius, garaging_street, garaging_city, garaging_state, garaging_zip, transporting_hazmat, vehicle_maintenance_program
+- WC (130): class_code_1, class_description_1, num_employees_1, annual_remuneration_1, class_code_2, class_description_2, annual_remuneration_2, officer_1_name, officer_1_title, officer_1_ownership, officer_1_inc_exc, officer_1_remuneration, rating_state, wc_part1_states, wc_each_accident, wc_disease_policy_limit, wc_disease_each_employee, subcontractors_used, workplace_safety_program, seasonal_employees, wc_travel_out_of_state, prior_wc_carrier_1, experience_mod
+- Umbrella (131): umbrella_or_excess, coverage_basis, each_occurrence_limit, aggregate_limit, retained_limit_occurrence, underlying_gl_carrier, underlying_gl_occurrence, underlying_gl_aggregate, underlying_auto_carrier, underlying_el_carrier, annual_payroll, annual_gross_sales, primary_description
+- Property (140): construction_type, year_built, num_stories, total_area_sq_ft, building_amount, bpp_amount, building_valuation, building_causes_of_loss, building_deductible, bpp_valuation, business_income_amount, extra_expense_amount, roof_type, sprinkler_pct, fire_alarm_type, burglar_alarm_type, primary_heat_type, protection_class, building_street_address
+- General info questions: subsidiary_of_another, has_subsidiaries, safety_program, exposure_flammables, policy_declined_cancelled, bankruptcy, foreign_operations
+- Remarks: remarks, general_info_remarks, remarks_126, auto_remarks, wc_remarks, umbrella_remarks, property_remarks
+
+CRITICAL CROSS-FORM RULE: When the agent provides information that applies to MULTIPLE forms, you MUST output field updates for ALL relevant forms in a single response. For example:
+- If they say "the building is joisted masonry, built in 1995" → output construction_type, year_built (140) AND building_construction (125 alias)
+- If they say "effective date is 01/01/2026" → output proposed_eff_date, effective_date, AND proposed_exp_date/expiration_date (auto-calc +1 year)
+- If they say "2 employees" → output full_time_employees, num_employees_1, total_employees
+- If they say "the address is 123 Main St, Austin TX 78701" → output mailing_address, city, state, zip, premises_address, premises_city, premises_state, premises_zip, garaging_street, garaging_city, garaging_state, garaging_zip, building_street_address
 
 When the agent says things like "set the company name to ABC Corp" or "the effective date is 01/01/2025", output:
 applicant_name: ABC Corp
