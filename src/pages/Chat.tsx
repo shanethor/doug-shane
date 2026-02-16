@@ -113,6 +113,46 @@ function stripMarkers(text: string): string {
   return text.replace(/\[FIELD:[^\]]+\]/g, "").replace(/\[BUTTON:[^\]]+\]/g, "").replace(/\[SUBMISSION_ID:[^\]]+\]/g, "").trim();
 }
 
+/** Try to extract intake field values from a user message */
+function tryExtractIntakeFromMessage(text: string): Record<string, string> | null {
+  const lower = text.toLowerCase();
+  const vals: Record<string, string> = {};
+
+  // Company name: look for explicit labels or just take the first capitalized phrase
+  const companyMatch = text.match(/(?:company\s*(?:name)?|business|client)\s*[:=\-–]?\s*([A-Z][^\n,;]{2,40})/i);
+  if (companyMatch) vals.company_name = companyMatch[1].trim();
+
+  // FEIN
+  const feinMatch = text.match(/(?:fein|ein|tax\s*id)\s*[:=\-–]?\s*(\d{2}[\s-]?\d{7})/i);
+  if (feinMatch) vals.fein = feinMatch[1].trim();
+
+  // Effective date
+  const dateMatch = text.match(/(?:effective|eff)\s*(?:date)?\s*[:=\-–]?\s*(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/i);
+  if (dateMatch) vals.effective_date = dateMatch[1].trim();
+
+  // State
+  const stateMatch = text.match(/(?:state)\s*[:=\-–]?\s*([A-Z]{2})\b/i);
+  if (stateMatch) vals.state = stateMatch[1].toUpperCase();
+
+  // Description
+  const descMatch = text.match(/(?:description|does|business\s*(?:type|desc))\s*[:=\-–]?\s*(.{10,200})/i);
+  if (descMatch) vals.description = descMatch[1].trim().replace(/[,;.]$/, "");
+
+  // Need at least company name + 2 others to consider it "complete enough"
+  const filledCount = Object.keys(vals).length;
+  if (vals.company_name && filledCount >= 3) return vals;
+  return null;
+}
+
+/** Map extracted data keys to field bubble keys */
+function autoFillFieldsFromExtracted(fields: FieldBubble[], extracted: Record<string, string>): Record<string, string> {
+  const result: Record<string, string> = {};
+  for (const f of fields) {
+    if (extracted[f.key]) result[f.key] = extracted[f.key];
+  }
+  return result;
+}
+
 export default function Chat() {
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
@@ -288,6 +328,42 @@ export default function Chat() {
       const finalText = fullTextRef.current;
       const fields = parseFields(finalText);
       const buttons = parseButtons(finalText);
+      
+      // Check if the user's last message already had intake data
+      const lastUserMsg = [...messages, userMsg].filter(m => m.role === "user").pop();
+      const isIntakeFields = fields.length >= 4 && fields.some(f => f.key === "company_name");
+      
+      if (isIntakeFields && lastUserMsg) {
+        const extracted = tryExtractIntakeFromMessage(lastUserMsg.content);
+        if (extracted) {
+          // Auto-fill and auto-submit
+          const autoFilled = autoFillFieldsFromExtracted(fields, extracted);
+          setFieldValues(autoFilled);
+          setMessages((prev) => {
+            const last = prev[prev.length - 1];
+            if (last?.role === "assistant") {
+              return prev.map((m, i) =>
+                i === prev.length - 1 ? { ...m, content: finalText, fields, buttons } : m
+              );
+            }
+            return [...prev, { role: "assistant", content: finalText, fields, buttons }];
+          });
+          setIsLoading(false);
+          // Auto-submit after a brief delay so user sees what happened
+          setTimeout(() => {
+            const filledFields = fields.map(f => ({ ...f }));
+            const filledVals: Record<string, string> = {};
+            for (const f of fields) {
+              filledVals[f.key] = autoFilled[f.key] || "";
+            }
+            setFieldValues(filledVals);
+            // Trigger auto-submit
+            submitFieldsWithValues(filledFields, filledVals);
+          }, 800);
+          return;
+        }
+      }
+      
       setMessages((prev) => {
         const last = prev[prev.length - 1];
         if (last?.role === "assistant") {
@@ -324,16 +400,14 @@ export default function Chat() {
     }
   };
 
-  const submitFields = async (fields: FieldBubble[]) => {
+  const submitFieldsWithValues = async (fields: FieldBubble[], vals: Record<string, string>) => {
     if (!user) return;
     setSubmittingFields(true);
-    const filled = fields.map((f) => `${f.label}: ${fieldValues[f.key] || "(empty)"}`).join("\n");
+    const filled = fields.map((f) => `${f.label}: ${vals[f.key] || "(empty)"}`).join("\n");
     
-    // Build a description from field values for extraction
-    const description = fields.map((f) => `${f.label}: ${fieldValues[f.key] || ""}`).filter(l => !l.endsWith(": ")).join("\n");
-    const companyName = fieldValues["company_name"] || fieldValues["applicant_name"] || "New Client";
+    const description = fields.map((f) => `${f.label}: ${vals[f.key] || ""}`).filter(l => !l.endsWith(": ")).join("\n");
+    const companyName = vals["company_name"] || vals["applicant_name"] || "New Client";
 
-    // Create business_submissions record
     try {
       const { data: sub, error: subErr } = await supabase
         .from("business_submissions")
@@ -348,7 +422,6 @@ export default function Chat() {
 
       if (subErr) throw subErr;
 
-      // Call extract-business-data to create insurance_applications record
       const extractResp = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/extract-business-data`,
         {
@@ -363,21 +436,27 @@ export default function Chat() {
 
       if (!extractResp.ok) console.warn("Extract failed:", extractResp.status);
 
-      // Send the message with the real submission ID embedded
       send(`Here are the details:\n${filled}\n\n[SUBMISSION_ID:${sub.id}]`);
-      // Detect which form was discussed and switch to 3-panel view
       const allText = messages.map(m => m.content).join(" ").toLowerCase();
       const formMatch = ACORD_FORM_LIST.find(f => allText.includes(f.name.toLowerCase()));
       setActiveFormId(formMatch?.id);
       setTimeout(() => setActiveSubmissionId(sub.id), 1500);
     } catch (err) {
       console.error("Failed to create submission:", err);
-      // Still send the message even if DB creation fails
       send(`Here are the details:\n${filled}`);
     }
 
     setFieldValues({});
     setSubmittingFields(false);
+  };
+
+  const submitFields = async (fields: FieldBubble[]) => {
+    submitFieldsWithValues(fields, fieldValues);
+  };
+
+  const skipToForm = async (fields: FieldBubble[]) => {
+    // Submit with whatever is filled (even if empty)
+    submitFieldsWithValues(fields, fieldValues);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -544,10 +623,15 @@ export default function Chat() {
                             />
                           </div>
                         ))}
-                        <Button size="sm" className="w-full mt-1 opacity-0 animate-[slideUpFadeIn_0.4s_ease-out_forwards]" style={{ animationDelay: `${0.5 + (m.fields?.length || 0) * 0.1 + 0.1}s` }} onClick={() => submitFields(m.fields!)} disabled={submittingFields}>
-                          {submittingFields ? <Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" /> : <Send className="h-3.5 w-3.5 mr-2" />}
-                          {submittingFields ? "Processing…" : "Submit details"}
-                        </Button>
+                        <div className="flex gap-2 mt-1 opacity-0 animate-[slideUpFadeIn_0.4s_ease-out_forwards]" style={{ animationDelay: `${0.5 + (m.fields?.length || 0) * 0.1 + 0.1}s` }}>
+                          <Button size="sm" className="flex-1" onClick={() => submitFields(m.fields!)} disabled={submittingFields}>
+                            {submittingFields ? <Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" /> : <Send className="h-3.5 w-3.5 mr-2" />}
+                            {submittingFields ? "Processing…" : "Submit details"}
+                          </Button>
+                          <Button size="sm" variant="ghost" className="text-muted-foreground" onClick={() => skipToForm(m.fields!)} disabled={submittingFields}>
+                            Skip — go to form
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   )}
