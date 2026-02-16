@@ -524,7 +524,7 @@ export default function Chat() {
 
                   {/* Pop-out field bubbles with slide-up animation */}
                   {m.role === "assistant" && m.fields && m.fields.length > 0 && !isLoading && (
-                    <div className="mt-3 ml-0 max-w-[85%] opacity-0 animate-[slideUpFadeIn_0.5s_ease-out_0.3s_forwards]">
+                    <div className="ml-0 max-w-[85%] animate-smooth-reveal">
                       <div className="rounded-xl border bg-card p-4 shadow-sm space-y-3">
                         <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                           Please fill in the following
@@ -554,7 +554,7 @@ export default function Chat() {
 
                   {/* Action buttons */}
                   {m.role === "assistant" && m.buttons && m.buttons.length > 0 && !isLoading && (
-                    <div className="mt-3 ml-0 max-w-[85%] opacity-0 animate-[slideUpFadeIn_0.5s_ease-out_0.3s_forwards]">
+                    <div className="ml-0 max-w-[85%] animate-smooth-reveal">
                       <div className="flex flex-wrap gap-2">
                         {m.buttons.map((b, bIdx) => {
                           const appMatch = b.action.match(/^\/application\/(.+)/);
