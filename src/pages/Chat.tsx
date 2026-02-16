@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import SubmissionReviewPanel from "@/components/SubmissionReviewPanel";
+import FormFillingView from "@/components/FormFillingView";
 import { Send, FileUp, ClipboardList, Search, Loader2, Paperclip, X, Download, Package } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -131,6 +132,7 @@ export default function Chat() {
   const navigate = useNavigate();
   const [reviewSubmissionId, setReviewSubmissionId] = useState<string | null>(null);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [activeSubmissionId, setActiveSubmissionId] = useState<string | null>(null);
 
   const downloadSubmission = async (subId: string, mode: "individual" | "package" = "package") => {
     if (!user) return;
@@ -360,6 +362,9 @@ export default function Chat() {
 
       // Send the message with the real submission ID embedded
       send(`Here are the details:\n${filled}\n\n[SUBMISSION_ID:${sub.id}]`);
+
+      // Switch to 3-panel form filling view
+      setTimeout(() => setActiveSubmissionId(sub.id), 1500);
     } catch (err) {
       console.error("Failed to create submission:", err);
       // Still send the message even if DB creation fails
@@ -382,6 +387,18 @@ export default function Chat() {
   };
 
   const isEmpty = messages.length === 0;
+
+  if (activeSubmissionId) {
+    return (
+      <AppLayout>
+        <FormFillingView
+          submissionId={activeSubmissionId}
+          initialMessages={messages.map((m) => ({ role: m.role, content: m.content }))}
+          onBack={() => setActiveSubmissionId(null)}
+        />
+      </AppLayout>
+    );
+  }
 
   return (
     <AppLayout>
@@ -547,7 +564,7 @@ export default function Chat() {
                                 } else if (downloadMatch) {
                                   downloadSubmission(downloadMatch[1], "individual");
                                 } else if (appMatch) {
-                                  setReviewSubmissionId(appMatch[1]);
+                                  setActiveSubmissionId(appMatch[1]);
                                 } else if (b.action.startsWith("/") || b.action.startsWith("http")) {
                                   navigate(b.action);
                                 } else {
