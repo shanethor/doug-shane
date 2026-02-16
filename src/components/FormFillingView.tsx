@@ -52,6 +52,7 @@ export default function FormFillingView({ submissionId, initialMessages, initial
   const [fieldFilter, setFieldFilter] = useState<FieldFilter>("all");
   const [centerView, setCenterView] = useState<CenterView>("form");
   const [mobilePanel, setMobilePanel] = useState<MobilePanel>("fields");
+  const [showFormProgress, setShowFormProgress] = useState(false);
 
   // Email dialog state
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
@@ -545,7 +546,16 @@ export default function FormFillingView({ submissionId, initialMessages, initial
         </div>
         {isAllForms && (
           <div className="space-y-1.5 pt-1">
-            {ACORD_FORM_LIST.map((f) => {
+            {isMobile && (
+              <button
+                onClick={() => setShowFormProgress((p) => !p)}
+                className="w-full flex items-center justify-between text-[10px] text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <span className="font-medium">Form Progress</span>
+                <ChevronRight className={`h-3 w-3 transition-transform ${showFormProgress ? "rotate-90" : ""}`} />
+              </button>
+            )}
+            {(!isMobile || showFormProgress) && ACORD_FORM_LIST.map((f) => {
               const fFilled = f.fields.filter((fd) => formData[fd.key] && String(formData[fd.key]).trim()).length;
               const fTotal = f.fields.length;
               const fPct = fTotal > 0 ? Math.round((fFilled / fTotal) * 100) : 0;
