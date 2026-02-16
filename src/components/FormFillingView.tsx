@@ -565,7 +565,9 @@ export default function FormFillingView({ submissionId, initialMessages, initial
                   </div>
                   <div className="h-1 bg-muted rounded-full overflow-hidden">
                     <div
-                      className="h-full bg-primary/70 rounded-full transition-all duration-500"
+                      className={`h-full rounded-full transition-all duration-500 ${
+                        fPct >= 75 ? "bg-green-500" : fPct >= 25 ? "bg-yellow-500" : "bg-red-500"
+                      }`}
                       style={{ width: `${fPct}%` }}
                     />
                   </div>
