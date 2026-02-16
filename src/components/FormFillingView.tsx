@@ -335,16 +335,16 @@ export default function FormFillingView({ submissionId, initialMessages, onBack 
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-[calc(100vh-7.5rem)]">
+      <div className="flex items-center justify-center h-[calc(100vh-4rem)]">
         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
       </div>
     );
   }
 
   return (
-    <div className="flex h-[calc(100vh-7.5rem)] overflow-hidden">
+    <div className="flex h-[calc(100vh-4rem)] overflow-hidden">
       {/* LEFT PANEL — Editable Fields */}
-      <div className="w-[340px] border-r flex flex-col bg-background shrink-0">
+      <div className="w-[300px] border-r flex flex-col bg-background shrink-0">
         {/* Form selector tabs */}
         <div className="border-b p-3 space-y-2">
           <div className="flex items-center justify-between">
@@ -519,7 +519,7 @@ export default function FormFillingView({ submissionId, initialMessages, onBack 
       </div>
 
       {/* RIGHT PANEL — Chat */}
-      <div className="w-[320px] border-l flex flex-col bg-background shrink-0">
+      <div className="w-[280px] border-l flex flex-col bg-background shrink-0">
         <div className="border-b p-3 flex items-center justify-between">
           <h2 className="text-sm font-semibold" style={{ fontFamily: "'Instrument Serif', serif" }}>Chat</h2>
           <Button variant="ghost" size="sm" className="text-[10px] h-6 px-2" onClick={onBack}>
