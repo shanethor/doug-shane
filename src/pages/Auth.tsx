@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/useAuth";
 import { Navigate } from "react-router-dom";
 import { toast } from "sonner";
-import epochLogo from "@/assets/epoch-risk-logo.png";
+// Logo import preserved for potential future use
 
 export default function Auth() {
   const { user, loading } = useAuth();
@@ -54,25 +54,25 @@ export default function Auth() {
       {/* Left panel */}
       <div className="hidden lg:flex lg:w-1/2 flex-col justify-between bg-primary p-12">
         <div className="flex items-center gap-3">
-          <span className="text-2xl font-bold tracking-tight text-primary-foreground" style={{ fontFamily: "'Instrument Serif', serif" }}>EPOCH</span>
+          <span className="text-2xl font-bold tracking-tight text-primary-foreground" style={{ fontFamily: "'Instrument Serif', serif" }}>AURA</span>
           <span className="text-sm text-primary-foreground/50 font-sans">Risk Group</span>
         </div>
         <div className="max-w-md">
           <h1 className="text-5xl text-primary-foreground leading-tight">
-            Streamline your insurance submissions
+            Smarter submissions, faster closes
           </h1>
           <p className="mt-6 text-primary-foreground/70 text-lg font-sans">
-            Manage quote requests, upload decks, and share secure links with clients — all from one place.
+            AI-powered submissions, ACORD compliance, and carrier-ready packages — all in one place.
           </p>
         </div>
-        <p className="text-primary-foreground/40 text-sm font-sans">© 2026 EPOCH Risk Group</p>
+        <p className="text-primary-foreground/40 text-sm font-sans">© 2026 AURA Risk Group</p>
       </div>
 
       {/* Right panel */}
       <div className="flex flex-1 items-center justify-center p-8">
         <div className="w-full max-w-sm">
           <div className="mb-8 lg:hidden flex items-center gap-2">
-            <span className="text-2xl font-bold tracking-tight text-foreground" style={{ fontFamily: "'Instrument Serif', serif" }}>EPOCH</span>
+            <span className="text-2xl font-bold tracking-tight text-foreground" style={{ fontFamily: "'Instrument Serif', serif" }}>AURA</span>
             <span className="text-sm text-muted-foreground font-sans">Risk Group</span>
           </div>
 
