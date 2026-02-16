@@ -6,7 +6,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { CheckCircle, FileText, ArrowRight, Loader2 } from "lucide-react";
+import { CheckCircle, FileText, ArrowRight, Loader2, Sparkles } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface FormStat {
   form: AcordFormDefinition;
@@ -22,23 +23,58 @@ interface ExtractionSummaryProps {
 
 export default function ExtractionSummary({ submissionId, onContinue }: ExtractionSummaryProps) {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [stats, setStats] = useState<FormStat[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filling, setFilling] = useState(false);
   const [totalFilled, setTotalFilled] = useState(0);
   const [totalFields, setTotalFields] = useState(0);
+  const [applicationId, setApplicationId] = useState<string | null>(null);
+
+  const computeStats = async (appData: Record<string, any>) => {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("full_name, agency_name, phone, form_defaults")
+      .eq("user_id", user!.id)
+      .single();
+
+    const defaults = (profile?.form_defaults || {}) as Record<string, string>;
+    const formStats: FormStat[] = [];
+    let tFilled = 0;
+    let tTotal = 0;
+
+    for (const form of ACORD_FORM_LIST) {
+      const filled = buildAutofilledData(form, appData, profile);
+      for (const [k, v] of Object.entries(defaults)) {
+        if (v && !filled[k]) filled[k] = v;
+      }
+      const total = form.fields.length;
+      const filledCount = form.fields.filter(
+        (f) => filled[f.key] && String(filled[f.key]).trim()
+      ).length;
+      formStats.push({ form, filled: filledCount, total, pct: Math.round((filledCount / total) * 100) });
+      tFilled += filledCount;
+      tTotal += total;
+    }
+
+    formStats.sort((a, b) => (b.filled > 0 ? 1 : 0) - (a.filled > 0 ? 1 : 0) || b.pct - a.pct);
+    setStats(formStats);
+    setTotalFilled(tFilled);
+    setTotalFields(tTotal);
+  };
 
   useEffect(() => {
     if (!user || !submissionId) return;
 
     const load = async () => {
-      // Poll briefly for data (extraction may still be running)
       let attempts = 0;
       let appData: Record<string, any> | null = null;
+      let appId: string | null = null;
 
       while (attempts < 6) {
         const { data } = await supabase
           .from("insurance_applications")
-          .select("form_data")
+          .select("id, form_data")
           .eq("submission_id", submissionId)
           .order("created_at", { ascending: false })
           .limit(1)
@@ -46,6 +82,7 @@ export default function ExtractionSummary({ submissionId, onContinue }: Extracti
 
         if (data?.form_data && Object.keys(data.form_data as object).length > 2) {
           appData = data.form_data as Record<string, any>;
+          appId = data.id;
           break;
         }
         attempts++;
@@ -53,50 +90,37 @@ export default function ExtractionSummary({ submissionId, onContinue }: Extracti
       }
 
       if (!appData) {
-        // No data yet — just continue to form view
         onContinue();
         return;
       }
 
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("full_name, agency_name, phone, form_defaults")
-        .eq("user_id", user.id)
-        .single();
-
-      const defaults = (profile?.form_defaults || {}) as Record<string, string>;
-      const formStats: FormStat[] = [];
-      let tFilled = 0;
-      let tTotal = 0;
-
-      for (const form of ACORD_FORM_LIST) {
-        const filled = buildAutofilledData(form, appData, profile);
-        // Apply defaults
-        for (const [k, v] of Object.entries(defaults)) {
-          if (v && !filled[k]) filled[k] = v;
-        }
-
-        const total = form.fields.length;
-        const filledCount = form.fields.filter(
-          (f) => filled[f.key] && String(filled[f.key]).trim()
-        ).length;
-
-        formStats.push({ form, filled: filledCount, total, pct: Math.round((filledCount / total) * 100) });
-        tFilled += filledCount;
-        tTotal += total;
-      }
-
-      // Sort: forms with data first, then by completion %
-      formStats.sort((a, b) => (b.filled > 0 ? 1 : 0) - (a.filled > 0 ? 1 : 0) || b.pct - a.pct);
-
-      setStats(formStats);
-      setTotalFilled(tFilled);
-      setTotalFields(tTotal);
+      setApplicationId(appId);
+      await computeStats(appData);
       setLoading(false);
     };
 
     load();
   }, [user, submissionId]);
+
+  const handleFillGaps = async () => {
+    if (!applicationId) return;
+    setFilling(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("fill-gaps", {
+        body: { application_id: applicationId, answers: {} },
+      });
+      if (error) throw error;
+      if (data?.form_data) {
+        await computeStats(data.form_data);
+        toast({ title: "Gaps filled", description: "AURA inferred additional field values." });
+      }
+    } catch (err) {
+      console.error("Fill gaps error:", err);
+      toast({ variant: "destructive", title: "Error", description: "Failed to fill gaps. Please try again." });
+    } finally {
+      setFilling(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -146,9 +170,21 @@ export default function ExtractionSummary({ submissionId, onContinue }: Extracti
         })}
       </div>
 
-      <Button size="lg" onClick={onContinue} className="mt-2 gap-2">
-        Continue to Forms <ArrowRight className="h-4 w-4" />
-      </Button>
+      <div className="flex gap-3 mt-2">
+        <Button
+          size="lg"
+          variant="outline"
+          onClick={handleFillGaps}
+          disabled={filling}
+          className="gap-2"
+        >
+          {filling ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+          {filling ? "Filling gaps…" : "Fill Remaining Gaps"}
+        </Button>
+        <Button size="lg" onClick={onContinue} className="gap-2">
+          Continue to Forms <ArrowRight className="h-4 w-4" />
+        </Button>
+      </div>
     </div>
   );
 }
