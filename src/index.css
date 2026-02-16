@@ -158,6 +158,23 @@
   50% { opacity: 0.6; }
 }
 
+@keyframes smoothReveal {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+    max-height: 0;
+    margin-top: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    max-height: 600px;
+    margin-top: 0.75rem;
+  }
+}
+
 .animate-page-enter {
   animation: pageEnter 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
@@ -172,6 +189,11 @@
 
 .animate-slide-in-left {
   animation: slideInFromLeft 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-smooth-reveal {
+  overflow: hidden;
+  animation: smoothReveal 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both;
 }
 
 /* Smooth transitions for interactive elements */
