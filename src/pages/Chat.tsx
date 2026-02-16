@@ -175,6 +175,7 @@ export default function Chat() {
   const [activeSubmissionId, setActiveSubmissionId] = useState<string | null>(null);
   const [activeFormId, setActiveFormId] = useState<string | undefined>(undefined);
   const [submittingFields, setSubmittingFields] = useState(false);
+  const skipAutoDetectRef = useRef(false);
 
   const downloadSubmission = async (subId: string, mode: "individual" | "package" = "package") => {
     if (!user) return;
@@ -333,12 +334,13 @@ export default function Chat() {
       const lastUserMsg = [...messages, userMsg].filter(m => m.role === "user").pop();
       const isIntakeFields = fields.length >= 4 && fields.some(f => f.key === "company_name");
       
-      if (isIntakeFields && lastUserMsg) {
+      if (isIntakeFields && lastUserMsg && !skipAutoDetectRef.current) {
         const userText = lastUserMsg.content.toLowerCase();
         const wantsSkip = /skip|straight to form|go to form|jump to form|skip intake|no intake|skip questions/i.test(userText);
         const extracted = tryExtractIntakeFromMessage(lastUserMsg.content);
         
         if (wantsSkip || extracted) {
+          skipAutoDetectRef.current = true;
           // Auto-fill whatever we can extract (may be empty if skipping)
           const autoFilled = extracted ? autoFillFieldsFromExtracted(fields, extracted) : {};
           setFieldValues(autoFilled);
