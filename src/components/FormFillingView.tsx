@@ -7,6 +7,7 @@ import { buildAutofilledData, formatUSD } from "@/lib/acord-autofill";
 import { CURRENCY_FIELDS } from "@/lib/acord-autofill";
 import { generateAcordPdfAsync } from "@/lib/pdf-generator";
 import { generateSubmissionPackage } from "@/lib/submission-package";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -15,8 +16,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Download, Send, Paperclip, Loader2, FileText, CheckCircle, X, Filter, Eye, Image } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { Download, Send, Paperclip, Loader2, FileText, CheckCircle, X, Filter, Eye, Image, Mail, ChevronLeft, ChevronRight, ClipboardList, MessageSquare } from "lucide-react";
 import { toast } from "sonner";
 
 type Msg = { role: "user" | "assistant"; content: string };
@@ -33,13 +34,29 @@ interface FormFillingViewProps {
 type FieldFilter = "all" | "filled" | "empty";
 type CenterView = "form" | "data";
 
+const MOBILE_PANELS = [
+  { key: "fields", label: "Fields", icon: ClipboardList },
+  { key: "form", label: "Form", icon: FileText },
+  { key: "chat", label: "Chat", icon: MessageSquare },
+] as const;
+
+type MobilePanel = typeof MOBILE_PANELS[number]["key"];
+
 export default function FormFillingView({ submissionId, initialMessages, initialFormId, onBack }: FormFillingViewProps) {
   const { user } = useAuth();
+  const isMobile = useIsMobile();
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
   const [activeFormId, setActiveFormId] = useState(initialFormId || "acord-125");
   const [fieldFilter, setFieldFilter] = useState<FieldFilter>("all");
   const [centerView, setCenterView] = useState<CenterView>("form");
+  const [mobilePanel, setMobilePanel] = useState<MobilePanel>("fields");
+
+  // Email dialog state
+  const [emailDialogOpen, setEmailDialogOpen] = useState(false);
+  const [emailTo, setEmailTo] = useState("");
+  const [emailMode, setEmailMode] = useState<"individual" | "package">("individual");
+  const [sendingEmail, setSendingEmail] = useState(false);
 
   // Chat state
   const [messages, setMessages] = useState<Msg[]>(initialMessages);
@@ -50,7 +67,34 @@ export default function FormFillingView({ submissionId, initialMessages, initial
   const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Swipe gesture support
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+  const swipeContainerRef = useRef<HTMLDivElement>(null);
+
   const activeForm = ACORD_FORMS[activeFormId];
+
+  // Touch handlers for mobile swipe
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStartRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+  }, []);
+
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    if (!touchStartRef.current) return;
+    const dx = e.changedTouches[0].clientX - touchStartRef.current.x;
+    const dy = e.changedTouches[0].clientY - touchStartRef.current.y;
+    touchStartRef.current = null;
+
+    // Only register horizontal swipes (dx > dy threshold)
+    if (Math.abs(dx) < 60 || Math.abs(dy) > Math.abs(dx) * 0.7) return;
+
+    const panelKeys = MOBILE_PANELS.map(p => p.key);
+    const currentIdx = panelKeys.indexOf(mobilePanel);
+    if (dx < 0 && currentIdx < panelKeys.length - 1) {
+      setMobilePanel(panelKeys[currentIdx + 1]);
+    } else if (dx > 0 && currentIdx > 0) {
+      setMobilePanel(panelKeys[currentIdx - 1]);
+    }
+  }, [mobilePanel]);
 
   // Load application data
   useEffect(() => {
@@ -74,17 +118,14 @@ export default function FormFillingView({ submissionId, initialMessages, initial
       const aiData = (appResult.data?.form_data || {}) as Record<string, any>;
       const defaults = (profileResult.data?.form_defaults || {}) as Record<string, string>;
 
-      // Merge all form fields into one data set
       const merged: Record<string, any> = {};
       for (const form of ACORD_FORM_LIST) {
         const filled = buildAutofilledData(form, aiData, profileResult.data);
         Object.assign(merged, filled);
       }
-      // Apply defaults
       for (const [k, v] of Object.entries(defaults)) {
         if (v && !merged[k]) merged[k] = v;
       }
-      // Also keep raw AI data for fields not covered by forms
       for (const [k, v] of Object.entries(aiData)) {
         if (!merged[k] && v) merged[k] = v;
       }
@@ -175,7 +216,6 @@ export default function FormFillingView({ submissionId, initialMessages, initial
         }
       }
 
-      // Check if AI response contains field updates (key: value patterns)
       parseAndApplyFieldUpdates(fullText);
     } catch (err) {
       console.error("Chat error:", err);
@@ -184,15 +224,12 @@ export default function FormFillingView({ submissionId, initialMessages, initial
     setIsLoading(false);
   };
 
-  // Try to extract field values from AI response
   const parseAndApplyFieldUpdates = (text: string) => {
-    // Look for patterns like "field_key: value" that match known form fields
     const allKeys = new Set(ACORD_FORM_LIST.flatMap((f) => f.fields.map((field) => field.key)));
     const lines = text.split("\n");
     const updates: Record<string, string> = {};
 
     for (const line of lines) {
-      // Match: - **field_key**: value, field_key: value, field_key = value, * field_key: value
       const match = line.match(/^\s*[-•*]?\s*\*{0,2}([a-z_][a-z0-9_]*)\*{0,2}\s*[:=]\s*(.+)/i);
       if (match) {
         const key = match[1].toLowerCase().replace(/\s+/g, "_");
@@ -273,6 +310,74 @@ export default function FormFillingView({ submissionId, initialMessages, initial
     setDownloading(false);
   };
 
+  // Email PDF
+  const handleEmailPdf = async () => {
+    if (!emailTo.trim() || !user) return;
+    setSendingEmail(true);
+    try {
+      // Generate the PDF as base64
+      const formsToProcess = emailMode === "individual"
+        ? ACORD_FORM_LIST.filter(f => f.id === activeFormId)
+        : ACORD_FORM_LIST;
+
+      const results: { form: AcordFormDefinition; data: Record<string, any> }[] = [];
+      for (const form of formsToProcess) {
+        const data: Record<string, any> = {};
+        for (const field of form.fields) {
+          if (formData[field.key]) data[field.key] = formData[field.key];
+        }
+        const filledCount = Object.values(data).filter((v) => v && String(v).trim()).length;
+        if (filledCount > 3) results.push({ form, data });
+      }
+
+      if (results.length === 0) {
+        toast.error("No forms have enough data to email.");
+        setSendingEmail(false);
+        return;
+      }
+
+      // For now, generate & download + copy email address
+      // (Full email sending would require an edge function with an email provider)
+      if (emailMode === "individual") {
+        for (const { form, data } of results) {
+          const pdf = await generateAcordPdfAsync(form, data);
+          pdf.save(`${form.name.replace(/\s/g, "_")}_${new Date().toISOString().slice(0, 10)}.pdf`);
+        }
+      } else {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("full_name, agency_name, phone")
+          .eq("user_id", user.id)
+          .single();
+        const companyName = formData.applicant_name || formData.insured_name || "Submission";
+        const pkg = await generateSubmissionPackage({
+          companyName,
+          narrative: "",
+          agencyName: profile?.agency_name || "",
+          producerName: profile?.full_name || "",
+          coverageLines: [],
+          forms: results,
+          effectiveDate: formData.effective_date || formData.proposed_eff_date || "",
+        });
+        const safeName = companyName.replace(/[^a-zA-Z0-9]/g, "_").slice(0, 40);
+        pkg.save(`Submission_${safeName}_${new Date().toISOString().slice(0, 10)}.pdf`);
+      }
+
+      // Open mailto link so user can attach the downloaded file
+      const subject = encodeURIComponent(`ACORD Forms - ${formData.applicant_name || "Submission"}`);
+      const body = encodeURIComponent(`Please find the attached ACORD form(s) for ${formData.applicant_name || "the submission"}.\n\nPlease review and let me know if you need any changes.`);
+      window.open(`mailto:${emailTo}?subject=${subject}&body=${body}`, "_blank");
+
+      toast.success("PDF downloaded — attach it to the email that just opened.");
+      setEmailDialogOpen(false);
+      setEmailTo("");
+    } catch (err) {
+      console.error("Email error:", err);
+      toast.error("Failed to prepare email");
+    }
+    setSendingEmail(false);
+  };
+
   // Save form data back to DB
   const saveFormData = async () => {
     if (!user) return;
@@ -342,7 +447,6 @@ export default function FormFillingView({ submissionId, initialMessages, initial
     }
   };
 
-  // Group fields by section
   const getFilteredSections = () => {
     if (!activeForm) return [];
     const sections: { name: string; fields: AcordFormField[] }[] = [];
@@ -375,312 +479,470 @@ export default function FormFillingView({ submissionId, initialMessages, initial
     );
   }
 
-  return (
-    <div className="flex h-[calc(100vh-4rem)] overflow-hidden">
-      {/* LEFT PANEL — Editable Fields */}
-      <div className="w-[300px] border-r flex flex-col bg-background shrink-0">
-        {/* Form selector tabs */}
-        <div className="border-b p-3 space-y-2">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold" style={{ fontFamily: "'Instrument Serif', serif" }}>Form Fields</h2>
-            <Badge variant="secondary" className="text-[10px]">{filledCount}/{totalCount}</Badge>
-          </div>
-          <div className="flex gap-1 flex-wrap">
-            {ACORD_FORM_LIST.map((f) => (
-              <button
-                key={f.id}
-                onClick={() => setActiveFormId(f.id)}
-                className={`text-[10px] px-2 py-1 rounded-md border transition-colors ${
-                  activeFormId === f.id
-                    ? "bg-primary text-primary-foreground border-primary"
-                    : "bg-card border-border hover:bg-accent/50"
-                }`}
-              >
-                {f.name}
-              </button>
-            ))}
-          </div>
-          <div className="flex gap-1">
-            {(["all", "filled", "empty"] as FieldFilter[]).map((filter) => (
-              <button
-                key={filter}
-                onClick={() => setFieldFilter(filter)}
-                className={`text-[10px] px-2 py-0.5 rounded capitalize transition-colors ${
-                  fieldFilter === filter
-                    ? "bg-muted text-foreground font-medium"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {filter}
-              </button>
-            ))}
-          </div>
+  // ─── Shared panel content renderers ───
+  const renderFieldsPanel = () => (
+    <div className="flex flex-col h-full bg-background">
+      <div className="border-b p-3 space-y-2">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold" style={{ fontFamily: "'Instrument Serif', serif" }}>Form Fields</h2>
+          <Badge variant="secondary" className="text-[10px]">{filledCount}/{totalCount}</Badge>
         </div>
-
-        {/* Progress bar */}
-        <div className="px-3 pt-2">
-          <div className="h-1 bg-muted rounded-full overflow-hidden">
-            <div
-              className="h-full bg-primary rounded-full transition-all duration-500"
-              style={{ width: `${totalCount > 0 ? (filledCount / totalCount) * 100 : 0}%` }}
-            />
-          </div>
+        <div className="flex gap-1 flex-wrap">
+          {ACORD_FORM_LIST.map((f) => (
+            <button
+              key={f.id}
+              onClick={() => setActiveFormId(f.id)}
+              className={`text-[10px] px-2 py-1 rounded-md border transition-colors ${
+                activeFormId === f.id
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "bg-card border-border hover:bg-accent/50"
+              }`}
+            >
+              {f.name}
+            </button>
+          ))}
         </div>
-
-        {/* Fields */}
-        <ScrollArea className="flex-1">
-          <div className="p-3 space-y-4">
-            {getFilteredSections().map((section) => (
-              <div key={section.name}>
-                <h3 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">
-                  {section.name}
-                </h3>
-                <div className="space-y-2">
-                  {section.fields.map((field) => (
-                    <div key={field.key} className="space-y-0.5">
-                      {field.type !== "checkbox" && (
-                        <Label className="text-[10px] uppercase tracking-wider text-muted-foreground flex items-center gap-1">
-                          {field.required && <span className="text-destructive">*</span>}
-                          {field.label}
-                        </Label>
-                      )}
-                      {renderField(field)}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </ScrollArea>
-
-        {/* Save + Download buttons */}
-        <div className="border-t p-3 space-y-2">
-          <Button size="sm" variant="outline" className="w-full text-xs h-8" onClick={saveFormData}>
-            Save Progress
-          </Button>
-          <div className="flex gap-2">
-            <Button
-              size="sm"
-              className="flex-1 text-xs h-8"
-              disabled={downloading}
-              onClick={() => downloadForms("individual")}
+        <div className="flex gap-1">
+          {(["all", "filled", "empty"] as FieldFilter[]).map((filter) => (
+            <button
+              key={filter}
+              onClick={() => setFieldFilter(filter)}
+              className={`text-[10px] px-2 py-0.5 rounded capitalize transition-colors ${
+                fieldFilter === filter
+                  ? "bg-muted text-foreground font-medium"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
             >
-              {downloading ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Download className="h-3 w-3 mr-1" />}
-              Forms
-            </Button>
-            <Button
-              size="sm"
-              className="flex-1 text-xs h-8"
-              disabled={downloading}
-              onClick={() => downloadForms("package")}
-            >
-              {downloading ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <FileText className="h-3 w-3 mr-1" />}
-              Package
-            </Button>
-          </div>
+              {filter}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* CENTER PANEL — Form Preview */}
-      <div className="flex-1 flex flex-col bg-muted/30 min-w-0">
-        <div className="border-b p-3 flex items-center justify-between bg-background">
-          <div>
-            <h2 className="text-sm font-semibold">{activeForm?.name}</h2>
-            <p className="text-[10px] text-muted-foreground">{activeForm?.fullName}</p>
-          </div>
-          <div className="flex items-center gap-2">
-            {filledCount === totalCount && totalCount > 0 && (
-              <Badge variant="secondary" className="text-[10px]">
-                <CheckCircle className="h-3 w-3 mr-1" />Complete
-              </Badge>
-            )}
-            {activeForm?.pages && activeForm.pages.length > 0 && (
-              <div className="flex rounded-md border overflow-hidden">
-                <button
-                  onClick={() => setCenterView("form")}
-                  className={`flex items-center gap-1 text-[10px] px-2 py-1 transition-colors ${
-                    centerView === "form" ? "bg-primary text-primary-foreground" : "bg-card hover:bg-accent/50"
-                  }`}
-                >
-                  <Image className="h-3 w-3" />Form
-                </button>
-                <button
-                  onClick={() => setCenterView("data")}
-                  className={`flex items-center gap-1 text-[10px] px-2 py-1 transition-colors ${
-                    centerView === "data" ? "bg-primary text-primary-foreground" : "bg-card hover:bg-accent/50"
-                  }`}
-                >
-                  <Eye className="h-3 w-3" />Live Data
-                </button>
-              </div>
-            )}
-          </div>
+      <div className="px-3 pt-2">
+        <div className="h-1 bg-muted rounded-full overflow-hidden">
+          <div
+            className="h-full bg-primary rounded-full transition-all duration-500"
+            style={{ width: `${totalCount > 0 ? (filledCount / totalCount) * 100 : 0}%` }}
+          />
         </div>
-        <ScrollArea className="flex-1">
-          <div className="p-4">
-            {activeForm?.pages && activeForm.pages.length > 0 && centerView === "form" ? (
-              <div className="space-y-4 max-w-4xl mx-auto">
-                {activeForm.pages.map((pageSrc, idx) => (
-                  <div key={idx} className="bg-background border rounded shadow-sm overflow-hidden">
-                    <img
-                      src={pageSrc}
-                      alt={`${activeForm.name} Page ${idx + 1}`}
-                      className="w-full h-auto"
-                      loading="lazy"
-                    />
-                    <div className="bg-muted/50 text-center py-1">
-                      <span className="text-[10px] text-muted-foreground">Page {idx + 1} of {activeForm.pages!.length}</span>
-                    </div>
+      </div>
+
+      <ScrollArea className="flex-1">
+        <div className="p-3 space-y-4">
+          {getFilteredSections().map((section) => (
+            <div key={section.name}>
+              <h3 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+                {section.name}
+              </h3>
+              <div className="space-y-2">
+                {section.fields.map((field) => (
+                  <div key={field.key} className="space-y-0.5">
+                    {field.type !== "checkbox" && (
+                      <Label className="text-[10px] uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+                        {field.required && <span className="text-destructive">*</span>}
+                        {field.label}
+                      </Label>
+                    )}
+                    {renderField(field)}
                   </div>
                 ))}
               </div>
-            ) : (
-              <div className="bg-background border rounded-lg shadow-sm p-6 max-w-2xl mx-auto">
-                <div className="text-center border-b pb-4 mb-6">
-                  <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground mb-1">ACORD®</p>
-                  <h1 className="text-lg font-bold">{activeForm?.fullName?.toUpperCase()}</h1>
-                  <p className="text-[10px] text-muted-foreground mt-1">
-                    Generated {new Date().toLocaleDateString()}
-                  </p>
-                </div>
-                {activeForm && (() => {
-                  const sections: { name: string; fields: AcordFormField[] }[] = [];
-                  const seen = new Set<string>();
-                  for (const field of activeForm.fields) {
-                    if (!seen.has(field.section)) {
-                      seen.add(field.section);
-                      sections.push({ name: field.section, fields: activeForm.fields.filter((f) => f.section === field.section) });
-                    }
-                  }
-                  return sections.map((section) => (
-                    <div key={section.name} className="mb-6">
-                      <h3 className="text-[10px] font-bold uppercase tracking-wider text-primary border-b border-primary/30 pb-1 mb-3">
-                        {section.name}
-                      </h3>
-                      <div className="grid grid-cols-2 gap-x-6 gap-y-2">
-                        {section.fields.map((field) => {
-                          const value = formData[field.key];
-                          const hasValue = value && String(value).trim();
-                          const isFullWidth = field.type === "textarea";
-                          return (
-                            <div key={field.key} className={`${isFullWidth ? "col-span-2" : ""}`}>
-                              <p className="text-[8px] uppercase tracking-wider text-muted-foreground font-medium">
-                                {field.label}
-                              </p>
-                              <p className={`text-xs border-b pb-1 min-h-[1.25rem] ${
-                                hasValue ? "text-foreground" : "text-muted-foreground/40 italic"
-                              }`}>
-                                {hasValue
-                                  ? (field.type === "currency" ? formatUSD(value) : Array.isArray(value) ? value.join(", ") : String(value))
-                                  : "—"
-                                }
-                              </p>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ));
-                })()}
-              </div>
-            )}
-          </div>
-        </ScrollArea>
-      </div>
-
-      {/* RIGHT PANEL — Chat */}
-      <div className="w-[340px] border-l flex flex-col bg-background shrink-0">
-        <div className="border-b p-3 flex items-center justify-between">
-          <h2 className="text-sm font-semibold" style={{ fontFamily: "'Instrument Serif', serif" }}>Chat</h2>
-          <Button variant="ghost" size="sm" className="text-[10px] h-6 px-2" onClick={onBack}>
-            ← Back
-          </Button>
-        </div>
-
-        {/* Messages */}
-        <div ref={chatScrollRef} className="flex-1 overflow-y-auto p-3 space-y-3">
-          {messages.map((m, i) => (
-            <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
-              <div className={`rounded-lg px-3 py-2 max-w-[90%] text-xs leading-relaxed ${
-                m.role === "user"
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-foreground prose prose-xs max-w-none"
-              }`}>
-                {m.role === "assistant" ? (
-                  <ReactMarkdown>{m.content.replace(/\[FIELD:[^\]]+\]/g, "").replace(/\[BUTTON:[^\]]+\]/g, "").replace(/\[SUBMISSION_ID:[^\]]+\]/g, "").trim()}</ReactMarkdown>
-                ) : (
-                  <span className="whitespace-pre-wrap">{m.content}</span>
-                )}
-              </div>
             </div>
           ))}
-          {isLoading && messages[messages.length - 1]?.role !== "assistant" && (
-            <div className="flex justify-start">
-              <div className="bg-muted rounded-lg px-3 py-2">
-                <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
-              </div>
+        </div>
+      </ScrollArea>
+
+      <div className="border-t p-3 space-y-2">
+        <Button size="sm" variant="outline" className="w-full text-xs h-8" onClick={saveFormData}>
+          Save Progress
+        </Button>
+        <div className="flex gap-1.5">
+          <Button
+            size="sm"
+            className="flex-1 text-xs h-7"
+            disabled={downloading}
+            onClick={() => downloadForms("individual")}
+          >
+            {downloading ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Download className="h-3 w-3 mr-1" />}
+            Form
+          </Button>
+          <Button
+            size="sm"
+            className="flex-1 text-xs h-7"
+            disabled={downloading}
+            onClick={() => downloadForms("package")}
+          >
+            {downloading ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <FileText className="h-3 w-3 mr-1" />}
+            Pkg
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="flex-1 text-xs h-7"
+            onClick={() => {
+              setEmailMode("individual");
+              setEmailDialogOpen(true);
+            }}
+          >
+            <Mail className="h-3 w-3 mr-1" />
+            Email
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderFormPreview = () => (
+    <div className="flex flex-col h-full bg-muted/30">
+      <div className="border-b p-3 flex items-center justify-between bg-background">
+        <div>
+          <h2 className="text-sm font-semibold">{activeForm?.name}</h2>
+          <p className="text-[10px] text-muted-foreground">{activeForm?.fullName}</p>
+        </div>
+        <div className="flex items-center gap-2">
+          {filledCount === totalCount && totalCount > 0 && (
+            <Badge variant="secondary" className="text-[10px]">
+              <CheckCircle className="h-3 w-3 mr-1" />Complete
+            </Badge>
+          )}
+          {activeForm?.pages && activeForm.pages.length > 0 && (
+            <div className="flex rounded-md border overflow-hidden">
+              <button
+                onClick={() => setCenterView("form")}
+                className={`flex items-center gap-1 text-[10px] px-2 py-1 transition-colors ${
+                  centerView === "form" ? "bg-primary text-primary-foreground" : "bg-card hover:bg-accent/50"
+                }`}
+              >
+                <Image className="h-3 w-3" />Form
+              </button>
+              <button
+                onClick={() => setCenterView("data")}
+                className={`flex items-center gap-1 text-[10px] px-2 py-1 transition-colors ${
+                  centerView === "data" ? "bg-primary text-primary-foreground" : "bg-card hover:bg-accent/50"
+                }`}
+              >
+                <Eye className="h-3 w-3" />Live Data
+              </button>
             </div>
           )}
         </div>
-
-        {/* Attached files preview */}
-        {attachedFiles.length > 0 && (
-          <div className="border-t bg-muted/30 px-3 py-2">
-            <div className="flex flex-wrap gap-1.5">
-              {attachedFiles.map((f, i) => (
-                <div key={i} className="flex items-center gap-1 rounded-md bg-card border px-2 py-1 text-[10px]">
-                  <Paperclip className="h-2.5 w-2.5 text-muted-foreground" />
-                  <span className="max-w-[80px] truncate">{f.name}</span>
-                  <button onClick={() => setAttachedFiles((prev) => prev.filter((_, idx) => idx !== i))} className="text-muted-foreground hover:text-foreground">
-                    <X className="h-2.5 w-2.5" />
-                  </button>
+      </div>
+      <ScrollArea className="flex-1">
+        <div className="p-4">
+          {activeForm?.pages && activeForm.pages.length > 0 && centerView === "form" ? (
+            <div className="space-y-4 max-w-4xl mx-auto">
+              {activeForm.pages.map((pageSrc, idx) => (
+                <div key={idx} className="bg-background border rounded shadow-sm overflow-hidden">
+                  <img
+                    src={pageSrc}
+                    alt={`${activeForm.name} Page ${idx + 1}`}
+                    className="w-full h-auto"
+                    loading="lazy"
+                  />
+                  <div className="bg-muted/50 text-center py-1">
+                    <span className="text-[10px] text-muted-foreground">Page {idx + 1} of {activeForm.pages!.length}</span>
+                  </div>
                 </div>
               ))}
             </div>
+          ) : (
+            <div className="bg-background border rounded-lg shadow-sm p-6 max-w-2xl mx-auto">
+              <div className="text-center border-b pb-4 mb-6">
+                <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground mb-1">ACORD®</p>
+                <h1 className="text-lg font-bold">{activeForm?.fullName?.toUpperCase()}</h1>
+                <p className="text-[10px] text-muted-foreground mt-1">
+                  Generated {new Date().toLocaleDateString()}
+                </p>
+              </div>
+              {activeForm && (() => {
+                const sections: { name: string; fields: AcordFormField[] }[] = [];
+                const seen = new Set<string>();
+                for (const field of activeForm.fields) {
+                  if (!seen.has(field.section)) {
+                    seen.add(field.section);
+                    sections.push({ name: field.section, fields: activeForm.fields.filter((f) => f.section === field.section) });
+                  }
+                }
+                return sections.map((section) => (
+                  <div key={section.name} className="mb-6">
+                    <h3 className="text-[10px] font-bold uppercase tracking-wider text-primary border-b border-primary/30 pb-1 mb-3">
+                      {section.name}
+                    </h3>
+                    <div className="grid grid-cols-2 gap-x-6 gap-y-2">
+                      {section.fields.map((field) => {
+                        const value = formData[field.key];
+                        const hasValue = value && String(value).trim();
+                        const isFullWidth = field.type === "textarea";
+                        return (
+                          <div key={field.key} className={`${isFullWidth ? "col-span-2" : ""}`}>
+                            <p className="text-[8px] uppercase tracking-wider text-muted-foreground font-medium">
+                              {field.label}
+                            </p>
+                            <p className={`text-xs border-b pb-1 min-h-[1.25rem] ${
+                              hasValue ? "text-foreground" : "text-muted-foreground/40 italic"
+                            }`}>
+                              {hasValue
+                                ? (field.type === "currency" ? formatUSD(value) : Array.isArray(value) ? value.join(", ") : String(value))
+                                : "—"
+                              }
+                            </p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ));
+              })()}
+            </div>
+          )}
+        </div>
+      </ScrollArea>
+    </div>
+  );
+
+  const renderChatPanel = () => (
+    <div className="flex flex-col h-full bg-background">
+      <div className="border-b p-3 flex items-center justify-between">
+        <h2 className="text-sm font-semibold" style={{ fontFamily: "'Instrument Serif', serif" }}>Chat</h2>
+        {!isMobile && (
+          <Button variant="ghost" size="sm" className="text-[10px] h-6 px-2" onClick={onBack}>
+            ← Back
+          </Button>
+        )}
+      </div>
+
+      <div ref={chatScrollRef} className="flex-1 overflow-y-auto p-3 space-y-3">
+        {messages.map((m, i) => (
+          <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
+            <div className={`rounded-lg px-3 py-2 max-w-[90%] text-xs leading-relaxed ${
+              m.role === "user"
+                ? "bg-primary text-primary-foreground"
+                : "bg-muted text-foreground prose prose-xs max-w-none"
+            }`}>
+              {m.role === "assistant" ? (
+                <ReactMarkdown>{m.content.replace(/\[FIELD:[^\]]+\]/g, "").replace(/\[BUTTON:[^\]]+\]/g, "").replace(/\[SUBMISSION_ID:[^\]]+\]/g, "").trim()}</ReactMarkdown>
+              ) : (
+                <span className="whitespace-pre-wrap">{m.content}</span>
+              )}
+            </div>
+          </div>
+        ))}
+        {isLoading && messages[messages.length - 1]?.role !== "assistant" && (
+          <div className="flex justify-start">
+            <div className="bg-muted rounded-lg px-3 py-2">
+              <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+            </div>
           </div>
         )}
+      </div>
 
-        {/* Chat input */}
-        <div className="border-t p-3">
-          <div className="flex items-end gap-1.5 rounded-lg border bg-card p-2">
-            <input type="file" ref={fileInputRef} className="hidden" multiple onChange={(e) => {
-              if (e.target.files) {
-                setAttachedFiles((prev) => [...prev, ...Array.from(e.target.files!)].slice(0, 10));
+      {attachedFiles.length > 0 && (
+        <div className="border-t bg-muted/30 px-3 py-2">
+          <div className="flex flex-wrap gap-1.5">
+            {attachedFiles.map((f, i) => (
+              <div key={i} className="flex items-center gap-1 rounded-md bg-card border px-2 py-1 text-[10px]">
+                <Paperclip className="h-2.5 w-2.5 text-muted-foreground" />
+                <span className="max-w-[80px] truncate">{f.name}</span>
+                <button onClick={() => setAttachedFiles((prev) => prev.filter((_, idx) => idx !== i))} className="text-muted-foreground hover:text-foreground">
+                  <X className="h-2.5 w-2.5" />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="border-t p-3">
+        <div className="flex items-end gap-1.5 rounded-lg border bg-card p-2">
+          <input type="file" ref={fileInputRef} className="hidden" multiple onChange={(e) => {
+            if (e.target.files) {
+              setAttachedFiles((prev) => [...prev, ...Array.from(e.target.files!)].slice(0, 10));
+            }
+          }} />
+          <Button
+            variant="ghost"
+            size="icon"
+            className="shrink-0 h-7 w-7 text-muted-foreground hover:text-foreground"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <Paperclip className="h-3 w-3" />
+          </Button>
+          <textarea
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleChatKeyDown}
+            placeholder="Ask about fields or upload docs..."
+            rows={3}
+            className="flex-1 resize-none bg-transparent border-0 outline-none text-xs placeholder:text-muted-foreground min-h-[56px] max-h-28 py-1"
+          />
+          <Button
+            onClick={() => {
+              let content = input.trim();
+              if (attachedFiles.length > 0) {
+                content += `\n\n[${attachedFiles.length} file(s) attached: ${attachedFiles.map((f) => f.name).join(", ")}]`;
+                setAttachedFiles([]);
               }
-            }} />
-            <Button
-              variant="ghost"
-              size="icon"
-              className="shrink-0 h-7 w-7 text-muted-foreground hover:text-foreground"
-              onClick={() => fileInputRef.current?.click()}
-            >
-              <Paperclip className="h-3 w-3" />
-            </Button>
-            <textarea
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleChatKeyDown}
-              placeholder="Ask about fields or upload docs..."
-              rows={3}
-              className="flex-1 resize-none bg-transparent border-0 outline-none text-xs placeholder:text-muted-foreground min-h-[56px] max-h-28 py-1"
+              sendMessage(content);
+            }}
+            disabled={(!input.trim() && attachedFiles.length === 0) || isLoading}
+            size="icon"
+            className="shrink-0 h-7 w-7"
+          >
+            <Send className="h-3 w-3" />
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+
+  // ─── Email Dialog ───
+  const emailDialog = (
+    <Dialog open={emailDialogOpen} onOpenChange={setEmailDialogOpen}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="text-sm">Email PDF</DialogTitle>
+          <DialogDescription className="text-xs text-muted-foreground">
+            Download the PDF and open your email client with a pre-filled message.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3 py-2">
+          <div>
+            <Label className="text-xs">Recipient Email</Label>
+            <Input
+              type="email"
+              value={emailTo}
+              onChange={(e) => setEmailTo(e.target.value)}
+              placeholder="underwriter@carrier.com"
+              className="h-8 text-xs mt-1"
             />
+          </div>
+          <div className="flex gap-2">
             <Button
-              onClick={() => {
-                let content = input.trim();
-                if (attachedFiles.length > 0) {
-                  content += `\n\n[${attachedFiles.length} file(s) attached: ${attachedFiles.map((f) => f.name).join(", ")}]`;
-                  setAttachedFiles([]);
-                }
-                sendMessage(content);
-              }}
-              disabled={(!input.trim() && attachedFiles.length === 0) || isLoading}
-              size="icon"
-              className="shrink-0 h-7 w-7"
+              size="sm"
+              variant={emailMode === "individual" ? "default" : "outline"}
+              className="flex-1 text-xs h-8"
+              onClick={() => setEmailMode("individual")}
             >
-              <Send className="h-3 w-3" />
+              Current Form
+            </Button>
+            <Button
+              size="sm"
+              variant={emailMode === "package" ? "default" : "outline"}
+              className="flex-1 text-xs h-8"
+              onClick={() => setEmailMode("package")}
+            >
+              Full Package
             </Button>
           </div>
         </div>
+        <DialogFooter>
+          <Button size="sm" variant="outline" onClick={() => setEmailDialogOpen(false)}>Cancel</Button>
+          <Button
+            size="sm"
+            onClick={handleEmailPdf}
+            disabled={!emailTo.trim() || sendingEmail}
+          >
+            {sendingEmail ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Mail className="h-3 w-3 mr-1" />}
+            Download & Email
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+
+  // ─── MOBILE LAYOUT ───
+  if (isMobile) {
+    return (
+      <div className="flex flex-col h-[calc(100vh-4rem)] overflow-hidden">
+        {emailDialog}
+        
+        {/* Mobile top bar with back button */}
+        <div className="border-b bg-background px-3 py-2 flex items-center justify-between shrink-0">
+          <Button variant="ghost" size="sm" className="text-xs h-7 px-2" onClick={onBack}>
+            <ChevronLeft className="h-3 w-3 mr-1" /> Back
+          </Button>
+          <span className="text-xs font-medium text-muted-foreground">{activeForm?.name}</span>
+          <Badge variant="secondary" className="text-[10px]">{filledCount}/{totalCount}</Badge>
+        </div>
+
+        {/* Panel navigation tabs */}
+        <div className="border-b bg-background flex shrink-0">
+          {MOBILE_PANELS.map((panel, idx) => {
+            const Icon = panel.icon;
+            const isActive = mobilePanel === panel.key;
+            return (
+              <button
+                key={panel.key}
+                onClick={() => setMobilePanel(panel.key)}
+                className={`flex-1 flex flex-col items-center gap-0.5 py-2.5 text-[10px] font-medium transition-colors relative ${
+                  isActive
+                    ? "text-primary"
+                    : "text-muted-foreground"
+                }`}
+              >
+                <Icon className="h-4 w-4" />
+                <span>{panel.label}</span>
+                {isActive && (
+                  <div className="absolute bottom-0 left-2 right-2 h-0.5 bg-primary rounded-full" />
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Swipe hint */}
+        <div className="bg-muted/50 flex items-center justify-center gap-2 py-1 text-[9px] text-muted-foreground shrink-0">
+          <ChevronLeft className="h-3 w-3" />
+          <span>Swipe to navigate</span>
+          <ChevronRight className="h-3 w-3" />
+        </div>
+
+        {/* Panel dots indicator */}
+        <div className="flex justify-center gap-1.5 py-1 bg-background shrink-0">
+          {MOBILE_PANELS.map((panel) => (
+            <div
+              key={panel.key}
+              className={`h-1.5 rounded-full transition-all duration-300 ${
+                mobilePanel === panel.key ? "w-4 bg-primary" : "w-1.5 bg-muted-foreground/30"
+              }`}
+            />
+          ))}
+        </div>
+
+        {/* Swipeable panel content */}
+        <div
+          ref={swipeContainerRef}
+          className="flex-1 overflow-hidden"
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+        >
+          {mobilePanel === "fields" && renderFieldsPanel()}
+          {mobilePanel === "form" && renderFormPreview()}
+          {mobilePanel === "chat" && renderChatPanel()}
+        </div>
+      </div>
+    );
+  }
+
+  // ─── DESKTOP LAYOUT (unchanged 3-column) ───
+  return (
+    <div className="flex h-[calc(100vh-4rem)] overflow-hidden">
+      {emailDialog}
+
+      {/* LEFT PANEL — Editable Fields */}
+      <div className="w-[300px] border-r flex flex-col shrink-0">
+        {renderFieldsPanel()}
+      </div>
+
+      {/* CENTER PANEL — Form Preview */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {renderFormPreview()}
+      </div>
+
+      {/* RIGHT PANEL — Chat */}
+      <div className="w-[340px] border-l flex flex-col shrink-0">
+        {renderChatPanel()}
       </div>
     </div>
   );
