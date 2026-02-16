@@ -20,6 +20,14 @@ export const calcExpiration = (effDateStr: string): string => {
   return d.toISOString().slice(0, 10);
 };
 
+/** Format a numeric string as USD: "600000" → "$600,000" */
+export const formatUSD = (raw: string | number): string => {
+  if (raw === "" || raw === null || raw === undefined) return "";
+  const num = typeof raw === "number" ? raw : Number(String(raw).replace(/[$,\s]/g, ""));
+  if (isNaN(num)) return String(raw);
+  return "$" + num.toLocaleString("en-US");
+};
+
 /** Clean currency strings: "$600,000" → "600000" */
 export const cleanCurrency = (raw: string): string => {
   if (!raw) return "";
@@ -87,7 +95,7 @@ const DATE_FIELDS = new Set([
   "pending_litigation_date", "signature_date", "mod_effective_date",
 ]);
 
-const CURRENCY_FIELDS = new Set([
+export const CURRENCY_FIELDS = new Set([
   "annual_revenues", "annual_revenue", "gross_sales", "current_premium",
   "cgl_premium", "property_premium", "auto_premium", "umbrella_premium",
   "crime_premium", "cyber_premium", "general_aggregate", "products_aggregate",
