@@ -80,7 +80,25 @@ export default function FormFillingView({ submissionId, initialMessages, initial
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const swipeContainerRef = useRef<HTMLDivElement>(null);
 
-  const activeForm = ACORD_FORMS[activeFormId];
+  const isAllForms = activeFormId === "all";
+  const activeForm = isAllForms ? null : ACORD_FORMS[activeFormId];
+
+  // Merged fields across all forms (deduplicated by key)
+  const allFormFields = (() => {
+    const seen = new Set<string>();
+    const fields: AcordFormField[] = [];
+    for (const form of ACORD_FORM_LIST) {
+      for (const field of form.fields) {
+        if (!seen.has(field.key)) {
+          seen.add(field.key);
+          fields.push(field);
+        }
+      }
+    }
+    return fields;
+  })();
+
+  const currentFields = isAllForms ? allFormFields : (activeForm?.fields || []);
 
   // Touch handlers for mobile swipe
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
@@ -457,28 +475,32 @@ export default function FormFillingView({ submissionId, initialMessages, initial
   };
 
   const getFilteredSections = () => {
-    if (!activeForm) return [];
+    const fields = currentFields;
+    if (fields.length === 0) return [];
     const sections: { name: string; fields: AcordFormField[] }[] = [];
     const seen = new Set<string>();
-    for (const field of activeForm.fields) {
-      if (!seen.has(field.section)) {
-        seen.add(field.section);
-        let sectionFields = activeForm.fields.filter((f) => f.section === field.section);
+    for (const field of fields) {
+      const sectionLabel = isAllForms
+        ? field.section
+        : field.section;
+      if (!seen.has(sectionLabel)) {
+        seen.add(sectionLabel);
+        let sectionFields = fields.filter((f) => f.section === sectionLabel);
         if (fieldFilter === "filled") {
           sectionFields = sectionFields.filter((f) => formData[f.key] && String(formData[f.key]).trim());
         } else if (fieldFilter === "empty") {
           sectionFields = sectionFields.filter((f) => !formData[f.key] || !String(formData[f.key]).trim());
         }
         if (sectionFields.length > 0) {
-          sections.push({ name: field.section, fields: sectionFields });
+          sections.push({ name: sectionLabel, fields: sectionFields });
         }
       }
     }
     return sections;
   };
 
-  const filledCount = activeForm?.fields.filter((f) => formData[f.key] && String(formData[f.key]).trim()).length || 0;
-  const totalCount = activeForm?.fields.length || 0;
+  const filledCount = currentFields.filter((f) => formData[f.key] && String(formData[f.key]).trim()).length;
+  const totalCount = currentFields.length;
 
   if (loading) {
     return (
@@ -497,6 +519,16 @@ export default function FormFillingView({ submissionId, initialMessages, initial
           <Badge variant="secondary" className="text-[10px]">{filledCount}/{totalCount}</Badge>
         </div>
         <div className="flex gap-1 flex-wrap">
+          <button
+            onClick={() => setActiveFormId("all")}
+            className={`text-[10px] px-2 py-1 rounded-md border transition-colors font-medium ${
+              isAllForms
+                ? "bg-primary text-primary-foreground border-primary"
+                : "bg-card border-border hover:bg-accent/50"
+            }`}
+          >
+            All Forms
+          </button>
           {ACORD_FORM_LIST.map((f) => (
             <button
               key={f.id}
@@ -602,12 +634,18 @@ export default function FormFillingView({ submissionId, initialMessages, initial
     </div>
   );
 
-  const renderFormPreview = () => (
+  const renderFormPreview = () => {
+    const previewTitle = isAllForms ? "All ACORD Forms" : activeForm?.name;
+    const previewSubtitle = isAllForms
+      ? `${ACORD_FORM_LIST.length} forms — ${filledCount} of ${totalCount} unique fields filled`
+      : activeForm?.fullName;
+
+    return (
     <div className="flex flex-col h-full bg-muted/30">
       <div className="border-b p-3 flex items-center justify-between bg-background">
         <div>
-          <h2 className="text-sm font-semibold">{activeForm?.name}</h2>
-          <p className="text-[10px] text-muted-foreground">{activeForm?.fullName}</p>
+          <h2 className="text-sm font-semibold">{previewTitle}</h2>
+          <p className="text-[10px] text-muted-foreground">{previewSubtitle}</p>
         </div>
         <div className="flex items-center gap-2">
           {filledCount === totalCount && totalCount > 0 && (
@@ -615,7 +653,7 @@ export default function FormFillingView({ submissionId, initialMessages, initial
               <CheckCircle className="h-3 w-3 mr-1" />Complete
             </Badge>
           )}
-          {activeForm?.pages && activeForm.pages.length > 0 && (
+          {!isAllForms && activeForm?.pages && activeForm.pages.length > 0 && (
             <div className="flex rounded-md border overflow-hidden">
               <button
                 onClick={() => setCenterView("form")}
@@ -639,7 +677,7 @@ export default function FormFillingView({ submissionId, initialMessages, initial
       </div>
       <ScrollArea className="flex-1">
         <div className="p-4">
-          {activeForm?.pages && activeForm.pages.length > 0 && centerView === "form" ? (
+          {!isAllForms && activeForm?.pages && activeForm.pages.length > 0 && centerView === "form" ? (
             <div className="space-y-4 max-w-4xl mx-auto">
               {activeForm.pages.map((pageSrc, idx) => (
                 <div key={idx} className="bg-background border rounded shadow-sm overflow-hidden">
@@ -659,12 +697,67 @@ export default function FormFillingView({ submissionId, initialMessages, initial
             <div className="bg-background border rounded-lg shadow-sm p-6 max-w-2xl mx-auto">
               <div className="text-center border-b pb-4 mb-6">
                 <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground mb-1">ACORD®</p>
-                <h1 className="text-lg font-bold">{activeForm?.fullName?.toUpperCase()}</h1>
+                <h1 className="text-lg font-bold">
+                  {isAllForms ? "ALL FORMS — UNIFIED VIEW" : activeForm?.fullName?.toUpperCase()}
+                </h1>
                 <p className="text-[10px] text-muted-foreground mt-1">
-                  Generated {new Date().toLocaleDateString()}
+                  {isAllForms
+                    ? `${ACORD_FORM_LIST.map(f => f.name).join(" • ")} — Generated ${new Date().toLocaleDateString()}`
+                    : `Generated ${new Date().toLocaleDateString()}`
+                  }
                 </p>
               </div>
-              {activeForm && (() => {
+              {isAllForms ? (
+                ACORD_FORM_LIST.map((form) => {
+                  const sections: { name: string; fields: AcordFormField[] }[] = [];
+                  const seen = new Set<string>();
+                  for (const field of form.fields) {
+                    if (!seen.has(field.section)) {
+                      seen.add(field.section);
+                      sections.push({ name: field.section, fields: form.fields.filter((f) => f.section === field.section) });
+                    }
+                  }
+                  const formFilled = form.fields.filter(f => formData[f.key] && String(formData[f.key]).trim()).length;
+                  return (
+                    <div key={form.id} className="mb-8">
+                      <div className="flex items-center gap-2 mb-3 border-b-2 border-primary/50 pb-2">
+                        <FileText className="h-4 w-4 text-primary" />
+                        <h2 className="text-sm font-bold text-primary">{form.name}</h2>
+                        <Badge variant="secondary" className="text-[9px] ml-auto">{formFilled}/{form.fields.length}</Badge>
+                      </div>
+                      {sections.map((section) => (
+                        <div key={`${form.id}-${section.name}`} className="mb-4">
+                          <h3 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground border-b border-border pb-1 mb-2">
+                            {section.name}
+                          </h3>
+                          <div className="grid grid-cols-2 gap-x-6 gap-y-2">
+                            {section.fields.map((field) => {
+                              const value = formData[field.key];
+                              const hasValue = value && String(value).trim();
+                              const isFullWidth = field.type === "textarea";
+                              return (
+                                <div key={field.key} className={`${isFullWidth ? "col-span-2" : ""}`}>
+                                  <p className="text-[8px] uppercase tracking-wider text-muted-foreground font-medium">
+                                    {field.label}
+                                  </p>
+                                  <p className={`text-xs border-b pb-1 min-h-[1.25rem] ${
+                                    hasValue ? "text-foreground" : "text-muted-foreground/40 italic"
+                                  }`}>
+                                    {hasValue
+                                      ? (field.type === "currency" ? formatUSD(value) : Array.isArray(value) ? value.join(", ") : String(value))
+                                      : "—"
+                                    }
+                                  </p>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })
+              ) : activeForm ? (() => {
                 const sections: { name: string; fields: AcordFormField[] }[] = [];
                 const seen = new Set<string>();
                 for (const field of activeForm.fields) {
@@ -702,13 +795,14 @@ export default function FormFillingView({ submissionId, initialMessages, initial
                     </div>
                   </div>
                 ));
-              })()}
+              })() : null}
             </div>
           )}
         </div>
       </ScrollArea>
     </div>
-  );
+  ); };
+
 
   const renderChatPanel = () => (
     <div className="flex flex-col h-full bg-background">
@@ -886,7 +980,7 @@ export default function FormFillingView({ submissionId, initialMessages, initial
           <Button variant="ghost" size="sm" className="text-xs h-7 px-2" onClick={onBack}>
             <ChevronLeft className="h-3 w-3 mr-1" /> Back
           </Button>
-          <span className="text-xs font-medium text-muted-foreground">{activeForm?.name}</span>
+          <span className="text-xs font-medium text-muted-foreground">{isAllForms ? "All Forms" : activeForm?.name}</span>
           <Badge variant="secondary" className="text-[10px]">{filledCount}/{totalCount}</Badge>
         </div>
 
