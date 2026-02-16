@@ -5,7 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 
 type VoiceState = "idle" | "connecting" | "listening";
 
-export function useVoiceInput(onTranscript: (text: string) => void) {
+export function useVoiceInput(onTranscript: (text: string) => void, autoSend?: (text: string) => void) {
   const [state, setState] = useState<VoiceState>("idle");
   const [liveText, setLiveText] = useState("");
   const { toast } = useToast();
@@ -64,6 +64,10 @@ export function useVoiceInput(onTranscript: (text: string) => void) {
     if (final) {
       onTranscript(final);
       toast({ title: "✅ Voice captured", description: final.length > 60 ? final.slice(0, 60) + "…" : final });
+      // Auto-send after a brief delay so the input is populated first
+      if (autoSend) {
+        setTimeout(() => autoSend(final), 300);
+      }
     } else {
       toast({ title: "No speech detected", description: "Try speaking louder or closer to your mic." });
     }

@@ -205,7 +205,10 @@ export default function Chat() {
   const handleVoiceTranscript = useCallback((text: string) => {
     setInput((prev) => (prev ? prev + " " + text : text));
   }, []);
-  const voice = useVoiceInput(handleVoiceTranscript);
+  const handleVoiceAutoSend = useCallback((text: string) => {
+    send(text);
+  }, []);
+  const voice = useVoiceInput(handleVoiceTranscript, handleVoiceAutoSend);
 
   const downloadSubmission = async (subId: string, mode: "individual" | "package" = "package") => {
     if (!user) return;
