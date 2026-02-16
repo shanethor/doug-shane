@@ -8,7 +8,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import SubmissionReviewPanel from "@/components/SubmissionReviewPanel";
 import FormFillingView from "@/components/FormFillingView";
-import { Send, FileUp, ClipboardList, Search, Loader2, Paperclip, X, Download, Package } from "lucide-react";
+import { Send, FileUp, ClipboardList, Search, Loader2, Paperclip, X, Download, Package, Mic, MicOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { ACORD_FORM_LIST } from "@/lib/acord-forms";
@@ -16,6 +16,7 @@ import { buildAutofilledData } from "@/lib/acord-autofill";
 import { generateAcordPdfAsync } from "@/lib/pdf-generator";
 import { generateSubmissionPackage } from "@/lib/submission-package";
 import { useAuth } from "@/hooks/useAuth";
+import { useVoiceInput } from "@/hooks/useVoiceInput";
 
 type ButtonMarker = { label: string; action: string };
 type Msg = { role: "user" | "assistant"; content: string; fields?: FieldBubble[]; buttons?: ButtonMarker[] };
@@ -200,6 +201,11 @@ export default function Chat() {
   const [activeFormId, setActiveFormId] = useState<string | undefined>(undefined);
   const [submittingFields, setSubmittingFields] = useState(false);
   const skipAutoDetectRef = useRef(false);
+
+  const handleVoiceTranscript = useCallback((text: string) => {
+    setInput((prev) => (prev ? prev + " " + text : text));
+  }, []);
+  const voice = useVoiceInput(handleVoiceTranscript);
 
   const downloadSubmission = async (subId: string, mode: "individual" | "package" = "package") => {
     if (!user) return;
@@ -582,6 +588,16 @@ export default function Chat() {
                     className="flex-1 resize-none bg-transparent border-0 outline-none text-sm placeholder:text-muted-foreground min-h-[52px] max-h-40 py-2"
                   />
                   <Button
+                    variant="ghost"
+                    size="icon"
+                    className={`shrink-0 h-9 w-9 transition-colors ${voice.isListening ? "text-red-500 animate-pulse" : "text-muted-foreground hover:text-foreground"}`}
+                    onClick={voice.toggle}
+                    disabled={voice.isConnecting}
+                    title={voice.isListening ? "Stop recording" : "Voice input"}
+                  >
+                    {voice.isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                  </Button>
+                  <Button
                     onClick={() => send(input)}
                     disabled={!input.trim() || isLoading}
                     size="icon"
@@ -767,6 +783,16 @@ export default function Chat() {
                   rows={2}
                   className="flex-1 resize-none bg-transparent border-0 outline-none text-sm placeholder:text-muted-foreground min-h-[52px] max-h-40 py-2"
                 />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={`shrink-0 h-9 w-9 transition-colors ${voice.isListening ? "text-red-500 animate-pulse" : "text-muted-foreground hover:text-foreground"}`}
+                  onClick={voice.toggle}
+                  disabled={voice.isConnecting}
+                  title={voice.isListening ? "Stop recording" : "Voice input"}
+                >
+                  {voice.isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+                </Button>
                 <Button
                   onClick={() => send(input)}
                   disabled={!input.trim() || isLoading}
