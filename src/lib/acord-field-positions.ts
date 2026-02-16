@@ -3,6 +3,8 @@
  * Coordinates are in points (1pt = 1/72 inch) on a letter-size page (612 × 792).
  * Each entry maps a field key to { page, x, y, maxWidth?, fontSize? }.
  * page is 0-indexed relative to the form's pages array.
+ *
+ * Calibrated against the actual ACORD template images in public/acord-pages/.
  */
 
 export type FieldPosition = {
@@ -16,170 +18,178 @@ export type FieldPosition = {
 
 // ─── ACORD 125 — Commercial Insurance Application (4 pages) ───
 export const ACORD_125_POSITIONS: Record<string, FieldPosition> = {
-  // Page 1 — Header / Agency
-  agency_name:          { page: 0, x: 48, y: 100, maxWidth: 180 },
-  agency_phone:         { page: 0, x: 48, y: 120, maxWidth: 140 },
-  agency_fax:           { page: 0, x: 200, y: 120, maxWidth: 140 },
-  agency_email:         { page: 0, x: 48, y: 140, maxWidth: 200 },
-  agency_customer_id:   { page: 0, x: 410, y: 80, maxWidth: 160 },
-  carrier:              { page: 0, x: 410, y: 100, maxWidth: 160 },
-  naic_code:            { page: 0, x: 410, y: 120, maxWidth: 80 },
-  policy_number:        { page: 0, x: 490, y: 120, maxWidth: 90 },
-  contact_name:         { page: 0, x: 48, y: 160, maxWidth: 180 },
-  transaction_date:     { page: 0, x: 410, y: 160, maxWidth: 100 },
+  // Page 1 — Header / Agency block
+  agency_name:          { page: 0, x: 22, y: 62, maxWidth: 270 },
+  agency_phone:         { page: 0, x: 22, y: 138, maxWidth: 130 },
+  agency_fax:           { page: 0, x: 22, y: 152, maxWidth: 130 },
+  agency_email:         { page: 0, x: 22, y: 166, maxWidth: 200 },
+  agency_customer_id:   { page: 0, x: 22, y: 207, maxWidth: 160 },
+  carrier:              { page: 0, x: 312, y: 62, maxWidth: 230 },
+  naic_code:            { page: 0, x: 565, y: 62, maxWidth: 40 },
+  policy_number:        { page: 0, x: 312, y: 98, maxWidth: 230 },
+  contact_name:         { page: 0, x: 22, y: 118, maxWidth: 200 },
+  transaction_date:     { page: 0, x: 545, y: 33, maxWidth: 60 },
 
-  // Applicant Information
-  applicant_name:       { page: 0, x: 48, y: 215, maxWidth: 300 },
-  mailing_address:      { page: 0, x: 48, y: 235, maxWidth: 300 },
-  city:                 { page: 0, x: 48, y: 255, maxWidth: 140 },
-  state:                { page: 0, x: 200, y: 255, maxWidth: 50 },
-  zip:                  { page: 0, x: 260, y: 255, maxWidth: 80 },
-  fein:                 { page: 0, x: 410, y: 215, maxWidth: 160 },
-  sic_code:             { page: 0, x: 410, y: 235, maxWidth: 70 },
-  naics_code:           { page: 0, x: 490, y: 235, maxWidth: 80 },
-  business_phone:       { page: 0, x: 410, y: 255, maxWidth: 160 },
-  website:              { page: 0, x: 48, y: 275, maxWidth: 300 },
-  business_type:        { page: 0, x: 410, y: 275, maxWidth: 160 },
+  // Policy Information (mid-page, below Attachments)
+  proposed_eff_date:    { page: 0, x: 22, y: 512, maxWidth: 72 },
+  proposed_exp_date:    { page: 0, x: 100, y: 512, maxWidth: 72 },
+  billing_plan:         { page: 0, x: 182, y: 525, maxWidth: 70 },
+  payment_plan:         { page: 0, x: 270, y: 512, maxWidth: 70 },
+  policy_premium:       { page: 0, x: 578, y: 512, maxWidth: 30 },
 
-  // Policy Information
-  proposed_eff_date:    { page: 0, x: 48, y: 325, maxWidth: 100 },
-  proposed_exp_date:    { page: 0, x: 160, y: 325, maxWidth: 100 },
-  billing_plan:         { page: 0, x: 290, y: 325, maxWidth: 100 },
-  payment_plan:         { page: 0, x: 410, y: 325, maxWidth: 100 },
-  policy_premium:       { page: 0, x: 520, y: 325, maxWidth: 70 },
+  // Applicant Information (bottom of page 1)
+  applicant_name:       { page: 0, x: 22, y: 568, maxWidth: 390 },
+  mailing_address:      { page: 0, x: 22, y: 582, maxWidth: 390 },
+  city:                 { page: 0, x: 22, y: 596, maxWidth: 140 },
+  state:                { page: 0, x: 170, y: 596, maxWidth: 40 },
+  zip:                  { page: 0, x: 220, y: 596, maxWidth: 80 },
+  fein:                 { page: 0, x: 565, y: 568, maxWidth: 40, fontSize: 7 },
+  sic_code:             { page: 0, x: 480, y: 558, maxWidth: 35 },
+  naics_code:           { page: 0, x: 520, y: 558, maxWidth: 40 },
+  business_phone:       { page: 0, x: 432, y: 600, maxWidth: 120 },
+  website:              { page: 0, x: 432, y: 615, maxWidth: 160 },
+  business_type:        { page: 0, x: 432, y: 558, maxWidth: 40 },
 
-  // Premises
-  premises_address:     { page: 0, x: 48, y: 420, maxWidth: 250 },
-  premises_city:        { page: 0, x: 48, y: 440, maxWidth: 140 },
-  premises_state:       { page: 0, x: 200, y: 440, maxWidth: 50 },
-  premises_zip:         { page: 0, x: 260, y: 440, maxWidth: 80 },
-  full_time_employees:  { page: 0, x: 410, y: 420, maxWidth: 60 },
-  part_time_employees:  { page: 0, x: 490, y: 420, maxWidth: 60 },
-  annual_revenues:      { page: 0, x: 410, y: 440, maxWidth: 120 },
+  // Page 2 — Premises Information
+  premises_address:     { page: 1, x: 60, y: 142, maxWidth: 220 },
+  premises_city:        { page: 1, x: 60, y: 162, maxWidth: 110 },
+  premises_state:       { page: 1, x: 178, y: 162, maxWidth: 40 },
+  premises_zip:         { page: 1, x: 232, y: 162, maxWidth: 60 },
+  full_time_employees:  { page: 1, x: 440, y: 142, maxWidth: 50 },
+  part_time_employees:  { page: 1, x: 440, y: 162, maxWidth: 50 },
+  annual_revenues:      { page: 1, x: 535, y: 142, maxWidth: 60 },
 
-  // Nature of Business
-  date_business_started:      { page: 0, x: 48, y: 510, maxWidth: 100 },
-  description_of_operations:  { page: 0, x: 48, y: 530, maxWidth: 520, fontSize: 7 },
+  // Nature of Business (page 2)
+  date_business_started:      { page: 1, x: 540, y: 518, maxWidth: 60 },
+  description_of_operations:  { page: 1, x: 22, y: 548, maxWidth: 560, fontSize: 7 },
 
-  // Page 2 — General Information
-  subsidiary_of_another:  { page: 1, x: 400, y: 100, maxWidth: 40 },
-  has_subsidiaries:       { page: 1, x: 400, y: 120, maxWidth: 40 },
-  safety_program:         { page: 1, x: 400, y: 140, maxWidth: 40 },
-  exposure_flammables:    { page: 1, x: 400, y: 180, maxWidth: 40 },
-  policy_declined_cancelled: { page: 1, x: 400, y: 220, maxWidth: 40 },
-  bankruptcy:             { page: 1, x: 400, y: 300, maxWidth: 40 },
-  general_info_remarks:   { page: 1, x: 48, y: 420, maxWidth: 520, fontSize: 7 },
+  // Page 3 — General Information (Y/N answers on right)
+  subsidiary_of_another:  { page: 2, x: 585, y: 52, maxWidth: 15 },
+  has_subsidiaries:       { page: 2, x: 585, y: 95, maxWidth: 15 },
+  safety_program:         { page: 2, x: 585, y: 135, maxWidth: 15 },
+  exposure_flammables:    { page: 2, x: 585, y: 172, maxWidth: 15 },
+  policy_declined_cancelled: { page: 2, x: 585, y: 258, maxWidth: 15 },
+  bankruptcy:             { page: 2, x: 585, y: 478, maxWidth: 15 },
+  general_info_remarks:   { page: 2, x: 22, y: 702, maxWidth: 560, fontSize: 7 },
 
-  // Page 3 — Prior Carrier / Loss History
-  prior_carrier_1:        { page: 2, x: 48, y: 120, maxWidth: 200 },
-  prior_policy_number_1:  { page: 2, x: 260, y: 120, maxWidth: 120 },
-  prior_gl_premium_1:     { page: 2, x: 400, y: 120, maxWidth: 80 },
-  loss_history:           { page: 2, x: 48, y: 300, maxWidth: 520, fontSize: 7 },
+  // Page 3 — Prior Carrier Information (bottom)
+  prior_carrier_1:        { page: 2, x: 68, y: 758, maxWidth: 100 },
+  prior_policy_number_1:  { page: 2, x: 68, y: 770, maxWidth: 100 },
+  prior_gl_premium_1:     { page: 2, x: 135, y: 778, maxWidth: 70 },
+  loss_history:           { page: 3, x: 22, y: 218, maxWidth: 560, fontSize: 7 },
 
-  // Page 4 — Remarks / Signature
-  remarks:                { page: 3, x: 48, y: 100, maxWidth: 520, fontSize: 7 },
-  producer_name:          { page: 3, x: 48, y: 680, maxWidth: 200 },
-  signature_date:         { page: 3, x: 410, y: 680, maxWidth: 100 },
+  // Page 4 — Signature
+  remarks:                { page: 2, x: 22, y: 702, maxWidth: 560, fontSize: 7 },
+  producer_name:          { page: 3, x: 252, y: 748, maxWidth: 200 },
+  signature_date:         { page: 3, x: 445, y: 762, maxWidth: 80 },
 };
 
 // ─── ACORD 126 — Commercial General Liability (4 pages) ───
 export const ACORD_126_POSITIONS: Record<string, FieldPosition> = {
-  agency_name:          { page: 0, x: 48, y: 100, maxWidth: 180 },
-  agency_customer_id:   { page: 0, x: 410, y: 80, maxWidth: 160 },
-  carrier:              { page: 0, x: 410, y: 100, maxWidth: 160 },
-  naic_code:            { page: 0, x: 410, y: 120, maxWidth: 80 },
-  policy_number:        { page: 0, x: 490, y: 120, maxWidth: 90 },
-  effective_date:       { page: 0, x: 48, y: 140, maxWidth: 100 },
-  insured_name:         { page: 0, x: 48, y: 170, maxWidth: 300 },
+  agency_name:          { page: 0, x: 22, y: 65, maxWidth: 270 },
+  agency_customer_id:   { page: 0, x: 370, y: 18, maxWidth: 160 },
+  carrier:              { page: 0, x: 312, y: 65, maxWidth: 230 },
+  naic_code:            { page: 0, x: 565, y: 65, maxWidth: 40 },
+  policy_number:        { page: 0, x: 22, y: 88, maxWidth: 190 },
+  effective_date:       { page: 0, x: 222, y: 88, maxWidth: 80 },
+  insured_name:         { page: 0, x: 342, y: 88, maxWidth: 230 },
 
-  // Coverages
-  coverage_type:        { page: 0, x: 48, y: 220, maxWidth: 100 },
-  general_aggregate:    { page: 0, x: 410, y: 220, maxWidth: 120 },
-  products_aggregate:   { page: 0, x: 410, y: 240, maxWidth: 120 },
-  each_occurrence:      { page: 0, x: 410, y: 260, maxWidth: 120 },
-  personal_adv_injury:  { page: 0, x: 410, y: 280, maxWidth: 120 },
-  fire_damage:          { page: 0, x: 410, y: 300, maxWidth: 120 },
-  medical_payments:     { page: 0, x: 410, y: 320, maxWidth: 120 },
+  // Coverages — Limits (right column, $ values)
+  coverage_type:        { page: 0, x: 30, y: 142, maxWidth: 180 },
+  general_aggregate:    { page: 0, x: 460, y: 142, maxWidth: 60 },
+  products_aggregate:   { page: 0, x: 460, y: 170, maxWidth: 60 },
+  personal_adv_injury:  { page: 0, x: 460, y: 185, maxWidth: 60 },
+  each_occurrence:      { page: 0, x: 460, y: 200, maxWidth: 60 },
+  fire_damage:          { page: 0, x: 460, y: 215, maxWidth: 60 },
+  medical_payments:     { page: 0, x: 460, y: 232, maxWidth: 60 },
 
-  // Hazards
-  hazard_code_1:          { page: 0, x: 48, y: 400, maxWidth: 80 },
-  hazard_classification_1:{ page: 0, x: 140, y: 400, maxWidth: 200 },
-  hazard_exposure_1:      { page: 0, x: 360, y: 400, maxWidth: 100 },
-  hazard_premium_1:       { page: 0, x: 480, y: 400, maxWidth: 80 },
+  // Schedule of Hazards (first row)
+  hazard_code_1:          { page: 0, x: 50, y: 368, maxWidth: 35 },
+  hazard_classification_1:{ page: 0, x: 22, y: 388, maxWidth: 280 },
+  hazard_exposure_1:      { page: 0, x: 220, y: 368, maxWidth: 80 },
+  hazard_premium_1:       { page: 0, x: 498, y: 372, maxWidth: 60 },
 
-  remarks_126:            { page: 1, x: 48, y: 100, maxWidth: 520, fontSize: 7 },
+  remarks_126:            { page: 1, x: 22, y: 100, maxWidth: 560, fontSize: 7 },
 };
 
 // ─── ACORD 127 — Business Auto (3 pages) ───
 export const ACORD_127_POSITIONS: Record<string, FieldPosition> = {
-  agency_name:          { page: 0, x: 48, y: 100, maxWidth: 180 },
-  insured_name:         { page: 0, x: 48, y: 170, maxWidth: 300 },
-  effective_date:       { page: 0, x: 48, y: 140, maxWidth: 100 },
-  policy_number:        { page: 0, x: 490, y: 120, maxWidth: 90 },
+  agency_name:          { page: 0, x: 22, y: 65, maxWidth: 270 },
+  insured_name:         { page: 0, x: 372, y: 88, maxWidth: 200 },
+  effective_date:       { page: 0, x: 268, y: 88, maxWidth: 80 },
+  policy_number:        { page: 0, x: 22, y: 88, maxWidth: 190 },
 
-  // Vehicles
-  vehicle_1_year:       { page: 0, x: 48, y: 340, maxWidth: 50 },
-  vehicle_1_make:       { page: 0, x: 110, y: 340, maxWidth: 80 },
-  vehicle_1_model:      { page: 0, x: 200, y: 340, maxWidth: 100 },
-  vehicle_1_vin:        { page: 0, x: 310, y: 340, maxWidth: 180 },
-
-  // Drivers
-  driver_1_name:        { page: 1, x: 48, y: 120, maxWidth: 200 },
-  driver_1_dob:         { page: 1, x: 260, y: 120, maxWidth: 80 },
-  driver_1_license:     { page: 1, x: 360, y: 120, maxWidth: 120 },
+  // Driver Information (page 1 — driver table rows, ~14pt spacing)
+  driver_1_name:        { page: 0, x: 55, y: 178, maxWidth: 130, fontSize: 7 },
+  driver_1_dob:         { page: 0, x: 242, y: 178, maxWidth: 60, fontSize: 7 },
+  driver_1_license:     { page: 0, x: 382, y: 178, maxWidth: 100, fontSize: 7 },
 };
 
 // ─── ACORD 130 — Workers Compensation (4 pages) ───
 export const ACORD_130_POSITIONS: Record<string, FieldPosition> = {
-  agency_name:            { page: 0, x: 48, y: 100, maxWidth: 180 },
-  insured_name:           { page: 0, x: 48, y: 170, maxWidth: 300 },
-  effective_date:         { page: 0, x: 48, y: 140, maxWidth: 100 },
-  policy_number:          { page: 0, x: 490, y: 120, maxWidth: 90 },
-  state_of_operation:     { page: 0, x: 410, y: 170, maxWidth: 80 },
+  // Page 1 — Header
+  agency_name:            { page: 0, x: 22, y: 62, maxWidth: 265 },
+  insured_name:           { page: 0, x: 312, y: 92, maxWidth: 200 },
+  effective_date:         { page: 0, x: 312, y: 108, maxWidth: 140 },
+  policy_number:          { page: 0, x: 312, y: 55, maxWidth: 200 },
+  state_of_operation:     { page: 0, x: 22, y: 478, maxWidth: 85 },
 
-  // Class codes
-  class_code_1:           { page: 0, x: 48, y: 320, maxWidth: 80 },
-  class_description_1:    { page: 0, x: 140, y: 320, maxWidth: 200 },
-  annual_remuneration_1:  { page: 0, x: 360, y: 320, maxWidth: 100 },
-  est_premium_1:          { page: 0, x: 480, y: 320, maxWidth: 80 },
+  // Federal Employer ID
+  fein:                   { page: 0, x: 260, y: 238, maxWidth: 150 },
 
-  // Officers
-  officer_1_name:         { page: 1, x: 48, y: 120, maxWidth: 200 },
-  officer_1_title:        { page: 1, x: 260, y: 120, maxWidth: 100 },
-  officer_1_ownership:    { page: 1, x: 380, y: 120, maxWidth: 60 },
+  // Policy Information
+  proposed_eff_date:      { page: 0, x: 22, y: 435, maxWidth: 72 },
+  proposed_exp_date:      { page: 0, x: 168, y: 435, maxWidth: 72 },
 
-  mod_rate:               { page: 0, x: 410, y: 300, maxWidth: 80 },
-  total_estimated_premium:{ page: 0, x: 480, y: 400, maxWidth: 80 },
+  // Part 2 — Employer's Liability limits
+  each_accident_limit:    { page: 0, x: 120, y: 492, maxWidth: 70, fontSize: 7 },
+  disease_policy_limit:   { page: 0, x: 120, y: 508, maxWidth: 70, fontSize: 7 },
+  disease_each_employee:  { page: 0, x: 120, y: 522, maxWidth: 70, fontSize: 7 },
+
+  // Total Estimated Annual Premium
+  total_estimated_premium:{ page: 0, x: 22, y: 602, maxWidth: 120 },
+
+  // Individuals Included/Excluded (bottom of page 1)
+  officer_1_name:         { page: 0, x: 82, y: 758, maxWidth: 130, fontSize: 7 },
+  officer_1_title:        { page: 0, x: 315, y: 758, maxWidth: 60, fontSize: 7 },
+  officer_1_ownership:    { page: 0, x: 382, y: 758, maxWidth: 40, fontSize: 7 },
+  class_code_1:           { page: 0, x: 502, y: 758, maxWidth: 40, fontSize: 7 },
+  annual_remuneration_1:  { page: 0, x: 555, y: 758, maxWidth: 50, fontSize: 7 },
+
+  mod_rate:               { page: 1, x: 22, y: 100, maxWidth: 60 },
 };
 
 // ─── ACORD 131 — Umbrella / Excess (5 pages) ───
 export const ACORD_131_POSITIONS: Record<string, FieldPosition> = {
-  agency_name:            { page: 0, x: 48, y: 100, maxWidth: 180 },
-  insured_name:           { page: 0, x: 48, y: 170, maxWidth: 300 },
-  effective_date:         { page: 0, x: 48, y: 140, maxWidth: 100 },
-  policy_number:          { page: 0, x: 490, y: 120, maxWidth: 90 },
+  agency_name:            { page: 0, x: 22, y: 82, maxWidth: 270 },
+  insured_name:           { page: 0, x: 342, y: 102, maxWidth: 200 },
+  effective_date:         { page: 0, x: 222, y: 102, maxWidth: 80 },
+  policy_number:          { page: 0, x: 22, y: 102, maxWidth: 190 },
 
-  each_occurrence_limit:  { page: 0, x: 410, y: 220, maxWidth: 120 },
-  aggregate_limit:        { page: 0, x: 410, y: 240, maxWidth: 120 },
-  self_insured_retention: { page: 0, x: 410, y: 260, maxWidth: 120 },
-  annual_premium:         { page: 0, x: 410, y: 280, maxWidth: 120 },
+  // Policy Information — Limit of Liability
+  each_occurrence_limit:  { page: 0, x: 480, y: 148, maxWidth: 50 },
+  aggregate_limit:        { page: 0, x: 480, y: 165, maxWidth: 50 },
+  self_insured_retention: { page: 0, x: 558, y: 148, maxWidth: 40 },
+  annual_premium:         { page: 0, x: 558, y: 165, maxWidth: 40 },
 };
 
 // ─── ACORD 140 — Property (3 pages) ───
 export const ACORD_140_POSITIONS: Record<string, FieldPosition> = {
-  agency_name:            { page: 0, x: 48, y: 100, maxWidth: 180 },
-  insured_name:           { page: 0, x: 48, y: 170, maxWidth: 300 },
-  effective_date:         { page: 0, x: 48, y: 140, maxWidth: 100 },
-  policy_number:          { page: 0, x: 490, y: 120, maxWidth: 90 },
+  agency_name:            { page: 0, x: 22, y: 62, maxWidth: 270 },
+  insured_name:           { page: 0, x: 342, y: 85, maxWidth: 200 },
+  effective_date:         { page: 0, x: 242, y: 85, maxWidth: 80 },
+  policy_number:          { page: 0, x: 22, y: 85, maxWidth: 190 },
 
-  construction_type:      { page: 0, x: 48, y: 300, maxWidth: 120 },
-  year_built:             { page: 0, x: 200, y: 300, maxWidth: 60 },
-  num_stories:            { page: 0, x: 280, y: 300, maxWidth: 40 },
-  total_area_sq_ft:       { page: 0, x: 340, y: 300, maxWidth: 80 },
+  // Construction / Building Info (lower section)
+  construction_type:      { page: 0, x: 22, y: 540, maxWidth: 100 },
+  year_built:             { page: 0, x: 525, y: 540, maxWidth: 45 },
+  num_stories:            { page: 0, x: 445, y: 540, maxWidth: 30 },
+  total_area_sq_ft:       { page: 0, x: 570, y: 540, maxWidth: 40 },
 
-  building_amount:        { page: 0, x: 410, y: 340, maxWidth: 100 },
-  bpp_amount:             { page: 0, x: 410, y: 360, maxWidth: 100 },
-  business_income_amount: { page: 0, x: 410, y: 380, maxWidth: 100 },
+  // Subjects of Insurance amounts (premises info section)
+  building_amount:        { page: 0, x: 148, y: 210, maxWidth: 70, fontSize: 7 },
+  bpp_amount:             { page: 0, x: 148, y: 225, maxWidth: 70, fontSize: 7 },
+  business_income_amount: { page: 0, x: 148, y: 240, maxWidth: 70, fontSize: 7 },
 };
 
 /** Master lookup by form ID */
