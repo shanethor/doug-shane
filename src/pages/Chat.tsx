@@ -13,7 +13,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { ACORD_FORM_LIST } from "@/lib/acord-forms";
 import { buildAutofilledData } from "@/lib/acord-autofill";
-import { generateAcordPdf } from "@/lib/pdf-generator";
+import { generateAcordPdf, generateAcordPdfAsync } from "@/lib/pdf-generator";
 import { generateSubmissionPackage } from "@/lib/submission-package";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -180,7 +180,7 @@ export default function Chat() {
       if (mode === "individual") {
         for (let i = 0; i < results.length; i++) {
           const { form, data } = results[i];
-          const pdf = generateAcordPdf(form, data);
+          const pdf = await generateAcordPdfAsync(form, data);
           pdf.save(`${form.name.replace(/\s/g, "_")}_${new Date().toISOString().slice(0, 10)}.pdf`);
           if (i < results.length - 1) await new Promise(r => setTimeout(r, 600));
         }
