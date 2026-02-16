@@ -223,10 +223,12 @@ export default function FormFillingView({ submissionId, initialMessages, initial
         .eq("user_id", user.id)
         .single();
 
-      const forms = ACORD_FORM_LIST;
+      const formsToProcess = mode === "individual"
+        ? ACORD_FORM_LIST.filter(f => f.id === activeFormId)
+        : ACORD_FORM_LIST;
       const results: { form: AcordFormDefinition; data: Record<string, any> }[] = [];
 
-      for (const form of forms) {
+      for (const form of formsToProcess) {
         const data: Record<string, any> = {};
         for (const field of form.fields) {
           if (formData[field.key]) data[field.key] = formData[field.key];
