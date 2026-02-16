@@ -48,33 +48,37 @@ export const splitEmployees = (raw: string): { full_time: string; part_time: str
 };
 
 const AI_TO_FORM_ALIASES: Record<string, string[]> = {
-  applicant_name: ["applicant_name", "insured_name", "named_insured"],
+  applicant_name: ["applicant_name", "insured_name", "named_insured", "primary_location_name"],
   dba_name: ["dba_name"],
-  mailing_address: ["mailing_address", "premises_address", "building_address"],
+  mailing_address: ["mailing_address", "premises_address", "building_address", "building_street_address", "garaging_street", "location_1_address", "primary_location_address"],
   city: ["city", "premises_city", "garaging_city", "building_city"],
-  state: ["state", "premises_state", "state_of_operation", "garaging_state", "building_state"],
+  state: ["state", "premises_state", "state_of_operation", "garaging_state", "building_state", "rating_state", "wc_part1_states"],
   zip: ["zip", "premises_zip", "garaging_zip", "building_zip"],
-  phone: ["business_phone", "phone", "contact_phone"],
-  email: ["email", "agency_email", "contact_email"],
+  phone: ["business_phone", "phone", "contact_phone", "applicant_phone"],
+  email: ["email", "agency_email", "contact_email", "applicant_email"],
   website: ["website"],
   fein: ["fein"],
-  sic_code: ["sic_code"],
+  sic_code: ["sic_code", "vehicle_1_sic"],
   naics_code: ["naics_code"],
   business_type: ["business_type"],
-  year_established: ["date_business_started"],
-  annual_revenue: ["annual_revenues", "annual_revenue", "gross_sales"],
+  year_established: ["date_business_started", "years_in_business"],
+  annual_revenue: ["annual_revenues", "annual_revenue", "gross_sales", "annual_gross_sales"],
   nature_of_business: ["nature_of_business", "business_category"],
-  description_of_operations: ["description_of_operations", "operations_description"],
+  description_of_operations: ["description_of_operations", "operations_description", "primary_description"],
   effective_date: ["effective_date", "proposed_eff_date"],
   expiration_date: ["expiration_date", "proposed_exp_date"],
-  current_carrier: ["prior_carrier_name", "current_carrier", "carrier", "prior_workers_comp_carrier"],
+  current_carrier: ["prior_carrier_name", "current_carrier", "carrier", "prior_workers_comp_carrier", "prior_wc_carrier_1", "prior_carrier_1"],
   current_premium: ["current_premium"],
-  premises_address: ["premises_address"],
+  premises_address: ["premises_address", "building_street_address", "garaging_street"],
   premises_owned_or_leased: ["premises_interest"],
   square_footage: ["occupied_sq_ft", "total_building_sq_ft", "total_area_sq_ft"],
   prior_losses_last_5_years: ["loss_history", "wc_loss_history"],
   claims_description: ["loss_history"],
   coverage_types_needed: ["lines_of_business"],
+  // Employee fields — cross-form
+  number_of_employees: ["total_employees"],
+  full_time_employees: ["full_time_employees"],
+  part_time_employees: ["part_time_employees"],
   // WC-specific aliases
   wc_class_code: ["class_code_1"],
   wc_class_description: ["class_description_1"],
@@ -82,11 +86,23 @@ const AI_TO_FORM_ALIASES: Record<string, string[]> = {
   officer_name: ["officer_1_name"],
   officer_title: ["officer_1_title"],
   officer_ownership: ["officer_1_ownership"],
+  // Property / Construction — cross-form
   building_construction: ["construction_type"],
   year_built: ["year_built"],
   safety_program: ["workplace_safety_program", "safety_program"],
   subcontractors_used: ["subcontractors_used"],
   seasonal_employees: ["seasonal_employees"],
+  // Auto — cross-form
+  driver_1_name: ["driver_1_name"],
+  vehicle_1_year: ["vehicle_1_year"],
+  vehicle_1_make: ["vehicle_1_make"],
+  vehicle_1_model: ["vehicle_1_model"],
+  vehicle_1_vin: ["vehicle_1_vin"],
+  // Umbrella — cross-form  
+  each_occurrence_limit: ["each_occurrence_limit"],
+  aggregate_limit: ["aggregate_limit"],
+  // Payroll cross-form (WC ↔ Umbrella)
+  annual_payroll: ["annual_payroll", "annual_remuneration_1"],
 };
 
 const DATE_FIELDS = new Set([

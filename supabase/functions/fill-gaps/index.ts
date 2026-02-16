@@ -8,38 +8,76 @@ const corsHeaders = {
 };
 
 // All ACORD form field keys that matter for completeness
-const ACORD_130_FIELDS = [
-  "insured_name", "effective_date", "expiration_date", "state_of_operation",
-  "mailing_address", "city", "state", "zip", "fein", "business_type",
-  "nature_of_business", "sic_code", "description_of_operations",
-  "class_code_1", "class_description_1", "num_employees_1", "annual_remuneration_1",
-  "officer_1_name", "officer_1_title", "officer_1_ownership", "officer_1_included", "officer_1_remuneration",
-  "subcontractors_used", "subcontractor_certs", "employees_travel_out_of_state",
-  "seasonal_employees", "leased_employees", "workplace_safety_program",
-  "prior_workers_comp_carrier", "wc_loss_history",
-];
-
 const ACORD_125_FIELDS = [
   "applicant_name", "proposed_eff_date", "proposed_exp_date",
   "mailing_address", "city", "state", "zip", "fein", "business_type",
   "business_phone", "annual_revenues", "full_time_employees", "part_time_employees",
   "description_of_operations", "business_category", "date_business_started",
   "safety_program", "exposure_flammables", "policy_declined_cancelled",
-  "prior_carrier_name",
+  "prior_carrier_1", "sic_code", "naics_code", "website",
+  "subsidiary_of_another", "has_subsidiaries", "bankruptcy", "foreign_operations",
 ];
 
 const ACORD_126_FIELDS = [
   "insured_name", "effective_date", "coverage_type",
   "general_aggregate", "each_occurrence", "personal_adv_injury",
   "fire_damage", "medical_payments", "products_aggregate",
-  "hazard_classification_1", "hazard_code_1",
+  "hazard_classification_1", "hazard_code_1", "hazard_exposure_1",
   "alcohol_served", "products_sold", "professional_services",
+  "draws_plans_for_others", "installs_services_products",
+];
+
+const ACORD_127_FIELDS = [
+  "insured_name", "effective_date",
+  "driver_1_name", "driver_1_dob", "driver_1_license",
+  "vehicle_1_year", "vehicle_1_make", "vehicle_1_model", "vehicle_1_vin",
+  "vehicle_1_body_type", "vehicle_1_radius",
+  "garaging_street", "garaging_city", "garaging_state", "garaging_zip",
+  "transporting_hazmat", "vehicle_maintenance_program",
+];
+
+const ACORD_130_FIELDS = [
+  "insured_name", "effective_date", "expiration_date", "state_of_operation",
+  "mailing_address", "city", "state", "zip", "fein", "business_type",
+  "nature_of_business", "sic_code", "description_of_operations",
+  "class_code_1", "class_description_1", "num_employees_1", "annual_remuneration_1",
+  "officer_1_name", "officer_1_title", "officer_1_ownership", "officer_1_inc_exc", "officer_1_remuneration",
+  "subcontractors_used", "subcontractor_certs", "wc_travel_out_of_state",
+  "seasonal_employees", "wc_lease_employees", "workplace_safety_program",
+  "prior_wc_carrier_1", "wc_part1_states", "rating_state",
+  "wc_each_accident", "wc_disease_policy_limit", "wc_disease_each_employee",
+];
+
+const ACORD_131_FIELDS = [
+  "insured_name", "effective_date",
+  "umbrella_or_excess", "coverage_basis",
+  "each_occurrence_limit", "aggregate_limit",
+  "retained_limit_occurrence", "retained_limit_aggregate",
+  "underlying_gl_carrier", "underlying_gl_occurrence", "underlying_gl_aggregate",
+  "underlying_auto_carrier", "underlying_auto_bi_ea_acc",
+  "underlying_el_carrier", "underlying_el_each_accident",
+  "annual_payroll", "annual_gross_sales", "total_employees",
+  "primary_description",
+];
+
+const ACORD_140_FIELDS = [
+  "insured_name", "effective_date",
+  "building_street_address", "construction_type", "num_stories", "year_built",
+  "total_area_sq_ft", "building_amount", "bpp_amount",
+  "building_valuation", "building_causes_of_loss", "building_deductible",
+  "bpp_valuation", "bpp_causes_of_loss", "bpp_deductible",
+  "business_income_amount", "extra_expense_amount",
+  "roof_type", "sprinkler_pct", "fire_alarm_type", "burglar_alarm_type",
+  "primary_heat_type", "protection_class",
 ];
 
 const ALL_TARGET_FIELDS: Record<string, string[]> = {
   "acord-125": ACORD_125_FIELDS,
   "acord-126": ACORD_126_FIELDS,
+  "acord-127": ACORD_127_FIELDS,
   "acord-130": ACORD_130_FIELDS,
+  "acord-131": ACORD_131_FIELDS,
+  "acord-140": ACORD_140_FIELDS,
 };
 
 serve(async (req) => {
@@ -115,7 +153,7 @@ serve(async (req) => {
       const companyContext = submission?.company_name ? `\nCOMPANY NAME: ${submission.company_name}` : "";
       const descContext = submission?.description ? `\nORIGINAL BUSINESS DESCRIPTION: ${submission.description}` : "";
 
-      const inferPrompt = `You are an expert insurance underwriter filling ACORD forms (125, 126, 130). Given the KNOWN data, you MUST infer as many EMPTY fields as possible. Be AGGRESSIVE with inference — use industry knowledge.
+      const inferPrompt = `You are an expert insurance underwriter filling ACORD forms (125, 126, 127, 130, 131, 140). Given the KNOWN data, you MUST infer as many EMPTY fields as possible across ALL forms. Be AGGRESSIVE with inference — use industry knowledge.
 
 RULES FOR INFERENCE (follow these strictly):
 - applicant_name / insured_name: Use the company name provided
