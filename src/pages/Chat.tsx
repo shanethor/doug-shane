@@ -144,7 +144,31 @@ function tryExtractIntakeFromMessage(text: string): Record<string, string> | nul
   return null;
 }
 
-/** Map extracted data keys to field bubble keys */
+/** Detect which ACORD form the user is requesting based on chat text */
+function detectRequestedForm(text: string): string | undefined {
+  const lower = text.toLowerCase();
+  
+  // Direct form number mentions (e.g., "form 130", "acord 130", "fill a 130")
+  const formNumMatch = lower.match(/(?:acord|form)\s*#?\s*(125|126|127|130|131|140)/);
+  if (formNumMatch) return `acord-${formNumMatch[1]}`;
+  
+  // Standalone number mentions in context (e.g., "fill out a 130", "need the 127")
+  const standaloneMatch = lower.match(/(?:fill|need|do|start|open|work on|the)\s+(?:a\s+|an?\s+)?#?(125|126|127|130|131|140)\b/);
+  if (standaloneMatch) return `acord-${standaloneMatch[1]}`;
+
+  // Coverage line keywords → form mapping
+  if (/workers?\s*comp|work\s*comp|wc\b/i.test(lower)) return "acord-130";
+  if (/commercial\s*auto|business\s*auto|auto\s*section/i.test(lower)) return "acord-127";
+  if (/general\s*liability|cgl\b|gl\s*section/i.test(lower)) return "acord-126";
+  if (/commercial\s*property|property\s*section|building\s*coverage/i.test(lower)) return "acord-140";
+  if (/umbrella|excess\s*liability/i.test(lower)) return "acord-131";
+  
+  // Fallback: check form names from the list
+  const formMatch = ACORD_FORM_LIST.find(f => lower.includes(f.name.toLowerCase()));
+  return formMatch?.id;
+}
+
+
 function autoFillFieldsFromExtracted(fields: FieldBubble[], extracted: Record<string, string>): Record<string, string> {
   const result: Record<string, string> = {};
   for (const f of fields) {
@@ -440,9 +464,10 @@ export default function Chat() {
       if (!extractResp.ok) console.warn("Extract failed:", extractResp.status);
 
       send(`Here are the details:\n${filled}\n\n[SUBMISSION_ID:${sub.id}]`);
-      const allText = messages.map(m => m.content).join(" ").toLowerCase();
-      const formMatch = ACORD_FORM_LIST.find(f => allText.includes(f.name.toLowerCase()));
-      setActiveFormId(formMatch?.id);
+      // Detect which form the user is requesting from chat context
+      const allText = messages.map(m => m.content).join(" ") + " " + filled;
+      const detectedFormId = detectRequestedForm(allText);
+      setActiveFormId(detectedFormId);
       setTimeout(() => setActiveSubmissionId(sub.id), 1500);
     } catch (err) {
       console.error("Failed to create submission:", err);
