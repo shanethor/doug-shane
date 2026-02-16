@@ -6,86 +6,97 @@
 
 @layer base {
   :root {
-    --background: 40 20% 98%;
-    --foreground: 220 20% 14%;
+    --background: 220 25% 97%;
+    --foreground: 220 30% 12%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 220 20% 14%;
+    --card: 220 20% 100%;
+    --card-foreground: 220 30% 12%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 220 20% 14%;
+    --popover: 220 20% 100%;
+    --popover-foreground: 220 30% 12%;
 
-    --primary: 220 60% 20%;
-    --primary-foreground: 40 20% 98%;
+    --primary: 220 55% 22%;
+    --primary-foreground: 220 20% 96%;
 
-    --secondary: 40 15% 94%;
-    --secondary-foreground: 220 20% 14%;
+    --secondary: 220 15% 93%;
+    --secondary-foreground: 220 30% 12%;
 
-    --muted: 40 10% 95%;
-    --muted-foreground: 220 10% 50%;
+    --muted: 220 12% 94%;
+    --muted-foreground: 220 12% 48%;
 
-    --accent: 160 40% 45%;
+    --accent: 220 40% 55%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 70% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 15% 90%;
-    --input: 220 15% 90%;
-    --ring: 220 60% 20%;
+    --border: 220 18% 88%;
+    --input: 220 18% 88%;
+    --ring: 220 55% 22%;
 
-    --radius: 0.5rem;
+    --radius: 0.625rem;
 
     --success: 160 50% 42%;
     --warning: 38 92% 50%;
 
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* AURA gradient tokens */
+    --aura-navy: 220 55% 22%;
+    --aura-steel: 220 15% 55%;
+    --aura-silver: 220 10% 78%;
+    --aura-glow: 220 40% 55%;
+
+    --sidebar-background: 220 25% 97%;
+    --sidebar-foreground: 220 30% 20%;
+    --sidebar-primary: 220 55% 22%;
+    --sidebar-primary-foreground: 220 20% 96%;
+    --sidebar-accent: 220 15% 93%;
+    --sidebar-accent-foreground: 220 30% 12%;
+    --sidebar-border: 220 18% 88%;
+    --sidebar-ring: 220 55% 45%;
   }
 
   .dark {
-    --background: 220 20% 8%;
-    --foreground: 40 20% 95%;
+    --background: 222 30% 7%;
+    --foreground: 220 15% 92%;
 
-    --card: 220 20% 11%;
-    --card-foreground: 40 20% 95%;
+    --card: 222 25% 10%;
+    --card-foreground: 220 15% 92%;
 
-    --popover: 220 20% 11%;
-    --popover-foreground: 40 20% 95%;
+    --popover: 222 25% 10%;
+    --popover-foreground: 220 15% 92%;
 
-    --primary: 40 20% 95%;
-    --primary-foreground: 220 20% 8%;
+    --primary: 220 30% 80%;
+    --primary-foreground: 222 30% 7%;
 
-    --secondary: 220 15% 18%;
-    --secondary-foreground: 40 20% 95%;
+    --secondary: 222 20% 16%;
+    --secondary-foreground: 220 15% 92%;
 
-    --muted: 220 15% 18%;
-    --muted-foreground: 220 10% 60%;
+    --muted: 222 20% 16%;
+    --muted-foreground: 220 12% 58%;
 
-    --accent: 160 40% 45%;
+    --accent: 220 40% 55%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 40 20% 95%;
+    --destructive-foreground: 220 15% 92%;
 
-    --border: 220 15% 20%;
-    --input: 220 15% 20%;
-    --ring: 40 20% 95%;
+    --border: 222 20% 18%;
+    --input: 222 20% 18%;
+    --ring: 220 30% 80%;
 
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
+    --aura-navy: 220 30% 80%;
+    --aura-steel: 220 15% 60%;
+    --aura-silver: 220 10% 45%;
+    --aura-glow: 220 40% 60%;
+
+    --sidebar-background: 222 30% 8%;
+    --sidebar-foreground: 220 15% 92%;
+    --sidebar-primary: 220 40% 55%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-accent: 222 20% 14%;
+    --sidebar-accent-foreground: 220 15% 92%;
+    --sidebar-border: 222 20% 16%;
+    --sidebar-ring: 220 40% 55%;
   }
 }
 
@@ -100,8 +111,43 @@
   }
 
   h1, h2, h3 {
-    font-family: 'Instrument Serif', serif;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 600;
+    letter-spacing: -0.02em;
   }
+}
+
+/* AURA gradient utilities */
+.aura-gradient-bg {
+  background: linear-gradient(135deg, hsl(var(--aura-navy)) 0%, hsl(var(--aura-steel)) 50%, hsl(var(--aura-silver)) 100%);
+}
+
+.aura-gradient-text {
+  background: linear-gradient(135deg, hsl(var(--aura-navy)) 0%, hsl(var(--aura-steel)) 60%, hsl(var(--aura-silver)) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.aura-gradient-border {
+  border-image: linear-gradient(135deg, hsl(var(--aura-navy) / 0.3), hsl(var(--aura-silver) / 0.15)) 1;
+}
+
+.aura-glass {
+  background: hsl(var(--card) / 0.7);
+  backdrop-filter: blur(16px) saturate(1.2);
+  -webkit-backdrop-filter: blur(16px) saturate(1.2);
+}
+
+.aura-glow-shadow {
+  box-shadow: 0 8px 32px -8px hsl(var(--aura-navy) / 0.12), 0 2px 8px -2px hsl(var(--aura-glow) / 0.08);
+}
+
+.aura-subtle-mesh {
+  background:
+    radial-gradient(ellipse at 20% 0%, hsl(var(--aura-glow) / 0.04) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 100%, hsl(var(--aura-silver) / 0.06) 0%, transparent 50%),
+    hsl(var(--background));
 }
 
 @keyframes slideUpFadeIn {
@@ -175,6 +221,11 @@
   }
 }
 
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
 .animate-page-enter {
   animation: pageEnter 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
@@ -196,6 +247,11 @@
   animation: smoothReveal 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.2s both;
 }
 
+.animate-shimmer {
+  background-size: 200% 100%;
+  animation: shimmer 2s linear infinite;
+}
+
 /* Smooth transitions for interactive elements */
 .transition-smooth {
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
@@ -208,5 +264,5 @@
 
 .hover-lift:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px -8px hsl(var(--foreground) / 0.08);
+  box-shadow: 0 8px 25px -8px hsl(var(--aura-navy) / 0.1), 0 4px 12px -4px hsl(var(--aura-glow) / 0.06);
 }

@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useAdmin } from "@/hooks/useAdmin";
-import { LayoutDashboard, FilePlus, LogOut, ShieldCheck, MessageCircle, FileStack } from "lucide-react";
+import { LayoutDashboard, LogOut, ShieldCheck, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import auraLogo from "@/assets/aura-logo.png";
 
@@ -17,8 +17,8 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b bg-card animate-page-fade">
+    <div className="min-h-screen aura-subtle-mesh">
+      <header className="border-b aura-glass animate-page-fade sticky top-0 z-40">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
           <Link to="/" className="flex items-center">
             <img src={auraLogo} alt="AURA Risk Group" className="h-8" />
@@ -30,7 +30,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
                 <Button
                   variant={location.pathname === item.to ? "secondary" : "ghost"}
                   size="sm"
-                  className="gap-2 text-xs"
+                  className={`gap-2 text-xs ${location.pathname === item.to ? "aura-glow-shadow" : ""}`}
                 >
                   <item.icon className="h-3.5 w-3.5" />
                   {item.label}

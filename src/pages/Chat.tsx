@@ -512,12 +512,12 @@ export default function Chat() {
         <div ref={scrollRef} className="flex-1 overflow-y-auto">
           {isEmpty ? (
             <div className="flex flex-col items-center justify-center h-full gap-6 px-4">
-              <div className="text-center space-y-2">
-                <h1 className="text-4xl tracking-tight" style={{ fontFamily: "'Instrument Serif', serif" }}>
+              <div className="text-center space-y-3">
+                <h1 className="text-4xl tracking-tight aura-gradient-text">
                   What are we working on?
                 </h1>
                 <p className="text-muted-foreground text-sm max-w-md">
-                  I'm AURA — your AI co-pilot for submissions, ACORD forms, and coverage reviews.
+                  I'm <span className="font-semibold text-foreground">AURA</span> — your AI co-pilot for submissions, ACORD forms, and coverage reviews.
                 </p>
               </div>
 
@@ -536,7 +536,7 @@ export default function Chat() {
                     ))}
                   </div>
                 )}
-                <div className="flex items-end gap-2 rounded-xl border bg-card p-3 shadow-sm focus-within:ring-2 focus-within:ring-ring">
+                <div className="flex items-end gap-2 rounded-xl border bg-card p-3 aura-glow-shadow focus-within:ring-2 focus-within:ring-ring">
                   <input type="file" ref={fileInputRef} className="hidden" multiple onChange={(e) => handleFiles(e.target.files)} />
                   <Button
                     variant="ghost"
@@ -573,9 +573,9 @@ export default function Chat() {
                   <button
                     key={s.label}
                     onClick={() => send(s.message)}
-                    className="flex flex-col items-start gap-2 rounded-lg border bg-card p-4 text-left hover:bg-accent/50 hover-lift transition-colors"
+                    className="flex flex-col items-start gap-2 rounded-xl border bg-card/80 backdrop-blur-sm p-4 text-left hover-lift aura-glow-shadow transition-colors group"
                   >
-                    <s.icon className="h-5 w-5 text-primary" />
+                    <s.icon className="h-5 w-5 text-accent group-hover:text-primary transition-colors" />
                     <span className="text-sm font-medium">{s.label}</span>
                   </button>
                 ))}
