@@ -25,17 +25,18 @@ const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/agent-chat`;
 interface FormFillingViewProps {
   submissionId: string;
   initialMessages: Msg[];
+  initialFormId?: string;
   onBack: () => void;
 }
 
 type FieldFilter = "all" | "filled" | "empty";
 type CenterView = "form" | "data";
 
-export default function FormFillingView({ submissionId, initialMessages, onBack }: FormFillingViewProps) {
+export default function FormFillingView({ submissionId, initialMessages, initialFormId, onBack }: FormFillingViewProps) {
   const { user } = useAuth();
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
-  const [activeFormId, setActiveFormId] = useState("acord-125");
+  const [activeFormId, setActiveFormId] = useState(initialFormId || "acord-125");
   const [fieldFilter, setFieldFilter] = useState<FieldFilter>("all");
   const [centerView, setCenterView] = useState<CenterView>("form");
 
@@ -45,6 +46,8 @@ export default function FormFillingView({ submissionId, initialMessages, onBack 
   const [isLoading, setIsLoading] = useState(false);
   const chatScrollRef = useRef<HTMLDivElement>(null);
   const [downloading, setDownloading] = useState(false);
+  const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const activeForm = ACORD_FORMS[activeFormId];
 
@@ -559,7 +562,7 @@ export default function FormFillingView({ submissionId, initialMessages, onBack 
       </div>
 
       {/* RIGHT PANEL — Chat */}
-      <div className="w-[280px] border-l flex flex-col bg-background shrink-0">
+      <div className="w-[340px] border-l flex flex-col bg-background shrink-0">
         <div className="border-b p-3 flex items-center justify-between">
           <h2 className="text-sm font-semibold" style={{ fontFamily: "'Instrument Serif', serif" }}>Chat</h2>
           <Button variant="ghost" size="sm" className="text-[10px] h-6 px-2" onClick={onBack}>
@@ -593,20 +596,57 @@ export default function FormFillingView({ submissionId, initialMessages, onBack 
           )}
         </div>
 
+        {/* Attached files preview */}
+        {attachedFiles.length > 0 && (
+          <div className="border-t bg-muted/30 px-3 py-2">
+            <div className="flex flex-wrap gap-1.5">
+              {attachedFiles.map((f, i) => (
+                <div key={i} className="flex items-center gap-1 rounded-md bg-card border px-2 py-1 text-[10px]">
+                  <Paperclip className="h-2.5 w-2.5 text-muted-foreground" />
+                  <span className="max-w-[80px] truncate">{f.name}</span>
+                  <button onClick={() => setAttachedFiles((prev) => prev.filter((_, idx) => idx !== i))} className="text-muted-foreground hover:text-foreground">
+                    <X className="h-2.5 w-2.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Chat input */}
         <div className="border-t p-3">
           <div className="flex items-end gap-1.5 rounded-lg border bg-card p-2">
+            <input type="file" ref={fileInputRef} className="hidden" multiple onChange={(e) => {
+              if (e.target.files) {
+                setAttachedFiles((prev) => [...prev, ...Array.from(e.target.files!)].slice(0, 10));
+              }
+            }} />
+            <Button
+              variant="ghost"
+              size="icon"
+              className="shrink-0 h-7 w-7 text-muted-foreground hover:text-foreground"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <Paperclip className="h-3 w-3" />
+            </Button>
             <textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleChatKeyDown}
-              placeholder="Ask about fields..."
-              rows={2}
-              className="flex-1 resize-none bg-transparent border-0 outline-none text-xs placeholder:text-muted-foreground min-h-[36px] max-h-20 py-1"
+              placeholder="Ask about fields or upload docs..."
+              rows={3}
+              className="flex-1 resize-none bg-transparent border-0 outline-none text-xs placeholder:text-muted-foreground min-h-[56px] max-h-28 py-1"
             />
             <Button
-              onClick={() => sendMessage(input)}
-              disabled={!input.trim() || isLoading}
+              onClick={() => {
+                let content = input.trim();
+                if (attachedFiles.length > 0) {
+                  content += `\n\n[${attachedFiles.length} file(s) attached: ${attachedFiles.map((f) => f.name).join(", ")}]`;
+                  setAttachedFiles([]);
+                }
+                sendMessage(content);
+              }}
+              disabled={(!input.trim() && attachedFiles.length === 0) || isLoading}
               size="icon"
               className="shrink-0 h-7 w-7"
             >
