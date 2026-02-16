@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Shield, Check, AlertCircle } from "lucide-react";
 import type { Tables } from "@/integrations/supabase/types";
+import auraLogo from "@/assets/aura-logo.png";
 
 type CustomerLink = Tables<"customer_links">;
 
@@ -124,7 +125,7 @@ export default function CustomerSubmit() {
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card">
         <div className="mx-auto flex h-14 max-w-2xl items-center px-4">
-          <span className="font-semibold tracking-tight text-sm">AURA Risk Group</span>
+          <img src={auraLogo} alt="AURA Risk Group" className="h-7" />
           <span className="ml-2 text-xs text-muted-foreground font-sans">Secure Submission</span>
         </div>
       </header>
