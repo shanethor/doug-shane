@@ -53,6 +53,12 @@ export default {
         },
         success: "hsl(var(--success))",
         warning: "hsl(var(--warning))",
+        aura: {
+          navy: "hsl(var(--aura-navy))",
+          steel: "hsl(var(--aura-steel))",
+          silver: "hsl(var(--aura-silver))",
+          glow: "hsl(var(--aura-glow))",
+        },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
