@@ -13,6 +13,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import Chat from "./pages/Chat";
 import TemplateEditor from "./pages/TemplateEditor";
 import NotFound from "./pages/NotFound";
+import Deck from "./pages/Deck";
 
 const queryClient = new QueryClient();
 
@@ -32,6 +33,7 @@ const App = () => (
           <Route path="/acord/:formId" element={<ProtectedRoute><AcordFormPage /></ProtectedRoute>} />
           <Route path="/templates" element={<ProtectedRoute><TemplateEditor /></ProtectedRoute>} />
           <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+          <Route path="/deck" element={<Deck />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
