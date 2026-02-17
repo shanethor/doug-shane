@@ -114,11 +114,14 @@ function StatCard({ value, label, sub }: { value: string; label: string; sub?: s
 function TitleSlide() {
   return (
     <div className="flex flex-col items-center text-center">
-      <img src={auraLogo} alt="AURA Risk Group" className="h-14 mb-8" />
-      <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-foreground leading-tight">
+      <h1 className="text-6xl md:text-8xl font-extrabold tracking-tight text-foreground leading-none mb-2">
+        <span className="aura-gradient-text">AURA</span>
+      </h1>
+      <p className="text-2xl md:text-3xl font-semibold text-muted-foreground tracking-wide mb-8">Risk Group</p>
+      <h2 className="text-3xl md:text-5xl font-bold tracking-tight text-foreground leading-tight">
         AI-Powered Insurance<br />
         <span className="aura-gradient-text">Submission Platform</span>
-      </h1>
+      </h2>
       <p className="mt-6 text-lg md:text-xl text-muted-foreground max-w-2xl">
         Reducing commercial insurance submission time by 75%+ while improving accuracy — trained by industry experts.
       </p>
