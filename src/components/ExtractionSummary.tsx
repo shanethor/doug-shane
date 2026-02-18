@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ACORD_FORM_LIST, type AcordFormDefinition } from "@/lib/acord-forms";
-import { buildAutofilledData } from "@/lib/acord-autofill";
+import { buildAutofilledDataWithAI } from "@/lib/acord-autofill";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -44,7 +44,7 @@ export default function ExtractionSummary({ submissionId, onContinue }: Extracti
     let tTotal = 0;
 
     for (const form of ACORD_FORM_LIST) {
-      const filled = buildAutofilledData(form, appData, profile);
+      const { data: filled } = await buildAutofilledDataWithAI(form, appData, profile, defaults);
       for (const [k, v] of Object.entries(defaults)) {
         if (v && !filled[k]) filled[k] = v;
       }

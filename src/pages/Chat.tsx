@@ -788,6 +788,12 @@ export default function Chat() {
                                   downloadSubmission(downloadMatch[1], "individual");
                                 } else if (appMatch) {
                                   setActiveSubmissionId(appMatch[1]);
+                                } else if (b.action === "skip-to-form") {
+                                  // User wants to skip straight to fillable forms after uploading a document
+                                  send("Skip straight to fillable forms — just extract what you can from the uploaded document and take me to the ACORD forms.");
+                                } else if (b.action === "ai-questions") {
+                                  // User wants AI to ask follow-up questions
+                                  send("Yes, please ask me follow-up questions to fill any gaps from the uploaded document.");
                                 } else if (b.action.startsWith("/") || b.action.startsWith("http")) {
                                   navigate(b.action);
                                 } else {
