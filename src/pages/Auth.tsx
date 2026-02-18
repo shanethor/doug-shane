@@ -36,7 +36,7 @@ export default function Auth() {
           },
         });
         if (error) throw error;
-        toast.success("Check your email for a confirmation link.");
+        toast.success("Check your email for a confirmation link. After confirming, you'll be able to set up your agency info.");
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;

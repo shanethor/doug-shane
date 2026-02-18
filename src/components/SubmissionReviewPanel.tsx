@@ -27,12 +27,14 @@ type Gap = {
 const DEFAULT_FIELDS = [
   { key: "agency_name", label: "Agency Name" },
   { key: "agency_phone", label: "Agency Phone" },
+  { key: "agency_fax", label: "Agency Fax" },
   { key: "agency_email", label: "Agency Email" },
   { key: "from_email", label: "Send-From Email (for outbound emails)" },
   { key: "billing_plan", label: "Default Billing Plan" },
   { key: "payment_plan", label: "Default Payment Plan" },
   { key: "producer_name", label: "Producer Name" },
   { key: "producer_license_no", label: "Producer License No." },
+  { key: "national_producer_number", label: "National Producer Number" },
 ];
 
 interface SubmissionReviewPanelProps {
@@ -173,8 +175,9 @@ export default function SubmissionReviewPanel({ submissionId }: SubmissionReview
     const results: { form: typeof selected[0]; data: Record<string, any> }[] = [];
 
     for (const form of selected) {
-      let filled = buildAutofilledData(form, aiData, profile);
+      let filled = buildAutofilledData(form, aiData, profile, agentDefaults);
 
+      // Layer any remaining agent defaults not already set
       for (const [k, v] of Object.entries(agentDefaults)) {
         if (v && (!filled[k] || (typeof filled[k] === "string" && !filled[k].trim()))) {
           filled[k] = v;
