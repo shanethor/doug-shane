@@ -32,9 +32,11 @@ serve(async (req) => {
 
     const systemPrompt = `You are an expert insurance data mapper. You map extracted business data to ACORD insurance form fields.
 
-Given extracted business data and a list of unfilled ACORD form fields, infer which extracted values should populate which form fields.
+Given extracted business data and a list of unfilled ACORD form fields, do TWO things:
+1. Map extracted values to form fields where you're confident.
+2. Mark fields as NOT APPLICABLE based on the business type and coverage context.
 
-Rules:
+Rules for mapping values:
 - Only map values you are confident about. Do not guess or fabricate data.
 - A single extracted value can map to multiple form fields (e.g. an address maps to mailing, premises, building addresses).
 - Use your insurance domain knowledge to make smart inferences (e.g. if you see "LLC" in the business name, business_type should be "LLC").
@@ -42,6 +44,19 @@ Rules:
 - For checkbox fields, return true/false.
 - For date fields, return YYYY-MM-DD format.
 - For currency fields, return numeric strings without $ or commas.
+
+Rules for marking fields N/A:
+- Analyze the business type (e.g. contractor, restaurant, retail) and determine which coverage lines are IRRELEVANT.
+- For premium fields of irrelevant coverage lines, set to "0" (e.g. inland_marine_premium, cyber_premium, liquor_premium for a general contractor).
+- For LOB checkbox fields of irrelevant lines, set to false (e.g. lob_cyber, lob_crime for a small contractor).
+- For fields about vehicles/drivers when the business clearly has no auto exposure, set to "N/A".
+- For umbrella/excess fields when there's no umbrella coverage indicated, set to "N/A".
+- Be conservative: only mark a field N/A if you're reasonably confident the coverage line doesn't apply based on the business profile.
+- Common examples:
+  - General contractor → inland_marine_premium=0, cyber_premium=0, crime_premium=0, liquor_premium=0, garage_premium=0, bop_premium=0
+  - Restaurant → auto_premium=0, inland_marine_premium=0, boiler_premium=0 (unless indicated otherwise)
+  - Small business without fleet → driver fields = "N/A", vehicle fields = "N/A"
+
 - Return ONLY a JSON object mapping field_key -> value. No explanations.`;
 
     const userPrompt = `Form: ${form_name || "ACORD Form"}
