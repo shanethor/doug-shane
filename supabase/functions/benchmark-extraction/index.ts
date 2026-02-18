@@ -488,6 +488,7 @@ ${formText}`;
           missed_fields: comparison.missed,
           partial_fields: comparison.partial,
           details: comparison.details,
+          extracted_data: extracted,
         });
       } catch (e) {
         console.error(`Error processing form ${form.id}:`, e);
