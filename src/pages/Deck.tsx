@@ -494,30 +494,32 @@ function ProjectionsSlide() {
         <table className="w-full text-sm border-collapse">
           <thead>
             <tr className="border-b border-border">
-              <th className="text-left py-3 px-4 text-muted-foreground font-semibold">Metric</th>
-              <th className="text-right py-3 px-4 text-muted-foreground font-semibold">18 Months</th>
-              <th className="text-right py-3 px-4 text-muted-foreground font-semibold">36 Months</th>
+              <th className="text-left py-2.5 px-3 text-muted-foreground font-semibold">Metric</th>
+              <th className="text-right py-2.5 px-3 text-muted-foreground font-semibold">18 Mo</th>
+              <th className="text-right py-2.5 px-3 text-muted-foreground font-semibold">36 Mo</th>
+              <th className="text-right py-2.5 px-3 text-muted-foreground font-semibold">54 Mo</th>
             </tr>
           </thead>
           <tbody className="text-foreground">
             {[
-              ["Policies", "100", "250+"],
-              ["Total Premiums", "$5,000,000", "$12,500,000"],
-              ["Platform Revenue", "$625,000", "$1,875,000"],
-              ["COGS", "~$300,000", "~$600,000"],
-              ["Gross Margin", "~$325,000 (52%)", "~$1,275,000 (68%)"],
-              ["Avg. per Producer", "$250–400/mo", "$500–800/mo"],
-            ].map(([metric, y1, y2]) => (
+              ["Policies", "100", "250+", "500+"],
+              ["Total Premiums", "$5M", "$12.5M", "$25M"],
+              ["Platform Revenue", "$625K", "$1.875M", "$4M+"],
+              ["COGS", "~$300K", "~$600K", "~$1.2M"],
+              ["Gross Margin", "$325K (52%)", "$1.275M (68%)", "$2.8M+ (70%)"],
+              ["Per Producer", "$250–400/mo", "$500–800/mo", "$800+/mo"],
+            ].map(([metric, y1, y2, y3]) => (
               <tr key={metric} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
-                <td className="py-3 px-4 font-medium">{metric}</td>
-                <td className="py-3 px-4 text-right tabular-nums">{y1}</td>
-                <td className="py-3 px-4 text-right tabular-nums font-semibold">{y2}</td>
+                <td className="py-2.5 px-3 font-medium">{metric}</td>
+                <td className="py-2.5 px-3 text-right tabular-nums">{y1}</td>
+                <td className="py-2.5 px-3 text-right tabular-nums">{y2}</td>
+                <td className="py-2.5 px-3 text-right tabular-nums font-semibold">{y3}</td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-      <p className="mt-4 text-sm text-muted-foreground">Primary COGS increase at 36 months: high-quality service staff to support producers at scale.</p>
+      <p className="mt-4 text-sm text-muted-foreground">By 54 months: full pricing tier active, expanded service team, and compounding renewal revenue driving 70%+ gross margins.</p>
     </div>
   );
 }
