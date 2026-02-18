@@ -1,4 +1,5 @@
 import type { AcordFormDefinition } from "./acord-forms";
+import { supabase } from "@/integrations/supabase/client";
 
 /** Parse natural-language dates into YYYY-MM-DD */
 export const parseDate = (raw: string): string => {
@@ -382,4 +383,76 @@ export function buildAutofilledData(
   }
 
   return mapped;
+}
+
+/**
+ * AI-powered field inference: sends extracted data + unfilled ACORD fields to AI
+ * to dynamically infer additional mappings the static aliases missed.
+ */
+export async function aiInferFieldMappings(
+  form: AcordFormDefinition,
+  aiData: Record<string, any>,
+  alreadyFilled: Record<string, any>,
+): Promise<Record<string, any>> {
+  const allFieldKeys = form.fields.map((f) => f.key);
+  const filledKeys = new Set(
+    Object.keys(alreadyFilled).filter(
+      (k) => alreadyFilled[k] !== "" && alreadyFilled[k] !== null && alreadyFilled[k] !== undefined
+    )
+  );
+  const unfilledKeys = allFieldKeys.filter((k) => !filledKeys.has(k));
+
+  // Skip if nothing to fill or no extracted data
+  if (unfilledKeys.length === 0 || Object.keys(aiData).length === 0) {
+    return {};
+  }
+
+  try {
+    const { data, error } = await supabase.functions.invoke("map-fields", {
+      body: {
+        extracted_data: aiData,
+        target_fields: unfilledKeys,
+        form_name: form.fullName || form.name,
+      },
+    });
+
+    if (error) {
+      console.error("AI field mapping error:", error);
+      return {};
+    }
+
+    return data?.mappings || {};
+  } catch (err) {
+    console.error("AI field mapping failed:", err);
+    return {};
+  }
+}
+
+/**
+ * Full autofill pipeline: static mapping + AI inference.
+ * Returns merged results with both static and AI-inferred values.
+ */
+export async function buildAutofilledDataWithAI(
+  form: AcordFormDefinition,
+  aiData: Record<string, any>,
+  profile?: { full_name?: string | null; agency_name?: string | null; phone?: string | null } | null,
+  formDefaults?: Record<string, string> | null,
+): Promise<{ data: Record<string, any>; aiInferredCount: number }> {
+  // Step 1: Static mapping
+  const staticMapped = buildAutofilledData(form, aiData, profile, formDefaults);
+
+  // Step 2: AI inference for remaining gaps
+  const aiMappings = await aiInferFieldMappings(form, aiData, staticMapped);
+
+  // Merge: static takes priority, AI fills the rest
+  const merged = { ...staticMapped };
+  let aiInferredCount = 0;
+  for (const [key, value] of Object.entries(aiMappings)) {
+    if (!merged[key] && value !== "" && value !== null && value !== undefined) {
+      merged[key] = normalizeValue(key, value);
+      aiInferredCount++;
+    }
+  }
+
+  return { data: merged, aiInferredCount };
 }

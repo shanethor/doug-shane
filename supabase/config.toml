@@ -1,1 +1,4 @@
 project_id = "wxastapzvnktttlhaiwe"
+
+[functions.map-fields]
+verify_jwt = false
