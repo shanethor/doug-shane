@@ -11,7 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Download, Trash2, FileText, ClipboardCopy, Loader2, FlaskConical, CheckCircle, XCircle, AlertTriangle, ChevronDown, ChevronUp } from "lucide-react";
+import { Plus, Download, Trash2, FileText, ClipboardCopy, Loader2, FlaskConical, CheckCircle, XCircle, AlertTriangle, ChevronDown, ChevronUp, Globe } from "lucide-react";
 import { generateRestaurantSupplement, generateContractorSupplement } from "@/lib/dummy-form-data";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ACORD_FORMS } from "@/lib/acord-forms";
@@ -65,7 +65,8 @@ export default function GeneratedForms() {
   const [benchmarkResults, setBenchmarkResults] = useState<BenchmarkResult[]>([]);
   const [expandedResult, setExpandedResult] = useState<string | null>(null);
   const [testingFormId, setTestingFormId] = useState<string | null>(null);
-
+  const [websiteUrl, setWebsiteUrl] = useState("");
+  const [scrapingWebsite, setScrapingWebsite] = useState(false);
   const { data: forms, isLoading } = useQuery({
     queryKey: ["generated-forms"],
     queryFn: async () => {
@@ -211,6 +212,49 @@ export default function GeneratedForms() {
       toast({ title: "Test failed", description: err.message, variant: "destructive" });
     } finally {
       setTestingFormId(null);
+    }
+  };
+
+  /** Scrape a website URL and merge with existing extracted data, then re-run ACORD fill */
+  const handleWebsiteScrapeTest = async (formId: string) => {
+    if (!session || !websiteUrl.trim()) return;
+    setScrapingWebsite(true);
+    try {
+      // Find the existing benchmark result for this form
+      const existingResult = benchmarkResults.find((r) => r.form_id === formId);
+      const existingExtracted = existingResult?.extracted_data || {};
+
+      // Scrape the website
+      const scrapeResp = await supabase.functions.invoke("scrape-website", {
+        body: { url: websiteUrl.trim() },
+      });
+      if (scrapeResp.error) throw new Error(scrapeResp.error.message);
+      const websiteData = scrapeResp.data?.extracted_data || {};
+
+      // Merge: supplement data takes priority, website fills gaps
+      const merged = { ...websiteData, ...existingExtracted };
+
+      // Re-run ACORD fill with merged data
+      const acordFill = await computeAcordFill(merged);
+      const avgFill = Math.round(acordFill.reduce((s, f) => s + f.fillRate, 0) / acordFill.length);
+
+      // Update the benchmark result in state
+      setBenchmarkResults((prev) =>
+        prev.map((r) =>
+          r.form_id === formId
+            ? { ...r, extracted_data: merged, acord_fill: acordFill }
+            : r
+        )
+      );
+
+      toast({
+        title: "Website data merged",
+        description: `Scraped ${Object.keys(websiteData).length} fields from website. New avg ACORD fill: ${avgFill}%`,
+      });
+    } catch (err: any) {
+      toast({ title: "Scrape failed", description: err.message, variant: "destructive" });
+    } finally {
+      setScrapingWebsite(false);
     }
   };
 
@@ -533,6 +577,34 @@ export default function GeneratedForms() {
                                   </CollapsibleContent>
                                 </Collapsible>
                               )}
+
+                              {/* Website scrape test */}
+                              <div className="border-t border-border/50 pt-3 mt-3">
+                                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                                  <Globe className="h-3 w-3" /> Test with Company Website
+                                </h4>
+                                <p className="text-[10px] text-muted-foreground mb-2">
+                                  Paste a sample website URL to scrape business data and merge it with the supplement extraction.
+                                </p>
+                                <div className="flex gap-2">
+                                  <Input
+                                    value={websiteUrl}
+                                    onChange={(e) => setWebsiteUrl(e.target.value)}
+                                    placeholder="https://example.com"
+                                    className="h-8 text-xs flex-1"
+                                  />
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="gap-1.5 text-xs h-8"
+                                    disabled={scrapingWebsite || !websiteUrl.trim()}
+                                    onClick={() => handleWebsiteScrapeTest(r.form_id)}
+                                  >
+                                    {scrapingWebsite ? <Loader2 className="h-3 w-3 animate-spin" /> : <Globe className="h-3 w-3" />}
+                                    {scrapingWebsite ? "Scraping…" : "Scrape & Merge"}
+                                  </Button>
+                                </div>
+                              </div>
                             </div>
                           )}
                         </CollapsibleContent>
