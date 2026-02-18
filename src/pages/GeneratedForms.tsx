@@ -15,7 +15,7 @@ import { Plus, Download, Trash2, FileText, ClipboardCopy, Loader2, FlaskConical,
 import { generateRestaurantSupplement, generateContractorSupplement } from "@/lib/dummy-form-data";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ACORD_FORMS } from "@/lib/acord-forms";
-import { buildAutofilledData } from "@/lib/acord-autofill";
+import { buildAutofilledData, buildAutofilledDataWithAI } from "@/lib/acord-autofill";
 
 type AcordFillResult = {
   formId: string;
@@ -133,17 +133,22 @@ export default function GeneratedForms() {
     toast({ title: "Copied", description: `Form ID ${id.slice(0, 8)}… copied to clipboard` });
   };
 
-  /** Run extracted data through the ACORD autofill pipeline to measure form fill coverage */
-  const computeAcordFill = (extractedData: Record<string, any>): AcordFillResult[] => {
+  /** Run extracted data through the ACORD autofill pipeline (with AI inference) to measure form fill coverage */
+  const computeAcordFill = async (extractedData: Record<string, any>): Promise<AcordFillResult[]> => {
     const acordFormIds = ["acord-125", "acord-126", "acord-127", "acord-130", "acord-131", "acord-140"];
-    return acordFormIds.map((formId) => {
+    const results: AcordFillResult[] = [];
+    for (const formId of acordFormIds) {
       const form = ACORD_FORMS[formId];
-      if (!form) return { formId, formName: formId, totalFields: 0, filledFields: 0, fillRate: 0, filledKeys: [], emptyKeys: [] };
-      const filled = buildAutofilledData(form, extractedData);
+      if (!form) {
+        results.push({ formId, formName: formId, totalFields: 0, filledFields: 0, fillRate: 0, filledKeys: [], emptyKeys: [] });
+        continue;
+      }
+      // Use AI-enhanced autofill
+      const { data: filled, aiInferredCount } = await buildAutofilledDataWithAI(form, extractedData);
       const totalFields = form.fields.length;
       const filledKeys = Object.keys(filled).filter((k) => filled[k] !== "" && filled[k] !== null && filled[k] !== undefined);
       const emptyKeys = form.fields.map((f) => f.key).filter((k) => !filledKeys.includes(k));
-      return {
+      results.push({
         formId,
         formName: form.name,
         totalFields,
@@ -151,16 +156,23 @@ export default function GeneratedForms() {
         fillRate: totalFields > 0 ? Math.round((filledKeys.length / totalFields) * 100) : 0,
         filledKeys,
         emptyKeys,
-      };
-    });
+      });
+    }
+    return results;
   };
 
   /** Enrich benchmark results with ACORD fill analysis */
-  const enrichWithAcordFill = (results: any[]): BenchmarkResult[] => {
-    return results.map((r: any) => {
-      if (r.error || !r.extracted_data) return r;
-      return { ...r, acord_fill: computeAcordFill(r.extracted_data) };
-    });
+  const enrichWithAcordFill = async (results: any[]): Promise<BenchmarkResult[]> => {
+    const enriched: BenchmarkResult[] = [];
+    for (const r of results) {
+      if (r.error || !r.extracted_data) {
+        enriched.push(r);
+        continue;
+      }
+      const acord_fill = await computeAcordFill(r.extracted_data);
+      enriched.push({ ...r, acord_fill });
+    }
+    return enriched;
   };
 
   const handleTestSingleForm = async (formId: string) => {
@@ -171,13 +183,13 @@ export default function GeneratedForms() {
         body: { form_ids: [formId] },
       });
       if (error) throw error;
-      const enriched = enrichWithAcordFill(data.results);
+      const enriched = await enrichWithAcordFill(data.results);
       setBenchmarkSummary(data.summary);
       setBenchmarkResults(enriched);
       setExpandedResult(enriched[0]?.form_id || null);
       const fillSummary = enriched[0]?.acord_fill;
       const avgFill = fillSummary ? Math.round(fillSummary.reduce((s: number, f: AcordFillResult) => s + f.fillRate, 0) / fillSummary.length) : 0;
-      toast({ title: "Test complete", description: `${data.results[0]?.accuracy ?? 0}% extraction · ${avgFill}% avg ACORD fill` });
+      toast({ title: "Test complete", description: `${data.results[0]?.accuracy ?? 0}% extraction · ${avgFill}% avg ACORD fill (AI-enhanced)` });
     } catch (err: any) {
       toast({ title: "Test failed", description: err.message, variant: "destructive" });
     } finally {
@@ -195,10 +207,10 @@ export default function GeneratedForms() {
         body: { user_id: session.user.id },
       });
       if (error) throw error;
-      const enriched = enrichWithAcordFill(data.results);
+      const enriched = await enrichWithAcordFill(data.results);
       setBenchmarkSummary(data.summary);
       setBenchmarkResults(enriched);
-      toast({ title: "Training complete", description: `${data.summary.avg_accuracy}% avg accuracy across ${data.summary.successful} forms` });
+      toast({ title: "Training complete", description: `${data.summary.avg_accuracy}% avg accuracy across ${data.summary.successful} forms (AI-enhanced)` });
     } catch (err: any) {
       toast({ title: "Training failed", description: err.message, variant: "destructive" });
     } finally {
