@@ -287,6 +287,13 @@ export default function FormFillingView({ submissionId, initialMessages, initial
     if (!user) return;
     setDownloading(true);
     try {
+      // Auto-save form data to DB before downloading so edits persist
+      await supabase
+        .from("insurance_applications")
+        .update({ form_data: formData })
+        .eq("submission_id", submissionId)
+        .eq("user_id", user.id);
+
       const { data: profile } = await supabase
         .from("profiles")
         .select("full_name, agency_name, phone")
