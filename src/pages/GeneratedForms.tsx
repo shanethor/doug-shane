@@ -14,6 +14,18 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Download, Trash2, FileText, ClipboardCopy, Loader2, FlaskConical, CheckCircle, XCircle, AlertTriangle, ChevronDown, ChevronUp } from "lucide-react";
 import { generateRestaurantSupplement, generateContractorSupplement } from "@/lib/dummy-form-data";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ACORD_FORMS } from "@/lib/acord-forms";
+import { buildAutofilledData } from "@/lib/acord-autofill";
+
+type AcordFillResult = {
+  formId: string;
+  formName: string;
+  totalFields: number;
+  filledFields: number;
+  fillRate: number;
+  filledKeys: string[];
+  emptyKeys: string[];
+};
 
 type BenchmarkResult = {
   form_id: string;
@@ -28,6 +40,8 @@ type BenchmarkResult = {
   missed_fields: string[];
   partial_fields: string[];
   details: Record<string, { expected: any; got: any; status: string }>;
+  extracted_data?: Record<string, any>;
+  acord_fill?: AcordFillResult[];
   error?: string;
 };
 
@@ -119,6 +133,36 @@ export default function GeneratedForms() {
     toast({ title: "Copied", description: `Form ID ${id.slice(0, 8)}… copied to clipboard` });
   };
 
+  /** Run extracted data through the ACORD autofill pipeline to measure form fill coverage */
+  const computeAcordFill = (extractedData: Record<string, any>): AcordFillResult[] => {
+    const acordFormIds = ["acord-125", "acord-126", "acord-127", "acord-130", "acord-131", "acord-140"];
+    return acordFormIds.map((formId) => {
+      const form = ACORD_FORMS[formId];
+      if (!form) return { formId, formName: formId, totalFields: 0, filledFields: 0, fillRate: 0, filledKeys: [], emptyKeys: [] };
+      const filled = buildAutofilledData(form, extractedData);
+      const totalFields = form.fields.length;
+      const filledKeys = Object.keys(filled).filter((k) => filled[k] !== "" && filled[k] !== null && filled[k] !== undefined);
+      const emptyKeys = form.fields.map((f) => f.key).filter((k) => !filledKeys.includes(k));
+      return {
+        formId,
+        formName: form.name,
+        totalFields,
+        filledFields: filledKeys.length,
+        fillRate: totalFields > 0 ? Math.round((filledKeys.length / totalFields) * 100) : 0,
+        filledKeys,
+        emptyKeys,
+      };
+    });
+  };
+
+  /** Enrich benchmark results with ACORD fill analysis */
+  const enrichWithAcordFill = (results: any[]): BenchmarkResult[] => {
+    return results.map((r: any) => {
+      if (r.error || !r.extracted_data) return r;
+      return { ...r, acord_fill: computeAcordFill(r.extracted_data) };
+    });
+  };
+
   const handleTestSingleForm = async (formId: string) => {
     if (!session) return;
     setTestingFormId(formId);
@@ -127,10 +171,13 @@ export default function GeneratedForms() {
         body: { form_ids: [formId] },
       });
       if (error) throw error;
+      const enriched = enrichWithAcordFill(data.results);
       setBenchmarkSummary(data.summary);
-      setBenchmarkResults(data.results);
-      setExpandedResult(data.results[0]?.form_id || null);
-      toast({ title: "Test complete", description: `${data.results[0]?.accuracy ?? 0}% accuracy` });
+      setBenchmarkResults(enriched);
+      setExpandedResult(enriched[0]?.form_id || null);
+      const fillSummary = enriched[0]?.acord_fill;
+      const avgFill = fillSummary ? Math.round(fillSummary.reduce((s: number, f: AcordFillResult) => s + f.fillRate, 0) / fillSummary.length) : 0;
+      toast({ title: "Test complete", description: `${data.results[0]?.accuracy ?? 0}% extraction · ${avgFill}% avg ACORD fill` });
     } catch (err: any) {
       toast({ title: "Test failed", description: err.message, variant: "destructive" });
     } finally {
@@ -148,8 +195,9 @@ export default function GeneratedForms() {
         body: { user_id: session.user.id },
       });
       if (error) throw error;
+      const enriched = enrichWithAcordFill(data.results);
       setBenchmarkSummary(data.summary);
-      setBenchmarkResults(data.results);
+      setBenchmarkResults(enriched);
       toast({ title: "Training complete", description: `${data.summary.avg_accuracy}% avg accuracy across ${data.summary.successful} forms` });
     } catch (err: any) {
       toast({ title: "Training failed", description: err.message, variant: "destructive" });
@@ -351,47 +399,110 @@ export default function GeneratedForms() {
                           {r.error ? (
                             <div className="p-3 text-xs text-red-500">{r.error}</div>
                           ) : (
-                            <div className="p-3 space-y-3">
-                              <div className="flex items-center gap-2">
-                                <div className="w-full bg-muted rounded-full h-2">
-                                  <div className={`${accuracyBg(r.accuracy)} h-2 rounded-full transition-all`} style={{ width: `${r.accuracy}%` }} />
+                            <div className="p-3 space-y-4">
+                              {/* Extraction accuracy */}
+                              <div>
+                                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">Data Extraction</h4>
+                                <div className="flex items-center gap-2">
+                                  <div className="w-full bg-muted rounded-full h-2">
+                                    <div className={`${accuracyBg(r.accuracy)} h-2 rounded-full transition-all`} style={{ width: `${r.accuracy}%` }} />
+                                  </div>
+                                  <span className="text-xs font-mono shrink-0">{r.matched + r.partial}/{r.total_fields}</span>
                                 </div>
-                                <span className="text-xs font-mono shrink-0">{r.matched + r.partial}/{r.total_fields}</span>
                               </div>
 
-                              {r.details && Object.keys(r.details).length > 0 && (
-                                <div className="overflow-x-auto">
-                                  <table className="w-full text-xs">
-                                    <thead>
-                                      <tr className="border-b">
-                                        <th className="text-left py-1 px-2 font-medium text-muted-foreground">Field</th>
-                                        <th className="text-left py-1 px-2 font-medium text-muted-foreground">Expected</th>
-                                        <th className="text-left py-1 px-2 font-medium text-muted-foreground">Extracted</th>
-                                        <th className="text-center py-1 px-2 font-medium text-muted-foreground">Status</th>
-                                      </tr>
-                                    </thead>
-                                    <tbody>
-                                      {Object.entries(r.details)
-                                        .sort(([, a], [, b]) => {
-                                          const order = { missed: 0, mismatch: 1, partial: 2, match: 3 };
-                                          return (order[a.status as keyof typeof order] ?? 4) - (order[b.status as keyof typeof order] ?? 4);
-                                        })
-                                        .map(([field, detail]) => (
-                                          <tr key={field} className="border-b border-muted/50">
-                                            <td className="py-1 px-2 font-mono">{field}</td>
-                                            <td className="py-1 px-2 max-w-[200px] truncate">{typeof detail.expected === "object" ? JSON.stringify(detail.expected) : String(detail.expected)}</td>
-                                            <td className="py-1 px-2 max-w-[200px] truncate">{detail.got === null ? "—" : typeof detail.got === "object" ? JSON.stringify(detail.got) : String(detail.got)}</td>
-                                            <td className="py-1 px-2 text-center">
-                                              {detail.status === "match" && <CheckCircle className="h-3 w-3 text-green-500 inline" />}
-                                              {detail.status === "partial" && <AlertTriangle className="h-3 w-3 text-yellow-500 inline" />}
-                                              {detail.status === "mismatch" && <AlertTriangle className="h-3 w-3 text-orange-500 inline" />}
-                                              {detail.status === "missed" && <XCircle className="h-3 w-3 text-red-500 inline" />}
-                                            </td>
-                                          </tr>
-                                        ))}
-                                    </tbody>
-                                  </table>
+                              {/* ACORD Form Fill Rates */}
+                              {r.acord_fill && r.acord_fill.length > 0 && (
+                                <div>
+                                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">ACORD Form Fill Coverage</h4>
+                                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                    {r.acord_fill.map((af) => (
+                                      <div key={af.formId} className="bg-muted/40 rounded-lg p-2.5">
+                                        <div className="flex items-center justify-between mb-1">
+                                          <span className="text-xs font-semibold text-foreground">{af.formName}</span>
+                                          <span className={`text-xs font-bold ${accuracyColor(af.fillRate)}`}>{af.fillRate}%</span>
+                                        </div>
+                                        <div className="w-full bg-muted rounded-full h-1.5 mb-1">
+                                          <div className={`${accuracyBg(af.fillRate)} h-1.5 rounded-full transition-all`} style={{ width: `${af.fillRate}%` }} />
+                                        </div>
+                                        <span className="text-[10px] text-muted-foreground">{af.filledFields}/{af.totalFields} fields</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                  {/* Unfilled fields summary */}
+                                  {r.acord_fill.some((af) => af.emptyKeys.length > 0) && (
+                                    <Collapsible className="mt-2">
+                                      <CollapsibleTrigger asChild>
+                                        <button className="text-[10px] text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors">
+                                          <ChevronDown className="h-3 w-3" /> Show unfilled ACORD fields
+                                        </button>
+                                      </CollapsibleTrigger>
+                                      <CollapsibleContent>
+                                        <div className="mt-2 space-y-2 max-h-60 overflow-y-auto">
+                                          {r.acord_fill.filter((af) => af.emptyKeys.length > 0).map((af) => (
+                                            <div key={af.formId}>
+                                              <span className="text-[10px] font-semibold text-foreground">{af.formName}</span>
+                                              <span className="text-[10px] text-muted-foreground ml-1">({af.emptyKeys.length} empty)</span>
+                                              <div className="flex flex-wrap gap-1 mt-0.5">
+                                                {af.emptyKeys.slice(0, 20).map((k) => (
+                                                  <span key={k} className="text-[9px] font-mono bg-muted rounded px-1 py-0.5">{k}</span>
+                                                ))}
+                                                {af.emptyKeys.length > 20 && (
+                                                  <span className="text-[9px] text-muted-foreground">+{af.emptyKeys.length - 20} more</span>
+                                                )}
+                                              </div>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </CollapsibleContent>
+                                    </Collapsible>
+                                  )}
                                 </div>
+                              )}
+
+                              {/* Field-level details table */}
+                              {r.details && Object.keys(r.details).length > 0 && (
+                                <Collapsible>
+                                  <CollapsibleTrigger asChild>
+                                    <button className="text-[10px] text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors">
+                                      <ChevronDown className="h-3 w-3" /> Show extraction field details
+                                    </button>
+                                  </CollapsibleTrigger>
+                                  <CollapsibleContent>
+                                    <div className="overflow-x-auto mt-2">
+                                      <table className="w-full text-xs">
+                                        <thead>
+                                          <tr className="border-b">
+                                            <th className="text-left py-1 px-2 font-medium text-muted-foreground">Field</th>
+                                            <th className="text-left py-1 px-2 font-medium text-muted-foreground">Expected</th>
+                                            <th className="text-left py-1 px-2 font-medium text-muted-foreground">Extracted</th>
+                                            <th className="text-center py-1 px-2 font-medium text-muted-foreground">Status</th>
+                                          </tr>
+                                        </thead>
+                                        <tbody>
+                                          {Object.entries(r.details)
+                                            .sort(([, a], [, b]) => {
+                                              const order = { missed: 0, mismatch: 1, partial: 2, match: 3 };
+                                              return (order[a.status as keyof typeof order] ?? 4) - (order[b.status as keyof typeof order] ?? 4);
+                                            })
+                                            .map(([field, detail]) => (
+                                              <tr key={field} className="border-b border-muted/50">
+                                                <td className="py-1 px-2 font-mono">{field}</td>
+                                                <td className="py-1 px-2 max-w-[200px] truncate">{typeof detail.expected === "object" ? JSON.stringify(detail.expected) : String(detail.expected)}</td>
+                                                <td className="py-1 px-2 max-w-[200px] truncate">{detail.got === null ? "—" : typeof detail.got === "object" ? JSON.stringify(detail.got) : String(detail.got)}</td>
+                                                <td className="py-1 px-2 text-center">
+                                                  {detail.status === "match" && <CheckCircle className="h-3 w-3 text-green-500 inline" />}
+                                                  {detail.status === "partial" && <AlertTriangle className="h-3 w-3 text-yellow-500 inline" />}
+                                                  {detail.status === "mismatch" && <AlertTriangle className="h-3 w-3 text-orange-500 inline" />}
+                                                  {detail.status === "missed" && <XCircle className="h-3 w-3 text-red-500 inline" />}
+                                                </td>
+                                              </tr>
+                                            ))}
+                                        </tbody>
+                                      </table>
+                                    </div>
+                                  </CollapsibleContent>
+                                </Collapsible>
                               )}
                             </div>
                           )}
