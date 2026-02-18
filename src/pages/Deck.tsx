@@ -409,47 +409,51 @@ function ReplacesSlide() {
 function ModelSlide() {
   return (
     <div>
-      <SlideHeader icon={DollarSign} tag="Revenue Model" title="Per-producer SaaS pricing" subtitle="Simple, predictable pricing per producer seat. We start at 30–50% of our long-term rate to drive adoption — then grow into full pricing as the platform delivers more value." />
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
-        <div className="rounded-xl border-2 border-border bg-card p-6 hover-lift text-center">
-          <div className="text-sm font-semibold text-muted-foreground mb-1">Launch Pricing</div>
-          <div className="text-3xl font-bold text-foreground">$250–400</div>
-          <div className="text-xs text-muted-foreground mt-1">per producer / month</div>
-          <div className="text-xs text-muted-foreground/70 mt-2">30–50% of long-term rate — low friction adoption</div>
+      <SlideHeader icon={DollarSign} tag="Revenue Model" title="Two pricing paths under evaluation" subtitle="We're exploring both models — per-producer SaaS pricing or contract revenue share. Both start low to drive adoption and grow as we deliver more value." />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-2">
+        {/* Option A */}
+        <div className="rounded-xl border-2 border-primary/30 bg-card p-5 hover-lift">
+          <div className="text-xs font-semibold uppercase tracking-widest text-primary mb-4">Option A — Per Producer Seat</div>
+          <div className="space-y-3">
+            {[
+              { year: "Year 1", price: "$250–400/mo", note: "30–50% of target — low friction adoption" },
+              { year: "Year 2", price: "$500–700/mo", note: "Full intelligence suite unlocked" },
+              { year: "Year 3+", price: "$800+/mo", note: "Complete data layer & integrations" },
+            ].map((t) => (
+              <div key={t.year} className="flex items-baseline justify-between border-b border-border/30 pb-2">
+                <div>
+                  <span className="text-sm font-semibold text-foreground">{t.year}</span>
+                  <p className="text-xs text-muted-foreground/70">{t.note}</p>
+                </div>
+                <span className="text-lg font-bold text-foreground whitespace-nowrap ml-3">{t.price}</span>
+              </div>
+            ))}
+          </div>
+          <p className="mt-3 text-xs text-muted-foreground/60 italic">Predictable, scales with agency headcount</p>
         </div>
-        <div className="rounded-xl border-2 border-primary/30 bg-card p-6 hover-lift text-center ring-1 ring-primary/10">
-          <div className="text-sm font-semibold text-primary mb-1">Year 2+ Pricing</div>
-          <div className="text-3xl font-bold text-foreground">$500–700</div>
-          <div className="text-xs text-muted-foreground mt-1">per producer / month</div>
-          <div className="text-xs text-muted-foreground/70 mt-2">Full intelligence suite unlocked — proven ROI</div>
-        </div>
-        <div className="rounded-xl border-2 border-primary/50 bg-card p-6 hover-lift text-center ring-1 ring-primary/20">
-          <div className="text-sm font-semibold text-primary mb-1">Long-Term Target</div>
-          <div className="text-3xl font-bold text-foreground">$800+</div>
-          <div className="text-xs text-muted-foreground mt-1">per producer / month</div>
-          <div className="text-xs text-muted-foreground/70 mt-2">Full data layer, intelligence engine & integrations</div>
+
+        {/* Option B */}
+        <div className="rounded-xl border-2 border-border bg-card p-5 hover-lift">
+          <div className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-4">Option B — Contract Revenue Share</div>
+          <div className="space-y-3">
+            {[
+              { year: "Year 1", price: "7.5%", note: "Agencies keep 92.5% — minimal risk" },
+              { year: "Year 2", price: "12.5%", note: "Proven value unlocks greater share" },
+              { year: "Year 3+", price: "20%", note: "Efficiency gains offset increase for agencies" },
+            ].map((t) => (
+              <div key={t.year} className="flex items-baseline justify-between border-b border-border/30 pb-2">
+                <div>
+                  <span className="text-sm font-semibold text-foreground">{t.year}</span>
+                  <p className="text-xs text-muted-foreground/70">{t.note}</p>
+                </div>
+                <span className="text-lg font-bold text-foreground whitespace-nowrap ml-3">{t.price}</span>
+              </div>
+            ))}
+          </div>
+          <p className="mt-3 text-xs text-muted-foreground/60 italic">Aligns revenue with agency success — compounding renewals</p>
         </div>
       </div>
-      <div className="mt-5 rounded-xl border border-border bg-card/50 p-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-          <div>
-            <h4 className="font-semibold text-foreground mb-1.5">Why per-producer pricing works</h4>
-            <ul className="text-xs text-muted-foreground space-y-1">
-              <li>• Agencies understand per-seat models</li>
-              <li>• Scales naturally with agency growth</li>
-              <li>• No revenue-share complexity or audit friction</li>
-            </ul>
-          </div>
-          <div>
-            <h4 className="font-semibold text-foreground mb-1.5">Why start at 30–50%</h4>
-            <ul className="text-xs text-muted-foreground space-y-1">
-              <li>• Minimal risk for early adopters</li>
-              <li>• Proves value before full pricing</li>
-              <li>• Long-term features justify the increase</li>
-            </ul>
-          </div>
-        </div>
-      </div>
+      <p className="mt-4 text-sm text-muted-foreground text-center">Both models start at 30–50% of long-term pricing to drive adoption. Final model selected based on early agency feedback.</p>
     </div>
   );
 }
