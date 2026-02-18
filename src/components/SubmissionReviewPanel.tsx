@@ -14,7 +14,7 @@ import { toast } from "sonner";
 import { ACORD_FORMS, ACORD_FORM_LIST } from "@/lib/acord-forms";
 import { COVERAGE_LINES, getFormsForCoverageLines } from "@/lib/coverage-form-map";
 import { generateAcordPdfAsync } from "@/lib/pdf-generator";
-import { buildAutofilledData } from "@/lib/acord-autofill";
+import { buildAutofilledDataWithAI } from "@/lib/acord-autofill";
 import { generateSubmissionPackage } from "@/lib/submission-package";
 import { runConsistencyChecks, type ConsistencyWarning } from "@/lib/consistency-checks";
 
@@ -174,8 +174,12 @@ export default function SubmissionReviewPanel({ submissionId }: SubmissionReview
     const selected = ACORD_FORM_LIST.filter((f) => selectedForms.has(f.id));
     const results: { form: typeof selected[0]; data: Record<string, any> }[] = [];
 
+    let totalAiInferred = 0;
+
     for (const form of selected) {
-      let filled = buildAutofilledData(form, aiData, profile, agentDefaults);
+      // Use AI-enhanced autofill
+      let { data: filled, aiInferredCount } = await buildAutofilledDataWithAI(form, aiData, profile, agentDefaults);
+      totalAiInferred += aiInferredCount;
 
       // Layer any remaining agent defaults not already set
       for (const [k, v] of Object.entries(agentDefaults)) {
@@ -214,6 +218,10 @@ export default function SubmissionReviewPanel({ submissionId }: SubmissionReview
       }
 
       results.push({ form, data: filled });
+    }
+
+    if (totalAiInferred > 0) {
+      toast.success(`AI inferred ${totalAiInferred} additional field${totalAiInferred !== 1 ? "s" : ""} across forms`);
     }
 
     return { results, profile };
