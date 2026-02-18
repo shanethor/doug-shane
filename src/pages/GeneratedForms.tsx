@@ -50,6 +50,7 @@ export default function GeneratedForms() {
   const [benchmarkSummary, setBenchmarkSummary] = useState<BenchmarkSummary | null>(null);
   const [benchmarkResults, setBenchmarkResults] = useState<BenchmarkResult[]>([]);
   const [expandedResult, setExpandedResult] = useState<string | null>(null);
+  const [testingFormId, setTestingFormId] = useState<string | null>(null);
 
   const { data: forms, isLoading } = useQuery({
     queryKey: ["generated-forms"],
@@ -116,6 +117,25 @@ export default function GeneratedForms() {
   const handleCopyId = (id: string) => {
     navigator.clipboard.writeText(id);
     toast({ title: "Copied", description: `Form ID ${id.slice(0, 8)}… copied to clipboard` });
+  };
+
+  const handleTestSingleForm = async (formId: string) => {
+    if (!session) return;
+    setTestingFormId(formId);
+    try {
+      const { data, error } = await supabase.functions.invoke("benchmark-extraction", {
+        body: { form_ids: [formId] },
+      });
+      if (error) throw error;
+      setBenchmarkSummary(data.summary);
+      setBenchmarkResults(data.results);
+      setExpandedResult(data.results[0]?.form_id || null);
+      toast({ title: "Test complete", description: `${data.results[0]?.accuracy ?? 0}% accuracy` });
+    } catch (err: any) {
+      toast({ title: "Test failed", description: err.message, variant: "destructive" });
+    } finally {
+      setTestingFormId(null);
+    }
   };
 
   const handleRunTraining = async () => {
@@ -425,6 +445,16 @@ export default function GeneratedForms() {
                   </div>
 
                   <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 gap-1.5 text-xs"
+                      disabled={testingFormId === form.id}
+                      onClick={() => handleTestSingleForm(form.id)}
+                    >
+                      {testingFormId === form.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <FlaskConical className="h-3 w-3" />}
+                      {testingFormId === form.id ? "Testing…" : "Test"}
+                    </Button>
                     <Button variant="outline" size="sm" className="flex-1 gap-1.5 text-xs" onClick={() => handleDownload(form)}>
                       <Download className="h-3 w-3" /> Download
                     </Button>
