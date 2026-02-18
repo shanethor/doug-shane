@@ -53,19 +53,29 @@ export const splitEmployees = (raw: string): { full_time: string; part_time: str
 const AI_TO_FORM_ALIASES: Record<string, string[]> = {
   // ── Applicant / Insured ──
   applicant_name: ["applicant_name", "insured_name", "named_insured", "primary_location_name", "contact_name_1"],
+  named_insured: ["applicant_name", "insured_name", "named_insured", "primary_location_name", "contact_name_1"],
+  insured_name: ["applicant_name", "insured_name", "named_insured", "primary_location_name"],
   dba_name: ["dba_name", "other_named_insured"],
   company_name: ["applicant_name", "insured_name", "named_insured", "primary_location_name"],
+  establishment_name: ["applicant_name", "insured_name", "named_insured"],
 
-  // ── Address (one-to-many) ──
+  // ── Address (one-to-many) — including supplement extraction keys ──
   mailing_address: ["mailing_address", "premises_address", "building_street_address", "garaging_street", "location_1_address", "primary_location_address"],
+  address: ["mailing_address", "premises_address", "building_street_address", "garaging_street", "location_1_address", "primary_location_address"],
+  location_street: ["mailing_address", "premises_address", "building_street_address", "garaging_street", "location_1_address", "primary_location_address"],
   city: ["city", "premises_city", "garaging_city", "building_city"],
   state: ["state", "premises_state", "garaging_state", "building_state", "rating_state", "wc_part1_states"],
   zip: ["zip", "premises_zip", "garaging_zip", "building_zip"],
+  zip_code: ["zip", "premises_zip", "garaging_zip", "building_zip"],
   county: ["premises_county", "garaging_county"],
+  states_of_operation: ["state", "premises_state", "wc_part1_states", "rating_state"],
 
-  // ── Contact ──
+  // ── Contact — including supplement extraction keys ──
   phone: ["business_phone", "phone", "contact_phone", "applicant_phone", "contact_phone_1"],
-  email: ["email", "agency_email", "contact_email", "applicant_email", "contact_email_1"],
+  telephone: ["business_phone", "phone", "contact_phone", "applicant_phone", "contact_phone_1"],
+  contact_number: ["business_phone", "phone", "contact_phone", "applicant_phone", "contact_phone_1"],
+  business_phone: ["business_phone", "applicant_phone", "contact_phone_1"],
+  email: ["contact_email_1", "applicant_email"],
   contact_name: ["contact_name", "contact_name_1"],
   website: ["website"],
 
@@ -74,13 +84,19 @@ const AI_TO_FORM_ALIASES: Record<string, string[]> = {
   sic_code: ["sic_code", "vehicle_1_sic"],
   naics_code: ["naics_code"],
   business_type: ["business_type"],
+  applicant_type: ["business_type"],
   gl_code: ["gl_code"],
 
-  // ── Business history ──
+  // ── Business history — including supplement keys ──
   year_established: ["date_business_started", "years_in_business"],
   date_business_started: ["date_business_started", "years_in_business"],
+  years_in_business: ["years_in_business", "date_business_started"],
+  industry_experience: ["years_in_business"],
   annual_revenue: ["annual_revenues", "annual_revenue", "gross_sales", "annual_gross_sales"],
   annual_revenues: ["annual_revenues", "annual_revenue", "gross_sales", "annual_gross_sales"],
+  total_sales: ["annual_revenues", "annual_revenue", "gross_sales", "annual_gross_sales"],
+  receipts_current: ["annual_revenues", "annual_revenue", "gross_sales", "annual_gross_sales"],
+  food_sales: ["annual_revenues"],
 
   // ── Operations ──
   nature_of_business: ["nature_of_business", "business_category"],
@@ -132,6 +148,11 @@ const AI_TO_FORM_ALIASES: Record<string, string[]> = {
   officer_1_duties: ["officer_1_duties"],
   experience_mod: ["experience_mod"],
 
+  // ── Payroll — contractor supplement keys ──
+  payroll_current: ["annual_payroll", "annual_remuneration_1"],
+  owner_payroll: ["officer_1_remuneration"],
+  annual_payroll: ["annual_payroll", "annual_remuneration_1"],
+
   // ── Property / Construction ──
   building_construction: ["construction_type"],
   construction_type: ["construction_type"],
@@ -145,6 +166,7 @@ const AI_TO_FORM_ALIASES: Record<string, string[]> = {
   sprinkler_pct: ["sprinkler_pct"],
   protection_class: ["protection_class"],
   distance_to_hydrant: ["distance_to_hydrant"],
+  wood_frame: ["construction_type"],
 
   // ── Property amounts ──
   building_amount: ["building_amount"],
@@ -157,11 +179,18 @@ const AI_TO_FORM_ALIASES: Record<string, string[]> = {
   building_valuation: ["building_valuation"],
   building_causes_of_loss: ["building_causes_of_loss"],
 
-  // ── Safety ──
+  // ── Safety — including contractor supplement keys ──
   safety_program: ["workplace_safety_program", "safety_program"],
   workplace_safety_program: ["workplace_safety_program", "safety_program"],
+  has_safety_program: ["workplace_safety_program", "safety_program"],
   subcontractors_used: ["subcontractors_used"],
   seasonal_employees: ["seasonal_employees"],
+  osha_violations: ["osha_compliance"],
+
+  // ── Contractor supplement → ACORD 125/126 General Info ──
+  bankruptcy: ["bankruptcy"],
+  has_workers_comp: ["wc_other_insurance_same"],
+  contractor_license: ["producer_license_no"],
 
   // ── Auto ──
   driver_1_name: ["driver_1_name"],
@@ -182,9 +211,6 @@ const AI_TO_FORM_ALIASES: Record<string, string[]> = {
   retained_limit_occurrence: ["retained_limit_occurrence"],
   retained_limit_aggregate: ["retained_limit_aggregate"],
   self_insured_retention: ["self_insured_retention"],
-
-  // ── Payroll (WC ↔ Umbrella) ──
-  annual_payroll: ["annual_payroll", "annual_remuneration_1"],
 
   // ── CGL Limits ──
   general_aggregate: ["general_aggregate"],
