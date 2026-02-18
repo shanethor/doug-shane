@@ -3,7 +3,7 @@ import ReactMarkdown from "react-markdown";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { ACORD_FORMS, ACORD_FORM_LIST, type AcordFormField, type AcordFormDefinition } from "@/lib/acord-forms";
-import { buildAutofilledData, formatUSD } from "@/lib/acord-autofill";
+import { buildAutofilledData, buildAutofilledDataWithAI, formatUSD } from "@/lib/acord-autofill";
 import { CURRENCY_FIELDS } from "@/lib/acord-autofill";
 import { generateAcordPdfAsync } from "@/lib/pdf-generator";
 import { generateSubmissionPackage } from "@/lib/submission-package";
@@ -148,7 +148,7 @@ export default function FormFillingView({ submissionId, initialMessages, initial
 
       const merged: Record<string, any> = {};
       for (const form of ACORD_FORM_LIST) {
-        const filled = buildAutofilledData(form, aiData, profileResult.data);
+        const { data: filled } = await buildAutofilledDataWithAI(form, aiData, profileResult.data, defaults);
         Object.assign(merged, filled);
       }
       for (const [k, v] of Object.entries(defaults)) {
@@ -170,14 +170,19 @@ export default function FormFillingView({ submissionId, initialMessages, initial
 
   useEffect(() => { scrollChatToBottom(); }, [messages, scrollChatToBottom]);
 
-  // Auto-send an initial message when the 3-column view loads
+  // Auto-send an initial message when the 3-column view loads — ask targeted gap-filling questions
   const hasAutoSent = useRef(false);
   useEffect(() => {
     if (hasAutoSent.current || loading) return;
     hasAutoSent.current = true;
     const companyName = formData.applicant_name || formData.insured_name || formData.company_name || "this client";
-    const filledKeys = ACORD_FORM_LIST.flatMap(f => f.fields).filter(f => formData[f.key] && String(formData[f.key]).trim());
-    const prompt = `I've loaded the submission for ${companyName} with ${filledKeys.length} fields pre-filled. What industry codes (SIC/NAICS) and coverage lines should we focus on? Are there any gaps or missing fields I should address first?`;
+    const allFields = ACORD_FORM_LIST.flatMap(f => f.fields);
+    const filledKeys = allFields.filter(f => formData[f.key] && String(formData[f.key]).trim());
+    const emptyKeys = allFields.filter(f => !formData[f.key] || !String(formData[f.key]).trim());
+    
+    // Build a targeted prompt with the top empty fields for the AI to ask about
+    const priorityEmpty = emptyKeys.slice(0, 15).map(f => f.label).join(", ");
+    const prompt = `I've loaded the submission for ${companyName} with ${filledKeys.length} fields pre-filled and ${emptyKeys.length} still empty. The most important empty fields are: ${priorityEmpty}. Please ask me targeted questions to fill these gaps — one or two questions at a time, focusing on the most impactful fields first. Keep going until the forms are as complete as possible.`;
     sendMessage(prompt);
   }, [loading, formData]);
 
