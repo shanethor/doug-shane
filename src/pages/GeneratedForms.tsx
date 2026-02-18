@@ -41,6 +41,7 @@ type BenchmarkResult = {
   partial_fields: string[];
   details: Record<string, { expected: any; got: any; status: string }>;
   extracted_data?: Record<string, any>;
+  website_data?: Record<string, any>;
   acord_fill?: AcordFillResult[];
   error?: string;
 };
@@ -216,6 +217,7 @@ export default function GeneratedForms() {
             results = results.map((r: any) => ({
               ...r,
               extracted_data: { ...websiteData, ...(r.extracted_data || {}) },
+              website_data: websiteData,
             }));
             toast({ title: "Website scraped", description: `Merged ${Object.keys(websiteData).length} fields from website` });
           }
@@ -514,6 +516,43 @@ export default function GeneratedForms() {
                                     </Collapsible>
                                   )}
                                 </div>
+                              )}
+
+                              {/* Website-extracted fields */}
+                              {r.website_data && Object.keys(r.website_data).length > 0 && (
+                                <Collapsible>
+                                  <CollapsibleTrigger asChild>
+                                    <button className="text-[10px] text-muted-foreground hover:text-foreground flex items-center gap-1 transition-colors">
+                                      <ChevronDown className="h-3 w-3" />
+                                      <Globe className="h-3 w-3" />
+                                      Show website-extracted fields ({Object.keys(r.website_data).length} fields)
+                                    </button>
+                                  </CollapsibleTrigger>
+                                  <CollapsibleContent>
+                                    <div className="overflow-x-auto mt-2">
+                                      <table className="w-full text-xs">
+                                        <thead>
+                                          <tr className="border-b">
+                                            <th className="text-left py-1 px-2 font-medium text-muted-foreground">Field</th>
+                                            <th className="text-left py-1 px-2 font-medium text-muted-foreground">Value from Website</th>
+                                          </tr>
+                                        </thead>
+                                        <tbody>
+                                          {Object.entries(r.website_data)
+                                            .sort(([a], [b]) => a.localeCompare(b))
+                                            .map(([field, value]) => (
+                                              <tr key={field} className="border-b border-muted/50">
+                                                <td className="py-1 px-2 font-mono">{field}</td>
+                                                <td className="py-1 px-2 max-w-[300px] truncate">
+                                                  {value === null || value === undefined ? "—" : typeof value === "object" ? JSON.stringify(value) : String(value)}
+                                                </td>
+                                              </tr>
+                                            ))}
+                                        </tbody>
+                                      </table>
+                                    </div>
+                                  </CollapsibleContent>
+                                </Collapsible>
                               )}
 
                               {/* Field-level details table */}
