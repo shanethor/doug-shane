@@ -13,6 +13,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import Chat from "./pages/Chat";
 import TemplateEditor from "./pages/TemplateEditor";
 import GeneratedForms from "./pages/GeneratedForms";
+import Onboarding from "./pages/Onboarding";
 import NotFound from "./pages/NotFound";
 import Deck from "./pages/Deck";
 
@@ -35,6 +36,7 @@ const App = () => (
           <Route path="/templates" element={<ProtectedRoute><TemplateEditor /></ProtectedRoute>} />
           <Route path="/forms" element={<ProtectedRoute><GeneratedForms /></ProtectedRoute>} />
           <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+          <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
           <Route path="/deck" element={<Deck />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
