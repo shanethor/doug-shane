@@ -210,6 +210,33 @@ export type Database = {
           },
         ]
       }
+      generated_forms: {
+        Row: {
+          created_at: string
+          display_name: string
+          form_data: Json
+          form_type: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          display_name: string
+          form_data?: Json
+          form_type: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string
+          form_data?: Json
+          form_type?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       insurance_applications: {
         Row: {
           created_at: string

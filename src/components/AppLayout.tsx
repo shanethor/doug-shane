@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useAdmin } from "@/hooks/useAdmin";
-import { LayoutDashboard, LogOut, ShieldCheck, MessageCircle } from "lucide-react";
+import { LayoutDashboard, LogOut, ShieldCheck, MessageCircle, FlaskConical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import auraLogo from "@/assets/aura-logo.png";
 
@@ -13,6 +13,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const navItems = [
     { to: "/", label: "Chat", icon: MessageCircle },
     { to: "/clients", label: "Clients", icon: LayoutDashboard },
+    { to: "/forms", label: "Forms", icon: FlaskConical },
     ...(isAdmin ? [{ to: "/admin", label: "Admin", icon: ShieldCheck }] : []),
   ];
 
