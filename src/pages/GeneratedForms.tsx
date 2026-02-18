@@ -133,8 +133,25 @@ export default function GeneratedForms() {
     toast({ title: "Copied", description: `Form ID ${id.slice(0, 8)}… copied to clipboard` });
   };
 
+  /** Load agent profile and form defaults for autofill */
+  const loadAgentProfile = async () => {
+    if (!session) return { profile: null, formDefaults: null };
+    const { data } = await supabase
+      .from("profiles")
+      .select("full_name, agency_name, phone, form_defaults")
+      .eq("user_id", session.user.id)
+      .single();
+    if (!data) return { profile: null, formDefaults: null };
+    const profile = { full_name: data.full_name, agency_name: data.agency_name, phone: data.phone };
+    const formDefaults = (data.form_defaults && Object.keys(data.form_defaults as Record<string, string>).length > 0)
+      ? data.form_defaults as Record<string, string>
+      : null;
+    return { profile, formDefaults };
+  };
+
   /** Run extracted data through the ACORD autofill pipeline (with AI inference) to measure form fill coverage */
   const computeAcordFill = async (extractedData: Record<string, any>): Promise<AcordFillResult[]> => {
+    const { profile, formDefaults } = await loadAgentProfile();
     const acordFormIds = ["acord-125", "acord-126", "acord-127", "acord-130", "acord-131", "acord-140"];
     const results: AcordFillResult[] = [];
     for (const formId of acordFormIds) {
@@ -143,8 +160,8 @@ export default function GeneratedForms() {
         results.push({ formId, formName: formId, totalFields: 0, filledFields: 0, fillRate: 0, filledKeys: [], emptyKeys: [] });
         continue;
       }
-      // Use AI-enhanced autofill
-      const { data: filled, aiInferredCount } = await buildAutofilledDataWithAI(form, extractedData);
+      // Use AI-enhanced autofill with agent profile and defaults
+      const { data: filled, aiInferredCount } = await buildAutofilledDataWithAI(form, extractedData, profile, formDefaults);
       const totalFields = form.fields.length;
       const filledKeys = Object.keys(filled).filter((k) => filled[k] !== "" && filled[k] !== null && filled[k] !== undefined);
       const emptyKeys = form.fields.map((f) => f.key).filter((k) => !filledKeys.includes(k));

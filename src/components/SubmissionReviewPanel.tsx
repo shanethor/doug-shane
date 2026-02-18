@@ -86,8 +86,9 @@ export default function SubmissionReviewPanel({ submissionId }: SubmissionReview
       .select("form_defaults, full_name, agency_name, phone")
       .eq("user_id", user.id)
       .single();
-    if (data?.form_defaults) {
-      setAgentDefaults(data.form_defaults as Record<string, string>);
+    const fd = data?.form_defaults as Record<string, string> | null;
+    if (fd && Object.keys(fd).length > 0) {
+      setAgentDefaults(fd);
     } else if (data) {
       const defaults: Record<string, string> = {};
       if (data.agency_name) defaults.agency_name = data.agency_name;
