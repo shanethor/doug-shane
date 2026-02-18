@@ -65,7 +65,7 @@ export default function GeneratedForms() {
   const [benchmarkResults, setBenchmarkResults] = useState<BenchmarkResult[]>([]);
   const [expandedResult, setExpandedResult] = useState<string | null>(null);
   const [testingFormId, setTestingFormId] = useState<string | null>(null);
-  const [websiteUrl, setWebsiteUrl] = useState("");
+  const [cardWebsiteUrls, setCardWebsiteUrls] = useState<Record<string, string>>({});
   const [scrapingWebsite, setScrapingWebsite] = useState(false);
   const { data: forms, isLoading } = useQuery({
     queryKey: ["generated-forms"],
@@ -193,7 +193,7 @@ export default function GeneratedForms() {
     return enriched;
   };
 
-  const handleTestSingleForm = async (formId: string) => {
+  const handleTestSingleForm = async (formId: string, websiteUrl?: string) => {
     if (!session) return;
     setTestingFormId(formId);
     try {
@@ -201,7 +201,33 @@ export default function GeneratedForms() {
         body: { form_ids: [formId] },
       });
       if (error) throw error;
-      const enriched = await enrichWithAcordFill(data.results);
+
+      let results = data.results;
+
+      // If a website URL was provided, scrape and merge data
+      if (websiteUrl?.trim()) {
+        setScrapingWebsite(true);
+        try {
+          const scrapeResp = await supabase.functions.invoke("scrape-website", {
+            body: { url: websiteUrl.trim() },
+          });
+          if (!scrapeResp.error) {
+            const websiteData = scrapeResp.data?.extracted_data || {};
+            results = results.map((r: any) => ({
+              ...r,
+              extracted_data: { ...websiteData, ...(r.extracted_data || {}) },
+            }));
+            toast({ title: "Website scraped", description: `Merged ${Object.keys(websiteData).length} fields from website` });
+          }
+        } catch (scrapeErr) {
+          console.warn("Website scrape failed:", scrapeErr);
+          toast({ title: "Website scrape failed", description: "Continuing with supplement data only", variant: "destructive" });
+        } finally {
+          setScrapingWebsite(false);
+        }
+      }
+
+      const enriched = await enrichWithAcordFill(results);
       setBenchmarkSummary(data.summary);
       setBenchmarkResults(enriched);
       setExpandedResult(enriched[0]?.form_id || null);
@@ -212,49 +238,6 @@ export default function GeneratedForms() {
       toast({ title: "Test failed", description: err.message, variant: "destructive" });
     } finally {
       setTestingFormId(null);
-    }
-  };
-
-  /** Scrape a website URL and merge with existing extracted data, then re-run ACORD fill */
-  const handleWebsiteScrapeTest = async (formId: string) => {
-    if (!session || !websiteUrl.trim()) return;
-    setScrapingWebsite(true);
-    try {
-      // Find the existing benchmark result for this form
-      const existingResult = benchmarkResults.find((r) => r.form_id === formId);
-      const existingExtracted = existingResult?.extracted_data || {};
-
-      // Scrape the website
-      const scrapeResp = await supabase.functions.invoke("scrape-website", {
-        body: { url: websiteUrl.trim() },
-      });
-      if (scrapeResp.error) throw new Error(scrapeResp.error.message);
-      const websiteData = scrapeResp.data?.extracted_data || {};
-
-      // Merge: supplement data takes priority, website fills gaps
-      const merged = { ...websiteData, ...existingExtracted };
-
-      // Re-run ACORD fill with merged data
-      const acordFill = await computeAcordFill(merged);
-      const avgFill = Math.round(acordFill.reduce((s, f) => s + f.fillRate, 0) / acordFill.length);
-
-      // Update the benchmark result in state
-      setBenchmarkResults((prev) =>
-        prev.map((r) =>
-          r.form_id === formId
-            ? { ...r, extracted_data: merged, acord_fill: acordFill }
-            : r
-        )
-      );
-
-      toast({
-        title: "Website data merged",
-        description: `Scraped ${Object.keys(websiteData).length} fields from website. New avg ACORD fill: ${avgFill}%`,
-      });
-    } catch (err: any) {
-      toast({ title: "Scrape failed", description: err.message, variant: "destructive" });
-    } finally {
-      setScrapingWebsite(false);
     }
   };
 
@@ -578,33 +561,6 @@ export default function GeneratedForms() {
                                 </Collapsible>
                               )}
 
-                              {/* Website scrape test */}
-                              <div className="border-t border-border/50 pt-3 mt-3">
-                                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                                  <Globe className="h-3 w-3" /> Test with Company Website
-                                </h4>
-                                <p className="text-[10px] text-muted-foreground mb-2">
-                                  Paste a sample website URL to scrape business data and merge it with the supplement extraction.
-                                </p>
-                                <div className="flex gap-2">
-                                  <Input
-                                    value={websiteUrl}
-                                    onChange={(e) => setWebsiteUrl(e.target.value)}
-                                    placeholder="https://example.com"
-                                    className="h-8 text-xs flex-1"
-                                  />
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    className="gap-1.5 text-xs h-8"
-                                    disabled={scrapingWebsite || !websiteUrl.trim()}
-                                    onClick={() => handleWebsiteScrapeTest(r.form_id)}
-                                  >
-                                    {scrapingWebsite ? <Loader2 className="h-3 w-3 animate-spin" /> : <Globe className="h-3 w-3" />}
-                                    {scrapingWebsite ? "Scraping…" : "Scrape & Merge"}
-                                  </Button>
-                                </div>
-                              </div>
                             </div>
                           )}
                         </CollapsibleContent>
@@ -656,16 +612,27 @@ export default function GeneratedForms() {
                     {new Date(form.created_at).toLocaleDateString()} {new Date(form.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </div>
 
+                  {/* Website URL input */}
+                  <div className="flex items-center gap-1.5">
+                    <Globe className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                    <Input
+                      value={cardWebsiteUrls[form.id] || ""}
+                      onChange={(e) => setCardWebsiteUrls((prev) => ({ ...prev, [form.id]: e.target.value }))}
+                      placeholder="Company website URL (optional)"
+                      className="h-7 text-xs"
+                    />
+                  </div>
+
                   <div className="flex gap-2">
                     <Button
                       variant="outline"
                       size="sm"
                       className="flex-1 gap-1.5 text-xs"
-                      disabled={testingFormId === form.id}
-                      onClick={() => handleTestSingleForm(form.id)}
+                      disabled={testingFormId === form.id || scrapingWebsite}
+                      onClick={() => handleTestSingleForm(form.id, cardWebsiteUrls[form.id])}
                     >
                       {testingFormId === form.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <FlaskConical className="h-3 w-3" />}
-                      {testingFormId === form.id ? "Testing…" : "Test"}
+                      {testingFormId === form.id && scrapingWebsite ? "Scraping…" : testingFormId === form.id ? "Testing…" : cardWebsiteUrls[form.id]?.trim() ? "Test + Scrape" : "Test"}
                     </Button>
                     <Button variant="outline" size="sm" className="flex-1 gap-1.5 text-xs" onClick={() => handleDownload(form)}>
                       <Download className="h-3 w-3" /> Download
