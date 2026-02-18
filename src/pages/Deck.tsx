@@ -75,10 +75,12 @@ export default function Deck() {
       <div className="flex-1 relative overflow-hidden">
         <div
           key={current}
-          className={`absolute inset-0 flex items-center justify-center p-6 md:p-12 ${animDir === "right" ? "animate-slide-in-right" : "animate-slide-in-left"}`}
+          className={`absolute inset-0 overflow-y-auto p-6 md:p-12 ${animDir === "right" ? "animate-slide-in-right" : "animate-slide-in-left"}`}
         >
-          <div className="w-full max-w-5xl">
+          <div className="w-full max-w-5xl mx-auto min-h-full flex items-center">
+            <div className="w-full">
             {slideComponents[current]}
+            </div>
           </div>
         </div>
 
