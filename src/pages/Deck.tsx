@@ -409,25 +409,47 @@ function ReplacesSlide() {
 function ModelSlide() {
   return (
     <div>
-      <SlideHeader icon={DollarSign} tag="Revenue Model" title="Growing share of every policy" subtitle="We take a percentage of each contract — starting small, growing as we prove value. The agency keeps more, and we grow together." />
+      <SlideHeader icon={DollarSign} tag="Revenue Model" title="Per-producer SaaS pricing" subtitle="Simple, predictable pricing per producer seat. We start at 30–50% of our long-term rate to drive adoption — then grow into full pricing as the platform delivers more value." />
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
         <div className="rounded-xl border-2 border-border bg-card p-6 hover-lift text-center">
-          <div className="text-sm font-semibold text-muted-foreground mb-1">Year 1</div>
-          <div className="text-4xl font-bold text-foreground">7.5%</div>
-          <div className="text-xs text-muted-foreground mt-2">Low friction adoption — agencies keep 92.5%</div>
+          <div className="text-sm font-semibold text-muted-foreground mb-1">Launch Pricing</div>
+          <div className="text-3xl font-bold text-foreground">$250–400</div>
+          <div className="text-xs text-muted-foreground mt-1">per producer / month</div>
+          <div className="text-xs text-muted-foreground/70 mt-2">30–50% of long-term rate — low friction adoption</div>
         </div>
         <div className="rounded-xl border-2 border-primary/30 bg-card p-6 hover-lift text-center ring-1 ring-primary/10">
-          <div className="text-sm font-semibold text-primary mb-1">Year 2</div>
-          <div className="text-4xl font-bold text-foreground">12.5%</div>
-          <div className="text-xs text-muted-foreground mt-2">Proven value unlocks greater share</div>
+          <div className="text-sm font-semibold text-primary mb-1">Year 2+ Pricing</div>
+          <div className="text-3xl font-bold text-foreground">$500–700</div>
+          <div className="text-xs text-muted-foreground mt-1">per producer / month</div>
+          <div className="text-xs text-muted-foreground/70 mt-2">Full intelligence suite unlocked — proven ROI</div>
         </div>
         <div className="rounded-xl border-2 border-primary/50 bg-card p-6 hover-lift text-center ring-1 ring-primary/20">
-          <div className="text-sm font-semibold text-primary mb-1">Year 3</div>
-          <div className="text-4xl font-bold text-foreground">20%</div>
-          <div className="text-xs text-muted-foreground mt-2">Efficiency gains offset the increase for agencies</div>
+          <div className="text-sm font-semibold text-primary mb-1">Long-Term Target</div>
+          <div className="text-3xl font-bold text-foreground">$800+</div>
+          <div className="text-xs text-muted-foreground mt-1">per producer / month</div>
+          <div className="text-xs text-muted-foreground/70 mt-2">Full data layer, intelligence engine & integrations</div>
         </div>
       </div>
-      <p className="mt-5 text-sm text-muted-foreground text-center italic">Revenue grows from renewals + new policies — compounding year over year.</p>
+      <div className="mt-5 rounded-xl border border-border bg-card/50 p-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+          <div>
+            <h4 className="font-semibold text-foreground mb-1.5">Why per-producer pricing works</h4>
+            <ul className="text-xs text-muted-foreground space-y-1">
+              <li>• Agencies understand per-seat models</li>
+              <li>• Scales naturally with agency growth</li>
+              <li>• No revenue-share complexity or audit friction</li>
+            </ul>
+          </div>
+          <div>
+            <h4 className="font-semibold text-foreground mb-1.5">Why start at 30–50%</h4>
+            <ul className="text-xs text-muted-foreground space-y-1">
+              <li>• Minimal risk for early adopters</li>
+              <li>• Proves value before full pricing</li>
+              <li>• Long-term features justify the increase</li>
+            </ul>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -480,7 +502,7 @@ function ProjectionsSlide() {
               ["Platform Revenue", "$625,000", "$1,875,000"],
               ["COGS", "~$300,000", "~$600,000"],
               ["Gross Margin", "~$325,000 (52%)", "~$1,275,000 (68%)"],
-              ["Our Rev Share", "7.5–12.5%", "20%"],
+              ["Avg. per Producer", "$250–400/mo", "$500–800/mo"],
             ].map(([metric, y1, y2]) => (
               <tr key={metric} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
                 <td className="py-3 px-4 font-medium">{metric}</td>
@@ -500,11 +522,11 @@ function ProjectionsSlide() {
 function AskSlide() {
   return (
     <div className="text-center">
-      <SlideHeader icon={Target} tag="The Ask" title="$250,000 for 10% equity" subtitle="" />
+      <SlideHeader icon={Target} tag="The Ask" title="$500,000 for 10% equity" subtitle="" />
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2 mb-8">
-        <StatCard value="$250K" label="Total raise" sub="For 10% equity" />
-        <StatCard value="$75K" label="Minimum per investor" />
-        <StatCard value="$2.5M" label="Pre-money valuation" />
+        <StatCard value="$500K" label="Total raise" sub="For 10% equity" />
+        <StatCard value="$100K" label="Minimum per investor" />
+        <StatCard value="$5M" label="Pre-money valuation" />
       </div>
       <div className="rounded-xl border border-border bg-card p-6 max-w-2xl mx-auto">
         <h3 className="font-semibold text-foreground mb-3">Use of Funds</h3>
