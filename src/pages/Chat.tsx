@@ -9,11 +9,11 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import SubmissionReviewPanel from "@/components/SubmissionReviewPanel";
 import FormFillingView from "@/components/FormFillingView";
 import ExtractionSummary from "@/components/ExtractionSummary";
-import { Send, FileUp, ClipboardList, Search, Loader2, Paperclip, X, Download, Package, Mic, MicOff } from "lucide-react";
+import { Send, FileUp, ClipboardList, Search, Loader2, Paperclip, X, Download, Package, Mic, MicOff, Globe } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { ACORD_FORM_LIST } from "@/lib/acord-forms";
-import { buildAutofilledData } from "@/lib/acord-autofill";
+import { buildAutofilledData, buildAutofilledDataWithAI } from "@/lib/acord-autofill";
 import { generateAcordPdfAsync } from "@/lib/pdf-generator";
 import { generateSubmissionPackage } from "@/lib/submission-package";
 import { useAuth } from "@/hooks/useAuth";
@@ -27,6 +27,7 @@ const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/agent-chat`;
 
 const SUGGESTIONS = [
   { icon: FileUp, label: "Submit a new client", message: "I want to submit a new client for coverage." },
+  { icon: Globe, label: "Scrape a company website", message: "I have a client's website URL — can you pull their business info from it?" },
   { icon: ClipboardList, label: "Fill an ACORD form", message: "Help me fill out an ACORD form for a client." },
   { icon: Search, label: "Review a submission", message: "I need to review an existing client submission." },
 ];
@@ -239,7 +240,7 @@ export default function Chat() {
       const results: { form: typeof forms[0]; data: Record<string, any> }[] = [];
 
       for (const form of forms) {
-        let filled = buildAutofilledData(form, aiData, profile);
+        const { data: filled } = await buildAutofilledDataWithAI(form, aiData, profile, defaults);
         for (const [k, v] of Object.entries(defaults)) {
           if (v && (!filled[k] || (typeof filled[k] === "string" && !filled[k].trim()))) {
             filled[k] = v;
@@ -367,7 +368,7 @@ export default function Chat() {
       
       // Check if the user's last message already had intake data
       const lastUserMsg = [...messages, userMsg].filter(m => m.role === "user").pop();
-      const isIntakeFields = fields.length >= 4 && fields.some(f => f.key === "company_name");
+      const isIntakeFields = fields.length >= 4 && fields.some(f => f.key === "company_name" || f.key === "website_url");
       
       if (isIntakeFields && lastUserMsg && !skipAutoDetectRef.current) {
         const userText = lastUserMsg.content.toLowerCase();
@@ -438,20 +439,68 @@ export default function Chat() {
     }
   };
 
+  /** Detect URLs in text and scrape them for business data */
+  const scrapeWebsiteUrls = async (text: string): Promise<Record<string, any>> => {
+    const urlRegex = /https?:\/\/[^\s,)]+/gi;
+    const urls = text.match(urlRegex);
+    if (!urls || urls.length === 0) return {};
+
+    let allExtracted: Record<string, any> = {};
+    for (const url of urls.slice(0, 3)) { // max 3 URLs
+      try {
+        const { data, error } = await supabase.functions.invoke("scrape-website", {
+          body: { url },
+        });
+        if (!error && data?.extracted_data) {
+          allExtracted = { ...allExtracted, ...data.extracted_data };
+          toast({
+            title: "Website scraped",
+            description: `Extracted business data from ${data.page_title || url}`,
+          });
+        }
+      } catch (err) {
+        console.warn("Scrape failed for", url, err);
+      }
+    }
+    return allExtracted;
+  };
+
   const submitFieldsWithValues = async (fields: FieldBubble[], vals: Record<string, string>) => {
     if (!user) return;
     setSubmittingFields(true);
+
+    // Check if website URL was provided and scrape it
+    const websiteUrl = vals["website_url"] || "";
+    let scrapedData: Record<string, any> = {};
+    if (websiteUrl && /https?:\/\//i.test(websiteUrl)) {
+      toast({ title: "Scraping website…", description: `Pulling business data from ${websiteUrl}` });
+      scrapedData = await scrapeWebsiteUrls(websiteUrl);
+    }
+
+    // Also check all user messages for URLs to scrape
+    const allUserText = messages.filter(m => m.role === "user").map(m => m.content).join(" ") + " " + Object.values(vals).join(" ");
+    if (Object.keys(scrapedData).length === 0) {
+      const urlMatch = allUserText.match(/https?:\/\/[^\s,)]+/gi);
+      if (urlMatch && urlMatch.length > 0) {
+        scrapedData = await scrapeWebsiteUrls(urlMatch.join(" "));
+      }
+    }
+
     const filled = fields.map((f) => `${f.label}: ${vals[f.key] || "(empty)"}`).join("\n");
     
     const description = fields.map((f) => `${f.label}: ${vals[f.key] || ""}`).filter(l => !l.endsWith(": ")).join("\n");
-    const companyName = vals["company_name"] || vals["applicant_name"] || "New Client";
+    const companyName = vals["company_name"] || vals["applicant_name"] || scrapedData.applicant_name || scrapedData.company_name || "New Client";
 
-    // Build full context from ALL chat messages + current intake fields
-    // This ensures every detail the user provided in conversation gets extracted
+    // Build full context from ALL chat messages + current intake fields + scraped data
     const fullChatContext = messages
       .map((m) => `${m.role === "user" ? "Agent" : "AURA"}: ${m.content}`)
       .join("\n\n");
-    const fullDescription = `${fullChatContext}\n\n--- Current Intake Fields ---\n${description}`;
+    
+    let fullDescription = `${fullChatContext}\n\n--- Current Intake Fields ---\n${description}`;
+    
+    if (Object.keys(scrapedData).length > 0) {
+      fullDescription += `\n\n--- Data Scraped from Website ---\n${JSON.stringify(scrapedData, null, 2)}`;
+    }
 
     try {
       const { data: sub, error: subErr } = await supabase
@@ -481,7 +530,7 @@ export default function Chat() {
 
       if (!extractResp.ok) console.warn("Extract failed:", extractResp.status);
 
-      send(`Here are the details:\n${filled}\n\n[SUBMISSION_ID:${sub.id}]`);
+      send(`Here are the details:\n${filled}${websiteUrl ? `\nWebsite: ${websiteUrl}` : ""}\n\n[SUBMISSION_ID:${sub.id}]`);
       // Detect which form the user is requesting from chat context
       const allText = messages.map(m => m.content).join(" ") + " " + filled;
       const detectedFormId = detectRequestedForm(allText);
@@ -648,7 +697,7 @@ export default function Chat() {
                 )}
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full max-w-xl">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full max-w-2xl">
                 {SUGGESTIONS.map((s) => (
                   <button
                     key={s.label}
