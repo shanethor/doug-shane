@@ -59,7 +59,8 @@ export default function Auth() {
         }} />
         
         <div className="relative z-10 flex items-center gap-3">
-          <img src={auraLogo} alt="AURA Risk Group" className="h-10" />
+          <span className="text-2xl font-bold tracking-tight text-white/90">AURA</span>
+          <span className="ml-1.5 text-xs text-white/50 tracking-widest uppercase">Risk Group</span>
         </div>
         <div className="relative z-10 max-w-md">
           <h1 className="text-5xl text-white/95 leading-tight tracking-tight">
