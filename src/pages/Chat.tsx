@@ -9,7 +9,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import SubmissionReviewPanel from "@/components/SubmissionReviewPanel";
 import FormFillingView from "@/components/FormFillingView";
 import ExtractionSummary from "@/components/ExtractionSummary";
-import { Send, FileUp, ClipboardList, Search, Loader2, Paperclip, X, Download, Package, Mic, MicOff, Globe } from "lucide-react";
+import { Send, FileUp, ClipboardList, Search, Loader2, Paperclip, X, Download, Mic, MicOff, Globe, Lightbulb, ChevronDown, ChevronUp, FileText, BrainCircuit, PenLine } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { ACORD_FORM_LIST } from "@/lib/acord-forms";
@@ -18,6 +18,7 @@ import { generateAcordPdfAsync } from "@/lib/pdf-generator";
 import { generateSubmissionPackage } from "@/lib/submission-package";
 import { useAuth } from "@/hooks/useAuth";
 import { useVoiceInput } from "@/hooks/useVoiceInput";
+import { useTrainingMode } from "@/hooks/useTrainingMode";
 
 type ButtonMarker = { label: string; action: string };
 type Msg = { role: "user" | "assistant"; content: string; fields?: FieldBubble[]; buttons?: ButtonMarker[] };
@@ -182,6 +183,33 @@ function autoFillFieldsFromExtracted(fields: FieldBubble[], extracted: Record<st
   return result;
 }
 
+const TRAINING_TIPS = [
+  {
+    icon: FileText,
+    title: "Upload Policy Docs & Decks",
+    tip: "Drop in existing policy PDFs, loss runs, or submission decks — AURA extracts all fields automatically for maximum pre-fill rates.",
+    accent: "primary",
+  },
+  {
+    icon: Globe,
+    title: "Share the Client's Website",
+    tip: "Paste a company URL and AURA will scrape it for business info, industry class, and location data to pre-fill ACORD forms instantly.",
+    accent: "success",
+  },
+  {
+    icon: ClipboardList,
+    title: "Request Specific ACORD Forms",
+    tip: 'Tell AURA which coverage lines you need — e.g. "125/126/130" or "GL and Workers Comp" — and it targets only those forms for extraction.',
+    accent: "accent",
+  },
+  {
+    icon: Search,
+    title: "Add Supplementals & Schedules",
+    tip: "Upload supplemental applications or carrier-specific schedules — AURA uses them to fill gaps the main forms leave behind.",
+    accent: "warning",
+  },
+];
+
 export default function Chat() {
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
@@ -190,6 +218,8 @@ export default function Chat() {
   const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
   const [fieldValues, setFieldValues] = useState<Record<string, string>>({});
   const [displayedText, setDisplayedText] = useState(""); // typewriter buffer
+  const [showTips, setShowTips] = useState(true);
+  const [showIntentButtons, setShowIntentButtons] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const fullTextRef = useRef(""); // full streamed text so far
@@ -198,6 +228,7 @@ export default function Chat() {
   const onFinishRef = useRef<(() => void) | null>(null); // callback when typewriter catches up
   const { toast } = useToast();
   const { user } = useAuth();
+  const { trainingMode } = useTrainingMode();
   const navigate = useNavigate();
   const [reviewSubmissionId, setReviewSubmissionId] = useState<string | null>(null);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
@@ -710,7 +741,14 @@ export default function Chat() {
                 {SUGGESTIONS.map((s) => (
                   <button
                     key={s.label}
-                    onClick={() => send(s.message)}
+                    onClick={() => {
+                      // "Fill an ACORD form" with no documents → show intent buttons in non-training mode
+                      if (!trainingMode && s.message.includes("ACORD form")) {
+                        setShowIntentButtons(true);
+                      } else {
+                        send(s.message);
+                      }
+                    }}
                     className="flex flex-col items-start gap-2 rounded-xl border bg-card/80 backdrop-blur-sm p-4 text-left hover-lift aura-glow-shadow transition-colors group"
                   >
                     <s.icon className="h-5 w-5 text-accent group-hover:text-primary transition-colors" />
@@ -718,6 +756,92 @@ export default function Chat() {
                   </button>
                 ))}
               </div>
+
+              {/* Intent buttons — shown in non-training mode when user picks "Fill ACORD form" */}
+              {!trainingMode && showIntentButtons && (
+                <div className="w-full max-w-2xl animate-smooth-reveal">
+                  <div className="rounded-xl border bg-card p-5 space-y-3 aura-glow-shadow">
+                    <p className="text-sm font-medium text-foreground">How would you like to get started?</p>
+                    <div className="flex flex-col gap-2">
+                      <button
+                        onClick={() => { setShowIntentButtons(false); fileInputRef.current?.click(); }}
+                        className="flex items-center gap-3 rounded-lg border bg-background hover:bg-muted/60 px-4 py-3 text-left transition-colors"
+                      >
+                        <div className="h-8 w-8 rounded-md bg-secondary flex items-center justify-center shrink-0">
+                          <FileText className="h-4 w-4 text-primary" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">Add Documents to Have AI Pre-fill ACORD Forms</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">Upload policies, decks, or loss runs for automated extraction</p>
+                        </div>
+                      </button>
+                      <button
+                        onClick={() => { setShowIntentButtons(false); send("I want to fill an ACORD form — please ask me a few short questions to gather the client information."); }}
+                        className="flex items-center gap-3 rounded-lg border bg-background hover:bg-muted/60 px-4 py-3 text-left transition-colors"
+                      >
+                        <div className="h-8 w-8 rounded-md bg-secondary flex items-center justify-center shrink-0">
+                          <BrainCircuit className="h-4 w-4 text-accent" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">Use AI to Infer Customer Information After a Few Short Questions</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">AURA will guide you through the key fields one by one</p>
+                        </div>
+                      </button>
+                      <button
+                        onClick={() => { setShowIntentButtons(false); send("I want to fill my own ACORD forms manually — just open the form editor and I'll ask for help when needed."); }}
+                        className="flex items-center gap-3 rounded-lg border bg-background hover:bg-muted/60 px-4 py-3 text-left transition-colors"
+                      >
+                        <div className="h-8 w-8 rounded-md bg-secondary flex items-center justify-center shrink-0">
+                          <PenLine className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">I Want to Fill My Own Forms and Ask AI for Help Later</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">Start with blank ACORD forms and get assistance on demand</p>
+                        </div>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Training mode tips panel */}
+              {trainingMode && (
+                <div className="w-full max-w-2xl animate-smooth-reveal">
+                  <button
+                    onClick={() => setShowTips(p => !p)}
+                    className="flex items-center justify-between w-full rounded-xl border bg-card/60 px-4 py-3 text-left hover:bg-card transition-colors"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Lightbulb className="h-4 w-4 text-accent" />
+                      <span className="text-sm font-semibold">Tips for Maximum ACORD Coverage</span>
+                      <span className="text-[10px] bg-secondary text-secondary-foreground px-1.5 py-0.5 rounded-full font-medium">Training Mode</span>
+                    </div>
+                    {showTips ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+                  </button>
+
+                  {showTips && (
+                    <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {TRAINING_TIPS.map((tip, i) => (
+                        <div
+                          key={i}
+                          className="rounded-xl border bg-card p-4 opacity-0 animate-[slideUpFadeIn_0.4s_ease-out_forwards]"
+                          style={{ animationDelay: `${i * 0.08}s` }}
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="mt-0.5 shrink-0 text-accent">
+                              <tip.icon className="h-4 w-4" />
+                            </div>
+                            <div>
+                              <p className="text-xs font-semibold mb-1 text-foreground">{tip.title}</p>
+                              <p className="text-xs text-muted-foreground leading-relaxed">{tip.tip}</p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           ) : (
             <div className="max-w-3xl mx-auto py-6 px-4 space-y-6">
