@@ -370,14 +370,20 @@ export default function Chat() {
 
   const removeFile = (idx: number) => setAttachedFiles((prev) => prev.filter((_, i) => i !== idx));
 
-  const isFormFillingIntent = (text: string) =>
-    /fill\s*(a|an|out|my|the)?\s*(acord|form|insurance|application)|acord\s*form|new\s*client|submit\s*(a\s*)?(client|form|acord)|need\s*(to\s*)?(fill|complete|do|start)|start\s*(a\s*)?(form|submission)/i.test(text.trim());
+  const isFormFillingIntent = (text: string) => {
+    const t = text.trim().toLowerCase();
+    // Any message that mentions forms, ACORD, new client, or submission intent
+    return /\bform\b|\bacord\b|\bsubmit|\bnew\s*client|\binsurance\b|\bcoverage\b|\bapplication\b/.test(t)
+      || /need\s*(a|an|to|help)|\bstart\b|\bget\s*start|\bfill\b|\bcreate\b/.test(t);
+  };
 
   const send = async (text: string) => {
     if (!text.trim() || isLoading) return;
 
     // In non-training mode, intercept form-filling intent and show the 3 intent buttons
-    if (!trainingMode && isFormFillingIntent(text) && messages.length === 0) {
+    // Only intercept if this is a short/vague opener (not a detailed mid-conversation follow-up)
+    const isShortVagueOpener = text.trim().split(/\s+/).length <= 8;
+    if (!trainingMode && isFormFillingIntent(text) && isShortVagueOpener && !showIntentButtons) {
       const userMsg: Msg = { role: "user", content: text.trim() };
       setMessages((prev) => [...prev, userMsg]);
       setInput("");
