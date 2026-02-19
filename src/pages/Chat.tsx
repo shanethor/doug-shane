@@ -496,7 +496,10 @@ export default function Chat() {
 
     // Build full context from ALL chat messages + current intake fields + scraped data
     const fullChatContext = messages
-      .map((m) => `${m.role === "user" ? "Agent" : "AURA"}: ${m.content}`)
+      .map((m) => {
+        const clean = m.content.replace(/\[FIELD:[^\]]+\]/g, "").replace(/\[BUTTON:[^\]]+\]/g, "").replace(/\[SUBMISSION_ID:[^\]]+\]/g, "").trim();
+        return `${m.role === "user" ? "Agent" : "AURA"}: ${clean}`;
+      })
       .join("\n\n");
     
     let fullDescription = `${fullChatContext}\n\n--- Current Intake Fields ---\n${description}`;
