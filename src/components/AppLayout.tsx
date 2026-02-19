@@ -1,19 +1,21 @@
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useAdmin } from "@/hooks/useAdmin";
-import { LayoutDashboard, LogOut, ShieldCheck, MessageCircle, FlaskConical } from "lucide-react";
+import { LayoutDashboard, LogOut, ShieldCheck, MessageCircle, GraduationCap } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { useTrainingMode } from "@/hooks/useTrainingMode";
 import auraLogo from "@/assets/aura-logo.png";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const { signOut } = useAuth();
   const { isAdmin } = useAdmin();
   const location = useLocation();
+  const { trainingMode, setTrainingMode } = useTrainingMode();
 
   const navItems = [
     { to: "/", label: "Chat", icon: MessageCircle },
     { to: "/clients", label: "Clients", icon: LayoutDashboard },
-    
     ...(isAdmin ? [{ to: "/admin", label: "Admin", icon: ShieldCheck }] : []),
   ];
 
@@ -40,6 +42,21 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
               </Link>
             ))}
             <div className="ml-2 h-4 w-px bg-border" />
+
+            {/* Training mode toggle */}
+            <div className="flex items-center gap-1.5 ml-1 px-2 py-1 rounded-md hover:bg-muted/60 transition-colors cursor-default">
+              <GraduationCap className={`h-3.5 w-3.5 transition-colors ${trainingMode ? "text-accent" : "text-muted-foreground"}`} />
+              <span className={`text-[11px] font-medium transition-colors ${trainingMode ? "text-foreground" : "text-muted-foreground"}`}>
+                Training
+              </span>
+              <Switch
+                checked={trainingMode}
+                onCheckedChange={setTrainingMode}
+                className="scale-75 origin-right"
+              />
+            </div>
+
+            <div className="ml-1 h-4 w-px bg-border" />
             <Button variant="ghost" size="sm" onClick={signOut} className="gap-2 text-xs text-muted-foreground">
               <LogOut className="h-3.5 w-3.5" />
               Sign out
