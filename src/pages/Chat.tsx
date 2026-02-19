@@ -35,11 +35,13 @@ const SUGGESTIONS = [
 
 async function streamChat({
   messages,
+  trainingMode,
   onDelta,
   onDone,
   onError,
 }: {
   messages: { role: string; content: string }[];
+  trainingMode: boolean;
   onDelta: (text: string) => void;
   onDone: () => void;
   onError: (err: string) => void;
@@ -50,7 +52,7 @@ async function streamChat({
       "Content-Type": "application/json",
       Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
     },
-    body: JSON.stringify({ messages }),
+    body: JSON.stringify({ messages, trainingMode }),
   });
 
   if (!resp.ok) {
@@ -454,6 +456,7 @@ export default function Chat() {
     try {
       await streamChat({
         messages: [...messages, userMsg].map((m) => ({ role: m.role, content: m.content })),
+        trainingMode,
         onDelta: upsert,
         onDone: () => {
           // Signal stream done — typewriter will call finalizeMessage when it catches up

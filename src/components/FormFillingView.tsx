@@ -298,55 +298,38 @@ export default function FormFillingView({ submissionId, initialMessages, initial
         .eq("submission_id", submissionId)
         .eq("user_id", user.id);
 
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("full_name, agency_name, phone")
-        .eq("user_id", user.id)
-        .single();
-
-      // "package" always uses ALL forms; "individual" uses active form only
+      // Determine which forms to download
+      const { FILLABLE_PDF_PATHS } = await import("@/lib/acord-field-map");
       const formsToProcess = mode === "individual" && !isAllForms
         ? ACORD_FORM_LIST.filter(f => f.id === activeFormId)
         : ACORD_FORM_LIST;
-      const results: { form: AcordFormDefinition; data: Record<string, any> }[] = [];
 
+      // Download each fillable PDF directly — same as what the viewer shows
+      const date = new Date().toISOString().slice(0, 10);
+      let count = 0;
       for (const form of formsToProcess) {
-        const data: Record<string, any> = {};
-        for (const field of form.fields) {
-          if (formData[field.key]) data[field.key] = formData[field.key];
-        }
-        const filledCount = Object.values(data).filter((v) => v && String(v).trim()).length;
-        if (filledCount > 3) results.push({ form, data });
+        const pdfPath = FILLABLE_PDF_PATHS[form.id];
+        if (!pdfPath) continue;
+        // Only include if we have meaningful data for this form
+        const hasData = form.fields.some(f => formData[f.key] && String(formData[f.key]).trim());
+        if (!hasData) continue;
+        const resp = await fetch(pdfPath);
+        if (!resp.ok) continue;
+        const blob = await resp.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${form.name.replace(/\s/g, "_")}_${date}.pdf`;
+        a.click();
+        URL.revokeObjectURL(url);
+        count++;
+        if (count < formsToProcess.length) await new Promise(r => setTimeout(r, 400));
       }
 
-      if (results.length === 0) {
+      if (count === 0) {
         toast.error("No forms have enough data to download.");
-        setDownloading(false);
-        return;
-      }
-
-      if (mode === "individual") {
-        for (let i = 0; i < results.length; i++) {
-          const { form, data } = results[i];
-          const pdf = await generateAcordPdfAsync(form, data);
-          pdf.save(`${form.name.replace(/\s/g, "_")}_${new Date().toISOString().slice(0, 10)}.pdf`);
-          if (i < results.length - 1) await new Promise((r) => setTimeout(r, 600));
-        }
-        toast.success(`${results.length} form(s) downloaded.`);
       } else {
-        const companyName = formData.applicant_name || formData.insured_name || "Submission";
-        const pkg = await generateSubmissionPackage({
-          companyName,
-          narrative: "",
-          agencyName: profile?.agency_name || "",
-          producerName: profile?.full_name || "",
-          coverageLines: [],
-          forms: results,
-          effectiveDate: formData.effective_date || formData.proposed_eff_date || "",
-        });
-        const safeName = companyName.replace(/[^a-zA-Z0-9]/g, "_").slice(0, 40);
-        pkg.save(`Submission_${safeName}_${new Date().toISOString().slice(0, 10)}.pdf`);
-        toast.success("Submission package downloaded!");
+        toast.success(`${count} fillable form(s) downloaded.`);
       }
     } catch (err) {
       console.error("Download error:", err);
