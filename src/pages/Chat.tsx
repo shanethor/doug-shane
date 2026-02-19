@@ -237,6 +237,7 @@ export default function Chat() {
   const [activeSubmissionId, setActiveSubmissionId] = useState<string | null>(null);
   const [pendingSubmissionId, setPendingSubmissionId] = useState<string | null>(null);
   const [activeFormId, setActiveFormId] = useState<string | undefined>(undefined);
+  const [blankFormMode, setBlankFormMode] = useState(false);
   const [requestedFormIds, setRequestedFormIds] = useState<string[]>([]);
   const [submittingFields, setSubmittingFields] = useState(false);
   const skipAutoDetectRef = useRef(false);
@@ -620,6 +621,7 @@ export default function Chat() {
         .select()
         .single();
       if (error || !sub) throw error || new Error("Failed to create submission");
+      setBlankFormMode(true);
       setActiveSubmissionId(sub.id);
     } catch (err) {
       console.error("Failed to open blank form editor:", err);
@@ -654,7 +656,9 @@ export default function Chat() {
             submissionId={activeSubmissionId}
             initialMessages={messages.map((m) => ({ role: m.role, content: m.content }))}
             initialFormId={activeFormId}
-            onBack={() => setActiveSubmissionId(null)}
+            onBack={() => { setActiveSubmissionId(null); setBlankFormMode(false); }}
+            suppressAutoAnalysis={blankFormMode && !trainingMode}
+            initialCompanyName={blankFormMode ? "New Client" : undefined}
           />
         </div>
       </AppLayout>
