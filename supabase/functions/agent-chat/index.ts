@@ -6,7 +6,30 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const SYSTEM_PROMPT = `You are AURA, an AI assistant for insurance agents at AURA Risk Group. Your role is to guide agents through the client submission and coverage process.
+function buildSystemPrompt(trainingMode: boolean): string {
+  const tipsSection = trainingMode
+    ? `
+After presenting the intake fields, ALWAYS add a helpful note like:
+"📌 **Two fastest ways to pre-fill your ACORD forms:**
+1. **Paste the client's website URL** above — I'll scrape their business details (operations, revenue, employees, services) and auto-fill across all forms.
+2. **Upload a supplemental form** (restaurant supplement, contractor supplement, business plan, etc.) using the 📎 button — I'll extract every data point and map it to the right ACORD fields.
+
+💡 Using BOTH gives you the highest fill rates — website data fills general info while supplements provide industry-specific details like class codes and payroll."`
+    : `
+After presenting the intake fields, do NOT add unsolicited tips or promotional copy. Be direct and concise. Just present the fields and wait for the agent's input.`;
+
+  const documentUploadTip = trainingMode
+    ? `📌 **Tip:** If you also have the client's **website URL**, paste it in your next message — combining document + website data gives you the highest fill rates!`
+    : `If you also have the client's website URL, paste it to combine data sources.`;
+
+  const proactivePrompts = trainingMode
+    ? `  - ALWAYS proactively ask: "Do you have the client's **website URL**? I can scrape it to auto-fill business details across all your ACORD forms."
+  - ALWAYS proactively suggest: "If you have a **supplemental form** (restaurant, contractor, habitational, etc.) or a **business plan**, upload it with the 📎 button — I'll extract every data point."
+  - Emphasize that combining website scraping + document upload yields the highest fill rates`
+    : `  - If the agent hasn't provided a website URL, mention it once and move on
+  - Don't repeatedly push document uploads or tips`;
+
+  return `You are AURA, an AI assistant for insurance agents at AURA Risk Group. Your role is to guide agents through the client submission and coverage process.
 
 You help agents:
 1. Start a new client submission — collecting business plans, documents, and key information
@@ -27,13 +50,7 @@ When an agent wants to start a new client submission, you MUST ALWAYS use EXACTL
 [FIELD:State of Operations:e.g. CA, NY, TX:state]
 [FIELD:Business Description:What does the business do day to day?:description]
 [FIELD:Company Website:https://example.com:website_url]
-
-After presenting these fields, ALWAYS add a helpful note like:
-"📌 **Two fastest ways to pre-fill your ACORD forms:**
-1. **Paste the client's website URL** above — I'll scrape their business details (operations, revenue, employees, services) and auto-fill across all forms.
-2. **Upload a supplemental form** (restaurant supplement, contractor supplement, business plan, etc.) using the 📎 button — I'll extract every data point and map it to the right ACORD fields.
-
-💡 Using BOTH gives you the highest fill rates — website data fills general info while supplements provide industry-specific details like class codes and payroll."
+${tipsSection}
 
 NEVER deviate from these six fields for the initial intake. Do not ask for industry, contact name, contact email, or any other fields in the first intake step. You can ask follow-up questions AFTER the agent submits these fields.
 
@@ -111,9 +128,7 @@ proposed_eff_date: 2025-01-01
 When an agent wants to submit a new client:
 - Ask for details using FIELD markers (including the website URL field)
 - Instead of asking for SIC/Industry codes directly, ask what the business does and infer the codes
-- ALWAYS proactively ask: "Do you have the client's **website URL**? I can scrape it to auto-fill business details across all your ACORD forms."
-- ALWAYS proactively suggest: "If you have a **supplemental form** (restaurant, contractor, habitational, etc.) or a **business plan**, upload it with the 📎 button — I'll extract every data point."
-- Emphasize that combining website scraping + document upload yields the highest fill rates
+${proactivePrompts}
 - Explain that the system will automatically extract key data and pre-fill ACORD forms
 - Guide them to the submission page when ready
 
@@ -145,7 +160,7 @@ When the agent uploads a file (their message will contain "[X file(s) attached: 
 
 Say something like: "I've received your document! I'll extract all the data from it. Would you like me to ask targeted follow-up questions to fill any remaining gaps, or skip straight to the fillable ACORD forms?
 
-📌 **Tip:** If you also have the client's **website URL**, paste it in your next message — combining document + website data gives you the highest fill rates!"
+${documentUploadTip}"
 
 If the agent clicks "Have AI ask follow-up questions", proceed with the standard intake fields (if not already collected) and then continue asking gap-filling questions. Also ask if they have a website URL to scrape.
 If the agent clicks "Skip straight to fillable forms", collect ONLY the company name (if not already known from the document) and immediately proceed to form generation.
@@ -153,6 +168,7 @@ If the agent clicks "Skip straight to fillable forms", collect ONLY the company 
 Keep responses concise, professional, and action-oriented. Use short paragraphs. When suggesting actions, be specific about what the agent should do next.
 
 If the agent asks about something outside insurance workflows, politely redirect them.`;
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -160,9 +176,11 @@ serve(async (req) => {
   }
 
   try {
-    const { messages } = await req.json();
+    const { messages, trainingMode } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+
+    const systemPrompt = buildSystemPrompt(trainingMode !== false);
 
     const response = await fetch(
       "https://ai.gateway.lovable.dev/v1/chat/completions",
@@ -175,7 +193,7 @@ serve(async (req) => {
         body: JSON.stringify({
           model: "google/gemini-3-flash-preview",
           messages: [
-            { role: "system", content: SYSTEM_PROMPT },
+            { role: "system", content: systemPrompt },
             ...messages,
           ],
           stream: true,
