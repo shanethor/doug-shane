@@ -51,13 +51,13 @@ async function buildFilledPdfUrl(
   const fieldLookup = new Map<string, typeof fields[0]>();
   for (const field of fields) {
     const name = field.getName();
-    fieldLookup.set(name.toLowerCase().replace(/[\s_\\-\.\/\\]+/g, ""), field);
+    fieldLookup.set(name.toLowerCase().replace(/[\s_./-]+/g, ""), field);
     fieldLookup.set(name, field); // also keep exact
   }
 
   // Helper: find a PDF field by fuzzy matching our key
   const findField = (key: string) => {
-    const keyNorm = key.toLowerCase().replace(/[\s_\\-\.]+/g, "");
+    const keyNorm = key.toLowerCase().replace(/[\s_.-]+/g, "");
     // exact normalised match
     if (fieldLookup.has(keyNorm)) return fieldLookup.get(keyNorm)!;
     // substring match: field name contains key fragments
