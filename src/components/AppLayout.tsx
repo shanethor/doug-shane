@@ -21,8 +21,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen aura-subtle-mesh">
       <header className="border-b aura-glass animate-page-fade sticky top-0 z-40">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
-          <Link to="/" className="flex items-center">
-            <img src={auraLogo} alt="AURA Risk Group" className="h-8" />
+          <Link to="/" className="flex items-center gap-2">
+            <span className="text-lg font-bold tracking-tight">AURA</span>
+            <span className="text-[11px] text-muted-foreground tracking-widest uppercase">Risk Group</span>
           </Link>
 
           <nav className="flex items-center gap-1">
