@@ -370,8 +370,21 @@ export default function Chat() {
 
   const removeFile = (idx: number) => setAttachedFiles((prev) => prev.filter((_, i) => i !== idx));
 
+  const isFormFillingIntent = (text: string) =>
+    /fill\s*(a|an|out|my|the)?\s*(acord|form|insurance|application)|acord\s*form|new\s*client|submit\s*(a\s*)?(client|form|acord)|need\s*(to\s*)?(fill|complete|do|start)|start\s*(a\s*)?(form|submission)/i.test(text.trim());
+
   const send = async (text: string) => {
     if (!text.trim() || isLoading) return;
+
+    // In non-training mode, intercept form-filling intent and show the 3 intent buttons
+    if (!trainingMode && isFormFillingIntent(text) && messages.length === 0) {
+      const userMsg: Msg = { role: "user", content: text.trim() };
+      setMessages((prev) => [...prev, userMsg]);
+      setInput("");
+      setAttachedFiles([]);
+      setShowIntentButtons(true);
+      return;
+    }
 
     let content = text.trim();
     if (attachedFiles.length > 0) {
@@ -958,6 +971,53 @@ export default function Chat() {
                 </div>
                 );
               })}
+              {/* Intent buttons in conversation view (non-training mode) */}
+              {!trainingMode && showIntentButtons && !isLoading && (
+                <div className="animate-smooth-reveal">
+                  <div className="rounded-xl border bg-card p-5 space-y-3 aura-glow-shadow">
+                    <p className="text-sm font-medium text-foreground">How would you like to get started?</p>
+                    <div className="flex flex-col gap-2">
+                      <button
+                        onClick={() => { setShowIntentButtons(false); fileInputRef.current?.click(); }}
+                        className="flex items-center gap-3 rounded-lg border bg-background hover:bg-muted/60 px-4 py-3 text-left transition-colors"
+                      >
+                        <div className="h-8 w-8 rounded-md bg-secondary flex items-center justify-center shrink-0">
+                          <FileText className="h-4 w-4 text-primary" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">Add Documents to Have AI Pre-fill ACORD Forms</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">Upload policies, decks, or loss runs for automated extraction</p>
+                        </div>
+                      </button>
+                      <button
+                        onClick={() => { setShowIntentButtons(false); send("I want to fill an ACORD form — please ask me a few short questions to gather the client information."); }}
+                        className="flex items-center gap-3 rounded-lg border bg-background hover:bg-muted/60 px-4 py-3 text-left transition-colors"
+                      >
+                        <div className="h-8 w-8 rounded-md bg-secondary flex items-center justify-center shrink-0">
+                          <BrainCircuit className="h-4 w-4 text-accent" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">Use AI to Infer Customer Information After a Few Short Questions</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">AURA will guide you through the key fields one by one</p>
+                        </div>
+                      </button>
+                      <button
+                        onClick={() => { setShowIntentButtons(false); send("I want to fill my own ACORD forms manually — just open the form editor and I'll ask for help when needed."); }}
+                        className="flex items-center gap-3 rounded-lg border bg-background hover:bg-muted/60 px-4 py-3 text-left transition-colors"
+                      >
+                        <div className="h-8 w-8 rounded-md bg-secondary flex items-center justify-center shrink-0">
+                          <PenLine className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">I Want to Fill My Own Forms and Ask AI for Help Later</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">Start with blank ACORD forms and get assistance on demand</p>
+                        </div>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {isLoading && displayedText === "" && (
                 <div className="flex justify-start animate-page-enter">
                   <div className="bg-muted rounded-xl px-4 py-3">
