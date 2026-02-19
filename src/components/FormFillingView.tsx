@@ -703,38 +703,47 @@ export default function FormFillingView({ submissionId, initialMessages, initial
   );
 
   /** Render field value overlays for a single page of a form */
-  const renderPageOverlay = (formId: string, pageIdx: number) => {
+  const renderPageOverlay = (formId: string, pageIdx: number, containerRef?: HTMLDivElement | null) => {
     const positions = FIELD_POSITION_MAP[formId] || {};
     const PAGE_W = 612; // letter width in points
     const PAGE_H = 792; // letter height in points
 
-    return Object.entries(positions)
-      .filter(([, pos]) => pos.page === pageIdx)
-      .map(([key, pos]) => {
+    const overlayEntries = Object.entries(positions)
+      .filter(([, pos]) => pos.page === pageIdx);
+
+    if (overlayEntries.length === 0) return null;
+
+    return overlayEntries.map(([key, pos]) => {
         const raw = formData[key];
         if (raw === undefined || raw === null || raw === "") return null;
         let display = String(raw);
         if (display === "true") display = "✓";
         if (display === "false") return null;
+        if (display === "N/A") return null;
         if (CURRENCY_FIELDS.has(key)) display = formatUSD(display);
+
+        // Format dates
+        if (key.includes("date") || key.includes("eff_") || key.includes("exp_")) {
+          const isoMatch = display.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+          if (isoMatch) display = `${isoMatch[2]}/${isoMatch[3]}/${isoMatch[1]}`;
+        }
 
         const leftPct = (pos.x / PAGE_W) * 100;
         const topPct = (pos.y / PAGE_H) * 100;
         const maxWPct = ((pos.maxWidth || 200) / PAGE_W) * 100;
-        // Scale font: base 8pt on 612-wide page ≈ 1.3% of width; use vw-relative via style
         const fontScale = (pos.fontSize || 8) / 8;
 
         return (
           <span
             key={key}
-            className="absolute leading-tight pointer-events-none whitespace-pre-wrap break-words"
+            className="absolute leading-tight pointer-events-none whitespace-pre-wrap break-words z-10"
             style={{
               left: `${leftPct}%`,
               top: `${topPct}%`,
               maxWidth: `${maxWPct}%`,
-              fontSize: `${0.58 * fontScale}cqw`,
+              fontSize: `clamp(6px, ${0.58 * fontScale}cqw, ${(pos.fontSize || 8) * 1.5}px)`,
               fontFamily: "Helvetica, Arial, sans-serif",
-              color: "hsl(230 80% 28%)", // dark blue matching PDF
+              color: "hsl(230 80% 28%)",
             }}
           >
             {pos.checkbox ? (raw === true || raw === "Yes" || display === "✓" ? "✓" : "") : display}
