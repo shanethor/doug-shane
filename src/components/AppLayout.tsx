@@ -13,7 +13,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const navItems = [
     { to: "/", label: "Chat", icon: MessageCircle },
     { to: "/clients", label: "Clients", icon: LayoutDashboard },
-    { to: "/forms", label: "Forms", icon: FlaskConical },
+    
     ...(isAdmin ? [{ to: "/admin", label: "Admin", icon: ShieldCheck }] : []),
   ];
 
