@@ -3,8 +3,8 @@ import ReactMarkdown from "react-markdown";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { ACORD_FORMS, ACORD_FORM_LIST, type AcordFormField, type AcordFormDefinition } from "@/lib/acord-forms";
-import { buildAutofilledData, buildAutofilledDataWithAI, formatUSD } from "@/lib/acord-autofill";
-import { CURRENCY_FIELDS } from "@/lib/acord-autofill";
+import { buildAutofilledData, buildAutofilledDataWithAI, formatUSD, CURRENCY_FIELDS } from "@/lib/acord-autofill";
+import { FIELD_POSITION_MAP, type FieldPosition } from "@/lib/acord-field-positions";
 import { generateAcordPdfAsync } from "@/lib/pdf-generator";
 import { generateSubmissionPackage } from "@/lib/submission-package";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -702,6 +702,47 @@ export default function FormFillingView({ submissionId, initialMessages, initial
     </div>
   );
 
+  /** Render field value overlays for a single page of a form */
+  const renderPageOverlay = (formId: string, pageIdx: number) => {
+    const positions = FIELD_POSITION_MAP[formId] || {};
+    const PAGE_W = 612; // letter width in points
+    const PAGE_H = 792; // letter height in points
+
+    return Object.entries(positions)
+      .filter(([, pos]) => pos.page === pageIdx)
+      .map(([key, pos]) => {
+        const raw = formData[key];
+        if (raw === undefined || raw === null || raw === "") return null;
+        let display = String(raw);
+        if (display === "true") display = "✓";
+        if (display === "false") return null;
+        if (CURRENCY_FIELDS.has(key)) display = formatUSD(display);
+
+        const leftPct = (pos.x / PAGE_W) * 100;
+        const topPct = (pos.y / PAGE_H) * 100;
+        const maxWPct = ((pos.maxWidth || 200) / PAGE_W) * 100;
+        // Scale font: base 8pt on 612-wide page ≈ 1.3% of width; use vw-relative via style
+        const fontScale = (pos.fontSize || 8) / 8;
+
+        return (
+          <span
+            key={key}
+            className="absolute leading-tight pointer-events-none whitespace-pre-wrap break-words"
+            style={{
+              left: `${leftPct}%`,
+              top: `${topPct}%`,
+              maxWidth: `${maxWPct}%`,
+              fontSize: `${0.58 * fontScale}cqw`,
+              fontFamily: "Helvetica, Arial, sans-serif",
+              color: "hsl(230 80% 28%)", // dark blue matching PDF
+            }}
+          >
+            {pos.checkbox ? (raw === true || raw === "Yes" || display === "✓" ? "✓" : "") : display}
+          </span>
+        );
+      });
+  };
+
   const renderFormPreview = () => {
     const previewTitle = isAllForms ? "All ACORD Forms" : activeForm?.name;
     const previewSubtitle = isAllForms
@@ -751,12 +792,15 @@ export default function FormFillingView({ submissionId, initialMessages, initial
                 ACORD_FORM_LIST.map((form) =>
                   form.pages?.map((pageSrc, idx) => (
                     <div key={`${form.id}-${idx}`} className="bg-background border rounded shadow-sm overflow-hidden">
-                      <img
-                        src={pageSrc}
-                        alt={`${form.name} Page ${idx + 1}`}
-                        className="w-full h-auto"
-                        loading="lazy"
-                      />
+                      <div className="relative" style={{ containerType: "inline-size" }}>
+                        <img
+                          src={pageSrc}
+                          alt={`${form.name} Page ${idx + 1}`}
+                          className="w-full h-auto block"
+                          loading="lazy"
+                        />
+                        {renderPageOverlay(form.id, idx)}
+                      </div>
                       <div className="bg-muted/50 text-center py-1">
                         <span className="text-[10px] text-muted-foreground">{form.name} — Page {idx + 1}</span>
                       </div>
@@ -766,12 +810,15 @@ export default function FormFillingView({ submissionId, initialMessages, initial
               ) : (
                 activeForm!.pages!.map((pageSrc, idx) => (
                   <div key={idx} className="bg-background border rounded shadow-sm overflow-hidden">
-                    <img
-                      src={pageSrc}
-                      alt={`${activeForm!.name} Page ${idx + 1}`}
-                      className="w-full h-auto"
-                      loading="lazy"
-                    />
+                    <div className="relative" style={{ containerType: "inline-size" }}>
+                      <img
+                        src={pageSrc}
+                        alt={`${activeForm!.name} Page ${idx + 1}`}
+                        className="w-full h-auto block"
+                        loading="lazy"
+                      />
+                      {renderPageOverlay(activeForm!.id, idx)}
+                    </div>
                     <div className="bg-muted/50 text-center py-1">
                       <span className="text-[10px] text-muted-foreground">Page {idx + 1} of {activeForm!.pages!.length}</span>
                     </div>
