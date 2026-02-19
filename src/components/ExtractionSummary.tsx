@@ -59,11 +59,16 @@ export default function ExtractionSummary({ submissionId, requestedFormIds = [],
     let tFilled = 0;
     let tTotal = 0;
 
+    // Build a merged data set across all scoped forms and persist it
+    const mergedAllForms: Record<string, any> = {};
+
     for (const form of scopedForms) {
       const { data: filled } = await buildAutofilledDataWithAI(form, appData, profile, defaults);
       for (const [k, v] of Object.entries(defaults)) {
         if (v && !filled[k]) filled[k] = v;
       }
+      // Accumulate all mapped data
+      Object.assign(mergedAllForms, filled);
       const total = form.fields.length;
       const filledCount = form.fields.filter(
         (f) => filled[f.key] && String(filled[f.key]).trim()
@@ -71,6 +76,21 @@ export default function ExtractionSummary({ submissionId, requestedFormIds = [],
       formStats.push({ form, filled: filledCount, total, pct: Math.round((filledCount / total) * 100) });
       tFilled += filledCount;
       tTotal += total;
+    }
+
+    // Persist AI-inferred data back to DB so FormFillingView doesn't re-run inference
+    if (applicationId && Object.keys(mergedAllForms).length > 0) {
+      const { data: existing } = await supabase
+        .from("insurance_applications")
+        .select("form_data")
+        .eq("id", applicationId)
+        .single();
+      const existingData = (existing?.form_data || {}) as Record<string, any>;
+      const updatedData = { ...existingData, ...mergedAllForms };
+      await supabase
+        .from("insurance_applications")
+        .update({ form_data: updatedData })
+        .eq("id", applicationId);
     }
 
     formStats.sort((a, b) => (b.filled > 0 ? 1 : 0) - (a.filled > 0 ? 1 : 0) || b.pct - a.pct);

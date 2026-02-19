@@ -3,7 +3,7 @@ import ReactMarkdown from "react-markdown";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { ACORD_FORMS, ACORD_FORM_LIST, type AcordFormField, type AcordFormDefinition } from "@/lib/acord-forms";
-import { buildAutofilledData, buildAutofilledDataWithAI, formatUSD, CURRENCY_FIELDS } from "@/lib/acord-autofill";
+import { buildAutofilledData, formatUSD, CURRENCY_FIELDS } from "@/lib/acord-autofill";
 import { FIELD_POSITION_MAP, type FieldPosition } from "@/lib/acord-field-positions";
 import { generateAcordPdfAsync } from "@/lib/pdf-generator";
 import { generateSubmissionPackage } from "@/lib/submission-package";
@@ -17,7 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
-import { Download, Send, Paperclip, Loader2, FileText, CheckCircle, X, Filter, Eye, Image, Mail, ChevronLeft, ChevronRight, ClipboardList, MessageSquare, Mic, MicOff } from "lucide-react";
+import { Download, Send, Paperclip, Loader2, FileText, CheckCircle, X, Filter, Eye, Image, Mail, ChevronLeft, ChevronRight, ClipboardList, MessageSquare, Mic, MicOff, ZoomIn, ZoomOut } from "lucide-react";
 import { toast } from "sonner";
 import { useVoiceInput } from "@/hooks/useVoiceInput";
 
@@ -53,6 +53,7 @@ export default function FormFillingView({ submissionId, initialMessages, initial
   const [centerView, setCenterView] = useState<CenterView>("form");
   const [mobilePanel, setMobilePanel] = useState<MobilePanel>("fields");
   const [showFormProgress, setShowFormProgress] = useState(false);
+  const [zoomLevel, setZoomLevel] = useState(150); // default 150% zoom
 
   // Email dialog state
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
@@ -124,7 +125,7 @@ export default function FormFillingView({ submissionId, initialMessages, initial
     }
   }, [mobilePanel]);
 
-  // Load application data
+  // Load application data — use DB data directly (AI inference already persisted by ExtractionSummary)
   useEffect(() => {
     if (!user || !submissionId) return;
     const load = async () => {
@@ -146,14 +147,16 @@ export default function FormFillingView({ submissionId, initialMessages, initial
       const aiData = (appResult.data?.form_data || {}) as Record<string, any>;
       const defaults = (profileResult.data?.form_defaults || {}) as Record<string, string>;
 
+      // Use static mapping only (no AI re-inference) — AI data is already in DB from ExtractionSummary
       const merged: Record<string, any> = {};
       for (const form of ACORD_FORM_LIST) {
-        const { data: filled } = await buildAutofilledDataWithAI(form, aiData, profileResult.data, defaults);
+        const filled = buildAutofilledData(form, aiData, profileResult.data, defaults);
         Object.assign(merged, filled);
       }
       for (const [k, v] of Object.entries(defaults)) {
         if (v && !merged[k]) merged[k] = v;
       }
+      // Overlay all raw AI data (includes AI-inferred values saved by ExtractionSummary)
       for (const [k, v] of Object.entries(aiData)) {
         if (!merged[k] && v) merged[k] = v;
       }
@@ -766,6 +769,26 @@ export default function FormFillingView({ submissionId, initialMessages, initial
           <p className="text-[10px] text-muted-foreground">{previewSubtitle}</p>
         </div>
         <div className="flex items-center gap-2">
+          {/* Zoom controls */}
+          {centerView === "form" && (
+            <div className="flex items-center gap-1 border rounded-md overflow-hidden">
+              <button
+                onClick={() => setZoomLevel((z) => Math.max(50, z - 25))}
+                className="p-1 hover:bg-accent/50 transition-colors"
+                title="Zoom out"
+              >
+                <ZoomOut className="h-3.5 w-3.5" />
+              </button>
+              <span className="text-[10px] font-mono px-1 min-w-[36px] text-center">{zoomLevel}%</span>
+              <button
+                onClick={() => setZoomLevel((z) => Math.min(300, z + 25))}
+                className="p-1 hover:bg-accent/50 transition-colors"
+                title="Zoom in"
+              >
+                <ZoomIn className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          )}
           {filledCount === totalCount && totalCount > 0 && (
             <Badge variant="secondary" className="text-[10px]">
               <CheckCircle className="h-3 w-3 mr-1" />Complete
@@ -796,7 +819,7 @@ export default function FormFillingView({ submissionId, initialMessages, initial
       <ScrollArea className="flex-1">
         <div className="p-4">
           {centerView === "form" && (isAllForms || (activeForm?.pages && activeForm.pages.length > 0)) ? (
-            <div className="space-y-4 max-w-4xl mx-auto">
+            <div className="space-y-4 mx-auto origin-top-left" style={{ width: `${zoomLevel}%`, transform: `scale(1)` }}>
               {isAllForms ? (
                 ACORD_FORM_LIST.map((form) =>
                   form.pages?.map((pageSrc, idx) => (

@@ -82,7 +82,7 @@ export async function generateAcordPdfAsync(
     if (raw === undefined || raw === null || raw === "") continue;
 
     const display = formatFieldValue(key, raw);
-    if (!display) continue;
+    if (!display || display === "N/A") continue;
 
     const pageIdx = pos.page;
     if (pageIdx >= (form.pages?.length || 0)) continue;
