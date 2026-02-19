@@ -609,6 +609,24 @@ export default function Chat() {
     submitFieldsWithValues(fields, fieldValues);
   };
 
+  /** Directly open a blank form editor without any intake — used by the "Fill Manually" button */
+  const openBlankFormEditor = async () => {
+    if (!user) return;
+    setShowIntentButtons(false);
+    try {
+      const { data: sub, error } = await supabase
+        .from("business_submissions")
+        .insert({ user_id: user.id, status: "draft", company_name: "New Client" })
+        .select()
+        .single();
+      if (error || !sub) throw error || new Error("Failed to create submission");
+      setActiveSubmissionId(sub.id);
+    } catch (err) {
+      console.error("Failed to open blank form editor:", err);
+      toast({ title: "Error", description: "Could not open form editor. Please try again.", variant: "destructive" });
+    }
+  };
+
   const skipToForm = async (fields: FieldBubble[]) => {
     // Submit with whatever is filled (even if empty)
     submitFieldsWithValues(fields, fieldValues);
@@ -810,7 +828,7 @@ export default function Chat() {
                         </div>
                       </button>
                       <button
-                        onClick={() => { setShowIntentButtons(false); send("I want to fill my own ACORD forms manually — just open the form editor and I'll ask for help when needed."); }}
+                        onClick={() => openBlankFormEditor()}
                         className="flex items-center gap-3 rounded-lg border bg-background hover:bg-muted/60 px-4 py-3 text-left transition-colors"
                       >
                         <div className="h-8 w-8 rounded-md bg-secondary flex items-center justify-center shrink-0">
@@ -1008,7 +1026,7 @@ export default function Chat() {
                         </div>
                       </button>
                       <button
-                        onClick={() => { setShowIntentButtons(false); send("I want to fill my own ACORD forms manually — just open the form editor and I'll ask for help when needed."); }}
+                        onClick={() => openBlankFormEditor()}
                         className="flex items-center gap-3 rounded-lg border bg-background hover:bg-muted/60 px-4 py-3 text-left transition-colors"
                       >
                         <div className="h-8 w-8 rounded-md bg-secondary flex items-center justify-center shrink-0">
