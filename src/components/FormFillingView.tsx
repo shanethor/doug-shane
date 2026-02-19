@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import FillablePdfViewer from "@/components/FillablePdfViewer";
 import ReactMarkdown from "react-markdown";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -17,7 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
-import { Download, Send, Paperclip, Loader2, FileText, CheckCircle, X, Filter, Eye, Image, Mail, ChevronLeft, ChevronRight, ClipboardList, MessageSquare, Mic, MicOff, ZoomIn, ZoomOut } from "lucide-react";
+import { Download, Send, Paperclip, Loader2, FileText, CheckCircle, X, Filter, Eye, Image, Mail, ChevronLeft, ChevronRight, ClipboardList, MessageSquare, Mic, MicOff } from "lucide-react";
 import { toast } from "sonner";
 import { useVoiceInput } from "@/hooks/useVoiceInput";
 
@@ -53,7 +54,7 @@ export default function FormFillingView({ submissionId, initialMessages, initial
   const [centerView, setCenterView] = useState<CenterView>("form");
   const [mobilePanel, setMobilePanel] = useState<MobilePanel>("fields");
   const [showFormProgress, setShowFormProgress] = useState(false);
-  const [zoomLevel, setZoomLevel] = useState(150); // default 150% zoom
+  const [zoomLevel, setZoomLevel] = useState(150); // kept for backward compat
 
   // Email dialog state
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
@@ -769,202 +770,172 @@ export default function FormFillingView({ submissionId, initialMessages, initial
           <p className="text-[10px] text-muted-foreground">{previewSubtitle}</p>
         </div>
         <div className="flex items-center gap-2">
-          {/* Zoom controls */}
-          {centerView === "form" && (
-            <div className="flex items-center gap-1 border rounded-md overflow-hidden">
-              <button
-                onClick={() => setZoomLevel((z) => Math.max(50, z - 25))}
-                className="p-1 hover:bg-accent/50 transition-colors"
-                title="Zoom out"
-              >
-                <ZoomOut className="h-3.5 w-3.5" />
-              </button>
-              <span className="text-[10px] font-mono px-1 min-w-[36px] text-center">{zoomLevel}%</span>
-              <button
-                onClick={() => setZoomLevel((z) => Math.min(300, z + 25))}
-                className="p-1 hover:bg-accent/50 transition-colors"
-                title="Zoom in"
-              >
-                <ZoomIn className="h-3.5 w-3.5" />
-              </button>
-            </div>
-          )}
           {filledCount === totalCount && totalCount > 0 && (
             <Badge variant="secondary" className="text-[10px]">
               <CheckCircle className="h-3 w-3 mr-1" />Complete
             </Badge>
           )}
-          {((!isAllForms && activeForm?.pages && activeForm.pages.length > 0) || isAllForms) && (
-            <div className="flex rounded-md border overflow-hidden">
-              <button
-                onClick={() => setCenterView("form")}
-                className={`flex items-center gap-1 text-[10px] px-2 py-1 transition-colors ${
-                  centerView === "form" ? "bg-primary text-primary-foreground" : "bg-card hover:bg-accent/50"
-                }`}
-              >
-                <Image className="h-3 w-3" />Forms
-              </button>
-              <button
-                onClick={() => setCenterView("data")}
-                className={`flex items-center gap-1 text-[10px] px-2 py-1 transition-colors ${
-                  centerView === "data" ? "bg-primary text-primary-foreground" : "bg-card hover:bg-accent/50"
-                }`}
-              >
-                <Eye className="h-3 w-3" />Data
-              </button>
-            </div>
-          )}
+          <div className="flex rounded-md border overflow-hidden">
+            <button
+              onClick={() => setCenterView("form")}
+              className={`flex items-center gap-1 text-[10px] px-2 py-1 transition-colors ${
+                centerView === "form" ? "bg-primary text-primary-foreground" : "bg-card hover:bg-accent/50"
+              }`}
+            >
+              <Image className="h-3 w-3" />PDF
+            </button>
+            <button
+              onClick={() => setCenterView("data")}
+              className={`flex items-center gap-1 text-[10px] px-2 py-1 transition-colors ${
+                centerView === "data" ? "bg-primary text-primary-foreground" : "bg-card hover:bg-accent/50"
+              }`}
+            >
+              <Eye className="h-3 w-3" />Data
+            </button>
+          </div>
         </div>
       </div>
-      <ScrollArea className="flex-1">
-        <div className="p-4">
-          {centerView === "form" && (isAllForms || (activeForm?.pages && activeForm.pages.length > 0)) ? (
-            <div className="space-y-4 mx-auto origin-top-left" style={{ width: `${zoomLevel}%`, transform: `scale(1)` }}>
-              {isAllForms ? (
-                ACORD_FORM_LIST.map((form) =>
-                  form.pages?.map((pageSrc, idx) => (
-                    <div key={`${form.id}-${idx}`} className="bg-background border rounded shadow-sm overflow-hidden">
-                      <div className="relative" style={{ containerType: "inline-size" }}>
-                        <img
-                          src={pageSrc}
-                          alt={`${form.name} Page ${idx + 1}`}
-                          className="w-full h-auto block"
-                          loading="lazy"
-                        />
-                        {renderPageOverlay(form.id, idx)}
-                      </div>
-                      <div className="bg-muted/50 text-center py-1">
-                        <span className="text-[10px] text-muted-foreground">{form.name} — Page {idx + 1}</span>
-                      </div>
+
+      {/* ── CENTER: Fillable PDF viewer or Data view ── */}
+      {centerView === "form" ? (
+        <div className="flex-1 overflow-hidden">
+          {isAllForms ? (
+            <ScrollArea className="h-full">
+              <div className="p-4 space-y-6">
+                {ACORD_FORM_LIST.map((form) => (
+                  <div key={form.id} className="bg-background border rounded shadow-sm overflow-hidden">
+                    <div className="bg-muted/50 px-3 py-1.5 border-b flex items-center gap-2">
+                      <FileText className="h-3.5 w-3.5 text-primary" />
+                      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{form.name}</span>
                     </div>
-                  ))
-                )
-              ) : (
-                activeForm!.pages!.map((pageSrc, idx) => (
-                  <div key={idx} className="bg-background border rounded shadow-sm overflow-hidden">
-                    <div className="relative" style={{ containerType: "inline-size" }}>
-                      <img
-                        src={pageSrc}
-                        alt={`${activeForm!.name} Page ${idx + 1}`}
-                        className="w-full h-auto block"
-                        loading="lazy"
+                    <div style={{ height: "800px" }}>
+                      <FillablePdfViewer
+                        formId={form.id}
+                        formData={formData}
+                        onFieldChange={handleFieldChange}
                       />
-                      {renderPageOverlay(activeForm!.id, idx)}
-                    </div>
-                    <div className="bg-muted/50 text-center py-1">
-                      <span className="text-[10px] text-muted-foreground">Page {idx + 1} of {activeForm!.pages!.length}</span>
                     </div>
                   </div>
-                ))
-              )}
-            </div>
-          ) : (
-            <div className="bg-background border rounded-lg shadow-sm p-6 max-w-2xl mx-auto">
-              <div className="text-center border-b pb-4 mb-6">
-                <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground mb-1">ACORD®</p>
-                <h1 className="text-lg font-bold">
-                  {isAllForms ? "ALL FORMS — UNIFIED VIEW" : activeForm?.fullName?.toUpperCase()}
-                </h1>
-                <p className="text-[10px] text-muted-foreground mt-1">
-                  {isAllForms
-                    ? `${ACORD_FORM_LIST.map(f => f.name).join(" • ")} — Generated ${new Date().toLocaleDateString()}`
-                    : `Generated ${new Date().toLocaleDateString()}`
-                  }
-                </p>
+                ))}
               </div>
-              {isAllForms ? (
-                ACORD_FORM_LIST.map((form) => {
-                  const sections: { name: string; fields: AcordFormField[] }[] = [];
-                  const seen = new Set<string>();
-                  for (const field of form.fields) {
-                    if (!seen.has(field.section)) {
-                      seen.add(field.section);
-                      sections.push({ name: field.section, fields: form.fields.filter((f) => f.section === field.section) });
-                    }
-                  }
-                  const formFilled = form.fields.filter(f => formData[f.key] && String(formData[f.key]).trim()).length;
-                  return (
-                    <div key={form.id} className="mb-8">
-                      <div className="flex items-center gap-2 mb-3 border-b-2 border-primary/50 pb-2">
-                        <FileText className="h-4 w-4 text-primary" />
-                        <h2 className="text-sm font-bold text-primary">{form.name}</h2>
-                        <Badge variant="secondary" className="text-[9px] ml-auto">{formFilled}/{form.fields.length}</Badge>
-                      </div>
-                      {sections.map((section) => (
-                        <div key={`${form.id}-${section.name}`} className="mb-4">
-                          <h3 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground border-b border-border pb-1 mb-2">
-                            {section.name}
-                          </h3>
-                          <div className="grid grid-cols-2 gap-x-6 gap-y-2">
-                            {section.fields.map((field) => {
-                              const value = formData[field.key];
-                              const hasValue = value && String(value).trim();
-                              const isFullWidth = field.type === "textarea";
-                              return (
-                                <div key={field.key} className={`${isFullWidth ? "col-span-2" : ""}`}>
-                                  <p className="text-[8px] uppercase tracking-wider text-muted-foreground font-medium">
-                                    {field.label}
-                                  </p>
-                                  <p className={`text-xs border-b pb-1 min-h-[1.25rem] ${
-                                    hasValue ? "text-foreground" : "text-muted-foreground/40 italic"
-                                  }`}>
-                                    {hasValue
-                                      ? (field.type === "currency" ? formatUSD(value) : Array.isArray(value) ? value.join(", ") : String(value))
-                                      : "—"
-                                    }
-                                  </p>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  );
-                })
-              ) : activeForm ? (() => {
-                const sections: { name: string; fields: AcordFormField[] }[] = [];
-                const seen = new Set<string>();
-                for (const field of activeForm.fields) {
-                  if (!seen.has(field.section)) {
-                    seen.add(field.section);
-                    sections.push({ name: field.section, fields: activeForm.fields.filter((f) => f.section === field.section) });
-                  }
-                }
-                return sections.map((section) => (
-                  <div key={section.name} className="mb-6">
-                    <h3 className="text-[10px] font-bold uppercase tracking-wider text-primary border-b border-primary/30 pb-1 mb-3">
-                      {section.name}
-                    </h3>
-                    <div className="grid grid-cols-2 gap-x-6 gap-y-2">
-                      {section.fields.map((field) => {
-                        const value = formData[field.key];
-                        const hasValue = value && String(value).trim();
-                        const isFullWidth = field.type === "textarea";
-                        return (
-                          <div key={field.key} className={`${isFullWidth ? "col-span-2" : ""}`}>
-                            <p className="text-[8px] uppercase tracking-wider text-muted-foreground font-medium">
-                              {field.label}
-                            </p>
-                            <p className={`text-xs border-b pb-1 min-h-[1.25rem] ${
-                              hasValue ? "text-foreground" : "text-muted-foreground/40 italic"
-                            }`}>
-                              {hasValue
-                                ? (field.type === "currency" ? formatUSD(value) : Array.isArray(value) ? value.join(", ") : String(value))
-                                : "—"
-                              }
-                            </p>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ));
-              })() : null}
-            </div>
+            </ScrollArea>
+          ) : (
+            <FillablePdfViewer
+              formId={activeFormId}
+              formData={formData}
+              onFieldChange={handleFieldChange}
+            />
           )}
         </div>
+      ) : (
+      <ScrollArea className="flex-1">
+        <div className="p-4">
+          <div className="bg-background border rounded-lg shadow-sm p-6 max-w-2xl mx-auto">
+            <div className="text-center border-b pb-4 mb-6">
+              <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground mb-1">ACORD®</p>
+              <h1 className="text-lg font-bold">
+                {isAllForms ? "ALL FORMS — UNIFIED VIEW" : activeForm?.fullName?.toUpperCase()}
+              </h1>
+              <p className="text-[10px] text-muted-foreground mt-1">
+                {isAllForms
+                  ? `${ACORD_FORM_LIST.map(f => f.name).join(" • ")} — Generated ${new Date().toLocaleDateString()}`
+                  : `Generated ${new Date().toLocaleDateString()}`
+                }
+              </p>
+            </div>
+            {isAllForms ? (
+              ACORD_FORM_LIST.map((form) => {
+                const sections: { name: string; fields: AcordFormField[] }[] = [];
+                const seen = new Set<string>();
+                for (const field of form.fields) {
+                  if (!seen.has(field.section)) {
+                    seen.add(field.section);
+                    sections.push({ name: field.section, fields: form.fields.filter((f) => f.section === field.section) });
+                  }
+                }
+                const formFilled = form.fields.filter(f => formData[f.key] && String(formData[f.key]).trim()).length;
+                return (
+                  <div key={form.id} className="mb-8">
+                    <div className="flex items-center gap-2 mb-3 border-b-2 border-primary/50 pb-2">
+                      <FileText className="h-4 w-4 text-primary" />
+                      <h2 className="text-sm font-bold text-primary">{form.name}</h2>
+                      <Badge variant="secondary" className="text-[9px] ml-auto">{formFilled}/{form.fields.length}</Badge>
+                    </div>
+                    {sections.map((section) => (
+                      <div key={`${form.id}-${section.name}`} className="mb-4">
+                        <h3 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground border-b border-border pb-1 mb-2">
+                          {section.name}
+                        </h3>
+                        <div className="grid grid-cols-2 gap-x-6 gap-y-2">
+                          {section.fields.map((field) => {
+                            const value = formData[field.key];
+                            const hasValue = value && String(value).trim();
+                            const isFullWidth = field.type === "textarea";
+                            return (
+                              <div key={field.key} className={`${isFullWidth ? "col-span-2" : ""}`}>
+                                <p className="text-[8px] uppercase tracking-wider text-muted-foreground font-medium">
+                                  {field.label}
+                                </p>
+                                <p className={`text-xs border-b pb-1 min-h-[1.25rem] ${
+                                  hasValue ? "text-foreground" : "text-muted-foreground/40 italic"
+                                }`}>
+                                  {hasValue
+                                    ? (field.type === "currency" ? formatUSD(value) : Array.isArray(value) ? value.join(", ") : String(value))
+                                    : "—"
+                                  }
+                                </p>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })
+            ) : activeForm ? (() => {
+              const sections: { name: string; fields: AcordFormField[] }[] = [];
+              const seen = new Set<string>();
+              for (const field of activeForm.fields) {
+                if (!seen.has(field.section)) {
+                  seen.add(field.section);
+                  sections.push({ name: field.section, fields: activeForm.fields.filter((f) => f.section === field.section) });
+                }
+              }
+              return sections.map((section) => (
+                <div key={section.name} className="mb-6">
+                  <h3 className="text-[10px] font-bold uppercase tracking-wider text-primary border-b border-primary/30 pb-1 mb-3">
+                    {section.name}
+                  </h3>
+                  <div className="grid grid-cols-2 gap-x-6 gap-y-2">
+                    {section.fields.map((field) => {
+                      const value = formData[field.key];
+                      const hasValue = value && String(value).trim();
+                      const isFullWidth = field.type === "textarea";
+                      return (
+                        <div key={field.key} className={`${isFullWidth ? "col-span-2" : ""}`}>
+                          <p className="text-[8px] uppercase tracking-wider text-muted-foreground font-medium">
+                            {field.label}
+                          </p>
+                          <p className={`text-xs border-b pb-1 min-h-[1.25rem] ${
+                            hasValue ? "text-foreground" : "text-muted-foreground/40 italic"
+                          }`}>
+                            {hasValue
+                              ? (field.type === "currency" ? formatUSD(value) : Array.isArray(value) ? value.join(", ") : String(value))
+                              : "—"
+                            }
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ));
+            })() : null}
+          </div>
+        </div>
       </ScrollArea>
+      )}
     </div>
   ); };
 
