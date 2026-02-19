@@ -7,7 +7,6 @@ import { formatUSD, CURRENCY_FIELDS } from "@/lib/acord-autofill";
 interface FillablePdfViewerProps {
   formId: string;
   formData: Record<string, any>;
-  /** Called when a field is edited directly inside the PDF viewer */
   onFieldChange?: (key: string, value: string) => void;
 }
 
@@ -23,9 +22,9 @@ function formatValueForPdf(key: string, val: any): string {
 }
 
 /**
- * Fills a fetchable ACORD fillable PDF with our data via pdf-lib,
- * using fuzzy field-name matching against the PDF's actual AcroForm fields.
- * Returns a Blob URL pointing to the filled PDF bytes.
+ * Attempts to fill a PDF's AcroForm fields using pdf-lib with fuzzy field matching.
+ * Falls back gracefully to rendering the raw unfilled PDF if the PDF uses
+ * unsupported features (e.g. newer PDF spec, complex encryption).
  */
 async function buildFilledPdfUrl(
   pdfPath: string,
@@ -34,84 +33,86 @@ async function buildFilledPdfUrl(
   const response = await fetch(pdfPath);
   if (!response.ok) throw new Error(`Failed to fetch PDF: ${pdfPath}`);
   const arrayBuffer = await response.arrayBuffer();
-  const pdfDoc = await PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
 
-  let form: ReturnType<typeof pdfDoc.getForm>;
+  // Try to load and fill via pdf-lib
   try {
-    form = pdfDoc.getForm();
-  } catch {
-    // PDF has no AcroForm — fall back to raw bytes
-  const bytes = await pdfDoc.save();
-    return URL.createObjectURL(new Blob([bytes.buffer as ArrayBuffer], { type: "application/pdf" }));
-  }
+    const pdfDoc = await PDFDocument.load(arrayBuffer, {
+      ignoreEncryption: true,
+      throwOnInvalidObject: false,
+    } as any);
 
-  const fields = form.getFields();
-
-  // Build a lookup: normalised field name -> field object
-  const fieldLookup = new Map<string, typeof fields[0]>();
-  for (const field of fields) {
-    const name = field.getName();
-    fieldLookup.set(name.toLowerCase().replace(/[\s_./-]+/g, ""), field);
-    fieldLookup.set(name, field); // also keep exact
-  }
-
-  // Helper: find a PDF field by fuzzy matching our key
-  const findField = (key: string) => {
-    const keyNorm = key.toLowerCase().replace(/[\s_.-]+/g, "");
-    // exact normalised match
-    if (fieldLookup.has(keyNorm)) return fieldLookup.get(keyNorm)!;
-    // substring match: field name contains key fragments
-    for (const [norm, field] of fieldLookup) {
-      if (norm.includes(keyNorm) || keyNorm.includes(norm)) return field;
-    }
-    return null;
-  };
-
-  // Fill each key we have data for
-  for (const [key, rawVal] of Object.entries(formData)) {
-    if (!rawVal && rawVal !== false) continue;
-    const val = formatValueForPdf(key, rawVal);
-
-    const pdfField = findField(key);
-    if (!pdfField) continue;
-
+    let fields: any[] = [];
     try {
-      const type = pdfField.constructor.name;
-      if (type === "PDFTextField") {
-        (pdfField as any).setText(val || "");
-      } else if (type === "PDFCheckBox") {
-        if (rawVal === true || rawVal === "Yes" || rawVal === "true") {
-          (pdfField as any).check();
-        } else {
-          (pdfField as any).uncheck();
-        }
-      } else if (type === "PDFDropdown" || type === "PDFOptionList") {
-        if (val) {
-          try { (pdfField as any).select(val); } catch { /* ignore invalid options */ }
-        }
-      } else if (type === "PDFRadioGroup") {
-        if (val) {
-          try { (pdfField as any).select(val); } catch { /* ignore */ }
-        }
-      }
+      fields = pdfDoc.getForm().getFields();
     } catch {
-      // swallow individual field errors
+      // No AcroForm or unreadable form — still serve the raw PDF
     }
+
+    if (fields.length > 0) {
+      // Build a lookup: normalised field name -> field object
+      const fieldLookup = new Map<string, any>();
+      for (const field of fields) {
+        try {
+          const name = field.getName();
+          fieldLookup.set(name.toLowerCase().replace(/[\s_./-]+/g, ""), field);
+          fieldLookup.set(name, field);
+        } catch { /* skip bad fields */ }
+      }
+
+      // Helper: find a PDF field by fuzzy matching our key
+      const findField = (key: string) => {
+        const keyNorm = key.toLowerCase().replace(/[\s_.-]+/g, "");
+        if (fieldLookup.has(keyNorm)) return fieldLookup.get(keyNorm);
+        for (const [norm, field] of fieldLookup) {
+          if (norm.includes(keyNorm) || keyNorm.includes(norm)) return field;
+        }
+        return null;
+      };
+
+      // Fill each key we have data for
+      for (const [key, rawVal] of Object.entries(formData)) {
+        if (!rawVal && rawVal !== false) continue;
+        const val = formatValueForPdf(key, rawVal);
+        const pdfField = findField(key);
+        if (!pdfField) continue;
+        try {
+          const type = pdfField.constructor.name;
+          if (type === "PDFTextField") {
+            pdfField.setText(val || "");
+          } else if (type === "PDFCheckBox") {
+            if (rawVal === true || rawVal === "Yes" || rawVal === "true") {
+              pdfField.check();
+            } else {
+              pdfField.uncheck();
+            }
+          } else if (type === "PDFDropdown" || type === "PDFOptionList") {
+            if (val) { try { pdfField.select(val); } catch { /* ignore */ } }
+          } else if (type === "PDFRadioGroup") {
+            if (val) { try { pdfField.select(val); } catch { /* ignore */ } }
+          }
+        } catch { /* swallow individual field errors */ }
+      }
+
+      const pdfBytes = await pdfDoc.save();
+      return URL.createObjectURL(new Blob([pdfBytes.buffer as ArrayBuffer], { type: "application/pdf" }));
+    }
+  } catch (e) {
+    console.warn("pdf-lib could not process PDF, serving raw:", e);
   }
 
-  // Flatten to prevent further in-viewer editing conflicts, but keep interactive
-  // (do NOT flatten so user can still type in the iframe)
-
-  const pdfBytes = await pdfDoc.save();
-  return URL.createObjectURL(new Blob([pdfBytes.buffer as ArrayBuffer], { type: "application/pdf" }));
+  // Fallback: serve the raw fillable PDF directly (browser renders it natively, fully editable)
+  const blob = new Blob([arrayBuffer], { type: "application/pdf" });
+  return URL.createObjectURL(blob);
 }
 
-export default function FillablePdfViewer({ formId, formData, onFieldChange }: FillablePdfViewerProps) {
+export default function FillablePdfViewer({ formId, formData }: FillablePdfViewerProps) {
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const prevBlobUrl = useRef<string | null>(null);
   const buildTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Track whether we've done the initial load — only rebuild on subsequent formData changes
+  const initialLoadDone = useRef(false);
 
   const pdfPath = FILLABLE_PDF_PATHS[formId];
 
@@ -127,12 +128,10 @@ export default function FillablePdfViewer({ formId, formData, onFieldChange }: F
       setError(null);
       const url = await buildFilledPdfUrl(pdfPath, formData);
 
-      // Revoke previous blob to avoid memory leaks
-      if (prevBlobUrl.current) {
-        URL.revokeObjectURL(prevBlobUrl.current);
-      }
+      if (prevBlobUrl.current) URL.revokeObjectURL(prevBlobUrl.current);
       prevBlobUrl.current = url;
       setBlobUrl(url);
+      initialLoadDone.current = true;
     } catch (err: any) {
       console.error("FillablePdfViewer error:", err);
       setError(err?.message || "Failed to load PDF");
@@ -141,20 +140,19 @@ export default function FillablePdfViewer({ formId, formData, onFieldChange }: F
     }
   }, [pdfPath, formData]);
 
-  // Debounce re-builds when formData changes (300ms)
+  // Initial load immediately; subsequent data changes debounced 1s
   useEffect(() => {
+    if (!initialLoadDone.current) {
+      buildPdf();
+      return;
+    }
     if (buildTimeoutRef.current) clearTimeout(buildTimeoutRef.current);
-    buildTimeoutRef.current = setTimeout(buildPdf, 300);
-    return () => {
-      if (buildTimeoutRef.current) clearTimeout(buildTimeoutRef.current);
-    };
+    buildTimeoutRef.current = setTimeout(buildPdf, 1000);
+    return () => { if (buildTimeoutRef.current) clearTimeout(buildTimeoutRef.current); };
   }, [buildPdf]);
 
-  // Cleanup on unmount
   useEffect(() => {
-    return () => {
-      if (prevBlobUrl.current) URL.revokeObjectURL(prevBlobUrl.current);
-    };
+    return () => { if (prevBlobUrl.current) URL.revokeObjectURL(prevBlobUrl.current); };
   }, []);
 
   if (!pdfPath) {
@@ -190,7 +188,7 @@ export default function FillablePdfViewer({ formId, formData, onFieldChange }: F
     <iframe
       key={blobUrl}
       src={blobUrl + "#toolbar=1&navpanes=0&scrollbar=1&zoom=page-width"}
-      className="w-full h-full border-0 rounded-b-lg"
+      className="w-full h-full border-0"
       title={`Fillable ACORD Form ${formId}`}
       style={{ minHeight: "600px" }}
     />
