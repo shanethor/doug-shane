@@ -147,28 +147,30 @@ function tryExtractIntakeFromMessage(text: string): Record<string, string> | nul
   return null;
 }
 
-/** Detect which ACORD form the user is requesting based on chat text */
-function detectRequestedForm(text: string): string | undefined {
+/** Detect which ACORD forms the user is requesting based on chat text (returns multiple) */
+function detectRequestedForms(text: string): string[] {
   const lower = text.toLowerCase();
+  const found = new Set<string>();
   
-  // Direct form number mentions (e.g., "form 130", "acord 130", "fill a 130")
-  const formNumMatch = lower.match(/(?:acord|form)\s*#?\s*(125|126|127|130|131|140)/);
-  if (formNumMatch) return `acord-${formNumMatch[1]}`;
-  
-  // Standalone number mentions in context (e.g., "fill out a 130", "need the 127")
-  const standaloneMatch = lower.match(/(?:fill|need|do|start|open|work on|the)\s+(?:a\s+|an?\s+)?#?(125|126|127|130|131|140)\b/);
-  if (standaloneMatch) return `acord-${standaloneMatch[1]}`;
+  // Direct form number mentions — find ALL (e.g., "125/127", "form 125 and 127", "125, 130")
+  const allNumMatches = lower.matchAll(/\b(125|126|127|130|131|140)\b/g);
+  for (const m of allNumMatches) {
+    found.add(`acord-${m[1]}`);
+  }
 
   // Coverage line keywords → form mapping
-  if (/workers?\s*comp|work\s*comp|wc\b/i.test(lower)) return "acord-130";
-  if (/commercial\s*auto|business\s*auto|auto\s*section/i.test(lower)) return "acord-127";
-  if (/general\s*liability|cgl\b|gl\s*section/i.test(lower)) return "acord-126";
-  if (/commercial\s*property|property\s*section|building\s*coverage/i.test(lower)) return "acord-140";
-  if (/umbrella|excess\s*liability/i.test(lower)) return "acord-131";
+  if (/workers?\s*comp|work\s*comp|wc\b/i.test(lower)) found.add("acord-130");
+  if (/commercial\s*auto|business\s*auto|auto\s*section/i.test(lower)) found.add("acord-127");
+  if (/general\s*liability|cgl\b|gl\s*section/i.test(lower)) found.add("acord-126");
+  if (/commercial\s*property|property\s*section|building\s*coverage/i.test(lower)) found.add("acord-140");
+  if (/umbrella|excess\s*liability/i.test(lower)) found.add("acord-131");
   
   // Fallback: check form names from the list
-  const formMatch = ACORD_FORM_LIST.find(f => lower.includes(f.name.toLowerCase()));
-  return formMatch?.id;
+  for (const f of ACORD_FORM_LIST) {
+    if (lower.includes(f.name.toLowerCase())) found.add(f.id);
+  }
+
+  return Array.from(found);
 }
 
 
@@ -202,6 +204,7 @@ export default function Chat() {
   const [activeSubmissionId, setActiveSubmissionId] = useState<string | null>(null);
   const [pendingSubmissionId, setPendingSubmissionId] = useState<string | null>(null);
   const [activeFormId, setActiveFormId] = useState<string | undefined>(undefined);
+  const [requestedFormIds, setRequestedFormIds] = useState<string[]>([]);
   const [submittingFields, setSubmittingFields] = useState(false);
   const skipAutoDetectRef = useRef(false);
 
@@ -531,10 +534,11 @@ export default function Chat() {
       if (!extractResp.ok) console.warn("Extract failed:", extractResp.status);
 
       send(`Here are the details:\n${filled}${websiteUrl ? `\nWebsite: ${websiteUrl}` : ""}\n\n[SUBMISSION_ID:${sub.id}]`);
-      // Detect which form the user is requesting from chat context
+      // Detect which forms the user is requesting from chat context
       const allText = messages.map(m => m.content).join(" ") + " " + filled;
-      const detectedFormId = detectRequestedForm(allText);
-      setActiveFormId(detectedFormId);
+      const detectedForms = detectRequestedForms(allText);
+      setRequestedFormIds(detectedForms);
+      if (detectedForms.length > 0) setActiveFormId(detectedForms[0]);
       setTimeout(() => setPendingSubmissionId(sub.id), 1500);
     } catch (err) {
       console.error("Failed to create submission:", err);
@@ -588,11 +592,13 @@ export default function Chat() {
       <AppLayout>
         <ExtractionSummary
           submissionId={pendingSubmissionId}
+          requestedFormIds={requestedFormIds}
           onContinue={(formId) => {
             if (formId) setActiveFormId(formId);
             setActiveSubmissionId(pendingSubmissionId);
             setPendingSubmissionId(null);
           }}
+          onFormsChanged={(ids) => setRequestedFormIds(ids)}
         />
       </AppLayout>
     );
