@@ -31,6 +31,8 @@ interface FormFillingViewProps {
   initialMessages: Msg[];
   initialFormId?: string;
   onBack: () => void;
+  suppressAutoAnalysis?: boolean;
+  initialCompanyName?: string;
 }
 
 type FieldFilter = "all" | "filled" | "empty";
@@ -44,10 +46,12 @@ const MOBILE_PANELS = [
 
 type MobilePanel = typeof MOBILE_PANELS[number]["key"];
 
-export default function FormFillingView({ submissionId, initialMessages, initialFormId, onBack }: FormFillingViewProps) {
+export default function FormFillingView({ submissionId, initialMessages, initialFormId, onBack, suppressAutoAnalysis, initialCompanyName }: FormFillingViewProps) {
   const { user } = useAuth();
   const isMobile = useIsMobile();
   const [formData, setFormData] = useState<Record<string, any>>({});
+  const [companyName, setCompanyName] = useState(initialCompanyName || "New Client");
+  const [editingName, setEditingName] = useState(!!initialCompanyName && initialCompanyName === "New Client");
   const [loading, setLoading] = useState(true);
   const [activeFormId, setActiveFormId] = useState(initialFormId || "acord-125");
   const [fieldFilter, setFieldFilter] = useState<FieldFilter>("all");
@@ -179,14 +183,19 @@ export default function FormFillingView({ submissionId, initialMessages, initial
   useEffect(() => {
     if (hasAutoSent.current || loading) return;
     hasAutoSent.current = true;
-    const companyName = formData.applicant_name || formData.insured_name || formData.company_name || "this client";
+    if (suppressAutoAnalysis) {
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: "Ready when you are. Ask me anything about the fields or I can help you fill them in." },
+      ]);
+      return;
+    }
+    const clientName = formData.applicant_name || formData.insured_name || formData.company_name || "this client";
     const allFields = ACORD_FORM_LIST.flatMap(f => f.fields);
     const filledKeys = allFields.filter(f => formData[f.key] && String(formData[f.key]).trim());
     const emptyKeys = allFields.filter(f => !formData[f.key] || !String(formData[f.key]).trim());
-    
-    // Build a targeted prompt with the top empty fields for the AI to ask about
     const priorityEmpty = emptyKeys.slice(0, 15).map(f => f.label).join(", ");
-    const prompt = `I've loaded the submission for ${companyName} with ${filledKeys.length} fields pre-filled and ${emptyKeys.length} still empty. The most important empty fields are: ${priorityEmpty}. Please ask me targeted questions to fill these gaps — one or two questions at a time, focusing on the most impactful fields first. Keep going until the forms are as complete as possible.`;
+    const prompt = `I've loaded the submission for ${clientName} with ${filledKeys.length} fields pre-filled and ${emptyKeys.length} still empty. The most important empty fields are: ${priorityEmpty}. Please ask me targeted questions to fill these gaps — one or two questions at a time, focusing on the most impactful fields first. Keep going until the forms are as complete as possible.`;
     sendMessage(prompt);
   }, [loading, formData]);
 
@@ -527,6 +536,38 @@ export default function FormFillingView({ submissionId, initialMessages, initial
   const renderFieldsPanel = () => (
     <div className="flex flex-col h-full bg-background">
       <div className="border-b p-3 space-y-2">
+        {/* Inline client name rename — shown when opened via Fill Manually */}
+        {initialCompanyName !== undefined && (
+          <div className="flex items-center gap-1.5 pb-1">
+            {editingName ? (
+              <input
+                autoFocus
+                className="flex-1 text-sm font-semibold border-b border-primary bg-transparent outline-none py-0.5"
+                value={companyName}
+                onChange={(e) => setCompanyName(e.target.value)}
+                onBlur={async () => {
+                  setEditingName(false);
+                  if (companyName.trim() && companyName !== "New Client") {
+                    await supabase
+                      .from("business_submissions")
+                      .update({ company_name: companyName.trim() })
+                      .eq("id", submissionId);
+                  }
+                }}
+                onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
+                placeholder="Client name…"
+              />
+            ) : (
+              <button
+                onClick={() => setEditingName(true)}
+                className="text-sm font-semibold hover:text-primary transition-colors truncate max-w-[200px]"
+                title="Click to rename"
+              >
+                {companyName || "New Client"} <span className="text-[10px] text-muted-foreground ml-1">✎</span>
+              </button>
+            )}
+          </div>
+        )}
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold" style={{ fontFamily: "'Instrument Serif', serif" }}>Form Fields</h2>
           <Badge variant="secondary" className="text-[10px]">{filledCount}/{totalCount}</Badge>
