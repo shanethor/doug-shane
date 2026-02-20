@@ -3,8 +3,17 @@ import { Loader2, AlertCircle } from "lucide-react";
 import { FILLABLE_PDF_PATHS } from "@/lib/acord-field-map";
 import type { AcordFormDefinition } from "@/lib/acord-forms";
 
-// Adobe PDF Embed API client ID
-const ADOBE_CLIENT_ID = "77a0a7210dba422fa2cd350209ffaabf";
+// Adobe PDF Embed API client IDs per domain
+const ADOBE_CLIENT_IDS: Record<string, string> = {
+  "doug-shane.lovable.app": "82d00c65432249999e0daa589ea94dfd",
+  "id-preview--002628bd-9af2-4bd3-bfc6-c0546eed53c2.lovable.app": "0e4142db962d4d64b1fee6bf34bc67ac",
+  "localhost": "600cf411cda548c1ae0978f2b7a685f9",
+};
+
+function getAdobeClientId(): string {
+  const hostname = window.location.hostname;
+  return ADOBE_CLIENT_IDS[hostname] ?? ADOBE_CLIENT_IDS["localhost"];
+}
 
 interface FillablePdfViewerProps {
   formId: string;
@@ -79,7 +88,7 @@ export default function FillablePdfViewer({ formId, formData, formDef }: Fillabl
         const absoluteUrl = `${window.location.origin}${pdfPath}`;
 
         const view = new window.AdobeDC.View({
-          clientId: ADOBE_CLIENT_ID,
+          clientId: getAdobeClientId(),
           divId,
         });
 
