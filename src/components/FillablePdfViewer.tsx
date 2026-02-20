@@ -1,8 +1,10 @@
-import { useEffect, useState, useRef } from "react";
-import { Loader2, AlertCircle, RefreshCw } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Loader2, AlertCircle } from "lucide-react";
 import { FILLABLE_PDF_PATHS } from "@/lib/acord-field-map";
-import { generateAcordPdfAsync } from "@/lib/pdf-generator";
 import type { AcordFormDefinition } from "@/lib/acord-forms";
+
+// Adobe PDF Embed API client ID
+const ADOBE_CLIENT_ID = "77a0a7210dba422fa2cd350209ffaabf";
 
 interface FillablePdfViewerProps {
   formId: string;
@@ -11,82 +13,112 @@ interface FillablePdfViewerProps {
   onFieldChange?: (key: string, value: string) => void;
 }
 
-/**
- * Loads the official ACORD fillable PDF pre-filled with form data.
- * Uses pdf-lib to write field values before displaying in the iframe.
- */
-async function buildFilledPdfBlobUrl(
-  formDef: AcordFormDefinition,
-  formData: Record<string, any>
-): Promise<string> {
-  // flatten: false keeps fields interactive in the iframe viewer
-  const result = await generateAcordPdfAsync(formDef, formData, { flatten: false });
-  const blob = new Blob([result.bytes.buffer as ArrayBuffer], { type: "application/pdf" });
-  return URL.createObjectURL(blob);
+declare global {
+  interface Window {
+    AdobeDC?: any;
+  }
+}
+
+function loadAdobeScript(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (window.AdobeDC) {
+      resolve();
+      return;
+    }
+    const existing = document.getElementById("adobe-dc-view-sdk");
+    if (existing) {
+      // Script already injected — wait for it to load
+      existing.addEventListener("load", () => resolve());
+      existing.addEventListener("error", reject);
+      return;
+    }
+    const script = document.createElement("script");
+    script.id = "adobe-dc-view-sdk";
+    script.src = "https://acrobatservices.adobe.com/view-sdk/viewer.js";
+    script.onload = () => resolve();
+    script.onerror = reject;
+    document.head.appendChild(script);
+  });
 }
 
 export default function FillablePdfViewer({ formId, formData, formDef }: FillablePdfViewerProps) {
-  const [blobUrl, setBlobUrl] = useState<string | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const adobeViewRef = useRef<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const prevBlobUrl = useRef<string | null>(null);
-  const prevDataRef = useRef<string>("");
+  const divId = `adobe-pdf-${formId}`;
 
   const pdfPath = FILLABLE_PDF_PATHS[formId];
 
-  const buildPdf = (def: AcordFormDefinition, data: Record<string, any>) => {
-    setLoading(true);
-    setError(null);
-
-    buildFilledPdfBlobUrl(def, data)
-      .then((url) => {
-        if (prevBlobUrl.current) URL.revokeObjectURL(prevBlobUrl.current);
-        prevBlobUrl.current = url;
-        setBlobUrl(url);
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error("PDF fill error:", err);
-        setError(err?.message || "Failed to generate PDF");
-        setLoading(false);
-      });
-  };
-
-  // Rebuild whenever formId or formDef changes
   useEffect(() => {
-    if (!formDef) {
-      setError(`No form definition available for: ${formId}`);
-      setLoading(false);
-      return;
-    }
     if (!pdfPath) {
-      setError(`No fillable PDF available for form: ${formId}`);
       setLoading(false);
       return;
     }
-    prevDataRef.current = JSON.stringify(formData);
-    buildPdf(formDef, formData);
+
+    let cancelled = false;
+
+    async function initViewer() {
+      try {
+        setLoading(true);
+        setError(null);
+
+        await loadAdobeScript();
+
+        // Adobe SDK fires a ready event before AdobeDC is usable
+        await new Promise<void>((resolve) => {
+          if (window.AdobeDC) {
+            resolve();
+          } else {
+            document.addEventListener("adobe_dc_view_sdk.ready", () => resolve(), { once: true });
+          }
+        });
+
+        if (cancelled) return;
+
+        const absoluteUrl = `${window.location.origin}${pdfPath}`;
+
+        const view = new window.AdobeDC.View({
+          clientId: ADOBE_CLIENT_ID,
+          divId,
+        });
+
+        adobeViewRef.current = view;
+
+        await view.previewFile(
+          {
+            content: { location: { url: absoluteUrl } },
+            metaData: { fileName: `ACORD ${formId.replace("acord-", "")}.pdf` },
+          },
+          {
+            embedMode: "IN_LINE",
+            showAnnotationTools: false,
+            showLeftHandPanel: false,
+            showPageControls: true,
+            showDownloadPDF: true,
+            showPrintPDF: true,
+            enableFormFilling: true,
+          }
+        );
+
+        if (!cancelled) setLoading(false);
+      } catch (err: any) {
+        if (!cancelled) {
+          console.error("Adobe PDF Embed error:", err);
+          setError(err?.message || "Failed to load PDF viewer");
+          setLoading(false);
+        }
+      }
+    }
+
+    initViewer();
+
+    return () => {
+      cancelled = true;
+    };
+    // Re-init when form switches
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [formId, formDef]);
-
-  // Rebuild when form data changes (debounced)
-  useEffect(() => {
-    if (!formDef || !pdfPath) return;
-    const serialized = JSON.stringify(formData);
-    if (serialized === prevDataRef.current) return;
-    prevDataRef.current = serialized;
-
-    const timer = setTimeout(() => {
-      buildPdf(formDef, formData);
-    }, 800);
-    return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [formData]);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => { if (prevBlobUrl.current) URL.revokeObjectURL(prevBlobUrl.current); };
-  }, []);
+  }, [formId, pdfPath]);
 
   if (!pdfPath) {
     return (
@@ -98,41 +130,32 @@ export default function FillablePdfViewer({ formId, formData, formDef }: Fillabl
     );
   }
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-full gap-2 text-muted-foreground">
-        <Loader2 className="h-5 w-5 animate-spin" />
-        <span className="text-sm">Filling PDF fields…</span>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground p-8 text-center">
-        <AlertCircle className="h-8 w-8 text-destructive" />
-        <p className="text-sm font-medium">PDF error</p>
-        <p className="text-xs text-destructive">{error}</p>
-        {formDef && (
-          <button
-            onClick={() => buildPdf(formDef, formData)}
-            className="flex items-center gap-1.5 text-xs text-primary hover:underline mt-1"
-          >
-            <RefreshCw className="h-3 w-3" /> Retry
-          </button>
-        )}
-      </div>
-    );
-  }
-
   return (
-    <div className="flex flex-col h-full">
-      <iframe
-        key={blobUrl}
-        src={blobUrl + "#toolbar=1&navpanes=0&scrollbar=1&zoom=100"}
-        className="w-full flex-1 border-0"
-        title={`Fillable ACORD Form ${formId}`}
-        style={{ minHeight: "560px" }}
+    <div className="flex flex-col h-full relative">
+      {loading && (
+        <div className="absolute inset-0 flex items-center justify-center gap-2 text-muted-foreground z-10 bg-background/80">
+          <Loader2 className="h-5 w-5 animate-spin" />
+          <span className="text-sm">Loading PDF viewer…</span>
+        </div>
+      )}
+
+      {error && (
+        <div className="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground p-8 text-center">
+          <AlertCircle className="h-8 w-8 text-destructive" />
+          <p className="text-sm font-medium">PDF viewer error</p>
+          <p className="text-xs text-destructive">{error}</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            Make sure the domain is registered in your Adobe PDF Embed API credentials.
+          </p>
+        </div>
+      )}
+
+      {/* Adobe renders into this div */}
+      <div
+        id={divId}
+        ref={containerRef}
+        className="w-full flex-1"
+        style={{ minHeight: "700px" }}
       />
     </div>
   );
