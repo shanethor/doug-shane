@@ -8,16 +8,47 @@ interface FieldInfo {
   name: string;
 }
 
-async function loadFields(path: string): Promise<FieldInfo[]> {
+/** Try AcroForm first; if 0 fields, attempt to enumerate XFA field names from raw XML */
+async function loadFields(path: string): Promise<{ fields: FieldInfo[]; xfaNames: string[] }> {
   const resp = await fetch(path);
   const bytes = await resp.arrayBuffer();
   const doc = await PDFDocument.load(new Uint8Array(bytes), { ignoreEncryption: true });
   const form = doc.getForm();
-  return form.getFields().map((f, i) => ({
+  const acroFields = form.getFields().map((f, i) => ({
     index: i,
     name: f.getName(),
-    type: f instanceof PDFTextField ? "TXT" : f instanceof PDFCheckBox ? "CHK" : "OTHER",
+    type: (f instanceof PDFTextField ? "TXT" : f instanceof PDFCheckBox ? "CHK" : "OTHER") as "TXT" | "CHK" | "OTHER",
   }));
+
+  // XFA field name extraction — parse raw PDF bytes looking for XFA XML
+  const xfaNames: string[] = [];
+  if (acroFields.length === 0) {
+    try {
+      // Try both UTF-8 and Latin-1 decoding to find XML content
+      const rawBytes = new Uint8Array(bytes);
+      // Search for XML field name patterns in chunks
+      const latin1 = new TextDecoder("latin1").decode(rawBytes);
+      const patterns = [
+        /<(?:xfa:)?field[^>]+name="([^"]+)"/g,
+        /name="([A-Za-z][A-Za-z0-9_\s\-\/()#]+)"/g,
+        /\/T\s*\(([^)]+)\)/g,  // PDF AcroForm field name objects
+        /\/T\s*<([0-9A-Fa-f]+)>/g, // hex-encoded field names
+      ];
+      const seen = new Set<string>();
+      for (const regex of patterns) {
+        let m;
+        while ((m = regex.exec(latin1)) !== null) {
+          const name = m[1].trim();
+          if (name.length > 1 && name.length < 80 && !seen.has(name)) {
+            seen.add(name);
+            xfaNames.push(name);
+          }
+        }
+      }
+    } catch (_) { /* ignore */ }
+  }
+
+  return { fields: acroFields, xfaNames };
 }
 
 /** Fill using an index map — returns [key, idx, ok, fieldType] */
@@ -119,6 +150,7 @@ const SAMPLE_DATA: Record<string, string> = {
 
 export default function PdfDiagnostic() {
   const [fields, setFields] = useState<FieldInfo[]>([]);
+  const [xfaNames, setXfaNames] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedForm, setSelectedForm] = useState<string>("acord-127");
   const [search, setSearch] = useState("");
@@ -133,8 +165,8 @@ export default function PdfDiagnostic() {
       const counts: Record<string, number> = {};
       for (const [id, path] of Object.entries(FILLABLE_PDF_PATHS)) {
         try {
-          const f = await loadFields(path);
-          counts[id] = f.length;
+          const { fields: f, xfaNames: x } = await loadFields(path);
+          counts[id] = f.length > 0 ? f.length : x.length > 0 ? -(x.length) : -1;
         } catch { counts[id] = -1; }
       }
       setFormCounts(counts);
@@ -144,13 +176,15 @@ export default function PdfDiagnostic() {
 
   useEffect(() => {
     setFields([]);
+    setXfaNames([]);
     setFillResults([]);
     setLayoutView(false);
     setLoading(true);
     const path = FILLABLE_PDF_PATHS[selectedForm];
     if (!path) { setLoading(false); return; }
-    loadFields(path).then(f => {
+    loadFields(path).then(({ fields: f, xfaNames: x }) => {
       setFields(f);
+      setXfaNames(x);
       setLoading(false);
     }).catch(() => setLoading(false));
   }, [selectedForm]);
@@ -357,6 +391,32 @@ export default function PdfDiagnostic() {
               })}
             </div>
           </>
+        )}
+
+        {/* XFA-only PDF: show discovered field names */}
+        {fields.length === 0 && xfaNames.length > 0 && (
+          <div style={{ marginTop: 8 }}>
+            <div style={{ color: "#fbbf24", fontSize: 12, marginBottom: 8, fontWeight: "bold" }}>
+              ⚠ XFA-only PDF — {xfaNames.length} field names found in XML. AcroForm index mapping not applicable.
+            </div>
+            <div style={{ color: "#94a3b8", fontSize: 11, marginBottom: 6 }}>
+              These are the XFA field names. Use them for name-based matching only.
+            </div>
+            <div style={{ background: "#1e293b", borderRadius: 6, padding: 10, fontFamily: "monospace", fontSize: 10, lineHeight: "18px", maxHeight: 600, overflowY: "auto" }}>
+              {xfaNames.map((name, i) => (
+                <div key={i} style={{ color: "#94a3b8" }}>
+                  <span style={{ color: "#60a5fa", minWidth: 30, display: "inline-block" }}>[{i}]</span>
+                  {" "}{name}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {fields.length === 0 && xfaNames.length === 0 && !loading && (
+          <div style={{ color: "#f87171", fontSize: 12, marginTop: 8 }}>
+            No AcroForm fields found and no XFA XML detected. PDF may be corrupt or unsupported.
+          </div>
         )}
 
         {loading && (
