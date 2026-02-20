@@ -1238,7 +1238,7 @@ export default function FormFillingView({ submissionId, initialMessages, initial
       {emailDialog}
 
       {/* LEFT PANEL — Editable Fields */}
-      <div className="w-[300px] border-r flex flex-col shrink-0">
+      <div className="w-[260px] border-r flex flex-col shrink-0">
         {renderFieldsPanel()}
       </div>
 
@@ -1248,7 +1248,7 @@ export default function FormFillingView({ submissionId, initialMessages, initial
       </div>
 
       {/* RIGHT PANEL — Chat */}
-      <div className="w-[340px] border-l flex flex-col shrink-0">
+      <div className="w-[300px] border-l flex flex-col shrink-0">
         {renderChatPanel()}
       </div>
     </div>
