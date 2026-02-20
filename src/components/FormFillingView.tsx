@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import FillablePdfViewer from "@/components/FillablePdfViewer";
+import FillablePdfViewer, { type FillablePdfViewerHandle } from "@/components/FillablePdfViewer";
 import ReactMarkdown from "react-markdown";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -98,6 +98,8 @@ export default function FormFillingView({ submissionId, initialMessages, initial
 
   // Bytes captured from Adobe SAVE_API (includes in-viewer edits) keyed by formId
   const [savedPdfBytesMap, setSavedPdfBytesMap] = useState<Record<string, Uint8Array>>({});
+  // Ref to the active FillablePdfViewer so we can trigger a save before downloading
+  const pdfViewerRef = useRef<FillablePdfViewerHandle>(null);
   // Pre-filled bytes (pdf-lib filled, read-only flags stripped) served to the Adobe viewer
   const [filledPdfBytesMap, setFilledPdfBytesMap] = useState<Record<string, Uint8Array>>({});
   const [isLoadingPdf, setIsLoadingPdf] = useState(false);
@@ -517,26 +519,34 @@ export default function FormFillingView({ submissionId, initialMessages, initial
   };
 
   /**
-   * Download filled ACORD PDFs using generateAcordPdfAsync.
-   * Uses jsPDF image overlay as fallback for XFA-based ACORD PDFs that pdf-lib can't process.
+   * Download filled ACORD PDFs.
+   * Triggers Adobe SAVE_API to capture in-viewer edits, then downloads the original
+   * ACORD PDF bytes with AcroForm fields filled — preserves 100% of original formatting.
    */
   const downloadForms = async (mode: "individual" | "package") => {
     if (!user) return;
     setDownloading(true);
     try {
-      // 1. Auto-save current formData to DB so edits persist
+      // 1. Trigger Adobe save to capture the latest in-viewer edits into savedPdfBytesMap
+      if (pdfViewerRef.current) {
+        await pdfViewerRef.current.triggerSave();
+        // Give React state a tick to update savedPdfBytesMap after SAVE_API fires
+        await new Promise(r => setTimeout(r, 300));
+      }
+
+      // 2. Auto-save current formData to DB so edits persist
       await supabase
         .from("insurance_applications")
         .update({ form_data: formData })
         .eq("submission_id", submissionId)
         .eq("user_id", user.id);
 
-      // 2. Determine which forms to download
+      // 3. Determine which forms to download
       const formsToProcess = mode === "individual" && !isAllForms
         ? enabledFormList.filter(f => f.id === activeFormId)
         : enabledFormList;
 
-      // 3. Generate and download each filled PDF
+      // 4. Download each form using Adobe-saved bytes (original PDF with fills, perfect formatting)
       const date = new Date().toISOString().slice(0, 10);
       let count = 0;
       for (const form of formsToProcess) {
@@ -544,7 +554,8 @@ export default function FormFillingView({ submissionId, initialMessages, initial
         if (!hasData) continue;
 
         try {
-          // Prefer Adobe-saved bytes (includes in-viewer edits) over regenerated PDF
+          // Use Adobe-saved bytes — these are the original ACORD PDF with filled AcroForm fields.
+          // This preserves 100% of original ACORD formatting since Adobe never stripped the PDF.
           const adobeBytes = savedPdfBytesMap[form.id];
           if (adobeBytes) {
             const blob = new Blob([adobeBytes.buffer as ArrayBuffer], { type: "application/pdf" });
@@ -556,14 +567,23 @@ export default function FormFillingView({ submissionId, initialMessages, initial
             setTimeout(() => URL.revokeObjectURL(url), 10000);
             count++;
           } else {
-            // Fallback: regenerate with pdf-lib / jsPDF image overlay
-            const result = await generateAcordPdfAsync(form, formData, { flatten: true });
-            result.save(`${form.name.replace(/\s/g, "_")}_${date}.pdf`);
-            count++;
+            // Fallback: use the pdf-lib filled bytes we already generated for the viewer.
+            // This is the same PDF that's displayed — proper ACORD layout, AcroForm filled.
+            const viewerBytes = filledPdfBytesMap[form.id];
+            if (viewerBytes) {
+              const blob = new Blob([viewerBytes.buffer as ArrayBuffer], { type: "application/pdf" });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = `${form.name.replace(/\s/g, "_")}_${date}.pdf`;
+              a.click();
+              setTimeout(() => URL.revokeObjectURL(url), 10000);
+              count++;
+            }
           }
           if (count < formsToProcess.length) await new Promise(r => setTimeout(r, 400));
         } catch (err) {
-          console.error(`Failed to generate PDF for ${form.name}:`, err);
+          console.error(`Failed to download PDF for ${form.name}:`, err);
         }
       }
 
@@ -1086,6 +1106,7 @@ export default function FormFillingView({ submissionId, initialMessages, initial
             </div>
           ) : activeForm && FILLABLE_PDF_PATHS[activeFormId] ? (
              <FillablePdfViewer
+               ref={pdfViewerRef}
                pdfBytes={filledPdfBytesMap[activeFormId] ?? null}
                isGenerating={isLoadingPdf || !filledPdfBytesMap[activeFormId]}
                fileName={`${activeForm.name}.pdf`}

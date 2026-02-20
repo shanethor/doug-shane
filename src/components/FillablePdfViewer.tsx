@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useImperativeHandle, forwardRef } from "react";
 import { Loader2, AlertCircle } from "lucide-react";
 
 // Adobe PDF Embed API client IDs per domain
@@ -14,6 +14,11 @@ const ADOBE_CLIENT_IDS: Record<string, string> = {
 function getAdobeClientId(): string {
   const hostname = window.location.hostname;
   return ADOBE_CLIENT_IDS[hostname] ?? ADOBE_CLIENT_IDS["localhost"];
+}
+
+export interface FillablePdfViewerHandle {
+  /** Trigger Adobe's save API to flush current field values into onSaveBytes */
+  triggerSave: () => Promise<void>;
 }
 
 export interface FillablePdfViewerProps {
@@ -61,13 +66,13 @@ function loadAdobeScript(): Promise<void> {
 
 let viewerInstanceCounter = 0;
 
-export default function FillablePdfViewer({
+const FillablePdfViewer = forwardRef<FillablePdfViewerHandle, FillablePdfViewerProps>(function FillablePdfViewer({
   pdfBytes,
   isGenerating = false,
   fileName = "ACORD Form.pdf",
   onFieldChange,
   onSaveBytes,
-}: FillablePdfViewerProps) {
+}, ref) {
   const [viewerKey, setViewerKey] = useState(() => ++viewerInstanceCounter);
   const [adobeError, setAdobeError] = useState<string | null>(null);
   const [adobeLoading, setAdobeLoading] = useState(false);
@@ -77,6 +82,23 @@ export default function FillablePdfViewer({
   onFieldChangeRef.current = onFieldChange;
   const onSaveBytesRef = useRef(onSaveBytes);
   onSaveBytesRef.current = onSaveBytes;
+  // Keep a ref to the Adobe view instance so we can call save APIs
+  const adobeViewRef = useRef<any>(null);
+
+  // Expose triggerSave so parent can request a save before downloading
+  useImperativeHandle(ref, () => ({
+    triggerSave: async () => {
+      const view = adobeViewRef.current;
+      if (!view) return;
+      try {
+        const apis = await view.getAPIs();
+        await apis.triggerFileEvent("SAVE");
+      } catch (e) {
+        // Best-effort — SAVE_API may not be available if no edits made
+        console.warn("[Adobe] triggerSave failed:", e);
+      }
+    },
+  }), []);
 
   // Bump the viewer key whenever pdfBytes reference changes (new generation)
   const prevBytesRef = useRef<Uint8Array | null>(null);
@@ -120,6 +142,7 @@ export default function FillablePdfViewer({
           clientId: getAdobeClientId(),
           divId,
         });
+        adobeViewRef.current = view;
 
         // ── SAVE_API: capture bytes whenever Adobe auto-saves or user triggers save ──
         // This gives us the live edited bytes (including in-viewer edits) for download.
@@ -245,4 +268,6 @@ export default function FillablePdfViewer({
       />
     </div>
   );
-}
+});
+
+export default FillablePdfViewer;
