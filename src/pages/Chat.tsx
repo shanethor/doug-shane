@@ -916,8 +916,15 @@ export default function Chat() {
                     {voice.isConnecting ? <Loader2 className="h-4 w-4 animate-spin" /> : voice.isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
                   </Button>
                   <Button
-                    onClick={() => send(input)}
-                    disabled={!input.trim() || isLoading}
+                    onClick={() => {
+                      if (attachedFiles.length > 0 && !input.trim()) {
+                        triggerDocumentExtraction(attachedFiles);
+                        setAttachedFiles([]);
+                      } else {
+                        send(input);
+                      }
+                    }}
+                    disabled={(!input.trim() && attachedFiles.length === 0) || isLoading}
                     size="icon"
                     className="shrink-0 h-9 w-9"
                   >
