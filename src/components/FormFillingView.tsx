@@ -98,10 +98,12 @@ export default function FormFillingView({ submissionId, initialMessages, initial
 
   // Bytes captured from Adobe SAVE_API (includes in-viewer edits) keyed by formId
   const [savedPdfBytesMap, setSavedPdfBytesMap] = useState<Record<string, Uint8Array>>({});
-  // Raw (untouched) PDF bytes loaded from /public/acord-fillable/ — fed directly to Adobe viewer
-  // We NEVER pass pdf-lib-processed bytes to Adobe because pdf-lib strips XFA data, breaking the viewer
+  // Raw bytes loaded once from /public/acord-fillable/ — used as the generation source
   const [rawPdfBytesMap, setRawPdfBytesMap] = useState<Record<string, Uint8Array>>({});
+  // Pre-filled bytes (pdf-lib filled, useObjectStreams:false) served to the Adobe viewer
+  const [filledPdfBytesMap, setFilledPdfBytesMap] = useState<Record<string, Uint8Array>>({});
   const [isLoadingPdf, setIsLoadingPdf] = useState(false);
+  const fillPdfTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Swipe gesture support
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
@@ -151,20 +153,53 @@ export default function FormFillingView({ submissionId, initialMessages, initial
     }
   }, [mobilePanel]);
 
-  // Load raw (untouched) PDF bytes from /public/acord-fillable/ when the active form changes.
-  // We serve these directly to Adobe — no pdf-lib processing — to preserve XFA data.
+  /**
+   * Regenerate the filled PDF bytes using pdf-lib.
+   * - Uses useObjectStreams:false so Adobe Embed API can parse the output correctly.
+   * - XFA data is stripped by pdf-lib (unavoidable), but Adobe falls back to AcroForm rendering.
+   * - flatten:false keeps fields editable in the viewer.
+   */
+  const regenerateFilledPdf = useCallback(async (fId: string, data: Record<string, any>) => {
+    if (isAllForms || !fId) return;
+    const form = ACORD_FORMS[fId];
+    if (!form) return;
+    setIsLoadingPdf(true);
+    try {
+      const result = await generateAcordPdfAsync(form, data, { flatten: false });
+      setFilledPdfBytesMap(prev => ({ ...prev, [fId]: result.bytes }));
+    } catch (err) {
+      console.error("[PDF Sync] Failed to pre-fill PDF:", err);
+    } finally {
+      setIsLoadingPdf(false);
+    }
+  }, [isAllForms]);
+
+  // Track latest formData in a ref so the debounce closure always sees current values
+  const formDataRef2 = useRef<Record<string, any>>({});
+  useEffect(() => { formDataRef2.current = formData; }, [formData]);
+
+  // Load raw bytes once per form (for use as the generation source / initial display)
   useEffect(() => {
     if (isAllForms || !activeFormId) return;
     const path = FILLABLE_PDF_PATHS[activeFormId];
-    if (!path || rawPdfBytesMap[activeFormId]) return; // already loaded
-    setIsLoadingPdf(true);
+    if (!path || rawPdfBytesMap[activeFormId]) return;
     fetch(path)
       .then(r => r.ok ? r.arrayBuffer() : Promise.reject(`HTTP ${r.status}`))
       .then(buf => setRawPdfBytesMap(prev => ({ ...prev, [activeFormId]: new Uint8Array(buf) })))
-      .catch(err => console.error("[PDF Load] Failed to load raw PDF:", err))
-      .finally(() => setIsLoadingPdf(false));
+      .catch(err => console.error("[PDF Load] Failed to load raw PDF:", err));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeFormId, isAllForms]);
+
+  // Debounced left-panel → PDF viewer sync: re-generate filled bytes whenever formData changes
+  useEffect(() => {
+    if (isAllForms || !activeFormId) return;
+    if (fillPdfTimerRef.current) clearTimeout(fillPdfTimerRef.current);
+    fillPdfTimerRef.current = setTimeout(() => {
+      regenerateFilledPdf(activeFormId, formDataRef2.current);
+    }, 1000);
+    return () => { if (fillPdfTimerRef.current) clearTimeout(fillPdfTimerRef.current); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData, activeFormId, isAllForms]);
 
   // Build reverse map: PDF field name → internal key (for FORM_FIELD_CHANGED sync)
   // This lets us map Adobe's obfuscated field names back to our internal keys
@@ -1007,7 +1042,7 @@ export default function FormFillingView({ submissionId, initialMessages, initial
             </div>
           ) : activeForm && FILLABLE_PDF_PATHS[activeFormId] ? (
              <FillablePdfViewer
-               pdfBytes={rawPdfBytesMap[activeFormId] ?? null}
+               pdfBytes={filledPdfBytesMap[activeFormId] ?? rawPdfBytesMap[activeFormId] ?? null}
                isGenerating={isLoadingPdf && !rawPdfBytesMap[activeFormId]}
                fileName={`${activeForm.name}.pdf`}
                onFieldChange={(pdfFieldName, value) => handleAdobeFieldChange(activeFormId, pdfFieldName, value)}
