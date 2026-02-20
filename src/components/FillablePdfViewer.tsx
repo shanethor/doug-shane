@@ -162,19 +162,22 @@ export default function FillablePdfViewer({
           pdfBytes.byteOffset + pdfBytes.byteLength
         ) as ArrayBuffer;
 
+        // FULL_WINDOW is the only mode that supports interactive form filling
+        // IN_LINE mode does not support form editing per Adobe docs
         await view.previewFile(
           {
             content: { promise: Promise.resolve(pdfBuffer) },
             metaData: { fileName },
           },
           {
-            embedMode: "IN_LINE",
+            embedMode: "FULL_WINDOW",
+            enableFormFilling: true,
             showAnnotationTools: false,
             showLeftHandPanel: false,
-            showPageControls: true,
+            showThumbnails: false,
+            showBookmarks: false,
             showDownloadPDF: true,
             showPrintPDF: true,
-            enableFormFilling: true,
             defaultViewMode: "FIT_WIDTH",
           }
         );
@@ -200,7 +203,8 @@ export default function FillablePdfViewer({
   const showSpinner = isGenerating || (adobeLoading && !adobeError);
 
   return (
-    <div className="flex flex-col h-full relative bg-muted/20">
+    // FULL_WINDOW mode needs a fixed-height container — it fills 100% of parent height/width
+    <div className="flex flex-col relative bg-muted/20" style={{ height: "100%", minHeight: "600px" }}>
       {/* Loading overlay */}
       {showSpinner && (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-muted-foreground z-10 bg-background/80">
@@ -208,9 +212,6 @@ export default function FillablePdfViewer({
           <span className="text-sm font-medium">
             {isGenerating ? "Preparing fillable PDF…" : "Loading viewer…"}
           </span>
-          {isGenerating && (
-            <span className="text-xs text-muted-foreground">Pre-filling your data</span>
-          )}
         </div>
       )}
 
@@ -234,12 +235,11 @@ export default function FillablePdfViewer({
         </div>
       )}
 
-      {/* Adobe renders into this div — key ensures fresh mount on new bytes */}
+      {/* Adobe renders into this div — FULL_WINDOW fills parent height */}
       <div
         key={viewerKey}
         id={divId}
-        className="w-full flex-1"
-        style={{ minHeight: "700px" }}
+        style={{ width: "100%", height: "100%", minHeight: "600px" }}
       />
     </div>
   );
