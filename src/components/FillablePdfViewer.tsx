@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { Loader2, AlertCircle } from "lucide-react";
 import { FILLABLE_PDF_PATHS, ACORD_FIELD_MAPS } from "@/lib/acord-field-map";
 import { PDFDocument } from "pdf-lib";
@@ -120,35 +120,64 @@ export default function FillablePdfViewer({ formId, formData }: FillablePdfViewe
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const prevBlobUrl = useRef<string | null>(null);
+  // Keep a stable ref to latest formData to use inside debounced rebuild
+  const formDataRef = useRef(formData);
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Track if we've done the initial load (no debounce) vs subsequent edits (debounced)
+  const initialLoadDone = useRef(false);
 
   const pdfPath = FILLABLE_PDF_PATHS[formId];
 
+  // Always keep ref current
+  useEffect(() => {
+    formDataRef.current = formData;
+  });
+
+  const rebuildPdf = useCallback((cancelled: { value: boolean }) => {
+    if (!pdfPath) return;
+    setLoading(true);
+    setError(null);
+    buildFilledPdfBlobUrl(pdfPath, formId, formDataRef.current).then((url) => {
+      if (cancelled.value) { URL.revokeObjectURL(url); return; }
+      if (prevBlobUrl.current) URL.revokeObjectURL(prevBlobUrl.current);
+      prevBlobUrl.current = url;
+      setBlobUrl(url);
+      setLoading(false);
+    }).catch((err) => {
+      if (!cancelled.value) {
+        setError(err?.message || "Failed to load PDF");
+        setLoading(false);
+      }
+    });
+  }, [pdfPath, formId]);
+
+  // Initial load: trigger immediately when formId/path changes
   useEffect(() => {
     if (!pdfPath) {
       setError(`No fillable PDF available for form: ${formId}`);
       setLoading(false);
       return;
     }
+    initialLoadDone.current = false;
+    const cancelled = { value: false };
+    rebuildPdf(cancelled);
+    initialLoadDone.current = true;
+    return () => { cancelled.value = true; };
+  }, [pdfPath, formId, rebuildPdf]);
 
-    let cancelled = false;
-    setLoading(true);
-    setError(null);
-
-    buildFilledPdfBlobUrl(pdfPath, formId, formData).then((url) => {
-      if (cancelled) { URL.revokeObjectURL(url); return; }
-      if (prevBlobUrl.current) URL.revokeObjectURL(prevBlobUrl.current);
-      prevBlobUrl.current = url;
-      setBlobUrl(url);
-      setLoading(false);
-    }).catch((err) => {
-      if (!cancelled) {
-        setError(err?.message || "Failed to load PDF");
-        setLoading(false);
-      }
-    });
-
-    return () => { cancelled = true; };
-  }, [pdfPath, formId, formData]);
+  // Debounced refresh on formData edits (after initial load)
+  useEffect(() => {
+    if (!initialLoadDone.current) return;
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    const cancelled = { value: false };
+    debounceTimer.current = setTimeout(() => {
+      rebuildPdf(cancelled);
+    }, 800);
+    return () => {
+      cancelled.value = true;
+      if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    };
+  }, [formData, rebuildPdf]);
 
   useEffect(() => {
     return () => { if (prevBlobUrl.current) URL.revokeObjectURL(prevBlobUrl.current); };
