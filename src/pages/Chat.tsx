@@ -373,9 +373,10 @@ export default function Chat() {
 
   const isFormFillingIntent = (text: string) => {
     const t = text.trim().toLowerCase();
-    // Any message that mentions forms, ACORD, new client, or submission intent
-    return /\bform\b|\bacord\b|\bsubmit|\bnew\s*client|\binsurance\b|\bcoverage\b|\bapplication\b/.test(t)
-      || /need\s*(a|an|to|help)|\bstart\b|\bget\s*start|\bfill\b|\bcreate\b/.test(t);
+    // Match "forms" (plural), "form", ACORD, specific form numbers, or general submission intent
+    return /\bforms?\b|\bacord\b|\bsubmit|\bnew\s*client|\binsurance\b|\bcoverage\b|\bapplication\b/.test(t)
+      || /need\s*(a|an|to|help|forms?)|\bstart\b|\bget\s*start|\bfill\b|\bcreate\b/.test(t)
+      || detectRequestedForms(text).length > 0; // direct form number mention always triggers
   };
 
   const send = async (text: string) => {
