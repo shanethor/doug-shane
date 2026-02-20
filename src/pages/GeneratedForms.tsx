@@ -12,7 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Download, Trash2, FileText, ClipboardCopy, Loader2, FlaskConical, CheckCircle, XCircle, AlertTriangle, ChevronDown, ChevronUp, Globe } from "lucide-react";
-import { generateRestaurantSupplement, generateContractorSupplement } from "@/lib/dummy-form-data";
+import { generateRestaurantSupplement, generateContractorSupplement, REAL_POLICY_DOCUMENTS } from "@/lib/dummy-form-data";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ACORD_FORMS } from "@/lib/acord-forms";
 import { buildAutofilledData, buildAutofilledDataWithAI } from "@/lib/acord-autofill";
@@ -86,23 +86,37 @@ export default function GeneratedForms() {
     setGenerating(true);
     try {
       const rows = [];
-      for (let i = 0; i < count; i++) {
-        const data = formType === "restaurant_supplement"
-          ? generateRestaurantSupplement()
-          : generateContractorSupplement();
-        const label = formType === "restaurant_supplement"
-          ? (data.named_insured || data.establishment_name)
-          : data.applicant_name;
-        rows.push({
-          form_type: formType,
-          form_data: data,
-          display_name: label,
-          user_id: session.user.id,
-        });
+
+      if (formType === "real_policy") {
+        // Insert all 3 real policy documents at once
+        for (const doc of REAL_POLICY_DOCUMENTS) {
+          rows.push({
+            form_type: doc.form_type,
+            form_data: doc,
+            display_name: doc.display_name,
+            user_id: session.user.id,
+          });
+        }
+      } else {
+        for (let i = 0; i < count; i++) {
+          const data = formType === "restaurant_supplement"
+            ? generateRestaurantSupplement()
+            : generateContractorSupplement();
+          const label = formType === "restaurant_supplement"
+            ? (data.named_insured || data.establishment_name)
+            : data.applicant_name;
+          rows.push({
+            form_type: formType,
+            form_data: data,
+            display_name: label,
+            user_id: session.user.id,
+          });
+        }
       }
+
       const { error } = await supabase.from("generated_forms").insert(rows);
       if (error) throw error;
-      toast({ title: `Generated ${count} form(s)` });
+      toast({ title: formType === "real_policy" ? `Added ${rows.length} real policy document(s)` : `Generated ${count} form(s)` });
       queryClient.invalidateQueries({ queryKey: ["generated-forms"] });
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
@@ -280,8 +294,14 @@ export default function GeneratedForms() {
     URL.revokeObjectURL(url);
   };
 
-  const typeLabel = (t: string) =>
-    t === "restaurant_supplement" ? "Restaurant Supplement" : "Contractor Supplement";
+  const typeLabel = (t: string) => {
+    if (t === "restaurant_supplement") return "Restaurant Supplement";
+    if (t === "contractor_supplement") return "Contractor Supplement";
+    if (t === "real_policy_auto") return "Real Policy – Business Auto";
+    if (t === "real_policy_property") return "Real Policy – Commercial Property";
+    if (t === "real_policy_excess") return "Real Policy – Excess Liability";
+    return t;
+  };
 
   const accuracyColor = (acc: number) => {
     if (acc >= 80) return "text-green-600";
@@ -315,29 +335,37 @@ export default function GeneratedForms() {
               <div className="space-y-1.5">
                 <Label className="text-xs">Form Type</Label>
                 <Select value={formType} onValueChange={setFormType}>
-                  <SelectTrigger className="w-[220px]">
+                  <SelectTrigger className="w-[280px]">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="restaurant_supplement">Restaurant Supplement</SelectItem>
                     <SelectItem value="contractor_supplement">Contractor Supplement</SelectItem>
+                    <SelectItem value="real_policy">📄 Real Insurance Policies (Kapura / Dos Santos)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs">Quantity</Label>
-                <Input
-                  type="number"
-                  min={1}
-                  max={50}
-                  value={count}
-                  onChange={(e) => setCount(Math.max(1, Math.min(50, Number(e.target.value))))}
-                  className="w-24"
-                />
-              </div>
+              {formType !== "real_policy" && (
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Quantity</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    max={50}
+                    value={count}
+                    onChange={(e) => setCount(Math.max(1, Math.min(50, Number(e.target.value))))}
+                    className="w-24"
+                  />
+                </div>
+              )}
+              {formType === "real_policy" && (
+                <p className="text-xs text-muted-foreground self-end pb-2">
+                  Adds 3 real policy documents (Business Auto, Commercial Property, Excess Liability)
+                </p>
+              )}
               <Button onClick={handleGenerate} disabled={generating} className="gap-2">
                 {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-                Generate
+                {formType === "real_policy" ? "Add Real Policies" : "Generate"}
               </Button>
             </div>
           </CardContent>
@@ -634,8 +662,11 @@ export default function GeneratedForms() {
                         <FileText className="h-4 w-4 text-accent shrink-0" />
                         <span className="font-medium text-sm truncate">{form.display_name}</span>
                       </div>
-                      <Badge variant="secondary" className="text-[10px]">
-                        {typeLabel(form.form_type)}
+                      <Badge
+                        variant={form.form_type.startsWith("real_policy") ? "default" : "secondary"}
+                        className="text-[10px]"
+                      >
+                        {form.form_type.startsWith("real_policy") ? "📄 " : ""}{typeLabel(form.form_type)}
                       </Badge>
                     </div>
                   </div>
