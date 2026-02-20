@@ -1,8 +1,13 @@
-import { useMemo } from "react";
-import { AlertCircle } from "lucide-react";
-import { ACORD_FORMS } from "@/lib/acord-forms";
-import { FIELD_POSITION_MAP } from "@/lib/acord-field-positions";
-import { CURRENCY_FIELDS, formatUSD } from "@/lib/acord-autofill";
+import { useEffect, useState, useRef, useCallback } from "react";
+import { Loader2, AlertCircle } from "lucide-react";
+import { FILLABLE_PDF_PATHS, ACORD_FIELD_MAPS } from "@/lib/acord-field-map";
+import {
+  PDFDocument,
+  PDFTextField,
+  PDFCheckBox,
+  PDFDropdown,
+  PDFRadioGroup,
+} from "pdf-lib";
 
 interface FillablePdfViewerProps {
   formId: string;
@@ -10,11 +15,7 @@ interface FillablePdfViewerProps {
   onFieldChange?: (key: string, value: string) => void;
 }
 
-/** Letter-size page dimensions in points (matches pdf-generator) */
-const PAGE_W = 612;
-const PAGE_H = 792;
-
-function formatDateForDisplay(val: string): string {
+function formatDateForPdf(val: string): string {
   if (!val) return "";
   const isoMatch = val.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (isoMatch) return `${isoMatch[2]}/${isoMatch[3]}/${isoMatch[1]}`;
@@ -25,113 +26,207 @@ function formatFieldValue(key: string, val: any): string {
   if (val === null || val === undefined || val === "") return "";
   const s = String(val);
   if (s === "false") return "";
-  if (s === "true") return "✓";
-  if (CURRENCY_FIELDS.has(key)) return formatUSD(s);
-  if (key.includes("date") || key.includes("eff_") || key.includes("exp_")) return formatDateForDisplay(s);
+  if (key.includes("date") || key.includes("eff_") || key.includes("exp_")) return formatDateForPdf(s);
   return s;
 }
 
-export default function FillablePdfViewer({ formId, formData }: FillablePdfViewerProps) {
-  const form = ACORD_FORMS[formId];
-  const positions = FIELD_POSITION_MAP[formId] || {};
+async function buildFilledPdfBlobUrl(
+  pdfPath: string,
+  formId: string,
+  formData: Record<string, any>
+): Promise<string> {
+  const response = await fetch(pdfPath);
+  if (!response.ok) throw new Error(`Failed to fetch PDF: ${pdfPath}`);
+  const arrayBuffer = await response.arrayBuffer();
 
-  const pages = useMemo(() => form?.pages || [], [form]);
+  const pdfDoc = await PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
+  const fieldMap = ACORD_FIELD_MAPS[formId] || {};
 
-  // Build per-page overlay entries
-  const overlaysByPage = useMemo(() => {
-    const byPage: Record<number, Array<{ key: string; display: string; x: number; y: number; maxWidth: number; fontSize: number; checkbox: boolean }>> = {};
+  let form: ReturnType<typeof pdfDoc.getForm> | null = null;
+  try {
+    form = pdfDoc.getForm();
+  } catch {
+    // No AcroForm — serve raw PDF
+  }
 
-    for (const [key, pos] of Object.entries(positions)) {
-      const rawVal = formData[key];
-      const display = formatFieldValue(key, rawVal);
+  if (form) {
+    const pdfFields = form.getFields();
+    // Build a lookup map: exact name → field, plus lowercased for fallback
+    const nameToField = new Map<string, typeof pdfFields[0]>();
+    const lowerToField = new Map<string, typeof pdfFields[0]>();
+    for (const f of pdfFields) {
+      nameToField.set(f.getName(), f);
+      lowerToField.set(f.getName().toLowerCase(), f);
+    }
+
+    for (const [ourKey, pdfFieldName] of Object.entries(fieldMap)) {
+      const rawVal = formData[ourKey];
+      if (rawVal === undefined || rawVal === null || rawVal === "") continue;
+
+      const display = formatFieldValue(ourKey, rawVal);
       if (!display) continue;
 
-      const pageIdx = pos.page;
-      if (pageIdx >= pages.length) continue;
+      // 1. Exact match
+      let field = nameToField.get(pdfFieldName);
 
-      if (!byPage[pageIdx]) byPage[pageIdx] = [];
-      byPage[pageIdx].push({
-        key,
-        display,
-        x: pos.x,
-        y: pos.y,
-        maxWidth: pos.maxWidth || 200,
-        fontSize: pos.fontSize || 8,
-        checkbox: pos.checkbox || false,
-      });
+      // 2. Case-insensitive exact match
+      if (!field) {
+        field = lowerToField.get(pdfFieldName.toLowerCase());
+      }
+
+      // 3. Substring fallback
+      if (!field) {
+        const lower = pdfFieldName.toLowerCase();
+        for (const [name, f] of lowerToField) {
+          if (name.includes(lower) || lower.includes(name)) {
+            field = f;
+            break;
+          }
+        }
+      }
+
+      if (!field) continue;
+
+      try {
+        // Use instanceof (safe across bundlers, unlike .constructor.name)
+        if (field instanceof PDFTextField) {
+          field.setText(display);
+        } else if (field instanceof PDFCheckBox) {
+          const isChecked = rawVal === true || rawVal === "true" || rawVal === "Yes" || rawVal === "✓";
+          if (isChecked) field.check(); else field.uncheck();
+        } else if (field instanceof PDFDropdown) {
+          try { field.select(display); } catch { /* option not in list */ }
+        } else if (field instanceof PDFRadioGroup) {
+          try { field.select(display); } catch { /* option unavailable */ }
+        }
+      } catch {
+        // Silently skip unwritable fields
+      }
     }
-    return byPage;
-  }, [positions, formData, pages.length]);
 
-  if (!form || pages.length === 0) {
+    try {
+      form.updateFieldAppearances();
+    } catch {
+      // Some PDFs block appearance updates — values still saved
+    }
+  }
+
+  const filledBytes = await pdfDoc.save({ useObjectStreams: false });
+  return URL.createObjectURL(
+    new Blob([filledBytes.buffer as ArrayBuffer], { type: "application/pdf" })
+  );
+}
+
+export default function FillablePdfViewer({ formId, formData }: FillablePdfViewerProps) {
+  const [blobUrl, setBlobUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const prevBlobUrl = useRef<string | null>(null);
+  const formDataRef = useRef(formData);
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Tracks whether first build for current formId has completed
+  const firstBuildDone = useRef(false);
+
+  const pdfPath = FILLABLE_PDF_PATHS[formId];
+
+  // Always sync ref to latest formData
+  useEffect(() => {
+    formDataRef.current = formData;
+  });
+
+  const rebuildPdf = useCallback(
+    (cancelled: { value: boolean }) => {
+      if (!pdfPath) return;
+      setLoading(true);
+      setError(null);
+      buildFilledPdfBlobUrl(pdfPath, formId, formDataRef.current)
+        .then((url) => {
+          if (cancelled.value) { URL.revokeObjectURL(url); return; }
+          if (prevBlobUrl.current) URL.revokeObjectURL(prevBlobUrl.current);
+          prevBlobUrl.current = url;
+          setBlobUrl(url);
+          setLoading(false);
+          firstBuildDone.current = true;
+        })
+        .catch((err) => {
+          if (!cancelled.value) {
+            console.error("PDF fill error:", err);
+            setError(err?.message || "Failed to load PDF");
+            setLoading(false);
+          }
+        });
+    },
+    [pdfPath, formId]
+  );
+
+  // Re-run immediately whenever formId changes (new form selected)
+  useEffect(() => {
+    if (!pdfPath) {
+      setError(`No fillable PDF available for form: ${formId}`);
+      setLoading(false);
+      return;
+    }
+    firstBuildDone.current = false;
+    setBlobUrl(null);
+    setLoading(true);
+    const cancelled = { value: false };
+    rebuildPdf(cancelled);
+    return () => { cancelled.value = true; };
+  }, [formId, pdfPath, rebuildPdf]);
+
+  // Debounce re-render when formData changes (field edits) — skip until first build is done
+  useEffect(() => {
+    if (!firstBuildDone.current) return;
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    const cancelled = { value: false };
+    debounceTimer.current = setTimeout(() => rebuildPdf(cancelled), 800);
+    return () => {
+      cancelled.value = true;
+      if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData]);
+
+  useEffect(() => {
+    return () => { if (prevBlobUrl.current) URL.revokeObjectURL(prevBlobUrl.current); };
+  }, []);
+
+  if (!pdfPath) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground p-8 text-center">
         <AlertCircle className="h-8 w-8 text-yellow-500" />
-        <p className="text-sm font-medium">No preview available for this form</p>
-        <p className="text-xs">{formId}</p>
+        <p className="text-sm font-medium">No fillable PDF for this form yet</p>
+        <p className="text-xs">Upload a fillable PDF for {formId} to enable interactive editing.</p>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-full gap-2 text-muted-foreground">
+        <Loader2 className="h-5 w-5 animate-spin" />
+        <span className="text-sm">Filling PDF fields…</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground p-8 text-center">
+        <AlertCircle className="h-8 w-8 text-destructive" />
+        <p className="text-sm font-medium">PDF load error</p>
+        <p className="text-xs text-destructive">{error}</p>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col gap-0 overflow-y-auto h-full bg-muted/30">
-      {pages.map((pageImg, pageIdx) => {
-        const overlays = overlaysByPage[pageIdx] || [];
-        return (
-          <div
-            key={pageIdx}
-            className="relative mx-auto shadow-md"
-            style={{
-              width: "100%",
-              maxWidth: "816px", // 612pt at 96dpi → 816px
-              aspectRatio: `${PAGE_W} / ${PAGE_H}`,
-            }}
-          >
-            {/* ACORD form page image */}
-            <img
-              src={pageImg}
-              alt={`${form.name} page ${pageIdx + 1}`}
-              className="w-full h-full object-fill select-none"
-              draggable={false}
-            />
-
-            {/* Field value overlays */}
-            {overlays.map(({ key, display, x, y, maxWidth, fontSize, checkbox }) => {
-              const leftPct = (x / PAGE_W) * 100;
-              const topPct = (y / PAGE_H) * 100;
-              const maxWidthPct = (maxWidth / PAGE_W) * 100;
-              // Scale font: 8pt base → at 816px wide, ~10.67px; scale proportionally
-              const fontSizePct = (fontSize / PAGE_H) * 100;
-
-              return (
-                <span
-                  key={key}
-                  style={{
-                    position: "absolute",
-                    left: `${leftPct}%`,
-                    top: `${topPct}%`,
-                    maxWidth: `${maxWidthPct}%`,
-                    fontSize: `${fontSizePct}%`,
-                    // Use vw as proxy for element width — font scales with container
-                    lineHeight: 1.1,
-                    color: "rgb(0 0 140)",
-                    fontFamily: "Helvetica, Arial, sans-serif",
-                    whiteSpace: "nowrap",
-                    overflow: "hidden",
-                    pointerEvents: "none",
-                    userSelect: "none",
-                  }}
-                  title={`${key}: ${display}`}
-                >
-                  {checkbox
-                    ? (display === "✓" ? "✓" : "")
-                    : display}
-                </span>
-              );
-            })}
-          </div>
-        );
-      })}
-    </div>
+    <iframe
+      key={blobUrl}
+      src={blobUrl + "#toolbar=1&navpanes=0&scrollbar=1&zoom=100"}
+      className="w-full h-full border-0"
+      title={`Fillable ACORD Form ${formId}`}
+      style={{ minHeight: "600px" }}
+    />
   );
 }
