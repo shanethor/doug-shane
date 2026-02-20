@@ -771,38 +771,48 @@ Document to extract:
 ${formText}`;
 
       try {
+        // Real policy schemas are too large for tool-calling (Google 400 schema branching limit).
+        // Use plain JSON response mode instead — more reliable for large schemas.
+        const requestBody: any = {
+          model: isRealPolicy ? "google/gemini-2.5-flash" : "google/gemini-3-flash-preview",
+          messages: [
+            {
+              role: "system",
+              content: isRealPolicy
+                ? "You are a commercial insurance underwriter with deep expertise in extracting structured data from auto, property, and excess liability policy documents. Extract every field with precision. ALWAYS respond with valid JSON only, no markdown fences."
+                : "You are a precise insurance form data extractor. Extract every single field from the provided form. ALWAYS respond with valid JSON only, no markdown fences.",
+            },
+            {
+              role: "user",
+              content: isRealPolicy
+                ? `${extractionPrompt}\n\nRespond ONLY with a JSON object containing the extracted fields. No markdown, no explanation — just the JSON.`
+                : extractionPrompt,
+            },
+          ],
+        };
+
+        // Supplement forms are small enough to use tool-calling reliably
+        if (!isRealPolicy) {
+          requestBody.tools = [
+            {
+              type: "function",
+              function: {
+                name: "extract_supplemental_form",
+                description: "Extract all fields from a supplemental insurance form",
+                parameters: buildExtractionSchema(form.form_type),
+              },
+            },
+          ];
+          requestBody.tool_choice = { type: "function", function: { name: "extract_supplemental_form" } };
+        }
+
         const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
           method: "POST",
           headers: {
             Authorization: `Bearer ${LOVABLE_API_KEY}`,
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            // Use a stronger model for real policy docs that have complex structured data
-            model: isRealPolicy ? "google/gemini-2.5-flash" : "google/gemini-3-flash-preview",
-            messages: [
-              {
-                role: "system",
-                content: isRealPolicy
-                  ? "You are a commercial insurance underwriter with deep expertise in extracting structured data from auto, property, and excess liability policy documents. Extract every field with precision."
-                  : "You are a precise insurance form data extractor. Extract every single field from the provided form.",
-              },
-              { role: "user", content: extractionPrompt },
-            ],
-            tools: [
-              {
-                type: "function",
-                function: {
-                  name: "extract_supplemental_form",
-                  description: isRealPolicy
-                    ? "Extract all fields from a real insurance policy document"
-                    : "Extract all fields from a supplemental insurance form",
-                  parameters: buildExtractionSchema(form.form_type),
-                },
-              },
-            ],
-            tool_choice: { type: "function", function: { name: "extract_supplemental_form" } },
-          }),
+          body: JSON.stringify(requestBody),
         });
 
         if (!response.ok) {
@@ -821,20 +831,39 @@ ${formText}`;
         }
 
         const aiResult = await response.json();
-        const toolCall = aiResult.choices?.[0]?.message?.tool_calls?.[0];
 
-        if (!toolCall) {
-          results.push({
-            form_id: form.id,
-            form_type: form.form_type,
-            display_name: form.display_name,
-            error: "No structured data returned",
-            accuracy: 0,
-          });
-          continue;
+        let extracted: Record<string, any>;
+        if (isRealPolicy) {
+          // Parse JSON from assistant message content
+          const content = aiResult.choices?.[0]?.message?.content || "";
+          const cleaned = content.replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/```\s*$/i, "").trim();
+          try {
+            extracted = JSON.parse(cleaned);
+          } catch {
+            console.error(`Failed to parse JSON for form ${form.id}:`, cleaned.slice(0, 200));
+            results.push({
+              form_id: form.id,
+              form_type: form.form_type,
+              display_name: form.display_name,
+              error: "Failed to parse AI JSON response",
+              accuracy: 0,
+            });
+            continue;
+          }
+        } else {
+          const toolCall = aiResult.choices?.[0]?.message?.tool_calls?.[0];
+          if (!toolCall) {
+            results.push({
+              form_id: form.id,
+              form_type: form.form_type,
+              display_name: form.display_name,
+              error: "No structured data returned",
+              accuracy: 0,
+            });
+            continue;
+          }
+          extracted = JSON.parse(toolCall.function.arguments);
         }
-
-        const extracted = JSON.parse(toolCall.function.arguments);
         const comparison = compareExtraction(formData, extracted);
 
         results.push({
