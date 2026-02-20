@@ -8,6 +8,7 @@ import { buildAutofilledData, buildAutofilledDataWithAI, formatUSD, CURRENCY_FIE
 import { FIELD_POSITION_MAP, type FieldPosition } from "@/lib/acord-field-positions";
 import { generateAcordPdfAsync } from "@/lib/pdf-generator";
 import { generateSubmissionPackage } from "@/lib/submission-package";
+import { FILLABLE_PDF_PATHS, ACORD_FIELD_MAPS, ACORD_INDEX_MAPS } from "@/lib/acord-field-map";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -95,11 +96,11 @@ export default function FormFillingView({ submissionId, initialMessages, initial
   const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Pre-filled PDF bytes for the Adobe viewer — keyed by formId
-  const [filledPdfBytesMap, setFilledPdfBytesMap] = useState<Record<string, Uint8Array>>({});
-  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
-  const [pdfFilledCount, setPdfFilledCount] = useState(0);
-  const pdfGenTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Raw fillable PDF bytes keyed by formId — loaded once from /public/acord-fillable/
+  const [rawPdfBytesMap, setRawPdfBytesMap] = useState<Record<string, Uint8Array>>({});
+  // Bytes captured from Adobe SAVE_API (includes in-viewer edits) keyed by formId
+  const [savedPdfBytesMap, setSavedPdfBytesMap] = useState<Record<string, Uint8Array>>({});
+  const [isLoadingPdf, setIsLoadingPdf] = useState(false);
 
   // Swipe gesture support
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
@@ -139,10 +140,7 @@ export default function FormFillingView({ submissionId, initialMessages, initial
     const dx = e.changedTouches[0].clientX - touchStartRef.current.x;
     const dy = e.changedTouches[0].clientY - touchStartRef.current.y;
     touchStartRef.current = null;
-
-    // Only register horizontal swipes (dx > dy threshold)
     if (Math.abs(dx) < 60 || Math.abs(dy) > Math.abs(dx) * 0.7) return;
-
     const panelKeys = MOBILE_PANELS.map(p => p.key);
     const currentIdx = panelKeys.indexOf(mobilePanel);
     if (dx < 0 && currentIdx < panelKeys.length - 1) {
@@ -152,89 +150,49 @@ export default function FormFillingView({ submissionId, initialMessages, initial
     }
   }, [mobilePanel]);
 
-  // Load application data — same pipeline as /forms benchmark: static + AI inference
+  // Load raw fillable PDF bytes from /public/acord-fillable/ when the active form changes
   useEffect(() => {
-    if (!user || !submissionId) return;
-    const load = async () => {
-      const [appResult, profileResult] = await Promise.all([
-        supabase
-          .from("insurance_applications")
-          .select("form_data")
-          .eq("submission_id", submissionId)
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .maybeSingle(),
-        supabase
-          .from("profiles")
-          .select("full_name, agency_name, phone, form_defaults")
-          .eq("user_id", user.id)
-          .single(),
-      ]);
+    if (isAllForms || !activeFormId) return;
+    const path = FILLABLE_PDF_PATHS[activeFormId];
+    if (!path || rawPdfBytesMap[activeFormId]) return; // already loaded
+    setIsLoadingPdf(true);
+    fetch(path)
+      .then(r => r.ok ? r.arrayBuffer() : Promise.reject(`HTTP ${r.status}`))
+      .then(buf => {
+        setRawPdfBytesMap(prev => ({ ...prev, [activeFormId]: new Uint8Array(buf) }));
+      })
+      .catch(err => console.error("[PDF Load] Failed to load raw PDF:", err))
+      .finally(() => setIsLoadingPdf(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeFormId, isAllForms]);
 
-      const aiData = (appResult.data?.form_data || {}) as Record<string, any>;
-      const defaults = (profileResult.data?.form_defaults || {}) as Record<string, string>;
-
-      // Use the SAME pipeline as the /forms benchmark: static aliases + AI inference per form
-      // This ensures chat fill rates match the training benchmark scores
-      const merged: Record<string, any> = {};
-      for (const form of ACORD_FORM_LIST) {
-        const { data: filled } = await buildAutofilledDataWithAI(form, aiData, profileResult.data, defaults);
-        Object.assign(merged, filled);
-      }
-      // Apply defaults for anything still empty
-      for (const [k, v] of Object.entries(defaults)) {
-        if (v && !merged[k]) merged[k] = v;
-      }
-      // Overlay raw AI data (flat keys already expanded by extraction, covers vehicle_N_* / driver_N_*)
-      for (const [k, v] of Object.entries(aiData)) {
-        if (!merged[k] && v && typeof v === "string") merged[k] = v;
-      }
-
-      setFormData(merged);
-      setLoading(false);
-    };
-    load();
-  }, [user, submissionId]);
-
-  // ── PDF viewer generation ──────────────────────────────────────────────────
-  // Generates a filled PDF using jsPDF overlay (works for XFA ACORD PDFs which pdf-lib can't load)
-  // and stores the bytes for the Adobe viewer.
-  const regeneratePdfForViewer = useCallback(async (formId: string, data: Record<string, any>) => {
-    const form = ACORD_FORMS[formId];
-    if (!form) return;
-    setIsGeneratingPdf(true);
-    try {
-      const result = await generateAcordPdfAsync(form, data, { flatten: false });
-      const filled = form.fields.filter(f => data[f.key] && String(data[f.key]).trim()).length;
-      setFilledPdfBytesMap(prev => ({ ...prev, [formId]: result.bytes }));
-      setPdfFilledCount(filled);
-    } catch (err) {
-      console.error("PDF viewer generation error:", err);
-    } finally {
-      setIsGeneratingPdf(false);
+  // Build reverse map: PDF field name → internal key (for FORM_FIELD_CHANGED sync)
+  // This lets us map Adobe's obfuscated field names back to our internal keys
+  const buildReverseFieldMap = useCallback((formId: string): Record<string, string> => {
+    const nameMap = ACORD_FIELD_MAPS[formId] || {};
+    const reverse: Record<string, string> = {};
+    for (const [internalKey, pdfFieldName] of Object.entries(nameMap)) {
+      reverse[pdfFieldName] = internalKey;
     }
+    return reverse;
   }, []);
 
-  // Trigger PDF generation when loading completes (initial fill)
-  useEffect(() => {
-    if (!loading && !isAllForms && activeFormId && Object.keys(formData).length > 0) {
-      regeneratePdfForViewer(activeFormId, formData);
+  // Per-form reverse maps (cached)
+  const reverseFieldMapsRef = useRef<Record<string, Record<string, string>>>({});
+  const getReverseMap = useCallback((formId: string) => {
+    if (!reverseFieldMapsRef.current[formId]) {
+      reverseFieldMapsRef.current[formId] = buildReverseFieldMap(formId);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading]);
+    return reverseFieldMapsRef.current[formId];
+  }, [buildReverseFieldMap]);
 
-  // Debounced regeneration when formData or activeFormId changes after initial load
-  useEffect(() => {
-    if (loading || isAllForms || !activeFormId || Object.keys(formData).length === 0) return;
-    if (pdfGenTimerRef.current) clearTimeout(pdfGenTimerRef.current);
-    pdfGenTimerRef.current = setTimeout(() => {
-      regeneratePdfForViewer(activeFormId, formData);
-    }, 1500);
-    return () => {
-      if (pdfGenTimerRef.current) clearTimeout(pdfGenTimerRef.current);
-    };
+  // Handle field changes from Adobe viewer — reverse-map PDF field name → internal key
+  const handleAdobeFieldChange = useCallback((formId: string, pdfFieldName: string, value: string) => {
+    const reverseMap = getReverseMap(formId);
+    const internalKey = reverseMap[pdfFieldName] || pdfFieldName;
+    handleFieldChange(internalKey, value);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [formData, activeFormId]);
+  }, [getReverseMap]);
 
   const scrollChatToBottom = useCallback(() => {
     if (chatScrollRef.current) chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
@@ -482,9 +440,23 @@ export default function FormFillingView({ submissionId, initialMessages, initial
         if (!hasData) continue;
 
         try {
-          const result = await generateAcordPdfAsync(form, formData, { flatten: true });
-          result.save(`${form.name.replace(/\s/g, "_")}_${date}.pdf`);
-          count++;
+          // Prefer Adobe-saved bytes (includes in-viewer edits) over regenerated PDF
+          const adobeBytes = savedPdfBytesMap[form.id];
+          if (adobeBytes) {
+            const blob = new Blob([adobeBytes.buffer as ArrayBuffer], { type: "application/pdf" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `${form.name.replace(/\s/g, "_")}_${date}.pdf`;
+            a.click();
+            setTimeout(() => URL.revokeObjectURL(url), 10000);
+            count++;
+          } else {
+            // Fallback: regenerate with pdf-lib / jsPDF image overlay
+            const result = await generateAcordPdfAsync(form, formData, { flatten: true });
+            result.save(`${form.name.replace(/\s/g, "_")}_${date}.pdf`);
+            count++;
+          }
           if (count < formsToProcess.length) await new Promise(r => setTimeout(r, 400));
         } catch (err) {
           console.error(`Failed to generate PDF for ${form.name}:`, err);
@@ -1001,27 +973,33 @@ export default function FormFillingView({ submissionId, initialMessages, initial
                       <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{form.name}</span>
                     </div>
                      <div style={{ height: "800px" }}>
-                       <FillablePdfViewer
-                         pdfBytes={filledPdfBytesMap[form.id] ?? null}
-                         isGenerating={isGeneratingPdf}
-                         filledCount={0}
-                         fileName={`${form.name}.pdf`}
-                         onFieldChange={handleFieldChange}
-                       />
+                       {FILLABLE_PDF_PATHS[form.id] ? (
+                         <FillablePdfViewer
+                           pdfBytes={rawPdfBytesMap[form.id] ?? null}
+                           isGenerating={isLoadingPdf && !rawPdfBytesMap[form.id]}
+                           fileName={`${form.name}.pdf`}
+                           onFieldChange={(pdfFieldName, value) => handleAdobeFieldChange(form.id, pdfFieldName, value)}
+                           onSaveBytes={(bytes) => setSavedPdfBytesMap(prev => ({ ...prev, [form.id]: bytes }))}
+                         />
+                       ) : (
+                         <div className="flex items-center justify-center h-full text-muted-foreground text-sm">No fillable PDF available</div>
+                       )}
                      </div>
                    </div>
                  ))}
                </div>
              </ScrollArea>
-           ) : (
+           ) : activeForm && FILLABLE_PDF_PATHS[activeFormId] ? (
              <FillablePdfViewer
-               pdfBytes={filledPdfBytesMap[activeFormId] ?? null}
-               isGenerating={isGeneratingPdf}
-               filledCount={pdfFilledCount}
-               fileName={activeForm ? `${activeForm.name}.pdf` : "ACORD Form.pdf"}
-               onFieldChange={handleFieldChange}
+               pdfBytes={rawPdfBytesMap[activeFormId] ?? null}
+               isGenerating={isLoadingPdf && !rawPdfBytesMap[activeFormId]}
+               fileName={`${activeForm.name}.pdf`}
+               onFieldChange={(pdfFieldName, value) => handleAdobeFieldChange(activeFormId, pdfFieldName, value)}
+               onSaveBytes={(bytes) => setSavedPdfBytesMap(prev => ({ ...prev, [activeFormId]: bytes }))}
              />
-          )}
+           ) : (
+             <div className="flex items-center justify-center h-full text-muted-foreground text-sm">No fillable PDF available for this form</div>
+           )}
         </div>
       ) : (
       <ScrollArea className="flex-1">
