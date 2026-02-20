@@ -217,8 +217,17 @@ export default function FormFillingView({ submissionId, initialMessages, initial
   };
 
   // Send chat message
+  const INFER_KEYWORDS = /\b(infer|auto.?fill|fill.?what.?you.?can|fill.?missing|fill.?fields|fill.?gaps|update.?fields|run.?ai|ai.?fill|use.?ai)\b/i;
+
   const sendMessage = async (text: string) => {
     if (!text.trim() || isLoading) return;
+
+    // Detect inference intent and route to AI inference pipeline
+    if (INFER_KEYWORDS.test(text)) {
+      setInput("");
+      runAiInference();
+      return;
+    }
     const userMsg: Msg = { role: "user", content: text.trim() };
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
