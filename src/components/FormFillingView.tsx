@@ -18,7 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
-import { Download, Send, Paperclip, Loader2, FileText, CheckCircle, X, Filter, Eye, Image, Mail, ChevronLeft, ChevronRight, ClipboardList, MessageSquare, Mic, MicOff, Plus } from "lucide-react";
+import { Download, Send, Paperclip, Loader2, FileText, CheckCircle, X, Filter, Eye, Image, Mail, ChevronLeft, ChevronRight, ClipboardList, MessageSquare, Mic, MicOff, Plus, BrainCircuit } from "lucide-react";
 import { toast } from "sonner";
 import { useVoiceInput } from "@/hooks/useVoiceInput";
 
@@ -307,6 +307,65 @@ export default function FormFillingView({ submissionId, initialMessages, initial
 
   const handleChatKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(input); }
+  };
+
+  // ── AI Inference: run full AI pipeline on all enabled forms and update fields ──
+  const [isInferring, setIsInferring] = useState(false);
+  const runAiInference = async () => {
+    if (isInferring) return;
+    setIsInferring(true);
+    setMessages((prev) => [
+      ...prev,
+      { role: "user", content: "Run AI inference and fill in any missing fields you can." },
+    ]);
+    try {
+      // Load the raw AI-extracted data from the DB to use as source
+      const { data: appData } = await supabase
+        .from("insurance_applications")
+        .select("form_data")
+        .eq("submission_id", submissionId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      const aiData = (appData?.form_data || formData) as Record<string, any>;
+      const { buildAutofilledDataWithAI } = await import("@/lib/acord-autofill");
+
+      let totalNewFields = 0;
+      const merged: Record<string, any> = { ...formData };
+
+      for (const form of enabledFormList) {
+        const { data: inferred, aiInferredCount } = await buildAutofilledDataWithAI(form, aiData);
+        for (const [k, v] of Object.entries(inferred)) {
+          if (!merged[k] && v !== "" && v !== null && v !== undefined) {
+            merged[k] = v;
+            totalNewFields++;
+          }
+        }
+      }
+
+      setFormData(merged);
+
+      // Persist to DB
+      await supabase
+        .from("insurance_applications")
+        .update({ form_data: merged })
+        .eq("submission_id", submissionId)
+        .eq("user_id", user?.id);
+
+      const assistantMsg = totalNewFields > 0
+        ? `✅ AI inference complete — I filled in **${totalNewFields} additional field(s)** based on the available data. Check the Fields panel to review the updated values.`
+        : "I reviewed all the fields but couldn't infer additional values from the existing data. Try uploading more documents or providing more details in the chat.";
+
+      setMessages((prev) => [...prev, { role: "assistant", content: assistantMsg }]);
+    } catch (err) {
+      console.error("AI inference error:", err);
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: "Sorry, AI inference encountered an error. Please try again." },
+      ]);
+    }
+    setIsInferring(false);
   };
 
   const downloadForms = async (mode: "individual" | "package") => {
@@ -973,13 +1032,26 @@ export default function FormFillingView({ submissionId, initialMessages, initial
 
   const renderChatPanel = () => (
     <div className="flex flex-col h-full bg-background">
-      <div className="border-b p-3 flex items-center justify-between">
-        <h2 className="text-sm font-semibold" style={{ fontFamily: "'Instrument Serif', serif" }}>Chat</h2>
-        {!isMobile && (
-          <Button variant="ghost" size="sm" className="text-[10px] h-6 px-2" onClick={onBack}>
-            ← Back
+      <div className="border-b p-3 flex items-center justify-between gap-2">
+        <h2 className="text-sm font-semibold shrink-0" style={{ fontFamily: "'Instrument Serif', serif" }}>Chat</h2>
+        <div className="flex items-center gap-1.5">
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-[10px] h-6 px-2 gap-1 border-primary/40 text-primary hover:bg-primary/10"
+            onClick={runAiInference}
+            disabled={isInferring}
+            title="Run AI inference to fill in missing fields from existing data"
+          >
+            {isInferring ? <Loader2 className="h-2.5 w-2.5 animate-spin" /> : <BrainCircuit className="h-2.5 w-2.5" />}
+            {isInferring ? "Inferring…" : "AI Infer & Fill"}
           </Button>
-        )}
+          {!isMobile && (
+            <Button variant="ghost" size="sm" className="text-[10px] h-6 px-2" onClick={onBack}>
+              ← Back
+            </Button>
+          )}
+        </div>
       </div>
 
       <div ref={chatScrollRef} className="flex-1 overflow-y-auto p-3 space-y-3">
