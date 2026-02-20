@@ -98,9 +98,7 @@ export default function FormFillingView({ submissionId, initialMessages, initial
 
   // Bytes captured from Adobe SAVE_API (includes in-viewer edits) keyed by formId
   const [savedPdfBytesMap, setSavedPdfBytesMap] = useState<Record<string, Uint8Array>>({});
-  // Raw bytes loaded once from /public/acord-fillable/ — used as the generation source
-  const [rawPdfBytesMap, setRawPdfBytesMap] = useState<Record<string, Uint8Array>>({});
-  // Pre-filled bytes (pdf-lib filled, useObjectStreams:false) served to the Adobe viewer
+  // Pre-filled bytes (pdf-lib filled, read-only flags stripped) served to the Adobe viewer
   const [filledPdfBytesMap, setFilledPdfBytesMap] = useState<Record<string, Uint8Array>>({});
   const [isLoadingPdf, setIsLoadingPdf] = useState(false);
   const fillPdfTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -178,15 +176,13 @@ export default function FormFillingView({ submissionId, initialMessages, initial
   const formDataRef2 = useRef<Record<string, any>>({});
   useEffect(() => { formDataRef2.current = formData; }, [formData]);
 
-  // Load raw bytes once per form (for use as the generation source / initial display)
+  // Immediately generate the pdf-lib processed PDF whenever the active form changes.
+  // We never show the raw original PDF (which shows "Protected" in Adobe) — always use
+  // the pdf-lib output which strips encryption flags and keeps fields editable.
   useEffect(() => {
     if (isAllForms || !activeFormId) return;
-    const path = FILLABLE_PDF_PATHS[activeFormId];
-    if (!path || rawPdfBytesMap[activeFormId]) return;
-    fetch(path)
-      .then(r => r.ok ? r.arrayBuffer() : Promise.reject(`HTTP ${r.status}`))
-      .then(buf => setRawPdfBytesMap(prev => ({ ...prev, [activeFormId]: new Uint8Array(buf) })))
-      .catch(err => console.error("[PDF Load] Failed to load raw PDF:", err));
+    if (filledPdfBytesMap[activeFormId]) return; // already generated
+    regenerateFilledPdf(activeFormId, formDataRef2.current);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeFormId, isAllForms]);
 
@@ -1042,8 +1038,8 @@ export default function FormFillingView({ submissionId, initialMessages, initial
             </div>
           ) : activeForm && FILLABLE_PDF_PATHS[activeFormId] ? (
              <FillablePdfViewer
-               pdfBytes={filledPdfBytesMap[activeFormId] ?? rawPdfBytesMap[activeFormId] ?? null}
-               isGenerating={isLoadingPdf && !rawPdfBytesMap[activeFormId]}
+               pdfBytes={filledPdfBytesMap[activeFormId] ?? null}
+               isGenerating={isLoadingPdf || !filledPdfBytesMap[activeFormId]}
                fileName={`${activeForm.name}.pdf`}
                onFieldChange={(pdfFieldName, value) => handleAdobeFieldChange(activeFormId, pdfFieldName, value)}
                onSaveBytes={(bytes) => setSavedPdfBytesMap(prev => ({ ...prev, [activeFormId]: bytes }))}

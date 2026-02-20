@@ -117,8 +117,24 @@ export async function generateAcordPdfAsync(
     try {
       const pdfBytes = await fetchPdfBytes(pdfPath);
       const pdfDoc = await PDFDocument.load(pdfBytes, { ignoreEncryption: true });
+
+      // Remove document-level encryption/protection flags so Adobe viewer allows editing
+      const pdfCatalog = pdfDoc.catalog;
+      try {
+        // Remove the Encrypt dictionary reference from the trailer
+        (pdfDoc as any).context.trailerInfo.Encrypt = undefined;
+      } catch (_) { /* ignore if not present */ }
+
       const pdfForm = pdfDoc.getForm();
       const allFields = pdfForm.getFields();
+
+      // Remove read-only flag from every field so Adobe viewer allows editing
+      for (const field of allFields) {
+        try {
+          field.enableReadOnly(); // ensure method exists
+          field.disableReadOnly(); // then disable it
+        } catch (_) { /* ignore */ }
+      }
 
       console.log(`[PDF Fields] ${form.name}: ${allFields.length} fields total`);
 
