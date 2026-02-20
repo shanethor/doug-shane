@@ -197,6 +197,8 @@ const AI_TO_FORM_ALIASES: Record<string, string[]> = {
   driver_1_name: ["driver_1_name"],
   driver_1_license: ["driver_1_license"],
   driver_1_dob: ["driver_1_dob"],
+  driver_1_license_number: ["driver_1_license"],
+  driver_1_license_state: ["driver_1_license_state"],
   vehicle_1_year: ["vehicle_1_year"],
   vehicle_1_make: ["vehicle_1_make"],
   vehicle_1_model: ["vehicle_1_model"],
@@ -346,6 +348,60 @@ export function buildAutofilledData(
   for (const [aiKey, value] of Object.entries(aiData)) {
     if (formFieldKeys.has(aiKey) && !mapped[aiKey] && value) {
       mapped[aiKey] = normalizeValue(aiKey, value);
+    }
+  }
+
+  // 5b. Expand vehicles[] array → vehicle_N_year/make/model/vin/body_type fields
+  const vehicles: any[] = Array.isArray(aiData.vehicles) ? aiData.vehicles : [];
+  vehicles.forEach((v: any, idx: number) => {
+    const n = idx + 1;
+    const vFields: Record<string, string> = {
+      [`vehicle_${n}_year`]: v.year || v.vehicle_year || "",
+      [`vehicle_${n}_make`]: v.make || v.vehicle_make || "",
+      [`vehicle_${n}_model`]: v.model || v.vehicle_model || "",
+      [`vehicle_${n}_vin`]: v.vin || v.vehicle_vin || v.VIN || "",
+      [`vehicle_${n}_body_type`]: v.body_type || v.bodyType || v.type || "",
+      [`vehicle_${n}_cost_new`]: v.stated_amount || v.cost_new || v.statedAmount || "",
+      [`vehicle_${n}_garaging_zip`]: v.garaging_zip || v.zip || "",
+    };
+    for (const [k, val] of Object.entries(vFields)) {
+      if (val && formFieldKeys.has(k) && !mapped[k]) mapped[k] = val;
+    }
+  });
+
+  // 5c. Expand drivers[] array → driver_N_name/dob/license fields
+  const drivers: any[] = Array.isArray(aiData.drivers) ? aiData.drivers : [];
+  drivers.forEach((d: any, idx: number) => {
+    const n = idx + 1;
+    const dFields: Record<string, string> = {
+      [`driver_${n}_name`]: d.name || d.driver_name || d.full_name || "",
+      [`driver_${n}_dob`]: d.dob || d.date_of_birth || d.birth_date || "",
+      [`driver_${n}_license`]: d.license || d.license_number || d.dl_number || "",
+      [`driver_${n}_license_state`]: d.license_state || d.state || "",
+    };
+    for (const [k, val] of Object.entries(dFields)) {
+      if (val && formFieldKeys.has(k) && !mapped[k]) mapped[k] = normalizeValue(k, val);
+    }
+  });
+
+  // 5d. Also expand flat driver_N_name / vehicle_N_vin keys if AI returned them directly
+  for (let n = 2; n <= 30; n++) {
+    const vKeys: Record<string, string> = {
+      [`vehicle_${n}_year`]: aiData[`vehicle_${n}_year`] || "",
+      [`vehicle_${n}_make`]: aiData[`vehicle_${n}_make`] || "",
+      [`vehicle_${n}_model`]: aiData[`vehicle_${n}_model`] || "",
+      [`vehicle_${n}_vin`]: aiData[`vehicle_${n}_vin`] || "",
+      [`vehicle_${n}_body_type`]: aiData[`vehicle_${n}_body_type`] || "",
+    };
+    for (const [k, val] of Object.entries(vKeys)) {
+      if (val && formFieldKeys.has(k) && !mapped[k]) mapped[k] = val;
+    }
+    const dKeys: Record<string, string> = {
+      [`driver_${n}_name`]: aiData[`driver_${n}_name`] || "",
+      [`driver_${n}_dob`]: aiData[`driver_${n}_dob`] || "",
+    };
+    for (const [k, val] of Object.entries(dKeys)) {
+      if (val && formFieldKeys.has(k) && !mapped[k]) mapped[k] = normalizeValue(k, val);
     }
   }
 

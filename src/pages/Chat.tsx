@@ -363,6 +363,106 @@ export default function Chat() {
     onFinishRef.current = null;
   }, []);
 
+  const readFileAsText = (file: File): Promise<string> =>
+    new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = () => resolve("");
+      reader.readAsText(file);
+    });
+
+  /** Immediately run document extraction when files are uploaded — no intent step needed */
+  const triggerDocumentExtraction = async (files: File[]) => {
+    if (!user || files.length === 0) return;
+    setIsLoading(true);
+    setShowIntentButtons(false);
+
+    // Show user a message immediately
+    const fileNames = files.map(f => f.name).join(", ");
+    const userMsg: Msg = { role: "user", content: `📎 Uploaded: ${fileNames}` };
+    setMessages(prev => [...prev, userMsg]);
+
+    toast({ title: "Extracting from documents…", description: "Reading your files and mapping to ACORD fields." });
+
+    try {
+      // Read text content from text-based files
+      let fileContents = "";
+      for (const file of files) {
+        if (file.type.startsWith("text/") || /\.(txt|md|csv)$/i.test(file.name)) {
+          const content = await readFileAsText(file);
+          fileContents += `\n--- ${file.name} ---\n${content}`;
+        }
+      }
+
+      const description = `Document upload: ${fileNames}\n${fileContents ? `\nFile contents:\n${fileContents}` : ""}`;
+      const companyName = "New Client";
+
+      // Create submission
+      const { data: sub, error: subErr } = await supabase
+        .from("business_submissions")
+        .insert({ user_id: user.id, company_name: companyName, description, status: "processing" })
+        .select()
+        .single();
+      if (subErr) throw subErr;
+
+      // Run extraction
+      const extractResp = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/extract-business-data`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
+          body: JSON.stringify({ description, file_contents: fileContents || undefined, submission_id: sub.id }),
+        }
+      );
+
+      if (!extractResp.ok) {
+        const errBody = await extractResp.json().catch(() => ({}));
+        throw new Error(errBody.error || `Extraction failed (${extractResp.status})`);
+      }
+
+      const extracted = await extractResp.json();
+      const detectedCompany = extracted?.form_data?.applicant_name || extracted?.form_data?.insured_name || companyName;
+
+      // Update company name if we found one
+      if (detectedCompany !== companyName) {
+        await supabase.from("business_submissions").update({ company_name: detectedCompany }).eq("id", sub.id);
+      }
+
+      // Detect form types from extracted LOB flags
+      const fd = extracted?.form_data || {};
+      const detectedForms: string[] = [];
+      if (fd.lob_auto === "true" || fd.number_of_vehicles) detectedForms.push("acord-127");
+      if (fd.lob_property === "true" || fd.building_limit || fd.bpp_limit) detectedForms.push("acord-140");
+      if (fd.lob_umbrella === "true" || fd.each_occurrence_limit) detectedForms.push("acord-131");
+      if (fd.lob_wc === "true") detectedForms.push("acord-130");
+      // Always include 125/126
+      if (!detectedForms.includes("acord-125")) detectedForms.unshift("acord-125");
+      if (!detectedForms.includes("acord-126")) detectedForms.splice(1, 0, "acord-126");
+
+      setRequestedFormIds(detectedForms);
+      if (detectedForms.length > 0) setActiveFormId(detectedForms[0]);
+
+      setMessages(prev => [
+        ...prev,
+        {
+          role: "assistant",
+          content: `✅ Extracted data from **${fileNames}**. Found **${Object.keys(fd).filter(k => fd[k]).length}** fields${detectedCompany !== "New Client" ? ` for **${detectedCompany}**` : ""}. Routing you to the form view now…`,
+        },
+      ]);
+
+      setTimeout(() => {
+        setPendingSubmissionId(null);
+        setActiveSubmissionId(sub.id);
+        setIsLoading(false);
+      }, 1200);
+    } catch (err: any) {
+      console.error("Document extraction error:", err);
+      toast({ variant: "destructive", title: "Extraction failed", description: err.message || "Could not extract from documents" });
+      setMessages(prev => [...prev, { role: "assistant", content: "Sorry, I couldn't extract data from those files. Please try again or paste the information directly." }]);
+      setIsLoading(false);
+    }
+  };
+
   const handleFiles = (files: FileList | null) => {
     if (!files) return;
     const newFiles = Array.from(files).slice(0, 10);
@@ -659,7 +759,8 @@ export default function Chat() {
   const handleDragOut = (e: React.DragEvent) => { e.preventDefault(); e.stopPropagation(); setDragActive(false); };
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault(); e.stopPropagation(); setDragActive(false);
-    handleFiles(e.dataTransfer.files);
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length > 0) triggerDocumentExtraction(files);
   };
 
   const isEmpty = messages.length === 0;
@@ -748,7 +849,7 @@ export default function Chat() {
                   </div>
                 )}
                 <div className="flex items-end gap-2 rounded-xl border bg-card p-3 aura-glow-shadow focus-within:ring-2 focus-within:ring-ring">
-                  <input type="file" ref={fileInputRef} className="hidden" multiple onChange={(e) => handleFiles(e.target.files)} />
+                  <input type="file" ref={fileInputRef} className="hidden" multiple onChange={(e) => { const files = Array.from(e.target.files || []); if (files.length > 0) triggerDocumentExtraction(files); e.target.value = ""; }} />
                   <Button
                     variant="ghost"
                     size="icon"
@@ -1100,7 +1201,7 @@ export default function Chat() {
           <div className="border-t bg-background p-4">
             <div className="max-w-3xl mx-auto">
               <div className="flex items-end gap-2 rounded-xl border bg-card p-3 shadow-sm focus-within:ring-2 focus-within:ring-ring">
-                <input type="file" ref={fileInputRef} className="hidden" multiple onChange={(e) => handleFiles(e.target.files)} />
+                <input type="file" ref={fileInputRef} className="hidden" multiple onChange={(e) => { const files = Array.from(e.target.files || []); if (files.length > 0) triggerDocumentExtraction(files); e.target.value = ""; }} />
                 <Button
                   variant="ghost"
                   size="icon"
