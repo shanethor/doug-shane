@@ -9,7 +9,7 @@ const ADOBE_CLIENT_IDS: Record<string, string> = {
   "id-preview--002628bd-9af2-4bd3-bfc6-c0546eed53c2.lovable.app": "0e4142db962d4d64b1fee6bf34bc67ac",
   // lovableproject.com preview domain — needs its own credential registered in Adobe Developer Console
   // Using preview credential as fallback until a dedicated one is created
-  "002628bd-9af2-4bd3-bfc6-c0546eed53c2.lovableproject.com": "0e4142db962d4d64b1fee6bf34bc67ac",
+  "002628bd-9af2-4bd3-bfc6-c0546eed53c2.lovableproject.com": "f5d0868e6dbf4ee79ef0a26e2157776a",
   "localhost": "600cf411cda548c1ae0978f2b7a685f9",
 };
 
