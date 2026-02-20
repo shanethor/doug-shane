@@ -188,7 +188,9 @@ export async function generateAcordPdfAsync(
         }
       }
 
-      const savedBytes = await pdfDoc.save();
+      // useObjectStreams: false produces a more broadly compatible PDF that Adobe
+      // Embed API can parse correctly even after XFA data has been stripped.
+      const savedBytes = await pdfDoc.save({ useObjectStreams: false });
       return {
         bytes: savedBytes,
         save: (filename: string) => {
