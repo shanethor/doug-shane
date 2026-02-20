@@ -54,7 +54,7 @@ export default function FormFillingView({ submissionId, initialMessages, initial
   const [formData, setFormData] = useState<Record<string, any>>({});
   const [companyName, setCompanyName] = useState(initialCompanyName || "New Client");
   const [editingName, setEditingName] = useState(!!initialCompanyName && initialCompanyName === "New Client");
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [autoSaving, setAutoSaving] = useState(false);
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const formDataRef = useRef<Record<string, any>>({});
@@ -246,6 +246,23 @@ export default function FormFillingView({ submissionId, initialMessages, initial
     } finally {
       setAutoSaving(false);
     }
+  }, [user, submissionId]);
+
+  // Load saved form data from DB on mount
+  useEffect(() => {
+    if (!user || !submissionId) return;
+    supabase
+      .from("insurance_applications")
+      .select("form_data")
+      .eq("submission_id", submissionId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data?.form_data && typeof data.form_data === "object") {
+          setFormData(data.form_data as Record<string, any>);
+        }
+      });
   }, [user, submissionId]);
 
   const handleFieldChange = (key: string, value: any) => {
