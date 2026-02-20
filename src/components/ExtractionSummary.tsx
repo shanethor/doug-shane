@@ -55,25 +55,30 @@ export default function ExtractionSummary({ submissionId, requestedFormIds = [],
       .single();
 
     const defaults = (profile?.form_defaults || {}) as Record<string, string>;
+
+    // Run AI field mapping for all forms in PARALLEL (not sequentially) — major speed gain
+    const results = await Promise.all(
+      scopedForms.map(async (form) => {
+        const { data: filled } = await buildAutofilledDataWithAI(form, appData, profile, defaults);
+        for (const [k, v] of Object.entries(defaults)) {
+          if (v && !filled[k]) filled[k] = v;
+        }
+        const total = form.fields.length;
+        const filledCount = form.fields.filter(
+          (f) => filled[f.key] && String(filled[f.key]).trim()
+        ).length;
+        return { form, filled, total, filledCount, pct: Math.round((filledCount / total) * 100) };
+      })
+    );
+
+    const mergedAllForms: Record<string, any> = {};
     const formStats: FormStat[] = [];
     let tFilled = 0;
     let tTotal = 0;
 
-    // Build a merged data set across all scoped forms and persist it
-    const mergedAllForms: Record<string, any> = {};
-
-    for (const form of scopedForms) {
-      const { data: filled } = await buildAutofilledDataWithAI(form, appData, profile, defaults);
-      for (const [k, v] of Object.entries(defaults)) {
-        if (v && !filled[k]) filled[k] = v;
-      }
-      // Accumulate all mapped data
+    for (const { form, filled, total, filledCount, pct } of results) {
       Object.assign(mergedAllForms, filled);
-      const total = form.fields.length;
-      const filledCount = form.fields.filter(
-        (f) => filled[f.key] && String(filled[f.key]).trim()
-      ).length;
-      formStats.push({ form, filled: filledCount, total, pct: Math.round((filledCount / total) * 100) });
+      formStats.push({ form, filled: filledCount, total, pct });
       tFilled += filledCount;
       tTotal += total;
     }

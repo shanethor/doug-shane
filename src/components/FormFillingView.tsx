@@ -200,11 +200,12 @@ export default function FormFillingView({ submissionId, initialMessages, initial
 
   useEffect(() => { scrollChatToBottom(); }, [messages, scrollChatToBottom]);
 
-  // Auto-send an initial message when the 3-column view loads — ask targeted gap-filling questions
+  // Auto-send an initial message when the 3-column view loads — deferred to avoid blocking render
   const hasAutoSent = useRef(false);
   useEffect(() => {
     if (hasAutoSent.current || loading) return;
     hasAutoSent.current = true;
+
     if (suppressAutoAnalysis) {
       setMessages((prev) => [
         ...prev,
@@ -212,14 +213,21 @@ export default function FormFillingView({ submissionId, initialMessages, initial
       ]);
       return;
     }
+
+    // Show a quick ready message immediately so the UI feels instant
     const clientName = formData.applicant_name || formData.insured_name || formData.company_name || "this client";
     const allFields = ACORD_FORM_LIST.flatMap(f => f.fields);
     const filledKeys = allFields.filter(f => formData[f.key] && String(formData[f.key]).trim());
     const emptyKeys = allFields.filter(f => !formData[f.key] || !String(formData[f.key]).trim());
-    const priorityEmpty = emptyKeys.slice(0, 15).map(f => f.label).join(", ");
-    const prompt = `I've loaded the submission for ${clientName} with ${filledKeys.length} fields pre-filled and ${emptyKeys.length} still empty. The most important empty fields are: ${priorityEmpty}. Please ask me targeted questions to fill these gaps — one or two questions at a time, focusing on the most impactful fields first. Keep going until the forms are as complete as possible.`;
-    sendMessage(prompt);
-  }, [loading, formData]);
+
+    setMessages((prev) => [
+      ...prev,
+      {
+        role: "assistant",
+        content: `Loaded **${clientName}** — ${filledKeys.length} fields pre-filled, ${emptyKeys.length} remaining. Ask me to fill gaps, or say "auto-fill" to run AI inference on all fields.`,
+      },
+    ]);
+  }, [loading]);
 
   // Keep ref in sync so the debounced save always uses the latest data
   useEffect(() => { formDataRef.current = formData; }, [formData]);
@@ -963,33 +971,24 @@ export default function FormFillingView({ submissionId, initialMessages, initial
       {/* ── CENTER: Fillable PDF viewer or Data view ── */}
       {centerView === "form" ? (
         <div className="flex-1 overflow-hidden">
+          {/* In "all forms" mode, show the first enabled form's PDF instead of trying to load all simultaneously */}
           {isAllForms ? (
-            <ScrollArea className="h-full">
-              <div className="p-4 space-y-6">
-                {enabledFormList.map((form) => (
-                  <div key={form.id} className="bg-background border rounded shadow-sm overflow-hidden">
-                    <div className="bg-muted/50 px-3 py-1.5 border-b flex items-center gap-2">
-                      <FileText className="h-3.5 w-3.5 text-primary" />
-                      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{form.name}</span>
-                    </div>
-                     <div style={{ height: "800px" }}>
-                       {FILLABLE_PDF_PATHS[form.id] ? (
-                         <FillablePdfViewer
-                           pdfBytes={rawPdfBytesMap[form.id] ?? null}
-                           isGenerating={isLoadingPdf && !rawPdfBytesMap[form.id]}
-                           fileName={`${form.name}.pdf`}
-                           onFieldChange={(pdfFieldName, value) => handleAdobeFieldChange(form.id, pdfFieldName, value)}
-                           onSaveBytes={(bytes) => setSavedPdfBytesMap(prev => ({ ...prev, [form.id]: bytes }))}
-                         />
-                       ) : (
-                         <div className="flex items-center justify-center h-full text-muted-foreground text-sm">No fillable PDF available</div>
-                       )}
-                     </div>
-                   </div>
-                 ))}
-               </div>
-             </ScrollArea>
-           ) : activeForm && FILLABLE_PDF_PATHS[activeFormId] ? (
+            <div className="flex flex-col items-center justify-center h-full gap-4 text-muted-foreground p-8 text-center">
+              <FileText className="h-8 w-8 text-primary/50" />
+              <p className="text-sm font-medium">Select a specific form from the left panel to view and edit its fillable PDF.</p>
+              <div className="flex flex-wrap gap-2 justify-center">
+                {enabledFormList.map(f => (
+                  <button
+                    key={f.id}
+                    onClick={() => setActiveFormId(f.id)}
+                    className="text-xs px-3 py-1.5 rounded-md border border-border hover:bg-primary/10 hover:text-primary hover:border-primary/40 transition-colors"
+                  >
+                    {f.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : activeForm && FILLABLE_PDF_PATHS[activeFormId] ? (
              <FillablePdfViewer
                pdfBytes={rawPdfBytesMap[activeFormId] ?? null}
                isGenerating={isLoadingPdf && !rawPdfBytesMap[activeFormId]}
