@@ -1,6 +1,6 @@
 import { PDFDocument, PDFTextField, PDFCheckBox, PDFDropdown, PDFRadioGroup } from "pdf-lib";
 import type { AcordFormDefinition } from "./acord-forms";
-import { ACORD_FIELD_MAPS, FILLABLE_PDF_PATHS } from "./acord-field-map";
+import { ACORD_FIELD_MAPS, ACORD_INDEX_MAPS, FILLABLE_PDF_PATHS } from "./acord-field-map";
 import { formatUSD, CURRENCY_FIELDS } from "./acord-autofill";
 
 export type PdfGenerateOptions = {
@@ -63,7 +63,7 @@ function trySetField(field: any, value: string, key: string): boolean {
   try {
     if (field instanceof PDFTextField) {
       field.setText(value || "");
-      field.enableReadOnly();
+      // Do NOT call enableReadOnly() — keeps field editable by user in viewer
       return true;
     }
     if (field instanceof PDFCheckBox) {
@@ -118,12 +118,12 @@ export async function generateAcordPdfAsync(
       const pdfBytes = await fetchPdfBytes(pdfPath);
       const pdfDoc = await PDFDocument.load(pdfBytes, { ignoreEncryption: true });
       const pdfForm = pdfDoc.getForm();
+      const allFields = pdfForm.getFields();
 
-      const { exact, normalized, all } = buildFieldLookup(pdfForm);
+      console.log(`[PDF Fields] ${form.name}: ${allFields.length} fields total`);
 
-      // Log all actual PDF field names for diagnostics (first run only)
-      const allFieldNames = all.map(f => f.getName());
-      console.log(`[PDF Fields] ${form.name} has ${allFieldNames.length} AcroForm fields:`, allFieldNames.slice(0, 30));
+      const indexMap = ACORD_INDEX_MAPS[form.id];
+      const { exact, normalized } = buildFieldLookup(pdfForm);
 
       let filled = 0;
       let missed = 0;
@@ -131,23 +131,38 @@ export async function generateAcordPdfAsync(
 
       for (const [ourKey, value] of Object.entries(data)) {
         if (value === undefined || value === null || value === "") continue;
-
-        const pdfFieldName = fieldMap[ourKey];
         const displayVal = formatFieldValue(ourKey, value);
         if (!displayVal) continue;
 
-        let field = pdfFieldName ? exact.get(pdfFieldName) : undefined;
+        let field: (typeof allFields)[0] | undefined;
 
-        // Fuzzy fallback: normalize our key and search normalized PDF names
+        // ── Strategy 1: index-based (primary for ACORD PDFs with obfuscated names) ──
+        if (indexMap && ourKey in indexMap) {
+          const idx = indexMap[ourKey];
+          if (idx >= 0 && idx < allFields.length) {
+            field = allFields[idx];
+          }
+        }
+
+        // ── Strategy 2: exact name match ──
+        if (!field) {
+          const pdfFieldName = fieldMap[ourKey];
+          if (pdfFieldName) field = exact.get(pdfFieldName);
+        }
+
+        // ── Strategy 3: normalized fuzzy match on our key ──
         if (!field) {
           const normKey = ourKey.toUpperCase().replace(/_/g, " ").replace(/\s+/g, " ").trim();
           field = normalized.get(normKey);
         }
 
-        // Second fuzzy: check if any normalized field name *contains* our key
-        if (!field && pdfFieldName) {
-          const normTarget = pdfFieldName.toUpperCase().replace(/[^A-Z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
-          field = normalized.get(normTarget);
+        // ── Strategy 4: normalized fuzzy match on mapped name ──
+        if (!field) {
+          const pdfFieldName = fieldMap[ourKey];
+          if (pdfFieldName) {
+            const normTarget = pdfFieldName.toUpperCase().replace(/[^A-Z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
+            field = normalized.get(normTarget);
+          }
         }
 
         if (field) {
@@ -156,12 +171,13 @@ export async function generateAcordPdfAsync(
           else missed++;
         } else {
           missed++;
-          if (pdfFieldName) missedKeys.push(`${ourKey} → "${pdfFieldName}"`);
+          if (indexMap && ourKey in indexMap) missedKeys.push(`${ourKey} → index ${indexMap[ourKey]} (out of range?)`);
+          else if (fieldMap[ourKey]) missedKeys.push(`${ourKey} → "${fieldMap[ourKey]}"`);
         }
       }
 
       console.log(`[PDF Fill] ${form.name}: ${filled} filled, ${missed} missed`);
-      if (missedKeys.length) console.log(`[PDF Misses] Fields not found in PDF:`, missedKeys);
+      if (missedKeys.length) console.log(`[PDF Misses]`, missedKeys);
 
       // Flatten the form so fields are baked in (skip for interactive viewer)
       if (flatten) {

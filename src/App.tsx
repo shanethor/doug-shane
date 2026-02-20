@@ -16,6 +16,7 @@ import GeneratedForms from "./pages/GeneratedForms";
 import Onboarding from "./pages/Onboarding";
 import NotFound from "./pages/NotFound";
 import Deck from "./pages/Deck";
+import PdfDiagnostic from "./pages/PdfDiagnostic";
 
 const queryClient = new QueryClient();
 
@@ -38,6 +39,7 @@ const App = () => (
           <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
           <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
           <Route path="/deck" element={<Deck />} />
+          <Route path="/pdf-diagnostic" element={<PdfDiagnostic />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
