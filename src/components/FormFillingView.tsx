@@ -57,7 +57,7 @@ export default function FormFillingView({ submissionId, initialMessages, initial
   const [autoSaving, setAutoSaving] = useState(false);
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const formDataRef = useRef<Record<string, any>>({});
-  const [activeFormId, setActiveFormId] = useState(initialFormId || "acord-125");
+  const [activeFormId, setActiveFormId] = useState(initialFormId || "acord-126");
   const [fieldFilter, setFieldFilter] = useState<FieldFilter>("all");
   const [centerView, setCenterView] = useState<CenterView>("form");
   const [mobilePanel, setMobilePanel] = useState<MobilePanel>("fields");

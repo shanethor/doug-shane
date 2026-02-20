@@ -189,7 +189,7 @@ export default function SubmissionReviewPanel({ submissionId }: SubmissionReview
         }
       }
 
-      if (form.id === "acord-125" && narrative.trim()) {
+      if (form.id === "acord-126" && narrative.trim()) {
         filled.remarks = narrative.trim() + (filled.remarks ? `\n\n${filled.remarks}` : "");
       }
 

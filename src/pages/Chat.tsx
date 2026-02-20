@@ -458,9 +458,8 @@ export default function Chat() {
       if (fd.lob_property === "true" || fd.building_limit || fd.bpp_limit) detectedForms.push("acord-140");
       if (fd.lob_umbrella === "true" || fd.each_occurrence_limit) detectedForms.push("acord-131");
       if (fd.lob_wc === "true") detectedForms.push("acord-130");
-      // Always include 125/126
-      if (!detectedForms.includes("acord-125")) detectedForms.unshift("acord-125");
-      if (!detectedForms.includes("acord-126")) detectedForms.splice(1, 0, "acord-126");
+      // Always include 126 as the base CGL form
+      if (!detectedForms.includes("acord-126")) detectedForms.unshift("acord-126");
 
       setRequestedFormIds(detectedForms);
       if (detectedForms.length > 0) setActiveFormId(detectedForms[0]);

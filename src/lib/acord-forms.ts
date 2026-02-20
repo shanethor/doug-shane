@@ -708,15 +708,10 @@ const acord140Fields: AcordFormField[] = [
 // ============================================================
 // Export all forms
 // ============================================================
+// ACORD 125 and ACORD 25 are XFA-format PDFs — no browser tool can edit them.
+// They are intentionally excluded until AcroForm-compatible versions are uploaded.
+
 export const ACORD_FORMS: Record<string, AcordFormDefinition> = {
-  "acord-125": {
-    id: "acord-125",
-    name: "ACORD 125",
-    fullName: "Commercial Insurance Application (2016/03)",
-    description: "Applicant information, lines of business, premises, nature of business, general information, prior carrier info, and loss history.",
-    fields: acord125Fields,
-    pages: ["/acord-pages/125-page1.jpg", "/acord-pages/125-page2.jpg", "/acord-pages/125-page3.jpg", "/acord-pages/125-page4.jpg"],
-  },
   "acord-126": {
     id: "acord-126",
     name: "ACORD 126",
@@ -756,6 +751,29 @@ export const ACORD_FORMS: Record<string, AcordFormDefinition> = {
     description: "Building construction, subject of insurance, protective devices, building improvements, heating source, and special coverages.",
     fields: acord140Fields,
     pages: ["/acord-pages/140-page1.jpg", "/acord-pages/140-page2.jpg", "/acord-pages/140-page3.jpg"],
+  },
+  "acord-75": {
+    id: "acord-75",
+    name: "ACORD 75",
+    fullName: "Cyber and Privacy Liability Section (2010/07)",
+    description: "Cyber and privacy liability coverages, limits, revenue, employees, and operations description.",
+    fields: [
+      { key: "agency_name", label: "Agency", type: "text", section: "Header", required: true },
+      { key: "agency_customer_id", label: "Agency Customer ID", type: "text", section: "Header" },
+      { key: "carrier", label: "Carrier", type: "text", section: "Header" },
+      { key: "naic_code", label: "NAIC Code", type: "text", section: "Header" },
+      { key: "policy_number", label: "Policy Number", type: "text", section: "Header" },
+      { key: "effective_date", label: "Effective Date", type: "date", section: "Header", required: true },
+      { key: "insured_name", label: "Named Insured", type: "text", section: "Header", required: true },
+      { key: "annual_revenues", label: "Annual Revenues", type: "currency", section: "Coverage Information", required: true },
+      { key: "total_employees", label: "Total # of Employees", type: "number", section: "Coverage Information" },
+      { key: "description_of_operations", label: "Description of Operations", type: "textarea", section: "Coverage Information", required: true },
+      { key: "each_occurrence_limit", label: "Each Occurrence Limit", type: "currency", section: "Limits", required: true },
+      { key: "aggregate_limit", label: "Aggregate Limit", type: "currency", section: "Limits" },
+      { key: "remarks", label: "Remarks", type: "textarea", section: "Remarks" },
+      { key: "producer_name", label: "Producer's Name", type: "text", section: "Signature" },
+      { key: "signature_date", label: "Date", type: "date", section: "Signature" },
+    ],
   },
 };
 

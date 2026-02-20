@@ -598,27 +598,28 @@ export const ACORD_25_FIELD_MAP: AcordFieldMap = {
 // ─────────────────────────────────────────────────────────────────
 // Master lookups
 // ─────────────────────────────────────────────────────────────────
+// Name-based maps kept as fallback (index maps are primary for all active forms)
 export const ACORD_FIELD_MAPS: Record<string, AcordFieldMap> = {
-  "acord-125": ACORD_125_FIELD_MAP,
   "acord-126": ACORD_126_FIELD_MAP,
   "acord-127": ACORD_127_FIELD_MAP,
   "acord-130": ACORD_130_FIELD_MAP,
   "acord-131": ACORD_131_FIELD_MAP,
   "acord-140": ACORD_140_FIELD_MAP,
   "acord-75":  ACORD_75_FIELD_MAP,
-  "acord-25":  ACORD_25_FIELD_MAP,
 };
 
-/** Paths to the official fillable PDFs in /public/acord-fillable/ */
+/**
+ * Paths to the official fillable PDFs in /public/acord-fillable/
+ * NOTE: ACORD 125 and ACORD 25 are XFA-format and excluded until
+ * AcroForm-compatible versions are uploaded.
+ */
 export const FILLABLE_PDF_PATHS: Record<string, string> = {
-  "acord-125": "/acord-fillable/125.pdf",
   "acord-126": "/acord-fillable/126.pdf",
   "acord-127": "/acord-fillable/127.pdf",
   "acord-130": "/acord-fillable/130.pdf",
   "acord-131": "/acord-fillable/131.pdf",
   "acord-140": "/acord-fillable/140.pdf",
   "acord-75":  "/acord-fillable/75.pdf",
-  "acord-25":  "/acord-fillable/25.pdf",
 };
 
 // ─────────────────────────────────────────────────────────────────
