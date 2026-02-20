@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Loader2, AlertCircle } from "lucide-react";
+import { PDFDocument, PDFTextField, PDFCheckBox } from "pdf-lib";
 import { FILLABLE_PDF_PATHS } from "@/lib/acord-field-map";
 import type { AcordFormDefinition } from "@/lib/acord-forms";
 
@@ -7,8 +8,6 @@ import type { AcordFormDefinition } from "@/lib/acord-forms";
 const ADOBE_CLIENT_IDS: Record<string, string> = {
   "doug-shane.lovable.app": "82d00c65432249999e0daa589ea94dfd",
   "id-preview--002628bd-9af2-4bd3-bfc6-c0546eed53c2.lovable.app": "0e4142db962d4d64b1fee6bf34bc67ac",
-  // lovableproject.com preview domain — needs its own credential registered in Adobe Developer Console
-  // Using preview credential as fallback until a dedicated one is created
   "002628bd-9af2-4bd3-bfc6-c0546eed53c2.lovableproject.com": "f5d0868e6dbf4ee79ef0a26e2157776a",
   "localhost": "600cf411cda548c1ae0978f2b7a685f9",
 };
@@ -53,35 +52,109 @@ function loadAdobeScript(): Promise<void> {
 }
 
 /**
- * Build the field-name → value map for the Adobe PDF Embed API.
- * ACORD PDFs use obfuscated binary field names, so we attempt both
- * the human-readable name (ACORD_FIELD_MAPS) and the index-positional
- * approach (ACORD_INDEX_MAPS). The API itself exposes actual field names
- * via getAnnotations, so we use that when available.
+ * Pre-fill the PDF using pdf-lib and the index-based field maps.
+ * ACORD PDFs use binary-obfuscated field names — we use positional index access.
+ * Returns a blob URL for the pre-filled PDF and a reverse map (pdfFieldName → internalKey).
  */
-async function buildAdobeFieldValues(
+async function prefillPdfWithData(
+  pdfPath: string,
   formId: string,
   formData: Record<string, any>
-): Promise<Record<string, string>> {
-  const { ACORD_FIELD_MAPS, ACORD_INDEX_MAPS } = await import("@/lib/acord-field-map");
-  const fieldMap = ACORD_FIELD_MAPS[formId] || {};
-  const result: Record<string, string> = {};
+): Promise<{ blobUrl: string; reverseMap: Record<string, string>; filledCount: number }> {
+  const { ACORD_INDEX_MAPS, ACORD_FIELD_MAPS } = await import("@/lib/acord-field-map");
 
-  for (const [key, pdfFieldName] of Object.entries(fieldMap)) {
-    const value = formData[key];
-    if (value !== undefined && value !== null && value !== "") {
-      const strVal = typeof value === "boolean" ? (value ? "Yes" : "No") : String(value);
-      result[pdfFieldName] = strVal;
+  const absoluteUrl = `${window.location.origin}${pdfPath}`;
+  const response = await fetch(absoluteUrl);
+  if (!response.ok) throw new Error(`Failed to fetch PDF: ${response.status}`);
+  const pdfBytes = await response.arrayBuffer();
+
+  const pdfDoc = await PDFDocument.load(new Uint8Array(pdfBytes), {
+    ignoreEncryption: true,
+    updateMetadata: false,
+  });
+
+  const form = pdfDoc.getForm();
+  const fields = form.getFields();
+
+  const reverseMap: Record<string, string> = {};
+  let filledCount = 0;
+
+  // Strategy 1: Index-based (primary — bypasses obfuscated field names)
+  const indexMap = ACORD_INDEX_MAPS[formId];
+  if (indexMap && fields.length > 0) {
+    for (const [key, idx] of Object.entries(indexMap)) {
+      const field = fields[idx];
+      if (!field) continue;
+
+      // Build reverse map while we have the real field name
+      reverseMap[field.getName()] = key;
+
+      const value = formData[key];
+      if (value === undefined || value === null || value === "") continue;
+
+      const strVal = typeof value === "boolean"
+        ? (value ? "Yes" : "No")
+        : String(value);
+
+      try {
+        if (field instanceof PDFTextField) {
+          field.setText(strVal);
+          filledCount++;
+        } else if (field instanceof PDFCheckBox) {
+          const isChecked = value === true || strVal === "Yes" || strVal === "true" || strVal === "X";
+          if (isChecked) field.check();
+          else field.uncheck();
+          filledCount++;
+        }
+      } catch {
+        // skip read-only or otherwise inaccessible fields
+      }
     }
   }
 
-  return result;
+  // Strategy 2: Name-based fallback (for forms without an index map, e.g. ACORD 125, 25)
+  if (!indexMap || filledCount === 0) {
+    const nameMap = ACORD_FIELD_MAPS[formId] || {};
+    for (const [key, pdfFieldName] of Object.entries(nameMap)) {
+      const value = formData[key];
+      if (value === undefined || value === null || value === "") continue;
+
+      const strVal = typeof value === "boolean"
+        ? (value ? "Yes" : "No")
+        : String(value);
+
+      try {
+        const field = form.getFieldMaybe(pdfFieldName);
+        if (!field) continue;
+        reverseMap[field.getName()] = key;
+
+        if (field instanceof PDFTextField) {
+          field.setText(strVal);
+          filledCount++;
+        } else if (field instanceof PDFCheckBox) {
+          const isChecked = value === true || strVal === "Yes" || strVal === "true" || strVal === "X";
+          if (isChecked) field.check();
+          else field.uncheck();
+          filledCount++;
+        }
+      } catch {
+        // field name not found or read-only
+      }
+    }
+  }
+
+  const filledBytes = await pdfDoc.save();
+  const blob = new Blob([filledBytes.buffer as ArrayBuffer], { type: "application/pdf" });
+  const blobUrl = URL.createObjectURL(blob);
+
+  return { blobUrl, reverseMap, filledCount };
 }
 
 export default function FillablePdfViewer({ formId, formData, formDef, onFieldChange }: FillablePdfViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const adobeViewRef = useRef<any>(null);
-  const apisRef = useRef<any>(null);
+  const reverseMapRef = useRef<Record<string, string>>({});
+  const blobUrlRef = useRef<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filledCount, setFilledCount] = useState(0);
@@ -102,6 +175,28 @@ export default function FillablePdfViewer({ formId, formData, formDef, onFieldCh
         setLoading(true);
         setError(null);
 
+        // Step 1: Pre-fill the PDF using pdf-lib (index-based, bypasses obfuscated names)
+        let pdfUrl: string;
+        let count = 0;
+        try {
+          const result = await prefillPdfWithData(pdfPath, formId, formData);
+          pdfUrl = result.blobUrl;
+          count = result.filledCount;
+          reverseMapRef.current = result.reverseMap;
+
+          // Clean up old blob URL
+          if (blobUrlRef.current) {
+            URL.revokeObjectURL(blobUrlRef.current);
+          }
+          blobUrlRef.current = pdfUrl;
+        } catch (fillErr) {
+          console.warn("pdf-lib pre-fill failed, using original PDF:", fillErr);
+          pdfUrl = `${window.location.origin}${pdfPath}`;
+        }
+
+        if (cancelled) return;
+
+        // Step 2: Load the Adobe PDF Embed SDK
         await loadAdobeScript();
 
         await new Promise<void>((resolve) => {
@@ -114,8 +209,6 @@ export default function FillablePdfViewer({ formId, formData, formDef, onFieldCh
 
         if (cancelled) return;
 
-        const absoluteUrl = `${window.location.origin}${pdfPath}`;
-
         const view = new window.AdobeDC.View({
           clientId: getAdobeClientId(),
           divId,
@@ -124,7 +217,7 @@ export default function FillablePdfViewer({ formId, formData, formDef, onFieldCh
         adobeViewRef.current = view;
 
         const previewConfig = {
-          content: { location: { url: absoluteUrl } },
+          content: { location: { url: pdfUrl } },
           metaData: { fileName: `ACORD ${formId.replace("acord-", "")}.pdf` },
         };
 
@@ -138,43 +231,30 @@ export default function FillablePdfViewer({ formId, formData, formDef, onFieldCh
           enableFormFilling: true,
         };
 
-        // Capture the APIs object returned by previewFile
-        const apisPromise = view.previewFile(previewConfig, viewerConfig);
-
-        // Register callback BEFORE awaiting so we don't miss events
+        // Register callback for field change sync BEFORE previewFile
         view.registerCallback(
           window.AdobeDC.View.Enum.CallbackType.EVENT_LISTENER,
-          async (event: any) => {
+          (event: any) => {
             if (cancelled) return;
 
-            if (
-              event.type === "PREVIEW_RENDERING_DONE" ||
-              event.type === "PDF_VIEWER_READY" ||
-              event.type === "PAGE_VIEW"
-            ) {
-              // Give the viewer a moment to fully render form fields
-              await new Promise((r) => setTimeout(r, 800));
-              if (cancelled) return;
-              await fillFormFields();
-            }
-
-            // Forward field changes back to parent
+            // Sync edits made in the Adobe viewer back to the left panel
             if (event.type === "FORM_FIELD_CHANGED" && onFieldChange) {
               const { name, value } = event.data || {};
-              if (name) onFieldChange(name, value ?? "");
+              if (name) {
+                // Try to reverse-map from the PDF's real field name to our internal key
+                const internalKey = reverseMapRef.current[name] || name;
+                onFieldChange(internalKey, value ?? "");
+              }
             }
           },
           { enablePDFAnalytics: false }
         );
 
-        const apis = await apisPromise;
-        apisRef.current = apis;
+        await view.previewFile(previewConfig, viewerConfig);
 
-        if (!cancelled) setLoading(false);
-
-        // Also attempt fill immediately after preview resolves
-        await new Promise((r) => setTimeout(r, 1500));
-        if (!cancelled) await fillFormFields();
+        if (cancelled) return;
+        setLoading(false);
+        setFilledCount(count);
       } catch (err: any) {
         if (!cancelled) {
           console.error("Adobe PDF Embed error:", err);
@@ -184,67 +264,24 @@ export default function FillablePdfViewer({ formId, formData, formDef, onFieldCh
       }
     }
 
-    async function fillFormFields() {
-      if (!apisRef.current) return;
-      try {
-        const fieldValues = await buildAdobeFieldValues(formId, formData);
-        const entries = Object.entries(fieldValues);
-        if (entries.length === 0) return;
-
-        // Use the PDF Analytics API to write form field values
-        // The Adobe PDF Embed API exposes form filling via executeCommand
-        for (const [fieldName, value] of entries) {
-          try {
-            await apisRef.current.executeCommand("FormFillCommand", {
-              fieldName,
-              value,
-            });
-          } catch {
-            // Some fields may not exist in this PDF — silently skip
-          }
-        }
-
-        setFilledCount(entries.length);
-      } catch (err) {
-        console.warn("Form pre-fill skipped:", err);
-      }
-    }
-
     initViewer();
 
     return () => {
       cancelled = true;
-      apisRef.current = null;
     };
-    // Re-init when form switches
+    // Re-init when form switches — formData captured at mount time for initial fill
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formId, pdfPath]);
 
-  // When formData changes (agent edits fields), push updates into the viewer
+  // Cleanup blob URL on unmount
   useEffect(() => {
-    if (!apisRef.current || loading) return;
-    let active = true;
-
-    async function pushUpdates() {
-      const fieldValues = await buildAdobeFieldValues(formId, formData);
-      for (const [fieldName, value] of Object.entries(fieldValues)) {
-        if (!active) break;
-        try {
-          await apisRef.current?.executeCommand("FormFillCommand", { fieldName, value });
-        } catch {
-          // ignore
-        }
-      }
-    }
-
-    // Debounce a bit so we don't spam on every keystroke
-    const timer = setTimeout(pushUpdates, 600);
     return () => {
-      active = false;
-      clearTimeout(timer);
+      if (blobUrlRef.current) {
+        URL.revokeObjectURL(blobUrlRef.current);
+        blobUrlRef.current = null;
+      }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [formData]);
+  }, []);
 
   if (!pdfPath) {
     return (
@@ -261,7 +298,7 @@ export default function FillablePdfViewer({ formId, formData, formDef, onFieldCh
       {loading && (
         <div className="absolute inset-0 flex items-center justify-center gap-2 text-muted-foreground z-10 bg-background/80">
           <Loader2 className="h-5 w-5 animate-spin" />
-          <span className="text-sm">Loading PDF viewer…</span>
+          <span className="text-sm">Preparing pre-filled PDF…</span>
         </div>
       )}
 
@@ -281,7 +318,7 @@ export default function FillablePdfViewer({ formId, formData, formDef, onFieldCh
 
       {!loading && !error && filledCount > 0 && (
         <div className="px-3 py-1.5 bg-muted/60 border-b text-xs text-muted-foreground flex items-center gap-1.5">
-          <span className="inline-block w-2 h-2 rounded-full bg-success" />
+          <span className="inline-block w-2 h-2 rounded-full bg-primary" />
           Pre-filled {filledCount} field{filledCount !== 1 ? "s" : ""} from extracted data
         </div>
       )}
