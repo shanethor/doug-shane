@@ -14,16 +14,15 @@ interface FillablePdfViewerProps {
 }
 
 /**
- * Loads the official ACORD fillable PDF pre-filled with form data.
- * Uses pdf-lib to write field values before displaying in the iframe.
- * Falls back to image overlay for XFA forms (e.g. ACORD 125).
+ * Loads the original ACORD PDF and draws field values directly onto each page
+ * using pdf-lib's page.drawText() — bypasses AcroForm/XFA entirely.
+ * This matches the approach from https://stackoverflow.com/questions/1180115
  */
 async function buildFilledPdfBlobUrl(
   formDef: AcordFormDefinition,
   formData: Record<string, any>
 ): Promise<{ url: string; isAcroForm: boolean }> {
-  // flatten: false keeps fields interactive in the iframe viewer
-  const result = await generateAcordPdfAsync(formDef, formData, { flatten: false });
+  const result = await generateAcordPdfAsync(formDef, formData, {});
   const blob = new Blob([result.bytes.buffer as ArrayBuffer], { type: "application/pdf" });
   const url = URL.createObjectURL(blob);
   return { url, isAcroForm: result.isAcroForm ?? true };
