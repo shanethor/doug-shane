@@ -4,7 +4,7 @@ import ReactMarkdown from "react-markdown";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { ACORD_FORMS, ACORD_FORM_LIST, type AcordFormField, type AcordFormDefinition } from "@/lib/acord-forms";
-import { buildAutofilledData, formatUSD, CURRENCY_FIELDS } from "@/lib/acord-autofill";
+import { buildAutofilledData, buildAutofilledDataWithAI, formatUSD, CURRENCY_FIELDS } from "@/lib/acord-autofill";
 import { FIELD_POSITION_MAP, type FieldPosition } from "@/lib/acord-field-positions";
 import { generateAcordPdfAsync } from "@/lib/pdf-generator";
 import { generateSubmissionPackage } from "@/lib/submission-package";
@@ -143,7 +143,7 @@ export default function FormFillingView({ submissionId, initialMessages, initial
     }
   }, [mobilePanel]);
 
-  // Load application data — use DB data directly (AI inference already persisted by ExtractionSummary)
+  // Load application data — same pipeline as /forms benchmark: static + AI inference
   useEffect(() => {
     if (!user || !submissionId) return;
     const load = async () => {
@@ -165,18 +165,20 @@ export default function FormFillingView({ submissionId, initialMessages, initial
       const aiData = (appResult.data?.form_data || {}) as Record<string, any>;
       const defaults = (profileResult.data?.form_defaults || {}) as Record<string, string>;
 
-      // Use static mapping only (no AI re-inference) — AI data is already in DB from ExtractionSummary
+      // Use the SAME pipeline as the /forms benchmark: static aliases + AI inference per form
+      // This ensures chat fill rates match the training benchmark scores
       const merged: Record<string, any> = {};
       for (const form of ACORD_FORM_LIST) {
-        const filled = buildAutofilledData(form, aiData, profileResult.data, defaults);
+        const { data: filled } = await buildAutofilledDataWithAI(form, aiData, profileResult.data, defaults);
         Object.assign(merged, filled);
       }
+      // Apply defaults for anything still empty
       for (const [k, v] of Object.entries(defaults)) {
         if (v && !merged[k]) merged[k] = v;
       }
-      // Overlay all raw AI data (includes AI-inferred values saved by ExtractionSummary)
+      // Overlay raw AI data (flat keys already expanded by extraction, covers vehicle_N_* / driver_N_*)
       for (const [k, v] of Object.entries(aiData)) {
-        if (!merged[k] && v) merged[k] = v;
+        if (!merged[k] && v && typeof v === "string") merged[k] = v;
       }
 
       setFormData(merged);
