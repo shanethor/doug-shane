@@ -633,54 +633,77 @@ export const FILLABLE_PDF_PATHS: Record<string, string> = {
 // ─────────────────────────────────────────────────────────────────
 
 // ── ACORD 126 (2016/09) — Commercial General Liability Section — 279 fields ──
-// Page 1 header block: AGENCY | AGENCY CUSTOMER ID | CARRIER | NAIC CODE |
-//   POLICY NUMBER | EFFECTIVE DATE | APPLICANT / FIRST NAMED INSURED
+//
+// Field type layout (verified via /pdf-diagnostic indexed fill):
+//   [0]  TXT  agency_name
+//   [1]  TXT  agency_customer_id
+//   [2]  TXT  carrier
+//   [3]  TXT  naic_code
+//   [4]  TXT  policy_number
+//   [5]  TXT  effective_date
+//   [6]  TXT  insured_name
+//   [7]  TXT  (date / transaction field)
+//   [8]  CHK  (Claims Made checkbox)
+//   [9]  CHK  (Occurrence checkbox)
+//   [10] CHK  (Owner's & Contractor's checkbox)
+//   [11] CHK  (other coverage checkbox)
+//   [12] CHK  (checkbox)
+//   [13] TXT  general_aggregate
+//   [14] CHK  (checkbox)
+//   [15] TXT  products_aggregate
+//   [16] CHK  (checkbox)
+//   [17] TXT  personal_adv_injury
+//   [18] CHK  (checkbox)
+//   [19] TXT  each_occurrence
+//   [20] TXT  fire_damage
+//   [21] CHK  (checkbox)
+//   [22] CHK  (checkbox)
+//   [23] TXT  medical_payments
+//   [24] CHK  (checkbox)
+//   [25] CHK  (checkbox)
+//   [26] CHK  (checkbox)
+//   [27] CHK  (checkbox)
+//   [28] TXT  ebl_limit
+//   [29] TXT  deductible_pd
+//   [30] TXT  deductible_bi
+//   [31] TXT  other_coverages_endorsements
+//   ...  TXT  Schedule of Hazards rows follow
 export const ACORD_126_INDEX_MAP: AcordIndexMap = {
-  // Header — Page 1 (indices 0-7 are the 8 top-row text fields)
-  agency_name:            0,  // AGENCY (top-left text box)
-  agency_customer_id:     1,  // AGENCY CUSTOMER ID (top-right)
-  carrier:                2,  // CARRIER
-  naic_code:              3,  // NAIC CODE
-  policy_number:          4,  // POLICY NUMBER
-  effective_date:         5,  // EFFECTIVE DATE
-  insured_name:           6,  // APPLICANT / FIRST NAMED INSURED
-  // Fields 7 are checkboxes for Claims Made / Occurrence / Owner's-Contractor's
-  // Fields 8-27 are coverages/limits/deductibles text fields
-  general_aggregate:      8,
-  products_aggregate:     9,
-  personal_adv_injury:   10,
-  each_occurrence:       11,
-  fire_damage:           12,
-  medical_payments:      13,
-  ebl_limit:             14,
-  deductible_pd:         15,
-  deductible_bi:         16,
-  // Other coverages text area
-  other_coverages_endorsements: 17,
-  // Schedule of hazards (page 1, bottom section)
-  hazard_loc_1:          18,
-  hazard_code_1:         19,
-  hazard_exposure_1:     20,
-  hazard_classification_1: 21,
-  hazard_loc_2:          22,
-  hazard_code_2:         23,
-  hazard_exposure_2:     24,
-  hazard_classification_2: 25,
-  hazard_loc_3:          26,
-  hazard_code_3:         27,
-  hazard_exposure_3:     28,
-  hazard_classification_3: 29,
-  // Claims-made section
-  retroactive_date:      30,
-  entry_date_claims_made: 31,
-  // EBL section
-  ebl_deductible_per_claim: 32,
-  ebl_num_employees:     33,
-  ebl_retroactive_date:  34,
-  // Subcontractors section (page 2 text fields)
-  type_work_subcontracted: 35,
-  paid_to_subcontractors:  36,
-  pct_work_subcontracted:  37,
+  // Header — Page 1
+  agency_name:            0,   // AGENCY
+  agency_customer_id:     1,   // AGENCY CUSTOMER ID
+  carrier:                2,   // CARRIER
+  naic_code:              3,   // NAIC CODE
+  policy_number:          4,   // POLICY NUMBER
+  effective_date:         5,   // EFFECTIVE DATE
+  insured_name:           6,   // APPLICANT / FIRST NAMED INSURED
+
+  // Coverage Limits — actual TXT fields after checkbox block
+  general_aggregate:     13,   // TXT — verified [13] is TXT
+  products_aggregate:    15,   // TXT — verified [15] is TXT
+  personal_adv_injury:   17,   // TXT — verified [17] is TXT
+  each_occurrence:       19,   // TXT — verified [19] is TXT
+  fire_damage:           20,   // TXT — verified [20] is TXT
+  medical_payments:      23,   // TXT — verified [23] is TXT
+  ebl_limit:             28,   // TXT — EBL limit field
+  deductible_pd:         29,   // TXT
+  deductible_bi:         30,   // TXT
+  other_coverages_endorsements: 31,  // TXT
+
+  // Schedule of Hazards — TXT fields continuing from [32]+
+  // Exact positions TBD from full indexed view; approximate:
+  hazard_loc_1:          32,
+  hazard_code_1:         33,
+  hazard_exposure_1:     34,
+  hazard_classification_1: 35,
+  hazard_loc_2:          36,
+  hazard_code_2:         37,
+  hazard_exposure_2:     38,
+  hazard_classification_2: 39,
+  hazard_loc_3:          40,
+  hazard_code_3:         41,
+  hazard_exposure_3:     42,
+  hazard_classification_3: 43,
 };
 
 // ── ACORD 127 (2010/05) — Business Auto Section — 636 fields ──
