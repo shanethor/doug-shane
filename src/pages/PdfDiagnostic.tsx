@@ -4,69 +4,8 @@ import { FILLABLE_PDF_PATHS, ACORD_INDEX_MAPS, type AcordIndexMap } from "@/lib/
 
 interface FieldInfo {
   index: number;
-  type: string;
+  type: "TXT" | "CHK" | "OTHER";
   name: string;
-}
-
-/** Fill every text field with its own index label [N] */
-async function buildIndexedPdfUrl(path: string): Promise<string> {
-  const resp = await fetch(path);
-  const bytes = await resp.arrayBuffer();
-  const doc = await PDFDocument.load(new Uint8Array(bytes), { ignoreEncryption: true, updateMetadata: false });
-  const form = doc.getForm();
-  const fields = form.getFields();
-  fields.forEach((f, i) => {
-    try {
-      if (f instanceof PDFTextField) f.setText(`[${i}]`);
-    } catch { /* skip */ }
-  });
-  const saved = await doc.save({ useObjectStreams: false });
-  return URL.createObjectURL(new Blob([saved.buffer as ArrayBuffer], { type: "application/pdf" }));
-}
-
-/** Fill specific fields by index with a test value */
-async function buildTestFillUrl(path: string, testIndices: Record<number, string>): Promise<string> {
-  const resp = await fetch(path);
-  const bytes = await resp.arrayBuffer();
-  const doc = await PDFDocument.load(new Uint8Array(bytes), { ignoreEncryption: true, updateMetadata: false });
-  const form = doc.getForm();
-  const fields = form.getFields();
-  fields.forEach((f, i) => {
-    try {
-      if (f instanceof PDFTextField) {
-        const val = testIndices[i];
-        f.setText(val !== undefined ? val : "");
-      }
-    } catch { /* skip */ }
-  });
-  const saved = await doc.save({ useObjectStreams: false });
-  return URL.createObjectURL(new Blob([saved.buffer as ArrayBuffer], { type: "application/pdf" }));
-}
-
-/** Fill using an index map with real sample data */
-async function buildRealDataFillUrl(path: string, indexMap: AcordIndexMap, sampleData: Record<string, string>): Promise<string> {
-  const resp = await fetch(path);
-  const bytes = await resp.arrayBuffer();
-  const doc = await PDFDocument.load(new Uint8Array(bytes), { ignoreEncryption: true, updateMetadata: false });
-  const form = doc.getForm();
-  const fields = form.getFields();
-
-  const results: { key: string; idx: number; val: string; ok: boolean }[] = [];
-
-  for (const [key, idx] of Object.entries(indexMap)) {
-    const val = sampleData[key];
-    if (!val) continue;
-    const field = fields[idx];
-    if (!field) { results.push({ key, idx, val, ok: false }); continue; }
-    try {
-      if (field instanceof PDFTextField) {
-        field.setText(val);
-        results.push({ key, idx, val, ok: true });
-      }
-    } catch { results.push({ key, idx, val, ok: false }); }
-  }
-  const saved = await doc.save({ useObjectStreams: false });
-  return URL.createObjectURL(new Blob([saved.buffer as ArrayBuffer], { type: "application/pdf" }));
 }
 
 async function loadFields(path: string): Promise<FieldInfo[]> {
@@ -77,11 +16,39 @@ async function loadFields(path: string): Promise<FieldInfo[]> {
   return form.getFields().map((f, i) => ({
     index: i,
     name: f.getName(),
-    type: f.constructor.name,
+    type: f instanceof PDFTextField ? "TXT" : f instanceof PDFCheckBox ? "CHK" : "OTHER",
   }));
 }
 
+/** Fill using an index map — returns [key, idx, ok, fieldType] */
+async function runRealFill(
+  path: string,
+  indexMap: AcordIndexMap,
+  sampleData: Record<string, string>
+): Promise<{ key: string; idx: number; ok: boolean; fieldType: string }[]> {
+  const resp = await fetch(path);
+  const bytes = await resp.arrayBuffer();
+  const doc = await PDFDocument.load(new Uint8Array(bytes), { ignoreEncryption: true, updateMetadata: false });
+  const form = doc.getForm();
+  const allFields = form.getFields();
+
+  const results: { key: string; idx: number; ok: boolean; fieldType: string }[] = [];
+  for (const [key, idx] of Object.entries(indexMap)) {
+    const val = sampleData[key];
+    if (!val) continue;
+    const field = allFields[idx];
+    if (!field) { results.push({ key, idx, ok: false, fieldType: "MISSING" }); continue; }
+    const ft = field instanceof PDFTextField ? "TXT" : field instanceof PDFCheckBox ? "CHK" : "OTHER";
+    try {
+      if (field instanceof PDFTextField) { field.setText(val); results.push({ key, idx, ok: true, fieldType: ft }); }
+      else { results.push({ key, idx, ok: false, fieldType: ft }); }
+    } catch { results.push({ key, idx, ok: false, fieldType: ft }); }
+  }
+  return results;
+}
+
 const SAMPLE_DATA: Record<string, string> = {
+  // Header (all forms)
   agency_name: "AURA AGENCY",
   agency_customer_id: "CUST-001",
   carrier: "HARTFORD FIRE INS CO",
@@ -89,27 +56,75 @@ const SAMPLE_DATA: Record<string, string> = {
   policy_number: "POL-2025-001",
   effective_date: "01/01/2026",
   insured_name: "ACME CORPORATION LLC",
+  // CGL 126
   general_aggregate: "$2,000,000",
   products_aggregate: "$2,000,000",
   personal_adv_injury: "$1,000,000",
   each_occurrence: "$1,000,000",
   fire_damage: "$100,000",
   medical_payments: "$5,000",
+  // Auto 127
+  driver_1_name: "JOHN DOE",
+  driver_1_dob: "01/15/1985",
+  driver_1_license: "D1234567",
+  vehicle_1_year: "2022",
+  vehicle_1_make: "FORD",
+  vehicle_1_model: "F-150",
+  vehicle_1_vin: "1FTFW1ET3NFC12345",
+  garaging_city: "LOS ANGELES",
+  garaging_state: "CA",
+  garaging_zip: "90001",
+  // WC 130
+  class_code_1: "5403",
+  class_description_1: "CARPENTRY",
+  num_employees_1: "5",
+  annual_remuneration_1: "$250,000",
+  officer_1_name: "JANE SMITH",
+  officer_1_title: "PRESIDENT",
+  officer_1_ownership: "100%",
+  wc_each_accident: "$1,000,000",
+  wc_disease_policy_limit: "$1,000,000",
+  wc_disease_each_employee: "$1,000,000",
+  rating_state: "CA",
+  // Umbrella 131
+  each_occurrence_limit: "$5,000,000",
+  aggregate_limit: "$5,000,000",
+  underlying_gl_carrier: "HARTFORD",
+  underlying_gl_occurrence: "$1,000,000",
+  underlying_gl_aggregate: "$2,000,000",
+  // Property 140
+  building_amount: "$2,000,000",
+  bpp_amount: "$500,000",
+  construction_type: "FRAME",
+  year_built: "1995",
+  num_stories: "2",
+  total_area_sq_ft: "5000",
+  protection_class: "4",
+  building_street_address: "123 MAIN ST",
+  premises_city: "LOS ANGELES",
+  premises_state: "CA",
+  premises_zip: "90001",
+  // Common
+  mailing_address: "123 MAIN ST",
+  city: "LOS ANGELES",
+  state: "CA",
+  zip: "90001",
+  fein: "12-3456789",
+  business_phone: "310-555-1234",
+  description_of_operations: "GENERAL CONTRACTOR",
+  annual_revenues: "$1,500,000",
+  full_time_employees: "8",
+  part_time_employees: "2",
 };
-
-type ViewMode = "indexed" | "test" | "real";
 
 export default function PdfDiagnostic() {
   const [fields, setFields] = useState<FieldInfo[]>([]);
-  const [blobUrl, setBlobUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [selectedForm, setSelectedForm] = useState<string>("acord-126");
+  const [selectedForm, setSelectedForm] = useState<string>("acord-127");
   const [search, setSearch] = useState("");
-  const [testFills, setTestFills] = useState<Record<number, string>>({});
-  const [testInput, setTestInput] = useState("AURA AGENCY");
   const [formCounts, setFormCounts] = useState<Record<string, number>>({});
-  const [viewMode, setViewMode] = useState<ViewMode>("indexed");
-  const [fillResults, setFillResults] = useState<{ key: string; idx: number; ok: boolean }[]>([]);
+  const [fillResults, setFillResults] = useState<{ key: string; idx: number; ok: boolean; fieldType: string }[]>([]);
+  const [layoutView, setLayoutView] = useState(false);
 
   const formIds = Object.keys(FILLABLE_PDF_PATHS);
 
@@ -127,236 +142,225 @@ export default function PdfDiagnostic() {
     loadCounts();
   }, []);
 
-  // Load fields + indexed view on form change
   useEffect(() => {
     setFields([]);
-    setBlobUrl(null);
-    setTestFills({});
     setFillResults([]);
+    setLayoutView(false);
     setLoading(true);
     const path = FILLABLE_PDF_PATHS[selectedForm];
     if (!path) { setLoading(false); return; }
-    loadFields(path).then(async (f) => {
+    loadFields(path).then(f => {
       setFields(f);
-      const url = await buildIndexedPdfUrl(path);
-      setBlobUrl(url);
-      setViewMode("indexed");
       setLoading(false);
     }).catch(() => setLoading(false));
   }, [selectedForm]);
 
-  const showIndexed = useCallback(async () => {
-    const path = FILLABLE_PDF_PATHS[selectedForm];
-    if (!path) return;
-    setLoading(true);
-    const url = await buildIndexedPdfUrl(path);
-    setBlobUrl(url);
-    setViewMode("indexed");
-    setLoading(false);
-  }, [selectedForm]);
-
-  const applyTestFill = useCallback(async () => {
-    const path = FILLABLE_PDF_PATHS[selectedForm];
-    if (!path) return;
-    setLoading(true);
-    const url = await buildTestFillUrl(path, testFills);
-    setBlobUrl(url);
-    setViewMode("test");
-    setLoading(false);
-  }, [selectedForm, testFills]);
-
   const applyRealData = useCallback(async () => {
     const path = FILLABLE_PDF_PATHS[selectedForm];
     const indexMap = ACORD_INDEX_MAPS[selectedForm];
-    if (!path || !indexMap) { alert("No index map configured for " + selectedForm); return; }
+    if (!path || !indexMap) { alert("No index map for " + selectedForm); return; }
     setLoading(true);
-
-    // Build results
-    const resp = await fetch(path);
-    const bytes = await resp.arrayBuffer();
-    const doc = await PDFDocument.load(new Uint8Array(bytes), { ignoreEncryption: true, updateMetadata: false });
-    const form = doc.getForm();
-    const allFields = form.getFields();
-
-    const results: { key: string; idx: number; ok: boolean }[] = [];
-    for (const [key, idx] of Object.entries(indexMap)) {
-      const val = SAMPLE_DATA[key];
-      if (!val) continue;
-      const field = allFields[idx];
-      if (!field) { results.push({ key, idx, ok: false }); continue; }
-      try {
-        if (field instanceof PDFTextField) {
-          field.setText(val);
-          results.push({ key, idx, ok: true });
-        } else {
-          results.push({ key, idx, ok: false });
-        }
-      } catch { results.push({ key, idx, ok: false }); }
-    }
-
-    const saved = await doc.save({ useObjectStreams: false });
-    const url = URL.createObjectURL(new Blob([saved.buffer as ArrayBuffer], { type: "application/pdf" }));
-    setBlobUrl(url);
+    const results = await runRealFill(path, indexMap, SAMPLE_DATA);
     setFillResults(results);
-    setViewMode("real");
     setLoading(false);
   }, [selectedForm]);
 
   const filtered = search
-    ? fields.filter(f => f.name.toLowerCase().includes(search.toLowerCase()) || String(f.index).includes(search))
+    ? fields.filter(f => String(f.index).includes(search) || f.type.toLowerCase().includes(search.toLowerCase()))
     : fields;
 
-  const isText = (f: FieldInfo) => f.type === "PDFTextField2";
   const currentIndexMap = ACORD_INDEX_MAPS[selectedForm];
+  const txtFields = fields.filter(f => f.type === "TXT");
+  const chkFields = fields.filter(f => f.type === "CHK");
+  const passed = fillResults.filter(r => r.ok).length;
+  const failed = fillResults.filter(r => !r.ok);
+
+  // Generate compact layout string for copying
+  const layoutSummary = fields.map(f => `[${f.index}] ${f.type}`).join("\n");
 
   return (
-    <div style={{ display: "flex", height: "100vh", fontFamily: "monospace", fontSize: 12 }}>
-      {/* Left sidebar */}
-      <div style={{ width: 420, overflowY: "auto", borderRight: "1px solid #ddd", padding: 10, display: "flex", flexDirection: "column", gap: 4 }}>
-        <h2 style={{ fontSize: 13, margin: "0 0 4px" }}>ACORD PDF Field Mapper</h2>
+    <div style={{ display: "flex", height: "100vh", fontFamily: "monospace", fontSize: 12, background: "#0f172a", color: "#e2e8f0" }}>
+      {/* Left panel */}
+      <div style={{ width: 460, overflowY: "auto", borderRight: "1px solid #334155", padding: 12, display: "flex", flexDirection: "column", gap: 6 }}>
+        <h2 style={{ fontSize: 14, margin: "0 0 6px", color: "#f1f5f9" }}>ACORD Field Mapper — Diagnostic</h2>
 
-        {/* Form selector */}
+        {/* Form tabs */}
         <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 8 }}>
           {formIds.map(id => (
             <button key={id} onClick={() => setSelectedForm(id)}
-              style={{ padding: "3px 7px", fontSize: 11, background: id === selectedForm ? "#dbeafe" : "#f0f0f0",
-                border: id === selectedForm ? "1px solid #93c5fd" : "1px solid #ddd", borderRadius: 4, cursor: "pointer" }}>
-              {id} ({formCounts[id] ?? "…"})
+              style={{ padding: "4px 8px", fontSize: 11, background: id === selectedForm ? "#2563eb" : "#1e293b",
+                color: id === selectedForm ? "white" : "#94a3b8",
+                border: id === selectedForm ? "1px solid #3b82f6" : "1px solid #334155",
+                borderRadius: 4, cursor: "pointer" }}>
+              {id.replace("acord-", "")} <span style={{ opacity: 0.7 }}>({formCounts[id] ?? "…"})</span>
             </button>
           ))}
         </div>
 
-        {/* View mode buttons */}
-        <div style={{ display: "flex", gap: 4, marginBottom: 8 }}>
-          <button onClick={showIndexed} disabled={loading}
-            style={{ flex: 1, padding: "5px 8px", fontSize: 11, background: viewMode === "indexed" ? "#1d4ed8" : "#64748b",
-              color: "white", border: "none", borderRadius: 4, cursor: "pointer", fontWeight: viewMode === "indexed" ? "bold" : "normal" }}>
-            📍 Show All Indices
+        {/* Stats bar */}
+        {fields.length > 0 && (
+          <div style={{ background: "#1e293b", borderRadius: 6, padding: "6px 10px", fontSize: 11, display: "flex", gap: 16 }}>
+            <span>Total: <strong style={{ color: "#f1f5f9" }}>{fields.length}</strong></span>
+            <span>TXT: <strong style={{ color: "#60a5fa" }}>{txtFields.length}</strong></span>
+            <span>CHK: <strong style={{ color: "#a78bfa" }}>{chkFields.length}</strong></span>
+            <span>Mapped: <strong style={{ color: "#4ade80" }}>{currentIndexMap ? Object.keys(currentIndexMap).length : 0}</strong></span>
+          </div>
+        )}
+
+        {/* Action buttons */}
+        <div style={{ display: "flex", gap: 6 }}>
+          <button onClick={applyRealData} disabled={loading || !currentIndexMap}
+            style={{ flex: 1, padding: "6px 10px", fontSize: 12, background: "#16a34a",
+              color: "white", border: "none", borderRadius: 4, cursor: "pointer", fontWeight: "bold" }}>
+            {loading ? "Running…" : "✅ Run Real Data Fill"}
           </button>
-          <button onClick={applyRealData} disabled={loading}
-            style={{ flex: 1, padding: "5px 8px", fontSize: 11, background: viewMode === "real" ? "#16a34a" : "#64748b",
-              color: "white", border: "none", borderRadius: 4, cursor: "pointer", fontWeight: viewMode === "real" ? "bold" : "normal" }}>
-            ✅ Test Real Data Fill
+          <button onClick={() => setLayoutView(v => !v)}
+            style={{ padding: "6px 10px", fontSize: 11, background: layoutView ? "#7c3aed" : "#334155",
+              color: "white", border: "none", borderRadius: 4, cursor: "pointer" }}>
+            {layoutView ? "📋 Layout" : "📋 Layout"}
           </button>
         </div>
 
-        {/* Real data fill results */}
-        {viewMode === "real" && fillResults.length > 0 && (
-          <div style={{ background: "#f0fdf4", border: "1px solid #86efac", borderRadius: 6, padding: 8, marginBottom: 8 }}>
-            <div style={{ fontWeight: "bold", fontSize: 11, color: "#166534", marginBottom: 4 }}>
-              Fill Results ({fillResults.filter(r => r.ok).length}/{fillResults.length} fields filled)
+        {/* Fill results */}
+        {fillResults.length > 0 && (
+          <div style={{ background: "#0f2211", border: `1px solid ${failed.length === 0 ? "#4ade80" : "#f87171"}`, borderRadius: 6, padding: 8 }}>
+            <div style={{ fontWeight: "bold", fontSize: 12, color: failed.length === 0 ? "#4ade80" : "#f87171", marginBottom: 6 }}>
+              {passed}/{fillResults.length} fields filled ({Math.round(passed/fillResults.length*100)}%)
             </div>
             {fillResults.map(r => (
-              <div key={r.key} style={{ fontSize: 10, color: r.ok ? "#166534" : "#dc2626", display: "flex", gap: 6 }}>
-                <span>{r.ok ? "✓" : "✗"}</span>
-                <span style={{ color: "#374151" }}>{r.key}</span>
-                <span style={{ color: "#9ca3af" }}>→ [{r.idx}]</span>
+              <div key={r.key} style={{ fontSize: 10, color: r.ok ? "#86efac" : "#f87171", display: "flex", gap: 6, lineHeight: "16px" }}>
+                <span style={{ minWidth: 14 }}>{r.ok ? "✓" : "✗"}</span>
+                <span style={{ minWidth: 26, color: "#64748b" }}>[{r.idx}]</span>
+                <span style={{ color: r.ok ? "#e2e8f0" : "#f87171", flex: 1 }}>{r.key}</span>
+                {!r.ok && <span style={{ color: "#f59e0b", fontSize: 9 }}>{r.fieldType}</span>}
               </div>
             ))}
           </div>
         )}
-
-        {/* Test fill panel */}
-        <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 6, padding: 8, marginBottom: 8 }}>
-          <div style={{ fontWeight: "bold", marginBottom: 4, fontSize: 11, color: "#1e40af" }}>Manual Index Test</div>
-          <div style={{ display: "flex", gap: 4, marginBottom: 4 }}>
-            <input value={testInput} onChange={e => setTestInput(e.target.value)}
-              placeholder="Test value"
-              style={{ flex: 1, padding: "3px 6px", border: "1px solid #ccc", borderRadius: 4, fontSize: 11 }} />
-          </div>
-          <div style={{ fontSize: 10, color: "#666", marginBottom: 6 }}>
-            Click a TXT field index below to add it, then apply.
-          </div>
-          {Object.keys(testFills).length > 0 && (
-            <div style={{ marginBottom: 6 }}>
-              {Object.entries(testFills).map(([idx, val]) => (
-                <div key={idx} style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#374151" }}>
-                  <span>[{idx}] = "{val}"</span>
-                  <button onClick={() => setTestFills(prev => { const n = {...prev}; delete n[Number(idx)]; return n; })}
-                    style={{ background: "none", border: "none", color: "#ef4444", cursor: "pointer", fontSize: 10 }}>×</button>
-                </div>
-              ))}
-            </div>
-          )}
-          <button onClick={applyTestFill} disabled={loading || Object.keys(testFills).length === 0}
-            style={{ padding: "4px 10px", background: Object.keys(testFills).length > 0 ? "#2563eb" : "#94a3b8",
-              color: "white", border: "none", borderRadius: 4, fontSize: 11, cursor: "pointer", width: "100%" }}>
-            {loading ? "Building…" : "Apply Manual Test → PDF"}
-          </button>
-        </div>
 
         {/* Current index map */}
         {currentIndexMap && (
-          <div style={{ background: "#fefce8", border: "1px solid #fde047", borderRadius: 6, padding: 8, marginBottom: 8 }}>
-            <div style={{ fontWeight: "bold", fontSize: 11, color: "#713f12", marginBottom: 4 }}>
-              Configured Index Map ({Object.keys(currentIndexMap).length} keys)
+          <div style={{ background: "#1a1a2e", border: "1px solid #fde047", borderRadius: 6, padding: 8 }}>
+            <div style={{ fontWeight: "bold", fontSize: 11, color: "#fde047", marginBottom: 4 }}>
+              Index Map ({Object.keys(currentIndexMap).length} keys)
             </div>
-            {Object.entries(currentIndexMap).map(([key, idx]) => (
-              <div key={key} style={{ fontSize: 10, color: "#374151", display: "flex", gap: 6 }}>
-                <span style={{ color: "#9ca3af", minWidth: 26 }}>[{idx}]</span>
-                <span>{key}</span>
-                {SAMPLE_DATA[key] && <span style={{ color: "#16a34a" }}>= "{SAMPLE_DATA[key]}"</span>}
+            {Object.entries(currentIndexMap).map(([key, idx]) => {
+              const fieldType = fields[idx]?.type ?? "?";
+              const isCorrect = fieldType === "TXT";
+              return (
+                <div key={key} style={{ fontSize: 10, display: "flex", gap: 6, lineHeight: "15px" }}>
+                  <span style={{ color: "#64748b", minWidth: 26 }}>[{idx}]</span>
+                  <span style={{ color: isCorrect ? "#86efac" : "#f87171", minWidth: 28, fontSize: 9 }}>{fieldType}</span>
+                  <span style={{ color: "#e2e8f0" }}>{key}</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Layout view */}
+        {layoutView && (
+          <div style={{ background: "#0f172a", border: "1px solid #334155", borderRadius: 6, padding: 8, maxHeight: 300, overflowY: "auto" }}>
+            <div style={{ fontWeight: "bold", fontSize: 11, color: "#94a3b8", marginBottom: 4 }}>
+              Full field layout (TXT only shown first)
+            </div>
+            {txtFields.map(f => (
+              <div key={f.index} style={{ fontSize: 10, color: "#60a5fa", lineHeight: "14px" }}>
+                [{f.index}] TXT
               </div>
             ))}
           </div>
         )}
 
-        {/* Field list */}
-        <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search field name or index…"
-          style={{ padding: "4px 6px", border: "1px solid #ccc", borderRadius: 4, fontSize: 11, marginBottom: 4 }} />
-        <div style={{ fontSize: 10, color: "#888", marginBottom: 2 }}>{filtered.length} / {fields.length} fields</div>
+        {/* Field list with type filter */}
+        <div style={{ display: "flex", gap: 4 }}>
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Filter by index or TXT/CHK…"
+            style={{ flex: 1, padding: "4px 6px", background: "#1e293b", border: "1px solid #334155",
+              borderRadius: 4, fontSize: 11, color: "#e2e8f0" }} />
+        </div>
+        <div style={{ fontSize: 10, color: "#64748b", marginBottom: 2 }}>{filtered.length} / {fields.length} fields</div>
 
         <div style={{ overflow: "auto", flex: 1 }}>
           {filtered.map(f => {
             const isMapped = currentIndexMap && Object.values(currentIndexMap).includes(f.index);
+            const isWrongType = isMapped && f.type !== "TXT";
             return (
-              <div key={f.index}
-                onClick={() => {
-                  if (!isText(f)) return;
-                  setTestFills(prev => ({ ...prev, [f.index]: testInput }));
-                }}
-                style={{
-                  padding: "2px 4px", fontSize: 10, borderBottom: "1px solid #f0f0f0",
-                  cursor: isText(f) ? "pointer" : "default",
-                  background: testFills[f.index] !== undefined ? "#dbeafe" : isMapped ? "#f0fdf4" : "transparent",
-                  display: "flex", gap: 6, alignItems: "center"
-                }}>
-                <span style={{ color: "#9ca3af", minWidth: 26 }}>[{f.index}]</span>
-                <span style={{ color: isText(f) ? "#2563eb" : "#7c3aed", minWidth: 28 }}>
-                  {isText(f) ? "TXT" : "CHK"}
-                </span>
-                {isMapped && <span style={{ color: "#16a34a", fontSize: 9 }}>✓</span>}
-                <span style={{ color: "#374151", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}
-                  title={f.name}>
-                  {f.name.length > 32 ? f.name.slice(0, 32) + "…" : f.name}
-                </span>
+              <div key={f.index} style={{
+                padding: "1px 4px", fontSize: 10, borderBottom: "1px solid #1e293b",
+                background: isWrongType ? "#2d0f0f" : isMapped ? "#0f2211" : "transparent",
+                display: "flex", gap: 6, alignItems: "center"
+              }}>
+                <span style={{ color: "#475569", minWidth: 30 }}>[{f.index}]</span>
+                <span style={{ color: f.type === "TXT" ? "#60a5fa" : "#a78bfa", minWidth: 28 }}>{f.type}</span>
+                {isMapped && <span style={{ color: isWrongType ? "#f87171" : "#4ade80", fontSize: 9 }}>{isWrongType ? "⚠" : "✓"}</span>}
               </div>
             );
           })}
         </div>
       </div>
 
-      {/* Right: PDF preview */}
-      <div style={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
-        {loading && (
-          <div style={{ padding: 12, background: "#fef3c7", fontSize: 11, textAlign: "center" }}>Building PDF…</div>
-        )}
-        <div style={{ padding: "6px 10px", background: "#1e293b", color: "#94a3b8", fontSize: 10, display: "flex", gap: 12, alignItems: "center" }}>
-          <span style={{ color: "white", fontWeight: "bold" }}>
-            {viewMode === "indexed" ? "📍 Every text field shows its own index [N]"
-              : viewMode === "real" ? "✅ Real data filled using index map — check fields match expected labels"
-              : "🧪 Manual test fill"}
-          </span>
-          {viewMode === "indexed" && (
-            <span style={{ color: "#94a3b8" }}>Compare [N] values with physical form labels to verify mapping</span>
-          )}
+      {/* Right panel — TXT-only compact layout for reference */}
+      <div style={{ flex: 1, overflowY: "auto", padding: 16, background: "#0f172a" }}>
+        <div style={{ color: "#94a3b8", fontSize: 12, marginBottom: 12 }}>
+          <strong style={{ color: "#f1f5f9" }}>TXT field indices for {selectedForm}</strong>
+          {" — "}use these to build the index map. Green = already mapped, red = mapped to wrong type.
         </div>
-        {blobUrl ? (
-          <iframe key={blobUrl} src={blobUrl + "#toolbar=1&navpanes=0&zoom=120"} style={{ width: "100%", flex: 1, border: "none" }} />
-        ) : (
-          <div style={{ padding: 24, color: "#9ca3af", textAlign: "center" }}>
-            {loading ? "Loading…" : "Select a form to begin"}
-          </div>
+
+        {fields.length > 0 && (
+          <>
+            {/* Compact grid of TXT fields */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(110px, 1fr))", gap: 4, marginBottom: 24 }}>
+              {fields.map(f => {
+                const isMapped = currentIndexMap && Object.values(currentIndexMap).includes(f.index);
+                const isWrongType = isMapped && f.type !== "TXT";
+                const mappedKey = currentIndexMap
+                  ? Object.entries(currentIndexMap).find(([, v]) => v === f.index)?.[0]
+                  : undefined;
+                return (
+                  <div key={f.index} style={{
+                    padding: "4px 6px", borderRadius: 4, fontSize: 10,
+                    background: isWrongType ? "#2d0f0f"
+                      : isMapped && f.type === "TXT" ? "#0f2211"
+                      : f.type === "TXT" ? "#1e293b"
+                      : "#160a29",
+                    border: isWrongType ? "1px solid #f87171"
+                      : isMapped && f.type === "TXT" ? "1px solid #4ade80"
+                      : f.type === "TXT" ? "1px solid #334155"
+                      : "1px solid #2d1f4a",
+                  }}>
+                    <div style={{ color: f.type === "TXT" ? "#60a5fa" : "#a78bfa", fontWeight: "bold" }}>
+                      [{f.index}] {f.type}
+                    </div>
+                    {mappedKey && (
+                      <div style={{ color: isWrongType ? "#f87171" : "#4ade80", fontSize: 9, marginTop: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {mappedKey}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* TXT-only list for easy copy */}
+            <div style={{ color: "#94a3b8", fontSize: 11, marginBottom: 8 }}>TXT fields only (for index map building):</div>
+            <div style={{ background: "#1e293b", borderRadius: 6, padding: 10, fontFamily: "monospace", fontSize: 10, lineHeight: "18px" }}>
+              {txtFields.map(f => {
+                const mappedKey = currentIndexMap
+                  ? Object.entries(currentIndexMap).find(([, v]) => v === f.index)?.[0]
+                  : undefined;
+                return (
+                  <div key={f.index} style={{ color: mappedKey ? "#4ade80" : "#94a3b8" }}>
+                    <span style={{ color: "#60a5fa" }}>[{f.index}]</span>
+                    {mappedKey ? ` → ${mappedKey}` : " → (unmapped)"}
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
+
+        {loading && (
+          <div style={{ color: "#94a3b8", textAlign: "center", padding: 40 }}>Loading fields…</div>
         )}
       </div>
     </div>
