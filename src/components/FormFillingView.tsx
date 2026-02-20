@@ -18,7 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
-import { Download, Send, Paperclip, Loader2, FileText, CheckCircle, X, Filter, Eye, Image, Mail, ChevronLeft, ChevronRight, ClipboardList, MessageSquare, Mic, MicOff } from "lucide-react";
+import { Download, Send, Paperclip, Loader2, FileText, CheckCircle, X, Filter, Eye, Image, Mail, ChevronLeft, ChevronRight, ClipboardList, MessageSquare, Mic, MicOff, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { useVoiceInput } from "@/hooks/useVoiceInput";
 
@@ -30,6 +30,7 @@ interface FormFillingViewProps {
   submissionId: string;
   initialMessages: Msg[];
   initialFormId?: string;
+  initialFormIds?: string[]; // pre-selected forms from chat context
   onBack: () => void;
   suppressAutoAnalysis?: boolean;
   initialCompanyName?: string;
@@ -46,7 +47,7 @@ const MOBILE_PANELS = [
 
 type MobilePanel = typeof MOBILE_PANELS[number]["key"];
 
-export default function FormFillingView({ submissionId, initialMessages, initialFormId, onBack, suppressAutoAnalysis, initialCompanyName }: FormFillingViewProps) {
+export default function FormFillingView({ submissionId, initialMessages, initialFormId, initialFormIds, onBack, suppressAutoAnalysis, initialCompanyName }: FormFillingViewProps) {
   const { user } = useAuth();
   const isMobile = useIsMobile();
   const [formData, setFormData] = useState<Record<string, any>>({});
@@ -59,6 +60,13 @@ export default function FormFillingView({ submissionId, initialMessages, initial
   const [mobilePanel, setMobilePanel] = useState<MobilePanel>("fields");
   const [showFormProgress, setShowFormProgress] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(150); // kept for backward compat
+
+  // Form package selection — which forms are in the active package
+  const defaultEnabledIds = initialFormIds && initialFormIds.length > 0
+    ? initialFormIds
+    : ACORD_FORM_LIST.map(f => f.id);
+  const [enabledFormIds, setEnabledFormIds] = useState<Set<string>>(new Set(defaultEnabledIds));
+  const [showAddFormDialog, setShowAddFormDialog] = useState(false);
 
   // Email dialog state
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
@@ -90,11 +98,15 @@ export default function FormFillingView({ submissionId, initialMessages, initial
   const isAllForms = activeFormId === "all";
   const activeForm = isAllForms ? null : ACORD_FORMS[activeFormId];
 
-  // Merged fields across all forms (deduplicated by key)
+  // Only forms that are enabled in the package
+  const enabledFormList = ACORD_FORM_LIST.filter(f => enabledFormIds.has(f.id));
+  const formsNotInPackage = ACORD_FORM_LIST.filter(f => !enabledFormIds.has(f.id));
+
+  // Merged fields across enabled forms (deduplicated by key)
   const allFormFields = (() => {
     const seen = new Set<string>();
     const fields: AcordFormField[] = [];
-    for (const form of ACORD_FORM_LIST) {
+    for (const form of enabledFormList) {
       for (const field of form.fields) {
         if (!seen.has(field.key)) {
           seen.add(field.key);
@@ -310,8 +322,8 @@ export default function FormFillingView({ submissionId, initialMessages, initial
       // Determine which forms to download
       const { FILLABLE_PDF_PATHS } = await import("@/lib/acord-field-map");
       const formsToProcess = mode === "individual" && !isAllForms
-        ? ACORD_FORM_LIST.filter(f => f.id === activeFormId)
-        : ACORD_FORM_LIST;
+        ? enabledFormList.filter(f => f.id === activeFormId)
+        : enabledFormList;
 
       // Download each fillable PDF directly — same as what the viewer shows
       const date = new Date().toISOString().slice(0, 10);
@@ -572,73 +584,67 @@ export default function FormFillingView({ submissionId, initialMessages, initial
           <h2 className="text-sm font-semibold" style={{ fontFamily: "'Instrument Serif', serif" }}>Form Fields</h2>
           <Badge variant="secondary" className="text-[10px]">{filledCount}/{totalCount}</Badge>
         </div>
-        <div className="flex gap-1 flex-wrap">
-          <button
-            onClick={() => setActiveFormId("all")}
-            className={`text-[10px] px-2 py-1 rounded-md border transition-colors font-medium ${
-              isAllForms
-                ? "bg-primary text-primary-foreground border-primary"
-                : "bg-card border-border hover:bg-accent/50"
-            }`}
-          >
-            All Forms
-          </button>
-          {ACORD_FORM_LIST.map((f) => (
-            <button
-              key={f.id}
-              onClick={() => setActiveFormId(f.id)}
-              className={`text-[10px] px-2 py-1 rounded-md border transition-colors ${
-                activeFormId === f.id
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "bg-card border-border hover:bg-accent/50"
-              }`}
-            >
-              {f.name}
-            </button>
-          ))}
-        </div>
-        {isAllForms && (
-          <div className="space-y-1.5 pt-1">
-            {isMobile && (
+        {/* Form package selector — checkboxes to include/exclude, + to add more */}
+        <div className="space-y-1">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Package Forms</span>
+            {formsNotInPackage.length > 0 && (
               <button
-                onClick={() => setShowFormProgress((p) => !p)}
-                className="w-full flex items-center justify-between text-[10px] text-muted-foreground hover:text-foreground transition-colors"
+                onClick={() => setShowAddFormDialog(true)}
+                className="flex items-center gap-0.5 text-[10px] text-primary hover:text-primary/80 transition-colors font-medium"
+                title="Add a form to the package"
               >
-                <span className="font-medium">Form Progress</span>
-                <ChevronRight className={`h-3 w-3 transition-transform ${showFormProgress ? "rotate-90" : ""}`} />
+                <Plus className="h-3 w-3" /> Add
               </button>
             )}
-            {(!isMobile || showFormProgress) && ACORD_FORM_LIST.map((f) => {
+          </div>
+          <div className="flex flex-col gap-0.5">
+            {ACORD_FORM_LIST.map((f) => {
+              const isEnabled = enabledFormIds.has(f.id);
+              const isActive = activeFormId === f.id;
               const fFilled = f.fields.filter((fd) => formData[fd.key] && String(formData[fd.key]).trim()).length;
               const fTotal = f.fields.length;
-              const fPct = fTotal > 0 ? Math.round((fFilled / fTotal) * 100) : 0;
               return (
-                <button
+                <div
                   key={f.id}
-                  onClick={() => setActiveFormId(f.id)}
-                  className="w-full text-left group"
+                  className={`flex items-center gap-2 rounded-md px-2 py-1 transition-colors ${
+                    isEnabled ? "opacity-100" : "opacity-40"
+                  } ${isActive && isEnabled ? "bg-primary/10 border border-primary/30" : "hover:bg-muted/50"}`}
                 >
-                  <div className="flex items-center justify-between mb-0.5">
-                    <span className="text-[10px] text-muted-foreground group-hover:text-foreground transition-colors truncate">
-                      {f.name}
-                    </span>
-                    <span className="text-[10px] font-mono text-muted-foreground">
-                      {fFilled}/{fTotal}
-                    </span>
-                  </div>
-                  <div className="h-1 bg-muted rounded-full overflow-hidden">
-                    <div
-                      className={`h-full rounded-full transition-all duration-500 ${
-                        fPct >= 75 ? "bg-green-500" : fPct >= 25 ? "bg-yellow-500" : "bg-red-500"
-                      }`}
-                      style={{ width: `${fPct}%` }}
-                    />
-                  </div>
-                </button>
+                  <Checkbox
+                    checked={isEnabled}
+                    onCheckedChange={(checked) => {
+                      setEnabledFormIds((prev) => {
+                        const next = new Set(prev);
+                        if (checked) next.add(f.id);
+                        else {
+                          next.delete(f.id);
+                          // If we removed the active form, switch to first enabled or "all"
+                          if (activeFormId === f.id) {
+                            const remaining = ACORD_FORM_LIST.find(x => next.has(x.id));
+                            setActiveFormId(remaining?.id || "all");
+                          }
+                        }
+                        return next;
+                      });
+                    }}
+                    className="h-3 w-3 shrink-0"
+                  />
+                  <button
+                    onClick={() => isEnabled && setActiveFormId(f.id)}
+                    disabled={!isEnabled}
+                    className={`flex-1 text-left text-[10px] font-medium truncate ${
+                      isActive && isEnabled ? "text-primary" : "text-foreground"
+                    }`}
+                  >
+                    {f.name}
+                  </button>
+                  <span className="text-[9px] font-mono text-muted-foreground shrink-0">{fFilled}/{fTotal}</span>
+                </div>
               );
             })}
           </div>
-        )}
+        </div>
         <div className="flex gap-1">
           {(["all", "filled", "empty"] as FieldFilter[]).map((filter) => (
             <button
@@ -781,9 +787,9 @@ export default function FormFillingView({ submissionId, initialMessages, initial
   };
 
   const renderFormPreview = () => {
-    const previewTitle = isAllForms ? "All ACORD Forms" : activeForm?.name;
+    const previewTitle = isAllForms ? `Package (${enabledFormList.length} forms)` : activeForm?.name;
     const previewSubtitle = isAllForms
-      ? `${ACORD_FORM_LIST.length} forms — ${filledCount} of ${totalCount} unique fields filled`
+      ? `${filledCount} of ${totalCount} unique fields filled`
       : activeForm?.fullName;
 
     return (
@@ -826,7 +832,7 @@ export default function FormFillingView({ submissionId, initialMessages, initial
           {isAllForms ? (
             <ScrollArea className="h-full">
               <div className="p-4 space-y-6">
-                {ACORD_FORM_LIST.map((form) => (
+                {enabledFormList.map((form) => (
                   <div key={form.id} className="bg-background border rounded shadow-sm overflow-hidden">
                     <div className="bg-muted/50 px-3 py-1.5 border-b flex items-center gap-2">
                       <FileText className="h-3.5 w-3.5 text-primary" />
@@ -862,13 +868,13 @@ export default function FormFillingView({ submissionId, initialMessages, initial
               </h1>
               <p className="text-[10px] text-muted-foreground mt-1">
                 {isAllForms
-                  ? `${ACORD_FORM_LIST.map(f => f.name).join(" • ")} — Generated ${new Date().toLocaleDateString()}`
+                  ? `${enabledFormList.map(f => f.name).join(" • ")} — Generated ${new Date().toLocaleDateString()}`
                   : `Generated ${new Date().toLocaleDateString()}`
                 }
               </p>
             </div>
             {isAllForms ? (
-              ACORD_FORM_LIST.map((form) => {
+              enabledFormList.map((form) => {
                 const sections: { name: string; fields: AcordFormField[] }[] = [];
                 const seen = new Set<string>();
                 for (const field of form.fields) {
@@ -1074,9 +1080,45 @@ export default function FormFillingView({ submissionId, initialMessages, initial
     </div>
   );
 
+  // ─── Add Form Dialog ───
+  const addFormDialog = (
+    <Dialog open={showAddFormDialog} onOpenChange={setShowAddFormDialog}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle className="text-sm">Add Forms to Package</DialogTitle>
+          <DialogDescription className="text-xs text-muted-foreground">
+            Select additional ACORD forms to include in this submission package.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-2 py-2">
+          {formsNotInPackage.map((f) => (
+            <label key={f.id} className="flex items-start gap-3 cursor-pointer p-2 rounded-md hover:bg-muted/50">
+              <Checkbox
+                onCheckedChange={(checked) => {
+                  if (checked) {
+                    setEnabledFormIds((prev) => new Set([...prev, f.id]));
+                    setShowAddFormDialog(false);
+                  }
+                }}
+              />
+              <div>
+                <p className="text-sm font-medium">{f.name}</p>
+                <p className="text-xs text-muted-foreground">{f.description}</p>
+              </div>
+            </label>
+          ))}
+        </div>
+        <div className="flex justify-end pt-2">
+          <Button variant="outline" size="sm" onClick={() => setShowAddFormDialog(false)}>Close</Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+
   // ─── Email Dialog ───
   const emailDialog = (
     <Dialog open={emailDialogOpen} onOpenChange={setEmailDialogOpen}>
+
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-sm">Send Submission Package</DialogTitle>
@@ -1118,6 +1160,7 @@ export default function FormFillingView({ submissionId, initialMessages, initial
   if (isMobile) {
     return (
       <div className="flex flex-col h-[calc(100vh-4rem)] overflow-hidden">
+        {addFormDialog}
         {emailDialog}
         
         {/* Mobile top bar with back button */}
@@ -1191,6 +1234,7 @@ export default function FormFillingView({ submissionId, initialMessages, initial
   // ─── DESKTOP LAYOUT (unchanged 3-column) ───
   return (
     <div className="flex h-[calc(100vh-4rem)] overflow-hidden">
+      {addFormDialog}
       {emailDialog}
 
       {/* LEFT PANEL — Editable Fields */}

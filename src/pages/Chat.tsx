@@ -656,6 +656,7 @@ export default function Chat() {
             submissionId={activeSubmissionId}
             initialMessages={messages.map((m) => ({ role: m.role, content: m.content }))}
             initialFormId={activeFormId}
+            initialFormIds={requestedFormIds.length > 0 ? requestedFormIds : undefined}
             onBack={() => { setActiveSubmissionId(null); setBlankFormMode(false); }}
             suppressAutoAnalysis={blankFormMode && !trainingMode}
             initialCompanyName={blankFormMode ? "New Client" : undefined}
