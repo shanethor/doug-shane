@@ -163,9 +163,9 @@ function detectRequestedForms(text: string): string[] {
 
   // Coverage line keywords → form mapping
   if (/workers?\s*comp|work\s*comp|wc\b/i.test(lower)) found.add("acord-130");
-  if (/commercial\s*auto|business\s*auto|auto\s*section/i.test(lower)) found.add("acord-127");
-  if (/general\s*liability|cgl\b|gl\s*section/i.test(lower)) found.add("acord-126");
-  if (/commercial\s*property|property\s*section|building\s*coverage/i.test(lower)) found.add("acord-140");
+  if (/commercial\s*auto|business\s*auto|auto\s*section|\bauto\b/i.test(lower)) found.add("acord-127");
+  if (/general\s*liability|cgl\b|gl\s*section|\bliability\b/i.test(lower)) found.add("acord-126");
+  if (/commercial\s*property|property\s*section|building\s*coverage|\bproperty\b/i.test(lower)) found.add("acord-140");
   if (/umbrella|excess\s*liability/i.test(lower)) found.add("acord-131");
   
   // Fallback: check form names from the list
@@ -373,10 +373,11 @@ export default function Chat() {
 
   const isFormFillingIntent = (text: string) => {
     const t = text.trim().toLowerCase();
-    // Match "forms" (plural), "form", ACORD, specific form numbers, or general submission intent
+    // Match forms, ACORD, coverage lines, submission intent, or specific form/coverage mentions
     return /\bforms?\b|\bacord\b|\bsubmit|\bnew\s*client|\binsurance\b|\bcoverage\b|\bapplication\b/.test(t)
       || /need\s*(a|an|to|help|forms?)|\bstart\b|\bget\s*start|\bfill\b|\bcreate\b/.test(t)
-      || detectRequestedForms(text).length > 0; // direct form number mention always triggers
+      || /workers?\s*comp|work\s*comp|\bliability\b|\bproperty\b|\bumbrella\b|\bauto\b/.test(t)
+      || detectRequestedForms(text).length > 0; // direct form number/coverage mention always triggers
   };
 
   const send = async (text: string) => {
