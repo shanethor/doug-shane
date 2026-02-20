@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { ChevronLeft, ChevronRight, TrendingUp, Brain, DollarSign, Users, Target, Rocket, BarChart3, Shield, Database, Eye, Layers, Replace, Zap, Heart, Smartphone, FolderOpen, MessageCircle } from "lucide-react";
-import auraLogo from "@/assets/aura-logo.png";
+
 
 const SLIDES = [
   { id: "title", label: "Title" },
@@ -66,7 +66,10 @@ export default function Deck() {
     <div className="fixed inset-0 bg-background flex flex-col">
       {/* Top bar */}
       <div className="flex items-center justify-between px-6 py-3 border-b border-border/50 bg-card/60 backdrop-blur-sm z-10">
-        <img src={auraLogo} alt="AURA" className="h-6" />
+        <div className="flex items-center gap-2">
+          <span className="text-lg font-bold tracking-tight text-foreground">AURA</span>
+          <span className="text-[11px] text-muted-foreground tracking-widest uppercase">Risk Group</span>
+        </div>
         <div className="flex items-center gap-1.5">
           {SLIDES.map((s, i) => (
             <button
@@ -839,7 +842,10 @@ function AskSlide() {
         <p className="text-sm font-bold text-primary mt-3">AURA was built by the industry to rebuild the industry.</p>
       </div>
       <div className="text-center">
-        <img src={auraLogo} alt="AURA" className="h-8 mx-auto opacity-60" />
+        <div className="flex items-center justify-center gap-2 opacity-60">
+          <span className="text-lg font-bold tracking-tight text-foreground">AURA</span>
+          <span className="text-[11px] text-muted-foreground tracking-widest uppercase">Risk Group</span>
+        </div>
         <p className="text-xs text-muted-foreground/50 mt-2">Confidential — AURA Risk Group</p>
       </div>
     </div>
