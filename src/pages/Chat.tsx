@@ -494,8 +494,22 @@ export default function Chat() {
 
   const removeFile = (idx: number) => setAttachedFiles((prev) => prev.filter((_, i) => i !== idx));
 
+  /** Detect purely informational / question-style messages that should go to AI, not the 3-bucket picker */
+  const isInformationalQuery = (text: string) => {
+    const t = text.trim().toLowerCase();
+    // Questions about what AURA/the app can do, what forms are available, how things work, etc.
+    return /^(what|which|how|why|when|can\s+you|do\s+you|tell\s+me|show\s+me|list|explain|describe|give\s+me|are\s+there|is\s+there)\b/.test(t)
+      || /\?\s*$/.test(t) // ends with a question mark
+      || /what\s+(forms?|acord\s+forms?)\s+(do\s+you|are|can|have|would)\b/i.test(t)
+      || /available\s+(for\s+me|to\s+me|forms?)\b/i.test(t)
+      || /\b(help|options?|info|information|details?|capabilities?|features?)\b/.test(t)
+      || /how\s+(do|does|can|would|should)\b/.test(t);
+  };
+
   const isFormFillingIntent = (text: string) => {
     const t = text.trim().toLowerCase();
+    // First: if this looks like an informational question, let AI handle it naturally
+    if (isInformationalQuery(text)) return false;
     // Match forms, ACORD, coverage lines, submission intent, or specific form/coverage mentions
     return /\bforms?\b|\bacord\b|\bsubmit|\bnew\s*client|\binsurance\b|\bcoverage\b|\bapplication\b/.test(t)
       || /need\s*(a|an|to|help|forms?)|\bstart\b|\bget\s*start|\bfill\b|\bcreate\b/.test(t)
