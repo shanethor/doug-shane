@@ -1025,6 +1025,7 @@ export default function FormFillingView({ submissionId, initialMessages, initial
                     <div style={{ height: "800px" }}>
                       <FillablePdfViewer
                         formId={form.id}
+                        formDef={form}
                         formData={formData}
                         onFieldChange={handleFieldChange}
                       />
@@ -1036,6 +1037,7 @@ export default function FormFillingView({ submissionId, initialMessages, initial
           ) : (
             <FillablePdfViewer
               formId={activeFormId}
+              formDef={activeForm ?? undefined}
               formData={formData}
               onFieldChange={handleFieldChange}
             />

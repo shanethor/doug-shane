@@ -3,6 +3,11 @@ import type { AcordFormDefinition } from "./acord-forms";
 import { ACORD_FIELD_MAPS, FILLABLE_PDF_PATHS } from "./acord-field-map";
 import { formatUSD, CURRENCY_FIELDS } from "./acord-autofill";
 
+export type PdfGenerateOptions = {
+  /** If true, flatten the form (bake fields in) for download. If false, keep interactive. Default: true */
+  flatten?: boolean;
+};
+
 /** Format a date string as MM/DD/YYYY for PDF display */
 function formatDateForPdf(val: string): string {
   if (!val) return "";
@@ -100,8 +105,10 @@ function trySetField(field: any, value: string, key: string): boolean {
  */
 export async function generateAcordPdfAsync(
   form: AcordFormDefinition,
-  data: Record<string, any>
+  data: Record<string, any>,
+  options: PdfGenerateOptions = {}
 ): Promise<{ save: (filename: string) => void; bytes: Uint8Array }> {
+  const { flatten = true } = options;
   const pdfPath = FILLABLE_PDF_PATHS[form.id];
   const fieldMap = ACORD_FIELD_MAPS[form.id] || {};
 
@@ -112,10 +119,15 @@ export async function generateAcordPdfAsync(
       const pdfDoc = await PDFDocument.load(pdfBytes, { ignoreEncryption: true });
       const pdfForm = pdfDoc.getForm();
 
-      const { exact, normalized } = buildFieldLookup(pdfForm);
+      const { exact, normalized, all } = buildFieldLookup(pdfForm);
+
+      // Log all actual PDF field names for diagnostics (first run only)
+      const allFieldNames = all.map(f => f.getName());
+      console.log(`[PDF Fields] ${form.name} has ${allFieldNames.length} AcroForm fields:`, allFieldNames.slice(0, 30));
 
       let filled = 0;
       let missed = 0;
+      const missedKeys: string[] = [];
 
       for (const [ourKey, value] of Object.entries(data)) {
         if (value === undefined || value === null || value === "") continue;
@@ -144,17 +156,20 @@ export async function generateAcordPdfAsync(
           else missed++;
         } else {
           missed++;
+          if (pdfFieldName) missedKeys.push(`${ourKey} → "${pdfFieldName}"`);
         }
       }
 
       console.log(`[PDF Fill] ${form.name}: ${filled} filled, ${missed} missed`);
+      if (missedKeys.length) console.log(`[PDF Misses] Fields not found in PDF:`, missedKeys);
 
-      // Flatten the form so fields are baked in
-      try {
-        pdfForm.flatten();
-      } catch (flattenErr) {
-        // Some PDFs fail to flatten due to complex field types — continue unflatted
-        console.warn("[PDF Fill] Could not flatten:", flattenErr);
+      // Flatten the form so fields are baked in (skip for interactive viewer)
+      if (flatten) {
+        try {
+          pdfForm.flatten();
+        } catch (flattenErr) {
+          console.warn("[PDF Fill] Could not flatten:", flattenErr);
+        }
       }
 
       const savedBytes = await pdfDoc.save();
