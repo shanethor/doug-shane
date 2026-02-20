@@ -103,6 +103,17 @@ export default function FillablePdfViewer({
 
         if (cancelledRef.current) return;
 
+        // Wait for the div to actually be present in the DOM before Adobe tries to use it
+        await new Promise<void>((resolve) => {
+          const check = () => {
+            if (document.getElementById(divId)) { resolve(); return; }
+            requestAnimationFrame(check);
+          };
+          check();
+        });
+
+        if (cancelledRef.current) return;
+
         const view = new window.AdobeDC.View({
           clientId: getAdobeClientId(),
           divId,
@@ -133,13 +144,16 @@ export default function FillablePdfViewer({
           (event: any) => {
             if (cancelledRef.current) return;
             if (event.type === "FORM_FIELD_CHANGED") {
-              const { name, value } = event.data || {};
+              // Adobe puts field info under event.data.fieldData OR event.data directly
+              const fieldData = event.data?.fieldData || event.data || {};
+              const name = fieldData.name ?? event.data?.name;
+              const value = fieldData.value ?? event.data?.value ?? "";
               if (name && onFieldChangeRef.current) {
-                onFieldChangeRef.current(name, value ?? "");
+                onFieldChangeRef.current(name, String(value));
               }
             }
           },
-          { enablePDFAnalytics: false }
+          { enablePDFAnalytics: true, listenOn: ["FORM_FIELD_CHANGED"] }
         );
 
         // Build a clean ArrayBuffer from the Uint8Array (avoids SharedArrayBuffer issues)
