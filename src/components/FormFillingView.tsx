@@ -98,10 +98,10 @@ export default function FormFillingView({ submissionId, initialMessages, initial
 
   // Bytes captured from Adobe SAVE_API (includes in-viewer edits) keyed by formId
   const [savedPdfBytesMap, setSavedPdfBytesMap] = useState<Record<string, Uint8Array>>({});
-  // Pre-filled PDF bytes keyed by formId — re-generated whenever formData changes
-  const [filledPdfBytesMap, setFilledPdfBytesMap] = useState<Record<string, Uint8Array>>({});
+  // Raw (untouched) PDF bytes loaded from /public/acord-fillable/ — fed directly to Adobe viewer
+  // We NEVER pass pdf-lib-processed bytes to Adobe because pdf-lib strips XFA data, breaking the viewer
+  const [rawPdfBytesMap, setRawPdfBytesMap] = useState<Record<string, Uint8Array>>({});
   const [isLoadingPdf, setIsLoadingPdf] = useState(false);
-  const fillPdfTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Swipe gesture support
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
@@ -151,43 +151,20 @@ export default function FormFillingView({ submissionId, initialMessages, initial
     }
   }, [mobilePanel]);
 
-  /**
-   * Pre-fill the active form's PDF bytes with current formData.
-   * Uses generateAcordPdfAsync with flatten:false so fields stay editable in Adobe.
-   * Debounced — fires 1.2s after the last field change.
-   */
-  const regenerateFilledPdf = useCallback(async (fId: string, data: Record<string, any>) => {
-    if (isAllForms || !fId) return;
-    const form = ACORD_FORMS[fId];
-    if (!form) return;
-    setIsLoadingPdf(true);
-    try {
-      const result = await generateAcordPdfAsync(form, data, { flatten: false });
-      setFilledPdfBytesMap(prev => ({ ...prev, [fId]: result.bytes }));
-    } catch (err) {
-      console.error("[PDF Sync] Failed to pre-fill PDF:", err);
-    } finally {
-      setIsLoadingPdf(false);
-    }
-  }, [isAllForms]);
-
-  // Debounced re-fill when formData changes (left-panel edits → PDF viewer sync)
-  const formDataRef2 = useRef<Record<string, any>>({});
-  useEffect(() => {
-    formDataRef2.current = formData;
-  }, [formData]);
-
+  // Load raw (untouched) PDF bytes from /public/acord-fillable/ when the active form changes.
+  // We serve these directly to Adobe — no pdf-lib processing — to preserve XFA data.
   useEffect(() => {
     if (isAllForms || !activeFormId) return;
-    if (fillPdfTimerRef.current) clearTimeout(fillPdfTimerRef.current);
-    fillPdfTimerRef.current = setTimeout(() => {
-      regenerateFilledPdf(activeFormId, formDataRef2.current);
-    }, 1200);
-    return () => {
-      if (fillPdfTimerRef.current) clearTimeout(fillPdfTimerRef.current);
-    };
+    const path = FILLABLE_PDF_PATHS[activeFormId];
+    if (!path || rawPdfBytesMap[activeFormId]) return; // already loaded
+    setIsLoadingPdf(true);
+    fetch(path)
+      .then(r => r.ok ? r.arrayBuffer() : Promise.reject(`HTTP ${r.status}`))
+      .then(buf => setRawPdfBytesMap(prev => ({ ...prev, [activeFormId]: new Uint8Array(buf) })))
+      .catch(err => console.error("[PDF Load] Failed to load raw PDF:", err))
+      .finally(() => setIsLoadingPdf(false));
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [formData, activeFormId, isAllForms]);
+  }, [activeFormId, isAllForms]);
 
   // Build reverse map: PDF field name → internal key (for FORM_FIELD_CHANGED sync)
   // This lets us map Adobe's obfuscated field names back to our internal keys
@@ -1030,8 +1007,8 @@ export default function FormFillingView({ submissionId, initialMessages, initial
             </div>
           ) : activeForm && FILLABLE_PDF_PATHS[activeFormId] ? (
              <FillablePdfViewer
-               pdfBytes={filledPdfBytesMap[activeFormId] ?? null}
-               isGenerating={isLoadingPdf && !filledPdfBytesMap[activeFormId]}
+               pdfBytes={rawPdfBytesMap[activeFormId] ?? null}
+               isGenerating={isLoadingPdf && !rawPdfBytesMap[activeFormId]}
                fileName={`${activeForm.name}.pdf`}
                onFieldChange={(pdfFieldName, value) => handleAdobeFieldChange(activeFormId, pdfFieldName, value)}
                onSaveBytes={(bytes) => setSavedPdfBytesMap(prev => ({ ...prev, [activeFormId]: bytes }))}
