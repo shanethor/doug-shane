@@ -54,6 +54,9 @@ export default function FormFillingView({ submissionId, initialMessages, initial
   const [companyName, setCompanyName] = useState(initialCompanyName || "New Client");
   const [editingName, setEditingName] = useState(!!initialCompanyName && initialCompanyName === "New Client");
   const [loading, setLoading] = useState(true);
+  const [autoSaving, setAutoSaving] = useState(false);
+  const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const formDataRef = useRef<Record<string, any>>({});
   const [activeFormId, setActiveFormId] = useState(initialFormId || "acord-125");
   const [fieldFilter, setFieldFilter] = useState<FieldFilter>("all");
   const [centerView, setCenterView] = useState<CenterView>("form");
@@ -214,8 +217,34 @@ export default function FormFillingView({ submissionId, initialMessages, initial
     sendMessage(prompt);
   }, [loading, formData]);
 
+  // Keep ref in sync so the debounced save always uses the latest data
+  useEffect(() => { formDataRef.current = formData; }, [formData]);
+
+  const persistFormData = useCallback(async (data: Record<string, any>) => {
+    if (!user || !submissionId) return;
+    setAutoSaving(true);
+    try {
+      await supabase
+        .from("insurance_applications")
+        .update({ form_data: data })
+        .eq("submission_id", submissionId)
+        .eq("user_id", user.id);
+    } catch (err) {
+      console.error("Auto-save failed:", err);
+    } finally {
+      setAutoSaving(false);
+    }
+  }, [user, submissionId]);
+
   const handleFieldChange = (key: string, value: any) => {
-    setFormData((prev) => ({ ...prev, [key]: value }));
+    setFormData((prev) => {
+      const next = { ...prev, [key]: value };
+      formDataRef.current = next;
+      // Debounce DB persist — fires 800ms after last edit
+      if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+      autoSaveTimer.current = setTimeout(() => persistFormData(formDataRef.current), 800);
+      return next;
+    });
   };
 
   // Send chat message
@@ -729,7 +758,15 @@ export default function FormFillingView({ submissionId, initialMessages, initial
         )}
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold" style={{ fontFamily: "'Instrument Serif', serif" }}>Form Fields</h2>
-          <Badge variant="secondary" className="text-[10px]">{filledCount}/{totalCount}</Badge>
+          <div className="flex items-center gap-2">
+            {autoSaving && (
+              <span className="flex items-center gap-1 text-[10px] text-muted-foreground animate-pulse">
+                <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                Saving…
+              </span>
+            )}
+            <Badge variant="secondary" className="text-[10px]">{filledCount}/{totalCount}</Badge>
+          </div>
         </div>
         {/* Form package selector — checkboxes to include/exclude, + to add more */}
         <div className="space-y-1">
