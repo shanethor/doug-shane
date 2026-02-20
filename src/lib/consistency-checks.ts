@@ -106,7 +106,6 @@ export function runConsistencyChecks(
 
   // 4. Missing required fields check
   const requiredMap: Record<string, string[]> = {
-    "acord-125": ["applicant_name", "mailing_address", "city", "state", "zip", "fein", "business_type", "description_of_operations"],
     "acord-126": ["insured_name", "effective_date", "coverage_type", "general_aggregate", "each_occurrence"],
     "acord-127": ["insured_name", "effective_date"],
     "acord-130": ["insured_name", "effective_date", "expiration_date", "state_of_operation", "fein", "business_type", "nature_of_business"],

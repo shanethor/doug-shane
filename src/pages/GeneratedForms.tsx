@@ -168,7 +168,7 @@ export default function GeneratedForms() {
   /** Run extracted data through the ACORD autofill pipeline (with AI inference) to measure form fill coverage */
   const computeAcordFill = async (extractedData: Record<string, any>): Promise<AcordFillResult[]> => {
     const { profile, formDefaults } = await loadAgentProfile();
-    const acordFormIds = ["acord-125", "acord-126", "acord-127", "acord-130", "acord-131", "acord-140"];
+    const acordFormIds = ["acord-126", "acord-127", "acord-130", "acord-131", "acord-140", "acord-75"];
     const results: AcordFillResult[] = [];
     for (const formId of acordFormIds) {
       const form = ACORD_FORMS[formId];
