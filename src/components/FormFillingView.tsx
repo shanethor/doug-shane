@@ -59,7 +59,8 @@ export default function FormFillingView({ submissionId, initialMessages, initial
   const [centerView, setCenterView] = useState<CenterView>("form");
   const [mobilePanel, setMobilePanel] = useState<MobilePanel>("fields");
   const [showFormProgress, setShowFormProgress] = useState(false);
-  const [zoomLevel, setZoomLevel] = useState(150); // kept for backward compat
+  const [zoomLevel, setZoomLevel] = useState(100); // kept for backward compat
+  const [leftPanelCollapsed, setLeftPanelCollapsed] = useState(false);
 
   // Form package selection — which forms are in the active package
   const defaultEnabledIds = initialFormIds && initialFormIds.length > 0
@@ -1237,9 +1238,27 @@ export default function FormFillingView({ submissionId, initialMessages, initial
       {addFormDialog}
       {emailDialog}
 
-      {/* LEFT PANEL — Editable Fields */}
-      <div className="w-[260px] border-r flex flex-col shrink-0">
-        {renderFieldsPanel()}
+      {/* LEFT PANEL — Editable Fields (collapsible) */}
+      <div
+        className="border-r flex flex-col shrink-0 relative transition-all duration-300 ease-in-out"
+        style={{ width: leftPanelCollapsed ? "0px" : "260px", overflow: leftPanelCollapsed ? "hidden" : "visible" }}
+      >
+        <div style={{ width: "260px", minWidth: "260px" }} className="flex flex-col h-full">
+          {renderFieldsPanel()}
+        </div>
+      </div>
+
+      {/* Collapse / Expand toggle tab */}
+      <div className="relative flex items-start shrink-0">
+        <button
+          onClick={() => setLeftPanelCollapsed(v => !v)}
+          className="absolute left-0 top-16 z-10 flex items-center justify-center w-4 h-10 rounded-r-md bg-muted border border-l-0 border-border text-muted-foreground hover:bg-muted/80 hover:text-foreground transition-colors"
+          title={leftPanelCollapsed ? "Expand fields panel" : "Collapse fields panel"}
+        >
+          {leftPanelCollapsed
+            ? <ChevronRight className="h-3 w-3" />
+            : <ChevronLeft className="h-3 w-3" />}
+        </button>
       </div>
 
       {/* CENTER PANEL — Form Preview */}
