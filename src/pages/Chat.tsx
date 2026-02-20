@@ -665,15 +665,16 @@ export default function Chat() {
   const isEmpty = messages.length === 0;
 
   if (activeSubmissionId) {
+    const handleBackFromForm = () => { setActiveSubmissionId(null); setBlankFormMode(false); };
     return (
-      <AppLayout>
+      <AppLayout onLogoClick={handleBackFromForm}>
         <div className="animate-slide-in-right">
           <FormFillingView
             submissionId={activeSubmissionId}
             initialMessages={messages.map((m) => ({ role: m.role, content: m.content }))}
             initialFormId={activeFormId}
             initialFormIds={requestedFormIds.length > 0 ? requestedFormIds : undefined}
-            onBack={() => { setActiveSubmissionId(null); setBlankFormMode(false); }}
+            onBack={handleBackFromForm}
             suppressAutoAnalysis={blankFormMode && !trainingMode}
             initialCompanyName={blankFormMode ? "New Client" : undefined}
           />
