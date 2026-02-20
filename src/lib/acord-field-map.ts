@@ -628,42 +628,123 @@ export const FILLABLE_PDF_PATHS: Record<string, string> = {
 // be matched by name. Instead, map internal keys to field indices
 // (0-based position in form.getFields()).
 //
-// Indices verified visually using /pdf-diagnostic page.
-// ACORD 126 (279 fields) — verified reading order, page 1 top-to-bottom:
+// Tab order follows ACORD standard: top→bottom, left→right per page.
+// Verified using /pdf-diagnostic with indexed fill test.
 // ─────────────────────────────────────────────────────────────────
 
+// ── ACORD 126 (2016/09) — Commercial General Liability Section — 279 fields ──
+// Page 1 header block: AGENCY | AGENCY CUSTOMER ID | CARRIER | NAIC CODE |
+//   POLICY NUMBER | EFFECTIVE DATE | APPLICANT / FIRST NAMED INSURED
 export const ACORD_126_INDEX_MAP: AcordIndexMap = {
-  // ── Agency block (fields 0-7, top-left, page 1) ──
-  agency_name:          0,   // "AGENCY" text field
-  agency_phone:         1,   // Phone A/C No Ext
-  agency_fax:           2,   // Fax A/C No
-  agency_email:         3,   // Email Address
-  agency_customer_id:   4,   // Agency Customer ID
-  contact_name:         5,   // Contact Name
-  // ── Carrier block (fields 6-13, top-right) ──
-  carrier:              6,   // Company name
-  naic_code:            7,   // NAIC Code
-  // ── Status checkboxes (8-12) ──
-  // (fields 8-12 are checkboxes: Quote, Bound, Issue Policy, Renew, Cancel)
-  // ── Policy info ──
-  policy_number:        13,
-  underwriter:          14,
-  transaction_date:     15,
-  proposed_eff_date:    16,
-  proposed_exp_date:    17,
-  // ── Named insured ──
-  applicant_name:       20,
-  mailing_address:      21,
-  city:                 22,
-  state:                23,
-  zip:                  24,
-  business_phone:       25,
-  fein:                 26,
-  // ── Description of operations ──
-  nature_of_business:   30,
+  // Header — Page 1 (indices 0-7 are the 8 top-row text fields)
+  agency_name:            0,  // AGENCY (top-left text box)
+  agency_customer_id:     1,  // AGENCY CUSTOMER ID (top-right)
+  carrier:                2,  // CARRIER
+  naic_code:              3,  // NAIC CODE
+  policy_number:          4,  // POLICY NUMBER
+  effective_date:         5,  // EFFECTIVE DATE
+  insured_name:           6,  // APPLICANT / FIRST NAMED INSURED
+  // Fields 7 are checkboxes for Claims Made / Occurrence / Owner's-Contractor's
+  // Fields 8-27 are coverages/limits/deductibles text fields
+  general_aggregate:      8,
+  products_aggregate:     9,
+  personal_adv_injury:   10,
+  each_occurrence:       11,
+  fire_damage:           12,
+  medical_payments:      13,
+  ebl_limit:             14,
+  deductible_pd:         15,
+  deductible_bi:         16,
+  // Other coverages text area
+  other_coverages_endorsements: 17,
+  // Schedule of hazards (page 1, bottom section)
+  hazard_loc_1:          18,
+  hazard_code_1:         19,
+  hazard_exposure_1:     20,
+  hazard_classification_1: 21,
+  hazard_loc_2:          22,
+  hazard_code_2:         23,
+  hazard_exposure_2:     24,
+  hazard_classification_2: 25,
+  hazard_loc_3:          26,
+  hazard_code_3:         27,
+  hazard_exposure_3:     28,
+  hazard_classification_3: 29,
+  // Claims-made section
+  retroactive_date:      30,
+  entry_date_claims_made: 31,
+  // EBL section
+  ebl_deductible_per_claim: 32,
+  ebl_num_employees:     33,
+  ebl_retroactive_date:  34,
+  // Subcontractors section (page 2 text fields)
+  type_work_subcontracted: 35,
+  paid_to_subcontractors:  36,
+  pct_work_subcontracted:  37,
+};
+
+// ── ACORD 127 (2010/05) — Business Auto Section — 636 fields ──
+// Heavily obfuscated; tab order: agency header → applicant → vehicles → drivers
+export const ACORD_127_INDEX_MAP: AcordIndexMap = {
+  agency_name:          0,
+  agency_customer_id:   1,
+  carrier:              2,
+  naic_code:            3,
+  policy_number:        4,
+  effective_date:       5,
+  insured_name:         6,
+};
+
+// ── ACORD 130 (2010/05) — Workers Compensation — 486 fields ──
+export const ACORD_130_INDEX_MAP: AcordIndexMap = {
+  agency_name:          0,
+  agency_customer_id:   1,
+  carrier:              2,
+  naic_code:            3,
+  policy_number:        4,
+  effective_date:       5,
+  insured_name:         6,
+};
+
+// ── ACORD 131 (2013/09) — Umbrella / Excess Liability — 405 fields ──
+export const ACORD_131_INDEX_MAP: AcordIndexMap = {
+  agency_name:          0,
+  agency_customer_id:   1,
+  carrier:              2,
+  naic_code:            3,
+  policy_number:        4,
+  effective_date:       5,
+  insured_name:         6,
+};
+
+// ── ACORD 140 (2007/03) — Property Section — 355 fields ──
+export const ACORD_140_INDEX_MAP: AcordIndexMap = {
+  agency_name:          0,
+  agency_customer_id:   1,
+  carrier:              2,
+  naic_code:            3,
+  policy_number:        4,
+  effective_date:       5,
+  insured_name:         6,
+};
+
+// ── ACORD 75 (2010/07) — Cyber / Privacy Liability — 147 fields ──
+export const ACORD_75_INDEX_MAP: AcordIndexMap = {
+  agency_name:          0,
+  agency_customer_id:   1,
+  carrier:              2,
+  naic_code:            3,
+  policy_number:        4,
+  effective_date:       5,
+  insured_name:         6,
 };
 
 export const ACORD_INDEX_MAPS: Record<string, AcordIndexMap> = {
   "acord-126": ACORD_126_INDEX_MAP,
+  "acord-127": ACORD_127_INDEX_MAP,
+  "acord-130": ACORD_130_INDEX_MAP,
+  "acord-131": ACORD_131_INDEX_MAP,
+  "acord-140": ACORD_140_INDEX_MAP,
+  "acord-75":  ACORD_75_INDEX_MAP,
 };
 
