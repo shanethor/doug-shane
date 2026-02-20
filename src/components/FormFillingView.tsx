@@ -179,9 +179,9 @@ export default function FormFillingView({ submissionId, initialMessages, initial
   // Immediately generate the pdf-lib processed PDF whenever the active form changes.
   // We never show the raw original PDF (which shows "Protected" in Adobe) — always use
   // the pdf-lib output which strips encryption flags and keeps fields editable.
+  // Always re-generate on form switch so current formData is baked in (no stale cache).
   useEffect(() => {
     if (isAllForms || !activeFormId) return;
-    if (filledPdfBytesMap[activeFormId]) return; // already generated
     regenerateFilledPdf(activeFormId, formDataRef2.current);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeFormId, isAllForms]);
@@ -197,30 +197,78 @@ export default function FormFillingView({ submissionId, initialMessages, initial
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formData, activeFormId, isAllForms]);
 
-  // Build reverse map: PDF field name → internal key (for FORM_FIELD_CHANGED sync)
-  // This lets us map Adobe's obfuscated field names back to our internal keys
-  const buildReverseFieldMap = useCallback((formId: string): Record<string, string> => {
-    const nameMap = ACORD_FIELD_MAPS[formId] || {};
+  /**
+   * Build reverse map: actual PDF field name (as Adobe returns it) → internal key.
+   *
+   * For index-mapped forms: load the PDF, enumerate fields in order, then invert
+   * index→key to get actualPdfFieldName→internalKey.
+   * For name-mapped forms: directly invert the name map.
+   */
+  const buildReverseFieldMap = useCallback(async (formId: string): Promise<Record<string, string>> => {
     const reverse: Record<string, string> = {};
-    for (const [internalKey, pdfFieldName] of Object.entries(nameMap)) {
-      reverse[pdfFieldName] = internalKey;
+    const indexMap = ACORD_INDEX_MAPS[formId];
+
+    if (indexMap) {
+      // Index-based forms: load the PDF and read actual field names at each index
+      const pdfPath = FILLABLE_PDF_PATHS[formId];
+      if (pdfPath) {
+        try {
+          const { PDFDocument } = await import("pdf-lib");
+          const resp = await fetch(pdfPath);
+          const bytes = await resp.arrayBuffer();
+          const doc = await PDFDocument.load(new Uint8Array(bytes), { ignoreEncryption: true });
+          const allFields = doc.getForm().getFields();
+          // Build index→internalKey then actualName→internalKey
+          for (const [internalKey, idx] of Object.entries(indexMap)) {
+            const field = allFields[idx];
+            if (field) reverse[field.getName()] = internalKey;
+          }
+        } catch (e) {
+          console.warn("[ReverseMap] Could not load PDF for reverse map:", e);
+        }
+      }
     }
+
+    // Also include name-based fallback entries (covers non-index-mapped forms)
+    const nameMap = ACORD_FIELD_MAPS[formId] || {};
+    for (const [internalKey, pdfFieldName] of Object.entries(nameMap)) {
+      if (!reverse[pdfFieldName]) reverse[pdfFieldName] = internalKey;
+    }
+
     return reverse;
   }, []);
 
-  // Per-form reverse maps (cached)
+  // Per-form reverse maps (cached as promises to avoid duplicate fetches)
   const reverseFieldMapsRef = useRef<Record<string, Record<string, string>>>({});
-  const getReverseMap = useCallback((formId: string) => {
-    if (!reverseFieldMapsRef.current[formId]) {
-      reverseFieldMapsRef.current[formId] = buildReverseFieldMap(formId);
+  const reverseMapPromisesRef = useRef<Record<string, Promise<Record<string, string>>>>({});
+
+  const getReverseMap = useCallback((formId: string): Record<string, string> => {
+    // Start building async if not already cached
+    if (!reverseMapPromisesRef.current[formId]) {
+      reverseMapPromisesRef.current[formId] = buildReverseFieldMap(formId).then(map => {
+        reverseFieldMapsRef.current[formId] = map;
+        return map;
+      });
     }
-    return reverseFieldMapsRef.current[formId];
+    // Return currently cached map (may be empty on first call, fills in async)
+    return reverseFieldMapsRef.current[formId] || {};
   }, [buildReverseFieldMap]);
+
+  // Pre-build reverse map whenever active form changes
+  useEffect(() => {
+    if (activeFormId && activeFormId !== "all") {
+      getReverseMap(activeFormId);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeFormId]);
 
   // Handle field changes from Adobe viewer — reverse-map PDF field name → internal key
   const handleAdobeFieldChange = useCallback((formId: string, pdfFieldName: string, value: string) => {
     const reverseMap = getReverseMap(formId);
-    const internalKey = reverseMap[pdfFieldName] || pdfFieldName;
+    // Try exact match, then case-insensitive
+    const internalKey = reverseMap[pdfFieldName]
+      || Object.entries(reverseMap).find(([k]) => k.toLowerCase() === pdfFieldName.toLowerCase())?.[1]
+      || pdfFieldName;
     handleFieldChange(internalKey, value);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [getReverseMap]);
