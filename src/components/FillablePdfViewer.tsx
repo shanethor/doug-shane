@@ -1,7 +1,13 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { Loader2, AlertCircle } from "lucide-react";
 import { FILLABLE_PDF_PATHS, ACORD_FIELD_MAPS } from "@/lib/acord-field-map";
-import { PDFDocument } from "pdf-lib";
+import {
+  PDFDocument,
+  PDFTextField,
+  PDFCheckBox,
+  PDFDropdown,
+  PDFRadioGroup,
+} from "pdf-lib";
 
 interface FillablePdfViewerProps {
   formId: string;
@@ -40,12 +46,18 @@ async function buildFilledPdfBlobUrl(
   try {
     form = pdfDoc.getForm();
   } catch {
-    // PDF has no AcroForm — fall through to raw render
+    // No AcroForm — serve raw PDF
   }
 
   if (form) {
     const pdfFields = form.getFields();
-    const pdfFieldNames = new Set(pdfFields.map(f => f.getName()));
+    // Build a lookup map: exact name → field, plus lowercased for fallback
+    const nameToField = new Map<string, typeof pdfFields[0]>();
+    const lowerToField = new Map<string, typeof pdfFields[0]>();
+    for (const f of pdfFields) {
+      nameToField.set(f.getName(), f);
+      lowerToField.set(f.getName().toLowerCase(), f);
+    }
 
     for (const [ourKey, pdfFieldName] of Object.entries(fieldMap)) {
       const rawVal = formData[ourKey];
@@ -54,65 +66,55 @@ async function buildFilledPdfBlobUrl(
       const display = formatFieldValue(ourKey, rawVal);
       if (!display) continue;
 
-      // Try exact match first, then substring match
-      let matchedName: string | null = null;
-      if (pdfFieldNames.has(pdfFieldName)) {
-        matchedName = pdfFieldName;
-      } else {
-        // Fallback: find a PDF field whose name contains the mapped name or vice versa
-        for (const pfn of pdfFieldNames) {
-          if (pfn.toLowerCase().includes(pdfFieldName.toLowerCase()) ||
-              pdfFieldName.toLowerCase().includes(pfn.toLowerCase())) {
-            matchedName = pfn;
+      // 1. Exact match
+      let field = nameToField.get(pdfFieldName);
+
+      // 2. Case-insensitive exact match
+      if (!field) {
+        field = lowerToField.get(pdfFieldName.toLowerCase());
+      }
+
+      // 3. Substring fallback
+      if (!field) {
+        const lower = pdfFieldName.toLowerCase();
+        for (const [name, f] of lowerToField) {
+          if (name.includes(lower) || lower.includes(name)) {
+            field = f;
             break;
           }
         }
       }
 
-      if (!matchedName) continue;
+      if (!field) continue;
 
       try {
-        const field = form.getField(matchedName);
-        const fieldType = field.constructor.name;
-
-        if (fieldType === "PDFTextField") {
-          (form.getTextField(matchedName)).setText(display);
-        } else if (fieldType === "PDFCheckBox") {
+        // Use instanceof (safe across bundlers, unlike .constructor.name)
+        if (field instanceof PDFTextField) {
+          field.setText(display);
+        } else if (field instanceof PDFCheckBox) {
           const isChecked = rawVal === true || rawVal === "true" || rawVal === "Yes" || rawVal === "✓";
-          if (isChecked) {
-            form.getCheckBox(matchedName).check();
-          } else {
-            form.getCheckBox(matchedName).uncheck();
-          }
-        } else if (fieldType === "PDFDropdown") {
-          try {
-            form.getDropdown(matchedName).select(display);
-          } catch {
-            // Option not in list — skip
-          }
-        } else if (fieldType === "PDFRadioGroup") {
-          try {
-            form.getRadioGroup(matchedName).select(display);
-          } catch {
-            // Option not available — skip
-          }
+          if (isChecked) field.check(); else field.uncheck();
+        } else if (field instanceof PDFDropdown) {
+          try { field.select(display); } catch { /* option not in list */ }
+        } else if (field instanceof PDFRadioGroup) {
+          try { field.select(display); } catch { /* option unavailable */ }
         }
       } catch {
-        // Field type mismatch or not found — skip silently
+        // Silently skip unwritable fields
       }
     }
 
-    // Flatten so values are visible (not editable native AcroForm which may hide values)
-    // We keep it unflattenned so the user can still edit natively in the PDF viewer
     try {
       form.updateFieldAppearances();
     } catch {
-      // Some PDFs resist appearance updates — ignore
+      // Some PDFs block appearance updates — values still saved
     }
   }
 
   const filledBytes = await pdfDoc.save({ useObjectStreams: false });
-  return URL.createObjectURL(new Blob([filledBytes.buffer as ArrayBuffer], { type: "application/pdf" }));
+  return URL.createObjectURL(
+    new Blob([filledBytes.buffer as ArrayBuffer], { type: "application/pdf" })
+  );
 }
 
 export default function FillablePdfViewer({ formId, formData }: FillablePdfViewerProps) {
@@ -120,64 +122,70 @@ export default function FillablePdfViewer({ formId, formData }: FillablePdfViewe
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const prevBlobUrl = useRef<string | null>(null);
-  // Keep a stable ref to latest formData to use inside debounced rebuild
   const formDataRef = useRef(formData);
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // Track if we've done the initial load (no debounce) vs subsequent edits (debounced)
-  const initialLoadDone = useRef(false);
+  // Tracks whether first build for current formId has completed
+  const firstBuildDone = useRef(false);
 
   const pdfPath = FILLABLE_PDF_PATHS[formId];
 
-  // Always keep ref current
+  // Always sync ref to latest formData
   useEffect(() => {
     formDataRef.current = formData;
   });
 
-  const rebuildPdf = useCallback((cancelled: { value: boolean }) => {
-    if (!pdfPath) return;
-    setLoading(true);
-    setError(null);
-    buildFilledPdfBlobUrl(pdfPath, formId, formDataRef.current).then((url) => {
-      if (cancelled.value) { URL.revokeObjectURL(url); return; }
-      if (prevBlobUrl.current) URL.revokeObjectURL(prevBlobUrl.current);
-      prevBlobUrl.current = url;
-      setBlobUrl(url);
-      setLoading(false);
-    }).catch((err) => {
-      if (!cancelled.value) {
-        setError(err?.message || "Failed to load PDF");
-        setLoading(false);
-      }
-    });
-  }, [pdfPath, formId]);
+  const rebuildPdf = useCallback(
+    (cancelled: { value: boolean }) => {
+      if (!pdfPath) return;
+      setLoading(true);
+      setError(null);
+      buildFilledPdfBlobUrl(pdfPath, formId, formDataRef.current)
+        .then((url) => {
+          if (cancelled.value) { URL.revokeObjectURL(url); return; }
+          if (prevBlobUrl.current) URL.revokeObjectURL(prevBlobUrl.current);
+          prevBlobUrl.current = url;
+          setBlobUrl(url);
+          setLoading(false);
+          firstBuildDone.current = true;
+        })
+        .catch((err) => {
+          if (!cancelled.value) {
+            console.error("PDF fill error:", err);
+            setError(err?.message || "Failed to load PDF");
+            setLoading(false);
+          }
+        });
+    },
+    [pdfPath, formId]
+  );
 
-  // Initial load: trigger immediately when formId/path changes
+  // Re-run immediately whenever formId changes (new form selected)
   useEffect(() => {
     if (!pdfPath) {
       setError(`No fillable PDF available for form: ${formId}`);
       setLoading(false);
       return;
     }
-    initialLoadDone.current = false;
+    firstBuildDone.current = false;
+    setBlobUrl(null);
+    setLoading(true);
     const cancelled = { value: false };
     rebuildPdf(cancelled);
-    initialLoadDone.current = true;
     return () => { cancelled.value = true; };
-  }, [pdfPath, formId, rebuildPdf]);
+  }, [formId, pdfPath, rebuildPdf]);
 
-  // Debounced refresh on formData edits (after initial load)
+  // Debounce re-render when formData changes (field edits) — skip until first build is done
   useEffect(() => {
-    if (!initialLoadDone.current) return;
+    if (!firstBuildDone.current) return;
     if (debounceTimer.current) clearTimeout(debounceTimer.current);
     const cancelled = { value: false };
-    debounceTimer.current = setTimeout(() => {
-      rebuildPdf(cancelled);
-    }, 800);
+    debounceTimer.current = setTimeout(() => rebuildPdf(cancelled), 800);
     return () => {
       cancelled.value = true;
       if (debounceTimer.current) clearTimeout(debounceTimer.current);
     };
-  }, [formData, rebuildPdf]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData]);
 
   useEffect(() => {
     return () => { if (prevBlobUrl.current) URL.revokeObjectURL(prevBlobUrl.current); };
