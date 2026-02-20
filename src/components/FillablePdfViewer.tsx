@@ -1,9 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { Loader2, AlertCircle, RefreshCw } from "lucide-react";
 import { FILLABLE_PDF_PATHS } from "@/lib/acord-field-map";
-import { FIELD_POSITION_MAP } from "@/lib/acord-field-positions";
 import { generateAcordPdfAsync } from "@/lib/pdf-generator";
-import { formatUSD, CURRENCY_FIELDS } from "@/lib/acord-autofill";
 import type { AcordFormDefinition } from "@/lib/acord-forms";
 
 interface FillablePdfViewerProps {
@@ -14,106 +12,21 @@ interface FillablePdfViewerProps {
 }
 
 /**
- * Loads the original ACORD PDF and draws field values directly onto each page
- * using pdf-lib's page.drawText() — bypasses AcroForm/XFA entirely.
- * This matches the approach from https://stackoverflow.com/questions/1180115
+ * Loads the official ACORD fillable PDF pre-filled with form data.
+ * Uses pdf-lib to write field values before displaying in the iframe.
  */
 async function buildFilledPdfBlobUrl(
   formDef: AcordFormDefinition,
   formData: Record<string, any>
-): Promise<{ url: string; isAcroForm: boolean }> {
-  const result = await generateAcordPdfAsync(formDef, formData, {});
+): Promise<string> {
+  // flatten: false keeps fields interactive in the iframe viewer
+  const result = await generateAcordPdfAsync(formDef, formData, { flatten: false });
   const blob = new Blob([result.bytes.buffer as ArrayBuffer], { type: "application/pdf" });
-  const url = URL.createObjectURL(blob);
-  return { url, isAcroForm: result.isAcroForm ?? true };
-}
-
-/** Image overlay viewer for XFA / non-AcroForm PDFs */
-function ImageOverlayViewer({
-  formDef,
-  formData,
-}: {
-  formDef: AcordFormDefinition;
-  formData: Record<string, any>;
-}) {
-  const positions = FIELD_POSITION_MAP[formDef.id] || {};
-  const pages = formDef.pages || [];
-
-  if (pages.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground p-8 text-center">
-        <AlertCircle className="h-8 w-8 text-destructive" />
-        <p className="text-sm font-medium">No page images for this form</p>
-      </div>
-    );
-  }
-
-  const PAGE_W = 612;
-  const PAGE_H = 792;
-
-  return (
-    <div className="flex flex-col gap-4 p-4 overflow-y-auto h-full bg-muted/30">
-      {pages.map((pageUrl, pageIdx) => (
-        <div
-          key={pageIdx}
-          className="relative mx-auto shadow-md rounded overflow-hidden"
-          style={{ width: "100%", maxWidth: "900px", aspectRatio: `${PAGE_W}/${PAGE_H}`, containerType: "inline-size" }}
-        >
-          <img
-            src={pageUrl}
-            alt={`${formDef.name} page ${pageIdx + 1}`}
-            className="w-full h-full object-cover block"
-            draggable={false}
-          />
-          {/* Data overlay — position each field value at its calibrated coordinate */}
-          {Object.entries(positions)
-            .filter(([, pos]) => pos.page === pageIdx)
-            .map(([key, pos]) => {
-              const raw = formData[key];
-              if (raw === undefined || raw === null || raw === "") return null;
-              let display = String(raw);
-              if (display === "false") return null;
-              if (display === "N/A") return null;
-              if (display === "true") display = "✓";
-              if (CURRENCY_FIELDS.has(key)) display = formatUSD(display);
-              // Format ISO dates
-              const isoMatch = display.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-              if (isoMatch) display = `${isoMatch[2]}/${isoMatch[3]}/${isoMatch[1]}`;
-
-              const leftPct = (pos.x / PAGE_W) * 100;
-              const topPct = (pos.y / PAGE_H) * 100;
-              const maxWPct = ((pos.maxWidth || 200) / PAGE_W) * 100;
-              const fontScale = (pos.fontSize || 8) / 8;
-
-              return (
-                <span
-                  key={key}
-                  className="absolute leading-tight pointer-events-none whitespace-pre-wrap break-words z-10"
-                  style={{
-                    left: `${leftPct}%`,
-                    top: `${topPct}%`,
-                    maxWidth: `${maxWPct}%`,
-                    fontSize: `clamp(6px, ${0.58 * fontScale}cqw, ${(pos.fontSize || 8) * 1.5}px)`,
-                    fontFamily: "Helvetica, Arial, sans-serif",
-                    color: "hsl(230 80% 28%)",
-                    fontWeight: 500,
-                  }}
-                >
-                  {pos.checkbox
-                    ? raw === true || raw === "Yes" || display === "✓" ? "✓" : ""
-                    : display}
-                </span>
-              );
-            })}
-        </div>
-      ))}
-    </div>
-  );
+  return URL.createObjectURL(blob);
 }
 
 export default function FillablePdfViewer({ formId, formData, formDef }: FillablePdfViewerProps) {
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
-  const [isAcroForm, setIsAcroForm] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const prevBlobUrl = useRef<string | null>(null);
@@ -126,23 +39,16 @@ export default function FillablePdfViewer({ formId, formData, formDef }: Fillabl
     setError(null);
 
     buildFilledPdfBlobUrl(def, data)
-      .then(({ url, isAcroForm: acro }) => {
+      .then((url) => {
         if (prevBlobUrl.current) URL.revokeObjectURL(prevBlobUrl.current);
         prevBlobUrl.current = url;
         setBlobUrl(url);
-        setIsAcroForm(acro);
         setLoading(false);
       })
       .catch((err) => {
         console.error("PDF fill error:", err);
-        // If we have page images, fall back to image overlay instead of error
-        if (def.pages && def.pages.length > 0) {
-          setIsAcroForm(false);
-          setLoading(false);
-        } else {
-          setError(err?.message || "Failed to generate PDF");
-          setLoading(false);
-        }
+        setError(err?.message || "Failed to generate PDF");
+        setLoading(false);
       });
   };
 
@@ -154,14 +60,8 @@ export default function FillablePdfViewer({ formId, formData, formDef }: Fillabl
       return;
     }
     if (!pdfPath) {
-      // No fillable PDF — go straight to image overlay if pages exist
-      if (formDef.pages && formDef.pages.length > 0) {
-        setIsAcroForm(false);
-        setLoading(false);
-      } else {
-        setError(`No fillable PDF available for form: ${formId}`);
-        setLoading(false);
-      }
+      setError(`No fillable PDF available for form: ${formId}`);
+      setLoading(false);
       return;
     }
     prevDataRef.current = JSON.stringify(formData);
@@ -169,11 +69,9 @@ export default function FillablePdfViewer({ formId, formData, formDef }: Fillabl
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formId, formDef]);
 
-  // Rebuild when form data changes (debounced) — only for AcroForm PDFs
+  // Rebuild when form data changes (debounced)
   useEffect(() => {
     if (!formDef || !pdfPath) return;
-    // Image overlay re-renders automatically via React props — no rebuild needed
-    if (isAcroForm === false) return;
     const serialized = JSON.stringify(formData);
     if (serialized === prevDataRef.current) return;
     prevDataRef.current = serialized;
@@ -189,6 +87,16 @@ export default function FillablePdfViewer({ formId, formData, formDef }: Fillabl
   useEffect(() => {
     return () => { if (prevBlobUrl.current) URL.revokeObjectURL(prevBlobUrl.current); };
   }, []);
+
+  if (!pdfPath) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground p-8 text-center">
+        <AlertCircle className="h-8 w-8 text-destructive" />
+        <p className="text-sm font-medium">No fillable PDF for this form yet</p>
+        <p className="text-xs">A fillable PDF for {formId} has not been configured.</p>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
@@ -217,12 +125,6 @@ export default function FillablePdfViewer({ formId, formData, formDef }: Fillabl
     );
   }
 
-  // ── XFA / non-AcroForm: use image overlay renderer ──
-  if (isAcroForm === false && formDef) {
-    return <ImageOverlayViewer formDef={formDef} formData={formData} />;
-  }
-
-  // ── AcroForm: render the pre-filled interactive PDF in an iframe ──
   return (
     <div className="flex flex-col h-full">
       <iframe

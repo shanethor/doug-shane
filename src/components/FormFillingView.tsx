@@ -408,20 +408,83 @@ export default function FormFillingView({ submissionId, initialMessages, initial
     setIsInferring(false);
   };
 
-  /** Fill a single ACORD PDF with formData and return a Blob. Uses the full generator pipeline. */
+  /** Fill a single ACORD PDF's AcroForm fields with formData and return a Blob */
   const buildFilledPdfBlob = async (form: typeof enabledFormList[0]): Promise<Blob | null> => {
+    const { FILLABLE_PDF_PATHS, ACORD_FIELD_MAPS } = await import("@/lib/acord-field-map");
+    const pdfPath = FILLABLE_PDF_PATHS[form.id];
+    if (!pdfPath) return null;
+
+    const resp = await fetch(pdfPath);
+    if (!resp.ok) return null;
+    const pdfBytes = await resp.arrayBuffer();
+
+    const { PDFDocument } = await import("pdf-lib");
+    const pdfDoc = await PDFDocument.load(pdfBytes, { ignoreEncryption: true });
+
     try {
-      const formFields: Record<string, any> = {};
-      for (const field of form.fields) {
-        if (formData[field.key] !== undefined) formFields[field.key] = formData[field.key];
+      const pdfForm = pdfDoc.getForm();
+      const fieldMap = ACORD_FIELD_MAPS[form.id] || {};
+      const pdfFields = pdfForm.getFields();
+      const pdfFieldNames = pdfFields.map(f => f.getName());
+
+      // Normalize a string for fuzzy comparison: lowercase, collapse whitespace, strip special chars
+      const norm = (s: string) =>
+        s.toLowerCase()
+          .replace(/[\\\/\-_&,.:;()\[\]#*]/g, " ")
+          .replace(/\s+/g, " ")
+          .trim();
+
+      // Build normalized lookup map once
+      const normalizedPdfNames = pdfFieldNames.map(n => ({ original: n, normalized: norm(n) }));
+
+      const findPdfField = (pdfName: string): string | undefined => {
+        const target = norm(pdfName);
+        // 1. Exact match (case-insensitive, normalized)
+        const exact = normalizedPdfNames.find(n => n.normalized === target);
+        if (exact) return exact.original;
+        // 2. PDF field contains our target string
+        const contains = normalizedPdfNames.find(n => n.normalized.includes(target));
+        if (contains) return contains.original;
+        // 3. Our target contains the PDF field name (for abbreviated PDF names)
+        const contained = normalizedPdfNames.find(n => target.includes(n.normalized) && n.normalized.length > 4);
+        if (contained) return contained.original;
+        return undefined;
+      };
+
+      for (const [ourKey, pdfName] of Object.entries(fieldMap)) {
+        const val = formData[ourKey];
+        if (val === null || val === undefined || val === "") continue;
+        const strVal = String(val).trim();
+        if (!strVal) continue;
+
+        const targetName = findPdfField(pdfName);
+        if (!targetName) continue;
+
+        try {
+          const field = pdfForm.getField(targetName);
+          const ctor = field.constructor.name;
+          if (ctor === "PDFTextField") {
+            pdfForm.getTextField(targetName).setText(strVal);
+          } else if (ctor === "PDFDropdown") {
+            try { pdfForm.getDropdown(targetName).select(strVal); } catch { /* option may not exist */ }
+          } else if (ctor === "PDFCheckBox") {
+            const truthy = /^(true|yes|1|x)$/i.test(strVal);
+            if (truthy) pdfForm.getCheckBox(targetName).check();
+            else pdfForm.getCheckBox(targetName).uncheck();
+          } else if (ctor === "PDFRadioGroup") {
+            try { pdfForm.getRadioGroup(targetName).select(strVal); } catch { /* option may not exist */ }
+          }
+        } catch { /* skip unwritable fields */ }
       }
-      // Also pass any flat keys not in the schema (vehicle_N_*, driver_N_*, etc.)
-      const result = await generateAcordPdfAsync(form, formData, { flatten: true });
-      return new Blob([result.bytes.buffer as ArrayBuffer], { type: "application/pdf" });
-    } catch (err) {
-      console.error(`[Download] Failed for ${form.id}:`, err);
-      return null;
+
+      // Flatten to lock values into the PDF
+      pdfForm.flatten();
+    } catch {
+      // If AcroForm manipulation fails, return the original PDF unmodified
     }
+
+    const filledBytes = await pdfDoc.save();
+    return new Blob([filledBytes.buffer as ArrayBuffer], { type: "application/pdf" });
   };
 
   const downloadForms = async (mode: "individual" | "package") => {
