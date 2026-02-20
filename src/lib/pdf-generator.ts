@@ -99,9 +99,17 @@ function trySetField(field: any, value: string, key: string): boolean {
 }
 
 /**
- * Main PDF generator: loads the official fillable ACORD PDF and fills AcroForm fields.
- * Strategy: exact name → normalized fuzzy → skip.
- * Falls back to jsPDF image overlay if the fillable PDF is unavailable.
+ * Main PDF generator.
+ *
+ * TWO PATHS intentionally split:
+ *   flatten=false  (interactive viewer)  → pdf-lib AcroForm fill
+ *                                           Strips /Encrypt so Adobe shows "Unprotected"
+ *                                           and allows in-viewer editing.
+ *   flatten=true   (download)            → jsPDF image-overlay
+ *                                           Renders page screenshots as PDF background
+ *                                           and overlays text at calibrated positions.
+ *                                           This preserves 100% of the original ACORD
+ *                                           visual formatting — no XFA loss.
  */
 export async function generateAcordPdfAsync(
   form: AcordFormDefinition,
@@ -112,7 +120,15 @@ export async function generateAcordPdfAsync(
   const pdfPath = FILLABLE_PDF_PATHS[form.id];
   const fieldMap = ACORD_FIELD_MAPS[form.id] || {};
 
-  // ── Primary path: pdf-lib AcroForm filling ──
+  // ── DOWNLOAD path: jsPDF image overlay (preserves original ACORD formatting) ──
+  // pdf-lib strips XFA data which is responsible for form layout/appearance.
+  // For download we render the original page screenshot as a background and
+  // overlay the filled values at calibrated pixel positions.
+  if (flatten && form.pages && form.pages.length > 0) {
+    return generateJsPdfOverlay(form, data);
+  }
+
+  // ── VIEWER path: pdf-lib AcroForm fill (keeps fields interactive) ──
   if (pdfPath) {
     try {
       const pdfBytes = await fetchPdfBytes(pdfPath);
@@ -251,46 +267,56 @@ export async function generateAcordPdfAsync(
     }
   }
 
-  // ── Fallback: jsPDF image overlay (original approach) ──
+  // Final fallback if pdf-lib failed and no pages exist
+  return generateJsPdfOverlay(form, data);
+}
+
+/**
+ * jsPDF image-overlay renderer.
+ * Uses the ACORD page screenshots as PDF backgrounds and overlays field values
+ * at calibrated positions. Produces a visually identical download with filled data.
+ */
+async function generateJsPdfOverlay(
+  form: AcordFormDefinition,
+  data: Record<string, any>
+): Promise<{ save: (filename: string) => void; bytes: Uint8Array }> {
   const jsPDF = (await import("jspdf")).default;
   const { FIELD_POSITION_MAP } = await import("./acord-field-positions");
-  const { formatUSD: fmtUSD, CURRENCY_FIELDS: CF } = await import("./acord-autofill");
 
   const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "letter" });
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
   const positions = FIELD_POSITION_MAP[form.id] || {};
 
-  if (form.pages && form.pages.length > 0) {
-    for (let i = 0; i < form.pages.length; i++) {
-      if (i > 0) doc.addPage();
-      try {
-        const imgData = await loadImageAsBase64(form.pages[i]);
-        doc.addImage(imgData, "JPEG", 0, 0, pageWidth, pageHeight);
-      } catch {
-        doc.setFontSize(14);
-        doc.setTextColor(150);
-        doc.text(`${form.name} — Page ${i + 1}`, pageWidth / 2, pageHeight / 2, { align: "center" });
-        doc.setTextColor(0);
-      }
+  // Render each page as a background image
+  for (let i = 0; i < (form.pages?.length || 0); i++) {
+    if (i > 0) doc.addPage();
+    try {
+      const imgData = await loadImageAsBase64(form.pages![i]);
+      doc.addImage(imgData, "JPEG", 0, 0, pageWidth, pageHeight);
+    } catch {
+      doc.setFontSize(14);
+      doc.setTextColor(150);
+      doc.text(`${form.name} — Page ${i + 1}`, pageWidth / 2, pageHeight / 2, { align: "center" });
+      doc.setTextColor(0);
     }
   }
 
-  doc.setTextColor(0, 0, 140);
+  // Overlay filled values in dark navy (matches ACORD form ink colour)
+  doc.setTextColor(10, 20, 80);
   for (const [key, pos] of Object.entries(positions)) {
     const raw = data[key];
     if (raw === undefined || raw === null || raw === "") continue;
-    let display = formatFieldValue(key, raw);
+    const display = formatFieldValue(key, raw);
     if (!display || display === "N/A") continue;
-    const pageIdx = pos.page;
-    if (pageIdx >= (form.pages?.length || 0)) continue;
-    doc.setPage(pageIdx + 1);
+    if (pos.page >= (form.pages?.length || 0)) continue;
+    doc.setPage(pos.page + 1);
     const fontSize = pos.fontSize || 8;
     doc.setFontSize(fontSize);
     doc.setFont("helvetica", "normal");
     if (pos.checkbox) {
       if (display === "✓" || raw === true || raw === "Yes") {
-        doc.setFontSize(12);
+        doc.setFontSize(11);
         doc.text("✓", pos.x, pos.y);
       }
     } else {
@@ -301,9 +327,9 @@ export async function generateAcordPdfAsync(
   }
   doc.setTextColor(0);
 
-  const fallbackBytes = doc.output("arraybuffer");
+  const outBytes = doc.output("arraybuffer");
   return {
-    bytes: new Uint8Array(fallbackBytes),
+    bytes: new Uint8Array(outBytes),
     save: (filename: string) => doc.save(filename),
   };
 }
