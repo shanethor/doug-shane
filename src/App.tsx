@@ -17,6 +17,7 @@ import Onboarding from "./pages/Onboarding";
 import NotFound from "./pages/NotFound";
 import Deck from "./pages/Deck";
 import PdfDiagnostic from "./pages/PdfDiagnostic";
+import FormTest from "./pages/FormTest";
 
 const queryClient = new QueryClient();
 
@@ -40,6 +41,7 @@ const App = () => (
           <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
           <Route path="/deck" element={<Deck />} />
           <Route path="/pdf-diagnostic" element={<PdfDiagnostic />} />
+          <Route path="/form-test" element={<ProtectedRoute><FormTest /></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
