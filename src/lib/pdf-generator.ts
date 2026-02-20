@@ -107,7 +107,7 @@ export async function generateAcordPdfAsync(
   form: AcordFormDefinition,
   data: Record<string, any>,
   options: PdfGenerateOptions = {}
-): Promise<{ save: (filename: string) => void; bytes: Uint8Array }> {
+): Promise<{ save: (filename: string) => void; bytes: Uint8Array; isAcroForm?: boolean }> {
   const { flatten = true } = options;
   const pdfPath = FILLABLE_PDF_PATHS[form.id];
   const fieldMap = ACORD_FIELD_MAPS[form.id] || {};
@@ -190,6 +190,7 @@ export async function generateAcordPdfAsync(
 
       const savedBytes = await pdfDoc.save();
       return {
+        isAcroForm: true,
         bytes: savedBytes,
         save: (filename: string) => {
           const blob = new Blob([savedBytes.buffer as ArrayBuffer], { type: "application/pdf" });
@@ -258,6 +259,7 @@ export async function generateAcordPdfAsync(
 
   const fallbackBytes = doc.output("arraybuffer");
   return {
+    isAcroForm: false,
     bytes: new Uint8Array(fallbackBytes),
     save: (filename: string) => doc.save(filename),
   };
