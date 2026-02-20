@@ -128,15 +128,23 @@ Mark WC-related gaps as "required" priority since ACORD 130 needs them for submi
 
 Return this exact structure:
 {
-  "form_data": { ... all extracted fields as string values ... },
+  "form_data": {
+    ... all extracted fields as string values ...,
+    "vehicles": [ { "year": "", "make": "", "model": "", "vin": "", "body_type": "", "stated_amount": "", "garaging_zip": "" } ],
+    "drivers": [ { "name": "", "dob": "", "license": "", "license_state": "" } ]
+  },
   "gaps": [ { "field": "field_key", "question": "question to ask", "priority": "required|recommended|optional" } ]
 }
 
 RULES:
-- All values in form_data must be strings (including booleans: use "true"/"false")
+- All scalar values in form_data must be strings (including booleans: use "true"/"false")
 - Dates in YYYY-MM-DD format
 - Currency as plain numbers without $ or commas
-- lob_auto/lob_gl/lob_property/lob_umbrella/lob_wc should be "true" or "false" strings`;
+- lob_auto/lob_gl/lob_property/lob_umbrella/lob_wc should be "true" or "false" strings
+- ALWAYS populate the vehicles[] array for any auto policy — include ALL vehicles found (up to 30)
+- ALWAYS populate the drivers[] array for any auto policy — include ALL drivers found (up to 30)
+- For each vehicle extract: year, make, model, VIN, body_type (e.g. Pickup, Van, Sedan), stated_amount/cost_new, garaging_zip
+- For each driver extract: full name, date of birth (YYYY-MM-DD), license number, license state`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
