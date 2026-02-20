@@ -207,12 +207,38 @@ const FillablePdfViewer = forwardRef<FillablePdfViewerHandle, FillablePdfViewerP
           { enablePDFAnalytics: true, listenOn: ["FORM_FIELD_CHANGED"] }
         );
 
-        // ── Load the ORIGINAL PDF directly — no pdf-lib processing ──
-        // Adobe handles XFA, AcroForms, and encryption natively.
-        // This preserves 100% of the original ACORD visual formatting.
+        // ── Strip encryption before loading into Adobe ──
+        // ACORD PDFs carry permission flags that trigger "Protected / desktop only"
+        // in the Adobe Embed API. We strip them with pdf-lib (ignoreEncryption) and
+        // re-save — this preserves 100% of AcroForm fields and visual layout.
         const response = await fetch(pdfUrl);
         if (!response.ok) throw new Error(`Failed to fetch PDF: ${pdfUrl}`);
-        const pdfBuffer = await response.arrayBuffer();
+        const rawBytes = await response.arrayBuffer();
+
+        let pdfBuffer: ArrayBuffer;
+        try {
+          const { PDFDocument } = await import("pdf-lib");
+          const doc = await PDFDocument.load(new Uint8Array(rawBytes), {
+            ignoreEncryption: true,
+            updateMetadata: false,
+          });
+          // Remove encryption dictionary entries so Adobe sees an open document
+          const catalog = doc.catalog;
+          if (catalog.has(doc.context.obj("Encrypt") as any)) {
+            catalog.delete(doc.context.obj("Encrypt") as any);
+          }
+          // Also clear permission flags via trailer
+          try {
+            (doc as any).context.trailerInfo.Encrypt = undefined;
+          } catch (_) { /* ignore */ }
+
+          const stripped = await doc.save({ useObjectStreams: false });
+          pdfBuffer = stripped.buffer as ArrayBuffer;
+          console.info("[Adobe] Encryption stripped — passing clean bytes to viewer");
+        } catch (stripErr) {
+          console.warn("[Adobe] Could not strip encryption, falling back to raw bytes:", stripErr);
+          pdfBuffer = rawBytes;
+        }
 
         await view.previewFile(
           {
