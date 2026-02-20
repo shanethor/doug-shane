@@ -124,6 +124,20 @@ ACORD 131 (Umbrella/Excess) — if umbrella/excess coverage detected:
 Do NOT ask about fields that can be inferred or auto-calculated (like expiration date from effective date).
 Mark WC-related gaps as "required" priority since ACORD 130 needs them for submission.`;
 
+    const systemPrompt = `You are an expert insurance underwriter assistant. Extract data from the provided business or policy information and return ONLY valid JSON with no markdown fences, no explanation — just raw JSON.
+
+Return this exact structure:
+{
+  "form_data": { ... all extracted fields as string values ... },
+  "gaps": [ { "field": "field_key", "question": "question to ask", "priority": "required|recommended|optional" } ]
+}
+
+RULES:
+- All values in form_data must be strings (including booleans: use "true"/"false")
+- Dates in YYYY-MM-DD format
+- Currency as plain numbers without $ or commas
+- lob_auto/lob_gl/lob_property/lob_umbrella/lob_wc should be "true" or "false" strings`;
+
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -131,219 +145,11 @@ Mark WC-related gaps as "required" priority since ACORD 130 needs them for submi
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: "google/gemini-2.5-flash",
         messages: [
-          { role: "system", content: "You are an expert insurance underwriter assistant." },
+          { role: "system", content: systemPrompt },
           { role: "user", content: prompt },
         ],
-        tools: [
-          {
-            type: "function",
-            function: {
-              name: "extract_insurance_data",
-              description: "Extract business data into insurance application fields and identify gaps",
-              parameters: {
-                type: "object",
-                properties: {
-                  form_data: {
-                    type: "object",
-                    description: "Extracted ACORD-style form fields",
-                    properties: {
-                      // Applicant Info
-                      applicant_name: { type: "string" },
-                      dba_name: { type: "string" },
-                      mailing_address: { type: "string" },
-                      city: { type: "string" },
-                      state: { type: "string" },
-                      zip: { type: "string" },
-                      phone: { type: "string" },
-                      email: { type: "string" },
-                      website: { type: "string" },
-                      fein: { type: "string" },
-                      sic_code: { type: "string" },
-                      naics_code: { type: "string" },
-                      business_type: { type: "string" },
-                      year_established: { type: "string" },
-                      annual_revenue: { type: "string" },
-                      number_of_employees: { type: "string" },
-                      full_time_employees: { type: "string" },
-                      part_time_employees: { type: "string" },
-                      nature_of_business: { type: "string" },
-                      description_of_operations: { type: "string" },
-                      coverage_types_needed: { type: "array", items: { type: "string" } },
-                      effective_date: { type: "string" },
-                      expiration_date: { type: "string" },
-                      current_carrier: { type: "string" },
-                      current_premium: { type: "string" },
-                      premises_address: { type: "string" },
-                      premises_owned_or_leased: { type: "string" },
-                      square_footage: { type: "string" },
-                      building_construction: { type: "string" },
-                      year_built: { type: "string" },
-                      prior_losses_last_5_years: { type: "string" },
-                      claims_description: { type: "string" },
-                      additional_insureds: { type: "string" },
-                      special_conditions: { type: "string" },
-                      // ACORD 125 specific
-                      business_category: { type: "string" },
-                      date_business_started: { type: "string" },
-                      proposed_eff_date: { type: "string" },
-                      proposed_exp_date: { type: "string" },
-                      billing_plan: { type: "string" },
-                      payment_plan: { type: "string" },
-                      contact_name_1: { type: "string" },
-                      contact_phone_1: { type: "string" },
-                      contact_email_1: { type: "string" },
-                      premises_city: { type: "string" },
-                      premises_state: { type: "string" },
-                      premises_zip: { type: "string" },
-                      occupied_sq_ft: { type: "string" },
-                      annual_revenues: { type: "string" },
-                      subsidiary_of_another: { type: "string" },
-                      has_subsidiaries: { type: "string" },
-                      safety_program: { type: "string" },
-                      exposure_flammables: { type: "string" },
-                      policy_declined_cancelled: { type: "string" },
-                      bankruptcy: { type: "string" },
-                      foreign_operations: { type: "string" },
-                      prior_carrier_1: { type: "string" },
-                      // GL (ACORD 126)
-                      coverage_type: { type: "string", description: "Occurrence or Claims-Made" },
-                      general_aggregate: { type: "string" },
-                      products_aggregate: { type: "string" },
-                      each_occurrence: { type: "string" },
-                      personal_adv_injury: { type: "string" },
-                      fire_damage: { type: "string" },
-                      medical_payments: { type: "string" },
-                      hazard_code_1: { type: "string" },
-                      hazard_classification_1: { type: "string" },
-                      hazard_exposure_1: { type: "string" },
-                      hazard_premium_1: { type: "string" },
-                      // WC (ACORD 130)
-                      wc_class_code: { type: "string" },
-                      wc_class_description: { type: "string" },
-                      annual_remuneration: { type: "string" },
-                      class_code_1: { type: "string" },
-                      class_description_1: { type: "string" },
-                      annual_remuneration_1: { type: "string" },
-                      class_code_2: { type: "string" },
-                      class_description_2: { type: "string" },
-                      annual_remuneration_2: { type: "string" },
-                      officer_name: { type: "string" },
-                      officer_title: { type: "string" },
-                      officer_ownership: { type: "string" },
-                      officer_1_name: { type: "string" },
-                      officer_1_title: { type: "string" },
-                      officer_1_ownership: { type: "string" },
-                      officer_1_included: { type: "string" },
-                      subcontractors_used: { type: "string" },
-                      seasonal_employees: { type: "string" },
-                      prior_wc_carrier: { type: "string" },
-                      experience_mod_rate: { type: "string" },
-                      total_estimated_premium: { type: "string" },
-                      // Auto (ACORD 127)
-                      driver_1_name: { type: "string" },
-                      driver_1_dob: { type: "string" },
-                      driver_1_license_number: { type: "string" },
-                      driver_1_license_state: { type: "string" },
-                      vehicle_1_year: { type: "string" },
-                      vehicle_1_make: { type: "string" },
-                      vehicle_1_model: { type: "string" },
-                      vehicle_1_vin: { type: "string" },
-                      radius_of_travel: { type: "string" },
-                      // Property (ACORD 140)
-                      construction_type: { type: "string" },
-                      num_stories: { type: "string" },
-                      total_area_sq_ft: { type: "string" },
-                      building_amount: { type: "string" },
-                      bpp_amount: { type: "string" },
-                      business_income_amount: { type: "string" },
-                      sprinkler_system: { type: "string" },
-                      fire_alarm: { type: "string" },
-                      burglar_alarm: { type: "string" },
-                      roof_type: { type: "string" },
-                      heating_type: { type: "string" },
-                      // Umbrella (ACORD 131)
-                      each_occurrence_limit: { type: "string" },
-                      aggregate_limit: { type: "string" },
-                      self_insured_retention: { type: "string" },
-                      // Auto (ACORD 127) — extended for policy docs
-                      driver_2_name: { type: "string" },
-                      driver_3_name: { type: "string" },
-                      driver_4_name: { type: "string" },
-                      driver_5_name: { type: "string" },
-                      vehicle_2_year: { type: "string" },
-                      vehicle_2_make: { type: "string" },
-                      vehicle_2_model: { type: "string" },
-                      vehicle_2_vin: { type: "string" },
-                      vehicle_2_body_type: { type: "string" },
-                      vehicle_3_year: { type: "string" },
-                      vehicle_3_make: { type: "string" },
-                      vehicle_3_model: { type: "string" },
-                      vehicle_3_vin: { type: "string" },
-                      vehicle_3_body_type: { type: "string" },
-                      number_of_vehicles: { type: "string" },
-                      number_of_drivers: { type: "string" },
-                      radius_of_operations: { type: "string" },
-                      garaging_state: { type: "string" },
-                      garaging_zip: { type: "string" },
-                      auto_liability_limit: { type: "string" },
-                      auto_liability_premium: { type: "string" },
-                      um_uim_limit: { type: "string" },
-                      um_uim_premium: { type: "string" },
-                      med_pay_limit: { type: "string" },
-                      med_pay_premium: { type: "string" },
-                      comp_premium: { type: "string" },
-                      collision_premium: { type: "string" },
-                      // Property (ACORD 140) — extended for policy docs
-                      building_limit: { type: "string" },
-                      bpp_limit: { type: "string" },
-                      business_income_limit: { type: "string" },
-                      total_insured_value: { type: "string" },
-                      property_premium: { type: "string" },
-                      property_deductible: { type: "string" },
-                      wind_hail_deductible_pct: { type: "string" },
-                      equipment_breakdown_premium: { type: "string" },
-                      causes_of_loss: { type: "string" },
-                      // LOB flags and premium buckets
-                      lob_auto: { type: "boolean" },
-                      lob_gl: { type: "boolean" },
-                      lob_property: { type: "boolean" },
-                      lob_umbrella: { type: "boolean" },
-                      lob_wc: { type: "boolean" },
-                      auto_premium: { type: "string" },
-                      inland_marine_premium: { type: "string" },
-                      cyber_premium: { type: "string" },
-                      crime_premium: { type: "string" },
-                      liquor_premium: { type: "string" },
-                      umbrella_premium: { type: "string" },
-                      // Policy identifiers (when extracting from existing policies)
-                      policy_number: { type: "string" },
-                      blanket_waiver_of_subrogation: { type: "string" },
-                      additional_insured_blanket: { type: "string" },
-                      surplus_lines: { type: "string" },
-                    },
-                  },
-                  gaps: {
-                    type: "array",
-                    description: "List of missing fields that need user input",
-                    items: {
-                      type: "object",
-                      properties: {
-                        field: { type: "string", description: "The field key" },
-                        question: { type: "string", description: "A clear question to ask the user" },
-                        priority: { type: "string", enum: ["required", "recommended", "optional"] },
-                      },
-                      required: ["field", "question", "priority"],
-                    },
-                  },
-                },
-                required: ["form_data", "gaps"],
-              },
-            },
-          },
-        ],
-        tool_choice: { type: "function", function: { name: "extract_insurance_data" } },
       }),
     });
 
@@ -364,13 +170,15 @@ Mark WC-related gaps as "required" priority since ACORD 130 needs them for submi
     }
 
     const aiResult = await response.json();
-    const toolCall = aiResult.choices?.[0]?.message?.tool_calls?.[0];
-    
-    if (!toolCall) {
-      throw new Error("No structured data returned from AI");
+    const rawContent = aiResult.choices?.[0]?.message?.content;
+
+    if (!rawContent) {
+      throw new Error("No content returned from AI");
     }
 
-    const extracted = JSON.parse(toolCall.function.arguments);
+    // Strip markdown code fences if present
+    const jsonStr = rawContent.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/i, "").trim();
+    const extracted = JSON.parse(jsonStr);
 
     // Save to database if submission_id provided
     if (submission_id) {
