@@ -177,6 +177,49 @@ ${file_contents ? `\nAdditional text content:\n${file_contents}` : ""}`;
     const jsonStr = rawContent.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/i, "").trim();
     const extracted = JSON.parse(jsonStr);
 
+    // Pre-expand vehicles[] and drivers[] arrays into flat vehicle_N_* / driver_N_* keys
+    // This ensures the form fill pipeline has exact flat keys identical to the benchmark ground-truth format
+    const fd: Record<string, any> = extracted.form_data || {};
+
+    const vehicles: any[] = Array.isArray(fd.vehicles) ? fd.vehicles : [];
+    vehicles.forEach((v: any, idx: number) => {
+      const n = idx + 1;
+      if (v.year && !fd[`vehicle_${n}_year`])         fd[`vehicle_${n}_year`]      = String(v.year);
+      if (v.make && !fd[`vehicle_${n}_make`])         fd[`vehicle_${n}_make`]      = String(v.make);
+      if (v.model && !fd[`vehicle_${n}_model`])       fd[`vehicle_${n}_model`]     = String(v.model);
+      if ((v.vin || v.VIN) && !fd[`vehicle_${n}_vin`]) fd[`vehicle_${n}_vin`]     = String(v.vin || v.VIN);
+      if ((v.body_type || v.bodyType || v.type) && !fd[`vehicle_${n}_body_type`])
+        fd[`vehicle_${n}_body_type`] = String(v.body_type || v.bodyType || v.type);
+      if ((v.stated_amount || v.cost_new) && !fd[`vehicle_${n}_stated_amount`])
+        fd[`vehicle_${n}_stated_amount`] = String(v.stated_amount || v.cost_new);
+      if ((v.garaging_zip || v.zip) && !fd[`vehicle_${n}_garaging_zip`])
+        fd[`vehicle_${n}_garaging_zip`] = String(v.garaging_zip || v.zip);
+    });
+    if (vehicles.length > 0 && !fd.number_of_vehicles) {
+      fd.number_of_vehicles = String(vehicles.length);
+    }
+
+    const drivers: any[] = Array.isArray(fd.drivers) ? fd.drivers : [];
+    drivers.forEach((d: any, idx: number) => {
+      const n = idx + 1;
+      if ((d.name || d.full_name) && !fd[`driver_${n}_name`])
+        fd[`driver_${n}_name`] = String(d.name || d.full_name);
+      if ((d.dob || d.date_of_birth) && !fd[`driver_${n}_dob`])
+        fd[`driver_${n}_dob`] = String(d.dob || d.date_of_birth);
+      if ((d.license || d.license_number || d.dl_number) && !fd[`driver_${n}_license`])
+        fd[`driver_${n}_license`] = String(d.license || d.license_number || d.dl_number);
+      if ((d.license_state || d.state) && !fd[`driver_${n}_license_state`])
+        fd[`driver_${n}_license_state`] = String(d.license_state || d.state);
+    });
+    if (drivers.length > 0 && !fd.number_of_drivers) {
+      fd.number_of_drivers = String(drivers.length);
+    }
+
+    // Also set LOB flags from detected arrays if not already set
+    if (vehicles.length > 0 && fd.lob_auto !== "true") fd.lob_auto = "true";
+
+    extracted.form_data = fd;
+
     // Save to database if submission_id provided
     if (submission_id) {
       const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
