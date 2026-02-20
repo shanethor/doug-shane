@@ -11,6 +11,7 @@ import ApplicationReview from "./pages/ApplicationReview";
 import AcordFormPage from "./pages/AcordFormPage";
 import AdminDashboard from "./pages/AdminDashboard";
 import Chat from "./pages/Chat";
+import WorkspaceView from "./pages/WorkspaceView";
 import TemplateEditor from "./pages/TemplateEditor";
 import GeneratedForms from "./pages/GeneratedForms";
 import Onboarding from "./pages/Onboarding";
@@ -31,6 +32,7 @@ const App = () => (
           <Route path="/clients" element={<ProtectedRoute><UserDashboard /></ProtectedRoute>} />
           <Route path="/submit-plan" element={<ProtectedRoute><SubmitPlan /></ProtectedRoute>} />
           <Route path="/application/:submissionId" element={<ProtectedRoute><ApplicationReview /></ProtectedRoute>} />
+          <Route path="/workspace/:submissionId" element={<ProtectedRoute><WorkspaceView /></ProtectedRoute>} />
           <Route path="/acord/:formId/:submissionId" element={<ProtectedRoute><AcordFormPage /></ProtectedRoute>} />
           <Route path="/acord/:formId" element={<ProtectedRoute><AcordFormPage /></ProtectedRoute>} />
           <Route path="/templates" element={<ProtectedRoute><TemplateEditor /></ProtectedRoute>} />
