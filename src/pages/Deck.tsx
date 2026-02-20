@@ -643,65 +643,58 @@ function WhyWinsSlide() {
 
 /* ─── Slide 12: Revenue Model ─── */
 function ModelSlide() {
+  const tiers = [
+    {
+      heading: "Core Deployment",
+      price: "$7,500–12,000/mo",
+      tag: "per agency",
+      features: ["Advisor workflow intelligence", "Submission ingestion & automation", "Coverage intelligence layer", "Production visibility"],
+      sub: "Typical for 5–10 advisor agencies",
+      highlight: false,
+    },
+    {
+      heading: "Full Agency Deployment",
+      price: "$12,000–25,000/mo",
+      tag: "per agency",
+      features: ["All Core features", "Agency-wide deployment", "Operational intelligence", "Performance tracking"],
+      sub: "Typical for 10–25 advisor agencies",
+      highlight: true,
+    },
+    {
+      heading: "Enterprise Deployment",
+      price: "$25,000+/mo",
+      tag: "per organization",
+      features: ["Full platform deployment", "Custom integrations", "Advanced intelligence layer", "Enterprise support"],
+      sub: "Large agencies, aggregators & networks",
+      highlight: false,
+    },
+  ];
   return (
     <div>
-      <SlideHeader icon={DollarSign} tag="Revenue Model" title="Priced on economic value. Not seats." subtitle="A top commercial producer generates $300K–$1M per year. AURA increases output by 20%+. Charging $800/mo is massively underpriced." />
+      <SlideHeader icon={DollarSign} tag="Revenue Model" title="Pricing aligned with value created, not seats." subtitle="AURA increases advisor output, agency efficiency, and protection quality." />
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-2">
-        <div className="rounded-xl border-2 border-primary/40 bg-card p-5 hover-lift">
-          <div className="text-xs font-semibold uppercase tracking-widest text-primary mb-4">Option A — Per Producer</div>
-          <div className="space-y-2">
-            {[
-              { label: "Entry", price: "$1,500–3,000/mo", note: "Per producer — priced on leverage" },
-              { label: "Enterprise", price: "$5,000–25,000/mo", note: "Per agency depending on size" },
-            ].map((t) => (
-              <div key={t.label} className="border-b border-border/30 pb-2">
-                <div className="flex justify-between items-baseline">
-                  <span className="text-sm font-semibold text-foreground">{t.label}</span>
-                  <span className="text-base font-bold text-foreground ml-2">{t.price}</span>
-                </div>
-                <p className="text-xs text-muted-foreground/70 mt-0.5">{t.note}</p>
-              </div>
-            ))}
+        {tiers.map((t) => (
+          <div key={t.heading} className={`rounded-xl p-5 hover-lift flex flex-col ${t.highlight ? "border-2 border-primary/50 bg-primary/5" : "border border-border bg-card"}`}>
+            <div className={`text-xs font-semibold uppercase tracking-widest mb-1 ${t.highlight ? "text-primary" : "text-muted-foreground"}`}>{t.heading}</div>
+            <div className="text-2xl font-bold text-foreground mt-1">{t.price}</div>
+            <div className="text-xs text-muted-foreground mb-4">{t.tag}</div>
+            <ul className="text-sm text-muted-foreground space-y-1.5 flex-1">
+              {t.features.map(f => (
+                <li key={f} className="flex items-start gap-2">
+                  <span className={`mt-0.5 ${t.highlight ? "text-primary" : "text-muted-foreground/60"}`}>✓</span>
+                  {f}
+                </li>
+              ))}
+            </ul>
+            <p className="mt-4 text-xs text-muted-foreground/60 italic border-t border-border/30 pt-3">{t.sub}</p>
           </div>
-          <p className="mt-3 text-xs text-muted-foreground/60 italic">Investors want to see enterprise pricing power. Not commodity pricing.</p>
-        </div>
-
-        <div className="rounded-xl border-2 border-border bg-card p-5 hover-lift">
-          <div className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-4">Option B — Revenue Share</div>
-          <div className="space-y-2">
-            {[
-              { year: "Year 1", price: "3–5%", note: "Of new business revenue influenced by AURA" },
-              { year: "Year 2", price: "5–7%", note: "Proven value unlocks greater share" },
-              { year: "Year 3+", price: "7–10%", note: "Full intelligence suite — compounding renewals" },
-            ].map((t) => (
-              <div key={t.year} className="border-b border-border/30 pb-2">
-                <div className="flex justify-between items-baseline">
-                  <span className="text-sm font-semibold text-foreground">{t.year}</span>
-                  <span className="text-base font-bold text-foreground ml-2">{t.price}</span>
-                </div>
-                <p className="text-xs text-muted-foreground/70 mt-0.5">{t.note}</p>
-              </div>
-            ))}
-          </div>
-          <p className="mt-3 text-xs text-muted-foreground/60 italic">Aligns revenue with agency success — scales with value delivered</p>
-        </div>
-
-        <div className="rounded-xl border border-border bg-card p-5">
-          <div className="text-xs font-semibold uppercase tracking-widest text-muted-foreground mb-4">Expansion Revenue Streams</div>
-          <ul className="text-sm text-muted-foreground space-y-2">
-            {["Carrier analytics access", "Risk intelligence licensing", "Cross-agency benchmarking", "Enterprise workflow licensing", "Data infrastructure fees"].map(item => (
-              <li key={item} className="flex items-center gap-2">
-                <span className="h-1.5 w-1.5 rounded-full bg-primary/60 shrink-0" />
-                {item}
-              </li>
-            ))}
-          </ul>
-          <p className="mt-3 text-xs text-muted-foreground/60 italic">These are Layer 4 revenue streams. Not in projections yet.</p>
-        </div>
+        ))}
       </div>
-      <p className="mt-4 text-sm text-muted-foreground text-center">
-        The real math: if AURA adds $60K–$200K per producer annually, pricing at $18K–$36K/yr is a 3–5x ROI minimum.
-      </p>
+      <div className="mt-4 text-center space-y-1">
+        <p className="text-sm font-bold text-foreground">AURA scales with the economic value it creates</p>
+        <p className="text-xs text-muted-foreground">Not limited by per-seat pricing. Revenue grows with deployment depth and intelligence value.</p>
+        <p className="text-xs text-muted-foreground/60 italic mt-1">100 agencies × $15K/mo average = $18M annual revenue. That is platform scale.</p>
+      </div>
     </div>
   );
 }
@@ -742,47 +735,62 @@ function GTMSlide() {
 
 /* ─── Slide 14: Projections ─── */
 function ProjectionsSlide() {
+  const years = [
+    { label: "Year 1", revenue: "1.2M", agencies: 10, avgMo: "$10K", height: "10%" },
+    { label: "Year 2", revenue: "5.7M", agencies: 40, avgMo: "$12K", height: "28%" },
+    { label: "Year 3", revenue: "21.6M", agencies: 120, avgMo: "$15K", height: "52%" },
+    { label: "Year 4", revenue: "64.8M", agencies: 300, avgMo: "$18K", height: "78%" },
+    { label: "Year 5", revenue: "144M", agencies: 600, avgMo: "$20K", height: "100%" },
+  ];
   return (
     <div>
-      <SlideHeader icon={BarChart3} tag="Financial Projections" title="Conservative floor. Platform ceiling." subtitle="These numbers reflect SaaS core revenue only. Expansion streams are not included." />
-      <div className="overflow-x-auto mt-2">
-        <table className="w-full text-sm border-collapse">
-          <thead>
-            <tr className="border-b border-border">
-              <th className="text-left py-2.5 px-3 text-muted-foreground font-semibold">Metric</th>
-              <th className="text-right py-2.5 px-3 text-muted-foreground font-semibold">18 Mo</th>
-              <th className="text-right py-2.5 px-3 text-muted-foreground font-semibold">36 Mo</th>
-              <th className="text-right py-2.5 px-3 text-muted-foreground font-semibold">54 Mo</th>
-            </tr>
-          </thead>
-          <tbody className="text-foreground">
-            {[
-              ["Policies Processed", "100", "250+", "500+"],
-              ["Total Premiums", "$5M", "$12.5M", "$25M"],
-              ["Core Platform Revenue", "$625K", "$1.875M", "$4M+"],
-              ["COGS", "~$300K", "~$600K", "~$1.2M"],
-              ["Gross Margin", "$325K (52%)", "$1.275M (68%)", "$2.8M+ (70%)"],
-              ["Per Producer", "$1,500–3,000/mo", "$2,000–4,000/mo", "$3,000+/mo"],
-            ].map(([metric, y1, y2, y3]) => (
-              <tr key={metric} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
-                <td className="py-2.5 px-3 font-medium">{metric}</td>
-                <td className="py-2.5 px-3 text-right tabular-nums">{y1}</td>
-                <td className="py-2.5 px-3 text-right tabular-nums">{y2}</td>
-                <td className="py-2.5 px-3 text-right tabular-nums font-semibold">{y3}</td>
-              </tr>
+      <SlideHeader icon={BarChart3} tag="Financial Projections" title="Revenue expansion as AURA becomes the intelligence layer." subtitle="Advisor wedge first. Platform scale next. Structured insurance intelligence compounds with every agency onboarded." />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-2">
+        {/* Bar chart */}
+        <div className="md:col-span-2 rounded-xl border border-border bg-card p-5">
+          <div className="flex items-end justify-around gap-3 h-44">
+            {years.map((y) => (
+              <div key={y.label} className="flex flex-col items-center gap-2 flex-1">
+                <span className="text-xs font-bold text-foreground tabular-nums">${y.revenue}</span>
+                <div className="w-full rounded-t-md bg-primary/80 transition-all" style={{ height: y.height, minHeight: "8px" }} />
+                <span className="text-xs text-muted-foreground font-medium">{y.label}</span>
+              </div>
             ))}
-          </tbody>
-        </table>
+          </div>
+          <p className="text-center text-xs text-muted-foreground mt-3 italic">Core platform subscription revenue only — expansion streams excluded</p>
+        </div>
+        {/* Explanation box */}
+        <div className="rounded-xl border border-border bg-card p-5 flex flex-col justify-between">
+          <div>
+            <p className="text-xs font-bold text-primary uppercase tracking-widest mb-3">Growth driven by agency adoption</p>
+            <ul className="text-sm text-muted-foreground space-y-2">
+              {[
+                "Start with core advisor workflow wedge",
+                "Expand to full agency deployment",
+                "Increase revenue per agency over time",
+                "Compounding growth through network expansion",
+              ].map(b => (
+                <li key={b} className="flex items-start gap-2">
+                  <span className="text-primary mt-0.5 shrink-0">→</span>
+                  {b}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="mt-4 pt-4 border-t border-border/30 space-y-1">
+            {years.map(y => (
+              <div key={y.label} className="flex justify-between text-xs">
+                <span className="text-muted-foreground">{y.label} — {y.agencies} agencies</span>
+                <span className="font-semibold text-foreground">${y.revenue}</span>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
-      <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="rounded-xl border border-border bg-card p-4">
-          <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-1">Not in these numbers</p>
-          <p className="text-xs text-muted-foreground">Carrier analytics, risk intelligence licensing, enterprise deployments, cross-agency benchmarking — Layer 4 expansion revenue that materializes as the data moat compounds.</p>
-        </div>
-        <div className="rounded-xl border border-border bg-card p-4">
-          <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-1">What drives margin expansion</p>
-          <p className="text-xs text-muted-foreground">Intelligence improves with scale. Marginal cost per additional policy decreases. Renewal revenue compounds. Switching costs increase. This is a platform flywheel.</p>
-        </div>
+      <div className="mt-4 text-center space-y-1">
+        <p className="text-sm font-bold text-foreground">Pricing aligned with economic value created, not software seats</p>
+        <p className="text-xs text-muted-foreground">Average agency subscription ranges from $7,500 to $25,000 per month depending on size and deployment</p>
+        <p className="text-xs text-muted-foreground/50 italic mt-1">Initial deployments begin within founder-led agency environment · Intelligence loop already active</p>
       </div>
     </div>
   );
