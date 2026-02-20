@@ -60,91 +60,80 @@ serve(async (req) => {
   }
 
   try {
-    const { description, file_contents, submission_id } = await req.json();
+    const { description, file_contents, pdf_files, submission_id } = await req.json();
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
-
-    const prompt = `You are an expert insurance underwriter assistant. Given the following business information, insurance policy documents, or business descriptions, extract as much data as possible to fill out commercial insurance applications (ACORD 125, 126, 127, 130, 131, 140).
-
-IMPORTANT EXTRACTION RULES:
-- Dates MUST be returned in YYYY-MM-DD format (e.g. "2026-03-01" not "March 1, 2026")
-- If you find an effective_date but no expiration_date, calculate expiration as effective_date + 1 year
-- Currency values must be plain numbers without $ signs or commas (e.g. "600000" not "$600,000")
-- If employee counts mention full-time and part-time separately, split them: set full_time_employees and part_time_employees as separate numeric fields, AND set number_of_employees to the total
-- For business_type, use one of: Corporation, LLC, Partnership, Sole Proprietor, Joint Venture, Not For Profit, Subchapter S Corp, Trust, Individual
-- If the document is an existing insurance policy, extract all policy details including premiums, limits, carrier names, policy numbers, vehicle schedules, and driver lists
-- For coverage premiums that clearly do NOT apply to this business type (e.g. liquor_premium for a contractor), set them to "0"
-- For boolean LOB fields: set lob_auto=true if auto coverage is present, lob_property=true if property is present, lob_umbrella=true if excess/umbrella is present, etc.
-
-Business information provided:
-${description || ""}
-${file_contents ? `\nAdditional file contents:\n${file_contents}` : ""}
-
-Extract the data and identify GAPS — important fields that are MISSING and need to be asked. You MUST ask about ALL of these critical fields if they cannot be found:
-
-ACORD 125 (General Application):
-- Coverage limits: general aggregate, each occurrence, deductible amounts
-- Prior carrier name, policy number, and premium
-- Whether applicant has: safety program, exposure to flammables, policies declined/cancelled, foreign operations
-- Desired billing/payment plan
-
-ACORD 126 (GL):
-- Coverage type: Occurrence or Claims-Made
-- GL classification code(s) and description(s)
-- Whether business involves: hazardous waste, products sold/manufactured, alcohol served, professional services
-
-ACORD 127 (Business Auto) — if auto exposure detected:
-- Complete vehicle schedule (year, make, model, VIN, body type, stated value)
-- Complete driver list with names
-- Radius of operations, garaging location
-- Auto liability, UM/UIM, medical payments, comp, collision limits and premiums
-
-ACORD 130 (Workers Comp) — CRITICAL, ask ALL of these if missing:
-- Workers compensation class code(s) and description(s) for each job classification
-- Annual payroll/remuneration for each class code
-- Owner/officer names, titles, ownership %, and whether included or excluded from coverage
-- Whether subcontractors are used (and if certs of insurance are obtained)
-- Whether employees are seasonal or travel out of state
-- Whether a workplace safety program is in effect
-- Prior workers comp carrier name
-- WC loss history for last 5 years (or confirm no losses)
-
-ACORD 140 (Property) — if property coverage detected:
-- Building construction type (Frame, Joisted Masonry, Non-Combustible, etc.) and year built
-- Building/property value amounts and BPP amounts
-- Protective devices (sprinkler, fire alarm, burglar alarm)
-- Roof type and condition
-
-ACORD 131 (Umbrella/Excess) — if umbrella/excess coverage detected:
-- Each occurrence and aggregate limits
-- Self-insured retention amount
-- Underlying coverage schedule
-
-Do NOT ask about fields that can be inferred or auto-calculated (like expiration date from effective date).
-Mark WC-related gaps as "required" priority since ACORD 130 needs them for submission.`;
 
     const systemPrompt = `You are an expert insurance underwriter assistant. Extract data from the provided business or policy information and return ONLY valid JSON with no markdown fences, no explanation — just raw JSON.
 
 Return this exact structure:
 {
   "form_data": {
-    ... all extracted fields as string values ...,
-    "vehicles": [ { "year": "", "make": "", "model": "", "vin": "", "body_type": "", "stated_amount": "", "garaging_zip": "" } ],
-    "drivers": [ { "name": "", "dob": "", "license": "", "license_state": "" } ]
+    "applicant_name": "", "dba_name": "", "mailing_address": "", "city": "", "state": "", "zip": "",
+    "phone": "", "email": "", "website": "", "fein": "", "sic_code": "", "naics_code": "",
+    "business_type": "", "year_established": "", "annual_revenue": "", "number_of_employees": "",
+    "full_time_employees": "", "part_time_employees": "", "nature_of_business": "",
+    "description_of_operations": "", "effective_date": "", "expiration_date": "",
+    "current_carrier": "", "current_premium": "", "policy_number": "",
+    "premises_address": "", "premises_city": "", "premises_state": "", "premises_zip": "",
+    "square_footage": "", "building_construction": "", "year_built": "",
+    "prior_losses_last_5_years": "", "additional_insureds": "",
+    "general_aggregate": "", "products_aggregate": "", "each_occurrence": "",
+    "personal_adv_injury": "", "fire_damage": "", "medical_payments": "",
+    "coverage_type": "", "hazard_code_1": "", "hazard_classification_1": "",
+    "wc_class_code": "", "wc_class_description": "", "annual_remuneration": "",
+    "class_code_1": "", "class_description_1": "", "annual_remuneration_1": "",
+    "officer_1_name": "", "officer_1_title": "", "officer_1_ownership": "", "officer_1_included": "",
+    "subcontractors_used": "", "prior_wc_carrier": "", "experience_mod_rate": "",
+    "construction_type": "", "building_amount": "", "bpp_amount": "", "business_income_amount": "",
+    "sprinkler_system": "", "fire_alarm": "", "burglar_alarm": "", "roof_type": "",
+    "each_occurrence_limit": "", "aggregate_limit": "", "self_insured_retention": "",
+    "number_of_vehicles": "", "number_of_drivers": "", "radius_of_operations": "",
+    "auto_liability_limit": "", "auto_liability_premium": "", "um_uim_limit": "",
+    "building_limit": "", "bpp_limit": "", "business_income_limit": "", "total_insured_value": "",
+    "property_premium": "", "property_deductible": "",
+    "lob_auto": "false", "lob_gl": "false", "lob_property": "false", "lob_umbrella": "false", "lob_wc": "false",
+    "vehicles": [],
+    "drivers": []
   },
-  "gaps": [ { "field": "field_key", "question": "question to ask", "priority": "required|recommended|optional" } ]
+  "gaps": []
 }
 
-RULES:
-- All scalar values in form_data must be strings (including booleans: use "true"/"false")
-- Dates in YYYY-MM-DD format
-- Currency as plain numbers without $ or commas
-- lob_auto/lob_gl/lob_property/lob_umbrella/lob_wc should be "true" or "false" strings
-- ALWAYS populate the vehicles[] array for any auto policy — include ALL vehicles found (up to 30)
-- ALWAYS populate the drivers[] array for any auto policy — include ALL drivers found (up to 30)
-- For each vehicle extract: year, make, model, VIN, body_type (e.g. Pickup, Van, Sedan), stated_amount/cost_new, garaging_zip
-- For each driver extract: full name, date of birth (YYYY-MM-DD), license number, license state`;
+EXTRACTION RULES:
+- Return ALL fields even if empty string
+- All scalar values must be strings — booleans as "true"/"false"
+- Dates → YYYY-MM-DD, currencies → plain number without $ or commas
+- lob_* flags: set "true" if that coverage type exists in the document
+- vehicles[]: include ALL vehicles — each: { year, make, model, vin, body_type, stated_amount, garaging_zip }
+- drivers[]: include ALL drivers — each: { name, dob, license, license_state }
+- gaps[]: list fields that are missing and important — { field, question, priority: required|recommended|optional }
+- If document is an insurance policy, extract carrier, policy number, limits, premiums, and all schedules
+- Be exhaustive — extract everything you can see in the document`;
+
+    const userPromptText = `Extract all insurance data from the following document(s).
+
+${description || ""}
+${file_contents ? `\nAdditional text content:\n${file_contents}` : ""}`;
+
+    // Build multimodal message — PDFs sent as inline base64 for Gemini native PDF reading
+    type ContentPart = { type: string; text?: string; image_url?: { url: string } };
+    const userContent: ContentPart[] = [{ type: "text", text: userPromptText }];
+
+    const hasPdfs = Array.isArray(pdf_files) && pdf_files.length > 0;
+    if (hasPdfs) {
+      for (const pf of pdf_files) {
+        if (pf.base64) {
+          userContent.push({
+            type: "image_url",
+            image_url: { url: `data:${pf.mimeType || "application/pdf"};base64,${pf.base64}` },
+          });
+        }
+      }
+    }
+
+    // Use gemini-2.5-pro for multimodal PDF reading (better accuracy), flash for text-only
+    const model = hasPdfs ? "google/gemini-2.5-pro" : "google/gemini-2.5-flash";
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -153,10 +142,10 @@ RULES:
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model,
         messages: [
           { role: "system", content: systemPrompt },
-          { role: "user", content: prompt },
+          { role: "user", content: hasPdfs ? userContent : userPromptText },
         ],
       }),
     });

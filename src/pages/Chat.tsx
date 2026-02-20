@@ -371,13 +371,24 @@ export default function Chat() {
       reader.readAsText(file);
     });
 
+  const readFileAsBase64 = (file: File): Promise<string> =>
+    new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result as string;
+        // Strip the data URL prefix (e.g. "data:application/pdf;base64,")
+        resolve(result.split(",")[1] || "");
+      };
+      reader.onerror = () => resolve("");
+      reader.readAsDataURL(file);
+    });
+
   /** Immediately run document extraction when files are uploaded — no intent step needed */
   const triggerDocumentExtraction = async (files: File[]) => {
     if (!user || files.length === 0) return;
     setIsLoading(true);
     setShowIntentButtons(false);
 
-    // Show user a message immediately
     const fileNames = files.map(f => f.name).join(", ");
     const userMsg: Msg = { role: "user", content: `📎 Uploaded: ${fileNames}` };
     setMessages(prev => [...prev, userMsg]);
@@ -385,19 +396,26 @@ export default function Chat() {
     toast({ title: "Extracting from documents…", description: "Reading your files and mapping to ACORD fields." });
 
     try {
-      // Read text content from text-based files
-      let fileContents = "";
+      // Collect files by type
+      let textContents = "";
+      const pdfFiles: { name: string; base64: string; mimeType: string }[] = [];
+
       for (const file of files) {
-        if (file.type.startsWith("text/") || /\.(txt|md|csv)$/i.test(file.name)) {
+        if (file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")) {
+          const base64 = await readFileAsBase64(file);
+          pdfFiles.push({ name: file.name, base64, mimeType: "application/pdf" });
+        } else if (file.type.startsWith("text/") || /\.(txt|md|csv)$/i.test(file.name)) {
           const content = await readFileAsText(file);
-          fileContents += `\n--- ${file.name} ---\n${content}`;
+          textContents += `\n--- ${file.name} ---\n${content}`;
+        } else if (file.type.startsWith("image/")) {
+          const base64 = await readFileAsBase64(file);
+          pdfFiles.push({ name: file.name, base64, mimeType: file.type });
         }
       }
 
-      const description = `Document upload: ${fileNames}\n${fileContents ? `\nFile contents:\n${fileContents}` : ""}`;
+      const description = `Insurance document upload: ${fileNames}${textContents ? `\n\nFile contents:\n${textContents}` : ""}`;
       const companyName = "New Client";
 
-      // Create submission
       const { data: sub, error: subErr } = await supabase
         .from("business_submissions")
         .insert({ user_id: user.id, company_name: companyName, description, status: "processing" })
@@ -405,13 +423,18 @@ export default function Chat() {
         .single();
       if (subErr) throw subErr;
 
-      // Run extraction
+      // Run extraction — send PDFs as base64 for Gemini multimodal reading
       const extractResp = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/extract-business-data`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
-          body: JSON.stringify({ description, file_contents: fileContents || undefined, submission_id: sub.id }),
+          body: JSON.stringify({
+            description,
+            file_contents: textContents || undefined,
+            pdf_files: pdfFiles.length > 0 ? pdfFiles : undefined,
+            submission_id: sub.id,
+          }),
         }
       );
 
