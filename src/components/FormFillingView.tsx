@@ -396,30 +396,57 @@ export default function FormFillingView({ submissionId, initialMessages, initial
       const pdfFields = pdfForm.getFields();
       const pdfFieldNames = pdfFields.map(f => f.getName());
 
+      // Normalize a string for fuzzy comparison: lowercase, collapse whitespace, strip special chars
+      const norm = (s: string) =>
+        s.toLowerCase()
+          .replace(/[\\\/\-_&,.:;()\[\]#*]/g, " ")
+          .replace(/\s+/g, " ")
+          .trim();
+
+      // Build normalized lookup map once
+      const normalizedPdfNames = pdfFieldNames.map(n => ({ original: n, normalized: norm(n) }));
+
+      const findPdfField = (pdfName: string): string | undefined => {
+        const target = norm(pdfName);
+        // 1. Exact match (case-insensitive, normalized)
+        const exact = normalizedPdfNames.find(n => n.normalized === target);
+        if (exact) return exact.original;
+        // 2. PDF field contains our target string
+        const contains = normalizedPdfNames.find(n => n.normalized.includes(target));
+        if (contains) return contains.original;
+        // 3. Our target contains the PDF field name (for abbreviated PDF names)
+        const contained = normalizedPdfNames.find(n => target.includes(n.normalized) && n.normalized.length > 4);
+        if (contained) return contained.original;
+        return undefined;
+      };
+
       for (const [ourKey, pdfName] of Object.entries(fieldMap)) {
         const val = formData[ourKey];
-        if (!val && val !== 0) continue;
+        if (val === null || val === undefined || val === "") continue;
         const strVal = String(val).trim();
         if (!strVal) continue;
 
-        // Try exact match first, then substring match
-        let targetName = pdfFieldNames.find(n => n === pdfName)
-          || pdfFieldNames.find(n => n.includes(pdfName) || pdfName.includes(n));
-
+        const targetName = findPdfField(pdfName);
         if (!targetName) continue;
 
         try {
           const field = pdfForm.getField(targetName);
-          const fieldType = field.constructor.name;
-          if (fieldType === "PDFTextField") {
-            (pdfForm.getTextField(targetName)).setText(strVal);
-          } else if (fieldType === "PDFCheckBox" && (strVal === "true" || strVal === "1" || strVal === "yes")) {
-            (pdfForm.getCheckBox(targetName)).check();
+          const ctor = field.constructor.name;
+          if (ctor === "PDFTextField") {
+            pdfForm.getTextField(targetName).setText(strVal);
+          } else if (ctor === "PDFDropdown") {
+            try { pdfForm.getDropdown(targetName).select(strVal); } catch { /* option may not exist */ }
+          } else if (ctor === "PDFCheckBox") {
+            const truthy = /^(true|yes|1|x)$/i.test(strVal);
+            if (truthy) pdfForm.getCheckBox(targetName).check();
+            else pdfForm.getCheckBox(targetName).uncheck();
+          } else if (ctor === "PDFRadioGroup") {
+            try { pdfForm.getRadioGroup(targetName).select(strVal); } catch { /* option may not exist */ }
           }
         } catch { /* skip unwritable fields */ }
       }
 
-      // Flatten to lock values but keep PDF readable
+      // Flatten to lock values into the PDF
       pdfForm.flatten();
     } catch {
       // If AcroForm manipulation fails, return the original PDF unmodified
