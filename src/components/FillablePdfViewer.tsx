@@ -207,38 +207,15 @@ const FillablePdfViewer = forwardRef<FillablePdfViewerHandle, FillablePdfViewerP
           { enablePDFAnalytics: true, listenOn: ["FORM_FIELD_CHANGED"] }
         );
 
-        // ── Strip encryption before loading into Adobe ──
-        // ACORD PDFs carry permission flags that trigger "Protected / desktop only"
-        // in the Adobe Embed API. We strip them with pdf-lib (ignoreEncryption) and
-        // re-save — this preserves 100% of AcroForm fields and visual layout.
+        // ── Load the ORIGINAL PDF bytes directly ──
+        // Do NOT process with pdf-lib — it strips the Encrypt dict but cannot
+        // decrypt content streams, resulting in a blank/corrupted document.
+        // Adobe Embed API handles owner-password-only PDFs natively and still
+        // allows form filling even when it shows the "Protected" info banner.
         const response = await fetch(pdfUrl);
         if (!response.ok) throw new Error(`Failed to fetch PDF: ${pdfUrl}`);
-        const rawBytes = await response.arrayBuffer();
-
-        let pdfBuffer: ArrayBuffer;
-        try {
-          const { PDFDocument } = await import("pdf-lib");
-          const doc = await PDFDocument.load(new Uint8Array(rawBytes), {
-            ignoreEncryption: true,
-            updateMetadata: false,
-          });
-          // Remove encryption dictionary entries so Adobe sees an open document
-          const catalog = doc.catalog;
-          if (catalog.has(doc.context.obj("Encrypt") as any)) {
-            catalog.delete(doc.context.obj("Encrypt") as any);
-          }
-          // Also clear permission flags via trailer
-          try {
-            (doc as any).context.trailerInfo.Encrypt = undefined;
-          } catch (_) { /* ignore */ }
-
-          const stripped = await doc.save({ useObjectStreams: false });
-          pdfBuffer = stripped.buffer as ArrayBuffer;
-          console.info("[Adobe] Encryption stripped — passing clean bytes to viewer");
-        } catch (stripErr) {
-          console.warn("[Adobe] Could not strip encryption, falling back to raw bytes:", stripErr);
-          pdfBuffer = rawBytes;
-        }
+        const pdfBuffer = await response.arrayBuffer();
+        console.info("[Adobe] Passing raw PDF bytes to viewer (no pre-processing)");
 
         await view.previewFile(
           {
