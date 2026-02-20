@@ -6,7 +6,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { ACORD_FORMS, ACORD_FORM_LIST, type AcordFormField, type AcordFormDefinition } from "@/lib/acord-forms";
 import { buildAutofilledData, buildAutofilledDataWithAI, formatUSD, CURRENCY_FIELDS } from "@/lib/acord-autofill";
 import { FIELD_POSITION_MAP, type FieldPosition } from "@/lib/acord-field-positions";
-import { generateAcordPdfAsync } from "@/lib/pdf-generator";
 import { generateSubmissionPackage } from "@/lib/submission-package";
 import { FILLABLE_PDF_PATHS, ACORD_FIELD_MAPS, ACORD_INDEX_MAPS } from "@/lib/acord-field-map";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -98,12 +97,12 @@ export default function FormFillingView({ submissionId, initialMessages, initial
 
   // Bytes captured from Adobe SAVE_API (includes in-viewer edits) keyed by formId
   const [savedPdfBytesMap, setSavedPdfBytesMap] = useState<Record<string, Uint8Array>>({});
-  // Ref to the active FillablePdfViewer so we can trigger a save before downloading
+  // Ref to the active FillablePdfViewer so we can trigger a save / inject field values
   const pdfViewerRef = useRef<FillablePdfViewerHandle>(null);
-  // Pre-filled bytes (pdf-lib filled, read-only flags stripped) served to the Adobe viewer
-  const [filledPdfBytesMap, setFilledPdfBytesMap] = useState<Record<string, Uint8Array>>({});
-  const [isLoadingPdf, setIsLoadingPdf] = useState(false);
+  // Debounce timer for left-panel → Adobe field injection
   const fillPdfTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Track whether Adobe viewer is ready (has APIs) for the current form
+  const [adobeReady, setAdobeReady] = useState(false);
 
   // Swipe gesture support
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
@@ -153,51 +152,66 @@ export default function FormFillingView({ submissionId, initialMessages, initial
     }
   }, [mobilePanel]);
 
-  /**
-   * Regenerate the filled PDF bytes using pdf-lib.
-   * - Uses useObjectStreams:false so Adobe Embed API can parse the output correctly.
-   * - XFA data is stripped by pdf-lib (unavoidable), but Adobe falls back to AcroForm rendering.
-   * - flatten:false keeps fields editable in the viewer.
-   */
-  const regenerateFilledPdf = useCallback(async (fId: string, data: Record<string, any>) => {
-    if (isAllForms || !fId) return;
-    const form = ACORD_FORMS[fId];
-    if (!form) return;
-    setIsLoadingPdf(true);
-    try {
-      const result = await generateAcordPdfAsync(form, data, { flatten: false });
-      setFilledPdfBytesMap(prev => ({ ...prev, [fId]: result.bytes }));
-    } catch (err) {
-      console.error("[PDF Sync] Failed to pre-fill PDF:", err);
-    } finally {
-      setIsLoadingPdf(false);
-    }
-  }, [isAllForms]);
-
   // Track latest formData in a ref so the debounce closure always sees current values
   const formDataRef2 = useRef<Record<string, any>>({});
   useEffect(() => { formDataRef2.current = formData; }, [formData]);
 
-  // Immediately generate the pdf-lib processed PDF whenever the active form changes.
-  // We never show the raw original PDF (which shows "Protected" in Adobe) — always use
-  // the pdf-lib output which strips encryption flags and keeps fields editable.
-  // Always re-generate on form switch so current formData is baked in (no stale cache).
-  useEffect(() => {
-    if (isAllForms || !activeFormId) return;
-    regenerateFilledPdf(activeFormId, formDataRef2.current);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeFormId, isAllForms]);
+  /**
+   * Push current formData into the Adobe viewer using its native setFieldValues API.
+   * This writes data DIRECTLY into the PDF via Adobe's engine — no pdf-lib processing,
+   * no XFA stripping, 100% original ACORD formatting preserved.
+   * The field names passed are the ACTUAL PDF AcroForm field names (from the reverse map).
+   */
+  const pushFieldsToAdobe = useCallback(async (fId: string, data: Record<string, any>) => {
+    if (!pdfViewerRef.current || !adobeReady) return;
+    const reverseMap = reverseFieldMapsRef.current[fId] || {};
+    // Build a { pdfFieldName → formatted value } map
+    const fieldValues: Record<string, string> = {};
+    for (const [internalKey, val] of Object.entries(data)) {
+      if (val === undefined || val === null || val === "") continue;
+      const pdfFieldName = Object.entries(reverseMap).find(([, k]) => k === internalKey)?.[0];
+      if (pdfFieldName) {
+        // Format dates as MM/DD/YYYY for the PDF
+        let display = String(val);
+        const isoMatch = display.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        if (isoMatch) display = `${isoMatch[2]}/${isoMatch[3]}/${isoMatch[1]}`;
+        fieldValues[pdfFieldName] = display;
+      }
+    }
+    if (Object.keys(fieldValues).length > 0) {
+      await pdfViewerRef.current.setFieldValues(fieldValues);
+    }
+  }, [adobeReady]);
 
-  // Debounced left-panel → PDF viewer sync: re-generate filled bytes whenever formData changes
+  // When Adobe becomes ready, inject current formData into the PDF
   useEffect(() => {
-    if (isAllForms || !activeFormId) return;
+    if (adobeReady && activeFormId && activeFormId !== "all") {
+      // Wait for reverse map to be built then push
+      const map = reverseMapPromisesRef.current[activeFormId];
+      if (map) {
+        map.then(() => pushFieldsToAdobe(activeFormId, formDataRef2.current));
+      } else {
+        pushFieldsToAdobe(activeFormId, formDataRef2.current);
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [adobeReady, activeFormId]);
+
+  // Reset adobeReady when form changes (new Adobe instance mounts)
+  useEffect(() => {
+    setAdobeReady(false);
+  }, [activeFormId]);
+
+  // Debounced left-panel → Adobe PDF sync: push field values to Adobe viewer 1s after each edit
+  useEffect(() => {
+    if (isAllForms || !activeFormId || !adobeReady) return;
     if (fillPdfTimerRef.current) clearTimeout(fillPdfTimerRef.current);
     fillPdfTimerRef.current = setTimeout(() => {
-      regenerateFilledPdf(activeFormId, formDataRef2.current);
+      pushFieldsToAdobe(activeFormId, formDataRef2.current);
     }, 1000);
     return () => { if (fillPdfTimerRef.current) clearTimeout(fillPdfTimerRef.current); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [formData, activeFormId, isAllForms]);
+  }, [formData, activeFormId, isAllForms, adobeReady]);
 
   /**
    * Build reverse map: actual PDF field name (as Adobe returns it) → internal key.
@@ -567,19 +581,10 @@ export default function FormFillingView({ submissionId, initialMessages, initial
             setTimeout(() => URL.revokeObjectURL(url), 10000);
             count++;
           } else {
-            // Fallback: use the pdf-lib filled bytes we already generated for the viewer.
-            // This is the same PDF that's displayed — proper ACORD layout, AcroForm filled.
-            const viewerBytes = filledPdfBytesMap[form.id];
-            if (viewerBytes) {
-              const blob = new Blob([viewerBytes.buffer as ArrayBuffer], { type: "application/pdf" });
-              const url = URL.createObjectURL(blob);
-              const a = document.createElement("a");
-              a.href = url;
-              a.download = `${form.name.replace(/\s/g, "_")}_${date}.pdf`;
-              a.click();
-              setTimeout(() => URL.revokeObjectURL(url), 10000);
-              count++;
-            }
+            // Fallback: no Adobe bytes yet — tell user to use Adobe's own Download button
+            // or trigger save explicitly. The original PDF is in the viewer with full formatting.
+            toast.info("Use the Download button in the PDF toolbar for best formatting, or edit a field first to enable our download.");
+            count++; // count it so we don't show "no data" error
           }
           if (count < formsToProcess.length) await new Promise(r => setTimeout(r, 400));
         } catch (err) {
@@ -1107,11 +1112,11 @@ export default function FormFillingView({ submissionId, initialMessages, initial
           ) : activeForm && FILLABLE_PDF_PATHS[activeFormId] ? (
              <FillablePdfViewer
                ref={pdfViewerRef}
-               pdfBytes={filledPdfBytesMap[activeFormId] ?? null}
-               isGenerating={isLoadingPdf || !filledPdfBytesMap[activeFormId]}
+               pdfUrl={FILLABLE_PDF_PATHS[activeFormId]}
                fileName={`${activeForm.name}.pdf`}
                onFieldChange={(pdfFieldName, value) => handleAdobeFieldChange(activeFormId, pdfFieldName, value)}
                onSaveBytes={(bytes) => setSavedPdfBytesMap(prev => ({ ...prev, [activeFormId]: bytes }))}
+               onReady={() => setAdobeReady(true)}
              />
            ) : (
              <div className="flex items-center justify-center h-full text-muted-foreground text-sm">No fillable PDF available for this form</div>
