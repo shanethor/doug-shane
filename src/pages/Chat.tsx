@@ -777,11 +777,22 @@ export default function Chat() {
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(input); }
   };
 
+  const dragCounterRef = useRef(0);
   const handleDrag = (e: React.DragEvent) => { e.preventDefault(); e.stopPropagation(); };
-  const handleDragIn = (e: React.DragEvent) => { e.preventDefault(); e.stopPropagation(); setDragActive(true); };
-  const handleDragOut = (e: React.DragEvent) => { e.preventDefault(); e.stopPropagation(); setDragActive(false); };
+  const handleDragIn = (e: React.DragEvent) => {
+    e.preventDefault(); e.stopPropagation();
+    dragCounterRef.current += 1;
+    if (e.dataTransfer.items && e.dataTransfer.items.length > 0) setDragActive(true);
+  };
+  const handleDragOut = (e: React.DragEvent) => {
+    e.preventDefault(); e.stopPropagation();
+    dragCounterRef.current -= 1;
+    if (dragCounterRef.current === 0) setDragActive(false);
+  };
   const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault(); e.stopPropagation(); setDragActive(false);
+    e.preventDefault(); e.stopPropagation();
+    dragCounterRef.current = 0;
+    setDragActive(false);
     const files = Array.from(e.dataTransfer.files);
     if (files.length > 0) triggerDocumentExtraction(files);
   };
@@ -835,10 +846,15 @@ export default function Chat() {
       >
         {/* Drag overlay */}
         {dragActive && (
-          <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm border-2 border-dashed border-primary rounded-xl m-4 pointer-events-none">
-            <div className="text-center space-y-2">
+          <div
+            className="absolute inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm border-2 border-dashed border-primary rounded-xl m-4"
+            onDragOver={handleDrag}
+            onDrop={handleDrop}
+          >
+            <div className="text-center space-y-2 pointer-events-none">
               <FileUp className="h-10 w-10 text-primary mx-auto" />
-              <p className="text-sm font-medium text-primary">Drop files here</p>
+              <p className="text-lg font-semibold text-primary">Drop to extract & fill forms</p>
+              <p className="text-xs text-muted-foreground">PDF, images, or text files</p>
             </div>
           </div>
         )}
