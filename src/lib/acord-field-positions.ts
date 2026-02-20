@@ -113,16 +113,87 @@ export const ACORD_126_POSITIONS: Record<string, FieldPosition> = {
 };
 
 // ─── ACORD 127 — Business Auto (3 pages) ───
+// Page dimensions: 612 × 792 pt (letter). Coordinates calibrated against
+// public/acord-pages/127-page1.jpg, 127-page2.jpg, 127-page3.jpg.
 export const ACORD_127_POSITIONS: Record<string, FieldPosition> = {
-  agency_name:          { page: 0, x: 22, y: 65, maxWidth: 270 },
-  insured_name:         { page: 0, x: 372, y: 88, maxWidth: 200 },
-  effective_date:       { page: 0, x: 268, y: 88, maxWidth: 80 },
-  policy_number:        { page: 0, x: 22, y: 88, maxWidth: 190 },
+  // ── Page 1 header ──
+  agency_name:          { page: 0, x: 22,  y: 58,  maxWidth: 250 },
+  agency_customer_id:   { page: 0, x: 410, y: 18,  maxWidth: 160 },
+  carrier:              { page: 0, x: 310, y: 58,  maxWidth: 200 },
+  naic_code:            { page: 0, x: 568, y: 58,  maxWidth: 38  },
+  transaction_date:     { page: 0, x: 545, y: 38,  maxWidth: 60  },
+  policy_number:        { page: 0, x: 22,  y: 82,  maxWidth: 190 },
+  effective_date:       { page: 0, x: 262, y: 82,  maxWidth: 80  },
+  insured_name:         { page: 0, x: 372, y: 82,  maxWidth: 210 },
 
-  // Driver Information (page 1 — driver table rows, ~14pt spacing)
-  driver_1_name:        { page: 0, x: 55, y: 178, maxWidth: 130, fontSize: 7 },
-  driver_1_dob:         { page: 0, x: 242, y: 178, maxWidth: 60, fontSize: 7 },
-  driver_1_license:     { page: 0, x: 382, y: 178, maxWidth: 100, fontSize: 7 },
+  // ── Page 1 — Driver Information table (row 1–5, ~14.4pt row spacing) ──
+  driver_1_name:        { page: 0, x: 40,  y: 185, maxWidth: 115, fontSize: 7 },
+  driver_1_city:        { page: 0, x: 40,  y: 194, maxWidth: 115, fontSize: 6 },
+  driver_1_sex:         { page: 0, x: 160, y: 185, maxWidth: 14,  fontSize: 7 },
+  driver_1_marital:     { page: 0, x: 177, y: 185, maxWidth: 14,  fontSize: 7 },
+  driver_1_dob:         { page: 0, x: 198, y: 185, maxWidth: 55,  fontSize: 7 },
+  driver_1_yrs_exp:     { page: 0, x: 257, y: 185, maxWidth: 18,  fontSize: 7 },
+  driver_1_license:     { page: 0, x: 300, y: 185, maxWidth: 95,  fontSize: 7 },
+  driver_1_state_lic:   { page: 0, x: 400, y: 185, maxWidth: 22,  fontSize: 7 },
+
+  driver_2_name:        { page: 0, x: 40,  y: 199, maxWidth: 115, fontSize: 7 },
+  driver_2_sex:         { page: 0, x: 160, y: 199, maxWidth: 14,  fontSize: 7 },
+  driver_2_marital:     { page: 0, x: 177, y: 199, maxWidth: 14,  fontSize: 7 },
+  driver_2_dob:         { page: 0, x: 198, y: 199, maxWidth: 55,  fontSize: 7 },
+  driver_2_yrs_exp:     { page: 0, x: 257, y: 199, maxWidth: 18,  fontSize: 7 },
+  driver_2_license:     { page: 0, x: 300, y: 199, maxWidth: 95,  fontSize: 7 },
+  driver_2_state_lic:   { page: 0, x: 400, y: 199, maxWidth: 22,  fontSize: 7 },
+
+  driver_3_name:        { page: 0, x: 40,  y: 213, maxWidth: 115, fontSize: 7 },
+  driver_3_dob:         { page: 0, x: 198, y: 213, maxWidth: 55,  fontSize: 7 },
+  driver_3_license:     { page: 0, x: 300, y: 213, maxWidth: 95,  fontSize: 7 },
+
+  // ── Page 1 — General Information Y/N (right column, questions 1-7) ──
+  veh_not_solely_owned:         { page: 0, x: 594, y: 468, maxWidth: 14, fontSize: 7 },
+  over_50pct_employees_auto:    { page: 0, x: 594, y: 499, maxWidth: 14, fontSize: 7 },
+  vehicle_maintenance_program:  { page: 0, x: 594, y: 527, maxWidth: 14, fontSize: 7 },
+  vehicles_leased_to_others:    { page: 0, x: 594, y: 555, maxWidth: 14, fontSize: 7 },
+  modified_special_equipment:   { page: 0, x: 594, y: 583, maxWidth: 14, fontSize: 7 },
+  icc_puc_filings:              { page: 0, x: 594, y: 614, maxWidth: 14, fontSize: 7 },
+  transporting_hazmat:          { page: 0, x: 594, y: 642, maxWidth: 14, fontSize: 7 },
+
+  // ── Page 2 — General Information continued (questions 8-16) ──
+  hold_harmless_agreements:     { page: 1, x: 594, y: 52,  maxWidth: 14, fontSize: 7 },
+  family_member_vehicles:       { page: 1, x: 594, y: 95,  maxWidth: 14, fontSize: 7 },
+  mvr_verifications:            { page: 1, x: 594, y: 128, maxWidth: 14, fontSize: 7 },
+  driver_recruiting_method:     { page: 1, x: 594, y: 160, maxWidth: 14, fontSize: 7 },
+  drivers_not_wc:               { page: 1, x: 594, y: 195, maxWidth: 14, fontSize: 7 },
+  vehicles_owned_not_scheduled: { page: 1, x: 594, y: 228, maxWidth: 14, fontSize: 7 },
+  driver_moving_violations:     { page: 1, x: 594, y: 278, maxWidth: 14, fontSize: 7 },
+  agent_inspected_vehicles:     { page: 1, x: 594, y: 380, maxWidth: 14, fontSize: 7 },
+  vehicles_fleet:               { page: 1, x: 594, y: 410, maxWidth: 14, fontSize: 7 },
+
+  garage_storage_description:   { page: 1, x: 22,  y: 430, maxWidth: 450, fontSize: 7 },
+  max_dollar_storage:           { page: 1, x: 490, y: 430, maxWidth: 80,  fontSize: 7 },
+
+  // Additional interest / certificate recipient
+  additional_interest_name:     { page: 1, x: 170, y: 488, maxWidth: 250, fontSize: 7 },
+  additional_interest_vehicle:  { page: 1, x: 570, y: 488, maxWidth: 38,  fontSize: 7 },
+
+  // Remarks
+  remarks:                      { page: 1, x: 22,  y: 620, maxWidth: 565, fontSize: 7 },
+
+  // ── Page 3 — Vehicle Schedule (row 1) ──
+  veh_1_year:           { page: 2, x: 22,  y: 52,  maxWidth: 28,  fontSize: 7 },
+  veh_1_make:           { page: 2, x: 55,  y: 52,  maxWidth: 80,  fontSize: 7 },
+  veh_1_model:          { page: 2, x: 55,  y: 63,  maxWidth: 80,  fontSize: 7 },
+  veh_1_vin:            { page: 2, x: 280, y: 58,  maxWidth: 115, fontSize: 7 },
+  veh_1_garaging_address: { page: 2, x: 22, y: 78, maxWidth: 140, fontSize: 7 },
+  veh_1_garaging_city:  { page: 2, x: 168, y: 78, maxWidth: 90,  fontSize: 7 },
+  veh_1_garaging_state: { page: 2, x: 472, y: 78, maxWidth: 22,  fontSize: 7 },
+  veh_1_garaging_zip:   { page: 2, x: 498, y: 78, maxWidth: 40,  fontSize: 7 },
+  veh_1_cost_new:       { page: 2, x: 553, y: 95,  maxWidth: 50,  fontSize: 7 },
+
+  // Producer / Signature block (page 3 bottom)
+  producer_name:        { page: 2, x: 162, y: 718, maxWidth: 200 },
+  producer_license:     { page: 2, x: 575, y: 718, maxWidth: 35  },
+  national_producer_num:{ page: 2, x: 480, y: 730, maxWidth: 120 },
+  signature_date:       { page: 2, x: 448, y: 730, maxWidth: 80  },
 };
 
 // ─── ACORD 130 — Workers Compensation (4 pages) ───
