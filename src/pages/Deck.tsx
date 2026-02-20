@@ -672,28 +672,49 @@ function ModelSlide() {
   return (
     <div>
       <SlideHeader icon={DollarSign} tag="Revenue Model" title="Pricing aligned with value created, not seats." subtitle="AURA increases advisor output, agency efficiency, and protection quality." />
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-2">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
         {tiers.map((t) => (
           <div key={t.heading} className={`rounded-xl p-5 hover-lift flex flex-col ${t.highlight ? "border-2 border-primary/50 bg-primary/5" : "border border-border bg-card"}`}>
             <div className={`text-xs font-semibold uppercase tracking-widest mb-1 ${t.highlight ? "text-primary" : "text-muted-foreground"}`}>{t.heading}</div>
-            <div className="text-2xl font-bold text-foreground mt-1">{t.price}</div>
-            <div className="text-xs text-muted-foreground mb-4">{t.tag}</div>
+            <div className="text-xl font-bold text-foreground mt-1">{t.price}</div>
+            <div className="text-xs text-muted-foreground mb-3">{t.tag}</div>
             <ul className="text-sm text-muted-foreground space-y-1.5 flex-1">
               {t.features.map(f => (
                 <li key={f} className="flex items-start gap-2">
-                  <span className={`mt-0.5 ${t.highlight ? "text-primary" : "text-muted-foreground/60"}`}>✓</span>
+                  <span className={`mt-0.5 shrink-0 ${t.highlight ? "text-primary" : "text-muted-foreground/60"}`}>✓</span>
                   {f}
                 </li>
               ))}
             </ul>
-            <p className="mt-4 text-xs text-muted-foreground/60 italic border-t border-border/30 pt-3">{t.sub}</p>
+            <p className="mt-3 text-xs text-muted-foreground/60 italic border-t border-border/30 pt-3">{t.sub}</p>
           </div>
         ))}
       </div>
-      <div className="mt-4 text-center space-y-1">
-        <p className="text-sm font-bold text-foreground">AURA scales with the economic value it creates</p>
-        <p className="text-xs text-muted-foreground">Not limited by per-seat pricing. Revenue grows with deployment depth and intelligence value.</p>
-        <p className="text-xs text-muted-foreground/60 italic mt-1">100 agencies × $15K/mo average = $18M annual revenue. That is platform scale.</p>
+      {/* Revenue Share Option */}
+      <div className="mt-4 rounded-xl border border-border bg-card p-4">
+        <div className="flex flex-col md:flex-row md:items-center gap-4">
+          <div className="shrink-0 md:w-40">
+            <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-0.5">Alternative Model</p>
+            <p className="text-sm font-bold text-foreground">Revenue Share</p>
+            <p className="text-xs text-muted-foreground mt-1">Aligns AURA revenue with agency success — scales with value delivered</p>
+          </div>
+          <div className="flex-1 grid grid-cols-3 gap-3">
+            {[
+              { label: "Year 1", pct: "3–5%", note: "Of new business influenced by AURA" },
+              { label: "Year 2", pct: "5–7%", note: "Proven value unlocks greater share" },
+              { label: "Year 3+", pct: "7–10%", note: "Full intelligence suite, compounding renewals" },
+            ].map(r => (
+              <div key={r.label} className="text-center rounded-lg border border-border/50 bg-muted/30 p-3">
+                <div className="text-xs text-muted-foreground mb-1">{r.label}</div>
+                <div className="text-lg font-bold text-foreground">{r.pct}</div>
+                <div className="text-[10px] text-muted-foreground/70 mt-1">{r.note}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+      <div className="mt-3 text-center">
+        <p className="text-xs text-muted-foreground/60 italic">100 agencies × $15K/mo average = $18M annual revenue. That is platform scale.</p>
       </div>
     </div>
   );
@@ -735,27 +756,35 @@ function GTMSlide() {
 
 /* ─── Slide 14: Projections ─── */
 function ProjectionsSlide() {
+  const MAX_PX = 160;
   const years = [
-    { label: "Year 1", revenue: "1.2M", agencies: 10, avgMo: "$10K", height: "10%" },
-    { label: "Year 2", revenue: "5.7M", agencies: 40, avgMo: "$12K", height: "28%" },
-    { label: "Year 3", revenue: "21.6M", agencies: 120, avgMo: "$15K", height: "52%" },
-    { label: "Year 4", revenue: "64.8M", agencies: 300, avgMo: "$18K", height: "78%" },
-    { label: "Year 5", revenue: "144M", agencies: 600, avgMo: "$20K", height: "100%" },
+    { label: "Year 1", revenue: "1.2M",  raw: 1.2,   agencies: 10,  avgMo: "$10K" },
+    { label: "Year 2", revenue: "5.7M",  raw: 5.7,   agencies: 40,  avgMo: "$12K" },
+    { label: "Year 3", revenue: "21.6M", raw: 21.6,  agencies: 120, avgMo: "$15K" },
+    { label: "Year 4", revenue: "64.8M", raw: 64.8,  agencies: 300, avgMo: "$18K" },
+    { label: "Year 5", revenue: "144M",  raw: 144,   agencies: 600, avgMo: "$20K" },
   ];
+  const maxRaw = Math.max(...years.map(y => y.raw));
   return (
     <div>
       <SlideHeader icon={BarChart3} tag="Financial Projections" title="Revenue expansion as AURA becomes the intelligence layer." subtitle="Advisor wedge first. Platform scale next. Structured insurance intelligence compounds with every agency onboarded." />
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-2">
         {/* Bar chart */}
         <div className="md:col-span-2 rounded-xl border border-border bg-card p-5">
-          <div className="flex items-end justify-around gap-3 h-44">
-            {years.map((y) => (
-              <div key={y.label} className="flex flex-col items-center gap-2 flex-1">
-                <span className="text-xs font-bold text-foreground tabular-nums">${y.revenue}</span>
-                <div className="w-full rounded-t-md bg-primary/80 transition-all" style={{ height: y.height, minHeight: "8px" }} />
-                <span className="text-xs text-muted-foreground font-medium">{y.label}</span>
-              </div>
-            ))}
+          <div className="flex items-end justify-around gap-3" style={{ height: `${MAX_PX + 32}px` }}>
+            {years.map((y) => {
+              const barH = Math.max(8, Math.round((y.raw / maxRaw) * MAX_PX));
+              return (
+                <div key={y.label} className="flex flex-col items-center gap-2 flex-1">
+                  <span className="text-xs font-bold text-foreground tabular-nums">${y.revenue}</span>
+                  <div
+                    className="w-full rounded-t-md bg-primary/80"
+                    style={{ height: `${barH}px` }}
+                  />
+                  <span className="text-xs text-muted-foreground font-medium">{y.label}</span>
+                </div>
+              );
+            })}
           </div>
           <p className="text-center text-xs text-muted-foreground mt-3 italic">Core platform subscription revenue only — expansion streams excluded</p>
         </div>
