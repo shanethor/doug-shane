@@ -1240,7 +1240,7 @@ export default function Chat() {
           <div className="border-t bg-background p-4">
             <div className="max-w-3xl mx-auto">
               <div className="flex items-end gap-2 rounded-xl border bg-card p-3 shadow-sm focus-within:ring-2 focus-within:ring-ring">
-                <input type="file" ref={fileInputRef} className="hidden" multiple onChange={(e) => { const files = Array.from(e.target.files || []); if (files.length > 0) triggerDocumentExtraction(files); e.target.value = ""; }} />
+                <input type="file" ref={fileInputRef} className="hidden" multiple onChange={(e) => { const files = Array.from(e.target.files || []); if (files.length > 0) setAttachedFiles(prev => [...prev, ...files].slice(0, 10)); e.target.value = ""; }} />
                 <Button
                   variant="ghost"
                   size="icon"
@@ -1268,8 +1268,15 @@ export default function Chat() {
                   {voice.isConnecting ? <Loader2 className="h-4 w-4 animate-spin" /> : voice.isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
                 </Button>
                 <Button
-                  onClick={() => send(input)}
-                  disabled={!input.trim() || isLoading}
+                  onClick={() => {
+                    if (attachedFiles.length > 0 && !input.trim()) {
+                      triggerDocumentExtraction(attachedFiles);
+                      setAttachedFiles([]);
+                    } else {
+                      send(input);
+                    }
+                  }}
+                  disabled={(!input.trim() && attachedFiles.length === 0) || isLoading}
                   size="icon"
                   className="shrink-0 h-9 w-9"
                 >
