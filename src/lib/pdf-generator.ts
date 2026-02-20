@@ -118,12 +118,34 @@ export async function generateAcordPdfAsync(
       const pdfBytes = await fetchPdfBytes(pdfPath);
       const pdfDoc = await PDFDocument.load(pdfBytes, { ignoreEncryption: true });
 
+      // ── Strip the /Encrypt entry from the trailer so Adobe does NOT show
+      //    the "Protected" badge. pdf-lib loads the encrypted PDF fine but
+      //    preserves the /Encrypt object in the saved output unless we remove it.
+      try {
+        const ctx = (pdfDoc as any).context;
+        // Remove from trailerInfo (used during serialization)
+        if (ctx?.trailerInfo) ctx.trailerInfo.Encrypt = undefined;
+        // Also remove from the trailer PDFDict directly
+        if (ctx?.trailer) {
+          const { PDFName } = await import("pdf-lib");
+          ctx.trailer.delete(PDFName.of("Encrypt"));
+        }
+      } catch (_) { /* best-effort */ }
+
       const pdfForm = pdfDoc.getForm();
       const allFields = pdfForm.getFields();
 
       // Remove read-only flag from every field so Adobe viewer allows editing
       for (const field of allFields) {
         try { field.disableReadOnly(); } catch (_) { /* ignore */ }
+        // Also clear the ProtectMDP/DocMDP transform reference if present
+        try {
+          const fieldDict = (field as any).acroField?.dict;
+          if (fieldDict) {
+            const { PDFName } = await import("pdf-lib");
+            fieldDict.delete(PDFName.of("Lock"));
+          }
+        } catch (_) { /* best-effort */ }
       }
 
       console.log(`[PDF Fields] ${form.name}: ${allFields.length} fields total`);
@@ -193,6 +215,21 @@ export async function generateAcordPdfAsync(
           console.warn("[PDF Fill] Could not flatten:", flattenErr);
         }
       }
+
+      // Also remove DocMDP / MarkInfo / Perms entries from the catalog — these are
+      // a second source of the "Protected" badge independent of /Encrypt.
+      try {
+        const { PDFName } = await import("pdf-lib");
+        const catalog = pdfDoc.catalog;
+        catalog.delete(PDFName.of("Perms"));
+        catalog.delete(PDFName.of("MarkInfo"));
+        // Remove AcroForm/SigFlags which lock the form
+        const acroForm = catalog.lookup(PDFName.of("AcroForm")) as any;
+        if (acroForm?.delete) {
+          acroForm.delete(PDFName.of("SigFlags"));
+          acroForm.delete(PDFName.of("XFA")); // strip XFA so Adobe uses AcroForm rendering
+        }
+      } catch (_) { /* best-effort */ }
 
       // useObjectStreams: false produces a more broadly compatible PDF that Adobe
       // Embed API can parse correctly even after XFA data has been stripped.
