@@ -377,35 +377,84 @@ export default function FormFillingView({ submissionId, initialMessages, initial
     setIsInferring(false);
   };
 
+  /** Fill a single ACORD PDF's AcroForm fields with formData and return a Blob */
+  const buildFilledPdfBlob = async (form: typeof enabledFormList[0]): Promise<Blob | null> => {
+    const { FILLABLE_PDF_PATHS, ACORD_FIELD_MAPS } = await import("@/lib/acord-field-map");
+    const pdfPath = FILLABLE_PDF_PATHS[form.id];
+    if (!pdfPath) return null;
+
+    const resp = await fetch(pdfPath);
+    if (!resp.ok) return null;
+    const pdfBytes = await resp.arrayBuffer();
+
+    const { PDFDocument } = await import("pdf-lib");
+    const pdfDoc = await PDFDocument.load(pdfBytes, { ignoreEncryption: true });
+
+    try {
+      const pdfForm = pdfDoc.getForm();
+      const fieldMap = ACORD_FIELD_MAPS[form.id] || {};
+      const pdfFields = pdfForm.getFields();
+      const pdfFieldNames = pdfFields.map(f => f.getName());
+
+      for (const [ourKey, pdfName] of Object.entries(fieldMap)) {
+        const val = formData[ourKey];
+        if (!val && val !== 0) continue;
+        const strVal = String(val).trim();
+        if (!strVal) continue;
+
+        // Try exact match first, then substring match
+        let targetName = pdfFieldNames.find(n => n === pdfName)
+          || pdfFieldNames.find(n => n.includes(pdfName) || pdfName.includes(n));
+
+        if (!targetName) continue;
+
+        try {
+          const field = pdfForm.getField(targetName);
+          const fieldType = field.constructor.name;
+          if (fieldType === "PDFTextField") {
+            (pdfForm.getTextField(targetName)).setText(strVal);
+          } else if (fieldType === "PDFCheckBox" && (strVal === "true" || strVal === "1" || strVal === "yes")) {
+            (pdfForm.getCheckBox(targetName)).check();
+          }
+        } catch { /* skip unwritable fields */ }
+      }
+
+      // Flatten to lock values but keep PDF readable
+      pdfForm.flatten();
+    } catch {
+      // If AcroForm manipulation fails, return the original PDF unmodified
+    }
+
+    const filledBytes = await pdfDoc.save();
+    return new Blob([filledBytes.buffer as ArrayBuffer], { type: "application/pdf" });
+  };
+
   const downloadForms = async (mode: "individual" | "package") => {
     if (!user) return;
     setDownloading(true);
     try {
-      // Auto-save form data to DB before downloading so edits persist
+      // 1. Auto-save current formData to DB so edits persist
       await supabase
         .from("insurance_applications")
         .update({ form_data: formData })
         .eq("submission_id", submissionId)
         .eq("user_id", user.id);
 
-      // Determine which forms to download
-      const { FILLABLE_PDF_PATHS } = await import("@/lib/acord-field-map");
+      // 2. Determine which forms to download
       const formsToProcess = mode === "individual" && !isAllForms
         ? enabledFormList.filter(f => f.id === activeFormId)
         : enabledFormList;
 
-      // Download each fillable PDF directly — same as what the viewer shows
+      // 3. Build and download each filled PDF
       const date = new Date().toISOString().slice(0, 10);
       let count = 0;
       for (const form of formsToProcess) {
-        const pdfPath = FILLABLE_PDF_PATHS[form.id];
-        if (!pdfPath) continue;
-        // Only include if we have meaningful data for this form
         const hasData = form.fields.some(f => formData[f.key] && String(formData[f.key]).trim());
         if (!hasData) continue;
-        const resp = await fetch(pdfPath);
-        if (!resp.ok) continue;
-        const blob = await resp.blob();
+
+        const blob = await buildFilledPdfBlob(form);
+        if (!blob) continue;
+
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
@@ -419,7 +468,7 @@ export default function FormFillingView({ submissionId, initialMessages, initial
       if (count === 0) {
         toast.error("No forms have enough data to download.");
       } else {
-        toast.success(`${count} fillable form(s) downloaded.`);
+        toast.success(`${count} filled form(s) downloaded.`);
       }
     } catch (err) {
       console.error("Download error:", err);
