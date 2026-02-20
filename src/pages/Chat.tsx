@@ -381,16 +381,30 @@ export default function Chat() {
   const send = async (text: string) => {
     if (!text.trim() || isLoading) return;
 
-    // In non-training mode, intercept form-filling intent and show the 3 intent buttons
-    // Only intercept if this is a short/vague opener (not a detailed mid-conversation follow-up)
-    const isShortVagueOpener = text.trim().split(/\s+/).length <= 8;
-    if (!trainingMode && isFormFillingIntent(text) && isShortVagueOpener && !showIntentButtons) {
+    // In non-training mode: intercept any form-filling intent and show the 3 bucket buttons.
+    // Exceptions — skip directly to the relevant flow:
+    //   • Files already attached → trigger document upload path automatically
+    //   • User explicitly says "skip" → bypass to form editor
+    const isSkipIntent = /\bskip\b|\bgo\s*(straight\s*)?to\s*(the\s*)?form\b/i.test(text);
+    if (!trainingMode && isFormFillingIntent(text) && !showIntentButtons && !isSkipIntent) {
       const userMsg: Msg = { role: "user", content: text.trim() };
       setMessages((prev) => [...prev, userMsg]);
       setInput("");
-      setAttachedFiles([]);
-      setShowIntentButtons(true);
-      return;
+      // Detect and pre-store any form numbers mentioned so all 3 paths carry context
+      const detected = detectRequestedForms(text);
+      if (detected.length > 0) {
+        setRequestedFormIds(detected);
+        setActiveFormId(detected[0]);
+      }
+      if (attachedFiles.length > 0) {
+        // Files attached → auto-route to document flow without showing buttons
+        setAttachedFiles([]);
+        // fall through and let the AI process with files attached
+      } else {
+        setAttachedFiles([]);
+        setShowIntentButtons(true);
+        return;
+      }
     }
 
     let content = text.trim();
@@ -821,7 +835,7 @@ export default function Chat() {
                         </div>
                       </button>
                       <button
-                        onClick={() => { setShowIntentButtons(false); send("I want to fill an ACORD form — please ask me a few short questions to gather the client information."); }}
+                        onClick={() => { setShowIntentButtons(false); const formContext = requestedFormIds.length > 0 ? ` The agent has already specified these ACORD forms: ${requestedFormIds.map(id => id.replace("acord-", "ACORD ")).join(", ")}.` : ""; send(`I want to fill an ACORD form — please ask me a few short questions to gather the client information.${formContext}`); }}
                         className="flex items-center gap-3 rounded-lg border bg-background hover:bg-muted/60 px-4 py-3 text-left transition-colors"
                       >
                         <div className="h-8 w-8 rounded-md bg-secondary flex items-center justify-center shrink-0">
@@ -1019,7 +1033,7 @@ export default function Chat() {
                         </div>
                       </button>
                       <button
-                        onClick={() => { setShowIntentButtons(false); send("I want to fill an ACORD form — please ask me a few short questions to gather the client information."); }}
+                        onClick={() => { setShowIntentButtons(false); const formContext = requestedFormIds.length > 0 ? ` The agent has already specified these ACORD forms: ${requestedFormIds.map(id => id.replace("acord-", "ACORD ")).join(", ")}.` : ""; send(`I want to fill an ACORD form — please ask me a few short questions to gather the client information.${formContext}`); }}
                         className="flex items-center gap-3 rounded-lg border bg-background hover:bg-muted/60 px-4 py-3 text-left transition-colors"
                       >
                         <div className="h-8 w-8 rounded-md bg-secondary flex items-center justify-center shrink-0">
