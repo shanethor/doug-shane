@@ -65,7 +65,7 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
-    const prompt = `You are an insurance application data extractor. Given the following business plan/description, extract as much information as possible to fill out commercial insurance applications (ACORD 125, 126, 130, 131, 140).
+    const prompt = `You are an expert insurance underwriter assistant. Given the following business information, insurance policy documents, or business descriptions, extract as much data as possible to fill out commercial insurance applications (ACORD 125, 126, 127, 130, 131, 140).
 
 IMPORTANT EXTRACTION RULES:
 - Dates MUST be returned in YYYY-MM-DD format (e.g. "2026-03-01" not "March 1, 2026")
@@ -73,12 +73,15 @@ IMPORTANT EXTRACTION RULES:
 - Currency values must be plain numbers without $ signs or commas (e.g. "600000" not "$600,000")
 - If employee counts mention full-time and part-time separately, split them: set full_time_employees and part_time_employees as separate numeric fields, AND set number_of_employees to the total
 - For business_type, use one of: Corporation, LLC, Partnership, Sole Proprietor, Joint Venture, Not For Profit, Subchapter S Corp, Trust, Individual
+- If the document is an existing insurance policy, extract all policy details including premiums, limits, carrier names, policy numbers, vehicle schedules, and driver lists
+- For coverage premiums that clearly do NOT apply to this business type (e.g. liquor_premium for a contractor), set them to "0"
+- For boolean LOB fields: set lob_auto=true if auto coverage is present, lob_property=true if property is present, lob_umbrella=true if excess/umbrella is present, etc.
 
 Business information provided:
 ${description || ""}
 ${file_contents ? `\nAdditional file contents:\n${file_contents}` : ""}
 
-Extract the data and identify GAPS — important fields that are MISSING and need to be asked. You MUST ask about ALL of these critical fields if they cannot be found in the business plan:
+Extract the data and identify GAPS — important fields that are MISSING and need to be asked. You MUST ask about ALL of these critical fields if they cannot be found:
 
 ACORD 125 (General Application):
 - Coverage limits: general aggregate, each occurrence, deductible amounts
@@ -91,6 +94,12 @@ ACORD 126 (GL):
 - GL classification code(s) and description(s)
 - Whether business involves: hazardous waste, products sold/manufactured, alcohol served, professional services
 
+ACORD 127 (Business Auto) — if auto exposure detected:
+- Complete vehicle schedule (year, make, model, VIN, body type, stated value)
+- Complete driver list with names
+- Radius of operations, garaging location
+- Auto liability, UM/UIM, medical payments, comp, collision limits and premiums
+
 ACORD 130 (Workers Comp) — CRITICAL, ask ALL of these if missing:
 - Workers compensation class code(s) and description(s) for each job classification
 - Annual payroll/remuneration for each class code
@@ -101,11 +110,16 @@ ACORD 130 (Workers Comp) — CRITICAL, ask ALL of these if missing:
 - Prior workers comp carrier name
 - WC loss history for last 5 years (or confirm no losses)
 
-ACORD 140 (Property):
+ACORD 140 (Property) — if property coverage detected:
 - Building construction type (Frame, Joisted Masonry, Non-Combustible, etc.) and year built
-- Building/property value amounts
+- Building/property value amounts and BPP amounts
 - Protective devices (sprinkler, fire alarm, burglar alarm)
 - Roof type and condition
+
+ACORD 131 (Umbrella/Excess) — if umbrella/excess coverage detected:
+- Each occurrence and aggregate limits
+- Self-insured retention amount
+- Underlying coverage schedule
 
 Do NOT ask about fields that can be inferred or auto-calculated (like expiration date from effective date).
 Mark WC-related gaps as "required" priority since ACORD 130 needs them for submission.`;
@@ -253,6 +267,61 @@ Mark WC-related gaps as "required" priority since ACORD 130 needs them for submi
                       each_occurrence_limit: { type: "string" },
                       aggregate_limit: { type: "string" },
                       self_insured_retention: { type: "string" },
+                      // Auto (ACORD 127) — extended for policy docs
+                      driver_2_name: { type: "string" },
+                      driver_3_name: { type: "string" },
+                      driver_4_name: { type: "string" },
+                      driver_5_name: { type: "string" },
+                      vehicle_2_year: { type: "string" },
+                      vehicle_2_make: { type: "string" },
+                      vehicle_2_model: { type: "string" },
+                      vehicle_2_vin: { type: "string" },
+                      vehicle_2_body_type: { type: "string" },
+                      vehicle_3_year: { type: "string" },
+                      vehicle_3_make: { type: "string" },
+                      vehicle_3_model: { type: "string" },
+                      vehicle_3_vin: { type: "string" },
+                      vehicle_3_body_type: { type: "string" },
+                      number_of_vehicles: { type: "string" },
+                      number_of_drivers: { type: "string" },
+                      radius_of_operations: { type: "string" },
+                      garaging_state: { type: "string" },
+                      garaging_zip: { type: "string" },
+                      auto_liability_limit: { type: "string" },
+                      auto_liability_premium: { type: "string" },
+                      um_uim_limit: { type: "string" },
+                      um_uim_premium: { type: "string" },
+                      med_pay_limit: { type: "string" },
+                      med_pay_premium: { type: "string" },
+                      comp_premium: { type: "string" },
+                      collision_premium: { type: "string" },
+                      // Property (ACORD 140) — extended for policy docs
+                      building_limit: { type: "string" },
+                      bpp_limit: { type: "string" },
+                      business_income_limit: { type: "string" },
+                      total_insured_value: { type: "string" },
+                      property_premium: { type: "string" },
+                      property_deductible: { type: "string" },
+                      wind_hail_deductible_pct: { type: "string" },
+                      equipment_breakdown_premium: { type: "string" },
+                      causes_of_loss: { type: "string" },
+                      // LOB flags and premium buckets
+                      lob_auto: { type: "boolean" },
+                      lob_gl: { type: "boolean" },
+                      lob_property: { type: "boolean" },
+                      lob_umbrella: { type: "boolean" },
+                      lob_wc: { type: "boolean" },
+                      auto_premium: { type: "string" },
+                      inland_marine_premium: { type: "string" },
+                      cyber_premium: { type: "string" },
+                      crime_premium: { type: "string" },
+                      liquor_premium: { type: "string" },
+                      umbrella_premium: { type: "string" },
+                      // Policy identifiers (when extracting from existing policies)
+                      policy_number: { type: "string" },
+                      blanket_waiver_of_subrogation: { type: "string" },
+                      additional_insured_blanket: { type: "string" },
+                      surplus_lines: { type: "string" },
                     },
                   },
                   gaps: {
