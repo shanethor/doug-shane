@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { ChevronLeft, ChevronRight, TrendingUp, Brain, DollarSign, Users, Target, Rocket, BarChart3, Shield, Database, Eye, Layers, Replace, Zap, Heart } from "lucide-react";
+import { ChevronLeft, ChevronRight, TrendingUp, Brain, DollarSign, Users, Target, Rocket, BarChart3, Shield, Database, Eye, Layers, Replace, Zap, Heart, Smartphone, FolderOpen, MessageCircle } from "lucide-react";
 import auraLogo from "@/assets/aura-logo.png";
 
 const SLIDES = [
@@ -13,6 +13,7 @@ const SLIDES = [
   { id: "human-first", label: "Human First" },
   { id: "moat", label: "The Moat" },
   { id: "wedge", label: "The Wedge" },
+  { id: "insured", label: "Insured Experience" },
   { id: "why-wins", label: "Why We Win" },
   { id: "model", label: "Revenue Model" },
   { id: "gtm", label: "Go-to-Market" },
@@ -53,6 +54,7 @@ export default function Deck() {
     <HumanFirstSlide />,
     <MoatSlide />,
     <WedgeSlide />,
+    <InsuredExperienceSlide />,
     <WhyWinsSlide />,
     <ModelSlide />,
     <GTMSlide />,
@@ -527,7 +529,72 @@ function WedgeSlide() {
   );
 }
 
-/* ─── Slide 11: Why We Win ─── */
+/* ─── Slide 11: Insured Experience ─── */
+function InsuredExperienceSlide() {
+  return (
+    <div className="flex flex-col items-center">
+      {/* Title */}
+      <div className="text-center mb-10">
+        <div className="flex items-center justify-center gap-2 mb-3">
+          <div className="p-1.5 rounded-md bg-primary/10"><Eye className="h-4 w-4 text-primary" /></div>
+          <span className="text-xs font-semibold uppercase tracking-widest text-primary">Platform Expansion</span>
+        </div>
+        <h2 className="text-3xl md:text-5xl font-bold tracking-tight text-foreground leading-tight">
+          Extending Intelligence to the<br />
+          <span className="aura-gradient-text">Insured Experience</span>
+        </h2>
+        <p className="mt-3 text-lg text-muted-foreground">
+          AURA connects the advisor and the insured through a modern digital experience
+        </p>
+      </div>
+
+      {/* Three columns */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-12 w-full mb-12">
+        {[
+          {
+            icon: Smartphone,
+            heading: "Instant Access",
+            lines: ["View ID cards anytime", "Download policies and documents", "Access insurance without waiting"],
+          },
+          {
+            icon: FolderOpen,
+            heading: "Full Visibility",
+            lines: ["See coverage in one place", "Access certificates quickly", "Stay connected to protection"],
+          },
+          {
+            icon: MessageCircle,
+            heading: "Connected Experience",
+            lines: ["Request service easily", "Communicate with advisor", "Modern client experience layer"],
+          },
+        ].map(({ icon: Icon, heading, lines }) => (
+          <div key={heading} className="flex flex-col items-center text-center gap-4">
+            <div className="p-4 rounded-2xl bg-primary/10 border border-primary/20">
+              <Icon className="h-8 w-8 text-primary" strokeWidth={1.5} />
+            </div>
+            <h3 className="text-xl font-bold text-foreground">{heading}</h3>
+            <ul className="space-y-2">
+              {lines.map(line => (
+                <li key={line} className="text-sm text-muted-foreground">{line}</li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </div>
+
+      {/* Bottom statement */}
+      <div className="text-center border-t border-border/40 pt-8 w-full max-w-2xl">
+        <p className="text-lg font-bold text-foreground mb-2">
+          AURA becomes the experience layer across the entire insurance relationship
+        </p>
+        <p className="text-sm text-muted-foreground/70">
+          Advisor. Agency. Insured. Connected through intelligence.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Slide 12: Why We Win ─── */
 function WhyWinsSlide() {
   return (
     <div>
