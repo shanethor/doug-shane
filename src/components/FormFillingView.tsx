@@ -989,6 +989,16 @@ export default function FormFillingView({ submissionId, initialMessages, initial
               <CheckCircle className="h-3 w-3 mr-1" />Complete
             </Badge>
           )}
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-7 text-xs gap-1.5"
+            disabled={downloading}
+            onClick={() => downloadForms(isAllForms ? "package" : "individual")}
+          >
+            {downloading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
+            Download PDF
+          </Button>
           <div className="flex rounded-md border overflow-hidden">
             <button
               onClick={() => setCenterView("form")}
