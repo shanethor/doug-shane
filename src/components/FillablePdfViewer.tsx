@@ -91,7 +91,7 @@ export default function FillablePdfViewer({ formId }: FillablePdfViewerProps) {
   return (
     <iframe
       key={blobUrl}
-      src={blobUrl + "#toolbar=1&navpanes=0&scrollbar=1&zoom=150"}
+      src={blobUrl + "#toolbar=1&navpanes=0&scrollbar=1&zoom=100"}
       className="w-full h-full border-0"
       title={`Fillable ACORD Form ${formId}`}
       style={{ minHeight: "600px" }}
