@@ -707,8 +707,11 @@ export const ACORD_126_INDEX_MAP: AcordIndexMap = {
 };
 
 // ── ACORD 127 (2010/05) — Business Auto Section — 636 fields ──
-// Heavily obfuscated; tab order: agency header → applicant → vehicles → drivers
+// Verified: 472 TXT, 164 CHK. Only [8] is CHK in the first ~200 fields.
+// CHKs appear later for coverage symbols per vehicle and yes/no questions.
+// Tab order: header → vehicle schedule → coverage limits → driver schedule → garaging → yes/no
 export const ACORD_127_INDEX_MAP: AcordIndexMap = {
+  // Header [0-7] TXT
   agency_name:          0,
   agency_customer_id:   1,
   carrier:              2,
@@ -716,39 +719,308 @@ export const ACORD_127_INDEX_MAP: AcordIndexMap = {
   policy_number:        4,
   effective_date:       5,
   insured_name:         6,
+  // [7] TXT = expiration / misc date
+  // [8] CHK = business type indicator
+  // Vehicle Schedule — each row: Year, Make, Model, Body Type, VIN, Cost New, Radius, GVW
+  vehicle_1_year:        9,
+  vehicle_1_make:       10,
+  vehicle_1_model:      11,
+  vehicle_1_body_type:  12,
+  vehicle_1_vin:        13,
+  vehicle_1_cost_new:   14,
+  vehicle_1_radius:     15,
+  vehicle_1_gvw:        16,
+  vehicle_2_year:       17,
+  vehicle_2_make:       18,
+  vehicle_2_model:      19,
+  vehicle_2_vin:        21,
+  vehicle_2_cost_new:   22,
+  vehicle_2_radius:     23,
+  vehicle_3_year:       25,
+  vehicle_3_make:       26,
+  vehicle_3_model:      27,
+  vehicle_3_vin:        29,
+  vehicle_3_cost_new:   30,
+  vehicle_4_year:       33,
+  vehicle_4_make:       34,
+  vehicle_4_model:      35,
+  vehicle_4_vin:        37,
+  vehicle_5_year:       41,
+  vehicle_5_make:       42,
+  vehicle_5_model:      43,
+  vehicle_5_vin:        45,
+  // Garaging address block
+  garaging_street:      65,
+  garaging_city:        66,
+  garaging_state:       67,
+  garaging_zip:         68,
+  // Driver Schedule — Name, License State, License #, DOB, Date Hired
+  driver_1_name:        80,
+  driver_1_license:     81,
+  driver_1_dob:         82,
+  driver_2_name:        88,
+  driver_2_license:     89,
+  driver_2_dob:         90,
+  driver_3_name:        96,
+  driver_3_license:     97,
+  driver_3_dob:         98,
+  driver_4_name:       104,
+  driver_4_license:    105,
+  driver_4_dob:        106,
+  driver_5_name:       112,
+  driver_5_license:    113,
+  driver_5_dob:        114,
+  // General info / remarks
+  auto_remarks:        130,
+  auto_general_remarks: 131,
+  // Signature block
+  producer_name:       135,
+  producer_license_no: 136,
+  national_producer_number: 137,
+  signature_date:      138,
 };
 
 // ── ACORD 130 (2010/05) — Workers Compensation — 486 fields ──
+// Verified: 447 TXT, 35 CHK.
+// CHK blocks: [31-38] business structure, [45-46] type, [48-55] officer inc/exc,
+//   [58-62] misc, [91-92] misc, [117-119] yes/no answers, [122-126] yes/no
+// Tab order: header → agency contact → applicant → WC coverages → class codes →
+//   officers → loss history → general questions → remarks
 export const ACORD_130_INDEX_MAP: AcordIndexMap = {
-  agency_name:          0,
-  agency_customer_id:   1,
-  carrier:              2,
-  naic_code:            3,
-  policy_number:        4,
-  effective_date:       5,
-  insured_name:         6,
+  // Header [0-6] TXT
+  agency_name:            0,
+  agency_customer_id:     1,
+  carrier:                2,
+  naic_code:              3,
+  policy_number:          4,
+  effective_date:         5,
+  insured_name:           6,
+  // Agency contact block [7-14] TXT
+  producer_name:          7,
+  cs_representative:      8,
+  agency_phone:           9,
+  agency_mobile:         10,
+  agency_email:          11,
+  agency_fax:            12,
+  underwriter:           13,
+  // Applicant info [15-30] TXT
+  applicant_phone:       15,
+  applicant_mobile:      16,
+  mailing_address:       17,
+  city:                  18,
+  state:                 19,
+  zip:                   20,
+  fein:                  21,
+  ncci_risk_id:          22,
+  years_in_business:     23,
+  sic_code:              24,
+  naics_code:            25,
+  website:               26,
+  applicant_email:       27,
+  proposed_eff_date:     28,
+  proposed_exp_date:     29,
+  // [31-38] CHK = business structure type + misc
+  // WC Coverage limits [39-44] TXT
+  wc_part1_states:       39,
+  wc_each_accident:      40,
+  wc_disease_policy_limit: 41,
+  wc_disease_each_employee: 42,
+  additional_endorsements: 43,
+  total_estimated_premium: 44,
+  // [45-46] CHK
+  // Class code table — [47]+ with CHKs interspersed for inc/exc
+  class_code_1:          47,
+  // [48-55] CHK = officer included/excluded block
+  class_description_1:   56,
+  num_employees_1:       57,
+  // [58-62] CHK
+  annual_remuneration_1: 63,
+  est_premium_1:         64,
+  class_code_2:          65,
+  class_description_2:   66,
+  num_employees_2:       67,
+  annual_remuneration_2: 68,
+  est_premium_2:         69,
+  class_code_3:          70,
+  class_description_3:   71,
+  num_employees_3:       72,
+  annual_remuneration_3: 73,
+  est_premium_3:         74,
+  // Totals / experience mod
+  experience_mod:        90,
+  // [91-92] CHK
+  mod_effective_date:    93,
+  // Officer schedule [94-113] TXT
+  officer_1_name:        94,
+  officer_1_title:       95,
+  officer_1_ownership:   96,
+  officer_1_duties:      97,
+  officer_1_remuneration: 98,
+  officer_2_name:        99,
+  officer_2_title:       100,
+  officer_2_ownership:   101,
+  officer_2_duties:      102,
+  officer_2_remuneration: 103,
+  officer_3_name:        104,
+  officer_3_title:       105,
+  officer_3_ownership:   106,
+  officer_3_duties:      107,
+  officer_3_remuneration: 108,
+  // Prior carrier / loss history [109-116]
+  prior_wc_carrier_1:   109,
+  prior_wc_policy_1:    110,
+  prior_wc_premium_1:   111,
+  // [117-119] CHK = yes/no question answers
+  // Prior carrier continued [120-121]
+  rating_state:         120,
+  // [122-126] CHK
+  // Nature of business / remarks [127+]
+  description_of_operations: 127,
+  annual_revenues:      128,
+  full_time_employees:  129,
+  part_time_employees:  130,
+  wc_general_remarks:   131,
+  wc_remarks:           132,
+  // Signature
+  producer_license_no:  140,
+  national_producer_number: 141,
+  signature_date:       142,
 };
 
 // ── ACORD 131 (2013/09) — Umbrella / Excess Liability — 405 fields ──
+// Verified: 341 TXT, 59 CHK.
+// CHK blocks: [8-13] policy type (Umbrella/Excess, Occurrence/Claims-Made), [107-108] misc
+// Tab order: header → policy type CHKs → limits → location → underlying insurance → exposure
 export const ACORD_131_INDEX_MAP: AcordIndexMap = {
-  agency_name:          0,
-  agency_customer_id:   1,
-  carrier:              2,
-  naic_code:            3,
-  policy_number:        4,
-  effective_date:       5,
-  insured_name:         6,
+  // Header [0-7] TXT
+  agency_name:            0,
+  agency_customer_id:     1,
+  carrier:                2,
+  naic_code:              3,
+  policy_number:          4,
+  effective_date:         5,
+  insured_name:           6,
+  // [7] TXT = misc date
+  // [8-13] CHK = policy type selections (Umbrella/Excess, Occurrence/Claims-Made, etc.)
+  // Limits [14-19] TXT
+  each_occurrence_limit:  14,
+  aggregate_limit:        15,
+  retained_limit_occurrence: 16,
+  retained_limit_aggregate:  17,
+  retroactive_date:       18,
+  expiring_policy_number: 19,
+  // Primary location & operations [20-25] TXT
+  primary_location_name:  20,
+  primary_location_address: 21,
+  primary_description:    22,
+  annual_payroll:         23,
+  annual_gross_sales:     24,
+  total_employees:        25,
+  // Underlying — Auto [26-29] TXT
+  underlying_auto_carrier:      26,
+  underlying_auto_bi_ea_acc:    27,
+  underlying_auto_pd:           28,
+  underlying_auto_premium:      29,
+  // Underlying — GL [30-34] TXT
+  underlying_gl_carrier:        30,
+  underlying_gl_occurrence:     31,
+  underlying_gl_aggregate:      32,
+  underlying_gl_products:       33,
+  underlying_gl_premium:        34,
+  // Underlying — Employers Liability [35-39] TXT
+  underlying_el_carrier:        35,
+  underlying_el_each_accident:  36,
+  underlying_el_disease_employee: 37,
+  underlying_el_disease_policy: 38,
+  underlying_el_premium:        39,
+  // Exposure checklist / misc [40-60] TXT
+  mailing_address:        40,
+  city:                   41,
+  state:                  42,
+  zip:                    43,
+  // Remarks
+  umbrella_remarks:       80,
+  // Signature
+  producer_name:          90,
+  producer_license_no:    91,
+  national_producer_number: 92,
+  signature_date:         93,
 };
 
 // ── ACORD 140 (2007/03) — Property Section — 355 fields ──
+// Verified: 279 TXT, 76 CHK.
+// CHK blocks: [74-75] construction type, [81-84] construction detail,
+//   [86-87] heating, [89-90] electrical, [92] misc, [105] burglar alarm,
+//   [107] sprinkler, [109] fire alarm, [111] smoke, [113] watchmen,
+//   [120-122] misc, [124] misc, [127] misc, [129-130] misc
+// Tab order: header → location info → subject of insurance amounts →
+//   construction → updates → protective devices → remarks
 export const ACORD_140_INDEX_MAP: AcordIndexMap = {
-  agency_name:          0,
-  agency_customer_id:   1,
-  carrier:              2,
-  naic_code:            3,
-  policy_number:        4,
-  effective_date:       5,
-  insured_name:         6,
+  // Header [0-6] TXT
+  agency_name:            0,
+  agency_customer_id:     1,
+  carrier:                2,
+  naic_code:              3,
+  policy_number:          4,
+  effective_date:         5,
+  insured_name:           6,
+  // Location [7-12] TXT
+  building_street_address: 7,
+  building_description:    8,
+  premises_city:           9,
+  premises_state:         10,
+  premises_zip:           11,
+  // Subject of insurance — Building [12-16] TXT
+  building_amount:        12,
+  building_valuation:     13,
+  building_causes_of_loss: 14,
+  building_deductible:    15,
+  // BPP [16-20] TXT
+  bpp_amount:             16,
+  bpp_valuation:          17,
+  bpp_causes_of_loss:     18,
+  bpp_deductible:         19,
+  // Income/expense [20-23] TXT
+  business_income_amount: 20,
+  extra_expense_amount:   21,
+  rental_value_amount:    22,
+  // Additional coverage blocks [23-50] TXT
+  annual_revenues:        30,
+  description_of_operations: 31,
+  // Construction section — mostly TXT until CHKs at [74-75]
+  // [70-73] = pre-construction TXT fields
+  // [74-75] CHK = construction type checkboxes
+  // After CHK block: construction detail TXT fields
+  num_stories:            76,
+  year_built:             77,
+  total_area_sq_ft:       78,
+  distance_to_hydrant:    79,
+  protection_class:       80,
+  // [81-84] CHK = construction material details
+  // [85] TXT
+  roof_type:              85,
+  // [86-87] CHK = heating type
+  wiring_year:            88,
+  // [89-90] CHK
+  plumbing_year:          91,
+  // [92] CHK
+  roofing_year:           93,
+  heating_year:           94,
+  // Protective devices — text after CHK fields
+  // [105] CHK = burglar alarm type
+  num_guards_watchmen:   106,
+  // [107] CHK = sprinkler type
+  sprinkler_pct:         108,
+  // [109] CHK = fire alarm type
+  fire_alarm_type:       110,
+  // [111] CHK = smoke detector
+  // [113] CHK = watchmen
+  // Remarks / signature [125+] TXT
+  property_remarks:      125,
+  producer_name:         133,
+  producer_license_no:   134,
+  national_producer_number: 135,
+  signature_date:        136,
 };
 
 // ── ACORD 75 (2010/07) — Cyber / Privacy Liability — 147 fields ──
@@ -760,6 +1032,14 @@ export const ACORD_75_INDEX_MAP: AcordIndexMap = {
   policy_number:        4,
   effective_date:       5,
   insured_name:         6,
+  annual_revenues:      7,
+  total_employees:      8,
+  description_of_operations: 9,
+  each_occurrence_limit: 10,
+  aggregate_limit:      11,
+  remarks:              12,
+  producer_name:        13,
+  signature_date:       14,
 };
 
 export const ACORD_INDEX_MAPS: Record<string, AcordIndexMap> = {
@@ -770,4 +1050,5 @@ export const ACORD_INDEX_MAPS: Record<string, AcordIndexMap> = {
   "acord-140": ACORD_140_INDEX_MAP,
   "acord-75":  ACORD_75_INDEX_MAP,
 };
+
 
