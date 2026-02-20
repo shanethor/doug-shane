@@ -95,6 +95,12 @@ export default function FormFillingView({ submissionId, initialMessages, initial
   const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Pre-filled PDF bytes for the Adobe viewer — keyed by formId
+  const [filledPdfBytesMap, setFilledPdfBytesMap] = useState<Record<string, Uint8Array>>({});
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [pdfFilledCount, setPdfFilledCount] = useState(0);
+  const pdfGenTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // Swipe gesture support
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const swipeContainerRef = useRef<HTMLDivElement>(null);
@@ -189,6 +195,46 @@ export default function FormFillingView({ submissionId, initialMessages, initial
     };
     load();
   }, [user, submissionId]);
+
+  // ── PDF viewer generation ──────────────────────────────────────────────────
+  // Generates a filled PDF using jsPDF overlay (works for XFA ACORD PDFs which pdf-lib can't load)
+  // and stores the bytes for the Adobe viewer.
+  const regeneratePdfForViewer = useCallback(async (formId: string, data: Record<string, any>) => {
+    const form = ACORD_FORMS[formId];
+    if (!form) return;
+    setIsGeneratingPdf(true);
+    try {
+      const result = await generateAcordPdfAsync(form, data, { flatten: false });
+      const filled = form.fields.filter(f => data[f.key] && String(data[f.key]).trim()).length;
+      setFilledPdfBytesMap(prev => ({ ...prev, [formId]: result.bytes }));
+      setPdfFilledCount(filled);
+    } catch (err) {
+      console.error("PDF viewer generation error:", err);
+    } finally {
+      setIsGeneratingPdf(false);
+    }
+  }, []);
+
+  // Trigger PDF generation when loading completes (initial fill)
+  useEffect(() => {
+    if (!loading && !isAllForms && activeFormId && Object.keys(formData).length > 0) {
+      regeneratePdfForViewer(activeFormId, formData);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading]);
+
+  // Debounced regeneration when formData or activeFormId changes after initial load
+  useEffect(() => {
+    if (loading || isAllForms || !activeFormId || Object.keys(formData).length === 0) return;
+    if (pdfGenTimerRef.current) clearTimeout(pdfGenTimerRef.current);
+    pdfGenTimerRef.current = setTimeout(() => {
+      regeneratePdfForViewer(activeFormId, formData);
+    }, 1500);
+    return () => {
+      if (pdfGenTimerRef.current) clearTimeout(pdfGenTimerRef.current);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData, activeFormId]);
 
   const scrollChatToBottom = useCallback(() => {
     if (chatScrollRef.current) chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
@@ -408,85 +454,10 @@ export default function FormFillingView({ submissionId, initialMessages, initial
     setIsInferring(false);
   };
 
-  /** Fill a single ACORD PDF's AcroForm fields with formData and return a Blob */
-  const buildFilledPdfBlob = async (form: typeof enabledFormList[0]): Promise<Blob | null> => {
-    const { FILLABLE_PDF_PATHS, ACORD_FIELD_MAPS } = await import("@/lib/acord-field-map");
-    const pdfPath = FILLABLE_PDF_PATHS[form.id];
-    if (!pdfPath) return null;
-
-    const resp = await fetch(pdfPath);
-    if (!resp.ok) return null;
-    const pdfBytes = await resp.arrayBuffer();
-
-    const { PDFDocument } = await import("pdf-lib");
-    const pdfDoc = await PDFDocument.load(pdfBytes, { ignoreEncryption: true });
-
-    try {
-      const pdfForm = pdfDoc.getForm();
-      const fieldMap = ACORD_FIELD_MAPS[form.id] || {};
-      const pdfFields = pdfForm.getFields();
-      const pdfFieldNames = pdfFields.map(f => f.getName());
-
-      // Normalize a string for fuzzy comparison: lowercase, collapse whitespace, strip special chars
-      const norm = (s: string) =>
-        s.toLowerCase()
-          .replace(/[\\\/\-_&,.:;()\[\]#*]/g, " ")
-          .replace(/\s+/g, " ")
-          .trim();
-
-      // Build normalized lookup map once
-      const normalizedPdfNames = pdfFieldNames.map(n => ({ original: n, normalized: norm(n) }));
-
-      const findPdfField = (pdfName: string): string | undefined => {
-        const target = norm(pdfName);
-        // 1. Exact match (case-insensitive, normalized)
-        const exact = normalizedPdfNames.find(n => n.normalized === target);
-        if (exact) return exact.original;
-        // 2. PDF field contains our target string
-        const contains = normalizedPdfNames.find(n => n.normalized.includes(target));
-        if (contains) return contains.original;
-        // 3. Our target contains the PDF field name (for abbreviated PDF names)
-        const contained = normalizedPdfNames.find(n => target.includes(n.normalized) && n.normalized.length > 4);
-        if (contained) return contained.original;
-        return undefined;
-      };
-
-      for (const [ourKey, pdfName] of Object.entries(fieldMap)) {
-        const val = formData[ourKey];
-        if (val === null || val === undefined || val === "") continue;
-        const strVal = String(val).trim();
-        if (!strVal) continue;
-
-        const targetName = findPdfField(pdfName);
-        if (!targetName) continue;
-
-        try {
-          const field = pdfForm.getField(targetName);
-          const ctor = field.constructor.name;
-          if (ctor === "PDFTextField") {
-            pdfForm.getTextField(targetName).setText(strVal);
-          } else if (ctor === "PDFDropdown") {
-            try { pdfForm.getDropdown(targetName).select(strVal); } catch { /* option may not exist */ }
-          } else if (ctor === "PDFCheckBox") {
-            const truthy = /^(true|yes|1|x)$/i.test(strVal);
-            if (truthy) pdfForm.getCheckBox(targetName).check();
-            else pdfForm.getCheckBox(targetName).uncheck();
-          } else if (ctor === "PDFRadioGroup") {
-            try { pdfForm.getRadioGroup(targetName).select(strVal); } catch { /* option may not exist */ }
-          }
-        } catch { /* skip unwritable fields */ }
-      }
-
-      // Flatten to lock values into the PDF
-      pdfForm.flatten();
-    } catch {
-      // If AcroForm manipulation fails, return the original PDF unmodified
-    }
-
-    const filledBytes = await pdfDoc.save();
-    return new Blob([filledBytes.buffer as ArrayBuffer], { type: "application/pdf" });
-  };
-
+  /**
+   * Download filled ACORD PDFs using generateAcordPdfAsync.
+   * Uses jsPDF image overlay as fallback for XFA-based ACORD PDFs that pdf-lib can't process.
+   */
   const downloadForms = async (mode: "individual" | "package") => {
     if (!user) return;
     setDownloading(true);
@@ -503,24 +474,21 @@ export default function FormFillingView({ submissionId, initialMessages, initial
         ? enabledFormList.filter(f => f.id === activeFormId)
         : enabledFormList;
 
-      // 3. Build and download each filled PDF
+      // 3. Generate and download each filled PDF
       const date = new Date().toISOString().slice(0, 10);
       let count = 0;
       for (const form of formsToProcess) {
         const hasData = form.fields.some(f => formData[f.key] && String(formData[f.key]).trim());
         if (!hasData) continue;
 
-        const blob = await buildFilledPdfBlob(form);
-        if (!blob) continue;
-
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `${form.name.replace(/\s/g, "_")}_${date}.pdf`;
-        a.click();
-        URL.revokeObjectURL(url);
-        count++;
-        if (count < formsToProcess.length) await new Promise(r => setTimeout(r, 400));
+        try {
+          const result = await generateAcordPdfAsync(form, formData, { flatten: true });
+          result.save(`${form.name.replace(/\s/g, "_")}_${date}.pdf`);
+          count++;
+          if (count < formsToProcess.length) await new Promise(r => setTimeout(r, 400));
+        } catch (err) {
+          console.error(`Failed to generate PDF for ${form.name}:`, err);
+        }
       }
 
       if (count === 0) {
@@ -1032,25 +1000,27 @@ export default function FormFillingView({ submissionId, initialMessages, initial
                       <FileText className="h-3.5 w-3.5 text-primary" />
                       <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{form.name}</span>
                     </div>
-                    <div style={{ height: "800px" }}>
-                      <FillablePdfViewer
-                        formId={form.id}
-                        formDef={form}
-                        formData={formData}
-                        onFieldChange={handleFieldChange}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </ScrollArea>
-          ) : (
-            <FillablePdfViewer
-              formId={activeFormId}
-              formDef={activeForm ?? undefined}
-              formData={formData}
-              onFieldChange={handleFieldChange}
-            />
+                     <div style={{ height: "800px" }}>
+                       <FillablePdfViewer
+                         pdfBytes={filledPdfBytesMap[form.id] ?? null}
+                         isGenerating={isGeneratingPdf}
+                         filledCount={0}
+                         fileName={`${form.name}.pdf`}
+                         onFieldChange={handleFieldChange}
+                       />
+                     </div>
+                   </div>
+                 ))}
+               </div>
+             </ScrollArea>
+           ) : (
+             <FillablePdfViewer
+               pdfBytes={filledPdfBytesMap[activeFormId] ?? null}
+               isGenerating={isGeneratingPdf}
+               filledCount={pdfFilledCount}
+               fileName={activeForm ? `${activeForm.name}.pdf` : "ACORD Form.pdf"}
+               onFieldChange={handleFieldChange}
+             />
           )}
         </div>
       ) : (

@@ -1,8 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Loader2, AlertCircle } from "lucide-react";
-import { PDFDocument, PDFTextField, PDFCheckBox } from "pdf-lib";
-import { FILLABLE_PDF_PATHS } from "@/lib/acord-field-map";
-import type { AcordFormDefinition } from "@/lib/acord-forms";
+import { Loader2, AlertCircle, RefreshCw } from "lucide-react";
 
 // Adobe PDF Embed API client IDs per domain
 const ADOBE_CLIENT_IDS: Record<string, string> = {
@@ -17,11 +14,17 @@ function getAdobeClientId(): string {
   return ADOBE_CLIENT_IDS[hostname] ?? ADOBE_CLIENT_IDS["localhost"];
 }
 
-interface FillablePdfViewerProps {
-  formId: string;
-  formData: Record<string, any>;
-  formDef?: AcordFormDefinition;
-  onFieldChange?: (key: string, value: string) => void;
+export interface FillablePdfViewerProps {
+  /** Pre-generated, filled PDF bytes to display. When this changes, the viewer re-renders. */
+  pdfBytes: Uint8Array | null;
+  /** True while the parent is generating the PDF — shows a loading spinner */
+  isGenerating?: boolean;
+  /** Number of fields that were pre-filled (shown in status bar) */
+  filledCount?: number;
+  /** Display name for the PDF tab title */
+  fileName?: string;
+  /** Called when the user edits a field inside the Adobe PDF viewer */
+  onFieldChange?: (fieldName: string, value: string) => void;
 }
 
 declare global {
@@ -32,10 +35,7 @@ declare global {
 
 function loadAdobeScript(): Promise<void> {
   return new Promise((resolve, reject) => {
-    if (window.AdobeDC) {
-      resolve();
-      return;
-    }
+    if (window.AdobeDC) { resolve(); return; }
     const existing = document.getElementById("adobe-dc-view-sdk");
     if (existing) {
       existing.addEventListener("load", () => resolve());
@@ -51,215 +51,104 @@ function loadAdobeScript(): Promise<void> {
   });
 }
 
-/**
- * Pre-fill the PDF using pdf-lib and the index-based field maps.
- * ACORD PDFs use binary-obfuscated field names — we use positional index access.
- * Returns a blob URL for the pre-filled PDF and a reverse map (pdfFieldName → internalKey).
- */
-async function prefillPdfWithData(
-  pdfPath: string,
-  formId: string,
-  formData: Record<string, any>
-): Promise<{ blobUrl: string; reverseMap: Record<string, string>; filledCount: number }> {
-  const { ACORD_INDEX_MAPS, ACORD_FIELD_MAPS } = await import("@/lib/acord-field-map");
+let viewerInstanceCounter = 0;
 
-  const absoluteUrl = `${window.location.origin}${pdfPath}`;
-  const response = await fetch(absoluteUrl);
-  if (!response.ok) throw new Error(`Failed to fetch PDF: ${response.status}`);
-  const pdfBytes = await response.arrayBuffer();
+export default function FillablePdfViewer({
+  pdfBytes,
+  isGenerating = false,
+  filledCount = 0,
+  fileName = "ACORD Form.pdf",
+  onFieldChange,
+}: FillablePdfViewerProps) {
+  // Each time pdfBytes changes we want a fresh viewer with a unique divId
+  const [viewerKey, setViewerKey] = useState(() => ++viewerInstanceCounter);
+  const [adobeError, setAdobeError] = useState<string | null>(null);
+  const [adobeLoading, setAdobeLoading] = useState(false);
+  const divId = `adobe-pdf-viewer-${viewerKey}`;
+  const cancelledRef = useRef(false);
+  const onFieldChangeRef = useRef(onFieldChange);
+  onFieldChangeRef.current = onFieldChange;
 
-  const pdfDoc = await PDFDocument.load(new Uint8Array(pdfBytes), {
-    ignoreEncryption: true,
-    updateMetadata: false,
-  });
-
-  const form = pdfDoc.getForm();
-  const fields = form.getFields();
-
-  const reverseMap: Record<string, string> = {};
-  let filledCount = 0;
-
-  // Strategy 1: Index-based (primary — bypasses obfuscated field names)
-  const indexMap = ACORD_INDEX_MAPS[formId];
-  if (indexMap && fields.length > 0) {
-    for (const [key, idx] of Object.entries(indexMap)) {
-      const field = fields[idx];
-      if (!field) continue;
-
-      // Build reverse map while we have the real field name
-      reverseMap[field.getName()] = key;
-
-      const value = formData[key];
-      if (value === undefined || value === null || value === "") continue;
-
-      const strVal = typeof value === "boolean"
-        ? (value ? "Yes" : "No")
-        : String(value);
-
-      try {
-        if (field instanceof PDFTextField) {
-          field.setText(strVal);
-          filledCount++;
-        } else if (field instanceof PDFCheckBox) {
-          const isChecked = value === true || strVal === "Yes" || strVal === "true" || strVal === "X";
-          if (isChecked) field.check();
-          else field.uncheck();
-          filledCount++;
-        }
-      } catch {
-        // skip read-only or otherwise inaccessible fields
-      }
-    }
-  }
-
-  // Strategy 2: Name-based fallback (for forms without an index map, e.g. ACORD 125, 25)
-  if (!indexMap || filledCount === 0) {
-    const nameMap = ACORD_FIELD_MAPS[formId] || {};
-    for (const [key, pdfFieldName] of Object.entries(nameMap)) {
-      const value = formData[key];
-      if (value === undefined || value === null || value === "") continue;
-
-      const strVal = typeof value === "boolean"
-        ? (value ? "Yes" : "No")
-        : String(value);
-
-      try {
-        const field = form.getFieldMaybe(pdfFieldName);
-        if (!field) continue;
-        reverseMap[field.getName()] = key;
-
-        if (field instanceof PDFTextField) {
-          field.setText(strVal);
-          filledCount++;
-        } else if (field instanceof PDFCheckBox) {
-          const isChecked = value === true || strVal === "Yes" || strVal === "true" || strVal === "X";
-          if (isChecked) field.check();
-          else field.uncheck();
-          filledCount++;
-        }
-      } catch {
-        // field name not found or read-only
-      }
-    }
-  }
-
-  const filledBytes = await pdfDoc.save();
-  const blob = new Blob([filledBytes.buffer as ArrayBuffer], { type: "application/pdf" });
-  const blobUrl = URL.createObjectURL(blob);
-
-  return { blobUrl, reverseMap, filledCount };
-}
-
-export default function FillablePdfViewer({ formId, formData, formDef, onFieldChange }: FillablePdfViewerProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const adobeViewRef = useRef<any>(null);
-  const reverseMapRef = useRef<Record<string, string>>({});
-  const blobUrlRef = useRef<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [filledCount, setFilledCount] = useState(0);
-  const divId = `adobe-pdf-${formId}`;
-
-  const pdfPath = FILLABLE_PDF_PATHS[formId];
-
+  // When bytes change (new PDF generated), bump the key to force viewer re-mount
+  const prevBytesRef = useRef<Uint8Array | null>(null);
   useEffect(() => {
-    if (!pdfPath) {
-      setLoading(false);
-      return;
+    if (pdfBytes && pdfBytes !== prevBytesRef.current) {
+      prevBytesRef.current = pdfBytes;
+      setViewerKey(++viewerInstanceCounter);
     }
+  }, [pdfBytes]);
 
-    let cancelled = false;
+  // Initialize the Adobe viewer whenever the viewerKey (= pdfBytes) changes
+  useEffect(() => {
+    if (!pdfBytes) return;
+
+    cancelledRef.current = false;
+    setAdobeError(null);
+    setAdobeLoading(true);
 
     async function initViewer() {
       try {
-        setLoading(true);
-        setError(null);
-
-        // Step 1: Pre-fill the PDF using pdf-lib (index-based, bypasses obfuscated names)
-        let pdfUrl: string;
-        let count = 0;
-        try {
-          const result = await prefillPdfWithData(pdfPath, formId, formData);
-          pdfUrl = result.blobUrl;
-          count = result.filledCount;
-          reverseMapRef.current = result.reverseMap;
-
-          // Clean up old blob URL
-          if (blobUrlRef.current) {
-            URL.revokeObjectURL(blobUrlRef.current);
-          }
-          blobUrlRef.current = pdfUrl;
-        } catch (fillErr) {
-          console.warn("pdf-lib pre-fill failed, using original PDF:", fillErr);
-          pdfUrl = `${window.location.origin}${pdfPath}`;
-        }
-
-        if (cancelled) return;
-
-        // Step 2: Load the Adobe PDF Embed SDK
         await loadAdobeScript();
 
+        // Wait for Adobe DC to be ready
         await new Promise<void>((resolve) => {
-          if (window.AdobeDC) {
-            resolve();
-          } else {
-            document.addEventListener("adobe_dc_view_sdk.ready", () => resolve(), { once: true });
-          }
+          if (window.AdobeDC) { resolve(); return; }
+          document.addEventListener("adobe_dc_view_sdk.ready", () => resolve(), { once: true });
         });
 
-        if (cancelled) return;
+        if (cancelledRef.current) return;
 
         const view = new window.AdobeDC.View({
           clientId: getAdobeClientId(),
           divId,
         });
 
-        adobeViewRef.current = view;
-
-        const previewConfig = {
-          content: { location: { url: pdfUrl } },
-          metaData: { fileName: `ACORD ${formId.replace("acord-", "")}.pdf` },
-        };
-
-        const viewerConfig = {
-          embedMode: "IN_LINE",
-          showAnnotationTools: false,
-          showLeftHandPanel: false,
-          showPageControls: true,
-          showDownloadPDF: true,
-          showPrintPDF: true,
-          enableFormFilling: true,
-        };
-
-        // Register callback for field change sync BEFORE previewFile
+        // Register event callbacks BEFORE previewFile
         view.registerCallback(
           window.AdobeDC.View.Enum.CallbackType.EVENT_LISTENER,
           (event: any) => {
-            if (cancelled) return;
-
-            // Sync edits made in the Adobe viewer back to the left panel
-            if (event.type === "FORM_FIELD_CHANGED" && onFieldChange) {
+            if (cancelledRef.current) return;
+            // Sync field edits from the Adobe viewer back to our left panel
+            if (event.type === "FORM_FIELD_CHANGED") {
               const { name, value } = event.data || {};
-              if (name) {
-                // Try to reverse-map from the PDF's real field name to our internal key
-                const internalKey = reverseMapRef.current[name] || name;
-                onFieldChange(internalKey, value ?? "");
+              if (name && onFieldChangeRef.current) {
+                onFieldChangeRef.current(name, value ?? "");
               }
             }
           },
           { enablePDFAnalytics: false }
         );
 
-        await view.previewFile(previewConfig, viewerConfig);
+        // Pass the filled PDF bytes directly via content.promise
+        // This avoids cross-origin issues with blob:// URLs
+        const pdfBuffer = pdfBytes.buffer.slice(
+          pdfBytes.byteOffset,
+          pdfBytes.byteOffset + pdfBytes.byteLength
+        ) as ArrayBuffer;
 
-        if (cancelled) return;
-        setLoading(false);
-        setFilledCount(count);
+        await view.previewFile(
+          {
+            content: { promise: Promise.resolve(pdfBuffer) },
+            metaData: { fileName },
+          },
+          {
+            embedMode: "IN_LINE",
+            showAnnotationTools: false,
+            showLeftHandPanel: false,
+            showPageControls: true,
+            showDownloadPDF: true,
+            showPrintPDF: true,
+            enableFormFilling: true,
+            defaultViewMode: "FIT_WIDTH",
+          }
+        );
+
+        if (!cancelledRef.current) setAdobeLoading(false);
       } catch (err: any) {
-        if (!cancelled) {
+        if (!cancelledRef.current) {
           console.error("Adobe PDF Embed error:", err);
-          setError(err?.message || "Failed to load PDF viewer");
-          setLoading(false);
+          setAdobeError(err?.message || "Failed to initialize PDF viewer");
+          setAdobeLoading(false);
         }
       }
     }
@@ -267,66 +156,60 @@ export default function FillablePdfViewer({ formId, formData, formDef, onFieldCh
     initViewer();
 
     return () => {
-      cancelled = true;
+      cancelledRef.current = true;
     };
-    // Re-init when form switches — formData captured at mount time for initial fill
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [formId, pdfPath]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewerKey]);
 
-  // Cleanup blob URL on unmount
-  useEffect(() => {
-    return () => {
-      if (blobUrlRef.current) {
-        URL.revokeObjectURL(blobUrlRef.current);
-        blobUrlRef.current = null;
-      }
-    };
-  }, []);
-
-  if (!pdfPath) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground p-8 text-center">
-        <AlertCircle className="h-8 w-8 text-destructive" />
-        <p className="text-sm font-medium">No fillable PDF for this form yet</p>
-        <p className="text-xs">A fillable PDF for {formId} has not been configured.</p>
-      </div>
-    );
-  }
+  const showSpinner = isGenerating || (adobeLoading && !adobeError);
 
   return (
-    <div className="flex flex-col h-full relative">
-      {loading && (
-        <div className="absolute inset-0 flex items-center justify-center gap-2 text-muted-foreground z-10 bg-background/80">
-          <Loader2 className="h-5 w-5 animate-spin" />
-          <span className="text-sm">Preparing pre-filled PDF…</span>
+    <div className="flex flex-col h-full relative bg-muted/20">
+      {/* Status bar */}
+      {!showSpinner && !adobeError && filledCount > 0 && (
+        <div className="px-3 py-1.5 border-b text-xs text-muted-foreground flex items-center gap-1.5 bg-background/80">
+          <span className="inline-block w-2 h-2 rounded-full bg-primary" />
+          {filledCount} field{filledCount !== 1 ? "s" : ""} pre-filled from extracted data — edit any field on the left to update
         </div>
       )}
 
-      {error && (
+      {/* Loading overlay */}
+      {showSpinner && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-muted-foreground z-10 bg-background/80">
+          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+          <span className="text-sm font-medium">
+            {isGenerating ? "Generating pre-filled PDF…" : "Loading viewer…"}
+          </span>
+          {isGenerating && (
+            <span className="text-xs text-muted-foreground">Building form with your data</span>
+          )}
+        </div>
+      )}
+
+      {/* Error state */}
+      {adobeError && !showSpinner && (
         <div className="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground p-8 text-center">
           <AlertCircle className="h-8 w-8 text-destructive" />
           <p className="text-sm font-medium">PDF viewer error</p>
-          <p className="text-xs text-destructive">{error}</p>
+          <p className="text-xs text-destructive max-w-sm">{adobeError}</p>
           <p className="text-xs text-muted-foreground mt-1">
-            Make sure the domain is registered in your Adobe PDF Embed API credentials.
-          </p>
-          <p className="text-xs text-muted-foreground">
-            Current domain: <code className="bg-muted px-1 rounded">{window.location.hostname}</code>
+            Domain: <code className="bg-muted px-1 rounded">{window.location.hostname}</code>
           </p>
         </div>
       )}
 
-      {!loading && !error && filledCount > 0 && (
-        <div className="px-3 py-1.5 bg-muted/60 border-b text-xs text-muted-foreground flex items-center gap-1.5">
-          <span className="inline-block w-2 h-2 rounded-full bg-primary" />
-          Pre-filled {filledCount} field{filledCount !== 1 ? "s" : ""} from extracted data
+      {/* No bytes yet — waiting for generation */}
+      {!pdfBytes && !isGenerating && !adobeError && (
+        <div className="flex flex-col items-center justify-center h-full gap-3 text-muted-foreground p-8 text-center">
+          <RefreshCw className="h-6 w-6 text-muted-foreground" />
+          <p className="text-sm">Fill in some fields on the left to generate the PDF preview</p>
         </div>
       )}
 
-      {/* Adobe renders into this div */}
+      {/* Adobe renders into this div — key ensures a fresh div on re-render */}
       <div
+        key={viewerKey}
         id={divId}
-        ref={containerRef}
         className="w-full flex-1"
         style={{ minHeight: "700px" }}
       />
