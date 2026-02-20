@@ -794,7 +794,7 @@ export default function Chat() {
     dragCounterRef.current = 0;
     setDragActive(false);
     const files = Array.from(e.dataTransfer.files);
-    if (files.length > 0) triggerDocumentExtraction(files);
+    if (files.length > 0) setAttachedFiles(prev => [...prev, ...files].slice(0, 10));
   };
 
   const isEmpty = messages.length === 0;
