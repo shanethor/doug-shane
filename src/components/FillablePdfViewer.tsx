@@ -3,8 +3,8 @@ import { Loader2, AlertCircle } from "lucide-react";
 
 // Adobe PDF Embed API client IDs per domain
 const ADOBE_CLIENT_IDS: Record<string, string> = {
-  "buildingaura.site": "77a0a7210dba422fa2cd350209ffaabf",
-  "www.buildingaura.site": "77a0a7210dba422fa2cd350209ffaabf",
+  "buildingaura.site": "683a4afbcd084e728689423a5e747605",
+  "www.buildingaura.site": "683a4afbcd084e728689423a5e747605",
   "doug-shane.lovable.app": "82d00c65432249999e0daa589ea94dfd",
   "id-preview--002628bd-9af2-4bd3-bfc6-c0546eed53c2.lovable.app": "0e4142db962d4d64b1fee6bf34bc67ac",
   "002628bd-9af2-4bd3-bfc6-c0546eed53c2.lovableproject.com": "f5d0868e6dbf4ee79ef0a26e2157776a",
