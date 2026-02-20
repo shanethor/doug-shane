@@ -1,20 +1,17 @@
 /**
- * Maps our internal field keys to the AcroForm PDF field names
- * embedded in the official fillable ACORD PDFs.
+ * Maps our internal field keys to the AcroForm PDF field names OR indices.
  *
- * VERIFICATION NOTES:
- * - ACORD 125 (2016/03): 279 fields — field names use SCREAMING_CAPS with spaces
- * - ACORD 126 (2016/09): ~180 fields — similar convention
- * - ACORD 127 (2010/05): ~120 fields
- * - ACORD 130 (2010/05): ~150 fields
- * - ACORD 131 (2013/09): ~130 fields
- * - ACORD 140 (2007/03): ~100 fields
+ * IMPORTANT: Official ACORD fillable PDFs use binary-obfuscated field names.
+ * Name-based matching DOES NOT WORK. We must use index-based (positional) mapping.
  *
- * Strategy: exact name first → normalized fuzzy match → skip
- * Field names are matched case-insensitively in pdf-generator.ts
+ * Use ACORD_INDEX_MAPS for index-based filling (primary strategy).
+ * ACORD_FIELD_MAPS (name-based) is kept as a fallback for PDFs that have readable names.
  */
 
 export type AcordFieldMap = Record<string, string>;
+/** Maps internal key → field index (0-based position in form.getFields()) */
+export type AcordIndexMap = Record<string, number>;
+
 
 // ─────────────────────────────────────────────────────────────────
 // ACORD 125 (2016/03) — Commercial Insurance Application
@@ -623,3 +620,50 @@ export const FILLABLE_PDF_PATHS: Record<string, string> = {
   "acord-75":  "/acord-fillable/75.pdf",
   "acord-25":  "/acord-fillable/25.pdf",
 };
+
+// ─────────────────────────────────────────────────────────────────
+// INDEX-BASED FIELD MAPS (primary strategy)
+//
+// Official ACORD PDFs use binary-obfuscated field names that cannot
+// be matched by name. Instead, map internal keys to field indices
+// (0-based position in form.getFields()).
+//
+// Indices verified visually using /pdf-diagnostic page.
+// ACORD 126 (279 fields) — verified reading order, page 1 top-to-bottom:
+// ─────────────────────────────────────────────────────────────────
+
+export const ACORD_126_INDEX_MAP: AcordIndexMap = {
+  // ── Agency block (fields 0-7, top-left, page 1) ──
+  agency_name:          0,   // "AGENCY" text field
+  agency_phone:         1,   // Phone A/C No Ext
+  agency_fax:           2,   // Fax A/C No
+  agency_email:         3,   // Email Address
+  agency_customer_id:   4,   // Agency Customer ID
+  contact_name:         5,   // Contact Name
+  // ── Carrier block (fields 6-13, top-right) ──
+  carrier:              6,   // Company name
+  naic_code:            7,   // NAIC Code
+  // ── Status checkboxes (8-12) ──
+  // (fields 8-12 are checkboxes: Quote, Bound, Issue Policy, Renew, Cancel)
+  // ── Policy info ──
+  policy_number:        13,
+  underwriter:          14,
+  transaction_date:     15,
+  proposed_eff_date:    16,
+  proposed_exp_date:    17,
+  // ── Named insured ──
+  applicant_name:       20,
+  mailing_address:      21,
+  city:                 22,
+  state:                23,
+  zip:                  24,
+  business_phone:       25,
+  fein:                 26,
+  // ── Description of operations ──
+  nature_of_business:   30,
+};
+
+export const ACORD_INDEX_MAPS: Record<string, AcordIndexMap> = {
+  "acord-126": ACORD_126_INDEX_MAP,
+};
+
