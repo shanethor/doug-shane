@@ -1,24 +1,23 @@
 import { useState, useEffect, useCallback } from "react";
-import { ChevronLeft, ChevronRight, TrendingUp, Brain, DollarSign, Users, Target, Rocket, BarChart3, Shield, Database, Eye, Layers, Replace, Zap, Heart, Smartphone, FolderOpen, MessageCircle } from "lucide-react";
-
+import { ChevronLeft, ChevronRight, TrendingUp, Brain, DollarSign, Users, Target, Rocket, BarChart3, Shield, Database, Eye, Layers, Zap, Heart, Smartphone, FolderOpen, MessageCircle, Bot } from "lucide-react";
 
 const SLIDES = [
   { id: "title", label: "Title" },
   { id: "origin", label: "Origin" },
   { id: "problem", label: "Problem" },
-  { id: "built-by", label: "Built By" },
+  { id: "built-by", label: "Unfair Advantage" },
   { id: "solution", label: "Solution" },
   { id: "how", label: "How It Works" },
   { id: "vision-layers", label: "Three Layers" },
   { id: "human-first", label: "Human First" },
   { id: "moat", label: "The Moat" },
-  { id: "wedge", label: "The Wedge" },
+  { id: "wedge", label: "Expansion" },
   { id: "insured", label: "Insured Experience" },
   { id: "why-wins", label: "Why We Win" },
   { id: "model", label: "Revenue Model" },
   { id: "gtm", label: "Go-to-Market" },
   { id: "projections", label: "Projections" },
-  { id: "ask", label: "The Ask" },
+  { id: "why-exists", label: "Why AURA Exists" },
 ];
 
 export default function Deck() {
@@ -59,7 +58,7 @@ export default function Deck() {
     <ModelSlide />,
     <GTMSlide />,
     <ProjectionsSlide />,
-    <AskSlide />,
+    <WhyExistsSlide />,
   ];
 
   return (
@@ -149,10 +148,13 @@ function TitleSlide() {
         <span className="aura-gradient-text">Insurance Runs On</span>
       </h2>
       <p className="mt-6 text-lg md:text-xl text-muted-foreground max-w-2xl">
-        AURA was not built to make insurance faster. It was built to make insurance right.
+        AURA was not built to make insurance faster. It was built to help producers manage and close business the right way.
       </p>
-      <p className="mt-3 text-base text-muted-foreground/70 max-w-xl italic">
-        AURA is not insurance software. It is what insurance looks like when the people inside it finally build the technology themselves.
+      <p className="mt-3 text-base text-muted-foreground/70 max-w-xl">
+        Built by producers. Not software companies.
+      </p>
+      <p className="mt-6 text-lg font-semibold text-foreground">
+        Insurance Runs on AURA.
       </p>
       <div className="mt-10 flex items-center gap-3 text-sm text-muted-foreground/60">
         <span>Investment Deck</span>
@@ -163,44 +165,40 @@ function TitleSlide() {
   );
 }
 
-/* ─── Slide 2: Origin / Founder Story ─── */
+/* ─── Slide 2: Origin ─── */
 function OriginSlide() {
   return (
     <div>
-      <SlideHeader icon={Heart} tag="The Origin" title="This did not start as a software idea" />
+      <SlideHeader icon={Heart} tag="The Origin" title="This did not start as a software idea." />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-2">
         <div className="rounded-xl border border-border bg-card p-6 hover-lift">
           <p className="text-sm text-muted-foreground leading-relaxed">
-            I did not set out to build a technology company. I set out to survive in an industry that was slowly crushing the people inside it.
+            I decided I was done wasting time re entering data, filling out forms, and working inside systems that were never built to support producers.
           </p>
           <p className="text-sm text-muted-foreground leading-relaxed mt-3">
-            Every day, I was expected to advise business owners on how to protect everything they had built. Their employees. Their families. Their future. But most of my time was not spent advising. It was spent re-entering the same data over and over. Filling out forms. Chasing information. Fighting systems that were never designed for the people actually doing the work.
+            Producers are expected to advise clients on risk, but most of their time is spent managing the process instead of closing business. When that happens, the insured does not get the attention they deserve.
           </p>
-          <p className="text-sm text-muted-foreground leading-relaxed mt-3">
-            And I realized something. The biggest risk in insurance was not the insured. It was the process.
+          <p className="text-sm font-semibold text-foreground leading-relaxed mt-4">
+            The biggest risk is not the insured. It is the systems everything runs on.
           </p>
         </div>
         <div className="space-y-4">
-          <div className="rounded-xl border border-border bg-card p-5 hover-lift">
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              When you are forced to move fast just to keep up, things get missed. Coverage gaps. Incorrect exposures. Policies that do not reflect reality. Nobody intended to fail the insured. The system just made it inevitable.
-            </p>
-          </div>
           <div className="rounded-xl border-2 border-primary/30 bg-primary/5 p-5 hover-lift">
             <p className="text-sm font-semibold text-foreground leading-relaxed">
-              "Insurance is not a product. It is a promise. A promise that when something goes wrong, someone will be there to help you recover."
-            </p>
-            <p className="text-xs text-muted-foreground mt-3">
-              AURA was not designed from the outside looking in. It was built from the inside out — by someone who carried the quota, won the trust, and felt what it was like to lose.
+              AURA is being built from inside the job, not outside of it.
             </p>
           </div>
           <div className="rounded-xl border border-border bg-card p-4">
-            <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-2">The founding team</p>
-            <div className="flex gap-4 text-sm text-muted-foreground">
-              <div><span className="font-semibold text-foreground">Doug</span> — Active commercial producer. Lived the problem. Carries the quota.</div>
-            </div>
-            <div className="flex gap-4 text-sm text-muted-foreground mt-2">
-              <div><span className="font-semibold text-foreground">Shane</span> — Engineer & co-founder. Builds the technology Doug needed but could not find.</div>
+            <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-3">Founding Team</p>
+            <div className="space-y-3">
+              <div className="text-sm text-muted-foreground">
+                <span className="font-semibold text-foreground">Doug Wenz</span>
+                <br />Founder & Active Commercial Producer
+              </div>
+              <div className="text-sm text-muted-foreground">
+                <span className="font-semibold text-foreground">Shane Thorstein</span>
+                <br />Co Founder & Lead Engineer
+              </div>
             </div>
           </div>
         </div>
@@ -213,14 +211,14 @@ function OriginSlide() {
 function ProblemSlide() {
   return (
     <div>
-      <SlideHeader icon={Shield} tag="The Problem" title="Advisors are drowning. The insured pays the price." subtitle="The commercial insurance workflow was built for process — not for the people responsible for protecting clients." />
+      <SlideHeader icon={Shield} tag="The Problem" title="Producers are buried in process. The insured pays the price." subtitle="The commercial insurance workflow was built for process, not for the people responsible for protecting clients." />
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
-        <StatCard value="3–5 hrs" label="Per submission — manual entry" sub="Data re-keyed across 6+ forms every time" />
-        <StatCard value="23%" label="Error rate on submissions" sub="Delays, re-work, missed coverage, lost business" />
-        <StatCard value="$4.2B" label="Wasted on admin annually" sub="Industry-wide — none of it serves the client" />
+        <StatCard value="3–5 hours" label="Per submission" sub="The same data re entered across multiple forms every time" />
+        <StatCard value="23%" label="Error rate on submissions" sub="Delays, rework, missed coverage, and lost business" />
+        <StatCard value="$4.2 billion" label="Spent on admin every year" sub="Time that should be spent advising clients and closing business" />
       </div>
       <div className="mt-5 rounded-xl border border-border bg-card/50 p-5">
-        <h3 className="text-sm font-semibold text-foreground mb-3">Work agencies outsource today because they have no choice:</h3>
+        <h3 className="text-sm font-semibold text-foreground mb-3">Agencies outsource just to keep up:</h3>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
           {["Submission preparation", "Exposure review", "Renewal prep", "Marketing prep", "COI review", "Coverage auditing"].map((item) => (
             <div key={item} className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -230,57 +228,47 @@ function ProblemSlide() {
           ))}
         </div>
         <p className="mt-4 text-sm font-medium text-foreground italic border-t border-border/40 pt-3">
-          "The problem is not data entry. The problem is lost time, lost visibility, and lost opportunity — when the people responsible for protecting clients are too buried to actually protect them."
+          The problem is not the work. The problem is the systems producers are forced to work in.
         </p>
       </div>
     </div>
   );
 }
 
-/* ─── Slide 4: Built By Production ─── */
+/* ─── Slide 4: Unfair Advantage ─── */
 function BuiltBySlide() {
   return (
     <div>
-      <SlideHeader icon={Users} tag="Unfair Advantage" title="Built inside the industry, not outside it" />
+      <SlideHeader icon={Users} tag="Unfair Advantage" title="Built inside the industry. Not outside of it." />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-2">
         <div className="space-y-4">
           <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-5">
-            <h3 className="text-sm font-semibold text-destructive mb-3">How every other insurance tech was built</h3>
+            <h3 className="text-sm font-semibold text-destructive mb-3">How every other insurance tech is built</h3>
             <ul className="text-sm text-muted-foreground space-y-2">
-              <li className="flex items-start gap-2"><span className="text-destructive/60 mt-0.5">×</span> Technologists who studied the workflow</li>
-              <li className="flex items-start gap-2"><span className="text-destructive/60 mt-0.5">×</span> Built from diagrams and interviews</li>
+              <li className="flex items-start gap-2"><span className="text-destructive/60 mt-0.5">×</span> Built by technologists who studied the workflow</li>
+              <li className="flex items-start gap-2"><span className="text-destructive/60 mt-0.5">×</span> Designed from diagrams and interviews</li>
               <li className="flex items-start gap-2"><span className="text-destructive/60 mt-0.5">×</span> Optimized for process efficiency</li>
-              <li className="flex items-start gap-2"><span className="text-destructive/60 mt-0.5">×</span> Never carried a quota or a client relationship</li>
+              <li className="flex items-start gap-2"><span className="text-destructive/60 mt-0.5">×</span> Never carried quota or owned the client relationship</li>
             </ul>
           </div>
           <div className="rounded-xl border-2 border-primary/30 bg-primary/5 p-5">
-            <h3 className="text-sm font-semibold text-primary mb-3">How AURA was built</h3>
+            <h3 className="text-sm font-semibold text-primary mb-3">AURA</h3>
             <ul className="text-sm text-muted-foreground space-y-2">
-              <li className="flex items-start gap-2"><span className="text-primary mt-0.5">✓</span> Founder is an active commercial insurance advisor</li>
-              <li className="flex items-start gap-2"><span className="text-primary mt-0.5">✓</span> Built from deadlines, not diagrams</li>
-              <li className="flex items-start gap-2"><span className="text-primary mt-0.5">✓</span> Optimized for production velocity and protection quality</li>
-              <li className="flex items-start gap-2"><span className="text-primary mt-0.5">✓</span> Deployed inside a live agency — real data, day one</li>
+              <li className="flex items-start gap-2"><span className="text-primary mt-0.5">✓</span> Built by an active commercial producer</li>
+              <li className="flex items-start gap-2"><span className="text-primary mt-0.5">✓</span> Built from real production experience</li>
+              <li className="flex items-start gap-2"><span className="text-primary mt-0.5">✓</span> Optimized to help producers win business and protect clients</li>
+              <li className="flex items-start gap-2"><span className="text-primary mt-0.5">✓</span> Running inside a live agency with real accounts</li>
             </ul>
           </div>
         </div>
-        <div className="space-y-4">
+        <div className="flex flex-col justify-center space-y-6">
           <div className="rounded-xl border border-border bg-card p-6 hover-lift">
             <p className="text-sm text-muted-foreground leading-relaxed">
-              Most insurance technology asks: <span className="font-semibold text-foreground">"How do we make submissions easier to process?"</span>
+              Most insurance technology is built to speed up the process.
             </p>
-            <p className="text-sm text-muted-foreground leading-relaxed mt-3">
-              AURA asks: <span className="font-semibold text-foreground">"How do I help the advisor win the account and protect the client properly — without drowning in busy work?"</span>
+            <p className="text-base font-semibold text-foreground leading-relaxed mt-4">
+              AURA was built to serve the producer and their insureds.
             </p>
-            <p className="text-sm text-muted-foreground leading-relaxed mt-3">
-              Those are not the same question. That difference changes everything.
-            </p>
-          </div>
-          <div className="rounded-xl border border-border bg-card p-5">
-            <p className="text-xs font-semibold text-primary uppercase tracking-widest mb-2">The principle that filters every feature</p>
-            <p className="text-sm font-semibold text-foreground">
-              "Would a top producing advisor voluntarily open this at 7am to win their day — or just tolerate it because they have to?"
-            </p>
-            <p className="text-xs text-muted-foreground mt-2">If they would not choose it, it does not belong in the product.</p>
           </div>
         </div>
       </div>
@@ -292,20 +280,19 @@ function BuiltBySlide() {
 function SolutionSlide() {
   return (
     <div>
-      <SlideHeader icon={Brain} tag="The Solution" title="AURA — the intelligence layer between insurance data and human judgment" subtitle="Submission automation is the entry point. Intelligence is the platform." />
+      <SlideHeader icon={Brain} tag="The Solution" title="AURA is the intelligence layer between the producer and the insurance data they rely on." subtitle="Submission automation is the entry point. Intelligence is the platform." />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
-        {[
-          { value: "75%+", label: "Reduction in submission time", sub: "Hours → minutes per account" },
-          { value: "6 forms", label: "Cross-filled simultaneously", sub: "ACORD 125, 126, 127, 130, 131, 140" },
-          { value: "Real data", label: "Trained on live agency submissions", sub: "Not synthetic — not theoretical" },
-          { value: "AI Audit", label: "Coverage gaps surfaced before the underwriter", sub: "Every submission reviewed for completeness" },
-        ].map((s) => (
-          <StatCard key={s.label} {...s} />
-        ))}
+        <StatCard value="75%+" label="Reduction in submission time" sub="From hours to minutes per account" />
+        <StatCard value="Cross filled" label="ACORD forms and carrier supplementals instantly" sub="No duplicate entry across forms" />
+        <StatCard value="Real data" label="Built on live agency submissions" sub="Not synthetic — not theoretical" />
+        <StatCard value="AI Audit" label="Coverage gaps surfaced before submission" sub="Every submission reviewed for completeness" />
+      </div>
+      <div className="mt-2">
+        <StatCard value="Loss runs" label="Pulled and attached automatically" sub="No manual carrier follow up" />
       </div>
       <div className="mt-4 rounded-xl border-2 border-primary/20 bg-primary/5 p-4 text-center">
         <p className="text-sm font-semibold text-foreground">
-          AURA is not a submission platform. AURA is the intelligence layer for insurance. Submission automation is where it starts.
+          AURA starts with submissions and becomes the system producers rely on to manage and place business.
         </p>
       </div>
     </div>
@@ -319,9 +306,9 @@ function HowSlide() {
       <SlideHeader icon={Rocket} tag="How It Works" title="Three steps. One conversation." />
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
         {[
-          { step: "01", title: "Upload & Chat", desc: "Upload documents or simply talk to AURA. The intelligence engine extracts business data, coverage needs, and loss history automatically — the way an advisor would." },
-          { step: "02", title: "Intelligence Cross-Fill", desc: "AURA fills all 6 ACORD forms simultaneously, infers missing values, flags coverage gaps, and surfaces observations the advisor needs to see before submission." },
-          { step: "03", title: "Review & Submit", desc: "The advisor reviews, approves or corrects, then sends a complete submission package. Nothing leaves without human sign-off." },
+          { step: "01", title: "Upload & Chat", desc: "Upload documents or talk to AURA. The intelligence engine extracts business data, coverage needs, and loss history automatically — the way a producer would." },
+          { step: "02", title: "Intelligence Cross Fill", desc: "AURA completes ACORD forms, carrier supplementals, and submission documents instantly, flags coverage gaps, and surfaces what the producer needs to see before submission." },
+          { step: "03", title: "Review & Submit", desc: "The producer reviews, makes corrections if needed, and sends a complete submission package. Nothing leaves without producer approval." },
         ].map((s) => (
           <div key={s.step} className="rounded-xl border border-border bg-card p-6 hover-lift">
             <div className="text-4xl font-bold text-primary/20 mb-3">{s.step}</div>
@@ -331,7 +318,7 @@ function HowSlide() {
         ))}
       </div>
       <p className="mt-5 text-center text-sm text-muted-foreground italic">
-        3 hours of thinking compressed into 3 minutes of review. The human still owns every decision.
+        Hours of work compressed into minutes. The producer stays in control.
       </p>
     </div>
   );
@@ -341,30 +328,30 @@ function HowSlide() {
 function VisionLayersSlide() {
   return (
     <div>
-      <SlideHeader icon={Layers} tag="Three Layers of Intelligence" title="Data. Thinking. Human." subtitle="AURA is not a CRM. Not automation software. It is the intelligence layer between raw insurance data and human judgment." />
+      <SlideHeader icon={Layers} tag="Three Layers of Intelligence" title="Data. Thinking. Human." subtitle="AURA is not a CRM or submission tool. It is the intelligence layer between insurance data and the producer." />
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-2">
         <div className="rounded-xl border-2 border-primary/40 bg-card p-6 hover-lift relative overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-primary/40" />
           <Database className="h-6 w-6 text-primary mb-3" />
           <h3 className="text-lg font-bold text-foreground mb-2">Layer 1 — Data</h3>
-          <p className="text-sm text-muted-foreground mb-3">Unify and structure all agency data into one canonical view.</p>
+          <p className="text-sm text-muted-foreground mb-3">Unifies and structures agency data into one view.</p>
           <ul className="text-xs text-muted-foreground/80 space-y-1">
             <li>• Policies, applications, loss runs, COIs</li>
-            <li>• Property, vehicle, industry benchmarks</li>
-            <li>• Year-over-year behavioral changes</li>
+            <li>• Property, vehicle, and exposure data</li>
+            <li>• Year over year changes and history</li>
           </ul>
-          <p className="mt-3 text-xs font-semibold text-primary/80">The data is the asset. Not the software.</p>
+          <p className="mt-3 text-xs font-semibold text-primary/80">The data becomes structured and usable.</p>
         </div>
 
         <div className="rounded-xl border-2 border-primary/30 bg-card p-6 hover-lift relative overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary/60 to-primary/20" />
           <Brain className="h-6 w-6 text-primary mb-3" />
           <h3 className="text-lg font-bold text-foreground mb-2">Layer 2 — Thinking</h3>
-          <p className="text-sm text-muted-foreground mb-3">AI analyzes, surfaces observations, and flags what matters.</p>
+          <p className="text-sm text-muted-foreground mb-3">AURA analyzes the data and surfaces what matters.</p>
           <ul className="text-xs text-muted-foreground/80 space-y-1">
             <li>• Detects missing coverages and gaps</li>
             <li>• Flags inconsistent limits and exposures</li>
-            <li>• Compares account vs. peers vs. history</li>
+            <li>• Compares the account against history and peers</li>
           </ul>
           <p className="mt-3 text-xs font-semibold text-primary/80">Pattern recognition at scale. Judgment stays human.</p>
         </div>
@@ -373,13 +360,13 @@ function VisionLayersSlide() {
           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary/30 to-primary/10" />
           <Eye className="h-6 w-6 text-primary mb-3" />
           <h3 className="text-lg font-bold text-foreground mb-2">Layer 3 — Human</h3>
-          <p className="text-sm text-muted-foreground mb-3">Nothing happens automatically. Everything flows through the advisor.</p>
+          <p className="text-sm text-muted-foreground mb-3">Nothing happens automatically. Everything flows through the producer.</p>
           <ul className="text-xs text-muted-foreground/80 space-y-1">
-            <li>• Observations, flags, suggested actions</li>
-            <li>• Producer approves or dismisses</li>
-            <li>• Full audit trail and accountability</li>
+            <li>• AURA surfaces observations and flags</li>
+            <li>• The producer reviews and decides</li>
+            <li>• Full accountability stays with the producer</li>
           </ul>
-          <p className="mt-3 text-xs font-semibold text-primary/80">The human is always the decision maker.</p>
+          <p className="mt-3 text-xs font-semibold text-primary/80">The producer remains the decision maker.</p>
         </div>
       </div>
     </div>
@@ -398,14 +385,14 @@ function HumanFirstSlide() {
         Human first.<br /><span className="aura-gradient-text">Always.</span>
       </h2>
       <p className="text-lg text-muted-foreground leading-relaxed mb-6">
-        The goal is not to replace the advisor. The goal is to restore them.
+        The goal is not to replace the producer. The goal is to restore them.
       </p>
       <p className="text-lg text-muted-foreground leading-relaxed mb-8">
-        Technology should never remove judgment. It should remove friction.
+        Technology should never replace judgment. It should remove friction.
       </p>
       <div className="rounded-xl border-2 border-primary/30 bg-primary/5 p-6 mb-6 w-full">
         <p className="text-base font-semibold text-foreground leading-relaxed">
-          AURA handles the busy work so the human can do what matters most.
+          AURA handles the busy work so the producer can do what matters most.
         </p>
         <div className="flex justify-center gap-8 mt-4">
           {["Think", "Advise", "Protect", "Build relationships"].map(w => (
@@ -414,30 +401,27 @@ function HumanFirstSlide() {
         </div>
       </div>
       <p className="text-base text-muted-foreground leading-relaxed">
-        This is how the industry gets better. Not by replacing people. By elevating them.
-      </p>
-      <p className="mt-4 text-sm text-muted-foreground/70 italic">
-        When advisors wake up and want to open AURA first — not because they have to, but because it helps them win — that is when the platform becomes inevitable.
+        The industry doesn't get better through mergers and acquisitions. It gets better by giving autonomy back to the people who built it.
       </p>
     </div>
   );
 }
 
-/* ─── Slide 9: The Moat (Compounding Intelligence) ─── */
+/* ─── Slide 9: The Moat ─── */
 function MoatSlide() {
   return (
     <div>
-      <SlideHeader icon={Database} tag="The Real Moat" title="The compounding intelligence moat" subtitle="Every submission processed through AURA permanently strengthens the system in a way competitors cannot replicate." />
+      <SlideHeader icon={Database} tag="The Real Moat" title="The compounding intelligence moat" subtitle="Every submission processed through AURA makes the system smarter and harder to replicate." />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-2">
         <div className="rounded-xl border border-border bg-card p-6 hover-lift">
-          <h3 className="text-base font-semibold text-foreground mb-4">The loop that never stops compounding</h3>
+          <h3 className="text-base font-semibold text-foreground mb-4">The loop that keeps compounding</h3>
           <div className="space-y-3">
             {[
-              { step: "1", text: "Submission enters AURA — data becomes structured" },
-              { step: "2", text: "Intelligence evaluates coverage, exposures, and gaps" },
-              { step: "3", text: "Advisor reviews and refines — outcome is captured" },
-              { step: "4", text: "System learns: what was chosen, what was corrected, what mattered" },
-              { step: "5", text: "Next submission benefits from every decision before it" },
+              { step: "1", text: "Submission enters AURA. Data becomes structured." },
+              { step: "2", text: "AURA evaluates coverage, exposures, and gaps." },
+              { step: "3", text: "Producer reviews and makes decisions. The outcome is captured." },
+              { step: "4", text: "AURA learns what was chosen, what was corrected, and what mattered." },
+              { step: "5", text: "Every future submission benefits from that experience." },
             ].map((item) => (
               <div key={item.step} className="flex items-start gap-3">
                 <span className="flex-shrink-0 h-6 w-6 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center">{item.step}</span>
@@ -446,30 +430,26 @@ function MoatSlide() {
             ))}
           </div>
           <div className="mt-4 p-3 rounded-lg bg-primary/5 border border-primary/20">
-            <p className="text-xs font-semibold text-primary text-center">This loop repeats on every policy. The more AURA is used, the more valuable it becomes.</p>
+            <p className="text-xs font-semibold text-primary text-center">This repeats on every account. The more AURA is used, the more valuable it becomes.</p>
           </div>
         </div>
         <div className="space-y-4">
           <div className="rounded-xl border border-border bg-card p-5 hover-lift">
-            <h4 className="text-sm font-semibold text-foreground mb-2">What becomes impossible to replicate</h4>
+            <h4 className="text-sm font-semibold text-foreground mb-2">What becomes difficult to replicate</h4>
             <ul className="text-xs text-muted-foreground space-y-1.5">
-              <li>• Structured insurance decision data — real outcomes, real situations</li>
-              <li>• Calibrated judgment built from human approvals and corrections</li>
-              <li>• Peer benchmarks by class of business, region, and carrier</li>
-              <li>• Switching costs that increase with every policy processed</li>
+              <li>• Structured insurance decision data built from real submissions</li>
+              <li>• Judgment calibrated from producer decisions</li>
+              <li>• Benchmarks across industries, regions, and carriers</li>
+              <li>• Switching costs that grow over time</li>
             </ul>
-          </div>
-          <div className="rounded-xl border border-border bg-card p-5 hover-lift">
-            <h4 className="text-sm font-semibold text-foreground mb-2">Why competitors cannot shortcut this</h4>
-            <p className="text-xs text-muted-foreground">
-              Competitors can copy software. They cannot copy accumulated intelligence built on real decisions made in real situations. This is not synthetic data. This is experience.
-            </p>
           </div>
           <div className="rounded-xl border-2 border-primary/30 bg-primary/5 p-4">
             <p className="text-sm font-semibold text-foreground text-center">
-              AURA is building the collective memory layer of insurance decision making.
+              Competitors can copy software. They cannot copy experience.
             </p>
-            <p className="text-xs text-muted-foreground text-center mt-1 italic">Powered by real-world agency deployment — already happening.</p>
+            <p className="text-xs text-muted-foreground text-center mt-2 italic">
+              AURA is becoming the intelligence layer behind insurance decision making.
+            </p>
           </div>
         </div>
       </div>
@@ -477,36 +457,36 @@ function MoatSlide() {
   );
 }
 
-/* ─── Slide 10: The Wedge & Expansion ─── */
+/* ─── Slide 10: Platform Expansion ─── */
 function WedgeSlide() {
   return (
     <div>
-      <SlideHeader icon={TrendingUp} tag="Platform Expansion" title="Submission is the entry point. Intelligence is the platform." subtitle="Investors need to see the path from first product to dominant infrastructure — so here it is." />
+      <SlideHeader icon={TrendingUp} tag="Platform Expansion" title="Submission is the entry point. Intelligence is the platform." />
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
         {[
           {
             phase: "Phase 1",
             title: "Submission Intelligence",
-            items: ["Ingestion & extraction", "ACORD cross-fill", "Gap detection", "Submission packages"],
+            items: ["Data ingestion and extraction", "ACORD cross fill", "Supplementals and carrier forms", "Gap detection", "Complete submission packages", "Loss run ingestion and analysis"],
             status: "Now",
           },
           {
             phase: "Phase 2",
-            title: "Advisor Augmentation",
-            items: ["Coverage adequacy scoring", "Renewal intelligence", "Peer benchmarking", "Loss analysis"],
+            title: "Producer Intelligence",
+            items: ["Coverage adequacy scoring", "Renewal intelligence", "Loss trend analysis", "Peer benchmarking", "Account level insights"],
             status: "12–18 mo",
           },
           {
             phase: "Phase 3",
             title: "Agency Operating System",
-            items: ["Full agency data layer", "Producer performance", "Carrier workflow", "Pipeline intelligence"],
+            items: ["Pipeline management", "Producer performance", "Carrier workflow", "Full agency data layer"],
             status: "24–36 mo",
           },
           {
             phase: "Phase 4",
             title: "Industry Intelligence Layer",
-            items: ["Cross-agency benchmarks", "Carrier analytics", "Risk intelligence licensing", "Enterprise deployments"],
-            status: "36–54 mo",
+            items: ["Cross agency benchmarks", "Carrier analytics", "Risk intelligence licensing", "Enterprise deployments"],
+            status: "36+ mo",
           },
         ].map((p, i) => (
           <div key={p.phase} className={`rounded-xl border ${i === 0 ? "border-primary/40 bg-primary/5" : "border-border bg-card"} p-5 hover-lift`}>
@@ -520,13 +500,11 @@ function WedgeSlide() {
         ))}
       </div>
       <div className="mt-5 rounded-xl border border-border bg-card/50 p-4 text-center">
-        <p className="text-sm font-semibold text-foreground">
-          Why AURA becomes the operating system of insurance:
+        <p className="text-sm text-muted-foreground">
+          Every submission makes AURA smarter.<br />
+          Every improvement helps producers write more business.<br />
+          That is how AURA becomes the system producers run on.
         </p>
-        <p className="text-sm text-muted-foreground mt-1">
-          Every submission creates structured data → every record improves intelligence → every improvement increases producer output → every output increase increases AURA penetration.
-        </p>
-        <p className="text-xs font-semibold text-primary mt-2">This is what turns AURA from a tool into a platform.</p>
       </div>
     </div>
   );
@@ -536,38 +514,38 @@ function WedgeSlide() {
 function InsuredExperienceSlide() {
   return (
     <div className="flex flex-col items-center">
-      {/* Title */}
       <div className="text-center mb-10">
         <div className="flex items-center justify-center gap-2 mb-3">
           <div className="p-1.5 rounded-md bg-primary/10"><Eye className="h-4 w-4 text-primary" /></div>
-          <span className="text-xs font-semibold uppercase tracking-widest text-primary">Platform Expansion</span>
+          <span className="text-xs font-semibold uppercase tracking-widest text-primary">Extending Intelligence</span>
         </div>
         <h2 className="text-3xl md:text-5xl font-bold tracking-tight text-foreground leading-tight">
-          Extending Intelligence to the<br />
-          <span className="aura-gradient-text">Insured Experience</span>
+          AURA extends the intelligence layer into the<br />
+          <span className="aura-gradient-text">client relationship.</span>
         </h2>
-        <p className="mt-3 text-lg text-muted-foreground">
-          AURA connects the advisor and the insured through a modern digital experience
-        </p>
       </div>
 
-      {/* Three columns */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-12 w-full mb-12">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-8 w-full mb-12">
         {[
           {
             icon: Smartphone,
             heading: "Instant Access",
-            lines: ["View ID cards anytime", "Download policies and documents", "Access insurance without waiting"],
+            lines: ["View ID cards anytime", "Download policies and documents", "Request certificates instantly"],
           },
           {
             icon: FolderOpen,
-            heading: "Full Visibility",
-            lines: ["See coverage in one place", "Access certificates quickly", "Stay connected to protection"],
+            heading: "Client Requests",
+            lines: ["Request policy changes", "Request new quotes", "Secure payment portal", "Everything flows directly to the producer"],
           },
           {
             icon: MessageCircle,
             heading: "Connected Experience",
-            lines: ["Request service easily", "Communicate with advisor", "Modern client experience layer"],
+            lines: ["Direct communication with the producer", "No lost emails. No broken handoffs", "Everything stays in one place"],
+          },
+          {
+            icon: Bot,
+            heading: "Intelligent Assistance",
+            lines: ["Clients can interact with AURA to access information and start requests", "AURA supports the relationship. The producer stays in control"],
           },
         ].map(({ icon: Icon, heading, lines }) => (
           <div key={heading} className="flex flex-col items-center text-center gap-4">
@@ -584,13 +562,9 @@ function InsuredExperienceSlide() {
         ))}
       </div>
 
-      {/* Bottom statement */}
       <div className="text-center border-t border-border/40 pt-8 w-full max-w-2xl">
         <p className="text-lg font-bold text-foreground mb-2">
-          AURA becomes the experience layer across the entire insurance relationship
-        </p>
-        <p className="text-sm text-muted-foreground/70">
-          Advisor. Agency. Insured. Connected through intelligence.
+          AURA makes it easier for clients to work with their producer. Not around them.
         </p>
       </div>
     </div>
@@ -601,39 +575,39 @@ function InsuredExperienceSlide() {
 function WhyWinsSlide() {
   return (
     <div>
-      <SlideHeader icon={Zap} tag="Why This Wins" title="Why AURA wins specifically" />
+      <SlideHeader icon={Zap} tag="Why AURA Wins" title="The founder advantage no one can replicate." />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-2">
         <div className="space-y-4">
           <div className="rounded-xl border-2 border-primary/30 bg-primary/5 p-5 hover-lift">
-            <h3 className="text-sm font-semibold text-foreground mb-3">The founder advantage no one can replicate</h3>
             <ul className="text-sm text-muted-foreground space-y-2">
-              <li className="flex items-start gap-2"><span className="text-primary mt-0.5">✓</span> Founder carried a commercial book of business — not a diagram</li>
-              <li className="flex items-start gap-2"><span className="text-primary mt-0.5">✓</span> Product tested on real accounts with real consequences</li>
-              <li className="flex items-start gap-2"><span className="text-primary mt-0.5">✓</span> Distribution access through active agency relationships</li>
-              <li className="flex items-start gap-2"><span className="text-primary mt-0.5">✓</span> Intelligence loop already started — not theoretical</li>
+              <li className="flex items-start gap-2"><span className="text-primary mt-0.5">✓</span> Built by an active commercial producer</li>
+              <li className="flex items-start gap-2"><span className="text-primary mt-0.5">✓</span> Tested on real accounts where mistakes actually matter</li>
+              <li className="flex items-start gap-2"><span className="text-primary mt-0.5">✓</span> Distribution exists because the relationships already exist</li>
+              <li className="flex items-start gap-2"><span className="text-primary mt-0.5">✓</span> The intelligence loop is already live</li>
             </ul>
           </div>
           <div className="rounded-xl border border-border bg-card p-5 hover-lift">
-            <h3 className="text-sm font-semibold text-foreground mb-2">The GTM no one else has</h3>
+            <h3 className="text-sm font-semibold text-foreground mb-2">The GTM advantage</h3>
             <p className="text-sm text-muted-foreground">
-              Most startups spend 12–18 months trying to get distribution. AURA starts with distribution. Real accounts. Real policies. A live feedback loop from day one.
+              Most companies build and then look for adoption. AURA starts with adoption and improves from there.
             </p>
           </div>
         </div>
         <div className="space-y-4">
           <div className="rounded-xl border border-border bg-card p-5 hover-lift">
-            <h3 className="text-sm font-semibold text-foreground mb-3">Intelligence advantages that compound</h3>
-            <ul className="text-sm text-muted-foreground space-y-2">
-              <li className="flex items-start gap-2"><span className="h-1.5 w-1.5 rounded-full bg-primary/60 mt-2 shrink-0" />Structured insurance decision data accumulates with every policy</li>
-              <li className="flex items-start gap-2"><span className="h-1.5 w-1.5 rounded-full bg-primary/60 mt-2 shrink-0" />Benchmarks and confidence calibrated by real human judgment</li>
-              <li className="flex items-start gap-2"><span className="h-1.5 w-1.5 rounded-full bg-primary/60 mt-2 shrink-0" />Switching costs increase over time — not decrease</li>
+            <h3 className="text-sm font-semibold text-foreground mb-3">Compounding intelligence advantage</h3>
+            <p className="text-sm text-muted-foreground mb-3">Every submission leaves something behind:</p>
+            <ul className="text-sm text-muted-foreground space-y-1.5">
+              <li className="flex items-start gap-2"><span className="h-1.5 w-1.5 rounded-full bg-primary/60 mt-2 shrink-0" />What markets responded</li>
+              <li className="flex items-start gap-2"><span className="h-1.5 w-1.5 rounded-full bg-primary/60 mt-2 shrink-0" />What was corrected</li>
+              <li className="flex items-start gap-2"><span className="h-1.5 w-1.5 rounded-full bg-primary/60 mt-2 shrink-0" />What won and what did not</li>
             </ul>
+            <p className="text-sm text-muted-foreground mt-3">That experience stays inside AURA. The next account starts smarter than the last one.</p>
           </div>
           <div className="rounded-xl border-2 border-primary/20 bg-card p-5 hover-lift">
-            <p className="text-base font-semibold text-foreground leading-relaxed">
-              "Every major insurance platform was built by technologists trying to understand insurance. AURA was built by someone inside the industry who understood the pain first."
+            <p className="text-sm font-semibold text-foreground leading-relaxed">
+              Over time, AURA becomes part of how the producer thinks and works because they simply cannot work without it.
             </p>
-            <p className="text-xs text-muted-foreground mt-3 italic">That difference is not a feature. It is the entire moat.</p>
           </div>
         </div>
       </div>
@@ -641,23 +615,21 @@ function WhyWinsSlide() {
   );
 }
 
-/* ─── Slide 12: Revenue Model ─── */
+/* ─── Slide 13: Revenue Model ─── */
 function ModelSlide() {
   const tiers = [
     {
       heading: "Core Deployment",
       price: "$7,500–12,000/mo",
       tag: "per agency",
-      features: ["Advisor workflow intelligence", "Submission ingestion & automation", "Coverage intelligence layer", "Production visibility"],
-      sub: "Typical for 5–10 advisor agencies",
+      features: ["Producer workflow intelligence", "Submission ingestion and automation", "Coverage intelligence layer", "Production visibility"],
       highlight: false,
     },
     {
       heading: "Full Agency Deployment",
       price: "$12,000–25,000/mo",
       tag: "per agency",
-      features: ["All Core features", "Agency-wide deployment", "Operational intelligence", "Performance tracking"],
-      sub: "Typical for 10–25 advisor agencies",
+      features: ["All core intelligence", "Agency wide deployment", "Operational intelligence", "Producer performance tracking"],
       highlight: true,
     },
     {
@@ -665,13 +637,12 @@ function ModelSlide() {
       price: "$25,000+/mo",
       tag: "per organization",
       features: ["Full platform deployment", "Custom integrations", "Advanced intelligence layer", "Enterprise support"],
-      sub: "Large agencies, aggregators & networks",
       highlight: false,
     },
   ];
   return (
     <div>
-      <SlideHeader icon={DollarSign} tag="Revenue Model" title="Pricing aligned with value created, not seats." subtitle="AURA increases advisor output, agency efficiency, and protection quality." />
+      <SlideHeader icon={DollarSign} tag="Revenue Model" title="AURA is not another broken insurance system. It becomes the system your agency runs on." />
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
         {tiers.map((t) => (
           <div key={t.heading} className={`rounded-xl p-5 hover-lift flex flex-col ${t.highlight ? "border-2 border-primary/50 bg-primary/5" : "border border-border bg-card"}`}>
@@ -686,23 +657,21 @@ function ModelSlide() {
                 </li>
               ))}
             </ul>
-            <p className="mt-3 text-xs text-muted-foreground/60 italic border-t border-border/30 pt-3">{t.sub}</p>
           </div>
         ))}
       </div>
       {/* Revenue Share Option */}
       <div className="mt-4 rounded-xl border border-border bg-card p-4">
         <div className="flex flex-col md:flex-row md:items-center gap-4">
-          <div className="shrink-0 md:w-40">
-            <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-0.5">Alternative Model</p>
-            <p className="text-sm font-bold text-foreground">Revenue Share</p>
-            <p className="text-xs text-muted-foreground mt-1">Aligns AURA revenue with agency success — scales with value delivered</p>
+          <div className="shrink-0 md:w-56">
+            <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-0.5">Alternative Model — Revenue Share</p>
+            <p className="text-sm text-muted-foreground mt-1">AURA grows when producers produce more.</p>
           </div>
           <div className="flex-1 grid grid-cols-3 gap-3">
             {[
               { label: "Year 1", pct: "3–5%", note: "Of new business influenced by AURA" },
-              { label: "Year 2", pct: "5–7%", note: "Proven value unlocks greater share" },
-              { label: "Year 3+", pct: "7–10%", note: "Full intelligence suite, compounding renewals" },
+              { label: "Year 2", pct: "5–7%", note: "As intelligence compounds" },
+              { label: "Year 3+", pct: "7–10%", note: "As AURA becomes embedded in production" },
             ].map(r => (
               <div key={r.label} className="text-center rounded-lg border border-border/50 bg-muted/30 p-3">
                 <div className="text-xs text-muted-foreground mb-1">{r.label}</div>
@@ -714,60 +683,69 @@ function ModelSlide() {
         </div>
       </div>
       <div className="mt-3 text-center">
-        <p className="text-xs text-muted-foreground/60 italic">100 agencies × $15K/mo average = $18M annual revenue. That is platform scale.</p>
+        <p className="text-xs text-muted-foreground/60 italic">Revenue share applies only in select cases where AURA participates as part of the operating structure.</p>
+        <p className="text-sm font-bold text-foreground mt-2">Insurance runs on AURA.</p>
       </div>
     </div>
   );
 }
 
-/* ─── Slide 13: GTM ─── */
+/* ─── Slide 14: GTM ─── */
 function GTMSlide() {
   return (
     <div>
-      <SlideHeader icon={Users} tag="Go-to-Market" title="The insider advantage" subtitle="AURA is deploying inside a live agency environment. Most startups spend 18 months trying to get where AURA starts." />
+      <SlideHeader icon={Users} tag="Go-to-Market" title="The insider advantage" subtitle="AURA is not being introduced to the industry. It is being built inside it." />
+      <p className="text-sm text-muted-foreground mb-4">
+        This starts inside Doug's active commercial book of business. Real producers. Real accounts. Real submissions.
+      </p>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
         <div className="rounded-xl border-2 border-primary/30 bg-primary/5 p-6 hover-lift">
           <h3 className="font-semibold text-foreground mb-3">Phase 1 — Prove (Months 1–6)</h3>
           <ul className="text-sm text-muted-foreground space-y-1.5">
-            <li className="flex items-start gap-2"><span className="text-primary mt-0.5">✓</span> Deploy inside Doug's active agency — real accounts</li>
-            <li className="flex items-start gap-2"><span className="text-primary mt-0.5">✓</span> Target 25 commercial policies processed</li>
-            <li className="flex items-start gap-2"><span className="text-primary mt-0.5">✓</span> Refine intelligence on live submission data</li>
-            <li className="flex items-start gap-2"><span className="text-primary mt-0.5">✓</span> Document time savings and coverage gap catches</li>
+            <li className="flex items-start gap-2"><span className="text-primary mt-0.5">✓</span> Deploy AURA across all new business submissions</li>
+            <li className="flex items-start gap-2"><span className="text-primary mt-0.5">✓</span> Train the intelligence on real producer decisions</li>
+            <li className="flex items-start gap-2"><span className="text-primary mt-0.5">✓</span> Capture time returned to the producer</li>
+            <li className="flex items-start gap-2"><span className="text-primary mt-0.5">✓</span> Identify coverage gaps and missed opportunities</li>
+            <li className="flex items-start gap-2"><span className="text-primary mt-0.5">✓</span> Prove this improves how producers operate in the real world</li>
           </ul>
         </div>
         <div className="rounded-xl border border-border bg-card p-6 hover-lift">
           <h3 className="font-semibold text-foreground mb-3">Phase 2 — Expand (Months 7–18)</h3>
           <ul className="text-sm text-muted-foreground space-y-1.5">
-            <li className="flex items-start gap-2"><span className="text-primary mt-0.5">✓</span> Onboard 3–5 partner agencies from existing network</li>
-            <li className="flex items-start gap-2"><span className="text-primary mt-0.5">✓</span> Reach 100 policies — $5M in premiums processed</li>
-            <li className="flex items-start gap-2"><span className="text-primary mt-0.5">✓</span> Intelligence loop compounds with each new agency</li>
-            <li className="flex items-start gap-2"><span className="text-primary mt-0.5">✓</span> Build referral flywheel through producer results</li>
+            <li className="flex items-start gap-2"><span className="text-primary mt-0.5">✓</span> Introduce AURA to partner agencies already in our network</li>
+            <li className="flex items-start gap-2"><span className="text-primary mt-0.5">✓</span> Expand across multiple producers and multiple agencies</li>
+            <li className="flex items-start gap-2"><span className="text-primary mt-0.5">✓</span> Each submission strengthens the intelligence layer</li>
+            <li className="flex items-start gap-2"><span className="text-primary mt-0.5">✓</span> Growth happens because producers see the advantage</li>
           </ul>
         </div>
       </div>
       <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-        <StatCard value="Real" label="Agency deployment — day one" sub="Not a pilot. Not a test. Active accounts." />
-        <StatCard value="Network" label="Distribution access built-in" sub="Doug's existing agency relationships" />
-        <StatCard value="Live" label="Intelligence loop already started" sub="Every policy makes the system stronger" />
+        <StatCard value="Real" label="Live inside an active agency from day one" sub="Not a pilot. Not a test." />
+        <StatCard value="Network" label="Distribution already exists" sub="Built through real relationships in the industry" />
+        <StatCard value="Live" label="The intelligence layer is already learning" sub="Every submission makes it stronger" />
       </div>
+      <p className="mt-4 text-center text-sm font-semibold text-foreground">
+        AURA did not enter the insurance industry. It was built inside it.
+      </p>
     </div>
   );
 }
 
-/* ─── Slide 14: Projections ─── */
+/* ─── Slide 15: Projections ─── */
 function ProjectionsSlide() {
   const MAX_PX = 160;
   const years = [
-    { label: "Year 1", revenue: "1.2M",  raw: 1.2,   agencies: 10,  avgMo: "$10K" },
-    { label: "Year 2", revenue: "5.7M",  raw: 5.7,   agencies: 40,  avgMo: "$12K" },
-    { label: "Year 3", revenue: "21.6M", raw: 21.6,  agencies: 120, avgMo: "$15K" },
-    { label: "Year 4", revenue: "64.8M", raw: 64.8,  agencies: 300, avgMo: "$18K" },
-    { label: "Year 5", revenue: "144M",  raw: 144,   agencies: 600, avgMo: "$20K" },
+    { label: "Year 1", revenue: "1.2M",  raw: 1.2,   agencies: 10 },
+    { label: "Year 2", revenue: "5.7M",  raw: 5.7,   agencies: 40 },
+    { label: "Year 3", revenue: "21.6M", raw: 21.6,  agencies: 120 },
+    { label: "Year 4", revenue: "64.8M", raw: 64.8,  agencies: 300 },
+    { label: "Year 5", revenue: "144M",  raw: 144,   agencies: 600 },
   ];
   const maxRaw = Math.max(...years.map(y => y.raw));
   return (
     <div>
-      <SlideHeader icon={BarChart3} tag="Financial Projections" title="Revenue expansion as AURA becomes the intelligence layer." subtitle="Advisor wedge first. Platform scale next. Structured insurance intelligence compounds with every agency onboarded." />
+      <SlideHeader icon={BarChart3} tag="Financial Projections" title="Revenue expansion as AURA becomes the intelligence layer." subtitle="AURA starts as a tool and becomes the system insurance runs on." />
+      <p className="text-sm text-muted-foreground mb-4">Producer wedge first. Platform scale next. Structured insurance intelligence compounds with every agency onboarded.</p>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-2">
         {/* Bar chart */}
         <div className="md:col-span-2 rounded-xl border border-border bg-card p-5">
@@ -786,7 +764,7 @@ function ProjectionsSlide() {
               );
             })}
           </div>
-          <p className="text-center text-xs text-muted-foreground mt-3 italic">Core platform subscription revenue only — expansion streams excluded</p>
+          <p className="text-center text-xs text-muted-foreground mt-3 italic">Core platform subscription revenue only. Expansion streams excluded.</p>
         </div>
         {/* Explanation box */}
         <div className="rounded-xl border border-border bg-card p-5 flex flex-col justify-between">
@@ -794,7 +772,7 @@ function ProjectionsSlide() {
             <p className="text-xs font-bold text-primary uppercase tracking-widest mb-3">Growth driven by agency adoption</p>
             <ul className="text-sm text-muted-foreground space-y-2">
               {[
-                "Start with core advisor workflow wedge",
+                "Start with core producer workflow wedge",
                 "Expand to full agency deployment",
                 "Increase revenue per agency over time",
                 "Compounding growth through network expansion",
@@ -817,74 +795,49 @@ function ProjectionsSlide() {
         </div>
       </div>
       <div className="mt-4 text-center space-y-1">
-        <p className="text-sm font-bold text-foreground">Pricing aligned with economic value created, not software seats</p>
-        <p className="text-xs text-muted-foreground">Average agency subscription ranges from $7,500 to $25,000 per month depending on size and deployment</p>
-        <p className="text-xs text-muted-foreground/50 italic mt-1">Initial deployments begin within founder-led agency environment · Intelligence loop already active</p>
+        <p className="text-sm font-bold text-foreground">Pricing aligned with economic value created, not software access.</p>
+        <p className="text-xs text-muted-foreground">Average agency subscription ranges from $7,500 to $25,000 per month depending on size and deployment.</p>
+        <p className="text-xs text-muted-foreground/50 italic mt-1">Initial deployments begin inside a live commercial agency. Intelligence layer already active.</p>
       </div>
     </div>
   );
 }
 
-/* ─── Slide 15: The Ask ─── */
-function AskSlide() {
+/* ─── Slide 16: Why AURA Exists ─── */
+function WhyExistsSlide() {
   return (
-    <div>
-      <SlideHeader icon={Target} tag="The Ask" title="Building the intelligence layer that insurance runs on" />
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2 mb-6">
-        <StatCard value="$1.5M" label="Total raise" sub="10M pre-money valuation" />
-        <StatCard value="10M" label="Pre-money valuation" sub="Reflects real deployment + platform potential" />
-        <StatCard value="$100K" label="Minimum per investor" sub="5 investors maximum" />
+    <div className="flex flex-col items-center text-center max-w-3xl mx-auto">
+      <div className="flex items-center gap-2 mb-6">
+        <div className="p-1.5 rounded-md bg-primary/10"><Target className="h-4 w-4 text-primary" /></div>
+        <span className="text-xs font-semibold uppercase tracking-widest text-primary">Why AURA Exists</span>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
-        <div className="rounded-xl border border-border bg-card p-5">
-          <h3 className="font-semibold text-foreground mb-3">Use of Funds</h3>
-          <div className="space-y-2 text-sm">
-            {[
-              ["Product & AI Development", "50%", "Accelerate intelligence engine, carrier workflows, data infrastructure"],
-              ["Deployment & Partner Expansion", "30%", "Onboard initial agency partners, expand real-world data footprint"],
-              ["Core Team & Operations", "20%", "Support growth while maintaining product velocity and execution focus"],
-            ].map(([use, pct, desc]) => (
-              <div key={use} className="pb-2 border-b border-border/30">
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">{use}</span>
-                  <span className="font-bold text-foreground">{pct}</span>
-                </div>
-                <p className="text-xs text-muted-foreground/60 mt-0.5">{desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-        <div className="space-y-4">
-          <div className="rounded-xl border-2 border-primary/30 bg-primary/5 p-5">
-            <h3 className="text-sm font-semibold text-foreground mb-2">Why now</h3>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              AURA is already being built and deployed inside a live agency environment. This is not theoretical. This raise accelerates what is already in motion.
-            </p>
-            <p className="text-sm text-muted-foreground mt-2">
-              Every submission processed makes AURA smarter. Every policy strengthens the data advantage. Every agency increases the scale of the platform.
-            </p>
-          </div>
-          <div className="rounded-xl border border-border bg-card p-4 text-center">
-            <p className="text-sm font-semibold text-foreground italic">
-              "We are not raising to build an idea. We are raising to scale what is already working."
-            </p>
-          </div>
-        </div>
-      </div>
-      <div className="rounded-xl border-2 border-primary/20 bg-primary/5 p-5 text-center mb-4">
-        <h3 className="text-base font-bold text-foreground mb-2">Why AURA exists</h3>
-        <p className="text-sm text-muted-foreground max-w-2xl mx-auto">
-          Insurance is built on trust. Trust that when something goes wrong, protection will be there. But the people responsible for that trust were given systems that made their job harder. AURA gives them the time, visibility, and intelligence to do it right. This is not just about efficiency. This is about restoring confidence in the system.
+      <h2 className="text-3xl md:text-5xl font-bold tracking-tight text-foreground leading-tight mb-6">
+        Insurance did not lose its expertise.<br />
+        <span className="aura-gradient-text">It lost its independence.</span>
+      </h2>
+      <p className="text-lg text-muted-foreground leading-relaxed mb-4">
+        Mergers and acquisitions scaled the business, but they buried the people who made it work.
+      </p>
+      <p className="text-lg text-muted-foreground leading-relaxed mb-4">
+        Producers were pushed into systems that slowed them down. Clients were left with less guidance and more process.
+      </p>
+      <p className="text-lg text-muted-foreground leading-relaxed mb-8">
+        The relationship became secondary to the machine.
+      </p>
+      <div className="rounded-xl border-2 border-primary/30 bg-primary/5 p-6 mb-6 w-full">
+        <p className="text-lg font-semibold text-foreground leading-relaxed mb-3">
+          AURA exists to change that.
         </p>
-        <p className="text-sm font-bold text-primary mt-3">AURA was built by the industry to rebuild the industry.</p>
+        <p className="text-base text-muted-foreground leading-relaxed">
+          It puts control back where it belongs. It gives producers their leverage back. It makes the system work for the people again.
+        </p>
       </div>
-      <div className="text-center">
-        <div className="flex items-center justify-center gap-2 opacity-60">
-          <span className="text-lg font-bold tracking-tight text-foreground">AURA</span>
-          <span className="text-[11px] text-muted-foreground tracking-widest uppercase">Risk Group</span>
-        </div>
-        <p className="text-xs text-muted-foreground/50 mt-2">Confidential — AURA Risk Group</p>
+      <p className="text-2xl font-bold text-foreground mt-4">Insurance runs on AURA.</p>
+      <div className="mt-10 flex items-center justify-center gap-2 opacity-60">
+        <span className="text-lg font-bold tracking-tight text-foreground">AURA</span>
+        <span className="text-[11px] text-muted-foreground tracking-widest uppercase">Risk Group</span>
       </div>
+      <p className="text-xs text-muted-foreground/50 mt-2">Confidential — AURA Risk Group</p>
     </div>
   );
 }
