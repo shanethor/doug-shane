@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      audit_log: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          metadata: Json | null
+          object_id: string
+          object_type: string
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          object_id: string
+          object_type: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          object_id?: string
+          object_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       business_submissions: {
         Row: {
           company_name: string | null
@@ -278,6 +308,195 @@ export type Database = {
           },
         ]
       }
+      lead_notes: {
+        Row: {
+          created_at: string
+          id: string
+          lead_id: string
+          note_text: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          lead_id: string
+          note_text: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          lead_id?: string
+          note_text?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_notes_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      leads: {
+        Row: {
+          account_name: string
+          business_type: string | null
+          contact_name: string | null
+          created_at: string
+          email: string | null
+          id: string
+          lead_source: string | null
+          owner_user_id: string
+          phone: string | null
+          stage: Database["public"]["Enums"]["lead_stage"]
+          state: string | null
+          updated_at: string
+        }
+        Insert: {
+          account_name: string
+          business_type?: string | null
+          contact_name?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          lead_source?: string | null
+          owner_user_id: string
+          phone?: string | null
+          stage?: Database["public"]["Enums"]["lead_stage"]
+          state?: string | null
+          updated_at?: string
+        }
+        Update: {
+          account_name?: string
+          business_type?: string | null
+          contact_name?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          lead_source?: string | null
+          owner_user_id?: string
+          phone?: string | null
+          stage?: Database["public"]["Enums"]["lead_stage"]
+          state?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      policies: {
+        Row: {
+          annual_premium: number
+          approved_at: string | null
+          approved_by_user_id: string | null
+          carrier: string
+          created_at: string
+          effective_date: string
+          id: string
+          lead_id: string
+          line_of_business: string
+          locked: boolean
+          policy_number: string
+          producer_user_id: string
+          rejected_at: string | null
+          rejected_by_user_id: string | null
+          rejection_reason: string | null
+          revenue: number | null
+          status: Database["public"]["Enums"]["policy_status"]
+          submitted_at: string
+          updated_at: string
+        }
+        Insert: {
+          annual_premium: number
+          approved_at?: string | null
+          approved_by_user_id?: string | null
+          carrier: string
+          created_at?: string
+          effective_date: string
+          id?: string
+          lead_id: string
+          line_of_business: string
+          locked?: boolean
+          policy_number: string
+          producer_user_id: string
+          rejected_at?: string | null
+          rejected_by_user_id?: string | null
+          rejection_reason?: string | null
+          revenue?: number | null
+          status?: Database["public"]["Enums"]["policy_status"]
+          submitted_at?: string
+          updated_at?: string
+        }
+        Update: {
+          annual_premium?: number
+          approved_at?: string | null
+          approved_by_user_id?: string | null
+          carrier?: string
+          created_at?: string
+          effective_date?: string
+          id?: string
+          lead_id?: string
+          line_of_business?: string
+          locked?: boolean
+          policy_number?: string
+          producer_user_id?: string
+          rejected_at?: string | null
+          rejected_by_user_id?: string | null
+          rejection_reason?: string | null
+          revenue?: number | null
+          status?: Database["public"]["Enums"]["policy_status"]
+          submitted_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "policies_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      policy_documents: {
+        Row: {
+          document_type: Database["public"]["Enums"]["document_type"]
+          file_name: string | null
+          file_url: string
+          id: string
+          policy_id: string
+          uploaded_at: string
+          uploaded_by_user_id: string
+        }
+        Insert: {
+          document_type?: Database["public"]["Enums"]["document_type"]
+          file_name?: string | null
+          file_url: string
+          id?: string
+          policy_id: string
+          uploaded_at?: string
+          uploaded_by_user_id: string
+        }
+        Update: {
+          document_type?: Database["public"]["Enums"]["document_type"]
+          file_name?: string | null
+          file_url?: string
+          id?: string
+          policy_id?: string
+          uploaded_at?: string
+          uploaded_by_user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "policy_documents_policy_id_fkey"
+            columns: ["policy_id"]
+            isOneToOne: false
+            referencedRelation: "policies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           agency_name: string | null
@@ -454,6 +673,9 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user"
+      document_type: "binder" | "dec" | "invoice" | "other"
+      lead_stage: "prospect" | "quoting" | "presenting" | "lost"
+      policy_status: "pending" | "approved" | "rejected"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -582,6 +804,9 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user"],
+      document_type: ["binder", "dec", "invoice", "other"],
+      lead_stage: ["prospect", "quoting", "presenting", "lost"],
+      policy_status: ["pending", "approved", "rejected"],
     },
   },
 } as const
