@@ -187,7 +187,7 @@ const FillablePdfViewer = forwardRef<FillablePdfViewerHandle, FillablePdfViewerP
 
         // Pre-fill fields using pdf-lib before passing to Adobe
         const prefillEntries = prefillByIndex ? Object.entries(prefillByIndex) : [];
-        console.info(`[pdf-lib] prefillByIndex has ${prefillEntries.length} entries`);
+        console.warn(`[pdf-lib] prefillByIndex has ${prefillEntries.length} entries`);
         if (prefillEntries.length > 0) {
           try {
             const { PDFDocument, StandardFonts } = await import("pdf-lib");
@@ -195,7 +195,7 @@ const FillablePdfViewer = forwardRef<FillablePdfViewerHandle, FillablePdfViewerP
             const helvetica = await doc.embedFont(StandardFonts.Helvetica);
             const form = doc.getForm();
             const allFields = form.getFields();
-            console.info(`[pdf-lib] PDF has ${allFields.length} form fields`);
+            console.warn(`[pdf-lib] PDF has ${allFields.length} form fields`);
             let filled = 0;
             for (const [idxStr, value] of prefillEntries) {
               const idx = Number(idxStr);
@@ -219,10 +219,10 @@ const FillablePdfViewer = forwardRef<FillablePdfViewerHandle, FillablePdfViewerP
             }
             // Force appearance streams to be generated for all fields
             try { form.updateFieldAppearances(helvetica); } catch (_) {}
-            console.info(`[pdf-lib] Pre-filled ${filled} fields into PDF`);
+            console.warn(`[pdf-lib] Pre-filled ${filled} fields into PDF`);
             const savedBytes = await doc.save();
             pdfBuffer = savedBytes.buffer as ArrayBuffer;
-            console.info(`[pdf-lib] Saved PDF: ${savedBytes.length} bytes`);
+            console.warn(`[pdf-lib] Saved PDF: ${savedBytes.length} bytes`);
           } catch (e) {
             console.warn("[pdf-lib] Pre-fill failed, using raw PDF:", e);
           }
@@ -252,7 +252,7 @@ const FillablePdfViewer = forwardRef<FillablePdfViewerHandle, FillablePdfViewerP
           if (adobeViewer && typeof adobeViewer.getAPIs === "function") {
             const apis = await adobeViewer.getAPIs();
             adobeApisRef.current = apis;
-            console.info("[Adobe] APIs acquired successfully");
+            console.warn("[Adobe] APIs acquired successfully");
           } else {
             console.warn("[Adobe] previewFile did not return a valid viewer object");
           }
