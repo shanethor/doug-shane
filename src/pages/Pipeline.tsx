@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -6,13 +6,14 @@ import { AppLayout } from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import {
@@ -22,7 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Search, GripVertical, CheckCircle } from "lucide-react";
+import { Plus, Search, CheckCircle, GripVertical } from "lucide-react";
 import { toast } from "sonner";
 import { LossRunBadge } from "@/components/LossRunBadge";
 
@@ -77,9 +78,24 @@ export default function Pipeline() {
 
   const [lossRunStatuses, setLossRunStatuses] = useState<Record<string, string>>({});
 
+  // Drag-and-drop state
+  const [draggedLeadId, setDraggedLeadId] = useState<string | null>(null);
+  const [dragOverStage, setDragOverStage] = useState<string | null>(null);
+
+  // Sold modal state
+  const [soldModalOpen, setSoldModalOpen] = useState(false);
+  const [soldLeadId, setSoldLeadId] = useState<string | null>(null);
+  const [policyForm, setPolicyForm] = useState({
+    carrier: "",
+    line_of_business: "",
+    policy_number: "",
+    effective_date: "",
+    annual_premium: "",
+  });
+  const [submittingSold, setSubmittingSold] = useState(false);
+
   const loadLeads = useCallback(async () => {
     if (!user) return;
-    // Fetch leads and check for approved policies + loss run statuses
     const [leadsRes, approvedRes, lossRunRes] = await Promise.all([
       supabase.from("leads").select("*").order("updated_at", { ascending: false }),
       supabase.from("policies").select("lead_id").eq("status", "approved"),
@@ -97,7 +113,6 @@ export default function Pipeline() {
       (approvedRes.data ?? []).map((p: any) => p.lead_id)
     );
 
-    // Build loss run status map (latest per lead)
     const lrMap: Record<string, string> = {};
     (lossRunRes.data ?? []).forEach((lr: any) => {
       lrMap[lr.lead_id] = lr.status;
@@ -133,7 +148,6 @@ export default function Pipeline() {
     if (error) {
       toast.error("Failed to add lead");
     } else {
-      // Audit
       await supabase.from("audit_log").insert({
         user_id: user.id,
         action: "create",
@@ -168,6 +182,98 @@ export default function Pipeline() {
     }
   };
 
+  // Drag handlers
+  const handleDragStart = (e: React.DragEvent, leadId: string) => {
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", leadId);
+    setDraggedLeadId(leadId);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedLeadId(null);
+    setDragOverStage(null);
+  };
+
+  const handleDragOver = (e: React.DragEvent, stage: string) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    setDragOverStage(stage);
+  };
+
+  const handleDragLeave = () => {
+    setDragOverStage(null);
+  };
+
+  const handleDrop = async (e: React.DragEvent, targetStage: string) => {
+    e.preventDefault();
+    setDragOverStage(null);
+    const leadId = e.dataTransfer.getData("text/plain");
+    if (!leadId) return;
+
+    const lead = leads.find((l) => l.id === leadId);
+    if (!lead) return;
+
+    // Determine current effective stage
+    const currentStage = lead.has_approved_policy ? "sold" : lead.stage;
+    if (currentStage === targetStage) return;
+
+    if (targetStage === "sold") {
+      // Open sold modal to collect policy details
+      setSoldLeadId(leadId);
+      setPolicyForm({ carrier: "", line_of_business: "", policy_number: "", effective_date: "", annual_premium: "" });
+      setSoldModalOpen(true);
+    } else {
+      // Regular stage move
+      await moveStage(leadId, targetStage);
+      toast.success(`Moved to ${STAGE_LABELS[targetStage]}`);
+    }
+    setDraggedLeadId(null);
+  };
+
+  const handleSoldSubmit = async () => {
+    if (!user || !soldLeadId) return;
+    if (!policyForm.carrier.trim() || !policyForm.policy_number.trim() || !policyForm.effective_date || !policyForm.annual_premium) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+
+    setSubmittingSold(true);
+    try {
+      // Create an approved policy for this lead
+      const { error } = await supabase.from("policies").insert({
+        lead_id: soldLeadId,
+        producer_user_id: user.id,
+        carrier: policyForm.carrier.trim(),
+        line_of_business: policyForm.line_of_business.trim() || "General",
+        policy_number: policyForm.policy_number.trim(),
+        effective_date: policyForm.effective_date,
+        annual_premium: parseFloat(policyForm.annual_premium) || 0,
+        status: "approved" as any,
+        approved_at: new Date().toISOString(),
+        approved_by_user_id: user.id,
+      });
+
+      if (error) throw error;
+
+      await supabase.from("audit_log").insert({
+        user_id: user.id,
+        action: "policy_sold",
+        object_type: "lead",
+        object_id: soldLeadId,
+        metadata: { carrier: policyForm.carrier, policy_number: policyForm.policy_number },
+      });
+
+      toast.success("Policy added — lead moved to Sold!");
+      setSoldModalOpen(false);
+      setSoldLeadId(null);
+      loadLeads();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to create policy");
+    } finally {
+      setSubmittingSold(false);
+    }
+  };
+
   const filtered = leads.filter((l) => {
     if (!search) return true;
     const q = search.toLowerCase();
@@ -178,7 +284,6 @@ export default function Pipeline() {
     );
   });
 
-  // Group by stage + sold
   const columns = [...STAGES, "sold" as const];
   const grouped: Record<string, Lead[]> = {};
   columns.forEach((s) => (grouped[s] = []));
@@ -200,6 +305,8 @@ export default function Pipeline() {
       </AppLayout>
     );
   }
+
+  const soldLead = soldLeadId ? leads.find((l) => l.id === soldLeadId) : null;
 
   return (
     <AppLayout>
@@ -299,7 +406,7 @@ export default function Pipeline() {
         </div>
       )}
 
-      {/* Kanban Board */}
+      {/* Kanban Board with drag-and-drop */}
       <div className="grid grid-cols-5 gap-3 min-h-[60vh]">
         {columns.map((stage) => (
           <div key={stage} className="flex flex-col">
@@ -309,44 +416,128 @@ export default function Pipeline() {
               </Badge>
               <span className="text-xs text-muted-foreground font-sans">{grouped[stage].length}</span>
             </div>
-            <div className="flex-1 space-y-2 rounded-lg border border-dashed border-border/50 p-2 bg-muted/30 min-h-[200px]">
+            <div
+              className={`flex-1 space-y-2 rounded-lg border border-dashed p-2 min-h-[200px] transition-colors ${
+                dragOverStage === stage
+                  ? "border-primary bg-primary/5"
+                  : "border-border/50 bg-muted/30"
+              }`}
+              onDragOver={(e) => handleDragOver(e, stage)}
+              onDragLeave={handleDragLeave}
+              onDrop={(e) => handleDrop(e, stage)}
+            >
               {grouped[stage].map((lead) => (
-                <Link key={lead.id} to={`/pipeline/${lead.id}`}>
-                  <Card className="hover-lift cursor-pointer">
-                    <CardContent className="p-3">
-                      <div className="flex items-start justify-between">
-                      <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-1.5">
-                            <p className="font-medium text-sm font-sans truncate">{lead.account_name}</p>
-                            {(stage === "prospect" || stage === "quoting") && (
-                              <LossRunBadge status={lossRunStatuses[lead.id] || null} />
+                <div
+                  key={lead.id}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, lead.id)}
+                  onDragEnd={handleDragEnd}
+                  className={`transition-opacity ${draggedLeadId === lead.id ? "opacity-40" : ""}`}
+                >
+                  <Link to={`/pipeline/${lead.id}`}>
+                    <Card className="hover-lift cursor-grab active:cursor-grabbing">
+                      <CardContent className="p-3">
+                        <div className="flex items-start justify-between">
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-1.5">
+                              <GripVertical className="h-3 w-3 text-muted-foreground/50 shrink-0" />
+                              <p className="font-medium text-sm font-sans truncate">{lead.account_name}</p>
+                              {(stage === "prospect" || stage === "quoting") && (
+                                <LossRunBadge status={lossRunStatuses[lead.id] || null} />
+                              )}
+                            </div>
+                            {lead.contact_name && (
+                              <p className="text-xs text-muted-foreground font-sans truncate ml-[18px]">{lead.contact_name}</p>
+                            )}
+                            {lead.business_type && (
+                              <p className="text-[10px] text-muted-foreground font-sans mt-1 ml-[18px]">{lead.business_type}</p>
                             )}
                           </div>
-                          {lead.contact_name && (
-                            <p className="text-xs text-muted-foreground font-sans truncate">{lead.contact_name}</p>
-                          )}
-                          {lead.business_type && (
-                            <p className="text-[10px] text-muted-foreground font-sans mt-1">{lead.business_type}</p>
+                          {lead.has_approved_policy && (
+                            <CheckCircle className="h-3.5 w-3.5 text-success shrink-0 mt-0.5" />
                           )}
                         </div>
-                        {lead.has_approved_policy && (
-                          <CheckCircle className="h-3.5 w-3.5 text-success shrink-0 mt-0.5" />
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                </div>
               ))}
-              {/* Stage move drop targets — simplified with buttons */}
-              {stage !== "sold" && grouped[stage].length === 0 && (
+              {grouped[stage].length === 0 && (
                 <p className="text-[10px] text-muted-foreground text-center py-8 font-sans">
-                  No leads
+                  {stage === "sold" ? "Drop here to mark as sold" : "No leads"}
                 </p>
               )}
             </div>
           </div>
         ))}
       </div>
+
+      {/* Sold Policy Modal */}
+      <Dialog open={soldModalOpen} onOpenChange={(open) => { if (!open) { setSoldModalOpen(false); setSoldLeadId(null); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Policy Details — {soldLead?.account_name}</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground font-sans">
+            Enter the bound policy details to move this lead to Sold.
+          </p>
+          <div className="grid gap-3 mt-2">
+            <div>
+              <Label>Carrier *</Label>
+              <Input
+                value={policyForm.carrier}
+                onChange={(e) => setPolicyForm({ ...policyForm, carrier: e.target.value })}
+                placeholder="e.g. Hartford, Travelers"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Line of Business</Label>
+                <Input
+                  value={policyForm.line_of_business}
+                  onChange={(e) => setPolicyForm({ ...policyForm, line_of_business: e.target.value })}
+                  placeholder="e.g. General Liability"
+                />
+              </div>
+              <div>
+                <Label>Policy Number *</Label>
+                <Input
+                  value={policyForm.policy_number}
+                  onChange={(e) => setPolicyForm({ ...policyForm, policy_number: e.target.value })}
+                  placeholder="e.g. GL-12345"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Effective Date *</Label>
+                <Input
+                  type="date"
+                  value={policyForm.effective_date}
+                  onChange={(e) => setPolicyForm({ ...policyForm, effective_date: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label>Annual Premium *</Label>
+                <Input
+                  type="number"
+                  value={policyForm.annual_premium}
+                  onChange={(e) => setPolicyForm({ ...policyForm, annual_premium: e.target.value })}
+                  placeholder="e.g. 12000"
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setSoldModalOpen(false); setSoldLeadId(null); }}>
+              Cancel
+            </Button>
+            <Button onClick={handleSoldSubmit} disabled={submittingSold}>
+              {submittingSold ? "Saving…" : "Mark as Sold"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 }
