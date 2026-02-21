@@ -708,10 +708,16 @@ const acord140Fields: AcordFormField[] = [
 // ============================================================
 // Export all forms
 // ============================================================
-// ACORD 125 and ACORD 25 are XFA-format PDFs — no browser tool can edit them.
-// They are intentionally excluded until AcroForm-compatible versions are uploaded.
 
 export const ACORD_FORMS: Record<string, AcordFormDefinition> = {
+  "acord-125": {
+    id: "acord-125",
+    name: "ACORD 125",
+    fullName: "Commercial Insurance Application (2016/03)",
+    description: "Base commercial application — agency info, lines of business, policy info, applicant, premises, nature of business, general information, prior carrier, loss history.",
+    fields: acord125Fields,
+    pages: ["/acord-pages/125-page1.jpg", "/acord-pages/125-page2.jpg", "/acord-pages/125-page3.jpg", "/acord-pages/125-page4.jpg"],
+  },
   "acord-126": {
     id: "acord-126",
     name: "ACORD 126",
