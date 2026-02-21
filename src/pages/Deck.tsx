@@ -148,7 +148,7 @@ function TitleSlide() {
         <span className="aura-gradient-text">Insurance Runs On</span>
       </h2>
       <p className="mt-6 text-lg md:text-xl text-muted-foreground max-w-2xl">
-        AURA was not built to make insurance faster. It was built to help producers manage and close business the right way.
+        AURA was built to help producers manage and close business the right way.
       </p>
       <p className="mt-3 text-base text-muted-foreground/70 max-w-xl">
         Built by producers. Not software companies.
@@ -196,7 +196,7 @@ function OriginSlide() {
                 <br />Founder & Active Commercial Producer
               </div>
               <div className="text-sm text-muted-foreground">
-                <span className="font-semibold text-foreground">Shane Thorstein</span>
+                <span className="font-semibold text-foreground">Shane Thorsteinson</span>
                 <br />Co Founder & Lead Engineer
               </div>
             </div>
@@ -211,7 +211,7 @@ function OriginSlide() {
 function ProblemSlide() {
   return (
     <div>
-      <SlideHeader icon={Shield} tag="The Problem" title="Producers are buried in process. The insured pays the price." subtitle="The commercial insurance workflow was built for process, not for the people responsible for protecting clients." />
+      <SlideHeader icon={Shield} tag="The Problem" title="Producers are buried in process. Clients pay the price." subtitle="Commercial insurance workflows were built around process — not the people responsible for protecting clients." />
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
         <StatCard value="3–5 hours" label="Per submission" sub="The same data re entered across multiple forms every time" />
         <StatCard value="23%" label="Error rate on submissions" sub="Delays, rework, missed coverage, and lost business" />
@@ -733,7 +733,7 @@ function GTMSlide() {
 
 /* ─── Slide 15: Projections ─── */
 function ProjectionsSlide() {
-  const MAX_PX = 160;
+  const MAX_PX = 140;
   const years = [
     { label: "Year 1", revenue: "1.2M",  raw: 1.2,   agencies: 10 },
     { label: "Year 2", revenue: "5.7M",  raw: 5.7,   agencies: 40 },
@@ -746,7 +746,7 @@ function ProjectionsSlide() {
     <div>
       <SlideHeader icon={BarChart3} tag="Financial Projections" title="Revenue expansion as AURA becomes the intelligence layer." subtitle="AURA starts as a tool and becomes the system insurance runs on." />
       <p className="text-sm text-muted-foreground mb-4">Producer wedge first. Platform scale next. Structured insurance intelligence compounds with every agency onboarded.</p>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-2">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-2">
         {/* Bar chart */}
         <div className="md:col-span-2 rounded-xl border border-border bg-card p-5">
           <div className="flex items-end justify-around gap-3" style={{ height: `${MAX_PX + 32}px` }}>
@@ -794,10 +794,30 @@ function ProjectionsSlide() {
           </div>
         </div>
       </div>
+
+      {/* Additional Revenue / Commission Generated */}
+      <div className="mt-5 rounded-xl border-2 border-primary/30 bg-primary/5 p-5">
+        <p className="text-xs font-bold text-primary uppercase tracking-widest mb-4">Conservative estimate of additional client commission generated</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="rounded-xl border border-border bg-card p-5 text-center">
+            <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Small Agency — $7,500/mo</p>
+            <p className="text-3xl font-extrabold text-foreground">$250,000</p>
+            <p className="text-sm text-muted-foreground mt-1">additional revenue per agency / year</p>
+          </div>
+          <div className="rounded-xl border border-border bg-card p-5 text-center">
+            <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Large Agency — $25,000/mo</p>
+            <p className="text-3xl font-extrabold text-foreground">$1,000,000</p>
+            <p className="text-sm text-muted-foreground mt-1">additional revenue per agency / year</p>
+          </div>
+        </div>
+        <p className="text-center text-sm text-muted-foreground mt-4 italic">
+          AURA doesn't just save time — it helps producers close more business. The platform pays for itself through the additional commission it generates.
+        </p>
+      </div>
+
       <div className="mt-4 text-center space-y-1">
         <p className="text-sm font-bold text-foreground">Pricing aligned with economic value created, not software access.</p>
         <p className="text-xs text-muted-foreground">Average agency subscription ranges from $7,500 to $25,000 per month depending on size and deployment.</p>
-        <p className="text-xs text-muted-foreground/50 italic mt-1">Initial deployments begin inside a live commercial agency. Intelligence layer already active.</p>
       </div>
     </div>
   );
