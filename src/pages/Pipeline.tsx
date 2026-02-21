@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/select";
 import { Plus, Search, GripVertical, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
+import { LossRunBadge } from "@/components/LossRunBadge";
 
 type Lead = {
   id: string;
@@ -74,29 +75,34 @@ export default function Pipeline() {
     lead_source: "",
   });
 
+  const [lossRunStatuses, setLossRunStatuses] = useState<Record<string, string>>({});
+
   const loadLeads = useCallback(async () => {
     if (!user) return;
-    // Fetch leads and check for approved policies
-    const { data: leadsData } = await supabase
-      .from("leads")
-      .select("*")
-      .order("updated_at", { ascending: false });
+    // Fetch leads and check for approved policies + loss run statuses
+    const [leadsRes, approvedRes, lossRunRes] = await Promise.all([
+      supabase.from("leads").select("*").order("updated_at", { ascending: false }),
+      supabase.from("policies").select("lead_id").eq("status", "approved"),
+      supabase.from("loss_run_requests").select("lead_id, status"),
+    ]);
 
+    const leadsData = leadsRes.data;
     if (!leadsData) {
       setLeads([]);
       setLoading(false);
       return;
     }
 
-    // Check which leads have approved policies
-    const { data: approvedPolicies } = await supabase
-      .from("policies")
-      .select("lead_id")
-      .eq("status", "approved");
-
     const approvedLeadIds = new Set(
-      (approvedPolicies ?? []).map((p: any) => p.lead_id)
+      (approvedRes.data ?? []).map((p: any) => p.lead_id)
     );
+
+    // Build loss run status map (latest per lead)
+    const lrMap: Record<string, string> = {};
+    (lossRunRes.data ?? []).forEach((lr: any) => {
+      lrMap[lr.lead_id] = lr.status;
+    });
+    setLossRunStatuses(lrMap);
 
     setLeads(
       leadsData.map((l: any) => ({
@@ -309,8 +315,13 @@ export default function Pipeline() {
                   <Card className="hover-lift cursor-pointer">
                     <CardContent className="p-3">
                       <div className="flex items-start justify-between">
-                        <div className="min-w-0 flex-1">
-                          <p className="font-medium text-sm font-sans truncate">{lead.account_name}</p>
+                      <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5">
+                            <p className="font-medium text-sm font-sans truncate">{lead.account_name}</p>
+                            {(stage === "prospect" || stage === "quoting") && (
+                              <LossRunBadge status={lossRunStatuses[lead.id] || null} />
+                            )}
+                          </div>
                           {lead.contact_name && (
                             <p className="text-xs text-muted-foreground font-sans truncate">{lead.contact_name}</p>
                           )}

@@ -385,6 +385,144 @@ export type Database = {
         }
         Relationships: []
       }
+      loss_run_attachments: {
+        Row: {
+          attachment_type: string
+          file_name: string
+          file_url: string
+          id: string
+          loss_run_request_id: string
+          uploaded_at: string
+          uploaded_by: string
+        }
+        Insert: {
+          attachment_type?: string
+          file_name: string
+          file_url: string
+          id?: string
+          loss_run_request_id: string
+          uploaded_at?: string
+          uploaded_by: string
+        }
+        Update: {
+          attachment_type?: string
+          file_name?: string
+          file_url?: string
+          id?: string
+          loss_run_request_id?: string
+          uploaded_at?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loss_run_attachments_loss_run_request_id_fkey"
+            columns: ["loss_run_request_id"]
+            isOneToOne: false
+            referencedRelation: "loss_run_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      loss_run_policy_items: {
+        Row: {
+          carrier_name: string
+          created_at: string
+          effective_end: string
+          effective_start: string
+          id: string
+          insured_name: string
+          line_of_business: string | null
+          loss_run_request_id: string
+          policy_number: string
+          request_email: string | null
+        }
+        Insert: {
+          carrier_name: string
+          created_at?: string
+          effective_end: string
+          effective_start: string
+          id?: string
+          insured_name: string
+          line_of_business?: string | null
+          loss_run_request_id: string
+          policy_number: string
+          request_email?: string | null
+        }
+        Update: {
+          carrier_name?: string
+          created_at?: string
+          effective_end?: string
+          effective_start?: string
+          id?: string
+          insured_name?: string
+          line_of_business?: string | null
+          loss_run_request_id?: string
+          policy_number?: string
+          request_email?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loss_run_policy_items_loss_run_request_id_fkey"
+            columns: ["loss_run_request_id"]
+            isOneToOne: false
+            referencedRelation: "loss_run_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      loss_run_requests: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          delivery_email: string | null
+          id: string
+          lead_id: string
+          notes: string | null
+          request_type: string
+          requested_at: string | null
+          requested_by: string
+          sent_at: string | null
+          status: Database["public"]["Enums"]["loss_run_status"]
+          updated_at: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          delivery_email?: string | null
+          id?: string
+          lead_id: string
+          notes?: string | null
+          request_type?: string
+          requested_at?: string | null
+          requested_by: string
+          sent_at?: string | null
+          status?: Database["public"]["Enums"]["loss_run_status"]
+          updated_at?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          delivery_email?: string | null
+          id?: string
+          lead_id?: string
+          notes?: string | null
+          request_type?: string
+          requested_at?: string | null
+          requested_by?: string
+          sent_at?: string | null
+          status?: Database["public"]["Enums"]["loss_run_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loss_run_requests_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       policies: {
         Row: {
           annual_premium: number
@@ -675,6 +813,13 @@ export type Database = {
       app_role: "admin" | "user"
       document_type: "binder" | "dec" | "invoice" | "other"
       lead_stage: "prospect" | "quoting" | "presenting" | "lost"
+      loss_run_status:
+        | "not_requested"
+        | "requested"
+        | "sent"
+        | "partial_received"
+        | "complete_received"
+        | "not_needed"
       policy_status: "pending" | "approved" | "rejected"
     }
     CompositeTypes: {
@@ -806,6 +951,14 @@ export const Constants = {
       app_role: ["admin", "user"],
       document_type: ["binder", "dec", "invoice", "other"],
       lead_stage: ["prospect", "quoting", "presenting", "lost"],
+      loss_run_status: [
+        "not_requested",
+        "requested",
+        "sent",
+        "partial_received",
+        "complete_received",
+        "not_needed",
+      ],
       policy_status: ["pending", "approved", "rejected"],
     },
   },
