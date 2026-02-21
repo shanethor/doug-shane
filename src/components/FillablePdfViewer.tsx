@@ -175,12 +175,20 @@ const FillablePdfViewer = forwardRef<FillablePdfViewerHandle, FillablePdfViewerP
         // formatting intact — 100% original ACORD visual layout preserved.
         view.registerCallback(
           window.AdobeDC.View.Enum.CallbackType.SAVE_API,
-          (metaData: any, content: ArrayBuffer) => {
-            if (!cancelledRef.current && onSaveBytesRef.current) {
-              onSaveBytesRef.current(new Uint8Array(content));
+          (metaData: any, content: any) => {
+            try {
+              // Adobe may pass content as ArrayBuffer or as second arg
+              const bytes = content instanceof ArrayBuffer
+                ? new Uint8Array(content)
+                : (metaData instanceof ArrayBuffer ? new Uint8Array(metaData) : null);
+              if (!cancelledRef.current && onSaveBytesRef.current && bytes) {
+                onSaveBytesRef.current(bytes);
+              }
+            } catch (e) {
+              console.warn("[Adobe] SAVE_API callback error:", e);
             }
             return new Promise((resolve) => {
-              resolve({ code: window.AdobeDC.View.Enum.ApiResponseCode.SUCCESS });
+              resolve({ code: window.AdobeDC?.View?.Enum?.ApiResponseCode?.SUCCESS ?? 0 });
             });
           },
           {
@@ -238,9 +246,13 @@ const FillablePdfViewer = forwardRef<FillablePdfViewerHandle, FillablePdfViewerP
         // Get the APIs object from the preview result (not the view)
         try {
           const adobeViewer = await previewFilePromise;
-          const apis = await adobeViewer.getAPIs();
-          adobeApisRef.current = apis;
-          console.info("[Adobe] APIs acquired successfully");
+          if (adobeViewer && typeof adobeViewer.getAPIs === "function") {
+            const apis = await adobeViewer.getAPIs();
+            adobeApisRef.current = apis;
+            console.info("[Adobe] APIs acquired successfully");
+          } else {
+            console.warn("[Adobe] previewFile did not return a valid viewer object");
+          }
         } catch (e) {
           console.warn("[Adobe] Could not get APIs:", e);
         }
