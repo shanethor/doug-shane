@@ -159,8 +159,9 @@ const FillablePdfViewer = forwardRef<FillablePdfViewerHandle, FillablePdfViewerP
             } catch (e) {
               console.warn("[Adobe] SAVE_API callback error:", e);
             }
-            return new Promise((resolve) => {
-              resolve({ code: window.AdobeDC?.View?.Enum?.ApiResponseCode?.SUCCESS ?? 0 });
+            // Always return a resolved promise — never let this throw
+            return Promise.resolve({
+              code: window.AdobeDC?.View?.Enum?.ApiResponseCode?.SUCCESS ?? 0,
             });
           },
           {
