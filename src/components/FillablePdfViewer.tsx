@@ -203,14 +203,14 @@ const FillablePdfViewer = forwardRef<FillablePdfViewerHandle, FillablePdfViewerP
               if (!field || !value) continue;
               try {
                 const typeName = field.constructor.name;
-                if (typeName === "PDFTextField") {
+                if (typeName.startsWith("PDFTextField")) {
                   const tf = field as any;
                   tf.setText(String(value));
                   tf.defaultUpdateAppearances(helvetica);
                   filled++;
-                } else if (typeName === "PDFCheckBox") {
+                } else if (typeName.startsWith("PDFCheckBox")) {
                   if (value === "true" || value === "Yes" || value === "1") (field as any).check();
-                } else if (typeName === "PDFDropdown") {
+                } else if (typeName.startsWith("PDFDropdown")) {
                   try { (field as any).select(String(value)); filled++; } catch (_) {}
                 }
               } catch (fieldErr) {
