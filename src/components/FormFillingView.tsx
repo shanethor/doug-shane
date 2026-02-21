@@ -182,15 +182,9 @@ export default function FormFillingView({ submissionId, initialMessages, initial
     : {};
   console.info(`[FormFilling] prefillByIndex for ${activeFormId}: ${Object.keys(prefillByIndex).length} entries, dbLoaded=${dbLoaded}, formData keys=${Object.keys(formData).filter(k => formData[k]).length}`);
 
-  // Generate a stable key for prefill data so we remount the viewer when fields change
-  // We use a hash of filled field count + first few values to avoid remounting on every keystroke
-  const prefillKeyRef = useRef(0);
-  const lastPrefillCountRef = useRef(0);
-  const currentPrefillCount = Object.keys(prefillByIndex).length;
-  if (currentPrefillCount !== lastPrefillCountRef.current) {
-    prefillKeyRef.current++;
-    lastPrefillCountRef.current = currentPrefillCount;
-  }
+  // Generate a stable key for prefill data — remount viewer when data actually changes
+  const prefillJson = JSON.stringify(prefillByIndex);
+  const prefillKey = `${activeFormId}-${prefillJson.length}-${dbLoaded}`;
 
   // Reset adobeReady when form changes (new Adobe instance mounts)
   useEffect(() => {
@@ -1098,7 +1092,7 @@ export default function FormFillingView({ submissionId, initialMessages, initial
             </div>
           ) : activeForm && FILLABLE_PDF_PATHS[activeFormId] ? (
              <FillablePdfViewer
-               key={`${activeFormId}-${prefillKeyRef.current}`}
+               key={prefillKey}
                ref={pdfViewerRef}
                pdfUrl={FILLABLE_PDF_PATHS[activeFormId]}
                fileName={`${activeForm.name}.pdf`}

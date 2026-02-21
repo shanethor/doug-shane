@@ -190,8 +190,9 @@ const FillablePdfViewer = forwardRef<FillablePdfViewerHandle, FillablePdfViewerP
         console.info(`[pdf-lib] prefillByIndex has ${prefillEntries.length} entries`);
         if (prefillEntries.length > 0) {
           try {
-            const { PDFDocument } = await import("pdf-lib");
+            const { PDFDocument, StandardFonts } = await import("pdf-lib");
             const doc = await PDFDocument.load(new Uint8Array(pdfBuffer), { ignoreEncryption: true });
+            const helvetica = await doc.embedFont(StandardFonts.Helvetica);
             const form = doc.getForm();
             const allFields = form.getFields();
             console.info(`[pdf-lib] PDF has ${allFields.length} form fields`);
@@ -203,7 +204,9 @@ const FillablePdfViewer = forwardRef<FillablePdfViewerHandle, FillablePdfViewerP
               try {
                 const typeName = field.constructor.name;
                 if (typeName === "PDFTextField") {
-                  (field as any).setText(String(value));
+                  const tf = field as any;
+                  tf.setText(String(value));
+                  tf.defaultUpdateAppearances(helvetica);
                   filled++;
                 } else if (typeName === "PDFCheckBox") {
                   if (value === "true" || value === "Yes" || value === "1") (field as any).check();
@@ -211,9 +214,11 @@ const FillablePdfViewer = forwardRef<FillablePdfViewerHandle, FillablePdfViewerP
                   try { (field as any).select(String(value)); filled++; } catch (_) {}
                 }
               } catch (fieldErr) {
-                console.warn(`[pdf-lib] Failed to set field ${idx}:`, fieldErr);
+                console.warn(`[pdf-lib] Failed to set field ${idx} (${field.getName()}):`, fieldErr);
               }
             }
+            // Force appearance streams to be generated for all fields
+            try { form.updateFieldAppearances(helvetica); } catch (_) {}
             console.info(`[pdf-lib] Pre-filled ${filled} fields into PDF`);
             const savedBytes = await doc.save();
             pdfBuffer = savedBytes.buffer as ArrayBuffer;
