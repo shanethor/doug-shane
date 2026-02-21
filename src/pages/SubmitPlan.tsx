@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Upload, FileText, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { ensurePipelineLead } from "@/lib/pipeline-sync";
 
 export default function SubmitPlan() {
   const { user } = useAuth();
@@ -81,6 +82,12 @@ export default function SubmitPlan() {
       );
 
       if (fnError) throw fnError;
+
+      // Auto-create pipeline lead in Quoting stage
+      await ensurePipelineLead({
+        userId: user.id,
+        accountName: companyName || result?.form_data?.applicant_name || "New Client",
+      });
 
       toast.success("Business plan processed! Review your application.");
       navigate(`/application/${submission.id}`);

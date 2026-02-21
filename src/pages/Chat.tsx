@@ -19,6 +19,7 @@ import { generateSubmissionPackage } from "@/lib/submission-package";
 import { useAuth } from "@/hooks/useAuth";
 import { useVoiceInput } from "@/hooks/useVoiceInput";
 import { useTrainingMode } from "@/hooks/useTrainingMode";
+import { ensurePipelineLead } from "@/lib/pipeline-sync";
 
 type ButtonMarker = { label: string; action: string };
 type Msg = { role: "user" | "assistant"; content: string; fields?: FieldBubble[]; buttons?: ButtonMarker[] };
@@ -453,6 +454,15 @@ export default function Chat() {
 
       // Detect form types from extracted LOB flags
       const fd = extracted?.form_data || {};
+
+      // Auto-create pipeline lead in Quoting stage with synced data
+      await ensurePipelineLead({
+        userId: user.id,
+        accountName: detectedCompany || companyName,
+        state: fd.state || fd.mailing_state || null,
+        businessType: fd.business_description || fd.sic_description || null,
+      });
+
       const detectedForms: string[] = [];
       if (fd.lob_auto === "true" || fd.number_of_vehicles) detectedForms.push("acord-127");
       if (fd.lob_property === "true" || fd.building_limit || fd.bpp_limit) detectedForms.push("acord-140");
