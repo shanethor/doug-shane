@@ -27,22 +27,16 @@ export interface FillablePdfViewerHandle {
 }
 
 export interface FillablePdfViewerProps {
-  /**
-   * URL/path to the original fillable PDF to load. Adobe handles this natively —
-   * no pdf-lib processing, no XFA stripping, 100% original formatting preserved.
-   */
   pdfUrl: string;
-  /** Display name for the PDF tab title */
   fileName?: string;
-  /** Called when the user edits a field inside the Adobe PDF viewer */
   onFieldChange?: (fieldName: string, value: string) => void;
-  /**
-   * Called with the latest saved PDF bytes (from Adobe's SAVE_API).
-   * Use this to power "Download Final PDF" with all in-viewer edits included.
-   */
   onSaveBytes?: (bytes: Uint8Array) => void;
-  /** Called once Adobe is ready so parent can call setFieldValues with initial data */
   onReady?: () => void;
+  /**
+   * Pre-fill data: map of field INDEX (0-based position in form.getFields()) → string value.
+   * pdf-lib fills these into the PDF before passing to Adobe viewer.
+   */
+  prefillByIndex?: Record<number, string>;
 }
 
 declare global {
@@ -77,6 +71,7 @@ const FillablePdfViewer = forwardRef<FillablePdfViewerHandle, FillablePdfViewerP
   onFieldChange,
   onSaveBytes,
   onReady,
+  prefillByIndex,
 }, ref) {
   const [viewerKey] = useState(() => ++viewerInstanceCounter);
   const [adobeError, setAdobeError] = useState<string | null>(null);
@@ -90,11 +85,9 @@ const FillablePdfViewer = forwardRef<FillablePdfViewerHandle, FillablePdfViewerP
   const onReadyRef = useRef(onReady);
   onReadyRef.current = onReady;
 
-  // Keep a ref to the Adobe APIs object so we can call setFieldValue later
   const adobeApisRef = useRef<any>(null);
   const adobeViewRef = useRef<any>(null);
 
-  // Expose methods so parent can trigger save and set field values
   useImperativeHandle(ref, () => ({
     triggerSave: async () => {
       const apis = adobeApisRef.current;
@@ -105,36 +98,8 @@ const FillablePdfViewer = forwardRef<FillablePdfViewerHandle, FillablePdfViewerP
         console.warn("[Adobe] triggerSave failed:", e);
       }
     },
-
-    setFieldValues: async (fields: Record<string, string>) => {
-      const apis = adobeApisRef.current;
-      if (!apis) {
-        console.warn("[Adobe] setFieldValues called before APIs ready");
-        return;
-      }
-      try {
-        // Adobe PDF Embed API: getFormManager provides field-level write access
-        // This writes data INTO the PDF using Adobe's native engine — 
-        // preserves 100% of original ACORD formatting.
-        if (typeof apis.getFormManager === "function") {
-          const formManager = await apis.getFormManager();
-          if (typeof formManager?.setFormFieldValue === "function") {
-            for (const [name, value] of Object.entries(fields)) {
-              try {
-                await formManager.setFormFieldValue(name, { value });
-              } catch (_) { /* field may not exist in this form */ }
-            }
-            return;
-          }
-        }
-
-        // Fallback: try the bulk annotation approach via FORM_FIELD_CHANGED events
-        // by injecting field values through the PDF context
-        console.info("[Adobe] getFormManager not available, values will show on next save");
-      } catch (e) {
-        console.warn("[Adobe] setFieldValues failed:", e);
-      }
-    },
+    // No-op: we now pre-fill via pdf-lib instead
+    setFieldValues: async () => {},
   }), []);
 
   useEffect(() => {
@@ -215,15 +180,48 @@ const FillablePdfViewer = forwardRef<FillablePdfViewerHandle, FillablePdfViewerP
           { enablePDFAnalytics: true, listenOn: ["FORM_FIELD_CHANGED"] }
         );
 
-        // ── Load the ORIGINAL PDF bytes directly ──
-        // Do NOT process with pdf-lib — it strips the Encrypt dict but cannot
-        // decrypt content streams, resulting in a blank/corrupted document.
-        // Adobe Embed API handles owner-password-only PDFs natively and still
-        // allows form filling even when it shows the "Protected" info banner.
+        // ── Load PDF and pre-fill with pdf-lib if prefillByIndex is provided ──
         const response = await fetch(pdfUrl);
         if (!response.ok) throw new Error(`Failed to fetch PDF: ${pdfUrl}`);
-        const pdfBuffer = await response.arrayBuffer();
-        console.info("[Adobe] Passing raw PDF bytes to viewer (no pre-processing)");
+        let pdfBuffer = await response.arrayBuffer();
+
+        // Pre-fill fields using pdf-lib before passing to Adobe
+        const prefillEntries = prefillByIndex ? Object.entries(prefillByIndex) : [];
+        console.info(`[pdf-lib] prefillByIndex has ${prefillEntries.length} entries`);
+        if (prefillEntries.length > 0) {
+          try {
+            const { PDFDocument } = await import("pdf-lib");
+            const doc = await PDFDocument.load(new Uint8Array(pdfBuffer), { ignoreEncryption: true });
+            const form = doc.getForm();
+            const allFields = form.getFields();
+            console.info(`[pdf-lib] PDF has ${allFields.length} form fields`);
+            let filled = 0;
+            for (const [idxStr, value] of prefillEntries) {
+              const idx = Number(idxStr);
+              const field = allFields[idx];
+              if (!field || !value) continue;
+              try {
+                const typeName = field.constructor.name;
+                if (typeName === "PDFTextField") {
+                  (field as any).setText(String(value));
+                  filled++;
+                } else if (typeName === "PDFCheckBox") {
+                  if (value === "true" || value === "Yes" || value === "1") (field as any).check();
+                } else if (typeName === "PDFDropdown") {
+                  try { (field as any).select(String(value)); filled++; } catch (_) {}
+                }
+              } catch (fieldErr) {
+                console.warn(`[pdf-lib] Failed to set field ${idx}:`, fieldErr);
+              }
+            }
+            console.info(`[pdf-lib] Pre-filled ${filled} fields into PDF`);
+            const savedBytes = await doc.save();
+            pdfBuffer = savedBytes.buffer as ArrayBuffer;
+            console.info(`[pdf-lib] Saved PDF: ${savedBytes.length} bytes`);
+          } catch (e) {
+            console.warn("[pdf-lib] Pre-fill failed, using raw PDF:", e);
+          }
+        }
 
         const previewFilePromise = view.previewFile(
           {
