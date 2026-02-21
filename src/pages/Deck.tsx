@@ -17,6 +17,7 @@ const SLIDES = [
   { id: "model", label: "Revenue Model" },
   { id: "gtm", label: "Go-to-Market" },
   { id: "projections", label: "Projections" },
+  { id: "the-ask", label: "The Ask" },
   { id: "why-exists", label: "Why AURA Exists" },
 ];
 
@@ -58,6 +59,7 @@ export default function Deck() {
     <ModelSlide />,
     <GTMSlide />,
     <ProjectionsSlide />,
+    <TheAskSlide />,
     <WhyExistsSlide />,
   ];
 
@@ -823,7 +825,70 @@ function ProjectionsSlide() {
   );
 }
 
-/* ─── Slide 16: Why AURA Exists ─── */
+/* ─── Slide 16: The Ask ─── */
+function TheAskSlide() {
+  return (
+    <div>
+      <SlideHeader icon={DollarSign} tag="The Ask" title="Building the intelligence layer that insurance runs on." />
+
+      {/* Raise Details */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
+        <div className="rounded-xl border-2 border-primary/30 bg-primary/5 p-6 text-center hover-lift">
+          <p className="text-4xl font-extrabold text-foreground">$2.5M</p>
+          <p className="text-sm font-medium text-muted-foreground mt-1">Total raise</p>
+        </div>
+        <div className="rounded-xl border border-border bg-card p-6 text-center hover-lift">
+          <p className="text-4xl font-extrabold text-foreground">Up to 10%</p>
+          <p className="text-sm font-medium text-muted-foreground mt-1">Minority equity offered</p>
+        </div>
+        <div className="rounded-xl border border-border bg-card p-6 text-center hover-lift">
+          <p className="text-4xl font-extrabold text-foreground">$250K</p>
+          <p className="text-sm font-medium text-muted-foreground mt-1">Minimum per investor</p>
+          <p className="text-xs text-muted-foreground/70 mt-1">Maximum 10 investors</p>
+        </div>
+      </div>
+
+      {/* Use of Funds */}
+      <div className="mt-6 rounded-xl border border-border bg-card p-6">
+        <p className="text-xs font-bold text-primary uppercase tracking-widest mb-4">Use of Funds</p>
+        <div className="space-y-4">
+          {[
+            { pct: "50%", title: "Product and AI Development", desc: "Continue building the intelligence engine, producer workflows, and data infrastructure." },
+            { pct: "30%", title: "Deployment and Partner Expansion", desc: "Deploy AURA across initial agencies and expand real world production footprint." },
+            { pct: "20%", title: "Core Team and Operations", desc: "Support engineering, infrastructure, and execution as adoption scales." },
+          ].map((item) => (
+            <div key={item.title} className="flex items-start gap-4">
+              <span className="text-2xl font-extrabold text-primary/80 w-16 shrink-0 text-right">{item.pct}</span>
+              <div>
+                <p className="text-sm font-semibold text-foreground">{item.title}</p>
+                <p className="text-sm text-muted-foreground">{item.desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Why AURA */}
+      <div className="mt-6 rounded-xl border-2 border-primary/20 bg-primary/5 p-6 space-y-3">
+        <p className="text-xs font-bold text-primary uppercase tracking-widest">Why AURA</p>
+        <p className="text-sm text-muted-foreground leading-relaxed">
+          AURA is already live inside a commercial agency environment. Submissions are being processed and the intelligence layer is already learning.
+        </p>
+        <p className="text-sm text-muted-foreground leading-relaxed">
+          Mergers and acquisitions changed who the industry works for. Producers were forced to operate inside broken systems, and the independence that defined this business started to disappear.
+        </p>
+        <p className="text-sm font-semibold text-foreground leading-relaxed">
+          We are raising to scale what is needed to give autonomy back to the professionals that built the industry.
+        </p>
+      </div>
+
+      <p className="mt-5 text-center text-lg font-bold text-foreground">Insurance runs on AURA.</p>
+      <p className="mt-2 text-center text-xs text-muted-foreground/50">Confidential — AURA Risk Group</p>
+    </div>
+  );
+}
+
+/* ─── Slide 17: Why AURA Exists ─── */
 function WhyExistsSlide() {
   return (
     <div className="flex flex-col items-center text-center max-w-3xl mx-auto">
