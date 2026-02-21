@@ -217,7 +217,7 @@ const FillablePdfViewer = forwardRef<FillablePdfViewerHandle, FillablePdfViewerP
         const pdfBuffer = await response.arrayBuffer();
         console.info("[Adobe] Passing raw PDF bytes to viewer (no pre-processing)");
 
-        await view.previewFile(
+        const previewFilePromise = view.previewFile(
           {
             content: { promise: Promise.resolve(pdfBuffer) },
             metaData: { fileName },
@@ -235,10 +235,12 @@ const FillablePdfViewer = forwardRef<FillablePdfViewerHandle, FillablePdfViewerP
           }
         );
 
-        // Get the APIs object after preview is ready
+        // Get the APIs object from the preview result (not the view)
         try {
-          const apis = await view.getAPIs();
+          const adobeViewer = await previewFilePromise;
+          const apis = await adobeViewer.getAPIs();
           adobeApisRef.current = apis;
+          console.info("[Adobe] APIs acquired successfully");
         } catch (e) {
           console.warn("[Adobe] Could not get APIs:", e);
         }
