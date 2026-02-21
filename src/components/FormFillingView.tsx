@@ -54,6 +54,7 @@ export default function FormFillingView({ submissionId, initialMessages, initial
   const [companyName, setCompanyName] = useState(initialCompanyName || "New Client");
   const [editingName, setEditingName] = useState(!!initialCompanyName && initialCompanyName === "New Client");
   const [loading, setLoading] = useState(false);
+  const [dbLoaded, setDbLoaded] = useState(false);
   const [autoSaving, setAutoSaving] = useState(false);
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const formDataRef = useRef<Record<string, any>>({});
@@ -183,19 +184,22 @@ export default function FormFillingView({ submissionId, initialMessages, initial
     }
   }, [adobeReady]);
 
-  // When Adobe becomes ready, inject current formData into the PDF
+  // When Adobe becomes ready OR when DB data loads, inject formData into the PDF
   useEffect(() => {
-    if (adobeReady && activeFormId && activeFormId !== "all") {
+    if (adobeReady && dbLoaded && activeFormId && activeFormId !== "all") {
       // Wait for reverse map to be built then push
       const map = reverseMapPromisesRef.current[activeFormId];
       if (map) {
-        map.then(() => pushFieldsToAdobe(activeFormId, formDataRef2.current));
+        map.then(() => {
+          console.info("[FormFilling] Pushing", Object.keys(formDataRef2.current).filter(k => formDataRef2.current[k]).length, "fields to Adobe");
+          pushFieldsToAdobe(activeFormId, formDataRef2.current);
+        });
       } else {
         pushFieldsToAdobe(activeFormId, formDataRef2.current);
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [adobeReady, activeFormId]);
+  }, [adobeReady, activeFormId, dbLoaded]);
 
   // Reset adobeReady when form changes (new Adobe instance mounts)
   useEffect(() => {
@@ -295,10 +299,10 @@ export default function FormFillingView({ submissionId, initialMessages, initial
 
   useEffect(() => { scrollChatToBottom(); }, [messages, scrollChatToBottom]);
 
-  // Auto-send an initial message when the 3-column view loads — deferred to avoid blocking render
+  // Auto-send an initial message when the 3-column view loads — deferred until DB data is loaded
   const hasAutoSent = useRef(false);
   useEffect(() => {
-    if (hasAutoSent.current || loading) return;
+    if (hasAutoSent.current || loading || !dbLoaded) return;
     hasAutoSent.current = true;
 
     if (suppressAutoAnalysis) {
@@ -309,7 +313,7 @@ export default function FormFillingView({ submissionId, initialMessages, initial
       return;
     }
 
-    // Show a quick ready message immediately so the UI feels instant
+    // Now formData has DB values — compute accurate stats
     const clientName = formData.applicant_name || formData.insured_name || formData.company_name || "this client";
     const allFields = ACORD_FORM_LIST.flatMap(f => f.fields);
     const filledKeys = allFields.filter(f => formData[f.key] && String(formData[f.key]).trim());
@@ -322,7 +326,7 @@ export default function FormFillingView({ submissionId, initialMessages, initial
         content: `Loaded **${clientName}** — ${filledKeys.length} fields pre-filled, ${emptyKeys.length} remaining. Ask me to fill gaps, or say "auto-fill" to run AI inference on all fields.`,
       },
     ]);
-  }, [loading]);
+  }, [loading, dbLoaded]);
 
   // Keep ref in sync so the debounced save always uses the latest data
   useEffect(() => { formDataRef.current = formData; }, [formData]);
@@ -355,8 +359,11 @@ export default function FormFillingView({ submissionId, initialMessages, initial
       .maybeSingle()
       .then(({ data }) => {
         if (data?.form_data && typeof data.form_data === "object") {
-          setFormData(data.form_data as Record<string, any>);
+          const loaded = data.form_data as Record<string, any>;
+          setFormData(loaded);
+          console.info("[FormFilling] Loaded", Object.keys(loaded).filter(k => loaded[k] && String(loaded[k]).trim()).length, "fields from DB");
         }
+        setDbLoaded(true);
       });
   }, [user, submissionId]);
 
