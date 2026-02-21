@@ -142,10 +142,17 @@ const FillablePdfViewer = forwardRef<FillablePdfViewerHandle, FillablePdfViewerP
           window.AdobeDC.View.Enum.CallbackType.SAVE_API,
           (metaData: any, content: any) => {
             try {
-              // Adobe may pass content as ArrayBuffer or as second arg
-              const bytes = content instanceof ArrayBuffer
-                ? new Uint8Array(content)
-                : (metaData instanceof ArrayBuffer ? new Uint8Array(metaData) : null);
+              // Adobe passes args inconsistently — defensively extract ArrayBuffer
+              let bytes: Uint8Array | null = null;
+              if (content instanceof ArrayBuffer) {
+                bytes = new Uint8Array(content);
+              } else if (content && typeof content === "object" && content.buffer instanceof ArrayBuffer) {
+                bytes = new Uint8Array(content.buffer);
+              } else if (metaData instanceof ArrayBuffer) {
+                bytes = new Uint8Array(metaData);
+              } else if (metaData && typeof metaData === "object" && metaData.buffer instanceof ArrayBuffer) {
+                bytes = new Uint8Array(metaData.buffer);
+              }
               if (!cancelledRef.current && onSaveBytesRef.current && bytes) {
                 onSaveBytesRef.current(bytes);
               }
@@ -264,6 +271,21 @@ const FillablePdfViewer = forwardRef<FillablePdfViewerHandle, FillablePdfViewerP
           setAdobeLoading(false);
           // Notify parent that Adobe is ready so it can inject initial field values
           if (onReadyRef.current) onReadyRef.current();
+
+          // ── Auto-save polling: trigger save every 3s to capture PDF field edits ──
+          // This ensures onSaveBytes fires periodically so the parent can extract
+          // current field values via pdf-lib and sync them back to the left panel.
+          const pollId = setInterval(() => {
+            if (cancelledRef.current || !adobeApisRef.current) {
+              clearInterval(pollId);
+              return;
+            }
+            try {
+              adobeApisRef.current.triggerFileEvent("SAVE").catch(() => {});
+            } catch (_) {}
+          }, 3000);
+          // Store for cleanup
+          (window as any).__adobePollId = pollId;
         }
       } catch (err: any) {
         if (!cancelledRef.current) {
@@ -278,6 +300,11 @@ const FillablePdfViewer = forwardRef<FillablePdfViewerHandle, FillablePdfViewerP
 
     return () => {
       cancelledRef.current = true;
+      // Clear auto-save poll
+      if ((window as any).__adobePollId) {
+        clearInterval((window as any).__adobePollId);
+        (window as any).__adobePollId = undefined;
+      }
     };
   // Only re-mount when the PDF URL changes (i.e. form switch)
   // eslint-disable-next-line react-hooks/exhaustive-deps
