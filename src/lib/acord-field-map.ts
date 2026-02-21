@@ -1041,7 +1041,103 @@ export const ACORD_75_INDEX_MAP: AcordIndexMap = {
   signature_date:       14,
 };
 
+// ── ACORD 125 — Commercial Insurance Application — Index Map ──
+// Placeholder indices — run /pdf-diagnostic on 125.pdf and refine with "Show All Indices"
+// Current mapping follows typical ACORD tab order: header → LOB → policy → applicant → premises → general info → remarks → signature
+export const ACORD_125_INDEX_MAP: AcordIndexMap = {
+  // Header / Agency block
+  agency_name:          0,
+  agency_phone:         1,
+  agency_fax:           2,
+  agency_email:         3,
+  agency_customer_id:   4,
+  contact_name:         5,
+  carrier:              6,
+  naic_code:            7,
+  company_program_name: 8,
+  program_code:         9,
+  policy_number:       10,
+  underwriter:         11,
+  underwriter_office:  12,
+  transaction_date:    13,
+
+  // Lines of Business checkboxes — these need diagnostic verification
+  // (indices will be CHK type fields interspersed with premium TXT fields)
+
+  // Policy Information
+  proposed_eff_date:   30,
+  proposed_exp_date:   31,
+  deposit_amount:      32,
+  minimum_premium:     33,
+  policy_premium:      34,
+
+  // Applicant Information
+  applicant_name:      40,
+  mailing_address:     41,
+  city:                42,
+  state:               43,
+  zip:                 44,
+  gl_code:             45,
+  sic_code:            46,
+  naics_code:          47,
+  fein:                48,
+  business_phone:      49,
+  website:             50,
+
+  // Other Named Insured
+  other_named_insured: 55,
+
+  // Contact Information
+  contact_name_1:      60,
+  contact_phone_1:     61,
+  contact_email_1:     62,
+
+  // Premises Information
+  premises_address:    70,
+  premises_city:       71,
+  premises_state:      72,
+  premises_zip:        73,
+  full_time_employees: 74,
+  part_time_employees: 75,
+  premises_description:76,
+
+  // Nature of Business
+  annual_revenues:     80,
+  occupied_sq_ft:      81,
+  total_building_sq_ft:82,
+  date_business_started:83,
+  description_of_operations: 84,
+
+  // General Information (Y/N)
+  subsidiary_of_another: 90,
+  has_subsidiaries:      91,
+  safety_program:        92,
+  exposure_flammables:   93,
+  other_insurance_same_company: 94,
+  policy_declined_cancelled: 95,
+  bankruptcy:            96,
+  general_info_remarks:  100,
+
+  // Remarks
+  remarks:              110,
+
+  // Prior Carrier
+  prior_carrier_1:      115,
+  prior_policy_number_1:116,
+  prior_gl_premium_1:   117,
+
+  // Loss History
+  loss_history:         120,
+
+  // Signature
+  producer_name:        130,
+  producer_license_no:  131,
+  national_producer_number: 132,
+  signature_date:       133,
+};
+
 export const ACORD_INDEX_MAPS: Record<string, AcordIndexMap> = {
+  "acord-125": ACORD_125_INDEX_MAP,
   "acord-126": ACORD_126_INDEX_MAP,
   "acord-127": ACORD_127_INDEX_MAP,
   "acord-130": ACORD_130_INDEX_MAP,
