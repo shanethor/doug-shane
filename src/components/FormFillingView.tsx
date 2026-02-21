@@ -158,64 +158,44 @@ export default function FormFillingView({ submissionId, initialMessages, initial
   useEffect(() => { formDataRef2.current = formData; }, [formData]);
 
   /**
-   * Push current formData into the Adobe viewer using its native setFieldValues API.
-   * This writes data DIRECTLY into the PDF via Adobe's engine — no pdf-lib processing,
-   * no XFA stripping, 100% original ACORD formatting preserved.
-   * The field names passed are the ACTUAL PDF AcroForm field names (from the reverse map).
+   * Build prefillByIndex for the active form: maps field INDEX → formatted string value.
+   * This is passed to FillablePdfViewer which uses pdf-lib to fill before Adobe loads.
    */
-  const pushFieldsToAdobe = useCallback(async (fId: string, data: Record<string, any>) => {
-    if (!pdfViewerRef.current || !adobeReady) return;
-    const reverseMap = reverseFieldMapsRef.current[fId] || {};
-    // Build a { pdfFieldName → formatted value } map
-    const fieldValues: Record<string, string> = {};
-    for (const [internalKey, val] of Object.entries(data)) {
+  const buildPrefillByIndex = useCallback((fId: string, data: Record<string, any>): Record<number, string> => {
+    const indexMap = ACORD_INDEX_MAPS[fId];
+    if (!indexMap) return {};
+    const result: Record<number, string> = {};
+    for (const [internalKey, idx] of Object.entries(indexMap)) {
+      const val = data[internalKey];
       if (val === undefined || val === null || val === "") continue;
-      const pdfFieldName = Object.entries(reverseMap).find(([, k]) => k === internalKey)?.[0];
-      if (pdfFieldName) {
-        // Format dates as MM/DD/YYYY for the PDF
-        let display = String(val);
-        const isoMatch = display.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-        if (isoMatch) display = `${isoMatch[2]}/${isoMatch[3]}/${isoMatch[1]}`;
-        fieldValues[pdfFieldName] = display;
-      }
+      let display = String(val);
+      const isoMatch = display.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (isoMatch) display = `${isoMatch[2]}/${isoMatch[3]}/${isoMatch[1]}`;
+      result[idx] = display;
     }
-    if (Object.keys(fieldValues).length > 0) {
-      await pdfViewerRef.current.setFieldValues(fieldValues);
-    }
-  }, [adobeReady]);
+    return result;
+  }, []);
 
-  // When Adobe becomes ready OR when DB data loads, inject formData into the PDF
-  useEffect(() => {
-    if (adobeReady && dbLoaded && activeFormId && activeFormId !== "all") {
-      // Wait for reverse map to be built then push
-      const map = reverseMapPromisesRef.current[activeFormId];
-      if (map) {
-        map.then(() => {
-          console.info("[FormFilling] Pushing", Object.keys(formDataRef2.current).filter(k => formDataRef2.current[k]).length, "fields to Adobe");
-          pushFieldsToAdobe(activeFormId, formDataRef2.current);
-        });
-      } else {
-        pushFieldsToAdobe(activeFormId, formDataRef2.current);
-      }
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [adobeReady, activeFormId, dbLoaded]);
+  // Compute prefill data — memoized to avoid unnecessary recalculations
+  const prefillByIndex = activeFormId && activeFormId !== "all"
+    ? buildPrefillByIndex(activeFormId, formData)
+    : {};
+  console.info(`[FormFilling] prefillByIndex for ${activeFormId}: ${Object.keys(prefillByIndex).length} entries, dbLoaded=${dbLoaded}, formData keys=${Object.keys(formData).filter(k => formData[k]).length}`);
+
+  // Generate a stable key for prefill data so we remount the viewer when fields change
+  // We use a hash of filled field count + first few values to avoid remounting on every keystroke
+  const prefillKeyRef = useRef(0);
+  const lastPrefillCountRef = useRef(0);
+  const currentPrefillCount = Object.keys(prefillByIndex).length;
+  if (currentPrefillCount !== lastPrefillCountRef.current) {
+    prefillKeyRef.current++;
+    lastPrefillCountRef.current = currentPrefillCount;
+  }
 
   // Reset adobeReady when form changes (new Adobe instance mounts)
   useEffect(() => {
     setAdobeReady(false);
   }, [activeFormId]);
-
-  // Debounced left-panel → Adobe PDF sync: push field values to Adobe viewer 1s after each edit
-  useEffect(() => {
-    if (isAllForms || !activeFormId || !adobeReady) return;
-    if (fillPdfTimerRef.current) clearTimeout(fillPdfTimerRef.current);
-    fillPdfTimerRef.current = setTimeout(() => {
-      pushFieldsToAdobe(activeFormId, formDataRef2.current);
-    }, 1000);
-    return () => { if (fillPdfTimerRef.current) clearTimeout(fillPdfTimerRef.current); };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [formData, activeFormId, isAllForms, adobeReady]);
 
   /**
    * Build reverse map: actual PDF field name (as Adobe returns it) → internal key.
@@ -1118,12 +1098,14 @@ export default function FormFillingView({ submissionId, initialMessages, initial
             </div>
           ) : activeForm && FILLABLE_PDF_PATHS[activeFormId] ? (
              <FillablePdfViewer
+               key={`${activeFormId}-${prefillKeyRef.current}`}
                ref={pdfViewerRef}
                pdfUrl={FILLABLE_PDF_PATHS[activeFormId]}
                fileName={`${activeForm.name}.pdf`}
                onFieldChange={(pdfFieldName, value) => handleAdobeFieldChange(activeFormId, pdfFieldName, value)}
                onSaveBytes={(bytes) => setSavedPdfBytesMap(prev => ({ ...prev, [activeFormId]: bytes }))}
                onReady={() => setAdobeReady(true)}
+               prefillByIndex={prefillByIndex}
              />
            ) : (
              <div className="flex items-center justify-center h-full text-muted-foreground text-sm">No fillable PDF available for this form</div>
