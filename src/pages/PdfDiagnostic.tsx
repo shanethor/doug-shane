@@ -199,6 +199,34 @@ export default function PdfDiagnostic() {
     setLoading(false);
   }, [selectedForm]);
 
+  /** Fill ALL TXT fields with their index number and download the PDF */
+  const fillAllAndDownload = useCallback(async () => {
+    const path = FILLABLE_PDF_PATHS[selectedForm];
+    if (!path) return;
+    setLoading(true);
+    try {
+      const resp = await fetch(path);
+      const bytes = await resp.arrayBuffer();
+      const doc = await PDFDocument.load(new Uint8Array(bytes), { ignoreEncryption: true, updateMetadata: false });
+      const form = doc.getForm();
+      const allFields = form.getFields();
+      allFields.forEach((f, i) => {
+        if (f instanceof PDFTextField) {
+          try { f.setText(`[${i}]`); } catch {}
+        }
+      });
+      const pdfBytes = await doc.save();
+      const blob = new Blob([pdfBytes.buffer as ArrayBuffer], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${selectedForm}-ALL-INDICES.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) { alert("Error: " + e); }
+    setLoading(false);
+  }, [selectedForm]);
+
   const filtered = search
     ? fields.filter(f => String(f.index).includes(search) || f.type.toLowerCase().includes(search.toLowerCase()))
     : fields;
@@ -247,6 +275,11 @@ export default function PdfDiagnostic() {
             style={{ flex: 1, padding: "6px 10px", fontSize: 12, background: "#16a34a",
               color: "white", border: "none", borderRadius: 4, cursor: "pointer", fontWeight: "bold" }}>
             {loading ? "Running…" : "✅ Run Real Data Fill"}
+          </button>
+          <button onClick={fillAllAndDownload} disabled={loading}
+            style={{ padding: "6px 10px", fontSize: 11, background: "#d97706",
+              color: "white", border: "none", borderRadius: 4, cursor: "pointer", fontWeight: "bold" }}>
+            📥 Fill All TXT
           </button>
           <button onClick={() => setLayoutView(v => !v)}
             style={{ padding: "6px 10px", fontSize: 11, background: layoutView ? "#7c3aed" : "#334155",
