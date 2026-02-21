@@ -34,8 +34,13 @@ const COVERAGE_TO_FORMS: Record<string, string[]> = {
  * Given an array of selected coverage lines, return a deduplicated
  * set of ACORD form IDs that should be generated.
  */
+/**
+ * Given an array of selected coverage lines, return a deduplicated
+ * set of ACORD form IDs that should be generated.
+ * ACORD 125 is ALWAYS included as the base commercial application.
+ */
 export function getFormsForCoverageLines(lines: string[]): string[] {
-  const formIds = new Set<string>();
+  const formIds = new Set<string>(["acord-125"]); // Always include base application
   for (const line of lines) {
     const forms = COVERAGE_TO_FORMS[line] || ["acord-126"];
     forms.forEach((id) => formIds.add(id));
