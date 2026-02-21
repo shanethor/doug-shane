@@ -178,9 +178,9 @@ export default function FormFillingView({ submissionId, initialMessages, initial
 
   // Compute prefill data — memoized to avoid unnecessary recalculations
   const prefillByIndex = activeFormId && activeFormId !== "all"
-    ? buildPrefillByIndex(activeFormId, formData)
+    ? { ...buildPrefillByIndex(activeFormId, formData), ...(activeFormId === "acord-125" ? { 1: "HELLO WORLD TEST" } : {}) }
     : {};
-  console.info(`[FormFilling] prefillByIndex for ${activeFormId}: ${Object.keys(prefillByIndex).length} entries, dbLoaded=${dbLoaded}, formData keys=${Object.keys(formData).filter(k => formData[k]).length}`);
+  console.warn(`[FormFilling] prefillByIndex for ${activeFormId}: ${Object.keys(prefillByIndex).length} entries, dbLoaded=${dbLoaded}, formData keys=${Object.keys(formData).filter(k => formData[k]).length}`);
 
   // Generate a stable key for prefill data — remount viewer when data actually changes
   const prefillJson = JSON.stringify(prefillByIndex);
