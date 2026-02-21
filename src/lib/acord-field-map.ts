@@ -600,6 +600,7 @@ export const ACORD_25_FIELD_MAP: AcordFieldMap = {
 // ─────────────────────────────────────────────────────────────────
 // Name-based maps kept as fallback (index maps are primary for all active forms)
 export const ACORD_FIELD_MAPS: Record<string, AcordFieldMap> = {
+  "acord-125": ACORD_125_FIELD_MAP,
   "acord-126": ACORD_126_FIELD_MAP,
   "acord-127": ACORD_127_FIELD_MAP,
   "acord-130": ACORD_130_FIELD_MAP,
@@ -1040,99 +1041,122 @@ export const ACORD_75_INDEX_MAP: AcordIndexMap = {
   signature_date:       14,
 };
 
-// ── ACORD 125 — Commercial Insurance Application — Index Map ──
-// Placeholder indices — run /pdf-diagnostic on 125.pdf and refine with "Show All Indices"
-// Current mapping follows typical ACORD tab order: header → LOB → policy → applicant → premises → general info → remarks → signature
+// ── ACORD 125 (2016/03) — Commercial Insurance Application — 550+ fields ──
+// Verified via /pdf-diagnostic "Fill All TXT" export — field names are semantic XFA names.
+// Field names follow pattern: F[0].P{page}[0].{FieldName}_{Suffix}[0]
+// Indices verified 2026-02-21 against 125.pdf diagnostic output.
 export const ACORD_125_INDEX_MAP: AcordIndexMap = {
-  // Header / Agency block
-  agency_name:          0,
-  agency_phone:         1,
-  agency_fax:           2,
-  agency_email:         3,
-  agency_customer_id:   4,
-  contact_name:         5,
-  carrier:              6,
-  naic_code:            7,
-  company_program_name: 8,
-  program_code:         9,
-  policy_number:       10,
-  underwriter:         11,
-  underwriter_office:  12,
-  transaction_date:    13,
+  // ── Page 1 (P1) — Agency / Carrier / LOB / Policy / Applicant ──
 
-  // Lines of Business checkboxes — these need diagnostic verification
-  // (indices will be CHK type fields interspersed with premium TXT fields)
+  // Agency block
+  transaction_date:       0,   // Form_CompletionDate_A
+  agency_name:            1,   // Producer_FullName_A
+  contact_name:           7,   // Producer_ContactPerson_FullName_A
+  agency_phone:           8,   // Producer_ContactPerson_PhoneNumber_A
+  agency_fax:             9,   // Producer_FaxNumber_A
+  agency_email:          10,   // Producer_ContactPerson_EmailAddress_A
+  agency_customer_id:    13,   // Producer_CustomerIdentifier_A
+
+  // Carrier block
+  carrier:               14,   // Insurer_FullName_A
+  naic_code:             15,   // Insurer_NAICCode_A
+  company_program_name:  16,   // Insurer_ProductDescription_A
+  program_code:          17,   // Insurer_ProductCode_A
+  policy_number:         18,   // Policy_PolicyNumberIdentifier_A
+  underwriter:           19,   // Insurer_Underwriter_FullName_A
+  underwriter_office:    20,   // Insurer_Underwriter_OfficeIdentifier_A
+
+  // Lines of Business premium amounts (odd indices are CHK checkboxes)
+  boiler_premium:        32,   // BoilerAndMachineryLineOfBusiness_PremiumAmount_A
+  auto_premium:          34,   // CommercialVehicleLineOfBusiness_PremiumAmount_A
+  bop_premium:           36,   // BusinessOwnersLineOfBusiness_PremiumAmount_A
+  cgl_premium:           38,   // GeneralLiabilityLineOfBusiness_TotalPremiumAmount_A
+  inland_marine_premium: 40,   // CommercialInlandMarineLineOfBusiness_PremiumAmount_A
+  property_premium:      42,   // CommercialPropertyLineOfBusiness_PremiumAmount_A
+  crime_premium:         44,   // CrimeLineOfBusiness_PremiumAmount_A
+  cyber_premium:         46,   // CyberAndPrivacyLineOfBusiness_PremiumAmount_A
+  garage_premium:        50,   // GarageAndDealersLineOfBusiness_PremiumAmount_A
+  liquor_premium:        52,   // LiquorLiabilityLineOfBusiness_PremiumAmount_A
+  umbrella_premium:      58,   // CommercialUmbrellaLineOfBusiness_PremiumAmount_A
 
   // Policy Information
-  proposed_eff_date:   30,
-  proposed_exp_date:   31,
-  deposit_amount:      32,
-  minimum_premium:     33,
-  policy_premium:      34,
+  proposed_eff_date:    115,   // Policy_EffectiveDate_A
+  proposed_exp_date:    116,   // Policy_ExpirationDate_A
+  billing_plan:         119,   // Policy_Payment_PaymentScheduleCode_A
+  method_of_payment:    120,   // Policy_PaymentMethod_MethodDescription_A
+  audit:                121,   // Policy_Audit_FrequencyCode_A
+  deposit_amount:       122,   // Policy_Payment_DepositAmount_A
+  minimum_premium:      123,   // Policy_Payment_MinimumPremiumAmount_A
+  policy_premium:       124,   // Policy_Payment_EstimatedTotalAmount_A
 
-  // Applicant Information
-  applicant_name:      40,
-  mailing_address:     41,
-  city:                42,
-  state:               43,
-  zip:                 44,
-  gl_code:             45,
-  sic_code:            46,
-  naics_code:          47,
-  fein:                48,
-  business_phone:      49,
-  website:             50,
+  // Applicant Information (First Named Insured)
+  applicant_name:       125,   // NamedInsured_FullName_A
+  mailing_address:      126,   // NamedInsured_MailingAddress_LineOne_A
+  city:                 128,   // NamedInsured_MailingAddress_CityName_A
+  state:                129,   // NamedInsured_MailingAddress_StateOrProvinceCode_A
+  zip:                  130,   // NamedInsured_MailingAddress_PostalCode_A
+  gl_code:              131,   // NamedInsured_GeneralLiabilityCode_A
+  sic_code:             132,   // NamedInsured_SICCode_A
+  naics_code:           133,   // NamedInsured_NAICSCode_A
+  fein:                 134,   // NamedInsured_TaxIdentifier_A
+  business_phone:       135,   // NamedInsured_Primary_PhoneNumber_A
+  website:              136,   // NamedInsured_Primary_WebsiteAddress_A
+  llc_members_managers: 141,   // NamedInsured_LegalEntity_MemberManagerCount_A
 
   // Other Named Insured
-  other_named_insured: 55,
+  other_named_insured:  148,   // NamedInsured_FullName_B
+
+  // ── Page 2 (P2) — Contacts / Premises / Nature of Business / Additional Interest ──
 
   // Contact Information
-  contact_name_1:      60,
-  contact_phone_1:     61,
-  contact_email_1:     62,
+  contact_type_1:       195,   // NamedInsured_Contact_ContactDescription_A
+  contact_name_1:       196,   // NamedInsured_Contact_FullName_A
+  contact_phone_1:      197,   // NamedInsured_Contact_PrimaryPhoneNumber_A
+  contact_email_1:      205,   // NamedInsured_Contact_PrimaryEmailAddress_A
 
-  // Premises Information
-  premises_address:    70,
-  premises_city:       71,
-  premises_state:      72,
-  premises_zip:        73,
-  full_time_employees: 74,
-  part_time_employees: 75,
-  premises_description:76,
+  // Premises Information (Location A)
+  premises_loc_number:  219,   // CommercialStructure_Location_ProducerIdentifier_A
+  premises_address:     221,   // CommercialStructure_PhysicalAddress_LineOne_A
+  premises_city:        223,   // CommercialStructure_PhysicalAddress_CityName_A
+  premises_county:      224,   // CommercialStructure_PhysicalAddress_CountyName_A
+  premises_state:       225,   // CommercialStructure_PhysicalAddress_StateOrProvinceCode_A
+  premises_zip:         226,   // CommercialStructure_PhysicalAddress_PostalCode_A
+  full_time_employees:  235,   // BusinessInformation_FullTimeEmployeeCount_A
+  part_time_employees:  236,   // BusinessInformation_PartTimeEmployeeCount_A
+  annual_revenues:      237,   // CommercialStructure_AnnualRevenueAmount_A
+  occupied_sq_ft:       238,   // BuildingOccupancy_OccupiedArea_A
+  open_to_public_area:  239,   // BuildingOccupancy_OpenToPublicArea_A
+  total_building_sq_ft: 240,   // Construction_BuildingArea_A
+  premises_description: 241,   // BuildingOccupancy_OperationsDescription_A
 
   // Nature of Business
-  annual_revenues:     80,
-  occupied_sq_ft:      81,
-  total_building_sq_ft:82,
-  date_business_started:83,
-  description_of_operations: 84,
+  date_business_started: 327,  // NamedInsured_BusinessStartDate_A
+  description_of_operations: 328, // CommercialPolicy_OperationsDescription_A
 
-  // General Information (Y/N)
-  subsidiary_of_another: 90,
-  has_subsidiaries:      91,
-  safety_program:        92,
-  exposure_flammables:   93,
-  other_insurance_same_company: 94,
-  policy_declined_cancelled: 95,
-  bankruptcy:            96,
-  general_info_remarks:  100,
+  // ── Page 3 (P3) — General Info / Remarks / Prior Coverage ──
 
   // Remarks
-  remarks:              110,
+  remarks:              449,   // CommercialPolicy_RemarkText_A
 
-  // Prior Carrier
-  prior_carrier_1:      115,
-  prior_policy_number_1:116,
-  prior_gl_premium_1:   117,
+  // Prior Coverage — Year 1
+  prior_year_1:         450,   // PriorCoverage_PolicyYear_A
+  prior_carrier_1:      451,   // PriorCoverage_GeneralLiability_InsurerFullName_A
+  prior_policy_number_1: 452,  // PriorCoverage_GeneralLiability_PolicyNumberIdentifier_A
+  prior_gl_premium_1:   453,   // PriorCoverage_GeneralLiability_TotalPremiumAmount_A
+  prior_eff_date_1:     454,   // PriorCoverage_GeneralLiability_EffectiveDate_A
+  prior_exp_date_1:     455,   // PriorCoverage_GeneralLiability_ExpirationDate_A
+
+  // ── Page 4 (P4) — Loss History / Signature ──
 
   // Loss History
-  loss_history:         120,
+  loss_history_years:   517,   // LossHistory_InformationYearCount_A
+  total_losses:         518,   // LossHistory_TotalAmount_A
 
   // Signature
-  producer_name:        130,
-  producer_license_no:  131,
-  national_producer_number: 132,
-  signature_date:       133,
+  producer_name:        546,   // Producer_AuthorizedRepresentative_FullName_A
+  producer_license_no:  547,   // Producer_StateLicenseIdentifier_A
+  signature_date:       549,   // NamedInsured_SignatureDate_A
+  national_producer_number: 550, // Producer_NationalIdentifier_A
 };
 
 export const ACORD_INDEX_MAPS: Record<string, AcordIndexMap> = {
