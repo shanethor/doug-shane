@@ -213,24 +213,24 @@ function OriginSlide() {
 function ProblemSlide() {
   return (
     <div>
-      <SlideHeader icon={Shield} tag="The Problem" title="Producers are buried in process. Clients pay the price." subtitle="Commercial insurance workflows were built around process — not the people responsible for protecting clients." />
+      <SlideHeader icon={Shield} tag="The Problem" title="Producers lose 60% of their week to admin. Clients lose their advocate." subtitle="The average commercial producer spends more time on paperwork than on the clients they're supposed to protect." />
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
-        <StatCard value="3–5 hours" label="Per submission" sub="The same data re entered across multiple forms every time" />
-        <StatCard value="23%" label="Error rate on submissions" sub="Delays, rework, missed coverage, and lost business" />
-        <StatCard value="$4.2 billion" label="Spent on admin every year" sub="Time that should be spent advising clients and closing business" />
+        <StatCard value="3–5 hours" label="Per submission" sub="Same data re-entered across multiple forms, carriers, and systems" />
+        <StatCard value="23%" label="Submission error rate" sub="Delays, E&O exposure, and lost accounts from preventable mistakes" />
+        <StatCard value="$4.2B" label="Spent on admin annually" sub="Industry-wide cost of process that producers never signed up for" />
       </div>
       <div className="mt-5 rounded-xl border border-border bg-card/50 p-5">
-        <h3 className="text-sm font-semibold text-foreground mb-3">Agencies outsource just to keep up:</h3>
+        <h3 className="text-sm font-semibold text-foreground mb-3">Work that gets outsourced because the tools can't keep up:</h3>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-          {["Submission preparation", "Exposure review", "Renewal prep", "Marketing prep", "COI review", "Coverage auditing"].map((item) => (
+          {["Submission preparation", "Exposure review", "Renewal prep", "Marketing prep", "COI management", "Coverage auditing"].map((item) => (
             <div key={item} className="flex items-center gap-2 text-sm text-muted-foreground">
               <span className="h-1.5 w-1.5 rounded-full bg-destructive/60 shrink-0" />
               {item}
             </div>
           ))}
         </div>
-        <p className="mt-4 text-sm font-medium text-foreground italic border-t border-border/40 pt-3">
-          The problem is not the work. The problem is the systems producers are forced to work in.
+        <p className="mt-4 text-sm font-medium text-foreground border-t border-border/40 pt-3">
+          Every hour spent on admin is an hour not spent advising clients, closing deals, or growing the book.
         </p>
       </div>
     </div>
@@ -834,17 +834,18 @@ function TheAskSlide() {
       {/* Raise Details */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
         <div className="rounded-xl border-2 border-primary/30 bg-primary/5 p-6 text-center hover-lift">
-          <p className="text-4xl font-extrabold text-foreground">$2.5M</p>
+          <p className="text-4xl font-extrabold text-foreground">$1M</p>
           <p className="text-sm font-medium text-muted-foreground mt-1">Total raise</p>
         </div>
         <div className="rounded-xl border border-border bg-card p-6 text-center hover-lift">
-          <p className="text-4xl font-extrabold text-foreground">Up to 10%</p>
-          <p className="text-sm font-medium text-muted-foreground mt-1">Minority equity offered</p>
+          <p className="text-4xl font-extrabold text-foreground">8%</p>
+          <p className="text-sm font-medium text-muted-foreground mt-1">Equity offered</p>
+          <p className="text-xs text-muted-foreground/70 mt-1">$12.5M pre-money valuation</p>
         </div>
         <div className="rounded-xl border border-border bg-card p-6 text-center hover-lift">
           <p className="text-4xl font-extrabold text-foreground">$250K</p>
           <p className="text-sm font-medium text-muted-foreground mt-1">Minimum per investor</p>
-          <p className="text-xs text-muted-foreground/70 mt-1">Maximum 10 investors</p>
+          <p className="text-xs text-muted-foreground/70 mt-1">Maximum 4 investors</p>
         </div>
       </div>
 
@@ -874,11 +875,8 @@ function TheAskSlide() {
         <p className="text-sm text-muted-foreground leading-relaxed">
           AURA is already live inside a commercial agency environment. Submissions are being processed and the intelligence layer is already learning.
         </p>
-        <p className="text-sm text-muted-foreground leading-relaxed">
-          Mergers and acquisitions changed who the industry works for. Producers were forced to operate inside broken systems, and the independence that defined this business started to disappear.
-        </p>
         <p className="text-sm font-semibold text-foreground leading-relaxed">
-          We are raising to scale what is needed to give autonomy back to the professionals that built the industry.
+          We are raising to scale what is already working — not to find product-market fit.
         </p>
       </div>
 
@@ -888,7 +886,7 @@ function TheAskSlide() {
   );
 }
 
-/* ─── Slide 17: Why AURA Exists ─── */
+/* ─── Slide 17: Why AURA Exists + Next Steps ─── */
 function WhyExistsSlide() {
   return (
     <div className="flex flex-col items-center text-center max-w-3xl mx-auto">
@@ -901,15 +899,9 @@ function WhyExistsSlide() {
         <span className="aura-gradient-text">It lost its independence.</span>
       </h2>
       <p className="text-lg text-muted-foreground leading-relaxed mb-4">
-        Mergers and acquisitions scaled the business, but they buried the people who made it work.
-      </p>
-      <p className="text-lg text-muted-foreground leading-relaxed mb-4">
         Producers were pushed into systems that slowed them down. Clients were left with less guidance and more process.
       </p>
-      <p className="text-lg text-muted-foreground leading-relaxed mb-8">
-        The relationship became secondary to the machine.
-      </p>
-      <div className="rounded-xl border-2 border-primary/30 bg-primary/5 p-6 mb-6 w-full">
+      <div className="rounded-xl border-2 border-primary/30 bg-primary/5 p-6 mb-8 w-full">
         <p className="text-lg font-semibold text-foreground leading-relaxed mb-3">
           AURA exists to change that.
         </p>
@@ -917,8 +909,40 @@ function WhyExistsSlide() {
           It puts control back where it belongs. It gives producers their leverage back. It makes the system work for the people again.
         </p>
       </div>
-      <p className="text-2xl font-bold text-foreground mt-4">Insurance runs on AURA.</p>
-      <div className="mt-10 flex items-center justify-center gap-2 opacity-60">
+
+      {/* Next Steps */}
+      <div className="rounded-xl border border-border bg-card p-6 w-full text-left mb-6">
+        <p className="text-xs font-bold text-primary uppercase tracking-widest mb-4 text-center">Next Steps</p>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="rounded-lg border border-border/60 p-4 hover-lift">
+            <p className="text-sm font-semibold text-foreground mb-1">1. Schedule a Discussion</p>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Connect directly with Doug Wenz to discuss AURA's vision, traction, and the opportunity in detail.
+            </p>
+          </div>
+          <div className="rounded-lg border border-border/60 p-4 hover-lift">
+            <p className="text-sm font-semibold text-foreground mb-1">2. Live Product Demo</p>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              See AURA in action — live submissions, AI intelligence, and the producer workflow running in a real agency.
+            </p>
+          </div>
+          <div className="rounded-lg border border-border/60 p-4 hover-lift">
+            <p className="text-sm font-semibold text-foreground mb-1">3. Letter of Intent</p>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Submit an LOI to secure your position. $250K minimum commitment, limited to 4 investors at this stage.
+            </p>
+          </div>
+        </div>
+        <div className="mt-4 pt-4 border-t border-border/40 text-center">
+          <p className="text-sm text-muted-foreground">
+            <span className="font-semibold text-foreground">Doug Wenz</span> — Founder & Active Commercial Producer
+          </p>
+          <p className="text-xs text-muted-foreground/70 mt-1">doug@buildingaura.site</p>
+        </div>
+      </div>
+
+      <p className="text-2xl font-bold text-foreground mt-2">Insurance runs on AURA.</p>
+      <div className="mt-8 flex items-center justify-center gap-2 opacity-60">
         <span className="text-lg font-bold tracking-tight text-foreground">AURA</span>
         <span className="text-[11px] text-muted-foreground tracking-widest uppercase">Risk Group</span>
       </div>
