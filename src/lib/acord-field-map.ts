@@ -707,78 +707,167 @@ export const ACORD_126_INDEX_MAP: AcordIndexMap = {
   hazard_classification_3: 43,
 };
 
-// ── ACORD 127 (2010/05) — Business Auto Section — 636 fields ──
-// Verified: 472 TXT, 164 CHK. Only [8] is CHK in the first ~200 fields.
-// CHKs appear later for coverage symbols per vehicle and yes/no questions.
-// Tab order: header → vehicle schedule → coverage limits → driver schedule → garaging → yes/no
+// ── ACORD 127 — Business Auto Section — 460 TXT fields ──
+// Verified via /pdf-diagnostic "Fill All TXT" export — field names are semantic XFA names.
+// Field names follow pattern: F[0].P{page}[0].{FieldName}_{Suffix}[0]
+// Indices verified 2026-02-21 against new unlocked 127.pdf.
 export const ACORD_127_INDEX_MAP: AcordIndexMap = {
-  // Header [0-7] TXT
-  agency_name:          0,
-  agency_customer_id:   1,
-  carrier:              2,
-  naic_code:            3,
-  policy_number:        4,
-  effective_date:       5,
-  insured_name:         6,
-  // [7] TXT = expiration / misc date
-  // [8] CHK = business type indicator
-  // Vehicle Schedule — each row: Year, Make, Model, Body Type, VIN, Cost New, Radius, GVW
-  vehicle_1_year:        9,
-  vehicle_1_make:       10,
-  vehicle_1_model:      11,
-  vehicle_1_body_type:  12,
-  vehicle_1_vin:        13,
-  vehicle_1_cost_new:   14,
-  vehicle_1_radius:     15,
-  vehicle_1_gvw:        16,
-  vehicle_2_year:       17,
-  vehicle_2_make:       18,
-  vehicle_2_model:      19,
-  vehicle_2_vin:        21,
-  vehicle_2_cost_new:   22,
-  vehicle_2_radius:     23,
-  vehicle_3_year:       25,
-  vehicle_3_make:       26,
-  vehicle_3_model:      27,
-  vehicle_3_vin:        29,
-  vehicle_3_cost_new:   30,
-  vehicle_4_year:       33,
-  vehicle_4_make:       34,
-  vehicle_4_model:      35,
-  vehicle_4_vin:        37,
-  vehicle_5_year:       41,
-  vehicle_5_make:       42,
-  vehicle_5_model:      43,
-  vehicle_5_vin:        45,
-  // Garaging address block
-  garaging_street:      65,
-  garaging_city:        66,
-  garaging_state:       67,
-  garaging_zip:         68,
-  // Driver Schedule — Name, License State, License #, DOB, Date Hired
-  driver_1_name:        80,
-  driver_1_license:     81,
-  driver_1_dob:         82,
-  driver_2_name:        88,
-  driver_2_license:     89,
-  driver_2_dob:         90,
-  driver_3_name:        96,
-  driver_3_license:     97,
-  driver_3_dob:         98,
-  driver_4_name:       104,
-  driver_4_license:    105,
-  driver_4_dob:        106,
-  driver_5_name:       112,
-  driver_5_license:    113,
-  driver_5_dob:        114,
-  // General info / remarks
-  auto_remarks:        130,
-  auto_general_remarks: 131,
-  // Signature block
-  producer_name:       135,
-  producer_license_no: 136,
-  national_producer_number: 137,
-  signature_date:      138,
+  // ── Page 1 (P1) — Header / Drivers / Questions ──
+  agency_customer_id:     0,   // Producer_CustomerIdentifier_A
+  transaction_date:       1,   // Form_CompletionDate_A
+  agency_name:            2,   // Producer_FullName_A
+  policy_number:          3,   // Policy_PolicyNumberIdentifier_A
+  effective_date:         4,   // Policy_EffectiveDate_A
+  carrier:                5,   // Insurer_FullName_A
+  naic_code:              6,   // Insurer_NAICCode_A
+  insured_name:           7,   // NamedInsured_FullName_A
+
+  // Driver A
+  driver_1_id:            9,   // Driver_ProducerIdentifier_A
+  driver_1_first_name:   10,   // Driver_GivenName_A
+  driver_1_middle:       11,   // Driver_OtherGivenNameInitial_A
+  driver_1_last_name:    12,   // Driver_Surname_A
+  driver_1_address:      13,   // Driver_MailingAddress_LineOne_A
+  driver_1_city:         14,   // Driver_MailingAddress_CityName_A
+  driver_1_state:        15,   // Driver_MailingAddress_StateOrProvinceCode_A
+  driver_1_zip:          16,   // Driver_MailingAddress_PostalCode_A
+  driver_1_sex:          17,   // Driver_GenderCode_A
+  driver_1_marital:      18,   // Driver_MaritalStatusCode_A
+  driver_1_dob:          19,   // Driver_BirthDate_A
+  driver_1_experience:   20,   // Driver_ExperienceYearCount_A
+  driver_1_licensed_year: 21,  // Driver_LicensedYear_A
+  driver_1_license:      22,   // Driver_LicenseNumberIdentifier_A
+  driver_1_ssn:          23,   // Driver_TaxIdentifier_A
+  driver_1_license_state: 24,  // Driver_LicensedStateOrProvinceCode_A
+  driver_1_hired_date:   25,   // Driver_HiredDate_A
+  driver_1_vehicle_id:   28,   // Driver_Vehicle_ProducerIdentifier_A
+  driver_1_vehicle_pct:  29,   // Driver_Vehicle_UsePercent_A
+
+  // Driver B
+  driver_2_id:           30,   // Driver_ProducerIdentifier_B
+  driver_2_first_name:   31,   // Driver_GivenName_B
+  driver_2_last_name:    33,   // Driver_Surname_B
+  driver_2_sex:          38,   // Driver_GenderCode_B
+  driver_2_marital:      39,   // Driver_MaritalStatusCode_B
+  driver_2_dob:          40,   // Driver_BirthDate_B
+  driver_2_license:      43,   // Driver_LicenseNumberIdentifier_B
+  driver_2_license_state: 45,  // Driver_LicensedStateOrProvinceCode_B
+
+  // Driver C
+  driver_3_id:           51,   // Driver_ProducerIdentifier_C
+  driver_3_first_name:   52,   // Driver_GivenName_C
+  driver_3_last_name:    54,   // Driver_Surname_C
+  driver_3_dob:          61,   // Driver_BirthDate_C
+  driver_3_license:      64,   // Driver_LicenseNumberIdentifier_C
+
+  // Driver D
+  driver_4_id:           72,   // Driver_ProducerIdentifier_D
+  driver_4_first_name:   73,   // Driver_GivenName_D
+  driver_4_last_name:    75,   // Driver_Surname_D
+  driver_4_dob:          82,   // Driver_BirthDate_D
+  driver_4_license:      85,   // Driver_LicenseNumberIdentifier_D
+
+  // Driver E
+  driver_5_id:           93,   // Driver_ProducerIdentifier_E
+  driver_5_first_name:   94,   // Driver_GivenName_E
+  driver_5_last_name:    96,   // Driver_Surname_E
+  driver_5_dob:         103,   // Driver_BirthDate_E
+  driver_5_license:     106,   // Driver_LicenseNumberIdentifier_E
+
+  // Questions on Page 1
+  over_50pct_employees_use_autos_explanation: 267, // ABACode explanation
+  vehicle_maintenance_explanation: 269, // KADCode explanation
+  vehicles_leased_explanation: 271, // ABCCode explanation
+  icc_puc_filings_explanation: 280, // AAECode explanation
+  transporting_hazmat_explanation: 282, // AAFCode explanation
+
+  // ── Page 2 (P2) — More Questions / Accidents / Additional Interest / Remarks ──
+  hold_harmless_explanation: 285, // AABCode explanation
+  vehicles_used_by_family_explanation: 287, // AACCode explanation
+  mvr_explanation: 289, // KAECode explanation
+  driver_recruiting_explanation: 291, // KAFCode explanation
+  drivers_no_wc_explanation: 293, // AAHCode explanation
+  vehicles_not_scheduled_explanation: 295, // AADCode explanation
+
+  // Accident/Conviction records
+  accident_driver_id_1:  297,  // AccidentConviction_DriverProducerIdentifier_A
+  accident_date_1:       298,  // AccidentConviction_IncidentDate_A
+  accident_description_1: 299, // AccidentConviction_IncidentDescription_A
+  accident_place_1:      300,  // AccidentConviction_PlaceOfIncident_A
+  accident_years_1:      301,  // AccidentConviction_ViolationYearCount_A
+
+  agent_inspected_explanation: 303, // ABBCode explanation
+  auto_remarks:          305,  // CommercialVehicleLineOfBusiness_RemarkText_A
+  max_dollar_value_at_risk: 306, // MaximumExposureAllVehiclesAmount_A
+
+  // Additional Interest A
+  additional_interest_name_1: 316, // AdditionalInterest_FullName_A
+  additional_interest_address_1: 317, // AdditionalInterest_MailingAddress_LineOne_A
+  additional_interest_city_1: 319, // AdditionalInterest_MailingAddress_CityName_A
+  additional_interest_state_1: 320, // AdditionalInterest_MailingAddress_StateOrProvinceCode_A
+  additional_interest_zip_1: 321, // AdditionalInterest_MailingAddress_PostalCode_A
+
+  auto_general_remarks:  346,  // CommercialVehicleLineOfBusiness_RemarkText_B
+
+  // ── Page 3 (P3) — Vehicle Schedule ──
+
+  // Vehicle A
+  vehicle_1_id:         349,   // Vehicle_ProducerIdentifier_A
+  vehicle_1_year:       350,   // Vehicle_ModelYear_A
+  vehicle_1_make:       351,   // Vehicle_ManufacturersName_A
+  vehicle_1_model:      352,   // Vehicle_ModelName_A
+  vehicle_1_body_type:  353,   // Vehicle_BodyCode_A
+  vehicle_1_vin:        354,   // Vehicle_VINIdentifier_A
+  vehicle_1_symbol:     358,   // Vehicle_SymbolCode_A
+  garaging_street:      361,   // Vehicle_PhysicalAddress_LineOne_A
+  garaging_city:        362,   // Vehicle_PhysicalAddress_CityName_A
+  garaging_county:      363,   // Vehicle_PhysicalAddress_CountyName_A
+  garaging_state:       364,   // Vehicle_PhysicalAddress_StateOrProvinceCode_A
+  garaging_zip:         365,   // Vehicle_PhysicalAddress_PostalCode_A
+  vehicle_1_gvw:        368,   // Vehicle_GrossVehicleWeight_A
+  vehicle_1_radius:     373,   // Vehicle_RadiusOfUse_A
+  vehicle_1_cost_new:   375,   // Vehicle_CostNewAmount_A
+  vehicle_1_comp_deductible: 408, // Vehicle_Coverage_ComprehensiveDeductibleAmount_A
+  vehicle_1_coll_deductible: 409, // Vehicle_Collision_DeductibleAmount_A
+  vehicle_1_premium:    413,   // Vehicle_TotalPremiumAmount_A
+
+  // Vehicle B
+  vehicle_2_id:         414,   // Vehicle_ProducerIdentifier_B
+  vehicle_2_year:       415,   // Vehicle_ModelYear_B
+  vehicle_2_make:       416,   // Vehicle_ManufacturersName_B
+  vehicle_2_model:      417,   // Vehicle_ModelName_B
+  vehicle_2_body_type:  418,   // Vehicle_BodyCode_B
+  vehicle_2_vin:        419,   // Vehicle_VINIdentifier_B
+  vehicle_2_gvw:        433,   // Vehicle_GrossVehicleWeight_B
+  vehicle_2_radius:     438,   // Vehicle_RadiusOfUse_B
+  vehicle_2_cost_new:   440,   // Vehicle_CostNewAmount_B
+  vehicle_2_premium:    478,   // Vehicle_TotalPremiumAmount_B
+
+  // Vehicle C
+  vehicle_3_id:         479,   // Vehicle_ProducerIdentifier_C
+  vehicle_3_year:       480,   // Vehicle_ModelYear_C
+  vehicle_3_make:       481,   // Vehicle_ManufacturersName_C
+  vehicle_3_model:      482,   // Vehicle_ModelName_C
+  vehicle_3_vin:        484,   // Vehicle_VINIdentifier_C
+  vehicle_3_gvw:        498,   // Vehicle_GrossVehicleWeight_C
+  vehicle_3_cost_new:   505,   // Vehicle_CostNewAmount_C
+  vehicle_3_premium:    543,   // Vehicle_TotalPremiumAmount_C
+
+  // Vehicle D
+  vehicle_4_id:         544,   // Vehicle_ProducerIdentifier_D
+  vehicle_4_year:       545,   // Vehicle_ModelYear_D
+  vehicle_4_make:       546,   // Vehicle_ManufacturersName_D
+  vehicle_4_model:      547,   // Vehicle_ModelName_D
+  vehicle_4_vin:        549,   // Vehicle_VINIdentifier_D
+  vehicle_4_gvw:        563,   // Vehicle_GrossVehicleWeight_D
+  vehicle_4_cost_new:   570,   // Vehicle_CostNewAmount_D
+  vehicle_4_premium:    608,   // Vehicle_TotalPremiumAmount_D
+
+  // Signature
+  producer_name:        610,   // Producer_AuthorizedRepresentative_FullName_A
+  producer_license_no:  611,   // Producer_StateLicenseIdentifier_A
+  signature_date:       613,   // NamedInsured_SignatureDate_A
+  national_producer_number: 614, // Producer_NationalIdentifier_A
 };
 
 // ── ACORD 130 (2010/05) — Workers Compensation — 486 fields ──
