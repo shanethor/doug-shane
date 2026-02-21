@@ -199,33 +199,19 @@ export default function PdfDiagnostic() {
     setLoading(false);
   }, [selectedForm]);
 
-  /** Fill ALL TXT fields with their index number and download the PDF */
-  const fillAllAndDownload = useCallback(async () => {
-    const path = FILLABLE_PDF_PATHS[selectedForm];
-    if (!path) return;
-    setLoading(true);
-    try {
-      const resp = await fetch(path);
-      const bytes = await resp.arrayBuffer();
-      const doc = await PDFDocument.load(new Uint8Array(bytes), { ignoreEncryption: true, updateMetadata: false });
-      const form = doc.getForm();
-      const allFields = form.getFields();
-      allFields.forEach((f, i) => {
-        if (f instanceof PDFTextField) {
-          try { f.setText(`[${i}]`); } catch {}
-        }
-      });
-      const pdfBytes = await doc.save();
-      const blob = new Blob([pdfBytes.buffer as ArrayBuffer], { type: "application/pdf" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${selectedForm}-ALL-INDICES.pdf`;
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch (e) { alert("Error: " + e); }
-    setLoading(false);
-  }, [selectedForm]);
+  /** Export all TXT field indices as a readable text file */
+  const fillAllAndDownload = useCallback(() => {
+    const txtOnly = fields.filter(f => f.type === "TXT");
+    const lines = txtOnly.map(f => `Index ${f.index}: "${f.name}"`);
+    const content = `ACORD ${selectedForm} — All TXT Field Indices\n${"=".repeat(50)}\nTotal TXT fields: ${txtOnly.length}\n\n${lines.join("\n")}`;
+    const blob = new Blob([content], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${selectedForm}-TXT-INDICES.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [selectedForm, fields]);
 
   const filtered = search
     ? fields.filter(f => String(f.index).includes(search) || f.type.toLowerCase().includes(search.toLowerCase()))
