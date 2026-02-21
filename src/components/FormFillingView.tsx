@@ -105,6 +105,13 @@ export default function FormFillingView({ submissionId, initialMessages, initial
   // Track whether Adobe viewer is ready (has APIs) for the current form
   const [adobeReady, setAdobeReady] = useState(false);
 
+  // ── Debounced viewer remount: prevent remount on every keystroke ──
+  // viewerRevision increments after 1.5s of no panel edits → triggers PDF remount
+  const [viewerRevision, setViewerRevision] = useState(0);
+  const viewerRevisionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Flag: true when the latest formData change originated from the PDF viewer
+  const editFromPdfRef = useRef(false);
+
   // Swipe gesture support
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const swipeContainerRef = useRef<HTMLDivElement>(null);
@@ -177,19 +184,36 @@ export default function FormFillingView({ submissionId, initialMessages, initial
   }, []);
 
   // Compute prefill data — memoized to avoid unnecessary recalculations
+  // Compute prefill data from live formData — used at viewer mount time
   const prefillByIndex = activeFormId && activeFormId !== "all"
-    ? { ...buildPrefillByIndex(activeFormId, formData), ...(activeFormId === "acord-125" ? { 1: "HELLO WORLD TEST" } : {}) }
+    ? buildPrefillByIndex(activeFormId, formData)
     : {};
-  console.warn(`[FormFilling] prefillByIndex for ${activeFormId}: ${Object.keys(prefillByIndex).length} entries, dbLoaded=${dbLoaded}, formData keys=${Object.keys(formData).filter(k => formData[k]).length}`);
 
-  // Generate a stable key for prefill data — remount viewer when data actually changes
-  const prefillJson = JSON.stringify(prefillByIndex);
-  const prefillKey = `${activeFormId}-${prefillJson.length}-${dbLoaded}`;
+  // Viewer key: only remounts on form switch, initial DB load, or debounced revision
+  const prefillKey = `${activeFormId}-${dbLoaded}-${viewerRevision}`;
 
   // Reset adobeReady when form changes (new Adobe instance mounts)
   useEffect(() => {
     setAdobeReady(false);
   }, [activeFormId]);
+
+  // Debounced viewer refresh: after 1.5s of no panel edits, bump revision to remount viewer
+  useEffect(() => {
+    if (!dbLoaded) return;
+    // If the edit came from the PDF, don't trigger a remount (would cause a loop)
+    if (editFromPdfRef.current) {
+      editFromPdfRef.current = false;
+      return;
+    }
+    if (viewerRevisionTimerRef.current) clearTimeout(viewerRevisionTimerRef.current);
+    viewerRevisionTimerRef.current = setTimeout(() => {
+      setViewerRevision((r) => r + 1);
+    }, 1500);
+    return () => {
+      if (viewerRevisionTimerRef.current) clearTimeout(viewerRevisionTimerRef.current);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData, dbLoaded]);
 
   /**
    * Build reverse map: actual PDF field name (as Adobe returns it) → internal key.
@@ -258,6 +282,8 @@ export default function FormFillingView({ submissionId, initialMessages, initial
 
   // Handle field changes from Adobe viewer — reverse-map PDF field name → internal key
   const handleAdobeFieldChange = useCallback((formId: string, pdfFieldName: string, value: string) => {
+    // Flag that this change came from the PDF so the debounce effect skips remounting
+    editFromPdfRef.current = true;
     const reverseMap = getReverseMap(formId);
     // Try exact match, then case-insensitive
     const internalKey = reverseMap[pdfFieldName]
