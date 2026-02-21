@@ -610,10 +610,9 @@ export const ACORD_FIELD_MAPS: Record<string, AcordFieldMap> = {
 
 /**
  * Paths to the official fillable PDFs in /public/acord-fillable/
- * NOTE: ACORD 125 and ACORD 25 are XFA-format and excluded until
- * AcroForm-compatible versions are uploaded.
  */
 export const FILLABLE_PDF_PATHS: Record<string, string> = {
+  "acord-125": "/acord-fillable/125.pdf",
   "acord-126": "/acord-fillable/126.pdf",
   "acord-127": "/acord-fillable/127.pdf",
   "acord-130": "/acord-fillable/130.pdf",
