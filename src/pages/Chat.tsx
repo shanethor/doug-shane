@@ -472,9 +472,9 @@ export default function Chat() {
         },
       ]);
 
+      // Route through ExtractionSummary so AI-inferred data gets persisted properly
       setTimeout(() => {
-        setPendingSubmissionId(null);
-        setActiveSubmissionId(sub.id);
+        setPendingSubmissionId(sub.id);
         setIsLoading(false);
       }, 1200);
     } catch (err: any) {

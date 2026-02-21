@@ -47,7 +47,8 @@ export default function ExtractionSummary({ submissionId, requestedFormIds = [],
     ? ACORD_FORM_LIST.filter(f => requestedFormIds.includes(f.id))
     : ACORD_FORM_LIST;
 
-  const computeStats = async (appData: Record<string, any>) => {
+  const computeStats = async (appData: Record<string, any>, appIdParam?: string) => {
+    const idToUse = appIdParam || applicationId;
     const { data: profile } = await supabase
       .from("profiles")
       .select("full_name, agency_name, phone, form_defaults")
@@ -84,18 +85,18 @@ export default function ExtractionSummary({ submissionId, requestedFormIds = [],
     }
 
     // Persist AI-inferred data back to DB so FormFillingView doesn't re-run inference
-    if (applicationId && Object.keys(mergedAllForms).length > 0) {
+    if (idToUse && Object.keys(mergedAllForms).length > 0) {
       const { data: existing } = await supabase
         .from("insurance_applications")
         .select("form_data")
-        .eq("id", applicationId)
+        .eq("id", idToUse)
         .single();
       const existingData = (existing?.form_data || {}) as Record<string, any>;
       const updatedData = { ...existingData, ...mergedAllForms };
       await supabase
         .from("insurance_applications")
         .update({ form_data: updatedData })
-        .eq("id", applicationId);
+        .eq("id", idToUse);
     }
 
     formStats.sort((a, b) => (b.filled > 0 ? 1 : 0) - (a.filled > 0 ? 1 : 0) || b.pct - a.pct);
@@ -136,7 +137,7 @@ export default function ExtractionSummary({ submissionId, requestedFormIds = [],
       }
 
       setApplicationId(appId);
-      await computeStats(appData);
+      await computeStats(appData, appId);
       setLoading(false);
     };
 
