@@ -442,6 +442,44 @@ export default function FormFillingView({ submissionId, initialMessages, initial
   // Send chat message
   const INFER_KEYWORDS = /\b(infer|auto.?fill|fill.?what.?you.?can|fill.?missing|fill.?fields|fill.?gaps|update.?fields|run.?ai|ai.?fill|use.?ai)\b/i;
 
+  /**
+   * Extract field values from natural language user messages.
+   * Handles patterns like "Client email: shane@example.com", "Phone: 555-1234", etc.
+   */
+  const extractInlineFieldValues = (text: string): Record<string, string> => {
+    const updates: Record<string, string> = {};
+    const t = text.trim();
+
+    // Email patterns: "client email: X", "email: X", "email is X", "their email is X"
+    const emailMatch = t.match(/(?:client\s*)?e[-.]?mail(?:\s*address)?[\s:=]+\s*([^\s,;]+@[^\s,;]+)/i)
+      || t.match(/(?:their|the|customer|client)\s+email\s+(?:is|=)\s+([^\s,;]+@[^\s,;]+)/i);
+    if (emailMatch) updates.contact_email = emailMatch[1].trim();
+
+    // Phone patterns
+    const phoneMatch = t.match(/(?:client\s*)?(?:phone|tel|cell|mobile)(?:\s*(?:number|#))?[\s:=]+\s*([\d\s()+-]{7,20})/i)
+      || t.match(/(?:their|the|customer|client)\s+(?:phone|number)\s+(?:is|=)\s+([\d\s()+-]{7,20})/i);
+    if (phoneMatch) updates.contact_phone = phoneMatch[1].trim();
+
+    // Contact name patterns
+    const nameMatch = t.match(/(?:client\s*)?(?:contact\s*name|client\s*name|insured\s*name)[\s:=]+\s*([A-Z][^\n,;]{2,40})/i)
+      || t.match(/(?:the\s+)?(?:contact|client|insured)\s+(?:is|name\s+is)\s+([A-Z][^\n,;]{2,40})/i);
+    if (nameMatch) updates.contact_name = nameMatch[1].trim();
+
+    // Company name
+    const companyMatch = t.match(/(?:company|business)\s*(?:name)?[\s:=]+\s*([A-Z][^\n,;]{2,40})/i);
+    if (companyMatch) updates.applicant_name = companyMatch[1].trim();
+
+    // FEIN
+    const feinMatch = t.match(/(?:fein|ein|tax\s*id)[\s:=]+\s*(\d{2}[\s-]?\d{7})/i);
+    if (feinMatch) updates.fein = feinMatch[1].trim();
+
+    // Address patterns
+    const addressMatch = t.match(/(?:mailing\s*)?address[\s:=]+\s*(.{10,100})/i);
+    if (addressMatch) updates.mailing_address = addressMatch[1].trim().replace(/[,;.]$/, "");
+
+    return updates;
+  };
+
   const sendMessage = async (text: string) => {
     if (!text.trim() || isLoading) return;
 
@@ -451,6 +489,20 @@ export default function FormFillingView({ submissionId, initialMessages, initial
       runAiInference();
       return;
     }
+
+    // Try to extract field values directly from user message (e.g. "Client email: shane@example.com")
+    const inlineUpdates = extractInlineFieldValues(text);
+    if (Object.keys(inlineUpdates).length > 0) {
+      setFormData(prev => {
+        const next = { ...prev, ...inlineUpdates };
+        formDataRef.current = next;
+        if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+        autoSaveTimer.current = setTimeout(() => persistFormData(formDataRef.current), 800);
+        return next;
+      });
+      toast.success(`Filled ${Object.keys(inlineUpdates).length} field(s) from your message`);
+    }
+
     const userMsg: Msg = { role: "user", content: text.trim() };
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
