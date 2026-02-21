@@ -292,6 +292,67 @@ export default function FormFillingView({ submissionId, initialMessages, initial
     handleFieldChange(internalKey, value);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [getReverseMap]);
+  /**
+   * PDF→Panel sync via pdf-lib extraction.
+   * When Adobe saves (auto-polled every 3s), we receive the PDF bytes,
+   * parse them with pdf-lib, extract all field values by index, diff
+   * against current formData, and sync any changes back to the left panel.
+   */
+  const handleSavedPdfBytes = useCallback(async (formId: string, bytes: Uint8Array) => {
+    // Store bytes for download
+    setSavedPdfBytesMap(prev => ({ ...prev, [formId]: bytes }));
+
+    // Extract field values from the saved PDF
+    const indexMap = ACORD_INDEX_MAPS[formId];
+    if (!indexMap) return;
+
+    try {
+      const { PDFDocument } = await import("pdf-lib");
+      const doc = await PDFDocument.load(bytes, { ignoreEncryption: true });
+      const form = doc.getForm();
+      const allFields = form.getFields();
+
+      const updates: Record<string, string> = {};
+      for (const [internalKey, idx] of Object.entries(indexMap)) {
+        const field = allFields[idx];
+        if (!field) continue;
+        try {
+          const typeName = field.constructor.name;
+          let pdfValue = "";
+          if (typeName.startsWith("PDFTextField")) {
+            pdfValue = (field as any).getText() || "";
+          } else if (typeName.startsWith("PDFCheckBox")) {
+            pdfValue = (field as any).isChecked() ? "true" : "false";
+          } else if (typeName.startsWith("PDFDropdown")) {
+            const selected = (field as any).getSelected();
+            pdfValue = Array.isArray(selected) ? selected[0] || "" : String(selected || "");
+          }
+
+          const currentValue = String(formDataRef.current[internalKey] || "");
+          // Only sync non-empty values that differ from current state
+          if (pdfValue && pdfValue !== currentValue) {
+            updates[internalKey] = pdfValue;
+          }
+        } catch (_) {}
+      }
+
+      if (Object.keys(updates).length > 0) {
+        // Flag as PDF-origin to prevent remount loop
+        editFromPdfRef.current = true;
+        setFormData(prev => {
+          const next = { ...prev, ...updates };
+          formDataRef.current = next;
+          // Debounce DB persist
+          if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
+          autoSaveTimer.current = setTimeout(() => persistFormData(formDataRef.current), 800);
+          return next;
+        });
+      }
+    } catch (e) {
+      // Silently fail — polling will retry
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const scrollChatToBottom = useCallback(() => {
     if (chatScrollRef.current) chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
@@ -1123,7 +1184,7 @@ export default function FormFillingView({ submissionId, initialMessages, initial
                pdfUrl={FILLABLE_PDF_PATHS[activeFormId]}
                fileName={`${activeForm.name}.pdf`}
                onFieldChange={(pdfFieldName, value) => handleAdobeFieldChange(activeFormId, pdfFieldName, value)}
-               onSaveBytes={(bytes) => setSavedPdfBytesMap(prev => ({ ...prev, [activeFormId]: bytes }))}
+               onSaveBytes={(bytes) => handleSavedPdfBytes(activeFormId, bytes)}
                onReady={() => setAdobeReady(true)}
                prefillByIndex={prefillByIndex}
              />
