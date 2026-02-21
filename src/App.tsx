@@ -18,7 +18,10 @@ import NotFound from "./pages/NotFound";
 import Deck from "./pages/Deck";
 import PdfDiagnostic from "./pages/PdfDiagnostic";
 import FormTest from "./pages/FormTest";
-
+import Pipeline from "./pages/Pipeline";
+import LeadDetail from "./pages/LeadDetail";
+import ProducerDashboard from "./pages/ProducerDashboard";
+import Approvals from "./pages/Approvals";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -42,6 +45,10 @@ const App = () => (
           <Route path="/deck" element={<Deck />} />
           <Route path="/pdf-diagnostic" element={<PdfDiagnostic />} />
           <Route path="/form-test" element={<ProtectedRoute><FormTest /></ProtectedRoute>} />
+          <Route path="/pipeline" element={<ProtectedRoute><Pipeline /></ProtectedRoute>} />
+          <Route path="/pipeline/:leadId" element={<ProtectedRoute><LeadDetail /></ProtectedRoute>} />
+          <Route path="/my-dashboard" element={<ProtectedRoute><ProducerDashboard /></ProtectedRoute>} />
+          <Route path="/approvals" element={<ProtectedRoute><Approvals /></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
