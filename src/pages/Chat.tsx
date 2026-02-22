@@ -9,7 +9,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import SubmissionReviewPanel from "@/components/SubmissionReviewPanel";
 import FormFillingView from "@/components/FormFillingView";
 import ExtractionSummary from "@/components/ExtractionSummary";
-import { Send, FileUp, ClipboardList, Search, Loader2, Paperclip, X, Download, Mic, MicOff, Globe, Lightbulb, ChevronDown, ChevronUp, FileText, BrainCircuit, PenLine, Users, BarChart3 } from "lucide-react";
+import { Send, FileUp, ClipboardList, Search, Loader2, Paperclip, X, Download, Mic, MicOff, Globe, Lightbulb, ChevronDown, ChevronUp, FileText, BrainCircuit, PenLine, Users, BarChart3, Mail } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { ACORD_FORM_LIST } from "@/lib/acord-forms";
@@ -1013,10 +1014,10 @@ export default function Chat() {
             <div className="flex flex-col items-center justify-center min-h-full gap-6 px-4 py-12">
               <div className="text-center space-y-3">
                 <h1 className="text-4xl tracking-tight aura-gradient-text">
-                  What are we working on?
+                  I'm AURA — your insurance trained AI co-pilot
                 </h1>
                 <p className="text-muted-foreground text-sm max-w-md">
-                  I'm <span className="font-semibold text-foreground">AURA</span> — your AI co-pilot for submissions, ACORD forms, and coverage reviews.
+                  Submissions, ACORD forms, pipeline management, and coverage reviews — all in one place.
                 </p>
               </div>
 
@@ -1112,6 +1113,50 @@ export default function Chat() {
                     <span className="text-sm font-medium">{s.label}</span>
                   </button>
                 ))}
+              </div>
+
+              {/* Feature action boxes */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-2xl">
+                <button
+                  onClick={() => navigate("/pipeline")}
+                  className="group flex items-start gap-3 rounded-xl border bg-card p-4 text-left hover:shadow-md hover:border-primary/30 transition-all"
+                >
+                  <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                    <Users className="h-4 w-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">Add a lead to our sales pipeline.</p>
+                    <p className="text-xs text-muted-foreground mt-1">Track prospects through quoting, presenting, and closing stages.</p>
+                  </div>
+                </button>
+                <button
+                  onClick={() => navigate("/approvals")}
+                  className="group flex items-start gap-3 rounded-xl border bg-card p-4 text-left hover:shadow-md hover:border-primary/30 transition-all"
+                >
+                  <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                    <BarChart3 className="h-4 w-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">Manage your production and renewals.</p>
+                    <p className="text-xs text-muted-foreground mt-1">View approved policies, pending approvals, and upcoming renewal dates.</p>
+                  </div>
+                </button>
+              </div>
+
+              {/* Coming Soon — Email in chat */}
+              <div className="w-full max-w-2xl relative rounded-xl border border-dashed border-muted-foreground/30 bg-muted/30 p-4 opacity-70">
+                <Badge variant="outline" className="absolute top-3 right-3 text-[10px] uppercase tracking-wider font-sans bg-muted text-muted-foreground border-muted-foreground/30">
+                  Coming Soon
+                </Badge>
+                <div className="flex items-start gap-3">
+                  <div className="h-9 w-9 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                    <Mail className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">Email in your chat request to have a client ready to go when you get back to the office.</p>
+                    <p className="text-xs text-muted-foreground mt-1">Send client details via email and AURA will pre-fill everything before you arrive.</p>
+                  </div>
+                </div>
               </div>
 
               {/* Intent buttons — shown in non-training mode when user picks "Fill ACORD form" */}
