@@ -26,6 +26,7 @@ import {
 import { Plus, Search, CheckCircle, GripVertical } from "lucide-react";
 import { toast } from "sonner";
 import { LossRunBadge } from "@/components/LossRunBadge";
+import { ClientDocuments } from "@/components/ClientDocuments";
 
 type Lead = {
   id: string;
@@ -465,9 +466,12 @@ export default function Pipeline() {
                             {lead.contact_name && (
                               <p className="text-xs text-muted-foreground font-sans truncate ml-[18px]">{lead.contact_name}</p>
                             )}
-                            {lead.business_type && (
-                              <p className="text-[10px] text-muted-foreground font-sans mt-1 ml-[18px]">{lead.business_type}</p>
-                            )}
+                            <div className="flex items-center gap-1 ml-[18px] mt-0.5">
+                              <ClientDocuments leadId={lead.id} submissionId={lead.submission_id} compact />
+                              {lead.business_type && (
+                                <span className="text-[10px] text-muted-foreground font-sans">{lead.business_type}</span>
+                              )}
+                            </div>
                           </div>
                           {lead.has_approved_policy && (
                             <CheckCircle className="h-3.5 w-3.5 text-success shrink-0 mt-0.5" />

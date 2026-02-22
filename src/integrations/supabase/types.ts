@@ -83,6 +83,57 @@ export type Database = {
         }
         Relationships: []
       }
+      client_documents: {
+        Row: {
+          created_at: string
+          document_type: string
+          file_name: string
+          file_size: number | null
+          file_url: string
+          id: string
+          lead_id: string | null
+          submission_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          document_type?: string
+          file_name: string
+          file_size?: number | null
+          file_url: string
+          id?: string
+          lead_id?: string | null
+          submission_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          document_type?: string
+          file_name?: string
+          file_size?: number | null
+          file_url?: string
+          id?: string
+          lead_id?: string | null
+          submission_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_documents_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_documents_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "business_submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       custom_form_templates: {
         Row: {
           created_at: string

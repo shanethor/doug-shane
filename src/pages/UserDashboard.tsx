@@ -13,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { FilePlus, FileText, MoreVertical, Copy, Pencil, Trash2, Search, Edit3, ArrowRight } from "lucide-react";
+import { ClientDocuments } from "@/components/ClientDocuments";
 import { toast } from "sonner";
 
 const statusColor: Record<string, string> = {
@@ -276,6 +277,7 @@ export default function UserDashboard() {
                       </Link>
                     );
                   })()}
+                  <ClientDocuments submissionId={s.id} compact />
                   {s.coverage_lines && (s.coverage_lines as string[]).length > 0 && (
                     <span className="text-[10px] text-muted-foreground font-sans">
                       {(s.coverage_lines as string[]).join(", ")}

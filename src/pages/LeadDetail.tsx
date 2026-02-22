@@ -27,6 +27,7 @@ import { ArrowLeft, Plus, FileText, CheckCircle, Clock, XCircle, MessageSquare, 
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LossRunsTab } from "@/components/LossRunsTab";
+import { ClientDocuments } from "@/components/ClientDocuments";
 
 const STAGE_COLORS: Record<string, string> = {
   prospect: "bg-muted text-muted-foreground",
@@ -308,6 +309,7 @@ export default function LeadDetail() {
       <Tabs defaultValue="overview" className="mt-6">
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="documents">Documents</TabsTrigger>
           <TabsTrigger value="loss-runs" data-tab-loss-runs>Loss Runs</TabsTrigger>
           <TabsTrigger value="notes">Notes</TabsTrigger>
         </TabsList>
@@ -409,6 +411,16 @@ export default function LeadDetail() {
                 </CardContent>
               </Card>
             </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="documents">
+          <div className="mt-4 max-w-2xl">
+            <h2 className="text-xl mb-4">Client Documents</h2>
+            <p className="text-sm text-muted-foreground font-sans mb-4">
+              Attach loss runs, supplemental forms, previous coverage docs, and more. These are shared across all views for this client.
+            </p>
+            <ClientDocuments leadId={leadId!} submissionId={lead.submission_id} />
           </div>
         </TabsContent>
 
