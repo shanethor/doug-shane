@@ -171,7 +171,7 @@ const FillablePdfViewer = forwardRef<FillablePdfViewerHandle, FillablePdfViewerP
           {
             autoSaveFrequency: 3,
             enableFocusPolling: true,
-            showSaveButton: false,
+            showSaveButton: true,
           }
         );
 
