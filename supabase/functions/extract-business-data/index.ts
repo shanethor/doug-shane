@@ -67,6 +67,13 @@ serve(async (req) => {
 
     const systemPrompt = `You are an expert insurance underwriter assistant. Extract data from the provided business or policy information and return ONLY valid JSON with no markdown fences, no explanation — just raw JSON.
 
+CRITICAL ANTI-HALLUCINATION RULES:
+- NEVER fabricate, guess, or invent data. If information is not explicitly present in the provided text or documents, leave the field as an empty string "".
+- Do NOT fill in sample/placeholder data like "123 Main St", "Acme Corp", "John Smith", or generic SIC/NAICS codes.
+- Do NOT infer employee counts, revenue, addresses, phone numbers, or any other factual data that is not stated.
+- If the user provided no business information (empty description, no documents), return ALL fields as empty strings.
+- Only populate a field if you can point to the specific text in the input that contains that value.
+
 Return this exact structure:
 {
   "form_data": {
@@ -101,15 +108,15 @@ Return this exact structure:
 }
 
 EXTRACTION RULES:
-- Return ALL fields even if empty string
+- Return ALL fields even if empty string — but ONLY populate with data actually found in input
 - All scalar values must be strings — booleans as "true"/"false"
 - Dates → YYYY-MM-DD, currencies → plain number without $ or commas
-- lob_* flags: set "true" if that coverage type exists in the document
-- vehicles[]: include ALL vehicles — each: { year, make, model, vin, body_type, stated_amount, garaging_zip }
-- drivers[]: include ALL drivers — each: { name, dob, license, license_state }
+- lob_* flags: set "true" ONLY if that coverage type is explicitly mentioned in the document
+- vehicles[]: include ALL vehicles found — each: { year, make, model, vin, body_type, stated_amount, garaging_zip }
+- drivers[]: include ALL drivers found — each: { name, dob, license, license_state }
 - gaps[]: list fields that are missing and important — { field, question, priority: required|recommended|optional }
 - If document is an insurance policy, extract carrier, policy number, limits, premiums, and all schedules
-- Be exhaustive — extract everything you can see in the document`;
+- If no meaningful business data is provided, return all fields as empty strings and list all critical fields as gaps`;
 
     const userPromptText = `Extract all insurance data from the following document(s).
 
