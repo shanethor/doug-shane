@@ -12,6 +12,7 @@ export async function ensurePipelineLead({
   phone,
   state,
   businessType,
+  submissionId,
 }: {
   userId: string;
   accountName: string;
@@ -20,6 +21,7 @@ export async function ensurePipelineLead({
   phone?: string | null;
   state?: string | null;
   businessType?: string | null;
+  submissionId?: string | null;
 }): Promise<string | null> {
   if (!accountName?.trim()) return null;
 
@@ -47,7 +49,8 @@ export async function ensurePipelineLead({
       lead_source: "client_submission",
       owner_user_id: userId,
       stage: "quoting" as any,
-    })
+      submission_id: submissionId || null,
+    } as any)
     .select("id")
     .single();
 

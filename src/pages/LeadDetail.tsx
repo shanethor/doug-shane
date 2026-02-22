@@ -23,7 +23,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { ArrowLeft, Plus, FileText, CheckCircle, Clock, XCircle, MessageSquare, Send } from "lucide-react";
+import { ArrowLeft, Plus, FileText, CheckCircle, Clock, XCircle, MessageSquare, Send, Edit3 } from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LossRunsTab } from "@/components/LossRunsTab";
@@ -122,6 +122,19 @@ export default function LeadDetail() {
       return;
     }
 
+    // Snapshot form_data from the linked submission (if any)
+    let formDataSnapshot: Record<string, any> | null = null;
+    if (lead?.submission_id) {
+      const { data: app } = await supabase
+        .from("insurance_applications")
+        .select("form_data")
+        .eq("submission_id", lead.submission_id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (app?.form_data) formDataSnapshot = app.form_data as Record<string, any>;
+    }
+
     const { data, error } = await supabase
       .from("policies")
       .insert({
@@ -132,7 +145,8 @@ export default function LeadDetail() {
         policy_number: newPolicy.policy_number,
         effective_date: newPolicy.effective_date,
         annual_premium: parseFloat(newPolicy.annual_premium),
-      })
+        ...(formDataSnapshot ? { form_data_snapshot: formDataSnapshot } : {}),
+      } as any)
       .select()
       .single();
 
@@ -201,6 +215,12 @@ export default function LeadDetail() {
           </div>
 
           <div className="flex gap-2">
+            {lead.submission_id && (
+              <Button size="sm" variant="outline" className="gap-1.5" onClick={() => navigate(`/acord/acord-125/${lead.submission_id}`)}>
+                <Edit3 className="h-3.5 w-3.5" />
+                Open Workspace
+              </Button>
+            )}
             {!hasApprovedPolicy && (
               <Select value={lead.stage} onValueChange={moveStage}>
                 <SelectTrigger className="w-[140px] h-9 text-xs">

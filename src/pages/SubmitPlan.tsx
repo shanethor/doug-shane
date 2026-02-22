@@ -87,6 +87,7 @@ export default function SubmitPlan() {
       await ensurePipelineLead({
         userId: user.id,
         accountName: companyName || result?.form_data?.applicant_name || "New Client",
+        submissionId: submission.id,
       });
 
       toast.success("Business plan processed! Review your application.");
