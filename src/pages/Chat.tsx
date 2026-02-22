@@ -9,7 +9,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import SubmissionReviewPanel from "@/components/SubmissionReviewPanel";
 import FormFillingView from "@/components/FormFillingView";
 import ExtractionSummary from "@/components/ExtractionSummary";
-import { Send, FileUp, ClipboardList, Search, Loader2, Paperclip, X, Download, Mic, MicOff, Globe, Lightbulb, ChevronDown, ChevronUp, FileText, BrainCircuit, PenLine } from "lucide-react";
+import { Send, FileUp, ClipboardList, Search, Loader2, Paperclip, X, Download, Mic, MicOff, Globe, Lightbulb, ChevronDown, ChevronUp, FileText, BrainCircuit, PenLine, Users, BarChart3 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { ACORD_FORM_LIST } from "@/lib/acord-forms";
@@ -31,6 +31,7 @@ const SUGGESTIONS = [
   { icon: FileUp, label: "Submit a new client", message: "I want to submit a new client for coverage." },
   { icon: Globe, label: "Scrape a company website", message: "I have a client's website URL — can you pull their business info from it?" },
   { icon: ClipboardList, label: "Fill an ACORD form", message: "Help me fill out an ACORD form for a client." },
+  { icon: Users, label: "Manage my pipeline", message: "Help me manage my sales pipeline — I need to move some leads and update statuses." },
   { icon: Search, label: "Review a submission", message: "I need to review an existing client submission." },
 ];
 
@@ -117,7 +118,41 @@ function parseButtons(text: string): ButtonMarker[] {
 }
 
 function stripMarkers(text: string): string {
-  return text.replace(/\[FIELD:[^\]]+\]/g, "").replace(/\[BUTTON:[^\]]+\]/g, "").replace(/\[SUBMISSION_ID:[^\]]+\]/g, "").trim();
+  return text
+    .replace(/\[FIELD:[^\]]+\]/g, "")
+    .replace(/\[BUTTON:[^\]]+\]/g, "")
+    .replace(/\[SUBMISSION_ID:[^\]]+\]/g, "")
+    .replace(/\[PIPELINE_ACTION:[^\]]+\]/g, "")
+    .trim();
+}
+
+type PipelineAction = {
+  type: "move_lead" | "update_lead" | "delete_lead";
+  account_name: string;
+  stage?: string;
+  field?: string;
+  value?: string;
+};
+
+/** Parse pipeline action markers from AI response like [PIPELINE_ACTION:move_lead:CompanyName:lost] */
+function parsePipelineActions(text: string): PipelineAction[] {
+  const regex = /\[PIPELINE_ACTION:([^:]+):([^:\]]+)(?::([^:\]]+))?(?::([^\]]+))?\]/g;
+  const actions: PipelineAction[] = [];
+  let m: RegExpExecArray | null;
+  while ((m = regex.exec(text)) !== null) {
+    const action: PipelineAction = {
+      type: m[1] as PipelineAction["type"],
+      account_name: m[2],
+    };
+    if (m[1] === "move_lead") {
+      action.stage = m[3];
+    } else if (m[1] === "update_lead") {
+      action.field = m[3];
+      action.value = m[4];
+    }
+    actions.push(action);
+  }
+  return actions;
 }
 
 /** Try to extract intake field values from a user message */
@@ -515,10 +550,19 @@ export default function Chat() {
       || /how\s+(do|does|can|would|should)\b/.test(t);
   };
 
+  const isPipelineIntent = (text: string) => {
+    const t = text.trim().toLowerCase();
+    return /\b(move|update|change|set|mark)\b.+\b(lead|pipeline|stage|prospect|quoting|presenting|lost|dead|renewal|production)\b/.test(t)
+      || /\b(pipeline|production|renewal|dead\s*lead)/i.test(t)
+      || /\bmanage\s*(my\s*)?(pipeline|leads?|production|renewals?)\b/.test(t);
+  };
+
   const isFormFillingIntent = (text: string) => {
     const t = text.trim().toLowerCase();
     // First: if this looks like an informational question, let AI handle it naturally
     if (isInformationalQuery(text)) return false;
+    // Pipeline/production management should not trigger form filling
+    if (isPipelineIntent(text)) return false;
     // Match forms, ACORD, coverage lines, submission intent, or specific form/coverage mentions
     return /\bforms?\b|\bacord\b|\bsubmit|\bnew\s*client|\binsurance\b|\bcoverage\b|\bapplication\b/.test(t)
       || /need\s*(a|an|to|help|forms?)|\bstart\b|\bget\s*start|\bfill\b|\bcreate\b/.test(t)
@@ -621,6 +665,12 @@ export default function Chat() {
         }
       }
       
+      // Execute pipeline actions if present
+      const pipelineActions = parsePipelineActions(finalText);
+      if (pipelineActions.length > 0) {
+        executePipelineActions(pipelineActions);
+      }
+
       setMessages((prev) => {
         const last = prev[prev.length - 1];
         if (last?.role === "assistant") {
@@ -655,6 +705,81 @@ export default function Chat() {
       killTypewriter();
       toast({ variant: "destructive", title: "Connection error", description: "Could not reach the assistant." });
       setIsLoading(false);
+    }
+  };
+
+  /** Execute pipeline actions parsed from AI response */
+  const executePipelineActions = async (actions: PipelineAction[]) => {
+    if (!user) return;
+    for (const action of actions) {
+      try {
+        if (action.type === "move_lead" && action.stage) {
+          // Find lead by account name (case-insensitive)
+          const { data: leads } = await supabase
+            .from("leads")
+            .select("id, account_name, stage")
+            .eq("owner_user_id", user.id)
+            .ilike("account_name", `%${action.account_name}%`);
+
+          if (leads && leads.length > 0) {
+            const validStages = ["prospect", "quoting", "presenting", "lost"];
+            const targetStage = action.stage.toLowerCase().replace(/\s+/g, "_");
+            const mapped = targetStage === "dead" || targetStage === "dead_leads" ? "lost" : targetStage;
+            if (validStages.includes(mapped)) {
+              for (const lead of leads) {
+                await supabase
+                  .from("leads")
+                  .update({ stage: mapped as any, updated_at: new Date().toISOString() })
+                  .eq("id", lead.id);
+              }
+              toast({ title: "Pipeline updated", description: `Moved ${leads.length} lead(s) to "${mapped}".` });
+            }
+          } else {
+            toast({ variant: "destructive", title: "Lead not found", description: `No lead matching "${action.account_name}".` });
+          }
+        } else if (action.type === "update_lead" && action.field && action.value) {
+          const { data: leads } = await supabase
+            .from("leads")
+            .select("id, account_name")
+            .eq("owner_user_id", user.id)
+            .ilike("account_name", `%${action.account_name}%`);
+
+          if (leads && leads.length > 0) {
+            const allowedFields = ["contact_name", "email", "phone", "business_type", "state", "lead_source"];
+            if (allowedFields.includes(action.field)) {
+              for (const lead of leads) {
+                await supabase
+                  .from("leads")
+                  .update({ [action.field]: action.value, updated_at: new Date().toISOString() })
+                  .eq("id", lead.id);
+              }
+              toast({ title: "Lead updated", description: `Updated ${action.field} for ${leads.length} lead(s).` });
+            }
+
+            // Handle policy-level updates (renewal date = effective_date on policies)
+            if (action.field === "renewal_date" || action.field === "effective_date") {
+              const { data: policies } = await supabase
+                .from("policies")
+                .select("id")
+                .in("lead_id", leads.map(l => l.id));
+              if (policies && policies.length > 0) {
+                for (const pol of policies) {
+                  await supabase
+                    .from("policies")
+                    .update({ effective_date: action.value, updated_at: new Date().toISOString() })
+                    .eq("id", pol.id);
+                }
+                toast({ title: "Renewal updated", description: `Updated renewal date for ${policies.length} polic(ies).` });
+              }
+            }
+          } else {
+            toast({ variant: "destructive", title: "Lead not found", description: `No lead matching "${action.account_name}".` });
+          }
+        }
+      } catch (err) {
+        console.error("Pipeline action failed:", err);
+        toast({ variant: "destructive", title: "Action failed", description: `Could not execute: ${action.type}` });
+      }
     }
   };
 
@@ -969,7 +1094,7 @@ export default function Chat() {
                 )}
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full max-w-2xl">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 w-full max-w-2xl">
                 {SUGGESTIONS.map((s) => (
                   <button
                     key={s.label}
