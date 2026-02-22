@@ -4,7 +4,7 @@ import ReactMarkdown from "react-markdown";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { ACORD_FORMS, ACORD_FORM_LIST, type AcordFormField, type AcordFormDefinition } from "@/lib/acord-forms";
-import { buildAutofilledData, buildAutofilledDataWithAI, formatUSD, CURRENCY_FIELDS } from "@/lib/acord-autofill";
+import { buildAutofilledData, buildAutofilledDataWithAI, formatUSD, CURRENCY_FIELDS, MANUAL_CODE_FIELDS } from "@/lib/acord-autofill";
 import { FIELD_POSITION_MAP, type FieldPosition } from "@/lib/acord-field-positions";
 import { generateSubmissionPackage } from "@/lib/submission-package";
 import { FILLABLE_PDF_PATHS, ACORD_FIELD_MAPS, ACORD_INDEX_MAPS } from "@/lib/acord-field-map";
@@ -18,7 +18,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
-import { Download, Send, Paperclip, Loader2, FileText, CheckCircle, X, Filter, Eye, Image, Mail, ChevronLeft, ChevronRight, ClipboardList, MessageSquare, Mic, MicOff, Plus, BrainCircuit } from "lucide-react";
+import { Download, Send, Paperclip, Loader2, FileText, CheckCircle, X, Filter, Eye, Image, Mail, ChevronLeft, ChevronRight, ClipboardList, MessageSquare, Mic, MicOff, Plus, BrainCircuit, ShieldAlert } from "lucide-react";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import { useVoiceInput } from "@/hooks/useVoiceInput";
 
@@ -1060,17 +1061,33 @@ export default function FormFillingView({ submissionId, initialMessages, initial
                 {section.name}
               </h3>
               <div className="space-y-2">
-                {section.fields.map((field) => (
-                  <div key={field.key} className="space-y-0.5">
-                    {field.type !== "checkbox" && (
-                      <Label className="text-[10px] uppercase tracking-wider text-muted-foreground flex items-center gap-1">
-                        {field.required && <span className="text-destructive">*</span>}
-                        {field.label}
-                      </Label>
-                    )}
-                    {renderField(field)}
-                  </div>
-                ))}
+                {section.fields.map((field) => {
+                  const isCodeField = MANUAL_CODE_FIELDS.has(field.key);
+                  return (
+                    <div key={field.key} className="space-y-0.5">
+                      {field.type !== "checkbox" && (
+                        <Label className="text-[10px] uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+                          {field.required && <span className="text-destructive">*</span>}
+                          {field.label}
+                          {isCodeField && (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <span className="inline-flex items-center gap-0.5 ml-1 px-1 py-0 rounded bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 text-[8px] font-semibold uppercase tracking-wide cursor-help">
+                                  <ShieldAlert className="h-2.5 w-2.5" />
+                                  Manual
+                                </span>
+                              </TooltipTrigger>
+                              <TooltipContent side="top" className="max-w-[220px] text-xs">
+                                This code field cannot be AI-inferred. It must come directly from uploaded documents or be entered manually.
+                              </TooltipContent>
+                            </Tooltip>
+                          )}
+                        </Label>
+                      )}
+                      {renderField(field)}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           ))}

@@ -257,6 +257,14 @@ const DATE_FIELDS = new Set([
   "anniversary_rating_date", "transaction_date",
 ]);
 
+/** Code fields that must NEVER be AI-inferred — only from documents or manual entry */
+export const MANUAL_CODE_FIELDS = new Set([
+  "sic_code", "naics_code", "naic_code", "gl_code", "class_code_1", "class_code_2",
+  "hazard_code_1", "hazard_code_2", "hazard_code_3", "hazard_code_4", "hazard_code_5",
+  "program_code", "ncci_risk_id", "wc_class_code", "policy_number",
+  "prior_policy_number_1", "prior_wc_policy_1",
+]);
+
 export const CURRENCY_FIELDS = new Set([
   "annual_revenues", "annual_revenue", "gross_sales", "current_premium",
   "cgl_premium", "property_premium", "auto_premium", "umbrella_premium",
@@ -456,14 +464,8 @@ export async function aiInferFieldMappings(
       (k) => alreadyFilled[k] !== "" && alreadyFilled[k] !== null && alreadyFilled[k] !== undefined
     )
   );
-  // Exclude code fields from AI inference — these must come directly from documents only
-  const CODE_FIELDS = new Set([
-    "sic_code", "naics_code", "naic_code", "gl_code", "class_code_1", "class_code_2",
-    "hazard_code_1", "hazard_code_2", "hazard_code_3", "hazard_code_4", "hazard_code_5",
-    "program_code", "ncci_risk_id", "wc_class_code", "policy_number",
-    "prior_policy_number_1", "prior_wc_policy_1",
-  ]);
-  const unfilledKeys = allFieldKeys.filter((k) => !filledKeys.has(k) && !CODE_FIELDS.has(k));
+  const unfilledKeysPreFilter = allFieldKeys.filter((k) => !filledKeys.has(k) && !MANUAL_CODE_FIELDS.has(k));
+  const unfilledKeys = allFieldKeys.filter((k) => !filledKeys.has(k) && !MANUAL_CODE_FIELDS.has(k));
 
   // Skip if nothing to fill or no extracted data
   if (unfilledKeys.length === 0 || Object.keys(aiData).length === 0) {
