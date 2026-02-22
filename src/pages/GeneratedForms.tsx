@@ -202,8 +202,8 @@ export default function GeneratedForms() {
     return fullText;
   };
 
-  /** Count unique field_key: value lines across all AI responses in a conversation */
-  const countUniqueFields = (conversationLog: { role: string; content: string }[]): number => {
+  /** Count unique field_key: value lines across all AI responses in a conversation, optionally filtered to known keys */
+  const countUniqueFields = (conversationLog: { role: string; content: string }[], knownKeys?: Set<string>): number => {
     const fieldKeyPattern = /^[a-z][a-z0-9_]+:\s*.+$/gm;
     const allKeys = new Set<string>();
     for (const msg of conversationLog) {
@@ -211,7 +211,9 @@ export default function GeneratedForms() {
       const matches = msg.content.match(fieldKeyPattern) || [];
       for (const m of matches) {
         const key = m.split(":")[0].trim();
-        allKeys.add(key);
+        if (!knownKeys || knownKeys.has(key)) {
+          allKeys.add(key);
+        }
       }
     }
     return allKeys.size;
@@ -459,12 +461,17 @@ export default function GeneratedForms() {
       setChatTestProgress(i + 1);
 
       const formData = form.form_data as Record<string, any>;
+      const knownFieldKeys = new Set(
+        Object.entries(formData)
+          .filter(([, v]) => v !== null && v !== undefined && v !== "")
+          .map(([k]) => k)
+      );
       const dataSummary = Object.entries(formData)
         .filter(([, v]) => v !== null && v !== undefined && v !== "")
         .map(([k, v]) => `${k}: ${typeof v === "object" ? JSON.stringify(v) : v}`)
         .join("\n");
 
-      const totalFieldsInData = Object.entries(formData).filter(([, v]) => v !== null && v !== undefined && v !== "").length;
+      const totalFieldsInData = knownFieldKeys.size;
 
       const userMessage = `I have the following business data from a ${typeLabel(form.form_type)} form. Please review it, identify what ACORD forms apply, and output field key-value pairs for everything you can infer. Then ask me targeted gap-filling questions for the remaining fields:\n\n${dataSummary}`;
 
@@ -481,7 +488,7 @@ export default function GeneratedForms() {
           const aiResponse = await streamChatTurn(conversationLog);
           conversationLog.push({ role: "assistant", content: aiResponse });
 
-          fieldsDetected = countUniqueFields(conversationLog);
+          fieldsDetected = countUniqueFields(conversationLog, knownFieldKeys);
           const coverage = totalFieldsInData > 0 ? fieldsDetected / totalFieldsInData : 0;
 
           // Stop if we hit target coverage or this is the last turn
@@ -495,7 +502,7 @@ export default function GeneratedForms() {
           conversationLog.push({ role: "user", content: fillerAnswer });
         }
 
-        const coverage = totalFieldsInData > 0 ? Math.min(100, Math.round((fieldsDetected / totalFieldsInData) * 100)) : 0;
+        const coverage = totalFieldsInData > 0 ? Math.round((fieldsDetected / totalFieldsInData) * 100) : 0;
 
         results.push({
           formId: form.id,
