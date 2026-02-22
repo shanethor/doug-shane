@@ -214,16 +214,18 @@ const FillablePdfViewer = forwardRef<FillablePdfViewerHandle, FillablePdfViewerP
               const field = allFields[idx];
               if (!field || !value) continue;
               try {
-                const typeName = field.constructor.name;
-                if (typeName.startsWith("PDFTextField")) {
-                  const tf = field as any;
-                  tf.setText(String(value));
-                  tf.defaultUpdateAppearances(helvetica);
+                const f = field as any;
+                // Use method-existence checks instead of constructor.name
+                // (ACORD PDFs often have non-standard constructor names like PDFTextField2)
+                if (typeof f.setText === "function") {
+                  f.setText(String(value));
+                  try { f.defaultUpdateAppearances(helvetica); } catch (_) {}
                   filled++;
-                } else if (typeName.startsWith("PDFCheckBox")) {
-                  if (value === "true" || value === "Yes" || value === "1") (field as any).check();
-                } else if (typeName.startsWith("PDFDropdown")) {
-                  try { (field as any).select(String(value)); filled++; } catch (_) {}
+                } else if (typeof f.check === "function") {
+                  if (value === "true" || value === "Yes" || value === "1") f.check();
+                  filled++;
+                } else if (typeof f.select === "function") {
+                  try { f.select(String(value)); filled++; } catch (_) {}
                 }
               } catch (fieldErr) {
                 console.warn(`[pdf-lib] Failed to set field ${idx} (${field.getName()}):`, fieldErr);

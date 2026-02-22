@@ -321,14 +321,15 @@ export default function FormFillingView({ submissionId, initialMessages, initial
         const field = allFields[idx];
         if (!field) continue;
         try {
-          const typeName = field.constructor.name;
+          const f = field as any;
           let pdfValue = "";
-          if (typeName.startsWith("PDFTextField")) {
-            pdfValue = (field as any).getText() || "";
-          } else if (typeName.startsWith("PDFCheckBox")) {
-            pdfValue = (field as any).isChecked() ? "true" : "false";
-          } else if (typeName.startsWith("PDFDropdown")) {
-            const selected = (field as any).getSelected();
+          // Use method-existence checks instead of constructor.name
+          if (typeof f.getText === "function") {
+            pdfValue = f.getText() || "";
+          } else if (typeof f.isChecked === "function") {
+            pdfValue = f.isChecked() ? "true" : "false";
+          } else if (typeof f.getSelected === "function") {
+            const selected = f.getSelected();
             pdfValue = Array.isArray(selected) ? selected[0] || "" : String(selected || "");
           }
 
