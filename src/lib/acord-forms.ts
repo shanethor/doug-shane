@@ -176,7 +176,7 @@ const acord125Fields: AcordFormField[] = [
 ];
 
 // ============================================================
-// ACORD 126 (2016/09) — Commercial General Liability Section
+// ACORD 126 (2009/08) — Commercial General Liability Section
 // ============================================================
 const acord126Fields: AcordFormField[] = [
   // Header
@@ -187,6 +187,7 @@ const acord126Fields: AcordFormField[] = [
   { key: "policy_number", label: "Policy Number", type: "text", section: "Header" },
   { key: "effective_date", label: "Effective Date", type: "date", section: "Header", required: true },
   { key: "insured_name", label: "Applicant / First Named Insured", type: "text", section: "Header", required: true },
+  { key: "transaction_date", label: "Date (MM/DD/YYYY)", type: "date", section: "Header" },
 
   // Coverages / Limits
   { key: "coverage_type", label: "Coverage Type", type: "select", options: ["Occurrence", "Claims-Made"], section: "Coverages / Limits", required: true },
@@ -200,35 +201,46 @@ const acord126Fields: AcordFormField[] = [
   { key: "ebl_limit", label: "Employee Benefits", type: "currency", section: "Coverages / Limits" },
   { key: "deductible_pd", label: "Deductible - Property Damage", type: "currency", section: "Coverages / Limits" },
   { key: "deductible_bi", label: "Deductible - Bodily Injury", type: "currency", section: "Coverages / Limits" },
+  { key: "premiums_prem_ops", label: "Premiums - Premises/Operations", type: "currency", section: "Coverages / Limits" },
+  { key: "premiums_products", label: "Premiums - Products", type: "currency", section: "Coverages / Limits" },
+  { key: "premiums_other", label: "Premiums - Other", type: "currency", section: "Coverages / Limits" },
+  { key: "premiums_total", label: "Premiums - Total", type: "currency", section: "Coverages / Limits" },
 
   // Other Coverages
   { key: "other_coverages_endorsements", label: "Other Coverages, Restrictions and/or Endorsements", type: "textarea", section: "Other Coverages" },
 
   // Schedule of Hazards
   { key: "hazard_loc_1", label: "LOC # (1)", type: "text", section: "Schedule of Hazards" },
+  { key: "hazard_haz_1", label: "HAZ # (1)", type: "text", section: "Schedule of Hazards" },
+  { key: "hazard_classification_1", label: "Classification (1)", type: "text", section: "Schedule of Hazards" },
   { key: "hazard_code_1", label: "Class Code (1)", type: "text", section: "Schedule of Hazards" },
-  { key: "hazard_classification_1", label: "Classification Description (1)", type: "text", section: "Schedule of Hazards" },
+  { key: "hazard_premium_basis_1", label: "Premium Basis (1)", type: "text", section: "Schedule of Hazards" },
   { key: "hazard_exposure_1", label: "Exposure (1)", type: "text", section: "Schedule of Hazards" },
-  { key: "hazard_rate_1", label: "Rate (1)", type: "text", section: "Schedule of Hazards" },
-  { key: "hazard_premium_1", label: "Premium (1)", type: "currency", section: "Schedule of Hazards" },
+  { key: "hazard_terr_1", label: "Territory (1)", type: "text", section: "Schedule of Hazards" },
+  { key: "hazard_rate_premops_1", label: "Rate Prem/Ops (1)", type: "text", section: "Schedule of Hazards" },
+  { key: "hazard_rate_products_1", label: "Rate Products (1)", type: "text", section: "Schedule of Hazards" },
+  { key: "hazard_premium_premops_1", label: "Premium Prem/Ops (1)", type: "currency", section: "Schedule of Hazards" },
+  { key: "hazard_premium_products_1", label: "Premium Products (1)", type: "currency", section: "Schedule of Hazards" },
   { key: "hazard_loc_2", label: "LOC # (2)", type: "text", section: "Schedule of Hazards" },
+  { key: "hazard_haz_2", label: "HAZ # (2)", type: "text", section: "Schedule of Hazards" },
+  { key: "hazard_classification_2", label: "Classification (2)", type: "text", section: "Schedule of Hazards" },
   { key: "hazard_code_2", label: "Class Code (2)", type: "text", section: "Schedule of Hazards" },
-  { key: "hazard_classification_2", label: "Classification Description (2)", type: "text", section: "Schedule of Hazards" },
+  { key: "hazard_premium_basis_2", label: "Premium Basis (2)", type: "text", section: "Schedule of Hazards" },
   { key: "hazard_exposure_2", label: "Exposure (2)", type: "text", section: "Schedule of Hazards" },
-  { key: "hazard_rate_2", label: "Rate (2)", type: "text", section: "Schedule of Hazards" },
-  { key: "hazard_premium_2", label: "Premium (2)", type: "currency", section: "Schedule of Hazards" },
+  { key: "hazard_premium_premops_2", label: "Premium Prem/Ops (2)", type: "currency", section: "Schedule of Hazards" },
+  { key: "hazard_premium_products_2", label: "Premium Products (2)", type: "currency", section: "Schedule of Hazards" },
 
   // Claims-Made
-  { key: "retroactive_date", label: "Proposed Retroactive Date", type: "date", section: "Claims-Made" },
-  { key: "entry_date_claims_made", label: "Entry Date into Uninterrupted Claims-Made Coverage", type: "date", section: "Claims-Made" },
-  { key: "excluded_from_previous", label: "Product/work/accident excluded from previous coverage?", type: "select", options: ["Yes", "No"], section: "Claims-Made" },
-  { key: "tail_coverage_purchased", label: "Tail coverage purchased under previous policy?", type: "select", options: ["Yes", "No"], section: "Claims-Made" },
+  { key: "retroactive_date", label: "1. Proposed Retroactive Date", type: "date", section: "Claims-Made" },
+  { key: "entry_date_claims_made", label: "2. Entry Date into Uninterrupted Claims-Made Coverage", type: "date", section: "Claims-Made" },
+  { key: "excluded_from_previous", label: "3. Product/work/accident excluded from previous coverage?", type: "select", options: ["Yes", "No"], section: "Claims-Made" },
+  { key: "tail_coverage_purchased", label: "4. Tail coverage purchased under previous policy?", type: "select", options: ["Yes", "No"], section: "Claims-Made" },
 
   // Employee Benefits Liability
-  { key: "ebl_deductible_per_claim", label: "EBL Deductible Per Claim", type: "currency", section: "Employee Benefits Liability" },
-  { key: "ebl_num_employees", label: "Number of Employees", type: "number", section: "Employee Benefits Liability" },
-  { key: "ebl_covered_employees", label: "Employees Covered by Benefit Plans", type: "number", section: "Employee Benefits Liability" },
-  { key: "ebl_retroactive_date", label: "EBL Retroactive Date", type: "date", section: "Employee Benefits Liability" },
+  { key: "ebl_deductible_per_claim", label: "1. Deductible Per Claim", type: "currency", section: "Employee Benefits Liability" },
+  { key: "ebl_num_employees", label: "2. Number of Employees", type: "number", section: "Employee Benefits Liability" },
+  { key: "ebl_covered_employees", label: "3. Employees Covered by Benefit Plans", type: "number", section: "Employee Benefits Liability" },
+  { key: "ebl_retroactive_date", label: "4. Retroactive Date", type: "date", section: "Employee Benefits Liability" },
 
   // Contractors
   { key: "draws_plans_for_others", label: "1. Applicant draw plans/designs/specifications for others?", type: "select", options: ["Yes", "No"], section: "Contractors" },
@@ -240,6 +252,8 @@ const acord126Fields: AcordFormField[] = [
   { key: "type_work_subcontracted", label: "Type of Work Subcontracted", type: "textarea", section: "Contractors" },
   { key: "paid_to_subcontractors", label: "$ Paid to Subcontractors", type: "currency", section: "Contractors" },
   { key: "pct_work_subcontracted", label: "% of Work Subcontracted", type: "text", section: "Contractors" },
+  { key: "contractor_full_time", label: "# Full-Time Staff", type: "number", section: "Contractors" },
+  { key: "contractor_part_time", label: "# Part-Time Staff", type: "number", section: "Contractors" },
 
   // Products / Completed Operations
   { key: "installs_services_products", label: "1. Applicant install, service or demonstrate products?", type: "select", options: ["Yes", "No"], section: "Products / Completed Operations" },
@@ -248,30 +262,47 @@ const acord126Fields: AcordFormField[] = [
   { key: "guarantees_warranties", label: "4. Guarantees, warranties, hold harmless agreements?", type: "select", options: ["Yes", "No"], section: "Products / Completed Operations" },
   { key: "aircraft_space_products", label: "5. Products related to aircraft/space industry?", type: "select", options: ["Yes", "No"], section: "Products / Completed Operations" },
   { key: "products_recalled", label: "6. Products recalled, discontinued, changed?", type: "select", options: ["Yes", "No"], section: "Products / Completed Operations" },
+  { key: "products_others_label", label: "7. Products of others sold/re-packaged under applicant label?", type: "select", options: ["Yes", "No"], section: "Products / Completed Operations" },
+  { key: "products_under_others_label", label: "8. Products under label of others?", type: "select", options: ["Yes", "No"], section: "Products / Completed Operations" },
+  { key: "vendors_coverage_required", label: "9. Vendors coverage required?", type: "select", options: ["Yes", "No"], section: "Products / Completed Operations" },
+  { key: "named_insured_sells_to_named", label: "10. Named insured sells to other named insureds?", type: "select", options: ["Yes", "No"], section: "Products / Completed Operations" },
+  { key: "products_annual_gross_sales", label: "Annual Gross Sales", type: "currency", section: "Products / Completed Operations" },
+  { key: "products_num_units", label: "# of Units", type: "text", section: "Products / Completed Operations" },
+  { key: "products_time_in_market", label: "Time in Market", type: "text", section: "Products / Completed Operations" },
+  { key: "products_expected_life", label: "Expected Life", type: "text", section: "Products / Completed Operations" },
+  { key: "products_intended_use", label: "Intended Use", type: "text", section: "Products / Completed Operations" },
+  { key: "products_principal_components", label: "Principal Components", type: "text", section: "Products / Completed Operations" },
 
-  // General Information
+  // Additional Interest / Certificate Recipient
+  { key: "add_interest_type_1", label: "Interest Type (1)", type: "text", section: "Additional Interest" },
+  { key: "add_interest_name_1", label: "Name and Address (1)", type: "text", section: "Additional Interest" },
+  { key: "add_interest_rank_1", label: "Rank (1)", type: "text", section: "Additional Interest" },
+  { key: "add_interest_item_1", label: "Interest in Item Number (1)", type: "text", section: "Additional Interest" },
+
+  // General Information (Page 3)
   { key: "medical_facilities", label: "1. Any medical facilities provided or professionals employed?", type: "select", options: ["Yes", "No"], section: "General Information" },
   { key: "radioactive_exposure", label: "2. Exposure to radioactive/nuclear materials?", type: "select", options: ["Yes", "No"], section: "General Information" },
   { key: "hazardous_material_ops", label: "3. Operations involve hazardous material?", type: "select", options: ["Yes", "No"], section: "General Information" },
   { key: "ops_sold_acquired", label: "4. Operations sold, acquired, or discontinued in last 5 years?", type: "select", options: ["Yes", "No"], section: "General Information" },
-  { key: "rent_equipment_to_others", label: "5. Rent or loan equipment to others?", type: "select", options: ["Yes", "No"], section: "General Information" },
+  { key: "rent_equipment_to_others", label: "5. Machinery or equipment loaned/rented to others?", type: "select", options: ["Yes", "No"], section: "General Information" },
   { key: "watercraft_docks", label: "6. Watercraft, docks, floats owned, hired or leased?", type: "select", options: ["Yes", "No"], section: "General Information" },
   { key: "parking_facilities", label: "7. Parking facilities owned/rented?", type: "select", options: ["Yes", "No"], section: "General Information" },
-  { key: "recreation_facilities", label: "8. Recreation facilities provided?", type: "select", options: ["Yes", "No"], section: "General Information" },
-  { key: "lodging_operations", label: "9. Lodging operations including apartments?", type: "select", options: ["Yes", "No"], section: "General Information" },
+  { key: "parking_fee_charged", label: "8. Is a fee charged for parking?", type: "select", options: ["Yes", "No"], section: "General Information" },
+  { key: "recreation_facilities", label: "9. Recreation facilities provided?", type: "select", options: ["Yes", "No"], section: "General Information" },
   { key: "swimming_pool", label: "10. Swimming pool on premises?", type: "select", options: ["Yes", "No"], section: "General Information" },
-  { key: "social_events", label: "11. Social events sponsored?", type: "select", options: ["Yes", "No"], section: "General Information" },
-  { key: "athletic_teams", label: "12. Athletic teams sponsored?", type: "select", options: ["Yes", "No"], section: "General Information" },
-  { key: "structural_alterations", label: "13. Structural alterations contemplated?", type: "select", options: ["Yes", "No"], section: "General Information" },
-  { key: "demolition_exposure", label: "14. Demolition exposure contemplated?", type: "select", options: ["Yes", "No"], section: "General Information" },
-  { key: "joint_ventures", label: "16. Active in joint ventures?", type: "select", options: ["Yes", "No"], section: "General Information" },
-  { key: "lease_employees", label: "17. Lease employees to or from other employers?", type: "select", options: ["Yes", "No"], section: "General Information" },
-  { key: "labor_interchange", label: "18. Labor interchange with other business/subsidiaries?", type: "select", options: ["Yes", "No"], section: "General Information" },
-  { key: "day_care_facilities", label: "19. Day care facilities operated or controlled?", type: "select", options: ["Yes", "No"], section: "General Information" },
-  { key: "crimes_on_premises", label: "20. Crimes occurred/attempted on premises in last 3 years?", type: "select", options: ["Yes", "No"], section: "General Information" },
-  { key: "safety_security_policy", label: "21. Formal written safety and security policy?", type: "select", options: ["Yes", "No"], section: "General Information" },
-  { key: "safety_claims_in_literature", label: "22. Promotional literature makes safety/security claims?", type: "select", options: ["Yes", "No"], section: "General Information" },
-  { key: "general_questions_remarks", label: "Explain all Yes responses", type: "textarea", section: "General Information" },
+  { key: "social_events", label: "11. Sporting or social events sponsored?", type: "select", options: ["Yes", "No"], section: "General Information" },
+  { key: "structural_alterations", label: "12. Structural alterations contemplated?", type: "select", options: ["Yes", "No"], section: "General Information" },
+  { key: "demolition_exposure", label: "13. Demolition exposure contemplated?", type: "select", options: ["Yes", "No"], section: "General Information" },
+  { key: "joint_ventures", label: "14. Active in joint ventures?", type: "select", options: ["Yes", "No"], section: "General Information" },
+  { key: "lease_employees", label: "15. Lease employees to or from other employers?", type: "select", options: ["Yes", "No"], section: "General Information" },
+
+  // General Information Continued (Page 4)
+  { key: "labor_interchange", label: "1. Labor interchange with other business/subsidiaries?", type: "select", options: ["Yes", "No"], section: "General Information (cont.)" },
+  { key: "day_care_facilities", label: "2. Day care facilities operated or controlled?", type: "select", options: ["Yes", "No"], section: "General Information (cont.)" },
+  { key: "crimes_on_premises", label: "3. Crimes occurred/attempted on premises in last 3 years?", type: "select", options: ["Yes", "No"], section: "General Information (cont.)" },
+  { key: "safety_security_policy", label: "4. Formal written safety and security policy?", type: "select", options: ["Yes", "No"], section: "General Information (cont.)" },
+  { key: "safety_claims_in_literature", label: "5. Promotional literature makes safety/security claims?", type: "select", options: ["Yes", "No"], section: "General Information (cont.)" },
+  { key: "general_questions_remarks", label: "Explain all Yes responses", type: "textarea", section: "General Information (cont.)" },
 
   // Remarks
   { key: "remarks_126", label: "Remarks", type: "textarea", section: "Remarks" },
@@ -721,7 +752,7 @@ export const ACORD_FORMS: Record<string, AcordFormDefinition> = {
   "acord-126": {
     id: "acord-126",
     name: "ACORD 126",
-    fullName: "Commercial General Liability Section (2016/09)",
+    fullName: "Commercial General Liability Section (2009/08)",
     description: "CGL coverages/limits, schedule of hazards, claims-made, employee benefits liability, contractors, products/completed ops, and general information.",
     fields: acord126Fields,
     pages: ["/acord-pages/126-page1.jpg", "/acord-pages/126-page2.jpg", "/acord-pages/126-page3.jpg", "/acord-pages/126-page4.jpg"],
