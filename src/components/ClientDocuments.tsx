@@ -53,9 +53,10 @@ type Props = {
   submissionId?: string | null;
   leadId?: string | null;
   compact?: boolean;
+  onFilesDropped?: (files: File[]) => void; // callback for auto-extraction on drop
 };
 
-export function ClientDocuments({ submissionId, leadId, compact = false }: Props) {
+export function ClientDocuments({ submissionId, leadId, compact = false, onFilesDropped }: Props) {
   const { user } = useAuth();
   const [docs, setDocs] = useState<ClientDocument[]>([]);
   const [loading, setLoading] = useState(true);
@@ -120,8 +121,10 @@ export function ClientDocuments({ submissionId, leadId, compact = false }: Props
       toast.success(`${file.name} attached`);
       setDocType("other");
       loadDocs();
+      return file; // return for chaining
     } catch (err: any) {
       toast.error(err.message || "Upload failed");
+      return null;
     } finally {
       setUploading(false);
       if (fileRef.current) fileRef.current.value = "";
@@ -180,6 +183,7 @@ export function ClientDocuments({ submissionId, leadId, compact = false }: Props
             formatSize={formatSize}
             typeLabel={typeLabel}
             uploadFile={uploadFile}
+            onFilesDropped={onFilesDropped}
           />
         </DialogContent>
       </Dialog>
@@ -198,6 +202,7 @@ export function ClientDocuments({ submissionId, leadId, compact = false }: Props
       formatSize={formatSize}
       typeLabel={typeLabel}
       uploadFile={uploadFile}
+      onFilesDropped={onFilesDropped}
     />
   );
 }
@@ -213,6 +218,7 @@ function FullDocumentView({
   formatSize,
   typeLabel,
   uploadFile,
+  onFilesDropped,
 }: {
   docs: ClientDocument[];
   docType: string;
@@ -223,7 +229,8 @@ function FullDocumentView({
   handleDelete: (id: string) => void;
   formatSize: (n: number | null) => string;
   typeLabel: (t: string) => string;
-  uploadFile: (file: File, type?: string) => Promise<void>;
+  uploadFile: (file: File, type?: string) => Promise<any>;
+  onFilesDropped?: (files: File[]) => void;
 }) {
   const [dragOver, setDragOver] = useState(false);
 
@@ -248,8 +255,14 @@ function FullDocumentView({
     const files = Array.from(e.dataTransfer.files);
     if (files.length === 0) return;
 
+    // Upload all files as attachments
     for (const file of files) {
       await uploadFile(file, docType);
+    }
+
+    // Trigger extraction callback if provided
+    if (onFilesDropped) {
+      onFilesDropped(files);
     }
   };
 
