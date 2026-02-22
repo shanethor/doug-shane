@@ -377,9 +377,11 @@ export default function FormFillingView({ submissionId, initialMessages, initial
 
     // Now formData has DB values — compute accurate stats
     const clientName = formData.applicant_name || formData.insured_name || formData.company_name || "this client";
-    const allFields = ACORD_FORM_LIST.flatMap(f => f.fields);
-    const filledKeys = allFields.filter(f => formData[f.key] && String(formData[f.key]).trim());
-    const emptyKeys = allFields.filter(f => !formData[f.key] || !String(formData[f.key]).trim());
+    const packageFields = ACORD_FORM_LIST.filter(f => enabledFormIds.has(f.id)).flatMap(f => f.fields);
+    const seen = new Set<string>();
+    const uniqueFields = packageFields.filter(f => { if (seen.has(f.key)) return false; seen.add(f.key); return true; });
+    const filledKeys = uniqueFields.filter(f => formData[f.key] && String(formData[f.key]).trim());
+    const emptyKeys = uniqueFields.filter(f => !formData[f.key] || !String(formData[f.key]).trim());
 
     setMessages((prev) => [
       ...prev,
