@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import { AppLayout } from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
@@ -310,6 +310,7 @@ export default function Chat() {
   const { user } = useAuth();
   const { trainingMode } = useTrainingMode();
   const navigate = useNavigate();
+  const location = useLocation();
   const [reviewSubmissionId, setReviewSubmissionId] = useState<string | null>(null);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [activeSubmissionId, setActiveSubmissionId] = useState<string | null>(null);
@@ -327,6 +328,19 @@ export default function Chat() {
     send(text);
   }, []);
   const voice = useVoiceInput(handleVoiceTranscript, handleVoiceAutoSend);
+
+  // Auto-send prefill message from navigation state (e.g., from training page)
+  const prefillSentRef = useRef(false);
+  useEffect(() => {
+    const state = location.state as { prefillMessage?: string } | null;
+    if (state?.prefillMessage && !prefillSentRef.current) {
+      prefillSentRef.current = true;
+      // Clear location state so refresh doesn't re-send
+      window.history.replaceState({}, "");
+      // Small delay to let component fully mount
+      setTimeout(() => send(state.prefillMessage!), 300);
+    }
+  }, [location.state]);
 
   const downloadSubmission = async (subId: string, mode: "individual" | "package" = "package") => {
     if (!user) return;
