@@ -169,8 +169,8 @@ const FillablePdfViewer = forwardRef<FillablePdfViewerHandle, FillablePdfViewerP
             });
           },
           {
-            autoSaveFrequency: 0,
-            enableFocusPolling: false,
+            autoSaveFrequency: 3,
+            enableFocusPolling: true,
             showSaveButton: false,
           }
         );
