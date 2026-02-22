@@ -79,6 +79,7 @@ export default function GeneratedForms() {
     fieldsDetected: number; totalFieldsInData: number;
     coverage: number; turns: number;
     conversationLog: { role: string; content: string }[];
+    missedFields: string[];
     error?: string;
   };
   const [chatTestResults, setChatTestResults] = useState<ChatTestResult[]>([]);
@@ -223,12 +224,10 @@ export default function GeneratedForms() {
   };
 
   /** Count unique field_key: value lines across all messages in a conversation, filtered to known keys */
-  const countUniqueFields = (conversationLog: { role: string; content: string }[], knownKeys?: Set<string>): number => {
-    // Match lines like "some_key: some value" — allow hyphens, mixed case
+  const countUniqueFields = (conversationLog: { role: string; content: string }[], knownKeys?: Set<string>): { count: number; matchedKeys: Set<string> } => {
     const fieldKeyPattern = /^[a-zA-Z][a-zA-Z0-9_-]+:\s*.+$/gm;
     const allKeys = new Set<string>();
     for (const msg of conversationLog) {
-      // Count fields from both assistant AND user messages (filler answers echo keys back)
       const matches = msg.content.match(fieldKeyPattern) || [];
       for (const m of matches) {
         const key = m.split(":")[0].trim();
@@ -237,7 +236,7 @@ export default function GeneratedForms() {
         }
       }
     }
-    return allKeys.size;
+    return { count: allKeys.size, matchedKeys: allKeys };
   };
   const { data: forms, isLoading } = useQuery({
     queryKey: ["generated-forms"],
@@ -520,7 +519,8 @@ ${dataSummary}`;
           const aiResponse = await streamChatTurn(conversationLog);
           conversationLog.push({ role: "assistant", content: aiResponse });
 
-          fieldsDetected = countUniqueFields(conversationLog, knownFieldKeys);
+          const result = countUniqueFields(conversationLog, knownFieldKeys);
+          fieldsDetected = result.count;
           const coverage = totalFieldsInData > 0 ? fieldsDetected / totalFieldsInData : 0;
 
           // Stop if we hit target coverage or this is the last turn
@@ -534,7 +534,10 @@ ${dataSummary}`;
           conversationLog.push({ role: "user", content: fillerAnswer });
         }
 
+        const finalResult = countUniqueFields(conversationLog, knownFieldKeys);
+        fieldsDetected = finalResult.count;
         const coverage = totalFieldsInData > 0 ? Math.round((fieldsDetected / totalFieldsInData) * 100) : 0;
+        const missedFields = Array.from(knownFieldKeys).filter(k => !finalResult.matchedKeys.has(k));
 
         results.push({
           formId: form.id,
@@ -545,6 +548,7 @@ ${dataSummary}`;
           coverage,
           turns,
           conversationLog,
+          missedFields,
         });
       } catch (err: any) {
         results.push({
@@ -556,6 +560,7 @@ ${dataSummary}`;
           coverage: 0,
           turns: 0,
           conversationLog: [],
+          missedFields: Array.from(knownFieldKeys),
           error: err.message,
         });
       }
@@ -1039,6 +1044,19 @@ ${dataSummary}`;
                                   <div className={`${accuracyBg(r.coverage)} h-2 rounded-full transition-all`} style={{ width: `${r.coverage}%` }} />
                                 </div>
                               </div>
+                              {/* Missed fields */}
+                              {r.missedFields.length > 0 && (
+                                <div>
+                                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+                                    Missed Fields ({r.missedFields.length})
+                                  </h4>
+                                  <div className="flex flex-wrap gap-1.5">
+                                    {r.missedFields.map((f) => (
+                                      <Badge key={f} variant="destructive" className="text-[10px] font-mono">{f}</Badge>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
                               {/* Conversation log */}
                               <div>
                                 <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
