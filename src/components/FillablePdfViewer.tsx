@@ -140,33 +140,37 @@ const FillablePdfViewer = forwardRef<FillablePdfViewerHandle, FillablePdfViewerP
         // formatting intact — 100% original ACORD visual layout preserved.
         view.registerCallback(
           window.AdobeDC.View.Enum.CallbackType.SAVE_API,
-          (metaData: any, content: any) => {
+          function (_metaData: any, _content: any) {
+            // Wrap EVERYTHING — Adobe internally accesses .metaData on the
+            // return value and on callback arguments; if anything is undefined
+            // it throws "Cannot read properties of undefined (reading 'metaData')".
             try {
-              // Adobe passes args inconsistently — defensively extract ArrayBuffer
+              const args = Array.prototype.slice.call(arguments);
               let bytes: Uint8Array | null = null;
-              if (content instanceof ArrayBuffer) {
-                bytes = new Uint8Array(content);
-              } else if (content && typeof content === "object" && content.buffer instanceof ArrayBuffer) {
-                bytes = new Uint8Array(content.buffer);
-              } else if (metaData instanceof ArrayBuffer) {
-                bytes = new Uint8Array(metaData);
-              } else if (metaData && typeof metaData === "object" && metaData.buffer instanceof ArrayBuffer) {
-                bytes = new Uint8Array(metaData.buffer);
+              for (const arg of args) {
+                if (arg == null) continue;
+                if (arg instanceof ArrayBuffer) { bytes = new Uint8Array(arg); break; }
+                if (arg instanceof Uint8Array) { bytes = arg; break; }
+                if (typeof arg === "object" && arg.buffer instanceof ArrayBuffer) {
+                  bytes = new Uint8Array(arg.buffer); break;
+                }
               }
               if (!cancelledRef.current && onSaveBytesRef.current && bytes) {
                 onSaveBytesRef.current(bytes);
               }
             } catch (e) {
-              console.warn("[Adobe] SAVE_API callback error:", e);
+              // Swallow — never let this propagate to Adobe internals
             }
-            // Always return a resolved promise — never let this throw
+            // Return object Adobe expects — include metaData to prevent the
+            // "Cannot read properties of undefined (reading 'metaData')" error
             return Promise.resolve({
               code: window.AdobeDC?.View?.Enum?.ApiResponseCode?.SUCCESS ?? 0,
+              data: { metaData: { fileName: fileName } },
             });
           },
           {
             autoSaveFrequency: 0,
-            enableFocusPolling: true,
+            enableFocusPolling: false,
             showSaveButton: false,
           }
         );
