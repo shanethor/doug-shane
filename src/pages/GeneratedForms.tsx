@@ -11,10 +11,11 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Download, Trash2, FileText, ClipboardCopy, Loader2, FlaskConical, CheckCircle, XCircle, AlertTriangle, ChevronDown, ChevronUp, Globe, MessageSquare } from "lucide-react";
+import { Plus, Download, Trash2, FileText, ClipboardCopy, Loader2, FlaskConical, CheckCircle, XCircle, AlertTriangle, ChevronDown, ChevronUp, Globe, MessageSquare, Bot } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { generateRestaurantSupplement, generateContractorSupplement, REAL_POLICY_DOCUMENTS } from "@/lib/dummy-form-data";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Textarea } from "@/components/ui/textarea";
+import { generateRestaurantSupplement, generateContractorSupplement, REAL_POLICY_DOCUMENTS } from "@/lib/dummy-form-data";
 import { ACORD_FORMS } from "@/lib/acord-forms";
 import { buildAutofilledData, buildAutofilledDataWithAI } from "@/lib/acord-autofill";
 
@@ -70,6 +71,13 @@ export default function GeneratedForms() {
   const [testingFormId, setTestingFormId] = useState<string | null>(null);
   const [cardWebsiteUrls, setCardWebsiteUrls] = useState<Record<string, string>>({});
   const [scrapingWebsite, setScrapingWebsite] = useState(false);
+  const [chatTesting, setChatTesting] = useState(false);
+  const [chatTestProgress, setChatTestProgress] = useState(0);
+  const [chatTestTotal, setChatTestTotal] = useState(0);
+  type ChatTestResult = { formId: string; displayName: string; formType: string; fieldsDetected: number; totalFieldsInData: number; aiResponse: string; error?: string };
+  const [chatTestResults, setChatTestResults] = useState<ChatTestResult[]>([]);
+  const [expandedChatResult, setExpandedChatResult] = useState<string | null>(null);
+  const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/agent-chat`;
   const { data: forms, isLoading } = useQuery({
     queryKey: ["generated-forms"],
     queryFn: async () => {
@@ -295,6 +303,111 @@ export default function GeneratedForms() {
     a.click();
     URL.revokeObjectURL(url);
   };
+
+  /** Run all forms through AI chat sequentially to test interaction quality */
+  const handleRunAllViaChat = async () => {
+    if (!session || !forms?.length) return;
+    setChatTesting(true);
+    setChatTestResults([]);
+    setChatTestProgress(0);
+    setChatTestTotal(forms.length);
+
+    const results: ChatTestResult[] = [];
+
+    for (let i = 0; i < forms.length; i++) {
+      const form = forms[i] as any;
+      setChatTestProgress(i + 1);
+
+      const formData = form.form_data as Record<string, any>;
+      const dataSummary = Object.entries(formData)
+        .filter(([, v]) => v !== null && v !== undefined && v !== "")
+        .map(([k, v]) => `${k}: ${typeof v === "object" ? JSON.stringify(v) : v}`)
+        .join("\n");
+
+      const totalFieldsInData = Object.entries(formData).filter(([, v]) => v !== null && v !== undefined && v !== "").length;
+
+      const userMessage = `I have the following business data from a ${typeLabel(form.form_type)} form. Please review it, identify what ACORD forms apply, ask me the most important gap-filling questions, and output field key-value pairs for everything you can infer:\n\n${dataSummary}`;
+
+      try {
+        const resp = await fetch(CHAT_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({
+            messages: [{ role: "user", content: userMessage }],
+            trainingMode: true,
+          }),
+        });
+
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+
+        // Collect full streamed response
+        let fullText = "";
+        if (resp.body) {
+          const reader = resp.body.getReader();
+          const decoder = new TextDecoder();
+          let buffer = "";
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+            let idx: number;
+            while ((idx = buffer.indexOf("\n")) !== -1) {
+              let line = buffer.slice(0, idx);
+              buffer = buffer.slice(idx + 1);
+              if (line.endsWith("\r")) line = line.slice(0, -1);
+              if (!line.startsWith("data: ")) continue;
+              const json = line.slice(6).trim();
+              if (json === "[DONE]") break;
+              try {
+                const parsed = JSON.parse(json);
+                const content = parsed.choices?.[0]?.delta?.content;
+                if (content) fullText += content;
+              } catch { break; }
+            }
+          }
+        }
+
+        // Count field_key: value lines in the response (AI-inferred fields)
+        const fieldKeyPattern = /^[a-z][a-z0-9_]+:\s*.+$/gm;
+        const fieldsDetected = (fullText.match(fieldKeyPattern) || []).length;
+
+        results.push({
+          formId: form.id,
+          displayName: form.display_name,
+          formType: form.form_type,
+          fieldsDetected,
+          totalFieldsInData: totalFieldsInData,
+          aiResponse: fullText,
+        });
+      } catch (err: any) {
+        results.push({
+          formId: form.id,
+          displayName: form.display_name,
+          formType: form.form_type,
+          fieldsDetected: 0,
+          totalFieldsInData: totalFieldsInData,
+          aiResponse: "",
+          error: err.message,
+        });
+      }
+
+      // Update results incrementally
+      setChatTestResults([...results]);
+    }
+
+    setChatTesting(false);
+    const avgFields = results.length > 0
+      ? Math.round(results.reduce((s, r) => s + r.fieldsDetected, 0) / results.length)
+      : 0;
+    toast({
+      title: "Chat test complete",
+      description: `Tested ${results.length} forms · avg ${avgFields} field key-values per response`,
+    });
+  };
+
 
   const typeLabel = (t: string) => {
     if (t === "restaurant_supplement") return "Restaurant Supplement";
@@ -630,6 +743,137 @@ export default function GeneratedForms() {
                                 </Collapsible>
                               )}
 
+                            </div>
+                          )}
+                        </CollapsibleContent>
+                      </Collapsible>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Chat Interaction Testing */}
+        <Card className="aura-glass border-primary/20">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Bot className="h-4 w-4 text-primary" />
+              Chat Interaction Testing
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-xs text-muted-foreground">
+              Send each form's data through the AI chat to test how AURA handles real conversations — measures field key-value output, form detection, and gap-filling question quality.
+            </p>
+            <div className="flex items-center gap-3">
+              <Button onClick={handleRunAllViaChat} disabled={chatTesting || !forms?.length} className="gap-2">
+                {chatTesting ? <Loader2 className="h-4 w-4 animate-spin" /> : <MessageSquare className="h-4 w-4" />}
+                {chatTesting ? `Testing ${chatTestProgress}/${chatTestTotal}…` : `Run All via Chat (${forms?.length || 0} forms)`}
+              </Button>
+            </div>
+
+            {chatTesting && (
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground">Sending form data to AURA sequentially… {chatTestProgress}/{chatTestTotal}</p>
+                <Progress value={(chatTestProgress / chatTestTotal) * 100} className="h-1.5" />
+              </div>
+            )}
+
+            {chatTestResults.length > 0 && (
+              <div className="space-y-4 pt-2">
+                {/* Summary stats */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div className="bg-muted/50 rounded-lg p-3 text-center">
+                    <div className="text-2xl font-bold text-foreground">{chatTestResults.length}</div>
+                    <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Forms Tested</div>
+                  </div>
+                  <div className="bg-muted/50 rounded-lg p-3 text-center">
+                    <div className="text-2xl font-bold text-foreground">
+                      {chatTestResults.length > 0 ? Math.round(chatTestResults.reduce((s, r) => s + r.fieldsDetected, 0) / chatTestResults.length) : 0}
+                    </div>
+                    <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Avg Fields Output</div>
+                  </div>
+                  <div className="bg-muted/50 rounded-lg p-3 text-center">
+                    <div className="text-2xl font-bold text-foreground">
+                      {chatTestResults.reduce((s, r) => s + r.fieldsDetected, 0)}
+                    </div>
+                    <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Total Fields Output</div>
+                  </div>
+                  <div className="bg-muted/50 rounded-lg p-3 text-center">
+                    <div className="text-2xl font-bold text-destructive">{chatTestResults.filter(r => r.error).length}</div>
+                    <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Errors</div>
+                  </div>
+                </div>
+
+                {/* Per-form chat results */}
+                <div>
+                  <h3 className="text-sm font-semibold text-foreground mb-2">Per-Form Chat Results</h3>
+                  <div className="space-y-2">
+                    {chatTestResults.map((r) => (
+                      <Collapsible key={r.formId} open={expandedChatResult === r.formId} onOpenChange={(open) => setExpandedChatResult(open ? r.formId : null)}>
+                        <CollapsibleTrigger asChild>
+                          <button className="w-full flex items-center justify-between bg-muted/30 hover:bg-muted/50 rounded-lg p-3 text-left transition-colors">
+                            <div className="flex items-center gap-3 min-w-0">
+                              {r.error ? (
+                                <XCircle className="h-4 w-4 text-destructive shrink-0" />
+                              ) : r.fieldsDetected >= 10 ? (
+                                <CheckCircle className="h-4 w-4 text-green-500 shrink-0" />
+                              ) : r.fieldsDetected >= 5 ? (
+                                <AlertTriangle className="h-4 w-4 text-yellow-500 shrink-0" />
+                              ) : (
+                                <XCircle className="h-4 w-4 text-destructive shrink-0" />
+                              )}
+                              <div className="min-w-0">
+                                <span className="text-sm font-medium truncate block">{r.displayName}</span>
+                                <span className="text-[10px] text-muted-foreground">{typeLabel(r.formType)}</span>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-3 shrink-0">
+                              {!r.error && (
+                                <div className="flex items-center gap-2">
+                                  <Badge variant="outline" className="text-[10px]">{r.fieldsDetected} fields output</Badge>
+                                  <Badge variant="secondary" className="text-[10px]">{r.totalFieldsInData} in source</Badge>
+                                </div>
+                              )}
+                              {r.error && <span className="text-xs text-destructive">Error</span>}
+                              {expandedChatResult === r.formId ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                            </div>
+                          </button>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                          {r.error ? (
+                            <div className="p-3 text-xs text-destructive">{r.error}</div>
+                          ) : (
+                            <div className="p-3 space-y-3">
+                              <div>
+                                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">AI Response</h4>
+                                <div className="bg-muted/30 rounded-lg p-3 max-h-80 overflow-y-auto">
+                                  <pre className="text-xs whitespace-pre-wrap text-foreground font-sans leading-relaxed">{r.aiResponse}</pre>
+                                </div>
+                              </div>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="gap-1.5 text-xs"
+                                onClick={() => {
+                                  const formData = forms?.find(f => (f as any).id === r.formId);
+                                  if (!formData) return;
+                                  const fd = (formData as any).form_data as Record<string, any>;
+                                  const summary = Object.entries(fd)
+                                    .filter(([, v]) => v !== null && v !== undefined && v !== "")
+                                    .map(([k, v]) => `${k}: ${typeof v === "object" ? JSON.stringify(v) : v}`)
+                                    .join("\n");
+                                  navigate("/", {
+                                    state: {
+                                      prefillMessage: `I have the following business data from a ${typeLabel(r.formType)} form. Please review it, ask me questions to fill any gaps, and help me complete the ACORD forms:\n\n${summary}`,
+                                    },
+                                  });
+                                }}
+                              >
+                                <MessageSquare className="h-3 w-3" /> Open in Full Chat
+                              </Button>
                             </div>
                           )}
                         </CollapsibleContent>
