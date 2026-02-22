@@ -9,7 +9,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import SubmissionReviewPanel from "@/components/SubmissionReviewPanel";
 import FormFillingView from "@/components/FormFillingView";
 import ExtractionSummary from "@/components/ExtractionSummary";
-import { Send, FileUp, ClipboardList, Search, Loader2, Paperclip, X, Download, Mic, MicOff, Globe, Lightbulb, ChevronDown, ChevronUp, FileText, BrainCircuit, PenLine, Users, BarChart3, Mail } from "lucide-react";
+import { Send, FileUp, ClipboardList, Search, Loader2, Paperclip, X, Download, Mic, MicOff, Globe, Lightbulb, ChevronDown, ChevronUp, FileText, BrainCircuit, PenLine, Users, BarChart3, Mail, FileSearch } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -1012,12 +1012,12 @@ export default function Chat() {
         <div ref={scrollRef} className="flex-1 overflow-y-auto">
           {isEmpty ? (
             <div className="flex flex-col items-center justify-center min-h-full gap-6 px-4 py-12">
-              <div className="text-center space-y-3">
+              <div className="text-center space-y-1">
                 <h1 className="text-4xl tracking-tight aura-gradient-text">
-                  I'm AURA — your insurance trained AI co-pilot
+                  I'm AURA
                 </h1>
-                <p className="text-muted-foreground text-sm max-w-md">
-                  Submissions, ACORD forms, pipeline management, and coverage reviews — all in one place.
+                <p className="text-muted-foreground text-sm">
+                  Your insurance trained AI co-pilot
                 </p>
               </div>
 
@@ -1095,12 +1095,11 @@ export default function Chat() {
                 )}
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 w-full max-w-2xl">
+              <div className="grid grid-cols-3 gap-3 w-full max-w-2xl">
                 {SUGGESTIONS.map((s) => (
                   <button
                     key={s.label}
                     onClick={() => {
-                      // "Fill an ACORD form" with no documents → show intent buttons in non-training mode
                       if (!trainingMode && s.message.includes("ACORD form")) {
                         setShowIntentButtons(true);
                       } else {
@@ -1113,6 +1112,14 @@ export default function Chat() {
                     <span className="text-sm font-medium">{s.label}</span>
                   </button>
                 ))}
+                {/* Run Loss Runs — positioned after "Fill an ACORD form" row, right of "Review a submission" */}
+                <button
+                  onClick={() => navigate("/pipeline")}
+                  className="flex flex-col items-start gap-2 rounded-xl border bg-card/80 backdrop-blur-sm p-4 text-left hover-lift aura-glow-shadow transition-colors group"
+                >
+                  <FileSearch className="h-5 w-5 text-accent group-hover:text-primary transition-colors" />
+                  <span className="text-sm font-medium">Run loss runs</span>
+                </button>
               </div>
 
               {/* Feature action boxes */}
