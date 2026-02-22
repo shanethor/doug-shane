@@ -12,7 +12,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { FilePlus, FileText, MoreVertical, Copy, Pencil, Trash2, Search, Edit3 } from "lucide-react";
+import { FilePlus, FileText, MoreVertical, Copy, Pencil, Trash2, Search, Edit3, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 
 const statusColor: Record<string, string> = {
@@ -22,33 +22,88 @@ const statusColor: Record<string, string> = {
   complete: "bg-success/20 text-success",
 };
 
+const stageLabel: Record<string, string> = {
+  prospect: "Prospect",
+  quoting: "Quoting",
+  presenting: "Presenting",
+  lost: "Lost",
+};
+
+const stageColor: Record<string, string> = {
+  prospect: "bg-muted text-muted-foreground",
+  quoting: "bg-primary/10 text-primary",
+  presenting: "bg-accent/20 text-accent-foreground",
+  lost: "bg-destructive/10 text-destructive",
+};
+
+type LeadInfo = {
+  id: string;
+  stage: string;
+  account_name: string;
+  submission_id: string | null;
+};
+
 export default function UserDashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [submissions, setSubmissions] = useState<any[]>([]);
+  const [leads, setLeads] = useState<LeadInfo[]>([]);
+  const [soldLeadIds, setSoldLeadIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
 
   useEffect(() => {
     if (!user) return;
-    loadSubmissions();
+    loadData();
   }, [user]);
 
-  const loadSubmissions = async () => {
+  const loadData = async () => {
     if (!user) return;
-    const { data } = await supabase
-      .from("business_submissions")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false });
-    setSubmissions(data ?? []);
+    const [subRes, leadRes] = await Promise.all([
+      supabase
+        .from("business_submissions")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("leads")
+        .select("id, stage, account_name, submission_id")
+        .eq("owner_user_id", user.id),
+    ]);
+    setSubmissions(subRes.data ?? []);
+    const leadsData = (leadRes.data ?? []) as LeadInfo[];
+    setLeads(leadsData);
+
+    // Check which leads have approved policies (= Sold)
+    if (leadsData.length > 0) {
+      const { data: policies } = await supabase
+        .from("policies")
+        .select("lead_id")
+        .in("lead_id", leadsData.map(l => l.id))
+        .eq("status", "approved");
+      setSoldLeadIds(new Set((policies ?? []).map(p => p.lead_id)));
+    }
+
     setLoading(false);
+  };
+
+  const getLeadForSubmission = (submissionId: string): LeadInfo | undefined => {
+    return leads.find(l => l.submission_id === submissionId);
+  };
+
+  const getPipelineStage = (lead: LeadInfo): { label: string; colorClass: string } => {
+    if (soldLeadIds.has(lead.id)) {
+      return { label: "Sold", colorClass: "bg-green-500/10 text-green-600" };
+    }
+    return {
+      label: stageLabel[lead.stage] || lead.stage,
+      colorClass: stageColor[lead.stage] || "bg-muted text-muted-foreground",
+    };
   };
 
   const duplicateSubmission = async (submission: any) => {
     if (!user) return;
     try {
-      // 1. Duplicate the submission
       const { data: newSub, error: subError } = await supabase
         .from("business_submissions")
         .insert({
@@ -85,7 +140,7 @@ export default function UserDashboard() {
       }
 
       toast.success("Account duplicated!");
-      loadSubmissions();
+      loadData();
     } catch (err: any) {
       toast.error(err.message || "Failed to duplicate");
     }
@@ -208,6 +263,19 @@ export default function UserDashboard() {
                   >
                     {s.status}
                   </Badge>
+                  {(() => {
+                    const lead = getLeadForSubmission(s.id);
+                    if (!lead) return null;
+                    const stage = getPipelineStage(lead);
+                    return (
+                      <Link to={`/lead/${lead.id}`} onClick={(e) => e.stopPropagation()}>
+                        <Badge variant="outline" className={`text-[10px] uppercase tracking-wider font-sans ${stage.colorClass}`}>
+                          <ArrowRight className="h-2.5 w-2.5 mr-1" />
+                          {stage.label}
+                        </Badge>
+                      </Link>
+                    );
+                  })()}
                   {s.coverage_lines && (s.coverage_lines as string[]).length > 0 && (
                     <span className="text-[10px] text-muted-foreground font-sans">
                       {(s.coverage_lines as string[]).join(", ")}
