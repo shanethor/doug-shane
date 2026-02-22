@@ -150,18 +150,16 @@ function TitleSlide() {
         <span className="aura-gradient-text">Insurance Runs On</span>
       </h2>
       <p className="mt-6 text-lg md:text-xl text-muted-foreground max-w-2xl">
-        AURA was built to help producers manage and close business the right way.
+        The operating system behind every transaction.
       </p>
       <p className="mt-3 text-base text-muted-foreground/70 max-w-xl">
         Built by producers. Not software companies.
       </p>
       <p className="mt-6 text-lg font-semibold text-foreground">
-        Insurance Runs on AURA.
+        Insurance runs on AURA.
       </p>
       <div className="mt-10 flex items-center gap-3 text-sm text-muted-foreground/60">
-        <span>Investment Deck</span>
-        <span className="h-1 w-1 rounded-full bg-muted-foreground/30" />
-        <span>Confidential</span>
+        <span>Confidential Investment Deck</span>
       </div>
     </div>
   );
