@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { AlertCircle, Loader2, FileText, CheckSquare, Download, Settings2, Sparkles, BookOpen, Package, AlertTriangle, Info } from "lucide-react";
+import { AlertCircle, Loader2, FileText, CheckSquare, Download, Settings2, Sparkles, BookOpen, Package, AlertTriangle, Info, Paperclip } from "lucide-react";
 import { toast } from "sonner";
 import { ACORD_FORMS, ACORD_FORM_LIST } from "@/lib/acord-forms";
 import { COVERAGE_LINES, getFormsForCoverageLines } from "@/lib/coverage-form-map";
@@ -17,6 +17,7 @@ import { generateAcordPdfAsync } from "@/lib/pdf-generator";
 import { buildAutofilledDataWithAI } from "@/lib/acord-autofill";
 import { generateSubmissionPackage } from "@/lib/submission-package";
 import { runConsistencyChecks, type ConsistencyWarning } from "@/lib/consistency-checks";
+import { ClientDocuments } from "@/components/ClientDocuments";
 
 type Gap = {
   field: string;
@@ -431,6 +432,22 @@ export default function SubmissionReviewPanel({ submissionId }: SubmissionReview
           </CardContent>
         </Card>
       )}
+
+      {/* Client Documents */}
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle className="text-lg font-sans flex items-center gap-2">
+            <Paperclip className="h-5 w-5 text-primary" />
+            Client Documents
+          </CardTitle>
+          <p className="text-xs text-muted-foreground font-sans">
+            Attach loss runs, supplementals, previous coverage docs, and more. Syncs across all views for this client.
+          </p>
+        </CardHeader>
+        <CardContent>
+          <ClientDocuments submissionId={submissionId} />
+        </CardContent>
+      </Card>
 
       {/* Underwriter Narrative */}
       <Card className="mb-8">
