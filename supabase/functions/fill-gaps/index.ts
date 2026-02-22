@@ -153,36 +153,27 @@ serve(async (req) => {
       const companyContext = submission?.company_name ? `\nCOMPANY NAME: ${submission.company_name}` : "";
       const descContext = submission?.description ? `\nORIGINAL BUSINESS DESCRIPTION: ${submission.description}` : "";
 
-      const inferPrompt = `You are an expert insurance underwriter filling ACORD forms (125, 126, 127, 130, 131, 140). Given the KNOWN data, you MUST infer as many EMPTY fields as possible across ALL forms. Be AGGRESSIVE with inference — use industry knowledge.
+      const inferPrompt = `You are an expert insurance underwriter filling ACORD forms (125, 126, 127, 130, 131, 140). Given the KNOWN data, infer empty fields ONLY when the inference is directly supported by existing data.
 
-RULES FOR INFERENCE (follow these strictly):
-- applicant_name / insured_name: Use the company name provided
-- sic_code: Look up the correct SIC for this type of business (e.g., 5812 for restaurants/cafes)
-- class_description_1: If class_code is 9079, description is "Restaurant NOC" 
-- officer_1_title: For an LLC, typical title is "Member/Manager" or "Owner/Member"
-- officer_1_ownership: If officer_name contains "100%", extract just the name and set ownership to "100%"
-- officer_1_included: Default to "Included" for working owners in small businesses
-- officer_1_remuneration: Can estimate based on annual_revenue and business size
-- subcontractor_certs: If subcontractors_used is "No", set to "N/A"
-- employees_travel_out_of_state: For a local restaurant/cafe with multiple state locations, set "Yes" if locations span states
-- seasonal_employees: For a small cafe, typically "No" unless indicated
-- leased_employees: For a small cafe, typically "No"
-- workplace_safety_program: If safety_program is "Yes", set this to "Yes"
-- prior_workers_comp_carrier: Use current_carrier value if it mentions WC
-- wc_loss_history: If prior_losses_last_5_years is "No", set to "No losses reported in last 5 years"
-- proposed_eff_date / effective_date: Use the known effective_date, parse to YYYY-MM-DD
-- proposed_exp_date / expiration_date: Calculate as effective_date + 1 year
-- business_category: Infer from nature_of_business (e.g., "Restaurant" for a tea cafe)
-- annual_revenues: Use annual_revenue value
-- coverage_type: Default "Occurrence" for small businesses
-- exposure_flammables: "No" for typical restaurants
-- policy_declined_cancelled: "No" unless indicated
-- professional_services: "No" for restaurants
-- hazard_classification_1 / hazard_code_1: Use same as WC class if GL
-- alcohol_served: Infer from business type (tea cafe = likely "No")
-- products_sold: "Yes" for any food/beverage establishment
+CRITICAL ANTI-HALLUCINATION RULES:
+- NEVER fabricate data. Only infer values that logically follow from KNOWN DATA below.
+- If KNOWN DATA is empty or minimal, return very few or zero inferred values — that is correct behavior.
+- Do NOT invent addresses, phone numbers, employee counts, revenue figures, SIC/NAICS codes, or any factual data.
+- Do NOT assume business type, industry, or operations unless explicitly stated in KNOWN DATA.
+- Only infer derivative values (e.g. expiration = effective + 1 year, insured_name = applicant_name).
 
-ONLY create gap questions for fields that genuinely require the user's specific input and cannot be reasonably inferred.
+SAFE INFERENCES (only when source data exists):
+- proposed_exp_date = proposed_eff_date + 1 year (if effective date is known)
+- insured_name = applicant_name (if applicant_name is known)
+- coverage_type = "Occurrence" (default for GL forms, only if GL coverage is indicated)
+- If a Yes/No question has an explicit answer elsewhere, propagate it
+
+UNSAFE — DO NOT DO:
+- Guessing SIC codes, class codes, or hazard codes without explicit business type
+- Estimating revenue, payroll, or employee counts
+- Filling in officer names, titles, or ownership percentages
+- Setting safety/compliance flags without evidence
+- Inventing prior carrier information
 ${companyContext}${descContext}
 
 KNOWN DATA:
@@ -191,7 +182,7 @@ ${knownData}
 EMPTY FIELDS THAT NEED VALUES:
 ${emptyFields.join(", ")}
 
-Return inferred values and remaining gaps.`;
+Return inferred values (only those supported by known data) and remaining gaps.`;
 
       // Build explicit properties for inferred_values based on empty fields
       const inferredProps: Record<string, any> = {};
@@ -208,7 +199,7 @@ Return inferred values and remaining gaps.`;
         body: JSON.stringify({
           model: "google/gemini-3-flash-preview",
           messages: [
-            { role: "system", content: "You are an expert insurance underwriter assistant. You MUST fill in inferred_values for every field you can reasonably determine. Do NOT leave inferred_values empty if you can infer values." },
+            { role: "system", content: "You are an expert insurance underwriter assistant. Only fill inferred_values with data that is directly supported by the known data provided. If known data is sparse, return few or zero inferred values — do NOT fabricate data to fill fields." },
             { role: "user", content: inferPrompt },
           ],
           tools: [{
