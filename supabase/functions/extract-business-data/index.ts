@@ -74,6 +74,9 @@ CRITICAL ANTI-HALLUCINATION RULES:
 - If the user provided no business information (empty description, no documents), return ALL fields as empty strings.
 - Only populate a field if you can point to the specific text in the input that contains that value.
 
+CODES — NEVER INFER, ONLY EXTRACT VERBATIM:
+- sic_code, naics_code, naic_code, gl_code, class_code_1, class_code_2, hazard_code_1, hazard_code_2, program_code, ncci_risk_id, wc_class_code, policy_number, prior_policy_number_1, prior_wc_policy_1: these fields must ONLY be populated if the EXACT code/number appears verbatim in the source document. NEVER look up, guess, or infer a code based on business type, industry, or description. If you cannot find the literal code string in the document, leave it as "".
+
 Return this exact structure:
 {
   "form_data": {
@@ -187,6 +190,30 @@ ${file_contents ? `\nAdditional text content:\n${file_contents}` : ""}`;
     // Pre-expand vehicles[] and drivers[] arrays into flat vehicle_N_* / driver_N_* keys
     // This ensures the form fill pipeline has exact flat keys identical to the benchmark ground-truth format
     const fd: Record<string, any> = extracted.form_data || {};
+
+    // Strip code fields that may have been hallucinated by AI
+    const CODE_FIELDS_TO_STRIP = [
+      "sic_code", "naics_code", "naic_code", "gl_code", "class_code_1", "class_code_2",
+      "hazard_code_1", "hazard_code_2", "hazard_code_3", "program_code", "ncci_risk_id",
+      "wc_class_code",
+    ];
+    // Only keep code fields if they appear verbatim in the source text
+    const sourceText = (description || "") + (file_contents || "");
+    for (const codeField of CODE_FIELDS_TO_STRIP) {
+      if (fd[codeField]) {
+        const codeValue = String(fd[codeField]).trim();
+        // If source text doesn't contain the exact code value, strip it
+        if (codeValue && !sourceText.includes(codeValue)) {
+          // For PDF files we can't easily search, keep the value only if it looks like
+          // an actual code (all digits, reasonable length) — but we still strip it
+          // since we can't verify. The extraction prompt should handle this.
+          if (!hasPdfs) {
+            fd[codeField] = "";
+          }
+          // For PDFs, trust the extraction since we told the AI to only extract verbatim
+        }
+      }
+    }
 
     const vehicles: any[] = Array.isArray(fd.vehicles) ? fd.vehicles : [];
     vehicles.forEach((v: any, idx: number) => {

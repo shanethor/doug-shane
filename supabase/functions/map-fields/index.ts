@@ -30,6 +30,15 @@ serve(async (req) => {
 
     const unfilled = target_fields as string[];
 
+    // Filter out code fields — AI must never infer these
+    const CODE_FIELDS = new Set([
+      "sic_code", "naics_code", "naic_code", "gl_code", "class_code_1", "class_code_2",
+      "hazard_code_1", "hazard_code_2", "hazard_code_3", "hazard_code_4", "hazard_code_5",
+      "program_code", "ncci_risk_id", "wc_class_code", "policy_number",
+      "prior_policy_number_1", "prior_wc_policy_1",
+    ]);
+    const filteredUnfilled = (unfilled as string[]).filter(k => !CODE_FIELDS.has(k));
+
     const systemPrompt = `You are an expert insurance data mapper. You map extracted business data to ACORD insurance form fields.
 
 CRITICAL ANTI-HALLUCINATION RULES:
@@ -37,6 +46,7 @@ CRITICAL ANTI-HALLUCINATION RULES:
 - If the extracted data has no value for a field, do NOT create one.
 - Do NOT fill in sample/placeholder values like "123 Main St", "Acme Corp", default SIC codes, or typical limits.
 - Only map a value if it directly comes from the extracted data provided.
+- NEVER infer or look up any CODES (SIC, NAICS, NAIC, GL, class codes, hazard codes, policy numbers, program codes). These are excluded from the target fields list.
 
 Given extracted business data and a list of unfilled ACORD form fields, do TWO things:
 1. Map extracted values to form fields where a direct match exists in the data.
@@ -64,7 +74,7 @@ Extracted Business Data:
 ${extractedSummary}
 
 Unfilled ACORD form fields that need values:
-${unfilled.join(", ")}
+${filteredUnfilled.join(", ")}
 
 Return a JSON object mapping field keys to inferred values. Only include fields you can confidently fill.`;
 

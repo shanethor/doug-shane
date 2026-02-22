@@ -456,7 +456,14 @@ export async function aiInferFieldMappings(
       (k) => alreadyFilled[k] !== "" && alreadyFilled[k] !== null && alreadyFilled[k] !== undefined
     )
   );
-  const unfilledKeys = allFieldKeys.filter((k) => !filledKeys.has(k));
+  // Exclude code fields from AI inference — these must come directly from documents only
+  const CODE_FIELDS = new Set([
+    "sic_code", "naics_code", "naic_code", "gl_code", "class_code_1", "class_code_2",
+    "hazard_code_1", "hazard_code_2", "hazard_code_3", "hazard_code_4", "hazard_code_5",
+    "program_code", "ncci_risk_id", "wc_class_code", "policy_number",
+    "prior_policy_number_1", "prior_wc_policy_1",
+  ]);
+  const unfilledKeys = allFieldKeys.filter((k) => !filledKeys.has(k) && !CODE_FIELDS.has(k));
 
   // Skip if nothing to fill or no extracted data
   if (unfilledKeys.length === 0 || Object.keys(aiData).length === 0) {
