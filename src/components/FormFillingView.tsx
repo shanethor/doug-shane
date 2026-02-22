@@ -981,8 +981,11 @@ export default function FormFillingView({ submissionId, initialMessages, initial
               return (
                 <div
                   key={f.id}
-                  className={`flex items-center gap-2 rounded-md px-2 py-1 transition-colors ${
-                    isEnabled ? "opacity-100" : "opacity-40"
+                  onClick={() => {
+                    if (isEnabled) setActiveFormId(f.id);
+                  }}
+                  className={`flex items-center gap-2 rounded-md px-2 py-1 transition-colors cursor-pointer ${
+                    isEnabled ? "opacity-100" : "opacity-40 cursor-default"
                   } ${isActive && isEnabled ? "bg-primary/10 border border-primary/30" : "hover:bg-muted/50"}`}
                 >
                   <Checkbox
@@ -993,7 +996,6 @@ export default function FormFillingView({ submissionId, initialMessages, initial
                         if (checked) next.add(f.id);
                         else {
                           next.delete(f.id);
-                          // If we removed the active form, switch to first enabled or "all"
                           if (activeFormId === f.id) {
                             const remaining = ACORD_FORM_LIST.find(x => next.has(x.id));
                             setActiveFormId(remaining?.id || "all");
@@ -1002,17 +1004,16 @@ export default function FormFillingView({ submissionId, initialMessages, initial
                         return next;
                       });
                     }}
+                    onClick={(e) => e.stopPropagation()}
                     className="h-3 w-3 shrink-0"
                   />
-                  <button
-                    onClick={() => isEnabled && setActiveFormId(f.id)}
-                    disabled={!isEnabled}
+                  <span
                     className={`flex-1 text-left text-[10px] font-medium truncate ${
                       isActive && isEnabled ? "text-primary" : "text-foreground"
                     }`}
                   >
                     {f.name}
-                  </button>
+                  </span>
                   <span className="text-[9px] font-mono text-muted-foreground shrink-0">{fFilled}/{fTotal}</span>
                 </div>
               );
