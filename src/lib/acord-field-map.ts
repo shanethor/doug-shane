@@ -290,7 +290,7 @@ export const ACORD_127_FIELD_MAP: AcordFieldMap = {
 };
 
 // ─────────────────────────────────────────────────────────────────
-// ACORD 130 (2010/05) — Workers Compensation Application
+// ACORD 130 (2013/01) — Workers Compensation Application
 // ─────────────────────────────────────────────────────────────────
 export const ACORD_130_FIELD_MAP: AcordFieldMap = {
   // Agency & Contact
@@ -1432,22 +1432,21 @@ export const ACORD_127_INDEX_MAP: AcordIndexMap = {
   national_producer_number: 635,
 };
 
-// ── ACORD 130 (2010/05) — Workers Compensation — 486 fields ──
-// Verified: 447 TXT, 35 CHK.
-// CHK blocks: [31-38] business structure, [45-46] type, [48-55] officer inc/exc,
-//   [58-62] misc, [91-92] misc, [117-119] yes/no answers, [122-126] yes/no
+// ── ACORD 130 (2013/01) — Workers Compensation — 484 fields ──
+// Verified: 447 TXT, 37 CHK via /pdf-diagnostic.
+// CHK blocks: [31-38] business structure, [40] misc, [46-56] officer inc/exc & misc,
+//   [59-62] misc, [63] misc, [92-93] misc, [118-120] yes/no, [123-127] yes/no, [129] misc
 // Tab order: header → agency contact → applicant → WC coverages → class codes →
 //   officers → loss history → general questions → remarks
 export const ACORD_130_INDEX_MAP: AcordIndexMap = {
-  // Header [0-6] TXT
-  // NOTE: [5] effective_date is read-only in ACORD 130 PDF — skip
+  // Header [0-6] TXT (skip [5] = effective_date read-only)
   agency_name:            0,
   agency_customer_id:     1,
   carrier:                2,
   naic_code:              3,
   policy_number:          4,
   insured_name:           6,
-  // Agency contact block [7-14] TXT
+  // Agency contact block [7-13] TXT
   producer_name:          7,
   cs_representative:      8,
   agency_phone:           9,
@@ -1455,7 +1454,7 @@ export const ACORD_130_INDEX_MAP: AcordIndexMap = {
   agency_email:          11,
   agency_fax:            12,
   underwriter:           13,
-  // Applicant info [15-30] TXT
+  // Applicant info [14-29] TXT
   applicant_phone:       15,
   applicant_mobile:      16,
   mailing_address:       17,
@@ -1471,22 +1470,26 @@ export const ACORD_130_INDEX_MAP: AcordIndexMap = {
   applicant_email:       27,
   proposed_eff_date:     28,
   proposed_exp_date:     29,
-  // [31-38] CHK = business structure type + misc
-  // WC Coverage limits [39-44] TXT
+  // [30] TXT = anniversary_rating_date or misc
+  anniversary_rating_date: 30,
+  // [31-38] CHK = business structure type
+  // WC Coverage limits [39, 41-44] TXT — [40] is CHK
   wc_part1_states:       39,
-  wc_each_accident:      40,
+  // NOTE: [40] is CHK in 2013/01 edition — wc_each_accident needs manual verification
   wc_disease_policy_limit: 41,
   wc_disease_each_employee: 42,
   additional_endorsements: 43,
   total_estimated_premium: 44,
-  // [45-46] CHK
-  // Class code table — [47]+ with CHKs interspersed for inc/exc
-  class_code_1:          47,
-  // [48-55] CHK = officer included/excluded block
-  class_description_1:   56,
+  // [45] TXT = total_minimum_premium or total_deposit_premium
+  total_minimum_premium: 45,
+  // [46] CHK
+  // Class code table — some indices are CHK in this edition
+  // [47] CHK, [48] TXT
+  // [49-55] CHK = officer included/excluded block
+  // [56] CHK
   num_employees_1:       57,
-  // [58-62] CHK
-  annual_remuneration_1: 63,
+  // [58] TXT, [59-62] CHK
+  // [63] CHK
   est_premium_1:         64,
   class_code_2:          65,
   class_description_2:   66,
@@ -1498,12 +1501,11 @@ export const ACORD_130_INDEX_MAP: AcordIndexMap = {
   num_employees_3:       72,
   annual_remuneration_3: 73,
   est_premium_3:         74,
+  // [75-89] TXT = additional class code rows (unmapped — extend as needed)
   // Totals / experience mod
   experience_mod:        90,
-  // [91-92] CHK
-  mod_effective_date:    93,
-  // Officer schedule [94-113] TXT
-  // NOTE: [94],[95],[96] officer_1_name/title/ownership are read-only in ACORD 130 PDF
+  // [91] TXT, [92-93] CHK
+  // Officer schedule [94-108] TXT
   officer_1_duties:      97,
   officer_1_remuneration: 98,
   officer_2_name:        99,
@@ -1516,18 +1518,16 @@ export const ACORD_130_INDEX_MAP: AcordIndexMap = {
   officer_3_ownership:   106,
   officer_3_duties:      107,
   officer_3_remuneration: 108,
-  // Prior carrier / loss history [109-116]
+  // Prior carrier / loss history [109-116] TXT
   prior_wc_carrier_1:   109,
   prior_wc_policy_1:    110,
   prior_wc_premium_1:   111,
-  // [117-119] CHK = yes/no question answers
-  // Prior carrier continued [120-121]
-  rating_state:         120,
-  // [122-126] CHK
-  // Nature of business / remarks [127+]
-  // NOTE: [128] is CHK in ACORD 130 — annual_revenues has no TXT field in this PDF version
-  description_of_operations: 127,
-  full_time_employees:  129,
+  // [112-117] TXT = additional prior carrier rows
+  // [118-119] CHK, [120] CHK
+  // [121-122] TXT
+  // [123-127] CHK
+  // Nature of business / remarks [128+]
+  // [127] is CHK, [128] TXT, [129] CHK
   part_time_employees:  130,
   wc_general_remarks:   131,
   wc_remarks:           132,

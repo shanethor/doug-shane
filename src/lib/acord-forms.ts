@@ -389,7 +389,7 @@ const acord127Fields: AcordFormField[] = [
 ];
 
 // ============================================================
-// ACORD 130 (2010/05) — Workers Compensation Application
+// ACORD 130 (2013/01) — Workers Compensation Application
 // ============================================================
 const acord130Fields: AcordFormField[] = [
   // Agency & Contact
@@ -768,7 +768,7 @@ export const ACORD_FORMS: Record<string, AcordFormDefinition> = {
   "acord-130": {
     id: "acord-130",
     name: "ACORD 130",
-    fullName: "Workers Compensation Application (2010/05)",
+    fullName: "Workers Compensation Application (2013/01)",
     description: "WC coverages, state rating information, individuals included/excluded, prior carrier/loss history, and 24 general information questions.",
     fields: acord130Fields,
     pages: ["/acord-pages/130-page1.jpg", "/acord-pages/130-page2.jpg", "/acord-pages/130-page3.jpg", "/acord-pages/130-page4.jpg"],
