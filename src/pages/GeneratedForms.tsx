@@ -11,7 +11,8 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Download, Trash2, FileText, ClipboardCopy, Loader2, FlaskConical, CheckCircle, XCircle, AlertTriangle, ChevronDown, ChevronUp, Globe } from "lucide-react";
+import { Plus, Download, Trash2, FileText, ClipboardCopy, Loader2, FlaskConical, CheckCircle, XCircle, AlertTriangle, ChevronDown, ChevronUp, Globe, MessageSquare } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { generateRestaurantSupplement, generateContractorSupplement, REAL_POLICY_DOCUMENTS } from "@/lib/dummy-form-data";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ACORD_FORMS } from "@/lib/acord-forms";
@@ -55,6 +56,7 @@ type BenchmarkSummary = {
 };
 
 export default function GeneratedForms() {
+  const navigate = useNavigate();
   const { session } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -693,7 +695,27 @@ export default function GeneratedForms() {
                     />
                   </div>
 
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 flex-wrap">
+                    <Button
+                      variant="default"
+                      size="sm"
+                      className="flex-1 gap-1.5 text-xs"
+                      onClick={() => {
+                        // Navigate to chat with this form's data as context
+                        const formData = form.form_data as Record<string, any>;
+                        const summary = Object.entries(formData)
+                          .filter(([, v]) => v !== null && v !== undefined && v !== "")
+                          .map(([k, v]) => `${k}: ${typeof v === "object" ? JSON.stringify(v) : v}`)
+                          .join("\n");
+                        navigate("/", {
+                          state: {
+                            prefillMessage: `I have the following business data from a ${typeLabel(form.form_type)} form. Please review it, ask me questions to fill any gaps, and help me complete the ACORD forms:\n\n${summary}`,
+                          },
+                        });
+                      }}
+                    >
+                      <MessageSquare className="h-3 w-3" /> Chat
+                    </Button>
                     <Button
                       variant="outline"
                       size="sm"
@@ -704,11 +726,11 @@ export default function GeneratedForms() {
                       {testingFormId === form.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <FlaskConical className="h-3 w-3" />}
                       {testingFormId === form.id && scrapingWebsite ? "Scraping…" : testingFormId === form.id ? "Testing…" : cardWebsiteUrls[form.id]?.trim() ? "Test + Scrape" : "Test"}
                     </Button>
-                    <Button variant="outline" size="sm" className="flex-1 gap-1.5 text-xs" onClick={() => handleDownload(form)}>
-                      <Download className="h-3 w-3" /> Download
+                    <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => handleDownload(form)}>
+                      <Download className="h-3 w-3" />
                     </Button>
                     <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive gap-1.5 text-xs" onClick={() => handleDelete(form.id)}>
-                      <Trash2 className="h-3 w-3" /> Delete
+                      <Trash2 className="h-3 w-3" />
                     </Button>
                   </div>
                 </CardContent>
