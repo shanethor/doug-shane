@@ -1012,12 +1012,12 @@ export default function Chat() {
         <div ref={scrollRef} className="flex-1 overflow-y-auto">
           {isEmpty ? (
             <div className="flex flex-col items-center justify-center min-h-full gap-6 px-4 py-12">
-              <div className="text-center space-y-1">
+              <div className="text-center space-y-2">
                 <h1 className="text-4xl tracking-tight aura-gradient-text">
-                  I'm AURA
+                  What are we working on?
                 </h1>
                 <p className="text-muted-foreground text-sm">
-                  Your insurance trained AI co-pilot
+                  I'm <span className="font-bold text-foreground">AURA</span> — your insurance trained AI co-pilot
                 </p>
               </div>
 
