@@ -16,6 +16,8 @@ const ACORD_125_FIELDS = [
   "safety_program", "exposure_flammables", "policy_declined_cancelled",
   "prior_carrier_1", "sic_code", "naics_code", "website",
   "subsidiary_of_another", "has_subsidiaries", "bankruptcy", "foreign_operations",
+  "total_employees", "occupied_sq_ft", "premises_address", "premises_city",
+  "premises_state", "premises_zip", "contact_name", "contact_phone",
 ];
 
 const ACORD_126_FIELDS = [
@@ -25,6 +27,7 @@ const ACORD_126_FIELDS = [
   "hazard_classification_1", "hazard_code_1", "hazard_exposure_1",
   "alcohol_served", "products_sold", "professional_services",
   "draws_plans_for_others", "installs_services_products",
+  "blasting_explosives", "annual_gross_sales",
 ];
 
 const ACORD_127_FIELDS = [
@@ -34,6 +37,8 @@ const ACORD_127_FIELDS = [
   "vehicle_1_body_type", "vehicle_1_radius",
   "garaging_street", "garaging_city", "garaging_state", "garaging_zip",
   "transporting_hazmat", "vehicle_maintenance_program",
+  "driver_monitoring_program", "safety_program_auto", "mvr_checks",
+  "driver_training", "pre_post_trip_inspections",
 ];
 
 const ACORD_130_FIELDS = [
@@ -41,11 +46,13 @@ const ACORD_130_FIELDS = [
   "mailing_address", "city", "state", "zip", "fein", "business_type",
   "nature_of_business", "sic_code", "description_of_operations",
   "class_code_1", "class_description_1", "num_employees_1", "annual_remuneration_1",
+  "class_code_2", "class_description_2", "num_employees_2", "annual_remuneration_2",
   "officer_1_name", "officer_1_title", "officer_1_ownership", "officer_1_inc_exc", "officer_1_remuneration",
   "subcontractors_used", "subcontractor_certs", "wc_travel_out_of_state",
   "seasonal_employees", "wc_lease_employees", "workplace_safety_program",
   "prior_wc_carrier_1", "wc_part1_states", "rating_state",
   "wc_each_accident", "wc_disease_policy_limit", "wc_disease_each_employee",
+  "experience_mod",
 ];
 
 const ACORD_131_FIELDS = [
@@ -69,6 +76,7 @@ const ACORD_140_FIELDS = [
   "business_income_amount", "extra_expense_amount",
   "roof_type", "sprinkler_pct", "fire_alarm_type", "burglar_alarm_type",
   "primary_heat_type", "protection_class",
+  "occupied_sq_ft", "vacancy_pct",
 ];
 
 const ALL_TARGET_FIELDS: Record<string, string[]> = {
