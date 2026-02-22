@@ -621,18 +621,301 @@ export const FILLABLE_PDF_PATHS: Record<string, string> = {
 // ─────────────────────────────────────────────────────────────────
 
 // ── ACORD 126 (2009/08) — Commercial General Liability Section ──
-// INDEX MAP CLEARED — new PDF requires re-mapping via /pdf-diagnostic.
-// Use "Fill All TXT" to export field indices, then populate below.
+// 253 TXT fields across 4 pages. Indices verified via /pdf-diagnostic "Fill All TXT".
+// Gaps in numbering (8-12, 14, 16, 18, 21-22, 24-27, 151, 210, etc.) are CHK (checkbox) fields.
 export const ACORD_126_INDEX_MAP: AcordIndexMap = {
-  // TODO: Run /pdf-diagnostic on new 126.pdf and populate indices
-  // Header fields — placeholders, verify with diagnostic
-  // agency_name:            0,
-  // agency_customer_id:     1,
-  // carrier:                2,
-  // naic_code:              3,
-  // policy_number:          4,
-  // effective_date:         5,
-  // insured_name:           6,
+  // ── Page 1 (P1) — Header / Coverages / Schedule of Hazards ──
+  agency_name:                0,   // P1.Text1  — Agency Name
+  agency_customer_id:         1,   // P1.Text2  — Agency Customer ID
+  transaction_date:           2,   // P1.Text3  — Date (MM/DD/YYYY)
+  carrier:                    3,   // P1.Text4  — Company
+  naic_code:                  4,   // P1.Text5  — NAIC Code
+  policy_number:              5,   // P1.Text6  — Policy Number
+  effective_date:             6,   // P1.Text7  — Effective Date
+  insured_name:               7,   // P1.Text8  — Named Insured
+
+  // Coverage Limits
+  each_occurrence:           13,   // P1.Text9  — Each Occurrence Limit
+  fire_damage:               15,   // P1.Text10 — Fire Damage (Any one fire)
+  medical_payments:          17,   // P1.Text11 — Med Exp (Any one person)
+  personal_adv_injury:       19,   // P1.Text12 — Personal & Adv Injury
+  general_aggregate:         20,   // P1.Text13 — General Aggregate
+  products_aggregate:        23,   // P1.Text14 — Products-Comp/Op Agg
+
+  // Deductibles & Other Coverage Details
+  deductible_amount:         28,   // P1.Text15 — Deductible Amount
+  deductible_applies:        29,   // P1.Text16 — Deductible Applies To
+  retention_amount:          30,   // P1.Text17 — SIR / Retention
+  aggregate_applies_per:     31,   // P1.Text18 — Aggregate Limit Applies Per
+  ebl_limit:                 32,   // P1.Text19 — Employee Benefits Liability Limit
+  other_coverage_1:          33,   // P1.Text20 — Other Coverage/Endorsement 1
+  other_coverage_2:          34,   // P1.Text21 — Other Coverage/Endorsement 2
+  other_coverage_3:          35,   // P1.Text22 — Other Coverage/Endorsement 3
+
+  // Schedule of Hazards — Row 1
+  hazard_loc_1:              36,   // P1.Text23 — Loc #
+  hazard_bldg_1:             37,   // P1.Text24 — Bldg #
+  hazard_code_1:             38,   // P1.Text25 — Class Code
+  hazard_classification_1:   39,   // P1.Text26 — Classification Description
+  hazard_exposure_1:         40,   // P1.Text27 — Premium Basis / Exposure
+  hazard_rate_premops_1:     41,   // P1.Text28 — Rate PremOps
+  hazard_rate_products_1:    42,   // P1.Text29 — Rate Products
+  hazard_premium_premops_1:  43,   // P1.Text30 — Premium PremOps
+  hazard_premium_products_1: 44,   // P1.Text31 — Premium Products
+
+  // Schedule of Hazards — Row 2
+  hazard_loc_2:              45,   // P1.Text32
+  hazard_bldg_2:             46,   // P1.Text33
+  hazard_code_2:             47,   // P1.Text34
+  hazard_classification_2:   48,   // P1.Text35
+  hazard_exposure_2:         49,   // P1.Text36
+  hazard_rate_premops_2:     50,   // P1.Text37
+  hazard_rate_products_2:    51,   // P1.Text38
+  hazard_premium_premops_2:  52,   // P1.Text39
+  hazard_premium_products_2: 53,   // P1.Text40
+
+  // Schedule of Hazards — Row 3
+  hazard_loc_3:              54,   // P1.Text41
+  hazard_bldg_3:             55,   // P1.Text42
+  hazard_code_3:             56,   // P1.Text43
+  hazard_classification_3:   57,   // P1.Text44
+  hazard_exposure_3:         58,   // P1.Text45
+  hazard_rate_premops_3:     59,   // P1.Text46
+  hazard_rate_products_3:    60,   // P1.Text47
+  hazard_premium_premops_3:  61,   // P1.Text48
+  hazard_premium_products_3: 62,   // P1.Text49
+
+  // Schedule of Hazards — Row 4
+  hazard_loc_4:              63,   // P1.Text50
+  hazard_bldg_4:             64,   // P1.Text51
+  hazard_code_4:             65,   // P1.Text52
+  hazard_classification_4:   66,   // P1.Text53
+  hazard_exposure_4:         67,   // P1.Text54
+  hazard_rate_premops_4:     68,   // P1.Text55
+  hazard_rate_products_4:    69,   // P1.Text56
+  hazard_premium_premops_4:  70,   // P1.Text57
+  hazard_premium_products_4: 71,   // P1.Text58
+
+  // Schedule of Hazards — Row 5
+  hazard_loc_5:              72,   // P1.Text59
+  hazard_bldg_5:             73,   // P1.Text60
+  hazard_code_5:             74,   // P1.Text61
+  hazard_classification_5:   75,   // P1.Text62
+  hazard_exposure_5:         76,   // P1.Text63
+  hazard_rate_premops_5:     77,   // P1.Text64
+  hazard_rate_products_5:    78,   // P1.Text65
+  hazard_premium_premops_5:  79,   // P1.Text66
+  hazard_premium_products_5: 80,   // P1.Text67
+
+  // Schedule of Hazards — Row 6
+  hazard_loc_6:              81,   // P1.Text68
+  hazard_bldg_6:             82,   // P1.Text69
+  hazard_code_6:             83,   // P1.Text70
+  hazard_classification_6:   84,   // P1.Text71
+  hazard_exposure_6:         85,   // P1.Text72
+  hazard_rate_premops_6:     86,   // P1.Text73
+  hazard_rate_products_6:    87,   // P1.Text74
+  hazard_premium_premops_6:  88,   // P1.Text75
+  hazard_premium_products_6: 89,   // P1.Text76
+
+  // Schedule of Hazards — Row 7
+  hazard_loc_7:              90,   // P1.Text77
+  hazard_bldg_7:             91,   // P1.Text78
+  hazard_code_7:             92,   // P1.Text79
+  hazard_classification_7:   93,   // P1.Text80
+  hazard_exposure_7:         94,   // P1.Text81
+  hazard_rate_premops_7:     95,   // P1.Text82
+  hazard_rate_products_7:    96,   // P1.Text83
+  hazard_premium_premops_7:  97,   // P1.Text84
+  hazard_premium_products_7: 98,   // P1.Text85
+
+  // Schedule of Hazards — Row 8
+  hazard_loc_8:              99,   // P1.Text86
+  hazard_bldg_8:            100,   // P1.Text87
+  hazard_code_8:            101,   // P1.Text88
+  hazard_classification_8:  102,   // P1.Text89
+  hazard_exposure_8:        103,   // P1.Text90
+  hazard_rate_premops_8:    104,   // P1.Text91
+  hazard_rate_products_8:   105,   // P1.Text92
+  hazard_premium_premops_8: 106,   // P1.Text93
+  hazard_premium_products_8:107,   // P1.Text94
+
+  // Premium Totals
+  total_premium_premops:    108,   // P1.Text95 — Total Prem/Ops Premium
+  total_premium_products:   109,   // P1.Text96 — Total Products Premium
+  premium_subtotal:         110,   // P1.Text97 — Premium Subtotal
+  premium_tax:              111,   // P1.Text98 — Premium Tax
+  total_premium:            112,   // P1.Text99 — Total Premium
+
+  // Products / Completed Operations Questions
+  q7_desc_products:         113,   // P1.Text100 — Q7 Description of Products
+  q8_pct_foreign:           114,   // P1.Text101 — Q8 % Foreign Products
+  q9_recall_expense:        115,   // P1.Text102 — Q9 Recall Expense
+  q10_annual_sales:         116,   // P1.Text103 — Q10 Annual Sales
+
+  // Claims-Made Section
+  retroactive_date:         117,   // P1.Text104 — Retroactive Date
+  entry_date_claims_made:   118,   // P1.Text105 — Entry Date
+  claims_made_pending:      119,   // P1.Text106 — Pending Claims Count
+  claims_made_prior_acts:   120,   // P1.Text107 — Prior Acts Date
+
+  // Additional Coverage Details
+  additional_cov_1:         121,   // P1.Text108
+  additional_cov_2:         122,   // P1.Text109
+  additional_cov_3:         123,   // P1.Text110
+  additional_cov_4:         124,   // P1.Text111
+  additional_cov_5:         125,   // P1.Text112
+  additional_cov_6:         126,   // P1.Text113
+  additional_cov_7:         127,   // P1.Text114
+  additional_cov_8:         128,   // P1.Text115
+  additional_cov_9:         129,   // P1.Text116
+  additional_cov_10:        130,   // P1.Text117
+  additional_cov_11:        131,   // P1.Text118
+  additional_cov_12:        132,   // P1.Text119
+  additional_cov_13:        133,   // P1.Text120
+  additional_cov_14:        134,   // P1.Text121
+  additional_cov_15:        135,   // P1.Text122
+  additional_cov_16:        136,   // P1.Text123
+  additional_cov_17:        137,   // P1.Text124
+  additional_cov_18:        138,   // P1.Text125
+  additional_cov_19:        139,   // P1.Text126
+  additional_cov_20:        140,   // P1.Text127
+
+  // Employee Benefits Liability
+  ebl_deductible_per_claim: 141,   // P1.Text128 — EBL Deductible Per Claim
+  ebl_aggregate:            142,   // P1.Text129 — EBL Aggregate
+  ebl_num_employees:        143,   // P1.Text130 — Number of Employees
+  ebl_retroactive_date:     144,   // P1.Text131 — EBL Retroactive Date
+  ebl_desc_plan_1:          145,   // P1.Text132
+  ebl_desc_plan_2:          146,   // P1.Text133
+  ebl_desc_plan_3:          147,   // P1.Text134
+  ebl_plan_admin:           148,   // P1.Text135
+  ebl_fiduciary_coverage:   149,   // P1.Text136
+  ebl_additional:           150,   // P1.Text137
+
+  // ── Page 2 (P2) — Contractor Questions / General Info ──
+  contractor_q1_desc:       152,   // P2.Text1  — Q1 Description
+  contractor_q2_desc:       153,   // P2.Text2  — Q2 Description
+  contractor_q3_desc:       154,   // P2.Text3  — Q3 Description
+  contractor_q4_desc:       155,   // P2.Text4  — Q4 Description
+  contractor_q5_desc:       156,   // P2.Text5  — Q5 Description
+  contractor_q6_desc:       157,   // P2.Text6  — Q6 Description
+  type_work_subcontracted:  158,   // P2.Text7  — Type of Work Subcontracted
+  paid_to_subcontractors:   159,   // P2.Text8  — Amount Paid to Subs
+  pct_work_subcontracted:   160,   // P2.Text9  — % Subcontracted
+
+  // General Information Questions (P2 continuation)
+  gen_q1_desc:              161,   // P2.Text10
+  gen_q2_desc:              162,   // P2.Text11
+  gen_q3_desc:              163,   // P2.Text12
+  gen_q4_desc:              164,   // P2.Text13
+  gen_q5_desc:              165,   // P2.Text14
+  gen_q6_desc:              166,   // P2.Text15
+  gen_q7_desc:              167,   // P2.Text16
+  gen_q8_desc:              168,   // P2.Text17
+  gen_q9_desc:              169,   // P2.Text18
+  gen_q10_desc:             170,   // P2.Text19
+  gen_q11_desc:             171,   // P2.Text20
+  gen_q12_desc:             172,   // P2.Text21
+  gen_q13_desc:             173,   // P2.Text22
+  gen_q14_desc:             174,   // P2.Text23
+  gen_q15_desc:             175,   // P2.Text24
+  gen_q16_desc:             176,   // P2.Text25
+  gen_q17_desc:             177,   // P2.Text26
+  gen_q18_desc:             178,   // P2.Text27
+  gen_q19_desc:             179,   // P2.Text28
+  gen_q20_desc:             180,   // P2.Text29
+  gen_q21_desc:             181,   // P2.Text30
+  gen_q22_desc:             182,   // P2.Text31
+  gen_q23_desc:             183,   // P2.Text32
+  gen_q24_desc:             184,   // P2.Text33
+  gen_q25_desc:             185,   // P2.Text34
+  gen_q26_desc:             186,   // P2.Text35
+  gen_q27_desc:             187,   // P2.Text36
+  gen_q28_desc:             188,   // P2.Text37
+  gen_q29_desc:             189,   // P2.Text38
+  gen_q30_desc:             190,   // P2.Text39
+  gen_q31_desc:             191,   // P2.Text40
+  gen_q32_desc:             192,   // P2.Text41
+  gen_q33_desc:             193,   // P2.Text42
+  gen_q34_desc:             194,   // P2.Text43
+  gen_q35_desc:             195,   // P2.Text44
+  gen_q36_desc:             196,   // P2.Text45
+  gen_q37_desc:             197,   // P2.Text46
+  gen_q38_desc:             198,   // P2.Text47
+  gen_q39_desc:             199,   // P2.Text48
+  gen_q40_desc:             200,   // P2.Text49
+  gen_q41_desc:             201,   // P2.Text50
+  gen_q42_desc:             202,   // P2.Text51
+  gen_q43_desc:             203,   // P2.Text52
+  gen_q44_desc:             204,   // P2.Text53
+  gen_q45_desc:             205,   // P2.Text54
+  gen_q46_desc:             206,   // P2.Text55
+  gen_q47_desc:             207,   // P2.Text56
+  gen_q48_desc:             208,   // P2.Text57
+  general_questions_remarks:209,   // P2.Text58 — Explain All Yes Responses
+
+  // ── Page 3 (P3) — Additional Interests / Remarks ──
+  additional_interest_remarks: 211, // P3.Text1  — Additional Interest Remarks
+  ai_1_rank:                219,   // P3.Text2
+  ai_1_name:                220,   // P3.Text3
+  ai_1_address:             222,   // P3.Text4
+  ai_1_loc:                 223,   // P3.Text6
+  ai_1_bldg:                224,   // P3.Text7
+  ai_2_rank:                225,   // P3.Text8
+  ai_2_name:                226,   // P3.Text9
+  ai_2_address:             227,   // P3.Text10
+  ai_2_loc:                 228,   // P3.Text11
+  ai_2_bldg:                229,   // P3.Text12
+  ai_3_rank:                230,   // P3.Text13
+  ai_3_name:                231,   // P3.Text14
+  ai_3_address:             232,   // P3.Text15
+  ai_3_loc:                 233,   // P3.Text16
+  ai_3_bldg:                234,   // P3.Text17
+  ai_4_rank:                235,   // P3.Text18
+  ai_4_name:                236,   // P3.Text19
+  ai_4_address:             237,   // P3.Text20
+  ai_4_loc:                 238,   // P3.Text21
+  ai_4_bldg:                239,   // P3.Text22
+  ai_5_rank:                240,   // P3.Text23
+  ai_5_name:                241,   // P3.Text24
+  ai_5_address:             242,   // P3.Text25
+  ai_5_loc:                 243,   // P3.Text26
+  ai_5_bldg:                244,   // P3.Text27
+  ai_6_rank:                245,   // P3.Text28
+  ai_6_name:                246,   // P3.Text29
+  ai_6_address:             247,   // P3.Text30
+  ai_6_loc:                 248,   // P3.Text31
+  ai_6_bldg:                249,   // P3.Text32
+  ai_7_rank:                250,   // P3.Text33
+  ai_7_name:                251,   // P3.Text34
+  ai_7_address:             252,   // P3.Text35
+  ai_7_loc:                 253,   // P3.Text36
+  ai_7_bldg:                254,   // P3.Text37
+  ai_8_rank:                255,   // P3.Text38
+  ai_8_name:                256,   // P3.Text39
+  ai_8_address:             257,   // P3.Text40
+  ai_8_loc:                 258,   // P3.Text41
+  ai_8_bldg:                259,   // P3.Text42
+  remarks_126_p3_1:         260,   // P3.Text43
+  remarks_126_p3_2:         261,   // P3.Text44
+  remarks_126_p3_3:         262,   // P3.Text45
+  remarks_126_p3_4:         263,   // P3.Text46
+  remarks_126_p3_5:         264,   // P3.Text47
+
+  // ── Page 4 (P4) — Remarks (continued) / Signature ──
+  remarks_126_p4_1:         266,   // P4.Text1
+  remarks_126_p4_2:         267,   // P4.Text2
+  remarks_126_p4_3:         268,   // P4.Text3
+  remarks_126_p4_4:         269,   // P4.Text4
+  remarks_126_p4_5:         270,   // P4.Text5
+  remarks_126_p4_6:         271,   // P4.Text6
+  remarks_126_p4_7:         272,   // P4.Text7
+  remarks_126_p4_8:         273,   // P4.Text8
+  remarks_126_p4_9:         274,   // P4.Text9
+  remarks_126_p4_10:        275,   // P4.Text10
+  remarks_126_p4_11:        276,   // P4.Text11
+  remarks_126_p4_12:        277,   // P4.Text12
 };
 
 // ── ACORD 127 — Business Auto Section — 460 TXT fields ──
