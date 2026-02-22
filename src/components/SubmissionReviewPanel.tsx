@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { AlertCircle, Loader2, FileText, CheckSquare, Download, Settings2, Sparkles, BookOpen, Package, AlertTriangle, Info, Paperclip } from "lucide-react";
+import { AlertCircle, Loader2, FileText, CheckSquare, Download, Settings2, Sparkles, BookOpen, Package, AlertTriangle, Info, Paperclip, BrainCircuit } from "lucide-react";
 import { toast } from "sonner";
 import { ACORD_FORMS, ACORD_FORM_LIST } from "@/lib/acord-forms";
 import { COVERAGE_LINES, getFormsForCoverageLines } from "@/lib/coverage-form-map";
@@ -57,6 +57,7 @@ export default function SubmissionReviewPanel({ submissionId }: SubmissionReview
   const [savingDefaults, setSavingDefaults] = useState(false);
   const [narrative, setNarrative] = useState("");
   const [consistencyWarnings, setConsistencyWarnings] = useState<ConsistencyWarning[]>([]);
+  const [extracting, setExtracting] = useState(false);
 
   useEffect(() => {
     if (!user || !submissionId) return;
@@ -109,6 +110,113 @@ export default function SubmissionReviewPanel({ submissionId }: SubmissionReview
     if (error) toast.error("Failed to save defaults");
     else toast.success("Defaults saved! These will apply to all future forms.");
     setSavingDefaults(false);
+  };
+
+  const readFileAsBase64 = (file: File): Promise<string> =>
+    new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result as string;
+        resolve(result.split(",")[1] || "");
+      };
+      reader.onerror = () => resolve("");
+      reader.readAsDataURL(file);
+    });
+
+  const readFileAsText = (file: File): Promise<string> =>
+    new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = () => resolve("");
+      reader.readAsText(file);
+    });
+
+  /** Extract data from dropped documents and merge into existing form_data */
+  const handleDocumentExtraction = async (files: File[]) => {
+    if (!user || !application || files.length === 0) return;
+    setExtracting(true);
+
+    try {
+      let textContents = "";
+      const pdfFiles: { name: string; base64: string; mimeType: string }[] = [];
+
+      for (const file of files) {
+        if (file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")) {
+          const base64 = await readFileAsBase64(file);
+          pdfFiles.push({ name: file.name, base64, mimeType: "application/pdf" });
+        } else if (file.type.startsWith("text/") || /\.(txt|md|csv)$/i.test(file.name)) {
+          const content = await readFileAsText(file);
+          textContents += `\n--- ${file.name} ---\n${content}`;
+        } else if (file.type.startsWith("image/")) {
+          const base64 = await readFileAsBase64(file);
+          pdfFiles.push({ name: file.name, base64, mimeType: file.type });
+        }
+      }
+
+      if (!textContents && pdfFiles.length === 0) {
+        toast.error("No extractable content found in dropped files.");
+        setExtracting(false);
+        return;
+      }
+
+      const fileNames = files.map(f => f.name).join(", ");
+      toast.info(`Extracting data from ${fileNames}…`);
+
+      const extractResp = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/extract-business-data`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          },
+          body: JSON.stringify({
+            description: `Supplemental document upload: ${fileNames}`,
+            file_contents: textContents || undefined,
+            pdf_files: pdfFiles.length > 0 ? pdfFiles : undefined,
+            submission_id: submissionId,
+          }),
+        }
+      );
+
+      if (!extractResp.ok) {
+        const errBody = await extractResp.json().catch(() => ({}));
+        throw new Error(errBody.error || `Extraction failed (${extractResp.status})`);
+      }
+
+      const extracted = await extractResp.json();
+      const newFields = extracted?.form_data || {};
+
+      // Merge: new extracted fields fill gaps but don't overwrite existing values
+      const existingData = (application.form_data || {}) as Record<string, any>;
+      const merged: Record<string, any> = { ...existingData };
+      let newFieldCount = 0;
+
+      for (const [key, value] of Object.entries(newFields)) {
+        if (value && (!merged[key] || (typeof merged[key] === "string" && !merged[key].trim()))) {
+          merged[key] = value;
+          newFieldCount++;
+        }
+      }
+
+      // Persist merged data
+      const { error } = await supabase
+        .from("insurance_applications")
+        .update({ form_data: merged })
+        .eq("id", application.id);
+
+      if (error) throw error;
+
+      setApplication((prev: any) => ({ ...prev, form_data: merged }));
+
+      toast.success(
+        `Extracted ${newFieldCount} new field${newFieldCount !== 1 ? "s" : ""} from ${fileNames}. Data merged into your forms.`
+      );
+    } catch (err: any) {
+      console.error("Document extraction error:", err);
+      toast.error(err.message || "Failed to extract data from documents");
+    }
+    setExtracting(false);
   };
 
   const submitGapAnswers = async () => {
@@ -433,19 +541,28 @@ export default function SubmissionReviewPanel({ submissionId }: SubmissionReview
         </Card>
       )}
 
-      {/* Client Documents */}
+      {/* Client Documents with auto-extraction */}
       <Card className="mb-8">
         <CardHeader>
           <CardTitle className="text-lg font-sans flex items-center gap-2">
             <Paperclip className="h-5 w-5 text-primary" />
             Client Documents
+            {extracting && (
+              <Badge variant="outline" className="ml-2 gap-1 text-[10px] bg-primary/10 text-primary animate-pulse">
+                <BrainCircuit className="h-3 w-3" />
+                Extracting data…
+              </Badge>
+            )}
           </CardTitle>
           <p className="text-xs text-muted-foreground font-sans">
-            Attach loss runs, supplementals, previous coverage docs, and more. Syncs across all views for this client.
+            Drop files here to auto-extract data into ACORD fields. Syncs across all views for this client.
           </p>
         </CardHeader>
         <CardContent>
-          <ClientDocuments submissionId={submissionId} />
+          <ClientDocuments
+            submissionId={submissionId}
+            onFilesDropped={handleDocumentExtraction}
+          />
         </CardContent>
       </Card>
 
