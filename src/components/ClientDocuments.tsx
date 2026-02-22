@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -52,7 +52,7 @@ type ClientDocument = {
 type Props = {
   submissionId?: string | null;
   leadId?: string | null;
-  compact?: boolean; // compact mode for pipeline cards / client rows
+  compact?: boolean;
 };
 
 export function ClientDocuments({ submissionId, leadId, compact = false }: Props) {
@@ -84,13 +84,10 @@ export function ClientDocuments({ submissionId, leadId, compact = false }: Props
     loadDocs();
   }, [user, submissionId, leadId]);
 
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !user) return;
-
+  const uploadFile = useCallback(async (file: File, type?: string) => {
+    if (!user) return;
     setUploading(true);
     try {
-      // Convert to base64 data URL for storage (no storage bucket available)
       const reader = new FileReader();
       const dataUrl = await new Promise<string>((resolve, reject) => {
         reader.onload = () => resolve(reader.result as string);
@@ -102,13 +99,12 @@ export function ClientDocuments({ submissionId, leadId, compact = false }: Props
         user_id: user.id,
         file_name: file.name,
         file_url: dataUrl,
-        document_type: docType,
+        document_type: type || docType,
         file_size: file.size,
       };
 
       if (submissionId) insertData.submission_id = submissionId;
       if (leadId) insertData.lead_id = leadId;
-      // If we have a submissionId, also try to find associated lead
       if (submissionId && !leadId) {
         const { data: lead } = await supabase
           .from("leads")
@@ -130,6 +126,12 @@ export function ClientDocuments({ submissionId, leadId, compact = false }: Props
       setUploading(false);
       if (fileRef.current) fileRef.current.value = "";
     }
+  }, [user, submissionId, leadId, docType]);
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    await uploadFile(file);
   };
 
   const handleDelete = async (docId: string) => {
@@ -150,7 +152,6 @@ export function ClientDocuments({ submissionId, leadId, compact = false }: Props
 
   const typeLabel = (type: string) => DOC_TYPES.find((t) => t.value === type)?.label || type;
 
-  // Compact mode: just show count badge + dialog trigger
   if (compact) {
     return (
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -178,13 +179,13 @@ export function ClientDocuments({ submissionId, leadId, compact = false }: Props
             handleDelete={handleDelete}
             formatSize={formatSize}
             typeLabel={typeLabel}
+            uploadFile={uploadFile}
           />
         </DialogContent>
       </Dialog>
     );
   }
 
-  // Full inline view
   return (
     <FullDocumentView
       docs={docs}
@@ -196,6 +197,7 @@ export function ClientDocuments({ submissionId, leadId, compact = false }: Props
       handleDelete={handleDelete}
       formatSize={formatSize}
       typeLabel={typeLabel}
+      uploadFile={uploadFile}
     />
   );
 }
@@ -210,6 +212,7 @@ function FullDocumentView({
   handleDelete,
   formatSize,
   typeLabel,
+  uploadFile,
 }: {
   docs: ClientDocument[];
   docType: string;
@@ -220,43 +223,88 @@ function FullDocumentView({
   handleDelete: (id: string) => void;
   formatSize: (n: number | null) => string;
   typeLabel: (t: string) => string;
+  uploadFile: (file: File, type?: string) => Promise<void>;
 }) {
+  const [dragOver, setDragOver] = useState(false);
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    e.dataTransfer.dropEffect = "copy";
+    setDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOver(false);
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOver(false);
+
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length === 0) return;
+
+    for (const file of files) {
+      await uploadFile(file, docType);
+    }
+  };
+
   return (
     <div className="space-y-3">
-      {/* Upload controls */}
-      <div className="flex items-center gap-2">
-        <Select value={docType} onValueChange={setDocType}>
-          <SelectTrigger className="w-[160px] h-8 text-xs">
-            <SelectValue placeholder="Doc type" />
-          </SelectTrigger>
-          <SelectContent>
-            {DOC_TYPES.map((t) => (
-              <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <input
-          ref={fileRef}
-          type="file"
-          className="hidden"
-          onChange={handleUpload}
-          accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.txt,.csv"
-        />
-        <Button
-          size="sm"
-          variant="outline"
-          className="gap-1.5 text-xs"
-          onClick={() => fileRef.current?.click()}
-          disabled={uploading}
-        >
-          <Upload className="h-3.5 w-3.5" />
-          {uploading ? "Uploading…" : "Attach File"}
-        </Button>
+      {/* Drag-and-drop zone */}
+      <div
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        className={`rounded-lg border-2 border-dashed p-6 text-center transition-colors ${
+          dragOver
+            ? "border-primary bg-primary/5"
+            : "border-border/50 bg-muted/20 hover:border-border"
+        }`}
+      >
+        <Upload className={`h-6 w-6 mx-auto mb-2 ${dragOver ? "text-primary" : "text-muted-foreground"}`} />
+        <p className="text-xs text-muted-foreground font-sans mb-2">
+          {dragOver ? "Drop files here…" : "Drag & drop files here, or use the button below"}
+        </p>
+        <div className="flex items-center justify-center gap-2">
+          <Select value={docType} onValueChange={setDocType}>
+            <SelectTrigger className="w-[160px] h-8 text-xs">
+              <SelectValue placeholder="Doc type" />
+            </SelectTrigger>
+            <SelectContent>
+              {DOC_TYPES.map((t) => (
+                <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <input
+            ref={fileRef}
+            type="file"
+            className="hidden"
+            onChange={handleUpload}
+            accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.txt,.csv"
+            multiple
+          />
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-1.5 text-xs"
+            onClick={() => fileRef.current?.click()}
+            disabled={uploading}
+          >
+            <Paperclip className="h-3.5 w-3.5" />
+            {uploading ? "Uploading…" : "Browse Files"}
+          </Button>
+        </div>
       </div>
 
       {/* Document list */}
       {docs.length === 0 ? (
-        <p className="text-xs text-muted-foreground font-sans py-4 text-center">
+        <p className="text-xs text-muted-foreground font-sans py-2 text-center">
           No documents attached yet.
         </p>
       ) : (
