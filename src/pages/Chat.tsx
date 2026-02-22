@@ -1095,6 +1095,8 @@ export default function Chat() {
                 )}
               </div>
 
+              {trainingMode && (
+                <>
               <div className="grid grid-cols-3 gap-3 w-full max-w-2xl">
                 {SUGGESTIONS.map((s) => (
                   <button
@@ -1112,7 +1114,7 @@ export default function Chat() {
                     <span className="text-sm font-medium">{s.label}</span>
                   </button>
                 ))}
-                {/* Run Loss Runs — positioned after "Fill an ACORD form" row, right of "Review a submission" */}
+                {/* Run Loss Runs */}
                 <button
                   onClick={() => navigate("/pipeline")}
                   className="flex flex-col items-start gap-2 rounded-xl border bg-card/80 backdrop-blur-sm p-4 text-left hover-lift aura-glow-shadow transition-colors group"
@@ -1165,7 +1167,8 @@ export default function Chat() {
                   </div>
                 </div>
               </div>
-
+                </>
+              )}
               {/* Intent buttons — shown in non-training mode when user picks "Fill ACORD form" */}
               {!trainingMode && showIntentButtons && (
                 <div className="w-full max-w-2xl animate-smooth-reveal">
