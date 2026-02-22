@@ -65,6 +65,7 @@ export default function FormFillingView({ submissionId, initialMessages, initial
   const [showFormProgress, setShowFormProgress] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(100); // kept for backward compat
   const [leftPanelCollapsed, setLeftPanelCollapsed] = useState(false);
+  const [rightPanelCollapsed, setRightPanelCollapsed] = useState(false);
 
   // Form package selection — which forms are in the active package
   const defaultEnabledIds = initialFormIds && initialFormIds.length > 0
@@ -1665,9 +1666,27 @@ export default function FormFillingView({ submissionId, initialMessages, initial
         {renderFormPreview()}
       </div>
 
-      {/* RIGHT PANEL — Chat */}
-      <div className="w-[300px] border-l flex flex-col shrink-0">
-        {renderChatPanel()}
+      {/* Collapse / Expand toggle tab for chat */}
+      <div className="relative flex items-start shrink-0">
+        <button
+          onClick={() => setRightPanelCollapsed(v => !v)}
+          className="absolute right-0 top-16 z-10 flex items-center justify-center w-4 h-10 rounded-l-md bg-muted border border-r-0 border-border text-muted-foreground hover:bg-muted/80 hover:text-foreground transition-colors"
+          title={rightPanelCollapsed ? "Expand chat panel" : "Collapse chat panel"}
+        >
+          {rightPanelCollapsed
+            ? <ChevronLeft className="h-3 w-3" />
+            : <ChevronRight className="h-3 w-3" />}
+        </button>
+      </div>
+
+      {/* RIGHT PANEL — Chat (collapsible) */}
+      <div
+        className="border-l flex flex-col shrink-0 relative transition-all duration-300 ease-in-out"
+        style={{ width: rightPanelCollapsed ? "0px" : "300px", overflow: rightPanelCollapsed ? "hidden" : "visible" }}
+      >
+        <div style={{ width: "300px", minWidth: "300px" }} className="flex flex-col h-full">
+          {renderChatPanel()}
+        </div>
       </div>
     </div>
   );
