@@ -213,6 +213,47 @@ function detectRequestedForms(text: string): string[] {
   return Array.from(found);
 }
 
+/**
+ * Detect ACORD forms from LOB flags set by AI extraction.
+ * Only includes specialty forms when their specific data/flags are present.
+ * ACORD 125 is always the base; 126 (GL) is included by default for commercial lines.
+ */
+function detectFormsFromLOBFlags(fd: Record<string, any>): string[] {
+  const forms: string[] = ["acord-125"]; // Always include base application
+
+  // Auto — only if explicit auto LOB flag or vehicle data present
+  const hasAutoData = fd.lob_auto === "true" || fd.lob_auto === true
+    || fd.number_of_vehicles || fd.vehicle_1_vin || fd.vehicle_1_year
+    || fd.lob_business_auto === "true" || fd.lob_business_auto === true;
+  if (hasAutoData) forms.push("acord-127");
+
+  // Property — only if explicit property flag or property-specific data
+  const hasPropertyData = fd.lob_property === "true" || fd.lob_property === true
+    || fd.building_limit || fd.bpp_limit
+    || fd.lob_commercial_property === "true" || fd.lob_commercial_property === true;
+  if (hasPropertyData) forms.push("acord-140");
+
+  // Umbrella — only if explicit umbrella flag or umbrella-specific data
+  const hasUmbrellaData = fd.lob_umbrella === "true" || fd.lob_umbrella === true
+    || fd.umbrella_each_occurrence || fd.umbrella_aggregate;
+  if (hasUmbrellaData) forms.push("acord-131");
+
+  // Workers Comp — only if explicit WC flag or WC-specific data
+  const hasWCData = fd.lob_wc === "true" || fd.lob_wc === true
+    || fd.has_workers_comp === "Yes" || fd.wc_state_1;
+  if (hasWCData) forms.push("acord-130");
+
+  // GL (126) — include by default for all commercial submissions unless ONLY auto/property
+  const hasGLData = fd.lob_gl === "true" || fd.lob_gl === true
+    || fd.lob_commercial_general_liability === "true" || fd.lob_commercial_general_liability === true
+    || fd.gl_each_occurrence || fd.gl_general_aggregate;
+  if (hasGLData || forms.length <= 1) {
+    // Include GL if explicit flag OR if no other specialty forms detected (default)
+    forms.push("acord-126");
+  }
+
+  return forms;
+}
 
 function autoFillFieldsFromExtracted(fields: FieldBubble[], extracted: Record<string, string>): Record<string, string> {
   const result: Record<string, string> = {};
@@ -500,13 +541,7 @@ export default function Chat() {
         submissionId: sub.id,
       });
 
-      const detectedForms: string[] = [];
-      if (fd.lob_auto === "true" || fd.number_of_vehicles) detectedForms.push("acord-127");
-      if (fd.lob_property === "true" || fd.building_limit || fd.bpp_limit) detectedForms.push("acord-140");
-      if (fd.lob_umbrella === "true" || fd.each_occurrence_limit) detectedForms.push("acord-131");
-      if (fd.lob_wc === "true") detectedForms.push("acord-130");
-      // Always include 126 as the base CGL form
-      if (!detectedForms.includes("acord-126")) detectedForms.unshift("acord-126");
+      const detectedForms = detectFormsFromLOBFlags(fd);
 
       setRequestedFormIds(detectedForms);
       if (detectedForms.length > 0) setActiveFormId(detectedForms[0]);
@@ -882,7 +917,31 @@ export default function Chat() {
       send(`Here are the details:\n${filled}${websiteUrl ? `\nWebsite: ${websiteUrl}` : ""}\n\n[SUBMISSION_ID:${sub.id}]`);
       // Detect which forms the user is requesting from chat context
       const allText = messages.map(m => m.content).join(" ") + " " + filled;
-      const detectedForms = detectRequestedForms(allText);
+      let detectedForms = detectRequestedForms(allText);
+
+      // If no explicit form/coverage mentions, try LOB flags from extracted data
+      if (detectedForms.length === 0) {
+        // Fetch the extracted form_data to check LOB flags
+        const { data: appRow } = await supabase
+          .from("insurance_applications")
+          .select("form_data")
+          .eq("submission_id", sub.id)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        const fd = (appRow?.form_data || {}) as Record<string, any>;
+        detectedForms = detectFormsFromLOBFlags(fd);
+      }
+
+      // Fallback: always at least ACORD 125 (base app) + 126 (GL)
+      if (detectedForms.length === 0) {
+        detectedForms = ["acord-125", "acord-126"];
+      }
+      // Always ensure ACORD 125 is included as the base application
+      if (!detectedForms.includes("acord-125")) {
+        detectedForms.unshift("acord-125");
+      }
+
       setRequestedFormIds(detectedForms);
       if (detectedForms.length > 0) setActiveFormId(detectedForms[0]);
       setTimeout(() => setPendingSubmissionId(sub.id), 1500);
