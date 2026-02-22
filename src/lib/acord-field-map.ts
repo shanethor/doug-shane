@@ -1835,71 +1835,419 @@ export const ACORD_130_INDEX_MAP: AcordIndexMap = {
 // CHK blocks: [8-15] transaction type (New/Renewal, Umbrella/Excess, Occurrence/Claims-Made,
 //   Voluntary/Proposed/Current), [109-110] misc, [153] misc,
 //   [164-204] coverage/exposure checklist (page 2), [236-239] misc,
-//   [241-243] misc, [332-334] misc, [348-351] misc
-// Tab order: header → policy CHKs → limits → EBL → locations → underlying → exposure → signature
+// ── ACORD 131 (2016/04) — Commercial Umbrella / Excess — 396 fields ──
+// Verified: 332 TXT, 64 CHK.  Indices from /pdf-diagnostic "Fill All TXT" export.
 export const ACORD_131_INDEX_MAP: AcordIndexMap = {
-  // ── Page 1 — Header [0-7] TXT ──
-  agency_name:              0,   // Agency
-  agency_customer_id:       1,   // Agency Customer ID
-  carrier:                  2,   // Carrier
-  naic_code:                3,   // NAIC Code
-  policy_number:            4,   // Policy Number
-  effective_date:           5,   // Effective Date
-  insured_name:             6,   // Named Insured(s)
-  // [7] = transaction_date or misc date
+  // ── Page 1 (P1) — Header ──
+  agency_customer_id:       0,
+  completion_date:          1,
+  agency_name:              2,
+  policy_number:            3,
+  effective_date:           4,
+  carrier:                  5,
+  naic_code:                6,
+  insured_name:             7,
 
   // [8-15] CHK = Transaction type checkboxes
 
-  // ── Policy Information / Limits [16-23] TXT ──
-  retroactive_date:        16,   // Retroactive Date
-  each_occurrence_limit:   17,   // Limit of Liability - Each Occurrence ($)
-  aggregate_limit:         18,   // Limit of Liability - Aggregate ($)
-  retained_limit_occurrence: 19, // Retained Limit ($)
-  expiring_policy_number:  21,   // Expiring Policy #
+  // ── Policy / Limits ──
+  transaction_type_other:  16,
+  expiring_policy_number:  17,
+  proposed_retroactive_date: 18,
+  current_retroactive_date: 19,
+  each_occurrence_limit:   20,
+  aggregate_limit:         21,
+  other_coverage_limit:    22,
+  other_coverage_description: 23,
+  retained_limit_occurrence: 24,
+  first_dollar_defense:    25,
 
-  // ── Employee Benefits Liability [24-28] TXT ──
-  ebl_each_employee:       24,   // EBL Limit (Each Employee)
-  ebl_aggregate:           25,   // EBL Aggregate Limit
-  ebl_retained_limit:      26,   // EBL Retained Limit
-  ebl_retroactive_date:    27,   // EBL Retroactive Date
-  benefit_program_name:    28,   // Name of Benefit Program
+  // ── Employee Benefits Liability ──
+  ebl_each_employee:       26,
+  ebl_aggregate:           27,
+  ebl_retained_limit:      28,
+  ebl_retroactive_date:    29,
+  benefit_program_name:    30,
 
-  // ── Primary Location & Subsidiaries [29-70] TXT ──
-  primary_location_name:   29,   // Row 1 Name
-  primary_location_address: 30,  // Row 1 Location
-  primary_description:     31,   // Row 1 Description
-  annual_payroll:          32,   // Row 1 Annual Payroll
-  annual_gross_sales:      33,   // Row 1 Annual Gross Sales
-  total_employees:         35,   // Row 1 # Employees
+  // ── Location A ──
+  location_id_a:           31,
+  location_name_a:         32,
+  location_address_a:      33,
+  location_city_a:         34,
+  location_state_a:        35,
+  location_zip_a:          36,
+  operations_description_a: 37,
+  total_payroll_a:         38,
+  annual_gross_receipts_a: 39,
+  foreign_gross_sales_a:   40,
+  employee_count_a:        41,
 
-  // ── Underlying Insurance — Auto [71-77] TXT ──
-  underlying_auto_carrier:      71,
-  underlying_auto_bi_ea_acc:    74,
-  underlying_auto_bi_ea_per:    75,
-  underlying_auto_pd:           76,
-  underlying_auto_premium:      77,
+  // ── Location B ──
+  location_id_b:           42,
+  location_name_b:         43,
+  location_address_b:      44,
+  location_city_b:         45,
+  location_state_b:        46,
+  location_zip_b:          47,
+  operations_description_b: 48,
+  total_payroll_b:         49,
+  annual_gross_receipts_b: 50,
+  foreign_gross_sales_b:   51,
+  employee_count_b:        52,
 
-  // ── Underlying Insurance — GL [78-95] TXT ──
-  underlying_gl_carrier:        78,
-  underlying_gl_occurrence:     81,
-  underlying_gl_aggregate:      84,
-  underlying_gl_products:       85,
-  underlying_gl_personal:       86,
-  underlying_gl_premium:        87,
+  // ── Location C ──
+  location_id_c:           53,
+  location_name_c:         54,
+  location_address_c:      55,
+  location_city_c:         56,
+  location_state_c:        57,
+  location_zip_c:          58,
+  operations_description_c: 59,
+  total_payroll_c:         60,
+  annual_gross_receipts_c: 61,
+  foreign_gross_sales_c:   62,
+  employee_count_c:        63,
 
-  // ── Underlying Insurance — Employers Liability [96-108] TXT ──
-  underlying_el_carrier:        96,
-  underlying_el_each_accident:  99,
-  underlying_el_disease_employee: 100,
-  underlying_el_disease_policy: 101,
-  underlying_el_premium:        102,
+  // ── Location D ──
+  location_id_d:           64,
+  location_name_d:         65,
+  location_address_d:      66,
+  location_city_d:         67,
+  location_state_d:        68,
+  location_zip_d:          69,
+  operations_description_d: 70,
+  total_payroll_d:         71,
+  annual_gross_receipts_d: 72,
+  foreign_gross_sales_d:   73,
+  employee_count_d:        74,
 
-  // ── Page 5 — Remarks / Signature ──
+  // ── Location E ──
+  location_id_e:           75,
+  location_name_e:         76,
+  location_address_e:      77,
+  location_city_e:         78,
+  location_state_e:        79,
+  location_zip_e:          80,
+  operations_description_e: 81,
+  total_payroll_e:         82,
+  annual_gross_receipts_e: 83,
+  foreign_gross_sales_e:   84,
+  employee_count_e:        85,
+
+  // ── Location F ──
+  location_id_f:           86,
+  location_name_f:         87,
+  location_address_f:      88,
+  location_city_f:         89,
+  location_state_f:        90,
+  location_zip_f:          91,
+  operations_description_f: 92,
+  total_payroll_f:         93,
+  annual_gross_receipts_f: 94,
+  foreign_gross_sales_f:   95,
+  employee_count_f:        96,
+
+  // ── Underlying Insurance — Auto ──
+  underlying_auto_carrier:      97,
+  underlying_auto_policy_number: 98,
+  underlying_auto_eff_date:     99,
+  underlying_auto_exp_date:    100,
+  underlying_auto_csl:         101,
+  underlying_auto_bi_ea_acc:   102,
+  underlying_auto_bi_ea_per:   103,
+  underlying_auto_pd:          104,
+  underlying_auto_csl_premium: 105,
+  underlying_auto_bi_premium:  106,
+  underlying_auto_pd_premium:  107,
+  underlying_auto_mod_factor:  108,
+
+  // [109-110] CHK
+
+  // ── Underlying Insurance — GL ──
+  underlying_gl_carrier:       111,
+  underlying_gl_policy_number: 112,
+  underlying_gl_eff_date:      113,
+  underlying_gl_exp_date:      114,
+  underlying_gl_occurrence:    115,
+  underlying_gl_aggregate:     116,
+  underlying_gl_products:      117,
+  underlying_gl_personal:      118,
+  underlying_gl_fire_damage:   119,
+  underlying_gl_med_expense:   120,
+  underlying_gl_prem_ops_premium: 121,
+  underlying_gl_products_premium: 122,
+  underlying_gl_other_premium: 123,
+  underlying_gl_mod_factor:    124,
+
+  // ── Underlying Insurance — Employers Liability ──
+  underlying_el_carrier:         125,
+  underlying_el_policy_number:   126,
+  underlying_el_eff_date:        127,
+  underlying_el_exp_date:        128,
+  underlying_el_each_accident:   129,
+  underlying_el_disease_employee: 130,
+  underlying_el_disease_policy:  131,
+  underlying_el_premium:         132,
+  underlying_el_mod_factor:      133,
+
+  // ── Underlying Insurance — Other A ──
+  underlying_other_a_type:       134,
+  underlying_other_a_carrier:    135,
+  underlying_other_a_policy_number: 136,
+  underlying_other_a_eff_date:   137,
+  underlying_other_a_exp_date:   138,
+  underlying_other_a_coverage:   139,
+  underlying_other_a_csl:        140,
+  underlying_other_a_premium:    141,
+  underlying_other_a_mod_factor: 142,
+
+  // ── Underlying Insurance — Other B ──
+  underlying_other_b_type:       143,
+  underlying_other_b_carrier:    144,
+  underlying_other_b_policy_number: 145,
+  underlying_other_b_eff_date:   146,
+  underlying_other_b_exp_date:   147,
+  underlying_other_b_coverage:   148,
+  underlying_other_b_csl:        149,
+  underlying_other_b_premium:    150,
+  underlying_other_b_mod_factor: 151,
+
+  // ── Page 2 (P2) ──
+  p2_agency_customer_id:   152,
+
+  // [153-155] CHK
+
+  gl_form_edition_date:    156,
+  q_excluded_uninsured_code: 157,
+  q_excluded_uninsured_explanation: 158,
+  gl_claims_retroactive_date: 159,
+  gl_claims_entry_date:    160,
+  q_tail_coverage_code:    161,
+  tail_coverage_eff_date:  162,
+  q_tail_coverage_explanation: 163,
+
+  // [164-193] CHK — underlying coverage checkboxes
+
+  underlying_other_coverage_a: 194,
+  // [195-196] CHK
+  underlying_other_coverage_b: 197,
+  // [198-199] CHK
+  underlying_other_coverage_c: 200,
+  // [201-202] CHK
+  underlying_other_coverage_d: 203,
+  // [204] CHK
+  underlying_info_description: 205,
+
+  // ── Loss History (6 rows) ──
+  loss_date_a:             206,
+  loss_lob_a:              207,
+  loss_description_a:      208,
+  loss_paid_a:             209,
+  loss_reserved_a:         210,
+
+  loss_date_b:             211,
+  loss_lob_b:              212,
+  loss_description_b:      213,
+  loss_paid_b:             214,
+  loss_reserved_b:         215,
+
+  loss_date_c:             216,
+  loss_lob_c:              217,
+  loss_description_c:      218,
+  loss_paid_c:             219,
+  loss_reserved_c:         220,
+
+  loss_date_d:             221,
+  loss_lob_d:              222,
+  loss_description_d:      223,
+  loss_paid_d:             224,
+  loss_reserved_d:         225,
+
+  loss_date_e:             226,
+  loss_lob_e:              227,
+  loss_description_e:      228,
+  loss_paid_e:             229,
+  loss_reserved_e:         230,
+
+  loss_date_f:             231,
+  loss_lob_f:              232,
+  loss_description_f:      233,
+  loss_paid_f:             234,
+  loss_reserved_f:         235,
+
+  // [236] CHK
+
+  // ── Care Custody & Control ──
+  ccc_location_id:         237,
+  // [238-239] CHK
+  ccc_property_value:      240,
+  // [241-243] CHK
+  ccc_insured_liability_other: 244,
+  ccc_occupied_area:       245,
+  ccc_property_description: 246,
+
+  // ── Vehicle Fleet Schedule ──
+  fleet_pp_owned:          247,
+  fleet_pp_nonowned:       248,
+  fleet_pp_leased:         249,
+  fleet_pp_hauled:         250,
+  fleet_pp_local:          251,
+  fleet_pp_intermediate:   252,
+  fleet_pp_long:           253,
+
+  fleet_lt_owned:          254,
+  fleet_lt_nonowned:       255,
+  fleet_lt_leased:         256,
+  fleet_lt_hauled:         257,
+  fleet_lt_local:          258,
+  fleet_lt_intermediate:   259,
+  fleet_lt_long:           260,
+
+  fleet_mt_owned:          261,
+  fleet_mt_nonowned:       262,
+  fleet_mt_leased:         263,
+  fleet_mt_hauled:         264,
+  fleet_mt_local:          265,
+  fleet_mt_intermediate:   266,
+  fleet_mt_long:           267,
+
+  fleet_ht_owned:          268,
+  fleet_ht_nonowned:       269,
+  fleet_ht_leased:         270,
+  fleet_ht_hauled:         271,
+  fleet_ht_local:          272,
+  fleet_ht_intermediate:   273,
+  fleet_ht_long:           274,
+
+  fleet_xht_owned:         275,
+  fleet_xht_nonowned:      276,
+  fleet_xht_leased:        277,
+  fleet_xht_hauled:        278,
+  fleet_xht_local:         279,
+  fleet_xht_intermediate:  280,
+  fleet_xht_long:          281,
+
+  fleet_htt_owned:         282,
+  fleet_htt_nonowned:      283,
+  fleet_htt_leased:        284,
+  fleet_htt_hauled:        285,
+  fleet_htt_local:         286,
+  fleet_htt_intermediate:  287,
+  fleet_htt_long:          288,
+
+  fleet_xhtt_owned:        289,
+  fleet_xhtt_nonowned:     290,
+  fleet_xhtt_leased:       291,
+  fleet_xhtt_hauled:       292,
+  fleet_xhtt_local:        293,
+  fleet_xhtt_intermediate: 294,
+  fleet_xhtt_long:         295,
+
+  fleet_bus_owned:         296,
+  fleet_bus_nonowned:      297,
+  fleet_bus_leased:        298,
+  fleet_bus_hauled:        299,
+  fleet_bus_local:         300,
+  fleet_bus_intermediate:  301,
+  fleet_bus_long:          302,
+
+  // ── Page 3 (P3) — Questions ──
+  p3_agency_customer_id:   303,
+  advertisers_media_code:  304,
+  advertisers_annual_cost: 305,
+
+  q_services_ad_agency_code: 306,
+  q_services_ad_agency_explanation: 307,
+  q_coverage_agency_policy_code: 308,
+  q_coverage_agency_policy_explanation: 309,
+  q_aircraft_code:         310,
+  q_aircraft_explanation:  311,
+  q_explosives_code:       312,
+  q_explosives_explanation: 313,
+  q_passengers_fee_code:   314,
+  q_passengers_fee_explanation: 315,
+  q_units_not_insured_code: 316,
+  q_units_not_insured_explanation: 317,
+  q_vehicles_leased_code:  318,
+  q_vehicles_leased_explanation: 319,
+  q_hired_nonowned_code:   320,
+  q_hired_nonowned_explanation: 321,
+  q_bridge_dam_marine_code: 322,
+  q_bridge_dam_marine_explanation: 323,
+  contractors_work_description: 324,
+  contractors_agreement:   325,
+  q_cranes_code:           326,
+  q_cranes_explanation:    327,
+  q_subcontractors_code:   328,
+  q_subcontractors_explanation: 329,
+  q_self_insured_code:     330,
+  q_self_insured_explanation: 331,
+
+  // [332-335] CHK
+
+  el_other_description:    336,
+  q_hospital_code:         337,
+  q_hospital_explanation:  338,
+  q_doctors_nurses_code:   339,
+  q_doctors_nurses_explanation: 340,
+  malpractice_doctor_count: 341,
+  malpractice_nurse_count: 342,
+  malpractice_bed_count:   343,
+
+  // ── Page 4 (P4) ──
+  p4_agency_customer_id:   344,
+  epa_identifier:          345,
+  q_hazardous_materials_code: 346,
+  q_hazardous_materials_explanation: 347,
+
+  // [348-351] CHK
+
+  q_missiles_engines_code: 352,
+  q_missiles_engines_explanation: 353,
+  q_kaq_code:              354,
+  q_product_loss_code:     355,
+  q_product_loss_explanation: 356,
+  product_gross_sales_a:   357,
+  product_gross_sales_b:   358,
+  product_gross_sales_c:   359,
+  protective_liability_description: 360,
+  q_watercraft_code:       361,
+  watercraft_location_g:   362,
+  watercraft_count_a:      363,
+  watercraft_length_a:     364,
+  watercraft_hp_a:         365,
+  watercraft_location_h:   366,
+  watercraft_count_b:      367,
+  watercraft_length_b:     368,
+  watercraft_hp_b:         369,
+  property_rating_location_i: 370,
+  property_stories_a:      371,
+  property_apartments_a:   372,
+  property_pools_a:        373,
+  property_diving_boards_a: 374,
+  property_rating_location_j: 375,
+  property_stories_b:      376,
+  property_apartments_b:   377,
+  property_pools_b:        378,
+  property_diving_boards_b: 379,
   umbrella_remarks:        380,
-  producer_name:           388,
-  producer_license_no:     389,
-  signature_date:          390,
-  national_producer_number: 391,
+
+  // ── Page 5 (P5) — Signature ──
+  p5_agency_customer_id:   381,
+  uninsured_motorists_limit: 382,
+  underinsured_motorists_limit: 383,
+  medical_payments_limit:  384,
+  initials_a:              385,
+  initials_b:              386,
+  initials_e:              387,
+  initials_c:              388,
+  initials_d:              389,
+  producer_signature:      390,
+  producer_name:           391,
+  producer_license_no:     392,
+  insured_signature:       393,
+  signature_date:          394,
+  national_producer_number: 395,
 };
 
 // ── ACORD 140 (2007/03) — Property Section — 355 fields ──
