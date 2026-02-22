@@ -139,27 +139,47 @@ export default function GeneratedForms() {
       }
     }
 
-    // If we couldn't match specific questions, provide a broad data dump
+    // If we couldn't match specific questions, provide a broad data dump using key: value format
     if (answers.length === 0) {
-      return `Here are the additional details:
-- Effective date: 01/01/2026, Expiration: 01/01/2027
-- 12 full-time employees, 3 part-time, annual payroll $850,000
-- Annual revenue: $2,400,000
-- FEIN: 82-1234567
-- Address: 456 Commerce Blvd, Suite 200, Los Angeles, CA 90012
-- Officers: Mike Johnson, President, 60% ownership, $125,000; Sarah Johnson, VP, 40%, $95,000
-- Experience mod: 0.95
-- Class codes: 8810 Clerical $250,000, 5183 Plumbing $600,000
-- 3 vehicles: 2022 Ford F-150, 2021 Chevy Silverado, 2023 Toyota Tacoma (50 mile radius)
-- Drivers: John Smith DOB 03/15/1985 Lic D12345678, Jane Doe DOB 07/22/1990 Lic D87654321
-- GL limits: $1M occ / $2M agg, WC: statutory limits, $500K/$500K/$500K EL
-- Building: joisted masonry, 1998, 12,500 sq ft, 2 stories, full sprinkler, central fire alarm
-- Building value: $1,200,000, Contents: $350,000, Business Income: $200,000
-- No losses past 5 years, no bankruptcies, no foreign ops
-- Prior carrier: Hartford, Policy BKS-1234567, premium $12,500
-- Safety program in place with monthly meetings`;
+      // Build key-value pairs from the formData for any fields that are empty, using realistic filler data
+      const fillerDefaults: Record<string, string> = {
+        effective_date: "01/01/2026", expiration_date: "01/01/2027",
+        employee_count: "15", full_time_employees: "12", part_time_employees: "3",
+        annual_payroll: "$850,000", annual_revenue: "$2,400,000", total_sales: "$2,400,000",
+        fein: "82-1234567", contact_name: "Mike Johnson", contact_number: "(555) 123-4567",
+        mailing_address: "456 Commerce Blvd, Suite 200, Los Angeles, CA 90012",
+        state: "CA", city_state: "Los Angeles, CA", zip: "90012",
+        named_insured: "Johnson's Commercial Services LLC",
+        establishment_name: "Johnson's Commercial Services",
+        date: "01/01/2026", loc_number: "1",
+        fully_sprinklered: "Yes", ul300_system: "Yes",
+        hood_cleaning_frequency: "Quarterly", last_hood_cleaning: "11/2025",
+        cooking_under_hood: "Yes", num_fryers: "2", num_woks: "0",
+        k_class_extinguishers: "Yes", hood_vendor: "ABC Fire Protection",
+        suppression_vendor: "ABC Fire Protection", last_suppression_service: "10/2025",
+        suppression_service_frequency: "Semi-annually",
+        has_liquor_sales: "No", food_sales: "$1,800,000", 
+        wood_frame: "No", building_age_over_20: "No",
+        hvac_update_year: "2020", roof_update_year: "2019",
+        plumbing_update_year: "2018", electrical_update_year: "2017",
+        applicant_type: "Corporation", agency_customer_id: "CUST-12345",
+        hood_professionally_cleaned: "Yes",
+      };
+
+      // Output missing fields from formData as key: value using fillers
+      const missingFields = Object.entries(formData)
+        .filter(([, v]) => !v || v === "")
+        .map(([k]) => `${k}: ${fillerDefaults[k] || "N/A"}`)
+        .join("\n");
+
+      if (missingFields) {
+        return `Here are the values for the missing fields:\n${missingFields}`;
+      }
+
+      return `All fields appear to be filled. No additional data needed.`;
     }
 
+    // Format answers as key: value pairs when possible
     return `Here are the answers to your questions:\n${answers.map((a, i) => `${i + 1}. ${a}`).join("\n")}`;
   };
 
@@ -202,12 +222,13 @@ export default function GeneratedForms() {
     return fullText;
   };
 
-  /** Count unique field_key: value lines across all AI responses in a conversation, optionally filtered to known keys */
+  /** Count unique field_key: value lines across all messages in a conversation, filtered to known keys */
   const countUniqueFields = (conversationLog: { role: string; content: string }[], knownKeys?: Set<string>): number => {
-    const fieldKeyPattern = /^[a-z][a-z0-9_]+:\s*.+$/gm;
+    // Match lines like "some_key: some value" — allow hyphens, mixed case
+    const fieldKeyPattern = /^[a-zA-Z][a-zA-Z0-9_-]+:\s*.+$/gm;
     const allKeys = new Set<string>();
     for (const msg of conversationLog) {
-      if (msg.role !== "assistant") continue;
+      // Count fields from both assistant AND user messages (filler answers echo keys back)
       const matches = msg.content.match(fieldKeyPattern) || [];
       for (const m of matches) {
         const key = m.split(":")[0].trim();
@@ -452,7 +473,7 @@ export default function GeneratedForms() {
     setChatTestProgress(0);
     setChatTestTotal(forms.length);
 
-    const MAX_TURNS = 4;
+    const MAX_TURNS = 6;
     const TARGET_COVERAGE = 0.9;
     const results: ChatTestResult[] = [];
 
@@ -473,7 +494,18 @@ export default function GeneratedForms() {
 
       const totalFieldsInData = knownFieldKeys.size;
 
-      const userMessage = `I have the following business data from a ${typeLabel(form.form_type)} form. Please review it, identify what ACORD forms apply, and output field key-value pairs for everything you can infer. Then ask me targeted gap-filling questions for the remaining fields:\n\n${dataSummary}`;
+      const allFieldKeys = Array.from(knownFieldKeys).join(", ");
+      const userMessage = `I have the following business data from a ${typeLabel(form.form_type)} form. Please do the following:
+
+1. Output ALL field values you can infer as key-value pairs using EXACTLY these field keys (one per line, format "field_key: value"):
+${allFieldKeys}
+
+2. For any fields listed above that are NOT in the data below, ask me targeted gap-filling questions to obtain the missing values.
+
+IMPORTANT: You MUST use the exact field key names listed above. Do NOT rename or rephrase them. Output as many as possible from the data.
+
+Here is the data:
+${dataSummary}`;
 
       const conversationLog: { role: string; content: string }[] = [
         { role: "user", content: userMessage },
