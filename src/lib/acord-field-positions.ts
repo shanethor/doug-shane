@@ -84,17 +84,19 @@ export const ACORD_125_POSITIONS: Record<string, FieldPosition> = {
   signature_date:         { page: 3, x: 445, y: 762, maxWidth: 80 },
 };
 
-// ─── ACORD 126 — Commercial General Liability (4 pages) ───
+// ─── ACORD 126 (2009/08) — Commercial General Liability (4 pages) ───
 export const ACORD_126_POSITIONS: Record<string, FieldPosition> = {
+  // Page 1 — Header
   agency_name:          { page: 0, x: 22, y: 65, maxWidth: 270 },
   agency_customer_id:   { page: 0, x: 370, y: 18, maxWidth: 160 },
   carrier:              { page: 0, x: 312, y: 65, maxWidth: 230 },
   naic_code:            { page: 0, x: 565, y: 65, maxWidth: 40 },
+  transaction_date:     { page: 0, x: 545, y: 33, maxWidth: 60 },
   policy_number:        { page: 0, x: 22, y: 88, maxWidth: 190 },
   effective_date:       { page: 0, x: 222, y: 88, maxWidth: 80 },
   insured_name:         { page: 0, x: 342, y: 88, maxWidth: 230 },
 
-  // Coverages — Limits (right column, $ values)
+  // Coverages — Limits
   coverage_type:        { page: 0, x: 30, y: 142, maxWidth: 180 },
   general_aggregate:    { page: 0, x: 460, y: 142, maxWidth: 60 },
   products_aggregate:   { page: 0, x: 460, y: 170, maxWidth: 60 },
@@ -102,14 +104,45 @@ export const ACORD_126_POSITIONS: Record<string, FieldPosition> = {
   each_occurrence:      { page: 0, x: 460, y: 200, maxWidth: 60 },
   fire_damage:          { page: 0, x: 460, y: 215, maxWidth: 60 },
   medical_payments:     { page: 0, x: 460, y: 232, maxWidth: 60 },
+  ebl_limit:            { page: 0, x: 460, y: 248, maxWidth: 60 },
+  deductible_pd:        { page: 0, x: 138, y: 193, maxWidth: 60 },
+  deductible_bi:        { page: 0, x: 138, y: 208, maxWidth: 60 },
+
+  // Premiums column
+  premiums_prem_ops:    { page: 0, x: 548, y: 142, maxWidth: 55 },
+  premiums_products:    { page: 0, x: 548, y: 170, maxWidth: 55 },
+  premiums_other:       { page: 0, x: 548, y: 200, maxWidth: 55 },
+  premiums_total:       { page: 0, x: 548, y: 232, maxWidth: 55 },
+
+  // Other Coverages
+  other_coverages_endorsements: { page: 0, x: 22, y: 275, maxWidth: 560, fontSize: 7 },
 
   // Schedule of Hazards (first row)
-  hazard_code_1:          { page: 0, x: 50, y: 368, maxWidth: 35 },
-  hazard_classification_1:{ page: 0, x: 22, y: 388, maxWidth: 280 },
-  hazard_exposure_1:      { page: 0, x: 220, y: 368, maxWidth: 80 },
-  hazard_premium_1:       { page: 0, x: 498, y: 372, maxWidth: 60 },
+  hazard_loc_1:           { page: 0, x: 22, y: 360, maxWidth: 25 },
+  hazard_haz_1:           { page: 0, x: 50, y: 360, maxWidth: 25 },
+  hazard_classification_1:{ page: 0, x: 80, y: 360, maxWidth: 160 },
+  hazard_code_1:          { page: 0, x: 245, y: 360, maxWidth: 35 },
+  hazard_exposure_1:      { page: 0, x: 320, y: 360, maxWidth: 60 },
+  hazard_premium_premops_1:{ page: 0, x: 498, y: 360, maxWidth: 50 },
+  hazard_premium_products_1:{ page: 0, x: 552, y: 360, maxWidth: 50 },
 
-  remarks_126:            { page: 1, x: 22, y: 100, maxWidth: 560, fontSize: 7 },
+  // Claims-Made section
+  retroactive_date:       { page: 0, x: 200, y: 490, maxWidth: 80 },
+  entry_date_claims_made: { page: 0, x: 200, y: 510, maxWidth: 80 },
+
+  // Employee Benefits Liability
+  ebl_deductible_per_claim: { page: 0, x: 200, y: 580, maxWidth: 80 },
+  ebl_num_employees:        { page: 0, x: 200, y: 595, maxWidth: 60 },
+  ebl_retroactive_date:     { page: 0, x: 200, y: 625, maxWidth: 80 },
+
+  // Page 2 — Contractors
+  type_work_subcontracted:  { page: 1, x: 22, y: 260, maxWidth: 400, fontSize: 7 },
+  paid_to_subcontractors:   { page: 1, x: 22, y: 285, maxWidth: 100 },
+  pct_work_subcontracted:   { page: 1, x: 150, y: 285, maxWidth: 60 },
+
+  // Remarks (page 4)
+  remarks_126:            { page: 3, x: 22, y: 100, maxWidth: 560, fontSize: 7 },
+  general_questions_remarks: { page: 3, x: 22, y: 100, maxWidth: 560, fontSize: 7 },
 };
 
 // ─── ACORD 127 — Business Auto (3 pages) ───

@@ -141,8 +141,8 @@ export const ACORD_125_FIELD_MAP: AcordFieldMap = {
 };
 
 // ─────────────────────────────────────────────────────────────────
-// ACORD 126 (2016/09) — Commercial General Liability Section
-// 279 fields total — one of the most complex ACORD forms
+// ACORD 126 (2009/08) — Commercial General Liability Section
+// Field names TBD — use /pdf-diagnostic Fill All TXT to verify
 // ─────────────────────────────────────────────────────────────────
 export const ACORD_126_FIELD_MAP: AcordFieldMap = {
   // Header
@@ -153,6 +153,7 @@ export const ACORD_126_FIELD_MAP: AcordFieldMap = {
   policy_number:            "POLICY NUMBER",
   effective_date:           "EFFECTIVE DATE",
   insured_name:             "APPLICANT",
+  transaction_date:         "DATE",
 
   // Coverages / Limits
   coverage_type:            "OCCURRENCE",
@@ -170,29 +171,15 @@ export const ACORD_126_FIELD_MAP: AcordFieldMap = {
   // Other Coverages
   other_coverages_endorsements: "OTHER COVERAGES",
 
-  // Schedule of Hazards (rows 1–4)
+  // Schedule of Hazards
   hazard_loc_1:             "LOC 1",
   hazard_code_1:            "CLASS CODE 1",
   hazard_classification_1:  "CLASSIFICATION 1",
   hazard_exposure_1:        "EXPOSURE 1",
-  hazard_rate_1:            "RATE 1",
-  hazard_premium_1:         "PREMIUM 1",
-  hazard_loc_2:             "LOC 2",
-  hazard_code_2:            "CLASS CODE 2",
-  hazard_classification_2:  "CLASSIFICATION 2",
-  hazard_exposure_2:        "EXPOSURE 2",
-  hazard_rate_2:            "RATE 2",
-  hazard_premium_2:         "PREMIUM 2",
-  hazard_loc_3:             "LOC 3",
-  hazard_code_3:            "CLASS CODE 3",
-  hazard_classification_3:  "CLASSIFICATION 3",
-  hazard_exposure_3:        "EXPOSURE 3",
-  hazard_premium_3:         "PREMIUM 3",
-  hazard_loc_4:             "LOC 4",
-  hazard_code_4:            "CLASS CODE 4",
-  hazard_classification_4:  "CLASSIFICATION 4",
-  hazard_exposure_4:        "EXPOSURE 4",
-  hazard_premium_4:         "PREMIUM 4",
+  hazard_rate_premops_1:    "RATE PREMOPS 1",
+  hazard_rate_products_1:   "RATE PRODUCTS 1",
+  hazard_premium_premops_1: "PREMIUM PREMOPS 1",
+  hazard_premium_products_1:"PREMIUM PRODUCTS 1",
 
   // Claims-Made
   retroactive_date:         "RETROACTIVE DATE",
@@ -203,7 +190,7 @@ export const ACORD_126_FIELD_MAP: AcordFieldMap = {
   ebl_num_employees:        "NUMBER OF EMPLOYEES",
   ebl_retroactive_date:     "EBL RETROACTIVE DATE",
 
-  // Contractors (Yes/No questions)
+  // Contractors
   draws_plans_for_others:   "1 YES",
   blasting_explosives:      "2 YES",
   excavation_underground:   "3 YES",
@@ -633,78 +620,19 @@ export const FILLABLE_PDF_PATHS: Record<string, string> = {
 // Verified using /pdf-diagnostic with indexed fill test.
 // ─────────────────────────────────────────────────────────────────
 
-// ── ACORD 126 (2016/09) — Commercial General Liability Section — 279 fields ──
-//
-// Field type layout (verified via /pdf-diagnostic indexed fill):
-//   [0]  TXT  agency_name
-//   [1]  TXT  agency_customer_id
-//   [2]  TXT  carrier
-//   [3]  TXT  naic_code
-//   [4]  TXT  policy_number
-//   [5]  TXT  effective_date
-//   [6]  TXT  insured_name
-//   [7]  TXT  (date / transaction field)
-//   [8]  CHK  (Claims Made checkbox)
-//   [9]  CHK  (Occurrence checkbox)
-//   [10] CHK  (Owner's & Contractor's checkbox)
-//   [11] CHK  (other coverage checkbox)
-//   [12] CHK  (checkbox)
-//   [13] TXT  general_aggregate
-//   [14] CHK  (checkbox)
-//   [15] TXT  products_aggregate
-//   [16] CHK  (checkbox)
-//   [17] TXT  personal_adv_injury
-//   [18] CHK  (checkbox)
-//   [19] TXT  each_occurrence
-//   [20] TXT  fire_damage
-//   [21] CHK  (checkbox)
-//   [22] CHK  (checkbox)
-//   [23] TXT  medical_payments
-//   [24] CHK  (checkbox)
-//   [25] CHK  (checkbox)
-//   [26] CHK  (checkbox)
-//   [27] CHK  (checkbox)
-//   [28] TXT  ebl_limit
-//   [29] TXT  deductible_pd
-//   [30] TXT  deductible_bi
-//   [31] TXT  other_coverages_endorsements
-//   ...  TXT  Schedule of Hazards rows follow
+// ── ACORD 126 (2009/08) — Commercial General Liability Section ──
+// INDEX MAP CLEARED — new PDF requires re-mapping via /pdf-diagnostic.
+// Use "Fill All TXT" to export field indices, then populate below.
 export const ACORD_126_INDEX_MAP: AcordIndexMap = {
-  // Header — Page 1
-  agency_name:            0,   // AGENCY
-  agency_customer_id:     1,   // AGENCY CUSTOMER ID
-  carrier:                2,   // CARRIER
-  naic_code:              3,   // NAIC CODE
-  policy_number:          4,   // POLICY NUMBER
-  effective_date:         5,   // EFFECTIVE DATE
-  insured_name:           6,   // APPLICANT / FIRST NAMED INSURED
-
-  // Coverage Limits — actual TXT fields after checkbox block
-  general_aggregate:     13,   // TXT — verified [13] is TXT
-  products_aggregate:    15,   // TXT — verified [15] is TXT
-  personal_adv_injury:   17,   // TXT — verified [17] is TXT
-  each_occurrence:       19,   // TXT — verified [19] is TXT
-  fire_damage:           20,   // TXT — verified [20] is TXT
-  medical_payments:      23,   // TXT — verified [23] is TXT
-  ebl_limit:             28,   // TXT — EBL limit field
-  deductible_pd:         29,   // TXT
-  deductible_bi:         30,   // TXT
-  other_coverages_endorsements: 31,  // TXT
-
-  // Schedule of Hazards — TXT fields continuing from [32]+
-  // Exact positions TBD from full indexed view; approximate:
-  hazard_loc_1:          32,
-  hazard_code_1:         33,
-  hazard_exposure_1:     34,
-  hazard_classification_1: 35,
-  hazard_loc_2:          36,
-  hazard_code_2:         37,
-  hazard_exposure_2:     38,
-  hazard_classification_2: 39,
-  hazard_loc_3:          40,
-  hazard_code_3:         41,
-  hazard_exposure_3:     42,
-  hazard_classification_3: 43,
+  // TODO: Run /pdf-diagnostic on new 126.pdf and populate indices
+  // Header fields — placeholders, verify with diagnostic
+  // agency_name:            0,
+  // agency_customer_id:     1,
+  // carrier:                2,
+  // naic_code:              3,
+  // policy_number:          4,
+  // effective_date:         5,
+  // insured_name:           6,
 };
 
 // ── ACORD 127 — Business Auto Section — 460 TXT fields ──
