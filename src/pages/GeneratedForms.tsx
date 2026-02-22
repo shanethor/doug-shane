@@ -495,7 +495,7 @@ export default function GeneratedForms() {
           conversationLog.push({ role: "user", content: fillerAnswer });
         }
 
-        const coverage = totalFieldsInData > 0 ? Math.round((fieldsDetected / totalFieldsInData) * 100) : 0;
+        const coverage = totalFieldsInData > 0 ? Math.min(100, Math.round((fieldsDetected / totalFieldsInData) * 100)) : 0;
 
         results.push({
           formId: form.id,
