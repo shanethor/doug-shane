@@ -639,9 +639,11 @@ export default function Chat() {
         setActiveFormId(detected[0]);
       }
       if (attachedFiles.length > 0) {
-        // Files attached → auto-route to document flow without showing buttons
+        // Files attached → auto-route to document extraction flow
+        const filesToExtract = [...attachedFiles];
         setAttachedFiles([]);
-        // fall through and let the AI process with files attached
+        triggerDocumentExtraction(filesToExtract);
+        return;
       } else {
         setAttachedFiles([]);
         setShowIntentButtons(true);
@@ -710,6 +712,44 @@ export default function Chat() {
             submitFieldsWithValues(fields, filledVals);
           }, 800);
           return;
+        }
+
+        // If a document was previously uploaded/extracted, pre-fill intake from that data
+        if (user) {
+          (async () => {
+            const { data: latestApp } = await supabase
+              .from("insurance_applications")
+              .select("form_data")
+              .order("created_at", { ascending: false })
+              .limit(1)
+              .maybeSingle();
+            if (latestApp?.form_data) {
+              const fd = latestApp.form_data as Record<string, any>;
+              const preFilled: Record<string, string> = {};
+              for (const f of fields) {
+                const val = fd[f.key] || fd[f.key.replace(/_/g, "")] || "";
+                if (val && String(val).trim() && val !== "N/A") {
+                  preFilled[f.key] = String(val);
+                }
+              }
+              // Map common extraction keys to intake field keys
+              if (!preFilled["company_name"] && (fd.applicant_name || fd.insured_name)) {
+                preFilled["company_name"] = fd.applicant_name || fd.insured_name;
+              }
+              if (!preFilled["state"] && (fd.state || fd.mailing_state || fd.states_of_operation)) {
+                preFilled["state"] = fd.state || fd.mailing_state || fd.states_of_operation;
+              }
+              if (!preFilled["business_description"] && (fd.business_description || fd.description_of_operations || fd.sic_description)) {
+                preFilled["business_description"] = fd.business_description || fd.description_of_operations || fd.sic_description;
+              }
+              if (!preFilled["website_url"] && fd.website) {
+                preFilled["website_url"] = fd.website;
+              }
+              if (Object.keys(preFilled).length > 0) {
+                setFieldValues(prev => ({ ...prev, ...preFilled }));
+              }
+            }
+          })();
         }
       }
       
@@ -1407,9 +1447,27 @@ export default function Chat() {
                                 } else if (b.action === "skip-to-form") {
                                   // User wants to skip straight to fillable forms after uploading a document
                                   send("Skip straight to fillable forms — just extract what you can from the uploaded document and take me to the ACORD forms.");
-                                } else if (b.action === "ai-questions") {
-                                  // User wants AI to ask follow-up questions
-                                  send("Yes, please ask me follow-up questions to fill any gaps from the uploaded document.");
+                      } else if (b.action === "ai-questions") {
+                                  // User wants AI to ask follow-up questions — include extracted data context
+                                  (async () => {
+                                    // Find the most recent submission's extracted data to give the AI context
+                                    let dataContext = "";
+                                    if (user) {
+                                      const { data: latestApp } = await supabase
+                                        .from("insurance_applications")
+                                        .select("form_data")
+                                        .order("created_at", { ascending: false })
+                                        .limit(1)
+                                        .maybeSingle();
+                                      if (latestApp?.form_data) {
+                                        const fd = latestApp.form_data as Record<string, any>;
+                                        const filled = Object.entries(fd).filter(([_, v]) => v && String(v).trim() && v !== "N/A");
+                                        const missing = Object.entries(fd).filter(([_, v]) => !v || !String(v).trim() || v === "N/A");
+                                        dataContext = `\n\nHere is what was already extracted from the document:\n${filled.map(([k, v]) => `- ${k}: ${v}`).join("\n")}\n\nFields still missing or empty (${missing.length}): ${missing.map(([k]) => k).join(", ")}\n\nPlease ask me targeted questions about the MISSING fields only. Do NOT show the intake form. Ask conversational questions one or two at a time.`;
+                                      }
+                                    }
+                                    send(`Yes, please ask me follow-up questions to fill any gaps from the uploaded document. Do NOT show the standard intake form — I already uploaded a document with data extracted.${dataContext}`);
+                                  })();
                                 } else if (b.action.startsWith("/") || b.action.startsWith("http")) {
                                   navigate(b.action);
                                 } else {
