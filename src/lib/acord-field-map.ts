@@ -1537,64 +1537,76 @@ export const ACORD_130_INDEX_MAP: AcordIndexMap = {
   signature_date:       142,
 };
 
-// ── ACORD 131 (2013/09) — Umbrella / Excess Liability — 405 fields ──
-// Verified: 341 TXT, 59 CHK.
-// CHK blocks: [8-13] policy type (Umbrella/Excess, Occurrence/Claims-Made), [107-108] misc
-// Tab order: header → policy type CHKs → limits → location → underlying insurance → exposure
+// ── ACORD 131 (2016/04) — Umbrella / Excess Liability — 396 fields ──
+// Verified: 332 TXT, 64 CHK via /pdf-diagnostic.
+// CHK blocks: [8-15] transaction type (New/Renewal, Umbrella/Excess, Occurrence/Claims-Made,
+//   Voluntary/Proposed/Current), [109-110] misc, [153] misc,
+//   [164-204] coverage/exposure checklist (page 2), [236-239] misc,
+//   [241-243] misc, [332-334] misc, [348-351] misc
+// Tab order: header → policy CHKs → limits → EBL → locations → underlying → exposure → signature
 export const ACORD_131_INDEX_MAP: AcordIndexMap = {
-  // Header [0-7] TXT
-  agency_name:            0,
-  agency_customer_id:     1,
-  carrier:                2,
-  naic_code:              3,
-  policy_number:          4,
-  effective_date:         5,
-  insured_name:           6,
-  // [7] TXT = misc date
-  // [8-13] CHK = policy type selections (Umbrella/Excess, Occurrence/Claims-Made, etc.)
-  // Limits [14-19] TXT
-  each_occurrence_limit:  14,
-  aggregate_limit:        15,
-  retained_limit_occurrence: 16,
-  retained_limit_aggregate:  17,
-  retroactive_date:       18,
-  expiring_policy_number: 19,
-  // Primary location & operations [20-25] TXT
-  primary_location_name:  20,
-  primary_location_address: 21,
-  primary_description:    22,
-  annual_payroll:         23,
-  annual_gross_sales:     24,
-  total_employees:        25,
-  // Underlying — Auto [26-29] TXT
-  underlying_auto_carrier:      26,
-  underlying_auto_bi_ea_acc:    27,
-  underlying_auto_pd:           28,
-  underlying_auto_premium:      29,
-  // Underlying — GL [30-34] TXT
-  underlying_gl_carrier:        30,
-  underlying_gl_occurrence:     31,
-  underlying_gl_aggregate:      32,
-  underlying_gl_products:       33,
-  underlying_gl_premium:        34,
-  // Underlying — Employers Liability [35-39] TXT
-  underlying_el_carrier:        35,
-  underlying_el_each_accident:  36,
-  underlying_el_disease_employee: 37,
-  underlying_el_disease_policy: 38,
-  underlying_el_premium:        39,
-  // Exposure checklist / misc [40-60] TXT
-  mailing_address:        40,
-  city:                   41,
-  state:                  42,
-  zip:                    43,
-  // Remarks
-  umbrella_remarks:       80,
-  // Signature
-  producer_name:          90,
-  producer_license_no:    91,
-  national_producer_number: 92,
-  signature_date:         93,
+  // ── Page 1 — Header [0-7] TXT ──
+  agency_name:              0,   // Agency
+  agency_customer_id:       1,   // Agency Customer ID
+  carrier:                  2,   // Carrier
+  naic_code:                3,   // NAIC Code
+  policy_number:            4,   // Policy Number
+  effective_date:           5,   // Effective Date
+  insured_name:             6,   // Named Insured(s)
+  // [7] = transaction_date or misc date
+
+  // [8-15] CHK = Transaction type checkboxes
+
+  // ── Policy Information / Limits [16-23] TXT ──
+  retroactive_date:        16,   // Retroactive Date
+  each_occurrence_limit:   17,   // Limit of Liability - Each Occurrence ($)
+  aggregate_limit:         18,   // Limit of Liability - Aggregate ($)
+  retained_limit_occurrence: 19, // Retained Limit ($)
+  expiring_policy_number:  21,   // Expiring Policy #
+
+  // ── Employee Benefits Liability [24-28] TXT ──
+  ebl_each_employee:       24,   // EBL Limit (Each Employee)
+  ebl_aggregate:           25,   // EBL Aggregate Limit
+  ebl_retained_limit:      26,   // EBL Retained Limit
+  ebl_retroactive_date:    27,   // EBL Retroactive Date
+  benefit_program_name:    28,   // Name of Benefit Program
+
+  // ── Primary Location & Subsidiaries [29-70] TXT ──
+  primary_location_name:   29,   // Row 1 Name
+  primary_location_address: 30,  // Row 1 Location
+  primary_description:     31,   // Row 1 Description
+  annual_payroll:          32,   // Row 1 Annual Payroll
+  annual_gross_sales:      33,   // Row 1 Annual Gross Sales
+  total_employees:         35,   // Row 1 # Employees
+
+  // ── Underlying Insurance — Auto [71-77] TXT ──
+  underlying_auto_carrier:      71,
+  underlying_auto_bi_ea_acc:    74,
+  underlying_auto_bi_ea_per:    75,
+  underlying_auto_pd:           76,
+  underlying_auto_premium:      77,
+
+  // ── Underlying Insurance — GL [78-95] TXT ──
+  underlying_gl_carrier:        78,
+  underlying_gl_occurrence:     81,
+  underlying_gl_aggregate:      84,
+  underlying_gl_products:       85,
+  underlying_gl_personal:       86,
+  underlying_gl_premium:        87,
+
+  // ── Underlying Insurance — Employers Liability [96-108] TXT ──
+  underlying_el_carrier:        96,
+  underlying_el_each_accident:  99,
+  underlying_el_disease_employee: 100,
+  underlying_el_disease_policy: 101,
+  underlying_el_premium:        102,
+
+  // ── Page 5 — Remarks / Signature ──
+  umbrella_remarks:        380,
+  producer_name:           388,
+  producer_license_no:     389,
+  signature_date:          390,
+  national_producer_number: 391,
 };
 
 // ── ACORD 140 (2007/03) — Property Section — 355 fields ──
