@@ -57,6 +57,13 @@ export default function ExtractionSummary({ submissionId, requestedFormIds = [],
 
     const defaults = (profile?.form_defaults || {}) as Record<string, string>;
 
+    // Helper: check if a value is meaningful (not empty, not "N/A", not just "false"/"0")
+    const isMeaningful = (v: any): boolean => {
+      if (v === undefined || v === null) return false;
+      const s = String(v).trim();
+      return s !== "" && s !== "N/A" && s !== "n/a" && s !== "[]";
+    };
+
     // Run AI field mapping for all forms in PARALLEL (not sequentially) — major speed gain
     const results = await Promise.all(
       scopedForms.map(async (form) => {
@@ -65,8 +72,9 @@ export default function ExtractionSummary({ submissionId, requestedFormIds = [],
           if (v && !filled[k]) filled[k] = v;
         }
         const total = form.fields.length;
+        // Only count fields with meaningful data (exclude N/A)
         const filledCount = form.fields.filter(
-          (f) => filled[f.key] && String(filled[f.key]).trim()
+          (f) => isMeaningful(filled[f.key])
         ).length;
         return { form, filled, total, filledCount, pct: Math.round((filledCount / total) * 100) };
       })
@@ -78,7 +86,12 @@ export default function ExtractionSummary({ submissionId, requestedFormIds = [],
     let tTotal = 0;
 
     for (const { form, filled, total, filledCount, pct } of results) {
-      Object.assign(mergedAllForms, filled);
+      // Only merge meaningful values — never overwrite existing data with "N/A"
+      for (const [k, v] of Object.entries(filled)) {
+        if (isMeaningful(v)) {
+          mergedAllForms[k] = v;
+        }
+      }
       formStats.push({ form, filled: filledCount, total, pct });
       tFilled += filledCount;
       tTotal += total;
@@ -92,7 +105,15 @@ export default function ExtractionSummary({ submissionId, requestedFormIds = [],
         .eq("id", idToUse)
         .single();
       const existingData = (existing?.form_data || {}) as Record<string, any>;
-      const updatedData = { ...existingData, ...mergedAllForms };
+      // Merge: existing real data takes priority over AI-mapped data
+      // AI-mapped data only fills gaps (keys not yet in existingData)
+      const updatedData = { ...existingData };
+      for (const [k, v] of Object.entries(mergedAllForms)) {
+        // Only set if existing value is empty/missing/N/A
+        if (!isMeaningful(updatedData[k])) {
+          updatedData[k] = v;
+        }
+      }
       await supabase
         .from("insurance_applications")
         .update({ form_data: updatedData })

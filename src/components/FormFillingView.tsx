@@ -176,7 +176,10 @@ export default function FormFillingView({ submissionId, initialMessages, initial
     for (const [internalKey, idx] of Object.entries(indexMap)) {
       const val = data[internalKey];
       if (val === undefined || val === null || val === "") continue;
-      let display = String(val);
+      const s = String(val).trim();
+      // Skip N/A and other non-data placeholders — they should not go into the PDF
+      if (s === "" || s === "N/A" || s === "n/a" || s === "[]") continue;
+      let display = s;
       const isoMatch = display.match(/^(\d{4})-(\d{2})-(\d{2})$/);
       if (isoMatch) display = `${isoMatch[2]}/${isoMatch[3]}/${isoMatch[1]}`;
       result[idx] = display;
