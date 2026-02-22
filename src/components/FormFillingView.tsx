@@ -330,8 +330,8 @@ export default function FormFillingView({ submissionId, initialMessages, initial
           }
 
           const currentValue = String(formDataRef.current[internalKey] || "");
-          // Only sync non-empty values that differ from current state
-          if (pdfValue && pdfValue !== currentValue) {
+          // Sync any value that differs — most recent edit wins (including clears)
+          if (pdfValue !== currentValue) {
             updates[internalKey] = pdfValue;
           }
         } catch (_) {}
