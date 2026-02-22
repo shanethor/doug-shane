@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { AppLayout } from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { FilePlus, ExternalLink, Copy, Check } from "lucide-react";
+import { FilePlus, ExternalLink, Copy, Check, Users, BarChart3, Mail, MessageSquare, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -23,8 +23,26 @@ const statusColor: Record<string, string> = {
   declined: "bg-destructive/10 text-destructive",
 };
 
+const FEATURE_BOXES = [
+  {
+    icon: Users,
+    title: "Add a lead to our sales pipeline.",
+    description: "Track prospects through quoting, presenting, and closing stages.",
+    link: "/pipeline",
+    cta: "Open Pipeline",
+  },
+  {
+    icon: BarChart3,
+    title: "Manage your production and renewals.",
+    description: "View approved policies, pending approvals, and upcoming renewal dates.",
+    link: "/approvals",
+    cta: "View Production",
+  },
+];
+
 export default function Dashboard() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [quotes, setQuotes] = useState<QuoteRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [linkQuoteId, setLinkQuoteId] = useState<string | null>(null);
@@ -44,6 +62,8 @@ export default function Dashboard() {
         setLoading(false);
       });
   }, [user]);
+
+  // ... keep existing code (createCustomerLink, copyLink functions)
 
   const createCustomerLink = async () => {
     if (!linkQuoteId || !user) return;
@@ -88,6 +108,46 @@ export default function Dashboard() {
 
   return (
     <AppLayout>
+      {/* Feature boxes */}
+      <div className="mb-10 space-y-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {FEATURE_BOXES.map((box) => (
+            <button
+              key={box.title}
+              onClick={() => navigate(box.link)}
+              className="group flex flex-col items-start gap-3 rounded-xl border bg-card p-5 text-left hover:shadow-md hover:border-primary/30 transition-all duration-200"
+            >
+              <div className="flex items-center gap-3 w-full">
+                <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                  <box.icon className="h-4.5 w-4.5 text-primary" />
+                </div>
+                <ArrowRight className="h-4 w-4 text-muted-foreground ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-foreground">{box.title}</p>
+                <p className="text-xs text-muted-foreground mt-1">{box.description}</p>
+              </div>
+            </button>
+          ))}
+        </div>
+
+        {/* Coming Soon — Email in chat */}
+        <div className="relative rounded-xl border border-dashed border-muted-foreground/30 bg-muted/30 p-5 opacity-70">
+          <Badge variant="outline" className="absolute top-3 right-3 text-[10px] uppercase tracking-wider font-sans bg-muted text-muted-foreground border-muted-foreground/30">
+            Coming Soon
+          </Badge>
+          <div className="flex items-start gap-3">
+            <div className="h-9 w-9 rounded-lg bg-muted flex items-center justify-center shrink-0">
+              <Mail className="h-4.5 w-4.5 text-muted-foreground" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-foreground">Email in your chat request to have a client ready to go when you get back to the office.</p>
+              <p className="text-xs text-muted-foreground mt-1">Send client details via email and AURA will pre-fill everything before you arrive.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="flex items-end justify-between mb-8">
         <div>
           <h1 className="text-4xl">Quote Requests</h1>
