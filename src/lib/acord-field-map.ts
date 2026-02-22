@@ -453,7 +453,7 @@ export const ACORD_131_FIELD_MAP: AcordFieldMap = {
 };
 
 // ─────────────────────────────────────────────────────────────────
-// ACORD 140 (2007/03) — Property Section
+// ACORD 140 (2014/12) — Property Section
 // ─────────────────────────────────────────────────────────────────
 export const ACORD_140_FIELD_MAP: AcordFieldMap = {
   // Header
@@ -2250,7 +2250,7 @@ export const ACORD_131_INDEX_MAP: AcordIndexMap = {
   national_producer_number: 395,
 };
 
-// ── ACORD 140 (2007/03) — Property Section — 355 fields ──
+// ── ACORD 140 (2014/12) — Property Section — 355 fields ──
 // Verified: 279 TXT, 76 CHK.
 // CHK blocks: [74-75] construction type, [81-84] construction detail,
 //   [86-87] heating, [89-90] electrical, [92] misc, [105] burglar alarm,

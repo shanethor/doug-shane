@@ -645,7 +645,7 @@ const acord131Fields: AcordFormField[] = [
 ];
 
 // ============================================================
-// ACORD 140 (2016/03) — Property Section
+// ACORD 140 (2014/12) — Property Section
 // ============================================================
 const acord140Fields: AcordFormField[] = [
   // Header
@@ -784,7 +784,7 @@ export const ACORD_FORMS: Record<string, AcordFormDefinition> = {
   "acord-140": {
     id: "acord-140",
     name: "ACORD 140",
-    fullName: "Property Section (2016/03)",
+    fullName: "Property Section (2014/12)",
     description: "Building construction, subject of insurance, protective devices, building improvements, heating source, and special coverages.",
     fields: acord140Fields,
     pages: ["/acord-pages/140-page1.jpg", "/acord-pages/140-page2.jpg", "/acord-pages/140-page3.jpg"],
