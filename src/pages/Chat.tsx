@@ -610,12 +610,25 @@ export default function Chat() {
   const send = async (text: string) => {
     if (!text.trim() || isLoading) return;
 
+    // Intercept skip intent BEFORE sending to AI — go directly to blank form editor
+    const isSkipIntent = /\bskip\b|\bgo\s*(straight\s*)?to\s*(the\s*)?form\b|\bjump\s*to\s*form\b|\bskip\s*(intake|questions)\b/i.test(text);
+    if (isSkipIntent) {
+      const userMsg: Msg = { role: "user", content: text.trim() };
+      setMessages((prev) => [...prev, userMsg]);
+      setInput("");
+      if (!trainingMode) {
+        // Non-training mode: show the 3-bucket selector so user can choose their path
+        setShowIntentButtons(true);
+        return;
+      }
+      // Training mode: skip directly to blank form editor
+      openBlankFormEditor();
+      return;
+    }
+
     // In non-training mode: intercept any form-filling intent and show the 3 bucket buttons.
-    // Exceptions — skip directly to the relevant flow:
-    //   • Files already attached → trigger document upload path automatically
-    //   • User explicitly says "skip" → bypass to form editor
-    const isSkipIntent = /\bskip\b|\bgo\s*(straight\s*)?to\s*(the\s*)?form\b/i.test(text);
-    if (!trainingMode && isFormFillingIntent(text) && !showIntentButtons && !isSkipIntent) {
+    // Exceptions — files already attached → trigger document upload path automatically
+    if (!trainingMode && isFormFillingIntent(text) && !showIntentButtons) {
       const userMsg: Msg = { role: "user", content: text.trim() };
       setMessages((prev) => [...prev, userMsg]);
       setInput("");
@@ -670,14 +683,12 @@ export default function Chat() {
       const isIntakeFields = fields.length >= 4 && fields.some(f => f.key === "company_name" || f.key === "website_url");
       
       if (isIntakeFields && lastUserMsg && !skipAutoDetectRef.current) {
-        const userText = lastUserMsg.content.toLowerCase();
-        const wantsSkip = /skip|straight to form|go to form|jump to form|skip intake|no intake|skip questions/i.test(userText);
         const extracted = tryExtractIntakeFromMessage(lastUserMsg.content);
         
-        if (wantsSkip || extracted) {
+        if (extracted) {
           skipAutoDetectRef.current = true;
-          // Auto-fill whatever we can extract (may be empty if skipping)
-          const autoFilled = extracted ? autoFillFieldsFromExtracted(fields, extracted) : {};
+          // Auto-fill whatever we can extract from inline data
+          const autoFilled = autoFillFieldsFromExtracted(fields, extracted);
           setFieldValues(autoFilled);
           setMessages((prev) => {
             const last = prev[prev.length - 1];
