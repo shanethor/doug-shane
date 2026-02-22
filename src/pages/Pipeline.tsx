@@ -41,6 +41,7 @@ type Lead = {
   created_at: string;
   updated_at: string;
   has_approved_policy?: boolean;
+  submission_id?: string | null;
 };
 
 const STAGES = ["prospect", "quoting", "presenting", "lost"] as const;
@@ -239,6 +240,20 @@ export default function Pipeline() {
 
     setSubmittingSold(true);
     try {
+      // Snapshot form_data from linked submission (if any)
+      const soldLead = leads.find((l) => l.id === soldLeadId) as any;
+      let formDataSnapshot: Record<string, any> | null = null;
+      if (soldLead?.submission_id) {
+        const { data: app } = await supabase
+          .from("insurance_applications")
+          .select("form_data")
+          .eq("submission_id", soldLead.submission_id)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (app?.form_data) formDataSnapshot = app.form_data as Record<string, any>;
+      }
+
       // Create an approved policy for this lead
       const { error } = await supabase.from("policies").insert({
         lead_id: soldLeadId,
@@ -251,7 +266,8 @@ export default function Pipeline() {
         status: "approved" as any,
         approved_at: new Date().toISOString(),
         approved_by_user_id: user.id,
-      });
+        ...(formDataSnapshot ? { form_data_snapshot: formDataSnapshot } : {}),
+      } as any);
 
       if (error) throw error;
 

@@ -497,6 +497,7 @@ export default function Chat() {
         accountName: detectedCompany || companyName,
         state: fd.state || fd.mailing_state || null,
         businessType: fd.business_description || fd.sic_description || null,
+        submissionId: sub.id,
       });
 
       const detectedForms: string[] = [];

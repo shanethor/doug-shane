@@ -12,7 +12,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { FilePlus, FileText, MoreVertical, Copy, Pencil, Trash2, Search } from "lucide-react";
+import { FilePlus, FileText, MoreVertical, Copy, Pencil, Trash2, Search, Edit3 } from "lucide-react";
 import { toast } from "sonner";
 
 const statusColor: Record<string, string> = {
@@ -221,6 +221,12 @@ export default function UserDashboard() {
               </Link>
 
               <div className="flex items-center gap-1 ml-4">
+                <Link to={`/acord/acord-125/${s.id}`}>
+                  <Button variant="ghost" size="sm" className="text-xs gap-1.5">
+                    <Edit3 className="h-3.5 w-3.5" />
+                    Workspace
+                  </Button>
+                </Link>
                 <Link to={`/application/${s.id}`}>
                   <Button variant="ghost" size="sm" className="text-xs">
                     {s.status === "extracted" || s.status === "complete" ? "Review" : "View"}

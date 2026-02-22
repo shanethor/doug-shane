@@ -353,6 +353,7 @@ export type Database = {
           phone: string | null
           stage: Database["public"]["Enums"]["lead_stage"]
           state: string | null
+          submission_id: string | null
           updated_at: string
         }
         Insert: {
@@ -367,6 +368,7 @@ export type Database = {
           phone?: string | null
           stage?: Database["public"]["Enums"]["lead_stage"]
           state?: string | null
+          submission_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -381,9 +383,18 @@ export type Database = {
           phone?: string | null
           stage?: Database["public"]["Enums"]["lead_stage"]
           state?: string | null
+          submission_id?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "leads_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "business_submissions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       loss_run_attachments: {
         Row: {
@@ -531,6 +542,7 @@ export type Database = {
           carrier: string
           created_at: string
           effective_date: string
+          form_data_snapshot: Json | null
           id: string
           lead_id: string
           line_of_business: string
@@ -552,6 +564,7 @@ export type Database = {
           carrier: string
           created_at?: string
           effective_date: string
+          form_data_snapshot?: Json | null
           id?: string
           lead_id: string
           line_of_business: string
@@ -573,6 +586,7 @@ export type Database = {
           carrier?: string
           created_at?: string
           effective_date?: string
+          form_data_snapshot?: Json | null
           id?: string
           lead_id?: string
           line_of_business?: string
