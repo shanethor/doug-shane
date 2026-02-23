@@ -23,7 +23,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { ArrowLeft, Plus, FileText, CheckCircle, Clock, XCircle, MessageSquare, Send, Edit3 } from "lucide-react";
+import { ArrowLeft, Plus, FileText, CheckCircle, Clock, XCircle, MessageSquare, Send, Edit3, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LossRunsTab } from "@/components/LossRunsTab";
@@ -387,10 +387,29 @@ export default function LeadDetail() {
                       <span className="text-muted-foreground text-xs">Created</span>
                       <p>{new Date(lead.created_at).toLocaleDateString()}</p>
                     </div>
-                    <div>
-                      <span className="text-muted-foreground text-xs">Updated</span>
-                      <p>{new Date(lead.updated_at).toLocaleDateString()}</p>
-                    </div>
+                     <div>
+                       <span className="text-muted-foreground text-xs">Updated</span>
+                       <p>{new Date(lead.updated_at).toLocaleDateString()}</p>
+                     </div>
+                     {lead.loss_reason && (
+                       <div className="col-span-2">
+                         <span className="text-muted-foreground text-xs flex items-center gap-1">
+                           <AlertTriangle className="h-3 w-3 text-destructive" />
+                           Loss Reason
+                         </span>
+                         <p className="text-destructive text-sm">{lead.loss_reason}</p>
+                       </div>
+                     )}
+                     {lead.presenting_details && (
+                       <div className="col-span-2">
+                         <span className="text-muted-foreground text-xs">Presenting Details</span>
+                         <div className="text-sm space-y-0.5">
+                           {(lead.presenting_details as any)?.carrier && <p>Carrier: {(lead.presenting_details as any).carrier}</p>}
+                           {(lead.presenting_details as any)?.quoted_premium && <p>Quoted: ${Number((lead.presenting_details as any).quoted_premium).toLocaleString()}</p>}
+                           {(lead.presenting_details as any)?.notes && <p className="text-muted-foreground">{(lead.presenting_details as any).notes}</p>}
+                         </div>
+                       </div>
+                     )}
                   </div>
                 </CardContent>
               </Card>

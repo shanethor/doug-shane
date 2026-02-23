@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useAdmin } from "@/hooks/useAdmin";
@@ -14,7 +15,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { CheckCircle, XCircle, Clock, FileText, ShieldAlert } from "lucide-react";
+import { CheckCircle, XCircle, Clock, FileText, ShieldAlert, Edit3 } from "lucide-react";
+import { ClientDocuments } from "@/components/ClientDocuments";
 import { toast } from "sonner";
 
 export default function Approvals() {
@@ -35,7 +37,7 @@ export default function Approvals() {
     if (!user) return;
     let query = supabase
       .from("policies")
-      .select("*, leads(account_name)")
+      .select("*, leads(id, account_name, submission_id)")
       .order("submitted_at", { ascending: false });
 
     if (filter === "pending") {
@@ -187,6 +189,19 @@ export default function Approvals() {
                       <p>Premium: ${Number(p.annual_premium).toLocaleString()} · Revenue: ${Number(p.revenue).toLocaleString()}</p>
                       <p>Submitted: {new Date(p.submitted_at).toLocaleString()}</p>
                       {p.rejection_reason && <p className="text-destructive">Reason: {p.rejection_reason}</p>}
+                      <div className="flex items-center gap-2 mt-1.5">
+                        {p.leads?.submission_id && (
+                          <Link to={`/acord/acord-125/${p.leads.submission_id}`}>
+                            <Badge variant="outline" className="text-[9px] cursor-pointer hover:bg-accent gap-0.5">
+                              <Edit3 className="h-2.5 w-2.5" />
+                              Workspace
+                            </Badge>
+                          </Link>
+                        )}
+                        {p.leads?.id && (
+                          <ClientDocuments leadId={p.leads.id} submissionId={p.leads.submission_id} compact />
+                        )}
+                      </div>
                     </div>
                   </div>
                   {p.status === "pending" && (

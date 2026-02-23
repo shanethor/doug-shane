@@ -6,6 +6,7 @@ import { AppLayout } from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
@@ -23,7 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Search, CheckCircle, GripVertical } from "lucide-react";
+import { Plus, Search, CheckCircle, GripVertical, Edit3 } from "lucide-react";
 import { toast } from "sonner";
 import { LossRunBadge } from "@/components/LossRunBadge";
 import { ClientDocuments } from "@/components/ClientDocuments";
@@ -95,6 +96,21 @@ export default function Pipeline() {
     annual_premium: "",
   });
   const [submittingSold, setSubmittingSold] = useState(false);
+
+  // Presenting modal state
+  const [presentingModalOpen, setPresentingModalOpen] = useState(false);
+  const [presentingLeadId, setPresentingLeadId] = useState<string | null>(null);
+  const [presentingForm, setPresentingForm] = useState({
+    carrier: "",
+    line_of_business: "",
+    quoted_premium: "",
+    notes: "",
+  });
+
+  // Lost modal state
+  const [lostModalOpen, setLostModalOpen] = useState(false);
+  const [lostLeadId, setLostLeadId] = useState<string | null>(null);
+  const [lostReason, setLostReason] = useState("");
 
   const loadLeads = useCallback(async () => {
     if (!user) return;
@@ -224,12 +240,90 @@ export default function Pipeline() {
       setSoldLeadId(leadId);
       setPolicyForm({ carrier: "", line_of_business: "", policy_number: "", effective_date: "", annual_premium: "" });
       setSoldModalOpen(true);
+    } else if (targetStage === "presenting") {
+      // Open presenting modal to collect quote details
+      setPresentingLeadId(leadId);
+      setPresentingForm({ carrier: "", line_of_business: "", quoted_premium: "", notes: "" });
+      setPresentingModalOpen(true);
+    } else if (targetStage === "lost") {
+      // Open lost modal to collect reason
+      setLostLeadId(leadId);
+      setLostReason("");
+      setLostModalOpen(true);
     } else {
       // Regular stage move
       await moveStage(leadId, targetStage);
       toast.success(`Moved to ${STAGE_LABELS[targetStage]}`);
     }
     setDraggedLeadId(null);
+  };
+
+  const handlePresentingSubmit = async () => {
+    if (!user || !presentingLeadId) return;
+    try {
+      const details = {
+        carrier: presentingForm.carrier,
+        line_of_business: presentingForm.line_of_business,
+        quoted_premium: presentingForm.quoted_premium,
+        notes: presentingForm.notes,
+        presented_at: new Date().toISOString(),
+      };
+
+      await supabase
+        .from("leads")
+        .update({
+          stage: "presenting" as any,
+          presenting_details: details,
+        } as any)
+        .eq("id", presentingLeadId);
+
+      await supabase.from("audit_log").insert({
+        user_id: user.id,
+        action: "stage_move",
+        object_type: "lead",
+        object_id: presentingLeadId,
+        metadata: { new_stage: "presenting", ...details },
+      });
+
+      toast.success("Moved to Presenting!");
+      setPresentingModalOpen(false);
+      setPresentingLeadId(null);
+      loadLeads();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update");
+    }
+  };
+
+  const handleLostSubmit = async () => {
+    if (!user || !lostLeadId) return;
+    if (!lostReason.trim()) {
+      toast.error("Please provide a reason");
+      return;
+    }
+    try {
+      await supabase
+        .from("leads")
+        .update({
+          stage: "lost" as any,
+          loss_reason: lostReason.trim(),
+        } as any)
+        .eq("id", lostLeadId);
+
+      await supabase.from("audit_log").insert({
+        user_id: user.id,
+        action: "stage_move",
+        object_type: "lead",
+        object_id: lostLeadId,
+        metadata: { new_stage: "lost", loss_reason: lostReason.trim() },
+      });
+
+      toast.success("Moved to Lost");
+      setLostModalOpen(false);
+      setLostLeadId(null);
+      loadLeads();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update");
+    }
   };
 
   const handleSoldSubmit = async () => {
@@ -324,6 +418,8 @@ export default function Pipeline() {
   }
 
   const soldLead = soldLeadId ? leads.find((l) => l.id === soldLeadId) : null;
+  const presentingLead = presentingLeadId ? leads.find((l) => l.id === presentingLeadId) : null;
+  const lostLead = lostLeadId ? leads.find((l) => l.id === lostLeadId) : null;
 
   return (
     <AppLayout>
@@ -468,6 +564,17 @@ export default function Pipeline() {
                             )}
                             <div className="flex items-center gap-1 ml-[18px] mt-0.5">
                               <ClientDocuments leadId={lead.id} submissionId={lead.submission_id} compact />
+                              {lead.submission_id && (
+                                <Link
+                                  to={`/acord/acord-125/${lead.submission_id}`}
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <Badge variant="outline" className="text-[9px] cursor-pointer hover:bg-accent gap-0.5">
+                                    <Edit3 className="h-2.5 w-2.5" />
+                                    ACORD
+                                  </Badge>
+                                </Link>
+                              )}
                               {lead.business_type && (
                                 <span className="text-[10px] text-muted-foreground font-sans">{lead.business_type}</span>
                               )}
@@ -491,6 +598,108 @@ export default function Pipeline() {
           </div>
         ))}
       </div>
+
+      {/* Presenting Modal */}
+      <Dialog open={presentingModalOpen} onOpenChange={(open) => { if (!open) { setPresentingModalOpen(false); setPresentingLeadId(null); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Presenting Quote — {presentingLead?.account_name}</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground font-sans">
+            Enter the quote details you're presenting to the client.
+          </p>
+          <div className="grid gap-3 mt-2">
+            <div>
+              <Label>Carrier</Label>
+              <Input
+                value={presentingForm.carrier}
+                onChange={(e) => setPresentingForm({ ...presentingForm, carrier: e.target.value })}
+                placeholder="e.g. Hartford, Travelers"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label>Line of Business</Label>
+                <Input
+                  value={presentingForm.line_of_business}
+                  onChange={(e) => setPresentingForm({ ...presentingForm, line_of_business: e.target.value })}
+                  placeholder="e.g. General Liability"
+                />
+              </div>
+              <div>
+                <Label>Quoted Premium</Label>
+                <Input
+                  type="number"
+                  value={presentingForm.quoted_premium}
+                  onChange={(e) => setPresentingForm({ ...presentingForm, quoted_premium: e.target.value })}
+                  placeholder="$0.00"
+                />
+              </div>
+            </div>
+            <div>
+              <Label>Notes</Label>
+              <Textarea
+                value={presentingForm.notes}
+                onChange={(e) => setPresentingForm({ ...presentingForm, notes: e.target.value })}
+                placeholder="Any additional details about the quote being presented…"
+                className="min-h-[80px]"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setPresentingModalOpen(false); setPresentingLeadId(null); }}>
+              Cancel
+            </Button>
+            <Button onClick={handlePresentingSubmit}>
+              Move to Presenting
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Lost Modal */}
+      <Dialog open={lostModalOpen} onOpenChange={(open) => { if (!open) { setLostModalOpen(false); setLostLeadId(null); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Mark as Lost — {lostLead?.account_name}</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground font-sans">
+            Why was this lead lost? This helps track patterns and improve your win rate.
+          </p>
+          <div className="grid gap-3 mt-2">
+            <div className="flex flex-wrap gap-2">
+              {["Price", "Coverage", "Competitor", "Client unresponsive", "Not a fit"].map((reason) => (
+                <Button
+                  key={reason}
+                  variant={lostReason === reason ? "default" : "outline"}
+                  size="sm"
+                  className="text-xs"
+                  onClick={() => setLostReason(reason)}
+                >
+                  {reason}
+                </Button>
+              ))}
+            </div>
+            <div>
+              <Label>Details</Label>
+              <Textarea
+                value={lostReason}
+                onChange={(e) => setLostReason(e.target.value)}
+                placeholder="Describe why this lead was lost…"
+                className="min-h-[80px]"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setLostModalOpen(false); setLostLeadId(null); }}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleLostSubmit} disabled={!lostReason.trim()}>
+              Mark as Lost
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Sold Policy Modal */}
       <Dialog open={soldModalOpen} onOpenChange={(open) => { if (!open) { setSoldModalOpen(false); setSoldLeadId(null); } }}>

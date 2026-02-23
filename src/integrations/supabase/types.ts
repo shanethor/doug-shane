@@ -400,8 +400,10 @@ export type Database = {
           email: string | null
           id: string
           lead_source: string | null
+          loss_reason: string | null
           owner_user_id: string
           phone: string | null
+          presenting_details: Json | null
           stage: Database["public"]["Enums"]["lead_stage"]
           state: string | null
           submission_id: string | null
@@ -415,8 +417,10 @@ export type Database = {
           email?: string | null
           id?: string
           lead_source?: string | null
+          loss_reason?: string | null
           owner_user_id: string
           phone?: string | null
+          presenting_details?: Json | null
           stage?: Database["public"]["Enums"]["lead_stage"]
           state?: string | null
           submission_id?: string | null
@@ -430,8 +434,10 @@ export type Database = {
           email?: string | null
           id?: string
           lead_source?: string | null
+          loss_reason?: string | null
           owner_user_id?: string
           phone?: string | null
+          presenting_details?: Json | null
           stage?: Database["public"]["Enums"]["lead_stage"]
           state?: string | null
           submission_id?: string | null

@@ -67,17 +67,51 @@ export function ClientDocuments({ submissionId, leadId, compact = false, onFiles
 
   const loadDocs = async () => {
     if (!user) return;
+
+    // Resolve both identifiers for comprehensive querying
+    let resolvedLeadId = leadId;
+    let resolvedSubmissionId = submissionId;
+
+    // If we only have submissionId, resolve the lead
+    if (submissionId && !leadId) {
+      const { data: lead } = await supabase
+        .from("leads")
+        .select("id")
+        .eq("submission_id", submissionId)
+        .maybeSingle();
+      if (lead) resolvedLeadId = lead.id;
+    }
+
+    // If we only have leadId, resolve the submission
+    if (leadId && !submissionId) {
+      const { data: lead } = await supabase
+        .from("leads")
+        .select("submission_id")
+        .eq("id", leadId)
+        .maybeSingle();
+      if (lead?.submission_id) resolvedSubmissionId = lead.submission_id;
+    }
+
+    // Query with OR logic to get all docs for this client
     let query = supabase
       .from("client_documents" as any)
       .select("*")
       .order("created_at", { ascending: false });
 
-    if (submissionId) query = query.eq("submission_id", submissionId);
-    else if (leadId) query = query.eq("lead_id", leadId);
-    else return;
+    if (resolvedSubmissionId && resolvedLeadId) {
+      query = query.or(`submission_id.eq.${resolvedSubmissionId},lead_id.eq.${resolvedLeadId}`);
+    } else if (resolvedSubmissionId) {
+      query = query.eq("submission_id", resolvedSubmissionId);
+    } else if (resolvedLeadId) {
+      query = query.eq("lead_id", resolvedLeadId);
+    } else {
+      return;
+    }
 
     const { data } = await query;
-    setDocs((data ?? []) as unknown as ClientDocument[]);
+    // Deduplicate by id in case OR returns overlaps
+    const unique = Array.from(new Map((data ?? []).map((d: any) => [d.id, d])).values());
+    setDocs(unique as unknown as ClientDocument[]);
     setLoading(false);
   };
 
