@@ -398,6 +398,7 @@ export type Database = {
           contact_name: string | null
           created_at: string
           email: string | null
+          estimated_renewal_date: string | null
           id: string
           lead_source: string | null
           loss_reason: string | null
@@ -415,6 +416,7 @@ export type Database = {
           contact_name?: string | null
           created_at?: string
           email?: string | null
+          estimated_renewal_date?: string | null
           id?: string
           lead_source?: string | null
           loss_reason?: string | null
@@ -432,6 +434,7 @@ export type Database = {
           contact_name?: string | null
           created_at?: string
           email?: string | null
+          estimated_renewal_date?: string | null
           id?: string
           lead_source?: string | null
           loss_reason?: string | null
