@@ -320,6 +320,7 @@ export default function Chat() {
   const [requestedFormIds, setRequestedFormIds] = useState<string[]>([]);
   const [submittingFields, setSubmittingFields] = useState(false);
   const skipAutoDetectRef = useRef(false);
+  const bypassIntentRef = useRef(false);
 
   const handleVoiceTranscript = useCallback((text: string) => {
     setInput((prev) => (prev ? prev + " " + text : text));
@@ -729,7 +730,10 @@ export default function Chat() {
 
     // In non-training mode: intercept any form-filling intent and show the 3 bucket buttons.
     // Exceptions — files already attached → trigger document upload path automatically
-    if (!trainingMode && isFormFillingIntent(text) && !showIntentButtons) {
+    // Also skip if bypassIntentRef is set (e.g. from ai-questions or infer buttons)
+    const shouldBypass = bypassIntentRef.current;
+    bypassIntentRef.current = false;
+    if (!trainingMode && !shouldBypass && isFormFillingIntent(text) && !showIntentButtons) {
       const userMsg: Msg = { role: "user", content: text.trim() };
       setMessages((prev) => [...prev, userMsg]);
       setInput("");
@@ -1433,7 +1437,7 @@ export default function Chat() {
                         </div>
                       </button>
                       <button
-                        onClick={() => { setShowIntentButtons(false); const formContext = requestedFormIds.length > 0 ? ` The agent has already specified these ACORD forms: ${requestedFormIds.map(id => id.replace("acord-", "ACORD ")).join(", ")}.` : ""; send(`I want to fill an ACORD form — please ask me a few short questions to gather the client information.${formContext}`); }}
+                        onClick={() => { setShowIntentButtons(false); const formContext = requestedFormIds.length > 0 ? ` The agent has already specified these ACORD forms: ${requestedFormIds.map(id => id.replace("acord-", "ACORD ")).join(", ")}.` : ""; bypassIntentRef.current = true; send(`I want to fill an ACORD form — please ask me a few short questions to gather the client information.${formContext}`); }}
                         className="flex items-center gap-3 rounded-lg border bg-background hover:bg-muted/60 px-4 py-3 text-left transition-colors"
                       >
                         <div className="h-8 w-8 rounded-md bg-secondary flex items-center justify-center shrink-0">
@@ -1617,6 +1621,7 @@ export default function Chat() {
                                         dataContext = `\n\nHere is what was already extracted from the document:\n${filled.map(([k, v]) => `- ${k}: ${v}`).join("\n")}\n\nFields still missing or empty (${missing.length}): ${missing.map(([k]) => k).join(", ")}\n\nPlease ask me targeted questions about the MISSING fields only. Do NOT show the intake form. Ask conversational questions one or two at a time.`;
                                       }
                                     }
+                                    bypassIntentRef.current = true;
                                     send(`Yes, please ask me follow-up questions to fill any gaps from the uploaded document. Do NOT show the standard intake form — I already uploaded a document with data extracted.${dataContext}`);
                                   })();
                                 } else if (b.action.startsWith("/") || b.action.startsWith("http")) {
@@ -1747,6 +1752,7 @@ export default function Chat() {
                                       const missing = Object.entries(fd).filter(([_, v]) => !v || !String(v).trim() || v === "N/A");
                                       dataContext = `\n\nHere is what was already extracted from the document:\n${filled.map(([k, v]) => `- ${k}: ${v}`).join("\n")}\n\nFields still missing or empty (${missing.length}): ${missing.map(([k]) => k).join(", ")}\n\nPlease ask me targeted questions about the MISSING fields only. Do NOT show the intake form. Ask conversational questions one or two at a time.`;
                                     }
+                                    bypassIntentRef.current = true;
                                     send(`Yes, please ask me follow-up questions to fill any gaps from the uploaded document. Do NOT show the standard intake form — I already uploaded a document with data extracted.${dataContext}`);
                                   })();
                                 }
@@ -1754,6 +1760,7 @@ export default function Chat() {
                             })();
                           } else {
                             const formContext = requestedFormIds.length > 0 ? ` The agent has already specified these ACORD forms: ${requestedFormIds.map(id => id.replace("acord-", "ACORD ")).join(", ")}.` : "";
+                            bypassIntentRef.current = true;
                             send(`I want to fill an ACORD form — please ask me a few short questions to gather the client information.${formContext}`);
                           }
                         }}
