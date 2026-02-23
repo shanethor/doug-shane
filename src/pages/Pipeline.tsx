@@ -111,6 +111,7 @@ export default function Pipeline() {
   const [lostModalOpen, setLostModalOpen] = useState(false);
   const [lostLeadId, setLostLeadId] = useState<string | null>(null);
   const [lostReason, setLostReason] = useState("");
+  const [lostRenewalDate, setLostRenewalDate] = useState("");
 
   const loadLeads = useCallback(async () => {
     if (!user) return;
@@ -149,6 +150,54 @@ export default function Pipeline() {
   useEffect(() => {
     loadLeads();
   }, [loadLeads]);
+
+  // Auto-promote lost leads back to Prospect when within 2 months of estimated renewal
+  const renewalCheckDone = useRef(false);
+  useEffect(() => {
+    if (!user || leads.length === 0 || renewalCheckDone.current) return;
+    renewalCheckDone.current = true;
+
+    const now = new Date();
+    const twoMonthsOut = new Date(now);
+    twoMonthsOut.setMonth(twoMonthsOut.getMonth() + 2);
+
+    const lostWithRenewal = leads.filter(
+      (l) => l.stage === "lost" && (l as any).estimated_renewal_date
+    );
+
+    const toPromote = lostWithRenewal.filter((l) => {
+      const renewalDate = new Date((l as any).estimated_renewal_date);
+      return renewalDate <= twoMonthsOut && renewalDate >= now;
+    });
+
+    if (toPromote.length === 0) return;
+
+    (async () => {
+      for (const lead of toPromote) {
+        await supabase
+          .from("leads")
+          .update({ stage: "prospect" as any, updated_at: new Date().toISOString() } as any)
+          .eq("id", lead.id);
+
+        await supabase.from("lead_notes").insert({
+          lead_id: lead.id,
+          user_id: user.id,
+          note_text: `🔄 Up for renewal soon — estimated renewal: ${(lead as any).estimated_renewal_date}. Auto-moved from Lost back to Prospect.`,
+        });
+
+        await supabase.from("audit_log").insert({
+          user_id: user.id,
+          action: "auto_renewal_promote",
+          object_type: "lead",
+          object_id: lead.id,
+          metadata: { from: "lost", to: "prospect", estimated_renewal_date: (lead as any).estimated_renewal_date },
+        });
+      }
+
+      toast.success(`${toPromote.length} lost lead(s) moved back to Prospect — up for renewal soon!`);
+      loadLeads();
+    })();
+  }, [user, leads, loadLeads]);
 
   const handleAddLead = async () => {
     if (!user || !newLead.account_name.trim()) return;
@@ -249,6 +298,7 @@ export default function Pipeline() {
       // Open lost modal to collect reason
       setLostLeadId(leadId);
       setLostReason("");
+      setLostRenewalDate("");
       setLostModalOpen(true);
     } else {
       // Regular stage move
@@ -300,12 +350,17 @@ export default function Pipeline() {
       toast.error("Please provide a reason");
       return;
     }
+    if (!lostRenewalDate) {
+      toast.error("Please provide an estimated renewal date");
+      return;
+    }
     try {
       await supabase
         .from("leads")
         .update({
           stage: "lost" as any,
           loss_reason: lostReason.trim(),
+          estimated_renewal_date: lostRenewalDate,
         } as any)
         .eq("id", lostLeadId);
 
@@ -314,7 +369,7 @@ export default function Pipeline() {
         action: "stage_move",
         object_type: "lead",
         object_id: lostLeadId,
-        metadata: { new_stage: "lost", loss_reason: lostReason.trim() },
+        metadata: { new_stage: "lost", loss_reason: lostReason.trim(), estimated_renewal_date: lostRenewalDate },
       });
 
       toast.success("Moved to Lost");
@@ -689,12 +744,23 @@ export default function Pipeline() {
                 className="min-h-[80px]"
               />
             </div>
+            <div>
+              <Label>Estimated Renewal Date *</Label>
+              <Input
+                type="date"
+                value={lostRenewalDate}
+                onChange={(e) => setLostRenewalDate(e.target.value)}
+              />
+              <p className="text-[11px] text-muted-foreground font-sans mt-1">
+                Two months before this date, the lead will automatically move back to Prospect.
+              </p>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { setLostModalOpen(false); setLostLeadId(null); }}>
               Cancel
             </Button>
-            <Button variant="destructive" onClick={handleLostSubmit} disabled={!lostReason.trim()}>
+            <Button variant="destructive" onClick={handleLostSubmit} disabled={!lostReason.trim() || !lostRenewalDate}>
               Mark as Lost
             </Button>
           </DialogFooter>
