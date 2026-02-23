@@ -1584,15 +1584,32 @@ export default function Chat() {
                       } else if (b.action === "ai-questions") {
                                   // User wants AI to ask follow-up questions — include extracted data context
                                   (async () => {
-                                    // Find the most recent submission's extracted data to give the AI context
+                                    // Find the submission ID from this session's chat context
                                     let dataContext = "";
                                     if (user) {
-                                      const { data: latestApp } = await supabase
+                                      // Look for a SUBMISSION_ID in the chat messages first
+                                      let subId: string | null = null;
+                                      for (const msg of messages) {
+                                        const sidMatch = msg.content.match(/\[SUBMISSION_ID:([^\]]+)\]/);
+                                        if (sidMatch) subId = sidMatch[1];
+                                      }
+
+                                      let query = supabase
                                         .from("insurance_applications")
                                         .select("form_data")
                                         .order("created_at", { ascending: false })
-                                        .limit(1)
-                                        .maybeSingle();
+                                        .limit(1);
+
+                                      // Scope to current session's submission if we have one
+                                      if (subId) {
+                                        query = query.eq("submission_id", subId);
+                                      } else if (activeSubmissionId) {
+                                        query = query.eq("submission_id", activeSubmissionId);
+                                      } else if (pendingSubmissionId) {
+                                        query = query.eq("submission_id", pendingSubmissionId);
+                                      }
+
+                                      const { data: latestApp } = await query.maybeSingle();
                                       if (latestApp?.form_data) {
                                         const fd = latestApp.form_data as Record<string, any>;
                                         const filled = Object.entries(fd).filter(([_, v]) => v && String(v).trim() && v !== "N/A");
