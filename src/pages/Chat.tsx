@@ -9,7 +9,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import SubmissionReviewPanel from "@/components/SubmissionReviewPanel";
 import FormFillingView from "@/components/FormFillingView";
 import ExtractionSummary from "@/components/ExtractionSummary";
-import { Send, FileUp, ClipboardList, Search, Loader2, Paperclip, X, Download, Mic, MicOff, Globe, Lightbulb, ChevronDown, ChevronUp, FileText, BrainCircuit, PenLine, Users, BarChart3, Mail, FileSearch, Camera } from "lucide-react";
+import { Send, FileUp, ClipboardList, Search, Loader2, Paperclip, X, Download, Mic, MicOff, Globe, Lightbulb, ChevronDown, ChevronUp, FileText, BrainCircuit, PenLine, Users, BarChart3, Mail, FileSearch, Camera, Plus, ArrowRight } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -321,6 +322,39 @@ export default function Chat() {
   const [submittingFields, setSubmittingFields] = useState(false);
   const skipAutoDetectRef = useRef(false);
   const bypassIntentRef = useRef(false);
+  const [coverageInfo, setCoverageInfo] = useState<{ filled: number; total: number; percent: number } | null>(null);
+
+  // Calculate coverage from form_data for a given submission
+  const calculateCoverage = useCallback(async (submissionId: string) => {
+    const { data } = await supabase
+      .from("insurance_applications")
+      .select("form_data")
+      .eq("submission_id", submissionId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (data?.form_data) {
+      const fd = data.form_data as Record<string, any>;
+      const total = Object.keys(fd).length;
+      const filled = Object.entries(fd).filter(([_, v]) => v && String(v).trim() && v !== "N/A").length;
+      const percent = total > 0 ? Math.round((filled / total) * 100) : 0;
+      setCoverageInfo({ filled, total, percent });
+      return { filled, total, percent, fd };
+    }
+    return null;
+  }, []);
+
+  // Helper: get current submission ID from chat messages
+  const getSessionSubmissionId = useCallback(() => {
+    let subId: string | null = null;
+    for (const msg of messages) {
+      const sidMatch = msg.content.match(/\[SUBMISSION_ID:([^\]]+)\]/);
+      if (sidMatch) subId = sidMatch[1];
+    }
+    return subId || activeSubmissionId || pendingSubmissionId || null;
+  }, [messages, activeSubmissionId, pendingSubmissionId]);
+
+  
 
   const handleVoiceTranscript = useCallback((text: string) => {
     setInput((prev) => (prev ? prev + " " + text : text));
@@ -903,6 +937,42 @@ export default function Chat() {
     }
   };
 
+  // Start the AI coverage loop: extract, then ask questions until 85%+
+  const startCoverageLoop = async (filesToExtract?: File[]) => {
+    if (filesToExtract && filesToExtract.length > 0) {
+      await triggerDocumentExtraction(filesToExtract);
+    }
+    await new Promise(r => setTimeout(r, 2500));
+
+    let subId: string | null = null;
+    setMessages(prev => {
+      for (const msg of prev) {
+        const sidMatch = msg.content.match(/\[SUBMISSION_ID:([^\]]+)\]/);
+        if (sidMatch) subId = sidMatch[1];
+      }
+      return prev;
+    });
+    subId = subId || activeSubmissionId || pendingSubmissionId;
+
+    if (!subId) {
+      bypassIntentRef.current = true;
+      send("I want to fill an ACORD form — please ask me a few short questions to gather the client information.");
+      return;
+    }
+
+    const result = await calculateCoverage(subId);
+    if (!result) return;
+
+    const { filled, total, percent, fd } = result;
+    const filledEntries = Object.entries(fd).filter(([_, v]) => v && String(v).trim() && v !== "N/A");
+    const missingEntries = Object.entries(fd).filter(([_, v]) => !v || !String(v).trim() || v === "N/A");
+
+    const dataContext = `\n\nCurrent coverage: ${percent}% (${filled}/${total} fields filled).\n\nAlready extracted:\n${filledEntries.slice(0, 30).map(([k, v]) => `- ${k}: ${v}`).join("\n")}\n\nFields still missing (${missingEntries.length}): ${missingEntries.map(([k]) => k).join(", ")}\n\nIMPORTANT: Keep asking me targeted questions about the MISSING fields, 2-3 at a time, until we reach at least 85% coverage. Do NOT show the intake form. Ask conversational questions. After I answer, acknowledge and ask the next batch. Current target: 85-90% coverage.`;
+
+    bypassIntentRef.current = true;
+    send(`Please help me fill in the remaining gaps from this submission. Use AI inference where possible and ask me targeted follow-up questions for the rest. Do NOT show the standard intake form.${dataContext}`);
+  };
+
   /** Execute pipeline actions parsed from AI response */
   const executePipelineActions = async (actions: PipelineAction[]) => {
     if (!user) return;
@@ -1413,7 +1483,28 @@ export default function Chat() {
                     <p className="text-sm font-medium text-foreground">How would you like to get started?</p>
                     <div className="flex flex-col gap-2">
                       <button
-                        onClick={() => { setShowIntentButtons(false); if (attachedFiles.length > 0) { const f = [...attachedFiles]; setAttachedFiles([]); triggerDocumentExtraction(f); } else { fileInputRef.current?.click(); } }}
+                        onClick={() => {
+                          setShowIntentButtons(false);
+                          if (attachedFiles.length > 0) {
+                            setMessages(prev => [...prev, {
+                              role: "assistant" as const,
+                              content: `📂 You have **${attachedFiles.length} document${attachedFiles.length > 1 ? 's' : ''}** ready. Would you like to add more, or continue with extraction?`,
+                              buttons: [
+                                { label: "Add More Documents", action: "add-more-docs" },
+                                { label: "Continue with Extraction", action: "extract-current-docs" },
+                              ]
+                            }]);
+                          } else {
+                            setMessages(prev => [...prev, {
+                              role: "assistant" as const,
+                              content: "📂 Upload your client documents — policies, decks, loss runs, or any supporting files. I'll extract and pre-fill your ACORD forms automatically.",
+                              buttons: [
+                                { label: "Upload Documents", action: "open-file-picker" },
+                                { label: "Skip to Fillable Forms", action: "skip-to-form" },
+                              ]
+                            }]);
+                          }
+                        }}
                         className="flex items-center gap-3 rounded-lg border bg-background hover:bg-muted/60 px-4 py-3 text-left transition-colors"
                       >
                         <div className="h-8 w-8 rounded-md bg-secondary flex items-center justify-center shrink-0">
@@ -1425,7 +1516,29 @@ export default function Chat() {
                         </div>
                       </button>
                       <button
-                        onClick={() => { setShowIntentButtons(false); if (attachedFiles.length > 0) { const f = [...attachedFiles]; setAttachedFiles([]); triggerHandwrittenExtraction(f); } else { const inp = document.createElement("input"); inp.type = "file"; inp.accept = "image/*"; inp.capture = "environment"; inp.multiple = true; inp.onchange = (e) => { const files = Array.from((e.target as HTMLInputElement).files || []); if (files.length > 0) triggerHandwrittenExtraction(files); }; inp.click(); } }}
+                        onClick={() => {
+                          setShowIntentButtons(false);
+                          if (attachedFiles.length > 0) {
+                            setMessages(prev => [...prev, {
+                              role: "assistant" as const,
+                              content: `📸 You have **${attachedFiles.length} file${attachedFiles.length > 1 ? 's' : ''}** attached. Take a photo of handwritten notes to add to these, or continue with extraction from what you have.`,
+                              buttons: [
+                                { label: "📷 Take Photo of Notes", action: "scan-handwritten-camera" },
+                                { label: "Continue with Extraction", action: "extract-current-docs" },
+                              ]
+                            }]);
+                          } else {
+                            setMessages(prev => [...prev, {
+                              role: "assistant" as const,
+                              content: "📸 Take a photo of your handwritten client notes for OCR scanning, or upload documents instead.",
+                              buttons: [
+                                { label: "📷 Take Photo of Notes", action: "scan-handwritten-camera" },
+                                { label: "Upload Documents Instead", action: "open-file-picker" },
+                                { label: "Skip to Fillable Forms", action: "skip-to-form" },
+                              ]
+                            }]);
+                          }
+                        }}
                         className="flex items-center gap-3 rounded-lg border bg-background hover:bg-muted/60 px-4 py-3 text-left transition-colors"
                       >
                         <div className="h-8 w-8 rounded-md bg-secondary flex items-center justify-center shrink-0">
@@ -1437,15 +1550,26 @@ export default function Chat() {
                         </div>
                       </button>
                       <button
-                        onClick={() => { setShowIntentButtons(false); const formContext = requestedFormIds.length > 0 ? ` The agent has already specified these ACORD forms: ${requestedFormIds.map(id => id.replace("acord-", "ACORD ")).join(", ")}.` : ""; bypassIntentRef.current = true; send(`I want to fill an ACORD form — please ask me a few short questions to gather the client information.${formContext}`); }}
+                        onClick={() => {
+                          setShowIntentButtons(false);
+                          if (attachedFiles.length > 0) {
+                            const filesToExtract = [...attachedFiles];
+                            setAttachedFiles([]);
+                            startCoverageLoop(filesToExtract);
+                          } else {
+                            const formContext = requestedFormIds.length > 0 ? ` The agent has already specified these ACORD forms: ${requestedFormIds.map(id => id.replace("acord-", "ACORD ")).join(", ")}.` : "";
+                            bypassIntentRef.current = true;
+                            send(`I want to fill an ACORD form — please ask me a few short questions to gather the client information.${formContext}`);
+                          }
+                        }}
                         className="flex items-center gap-3 rounded-lg border bg-background hover:bg-muted/60 px-4 py-3 text-left transition-colors"
                       >
                         <div className="h-8 w-8 rounded-md bg-secondary flex items-center justify-center shrink-0">
                           <BrainCircuit className="h-4 w-4 text-accent" />
                         </div>
                         <div>
-                          <p className="text-sm font-medium">Use AI to Infer Customer Information After a Few Short Questions</p>
-                          <p className="text-xs text-muted-foreground mt-0.5">AURA will guide you through the key fields one by one</p>
+                          <p className="text-sm font-medium">Use AI to Infer Customer Information</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">Extracts data, uses AI inference, and asks questions until 85-90% coverage</p>
                         </div>
                       </button>
                       <button
@@ -1583,47 +1707,58 @@ export default function Chat() {
                                 } else if (appMatch) {
                                   setActiveSubmissionId(appMatch[1]);
                                 } else if (b.action === "skip-to-form") {
-                                  // User wants to skip straight to fillable forms after uploading a document
                                   send("Skip straight to fillable forms — just extract what you can from the uploaded document and take me to the ACORD forms.");
-                      } else if (b.action === "ai-questions") {
-                                  // User wants AI to ask follow-up questions — include extracted data context
+                                } else if (b.action === "ai-questions") {
                                   (async () => {
-                                    // Find the submission ID from this session's chat context
                                     let dataContext = "";
-                                    if (user) {
-                                      // Look for a SUBMISSION_ID in the chat messages first
-                                      let subId: string | null = null;
-                                      for (const msg of messages) {
-                                        const sidMatch = msg.content.match(/\[SUBMISSION_ID:([^\]]+)\]/);
-                                        if (sidMatch) subId = sidMatch[1];
-                                      }
-
-                                      let query = supabase
-                                        .from("insurance_applications")
-                                        .select("form_data")
-                                        .order("created_at", { ascending: false })
-                                        .limit(1);
-
-                                      // Scope to current session's submission if we have one
-                                      if (subId) {
-                                        query = query.eq("submission_id", subId);
-                                      } else if (activeSubmissionId) {
-                                        query = query.eq("submission_id", activeSubmissionId);
-                                      } else if (pendingSubmissionId) {
-                                        query = query.eq("submission_id", pendingSubmissionId);
-                                      }
-
-                                      const { data: latestApp } = await query.maybeSingle();
-                                      if (latestApp?.form_data) {
-                                        const fd = latestApp.form_data as Record<string, any>;
-                                        const filled = Object.entries(fd).filter(([_, v]) => v && String(v).trim() && v !== "N/A");
-                                        const missing = Object.entries(fd).filter(([_, v]) => !v || !String(v).trim() || v === "N/A");
-                                        dataContext = `\n\nHere is what was already extracted from the document:\n${filled.map(([k, v]) => `- ${k}: ${v}`).join("\n")}\n\nFields still missing or empty (${missing.length}): ${missing.map(([k]) => k).join(", ")}\n\nPlease ask me targeted questions about the MISSING fields only. Do NOT show the intake form. Ask conversational questions one or two at a time.`;
+                                    const subId = getSessionSubmissionId();
+                                    if (subId) {
+                                      const result = await calculateCoverage(subId);
+                                      if (result) {
+                                        const { filled, total, percent, fd } = result;
+                                        const filledEntries = Object.entries(fd).filter(([_, v]) => v && String(v).trim() && v !== "N/A");
+                                        const missingEntries = Object.entries(fd).filter(([_, v]) => !v || !String(v).trim() || v === "N/A");
+                                        dataContext = `\n\nCurrent coverage: ${percent}% (${filled}/${total} fields).\n\nAlready extracted:\n${filledEntries.slice(0, 30).map(([k, v]) => `- ${k}: ${v}`).join("\n")}\n\nFields still missing (${missingEntries.length}): ${missingEntries.map(([k]) => k).join(", ")}\n\nKeep asking me targeted questions about the MISSING fields, 2-3 at a time, until we reach at least 85% coverage. Do NOT show the intake form.`;
                                       }
                                     }
                                     bypassIntentRef.current = true;
                                     send(`Yes, please ask me follow-up questions to fill any gaps from the uploaded document. Do NOT show the standard intake form — I already uploaded a document with data extracted.${dataContext}`);
                                   })();
+                                } else if (b.action === "add-more-docs") {
+                                  const inp = document.createElement("input");
+                                  inp.type = "file"; inp.multiple = true;
+                                  inp.accept = ".pdf,.txt,.doc,.docx,.png,.jpg,.jpeg,.md,.csv";
+                                  inp.onchange = (e) => {
+                                    const files = Array.from((e.target as HTMLInputElement).files || []);
+                                    if (files.length > 0) triggerDocumentExtraction(files);
+                                  };
+                                  inp.click();
+                                } else if (b.action === "extract-current-docs") {
+                                  const f = [...attachedFiles]; setAttachedFiles([]);
+                                  if (f.length > 0) triggerDocumentExtraction(f);
+                                } else if (b.action === "open-file-picker") {
+                                  const inp = document.createElement("input");
+                                  inp.type = "file"; inp.multiple = true;
+                                  inp.accept = ".pdf,.txt,.doc,.docx,.png,.jpg,.jpeg,.md,.csv";
+                                  inp.onchange = (e) => {
+                                    const files = Array.from((e.target as HTMLInputElement).files || []);
+                                    if (files.length > 0) triggerDocumentExtraction(files);
+                                  };
+                                  inp.click();
+                                } else if (b.action === "scan-handwritten-camera") {
+                                  const existingFiles = [...attachedFiles];
+                                  const inp = document.createElement("input");
+                                  inp.type = "file"; inp.accept = "image/*"; inp.capture = "environment"; inp.multiple = true;
+                                  inp.onchange = (e) => {
+                                    const newFiles = Array.from((e.target as HTMLInputElement).files || []);
+                                    const combined = [...existingFiles, ...newFiles].slice(0, 10);
+                                    setAttachedFiles([]);
+                                    if (combined.length > 0) triggerHandwrittenExtraction(combined);
+                                  };
+                                  inp.click();
+                                } else if (b.action === "continue-to-form") {
+                                  setCoverageInfo(null);
+                                  send("Skip straight to fillable forms — take me to the ACORD forms with the data we have.");
                                 } else if (b.action.startsWith("/") || b.action.startsWith("http")) {
                                   navigate(b.action);
                                 } else {
@@ -1652,6 +1787,39 @@ export default function Chat() {
                 </div>
                 );
               })}
+              {/* Coverage tracker */}
+              {coverageInfo && (
+                <div className="animate-smooth-reveal">
+                  <div className="rounded-xl border bg-card p-4 space-y-3 aura-glow-shadow">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-semibold text-foreground">📊 Field Coverage</p>
+                      <span className={`text-sm font-bold ${coverageInfo.percent >= 85 ? 'text-green-600' : coverageInfo.percent >= 50 ? 'text-amber-600' : 'text-red-500'}`}>
+                        {coverageInfo.percent}%
+                      </span>
+                    </div>
+                    <Progress value={coverageInfo.percent} className="h-2" />
+                    <p className="text-xs text-muted-foreground">
+                      {coverageInfo.filled} of {coverageInfo.total} fields filled
+                      {coverageInfo.percent >= 85
+                        ? " — Great coverage! You can continue to fillable forms."
+                        : ` — Target: 85%+ (${Math.max(0, Math.ceil(coverageInfo.total * 0.85) - coverageInfo.filled)} more fields needed)`}
+                    </p>
+                    {coverageInfo.percent >= 85 && (
+                      <Button
+                        size="sm"
+                        className="w-full"
+                        onClick={() => {
+                          setCoverageInfo(null);
+                          send("Skip straight to fillable forms — take me to the ACORD forms with the data we have.");
+                        }}
+                      >
+                        <ArrowRight className="h-4 w-4 mr-2" />
+                        Continue to Fillable Forms
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              )}
               {/* Intent buttons in conversation view */}
               {showIntentButtons && !isLoading && (
                 <div className="animate-smooth-reveal">
@@ -1662,19 +1830,23 @@ export default function Chat() {
                         onClick={() => {
                           setShowIntentButtons(false);
                           if (attachedFiles.length > 0) {
-                            const f = [...attachedFiles]; setAttachedFiles([]); triggerDocumentExtraction(f);
+                            setMessages(prev => [...prev, {
+                              role: "assistant" as const,
+                              content: `📂 You have **${attachedFiles.length} document${attachedFiles.length > 1 ? 's' : ''}** ready. Would you like to add more, or continue with extraction?`,
+                              buttons: [
+                                { label: "Add More Documents", action: "add-more-docs" },
+                                { label: "Continue with Extraction", action: "extract-current-docs" },
+                              ]
+                            }]);
                           } else {
-                            // Prompt user and open file picker — auto-extract when files selected
-                            setMessages(prev => [...prev, { role: "assistant" as const, content: "📂 Please upload your client documents — policies, decks, loss runs, or any supporting files. I'll extract and pre-fill your ACORD forms automatically." }]);
-                            const inp = document.createElement("input");
-                            inp.type = "file";
-                            inp.multiple = true;
-                            inp.accept = ".pdf,.txt,.doc,.docx,.png,.jpg,.jpeg,.md,.csv";
-                            inp.onchange = (e) => {
-                              const files = Array.from((e.target as HTMLInputElement).files || []);
-                              if (files.length > 0) triggerDocumentExtraction(files);
-                            };
-                            inp.click();
+                            setMessages(prev => [...prev, {
+                              role: "assistant" as const,
+                              content: "📂 Upload your client documents — policies, decks, loss runs, or any supporting files. I'll extract and pre-fill your ACORD forms automatically.",
+                              buttons: [
+                                { label: "Upload Documents", action: "open-file-picker" },
+                                { label: "Skip to Fillable Forms", action: "skip-to-form" },
+                              ]
+                            }]);
                           }
                         }}
                         className="flex items-center gap-3 rounded-lg border bg-background hover:bg-muted/60 px-4 py-3 text-left transition-colors"
@@ -1690,20 +1862,26 @@ export default function Chat() {
                       <button
                         onClick={() => {
                           setShowIntentButtons(false);
-                          // Combine existing attached files with new camera/image captures
-                          const existingFiles = [...attachedFiles];
-                          const inp = document.createElement("input");
-                          inp.type = "file";
-                          inp.accept = "image/*";
-                          inp.capture = "environment";
-                          inp.multiple = true;
-                          inp.onchange = (e) => {
-                            const newFiles = Array.from((e.target as HTMLInputElement).files || []);
-                            const combined = [...existingFiles, ...newFiles].slice(0, 10);
-                            setAttachedFiles([]);
-                            if (combined.length > 0) triggerHandwrittenExtraction(combined);
-                          };
-                          inp.click();
+                          if (attachedFiles.length > 0) {
+                            setMessages(prev => [...prev, {
+                              role: "assistant" as const,
+                              content: `📸 You have **${attachedFiles.length} file${attachedFiles.length > 1 ? 's' : ''}** attached. Take a photo of handwritten notes to add to these, or continue with extraction from what you have.`,
+                              buttons: [
+                                { label: "📷 Take Photo of Notes", action: "scan-handwritten-camera" },
+                                { label: "Continue with Extraction", action: "extract-current-docs" },
+                              ]
+                            }]);
+                          } else {
+                            setMessages(prev => [...prev, {
+                              role: "assistant" as const,
+                              content: "📸 Take a photo of your handwritten client notes for OCR scanning, or upload documents instead.",
+                              buttons: [
+                                { label: "📷 Take Photo of Notes", action: "scan-handwritten-camera" },
+                                { label: "Upload Documents Instead", action: "open-file-picker" },
+                                { label: "Skip to Fillable Forms", action: "skip-to-form" },
+                              ]
+                            }]);
+                          }
                         }}
                         className="flex items-center gap-3 rounded-lg border bg-background hover:bg-muted/60 px-4 py-3 text-left transition-colors"
                       >
@@ -1718,46 +1896,10 @@ export default function Chat() {
                       <button
                         onClick={() => {
                           setShowIntentButtons(false);
-                          // If files are attached, extract them first then ask follow-up questions
                           if (attachedFiles.length > 0) {
                             const filesToExtract = [...attachedFiles];
                             setAttachedFiles([]);
-                            // Run extraction, then after it completes the user can use ai-questions from the form view
-                            (async () => {
-                              await triggerDocumentExtraction(filesToExtract);
-                              // After extraction, find submission ID from messages and ask follow-up questions
-                              setTimeout(() => {
-                                let subId: string | null = null;
-                                // Read from the latest messages to get the submission ID
-                                setMessages(prev => {
-                                  for (const msg of prev) {
-                                    const sidMatch = msg.content.match(/\[SUBMISSION_ID:([^\]]+)\]/);
-                                    if (sidMatch) subId = sidMatch[1];
-                                  }
-                                  return prev;
-                                });
-                                if (subId) {
-                                  (async () => {
-                                    let dataContext = "";
-                                    const { data: latestApp } = await supabase
-                                      .from("insurance_applications")
-                                      .select("form_data")
-                                      .eq("submission_id", subId!)
-                                      .order("created_at", { ascending: false })
-                                      .limit(1)
-                                      .maybeSingle();
-                                    if (latestApp?.form_data) {
-                                      const fd = latestApp.form_data as Record<string, any>;
-                                      const filled = Object.entries(fd).filter(([_, v]) => v && String(v).trim() && v !== "N/A");
-                                      const missing = Object.entries(fd).filter(([_, v]) => !v || !String(v).trim() || v === "N/A");
-                                      dataContext = `\n\nHere is what was already extracted from the document:\n${filled.map(([k, v]) => `- ${k}: ${v}`).join("\n")}\n\nFields still missing or empty (${missing.length}): ${missing.map(([k]) => k).join(", ")}\n\nPlease ask me targeted questions about the MISSING fields only. Do NOT show the intake form. Ask conversational questions one or two at a time.`;
-                                    }
-                                    bypassIntentRef.current = true;
-                                    send(`Yes, please ask me follow-up questions to fill any gaps from the uploaded document. Do NOT show the standard intake form — I already uploaded a document with data extracted.${dataContext}`);
-                                  })();
-                                }
-                              }, 2000);
-                            })();
+                            startCoverageLoop(filesToExtract);
                           } else {
                             const formContext = requestedFormIds.length > 0 ? ` The agent has already specified these ACORD forms: ${requestedFormIds.map(id => id.replace("acord-", "ACORD ")).join(", ")}.` : "";
                             bypassIntentRef.current = true;
@@ -1771,7 +1913,7 @@ export default function Chat() {
                         </div>
                         <div>
                           <p className="text-sm font-medium">Use AI to Infer Customer Information</p>
-                          <p className="text-xs text-muted-foreground mt-0.5">Extracts existing data from documents and asks follow-up questions for maximum coverage</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">Extracts data, uses AI inference, and asks questions until 85-90% coverage</p>
                         </div>
                       </button>
                       <button
