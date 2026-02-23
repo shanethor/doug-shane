@@ -628,9 +628,9 @@ export const ACORD_126_INDEX_MAP: AcordIndexMap = {
   agency_name:                0,   // P1.Text1  — Agency Name
   agency_customer_id:         1,   // P1.Text2  — Agency Customer ID
   transaction_date:           2,   // P1.Text3  — Date (MM/DD/YYYY)
-  carrier:                    3,   // P1.Text4  — Company
+  policy_number:              3,   // P1.Text4  — Policy Number
   naic_code:                  4,   // P1.Text5  — NAIC Code
-  policy_number:              5,   // P1.Text6  — Policy Number
+  carrier:                    5,   // P1.Text6  — Company
   effective_date:             6,   // P1.Text7  — Effective Date
   insured_name:               7,   // P1.Text8  — Named Insured
 
