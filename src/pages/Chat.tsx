@@ -1266,6 +1266,15 @@ export default function Chat() {
                   >
                     <Paperclip className="h-4 w-4" />
                   </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="shrink-0 h-9 w-9 text-muted-foreground hover:text-foreground"
+                    onClick={() => { const inp = document.createElement("input"); inp.type = "file"; inp.accept = "image/*"; inp.capture = "environment"; inp.multiple = true; inp.onchange = (e) => { const files = Array.from((e.target as HTMLInputElement).files || []); if (files.length > 0) triggerHandwrittenExtraction(files); }; inp.click(); }}
+                    title="Scan handwritten notes"
+                  >
+                    <Camera className="h-4 w-4" />
+                  </Button>
                   <textarea
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
@@ -1722,6 +1731,15 @@ export default function Chat() {
                   onClick={() => fileInputRef.current?.click()}
                 >
                   <Paperclip className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="shrink-0 h-9 w-9 text-muted-foreground hover:text-foreground"
+                  onClick={() => { const inp = document.createElement("input"); inp.type = "file"; inp.accept = "image/*"; inp.capture = "environment"; inp.multiple = true; inp.onchange = (e) => { const files = Array.from((e.target as HTMLInputElement).files || []); if (files.length > 0) triggerHandwrittenExtraction(files); }; inp.click(); }}
+                  title="Scan handwritten notes"
+                >
+                  <Camera className="h-4 w-4" />
                 </Button>
                 <textarea
                   value={input}
