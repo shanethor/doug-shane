@@ -937,31 +937,115 @@ export default function Chat() {
     }
   };
 
-  // Start the AI coverage loop: extract, then ask questions until 85%+
+  // Start the AI coverage loop: extract inline (without navigating away), then ask questions until 85%+
   const startCoverageLoop = async (filesToExtract?: File[]) => {
-    if (filesToExtract && filesToExtract.length > 0) {
-      await triggerDocumentExtraction(filesToExtract);
-    }
-    await new Promise(r => setTimeout(r, 2500));
+    if (!user) return;
+    setShowIntentButtons(false);
+    setIsLoading(true);
 
     let subId: string | null = null;
-    setMessages(prev => {
-      for (const msg of prev) {
+
+    // If files provided, extract inline without setting pendingSubmissionId
+    if (filesToExtract && filesToExtract.length > 0) {
+      const fileNames = filesToExtract.map(f => f.name).join(", ");
+      const userMsg: Msg = { role: "user", content: `🧠 AI Infer mode — extracting from: ${fileNames}` };
+      setMessages(prev => [...prev, userMsg]);
+      toast({ title: "Extracting from documents…", description: "Reading files and mapping to ACORD fields." });
+
+      try {
+        let textContents = "";
+        const pdfFiles: { name: string; base64: string; mimeType: string }[] = [];
+        for (const file of filesToExtract) {
+          if (file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")) {
+            const base64 = await readFileAsBase64(file);
+            pdfFiles.push({ name: file.name, base64, mimeType: "application/pdf" });
+          } else if (file.type.startsWith("text/") || /\.(txt|md|csv)$/i.test(file.name)) {
+            const content = await readFileAsText(file);
+            textContents += `\n--- ${file.name} ---\n${content}`;
+          } else if (file.type.startsWith("image/")) {
+            const base64 = await readFileAsBase64(file);
+            pdfFiles.push({ name: file.name, base64, mimeType: file.type });
+          }
+        }
+
+        const description = `Insurance document upload: ${fileNames}${textContents ? `\n\nFile contents:\n${textContents}` : ""}`;
+        const { data: sub, error: subErr } = await supabase
+          .from("business_submissions")
+          .insert({ user_id: user.id, company_name: "New Client", description, status: "processing" })
+          .select()
+          .single();
+        if (subErr) throw subErr;
+        subId = sub.id;
+
+        const extractResp = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/extract-business-data`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
+            body: JSON.stringify({ description, file_contents: textContents || undefined, pdf_files: pdfFiles.length > 0 ? pdfFiles : undefined, submission_id: sub.id }),
+          }
+        );
+        if (!extractResp.ok) {
+          const errBody = await extractResp.json().catch(() => ({}));
+          throw new Error(errBody.error || `Extraction failed (${extractResp.status})`);
+        }
+
+        const extracted = await extractResp.json();
+        const fd = extracted?.form_data || {};
+        const detectedCompany = fd.applicant_name || fd.insured_name || "New Client";
+        if (detectedCompany !== "New Client") {
+          await supabase.from("business_submissions").update({ company_name: detectedCompany }).eq("id", sub.id);
+        }
+
+        await ensurePipelineLead({
+          userId: user.id,
+          accountName: detectedCompany,
+          state: fd.state || fd.mailing_state || null,
+          businessType: fd.business_description || fd.sic_description || null,
+          submissionId: sub.id,
+        });
+
+        const detectedForms = detectFormsFromLOBFlags(fd);
+        setRequestedFormIds(detectedForms);
+        if (detectedForms.length > 0) setActiveFormId(detectedForms[0]);
+
+        const filledCount = Object.keys(fd).filter(k => fd[k]).length;
+        setMessages(prev => [...prev, {
+          role: "assistant",
+          content: `✅ Extracted **${filledCount}** fields from **${fileNames}**${detectedCompany !== "New Client" ? ` for **${detectedCompany}**` : ""}. Now let me ask you some follow-up questions to increase coverage… [SUBMISSION_ID:${sub.id}]`,
+        }]);
+      } catch (err: any) {
+        console.error("Coverage loop extraction error:", err);
+        toast({ variant: "destructive", title: "Extraction failed", description: err.message || "Could not extract" });
+        setMessages(prev => [...prev, { role: "assistant", content: "Sorry, extraction failed. Let me ask you questions directly instead." }]);
+        setIsLoading(false);
+        // Fall through to ask questions without extracted data
+      }
+    }
+
+    // Get submission ID from messages if not set
+    if (!subId) {
+      for (const msg of messages) {
         const sidMatch = msg.content.match(/\[SUBMISSION_ID:([^\]]+)\]/);
         if (sidMatch) subId = sidMatch[1];
       }
-      return prev;
-    });
-    subId = subId || activeSubmissionId || pendingSubmissionId;
+      subId = subId || activeSubmissionId || pendingSubmissionId;
+    }
 
     if (!subId) {
+      setIsLoading(false);
       bypassIntentRef.current = true;
       send("I want to fill an ACORD form — please ask me a few short questions to gather the client information.");
       return;
     }
 
     const result = await calculateCoverage(subId);
-    if (!result) return;
+    setIsLoading(false);
+    if (!result) {
+      bypassIntentRef.current = true;
+      send("I want to fill an ACORD form — please ask me targeted follow-up questions about the client. Do NOT show the standard intake form.");
+      return;
+    }
 
     const { filled, total, percent, fd } = result;
     const filledEntries = Object.entries(fd).filter(([_, v]) => v && String(v).trim() && v !== "N/A");
