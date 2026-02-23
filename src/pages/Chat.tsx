@@ -9,7 +9,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import SubmissionReviewPanel from "@/components/SubmissionReviewPanel";
 import FormFillingView from "@/components/FormFillingView";
 import ExtractionSummary from "@/components/ExtractionSummary";
-import { Send, FileUp, ClipboardList, Search, Loader2, Paperclip, X, Download, Mic, MicOff, Globe, Lightbulb, ChevronDown, ChevronUp, FileText, BrainCircuit, PenLine, Users, BarChart3, Mail, FileSearch } from "lucide-react";
+import { Send, FileUp, ClipboardList, Search, Loader2, Paperclip, X, Download, Mic, MicOff, Globe, Lightbulb, ChevronDown, ChevronUp, FileText, BrainCircuit, PenLine, Users, BarChart3, Mail, FileSearch, Camera } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -474,6 +474,93 @@ export default function Chat() {
       reader.onerror = () => resolve("");
       reader.readAsDataURL(file);
     });
+
+  /** Extract handwritten notes from images — uses OCR with fuzzy text matching */
+  const triggerHandwrittenExtraction = async (files: File[]) => {
+    if (!user || files.length === 0) return;
+    setIsLoading(true);
+    setShowIntentButtons(false);
+
+    // Filter to only images, or use all files if none are images
+    const imageFiles = files.filter(f => f.type.startsWith("image/") || /\.(png|jpg|jpeg|heic|webp|bmp|tiff?)$/i.test(f.name));
+    const filesToProcess = imageFiles.length > 0 ? imageFiles : files;
+    const fileNames = filesToProcess.map(f => f.name).join(", ");
+    const userMsg: Msg = { role: "user", content: `📸 Scanning handwritten notes: ${fileNames}` };
+    setMessages(prev => [...prev, userMsg]);
+
+    toast({ title: "Scanning handwritten notes…", description: "Running OCR with fuzzy text matching." });
+
+    try {
+      const pdfFiles: { name: string; base64: string; mimeType: string }[] = [];
+      for (const file of filesToProcess) {
+        const base64 = await readFileAsBase64(file);
+        pdfFiles.push({ name: file.name, base64, mimeType: file.type || "image/jpeg" });
+      }
+
+      const companyName = "New Client";
+      const { data: sub, error: subErr } = await supabase
+        .from("business_submissions")
+        .insert({ user_id: user.id, company_name: companyName, description: `Handwritten notes scan: ${fileNames}`, status: "processing" })
+        .select()
+        .single();
+      if (subErr) throw subErr;
+
+      const extractResp = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/extract-business-data`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
+          body: JSON.stringify({
+            description: `HANDWRITTEN NOTES — apply aggressive OCR fuzzy matching. Characters may be ambiguous: 0/O, 1/l/I, 5/S, 8/B, Z/2, etc. Use contextual clues (addresses, names, numbers) to resolve ambiguous characters. If a word is partially illegible, use the most likely insurance/business term that fits.\n\nScanned from: ${fileNames}`,
+            pdf_files: pdfFiles,
+            submission_id: sub.id,
+          }),
+        }
+      );
+
+      if (!extractResp.ok) {
+        const errBody = await extractResp.json().catch(() => ({}));
+        throw new Error(errBody.error || `Extraction failed (${extractResp.status})`);
+      }
+
+      const extracted = await extractResp.json();
+      const detectedCompany = extracted?.form_data?.applicant_name || extracted?.form_data?.insured_name || companyName;
+      if (detectedCompany !== companyName) {
+        await supabase.from("business_submissions").update({ company_name: detectedCompany }).eq("id", sub.id);
+      }
+
+      const fd = extracted?.form_data || {};
+      await ensurePipelineLead({
+        userId: user.id,
+        accountName: detectedCompany || companyName,
+        state: fd.state || fd.mailing_state || null,
+        businessType: fd.business_description || fd.sic_description || null,
+        submissionId: sub.id,
+      });
+
+      const detectedForms = detectFormsFromLOBFlags(fd);
+      setRequestedFormIds(detectedForms);
+      if (detectedForms.length > 0) setActiveFormId(detectedForms[0]);
+
+      setMessages(prev => [
+        ...prev,
+        {
+          role: "assistant",
+          content: `✅ Scanned handwritten notes from **${fileNames}**. Extracted **${Object.keys(fd).filter(k => fd[k]).length}** fields${detectedCompany !== "New Client" ? ` for **${detectedCompany}**` : ""}. Routing to form view…`,
+        },
+      ]);
+
+      setTimeout(() => {
+        setPendingSubmissionId(sub.id);
+        setIsLoading(false);
+      }, 1200);
+    } catch (err: any) {
+      console.error("Handwritten extraction error:", err);
+      toast({ variant: "destructive", title: "Scan failed", description: err.message || "Could not read handwritten notes" });
+      setMessages(prev => [...prev, { role: "assistant", content: "Sorry, I couldn't read those handwritten notes. Try a clearer image or type the information directly." }]);
+      setIsLoading(false);
+    }
+  };
 
   /** Immediately run document extraction when files are uploaded — no intent step needed */
   const triggerDocumentExtraction = async (files: File[]) => {
@@ -1068,7 +1155,15 @@ export default function Chat() {
     dragCounterRef.current = 0;
     setDragActive(false);
     const files = Array.from(e.dataTransfer.files);
-    if (files.length > 0) setAttachedFiles(prev => [...prev, ...files].slice(0, 10));
+    if (files.length > 0) {
+      const newFiles = [...attachedFiles, ...files].slice(0, 10);
+      setAttachedFiles(newFiles);
+      // Show intent buttons so user can choose how to process dropped files
+      const fileNames = files.map(f => f.name).join(", ");
+      const userMsg: Msg = { role: "user", content: `📎 Dropped: ${fileNames}` };
+      setMessages(prev => [...prev, userMsg]);
+      setShowIntentButtons(true);
+    }
   };
 
   const isEmpty = messages.length === 0;
@@ -1162,7 +1257,7 @@ export default function Chat() {
                   </div>
                 )}
                 <div className="flex items-end gap-2 rounded-xl border bg-card p-3 aura-glow-shadow focus-within:ring-2 focus-within:ring-ring">
-                  <input type="file" ref={fileInputRef} className="hidden" multiple onChange={(e) => { const files = Array.from(e.target.files || []); if (files.length > 0) triggerDocumentExtraction(files); e.target.value = ""; }} />
+                  <input type="file" ref={fileInputRef} className="hidden" multiple onChange={(e) => { const files = Array.from(e.target.files || []); if (files.length > 0) { setAttachedFiles(prev => [...prev, ...files].slice(0, 10)); const fileNames = files.map(f => f.name).join(", "); setMessages(prev => [...prev, { role: "user" as const, content: `📎 Attached: ${fileNames}` }]); setShowIntentButtons(true); } e.target.value = ""; }} />
                   <Button
                     variant="ghost"
                     size="icon"
@@ -1192,8 +1287,10 @@ export default function Chat() {
                   <Button
                     onClick={() => {
                       if (attachedFiles.length > 0 && !input.trim()) {
-                        triggerDocumentExtraction(attachedFiles);
-                        setAttachedFiles([]);
+                        // Show intent buttons so user can choose how to process
+                        const fileNames = attachedFiles.map(f => f.name).join(", ");
+                        setMessages(prev => [...prev, { role: "user" as const, content: `📎 Attached: ${fileNames}` }]);
+                        setShowIntentButtons(true);
                       } else {
                         send(input);
                       }
@@ -1294,14 +1391,14 @@ export default function Chat() {
               </div>
                 </>
               )}
-              {/* Intent buttons — shown in non-training mode when user picks "Fill ACORD form" */}
-              {!trainingMode && showIntentButtons && (
+              {/* Intent buttons — shown when files dropped or form filling intent detected */}
+              {showIntentButtons && (
                 <div className="w-full max-w-2xl animate-smooth-reveal">
                   <div className="rounded-xl border bg-card p-5 space-y-3 aura-glow-shadow">
                     <p className="text-sm font-medium text-foreground">How would you like to get started?</p>
                     <div className="flex flex-col gap-2">
                       <button
-                        onClick={() => { setShowIntentButtons(false); fileInputRef.current?.click(); }}
+                        onClick={() => { setShowIntentButtons(false); if (attachedFiles.length > 0) { const f = [...attachedFiles]; setAttachedFiles([]); triggerDocumentExtraction(f); } else { fileInputRef.current?.click(); } }}
                         className="flex items-center gap-3 rounded-lg border bg-background hover:bg-muted/60 px-4 py-3 text-left transition-colors"
                       >
                         <div className="h-8 w-8 rounded-md bg-secondary flex items-center justify-center shrink-0">
@@ -1310,6 +1407,18 @@ export default function Chat() {
                         <div>
                           <p className="text-sm font-medium">Add Documents to Have AI Pre-fill ACORD Forms</p>
                           <p className="text-xs text-muted-foreground mt-0.5">Upload policies, decks, or loss runs for automated extraction</p>
+                        </div>
+                      </button>
+                      <button
+                        onClick={() => { setShowIntentButtons(false); if (attachedFiles.length > 0) { const f = [...attachedFiles]; setAttachedFiles([]); triggerHandwrittenExtraction(f); } else { const inp = document.createElement("input"); inp.type = "file"; inp.accept = "image/*"; inp.capture = "environment"; inp.multiple = true; inp.onchange = (e) => { const files = Array.from((e.target as HTMLInputElement).files || []); if (files.length > 0) triggerHandwrittenExtraction(files); }; inp.click(); } }}
+                        className="flex items-center gap-3 rounded-lg border bg-background hover:bg-muted/60 px-4 py-3 text-left transition-colors"
+                      >
+                        <div className="h-8 w-8 rounded-md bg-secondary flex items-center justify-center shrink-0">
+                          <Camera className="h-4 w-4 text-primary" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">Scan Handwritten Client Notes</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">Take a photo of handwritten notes — OCR with fuzzy matching fills ACORD fields</p>
                         </div>
                       </button>
                       <button
@@ -1510,14 +1619,14 @@ export default function Chat() {
                 </div>
                 );
               })}
-              {/* Intent buttons in conversation view (non-training mode) */}
-              {!trainingMode && showIntentButtons && !isLoading && (
+              {/* Intent buttons in conversation view */}
+              {showIntentButtons && !isLoading && (
                 <div className="animate-smooth-reveal">
                   <div className="rounded-xl border bg-card p-5 space-y-3 aura-glow-shadow">
                     <p className="text-sm font-medium text-foreground">How would you like to get started?</p>
                     <div className="flex flex-col gap-2">
                       <button
-                        onClick={() => { setShowIntentButtons(false); fileInputRef.current?.click(); }}
+                        onClick={() => { setShowIntentButtons(false); if (attachedFiles.length > 0) { const f = [...attachedFiles]; setAttachedFiles([]); triggerDocumentExtraction(f); } else { fileInputRef.current?.click(); } }}
                         className="flex items-center gap-3 rounded-lg border bg-background hover:bg-muted/60 px-4 py-3 text-left transition-colors"
                       >
                         <div className="h-8 w-8 rounded-md bg-secondary flex items-center justify-center shrink-0">
@@ -1526,6 +1635,18 @@ export default function Chat() {
                         <div>
                           <p className="text-sm font-medium">Add Documents to Have AI Pre-fill ACORD Forms</p>
                           <p className="text-xs text-muted-foreground mt-0.5">Upload policies, decks, or loss runs for automated extraction</p>
+                        </div>
+                      </button>
+                      <button
+                        onClick={() => { setShowIntentButtons(false); if (attachedFiles.length > 0) { const f = [...attachedFiles]; setAttachedFiles([]); triggerHandwrittenExtraction(f); } else { const inp = document.createElement("input"); inp.type = "file"; inp.accept = "image/*"; inp.capture = "environment"; inp.multiple = true; inp.onchange = (e) => { const files = Array.from((e.target as HTMLInputElement).files || []); if (files.length > 0) triggerHandwrittenExtraction(files); }; inp.click(); } }}
+                        className="flex items-center gap-3 rounded-lg border bg-background hover:bg-muted/60 px-4 py-3 text-left transition-colors"
+                      >
+                        <div className="h-8 w-8 rounded-md bg-secondary flex items-center justify-center shrink-0">
+                          <Camera className="h-4 w-4 text-primary" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium">Scan Handwritten Client Notes</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">Take a photo of handwritten notes — OCR with fuzzy matching fills ACORD fields</p>
                         </div>
                       </button>
                       <button
@@ -1623,8 +1744,9 @@ export default function Chat() {
                 <Button
                   onClick={() => {
                     if (attachedFiles.length > 0 && !input.trim()) {
-                      triggerDocumentExtraction(attachedFiles);
-                      setAttachedFiles([]);
+                      const fileNames = attachedFiles.map(f => f.name).join(", ");
+                      setMessages(prev => [...prev, { role: "user" as const, content: `📎 Attached: ${fileNames}` }]);
+                      setShowIntentButtons(true);
                     } else {
                       send(input);
                     }
