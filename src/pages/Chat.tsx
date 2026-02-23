@@ -322,6 +322,7 @@ export default function Chat() {
   const [submittingFields, setSubmittingFields] = useState(false);
   const skipAutoDetectRef = useRef(false);
   const bypassIntentRef = useRef(false);
+  const inCoverageLoopRef = useRef(false);
   const [coverageInfo, setCoverageInfo] = useState<{ filled: number; total: number; percent: number } | null>(null);
 
   // Calculate coverage from form_data for a given submission
@@ -767,7 +768,7 @@ export default function Chat() {
     // Also skip if bypassIntentRef is set (e.g. from ai-questions or infer buttons)
     const shouldBypass = bypassIntentRef.current;
     bypassIntentRef.current = false;
-    if (!trainingMode && !shouldBypass && isFormFillingIntent(text) && !showIntentButtons) {
+    if (!trainingMode && !shouldBypass && !inCoverageLoopRef.current && isFormFillingIntent(text) && !showIntentButtons) {
       const userMsg: Msg = { role: "user", content: text.trim() };
       setMessages((prev) => [...prev, userMsg]);
       setInput("");
@@ -823,7 +824,7 @@ export default function Chat() {
       const lastUserMsg = [...messages, userMsg].filter(m => m.role === "user").pop();
       const isIntakeFields = fields.length >= 4 && fields.some(f => f.key === "company_name" || f.key === "website_url");
       
-      if (isIntakeFields && lastUserMsg && !skipAutoDetectRef.current) {
+      if (isIntakeFields && lastUserMsg && !skipAutoDetectRef.current && !inCoverageLoopRef.current) {
         const extracted = tryExtractIntakeFromMessage(lastUserMsg.content);
         
         if (extracted) {
@@ -910,6 +911,14 @@ export default function Chat() {
         return [...prev, { role: "assistant", content: finalText, fields, buttons }];
       });
       setIsLoading(false);
+
+      // In coverage loop mode, recalculate coverage after each AI response
+      if (inCoverageLoopRef.current) {
+        const subId = getSessionSubmissionId();
+        if (subId) {
+          setTimeout(() => calculateCoverage(subId), 500);
+        }
+      }
     };
 
     setTimeout(() => startTypewriter(), 50);
@@ -942,6 +951,7 @@ export default function Chat() {
     if (!user) return;
     setShowIntentButtons(false);
     setIsLoading(true);
+    inCoverageLoopRef.current = true;
 
     let subId: string | null = null;
 
@@ -1842,6 +1852,7 @@ export default function Chat() {
                                   inp.click();
                                 } else if (b.action === "continue-to-form") {
                                   setCoverageInfo(null);
+                                  inCoverageLoopRef.current = false;
                                   send("Skip straight to fillable forms — take me to the ACORD forms with the data we have.");
                                 } else if (b.action.startsWith("/") || b.action.startsWith("http")) {
                                   navigate(b.action);
@@ -1894,6 +1905,7 @@ export default function Chat() {
                         className="w-full"
                         onClick={() => {
                           setCoverageInfo(null);
+                          inCoverageLoopRef.current = false;
                           send("Skip straight to fillable forms — take me to the ACORD forms with the data we have.");
                         }}
                       >
