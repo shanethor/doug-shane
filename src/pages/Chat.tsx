@@ -546,7 +546,7 @@ export default function Chat() {
         ...prev,
         {
           role: "assistant",
-          content: `✅ Scanned handwritten notes from **${fileNames}**. Extracted **${Object.keys(fd).filter(k => fd[k]).length}** fields${detectedCompany !== "New Client" ? ` for **${detectedCompany}**` : ""}. Routing to form view…`,
+          content: `✅ Scanned handwritten notes from **${fileNames}**. Extracted **${Object.keys(fd).filter(k => fd[k]).length}** fields${detectedCompany !== "New Client" ? ` for **${detectedCompany}**` : ""}. Routing to form view… [SUBMISSION_ID:${sub.id}]`,
         },
       ]);
 
@@ -651,7 +651,7 @@ export default function Chat() {
         ...prev,
         {
           role: "assistant",
-          content: `✅ Extracted data from **${fileNames}**. Found **${Object.keys(fd).filter(k => fd[k]).length}** fields${detectedCompany !== "New Client" ? ` for **${detectedCompany}**` : ""}. Routing you to the form view now…`,
+          content: `✅ Extracted data from **${fileNames}**. Found **${Object.keys(fd).filter(k => fd[k]).length}** fields${detectedCompany !== "New Client" ? ` for **${detectedCompany}**` : ""}. Routing you to the form view now… [SUBMISSION_ID:${sub.id}]`,
         },
       ]);
 
@@ -1654,7 +1654,24 @@ export default function Chat() {
                     <p className="text-sm font-medium text-foreground">How would you like to get started?</p>
                     <div className="flex flex-col gap-2">
                       <button
-                        onClick={() => { setShowIntentButtons(false); if (attachedFiles.length > 0) { const f = [...attachedFiles]; setAttachedFiles([]); triggerDocumentExtraction(f); } else { fileInputRef.current?.click(); } }}
+                        onClick={() => {
+                          setShowIntentButtons(false);
+                          if (attachedFiles.length > 0) {
+                            const f = [...attachedFiles]; setAttachedFiles([]); triggerDocumentExtraction(f);
+                          } else {
+                            // Prompt user and open file picker — auto-extract when files selected
+                            setMessages(prev => [...prev, { role: "assistant" as const, content: "📂 Please upload your client documents — policies, decks, loss runs, or any supporting files. I'll extract and pre-fill your ACORD forms automatically." }]);
+                            const inp = document.createElement("input");
+                            inp.type = "file";
+                            inp.multiple = true;
+                            inp.accept = ".pdf,.txt,.doc,.docx,.png,.jpg,.jpeg,.md,.csv";
+                            inp.onchange = (e) => {
+                              const files = Array.from((e.target as HTMLInputElement).files || []);
+                              if (files.length > 0) triggerDocumentExtraction(files);
+                            };
+                            inp.click();
+                          }
+                        }}
                         className="flex items-center gap-3 rounded-lg border bg-background hover:bg-muted/60 px-4 py-3 text-left transition-colors"
                       >
                         <div className="h-8 w-8 rounded-md bg-secondary flex items-center justify-center shrink-0">
@@ -1666,7 +1683,23 @@ export default function Chat() {
                         </div>
                       </button>
                       <button
-                        onClick={() => { setShowIntentButtons(false); if (attachedFiles.length > 0) { const f = [...attachedFiles]; setAttachedFiles([]); triggerHandwrittenExtraction(f); } else { const inp = document.createElement("input"); inp.type = "file"; inp.accept = "image/*"; inp.capture = "environment"; inp.multiple = true; inp.onchange = (e) => { const files = Array.from((e.target as HTMLInputElement).files || []); if (files.length > 0) triggerHandwrittenExtraction(files); }; inp.click(); } }}
+                        onClick={() => {
+                          setShowIntentButtons(false);
+                          // Combine existing attached files with new camera/image captures
+                          const existingFiles = [...attachedFiles];
+                          const inp = document.createElement("input");
+                          inp.type = "file";
+                          inp.accept = "image/*";
+                          inp.capture = "environment";
+                          inp.multiple = true;
+                          inp.onchange = (e) => {
+                            const newFiles = Array.from((e.target as HTMLInputElement).files || []);
+                            const combined = [...existingFiles, ...newFiles].slice(0, 10);
+                            setAttachedFiles([]);
+                            if (combined.length > 0) triggerHandwrittenExtraction(combined);
+                          };
+                          inp.click();
+                        }}
                         className="flex items-center gap-3 rounded-lg border bg-background hover:bg-muted/60 px-4 py-3 text-left transition-colors"
                       >
                         <div className="h-8 w-8 rounded-md bg-secondary flex items-center justify-center shrink-0">
@@ -1678,15 +1711,60 @@ export default function Chat() {
                         </div>
                       </button>
                       <button
-                        onClick={() => { setShowIntentButtons(false); const formContext = requestedFormIds.length > 0 ? ` The agent has already specified these ACORD forms: ${requestedFormIds.map(id => id.replace("acord-", "ACORD ")).join(", ")}.` : ""; send(`I want to fill an ACORD form — please ask me a few short questions to gather the client information.${formContext}`); }}
+                        onClick={() => {
+                          setShowIntentButtons(false);
+                          // If files are attached, extract them first then ask follow-up questions
+                          if (attachedFiles.length > 0) {
+                            const filesToExtract = [...attachedFiles];
+                            setAttachedFiles([]);
+                            // Run extraction, then after it completes the user can use ai-questions from the form view
+                            (async () => {
+                              await triggerDocumentExtraction(filesToExtract);
+                              // After extraction, find submission ID from messages and ask follow-up questions
+                              setTimeout(() => {
+                                let subId: string | null = null;
+                                // Read from the latest messages to get the submission ID
+                                setMessages(prev => {
+                                  for (const msg of prev) {
+                                    const sidMatch = msg.content.match(/\[SUBMISSION_ID:([^\]]+)\]/);
+                                    if (sidMatch) subId = sidMatch[1];
+                                  }
+                                  return prev;
+                                });
+                                if (subId) {
+                                  (async () => {
+                                    let dataContext = "";
+                                    const { data: latestApp } = await supabase
+                                      .from("insurance_applications")
+                                      .select("form_data")
+                                      .eq("submission_id", subId!)
+                                      .order("created_at", { ascending: false })
+                                      .limit(1)
+                                      .maybeSingle();
+                                    if (latestApp?.form_data) {
+                                      const fd = latestApp.form_data as Record<string, any>;
+                                      const filled = Object.entries(fd).filter(([_, v]) => v && String(v).trim() && v !== "N/A");
+                                      const missing = Object.entries(fd).filter(([_, v]) => !v || !String(v).trim() || v === "N/A");
+                                      dataContext = `\n\nHere is what was already extracted from the document:\n${filled.map(([k, v]) => `- ${k}: ${v}`).join("\n")}\n\nFields still missing or empty (${missing.length}): ${missing.map(([k]) => k).join(", ")}\n\nPlease ask me targeted questions about the MISSING fields only. Do NOT show the intake form. Ask conversational questions one or two at a time.`;
+                                    }
+                                    send(`Yes, please ask me follow-up questions to fill any gaps from the uploaded document. Do NOT show the standard intake form — I already uploaded a document with data extracted.${dataContext}`);
+                                  })();
+                                }
+                              }, 2000);
+                            })();
+                          } else {
+                            const formContext = requestedFormIds.length > 0 ? ` The agent has already specified these ACORD forms: ${requestedFormIds.map(id => id.replace("acord-", "ACORD ")).join(", ")}.` : "";
+                            send(`I want to fill an ACORD form — please ask me a few short questions to gather the client information.${formContext}`);
+                          }
+                        }}
                         className="flex items-center gap-3 rounded-lg border bg-background hover:bg-muted/60 px-4 py-3 text-left transition-colors"
                       >
                         <div className="h-8 w-8 rounded-md bg-secondary flex items-center justify-center shrink-0">
                           <BrainCircuit className="h-4 w-4 text-accent" />
                         </div>
                         <div>
-                          <p className="text-sm font-medium">Use AI to Infer Customer Information After a Few Short Questions</p>
-                          <p className="text-xs text-muted-foreground mt-0.5">AURA will guide you through the key fields one by one</p>
+                          <p className="text-sm font-medium">Use AI to Infer Customer Information</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">Extracts existing data from documents and asks follow-up questions for maximum coverage</p>
                         </div>
                       </button>
                       <button
