@@ -815,12 +815,14 @@ export default function Chat() {
           return;
         }
 
-        // If a document was previously uploaded/extracted, pre-fill intake from that data
-        if (user) {
+        // If a document was previously uploaded/extracted for THIS session, pre-fill intake
+        // Only use activeSubmissionId to avoid cross-session data contamination
+        if (user && activeSubmissionId) {
           (async () => {
             const { data: latestApp } = await supabase
               .from("insurance_applications")
               .select("form_data")
+              .eq("submission_id", activeSubmissionId)
               .order("created_at", { ascending: false })
               .limit(1)
               .maybeSingle();
