@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { AppLayout } from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,11 +11,11 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Download, Trash2, FileText, ClipboardCopy, Loader2, FlaskConical, CheckCircle, XCircle, AlertTriangle, ChevronDown, ChevronUp, Globe, MessageSquare, Bot } from "lucide-react";
+import { Plus, Download, Trash2, FileText, ClipboardCopy, Loader2, FlaskConical, CheckCircle, XCircle, AlertTriangle, ChevronDown, ChevronUp, Globe, MessageSquare, Bot, Upload } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Textarea } from "@/components/ui/textarea";
-import { generateRestaurantSupplement, generateContractorSupplement, REAL_POLICY_DOCUMENTS } from "@/lib/dummy-form-data";
+import { generateRestaurantSupplement, generateContractorSupplement, generateBuildingOwnerSupplement, REAL_POLICY_DOCUMENTS, REAL_DEC_DOCUMENTS } from "@/lib/dummy-form-data";
 import { ACORD_FORMS } from "@/lib/acord-forms";
 import { buildAutofilledData, buildAutofilledDataWithAI } from "@/lib/acord-autofill";
 
@@ -84,6 +84,8 @@ export default function GeneratedForms() {
   };
   const [chatTestResults, setChatTestResults] = useState<ChatTestResult[]>([]);
   const [expandedChatResult, setExpandedChatResult] = useState<string | null>(null);
+  const [uploadingDec, setUploadingDec] = useState(false);
+  const decFileInputRef = useRef<HTMLInputElement>(null);
   const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/agent-chat`;
 
   /** Generate filler answers for AI gap-filling questions */
@@ -258,8 +260,16 @@ export default function GeneratedForms() {
       const rows = [];
 
       if (formType === "real_policy") {
-        // Insert all 3 real policy documents at once
         for (const doc of REAL_POLICY_DOCUMENTS) {
+          rows.push({
+            form_type: doc.form_type,
+            form_data: doc,
+            display_name: doc.display_name,
+            user_id: session.user.id,
+          });
+        }
+      } else if (formType === "real_dec") {
+        for (const doc of REAL_DEC_DOCUMENTS) {
           rows.push({
             form_type: doc.form_type,
             form_data: doc,
@@ -271,9 +281,13 @@ export default function GeneratedForms() {
         for (let i = 0; i < count; i++) {
           const data = formType === "restaurant_supplement"
             ? generateRestaurantSupplement()
+            : formType === "building_owner_supplement"
+            ? generateBuildingOwnerSupplement()
             : generateContractorSupplement();
           const label = formType === "restaurant_supplement"
             ? (data.named_insured || data.establishment_name)
+            : formType === "building_owner_supplement"
+            ? data.named_insured
             : data.applicant_name;
           rows.push({
             form_type: formType,
@@ -286,12 +300,57 @@ export default function GeneratedForms() {
 
       const { error } = await supabase.from("generated_forms").insert(rows);
       if (error) throw error;
-      toast({ title: formType === "real_policy" ? `Added ${rows.length} real policy document(s)` : `Generated ${count} form(s)` });
+      toast({ title: (formType === "real_policy" || formType === "real_dec") ? `Added ${rows.length} document(s)` : `Generated ${count} form(s)` });
       queryClient.invalidateQueries({ queryKey: ["generated-forms"] });
     } catch (err: any) {
       toast({ title: "Error", description: err.message, variant: "destructive" });
     } finally {
       setGenerating(false);
+    }
+  };
+
+  /** Upload a Dec PDF, extract data via AI, and store as a training form */
+  const handleDecUpload = async (file: File) => {
+    if (!session || !file) return;
+    setUploadingDec(true);
+    try {
+      // Convert PDF to base64
+      const arrayBuffer = await file.arrayBuffer();
+      const base64 = btoa(
+        new Uint8Array(arrayBuffer).reduce((data, byte) => data + String.fromCharCode(byte), "")
+      );
+
+      // Send to extraction edge function
+      const { data, error } = await supabase.functions.invoke("extract-business-data", {
+        body: {
+          files: [{ name: file.name, type: "application/pdf", base64 }],
+          prompt: "Extract all declaration page data from this insurance Dec form. Include named insured, carrier, policy number, effective/expiration dates, limits, premiums, class codes, endorsements, and any other policy details.",
+        },
+      });
+      if (error) throw error;
+
+      const extractedData = data?.extracted_data || data?.data || {};
+      const companyName = extractedData.named_insured || extractedData.company_name || file.name.replace(/\.pdf$/i, "");
+
+      // Store as training form
+      const { error: insertError } = await supabase.from("generated_forms").insert({
+        form_type: "dec_uploaded",
+        form_data: { ...extractedData, form_type: "dec_uploaded", source_file: file.name },
+        display_name: `${companyName} – Dec Upload`,
+        user_id: session.user.id,
+      });
+      if (insertError) throw insertError;
+
+      toast({
+        title: "Dec form uploaded",
+        description: `Extracted ${Object.keys(extractedData).length} fields from ${file.name}`,
+      });
+      queryClient.invalidateQueries({ queryKey: ["generated-forms"] });
+    } catch (err: any) {
+      toast({ title: "Upload failed", description: err.message, variant: "destructive" });
+    } finally {
+      setUploadingDec(false);
+      if (decFileInputRef.current) decFileInputRef.current.value = "";
     }
   };
 
@@ -582,9 +641,12 @@ ${dataSummary}`;
   const typeLabel = (t: string) => {
     if (t === "restaurant_supplement") return "Restaurant Supplement";
     if (t === "contractor_supplement") return "Contractor Supplement";
+    if (t === "building_owner_supplement") return "Building Owner Supplement";
     if (t === "real_policy_auto") return "Real Policy – Business Auto";
     if (t === "real_policy_property") return "Real Policy – Commercial Property";
     if (t === "real_policy_excess") return "Real Policy – Excess Liability";
+    if (t === "dec_cgl") return "Dec – CGL";
+    if (t === "dec_uploaded") return "Dec – Uploaded";
     return t;
   };
 
@@ -626,11 +688,13 @@ ${dataSummary}`;
                   <SelectContent>
                     <SelectItem value="restaurant_supplement">Restaurant Supplement</SelectItem>
                     <SelectItem value="contractor_supplement">Contractor Supplement</SelectItem>
+                    <SelectItem value="building_owner_supplement">Building Owner Supplement</SelectItem>
                     <SelectItem value="real_policy">📄 Real Insurance Policies (Kapura / Dos Santos)</SelectItem>
+                    <SelectItem value="real_dec">📋 Dec Forms (Lyndsey Roofing CGL)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              {formType !== "real_policy" && (
+              {formType !== "real_policy" && formType !== "real_dec" && (
                 <div className="space-y-1.5">
                   <Label className="text-xs">Quantity</Label>
                   <Input
@@ -648,10 +712,54 @@ ${dataSummary}`;
                   Adds 3 real policy documents (Business Auto, Commercial Property, Excess Liability)
                 </p>
               )}
+              {formType === "real_dec" && (
+                <p className="text-xs text-muted-foreground self-end pb-2">
+                  Adds the Lyndsey Roofing CGL Declaration form for training
+                </p>
+              )}
               <Button onClick={handleGenerate} disabled={generating} className="gap-2">
                 {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-                {formType === "real_policy" ? "Add Real Policies" : "Generate"}
+                {formType === "real_policy" || formType === "real_dec" ? "Add Documents" : "Generate"}
               </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Dec PDF Upload */}
+        <Card className="aura-glass border-primary/10">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Upload className="h-4 w-4 text-primary" />
+              Upload Dec (Declaration) Form
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-xs text-muted-foreground mb-3">
+              Upload a Declaration page PDF. The AI will extract all policy data and store it as a training document. Findings sync to the main chat when you click "Open in Full Chat" on any card.
+            </p>
+            <div className="flex items-center gap-3">
+              <input
+                ref={decFileInputRef}
+                type="file"
+                accept=".pdf,application/pdf"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleDecUpload(file);
+                }}
+              />
+              <Button
+                variant="outline"
+                onClick={() => decFileInputRef.current?.click()}
+                disabled={uploadingDec}
+                className="gap-2"
+              >
+                {uploadingDec ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                {uploadingDec ? "Extracting…" : "Upload Dec PDF"}
+              </Button>
+              <span className="text-[11px] text-muted-foreground">
+                Supports CGL, Property, Auto, WC, Umbrella declarations
+              </span>
             </div>
           </CardContent>
         </Card>
@@ -1129,10 +1237,10 @@ ${dataSummary}`;
                         <span className="font-medium text-sm truncate">{form.display_name}</span>
                       </div>
                       <Badge
-                        variant={form.form_type.startsWith("real_policy") ? "default" : "secondary"}
+                        variant={form.form_type.startsWith("real_policy") || form.form_type.startsWith("dec_") ? "default" : "secondary"}
                         className="text-[10px]"
                       >
-                        {form.form_type.startsWith("real_policy") ? "📄 " : ""}{typeLabel(form.form_type)}
+                        {form.form_type.startsWith("real_policy") ? "📄 " : form.form_type.startsWith("dec_") ? "📋 " : ""}{typeLabel(form.form_type)}
                       </Badge>
                     </div>
                   </div>
