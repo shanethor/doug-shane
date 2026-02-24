@@ -417,24 +417,68 @@ export default function FormFillingView({ submissionId, initialMessages, initial
     }
   }, [user, submissionId]);
 
-  // Load saved form data from DB on mount
+  // Load saved form data from DB on mount, and inject agency defaults if blank
   useEffect(() => {
     if (!user || !submissionId) return;
-    supabase
-      .from("insurance_applications")
-      .select("form_data")
-      .eq("submission_id", submissionId)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle()
-      .then(({ data }) => {
-        if (data?.form_data && typeof data.form_data === "object") {
-          const loaded = data.form_data as Record<string, any>;
-          setFormData(loaded);
-          console.info("[FormFilling] Loaded", Object.keys(loaded).filter(k => loaded[k] && String(loaded[k]).trim()).length, "fields from DB");
+    (async () => {
+      const { data } = await supabase
+        .from("insurance_applications")
+        .select("form_data")
+        .eq("submission_id", submissionId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      let loaded: Record<string, any> = {};
+      if (data?.form_data && typeof data.form_data === "object") {
+        loaded = data.form_data as Record<string, any>;
+      }
+
+      // Count how many non-empty fields exist
+      const filledCount = Object.values(loaded).filter(v => v && String(v).trim()).length;
+
+      // If form is blank or near-blank, inject agency profile defaults
+      if (filledCount < 3) {
+        try {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("full_name, agency_name, phone, form_defaults")
+            .eq("user_id", user.id)
+            .single();
+
+          if (profile) {
+            const defaults: Record<string, string> = {};
+            if (profile.agency_name) defaults.agency_name = profile.agency_name;
+            if (profile.full_name) defaults.producer_name = profile.full_name;
+            if (profile.phone) defaults.agency_phone = profile.phone;
+
+            // Merge form_defaults (agency_email, agency_fax, producer_license_no, etc.)
+            const formDefaults = (profile.form_defaults || {}) as Record<string, string>;
+            for (const [k, v] of Object.entries(formDefaults)) {
+              if (v && typeof v === "string" && v.trim()) {
+                defaults[k] = v;
+              }
+            }
+
+            // Only set defaults where no existing value
+            for (const [k, v] of Object.entries(defaults)) {
+              if (!loaded[k] || (typeof loaded[k] === "string" && !loaded[k].trim())) {
+                loaded[k] = v;
+              }
+            }
+
+            console.info("[FormFilling] Injected", Object.keys(defaults).length, "agency defaults into blank form");
+          }
+        } catch (e) {
+          console.warn("[FormFilling] Could not load agency defaults:", e);
         }
-        setDbLoaded(true);
-      });
+      }
+
+      setFormData(loaded);
+      formDataRef.current = loaded;
+      console.info("[FormFilling] Loaded", Object.values(loaded).filter(v => v && String(v).trim()).length, "fields from DB");
+      setDbLoaded(true);
+    })();
   }, [user, submissionId]);
 
   const handleFieldChange = (key: string, value: any) => {

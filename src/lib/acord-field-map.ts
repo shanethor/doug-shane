@@ -644,11 +644,14 @@ export const ACORD_126_INDEX_MAP: AcordIndexMap = {
 
   // Deductibles & Other Coverage Details
   deductible_amount:         28,   // P1.Text15 — Deductible Amount
+  deductible_pd:             28,   // Alias — form definition key for Property Damage deductible
   deductible_applies:        29,   // P1.Text16 — Deductible Applies To
+  deductible_bi:             29,   // Alias — form definition key for Bodily Injury deductible
   retention_amount:          30,   // P1.Text17 — SIR / Retention
   aggregate_applies_per:     31,   // P1.Text18 — Aggregate Limit Applies Per
   ebl_limit:                 32,   // P1.Text19 — Employee Benefits Liability Limit
   other_coverage_1:          33,   // P1.Text20 — Other Coverage/Endorsement 1
+  other_coverages_endorsements: 33, // Alias — form definition key
   other_coverage_2:          34,   // P1.Text21 — Other Coverage/Endorsement 2
   other_coverage_3:          35,   // P1.Text22 — Other Coverage/Endorsement 3
 
@@ -742,10 +745,14 @@ export const ACORD_126_INDEX_MAP: AcordIndexMap = {
 
   // Premium Totals
   total_premium_premops:    108,   // P1.Text95 — Total Prem/Ops Premium
+  premiums_prem_ops:        108,   // Alias — form definition key
   total_premium_products:   109,   // P1.Text96 — Total Products Premium
+  premiums_products:        109,   // Alias — form definition key
   premium_subtotal:         110,   // P1.Text97 — Premium Subtotal
+  premiums_other:           110,   // Alias — form definition key
   premium_tax:              111,   // P1.Text98 — Premium Tax
   total_premium:            112,   // P1.Text99 — Total Premium
+  premiums_total:           112,   // Alias — form definition key
 
   // Products / Completed Operations Questions
   q7_desc_products:         113,   // P1.Text100 — Q7 Description of Products
@@ -904,6 +911,7 @@ export const ACORD_126_INDEX_MAP: AcordIndexMap = {
   remarks_126_p3_5:         264,   // P3.Text47
 
   // ── Page 4 (P4) — Remarks (continued) / Signature ──
+  remarks_126:              266,   // Alias — form definition key maps to first P4 remark
   remarks_126_p4_1:         266,   // P4.Text1
   remarks_126_p4_2:         267,   // P4.Text2
   remarks_126_p4_3:         268,   // P4.Text3
