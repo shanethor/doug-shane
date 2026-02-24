@@ -395,8 +395,8 @@ function HumanFirstSlide() {
           AURA handles the busy work so the producer can do what matters most.
         </p>
         <div className="flex justify-center gap-8 mt-4">
-          {["Think", "Advise", "Protect", "Build relationships"].map(w => (
-            <span key={w} className="text-sm font-semibold text-primary">{w}</span>
+          {["Authority", "Unity", "Risk", "Automation"].map(w => (
+            <span key={w} className="text-sm font-semibold text-primary tracking-wide uppercase">{w}</span>
           ))}
         </div>
       </div>
