@@ -290,10 +290,21 @@ export default function Pipeline() {
       setPolicyForm({ carrier: "", line_of_business: "", policy_number: "", effective_date: "", annual_premium: "" });
       setSoldModalOpen(true);
     } else if (targetStage === "presenting") {
-      // Open presenting modal to collect quote details
-      setPresentingLeadId(leadId);
-      setPresentingForm({ carrier: "", line_of_business: "", quoted_premium: "", notes: "" });
-      setPresentingModalOpen(true);
+      // Move directly to presenting without a modal
+      try {
+        await supabase.from("leads").update({ stage: "presenting" as any }).eq("id", leadId);
+        await supabase.from("audit_log").insert({
+          user_id: user.id,
+          action: "stage_move",
+          object_type: "lead",
+          object_id: leadId,
+          metadata: { new_stage: "presenting" },
+        });
+        toast.success("Moved to Presenting!");
+        loadLeads();
+      } catch (err: any) {
+        toast.error(err.message || "Failed to move lead");
+      }
     } else if (targetStage === "lost") {
       // Open lost modal to collect reason
       setLostLeadId(leadId);
@@ -654,63 +665,6 @@ export default function Pipeline() {
         ))}
       </div>
 
-      {/* Presenting Modal */}
-      <Dialog open={presentingModalOpen} onOpenChange={(open) => { if (!open) { setPresentingModalOpen(false); setPresentingLeadId(null); } }}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Presenting Quote — {presentingLead?.account_name}</DialogTitle>
-          </DialogHeader>
-          <p className="text-sm text-muted-foreground font-sans">
-            Enter the quote details you're presenting to the client.
-          </p>
-          <div className="grid gap-3 mt-2">
-            <div>
-              <Label>Carrier</Label>
-              <Input
-                value={presentingForm.carrier}
-                onChange={(e) => setPresentingForm({ ...presentingForm, carrier: e.target.value })}
-                placeholder="e.g. Hartford, Travelers"
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label>Line of Business</Label>
-                <Input
-                  value={presentingForm.line_of_business}
-                  onChange={(e) => setPresentingForm({ ...presentingForm, line_of_business: e.target.value })}
-                  placeholder="e.g. General Liability"
-                />
-              </div>
-              <div>
-                <Label>Quoted Premium</Label>
-                <Input
-                  type="number"
-                  value={presentingForm.quoted_premium}
-                  onChange={(e) => setPresentingForm({ ...presentingForm, quoted_premium: e.target.value })}
-                  placeholder="$0.00"
-                />
-              </div>
-            </div>
-            <div>
-              <Label>Notes</Label>
-              <Textarea
-                value={presentingForm.notes}
-                onChange={(e) => setPresentingForm({ ...presentingForm, notes: e.target.value })}
-                placeholder="Any additional details about the quote being presented…"
-                className="min-h-[80px]"
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => { setPresentingModalOpen(false); setPresentingLeadId(null); }}>
-              Cancel
-            </Button>
-            <Button onClick={handlePresentingSubmit}>
-              Move to Presenting
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {/* Lost Modal */}
       <Dialog open={lostModalOpen} onOpenChange={(open) => { if (!open) { setLostModalOpen(false); setLostLeadId(null); } }}>
