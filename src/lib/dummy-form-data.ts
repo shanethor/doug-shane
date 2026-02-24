@@ -487,3 +487,160 @@ export function generateContractorSupplement(): Record<string, any> {
     bankruptcy: "No",
   };
 }
+
+// ─── BUILDING OWNER SUPPLEMENT ────────────────────────────────────────────────
+
+const BUILDING_TYPES = ["Office Building", "Retail Strip Mall", "Industrial Warehouse", "Mixed-Use", "Medical Office", "Multi-Tenant Office", "Shopping Center"];
+const CONSTRUCTION_TYPES = ["Fire Resistive", "Masonry Non-Combustible", "Joisted Masonry", "Frame", "Modified Fire Resistive"];
+const ROOF_TYPES = ["Built-Up", "Modified Bitumen", "EPDM / Rubber Membrane", "Metal", "TPO Single-Ply", "Shingle"];
+const HEATING_TYPES = ["Gas Forced Air", "Electric Heat Pump", "Oil Boiler", "Radiant", "Rooftop Package Unit"];
+const SPRINKLER_TYPES = ["Full Wet Pipe", "Partial Wet Pipe", "Dry Pipe", "Pre-Action", "None"];
+
+export function generateBuildingOwnerSupplement(): Record<string, any> {
+  const loc = pick(CITIES);
+  const numBuildings = randInt(1, 4);
+  const buildingAge = randInt(1960, 2020);
+  const stories = randInt(1, 12);
+  const sqft = randInt(5000, 150000);
+  const numTenants = randInt(1, 30);
+
+  return {
+    form_type: "building_owner_supplement",
+    named_insured: pick(COMPANY_NAMES),
+    contact_name: pick(CONTACT_NAMES),
+    contact_number: randPhone(),
+    mailing_address: `${pick(STREETS)}, ${loc.city}, ${loc.state} ${loc.zip}`,
+    city: loc.city,
+    state: loc.state,
+    zip: loc.zip,
+    organization_type: pick(["LLC", "Corporation", "Partnership", "Trust", "Individual"]),
+
+    // Building details
+    building_type: pick(BUILDING_TYPES),
+    construction_type: pick(CONSTRUCTION_TYPES),
+    year_built: String(buildingAge),
+    number_of_stories: String(stories),
+    total_square_footage: String(sqft),
+    number_of_buildings: String(numBuildings),
+
+    // Systems & updates
+    roof_type: pick(ROOF_TYPES),
+    roof_update_year: String(randInt(Math.max(buildingAge, 2005), 2025)),
+    electrical_update_year: String(randInt(Math.max(buildingAge, 2000), 2025)),
+    plumbing_update_year: String(randInt(Math.max(buildingAge, 2000), 2025)),
+    hvac_type: pick(HEATING_TYPES),
+    hvac_update_year: String(randInt(Math.max(buildingAge, 2005), 2025)),
+    sprinkler_type: pick(SPRINKLER_TYPES),
+    fire_alarm: yesNo(),
+    burglar_alarm: yesNo(),
+    central_station_monitoring: yesNo(),
+    emergency_generator: yesNo(),
+    elevator: stories >= 3 ? "Yes" : yesNo(),
+    number_of_elevators: stories >= 3 ? String(randInt(1, 4)) : "0",
+
+    // Occupancy & tenants
+    owner_occupied_pct: `${randInt(0, 100)}%`,
+    vacancy_pct: `${randInt(0, 25)}%`,
+    number_of_tenants: String(numTenants),
+    tenant_types: pick(["Office", "Retail", "Medical", "Industrial", "Mixed"]),
+    annual_rental_income: randDollar(100000, 3000000),
+    require_tenant_insurance: yesNo(),
+
+    // Values
+    building_value: randDollar(500000, 15000000),
+    bpp_value: randDollar(50000, 500000),
+    business_income_value: randDollar(50000, 1000000),
+    building_valuation: pick(["Replacement Cost", "Actual Cash Value", "Agreed Value"]),
+    property_deductible: pick(["$1,000", "$2,500", "$5,000", "$10,000", "$25,000"]),
+
+    // Exposure
+    parking_lot: yesNo(),
+    swimming_pool: yesNo(),
+    playground: "No",
+    hazardous_materials_on_site: "No",
+    prior_losses_3yr: yesNo(),
+    loss_details: Math.random() > 0.7 ? `Water damage ${randDate(-1)}, paid ${randDollar(5000, 50000)}` : "None",
+
+    // Maintenance
+    has_maintenance_program: "Yes",
+    snow_removal_contract: loc.state === "FL" || loc.state === "AZ" ? "No" : "Yes",
+    janitorial_service: yesNo(),
+    pest_control: "Yes",
+  };
+}
+
+// ─── REAL DEC (DECLARATION) FORM DATA ─────────────────────────────────────────
+
+export const REAL_DEC_DOCUMENTS: Record<string, any>[] = [
+  {
+    form_type: "dec_cgl",
+    display_name: "Lyndsey Roofing LLC – CGL Declaration",
+
+    // Named insured & address
+    named_insured: "Lyndsey Roofing LLC",
+    business_name: "Lyndsey Roofing LLC",
+    company_name: "Lyndsey Roofing LLC",
+    mailing_address: "29 Firemens Way, Poughkeepsie, NY 12603",
+    street_address: "29 Firemens Way",
+    city: "Poughkeepsie",
+    state: "NY",
+    zip: "12603",
+    city_state_zip: "Poughkeepsie, NY 12603",
+
+    // Carrier / Producer
+    current_carrier: "Accelerant Specialty Insurance Company",
+    carrier_name: "Accelerant Specialty Insurance Company",
+    carrier_address: "400 Northridge Road, Suite 800, Sandy Spring, GA 30350",
+    broker_name: "RT Specialty - New York",
+    broker_address: "1166 Avenue of the Americas, 18th Floor, New York, NY 10036",
+    managing_general_agent: "Accelerant Underwriting Managers, Inc. administered by Mission Underwriting Managers, LLC – Quantum Specialty Series",
+
+    // Policy info
+    policy_number: "SGL183R0083300",
+    effective_date: "06/27/2025",
+    expiration_date: "06/27/2026",
+    policy_period: "06/27/2025 – 06/27/2026",
+    coverage_type: "Commercial General Liability",
+
+    // Limits
+    each_occurrence_limit: "2000000",
+    personal_advertising_injury_limit: "1000000",
+    general_aggregate_limit: "4000000",
+    products_completed_ops_aggregate: "4000000",
+    damage_to_premises_rented: "100000",
+    medical_expense_limit: "5000",
+
+    // Premium
+    estimated_premium: "81000",
+    tria_premium: "N/A",
+    policy_fee: "1075",
+    total_amount_payable: "82075",
+
+    // Classification
+    class_code: "98678",
+    class_description: "Roofing--Residential--Three Stories & Under",
+    premium_basis: "Gross Sales per $1,000",
+    exposure: "6000000",
+    rate: "13.500",
+    class_premium: "81000",
+
+    // Audit
+    audit_period: "Policy Term",
+
+    // Key endorsements
+    additional_insured_scheduled: "CG 20 10 (12-19)",
+    additional_insured_completed_ops: "CG 20 37 (12-19)",
+    waiver_of_subrogation: "CG 24 04 (12-19)",
+    total_pollution_exclusion: "CG 21 65 (12-04)",
+    per_project_aggregate: "Yes",
+
+    // AI-inferred
+    industry: "Roofing Contractor",
+    business_category: "Contractor",
+    description_of_operations: "Residential roofing services, three stories and under",
+    lob_gl: true,
+    organization_type: "LLC",
+    business_type: "LLC",
+    surplus_lines: "Yes",
+  },
+];
