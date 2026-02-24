@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import JSZip from "jszip";
 import FillablePdfViewer, { type FillablePdfViewerHandle } from "@/components/FillablePdfViewer";
 import ReactMarkdown from "react-markdown";
 import { supabase } from "@/integrations/supabase/client";
@@ -688,42 +689,58 @@ export default function FormFillingView({ submissionId, initialMessages, initial
         ? enabledFormList.filter(f => f.id === activeFormId)
         : enabledFormList;
 
-      // 4. Download each form using Adobe-saved bytes (original PDF with fills, perfect formatting)
+      // 4. Download forms
       const date = new Date().toISOString().slice(0, 10);
+      const zip = mode === "package" ? new JSZip() : null;
       let count = 0;
+
       for (const form of formsToProcess) {
         const hasData = form.fields.some(f => formData[f.key] && String(formData[f.key]).trim());
         if (!hasData) continue;
 
         try {
-          // Use Adobe-saved bytes — these are the original ACORD PDF with filled AcroForm fields.
-          // This preserves 100% of original ACORD formatting since Adobe never stripped the PDF.
           const adobeBytes = savedPdfBytesMap[form.id];
           if (adobeBytes) {
-            const blob = new Blob([adobeBytes.buffer as ArrayBuffer], { type: "application/pdf" });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = `${form.name.replace(/\s/g, "_")}_${date}.pdf`;
-            a.click();
-            setTimeout(() => URL.revokeObjectURL(url), 10000);
+            const fileName = `${form.name.replace(/\s/g, "_")}_${date}.pdf`;
+            if (zip) {
+              zip.file(fileName, adobeBytes);
+            } else {
+              const blob = new Blob([adobeBytes.buffer as ArrayBuffer], { type: "application/pdf" });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url;
+              a.download = fileName;
+              a.click();
+              setTimeout(() => URL.revokeObjectURL(url), 10000);
+            }
             count++;
           } else {
-            // Fallback: no Adobe bytes yet — tell user to use Adobe's own Download button
-            // or trigger save explicitly. The original PDF is in the viewer with full formatting.
-            toast.info("Use the Download button in the PDF toolbar for best formatting, or edit a field first to enable our download.");
-            count++; // count it so we don't show "no data" error
+            toast.info(`Use the Download button in the PDF toolbar for ${form.name}, or edit a field first to enable our download.`);
+            count++;
           }
-          if (count < formsToProcess.length) await new Promise(r => setTimeout(r, 400));
+          if (!zip && count < formsToProcess.length) await new Promise(r => setTimeout(r, 400));
         } catch (err) {
-          console.error(`Failed to download PDF for ${form.name}:`, err);
+          console.error(`Failed to process PDF for ${form.name}:`, err);
         }
+      }
+
+      // If package mode, generate and download the zip
+      if (zip && count > 0) {
+        const companyName = formData.applicant_name || formData.insured_name || "Submission";
+        const safeName = companyName.replace(/[^a-zA-Z0-9]/g, "_").slice(0, 40);
+        const zipBlob = await zip.generateAsync({ type: "blob" });
+        const url = URL.createObjectURL(zipBlob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `ACORD_Package_${safeName}_${date}.zip`;
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(url), 10000);
       }
 
       if (count === 0) {
         toast.error("No forms have enough data to download.");
       } else {
-        toast.success(`${count} filled form(s) downloaded.`);
+        toast.success(zip ? `${count} form(s) bundled into ZIP.` : `${count} filled form(s) downloaded.`);
       }
     } catch (err) {
       console.error("Download error:", err);
