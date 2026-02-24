@@ -733,7 +733,9 @@ export default function FormFillingView({ submissionId, initialMessages, initial
         const a = document.createElement("a");
         a.href = url;
         a.download = `ACORD_Package_${safeName}_${date}.zip`;
+        document.body.appendChild(a);
         a.click();
+        document.body.removeChild(a);
         setTimeout(() => URL.revokeObjectURL(url), 10000);
       }
 
