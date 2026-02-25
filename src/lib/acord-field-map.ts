@@ -2411,17 +2411,31 @@ export const ACORD_125_INDEX_MAP: AcordIndexMap = {
   underwriter:           19,   // Insurer_Underwriter_FullName_A
   underwriter_office:    20,   // Insurer_Underwriter_OfficeIdentifier_A
 
-  // Lines of Business premium amounts (odd indices are CHK checkboxes)
+  // Lines of Business — CHK checkboxes (odd indices) and premium amounts (even indices)
+  chk_lob_boiler:        31,   // ☐ Boiler & Machinery
   boiler_premium:        32,   // BoilerAndMachineryLineOfBusiness_PremiumAmount_A
+  chk_lob_auto:          33,   // ☐ Business Auto
   auto_premium:          34,   // CommercialVehicleLineOfBusiness_PremiumAmount_A
+  chk_lob_bop:           35,   // ☐ Business Owners
   bop_premium:           36,   // BusinessOwnersLineOfBusiness_PremiumAmount_A
+  chk_lob_cgl:           37,   // ☐ Commercial General Liability
+  lob_commercial_general_liability: 37, // Alias for extraction key
   cgl_premium:           38,   // GeneralLiabilityLineOfBusiness_TotalPremiumAmount_A
+  chk_lob_inland_marine: 39,   // ☐ Commercial Inland Marine
   inland_marine_premium: 40,   // CommercialInlandMarineLineOfBusiness_PremiumAmount_A
+  chk_lob_property:      41,   // ☐ Commercial Property
   property_premium:      42,   // CommercialPropertyLineOfBusiness_PremiumAmount_A
+  chk_lob_crime:         43,   // ☐ Crime
   crime_premium:         44,   // CrimeLineOfBusiness_PremiumAmount_A
+  chk_lob_cyber:         45,   // ☐ Cyber & Privacy
   cyber_premium:         46,   // CyberAndPrivacyLineOfBusiness_PremiumAmount_A
+  // indices 47-48: Fiduciary / Garage & Dealers CHK
+  chk_lob_garage:        49,   // ☐ Garage & Dealers
   garage_premium:        50,   // GarageAndDealersLineOfBusiness_PremiumAmount_A
+  chk_lob_liquor:        51,   // ☐ Liquor Liability
   liquor_premium:        52,   // LiquorLiabilityLineOfBusiness_PremiumAmount_A
+  // indices 53-56: Motor Carrier / Truckers CHK+premium
+  chk_lob_umbrella:      57,   // ☐ Umbrella
   umbrella_premium:      58,   // CommercialUmbrellaLineOfBusiness_PremiumAmount_A
 
   // Policy Information
