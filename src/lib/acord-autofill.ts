@@ -435,6 +435,17 @@ export const CURRENCY_FIELDS = new Set([
   "inland_marine_premium", "boiler_premium", "bop_premium", "garage_premium", "liquor_premium",
 ]);
 
+/** Fields with "code" in the name must only contain numeric values */
+const CODE_FIELD_PATTERN = /code/i;
+
+const isCodeField = (fieldKey: string): boolean => CODE_FIELD_PATTERN.test(fieldKey);
+
+/** Strip non-numeric chars from a value; return "" if nothing numeric remains */
+const enforceNumericCode = (value: string): string => {
+  const digits = value.replace(/[^0-9]/g, "");
+  return digits || "";
+};
+
 const normalizeValue = (fieldKey: string, value: any): any => {
   // Filter out boolean false values — they leak from checkbox/flag fields
   if (value === false) return "";
@@ -442,6 +453,8 @@ const normalizeValue = (fieldKey: string, value: any): any => {
   if (!s || s === "false") return "";
   if (DATE_FIELDS.has(fieldKey)) return parseDate(s);
   if (CURRENCY_FIELDS.has(fieldKey)) return cleanCurrency(s);
+  // CODE fields must be numeric only
+  if (isCodeField(fieldKey)) return enforceNumericCode(s);
   return Array.isArray(value) ? value.join(", ") : s;
 };
 
@@ -586,6 +599,32 @@ export function buildAutofilledData(
     const loss = String(aiData.prior_losses_last_5_years).toLowerCase();
     if (loss === "no" || loss === "none" || loss === "n/a") {
       mapped.no_previous_claims = true;
+    }
+  }
+
+  // 11. Auto-check LOB checkboxes when a premium amount is present
+  const PREMIUM_TO_CHECKBOX: Record<string, string[]> = {
+    cgl_premium:        ["lob_commercial_general_liability", "chk_lob_cgl", "chk_commercial_general_liability"],
+    property_premium:   ["lob_commercial_property", "chk_lob_property"],
+    auto_premium:       ["lob_business_auto", "chk_lob_auto"],
+    umbrella_premium:   ["lob_umbrella", "chk_lob_umbrella"],
+    crime_premium:      ["lob_crime"],
+    cyber_premium:      ["lob_cyber"],
+    inland_marine_premium: ["lob_inland_marine"],
+    boiler_premium:     ["lob_boiler_machinery"],
+    bop_premium:        ["lob_bop"],
+    garage_premium:     ["lob_garage_dealers"],
+    liquor_premium:     ["lob_liquor_liability"],
+  };
+
+  for (const [premiumKey, checkboxKeys] of Object.entries(PREMIUM_TO_CHECKBOX)) {
+    const premVal = mapped[premiumKey];
+    if (premVal && String(premVal).replace(/[$,\s0]/g, "") !== "") {
+      for (const chkKey of checkboxKeys) {
+        if (formFieldKeys.has(chkKey)) {
+          mapped[chkKey] = true;
+        }
+      }
     }
   }
 
