@@ -112,8 +112,12 @@ const AI_TO_FORM_ALIASES: Record<string, string[]> = {
 
   // ── Prior carrier ──
   current_carrier: ["prior_carrier_name", "current_carrier", "carrier", "prior_wc_carrier_1", "prior_carrier_1"],
-  current_premium: ["current_premium"],
+  current_premium: ["current_premium", "total_premium"],
   prior_carrier_name: ["prior_carrier_1", "prior_wc_carrier_1", "current_carrier"],
+  naic_code: ["naic_code"],
+  policy_fee: ["policy_fee"],
+  tria_premium: ["tria_premium"],
+  audit_period: ["audit_period"],
 
   // ── Premises ──
   premises_address: ["premises_address", "building_street_address", "garaging_street", "location_1_address"],
@@ -224,6 +228,45 @@ const AI_TO_FORM_ALIASES: Record<string, string[]> = {
   medical_payments: ["medical_payments"],
   coverage_type: ["coverage_type"],
   aggregate_applies_per: ["aggregate_applies_per"],
+
+  // ── ACORD 126 Checkboxes (coverage triggers, deductibles, limits) ──
+  chk_commercial_general_liability: ["chk_commercial_general_liability"],
+  chk_claims_made: ["chk_claims_made"],
+  chk_occurrence: ["chk_occurrence"],
+  chk_owners_contractors: ["chk_owners_contractors"],
+  chk_limit_policy: ["chk_limit_policy"],
+  chk_limit_location: ["chk_limit_location"],
+  chk_limit_project: ["chk_limit_project"],
+  chk_limit_other: ["chk_limit_other"],
+  chk_deductible_pd: ["chk_deductible_pd"],
+  chk_deductible_bi: ["chk_deductible_bi"],
+  chk_per_claim: ["chk_per_claim"],
+  chk_per_occurrence: ["chk_per_occurrence"],
+
+  // ── ACORD 126 Schedule of Hazards ──
+  hazard_loc_1: ["hazard_loc_1"],
+  hazard_bldg_1: ["hazard_bldg_1"],
+  hazard_classification_1: ["hazard_classification_1"],
+  hazard_exposure_1: ["hazard_exposure_1"],
+  hazard_rate_premops_1: ["hazard_rate_premops_1"],
+  hazard_rate_products_1: ["hazard_rate_products_1"],
+  hazard_premium_premops_1: ["hazard_premium_premops_1"],
+  hazard_premium_products_1: ["hazard_premium_products_1"],
+
+  // ── ACORD 126 Premium Totals ──
+  total_premium_premops: ["total_premium_premops", "premiums_prem_ops"],
+  total_premium_products: ["total_premium_products", "premiums_products"],
+  premium_subtotal: ["premium_subtotal", "premiums_other"],
+  premium_tax: ["premium_tax"],
+  total_premium: ["total_premium", "premiums_total"],
+
+  // ── ACORD 126 Claims-Made / EBL ──
+  retroactive_date: ["retroactive_date"],
+  entry_date_claims_made: ["entry_date_claims_made"],
+  retention_amount: ["retention_amount"],
+  ebl_limit: ["ebl_limit"],
+  ebl_deductible_per_claim: ["ebl_deductible_per_claim"],
+  ebl_aggregate: ["ebl_aggregate"],
 
   // ── WC Coverages ──
   wc_each_accident: ["wc_each_accident"],

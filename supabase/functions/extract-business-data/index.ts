@@ -74,8 +74,8 @@ CRITICAL ANTI-HALLUCINATION RULES:
 - If the user provided no business information (empty description, no documents), return ALL fields as empty strings.
 - Only populate a field if you can point to the specific text in the input that contains that value.
 
-CODES — NEVER INFER, ONLY EXTRACT VERBATIM:
-- sic_code, naics_code, naic_code, gl_code, class_code_1, class_code_2, hazard_code_1, hazard_code_2, program_code, ncci_risk_id, wc_class_code, policy_number, prior_policy_number_1, prior_wc_policy_1: these fields must ONLY be populated if the EXACT code/number appears verbatim in the source document. NEVER look up, guess, or infer a code based on business type, industry, or description. If you cannot find the literal code string in the document, leave it as "".
+CODES — EXTRACT VERBATIM ONLY, NEVER INFER:
+- sic_code, naics_code, naic_code, gl_code, class_code_1, class_code_2, hazard_code_1, hazard_code_2, program_code, ncci_risk_id, wc_class_code, policy_number, prior_policy_number_1, prior_wc_policy_1: these fields must ONLY be populated if the EXACT code/number appears verbatim in the source document. NEVER look up, guess, or infer a code based on business type, industry, or description. If the document explicitly lists a class code, you MUST extract it.
 
 Return this exact structure:
 {
@@ -85,7 +85,7 @@ Return this exact structure:
     "business_type": "", "year_established": "", "annual_revenue": "", "number_of_employees": "",
     "full_time_employees": "", "part_time_employees": "", "nature_of_business": "",
     "description_of_operations": "", "effective_date": "", "expiration_date": "",
-    "current_carrier": "", "current_premium": "", "policy_number": "",
+    "current_carrier": "", "current_premium": "", "policy_number": "", "naic_code": "",
     "premises_address": "", "premises_city": "", "premises_state": "", "premises_zip": "",
     "square_footage": "", "building_construction": "", "year_built": "",
     "prior_losses_last_5_years": "", "additional_insureds": "",
@@ -104,6 +104,34 @@ Return this exact structure:
     "building_limit": "", "bpp_limit": "", "business_income_limit": "", "total_insured_value": "",
     "property_premium": "", "property_deductible": "",
     "lob_auto": "false", "lob_gl": "false", "lob_property": "false", "lob_umbrella": "false", "lob_wc": "false",
+
+    "chk_commercial_general_liability": "false",
+    "chk_claims_made": "false",
+    "chk_occurrence": "false",
+    "chk_owners_contractors": "false",
+    "chk_limit_policy": "false",
+    "chk_limit_location": "false",
+    "chk_limit_project": "false",
+    "chk_limit_other": "false",
+    "chk_deductible_pd": "false",
+    "chk_deductible_bi": "false",
+    "chk_per_claim": "false",
+    "chk_per_occurrence": "false",
+
+    "hazard_loc_1": "", "hazard_bldg_1": "", "hazard_code_1": "", "hazard_classification_1": "",
+    "hazard_exposure_1": "", "hazard_rate_premops_1": "", "hazard_rate_products_1": "",
+    "hazard_premium_premops_1": "", "hazard_premium_products_1": "",
+    "total_premium_premops": "", "total_premium_products": "", "premium_subtotal": "",
+    "premium_tax": "", "total_premium": "",
+
+    "retroactive_date": "", "entry_date_claims_made": "",
+    "deductible_amount": "", "retention_amount": "", "aggregate_applies_per": "",
+    "ebl_limit": "", "ebl_deductible_per_claim": "", "ebl_aggregate": "", "ebl_num_employees": "",
+
+    "audit_period": "",
+    "tria_premium": "",
+    "policy_fee": "",
+
     "vehicles": [],
     "drivers": []
   },
@@ -113,12 +141,27 @@ Return this exact structure:
 EXTRACTION RULES:
 - Return ALL fields even if empty string — but ONLY populate with data actually found in input
 - All scalar values must be strings — booleans as "true"/"false"
-- Dates → YYYY-MM-DD, currencies → plain number without $ or commas
+- Dates → MM/DD/YYYY format, currencies → plain number without $ or commas
 - lob_* flags: set "true" ONLY if that coverage type is explicitly mentioned in the document
+- CHECKBOX FIELDS (chk_*): set "true" if the document indicates that option applies:
+  - chk_commercial_general_liability: "true" if it is a CGL policy
+  - chk_occurrence: "true" if the policy is occurrence-based (look for "CG 00 01" or "occurrence" language)
+  - chk_claims_made: "true" if claims-made policy
+  - chk_owners_contractors: "true" if Owner's & Contractor's Protective coverage
+  - chk_limit_policy: "true" if aggregate limit applies per policy
+  - chk_limit_project: "true" if aggregate limit applies per project (look for "Per Project" endorsement)
+  - chk_limit_location: "true" if aggregate limit applies per location
+  - chk_deductible_pd: "true" if property damage deductible applies
+  - chk_deductible_bi: "true" if bodily injury deductible applies
+  - chk_per_claim: "true" if deductible applies per claim
+  - chk_per_occurrence: "true" if deductible applies per occurrence
+- SCHEDULE OF HAZARDS: Extract class codes, descriptions, premium basis, exposure, rates, and premiums for each hazard/class row. Use hazard_loc_1, hazard_code_1, hazard_classification_1, hazard_exposure_1, etc.
+- PREMIUM TOTALS: Extract total_premium, total_premium_premops, total_premium_products if listed
+- ENDORSEMENTS: Look for "Per Project" aggregate endorsement (sets chk_limit_project) and deductible endorsements
 - vehicles[]: include ALL vehicles found — each: { year, make, model, vin, body_type, stated_amount, garaging_zip }
 - drivers[]: include ALL drivers found — each: { name, dob, license, license_state }
 - gaps[]: list fields that are missing and important — { field, question, priority: required|recommended|optional }
-- If document is an insurance policy, extract carrier, policy number, limits, premiums, and all schedules
+- If document is an insurance policy/dec page, extract carrier, NAIC code, policy number, limits, premiums, class codes, and all schedules
 - If no meaningful business data is provided, return all fields as empty strings and list all critical fields as gaps`;
 
     const userPromptText = `Extract all insurance data from the following document(s).
