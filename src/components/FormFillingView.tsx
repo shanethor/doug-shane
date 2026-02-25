@@ -8,6 +8,7 @@ import { ACORD_FORMS, ACORD_FORM_LIST, type AcordFormField, type AcordFormDefini
 import { buildAutofilledData, buildAutofilledDataWithAI, formatUSD, CURRENCY_FIELDS, MANUAL_CODE_FIELDS } from "@/lib/acord-autofill";
 import { FIELD_POSITION_MAP, type FieldPosition } from "@/lib/acord-field-positions";
 import { generateSubmissionPackage } from "@/lib/submission-package";
+import SubmitPackageDialog from "@/components/SubmitPackageDialog";
 import { FILLABLE_PDF_PATHS, ACORD_FIELD_MAPS, ACORD_INDEX_MAPS } from "@/lib/acord-field-map";
 import { getMergedIndexMap } from "@/lib/acord-pdf-fields";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -20,7 +21,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
-import { Download, Send, Paperclip, Loader2, FileText, CheckCircle, X, Filter, Eye, Image, Mail, ChevronLeft, ChevronRight, ClipboardList, MessageSquare, Mic, MicOff, Plus, BrainCircuit, ShieldAlert } from "lucide-react";
+import { Download, Send, Paperclip, Loader2, FileText, CheckCircle, X, Filter, Eye, Image, Mail, ChevronLeft, ChevronRight, ClipboardList, MessageSquare, Mic, MicOff, Plus, BrainCircuit, ShieldAlert, Package } from "lucide-react";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import { useVoiceInput } from "@/hooks/useVoiceInput";
@@ -77,7 +78,10 @@ export default function FormFillingView({ submissionId, initialMessages, initial
   const [enabledFormIds, setEnabledFormIds] = useState<Set<string>>(new Set(defaultEnabledIds));
   const [showAddFormDialog, setShowAddFormDialog] = useState(false);
 
-  // Email dialog state
+  // Submit Package dialog
+  const [submitPackageOpen, setSubmitPackageOpen] = useState(false);
+
+  // Email dialog state (kept for backward compat)
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
   const [emailTo, setEmailTo] = useState("");
   const [emailMode, setEmailMode] = useState<"individual" | "package">("individual");
@@ -1186,22 +1190,10 @@ export default function FormFillingView({ submissionId, initialMessages, initial
             size="sm"
             className="flex-1 text-xs h-7"
             disabled={downloading}
-            onClick={() => downloadForms("package")}
+            onClick={() => setSubmitPackageOpen(true)}
           >
-            {downloading ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <FileText className="h-3 w-3 mr-1" />}
-            Pkg
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            className="flex-1 text-xs h-7"
-            onClick={() => {
-              setEmailMode("individual");
-              setEmailDialogOpen(true);
-            }}
-          >
-            <Mail className="h-3 w-3 mr-1" />
-            Email
+            <Package className="h-3 w-3 mr-1" />
+            Submit Package
           </Button>
         </div>
       </div>
@@ -1661,6 +1653,16 @@ export default function FormFillingView({ submissionId, initialMessages, initial
       <div className="flex flex-col h-[calc(100vh-4rem)] overflow-hidden">
         {addFormDialog}
         {emailDialog}
+        <SubmitPackageDialog
+          open={submitPackageOpen}
+          onOpenChange={setSubmitPackageOpen}
+          enabledFormIds={enabledFormIds}
+          formData={formData}
+          savedPdfBytesMap={savedPdfBytesMap}
+          submissionId={submissionId}
+          userId={user?.id}
+          triggerSave={async () => { if (pdfViewerRef.current) await pdfViewerRef.current.triggerSave(); }}
+        />
         
         {/* Mobile top bar with back button */}
         <div className="border-b bg-background px-3 py-2 flex items-center justify-between shrink-0">
@@ -1735,6 +1737,16 @@ export default function FormFillingView({ submissionId, initialMessages, initial
     <div className="flex h-[calc(100vh-4rem)] overflow-hidden">
       {addFormDialog}
       {emailDialog}
+      <SubmitPackageDialog
+        open={submitPackageOpen}
+        onOpenChange={setSubmitPackageOpen}
+        enabledFormIds={enabledFormIds}
+        formData={formData}
+        savedPdfBytesMap={savedPdfBytesMap}
+        submissionId={submissionId}
+        userId={user?.id}
+        triggerSave={async () => { if (pdfViewerRef.current) await pdfViewerRef.current.triggerSave(); }}
+      />
 
       {/* LEFT PANEL — Editable Fields (collapsible) */}
       <div
