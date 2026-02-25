@@ -1704,14 +1704,29 @@ export default function Chat() {
                         </div>
                       </button>
                       <button
-                        onClick={() => {
+                        onClick={async () => {
                           if (attachedFiles.length > 0) {
                             const filesToExtract = [...attachedFiles];
                             setAttachedFiles([]);
                             setShowIntentButtons(false);
                             triggerDocumentExtraction(filesToExtract);
                           } else {
-                            openBlankFormEditor();
+                            // No files — create a blank submission and route through ExtractionSummary
+                            if (!user) return;
+                            setShowIntentButtons(false);
+                            try {
+                              const { data: sub, error } = await supabase
+                                .from("business_submissions")
+                                .insert({ user_id: user.id, status: "draft", company_name: "New Client" })
+                                .select()
+                                .single();
+                              if (error || !sub) throw error || new Error("Failed to create submission");
+                              setMessages(prev => [...prev, { role: "assistant" as const, content: `📝 Opening blank form workspace… [SUBMISSION_ID:${sub.id}]` }]);
+                              setPendingSubmissionId(sub.id);
+                            } catch (err) {
+                              console.error("Failed to open blank form editor:", err);
+                              toast({ title: "Error", description: "Could not open form editor. Please try again.", variant: "destructive" });
+                            }
                           }
                         }}
                         className="flex items-center gap-3 rounded-lg border bg-background hover:bg-muted/60 px-4 py-3 text-left transition-colors"
@@ -2059,14 +2074,28 @@ export default function Chat() {
                         </div>
                       </button>
                       <button
-                        onClick={() => {
+                        onClick={async () => {
                           if (attachedFiles.length > 0) {
                             const filesToExtract = [...attachedFiles];
                             setAttachedFiles([]);
                             setShowIntentButtons(false);
                             triggerDocumentExtraction(filesToExtract);
                           } else {
-                            openBlankFormEditor();
+                            if (!user) return;
+                            setShowIntentButtons(false);
+                            try {
+                              const { data: sub, error } = await supabase
+                                .from("business_submissions")
+                                .insert({ user_id: user.id, status: "draft", company_name: "New Client" })
+                                .select()
+                                .single();
+                              if (error || !sub) throw error || new Error("Failed to create submission");
+                              setMessages(prev => [...prev, { role: "assistant" as const, content: `📝 Opening blank form workspace… [SUBMISSION_ID:${sub.id}]` }]);
+                              setPendingSubmissionId(sub.id);
+                            } catch (err) {
+                              console.error("Failed to open blank form editor:", err);
+                              toast({ title: "Error", description: "Could not open form editor. Please try again.", variant: "destructive" });
+                            }
                           }
                         }}
                         className="flex items-center gap-3 rounded-lg border bg-background hover:bg-muted/60 px-4 py-3 text-left transition-colors"
