@@ -404,6 +404,19 @@ export const MANUAL_CODE_FIELDS = new Set([
   "hazard_code_1", "hazard_code_2", "hazard_code_3", "hazard_code_4", "hazard_code_5",
   "program_code", "ncci_risk_id", "wc_class_code", "policy_number",
   "prior_policy_number_1", "prior_wc_policy_1",
+  // Products/Completed Operations — only explicit extraction
+  "product_name_a", "product_gross_sales_a", "product_units_a", "product_months_market_a",
+  "product_expected_life_a", "product_intended_use_a", "product_components_a",
+  "product_name_b", "product_gross_sales_b", "product_units_b", "product_months_market_b",
+  "product_expected_life_b", "product_intended_use_b", "product_components_b",
+  "product_name_c", "product_gross_sales_c", "product_units_c", "product_months_market_c",
+  "product_expected_life_c", "product_intended_use_c", "product_components_c",
+  // Products & Contractors question fields
+  "products_q1_code", "products_q2_code", "products_q3_code", "products_q4_code",
+  "products_q5_code", "products_q6_code", "products_q7_code", "products_q8_code",
+  "contractors_q1_code", "contractors_q2_code", "contractors_q3_code",
+  "contractors_q4_code", "contractors_q5_code", "contractors_q6_code",
+  "claims_made_q1_code", "claims_made_q2_code",
 ]);
 
 export const CURRENCY_FIELDS = new Set([

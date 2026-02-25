@@ -95,6 +95,30 @@ serve(async (req) => {
       "premiums_other", "premiums_total"]) {
       HAZARD_SCHEDULE_FIELDS.add(f);
     }
+
+    // Block Products/Completed Operations fields — only filled from explicit extraction
+    for (const suffix of ["_a", "_b", "_c"]) {
+      for (const col of ["product_name", "product_gross_sales", "product_units",
+        "product_months_market", "product_expected_life", "product_intended_use",
+        "product_components"]) {
+        HAZARD_SCHEDULE_FIELDS.add(col + suffix);
+      }
+    }
+    // Block products questions too
+    for (let i = 1; i <= 8; i++) {
+      HAZARD_SCHEDULE_FIELDS.add(`products_q${i}_code`);
+      HAZARD_SCHEDULE_FIELDS.add(`products_q${i}_explanation`);
+    }
+    // Block contractors questions
+    for (let i = 1; i <= 6; i++) {
+      HAZARD_SCHEDULE_FIELDS.add(`contractors_q${i}_code`);
+      HAZARD_SCHEDULE_FIELDS.add(`contractors_q${i}_explanation`);
+    }
+    // Block claims-made questions
+    for (let i = 1; i <= 2; i++) {
+      HAZARD_SCHEDULE_FIELDS.add(`claims_made_q${i}_code`);
+      HAZARD_SCHEDULE_FIELDS.add(`claims_made_q${i}_explanation`);
+    }
     const filteredUnfilled = (unfilled as string[]).filter(k => !CODE_FIELDS.has(k) && !HAZARD_SCHEDULE_FIELDS.has(k));
 
     const systemPrompt = `You are an expert insurance data mapper. You map extracted business data to ACORD insurance form fields.
