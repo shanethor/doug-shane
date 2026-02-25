@@ -350,51 +350,75 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
+    const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
     const systemPrompt = buildSystemPrompt(trainingMode !== false);
 
-    const response = await fetch(
-      "https://ai.gateway.lovable.dev/v1/chat/completions",
-      {
+    if (ANTHROPIC_API_KEY) {
+      // Use Claude Sonnet 4 for chat — faster and more accurate
+      console.log("agent-chat: Using Claude Sonnet 4");
+
+      const claudeMessages = messages.map((m: any) => ({
+        role: m.role === "system" ? "user" : m.role,
+        content: m.content,
+      }));
+
+      const claudeResp = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          "Content-Type": "application/json",
+          "x-api-key": ANTHROPIC_API_KEY,
+          "anthropic-version": "2023-06-01",
+          "content-type": "application/json",
         },
         body: JSON.stringify({
-          model: "google/gemini-3-flash-preview",
-          messages: [
-            { role: "system", content: systemPrompt },
-            ...messages,
-          ],
-          stream: true,
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 4096,
+          system: systemPrompt,
+          messages: claudeMessages,
         }),
-      }
-    );
+      });
 
-    if (!response.ok) {
-      if (response.status === 429) {
-        return new Response(
-          JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment." }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+      if (!claudeResp.ok) {
+        const errText = await claudeResp.text();
+        console.error("Claude API error in agent-chat:", claudeResp.status, errText);
+        // Fall back to Lovable AI gateway
+        return await callLovableGatewayForChat(LOVABLE_API_KEY, systemPrompt, messages, corsHeaders);
       }
-      if (response.status === 402) {
-        return new Response(
-          JSON.stringify({ error: "AI credits exhausted. Please add funds to continue." }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+
+      const claudeResult = await claudeResp.json();
+      
+      // Check for error in response
+      if (claudeResult.type === "error") {
+        console.error("Claude response error:", JSON.stringify(claudeResult));
+        return await callLovableGatewayForChat(LOVABLE_API_KEY, systemPrompt, messages, corsHeaders);
       }
-      const t = await response.text();
-      console.error("AI gateway error:", response.status, t);
-      return new Response(
-        JSON.stringify({ error: "AI service unavailable" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+
+      const claudeText = claudeResult.content?.[0]?.text || "";
+      if (!claudeText) {
+        console.error("Claude returned empty content, falling back");
+        return await callLovableGatewayForChat(LOVABLE_API_KEY, systemPrompt, messages, corsHeaders);
+      }
+
+      // Convert Claude's response to SSE format matching what the frontend expects
+      const encoder = new TextEncoder();
+      const chunks = claudeText.match(/.{1,80}/g) || [claudeText];
+      const stream = new ReadableStream({
+        async start(controller) {
+          for (const chunk of chunks) {
+            const openaiChunk = { choices: [{ delta: { content: chunk } }] };
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify(openaiChunk)}\n\n`));
+          }
+          controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+          controller.close();
+        },
+      });
+
+      return new Response(stream, {
+        headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
+      });
     }
 
-    return new Response(response.body, {
-      headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
-    });
+    // Fallback: Lovable AI gateway (Gemini)
+    return await callLovableGatewayForChat(LOVABLE_API_KEY, systemPrompt, messages, corsHeaders);
   } catch (e) {
     console.error("agent-chat error:", e);
     return new Response(
@@ -403,3 +427,55 @@ serve(async (req) => {
     );
   }
 });
+
+async function callLovableGatewayForChat(
+  apiKey: string,
+  systemPrompt: string,
+  messages: any[],
+  corsHeaders: Record<string, string>,
+): Promise<Response> {
+  console.log("agent-chat: Using Lovable AI gateway (Gemini)");
+  const response = await fetch(
+    "https://ai.gateway.lovable.dev/v1/chat/completions",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-3-flash-preview",
+        messages: [
+          { role: "system", content: systemPrompt },
+          ...messages,
+        ],
+        stream: true,
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    if (response.status === 429) {
+      return new Response(
+        JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment." }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    if (response.status === 402) {
+      return new Response(
+        JSON.stringify({ error: "AI credits exhausted. Please add funds to continue." }),
+        { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    const t = await response.text();
+    console.error("AI gateway error:", response.status, t);
+    return new Response(
+      JSON.stringify({ error: "AI service unavailable" }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
+  return new Response(response.body, {
+    headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
+  });
+}
