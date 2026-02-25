@@ -1704,7 +1704,16 @@ export default function Chat() {
                         </div>
                       </button>
                       <button
-                        onClick={() => openBlankFormEditor()}
+                        onClick={() => {
+                          if (attachedFiles.length > 0) {
+                            const filesToExtract = [...attachedFiles];
+                            setAttachedFiles([]);
+                            setShowIntentButtons(false);
+                            triggerDocumentExtraction(filesToExtract);
+                          } else {
+                            openBlankFormEditor();
+                          }
+                        }}
                         className="flex items-center gap-3 rounded-lg border bg-background hover:bg-muted/60 px-4 py-3 text-left transition-colors"
                       >
                         <div className="h-8 w-8 rounded-md bg-secondary flex items-center justify-center shrink-0">
@@ -1712,7 +1721,7 @@ export default function Chat() {
                         </div>
                         <div>
                           <p className="text-sm font-medium">I Want to Fill My Own Forms and Ask AI for Help Later</p>
-                          <p className="text-xs text-muted-foreground mt-0.5">Start with blank ACORD forms and get assistance on demand</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">{attachedFiles.length > 0 ? "Extract from your files, then edit forms manually" : "Start with blank ACORD forms and get assistance on demand"}</p>
                         </div>
                       </button>
                     </div>
@@ -2050,7 +2059,16 @@ export default function Chat() {
                         </div>
                       </button>
                       <button
-                        onClick={() => openBlankFormEditor()}
+                        onClick={() => {
+                          if (attachedFiles.length > 0) {
+                            const filesToExtract = [...attachedFiles];
+                            setAttachedFiles([]);
+                            setShowIntentButtons(false);
+                            triggerDocumentExtraction(filesToExtract);
+                          } else {
+                            openBlankFormEditor();
+                          }
+                        }}
                         className="flex items-center gap-3 rounded-lg border bg-background hover:bg-muted/60 px-4 py-3 text-left transition-colors"
                       >
                         <div className="h-8 w-8 rounded-md bg-secondary flex items-center justify-center shrink-0">
@@ -2058,7 +2076,7 @@ export default function Chat() {
                         </div>
                         <div>
                           <p className="text-sm font-medium">I Want to Fill My Own Forms and Ask AI for Help Later</p>
-                          <p className="text-xs text-muted-foreground mt-0.5">Start with blank ACORD forms and get assistance on demand</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">{attachedFiles.length > 0 ? "Extract from your files, then edit forms manually" : "Start with blank ACORD forms and get assistance on demand"}</p>
                         </div>
                       </button>
                     </div>
