@@ -344,9 +344,26 @@ const AI_TO_FORM_ALIASES: Record<string, string[]> = {
   hazard_bldg_2: ["hazard_bldg_2"],
   hazard_classification_2: ["hazard_classification_2"],
   hazard_code_2: ["hazard_code_2"],
+  hazard_premium_basis_2: ["hazard_premium_basis_2"],
   hazard_exposure_2: ["hazard_exposure_2"],
+  hazard_terr_2: ["hazard_terr_2"],
   hazard_rate_premops_2: ["hazard_rate_premops_2"],
+  hazard_rate_products_2: ["hazard_rate_products_2"],
   hazard_premium_premops_2: ["hazard_premium_premops_2"],
+  hazard_premium_products_2: ["hazard_premium_products_2"],
+
+  // ── ACORD 126 Schedule of Hazards — Row 3 ──
+  hazard_loc_3: ["hazard_loc_3"],
+  hazard_bldg_3: ["hazard_bldg_3"],
+  hazard_classification_3: ["hazard_classification_3"],
+  hazard_code_3: ["hazard_code_3"],
+  hazard_premium_basis_3: ["hazard_premium_basis_3"],
+  hazard_exposure_3: ["hazard_exposure_3"],
+  hazard_terr_3: ["hazard_terr_3"],
+  hazard_rate_premops_3: ["hazard_rate_premops_3"],
+  hazard_rate_products_3: ["hazard_rate_products_3"],
+  hazard_premium_premops_3: ["hazard_premium_premops_3"],
+  hazard_premium_products_3: ["hazard_premium_products_3"],
 
   // ── ACORD 126 Premium Totals ──
   total_premium_premops: ["total_premium_premops", "premiums_prem_ops"],
