@@ -173,8 +173,17 @@ Return this exact structure:
     "chk_per_occurrence": "false",
 
     "hazard_loc_1": "", "hazard_bldg_1": "", "hazard_code_1": "", "hazard_classification_1": "",
-    "hazard_exposure_1": "", "hazard_rate_premops_1": "", "hazard_rate_products_1": "",
+    "hazard_premium_basis_1": "", "hazard_exposure_1": "", "hazard_terr_1": "",
+    "hazard_rate_premops_1": "", "hazard_rate_products_1": "",
     "hazard_premium_premops_1": "", "hazard_premium_products_1": "",
+    "hazard_loc_2": "", "hazard_bldg_2": "", "hazard_code_2": "", "hazard_classification_2": "",
+    "hazard_premium_basis_2": "", "hazard_exposure_2": "", "hazard_terr_2": "",
+    "hazard_rate_premops_2": "", "hazard_rate_products_2": "",
+    "hazard_premium_premops_2": "", "hazard_premium_products_2": "",
+    "hazard_loc_3": "", "hazard_bldg_3": "", "hazard_code_3": "", "hazard_classification_3": "",
+    "hazard_premium_basis_3": "", "hazard_exposure_3": "", "hazard_terr_3": "",
+    "hazard_rate_premops_3": "", "hazard_rate_products_3": "",
+    "hazard_premium_premops_3": "", "hazard_premium_products_3": "",
     "total_premium_premops": "", "total_premium_products": "", "premium_subtotal": "",
     "premium_tax": "", "total_premium": "",
 
@@ -210,7 +219,7 @@ EXTRACTION RULES:
   - chk_deductible_bi: "true" if bodily injury deductible applies
   - chk_per_claim: "true" if deductible applies per claim
   - chk_per_occurrence: "true" if deductible applies per occurrence
-- SCHEDULE OF HAZARDS: Extract class codes, descriptions, premium basis, exposure, rates, and premiums for each hazard/class row. Use hazard_loc_1, hazard_code_1, hazard_classification_1, hazard_exposure_1, etc.
+- SCHEDULE OF HAZARDS: Extract ALL class code rows from the document. Use hazard_loc_1/hazard_code_1/hazard_classification_1/hazard_premium_basis_1/hazard_exposure_1/hazard_terr_1/hazard_rate_premops_1/hazard_premium_premops_1 for the first row, then hazard_*_2 for the second row, hazard_*_3 for the third row. Many policies have 2-3 class codes — extract ALL of them.
 - PREMIUM TOTALS: Extract total_premium, total_premium_premops, total_premium_products if listed
 - ENDORSEMENTS: Look for "Per Project" aggregate endorsement (sets chk_limit_project) and deductible endorsements
 - vehicles[]: include ALL vehicles found — each: { year, make, model, vin, body_type, stated_amount, garaging_zip }
