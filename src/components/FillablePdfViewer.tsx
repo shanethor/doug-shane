@@ -221,6 +221,7 @@ const FillablePdfViewer = forwardRef<FillablePdfViewerHandle, FillablePdfViewerP
                   f.setText(String(value));
                   try { f.defaultUpdateAppearances(helvetica); } catch (_) {}
                   filled++;
+                  filled++;
                 } else if (typeof f.check === "function") {
                   if (value === "true" || value === "Yes" || value === "1") f.check();
                   filled++;
