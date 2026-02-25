@@ -184,6 +184,8 @@ export default function FormFillingView({ submissionId, initialMessages, initial
       const s = String(val).trim();
       // Skip N/A and other non-data placeholders — they should not go into the PDF
       if (s === "" || s === "N/A" || s === "n/a" || s === "[]") continue;
+      // Skip boolean "false" for non-checkbox keys — prevents "false" text in PDF fields
+      if (s === "false" && !internalKey.startsWith("chk_")) continue;
       let display = s;
       const isoMatch = display.match(/^(\d{4})-(\d{2})-(\d{2})$/);
       if (isoMatch) display = `${isoMatch[2]}/${isoMatch[3]}/${isoMatch[1]}`;
@@ -343,6 +345,8 @@ export default function FormFillingView({ submissionId, initialMessages, initial
           }
 
           const currentValue = String(formDataRef.current[internalKey] || "");
+          // Don't sync boolean "false" into non-checkbox form data keys
+          if (pdfValue === "false" && !internalKey.startsWith("chk_")) pdfValue = "";
           // Sync any value that differs — most recent edit wins (including clears)
           if (pdfValue !== currentValue) {
             updates[internalKey] = pdfValue;

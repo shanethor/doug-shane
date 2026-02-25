@@ -349,8 +349,10 @@ export const CURRENCY_FIELDS = new Set([
 ]);
 
 const normalizeValue = (fieldKey: string, value: any): any => {
+  // Filter out boolean false values — they leak from checkbox/flag fields
+  if (value === false) return "";
   const s = String(value ?? "");
-  if (!s) return s;
+  if (!s || s === "false") return "";
   if (DATE_FIELDS.has(fieldKey)) return parseDate(s);
   if (CURRENCY_FIELDS.has(fieldKey)) return cleanCurrency(s);
   return Array.isArray(value) ? value.join(", ") : s;
