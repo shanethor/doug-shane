@@ -586,7 +586,21 @@ export function buildAutofilledData(
     mapped.transaction_date = new Date().toISOString().slice(0, 10);
   }
 
-  // 9. No losses default
+  // 9. Normalize business_type at the autofill level too
+  if (mapped.business_type) {
+    const ENTITY_NORMALIZE: Record<string, string> = {
+      "limited liability company": "LLC", "limit liability comp": "LLC", "llc": "LLC",
+      "corporation": "Corporation", "corp": "Corporation", "corp.": "Corporation",
+      "s corporation": "S Corporation", "s corp": "S Corporation",
+      "partnership": "Partnership", "sole proprietor": "Sole Proprietor",
+      "sole proprietorship": "Sole Proprietor", "joint venture": "Joint Venture",
+      "trust": "Trust", "individual": "Individual", "not for profit": "Not For Profit",
+    };
+    const normalized = ENTITY_NORMALIZE[String(mapped.business_type).trim().toLowerCase()];
+    if (normalized) mapped.business_type = normalized;
+  }
+
+  // 10. No losses default
   if (formFieldKeys.has("no_losses") && aiData.prior_losses_last_5_years) {
     const loss = String(aiData.prior_losses_last_5_years).toLowerCase();
     if (loss === "no" || loss === "none" || loss === "n/a") {
