@@ -359,6 +359,85 @@ ${file_contents ? `\nAdditional text content:\n${file_contents}` : ""}`;
     // Also set LOB flags from detected arrays if not already set
     if (vehicles.length > 0 && fd.lob_auto !== "true") fd.lob_auto = "true";
 
+    // ── Post-processing: normalize business_type ──
+    // Common variations → standard ACORD entity types
+    const BUSINESS_TYPE_MAP: Record<string, string> = {
+      "limited liability company": "LLC",
+      "limit liability comp": "LLC",
+      "llc": "LLC",
+      "corporation": "Corporation",
+      "corp": "Corporation",
+      "s corporation": "S Corporation",
+      "s corp": "S Corporation",
+      "c corporation": "C Corporation",
+      "c corp": "C Corporation",
+      "partnership": "Partnership",
+      "sole proprietor": "Sole Proprietor",
+      "sole proprietorship": "Sole Proprietor",
+      "joint venture": "Joint Venture",
+      "trust": "Trust",
+      "not for profit": "Not For Profit",
+      "non-profit": "Not For Profit",
+      "nonprofit": "Not For Profit",
+      "individual": "Individual",
+      "subchapter s corporation": "Subchapter S Corporation",
+    };
+
+    if (fd.business_type) {
+      const btLower = String(fd.business_type).trim().toLowerCase();
+      // Check if it's a known entity type
+      if (BUSINESS_TYPE_MAP[btLower]) {
+        fd.business_type = BUSINESS_TYPE_MAP[btLower];
+      } else {
+        // If business_type looks like a business description (e.g. "63-unit Habitational"),
+        // move it to nature_of_business and clear business_type
+        const entityKeywords = ["llc", "corp", "partnership", "proprietor", "venture", "trust", "individual", "liability"];
+        const isEntityType = entityKeywords.some(kw => btLower.includes(kw));
+        if (!isEntityType && !fd.nature_of_business) {
+          fd.nature_of_business = fd.business_type;
+          fd.business_type = "";
+        }
+      }
+    }
+
+    // ── Post-processing: auto-detect occurrence vs claims-made ──
+    // If CGL is present and chk_occurrence/chk_claims_made are both false,
+    // default to occurrence (the most common form type)
+    if (fd.lob_gl === "true" || fd.lob_commercial_general_liability === "true" || fd.chk_commercial_general_liability === "true") {
+      if (fd.chk_occurrence !== "true" && fd.chk_claims_made !== "true") {
+        // Default to occurrence unless there's claims-made indicators
+        const hasClaimsMadeIndicator = fd.retroactive_date || fd.entry_date_claims_made;
+        if (hasClaimsMadeIndicator) {
+          fd.chk_claims_made = "true";
+        } else {
+          fd.chk_occurrence = "true";
+        }
+      }
+    }
+
+    // ── Post-processing: auto-set aggregate applies per ──
+    if (!fd.aggregate_applies_per && (fd.chk_limit_policy === "true" || fd.chk_limit_project === "true" || fd.chk_limit_location === "true")) {
+      if (fd.chk_limit_policy === "true") fd.aggregate_applies_per = "Policy";
+      else if (fd.chk_limit_project === "true") fd.aggregate_applies_per = "Project";
+      else if (fd.chk_limit_location === "true") fd.aggregate_applies_per = "Location";
+    }
+
+    // If no aggregate limit checkbox is set but we have GL, default to Policy
+    if (fd.lob_gl === "true" && fd.chk_limit_policy !== "true" && fd.chk_limit_project !== "true" && fd.chk_limit_location !== "true") {
+      fd.chk_limit_policy = "true";
+      if (!fd.aggregate_applies_per) fd.aggregate_applies_per = "Policy";
+    }
+
+    // ── Post-processing: infer entity type from company name if business_type empty ──
+    if (!fd.business_type && fd.applicant_name) {
+      const name = String(fd.applicant_name).trim();
+      if (/\bLLC\b/i.test(name)) fd.business_type = "LLC";
+      else if (/\bInc\.?\b/i.test(name)) fd.business_type = "Corporation";
+      else if (/\bCorp\.?\b/i.test(name)) fd.business_type = "Corporation";
+      else if (/\bLLP\b/i.test(name)) fd.business_type = "Partnership";
+      else if (/\bLP\b/i.test(name)) fd.business_type = "Partnership";
+    }
+
     extracted.form_data = fd;
 
     // Save to database if submission_id provided
