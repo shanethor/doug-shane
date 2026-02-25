@@ -211,6 +211,8 @@ export default function PdfDiagnostic() {
     allFields.forEach((f, i) => {
       if (f instanceof PDFTextField) {
         try { f.setText(`[${i}]`); } catch {}
+      } else if (f instanceof PDFCheckBox) {
+        try { f.check(); } catch {}
       }
     });
     const pdfBytes = await doc.save();
