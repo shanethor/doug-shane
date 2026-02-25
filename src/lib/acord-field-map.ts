@@ -711,15 +711,15 @@ export const ACORD_126_INDEX_MAP: AcordIndexMap = {
   chk_occurrence:                  11,   // ☐ Occurrence
   chk_owners_contractors:          12,   // ☐ Owner's & Contractor's Protective
   chk_other_coverage:              13,   // ☐ Other Coverage
-  chk_pd_deductible:               15,   // ☐ Property Damage Deductible
-  chk_bi_deductible:               17,   // ☐ Bodily Injury Deductible
+  chk_deductible_pd:               15,   // ☐ Property Damage Deductible
+  chk_deductible_bi:               17,   // ☐ Bodily Injury Deductible
   chk_other_deductible:            19,   // ☐ Other Deductible
-  chk_deductible_per_claim:        22,   // ☐ Per Claim
-  chk_deductible_per_occurrence:   23,   // ☐ Per Occurrence
-  chk_aggregate_per_policy:        25,   // ☐ Per Policy
-  chk_aggregate_per_project:       26,   // ☐ Per Project
-  chk_aggregate_per_location:      27,   // ☐ Per Location
-  chk_aggregate_other:             28,   // ☐ Other
+  chk_per_claim:                   22,   // ☐ Per Claim
+  chk_per_occurrence:              23,   // ☐ Per Occurrence
+  chk_limit_policy:                25,   // ☐ Per Policy
+  chk_limit_project:               26,   // ☐ Per Project
+  chk_limit_location:              27,   // ☐ Per Location
+  chk_limit_other:                 28,   // ☐ Other
   chk_um_available:                43,   // ☐ UM Coverage Available
   chk_um_not_available:            44,   // ☐ UM Not Available
   chk_med_pay_available:           45,   // ☐ Med Pay Available
