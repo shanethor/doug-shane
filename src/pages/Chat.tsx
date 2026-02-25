@@ -511,6 +511,37 @@ export default function Chat() {
       reader.readAsDataURL(file);
     });
 
+  /** Persist uploaded files to client_documents so they show on the Documents tab */
+  const persistFilesToDocuments = async (
+    files: File[],
+    userId: string,
+    submissionId: string,
+    leadId: string | null,
+    docType: string,
+  ) => {
+    for (const file of files) {
+      try {
+        const dataUrl = await new Promise<string>((resolve, reject) => {
+          const r = new FileReader();
+          r.onload = () => resolve(r.result as string);
+          r.onerror = reject;
+          r.readAsDataURL(file);
+        });
+        const insertData: Record<string, any> = {
+          user_id: userId,
+          file_name: file.name,
+          file_url: dataUrl,
+          document_type: docType,
+          file_size: file.size,
+          submission_id: submissionId,
+        };
+        if (leadId) insertData.lead_id = leadId;
+        await supabase.from("client_documents" as any).insert(insertData);
+      } catch (err) {
+        console.warn("Failed to persist file to client_documents:", file.name, err);
+      }
+    }
+  };
   /** Extract handwritten notes from images — uses OCR with fuzzy text matching */
   const triggerHandwrittenExtraction = async (files: File[]) => {
     if (!user || files.length === 0) return;
@@ -566,13 +597,16 @@ export default function Chat() {
       }
 
       const fd = extracted?.form_data || {};
-      await ensurePipelineLead({
+      const leadId = await ensurePipelineLead({
         userId: user.id,
         accountName: detectedCompany || companyName,
         state: fd.state || fd.mailing_state || null,
         businessType: fd.business_description || fd.sic_description || null,
         submissionId: sub.id,
       });
+
+      // Persist uploaded files to client_documents so they appear on the Documents tab
+      await persistFilesToDocuments(filesToProcess, user.id, sub.id, leadId, "other");
 
       const detectedForms = detectFormsFromLOBFlags(fd);
       setRequestedFormIds(detectedForms);
@@ -670,13 +704,16 @@ export default function Chat() {
       const fd = extracted?.form_data || {};
 
       // Auto-create pipeline lead in Quoting stage with synced data
-      await ensurePipelineLead({
+      const leadId = await ensurePipelineLead({
         userId: user.id,
         accountName: detectedCompany || companyName,
         state: fd.state || fd.mailing_state || null,
         businessType: fd.business_description || fd.sic_description || null,
         submissionId: sub.id,
       });
+
+      // Persist uploaded files to client_documents so they appear on the Documents tab
+      await persistFilesToDocuments(files, user.id, sub.id, leadId, "application");
 
       const detectedForms = detectFormsFromLOBFlags(fd);
 
