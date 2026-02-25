@@ -9,6 +9,7 @@ import { buildAutofilledData, buildAutofilledDataWithAI, formatUSD, CURRENCY_FIE
 import { FIELD_POSITION_MAP, type FieldPosition } from "@/lib/acord-field-positions";
 import { generateSubmissionPackage } from "@/lib/submission-package";
 import { FILLABLE_PDF_PATHS, ACORD_FIELD_MAPS, ACORD_INDEX_MAPS } from "@/lib/acord-field-map";
+import { getMergedIndexMap } from "@/lib/acord-pdf-fields";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -169,13 +170,15 @@ export default function FormFillingView({ submissionId, initialMessages, initial
 
   /**
    * Build prefillByIndex for the active form: maps field INDEX → formatted string value.
-   * This is passed to FillablePdfViewer which uses pdf-lib to fill before Adobe loads.
+   * Uses runtime-merged index map (PDF field names + semantic aliases) for full coverage.
    */
-  const buildPrefillByIndex = useCallback((fId: string, data: Record<string, any>): Record<number, string> => {
-    const indexMap = ACORD_INDEX_MAPS[fId];
+  const buildPrefillByIndex = useCallback(async (fId: string, data: Record<string, any>): Promise<Record<number, string>> => {
+    // Try runtime merged map first (covers ALL fields), fall back to static
+    const indexMap = await getMergedIndexMap(fId).catch(() => null) || ACORD_INDEX_MAPS[fId];
     if (!indexMap) return {};
     const result: Record<number, string> = {};
-    for (const [internalKey, idx] of Object.entries(indexMap)) {
+    for (const [internalKey, rawIdx] of Object.entries(indexMap)) {
+      const idx = rawIdx as number;
       const val = data[internalKey];
       if (val === undefined || val === null || val === "") continue;
       const s = String(val).trim();
@@ -189,11 +192,15 @@ export default function FormFillingView({ submissionId, initialMessages, initial
     return result;
   }, []);
 
-  // Compute prefill data — memoized to avoid unnecessary recalculations
   // Compute prefill data from live formData — used at viewer mount time
-  const prefillByIndex = activeFormId && activeFormId !== "all"
-    ? buildPrefillByIndex(activeFormId, formData)
-    : {};
+  const [prefillByIndex, setPrefillByIndex] = useState<Record<number, string>>({});
+  useEffect(() => {
+    if (activeFormId && activeFormId !== "all") {
+      buildPrefillByIndex(activeFormId, formData).then(setPrefillByIndex);
+    } else {
+      setPrefillByIndex({});
+    }
+  }, [activeFormId, formData, buildPrefillByIndex]);
 
   // Viewer key: only remounts on form switch, initial DB load, or debounced revision
   const prefillKey = `${activeFormId}-${dbLoaded}-${viewerRevision}`;
