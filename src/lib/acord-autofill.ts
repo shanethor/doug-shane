@@ -479,6 +479,8 @@ const enforceNumericCode = (value: string): string => {
 const normalizeValue = (fieldKey: string, value: any): any => {
   // Filter out boolean false values — they leak from checkbox/flag fields
   if (value === false) return "";
+  // Preserve boolean true for checkbox fields
+  if (value === true) return true;
   const s = String(value ?? "");
   if (!s || s === "false") return "";
   if (DATE_FIELDS.has(fieldKey)) return parseDate(s);
