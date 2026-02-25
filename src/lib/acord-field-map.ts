@@ -703,18 +703,216 @@ export const ACORD_126_INDEX_MAP: AcordIndexMap = {
   hazard_rate_products_3:    76,
   hazard_premium_premops_3:  77,
   hazard_premium_products_3: 78,
-  // hazard_classification_3: TBD — need to see rest of page 1
+  hazard_classification_3:   79,   // Classification Description Row 3
 
-  // ── Pages 2-3: TODO — run Fill All TXT diagnostic to map remaining fields ──
-  // Claims-Made, Employee Benefits Liability, Contractors, General Info,
-  // Additional Interests, Remarks, Signature sections need index verification.
-
-  // ── CHECKBOX FIELDS — indices TBD via Fill All CHK ──
-  chk_commercial_general_liability: 9,   // ☐ CGL (estimated)
+  // ── CHECKBOX FIELDS (Page 1) ──
+  chk_commercial_general_liability: 9,   // ☐ CGL
   chk_claims_made:                 10,   // ☐ Claims Made
   chk_occurrence:                  11,   // ☐ Occurrence
   chk_owners_contractors:          12,   // ☐ Owner's & Contractor's Protective
-  // Additional checkboxes at 13, 15, 17, 19, 22-23, 25-28, 43-46 need verification
+  chk_other_coverage:              13,   // ☐ Other Coverage
+  chk_pd_deductible:               15,   // ☐ Property Damage Deductible
+  chk_bi_deductible:               17,   // ☐ Bodily Injury Deductible
+  chk_other_deductible:            19,   // ☐ Other Deductible
+  chk_deductible_per_claim:        22,   // ☐ Per Claim
+  chk_deductible_per_occurrence:   23,   // ☐ Per Occurrence
+  chk_aggregate_per_policy:        25,   // ☐ Per Policy
+  chk_aggregate_per_project:       26,   // ☐ Per Project
+  chk_aggregate_per_location:      27,   // ☐ Per Location
+  chk_aggregate_other:             28,   // ☐ Other
+  chk_um_available:                43,   // ☐ UM Coverage Available
+  chk_um_not_available:            44,   // ☐ UM Not Available
+  chk_med_pay_available:           45,   // ☐ Med Pay Available
+  chk_med_pay_not_available:       46,   // ☐ Med Pay Not Available
+
+  // ── Page 2 — Claims-Made (indices 80-85) ──
+  retroactive_date:              80,   // ClaimsMade_ProposedRetroactiveDate_A
+  entry_date_claims_made:        81,   // ClaimsMade_UninterruptedCoverageEntryDate_A
+  claims_made_q1_code:           82,   // AAHCode — Any product/work/accident excluded?
+  claims_made_q1_explanation:    83,   // Explanation
+  claims_made_q2_code:           84,   // AAICode — Tail coverage purchased?
+  claims_made_q2_explanation:    85,   // Explanation
+
+  // ── Employee Benefits Liability (indices 86-89) ──
+  ebl_deductible_per_claim:      86,   // EBL Per Claim Deductible Amount
+  ebl_num_employees:             87,   // Employee Count
+  ebl_num_covered:               88,   // Employees Covered Count
+  ebl_retroactive_date:          89,   // EBL Retroactive Date
+
+  // ── Contractors Questions (indices 90-106) ──
+  contractors_q1_code:           90,   // AABCode — Draw plans for others?
+  contractors_q1_explanation:    91,   // Explanation
+  contractors_q2_code:           92,   // AAICode — Blasting/explosives?
+  contractors_q2_explanation:    93,   // Explanation
+  contractors_q3_code:           94,   // AACCode — Excavation/underground?
+  contractors_q3_explanation:    95,   // Explanation
+  contractors_q4_code:           96,   // ABBCode — Subs carry lower limits?
+  contractors_q4_explanation:    97,   // Explanation
+  contractors_q5_code:           98,   // AADCode — Subs without COI?
+  contractors_q5_explanation:    99,   // Explanation
+  contractors_q6_code:          100,   // AAECode — Lease equipment to others?
+  contractors_q6_explanation:   101,   // Explanation
+  paid_to_subcontractors:       102,   // Subcontractors Paid Amount
+  pct_work_subcontracted:       103,   // Percent Subcontracted
+  contractors_ft_employees:     104,   // Full Time Employee Count
+  contractors_pt_employees:     105,   // Part Time Employee Count
+  type_work_subcontracted:      106,   // Type of Work Subcontracted
+
+  // ── Products / Completed Operations (indices 107-146) ──
+  product_name_a:               107,   // Product Name A
+  product_gross_sales_a:        108,   // Annual Gross Sales A
+  product_units_a:              109,   // Unit Count A
+  product_months_market_a:      110,   // In Market Month Count A
+  product_expected_life_a:      111,   // Expected Life Month Count A
+  product_intended_use_a:       112,   // Intended Use A
+  product_components_a:         113,   // Principal Components A
+  product_name_b:               114,   // Product Name B
+  product_gross_sales_b:        115,   // Annual Gross Sales B
+  product_units_b:              116,   // Unit Count B
+  product_months_market_b:      117,   // In Market Month Count B
+  product_expected_life_b:      118,   // Expected Life Month Count B
+  product_intended_use_b:       119,   // Intended Use B
+  product_components_b:         120,   // Principal Components B
+  product_name_c:               121,   // Product Name C
+  product_gross_sales_c:        122,   // Annual Gross Sales C
+  product_units_c:              123,   // Unit Count C
+  product_months_market_c:      124,   // In Market Month Count C
+  product_expected_life_c:      125,   // Expected Life Month Count C
+  product_intended_use_c:       126,   // Intended Use C
+  product_components_c:         127,   // Principal Components C
+  products_q1_code:             128,   // AAJCode — Install/service products?
+  products_q1_explanation:      129,   // Explanation
+  products_q2_code:             130,   // ABACode — Distribution?
+  products_q3_code:             131,   // ABBCode — R&D new products?
+  products_q3_explanation:      132,   // Explanation
+  products_q4_code:             133,   // ABCCode — Guarantees/warranties?
+  products_q4_explanation:      134,   // Explanation
+  products_q5_code:             135,   // ABDCode — Aircraft industry?
+  products_q5_explanation:      136,   // Explanation
+  products_q6_code:             137,   // ABECode — Products recalled/discontinued?
+  products_q6_explanation:      138,   // Explanation
+  products_q7_code:             139,   // ABFCode — Others' products under applicant label?
+  products_q7_explanation:      140,   // Explanation
+  products_q8_code:             141,   // ABGCode — Products under label of others?
+  products_q8_explanation:      142,   // Explanation
+  products_q9_code:             143,   // ABHCode — Vendor coverage required?
+  products_q9_explanation:      144,   // Explanation
+  products_q10_code:            145,   // ABICode — Named insured sell to other named insured?
+  products_q10_explanation:     146,   // Explanation
+
+  // ── Additional Interest (indices 147-170) ──
+  chk_126_addl_interest_attached: 147, // ☐ Additional Interest Attached
+  chk_126_addl_insured:          148,  // ☐ Additional Insured
+  chk_126_employee_lessor:       149,  // ☐ Employee as Lessor
+  chk_126_lenders_loss_payable:  150,  // ☐ Lender's Loss Payable
+  chk_126_lienholder:            151,  // ☐ Lienholder
+  chk_126_loss_payee:            152,  // ☐ Loss Payee
+  chk_126_mortgagee:             153,  // ☐ Mortgagee
+  chk_126_interest_other:        154,  // ☐ Other
+  addl_interest_126_other_desc:  155,  // Other Description
+  addl_interest_126_rank:        156,  // Interest Rank
+  chk_126_cert_required:         157,  // ☐ Certificate Required
+  addl_interest_126_name:        158,  // Full Name
+  addl_interest_126_address:     159,  // Address Line One
+  addl_interest_126_address2:    160,  // Address Line Two
+  addl_interest_126_city:        161,  // City
+  addl_interest_126_state:       162,  // State
+  addl_interest_126_zip:         163,  // Postal Code
+  addl_interest_126_country:     164,  // Country Code
+  addl_interest_126_account:     165,  // Account Number
+  addl_interest_126_location:    166,  // Location Producer Identifier
+  addl_interest_126_building:    167,  // Building Producer Identifier
+  addl_interest_126_sched_class: 168,  // Scheduled Item Class Code
+  addl_interest_126_sched_id:    169,  // Scheduled Item Producer Identifier
+  addl_interest_126_item_desc:   170,  // Item Description
+
+  // ── General Information Questions (indices 171-247) ──
+  gi_q1_code:                   171,   // ABJCode — Medical facilities/professionals?
+  gi_q1_explanation:            172,   // Explanation
+  gi_q2_code:                   173,   // ACACode — Radioactive materials?
+  gi_q2_explanation:            174,   // Explanation
+  gi_q3_code:                   175,   // ACJCode — Hazardous material ops?
+  gi_q3_explanation:            176,   // Explanation
+  gi_q4_code:                   177,   // ACBCode — Operations sold/acquired last 5 years?
+  gi_q4_explanation:            178,   // Explanation
+  gi_q5_code:                   179,   // ACCCode — Machinery/equipment loaned/rented?
+  gi_q5_explanation:            180,   // Explanation
+  chk_equip_small_tools_a:      181,   // ☐ Small Tools A
+  chk_equip_large_a:            182,   // ☐ Large Equipment A
+  equip_instruction_a:          183,   // Equipment Instruction Given Code A
+  gi_q5_explanation_b:          184,   // Explanation B (additional equipment)
+  chk_equip_small_tools_b:      185,   // ☐ Small Tools B
+  chk_equip_large_b:            186,   // ☐ Large Equipment B
+  equip_instruction_b:          187,   // Equipment Instruction Given Code B
+  gi_q6_code:                   188,   // AAHCode — Watercraft/docks/floats?
+  gi_q6_explanation:            189,   // Explanation
+  gi_q7_code:                   190,   // ACDCode — Parking facilities?
+  gi_q7_explanation:            191,   // Explanation
+  gi_q8_code:                   192,   // KAGCode — Fee charged for parking?
+  gi_q8_explanation:            193,   // Explanation
+  gi_q9_code:                   194,   // ACECode — Recreational facilities?
+  gi_q9_explanation:            195,   // Explanation
+  gi_q10_code:                  196,   // KAACode — Apartments?
+  gi_q10_apartment_count:       197,   // Apartment Count
+  gi_q10_apartment_area:        198,   // Apartment Area
+  gi_q10_other_lodging:         199,   // Other Lodging Operations Description
+  gi_q11_code:                  200,   // KAHCode — Swimming pool?
+  chk_pool_fence:               201,   // ☐ Approved Fence
+  chk_pool_limited_access:      202,   // ☐ Limited Access
+  chk_pool_diving_board:        203,   // ☐ Diving Board
+  chk_pool_slide:               204,   // ☐ Slide
+  chk_pool_above_ground:        205,   // ☐ Above Ground
+  chk_pool_in_ground:           206,   // ☐ In Ground
+  chk_pool_lifeguard:           207,   // ☐ Life Guard
+  gi_q12_code:                  208,   // ACFCode — Sporting/social events?
+  gi_q12_explanation:           209,   // Explanation
+  gi_q13_code:                  210,   // KABCode — Athletic teams?
+  athletic_sport_a:             211,   // Sport Description A
+  athletic_contact_a:           212,   // Contact Sport Code A
+  chk_athletic_12under_a:       213,   // ☐ 12 and Under A
+  chk_athletic_13to18_a:        214,   // ☐ 13-18 A
+  chk_athletic_over18_a:        215,   // ☐ Over 18 A
+  athletic_sponsorship_a:       216,   // Sponsorship Extent A
+  athletic_sport_b:             217,   // Sport Description B
+  athletic_contact_b:           218,   // Contact Sport Code B
+  chk_athletic_12under_b:       219,   // ☐ 12 and Under B
+  chk_athletic_13to18_b:        220,   // ☐ 13-18 B
+  chk_athletic_over18_b:        221,   // ☐ Over 18 B
+  athletic_sponsorship_b:       222,   // Sponsorship Extent B
+  gi_q14_code:                  223,   // ACGCode — Structural alterations?
+  gi_q14_explanation:           224,   // Explanation
+  gi_q15_code:                  225,   // ACHCode — Demolition exposure?
+  gi_q15_explanation:           226,   // Explanation
+  gi_q16_code:                  227,   // AABCode — Active joint ventures?
+  gi_q16_explanation:           228,   // Explanation
+  gi_q17_code:                  229,   // AACCode — Uninsured subcontractors?
+  gi_q17_sub_name_a:            230,   // Subcontractor Name A
+  gi_q17_sub_wc_a:              231,   // WC Carried Code A
+  gi_q17_sub_name_b:            232,   // Subcontractor Name B
+  gi_q17_sub_wc_b:              233,   // WC Carried Code B
+  gi_q17_sub_name_c:            234,   // Subcontractor Name C
+  gi_q17_sub_wc_c:              235,   // WC Carried Code C
+  gi_q17_sub_name_d:            236,   // Subcontractor Name D
+  gi_q17_sub_wc_d:              237,   // WC Carried Code D
+  gi_q18_code:                  238,   // AADCode — Labour interchange?
+  gi_q18_explanation:           239,   // Explanation
+  gi_q19_code:                  240,   // AAECode — Day care facilities?
+  gi_q19_explanation:           241,   // Explanation
+  gi_q20_code:                  242,   // AAFCode — Crimes last 3 years?
+  gi_q20_explanation:           243,   // Explanation
+  gi_q21_code:                  244,   // AAGCode — Formal safety/security policy?
+  gi_q21_explanation:           245,   // Explanation
+  gi_q22_code:                  246,   // AAGCode — Business/promotional literature?
+  gi_q22_explanation:           247,   // Explanation
+
+  // ── Remarks & Signature (indices 248-254) ──
+  remarks_126:                  248,   // RemarkText_B
+  producer_126_signature:       249,   // Producer Signature
+  producer_126_name:            250,   // Producer Full Name
+  producer_126_license:         251,   // State License Identifier
+  insured_126_signature:        252,   // Named Insured Signature
+  signature_126_date:           253,   // Signature Date
+  national_producer_126:        254,   // National Producer Identifier
 };
 
 // ── ACORD 127 — Business Auto Section — 472 TXT fields ──
@@ -2246,33 +2444,376 @@ export const ACORD_125_INDEX_MAP: AcordIndexMap = {
   total_building_sq_ft: 240,   // Construction_BuildingArea_A
   premises_description: 241,   // BuildingOccupancy_OperationsDescription_A
 
-  // Nature of Business
-  date_business_started: 327,  // NamedInsured_BusinessStartDate_A
-  description_of_operations: 328, // CommercialPolicy_OperationsDescription_A
+  // ── Premises B (indices 243-266) ──
+  premises_loc_number_b:  243,   // CommercialStructure_Location_ProducerIdentifier_B
+  premises_bldg_number_b: 244,   // CommercialStructure_Building_ProducerIdentifier_B
+  premises_address_b:     245,   // CommercialStructure_PhysicalAddress_LineOne_B
+  premises_address2_b:    246,   // CommercialStructure_PhysicalAddress_LineTwo_B
+  premises_city_b:        247,   // CommercialStructure_PhysicalAddress_CityName_B
+  premises_county_b:      248,   // CommercialStructure_PhysicalAddress_CountyName_B
+  premises_state_b:       249,   // CommercialStructure_PhysicalAddress_StateOrProvinceCode_B
+  premises_zip_b:         250,   // CommercialStructure_PhysicalAddress_PostalCode_B
+  chk_inside_city_b:      251,   // ☐ Inside City Limits B
+  chk_outside_city_b:     252,   // ☐ Outside City Limits B
+  chk_city_other_b:       253,   // ☐ Other B
+  city_other_desc_b:      254,   // Other Description B
+  chk_owner_b:            255,   // ☐ Owner B
+  chk_tenant_b:           256,   // ☐ Tenant B
+  chk_interest_other_b:   257,   // ☐ Other Interest B
+  interest_other_desc_b:  258,   // Other Interest Description B
+  full_time_employees_b:  259,   // BusinessInformation_FullTimeEmployeeCount_B
+  part_time_employees_b:  260,   // BusinessInformation_PartTimeEmployeeCount_B
+  annual_revenues_b:      261,   // CommercialStructure_AnnualRevenueAmount_B
+  occupied_sq_ft_b:       262,   // BuildingOccupancy_OccupiedArea_B
+  open_to_public_area_b:  263,   // BuildingOccupancy_OpenToPublicArea_B
+  total_building_sq_ft_b: 264,   // Construction_BuildingArea_B
+  premises_description_b: 265,   // BuildingOccupancy_OperationsDescription_B
+  abb_code_b:             266,   // CommercialStructure_Question_ABBCode_B
 
-  // ── Page 3 (P3) — General Info / Remarks / Prior Coverage ──
+  // ── Premises C (indices 267-290) ──
+  premises_loc_number_c:  267,   // CommercialStructure_Location_ProducerIdentifier_C
+  premises_bldg_number_c: 268,   // CommercialStructure_Building_ProducerIdentifier_C
+  premises_address_c:     269,   // CommercialStructure_PhysicalAddress_LineOne_C
+  premises_address2_c:    270,   // CommercialStructure_PhysicalAddress_LineTwo_C
+  premises_city_c:        271,   // CommercialStructure_PhysicalAddress_CityName_C
+  premises_county_c:      272,   // CommercialStructure_PhysicalAddress_CountyName_C
+  premises_state_c:       273,   // CommercialStructure_PhysicalAddress_StateOrProvinceCode_C
+  premises_zip_c:         274,   // CommercialStructure_PhysicalAddress_PostalCode_C
+  chk_inside_city_c:      275,   // ☐ Inside City Limits C
+  chk_outside_city_c:     276,   // ☐ Outside City Limits C
+  chk_city_other_c:       277,   // ☐ Other C
+  city_other_desc_c:      278,   // Other Description C
+  chk_owner_c:            279,   // ☐ Owner C
+  chk_tenant_c:           280,   // ☐ Tenant C
+  chk_interest_other_c:   281,   // ☐ Other Interest C
+  interest_other_desc_c:  282,   // Other Interest Description C
+  full_time_employees_c:  283,   // BusinessInformation_FullTimeEmployeeCount_C
+  part_time_employees_c:  284,   // BusinessInformation_PartTimeEmployeeCount_C
+  annual_revenues_c:      285,   // CommercialStructure_AnnualRevenueAmount_C
+  occupied_sq_ft_c:       286,   // BuildingOccupancy_OccupiedArea_C
+  open_to_public_area_c:  287,   // BuildingOccupancy_OpenToPublicArea_C
+  total_building_sq_ft_c: 288,   // Construction_BuildingArea_C
+  premises_description_c: 289,   // BuildingOccupancy_OperationsDescription_C
+  abb_code_c:             290,   // CommercialStructure_Question_ABBCode_C
+
+  // ── Premises D (indices 291-314) ──
+  premises_loc_number_d:  291,   // CommercialStructure_Location_ProducerIdentifier_D
+  premises_bldg_number_d: 292,   // CommercialStructure_Building_ProducerIdentifier_D
+  premises_address_d:     293,   // CommercialStructure_PhysicalAddress_LineOne_D
+  premises_address2_d:    294,   // CommercialStructure_PhysicalAddress_LineTwo_D
+  premises_city_d:        295,   // CommercialStructure_PhysicalAddress_CityName_D
+  premises_county_d:      296,   // CommercialStructure_PhysicalAddress_CountyName_D
+  premises_state_d:       297,   // CommercialStructure_PhysicalAddress_StateOrProvinceCode_D
+  premises_zip_d:         298,   // CommercialStructure_PhysicalAddress_PostalCode_D
+  chk_inside_city_d:      299,   // ☐ Inside City Limits D
+  chk_outside_city_d:     300,   // ☐ Outside City Limits D
+  chk_city_other_d:       301,   // ☐ Other D
+  city_other_desc_d:      302,   // Other Description D
+  chk_owner_d:            303,   // ☐ Owner D
+  chk_tenant_d:           304,   // ☐ Tenant D
+  chk_interest_other_d:   305,   // ☐ Other Interest D
+  interest_other_desc_d:  306,   // Other Interest Description D
+  full_time_employees_d:  307,   // BusinessInformation_FullTimeEmployeeCount_D
+  part_time_employees_d:  308,   // BusinessInformation_PartTimeEmployeeCount_D
+  annual_revenues_d:      309,   // CommercialStructure_AnnualRevenueAmount_D
+  occupied_sq_ft_d:       310,   // BuildingOccupancy_OccupiedArea_D
+  open_to_public_area_d:  311,   // BuildingOccupancy_OpenToPublicArea_D
+  total_building_sq_ft_d: 312,   // Construction_BuildingArea_D
+  premises_description_d: 313,   // BuildingOccupancy_OperationsDescription_D
+  abb_code_d:             314,   // CommercialStructure_Question_ABBCode_D
+
+  // ── Business Type Checkboxes (indices 315-326) ──
+  chk_biz_apartments:     315,   // ☐ Apartments
+  chk_biz_condominiums:   316,   // ☐ Condominiums
+  chk_biz_contractor:     317,   // ☐ Contractor
+  chk_biz_institutional:  318,   // ☐ Institutional
+  chk_biz_manufacturing:  319,   // ☐ Manufacturing
+  chk_biz_office:         320,   // ☐ Office
+  chk_biz_restaurant:     321,   // ☐ Restaurant
+  chk_biz_retail:         322,   // ☐ Retail
+  chk_biz_service:        323,   // ☐ Service
+  chk_biz_wholesale:      324,   // ☐ Wholesale
+  chk_biz_other:          325,   // ☐ Other
+  biz_other_description:  326,   // Other Business Type Description
+
+  // Nature of Business
+  date_business_started:  327,   // NamedInsured_BusinessStartDate_A
+  description_of_operations: 328, // CommercialPolicy_OperationsDescription_A
+  install_repair_work_pct: 329,  // InstallationRepairWorkPercent_A
+  install_repair_offprem_pct: 330, // InstallationRepairWorkOffPremisesPercent_A
+  operations_description_b: 331, // CommercialPolicy_OperationsDescription_B
+
+  // ── Additional Interest A (indices 332-372) ──
+  chk_addl_insured:       332,   // ☐ Additional Insured
+  chk_breach_warranty:    333,   // ☐ Breach of Warranty
+  chk_co_owner:           334,   // ☐ Co-Owner
+  chk_employee_lessor:    335,   // ☐ Employee as Lessor
+  chk_leaseback_owner:    336,   // ☐ Leaseback Owner
+  chk_lenders_loss_payable: 337, // ☐ Lender's Loss Payable
+  chk_lienholder:         338,   // ☐ Lienholder
+  chk_loss_payee:         339,   // ☐ Loss Payee
+  chk_mortgagee:          340,   // ☐ Mortgagee
+  chk_owner_interest:     341,   // ☐ Owner
+  chk_registrant:         342,   // ☐ Registrant
+  chk_trustee:            343,   // ☐ Trustee
+  chk_addl_interest_other: 344,  // ☐ Other Interest
+  addl_interest_other_desc: 345, // Other Interest Description
+  addl_interest_reason:   346,   // Interest Reason Description
+  addl_interest_rank:     347,   // Interest Rank
+  chk_cert_required:      348,   // ☐ Certificate Required
+  chk_policy_required:    349,   // ☐ Policy Required
+  chk_send_bill:          350,   // ☐ Send Bill
+  addl_interest_name:     351,   // Additional Interest Full Name
+  addl_interest_address:  352,   // Mailing Address Line One
+  addl_interest_address2: 353,   // Mailing Address Line Two
+  addl_interest_city:     354,   // City
+  addl_interest_state:    355,   // State
+  addl_interest_zip:      356,   // Postal Code
+  addl_interest_country:  357,   // Country Code
+  addl_interest_account:  358,   // Account Number
+  addl_interest_end_date: 359,   // Interest End Date
+  addl_interest_loan_amt: 360,   // Loan Amount
+  addl_interest_phone:    361,   // Phone Number
+  addl_interest_fax:      362,   // Fax Number
+  addl_interest_email:    363,   // Email Address
+  addl_interest_location: 364,   // Location Producer Identifier
+  addl_interest_building: 365,   // Building Producer Identifier
+  addl_interest_vehicle:  366,   // Vehicle Producer Identifier
+  addl_interest_boat:     367,   // Boat Producer Identifier
+  addl_interest_airport:  368,   // Airport Identifier
+  addl_interest_aircraft: 369,   // Aircraft Producer Identifier
+  addl_interest_sched_class: 370, // Scheduled Item Class Code
+  addl_interest_sched_id: 371,   // Scheduled Item Producer Identifier
+  addl_interest_item_desc: 372,  // Item Description
+
+  // ── Page 3 (P3) — General Information Questions ──
+  p3_agency_customer_id:  373,   // Producer_CustomerIdentifier (page 3)
+
+  // Q1: Subsidiary of another entity?
+  q1a_code:               374,   // AAICode — Y/N code
+  q1a_parent_name:        375,   // Parent Organization Name
+  q1a_relationship:       376,   // Parent/Subsidiary Relationship Description
+  q1a_ownership_pct:      377,   // Parent Ownership Percent
+  q1b_code:               378,   // AAJCode — Has subsidiaries?
+  q1b_subsidiary_name:    379,   // Subsidiary Organization Name
+  q1b_relationship:       380,   // Subsidiary Relationship Description
+  q1b_ownership_pct:      381,   // Subsidiary Ownership Percent
+
+  // Q2: Formal safety program?
+  q2_code:                382,   // KAACode — Y/N code
+  chk_safety_manual:      383,   // ☐ Safety Manual
+  chk_safety_position:    384,   // ☐ Safety Position
+  chk_monthly_meetings:   385,   // ☐ Monthly Meetings
+  chk_osha:               386,   // ☐ OSHA
+  chk_safety_other:       387,   // ☐ Other
+  safety_other_desc:      388,   // Safety Other Description
+
+  // Q3: Exposure to flammables/explosives/chemicals?
+  q3_code:                389,   // ABCCode — Y/N code
+  q3_explanation:         390,   // Explanation
+
+  // Q4: Other insurance with same company?
+  q4_code:                391,   // AAHCode — Y/N code
+  q4_lob_a:               392,   // Line of Business A
+  q4_policy_a:            393,   // Policy Number A
+  q4_lob_b:               394,   // Line of Business B
+  q4_policy_b:            395,   // Policy Number B
+  q4_lob_c:               396,   // Line of Business C
+  q4_policy_c:            397,   // Policy Number C
+  q4_lob_d:               398,   // Line of Business D
+  q4_policy_d:            399,   // Policy Number D
+
+  // Q5: Policy declined/cancelled/non-renewed?
+  q5_code:                400,   // AACCode — Y/N code
+  chk_cancel_nonpayment:  401,   // ☐ Non-Payment
+  chk_cancel_nonrenewal:  402,   // ☐ Non-Renewal
+  chk_cancel_agent_left:  403,   // ☐ Agent No Longer Writes
+  chk_cancel_underwriting: 404,  // ☐ Underwriting
+  chk_cancel_uw_corrected: 405,  // ☐ Underwriting Condition Corrected
+  cancel_uw_corrected_desc: 406, // Correction Description
+  chk_cancel_other:       407,   // ☐ Other
+  cancel_other_desc:      408,   // Other Description
+
+  // Q6: Past losses/claims relating to sexual abuse/discrimination?
+  q6_code:                409,   // AADCode — Y/N code
+  q6_explanation:         410,   // Explanation
+
+  // Q7: Fraud/bribery/arson conviction?
+  q7_code:                411,   // KABCode — Y/N code
+  q7_explanation:         412,   // Explanation
+
+  // Q8: Fire code violations?
+  q8_code:                413,   // AAFCode — Y/N code
+  q8_occurrence_date_a:   414,   // Occurrence Date A
+  q8_explanation_a:       415,   // Explanation A
+  q8_resolution_desc_a:   416,   // Resolution Description A
+  q8_resolution_date_a:   417,   // Resolution Date A
+  q8_occurrence_date_b:   418,   // Occurrence Date B
+  q8_explanation_b:       419,   // Explanation B
+  q8_resolution_desc_b:   420,   // Resolution Description B
+  q8_resolution_date_b:   421,   // Resolution Date B
+
+  // Q9: Bankruptcy/foreclosure/repossession?
+  q9_code:                422,   // KAKCode — Y/N code
+  q9_occurrence_date_a:   423,   // Occurrence Date A
+  q9_explanation_a:       424,   // Explanation A
+  q9_resolution_desc_a:   425,   // Resolution Description A
+  q9_resolution_date_a:   426,   // Resolution Date A
+  q9_occurrence_date_b:   427,   // Occurrence Date B
+  q9_explanation_b:       428,   // Explanation B
+  q9_resolution_desc_b:   429,   // Resolution Description B
+  q9_resolution_date_b:   430,   // Resolution Date B
+
+  // Q10: Judgement or lien?
+  q10_code:               431,   // KALCode — Y/N code
+  q10_occurrence_date_a:  432,   // Occurrence Date A
+  q10_explanation_a:      433,   // Explanation A
+  q10_resolution_desc_a:  434,   // Resolution Description A
+  q10_resolution_date_a:  435,   // Resolution Date A
+  q10_occurrence_date_b:  436,   // Occurrence Date B
+  q10_explanation_b:      437,   // Explanation B
+  q10_resolution_desc_b:  438,   // Resolution Description B
+  q10_resolution_date_b:  439,   // Resolution Date B
+
+  // Q11: Business held in trust?
+  q11_code:               440,   // ABBCode — Y/N code
+  q11_trust_name:         441,   // Trust Name
+
+  // Q12: Foreign operations?
+  q12_code:               442,   // KACCode — Y/N code
+
+  // Q13: Other business ventures?
+  q13_code:               443,   // KAMCode — Y/N code
+  q13_explanation:        444,   // Explanation
+
+  // Q14: Operates drones?
+  q14_code:               445,   // KANCode — Y/N code
+  q14_explanation:        446,   // Explanation
+
+  // Q15: Hires drone operators?
+  q15_code:               447,   // KAOCode — Y/N code
+  q15_explanation:        448,   // Explanation
 
   // Remarks
-  remarks:              449,   // CommercialPolicy_RemarkText_A
+  remarks:                449,   // CommercialPolicy_RemarkText_A
 
-  // Prior Coverage — Year 1
-  prior_year_1:         450,   // PriorCoverage_PolicyYear_A
-  prior_carrier_1:      451,   // PriorCoverage_GeneralLiability_InsurerFullName_A
-  prior_policy_number_1: 452,  // PriorCoverage_GeneralLiability_PolicyNumberIdentifier_A
-  prior_gl_premium_1:   453,   // PriorCoverage_GeneralLiability_TotalPremiumAmount_A
-  prior_eff_date_1:     454,   // PriorCoverage_GeneralLiability_EffectiveDate_A
-  prior_exp_date_1:     455,   // PriorCoverage_GeneralLiability_ExpirationDate_A
+  // ── Prior Coverage — Year 1 (GL / Auto / Property / Other) ──
+  prior_year_1:           450,   // PriorCoverage_PolicyYear_A
+  prior_carrier_1:        451,   // PriorCoverage_GeneralLiability_InsurerFullName_A
+  prior_policy_number_1:  452,   // PriorCoverage_GeneralLiability_PolicyNumberIdentifier_A
+  prior_gl_premium_1:     453,   // PriorCoverage_GeneralLiability_TotalPremiumAmount_A
+  prior_eff_date_1:       454,   // PriorCoverage_GeneralLiability_EffectiveDate_A
+  prior_exp_date_1:       455,   // PriorCoverage_GeneralLiability_ExpirationDate_A
+  prior_auto_carrier_1:   456,   // PriorCoverage_Automobile_InsurerFullName_A
+  prior_auto_policy_1:    457,   // PriorCoverage_Automobile_PolicyNumberIdentifier_A
+  prior_auto_premium_1:   458,   // PriorCoverage_Automobile_TotalPremiumAmount_A
+  prior_auto_eff_1:       459,   // PriorCoverage_Automobile_EffectiveDate_A
+  prior_auto_exp_1:       460,   // PriorCoverage_Automobile_ExpirationDate_A
+  prior_prop_carrier_1:   461,   // PriorCoverage_Property_InsurerFullName_A
+  prior_prop_policy_1:    462,   // PriorCoverage_Property_PolicyNumberIdentifier_A
+  prior_prop_premium_1:   463,   // PriorCoverage_Property_TotalPremiumAmount_A
+  prior_prop_eff_1:       464,   // PriorCoverage_Property_EffectiveDate_A
+  prior_prop_exp_1:       465,   // PriorCoverage_Property_ExpirationDate_A
+  prior_other_lob_1:      466,   // PriorCoverage_OtherLine_LineOfBusinessCode_A
+  prior_other_carrier_1:  467,   // PriorCoverage_OtherLine_InsurerFullName_A
+  prior_other_policy_1:   468,   // PriorCoverage_OtherLine_PolicyNumberIdentifier_A
+  prior_other_premium_1:  469,   // PriorCoverage_OtherLine_TotalPremiumAmount_A
+  prior_other_eff_1:      470,   // PriorCoverage_OtherLine_EffectiveDate_A
+  prior_other_exp_1:      471,   // PriorCoverage_OtherLine_ExpirationDate_A
 
-  // ── Page 4 (P4) — Loss History / Signature ──
+  // ── Page 4 (P4) — Prior Coverage Years 2 & 3 ──
+  p4_agency_customer_id:  472,   // Producer_CustomerIdentifier (page 4)
 
-  // Loss History
-  loss_history_years:   517,   // LossHistory_InformationYearCount_A
-  total_losses:         518,   // LossHistory_TotalAmount_A
+  // Prior Coverage — Year 2
+  prior_year_2:           473,   // PriorCoverage_PolicyYear_B
+  prior_carrier_2:        474,   // PriorCoverage_GeneralLiability_InsurerFullName_B
+  prior_policy_number_2:  475,   // PriorCoverage_GeneralLiability_PolicyNumberIdentifier_B
+  prior_gl_premium_2:     476,   // PriorCoverage_GeneralLiability_TotalPremiumAmount_B
+  prior_eff_date_2:       477,   // PriorCoverage_GeneralLiability_EffectiveDate_B
+  prior_exp_date_2:       478,   // PriorCoverage_GeneralLiability_ExpirationDate_B
+  prior_auto_carrier_2:   479,   // PriorCoverage_Automobile_InsurerFullName_B
+  prior_auto_policy_2:    480,   // PriorCoverage_Automobile_PolicyNumberIdentifier_B
+  prior_auto_premium_2:   481,   // PriorCoverage_Automobile_TotalPremiumAmount_B
+  prior_auto_eff_2:       482,   // PriorCoverage_Automobile_EffectiveDate_B
+  prior_auto_exp_2:       483,   // PriorCoverage_Automobile_ExpirationDate_B
+  prior_prop_carrier_2:   484,   // PriorCoverage_Property_InsurerFullName_B
+  prior_prop_policy_2:    485,   // PriorCoverage_Property_PolicyNumberIdentifier_B
+  prior_prop_premium_2:   486,   // PriorCoverage_Property_TotalPremiumAmount_B
+  prior_prop_eff_2:       487,   // PriorCoverage_Property_EffectiveDate_B
+  prior_prop_exp_2:       488,   // PriorCoverage_Property_ExpirationDate_B
+  prior_other_lob_2:      489,   // PriorCoverage_OtherLine_LineOfBusinessCode (page 4)
+  prior_other_carrier_2:  490,   // PriorCoverage_OtherLine_InsurerFullName_B
+  prior_other_policy_2:   491,   // PriorCoverage_OtherLine_PolicyNumberIdentifier_B
+  prior_other_premium_2:  492,   // PriorCoverage_OtherLine_TotalPremiumAmount_B
+  prior_other_eff_2:      493,   // PriorCoverage_OtherLine_EffectiveDate_B
+  prior_other_exp_2:      494,   // PriorCoverage_OtherLine_ExpirationDate_B
 
-  // Signature
-  producer_name:        546,   // Producer_AuthorizedRepresentative_FullName_A
-  producer_license_no:  547,   // Producer_StateLicenseIdentifier_A
-  signature_date:       549,   // NamedInsured_SignatureDate_A
+  // Prior Coverage — Year 3
+  prior_year_3:           495,   // PriorCoverage_PolicyYear_C
+  prior_carrier_3:        496,   // PriorCoverage_GeneralLiability_InsurerFullName_C
+  prior_policy_number_3:  497,   // PriorCoverage_GeneralLiability_PolicyNumberIdentifier_C
+  prior_gl_premium_3:     498,   // PriorCoverage_GeneralLiability_TotalPremiumAmount_C
+  prior_eff_date_3:       499,   // PriorCoverage_GeneralLiability_EffectiveDate_C
+  prior_exp_date_3:       500,   // PriorCoverage_GeneralLiability_ExpirationDate_C
+  prior_auto_carrier_3:   501,   // PriorCoverage_Automobile_InsurerFullName_C
+  prior_auto_policy_3:    502,   // PriorCoverage_Automobile_PolicyNumberIdentifier_C
+  prior_auto_premium_3:   503,   // PriorCoverage_Automobile_TotalPremiumAmount_C
+  prior_auto_eff_3:       504,   // PriorCoverage_Automobile_EffectiveDate_C
+  prior_auto_exp_3:       505,   // PriorCoverage_Automobile_ExpirationDate_C
+  prior_prop_carrier_3:   506,   // PriorCoverage_Property_InsurerFullName_C
+  prior_prop_policy_3:    507,   // PriorCoverage_Property_PolicyNumberIdentifier_C
+  prior_prop_premium_3:   508,   // PriorCoverage_Property_TotalPremiumAmount_C
+  prior_prop_eff_3:       509,   // PriorCoverage_Property_EffectiveDate_C
+  prior_prop_exp_3:       510,   // PriorCoverage_Property_ExpirationDate_C
+  prior_other_carrier_3:  511,   // PriorCoverage_OtherLine_InsurerFullName_C
+  prior_other_policy_3:   512,   // PriorCoverage_OtherLine_PolicyNumberIdentifier_C
+  prior_other_premium_3:  513,   // PriorCoverage_OtherLine_TotalPremiumAmount_C
+  prior_other_eff_3:      514,   // PriorCoverage_OtherLine_EffectiveDate_C
+  prior_other_exp_3:      515,   // PriorCoverage_OtherLine_ExpirationDate_C
+
+  // ── Loss History ──
+  chk_no_prior_losses:    516,   // ☐ No Prior Losses
+  loss_history_years:     517,   // LossHistory_InformationYearCount_A
+  total_losses:           518,   // LossHistory_TotalAmount_A
+
+  // Loss Row A
+  loss_date_a:            519,   // LossHistory_OccurrenceDate_A
+  loss_lob_a:             520,   // LossHistory_LineOfBusiness_A
+  loss_description_a:     521,   // LossHistory_OccurrenceDescription_A
+  loss_claim_date_a:      522,   // LossHistory_ClaimDate_A
+  loss_paid_a:            523,   // LossHistory_PaidAmount_A
+  loss_reserved_a:        524,   // LossHistory_ReservedAmount_A
+  loss_subrogation_a:     525,   // LossHistory_ClaimStatus_SubrogationCode_A
+  loss_open_a:            526,   // LossHistory_ClaimStatus_OpenCode_A
+
+  // Loss Row B
+  loss_date_b:            527,   // LossHistory_OccurrenceDate_B
+  loss_lob_b:             528,   // LossHistory_LineOfBusiness_B
+  loss_description_b:     529,   // LossHistory_OccurrenceDescription_B
+  loss_claim_date_b:      530,   // LossHistory_ClaimDate_B
+  loss_paid_b:            531,   // LossHistory_PaidAmount_B
+  loss_reserved_b:        532,   // LossHistory_ReservedAmount_B
+  loss_subrogation_b:     533,   // LossHistory_ClaimStatus_SubrogationCode_B
+  loss_open_b:            534,   // LossHistory_ClaimStatus_OpenCode_B
+
+  // Loss Row C
+  loss_date_c:            535,   // LossHistory_OccurrenceDate_C
+  loss_lob_c:             536,   // LossHistory_LineOfBusiness_C
+  loss_description_c:     537,   // LossHistory_OccurrenceDescription_C
+  loss_claim_date_c:      538,   // LossHistory_ClaimDate_C
+  loss_paid_c:            539,   // LossHistory_PaidAmount_C
+  loss_reserved_c:        540,   // LossHistory_ReservedAmount_C
+  loss_subrogation_c:     541,   // LossHistory_ClaimStatus_SubrogationCode_C
+  loss_open_c:            542,   // LossHistory_ClaimStatus_OpenCode_C
+
+  // ── Signature Block ──
+  chk_info_practices_notice: 543, // ☐ Information Practices Notice
+  insured_initials:       544,   // NamedInsured_Initials_A
+  producer_signature:     545,   // Producer_AuthorizedRepresentative_Signature_A
+  producer_name:          546,   // Producer_AuthorizedRepresentative_FullName_A
+  producer_license_no:    547,   // Producer_StateLicenseIdentifier_A
+  insured_signature:      548,   // NamedInsured_Signature_A
+  signature_date:         549,   // NamedInsured_SignatureDate_A
   national_producer_number: 550, // Producer_NationalIdentifier_A
 };
 
