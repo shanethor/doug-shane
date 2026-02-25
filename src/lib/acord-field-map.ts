@@ -656,92 +656,101 @@ export const ACORD_126_INDEX_MAP: AcordIndexMap = {
   other_coverage_3:          35,   // P1.Text22 — Other Coverage/Endorsement 3
 
   // Schedule of Hazards — Row 1
+  // Column order on PDF (L→R): LOC | HAZ# | CLASSIFICATION | CLASS CODE | PREMIUM BASIS/EXPOSURE | TERR(n/a) | RATE PO | RATE PROD | PREM PO | PREM PROD
   hazard_loc_1:              36,   // P1.Text23 — Loc #
-  hazard_bldg_1:             37,   // P1.Text24 — Bldg #
-  hazard_code_1:             38,   // P1.Text25 — Class Code
-  hazard_classification_1:   39,   // P1.Text26 — Classification Description
-  hazard_exposure_1:         40,   // P1.Text27 — Premium Basis / Exposure
+  hazard_bldg_1:             37,   // P1.Text24 — Haz / Bldg #
+  hazard_classification_1:   38,   // P1.Text25 — Classification (3rd col)
+  hazard_code_1:             39,   // P1.Text26 — Class Code (4th col)
+  hazard_premium_basis_1:    40,   // P1.Text27 — Premium Basis / Exposure
+  hazard_exposure_1:         40,   // Alias — kept for backward compat
   hazard_rate_premops_1:     41,   // P1.Text28 — Rate PremOps
   hazard_rate_products_1:    42,   // P1.Text29 — Rate Products
   hazard_premium_premops_1:  43,   // P1.Text30 — Premium PremOps
   hazard_premium_products_1: 44,   // P1.Text31 — Premium Products
 
   // Schedule of Hazards — Row 2
-  hazard_loc_2:              45,   // P1.Text32
-  hazard_bldg_2:             46,   // P1.Text33
-  hazard_code_2:             47,   // P1.Text34
-  hazard_classification_2:   48,   // P1.Text35
-  hazard_exposure_2:         49,   // P1.Text36
-  hazard_rate_premops_2:     50,   // P1.Text37
-  hazard_rate_products_2:    51,   // P1.Text38
-  hazard_premium_premops_2:  52,   // P1.Text39
-  hazard_premium_products_2: 53,   // P1.Text40
+  hazard_loc_2:              45,
+  hazard_bldg_2:             46,
+  hazard_classification_2:   47,
+  hazard_code_2:             48,
+  hazard_premium_basis_2:    49,
+  hazard_exposure_2:         49,
+  hazard_rate_premops_2:     50,
+  hazard_rate_products_2:    51,
+  hazard_premium_premops_2:  52,
+  hazard_premium_products_2: 53,
 
   // Schedule of Hazards — Row 3
-  hazard_loc_3:              54,   // P1.Text41
-  hazard_bldg_3:             55,   // P1.Text42
-  hazard_code_3:             56,   // P1.Text43
-  hazard_classification_3:   57,   // P1.Text44
-  hazard_exposure_3:         58,   // P1.Text45
-  hazard_rate_premops_3:     59,   // P1.Text46
-  hazard_rate_products_3:    60,   // P1.Text47
-  hazard_premium_premops_3:  61,   // P1.Text48
-  hazard_premium_products_3: 62,   // P1.Text49
+  hazard_loc_3:              54,
+  hazard_bldg_3:             55,
+  hazard_classification_3:   56,
+  hazard_code_3:             57,
+  hazard_premium_basis_3:    58,
+  hazard_exposure_3:         58,
+  hazard_rate_premops_3:     59,
+  hazard_rate_products_3:    60,
+  hazard_premium_premops_3:  61,
+  hazard_premium_products_3: 62,
 
   // Schedule of Hazards — Row 4
-  hazard_loc_4:              63,   // P1.Text50
-  hazard_bldg_4:             64,   // P1.Text51
-  hazard_code_4:             65,   // P1.Text52
-  hazard_classification_4:   66,   // P1.Text53
-  hazard_exposure_4:         67,   // P1.Text54
-  hazard_rate_premops_4:     68,   // P1.Text55
-  hazard_rate_products_4:    69,   // P1.Text56
-  hazard_premium_premops_4:  70,   // P1.Text57
-  hazard_premium_products_4: 71,   // P1.Text58
+  hazard_loc_4:              63,
+  hazard_bldg_4:             64,
+  hazard_classification_4:   65,
+  hazard_code_4:             66,
+  hazard_premium_basis_4:    67,
+  hazard_exposure_4:         67,
+  hazard_rate_premops_4:     68,
+  hazard_rate_products_4:    69,
+  hazard_premium_premops_4:  70,
+  hazard_premium_products_4: 71,
 
   // Schedule of Hazards — Row 5
-  hazard_loc_5:              72,   // P1.Text59
-  hazard_bldg_5:             73,   // P1.Text60
-  hazard_code_5:             74,   // P1.Text61
-  hazard_classification_5:   75,   // P1.Text62
-  hazard_exposure_5:         76,   // P1.Text63
-  hazard_rate_premops_5:     77,   // P1.Text64
-  hazard_rate_products_5:    78,   // P1.Text65
-  hazard_premium_premops_5:  79,   // P1.Text66
-  hazard_premium_products_5: 80,   // P1.Text67
+  hazard_loc_5:              72,
+  hazard_bldg_5:             73,
+  hazard_classification_5:   74,
+  hazard_code_5:             75,
+  hazard_premium_basis_5:    76,
+  hazard_exposure_5:         76,
+  hazard_rate_premops_5:     77,
+  hazard_rate_products_5:    78,
+  hazard_premium_premops_5:  79,
+  hazard_premium_products_5: 80,
 
   // Schedule of Hazards — Row 6
-  hazard_loc_6:              81,   // P1.Text68
-  hazard_bldg_6:             82,   // P1.Text69
-  hazard_code_6:             83,   // P1.Text70
-  hazard_classification_6:   84,   // P1.Text71
-  hazard_exposure_6:         85,   // P1.Text72
-  hazard_rate_premops_6:     86,   // P1.Text73
-  hazard_rate_products_6:    87,   // P1.Text74
-  hazard_premium_premops_6:  88,   // P1.Text75
-  hazard_premium_products_6: 89,   // P1.Text76
+  hazard_loc_6:              81,
+  hazard_bldg_6:             82,
+  hazard_classification_6:   83,
+  hazard_code_6:             84,
+  hazard_premium_basis_6:    85,
+  hazard_exposure_6:         85,
+  hazard_rate_premops_6:     86,
+  hazard_rate_products_6:    87,
+  hazard_premium_premops_6:  88,
+  hazard_premium_products_6: 89,
 
   // Schedule of Hazards — Row 7
-  hazard_loc_7:              90,   // P1.Text77
-  hazard_bldg_7:             91,   // P1.Text78
-  hazard_code_7:             92,   // P1.Text79
-  hazard_classification_7:   93,   // P1.Text80
-  hazard_exposure_7:         94,   // P1.Text81
-  hazard_rate_premops_7:     95,   // P1.Text82
-  hazard_rate_products_7:    96,   // P1.Text83
-  hazard_premium_premops_7:  97,   // P1.Text84
-  hazard_premium_products_7: 98,   // P1.Text85
+  hazard_loc_7:              90,
+  hazard_bldg_7:             91,
+  hazard_classification_7:   92,
+  hazard_code_7:             93,
+  hazard_premium_basis_7:    94,
+  hazard_exposure_7:         94,
+  hazard_rate_premops_7:     95,
+  hazard_rate_products_7:    96,
+  hazard_premium_premops_7:  97,
+  hazard_premium_products_7: 98,
 
   // Schedule of Hazards — Row 8
-  hazard_loc_8:              99,   // P1.Text86
-  hazard_bldg_8:            100,   // P1.Text87
-  hazard_code_8:            101,   // P1.Text88
-  hazard_classification_8:  102,   // P1.Text89
-  hazard_exposure_8:        103,   // P1.Text90
-  hazard_rate_premops_8:    104,   // P1.Text91
-  hazard_rate_products_8:   105,   // P1.Text92
-  hazard_premium_premops_8: 106,   // P1.Text93
-  hazard_premium_products_8:107,   // P1.Text94
+  hazard_loc_8:              99,
+  hazard_bldg_8:            100,
+  hazard_classification_8:  101,
+  hazard_code_8:            102,
+  hazard_premium_basis_8:   103,
+  hazard_exposure_8:        103,
+  hazard_rate_premops_8:    104,
+  hazard_rate_products_8:   105,
+  hazard_premium_premops_8: 106,
+  hazard_premium_products_8:107,
 
   // Premium Totals
   total_premium_premops:    108,   // P1.Text95 — Total Prem/Ops Premium
