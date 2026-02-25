@@ -104,6 +104,8 @@ Return this exact structure:
     "building_limit": "", "bpp_limit": "", "business_income_limit": "", "total_insured_value": "",
     "property_premium": "", "property_deductible": "",
     "lob_auto": "false", "lob_gl": "false", "lob_property": "false", "lob_umbrella": "false", "lob_wc": "false",
+    "lob_commercial_general_liability": "false",
+    "cgl_premium": "",
 
     "chk_commercial_general_liability": "false",
     "chk_claims_made": "false",
@@ -142,9 +144,10 @@ EXTRACTION RULES:
 - Return ALL fields even if empty string — but ONLY populate with data actually found in input
 - All scalar values must be strings — booleans as "true"/"false"
 - Dates → MM/DD/YYYY format, currencies → plain number without $ or commas
-- lob_* flags: set "true" ONLY if that coverage type is explicitly mentioned in the document
+- lob_* flags: set "true" ONLY if that coverage type is explicitly mentioned in the document. lob_gl and lob_commercial_general_liability should both be "true" if CGL coverage is present.
+- cgl_premium: extract the CGL/GL total premium amount if listed (e.g. from "Lines of Business" or dec page premium schedule)
 - CHECKBOX FIELDS (chk_*): set "true" if the document indicates that option applies:
-  - chk_commercial_general_liability: "true" if it is a CGL policy
+  - chk_commercial_general_liability: "true" if it is a CGL policy (same as lob_gl)
   - chk_occurrence: "true" if the policy is occurrence-based (look for "CG 00 01" or "occurrence" language)
   - chk_claims_made: "true" if claims-made policy
   - chk_owners_contractors: "true" if Owner's & Contractor's Protective coverage

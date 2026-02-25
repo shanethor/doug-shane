@@ -112,7 +112,8 @@ const AI_TO_FORM_ALIASES: Record<string, string[]> = {
 
   // ── Prior carrier ──
   current_carrier: ["prior_carrier_name", "current_carrier", "carrier", "prior_wc_carrier_1", "prior_carrier_1"],
-  current_premium: ["current_premium", "total_premium"],
+  current_premium: ["current_premium", "total_premium", "cgl_premium"],
+  cgl_premium: ["cgl_premium"],
   prior_carrier_name: ["prior_carrier_1", "prior_wc_carrier_1", "current_carrier"],
   naic_code: ["naic_code"],
   policy_fee: ["policy_fee"],
@@ -229,8 +230,16 @@ const AI_TO_FORM_ALIASES: Record<string, string[]> = {
   coverage_type: ["coverage_type"],
   aggregate_applies_per: ["aggregate_applies_per"],
 
+  // ── Lines of Business flags (ACORD 125 LOB checkboxes) ──
+  lob_gl: ["chk_lob_cgl", "lob_commercial_general_liability", "chk_commercial_general_liability"],
+  lob_auto: ["chk_lob_auto"],
+  lob_property: ["chk_lob_property"],
+  lob_umbrella: ["chk_lob_umbrella"],
+  lob_wc: [],  // No checkbox on 125 for WC (separate 130 form)
+  lob_commercial_general_liability: ["chk_lob_cgl", "lob_commercial_general_liability", "chk_commercial_general_liability"],
+
   // ── ACORD 126 Checkboxes (coverage triggers, deductibles, limits) ──
-  chk_commercial_general_liability: ["chk_commercial_general_liability"],
+  chk_commercial_general_liability: ["chk_commercial_general_liability", "chk_lob_cgl", "lob_commercial_general_liability"],
   chk_claims_made: ["chk_claims_made"],
   chk_occurrence: ["chk_occurrence"],
   chk_owners_contractors: ["chk_owners_contractors"],
