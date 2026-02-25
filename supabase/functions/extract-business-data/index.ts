@@ -54,6 +54,58 @@ const ACORD_FIELDS = {
   special_conditions: "",
 };
 
+/** Helper: call Lovable AI Gateway (Gemini) for extraction */
+async function callLovableGateway(
+  apiKey: string,
+  systemPrompt: string,
+  userPromptText: string,
+  pdf_files: any[],
+  hasPdfs: boolean,
+  corsHeaders: Record<string, string>,
+): Promise<string> {
+  type ContentPart = { type: string; text?: string; image_url?: { url: string } };
+  const userContent: ContentPart[] = [{ type: "text", text: userPromptText }];
+
+  if (hasPdfs) {
+    for (const pf of pdf_files) {
+      if (pf.base64) {
+        userContent.push({
+          type: "image_url",
+          image_url: { url: `data:${pf.mimeType || "application/pdf"};base64,${pf.base64}` },
+        });
+      }
+    }
+  }
+
+  const model = hasPdfs ? "google/gemini-2.5-pro" : "google/gemini-2.5-flash";
+
+  const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: hasPdfs ? userContent : userPromptText },
+      ],
+    }),
+  });
+
+  if (!response.ok) {
+    const t = await response.text();
+    console.error("AI gateway error:", response.status, t);
+    if (response.status === 429) throw new Error("Rate limited, please try again shortly.");
+    if (response.status === 402) throw new Error("AI credits exhausted.");
+    throw new Error("AI extraction failed");
+  }
+
+  const aiResult = await response.json();
+  return aiResult.choices?.[0]?.message?.content || "{}";
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -172,58 +224,67 @@ EXTRACTION RULES:
 ${description || ""}
 ${file_contents ? `\nAdditional text content:\n${file_contents}` : ""}`;
 
-    // Build multimodal message — PDFs sent as inline base64 for Gemini native PDF reading
-    type ContentPart = { type: string; text?: string; image_url?: { url: string } };
-    const userContent: ContentPart[] = [{ type: "text", text: userPromptText }];
-
     const hasPdfs = Array.isArray(pdf_files) && pdf_files.length > 0;
-    if (hasPdfs) {
+    const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
+
+    let rawContent: string;
+
+    if (ANTHROPIC_API_KEY && hasPdfs) {
+      // Use Claude Sonnet 4 for PDF extraction — faster and more accurate
+      console.log("Using Claude Sonnet 4 for extraction");
+
+      // Build Claude messages with document content blocks
+      const claudeContent: any[] = [];
       for (const pf of pdf_files) {
         if (pf.base64) {
-          userContent.push({
-            type: "image_url",
-            image_url: { url: `data:${pf.mimeType || "application/pdf"};base64,${pf.base64}` },
-          });
+          const mediaType = pf.mimeType === "application/pdf" ? "application/pdf"
+            : pf.mimeType?.startsWith("image/") ? pf.mimeType : "application/pdf";
+
+          if (mediaType === "application/pdf") {
+            claudeContent.push({
+              type: "document",
+              source: { type: "base64", media_type: "application/pdf", data: pf.base64 },
+            });
+          } else {
+            claudeContent.push({
+              type: "image",
+              source: { type: "base64", media_type: mediaType, data: pf.base64 },
+            });
+          }
         }
       }
+      claudeContent.push({ type: "text", text: userPromptText });
+
+      const response = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "x-api-key": ANTHROPIC_API_KEY,
+          "anthropic-version": "2023-06-01",
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 8192,
+          system: systemPrompt,
+          messages: [{ role: "user", content: claudeContent }],
+        }),
+      });
+
+      if (!response.ok) {
+        const errText = await response.text();
+        console.error("Claude API error:", response.status, errText);
+        // Fall back to Lovable AI gateway
+        console.log("Falling back to Lovable AI gateway");
+        rawContent = await callLovableGateway(LOVABLE_API_KEY!, systemPrompt, userPromptText, pdf_files, hasPdfs, corsHeaders);
+      } else {
+        const result = await response.json();
+        rawContent = result.content?.[0]?.text || "{}";
+      }
+    } else {
+      // Use Lovable AI gateway (Gemini) for text-only or when no Anthropic key
+      rawContent = await callLovableGateway(LOVABLE_API_KEY!, systemPrompt, userPromptText, pdf_files, hasPdfs, corsHeaders);
     }
 
-    // Use gemini-2.5-pro for multimodal PDF reading (better accuracy), flash for text-only
-    const model = hasPdfs ? "google/gemini-2.5-pro" : "google/gemini-2.5-flash";
-
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model,
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: hasPdfs ? userContent : userPromptText },
-        ],
-      }),
-    });
-
-    if (!response.ok) {
-      if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limited, please try again shortly." }), {
-          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "AI credits exhausted." }), {
-          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      const t = await response.text();
-      console.error("AI gateway error:", response.status, t);
-      throw new Error("AI extraction failed");
-    }
-
-    const aiResult = await response.json();
-    const rawContent = aiResult.choices?.[0]?.message?.content;
 
     if (!rawContent) {
       throw new Error("No content returned from AI");
