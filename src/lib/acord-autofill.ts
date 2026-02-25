@@ -57,17 +57,22 @@ const AI_TO_FORM_ALIASES: Record<string, string[]> = {
   named_insured: ["applicant_name", "insured_name", "named_insured", "primary_location_name", "contact_name_1"],
   insured_name: ["applicant_name", "insured_name", "named_insured", "primary_location_name"],
   dba_name: ["dba_name", "other_named_insured"],
+  doing_business_as: ["dba_name", "other_named_insured"],
   company_name: ["applicant_name", "insured_name", "named_insured", "primary_location_name"],
   establishment_name: ["applicant_name", "insured_name", "named_insured"],
+  first_named_insured: ["applicant_name", "insured_name", "named_insured", "primary_location_name", "contact_name_1"],
 
   // ── Address (one-to-many) — including supplement extraction keys ──
   mailing_address: ["mailing_address", "premises_address", "building_street_address", "garaging_street", "location_1_address", "primary_location_address"],
   address: ["mailing_address", "premises_address", "building_street_address", "garaging_street", "location_1_address", "primary_location_address"],
   location_street: ["mailing_address", "premises_address", "building_street_address", "garaging_street", "location_1_address", "primary_location_address"],
+  location_address: ["premises_address", "building_street_address", "location_1_address", "primary_location_address"],
+  insured_address: ["mailing_address", "premises_address"],
   city: ["city", "premises_city", "garaging_city", "building_city"],
   state: ["state", "premises_state", "garaging_state", "building_state", "rating_state", "wc_part1_states"],
   zip: ["zip", "premises_zip", "garaging_zip", "building_zip"],
   zip_code: ["zip", "premises_zip", "garaging_zip", "building_zip"],
+  postal_code: ["zip", "premises_zip", "garaging_zip", "building_zip"],
   county: ["premises_county", "garaging_county"],
   states_of_operation: ["state", "premises_state", "wc_part1_states", "rating_state"],
 
@@ -82,10 +87,16 @@ const AI_TO_FORM_ALIASES: Record<string, string[]> = {
 
   // ── Business identifiers ──
   fein: ["fein"],
+  tax_id: ["fein"],
+  federal_employer_id: ["fein"],
   sic_code: ["sic_code", "vehicle_1_sic"],
   naics_code: ["naics_code"],
+  naic_number: ["naic_code"],
   business_type: ["business_type"],
   applicant_type: ["business_type"],
+  form_of_business: ["business_type"],
+  organization_type: ["business_type"],
+  legal_entity: ["business_type"],
   gl_code: ["gl_code"],
 
   // ── Business history — including supplement keys ──
@@ -102,30 +113,58 @@ const AI_TO_FORM_ALIASES: Record<string, string[]> = {
   // ── Operations ──
   nature_of_business: ["nature_of_business", "business_category"],
   business_category: ["business_category", "nature_of_business"],
+  business_description: ["description_of_operations", "premises_description", "primary_description"],
   description_of_operations: ["description_of_operations", "premises_description", "primary_description"],
+  insured_business: ["description_of_operations", "premises_description"],
+  type_of_business: ["description_of_operations", "business_type"],
 
   // ── Policy dates ──
   effective_date: ["effective_date", "proposed_eff_date"],
   expiration_date: ["expiration_date", "proposed_exp_date"],
   proposed_eff_date: ["proposed_eff_date", "effective_date"],
   proposed_exp_date: ["proposed_exp_date", "expiration_date"],
+  policy_period_from: ["proposed_eff_date", "effective_date"],
+  policy_period_to: ["proposed_exp_date", "expiration_date"],
 
-  // ── Prior carrier ──
+  // ── Prior carrier / Policy ──
   current_carrier: ["prior_carrier_name", "current_carrier", "carrier", "prior_wc_carrier_1", "prior_carrier_1"],
+  insurer_name: ["carrier"],
+  insurance_company: ["carrier"],
+  writing_company: ["carrier"],
   current_premium: ["current_premium", "total_premium", "cgl_premium"],
   cgl_premium: ["cgl_premium"],
+  gl_premium: ["cgl_premium"],
+  coverage_part_premium: ["cgl_premium"],
+  advance_premium: ["cgl_premium"],
   prior_carrier_name: ["prior_carrier_1", "prior_wc_carrier_1", "current_carrier"],
   naic_code: ["naic_code"],
   policy_fee: ["policy_fee"],
   tria_premium: ["tria_premium"],
+  terrorism_premium: ["tria_premium"],
   audit_period: ["audit_period"],
+  surplus_lines_tax: ["surplus_lines_tax"],
+  broker_fee: ["broker_fee"],
+  inspection_fee: ["inspection_fee"],
+  stamping_fee: ["stamping_fee"],
+  total_annual_premium: ["policy_premium", "total_premium"],
+  premium_total: ["policy_premium", "total_premium"],
+  grand_total: ["policy_premium", "total_premium"],
+  total_charges: ["policy_premium", "total_premium"],
+
+  // ── Policy number ──
+  policy_number: ["policy_number"],
+  previous_policy_number: ["prior_policy_number_1"],
+  expiring_policy_number: ["prior_policy_number_1", "expiring_policy_number"],
+  renewal_of: ["prior_policy_number_1"],
 
   // ── Premises ──
   premises_address: ["premises_address", "building_street_address", "garaging_street", "location_1_address"],
+  premises_location: ["premises_address", "building_street_address", "location_1_address"],
   premises_owned_or_leased: ["premises_interest"],
   premises_interest: ["premises_interest"],
   square_footage: ["occupied_sq_ft", "total_building_sq_ft", "total_area_sq_ft"],
   occupied_sq_ft: ["occupied_sq_ft", "total_building_sq_ft", "total_area_sq_ft"],
+  total_area: ["occupied_sq_ft", "total_building_sq_ft", "total_area_sq_ft"],
 
   // ── Loss history ──
   prior_losses_last_5_years: ["loss_history", "wc_loss_history"],
@@ -137,6 +176,7 @@ const AI_TO_FORM_ALIASES: Record<string, string[]> = {
   total_employees: ["total_employees", "num_employees_1", "ebl_num_employees"],
   full_time_employees: ["full_time_employees"],
   part_time_employees: ["part_time_employees"],
+  employee_count: ["total_employees", "num_employees_1", "ebl_num_employees"],
 
   // ── WC-specific ──
   wc_class_code: ["class_code_1"],
@@ -164,6 +204,7 @@ const AI_TO_FORM_ALIASES: Record<string, string[]> = {
   construction_type: ["construction_type"],
   year_built: ["year_built"],
   num_stories: ["num_stories"],
+  number_of_stories: ["num_stories"],
   roof_type: ["roof_type"],
   wiring_year: ["wiring_year"],
   plumbing_year: ["plumbing_year"],
@@ -176,11 +217,15 @@ const AI_TO_FORM_ALIASES: Record<string, string[]> = {
 
   // ── Property amounts ──
   building_amount: ["building_amount"],
+  building_limit: ["building_amount"],
+  building_replacement_cost: ["building_amount"],
   bpp_amount: ["bpp_amount"],
+  business_personal_property: ["bpp_amount"],
   business_income_amount: ["business_income_amount"],
   extra_expense_amount: ["extra_expense_amount"],
   rental_value_amount: ["rental_value_amount"],
   building_deductible: ["building_deductible"],
+  property_deductible: ["building_deductible"],
   bpp_deductible: ["bpp_deductible"],
   building_valuation: ["building_valuation"],
   building_causes_of_loss: ["building_causes_of_loss"],
@@ -220,15 +265,45 @@ const AI_TO_FORM_ALIASES: Record<string, string[]> = {
   retained_limit_aggregate: ["retained_limit_aggregate"],
   self_insured_retention: ["self_insured_retention"],
 
-  // ── CGL Limits ──
+  // ── CGL Limits — including common dec page extraction keys ──
   general_aggregate: ["general_aggregate"],
+  aggregate_limits_of_liability: ["general_aggregate"],
+  general_aggregate_limit: ["general_aggregate"],
   products_aggregate: ["products_aggregate"],
+  products_completed_operations_aggregate: ["products_aggregate"],
+  products_comp_op_agg: ["products_aggregate"],
   each_occurrence: ["each_occurrence"],
+  bodily_injury_property_damage: ["each_occurrence"],
+  bodily_injury_property_damage_liability: ["each_occurrence"],
+  per_occurrence: ["each_occurrence"],
+  per_occurrence_limit: ["each_occurrence"],
   personal_adv_injury: ["personal_adv_injury"],
+  personal_advertising_injury: ["personal_adv_injury"],
+  personal_and_advertising_injury: ["personal_adv_injury"],
+  personal_injury: ["personal_adv_injury"],
   fire_damage: ["fire_damage"],
+  damage_to_rented_premises: ["fire_damage"],
+  damage_to_premises_rented_to_you: ["fire_damage"],
+  fire_damage_limit: ["fire_damage"],
   medical_payments: ["medical_payments"],
+  medical_expense: ["medical_payments"],
+  med_exp: ["medical_payments"],
+  medical_expense_limit: ["medical_payments"],
   coverage_type: ["coverage_type"],
   aggregate_applies_per: ["aggregate_applies_per"],
+
+  // ── CGL Class / Hazard — dec page extraction keys ──
+  class_code: ["hazard_code_1"],
+  classification_code: ["hazard_code_1"],
+  gl_class_code: ["hazard_code_1"],
+  classification: ["hazard_classification_1"],
+  classification_description: ["hazard_classification_1"],
+  class_description: ["hazard_classification_1"],
+  gl_classification: ["hazard_classification_1"],
+  premium_basis: ["hazard_premium_basis_1", "hazard_exposure_1"],
+  exposure: ["hazard_exposure_1", "hazard_premium_basis_1"],
+  exposure_units: ["hazard_exposure_1"],
+  territory: ["hazard_terr_1"],
 
   // ── Lines of Business flags (ACORD 125 LOB checkboxes) ──
   lob_gl: ["chk_lob_cgl", "lob_commercial_general_liability", "chk_commercial_general_liability"],
@@ -263,6 +338,15 @@ const AI_TO_FORM_ALIASES: Record<string, string[]> = {
   hazard_rate_products_1: ["hazard_rate_products_1"],
   hazard_premium_premops_1: ["hazard_premium_premops_1"],
   hazard_premium_products_1: ["hazard_premium_products_1"],
+
+  // ── ACORD 126 Schedule of Hazards — Row 2 ──
+  hazard_loc_2: ["hazard_loc_2"],
+  hazard_bldg_2: ["hazard_bldg_2"],
+  hazard_classification_2: ["hazard_classification_2"],
+  hazard_code_2: ["hazard_code_2"],
+  hazard_exposure_2: ["hazard_exposure_2"],
+  hazard_rate_premops_2: ["hazard_rate_premops_2"],
+  hazard_premium_premops_2: ["hazard_premium_premops_2"],
 
   // ── ACORD 126 Premium Totals ──
   total_premium_premops: ["total_premium_premops", "premiums_prem_ops"],
@@ -300,6 +384,9 @@ const AI_TO_FORM_ALIASES: Record<string, string[]> = {
   producer_license_no: ["producer_license_no"],
   national_producer_number: ["national_producer_number"],
   cs_representative: ["cs_representative"],
+  agent_name: ["agency_name"],
+  agent_number: ["agency_customer_id"],
+  producer_number: ["agency_customer_id"],
 };
 
 const DATE_FIELDS = new Set([
