@@ -674,6 +674,17 @@ export function buildAutofilledData(
     }
   }
 
+  // 12. Auto-check Occurrence / Claims Made checkboxes from coverage_type value
+  const covType = String(mapped.coverage_type || aiData.coverage_type || "").toLowerCase();
+  if (covType.includes("occurrence")) {
+    if (formFieldKeys.has("chk_occurrence")) mapped.chk_occurrence = true;
+    // Ensure Claims Made is not checked for Occurrence policies
+    if (formFieldKeys.has("chk_claims_made") && !mapped.chk_claims_made) mapped.chk_claims_made = false;
+  } else if (covType.includes("claims") || covType.includes("claims-made") || covType.includes("claims made")) {
+    if (formFieldKeys.has("chk_claims_made")) mapped.chk_claims_made = true;
+    if (formFieldKeys.has("chk_occurrence") && !mapped.chk_occurrence) mapped.chk_occurrence = false;
+  }
+
   return mapped;
 }
 
