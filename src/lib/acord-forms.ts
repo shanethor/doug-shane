@@ -769,7 +769,7 @@ export const ACORD_FORMS: Record<string, AcordFormDefinition> = {
     fullName: "Commercial General Liability Section (2009/08)",
     description: "CGL coverages/limits, schedule of hazards, claims-made, employee benefits liability, contractors, products/completed ops, and general information.",
     fields: acord126Fields,
-    pages: ["/acord-pages/126-page1.jpg", "/acord-pages/126-page2.jpg", "/acord-pages/126-page3.jpg", "/acord-pages/126-page4.jpg"],
+    pages: [],
   },
   "acord-127": {
     id: "acord-127",
