@@ -37,7 +37,24 @@ serve(async (req) => {
       "program_code", "ncci_risk_id", "wc_class_code", "policy_number",
       "prior_policy_number_1", "prior_wc_policy_1",
     ]);
-    const filteredUnfilled = (unfilled as string[]).filter(k => !CODE_FIELDS.has(k));
+
+    // Hazard schedule fields must ONLY come from extraction — never AI-inferred
+    const HAZARD_SCHEDULE_FIELDS = new Set<string>();
+    for (let i = 1; i <= 8; i++) {
+      for (const col of ["hazard_loc_", "hazard_bldg_", "hazard_code_", "hazard_classification_",
+        "hazard_premium_basis_", "hazard_exposure_", "hazard_terr_",
+        "hazard_rate_premops_", "hazard_rate_products_",
+        "hazard_premium_premops_", "hazard_premium_products_"]) {
+        HAZARD_SCHEDULE_FIELDS.add(col + i);
+      }
+    }
+    // Also block premium total fields from AI inference
+    for (const f of ["total_premium_premops", "total_premium_products", "premium_subtotal",
+      "premium_tax", "total_premium", "premiums_prem_ops", "premiums_products",
+      "premiums_other", "premiums_total"]) {
+      HAZARD_SCHEDULE_FIELDS.add(f);
+    }
+    const filteredUnfilled = (unfilled as string[]).filter(k => !CODE_FIELDS.has(k) && !HAZARD_SCHEDULE_FIELDS.has(k));
 
     const systemPrompt = `You are an expert insurance data mapper. You map extracted business data to ACORD insurance form fields.
 
