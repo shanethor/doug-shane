@@ -78,6 +78,70 @@ async function runRealFill(
   return results;
 }
 
+interface AuditResult {
+  key: string;
+  idx: number;
+  written: string;
+  readBack: string;
+  match: boolean;
+  fieldName: string;
+}
+
+/** Round-trip audit: fill PDF → save → reload → read back → compare */
+async function runRoundTripAudit(
+  path: string,
+  indexMap: AcordIndexMap,
+  sampleData: Record<string, string>
+): Promise<{ results: AuditResult[]; pdfBytes: Uint8Array }> {
+  // Step 1: Fill the PDF
+  const resp = await fetch(path);
+  const bytes = await resp.arrayBuffer();
+  const doc = await PDFDocument.load(new Uint8Array(bytes), { ignoreEncryption: true, updateMetadata: false });
+  const form = doc.getForm();
+  const allFields = form.getFields();
+
+  const writtenValues: { key: string; idx: number; value: string; fieldName: string }[] = [];
+  for (const [key, idx] of Object.entries(indexMap)) {
+    const val = sampleData[key];
+    if (!val) continue;
+    const field = allFields[idx];
+    if (!field) continue;
+    if (field instanceof PDFTextField) {
+      try {
+        field.setText(val);
+        writtenValues.push({ key, idx, value: val, fieldName: field.getName() });
+      } catch { /* skip */ }
+    }
+  }
+
+  // Step 2: Save the filled PDF
+  const pdfBytes = await doc.save();
+
+  // Step 3: Reload and read back
+  const doc2 = await PDFDocument.load(pdfBytes, { ignoreEncryption: true, updateMetadata: false });
+  const form2 = doc2.getForm();
+  const allFields2 = form2.getFields();
+
+  const results: AuditResult[] = [];
+  for (const w of writtenValues) {
+    const field2 = allFields2[w.idx];
+    let readBack = "";
+    if (field2 instanceof PDFTextField) {
+      readBack = field2.getText() ?? "";
+    }
+    results.push({
+      key: w.key,
+      idx: w.idx,
+      written: w.value,
+      readBack,
+      match: readBack === w.value,
+      fieldName: w.fieldName,
+    });
+  }
+
+  return { results, pdfBytes };
+}
+
 const SAMPLE_DATA: Record<string, string> = {
   // ═══ COMMON HEADER (all forms) ═══
   agency_name: "AURA AGENCY",
@@ -671,6 +735,8 @@ export default function PdfDiagnostic() {
   const [formCounts, setFormCounts] = useState<Record<string, number>>({});
   const [fillResults, setFillResults] = useState<{ key: string; idx: number; ok: boolean; fieldType: string }[]>([]);
   const [layoutView, setLayoutView] = useState(false);
+  const [auditResults, setAuditResults] = useState<AuditResult[]>([]);
+  const [auditPdfUrl, setAuditPdfUrl] = useState<string | null>(null);
 
   const formIds = Object.keys(FILLABLE_PDF_PATHS);
 
@@ -692,6 +758,9 @@ export default function PdfDiagnostic() {
     setFields([]);
     setXfaNames([]);
     setFillResults([]);
+    setAuditResults([]);
+    if (auditPdfUrl) URL.revokeObjectURL(auditPdfUrl);
+    setAuditPdfUrl(null);
     setLayoutView(false);
     setLoading(true);
     const path = FILLABLE_PDF_PATHS[selectedForm];
@@ -713,7 +782,29 @@ export default function PdfDiagnostic() {
     setLoading(false);
   }, [selectedForm]);
 
-  /** Fill all TXT fields with their index number and download the PDF */
+  /** Round-trip audit: fill → save → reload → read back → compare */
+  const runAudit = useCallback(async () => {
+    const path = FILLABLE_PDF_PATHS[selectedForm];
+    const indexMap = ACORD_INDEX_MAPS[selectedForm];
+    if (!path || !indexMap) { alert("No index map for " + selectedForm); return; }
+    setLoading(true);
+    setAuditResults([]);
+    if (auditPdfUrl) URL.revokeObjectURL(auditPdfUrl);
+    setAuditPdfUrl(null);
+    try {
+      const { results, pdfBytes } = await runRoundTripAudit(path, indexMap, SAMPLE_DATA);
+      setAuditResults(results);
+      // Create downloadable/viewable URL for the filled PDF
+      const blob = new Blob([pdfBytes.buffer as ArrayBuffer], { type: "application/pdf" });
+      setAuditPdfUrl(URL.createObjectURL(blob));
+    } catch (e) {
+      console.error("Audit failed:", e);
+      alert("Audit failed: " + (e instanceof Error ? e.message : String(e)));
+    }
+    setLoading(false);
+  }, [selectedForm, auditPdfUrl]);
+
+
   const fillAllAndDownload = useCallback(async () => {
     const path = FILLABLE_PDF_PATHS[selectedForm];
     if (!path) return;
@@ -795,12 +886,19 @@ export default function PdfDiagnostic() {
         )}
 
         {/* Action buttons */}
-        <div style={{ display: "flex", gap: 6 }}>
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
           <button onClick={applyRealData} disabled={loading || !currentIndexMap}
             style={{ flex: 1, padding: "6px 10px", fontSize: 12, background: "#16a34a",
               color: "white", border: "none", borderRadius: 4, cursor: "pointer", fontWeight: "bold" }}>
             {loading ? "Running…" : "✅ Run Real Data Fill"}
           </button>
+          <button onClick={runAudit} disabled={loading || !currentIndexMap}
+            style={{ flex: 1, padding: "6px 10px", fontSize: 12, background: "#dc2626",
+              color: "white", border: "none", borderRadius: 4, cursor: "pointer", fontWeight: "bold" }}>
+            {loading ? "Auditing…" : "🔍 Round-Trip Audit"}
+          </button>
+        </div>
+        <div style={{ display: "flex", gap: 6 }}>
           <button onClick={fillAllAndDownload} disabled={loading}
             style={{ padding: "6px 10px", fontSize: 11, background: "#d97706",
               color: "white", border: "none", borderRadius: 4, cursor: "pointer", fontWeight: "bold" }}>
@@ -811,12 +909,56 @@ export default function PdfDiagnostic() {
               color: "white", border: "none", borderRadius: 4, cursor: "pointer", fontWeight: "bold" }}>
             📄 TXT List
           </button>
+          {auditPdfUrl && (
+            <a href={auditPdfUrl} download={`${selectedForm}-AUDIT-FILLED.pdf`}
+              style={{ padding: "6px 10px", fontSize: 11, background: "#7c3aed",
+                color: "white", border: "none", borderRadius: 4, cursor: "pointer", fontWeight: "bold",
+                textDecoration: "none", display: "inline-flex", alignItems: "center" }}>
+              📄 Download Filled PDF
+            </a>
+          )}
           <button onClick={() => setLayoutView(v => !v)}
             style={{ padding: "6px 10px", fontSize: 11, background: layoutView ? "#7c3aed" : "#334155",
               color: "white", border: "none", borderRadius: 4, cursor: "pointer" }}>
-            {layoutView ? "📋 Layout" : "📋 Layout"}
+            📋 Layout
           </button>
         </div>
+
+        {/* Audit results */}
+        {auditResults.length > 0 && (
+          <div style={{ background: "#1a0a0a", border: `1px solid ${auditResults.every(r=>r.match) ? "#4ade80" : "#f87171"}`, borderRadius: 6, padding: 8, maxHeight: 300, overflowY: "auto" }}>
+            <div style={{ fontWeight: "bold", fontSize: 12, marginBottom: 6,
+              color: auditResults.every(r=>r.match) ? "#4ade80" : "#f87171" }}>
+              🔍 Round-Trip Audit: {auditResults.filter(r=>r.match).length}/{auditResults.length} fields match
+              {auditResults.some(r=>!r.match) && ` — ${auditResults.filter(r=>!r.match).length} MISMATCHES`}
+            </div>
+            {auditResults.filter(r=>!r.match).length > 0 && (
+              <div style={{ marginBottom: 6 }}>
+                <div style={{ fontSize: 10, color: "#f87171", fontWeight: "bold", marginBottom: 3 }}>❌ MISMATCHES:</div>
+                {auditResults.filter(r=>!r.match).map(r => (
+                  <div key={r.key} style={{ fontSize: 10, color: "#f87171", lineHeight: "16px", marginBottom: 2 }}>
+                    <span style={{ color: "#64748b" }}>[{r.idx}]</span>{" "}
+                    <strong>{r.key}</strong>{" "}
+                    wrote="{r.written}" → read="{r.readBack || "(empty)"}"
+                    <span style={{ color: "#64748b", fontSize: 9 }}> ({r.fieldName})</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            {auditResults.filter(r=>r.match).length > 0 && (
+              <details>
+                <summary style={{ fontSize: 10, color: "#4ade80", cursor: "pointer" }}>
+                  ✅ {auditResults.filter(r=>r.match).length} matching fields
+                </summary>
+                {auditResults.filter(r=>r.match).map(r => (
+                  <div key={r.key} style={{ fontSize: 10, color: "#86efac", lineHeight: "14px" }}>
+                    <span style={{ color: "#64748b" }}>[{r.idx}]</span> {r.key} = "{r.written}"
+                  </div>
+                ))}
+              </details>
+            )}
+          </div>
+        )}
 
         {/* Fill results */}
         {fillResults.length > 0 && (
