@@ -223,6 +223,19 @@ export default function PdfDiagnostic() {
     URL.revokeObjectURL(url);
   }, [selectedForm, fields]);
 
+  /** Download a plain-text file listing all field indices, types, and names */
+  const downloadTxtList = useCallback(() => {
+    const lines = fields.map(f => `[${f.index}] ${f.type} "${f.name}"`);
+    const text = `${selectedForm} — ${fields.length} fields\nTXT: ${fields.filter(f=>f.type==="TXT").length} | CHK: ${fields.filter(f=>f.type==="CHK").length}\n${"─".repeat(60)}\n${lines.join("\n")}`;
+    const blob = new Blob([text], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${selectedForm}-field-list.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [selectedForm, fields]);
+
   const filtered = search
     ? fields.filter(f => String(f.index).includes(search) || f.type.toLowerCase().includes(search.toLowerCase()))
     : fields;
@@ -276,6 +289,11 @@ export default function PdfDiagnostic() {
             style={{ padding: "6px 10px", fontSize: 11, background: "#d97706",
               color: "white", border: "none", borderRadius: 4, cursor: "pointer", fontWeight: "bold" }}>
             📥 Fill All TXT
+          </button>
+          <button onClick={downloadTxtList} disabled={loading || fields.length === 0}
+            style={{ padding: "6px 10px", fontSize: 11, background: "#0ea5e9",
+              color: "white", border: "none", borderRadius: 4, cursor: "pointer", fontWeight: "bold" }}>
+            📄 TXT List
           </button>
           <button onClick={() => setLayoutView(v => !v)}
             style={{ padding: "6px 10px", fontSize: 11, background: layoutView ? "#7c3aed" : "#334155",
