@@ -189,6 +189,20 @@ const acord126Fields: AcordFormField[] = [
   { key: "insured_name", label: "Applicant / First Named Insured", type: "text", section: "Header", required: true },
   { key: "transaction_date", label: "Date (MM/DD/YYYY)", type: "date", section: "Header" },
 
+  // Coverage Checkboxes
+  { key: "chk_commercial_general_liability", label: "Commercial General Liability", type: "checkbox", section: "Coverages / Limits" },
+  { key: "chk_claims_made", label: "Claims Made", type: "checkbox", section: "Coverages / Limits" },
+  { key: "chk_occurrence", label: "Occurrence", type: "checkbox", section: "Coverages / Limits" },
+  { key: "chk_owners_contractors", label: "Owner's & Contractor's Protective", type: "checkbox", section: "Coverages / Limits" },
+  { key: "chk_limit_policy", label: "Limit Applies Per: Policy", type: "checkbox", section: "Coverages / Limits" },
+  { key: "chk_limit_location", label: "Limit Applies Per: Location", type: "checkbox", section: "Coverages / Limits" },
+  { key: "chk_limit_project", label: "Limit Applies Per: Project", type: "checkbox", section: "Coverages / Limits" },
+  { key: "chk_limit_other", label: "Limit Applies Per: Other", type: "checkbox", section: "Coverages / Limits" },
+  { key: "chk_deductible_pd", label: "Deductible: Property Damage", type: "checkbox", section: "Coverages / Limits" },
+  { key: "chk_deductible_bi", label: "Deductible: Bodily Injury", type: "checkbox", section: "Coverages / Limits" },
+  { key: "chk_per_claim", label: "Deductible: Per Claim", type: "checkbox", section: "Coverages / Limits" },
+  { key: "chk_per_occurrence", label: "Deductible: Per Occurrence", type: "checkbox", section: "Coverages / Limits" },
+
   // Coverages / Limits
   { key: "coverage_type", label: "Coverage Type", type: "select", options: ["Occurrence", "Claims-Made"], section: "Coverages / Limits", required: true },
   { key: "general_aggregate", label: "General Aggregate", type: "currency", section: "Coverages / Limits", required: true },

@@ -924,6 +924,39 @@ export const ACORD_126_INDEX_MAP: AcordIndexMap = {
   remarks_126_p4_10:        275,   // P4.Text10
   remarks_126_p4_11:        276,   // P4.Text11
   remarks_126_p4_12:        277,   // P4.Text12
+
+  // ── CHECKBOX FIELDS (CHK) — 22 checkboxes across 4 pages ──
+  // Verified via /pdf-diagnostic "Fill All CHK" — indices are 0-based field positions.
+
+  // Page 1 — Coverages
+  chk_commercial_general_liability: 8,   // ☐ COMMERCIAL GENERAL LIABILITY
+  chk_claims_made:                  9,   // ☐ CLAIMS MADE
+  chk_occurrence:                  10,   // ☐ OCCURRENCE
+  chk_owners_contractors:          11,   // ☐ OWNER'S & CONTRACTOR'S PROTECTIVE
+
+  // Page 1 — Limit Applies Per
+  chk_limit_policy:                12,   // ☐ POLICY
+  chk_limit_location:              14,   // ☐ LOCATION
+  chk_limit_project:               16,   // ☐ PROJECT
+  chk_limit_other:                 18,   // ☐ OTHER
+
+  // Page 1 — Deductibles
+  chk_deductible_pd:               21,   // ☐ Property Damage
+  chk_deductible_bi:               22,   // ☐ Bodily Injury
+  chk_per_claim:                   24,   // ☐ PER CLAIM
+  chk_per_occurrence:              25,   // ☐ PER OCCURRENCE
+  chk_deductible_3:                26,   // ☐ (3rd deductible line)
+  chk_deductible_4:                27,   // ☐ (4th deductible line)
+
+  // Page 3 — Additional Interest
+  chk_acord_45_attached:          212,   // ☐ ACORD 45 attached for additional names
+  chk_additional_insured:         213,   // ☐ ADDITIONAL INSURED
+  chk_employee_as_lessor:         214,   // ☐ EMPLOYEE AS LESSOR
+  chk_lienholder:                 215,   // ☐ LIENHOLDER
+  chk_loss_payee:                 216,   // ☐ LOSS PAYEE
+  chk_mortgagee:                  217,   // ☐ MORTGAGEE
+  chk_evidence:                   218,   // ☐ EVIDENCE
+  chk_certificate:                221,   // ☐ CERTIFICATE
 };
 
 // ── ACORD 127 — Business Auto Section — 472 TXT fields ──
