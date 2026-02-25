@@ -1,0 +1,507 @@
+import { useState, useCallback } from "react";
+import JSZip from "jszip";
+import { supabase } from "@/integrations/supabase/client";
+import { ACORD_FORM_LIST, type AcordFormDefinition } from "@/lib/acord-forms";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import {
+  Download, Mail, Loader2, FileText, CheckCircle, BrainCircuit,
+  Package, FileCheck, StickyNote, Send
+} from "lucide-react";
+import { toast } from "sonner";
+
+interface SubmitPackageDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  enabledFormIds: Set<string>;
+  formData: Record<string, any>;
+  savedPdfBytesMap: Record<string, Uint8Array>;
+  submissionId: string;
+  userId?: string;
+  triggerSave: () => Promise<void>;
+}
+
+export default function SubmitPackageDialog({
+  open,
+  onOpenChange,
+  enabledFormIds,
+  formData,
+  savedPdfBytesMap,
+  submissionId,
+  userId,
+  triggerSave,
+}: SubmitPackageDialogProps) {
+  const [narrative, setNarrative] = useState("");
+  const [generatingNarrative, setGeneratingNarrative] = useState(false);
+  const [activeTab, setActiveTab] = useState("review");
+  const [downloading, setDownloading] = useState(false);
+
+  // Email state
+  const [emailTo, setEmailTo] = useState("");
+  const [sendingEmail, setSendingEmail] = useState(false);
+
+  const enabledFormList = ACORD_FORM_LIST.filter(f => enabledFormIds.has(f.id));
+
+  const companyName = formData.applicant_name || formData.insured_name || "Submission";
+
+  // Per-form fill stats
+  const formStats = enabledFormList.map(form => {
+    const filled = form.fields.filter(f => formData[f.key] && String(formData[f.key]).trim()).length;
+    return { form, filled, total: form.fields.length };
+  });
+
+  const totalFilled = formStats.reduce((s, f) => s + f.filled, 0);
+  const totalFields = formStats.reduce((s, f) => s + f.total, 0);
+
+  // Generate narrative with AI
+  const generateNarrative = useCallback(async () => {
+    setGeneratingNarrative(true);
+    try {
+      // Build a summary of the form data for the AI
+      const keyFields: Record<string, string> = {};
+      const importantKeys = [
+        "applicant_name", "insured_name", "dba_name", "mailing_address", "city", "state", "zip",
+        "nature_of_business", "description_of_operations", "business_type", "year_established",
+        "annual_revenue", "annual_revenues", "number_of_employees", "full_time_employees",
+        "effective_date", "expiration_date", "proposed_eff_date", "proposed_exp_date",
+        "carrier", "current_carrier", "policy_number",
+        "general_aggregate", "products_aggregate", "each_occurrence", "personal_adv_injury",
+        "fire_damage", "medical_payments", "cgl_premium", "property_premium", "auto_premium",
+        "umbrella_premium", "each_occurrence_limit", "aggregate_limit",
+        "building_amount", "bpp_amount", "business_income_amount",
+        "hazard_classification_1", "hazard_classification_2", "hazard_code_1", "hazard_code_2",
+        "wc_each_accident", "wc_disease_policy_limit",
+        "premises_address", "premises_city", "premises_state", "premises_zip",
+        "fein", "sic_code", "naics_code",
+      ];
+
+      for (const key of importantKeys) {
+        const val = formData[key];
+        if (val && String(val).trim() && String(val).trim() !== "false") {
+          keyFields[key] = String(val);
+        }
+      }
+
+      const formsIncluded = enabledFormList.map(f => f.name).join(", ");
+
+      const { data, error } = await supabase.functions.invoke("agent-chat", {
+        body: {
+          messages: [
+            {
+              role: "system",
+              content: `You are an experienced commercial insurance producer writing a narrative cover letter for a submission package to an underwriter. Write a professional, concise narrative summary (2-4 paragraphs) that covers:
+
+1. Business overview: who the insured is, what they do, location, years in business
+2. Coverage being requested: lines of business, key limits, effective dates
+3. Key details: employee count, revenue, operations description
+4. Any notable features of the risk
+
+Keep it professional and factual. Do NOT include placeholders or brackets. Use the actual data provided. If data is missing, simply omit that detail rather than noting it's missing. Do not include a subject line or greeting — just the narrative body.`
+            },
+            {
+              role: "user",
+              content: `Write a submission narrative for this account.\n\nForms included: ${formsIncluded}\n\nKey data:\n${JSON.stringify(keyFields, null, 2)}`
+            }
+          ],
+        },
+      });
+
+      if (error) throw error;
+
+      // Handle streaming response or direct response
+      if (typeof data === "string") {
+        // SSE stream — parse
+        const lines = data.split("\n");
+        let fullText = "";
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          const json = line.slice(6).trim();
+          if (json === "[DONE]") break;
+          try {
+            const parsed = JSON.parse(json);
+            const content = parsed.choices?.[0]?.delta?.content || parsed.choices?.[0]?.message?.content || "";
+            fullText += content;
+          } catch {}
+        }
+        setNarrative(fullText || data);
+      } else if (data?.choices?.[0]?.message?.content) {
+        setNarrative(data.choices[0].message.content);
+      } else {
+        // Fallback: try to read it as text
+        setNarrative(String(data || ""));
+      }
+
+      toast.success("Narrative generated!");
+    } catch (err) {
+      console.error("Narrative generation error:", err);
+      toast.error("Failed to generate narrative");
+    }
+    setGeneratingNarrative(false);
+  }, [formData, enabledFormList]);
+
+  // Download as ZIP
+  const handleDownloadZip = async () => {
+    setDownloading(true);
+    try {
+      // Trigger save first
+      await triggerSave();
+      await new Promise(r => setTimeout(r, 300));
+
+      // Auto-save to DB
+      if (userId) {
+        await supabase
+          .from("insurance_applications")
+          .update({ form_data: formData })
+          .eq("submission_id", submissionId)
+          .eq("user_id", userId);
+      }
+
+      const zip = new JSZip();
+      const date = new Date().toISOString().slice(0, 10);
+      let count = 0;
+
+      for (const form of enabledFormList) {
+        const hasData = form.fields.some(f => formData[f.key] && String(formData[f.key]).trim());
+        if (!hasData) continue;
+
+        const adobeBytes = savedPdfBytesMap[form.id];
+        if (adobeBytes) {
+          zip.file(`${form.name.replace(/\s/g, "_")}_${date}.pdf`, adobeBytes);
+          count++;
+        }
+      }
+
+      // Add narrative as txt file if present
+      if (narrative.trim()) {
+        zip.file(`Narrative_${companyName.replace(/[^a-zA-Z0-9]/g, "_").slice(0, 30)}.txt`, narrative);
+      }
+
+      if (count === 0) {
+        toast.error("No forms have saved PDF data. Edit a field in each form first to enable download.");
+        setDownloading(false);
+        return;
+      }
+
+      const safeName = companyName.replace(/[^a-zA-Z0-9]/g, "_").slice(0, 40);
+      const zipBlob = await zip.generateAsync({ type: "blob" });
+      const url = URL.createObjectURL(zipBlob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Submission_${safeName}_${date}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
+
+      toast.success(`${count} form(s)${narrative.trim() ? " + narrative" : ""} bundled into ZIP.`);
+      onOpenChange(false);
+    } catch (err) {
+      console.error("Download error:", err);
+      toast.error("Failed to download package");
+    }
+    setDownloading(false);
+  };
+
+  // Email package
+  const handleEmailPackage = async () => {
+    if (!emailTo.trim() || !userId) return;
+    setSendingEmail(true);
+    try {
+      await triggerSave();
+      await new Promise(r => setTimeout(r, 300));
+
+      // Get user profile for from_email
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("full_name, agency_name, form_defaults")
+        .eq("user_id", userId)
+        .single();
+
+      const defaults = (profile?.form_defaults || {}) as Record<string, string>;
+      const fromEmail = defaults.from_email || undefined;
+
+      // Build attachments from saved PDF bytes
+      const attachments: { filename: string; content: string }[] = [];
+      const date = new Date().toISOString().slice(0, 10);
+
+      for (const form of enabledFormList) {
+        const adobeBytes = savedPdfBytesMap[form.id];
+        if (!adobeBytes) continue;
+        const hasData = form.fields.some(f => formData[f.key] && String(formData[f.key]).trim());
+        if (!hasData) continue;
+
+        // Convert Uint8Array to base64
+        let binary = "";
+        for (let i = 0; i < adobeBytes.length; i++) {
+          binary += String.fromCharCode(adobeBytes[i]);
+        }
+        const base64 = btoa(binary);
+        attachments.push({
+          filename: `${form.name.replace(/\s/g, "_")}_${date}.pdf`,
+          content: base64,
+        });
+      }
+
+      if (attachments.length === 0) {
+        toast.error("No forms have saved PDF data to email.");
+        setSendingEmail(false);
+        return;
+      }
+
+      const subject = `Submission Package - ${companyName}`;
+
+      // Use narrative as body if present, otherwise generic
+      const bodyHtml = narrative.trim()
+        ? `<div style="font-family: Arial, sans-serif; font-size: 14px; line-height: 1.6; color: #333;">
+            ${narrative.split("\n\n").map(p => `<p>${p.replace(/\n/g, "<br/>")}</p>`).join("")}
+            <hr style="border: none; border-top: 1px solid #ddd; margin: 24px 0;" />
+            <p style="color: #888; font-size: 12px;">Sent via AURA</p>
+          </div>`
+        : `<p>Please find the attached submission package for <strong>${companyName}</strong>.</p>
+           <p>Please review and let me know if you need any changes.</p>
+           <p style="font-size:12px;">Sent via AURA</p>`;
+
+      const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-email`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({
+          to: emailTo,
+          from_email: fromEmail,
+          subject,
+          html: bodyHtml,
+          attachments,
+        }),
+      });
+
+      const result = await resp.json();
+      if (!resp.ok) throw new Error(result.error || "Failed to send email");
+
+      toast.success("Submission package emailed!");
+      onOpenChange(false);
+    } catch (err: any) {
+      console.error("Email error:", err);
+      toast.error(err.message || "Failed to send email");
+    }
+    setSendingEmail(false);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-2xl max-h-[85vh] flex flex-col">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-base">
+            <Package className="h-5 w-5 text-primary" />
+            Submit Package
+          </DialogTitle>
+          <DialogDescription className="text-xs">
+            Review your submission, add a narrative note, then download or email.
+          </DialogDescription>
+        </DialogHeader>
+
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
+          <TabsList className="grid grid-cols-3 w-full">
+            <TabsTrigger value="review" className="text-xs gap-1.5">
+              <FileCheck className="h-3.5 w-3.5" />
+              Forms
+            </TabsTrigger>
+            <TabsTrigger value="narrative" className="text-xs gap-1.5">
+              <StickyNote className="h-3.5 w-3.5" />
+              Narrative
+            </TabsTrigger>
+            <TabsTrigger value="send" className="text-xs gap-1.5">
+              <Send className="h-3.5 w-3.5" />
+              Send
+            </TabsTrigger>
+          </TabsList>
+
+          {/* ── Tab 1: Review Forms ── */}
+          <TabsContent value="review" className="flex-1 overflow-hidden mt-3">
+            <ScrollArea className="h-[400px]">
+              <div className="space-y-1 pr-4">
+                {/* Summary header */}
+                <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg mb-3">
+                  <div>
+                    <p className="text-sm font-semibold">{companyName}</p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {totalFilled} of {totalFields} fields filled across {enabledFormList.length} form(s)
+                    </p>
+                  </div>
+                  <Badge variant="secondary" className="text-xs">
+                    {Math.round((totalFilled / Math.max(totalFields, 1)) * 100)}% Complete
+                  </Badge>
+                </div>
+
+                {/* ACORD Forms section */}
+                <div className="mb-4">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">ACORD Forms</p>
+                  {formStats.map(({ form, filled, total }) => {
+                    const pct = Math.round((filled / Math.max(total, 1)) * 100);
+                    const hasPdf = !!savedPdfBytesMap[form.id];
+                    return (
+                      <div key={form.id} className="flex items-center gap-3 py-2 px-3 rounded-md hover:bg-muted/30">
+                        <FileText className="h-4 w-4 text-primary/70 shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium truncate">{form.name}</p>
+                          <p className="text-[10px] text-muted-foreground">{form.fullName}</p>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <Badge variant={pct >= 80 ? "default" : pct >= 40 ? "secondary" : "outline"} className="text-[10px]">
+                            {filled}/{total}
+                          </Badge>
+                          {hasPdf ? (
+                            <CheckCircle className="h-3.5 w-3.5 text-green-500" />
+                          ) : (
+                            <span className="text-[9px] text-amber-500">No PDF</span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Supplementals placeholder */}
+                <div className="mb-4">
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Supplementals</p>
+                  <div className="flex items-center gap-3 py-3 px-3 rounded-md bg-muted/20 border border-dashed border-border">
+                    <FileText className="h-4 w-4 text-muted-foreground/40" />
+                    <p className="text-xs text-muted-foreground italic">Supplemental form support coming soon</p>
+                  </div>
+                </div>
+
+                {/* Narrative status */}
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Narrative Note</p>
+                  <div className="flex items-center gap-3 py-2 px-3 rounded-md bg-muted/20">
+                    <StickyNote className="h-4 w-4 text-muted-foreground/50 shrink-0" />
+                    <p className="text-xs text-muted-foreground flex-1">
+                      {narrative.trim() ? `${narrative.slice(0, 80)}…` : "No narrative added yet"}
+                    </p>
+                    {narrative.trim() ? (
+                      <CheckCircle className="h-3.5 w-3.5 text-green-500 shrink-0" />
+                    ) : (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-[10px] h-6 px-2 text-primary shrink-0"
+                        onClick={() => setActiveTab("narrative")}
+                      >
+                        Add →
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </ScrollArea>
+          </TabsContent>
+
+          {/* ── Tab 2: Narrative ── */}
+          <TabsContent value="narrative" className="flex-1 overflow-hidden mt-3">
+            <div className="flex flex-col h-[400px]">
+              <div className="flex items-center justify-between mb-2">
+                <Label className="text-xs font-semibold">Narrative Note</Label>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-[10px] h-7 gap-1.5 border-primary/40 text-primary hover:bg-primary/10"
+                  onClick={generateNarrative}
+                  disabled={generatingNarrative}
+                >
+                  {generatingNarrative ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <BrainCircuit className="h-3 w-3" />
+                  )}
+                  {generatingNarrative ? "Generating…" : "Write with AI"}
+                </Button>
+              </div>
+              <p className="text-[10px] text-muted-foreground mb-2">
+                This note will be included as a .txt file in ZIP downloads, or as the email body when sending.
+              </p>
+              <Textarea
+                value={narrative}
+                onChange={(e) => setNarrative(e.target.value)}
+                placeholder="Write a summary of the business and policies for this submission…"
+                className="flex-1 text-xs resize-none min-h-0"
+              />
+            </div>
+          </TabsContent>
+
+          {/* ── Tab 3: Send ── */}
+          <TabsContent value="send" className="flex-1 overflow-hidden mt-3">
+            <div className="space-y-6 h-[400px]">
+              {/* Option 1: Download ZIP */}
+              <div className="p-4 border rounded-lg space-y-3">
+                <div className="flex items-center gap-2">
+                  <Download className="h-4 w-4 text-primary" />
+                  <h3 className="text-sm font-semibold">Download as ZIP</h3>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Bundle all selected ACORD forms{narrative.trim() ? " and narrative note" : ""} into a single ZIP file.
+                </p>
+                <Button
+                  size="sm"
+                  className="w-full text-xs"
+                  onClick={handleDownloadZip}
+                  disabled={downloading}
+                >
+                  {downloading ? (
+                    <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />
+                  ) : (
+                    <Download className="h-3 w-3 mr-1.5" />
+                  )}
+                  Download Package
+                </Button>
+              </div>
+
+              <Separator />
+
+              {/* Option 2: Email */}
+              <div className="p-4 border rounded-lg space-y-3">
+                <div className="flex items-center gap-2">
+                  <Mail className="h-4 w-4 text-primary" />
+                  <h3 className="text-sm font-semibold">Email to Underwriter</h3>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Send all forms as PDF attachments.{narrative.trim() ? " The narrative will be used as the email body." : ""}
+                </p>
+                <div>
+                  <Label className="text-xs">Recipient Email</Label>
+                  <Input
+                    type="email"
+                    value={emailTo}
+                    onChange={(e) => setEmailTo(e.target.value)}
+                    placeholder="underwriter@carrier.com"
+                    className="h-8 text-xs mt-1"
+                  />
+                </div>
+                <Button
+                  size="sm"
+                  className="w-full text-xs"
+                  onClick={handleEmailPackage}
+                  disabled={!emailTo.trim() || sendingEmail}
+                >
+                  {sendingEmail ? (
+                    <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />
+                  ) : (
+                    <Mail className="h-3 w-3 mr-1.5" />
+                  )}
+                  Send Package
+                </Button>
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
+      </DialogContent>
+    </Dialog>
+  );
+}
