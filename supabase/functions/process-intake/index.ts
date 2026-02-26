@@ -55,6 +55,9 @@ Deno.serve(async (req) => {
     const agentId = link.agent_id;
     const businessName = submission.business_name;
 
+    // Mark link as used (service role bypasses RLS)
+    await supabase.from("intake_links").update({ is_used: true }).eq("id", link.id);
+
     // Check if lead already exists
     let leadId = link.lead_id;
     if (!leadId) {
