@@ -24,10 +24,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Search, CheckCircle, GripVertical, Edit3 } from "lucide-react";
+import { Plus, Search, CheckCircle, GripVertical, Edit3, Send, PenLine, Copy, Check, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { LossRunBadge } from "@/components/LossRunBadge";
 import { ClientDocuments } from "@/components/ClientDocuments";
+import { generateIntakeLink } from "@/lib/intake-links";
 
 type Lead = {
   id: string;
@@ -69,6 +70,10 @@ export default function Pipeline() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [addOpen, setAddOpen] = useState(false);
+  const [addMode, setAddMode] = useState<"choose" | "manual" | "intake">("choose");
+  const [intakeLink, setIntakeLink] = useState<string | null>(null);
+  const [intakeCopied, setIntakeCopied] = useState(false);
+  const [creatingIntake, setCreatingIntake] = useState(false);
   const [newLead, setNewLead] = useState({
     account_name: "",
     contact_name: "",
@@ -201,7 +206,7 @@ export default function Pipeline() {
 
   const handleAddLead = async () => {
     if (!user || !newLead.account_name.trim()) return;
-    const { error } = await supabase.from("leads").insert({
+    const { data: lead, error } = await supabase.from("leads").insert({
       account_name: newLead.account_name.trim(),
       contact_name: newLead.contact_name || null,
       phone: newLead.phone || null,
@@ -210,7 +215,7 @@ export default function Pipeline() {
       business_type: newLead.business_type || null,
       lead_source: newLead.lead_source || null,
       owner_user_id: user.id,
-    });
+    }).select("id").single();
 
     if (error) {
       toast.error("Failed to add lead");
@@ -219,12 +224,51 @@ export default function Pipeline() {
         user_id: user.id,
         action: "create",
         object_type: "lead",
-        object_id: "00000000-0000-0000-0000-000000000000",
+        object_id: lead?.id || "00000000-0000-0000-0000-000000000000",
       });
       toast.success("Lead added!");
       setNewLead({ account_name: "", contact_name: "", phone: "", email: "", state: "", business_type: "", lead_source: "" });
       setAddOpen(false);
+      setAddMode("choose");
       loadLeads();
+    }
+  };
+
+  const handleSendIntake = async () => {
+    if (!user || !newLead.account_name.trim()) return;
+    setCreatingIntake(true);
+    try {
+      // Create the lead first
+      const { data: lead, error } = await supabase.from("leads").insert({
+        account_name: newLead.account_name.trim(),
+        contact_name: newLead.contact_name || null,
+        email: newLead.email || null,
+        phone: newLead.phone || null,
+        state: newLead.state || null,
+        business_type: newLead.business_type || null,
+        lead_source: "customer_intake",
+        owner_user_id: user.id,
+      }).select("id").single();
+
+      if (error || !lead) throw error || new Error("Failed to create lead");
+
+      // Generate intake link
+      const result = await generateIntakeLink({
+        agentId: user.id,
+        leadId: lead.id,
+        customerName: newLead.contact_name || null,
+        customerEmail: newLead.email || null,
+      });
+
+      if (!result) throw new Error("Failed to generate link");
+
+      setIntakeLink(result.url);
+      setAddMode("intake");
+      loadLeads();
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to create intake link");
+    } finally {
+      setCreatingIntake(false);
     }
   };
 
@@ -496,7 +540,7 @@ export default function Pipeline() {
             {leads.length} lead{leads.length !== 1 ? "s" : ""} — drag between stages to manage your pipeline.
           </p>
         </div>
-        <Dialog open={addOpen} onOpenChange={setAddOpen}>
+        <Dialog open={addOpen} onOpenChange={(open) => { setAddOpen(open); if (!open) { setAddMode("choose"); setIntakeLink(null); setIntakeCopied(false); } }}>
           <DialogTrigger asChild>
             <Button size="sm" className="gap-2">
               <Plus className="h-4 w-4" />
@@ -505,70 +549,188 @@ export default function Pipeline() {
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Add New Lead</DialogTitle>
+              <DialogTitle>
+                {addMode === "choose" ? "Add New Lead" : addMode === "manual" ? "Enter Lead Details" : addMode === "intake" && intakeLink ? "Intake Link Ready" : "Send Intake Form"}
+              </DialogTitle>
             </DialogHeader>
-            <div className="grid gap-3 mt-2">
-              <div>
-                <Label>Account Name *</Label>
-                <Input
-                  value={newLead.account_name}
-                  onChange={(e) => setNewLead({ ...newLead, account_name: e.target.value })}
-                  placeholder="Company name"
-                />
+
+            {/* Step 1: Choose mode */}
+            {addMode === "choose" && (
+              <div className="grid gap-3 mt-2">
+                <button
+                  className="flex items-center gap-4 rounded-lg border bg-card p-4 text-left hover:border-primary hover:shadow-sm transition-all"
+                  onClick={() => setAddMode("manual")}
+                >
+                  <div className="rounded-full bg-primary/10 p-2.5">
+                    <PenLine className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-sm">Enter Information Yourself</p>
+                    <p className="text-xs text-muted-foreground font-sans mt-0.5">Manually enter client details and start working on their account</p>
+                  </div>
+                </button>
+                <button
+                  className="flex items-center gap-4 rounded-lg border bg-card p-4 text-left hover:border-primary hover:shadow-sm transition-all"
+                  onClick={() => setAddMode("intake")}
+                >
+                  <div className="rounded-full bg-accent/10 p-2.5">
+                    <Send className="h-5 w-5 text-accent" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-sm">Send Intake Form to Client</p>
+                    <p className="text-xs text-muted-foreground font-sans mt-0.5">Generate a secure link for the client to submit their own info</p>
+                  </div>
+                </button>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+            )}
+
+            {/* Step 2a: Manual entry */}
+            {addMode === "manual" && (
+              <div className="grid gap-3 mt-2">
                 <div>
-                  <Label>Contact Name</Label>
+                  <Label>Account Name *</Label>
                   <Input
-                    value={newLead.contact_name}
-                    onChange={(e) => setNewLead({ ...newLead, contact_name: e.target.value })}
+                    value={newLead.account_name}
+                    onChange={(e) => setNewLead({ ...newLead, account_name: e.target.value })}
+                    placeholder="Company name"
                   />
                 </div>
-                <div>
-                  <Label>Phone</Label>
-                  <Input
-                    value={newLead.phone}
-                    onChange={(e) => setNewLead({ ...newLead, phone: e.target.value })}
-                  />
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>Contact Name</Label>
+                    <Input
+                      value={newLead.contact_name}
+                      onChange={(e) => setNewLead({ ...newLead, contact_name: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label>Phone</Label>
+                    <Input
+                      value={newLead.phone}
+                      onChange={(e) => setNewLead({ ...newLead, phone: e.target.value })}
+                    />
+                  </div>
                 </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>Email</Label>
+                    <Input
+                      value={newLead.email}
+                      onChange={(e) => setNewLead({ ...newLead, email: e.target.value })}
+                      type="email"
+                    />
+                  </div>
+                  <div>
+                    <Label>State</Label>
+                    <Input
+                      value={newLead.state}
+                      onChange={(e) => setNewLead({ ...newLead, state: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>Business Type</Label>
+                    <Input
+                      value={newLead.business_type}
+                      onChange={(e) => setNewLead({ ...newLead, business_type: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label>Lead Source</Label>
+                    <Input
+                      value={newLead.lead_source}
+                      onChange={(e) => setNewLead({ ...newLead, lead_source: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setAddMode("choose")}>Back</Button>
+                  <Button onClick={handleAddLead} disabled={!newLead.account_name.trim()}>
+                    Add Lead
+                  </Button>
+                </DialogFooter>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+            )}
+
+            {/* Step 2b: Intake link — collect minimal info then generate */}
+            {addMode === "intake" && !intakeLink && (
+              <div className="grid gap-3 mt-2">
+                <p className="text-sm text-muted-foreground font-sans">
+                  Enter the client's name and email, then we'll generate a secure intake form link you can send them.
+                </p>
                 <div>
-                  <Label>Email</Label>
+                  <Label>Account / Business Name *</Label>
                   <Input
-                    value={newLead.email}
-                    onChange={(e) => setNewLead({ ...newLead, email: e.target.value })}
-                    type="email"
+                    value={newLead.account_name}
+                    onChange={(e) => setNewLead({ ...newLead, account_name: e.target.value })}
+                    placeholder="Company name"
                   />
                 </div>
-                <div>
-                  <Label>State</Label>
-                  <Input
-                    value={newLead.state}
-                    onChange={(e) => setNewLead({ ...newLead, state: e.target.value })}
-                  />
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>Contact Name</Label>
+                    <Input
+                      value={newLead.contact_name}
+                      onChange={(e) => setNewLead({ ...newLead, contact_name: e.target.value })}
+                      placeholder="John Smith"
+                    />
+                  </div>
+                  <div>
+                    <Label>Email</Label>
+                    <Input
+                      value={newLead.email}
+                      onChange={(e) => setNewLead({ ...newLead, email: e.target.value })}
+                      type="email"
+                      placeholder="john@company.com"
+                    />
+                  </div>
                 </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setAddMode("choose")}>Back</Button>
+                  <Button onClick={handleSendIntake} disabled={!newLead.account_name.trim() || creatingIntake} className="gap-2">
+                    <Send className="h-4 w-4" />
+                    {creatingIntake ? "Generating…" : "Generate Intake Link"}
+                  </Button>
+                </DialogFooter>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label>Business Type</Label>
-                  <Input
-                    value={newLead.business_type}
-                    onChange={(e) => setNewLead({ ...newLead, business_type: e.target.value })}
-                  />
+            )}
+
+            {/* Step 3: Show generated link */}
+            {addMode === "intake" && intakeLink && (
+              <div className="space-y-4 mt-2">
+                <div className="rounded-lg bg-muted/50 border p-4">
+                  <p className="text-xs text-muted-foreground font-sans mb-2">Share this link with your client:</p>
+                  <div className="flex items-center gap-2">
+                    <code className="flex-1 text-xs bg-background rounded px-2 py-1.5 border truncate font-mono">
+                      {intakeLink}
+                    </code>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="shrink-0 gap-1.5"
+                      onClick={async () => {
+                        try { await navigator.clipboard.writeText(intakeLink); } catch { /* ignore */ }
+                        setIntakeCopied(true);
+                        toast.success("Link copied!");
+                        setTimeout(() => setIntakeCopied(false), 2000);
+                      }}
+                    >
+                      {intakeCopied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                      {intakeCopied ? "Copied" : "Copy"}
+                    </Button>
+                  </div>
                 </div>
-                <div>
-                  <Label>Lead Source</Label>
-                  <Input
-                    value={newLead.lead_source}
-                    onChange={(e) => setNewLead({ ...newLead, lead_source: e.target.value })}
-                  />
-                </div>
+                <p className="text-xs text-muted-foreground font-sans">
+                  The client will fill out their business details, EIN, address, and coverage needs. Their responses will automatically populate your forms.
+                </p>
+                <DialogFooter>
+                  <Button onClick={() => { setAddOpen(false); setAddMode("choose"); setIntakeLink(null); setNewLead({ account_name: "", contact_name: "", phone: "", email: "", state: "", business_type: "", lead_source: "" }); }}>
+                    Done
+                  </Button>
+                </DialogFooter>
               </div>
-              <Button onClick={handleAddLead} disabled={!newLead.account_name.trim()}>
-                Add Lead
-              </Button>
-            </div>
+            )}
           </DialogContent>
         </Dialog>
       </div>
