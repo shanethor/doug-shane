@@ -21,7 +21,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
-import { Download, Send, Paperclip, Loader2, FileText, CheckCircle, X, Filter, Eye, Image, Mail, ChevronLeft, ChevronRight, ClipboardList, MessageSquare, Mic, MicOff, Plus, BrainCircuit, ShieldAlert, Package, LinkIcon } from "lucide-react";
+import { Download, Send, Paperclip, Loader2, FileText, CheckCircle, X, Filter, Eye, Image, Mail, ChevronLeft, ChevronRight, ClipboardList, MessageSquare, Mic, MicOff, Plus, BrainCircuit, ShieldAlert, Package, LinkIcon, StickyNote } from "lucide-react";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import { useVoiceInput } from "@/hooks/useVoiceInput";
@@ -1147,6 +1147,30 @@ export default function FormFillingView({ submissionId, initialMessages, initial
                 </div>
               );
             })}
+          </div>
+          {/* Narrative / Executive Summary — opens Submit Package dialog on Narrative tab */}
+          <div
+            onClick={() => {
+              setSubmitPackageOpen(true);
+              // Small delay to let dialog mount, then switch tab
+              setTimeout(() => {
+                const narrativeTab = document.querySelector('[data-value="narrative"]') as HTMLElement;
+                if (narrativeTab) narrativeTab.click();
+              }, 100);
+            }}
+            className="flex items-center gap-2 rounded-md px-2 py-1 transition-colors cursor-pointer hover:bg-muted/50"
+          >
+            <StickyNote className="h-3 w-3 shrink-0 text-primary/60" />
+            <span className="flex-1 text-left text-[10px] font-medium truncate text-foreground">
+              Narrative / Executive Summary
+            </span>
+            <Badge variant="secondary" className="text-[8px] px-1.5 py-0">Note</Badge>
+          </div>
+          {/* Statement of Values placeholder */}
+          <div className="flex items-center gap-2 rounded-md px-2 py-1 opacity-40 cursor-default">
+            <Checkbox checked={false} disabled className="h-3 w-3 shrink-0" />
+            <span className="flex-1 text-left text-[10px] font-medium truncate text-foreground">Statement of Values</span>
+            <Badge variant="outline" className="text-[8px] px-1.5 py-0">Coming Soon</Badge>
           </div>
           {/* Supplemental placeholder */}
           <div className="flex items-center gap-2 rounded-md px-2 py-1 opacity-40 cursor-default">
