@@ -24,7 +24,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Search, CheckCircle, GripVertical, Edit3, Send, PenLine, Copy, Check, ExternalLink, FileText } from "lucide-react";
+import { Plus, Search, CheckCircle, GripVertical, Edit3, Send, PenLine, Copy, Check, ExternalLink, FileText, Trash2, Users, DollarSign, TrendingUp, Share2, BarChart3 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { LossRunBadge } from "@/components/LossRunBadge";
 import { ClientDocuments } from "@/components/ClientDocuments";
@@ -119,12 +129,29 @@ export default function Pipeline() {
   const [lostRenewalDate, setLostRenewalDate] = useState("");
   const [quoteComparisonModalOpen, setQuoteComparisonModalOpen] = useState(false);
 
+  // Delete lead state
+  const [deleteLeadId, setDeleteLeadId] = useState<string | null>(null);
+  const [deleteAlertOpen, setDeleteAlertOpen] = useState(false);
+
+  // Pipeline stats
+  const [pipelineStats, setPipelineStats] = useState({
+    totalProspects: 0,
+    totalPremiumPipeline: 0,
+    totalRevenuePipeline: 0,
+    totalPremiumSold: 0,
+    totalRevenueSold: 0,
+  });
+
+  // Share tracker
+  const [trackerCopied, setTrackerCopied] = useState(false);
+
   const loadLeads = useCallback(async () => {
     if (!user) return;
-    const [leadsRes, approvedRes, lossRunRes] = await Promise.all([
+    const [leadsRes, approvedRes, lossRunRes, allPoliciesRes] = await Promise.all([
       supabase.from("leads").select("*").order("updated_at", { ascending: false }),
       supabase.from("policies").select("lead_id").eq("status", "approved"),
       supabase.from("loss_run_requests").select("lead_id, status"),
+      supabase.from("policies").select("annual_premium, revenue, status").eq("producer_user_id", user.id),
     ]);
 
     const leadsData = leadsRes.data;
@@ -150,11 +177,26 @@ export default function Pipeline() {
         has_approved_policy: approvedLeadIds.has(l.id),
       }))
     );
+
+    // Compute pipeline stats
+    const allPolicies = allPoliciesRes.data ?? [];
+    const approved = allPolicies.filter((p: any) => p.status === "approved");
+    const activeLeads = leadsData.filter((l: any) => l.stage !== "lost" && !approvedLeadIds.has(l.id));
+    setPipelineStats({
+      totalProspects: activeLeads.length,
+      totalPremiumPipeline: allPolicies.reduce((s: number, p: any) => s + Number(p.annual_premium || 0), 0),
+      totalRevenuePipeline: allPolicies.reduce((s: number, p: any) => s + Number(p.revenue || Number(p.annual_premium) * 0.12 || 0), 0),
+      totalPremiumSold: approved.reduce((s: number, p: any) => s + Number(p.annual_premium || 0), 0),
+      totalRevenueSold: approved.reduce((s: number, p: any) => s + Number(p.revenue || Number(p.annual_premium) * 0.12 || 0), 0),
+    });
+
     setLoading(false);
   }, [user]);
 
   useEffect(() => {
     loadLeads();
+    const interval = setInterval(loadLeads, 15000);
+    return () => clearInterval(interval);
   }, [loadLeads]);
 
   // Auto-promote lost leads back to Prospect when within 2 months of estimated renewal
@@ -499,6 +541,38 @@ export default function Pipeline() {
     }
   };
 
+  const handleDeleteLead = async () => {
+    if (!user || !deleteLeadId) return;
+    try {
+      // Delete related records first
+      await Promise.all([
+        supabase.from("lead_notes").delete().eq("lead_id", deleteLeadId),
+        supabase.from("loss_run_requests").delete().eq("lead_id", deleteLeadId),
+        supabase.from("policies").delete().eq("lead_id", deleteLeadId),
+        supabase.from("client_documents").delete().eq("lead_id", deleteLeadId),
+        supabase.from("intake_links").delete().eq("lead_id", deleteLeadId),
+      ]);
+      const { error } = await supabase.from("leads").delete().eq("id", deleteLeadId);
+      if (error) throw error;
+
+      await supabase.from("audit_log").insert({
+        user_id: user.id,
+        action: "delete",
+        object_type: "lead",
+        object_id: deleteLeadId,
+      });
+
+      toast.success("Lead deleted");
+      setDeleteAlertOpen(false);
+      setDeleteLeadId(null);
+      loadLeads();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to delete lead");
+    }
+  };
+
+  const trackerUrl = user ? `${window.location.origin}/tracker?uid=${user.id}` : "";
+
   const filtered = leads.filter((l) => {
     if (!search) return true;
     const q = search.toLowerCase();
@@ -535,8 +609,59 @@ export default function Pipeline() {
   const presentingLead = presentingLeadId ? leads.find((l) => l.id === presentingLeadId) : null;
   const lostLead = lostLeadId ? leads.find((l) => l.id === lostLeadId) : null;
 
+  const fmt = (n: number) => "$" + n.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+
   return (
     <AppLayout>
+      {/* Stats Tracker Bar */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
+        <Card>
+          <CardContent className="p-3 flex items-center gap-2">
+            <Users className="h-4 w-4 text-primary shrink-0" />
+            <div>
+              <p className="text-lg font-semibold font-sans leading-tight">{pipelineStats.totalProspects}</p>
+              <p className="text-[10px] text-muted-foreground font-sans">Active Prospects</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-3 flex items-center gap-2">
+            <DollarSign className="h-4 w-4 text-accent shrink-0" />
+            <div>
+              <p className="text-lg font-semibold font-sans leading-tight">{fmt(pipelineStats.totalPremiumPipeline)}</p>
+              <p className="text-[10px] text-muted-foreground font-sans">Pipeline Premium</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-3 flex items-center gap-2">
+            <TrendingUp className="h-4 w-4 text-accent shrink-0" />
+            <div>
+              <p className="text-lg font-semibold font-sans leading-tight">{fmt(pipelineStats.totalRevenuePipeline)}</p>
+              <p className="text-[10px] text-muted-foreground font-sans">Pipeline Revenue</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-success/30">
+          <CardContent className="p-3 flex items-center gap-2">
+            <CheckCircle className="h-4 w-4 text-success shrink-0" />
+            <div>
+              <p className="text-lg font-semibold font-sans leading-tight">{fmt(pipelineStats.totalPremiumSold)}</p>
+              <p className="text-[10px] text-muted-foreground font-sans">Premium Sold</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-success/30">
+          <CardContent className="p-3 flex items-center gap-2">
+            <TrendingUp className="h-4 w-4 text-success shrink-0" />
+            <div>
+              <p className="text-lg font-semibold font-sans leading-tight">{fmt(pipelineStats.totalRevenueSold)}</p>
+              <p className="text-[10px] text-muted-foreground font-sans">Revenue Sold</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
       <div className="flex items-end justify-between mb-6">
         <div>
           <h1 className="text-4xl">Pipeline</h1>
@@ -544,6 +669,21 @@ export default function Pipeline() {
             {leads.length} lead{leads.length !== 1 ? "s" : ""} — drag between stages to manage your pipeline.
           </p>
         </div>
+        <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-2"
+            onClick={async () => {
+              try { await navigator.clipboard.writeText(trackerUrl); } catch {}
+              setTrackerCopied(true);
+              toast.success("Tracker link copied!");
+              setTimeout(() => setTrackerCopied(false), 2000);
+            }}
+          >
+            {trackerCopied ? <Check className="h-3.5 w-3.5" /> : <Share2 className="h-3.5 w-3.5" />}
+            {trackerCopied ? "Copied" : "Share Tracker"}
+          </Button>
         <Dialog open={addOpen} onOpenChange={(open) => { setAddOpen(open); if (!open) { setAddMode("choose"); setIntakeLink(null); setIntakeCopied(false); } }}>
           <DialogTrigger asChild>
             <Button size="sm" className="gap-2">
@@ -737,6 +877,7 @@ export default function Pipeline() {
             )}
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {leads.length > 0 && (
@@ -780,7 +921,7 @@ export default function Pipeline() {
                   className={`transition-opacity ${draggedLeadId === lead.id ? "opacity-40" : ""}`}
                 >
                   <Link to={`/pipeline/${lead.id}`}>
-                    <Card className="hover-lift cursor-grab active:cursor-grabbing">
+                    <Card className="hover-lift cursor-grab active:cursor-grabbing group">
                       <CardContent className="p-3">
                         <div className="flex items-start justify-between">
                           <div className="min-w-0 flex-1">
@@ -812,9 +953,23 @@ export default function Pipeline() {
                               )}
                             </div>
                           </div>
-                          {lead.has_approved_policy && (
-                            <CheckCircle className="h-3.5 w-3.5 text-success shrink-0 mt-0.5" />
-                          )}
+                          <div className="flex items-center gap-1 shrink-0 mt-0.5">
+                            {lead.has_approved_policy && (
+                              <CheckCircle className="h-3.5 w-3.5 text-success" />
+                            )}
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setDeleteLeadId(lead.id);
+                                setDeleteAlertOpen(true);
+                              }}
+                              className="p-0.5 rounded hover:bg-destructive/10 transition-colors opacity-0 group-hover:opacity-100"
+                              title="Delete lead"
+                            >
+                              <Trash2 className="h-3 w-3 text-muted-foreground hover:text-destructive" />
+                            </button>
+                          </div>
                         </div>
                       </CardContent>
                     </Card>
@@ -976,6 +1131,24 @@ export default function Pipeline() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Lead Confirmation */}
+      <AlertDialog open={deleteAlertOpen} onOpenChange={setDeleteAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Lead</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete this lead and all associated notes, documents, and loss run requests. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => { setDeleteAlertOpen(false); setDeleteLeadId(null); }}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteLead} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppLayout>
   );
 }

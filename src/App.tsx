@@ -23,6 +23,7 @@ import LeadDetail from "./pages/LeadDetail";
 import ProducerDashboard from "./pages/ProducerDashboard";
 import Approvals from "./pages/Approvals";
 import IntakeForm from "./pages/IntakeForm";
+import PipelineTracker from "./pages/PipelineTracker";
 import { Navigate } from "react-router-dom";
 const queryClient = new QueryClient();
 
@@ -52,6 +53,7 @@ const App = () => (
           <Route path="/my-dashboard" element={<ProtectedRoute><ProducerDashboard /></ProtectedRoute>} />
           <Route path="/approvals" element={<Navigate to="/admin" replace />} />
           <Route path="/intake/:token" element={<IntakeForm />} />
+          <Route path="/tracker" element={<PipelineTracker />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
