@@ -44,6 +44,10 @@ type LeadInfo = {
   submission_id: string | null;
 };
 
+type SortOption = "newest" | "oldest" | "name_asc" | "name_desc" | "status";
+
+const PAGE_SIZE = 20;
+
 export default function UserDashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -52,6 +56,8 @@ export default function UserDashboard() {
   const [soldLeadIds, setSoldLeadIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [sortBy, setSortBy] = useState<SortOption>("newest");
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   useEffect(() => {
     if (!user) return;
@@ -180,15 +186,31 @@ export default function UserDashboard() {
     }
   };
 
-  const filtered = submissions.filter((s) => {
-    if (!search) return true;
-    const q = search.toLowerCase();
-    return (
-      (s.company_name || "").toLowerCase().includes(q) ||
-      (s.description || "").toLowerCase().includes(q) ||
-      s.status.toLowerCase().includes(q)
-    );
-  });
+  // Reset visible count when search changes
+  useEffect(() => { setVisibleCount(PAGE_SIZE); }, [search]);
+
+  const filtered = submissions
+    .filter((s) => {
+      if (!search) return true;
+      const q = search.toLowerCase();
+      return (
+        (s.company_name || "").toLowerCase().includes(q) ||
+        (s.description || "").toLowerCase().includes(q) ||
+        s.status.toLowerCase().includes(q)
+      );
+    })
+    .sort((a, b) => {
+      switch (sortBy) {
+        case "oldest": return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        case "name_asc": return (a.company_name || "").localeCompare(b.company_name || "");
+        case "name_desc": return (b.company_name || "").localeCompare(a.company_name || "");
+        case "status": return (a.status || "").localeCompare(b.status || "");
+        default: return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      }
+    });
+
+  const visible = filtered.slice(0, visibleCount);
+  const hasMore = visibleCount < filtered.length;
 
   if (loading) {
     return (
@@ -217,16 +239,33 @@ export default function UserDashboard() {
         </Link>
       </div>
 
-      {/* Search */}
+      {/* Search & Sort */}
       {submissions.length > 0 && (
-        <div className="relative mb-6">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search clients…"
-            className="pl-9 h-10"
-          />
+        <div className="flex gap-3 mb-6">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search clients…"
+              className="pl-9 h-10"
+            />
+          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="h-10 text-xs gap-1.5 shrink-0">
+                <ArrowRight className="h-3.5 w-3.5 rotate-90" />
+                Sort
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setSortBy("newest")} className={sortBy === "newest" ? "font-semibold" : ""}>Newest First</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSortBy("oldest")} className={sortBy === "oldest" ? "font-semibold" : ""}>Oldest First</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSortBy("name_asc")} className={sortBy === "name_asc" ? "font-semibold" : ""}>Name A–Z</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSortBy("name_desc")} className={sortBy === "name_desc" ? "font-semibold" : ""}>Name Z–A</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSortBy("status")} className={sortBy === "status" ? "font-semibold" : ""}>By Status</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       )}
 
@@ -245,7 +284,7 @@ export default function UserDashboard() {
         </div>
       ) : (
         <div className="grid gap-3">
-          {filtered.map((s) => (
+          {visible.map((s) => (
             <div
               key={s.id}
               className="flex items-center justify-between rounded-lg border bg-card p-4 hover:shadow-sm transition-shadow cursor-pointer"
@@ -335,6 +374,13 @@ export default function UserDashboard() {
             <p className="text-center text-sm text-muted-foreground py-8 font-sans">
               No clients matching "{search}"
             </p>
+          )}
+          {hasMore && (
+            <div className="flex justify-center py-4">
+              <Button variant="outline" size="sm" onClick={() => setVisibleCount(c => c + PAGE_SIZE)} className="text-xs">
+                Load More ({filtered.length - visibleCount} remaining)
+              </Button>
+            </div>
           )}
         </div>
       )}

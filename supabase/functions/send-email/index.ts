@@ -28,8 +28,8 @@ serve(async (req) => {
       });
     }
 
-    // Use user's custom from_email or fallback to a default
-    const fromAddress = from_email || "noreply@resend.dev";
+    // Always send from our verified domain
+    const fromAddress = "AURA <noreply@epochrisk.com>";
 
     const resendPayload: Record<string, unknown> = {
       from: fromAddress,
