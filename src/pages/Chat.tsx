@@ -802,6 +802,9 @@ export default function Chat() {
       /\bcustomer\s*(submission|onboard|onboarding)\s*(link|form)?\b/,
       /\b(new|create)\s*(client|customer)\s*(link|form)\b/,
       /\bonboard\s*(a\s*)?(new\s*)?(client|customer)\b/,
+      /\bneed\s*(a\s*)?link\b/,
+      /\b(get|create|make)\s*(a\s*)?link\b/,
+      /\blink\s*for\s*(a\s*)?(customer|client)\b/,
     ];
     return patterns.some(p => p.test(t));
   };
@@ -827,9 +830,12 @@ export default function Chat() {
             },
           ]);
           toast({ title: "Intake link copied!", description: "Share this link with your customer." });
+        } else {
+          throw new Error("Link generation returned null");
         }
-      } catch (err) {
-        setMessages((prev) => [...prev, { role: "assistant", content: "Sorry, I couldn't generate the intake link. Please try again." }]);
+      } catch (err: any) {
+        console.error("Intake link generation failed:", err);
+        setMessages((prev) => [...prev, { role: "assistant", content: `Sorry, I couldn't generate the intake link. Error: ${err?.message || "Unknown error"}. Please try again.` }]);
       }
       setIsLoading(false);
       return;
