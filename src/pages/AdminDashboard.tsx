@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useAdmin } from "@/hooks/useAdmin";
 import { AppLayout } from "@/components/AppLayout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -29,6 +30,7 @@ const statusColor: Record<string, string> = {
 
 export default function AdminDashboard() {
   const { user } = useAuth();
+  const { isAdmin, loading: adminLoading } = useAdmin();
   const [submissions, setSubmissions] = useState<any[]>([]);
   const [applications, setApplications] = useState<any[]>([]);
   const [policies, setPolicies] = useState<any[]>([]);
@@ -38,7 +40,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || !isAdmin) return;
     Promise.all([
       supabase.from("business_submissions").select("*").order("created_at", { ascending: false }),
       supabase.from("insurance_applications").select("*").order("created_at", { ascending: false }),
@@ -114,11 +116,24 @@ export default function AdminDashboard() {
       .sort((a, b) => b.count - a.count);
   }, [corrections]);
 
-  if (loading) {
+  if (adminLoading || loading) {
     return (
       <AppLayout>
         <div className="flex items-center justify-center py-20">
           <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+        </div>
+      </AppLayout>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <AppLayout>
+        <div className="flex flex-col items-center justify-center py-20 gap-4">
+          <AlertTriangle className="h-12 w-12 text-destructive" />
+          <h2 className="text-xl font-semibold">Access Denied</h2>
+          <p className="text-muted-foreground">You do not have admin privileges.</p>
+          <Link to="/" className="text-primary underline">Go to Dashboard</Link>
         </div>
       </AppLayout>
     );
