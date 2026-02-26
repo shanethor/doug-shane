@@ -248,12 +248,17 @@ export default function UserDashboard() {
           {filtered.map((s) => (
             <div
               key={s.id}
-              className="flex items-center justify-between rounded-lg border bg-card p-4 hover:shadow-sm transition-shadow"
+              className="flex items-center justify-between rounded-lg border bg-card p-4 hover:shadow-sm transition-shadow cursor-pointer"
+              onClick={() => {
+                const lead = getLeadForSubmission(s.id);
+                if (lead) {
+                  navigate(`/pipeline/${lead.id}`);
+                } else {
+                  navigate(`/application/${s.id}`);
+                }
+              }}
             >
-              <Link
-                to={`/application/${s.id}`}
-                className="flex-1 min-w-0"
-              >
+              <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-3 mb-1">
                   <span className="font-medium text-sm font-sans truncate">
                     {s.company_name || "Untitled Submission"}
@@ -269,12 +274,9 @@ export default function UserDashboard() {
                     if (!lead) return null;
                     const stage = getPipelineStage(lead);
                     return (
-                      <Link to={`/lead/${lead.id}`} onClick={(e) => e.stopPropagation()}>
-                        <Badge variant="outline" className={`text-[10px] uppercase tracking-wider font-sans ${stage.colorClass}`}>
-                          <ArrowRight className="h-2.5 w-2.5 mr-1" />
-                          {stage.label}
-                        </Badge>
-                      </Link>
+                      <Badge variant="outline" className={`text-[10px] uppercase tracking-wider font-sans ${stage.colorClass}`}>
+                        {stage.label}
+                      </Badge>
                     );
                   })()}
                   <ClientDocuments submissionId={s.id} compact />
@@ -288,7 +290,7 @@ export default function UserDashboard() {
                   {new Date(s.created_at).toLocaleDateString()}
                   {s.description && ` · ${s.description.slice(0, 60)}…`}
                 </p>
-              </Link>
+              </div>
 
               <div className="flex items-center gap-1 ml-4">
                 <Link to={`/acord/acord-125/${s.id}`}>
