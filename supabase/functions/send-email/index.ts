@@ -29,7 +29,7 @@ serve(async (req) => {
     }
 
     // Always send from our verified domain
-    const fromAddress = "AURA <noreply@epochrisk.com>";
+    const fromAddress = "AURA <noreply@buildingaura.site>";
 
     const resendPayload: Record<string, unknown> = {
       from: fromAddress,
