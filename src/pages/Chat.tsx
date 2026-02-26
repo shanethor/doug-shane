@@ -1146,7 +1146,7 @@ export default function Chat() {
     if (!subId) {
       setIsLoading(false);
       bypassIntentRef.current = true;
-      send("I want to fill an ACORD form — please ask me a few short questions to gather the client information.");
+      send("I want to fill an ACORD form — please ask me a few short targeted questions (2-3 at a time) to gather the client information. Do NOT show the standard intake form or use [FIELD:] markers. Ask conversational questions instead.");
       return;
     }
 
@@ -1787,7 +1787,7 @@ export default function Chat() {
                           } else {
                             const formContext = requestedFormIds.length > 0 ? ` The agent has already specified these ACORD forms: ${requestedFormIds.map(id => id.replace("acord-", "ACORD ")).join(", ")}.` : "";
                             bypassIntentRef.current = true;
-                            send(`I want to fill an ACORD form — please ask me a few short questions to gather the client information.${formContext}`);
+                            send(`I want to fill an ACORD form — please ask me a few short targeted questions (2-3 at a time) to gather the client information. Do NOT show the standard intake form or use [FIELD:] markers. Ask conversational questions instead.${formContext}`);
                           }
                         }}
                         className="flex items-center gap-3 rounded-lg border bg-background hover:bg-muted/60 px-4 py-3 text-left transition-colors"
@@ -2168,7 +2168,7 @@ export default function Chat() {
                           } else {
                             const formContext = requestedFormIds.length > 0 ? ` The agent has already specified these ACORD forms: ${requestedFormIds.map(id => id.replace("acord-", "ACORD ")).join(", ")}.` : "";
                             bypassIntentRef.current = true;
-                            send(`I want to fill an ACORD form — please ask me a few short questions to gather the client information.${formContext}`);
+                            send(`I want to fill an ACORD form — please ask me a few short targeted questions (2-3 at a time) to gather the client information. Do NOT show the standard intake form or use [FIELD:] markers. Ask conversational questions instead.${formContext}`);
                           }
                         }}
                         className="flex items-center gap-3 rounded-lg border bg-background hover:bg-muted/60 px-4 py-3 text-left transition-colors"
