@@ -1,7 +1,9 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import JSZip from "jszip";
 import { supabase } from "@/integrations/supabase/client";
 import { ACORD_FORM_LIST, type AcordFormDefinition } from "@/lib/acord-forms";
+import { FILLABLE_PDF_PATHS, ACORD_INDEX_MAPS } from "@/lib/acord-field-map";
+import { getMergedIndexMap } from "@/lib/acord-pdf-fields";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,10 +44,88 @@ export default function SubmitPackageDialog({
   const [generatingNarrative, setGeneratingNarrative] = useState(false);
   const [activeTab, setActiveTab] = useState("review");
   const [downloading, setDownloading] = useState(false);
+  const [generatedPdfMap, setGeneratedPdfMap] = useState<Record<string, Uint8Array>>({});
+  const [generatingPdfs, setGeneratingPdfs] = useState(false);
 
   // Email state
   const [emailTo, setEmailTo] = useState("");
   const [sendingEmail, setSendingEmail] = useState(false);
+
+  // Merge savedPdfBytesMap (from Adobe viewer) with auto-generated PDFs
+  const mergedPdfMap = { ...generatedPdfMap, ...savedPdfBytesMap };
+
+  // Auto-generate PDF bytes for forms not in savedPdfBytesMap when dialog opens
+  const hasRunRef = useRef(false);
+  useEffect(() => {
+    if (!open) {
+      hasRunRef.current = false;
+      return;
+    }
+    if (hasRunRef.current) return;
+    hasRunRef.current = true;
+
+    const formsMissingPdf = ACORD_FORM_LIST.filter(
+      f => enabledFormIds.has(f.id) && !savedPdfBytesMap[f.id] && FILLABLE_PDF_PATHS[f.id]
+    );
+    if (formsMissingPdf.length === 0) return;
+
+    setGeneratingPdfs(true);
+    (async () => {
+      const { PDFDocument, StandardFonts } = await import("pdf-lib");
+      const newMap: Record<string, Uint8Array> = {};
+
+      for (const form of formsMissingPdf) {
+        try {
+          const pdfPath = FILLABLE_PDF_PATHS[form.id];
+          const resp = await fetch(pdfPath);
+          const bytes = await resp.arrayBuffer();
+          const doc = await PDFDocument.load(new Uint8Array(bytes), { ignoreEncryption: true });
+          const helvetica = await doc.embedFont(StandardFonts.Helvetica);
+          const pdfForm = doc.getForm();
+          const allFields = pdfForm.getFields();
+
+          // Build prefill index map
+          const indexMap = await getMergedIndexMap(form.id).catch(() => null) || ACORD_INDEX_MAPS[form.id];
+          if (indexMap) {
+            for (const [internalKey, rawIdx] of Object.entries(indexMap)) {
+              const idx = rawIdx as number;
+              const val = formData[internalKey];
+              if (val === undefined || val === null || val === "") continue;
+              const s = String(val).trim();
+              if (!s || s === "N/A" || s === "n/a" || s === "[]") continue;
+              if (s === "false" && !internalKey.startsWith("chk_")) continue;
+              let display = s;
+              const isoMatch = display.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+              if (isoMatch) display = `${isoMatch[2]}/${isoMatch[3]}/${isoMatch[1]}`;
+
+              const field = allFields[idx];
+              if (!field) continue;
+              try {
+                const f = field as any;
+                if (typeof f.setText === "function") {
+                  f.setText(display);
+                  try { f.defaultUpdateAppearances(helvetica); } catch (_) {}
+                } else if (typeof f.check === "function") {
+                  if (display === "true" || display === "Yes" || display === "1") f.check();
+                } else if (typeof f.select === "function") {
+                  try { f.select(display); } catch (_) {}
+                }
+              } catch (_) {}
+            }
+          }
+
+          try { pdfForm.updateFieldAppearances(helvetica); } catch (_) {}
+          const savedBytes = await doc.save();
+          newMap[form.id] = new Uint8Array(savedBytes);
+        } catch (err) {
+          console.warn(`Failed to generate PDF for ${form.name}:`, err);
+        }
+      }
+
+      setGeneratedPdfMap(prev => ({ ...prev, ...newMap }));
+      setGeneratingPdfs(false);
+    })();
+  }, [open, enabledFormIds, savedPdfBytesMap, formData]);
 
   const enabledFormList = ACORD_FORM_LIST.filter(f => enabledFormIds.has(f.id));
 
@@ -169,7 +249,7 @@ Keep it professional, factual, and specific. Do NOT include placeholders or brac
         const hasData = form.fields.some(f => formData[f.key] && String(formData[f.key]).trim());
         if (!hasData) continue;
 
-        const adobeBytes = savedPdfBytesMap[form.id];
+        const adobeBytes = mergedPdfMap[form.id];
         if (adobeBytes) {
           zip.file(`${form.name.replace(/\s/g, "_")}_${date}.pdf`, adobeBytes);
           count++;
@@ -230,7 +310,7 @@ Keep it professional, factual, and specific. Do NOT include placeholders or brac
       const date = new Date().toISOString().slice(0, 10);
 
       for (const form of enabledFormList) {
-        const adobeBytes = savedPdfBytesMap[form.id];
+        const adobeBytes = mergedPdfMap[form.id];
         if (!adobeBytes) continue;
         const hasData = form.fields.some(f => formData[f.key] && String(formData[f.key]).trim());
         if (!hasData) continue;
@@ -344,7 +424,7 @@ Keep it professional, factual, and specific. Do NOT include placeholders or brac
                   <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">ACORD Forms</p>
                   {formStats.map(({ form, filled, total }) => {
                     const pct = Math.round((filled / Math.max(total, 1)) * 100);
-                    const hasPdf = !!savedPdfBytesMap[form.id];
+                    const hasPdf = !!mergedPdfMap[form.id];
                     return (
                       <div key={form.id} className="flex items-center gap-3 py-2 px-3 rounded-md hover:bg-muted/30">
                         <FileText className="h-4 w-4 text-primary/70 shrink-0" />
@@ -358,6 +438,8 @@ Keep it professional, factual, and specific. Do NOT include placeholders or brac
                           </Badge>
                           {hasPdf ? (
                             <CheckCircle className="h-3.5 w-3.5 text-green-500" />
+                          ) : generatingPdfs ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
                           ) : (
                             <span className="text-[9px] text-amber-500">No PDF</span>
                           )}
