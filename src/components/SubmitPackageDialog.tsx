@@ -426,7 +426,7 @@ Keep it professional, factual, and specific. Do NOT include placeholders or brac
   return (
     <>
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl max-h-[85vh] flex flex-col">
+      <DialogContent className="sm:max-w-2xl max-h-[92vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-base">
             <Package className="h-5 w-5 text-primary" />
@@ -455,7 +455,7 @@ Keep it professional, factual, and specific. Do NOT include placeholders or brac
 
           {/* ── Tab 1: Producer Forms ── */}
           <TabsContent value="review" className="flex-1 overflow-hidden mt-3">
-            <ScrollArea className="h-[400px]">
+            <ScrollArea className="h-[550px]">
               <div className="space-y-1 pr-4">
                 <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg mb-3">
                   <div>
@@ -564,7 +564,7 @@ Keep it professional, factual, and specific. Do NOT include placeholders or brac
 
           {/* ── Tab 3: Client Documents ── */}
           <TabsContent value="client" className="flex-1 overflow-hidden mt-3">
-            <ScrollArea className="h-[400px]">
+            <ScrollArea className="h-[550px]">
               <div className="space-y-4 pr-4">
                 <div className="p-3 bg-muted/50 rounded-lg">
                   <p className="text-xs font-semibold mb-1">Client Documents</p>
@@ -653,7 +653,7 @@ Keep it professional, factual, and specific. Do NOT include placeholders or brac
 
           {/* ── Tab 4: Send ── */}
           <TabsContent value="send" className="flex-1 overflow-hidden mt-3">
-            <div className="space-y-6 h-[400px]">
+            <div className="space-y-6 h-[550px]">
               <div className="p-4 border rounded-lg space-y-3">
                 <div className="flex items-center gap-2">
                   <Download className="h-4 w-4 text-primary" />
