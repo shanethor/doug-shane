@@ -787,7 +787,23 @@ export default function Chat() {
   /** Detect if user is asking for a customer intake link/form */
   const isIntakeLinkIntent = (text: string) => {
     const t = text.trim().toLowerCase();
-    return /\bintake\s*(form|link)\b|\bclient\s*intake\b|\bcustomer\s*(intake|form|link)\b|\bsend\s*(a|an|the)?\s*(intake|customer)\b|\bneed\s*(a|an)?\s*(client|customer)?\s*intake\b|\bgenerate\s*(an?\s*)?(intake|customer)\s*(link|form)\b|\bcollect\s*(customer|client)\s*(info|information|details)\b/.test(t);
+    const patterns = [
+      /\bintake\s*(form|link)\b/,
+      /\bclient\s*intake\b/,
+      /\bcustomer\s*(intake|form|link)\b/,
+      /\bsend\s*(a|an|the)?\s*(intake|customer)\b/,
+      /\bneed\s*(a|an)?\s*(client|customer)?\s*intake\b/,
+      /\bgenerate\s*(an?\s*)?(intake|customer)\s*(link|form)\b/,
+      /\bcollect\s*(customer|client)\s*(info|information|details)\b/,
+      /\blink\s*(to\s*)?(give|send|share)\s*(to\s*)?(a\s*)?(customer|client)\b/,
+      /\b(give|send|share)\s*(a\s*)?(link|form)\s*(to\s*)?(a\s*)?(customer|client)\b/,
+      /\bneed\s*(a\s*)?(link|form)\s*(to\s*)?(give|send|share)\b/,
+      /\bneed\s*(a\s*)?(link|form)\s*(for\s*)?(a\s*)?(customer|client)\b/,
+      /\bcustomer\s*(submission|onboard|onboarding)\s*(link|form)?\b/,
+      /\b(new|create)\s*(client|customer)\s*(link|form)\b/,
+      /\bonboard\s*(a\s*)?(new\s*)?(client|customer)\b/,
+    ];
+    return patterns.some(p => p.test(t));
   };
 
   const send = async (text: string) => {
