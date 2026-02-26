@@ -21,10 +21,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
-import { Download, Send, Paperclip, Loader2, FileText, CheckCircle, X, Filter, Eye, Image, Mail, ChevronLeft, ChevronRight, ClipboardList, MessageSquare, Mic, MicOff, Plus, BrainCircuit, ShieldAlert, Package } from "lucide-react";
+import { Download, Send, Paperclip, Loader2, FileText, CheckCircle, X, Filter, Eye, Image, Mail, ChevronLeft, ChevronRight, ClipboardList, MessageSquare, Mic, MicOff, Plus, BrainCircuit, ShieldAlert, Package, LinkIcon } from "lucide-react";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import { useVoiceInput } from "@/hooks/useVoiceInput";
+import { generateIntakeLink } from "@/lib/intake-links";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
@@ -1235,6 +1236,27 @@ export default function FormFillingView({ submissionId, initialMessages, initial
             Submit Package
           </Button>
         </div>
+        <Button
+          size="sm"
+          variant="outline"
+          className="w-full text-xs h-7"
+          onClick={async () => {
+            if (!user) return;
+            const result = await generateIntakeLink({
+              agentId: user.id,
+              submissionId: submissionId !== "draft" ? submissionId : null,
+            });
+            if (result) {
+              await navigator.clipboard.writeText(result.url);
+              toast.success("Intake link copied to clipboard!");
+            } else {
+              toast.error("Failed to generate intake link");
+            }
+          }}
+        >
+          <LinkIcon className="h-3 w-3 mr-1" />
+          Send Intake to Customer
+        </Button>
       </div>
     </div>
   );
