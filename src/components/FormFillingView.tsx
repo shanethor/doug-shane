@@ -1386,6 +1386,15 @@ export default function FormFillingView({ submissionId, initialMessages, initial
               </div>
             </div>
           ) : activeForm && FILLABLE_PDF_PATHS[activeFormId] ? (
+            <div className="relative h-full">
+              {/* Loading overlay while prefill data is being computed */}
+              {prefillCount === 0 && dbLoaded && Object.keys(formData).length > 0 && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 z-20 bg-background/90 backdrop-blur-sm">
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                  <p className="text-sm font-medium text-muted-foreground">Preparing form data…</p>
+                  <p className="text-[10px] text-muted-foreground">Mapping fields to {activeForm.name}</p>
+                </div>
+              )}
              <FillablePdfViewer
                key={prefillKey}
                ref={pdfViewerRef}
@@ -1396,6 +1405,7 @@ export default function FormFillingView({ submissionId, initialMessages, initial
                onReady={() => setAdobeReady(true)}
                prefillByIndex={prefillByIndex}
              />
+            </div>
            ) : (
              <div className="flex items-center justify-center h-full text-muted-foreground text-sm">No fillable PDF available for this form</div>
            )}
@@ -1513,8 +1523,45 @@ export default function FormFillingView({ submissionId, initialMessages, initial
   ); };
 
 
+  const [chatDragActive, setChatDragActive] = useState(false);
+
+  const handleChatDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setChatDragActive(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      setAttachedFiles((prev) => [...prev, ...Array.from(e.dataTransfer.files)].slice(0, 10));
+    }
+  }, []);
+
+  const handleChatDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setChatDragActive(true);
+  }, []);
+
+  const handleChatDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setChatDragActive(false);
+  }, []);
+
   const renderChatPanel = () => (
-    <div className="flex flex-col h-full bg-background">
+    <div
+      className="flex flex-col h-full bg-background relative"
+      onDrop={handleChatDrop}
+      onDragOver={handleChatDragOver}
+      onDragLeave={handleChatDragLeave}
+    >
+      {/* Drag overlay */}
+      {chatDragActive && (
+        <div className="absolute inset-0 z-30 flex items-center justify-center bg-primary/5 border-2 border-dashed border-primary/40 rounded-lg backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-2 text-primary">
+            <Paperclip className="h-6 w-6" />
+            <p className="text-xs font-medium">Drop files here</p>
+          </div>
+        </div>
+      )}
       <div className="border-b p-3 flex items-center justify-between gap-2">
         <h2 className="text-sm font-semibold shrink-0" style={{ fontFamily: "'Instrument Serif', serif" }}>Chat</h2>
         <div className="flex items-center gap-1.5">
