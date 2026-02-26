@@ -1148,6 +1148,12 @@ export default function FormFillingView({ submissionId, initialMessages, initial
               );
             })}
           </div>
+          {/* Supplemental placeholder */}
+          <div className="flex items-center gap-2 rounded-md px-2 py-1 opacity-40 cursor-default">
+            <Checkbox checked={false} disabled className="h-3 w-3 shrink-0" />
+            <span className="flex-1 text-left text-[10px] font-medium truncate text-foreground">Supplemental</span>
+            <Badge variant="outline" className="text-[8px] px-1.5 py-0">Coming Soon</Badge>
+          </div>
         </div>
         <div className="flex gap-1">
           {(["all", "filled", "empty"] as FieldFilter[]).map((filter) => (
