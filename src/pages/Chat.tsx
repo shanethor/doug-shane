@@ -24,6 +24,7 @@ import { useVoiceInput } from "@/hooks/useVoiceInput";
 import { useTrainingMode } from "@/hooks/useTrainingMode";
 import { ensurePipelineLead } from "@/lib/pipeline-sync";
 import { generateIntakeLink } from "@/lib/intake-links";
+import { fuzzyMatch } from "@/lib/fuzzy-match";
 
 type ButtonMarker = { label: string; action: string };
 type Msg = { role: "user" | "assistant"; content: string; fields?: FieldBubble[]; buttons?: ButtonMarker[] };
@@ -1164,20 +1165,27 @@ export default function Chat() {
     send(`Please help me fill in the remaining gaps from this submission. Use AI inference where possible and ask me targeted follow-up questions for the rest. Do NOT show the standard intake form.${dataContext}`);
   };
 
+  /** Find leads using fuzzy matching */
+  const findLeadsFuzzy = async (accountName: string) => {
+    if (!user) return [];
+    const { data: allLeads } = await supabase
+      .from("leads")
+      .select("id, account_name, stage")
+      .eq("owner_user_id", user.id);
+    if (!allLeads?.length) return [];
+    const matches = fuzzyMatch(accountName, allLeads, l => l.account_name, 0.4);
+    return matches.map(m => m.item);
+  };
+
   /** Execute pipeline actions parsed from AI response */
   const executePipelineActions = async (actions: PipelineAction[]) => {
     if (!user) return;
     for (const action of actions) {
       try {
         if (action.type === "move_lead" && action.stage) {
-          // Find lead by account name (case-insensitive)
-          const { data: leads } = await supabase
-            .from("leads")
-            .select("id, account_name, stage")
-            .eq("owner_user_id", user.id)
-            .ilike("account_name", `%${action.account_name}%`);
+          const leads = await findLeadsFuzzy(action.account_name);
 
-          if (leads && leads.length > 0) {
+          if (leads.length > 0) {
             const validStages = ["prospect", "quoting", "presenting", "lost"];
             const targetStage = action.stage.toLowerCase().replace(/\s+/g, "_");
             const mapped = targetStage === "dead" || targetStage === "dead_leads" ? "lost" : targetStage;
@@ -1188,19 +1196,15 @@ export default function Chat() {
                   .update({ stage: mapped as any, updated_at: new Date().toISOString() })
                   .eq("id", lead.id);
               }
-              toast({ title: "Pipeline updated", description: `Moved ${leads.length} lead(s) to "${mapped}".` });
+              toast({ title: "Pipeline updated", description: `Moved "${leads[0].account_name}" to "${mapped}".` });
             }
           } else {
             toast({ variant: "destructive", title: "Lead not found", description: `No lead matching "${action.account_name}".` });
           }
         } else if (action.type === "update_lead" && action.field && action.value) {
-          const { data: leads } = await supabase
-            .from("leads")
-            .select("id, account_name")
-            .eq("owner_user_id", user.id)
-            .ilike("account_name", `%${action.account_name}%`);
+          const leads = await findLeadsFuzzy(action.account_name);
 
-          if (leads && leads.length > 0) {
+          if (leads.length > 0) {
             const allowedFields = ["contact_name", "email", "phone", "business_type", "state", "lead_source"];
             if (allowedFields.includes(action.field)) {
               for (const lead of leads) {
@@ -1209,7 +1213,7 @@ export default function Chat() {
                   .update({ [action.field]: action.value, updated_at: new Date().toISOString() })
                   .eq("id", lead.id);
               }
-              toast({ title: "Lead updated", description: `Updated ${action.field} for ${leads.length} lead(s).` });
+              toast({ title: "Lead updated", description: `Updated ${action.field} for "${leads[0].account_name}".` });
             }
 
             // Handle policy-level updates (renewal date = effective_date on policies)
