@@ -659,7 +659,7 @@ export default function Pipeline() {
             <Users className="h-4 w-4 text-primary shrink-0" />
             <div>
               <p className="text-lg font-semibold font-sans leading-tight">{pipelineStats.totalProspects}</p>
-              <p className="text-[10px] text-muted-foreground font-sans">Prospects</p>
+              <p className="text-[10px] text-muted-foreground font-sans">Leads</p>
             </div>
           </CardContent>
         </Card>
@@ -985,12 +985,17 @@ export default function Pipeline() {
       <div className="grid grid-cols-5 gap-3 min-h-[60vh]">
         {columns.map((stage) => (
           <div key={stage} className="flex flex-col">
-            <div className="flex items-center gap-2 mb-3">
+            <div className="flex items-center gap-2 mb-1">
               <Badge variant="outline" className={`text-[10px] uppercase tracking-wider font-sans ${STAGE_COLORS[stage]}`}>
                 {STAGE_LABELS[stage]}
               </Badge>
               <span className="text-xs text-muted-foreground font-sans">{grouped[stage].length}</span>
             </div>
+            {stage === "prospect" && (
+              <p className="text-[9px] text-muted-foreground/70 font-sans mb-2 leading-tight">
+                * Over time AURA can generate external leads and automatically drop them in your pipeline based on your current clientele
+              </p>
+            )}
             <div
               className={`flex-1 space-y-2 rounded-lg border border-dashed p-2 min-h-[200px] transition-colors ${
                 dragOverStage === stage

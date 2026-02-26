@@ -120,7 +120,7 @@ export default function PipelineTracker() {
                 </div>
                 <div>
                   <p className="text-2xl font-semibold font-sans">{stats.totalProspects}</p>
-                  <p className="text-xs text-muted-foreground font-sans">Prospects</p>
+                  <p className="text-xs text-muted-foreground font-sans">Leads</p>
                 </div>
               </div>
             </CardContent>
