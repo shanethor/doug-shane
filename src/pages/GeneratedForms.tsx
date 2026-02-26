@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { getAuthHeaders } from "@/lib/auth-fetch";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Download, Trash2, FileText, ClipboardCopy, Loader2, FlaskConical, CheckCircle, XCircle, AlertTriangle, ChevronDown, ChevronUp, Globe, MessageSquare, Bot, Upload } from "lucide-react";
@@ -188,12 +189,10 @@ export default function GeneratedForms() {
 
   /** Stream a single chat turn and collect the full response text */
   const streamChatTurn = async (messages: { role: string; content: string }[]): Promise<string> => {
+    const chatHeaders = await getAuthHeaders();
     const resp = await fetch(CHAT_URL, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-      },
+      headers: chatHeaders,
       body: JSON.stringify({ messages, trainingMode: true }),
     });
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
