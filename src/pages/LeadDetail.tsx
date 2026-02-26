@@ -23,11 +23,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { ArrowLeft, Plus, FileText, CheckCircle, Clock, XCircle, MessageSquare, Send, Edit3, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Plus, FileText, CheckCircle, Clock, XCircle, MessageSquare, Send, Edit3, AlertTriangle, ExternalLink, Copy, Check } from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LossRunsTab } from "@/components/LossRunsTab";
 import { ClientDocuments } from "@/components/ClientDocuments";
+import { generateIntakeLink } from "@/lib/intake-links";
 
 const STAGE_COLORS: Record<string, string> = {
   prospect: "bg-muted text-muted-foreground",
@@ -434,12 +435,17 @@ export default function LeadDetail() {
         </TabsContent>
 
         <TabsContent value="documents">
-          <div className="mt-4 max-w-2xl">
-            <h2 className="text-xl mb-4">Client Documents</h2>
-            <p className="text-sm text-muted-foreground font-sans mb-4">
-              Attach loss runs, supplemental forms, previous coverage docs, and more. These are shared across all views for this client.
-            </p>
-            <ClientDocuments leadId={leadId!} submissionId={lead.submission_id} />
+          <div className="mt-4 max-w-2xl space-y-6">
+            {/* Intake Link Section */}
+            <IntakeLinkSection leadId={leadId!} submissionId={lead.submission_id} accountName={lead.account_name} contactName={lead.contact_name} contactEmail={lead.email} />
+
+            <div>
+              <h2 className="text-xl mb-4">Client Documents</h2>
+              <p className="text-sm text-muted-foreground font-sans mb-4">
+                Attach loss runs, supplemental forms, previous coverage docs, and more. These are shared across all views for this client.
+              </p>
+              <ClientDocuments leadId={leadId!} submissionId={lead.submission_id} />
+            </div>
           </div>
         </TabsContent>
 
@@ -482,6 +488,76 @@ export default function LeadDetail() {
         </TabsContent>
       </Tabs>
     </AppLayout>
+  );
+}
+
+function IntakeLinkSection({ leadId, submissionId, accountName, contactName, contactEmail }: {
+  leadId: string;
+  submissionId?: string | null;
+  accountName: string;
+  contactName?: string | null;
+  contactEmail?: string | null;
+}) {
+  const { user } = useAuth();
+  const [generatedLink, setGeneratedLink] = useState("");
+  const [creating, setCreating] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const handleGenerate = async () => {
+    if (!user) return;
+    setCreating(true);
+    const result = await generateIntakeLink({
+      agentId: user.id,
+      leadId,
+      submissionId,
+      customerName: contactName,
+      customerEmail: contactEmail,
+    });
+    if (result) {
+      setGeneratedLink(result.url);
+      try { await navigator.clipboard.writeText(result.url); setCopied(true); setTimeout(() => setCopied(false), 2000); } catch {}
+      toast.success("Intake link generated!");
+    } else {
+      toast.error("Failed to generate link");
+    }
+    setCreating(false);
+  };
+
+  const copyLink = () => {
+    navigator.clipboard.writeText(generatedLink).then(() => {
+      setCopied(true);
+      toast.success("Copied!");
+      setTimeout(() => setCopied(false), 2000);
+    }).catch(() => {});
+  };
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base font-sans flex items-center gap-2">
+          <ExternalLink className="h-4 w-4" />
+          Customer Intake Form
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <p className="text-xs text-muted-foreground font-sans">
+          Generate a link to send {accountName} a self-service intake form. Their responses will auto-sync to this client's pipeline and pre-fill ACORD forms.
+        </p>
+        {!generatedLink ? (
+          <Button size="sm" onClick={handleGenerate} disabled={creating} className="gap-1.5 text-xs">
+            <ExternalLink className="h-3 w-3" />
+            {creating ? "Generating…" : "Generate Intake Link"}
+          </Button>
+        ) : (
+          <div className="flex items-center gap-2 rounded-lg border bg-muted p-3">
+            <code className="flex-1 text-xs truncate font-sans">{generatedLink}</code>
+            <Button size="sm" variant="ghost" onClick={copyLink} className="h-7 w-7 p-0">
+              {copied ? <Check className="h-3.5 w-3.5 text-success" /> : <Copy className="h-3.5 w-3.5" />}
+            </Button>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
