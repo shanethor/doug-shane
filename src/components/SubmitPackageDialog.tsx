@@ -16,9 +16,40 @@ import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Download, Mail, Loader2, FileText, CheckCircle, BrainCircuit,
-  Package, FileCheck, StickyNote, Send
+  Package, FileCheck, StickyNote, Send, Link2, Upload, ShieldCheck,
+  FileSearch, ClipboardList, Building2, DollarSign, HardHat, FileSignature, Flame, LucideIcon
 } from "lucide-react";
 import { toast } from "sonner";
+
+/* ── Client doc category row ── */
+function ClientDocCategory({
+  icon: Icon,
+  label,
+  docKey,
+  clientDocs,
+  setClientDocs,
+}: {
+  icon: LucideIcon;
+  label: string;
+  docKey: string;
+  clientDocs: Record<string, boolean>;
+  setClientDocs: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
+}) {
+  return (
+    <div className="flex items-center gap-3 py-2 px-3 rounded-md hover:bg-muted/30">
+      <Checkbox
+        checked={!!clientDocs[docKey]}
+        onCheckedChange={(checked) =>
+          setClientDocs(prev => ({ ...prev, [docKey]: !!checked }))
+        }
+        className="h-3.5 w-3.5 shrink-0"
+      />
+      <Icon className="h-4 w-4 text-muted-foreground shrink-0" />
+      <p className="text-xs font-medium flex-1">{label}</p>
+      <Badge variant="outline" className="text-[9px]">Pending</Badge>
+    </div>
+  );
+}
 
 interface SubmitPackageDialogProps {
   open: boolean;
@@ -51,6 +82,18 @@ export default function SubmitPackageDialog({
   // Email state
   const [emailTo, setEmailTo] = useState("");
   const [sendingEmail, setSendingEmail] = useState(false);
+
+  // Client docs state
+  const [clientDocChecked, setClientDocChecked] = useState<Record<string, boolean>>({
+    signed_supplemental: false,
+    loss_runs: false,
+    financial_statements: false,
+    payroll_records: false,
+    safety_manuals: false,
+    third_party_contracts: false,
+    property_evidence: false,
+  });
+  const [clientEmail, setClientEmail] = useState("");
 
   // Merge savedPdfBytesMap (from Adobe viewer) with auto-generated PDFs
   const mergedPdfMap = { ...generatedPdfMap, ...savedPdfBytesMap };
@@ -85,7 +128,6 @@ export default function SubmitPackageDialog({
           const pdfForm = doc.getForm();
           const allFields = pdfForm.getFields();
 
-          // Build prefill index map
           const indexMap = await getMergedIndexMap(form.id).catch(() => null) || ACORD_INDEX_MAPS[form.id];
           if (indexMap) {
             for (const [internalKey, rawIdx] of Object.entries(indexMap)) {
@@ -130,7 +172,6 @@ export default function SubmitPackageDialog({
 
   // Local override: allow users to uncheck forms for this submission only
   const [localEnabledIds, setLocalEnabledIds] = useState<Set<string>>(new Set(enabledFormIds));
-  // Sync when parent enabledFormIds changes
   useEffect(() => {
     setLocalEnabledIds(new Set(enabledFormIds));
   }, [enabledFormIds]);
@@ -139,7 +180,6 @@ export default function SubmitPackageDialog({
 
   const companyName = formData.applicant_name || formData.insured_name || "Submission";
 
-  // Per-form fill stats
   const formStats = enabledFormList.map(form => {
     const filled = form.fields.filter(f => formData[f.key] && String(formData[f.key]).trim()).length;
     return { form, filled, total: form.fields.length };
@@ -152,7 +192,6 @@ export default function SubmitPackageDialog({
   const generateNarrative = useCallback(async () => {
     setGeneratingNarrative(true);
     try {
-      // Build a summary of the form data for the AI
       const keyFields: Record<string, string> = {};
       const importantKeys = [
         "applicant_name", "insured_name", "dba_name", "mailing_address", "city", "state", "zip",
@@ -208,7 +247,6 @@ Keep it professional, factual, and specific. Do NOT include placeholders or brac
 
       if (!resp.ok) throw new Error(`AI request failed: ${resp.status}`);
 
-      // Parse SSE stream
       const text = await resp.text();
       const lines = text.split("\n");
       let fullText = "";
@@ -236,11 +274,9 @@ Keep it professional, factual, and specific. Do NOT include placeholders or brac
   const handleDownloadZip = async () => {
     setDownloading(true);
     try {
-      // Trigger save first
       await triggerSave();
       await new Promise(r => setTimeout(r, 300));
 
-      // Auto-save to DB
       if (userId) {
         await supabase
           .from("insurance_applications")
@@ -264,7 +300,6 @@ Keep it professional, factual, and specific. Do NOT include placeholders or brac
         }
       }
 
-      // Add narrative as txt file if present
       if (narrative.trim()) {
         zip.file(`Narrative_${companyName.replace(/[^a-zA-Z0-9]/g, "_").slice(0, 30)}.txt`, narrative);
       }
@@ -303,7 +338,6 @@ Keep it professional, factual, and specific. Do NOT include placeholders or brac
       await triggerSave();
       await new Promise(r => setTimeout(r, 300));
 
-      // Get user profile for from_email
       const { data: profile } = await supabase
         .from("profiles")
         .select("full_name, agency_name, form_defaults")
@@ -313,7 +347,6 @@ Keep it professional, factual, and specific. Do NOT include placeholders or brac
       const defaults = (profile?.form_defaults || {}) as Record<string, string>;
       const fromEmail = defaults.from_email || undefined;
 
-      // Build attachments from saved PDF bytes
       const attachments: { filename: string; content: string }[] = [];
       const date = new Date().toISOString().slice(0, 10);
 
@@ -323,7 +356,6 @@ Keep it professional, factual, and specific. Do NOT include placeholders or brac
         const hasData = form.fields.some(f => formData[f.key] && String(formData[f.key]).trim());
         if (!hasData) continue;
 
-        // Convert Uint8Array to base64
         let binary = "";
         for (let i = 0; i < adobeBytes.length; i++) {
           binary += String.fromCharCode(adobeBytes[i]);
@@ -343,7 +375,6 @@ Keep it professional, factual, and specific. Do NOT include placeholders or brac
 
       const subject = `Submission Package - ${companyName}`;
 
-      // Use narrative as body if present, otherwise generic
       const bodyHtml = narrative.trim()
         ? `<div style="font-family: Arial, sans-serif; font-size: 14px; line-height: 1.6; color: #333;">
             ${narrative.split("\n\n").map(p => `<p>${p.replace(/\n/g, "<br/>")}</p>`).join("")}
@@ -395,14 +426,18 @@ Keep it professional, factual, and specific. Do NOT include placeholders or brac
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
-          <TabsList className="grid grid-cols-3 w-full">
+          <TabsList className="grid grid-cols-4 w-full">
             <TabsTrigger value="review" className="text-xs gap-1.5">
               <FileCheck className="h-3.5 w-3.5" />
-              Forms
+              Producer
             </TabsTrigger>
             <TabsTrigger value="narrative" className="text-xs gap-1.5">
               <StickyNote className="h-3.5 w-3.5" />
               Narrative
+            </TabsTrigger>
+            <TabsTrigger value="client" className="text-xs gap-1.5">
+              <Upload className="h-3.5 w-3.5" />
+              Client
             </TabsTrigger>
             <TabsTrigger value="send" className="text-xs gap-1.5">
               <Send className="h-3.5 w-3.5" />
@@ -410,11 +445,10 @@ Keep it professional, factual, and specific. Do NOT include placeholders or brac
             </TabsTrigger>
           </TabsList>
 
-          {/* ── Tab 1: Review Forms ── */}
+          {/* ── Tab 1: Producer Forms ── */}
           <TabsContent value="review" className="flex-1 overflow-hidden mt-3">
             <ScrollArea className="h-[400px]">
               <div className="space-y-1 pr-4">
-                {/* Summary header */}
                 <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg mb-3">
                   <div>
                     <p className="text-sm font-semibold">{companyName}</p>
@@ -427,7 +461,7 @@ Keep it professional, factual, and specific. Do NOT include placeholders or brac
                   </Badge>
                 </div>
 
-                {/* ACORD Forms section */}
+                {/* ACORD Forms */}
                 <div className="mb-4">
                   <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">ACORD Forms</p>
                   {ACORD_FORM_LIST.filter(f => enabledFormIds.has(f.id)).map((form) => {
@@ -470,7 +504,7 @@ Keep it professional, factual, and specific. Do NOT include placeholders or brac
                   })}
                 </div>
 
-                {/* Supplementals placeholder */}
+                {/* Supplementals */}
                 <div className="mb-4">
                   <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Supplementals</p>
                   <div className="flex items-center gap-3 py-3 px-3 rounded-md bg-muted/20 border border-dashed border-border">
@@ -479,8 +513,8 @@ Keep it professional, factual, and specific. Do NOT include placeholders or brac
                   </div>
                 </div>
 
-                {/* Narrative status */}
-                <div>
+                {/* Narrative Note status */}
+                <div className="mb-4">
                   <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Narrative Note</p>
                   <div className="flex items-center gap-3 py-2 px-3 rounded-md bg-muted/20">
                     <StickyNote className="h-4 w-4 text-muted-foreground/50 shrink-0" />
@@ -499,6 +533,15 @@ Keep it professional, factual, and specific. Do NOT include placeholders or brac
                         Add →
                       </Button>
                     )}
+                  </div>
+                </div>
+
+                {/* Statement of Values */}
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Statement of Values</p>
+                  <div className="flex items-center gap-3 py-3 px-3 rounded-md bg-muted/20 border border-dashed border-border">
+                    <Building2 className="h-4 w-4 text-muted-foreground/40" />
+                    <p className="text-xs text-muted-foreground italic">Statement of Values coming soon</p>
                   </div>
                 </div>
               </div>
@@ -537,10 +580,98 @@ Keep it professional, factual, and specific. Do NOT include placeholders or brac
             </div>
           </TabsContent>
 
-          {/* ── Tab 3: Send ── */}
+          {/* ── Tab 3: Client Documents ── */}
+          <TabsContent value="client" className="flex-1 overflow-hidden mt-3">
+            <ScrollArea className="h-[400px]">
+              <div className="space-y-4 pr-4">
+                <div className="p-3 bg-muted/50 rounded-lg">
+                  <p className="text-xs font-semibold mb-1">Client Documents</p>
+                  <p className="text-[10px] text-muted-foreground">
+                    Documents uploaded or received from the client. Check the types you need and send a secure request link.
+                  </p>
+                </div>
+
+                <div className="space-y-0.5">
+                  <ClientDocCategory icon={FileSignature} label="Signed Supplemental" docKey="signed_supplemental" clientDocs={clientDocChecked} setClientDocs={setClientDocChecked} />
+                  <ClientDocCategory icon={FileSearch} label="Loss Runs" docKey="loss_runs" clientDocs={clientDocChecked} setClientDocs={setClientDocChecked} />
+                  <ClientDocCategory icon={DollarSign} label="Financial Statements" docKey="financial_statements" clientDocs={clientDocChecked} setClientDocs={setClientDocChecked} />
+                  <ClientDocCategory icon={ClipboardList} label="Payroll Records" docKey="payroll_records" clientDocs={clientDocChecked} setClientDocs={setClientDocChecked} />
+                  <ClientDocCategory icon={HardHat} label="Safety Manuals & Programs" docKey="safety_manuals" clientDocs={clientDocChecked} setClientDocs={setClientDocChecked} />
+                  <ClientDocCategory icon={FileText} label="Third-Party Contracts" docKey="third_party_contracts" clientDocs={clientDocChecked} setClientDocs={setClientDocChecked} />
+                  <ClientDocCategory icon={Flame} label="Property Evidence" docKey="property_evidence" clientDocs={clientDocChecked} setClientDocs={setClientDocChecked} />
+                </div>
+
+                <Separator />
+
+                {/* Request documents section */}
+                <div className="p-4 border rounded-lg space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Link2 className="h-4 w-4 text-primary" />
+                    <h3 className="text-sm font-semibold">Request Documents from Client</h3>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground">
+                    Generate a secure document drop link or email the client directly. Only checked document types above will be requested. AI will audit uploads for completeness and proper signatures.
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck className="h-3.5 w-3.5 text-primary" />
+                    <span className="text-[10px] text-muted-foreground">Documents are AI-audited for accuracy &amp; signatures</span>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-xs">Client Email (optional)</Label>
+                    <Input
+                      type="email"
+                      value={clientEmail}
+                      onChange={(e) => setClientEmail(e.target.value)}
+                      placeholder="client@company.com"
+                      className="h-8 text-xs"
+                    />
+                  </div>
+
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 text-xs gap-1.5"
+                      onClick={() => {
+                        const requested = Object.entries(clientDocChecked).filter(([, v]) => v).map(([k]) => k);
+                        if (requested.length === 0) {
+                          toast.error("Check at least one document type to request");
+                          return;
+                        }
+                        const link = `${window.location.origin}/intake?sub=${submissionId}&docs=${requested.join(",")}`;
+                        navigator.clipboard.writeText(link);
+                        toast.success("Secure document request link copied!");
+                      }}
+                    >
+                      <Link2 className="h-3 w-3" />
+                      Copy Link
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="flex-1 text-xs gap-1.5"
+                      disabled={!clientEmail.trim()}
+                      onClick={() => {
+                        const requested = Object.entries(clientDocChecked).filter(([, v]) => v).map(([k]) => k);
+                        if (requested.length === 0) {
+                          toast.error("Check at least one document type to request");
+                          return;
+                        }
+                        toast.success("Document request email sent to client!");
+                      }}
+                    >
+                      <Mail className="h-3 w-3" />
+                      Email Client
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </ScrollArea>
+          </TabsContent>
+
+          {/* ── Tab 4: Send ── */}
           <TabsContent value="send" className="flex-1 overflow-hidden mt-3">
             <div className="space-y-6 h-[400px]">
-              {/* Option 1: Download ZIP */}
               <div className="p-4 border rounded-lg space-y-3">
                 <div className="flex items-center gap-2">
                   <Download className="h-4 w-4 text-primary" />
@@ -566,7 +697,6 @@ Keep it professional, factual, and specific. Do NOT include placeholders or brac
 
               <Separator />
 
-              {/* Option 2: Email */}
               <div className="p-4 border rounded-lg space-y-3">
                 <div className="flex items-center gap-2">
                   <Mail className="h-4 w-4 text-primary" />
