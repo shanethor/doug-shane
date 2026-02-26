@@ -35,13 +35,21 @@ function ClientDocCategory({
   clientDocs: Record<string, boolean>;
   setClientDocs: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
 }) {
+  const isChecked = !!clientDocs[docKey];
+  const toggle = () => setClientDocs(prev => ({ ...prev, [docKey]: !prev[docKey] }));
   return (
-    <div className="flex items-center gap-3 py-2 px-3 rounded-md hover:bg-muted/30">
+    <div
+      onClick={toggle}
+      className={`flex items-center gap-3 py-2 px-3 rounded-md cursor-pointer transition-colors ${
+        isChecked
+          ? "bg-primary/10 border border-primary/30 hover:bg-primary/15"
+          : "hover:bg-muted/30 border border-transparent"
+      }`}
+    >
       <Checkbox
-        checked={!!clientDocs[docKey]}
-        onCheckedChange={(checked) =>
-          setClientDocs(prev => ({ ...prev, [docKey]: !!checked }))
-        }
+        checked={isChecked}
+        onCheckedChange={() => toggle()}
+        onClick={(e) => e.stopPropagation()}
         className="h-3.5 w-3.5 shrink-0"
       />
       <Icon className="h-4 w-4 text-muted-foreground shrink-0" />
