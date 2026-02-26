@@ -496,6 +496,15 @@ export default function FormFillingView({ submissionId, initialMessages, initial
         }
       }
 
+      // Apply form-definition defaults (e.g. Y/N → "No") for fields with no extracted/DB value
+      for (const form of ACORD_FORM_LIST) {
+        for (const field of form.fields) {
+          if (field.default && (!loaded[field.key] || (typeof loaded[field.key] === "string" && !loaded[field.key].trim()))) {
+            loaded[field.key] = field.default;
+          }
+        }
+      }
+
       setFormData(loaded);
       formDataRef.current = loaded;
       // Snapshot AI-extracted values for correction tracking
