@@ -182,6 +182,7 @@ export default function FormFillingView({ submissionId, initialMessages, initial
     const indexMap = await getMergedIndexMap(fId).catch(() => null) || ACORD_INDEX_MAPS[fId];
     if (!indexMap) return {};
     const result: Record<number, string> = {};
+    const debugEntries: string[] = [];
     for (const [internalKey, rawIdx] of Object.entries(indexMap)) {
       const idx = rawIdx as number;
       const val = data[internalKey];
@@ -195,7 +196,9 @@ export default function FormFillingView({ submissionId, initialMessages, initial
       const isoMatch = display.match(/^(\d{4})-(\d{2})-(\d{2})$/);
       if (isoMatch) display = `${isoMatch[2]}/${isoMatch[3]}/${isoMatch[1]}`;
       result[idx] = display;
+      debugEntries.push(`  [${idx}] ${internalKey} = "${display.slice(0, 40)}"`);
     }
+    console.warn(`[prefill] ${fId}: ${debugEntries.length} fields mapped:\n${debugEntries.join("\n")}`);
     return result;
   }, []);
 
@@ -209,8 +212,9 @@ export default function FormFillingView({ submissionId, initialMessages, initial
     }
   }, [activeFormId, formData, buildPrefillByIndex]);
 
-  // Viewer key: only remounts on form switch, initial DB load, or debounced revision
-  const prefillKey = `${activeFormId}-${dbLoaded}-${viewerRevision}`;
+  // Viewer key: remounts on form switch, initial DB load, debounced revision, OR when prefill data becomes available
+  const prefillCount = Object.keys(prefillByIndex).length;
+  const prefillKey = `${activeFormId}-${dbLoaded}-${viewerRevision}-${prefillCount}`;
 
   // Reset adobeReady when form changes (new Adobe instance mounts)
   useEffect(() => {
