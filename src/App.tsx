@@ -22,6 +22,7 @@ import Pipeline from "./pages/Pipeline";
 import LeadDetail from "./pages/LeadDetail";
 import ProducerDashboard from "./pages/ProducerDashboard";
 import Approvals from "./pages/Approvals";
+import IntakeForm from "./pages/IntakeForm";
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -49,6 +50,7 @@ const App = () => (
           <Route path="/pipeline/:leadId" element={<ProtectedRoute><LeadDetail /></ProtectedRoute>} />
           <Route path="/my-dashboard" element={<ProtectedRoute><ProducerDashboard /></ProtectedRoute>} />
           <Route path="/approvals" element={<ProtectedRoute><Approvals /></ProtectedRoute>} />
+          <Route path="/intake/:token" element={<IntakeForm />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

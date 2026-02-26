@@ -433,6 +433,104 @@ export type Database = {
           },
         ]
       }
+      intake_links: {
+        Row: {
+          agent_id: string
+          created_at: string
+          customer_email: string | null
+          customer_name: string | null
+          expires_at: string
+          id: string
+          is_used: boolean
+          lead_id: string | null
+          submission_id: string | null
+          token: string
+        }
+        Insert: {
+          agent_id: string
+          created_at?: string
+          customer_email?: string | null
+          customer_name?: string | null
+          expires_at?: string
+          id?: string
+          is_used?: boolean
+          lead_id?: string | null
+          submission_id?: string | null
+          token?: string
+        }
+        Update: {
+          agent_id?: string
+          created_at?: string
+          customer_email?: string | null
+          customer_name?: string | null
+          expires_at?: string
+          id?: string
+          is_used?: boolean
+          lead_id?: string | null
+          submission_id?: string | null
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intake_links_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intake_links_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "business_submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      intake_submissions: {
+        Row: {
+          additional_notes: string | null
+          business_name: string
+          created_at: string
+          customer_email: string
+          customer_name: string
+          id: string
+          intake_link_id: string
+          requested_coverage: string | null
+          requested_premium: string | null
+        }
+        Insert: {
+          additional_notes?: string | null
+          business_name: string
+          created_at?: string
+          customer_email: string
+          customer_name: string
+          id?: string
+          intake_link_id: string
+          requested_coverage?: string | null
+          requested_premium?: string | null
+        }
+        Update: {
+          additional_notes?: string | null
+          business_name?: string
+          created_at?: string
+          customer_email?: string
+          customer_name?: string
+          id?: string
+          intake_link_id?: string
+          requested_coverage?: string | null
+          requested_premium?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intake_submissions_intake_link_id_fkey"
+            columns: ["intake_link_id"]
+            isOneToOne: false
+            referencedRelation: "intake_links"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lead_notes: {
         Row: {
           created_at: string

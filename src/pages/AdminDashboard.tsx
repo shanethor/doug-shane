@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -10,8 +10,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Users, FileText, CheckCircle, Clock, Bug, Lightbulb,
-  BarChart3, DollarSign, AlertTriangle, Eye,
+  BarChart3, DollarSign, AlertTriangle, Eye, TrendingUp, TrendingDown,
 } from "lucide-react";
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
 
 const statusColor: Record<string, string> = {
   pending: "bg-muted text-muted-foreground",
@@ -66,6 +67,53 @@ export default function AdminDashboard() {
     setCorrections(prev => prev.map(c => c.id === id ? { ...c, status } : c));
   };
 
+  // ── Analytics: Extraction accuracy over time ──
+  const accuracyData = useMemo(() => {
+    const weekMap = new Map<string, number>();
+    const submissionWeekMap = new Map<string, number>();
+    corrections.forEach((c: any) => {
+      const d = new Date(c.created_at);
+      const weekStart = new Date(d);
+      weekStart.setDate(d.getDate() - d.getDay());
+      const key = weekStart.toISOString().split("T")[0];
+      weekMap.set(key, (weekMap.get(key) || 0) + 1);
+    });
+    submissions.forEach((s: any) => {
+      const d = new Date(s.created_at);
+      const weekStart = new Date(d);
+      weekStart.setDate(d.getDate() - d.getDay());
+      const key = weekStart.toISOString().split("T")[0];
+      submissionWeekMap.set(key, (submissionWeekMap.get(key) || 0) + 1);
+    });
+    const allWeeks = new Set([...weekMap.keys(), ...submissionWeekMap.keys()]);
+    return Array.from(allWeeks)
+      .sort()
+      .slice(-12)
+      .map(week => {
+        const correctionCount = weekMap.get(week) || 0;
+        const submissionCount = submissionWeekMap.get(week) || 0;
+        const totalFields = submissionCount * 20;
+        const accuracy = totalFields > 0 ? Math.round(((totalFields - correctionCount) / totalFields) * 100) : 100;
+        return {
+          week: new Date(week).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+          accuracy: Math.max(0, Math.min(100, accuracy)),
+          corrections: correctionCount,
+          submissions: submissionCount,
+        };
+      });
+  }, [corrections, submissions]);
+
+  const correctionsByForm = useMemo(() => {
+    const map = new Map<string, number>();
+    corrections.forEach((c: any) => {
+      const form = c.form_id || "unknown";
+      map.set(form, (map.get(form) || 0) + 1);
+    });
+    return Array.from(map.entries())
+      .map(([form, count]) => ({ form: form.replace("acord-", "ACORD "), count }))
+      .sort((a, b) => b.count - a.count);
+  }, [corrections]);
+
   if (loading) {
     return (
       <AppLayout>
@@ -109,6 +157,71 @@ export default function AdminDashboard() {
             <StatCard icon={Lightbulb} label="New Suggestions" value={newSuggestions} color="accent" />
           </div>
 
+          {/* Extraction Accuracy Charts */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4 text-primary" />
+                  Extraction Accuracy Over Time
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {accuracyData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={200}>
+                    <AreaChart data={accuracyData}>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                      <XAxis dataKey="week" className="text-[10px]" tick={{ fontSize: 10 }} />
+                      <YAxis domain={[0, 100]} className="text-[10px]" tick={{ fontSize: 10 }} unit="%" />
+                      <RechartsTooltip
+                        contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid hsl(var(--border))" }}
+                        formatter={(value: number) => [`${value}%`, "Accuracy"]}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="accuracy"
+                        stroke="hsl(var(--primary))"
+                        fill="hsl(var(--primary) / 0.15)"
+                        strokeWidth={2}
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex items-center justify-center h-[200px] text-sm text-muted-foreground">
+                    No data yet — accuracy will appear as submissions are processed.
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                  <Bug className="h-4 w-4 text-destructive" />
+                  Corrections by Form
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {correctionsByForm.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={200}>
+                    <BarChart data={correctionsByForm}>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                      <XAxis dataKey="form" className="text-[10px]" tick={{ fontSize: 10 }} />
+                      <YAxis className="text-[10px]" tick={{ fontSize: 10 }} allowDecimals={false} />
+                      <RechartsTooltip
+                        contentStyle={{ fontSize: 12, borderRadius: 8, border: "1px solid hsl(var(--border))" }}
+                      />
+                      <Bar dataKey="count" fill="hsl(var(--destructive))" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex items-center justify-center h-[200px] text-sm text-muted-foreground">
+                    No corrections yet.
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
           {/* Recent submissions */}
           <div>
             <h2 className="text-lg font-semibold mb-3">Recent Submissions</h2>

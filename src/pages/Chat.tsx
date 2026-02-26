@@ -9,7 +9,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import SubmissionReviewPanel from "@/components/SubmissionReviewPanel";
 import FormFillingView from "@/components/FormFillingView";
 import ExtractionSummary from "@/components/ExtractionSummary";
-import { Send, FileUp, ClipboardList, Search, Loader2, Paperclip, X, Download, Mic, MicOff, Globe, Lightbulb, ChevronDown, ChevronUp, FileText, BrainCircuit, PenLine, Users, BarChart3, Mail, FileSearch, Camera, Plus, ArrowRight, Sparkles } from "lucide-react";
+import { Send, FileUp, ClipboardList, Search, Loader2, Paperclip, X, Download, Mic, MicOff, Globe, Lightbulb, ChevronDown, ChevronUp, FileText, BrainCircuit, PenLine, Users, BarChart3, Mail, FileSearch, Camera, Plus, ArrowRight, Sparkles, LinkIcon } from "lucide-react";
 import { FeatureSuggestionDialog } from "@/components/FeatureSuggestionDialog";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +23,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useVoiceInput } from "@/hooks/useVoiceInput";
 import { useTrainingMode } from "@/hooks/useTrainingMode";
 import { ensurePipelineLead } from "@/lib/pipeline-sync";
+import { generateIntakeLink } from "@/lib/intake-links";
 
 type ButtonMarker = { label: string; action: string };
 type Msg = { role: "user" | "assistant"; content: string; fields?: FieldBubble[]; buttons?: ButtonMarker[] };
@@ -1561,6 +1562,21 @@ export default function Chat() {
                 >
                   <FileSearch className="h-5 w-5 text-accent group-hover:text-primary transition-colors" />
                   <span className="text-sm font-medium">Run loss runs</span>
+                </button>
+                {/* Send Intake Form */}
+                <button
+                  onClick={async () => {
+                    if (!user) return;
+                    const result = await generateIntakeLink({ agentId: user.id });
+                    if (result) {
+                      await navigator.clipboard.writeText(result.url);
+                      toast({ title: "Intake link copied!", description: "Share this link with your customer to collect their details." });
+                    }
+                  }}
+                  className="flex flex-col items-start gap-2 rounded-xl border bg-card/80 backdrop-blur-sm p-4 text-left hover-lift aura-glow-shadow transition-colors group"
+                >
+                  <LinkIcon className="h-5 w-5 text-accent group-hover:text-primary transition-colors" />
+                  <span className="text-sm font-medium">Send intake form</span>
                 </button>
               </div>
 
