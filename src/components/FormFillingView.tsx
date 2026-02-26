@@ -491,10 +491,36 @@ export default function FormFillingView({ submissionId, initialMessages, initial
 
       setFormData(loaded);
       formDataRef.current = loaded;
+      // Snapshot AI-extracted values for correction tracking
+      aiSnapshotRef.current = { ...loaded };
       console.info("[FormFilling] Loaded", Object.values(loaded).filter(v => v && String(v).trim()).length, "fields from DB");
       setDbLoaded(true);
     })();
   }, [user, submissionId]);
+
+  // Snapshot of AI-extracted values — set once after AI inference or DB load
+  const aiSnapshotRef = useRef<Record<string, any>>({});
+  // Debounce timer for batching correction inserts
+  const correctionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingCorrectionsRef = useRef<Record<string, { ai: string; corrected: string; label?: string }>>({});
+
+  const flushCorrections = useCallback(() => {
+    const corrections = pendingCorrectionsRef.current;
+    pendingCorrectionsRef.current = {};
+    if (!user || !submissionId || Object.keys(corrections).length === 0) return;
+    const rows = Object.entries(corrections).map(([field_key, c]) => ({
+      user_id: user.id,
+      submission_id: submissionId,
+      form_id: activeFormId || "unknown",
+      field_key,
+      field_label: c.label || field_key,
+      ai_value: c.ai || "",
+      corrected_value: c.corrected,
+    }));
+    supabase.from("extraction_corrections" as any).insert(rows as any).then(({ error }) => {
+      if (error) console.warn("[CorrectionTracker] insert error:", error);
+    });
+  }, [user, submissionId, activeFormId]);
 
   const handleFieldChange = (key: string, value: any) => {
     setFormData((prev) => {
@@ -503,6 +529,17 @@ export default function FormFillingView({ submissionId, initialMessages, initial
       // Debounce DB persist — fires 800ms after last edit
       if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current);
       autoSaveTimer.current = setTimeout(() => persistFormData(formDataRef.current), 800);
+
+      // Track correction if the value differs from AI snapshot
+      const aiVal = String(aiSnapshotRef.current[key] || "");
+      const newVal = String(value || "");
+      if (aiVal && newVal !== aiVal) {
+        const fieldDef = currentFields.find(f => f.key === key);
+        pendingCorrectionsRef.current[key] = { ai: aiVal, corrected: newVal, label: fieldDef?.label };
+        if (correctionTimerRef.current) clearTimeout(correctionTimerRef.current);
+        correctionTimerRef.current = setTimeout(flushCorrections, 3000);
+      }
+
       return next;
     });
   };
@@ -697,6 +734,8 @@ export default function FormFillingView({ submissionId, initialMessages, initial
       }
 
       setFormData(merged);
+      // Update AI snapshot so future user edits are tracked against new AI values
+      aiSnapshotRef.current = { ...merged };
 
       // Persist to DB
       await supabase
