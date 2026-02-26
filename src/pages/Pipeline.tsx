@@ -24,7 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Search, CheckCircle, GripVertical, Edit3, Send, PenLine, Copy, Check, ExternalLink } from "lucide-react";
+import { Plus, Search, CheckCircle, GripVertical, Edit3, Send, PenLine, Copy, Check, ExternalLink, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { LossRunBadge } from "@/components/LossRunBadge";
 import { ClientDocuments } from "@/components/ClientDocuments";
@@ -117,6 +117,7 @@ export default function Pipeline() {
   const [lostLeadId, setLostLeadId] = useState<string | null>(null);
   const [lostReason, setLostReason] = useState("");
   const [lostRenewalDate, setLostRenewalDate] = useState("");
+  const [quoteComparisonModalOpen, setQuoteComparisonModalOpen] = useState(false);
 
   const loadLeads = useCallback(async () => {
     if (!user) return;
@@ -334,7 +335,7 @@ export default function Pipeline() {
       setPolicyForm({ carrier: "", line_of_business: "", policy_number: "", effective_date: "", annual_premium: "" });
       setSoldModalOpen(true);
     } else if (targetStage === "presenting") {
-      // Move directly to presenting without a modal
+      // Move directly to presenting, then show quote comparison teaser
       try {
         await supabase.from("leads").update({ stage: "presenting" as any }).eq("id", leadId);
         await supabase.from("audit_log").insert({
@@ -346,6 +347,8 @@ export default function Pipeline() {
         });
         toast.success("Moved to Presenting!");
         loadLeads();
+        // Show quote comparison coming soon modal
+        setQuoteComparisonModalOpen(true);
       } catch (err: any) {
         toast.error(err.message || "Failed to move lead");
       }
@@ -945,6 +948,29 @@ export default function Pipeline() {
             </Button>
             <Button onClick={handleSoldSubmit} disabled={submittingSold}>
               {submittingSold ? "Saving…" : "Mark as Sold"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Quote Comparison Coming Soon Modal */}
+      <Dialog open={quoteComparisonModalOpen} onOpenChange={setQuoteComparisonModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create Quote Comparison</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground font-sans">
+            Enter quote information from multiple carriers and generate a quote comparison for your client.
+          </p>
+          <div className="flex items-center justify-center py-8">
+            <Badge variant="outline" className="text-sm px-4 py-2 gap-2">
+              <FileText className="h-4 w-4 text-muted-foreground" />
+              Coming Soon
+            </Badge>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setQuoteComparisonModalOpen(false)}>
+              Close
             </Button>
           </DialogFooter>
         </DialogContent>
