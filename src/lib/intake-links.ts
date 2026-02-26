@@ -19,14 +19,14 @@ export async function generateIntakeLink({
   customerEmail?: string | null;
 }): Promise<{ url: string; token: string } | null> {
   const { data, error } = await supabase
-    .from("intake_links" as any)
+    .from("intake_links")
     .insert({
       agent_id: agentId,
       lead_id: leadId || null,
       submission_id: submissionId || null,
       customer_name: customerName || null,
       customer_email: customerEmail || null,
-    } as any)
+    })
     .select("token")
     .single();
 
@@ -35,7 +35,7 @@ export async function generateIntakeLink({
     return null;
   }
 
-  const token = (data as any).token;
+  const token = data.token;
   const url = `${window.location.origin}/intake/${token}`;
   return { url, token };
 }
