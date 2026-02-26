@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Users, FileText, CheckCircle, Clock, Bug, Lightbulb,
-  BarChart3, DollarSign, AlertTriangle, Eye, TrendingUp, TrendingDown,
+  BarChart3, DollarSign, AlertTriangle, Eye, TrendingUp,
 } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
 

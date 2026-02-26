@@ -84,10 +84,7 @@ export default function IntakeForm() {
       } as any);
       if (subError) throw subError;
 
-      // 2. Mark link as used
-      await supabase.from("intake_links" as any).update({ is_used: true } as any).eq("id", linkData.id);
-
-      // 3. Process intake via edge function (creates lead + submission with service role)
+      // 2. Process intake via edge function (creates lead + submission + marks link used, with service role)
       await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/process-intake`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
