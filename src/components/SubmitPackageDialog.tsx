@@ -91,52 +91,50 @@ export default function SubmitPackageDialog({
 
       const formsIncluded = enabledFormList.map(f => f.name).join(", ");
 
-      const { data, error } = await supabase.functions.invoke("agent-chat", {
-        body: {
+      const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/agent-chat`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({
           messages: [
             {
               role: "system",
-              content: `You are an experienced commercial insurance producer writing a narrative cover letter for a submission package to an underwriter. Write a professional, concise narrative summary (2-4 paragraphs) that covers:
+              content: `You are an experienced commercial insurance producer writing a professional narrative cover letter for a submission package to an underwriter. Write a thorough, professional narrative (3-5 paragraphs) modeled after industry-standard submission narratives. Include:
 
-1. Business overview: who the insured is, what they do, location, years in business
-2. Coverage being requested: lines of business, key limits, effective dates
-3. Key details: employee count, revenue, operations description
-4. Any notable features of the risk
+1. **Executive Summary / Risk Description**: Who the insured is, what they do, years in business, location, and what coverage is being requested with effective dates and key limits.
+2. **Operational Highlights & Risk Management**: Describe the nature of operations, employee count, revenue, industry classification (SIC/NAICS), and any risk management details that can be inferred from the business type.
+3. **Coverage Summary**: List the lines of business and key limits/premiums from the forms data.
+4. **Conclusion**: A brief closing statement positioning the applicant as a quality risk.
 
-Keep it professional and factual. Do NOT include placeholders or brackets. Use the actual data provided. If data is missing, simply omit that detail rather than noting it's missing. Do not include a subject line or greeting — just the narrative body.`
+Keep it professional, factual, and specific. Do NOT include placeholders or brackets. Use the actual data provided. If data is missing, simply omit that detail. Do not include a subject line, greeting, or sign-off — just the narrative body.`
             },
             {
               role: "user",
-              content: `Write a submission narrative for this account.\n\nForms included: ${formsIncluded}\n\nKey data:\n${JSON.stringify(keyFields, null, 2)}`
+              content: `Write a professional submission narrative for this account.\n\nForms included: ${formsIncluded}\n\nAll form data:\n${JSON.stringify(keyFields, null, 2)}`
             }
           ],
-        },
+        }),
       });
 
-      if (error) throw error;
+      if (!resp.ok) throw new Error(`AI request failed: ${resp.status}`);
 
-      // Handle streaming response or direct response
-      if (typeof data === "string") {
-        // SSE stream — parse
-        const lines = data.split("\n");
-        let fullText = "";
-        for (const line of lines) {
-          if (!line.startsWith("data: ")) continue;
-          const json = line.slice(6).trim();
-          if (json === "[DONE]") break;
-          try {
-            const parsed = JSON.parse(json);
-            const content = parsed.choices?.[0]?.delta?.content || parsed.choices?.[0]?.message?.content || "";
-            fullText += content;
-          } catch {}
-        }
-        setNarrative(fullText || data);
-      } else if (data?.choices?.[0]?.message?.content) {
-        setNarrative(data.choices[0].message.content);
-      } else {
-        // Fallback: try to read it as text
-        setNarrative(String(data || ""));
+      // Parse SSE stream
+      const text = await resp.text();
+      const lines = text.split("\n");
+      let fullText = "";
+      for (const line of lines) {
+        if (!line.startsWith("data: ")) continue;
+        const json = line.slice(6).trim();
+        if (json === "[DONE]") break;
+        try {
+          const parsed = JSON.parse(json);
+          const content = parsed.choices?.[0]?.delta?.content || parsed.choices?.[0]?.message?.content || "";
+          fullText += content;
+        } catch {}
       }
+      setNarrative(fullText || text);
 
       toast.success("Narrative generated!");
     } catch (err) {
