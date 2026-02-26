@@ -9,7 +9,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import SubmissionReviewPanel from "@/components/SubmissionReviewPanel";
 import FormFillingView from "@/components/FormFillingView";
 import ExtractionSummary from "@/components/ExtractionSummary";
-import { Send, FileUp, ClipboardList, Search, Loader2, Paperclip, X, Download, Mic, MicOff, Globe, Lightbulb, ChevronDown, ChevronUp, FileText, BrainCircuit, PenLine, Users, BarChart3, Mail, FileSearch, Camera, Plus, ArrowRight } from "lucide-react";
+import { Send, FileUp, ClipboardList, Search, Loader2, Paperclip, X, Download, Mic, MicOff, Globe, Lightbulb, ChevronDown, ChevronUp, FileText, BrainCircuit, PenLine, Users, BarChart3, Mail, FileSearch, Camera, Plus, ArrowRight, Sparkles } from "lucide-react";
+import { FeatureSuggestionDialog } from "@/components/FeatureSuggestionDialog";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
@@ -324,6 +325,7 @@ export default function Chat() {
   const bypassIntentRef = useRef(false);
   const inCoverageLoopRef = useRef(false);
   const [coverageInfo, setCoverageInfo] = useState<{ filled: number; total: number; percent: number } | null>(null);
+  const [showFeatureSuggestion, setShowFeatureSuggestion] = useState(false);
 
   // Calculate coverage from form_data for a given submission
   const calculateCoverage = useCallback(async (submissionId: string) => {
@@ -1605,6 +1607,15 @@ export default function Chat() {
                   </div>
                 </div>
               </div>
+
+              {/* Suggest a Feature */}
+              <button
+                onClick={() => setShowFeatureSuggestion(true)}
+                className="flex items-center gap-2 text-xs text-muted-foreground hover:text-primary transition-colors"
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                <span>Suggest a feature to our team</span>
+              </button>
                 </>
               )}
               {/* Intent buttons — shown when files dropped or form filling intent detected */}
@@ -2213,6 +2224,8 @@ export default function Chat() {
               ) : (
                 <p className="text-[10px] text-muted-foreground text-center mt-2">
                   Drop files anywhere or click <Paperclip className="inline h-3 w-3" /> to attach
+                  <span className="mx-1">·</span>
+                  <button onClick={() => setShowFeatureSuggestion(true)} className="hover:text-primary transition-colors underline-offset-2 hover:underline">Suggest a feature</button>
                 </p>
               )}
             </div>
@@ -2230,6 +2243,7 @@ export default function Chat() {
           </ScrollArea>
         </DialogContent>
       </Dialog>
+      <FeatureSuggestionDialog open={showFeatureSuggestion} onOpenChange={setShowFeatureSuggestion} />
     </AppLayout>
   );
 }

@@ -250,6 +250,33 @@ export type Database = {
           },
         ]
       }
+      feature_suggestions: {
+        Row: {
+          category: string | null
+          created_at: string
+          id: string
+          status: string
+          suggestion: string
+          user_id: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          id?: string
+          status?: string
+          suggestion: string
+          user_id: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          id?: string
+          status?: string
+          suggestion?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       field_overrides: {
         Row: {
           ai_value: string | null
