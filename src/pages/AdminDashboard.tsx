@@ -51,12 +51,12 @@ export default function AdminDashboard() {
   useEffect(() => {
     if (!user || !isAdmin) return;
     Promise.all([
-      supabase.from("business_submissions").select("*").order("created_at", { ascending: false }),
-      supabase.from("insurance_applications").select("*").order("created_at", { ascending: false }),
-      supabase.from("policies").select("*, leads(id, account_name, submission_id)").order("created_at", { ascending: false }),
-      supabase.from("feature_suggestions" as any).select("*").order("created_at", { ascending: false }),
-      supabase.from("extraction_corrections" as any).select("*").order("created_at", { ascending: false }),
-      supabase.from("profiles").select("*").order("created_at", { ascending: false }),
+      supabase.from("business_submissions").select("*").order("created_at", { ascending: false }).limit(200),
+      supabase.from("insurance_applications").select("*").order("created_at", { ascending: false }).limit(200),
+      supabase.from("policies").select("*, leads(id, account_name, submission_id)").order("created_at", { ascending: false }).limit(200),
+      supabase.from("feature_suggestions" as any).select("*").order("created_at", { ascending: false }).limit(100),
+      supabase.from("extraction_corrections" as any).select("*").order("created_at", { ascending: false }).limit(200),
+      supabase.from("profiles").select("*").order("created_at", { ascending: false }).limit(200),
     ]).then(([subRes, appRes, polRes, sugRes, corRes, profRes]) => {
       setSubmissions(subRes.data ?? []);
       setApplications(appRes.data ?? []);

@@ -179,26 +179,27 @@ export default function Pipeline() {
     if (toPromote.length === 0) return;
 
     (async () => {
-      for (const lead of toPromote) {
+      await Promise.all(toPromote.map(async (lead) => {
         await supabase
           .from("leads")
           .update({ stage: "prospect" as any, updated_at: new Date().toISOString() } as any)
           .eq("id", lead.id);
 
-        await supabase.from("lead_notes").insert({
-          lead_id: lead.id,
-          user_id: user.id,
-          note_text: `🔄 Up for renewal soon — estimated renewal: ${(lead as any).estimated_renewal_date}. Auto-moved from Lost back to Prospect.`,
-        });
-
-        await supabase.from("audit_log").insert({
-          user_id: user.id,
-          action: "auto_renewal_promote",
-          object_type: "lead",
-          object_id: lead.id,
-          metadata: { from: "lost", to: "prospect", estimated_renewal_date: (lead as any).estimated_renewal_date },
-        });
-      }
+        await Promise.all([
+          supabase.from("lead_notes").insert({
+            lead_id: lead.id,
+            user_id: user.id,
+            note_text: `🔄 Up for renewal soon — estimated renewal: ${(lead as any).estimated_renewal_date}. Auto-moved from Lost back to Prospect.`,
+          }),
+          supabase.from("audit_log").insert({
+            user_id: user.id,
+            action: "auto_renewal_promote",
+            object_type: "lead",
+            object_id: lead.id,
+            metadata: { from: "lost", to: "prospect", estimated_renewal_date: (lead as any).estimated_renewal_date },
+          }),
+        ]);
+      }));
 
       toast.success(`${toPromote.length} lost lead(s) moved back to Prospect — up for renewal soon!`);
       loadLeads();
