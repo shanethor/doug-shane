@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Download, Mail, Loader2, FileText, CheckCircle, BrainCircuit,
   Package, FileCheck, StickyNote, Send
@@ -127,7 +128,14 @@ export default function SubmitPackageDialog({
     })();
   }, [open, enabledFormIds, savedPdfBytesMap, formData]);
 
-  const enabledFormList = ACORD_FORM_LIST.filter(f => enabledFormIds.has(f.id));
+  // Local override: allow users to uncheck forms for this submission only
+  const [localEnabledIds, setLocalEnabledIds] = useState<Set<string>>(new Set(enabledFormIds));
+  // Sync when parent enabledFormIds changes
+  useEffect(() => {
+    setLocalEnabledIds(new Set(enabledFormIds));
+  }, [enabledFormIds]);
+
+  const enabledFormList = ACORD_FORM_LIST.filter(f => localEnabledIds.has(f.id));
 
   const companyName = formData.applicant_name || formData.insured_name || "Submission";
 
@@ -415,25 +423,38 @@ Keep it professional, factual, and specific. Do NOT include placeholders or brac
                     </p>
                   </div>
                   <Badge variant="secondary" className="text-xs">
-                    {Math.round((totalFilled / Math.max(totalFields, 1)) * 100)}% Complete
+                    {totalFilled} Fields Filled
                   </Badge>
                 </div>
 
                 {/* ACORD Forms section */}
                 <div className="mb-4">
                   <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">ACORD Forms</p>
-                  {formStats.map(({ form, filled, total }) => {
-                    const pct = Math.round((filled / Math.max(total, 1)) * 100);
+                  {ACORD_FORM_LIST.filter(f => enabledFormIds.has(f.id)).map((form) => {
+                    const filled = form.fields.filter(f => formData[f.key] && String(formData[f.key]).trim()).length;
+                    const total = form.fields.length;
+                    const isIncluded = localEnabledIds.has(form.id);
                     const hasPdf = !!mergedPdfMap[form.id];
                     return (
-                      <div key={form.id} className="flex items-center gap-3 py-2 px-3 rounded-md hover:bg-muted/30">
-                        <FileText className="h-4 w-4 text-primary/70 shrink-0" />
+                      <div key={form.id} className={`flex items-center gap-3 py-2 px-3 rounded-md hover:bg-muted/30 ${!isIncluded ? "opacity-50" : ""}`}>
+                        <Checkbox
+                          checked={isIncluded}
+                          onCheckedChange={(checked) => {
+                            setLocalEnabledIds(prev => {
+                              const next = new Set(prev);
+                              if (checked) next.add(form.id);
+                              else next.delete(form.id);
+                              return next;
+                            });
+                          }}
+                          className="h-3.5 w-3.5 shrink-0"
+                        />
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-medium truncate">{form.name}</p>
                           <p className="text-[10px] text-muted-foreground">{form.fullName}</p>
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
-                          <Badge variant={pct >= 80 ? "default" : pct >= 40 ? "secondary" : "outline"} className="text-[10px]">
+                          <Badge variant={filled >= total * 0.8 ? "default" : filled >= total * 0.4 ? "secondary" : "outline"} className="text-[10px]">
                             {filled}/{total}
                           </Badge>
                           {hasPdf ? (
