@@ -120,7 +120,7 @@ serve(async (req) => {
     const { description, file_contents, pdf_files, submission_id } = await req.json();
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+    if (!LOVABLE_API_KEY) throw new Error("Service temporarily unavailable");
 
     const systemPrompt = `You are an expert insurance underwriter assistant. Extract data from the provided business or policy information and return ONLY valid JSON with no markdown fences, no explanation — just raw JSON.
 
@@ -497,7 +497,7 @@ ${file_contents ? `\nAdditional text content:\n${file_contents}` : ""}`;
   } catch (e) {
     console.error("extract error:", e);
     return new Response(
-      JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }),
+      JSON.stringify({ error: "An error occurred processing your request" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
