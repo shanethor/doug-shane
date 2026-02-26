@@ -1148,15 +1148,10 @@ export default function FormFillingView({ submissionId, initialMessages, initial
               );
             })}
           </div>
-          {/* Narrative / Executive Summary — opens Submit Package dialog on Narrative tab */}
+          {/* Narrative / Executive Summary — opens Submit Package dialog */}
           <div
             onClick={() => {
               setSubmitPackageOpen(true);
-              // Small delay to let dialog mount, then switch tab
-              setTimeout(() => {
-                const narrativeTab = document.querySelector('[data-value="narrative"]') as HTMLElement;
-                if (narrativeTab) narrativeTab.click();
-              }, 100);
             }}
             className="flex items-center gap-2 rounded-md px-2 py-1 transition-colors cursor-pointer hover:bg-muted/50"
           >
