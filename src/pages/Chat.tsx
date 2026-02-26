@@ -1964,7 +1964,7 @@ export default function Chat() {
                                 } else if (appMatch) {
                                   setActiveSubmissionId(appMatch[1]);
                                 } else if (b.action === "skip-to-form") {
-                                  send("Skip straight to fillable forms — just extract what you can from the uploaded document and take me to the ACORD forms.");
+                                  send("Skip straight to fillable forms — just extract what you can from the uploaded document and take me to the ACORD forms.", "📝 Skipping to fillable forms…");
                                 } else if (b.action === "ai-questions") {
                                   (async () => {
                                     let dataContext = "";
@@ -1979,7 +1979,7 @@ export default function Chat() {
                                       }
                                     }
                                     bypassIntentRef.current = true;
-                                    send(`Yes, please ask me follow-up questions to fill any gaps from the uploaded document. Do NOT show the standard intake form — I already uploaded a document with data extracted.${dataContext}`);
+                                    send(`Yes, please ask me follow-up questions to fill any gaps from the uploaded document. Do NOT show the standard intake form — I already uploaded a document with data extracted.${dataContext}`, "🧠 Asking follow-up questions to fill gaps…");
                                   })();
                                 } else if (b.action === "add-more-docs") {
                                   const inp = document.createElement("input");
@@ -2016,7 +2016,7 @@ export default function Chat() {
                                 } else if (b.action === "continue-to-form") {
                                   setCoverageInfo(null);
                                   inCoverageLoopRef.current = false;
-                                  send("Skip straight to fillable forms — take me to the ACORD forms with the data we have.");
+                                  send("Skip straight to fillable forms — take me to the ACORD forms with the data we have.", "📝 Continuing to fillable forms…");
                                 } else if (b.action.startsWith("pick-lead:")) {
                                   const leadId = b.action.replace("pick-lead:", "");
                                   const pending = pendingPipelineActionRef.current;
@@ -2080,7 +2080,7 @@ export default function Chat() {
                         onClick={() => {
                           setCoverageInfo(null);
                           inCoverageLoopRef.current = false;
-                          send("Skip straight to fillable forms — take me to the ACORD forms with the data we have.");
+                          send("Skip straight to fillable forms — take me to the ACORD forms with the data we have.", "📝 Continuing to fillable forms…");
                         }}
                       >
                         <ArrowRight className="h-4 w-4 mr-2" />
@@ -2173,7 +2173,7 @@ export default function Chat() {
                           } else {
                             const formContext = requestedFormIds.length > 0 ? ` The agent has already specified these ACORD forms: ${requestedFormIds.map(id => id.replace("acord-", "ACORD ")).join(", ")}.` : "";
                             bypassIntentRef.current = true;
-                            send(`I want to fill an ACORD form — please ask me a few short targeted questions (2-3 at a time) to gather the client information. Do NOT show the standard intake form or use [FIELD:] markers. Ask conversational questions instead.${formContext}`);
+                            send(`I want to fill an ACORD form — please ask me a few short targeted questions (2-3 at a time) to gather the client information. Do NOT show the standard intake form or use [FIELD:] markers. Ask conversational questions instead.${formContext}`, "🧠 Starting AI-assisted form filling…");
                           }
                         }}
                         className="flex items-center gap-3 rounded-lg border bg-background hover:bg-muted/60 px-4 py-3 text-left transition-colors"
