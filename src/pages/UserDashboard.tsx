@@ -66,7 +66,7 @@ export default function UserDashboard() {
 
   const loadData = async () => {
     if (!user) return;
-    const [subRes, leadRes] = await Promise.all([
+    const [subRes, leadRes, policyRes] = await Promise.all([
       supabase
         .from("business_submissions")
         .select("*")
@@ -76,20 +76,19 @@ export default function UserDashboard() {
         .from("leads")
         .select("id, stage, account_name, submission_id")
         .eq("owner_user_id", user.id),
+      supabase
+        .from("policies")
+        .select("lead_id")
+        .eq("status", "approved"),
     ]);
     setSubmissions(subRes.data ?? []);
     const leadsData = (leadRes.data ?? []) as LeadInfo[];
     setLeads(leadsData);
 
-    // Check which leads have approved policies (= Sold)
-    if (leadsData.length > 0) {
-      const { data: policies } = await supabase
-        .from("policies")
-        .select("lead_id")
-        .in("lead_id", leadsData.map(l => l.id))
-        .eq("status", "approved");
-      setSoldLeadIds(new Set((policies ?? []).map(p => p.lead_id)));
-    }
+    // Filter policies to only relevant leads
+    const leadIdSet = new Set(leadsData.map(l => l.id));
+    const relevantPolicies = (policyRes.data ?? []).filter(p => leadIdSet.has(p.lead_id));
+    setSoldLeadIds(new Set(relevantPolicies.map(p => p.lead_id)));
 
     setLoading(false);
   };
