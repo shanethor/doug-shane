@@ -40,6 +40,11 @@ import { LossRunBadge } from "@/components/LossRunBadge";
 import { ClientDocuments } from "@/components/ClientDocuments";
 import { generateIntakeLink } from "@/lib/intake-links";
 
+type PresentingLine = {
+  line_of_business: string;
+  premium: string;
+};
+
 type Lead = {
   id: string;
   account_name: string;
@@ -55,6 +60,7 @@ type Lead = {
   updated_at: string;
   has_approved_policy?: boolean;
   submission_id?: string | null;
+  presenting_details?: any;
 };
 
 const STAGES = ["prospect", "quoting", "presenting", "lost"] as const;
@@ -115,19 +121,17 @@ export default function Pipeline() {
   // Presenting modal state
   const [presentingModalOpen, setPresentingModalOpen] = useState(false);
   const [presentingLeadId, setPresentingLeadId] = useState<string | null>(null);
-  const [presentingForm, setPresentingForm] = useState({
-    carrier: "",
-    line_of_business: "",
-    quoted_premium: "",
-    notes: "",
-  });
+  const [presentingLines, setPresentingLines] = useState<PresentingLine[]>([
+    { line_of_business: "", premium: "" },
+  ]);
+  const [presentingNotes, setPresentingNotes] = useState("");
 
   // Lost modal state
   const [lostModalOpen, setLostModalOpen] = useState(false);
   const [lostLeadId, setLostLeadId] = useState<string | null>(null);
   const [lostReason, setLostReason] = useState("");
   const [lostRenewalDate, setLostRenewalDate] = useState("");
-  const [quoteComparisonModalOpen, setQuoteComparisonModalOpen] = useState(false);
+  
 
   // Delete lead state
   const [deleteLeadId, setDeleteLeadId] = useState<string | null>(null);
@@ -136,8 +140,12 @@ export default function Pipeline() {
   // Pipeline stats
   const [pipelineStats, setPipelineStats] = useState({
     totalProspects: 0,
-    totalPremiumPipeline: 0,
-    totalRevenuePipeline: 0,
+    quotingCount: 0,
+    presentingCount: 0,
+    lostCount: 0,
+    soldCount: 0,
+    presentingPremium: 0,
+    presentingRevenue: 0,
     totalPremiumSold: 0,
     totalRevenueSold: 0,
   });
@@ -181,11 +189,31 @@ export default function Pipeline() {
     // Compute pipeline stats
     const allPolicies = allPoliciesRes.data ?? [];
     const approved = allPolicies.filter((p: any) => p.status === "approved");
-    const activeLeads = leadsData.filter((l: any) => l.stage !== "lost" && !approvedLeadIds.has(l.id));
+    const prospectLeads = leadsData.filter((l: any) => l.stage === "prospect" && !approvedLeadIds.has(l.id));
+    const quotingLeads = leadsData.filter((l: any) => l.stage === "quoting" && !approvedLeadIds.has(l.id));
+    const presentingLeads = leadsData.filter((l: any) => l.stage === "presenting" && !approvedLeadIds.has(l.id));
+    const lostLeads = leadsData.filter((l: any) => l.stage === "lost");
+    const soldLeads = leadsData.filter((l: any) => approvedLeadIds.has(l.id));
+
+    // Sum presenting premiums from presenting_details.lines
+    let presentingPremium = 0;
+    presentingLeads.forEach((l: any) => {
+      const lines = l.presenting_details?.lines;
+      if (Array.isArray(lines)) {
+        lines.forEach((line: any) => { presentingPremium += Number(line.premium) || 0; });
+      } else if (l.presenting_details?.quoted_premium) {
+        presentingPremium += Number(l.presenting_details.quoted_premium) || 0;
+      }
+    });
+
     setPipelineStats({
-      totalProspects: activeLeads.length,
-      totalPremiumPipeline: allPolicies.reduce((s: number, p: any) => s + Number(p.annual_premium || 0), 0),
-      totalRevenuePipeline: allPolicies.reduce((s: number, p: any) => s + Number(p.revenue || Number(p.annual_premium) * 0.12 || 0), 0),
+      totalProspects: prospectLeads.length,
+      quotingCount: quotingLeads.length,
+      presentingCount: presentingLeads.length,
+      lostCount: lostLeads.length,
+      soldCount: soldLeads.length,
+      presentingPremium,
+      presentingRevenue: presentingPremium * 0.12,
       totalPremiumSold: approved.reduce((s: number, p: any) => s + Number(p.annual_premium || 0), 0),
       totalRevenueSold: approved.reduce((s: number, p: any) => s + Number(p.revenue || Number(p.annual_premium) * 0.12 || 0), 0),
     });
@@ -378,23 +406,18 @@ export default function Pipeline() {
       setPolicyForm({ carrier: "", line_of_business: "", policy_number: "", effective_date: "", annual_premium: "" });
       setSoldModalOpen(true);
     } else if (targetStage === "presenting") {
-      // Move directly to presenting, then show quote comparison teaser
-      try {
-        await supabase.from("leads").update({ stage: "presenting" as any }).eq("id", leadId);
-        await supabase.from("audit_log").insert({
-          user_id: user.id,
-          action: "stage_move",
-          object_type: "lead",
-          object_id: leadId,
-          metadata: { new_stage: "presenting" },
-        });
-        toast.success("Moved to Presenting!");
-        loadLeads();
-        // Show quote comparison coming soon modal
-        setQuoteComparisonModalOpen(true);
-      } catch (err: any) {
-        toast.error(err.message || "Failed to move lead");
+      // Open presenting modal to collect premium lines
+      setPresentingLeadId(leadId);
+      // Pre-populate with existing presenting_details if any
+      const existingLead = leads.find(l => l.id === leadId);
+      if (existingLead?.presenting_details?.lines) {
+        setPresentingLines(existingLead.presenting_details.lines);
+        setPresentingNotes(existingLead.presenting_details.notes || "");
+      } else {
+        setPresentingLines([{ line_of_business: "", premium: "" }]);
+        setPresentingNotes("");
       }
+      setPresentingModalOpen(true);
     } else if (targetStage === "lost") {
       // Open lost modal to collect reason
       setLostLeadId(leadId);
@@ -411,12 +434,18 @@ export default function Pipeline() {
 
   const handlePresentingSubmit = async () => {
     if (!user || !presentingLeadId) return;
+    const validLines = presentingLines.filter(l => l.line_of_business.trim() && l.premium);
+    if (validLines.length === 0) {
+      toast.error("Add at least one line of business with a premium");
+      return;
+    }
     try {
+      const totalPremium = validLines.reduce((s, l) => s + (parseFloat(l.premium) || 0), 0);
       const details = {
-        carrier: presentingForm.carrier,
-        line_of_business: presentingForm.line_of_business,
-        quoted_premium: presentingForm.quoted_premium,
-        notes: presentingForm.notes,
+        lines: validLines,
+        total_premium: totalPremium,
+        total_revenue: totalPremium * 0.12,
+        notes: presentingNotes,
         presented_at: new Date().toISOString(),
       };
 
@@ -433,7 +462,7 @@ export default function Pipeline() {
         action: "stage_move",
         object_type: "lead",
         object_id: presentingLeadId,
-        metadata: { new_stage: "presenting", ...details },
+        metadata: { new_stage: "presenting", total_premium: totalPremium },
       });
 
       toast.success("Moved to Presenting!");
@@ -613,14 +642,32 @@ export default function Pipeline() {
 
   return (
     <AppLayout>
-      {/* Stats Tracker Bar */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
+      {/* Command Center Stats Bar */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3 mb-6">
         <Card>
           <CardContent className="p-3 flex items-center gap-2">
             <Users className="h-4 w-4 text-primary shrink-0" />
             <div>
               <p className="text-lg font-semibold font-sans leading-tight">{pipelineStats.totalProspects}</p>
-              <p className="text-[10px] text-muted-foreground font-sans">Active Prospects</p>
+              <p className="text-[10px] text-muted-foreground font-sans">Prospects</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-3 flex items-center gap-2">
+            <Users className="h-4 w-4 text-primary shrink-0" />
+            <div>
+              <p className="text-lg font-semibold font-sans leading-tight">{pipelineStats.quotingCount}</p>
+              <p className="text-[10px] text-muted-foreground font-sans">Quoting</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-3 flex items-center gap-2">
+            <Users className="h-4 w-4 text-accent shrink-0" />
+            <div>
+              <p className="text-lg font-semibold font-sans leading-tight">{pipelineStats.presentingCount}</p>
+              <p className="text-[10px] text-muted-foreground font-sans">Presenting</p>
             </div>
           </CardContent>
         </Card>
@@ -628,8 +675,8 @@ export default function Pipeline() {
           <CardContent className="p-3 flex items-center gap-2">
             <DollarSign className="h-4 w-4 text-accent shrink-0" />
             <div>
-              <p className="text-lg font-semibold font-sans leading-tight">{fmt(pipelineStats.totalPremiumPipeline)}</p>
-              <p className="text-[10px] text-muted-foreground font-sans">Pipeline Premium</p>
+              <p className="text-lg font-semibold font-sans leading-tight">{fmt(pipelineStats.presentingPremium)}</p>
+              <p className="text-[10px] text-muted-foreground font-sans">Presenting Premium</p>
             </div>
           </CardContent>
         </Card>
@@ -637,8 +684,8 @@ export default function Pipeline() {
           <CardContent className="p-3 flex items-center gap-2">
             <TrendingUp className="h-4 w-4 text-accent shrink-0" />
             <div>
-              <p className="text-lg font-semibold font-sans leading-tight">{fmt(pipelineStats.totalRevenuePipeline)}</p>
-              <p className="text-[10px] text-muted-foreground font-sans">Pipeline Revenue</p>
+              <p className="text-lg font-semibold font-sans leading-tight">{fmt(pipelineStats.presentingRevenue)}</p>
+              <p className="text-[10px] text-muted-foreground font-sans">Potential Revenue</p>
             </div>
           </CardContent>
         </Card>
@@ -952,6 +999,17 @@ export default function Pipeline() {
                                 <span className="text-[10px] text-muted-foreground font-sans">{lead.business_type}</span>
                               )}
                             </div>
+                            {/* Show premium on presenting cards */}
+                            {stage === "presenting" && lead.presenting_details && (
+                              <div className="ml-[18px] mt-1">
+                                <span className="text-[10px] font-semibold text-accent font-sans">
+                                  {fmt(lead.presenting_details.total_premium || 0)} premium
+                                </span>
+                                <span className="text-[10px] text-muted-foreground font-sans ml-1">
+                                  ({fmt((lead.presenting_details.total_premium || 0) * 0.12)} rev)
+                                </span>
+                              </div>
+                            )}
                           </div>
                           <div className="flex items-center gap-1 shrink-0 mt-0.5">
                             {lead.has_approved_policy && (
@@ -1109,24 +1167,101 @@ export default function Pipeline() {
         </DialogContent>
       </Dialog>
 
-      {/* Quote Comparison Coming Soon Modal */}
-      <Dialog open={quoteComparisonModalOpen} onOpenChange={setQuoteComparisonModalOpen}>
-        <DialogContent>
+      {/* Presenting Premium Modal */}
+      <Dialog open={presentingModalOpen} onOpenChange={(open) => { if (!open) { setPresentingModalOpen(false); setPresentingLeadId(null); } }}>
+        <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Create Quote Comparison</DialogTitle>
+            <DialogTitle>Enter Quoted Premiums — {presentingLead?.account_name}</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground font-sans">
-            Enter quote information from multiple carriers and generate a quote comparison for your client.
+            Add the lines of business being quoted and the premium for each.
           </p>
-          <div className="flex items-center justify-center py-8">
-            <Badge variant="outline" className="text-sm px-4 py-2 gap-2">
-              <FileText className="h-4 w-4 text-muted-foreground" />
-              Coming Soon
-            </Badge>
+          <div className="space-y-3 mt-2 max-h-[40vh] overflow-y-auto">
+            {presentingLines.map((line, i) => (
+              <div key={i} className="grid grid-cols-[1fr_120px_32px] gap-2 items-end">
+                <div>
+                  {i === 0 && <Label className="text-xs">Line of Business</Label>}
+                  <Input
+                    value={line.line_of_business}
+                    onChange={(e) => {
+                      const updated = [...presentingLines];
+                      updated[i] = { ...updated[i], line_of_business: e.target.value };
+                      setPresentingLines(updated);
+                    }}
+                    placeholder="e.g. General Liability"
+                  />
+                </div>
+                <div>
+                  {i === 0 && <Label className="text-xs">Premium</Label>}
+                  <Input
+                    type="number"
+                    value={line.premium}
+                    onChange={(e) => {
+                      const updated = [...presentingLines];
+                      updated[i] = { ...updated[i], premium: e.target.value };
+                      setPresentingLines(updated);
+                    }}
+                    placeholder="$0"
+                  />
+                </div>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-9 w-9 text-muted-foreground hover:text-destructive"
+                  onClick={() => {
+                    if (presentingLines.length <= 1) return;
+                    setPresentingLines(presentingLines.filter((_, idx) => idx !== i));
+                  }}
+                  disabled={presentingLines.length <= 1}
+                >
+                  ×
+                </Button>
+              </div>
+            ))}
           </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5 mt-1"
+            onClick={() => setPresentingLines([...presentingLines, { line_of_business: "", premium: "" }])}
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Add Line
+          </Button>
+
+          {/* Totals */}
+          {(() => {
+            const totalPrem = presentingLines.reduce((s, l) => s + (parseFloat(l.premium) || 0), 0);
+            return totalPrem > 0 ? (
+              <div className="rounded-lg bg-muted/50 border p-3 mt-2">
+                <div className="flex justify-between text-sm font-sans">
+                  <span className="text-muted-foreground">Total Premium:</span>
+                  <span className="font-semibold">{fmt(totalPrem)}</span>
+                </div>
+                <div className="flex justify-between text-sm font-sans mt-1">
+                  <span className="text-muted-foreground">Potential Revenue (12%):</span>
+                  <span className="font-semibold text-success">{fmt(totalPrem * 0.12)}</span>
+                </div>
+              </div>
+            ) : null;
+          })()}
+
+          <div className="mt-2">
+            <Label className="text-xs">Notes (optional)</Label>
+            <Textarea
+              value={presentingNotes}
+              onChange={(e) => setPresentingNotes(e.target.value)}
+              placeholder="Any notes about the quote…"
+              className="min-h-[60px]"
+            />
+          </div>
+
           <DialogFooter>
-            <Button variant="outline" onClick={() => setQuoteComparisonModalOpen(false)}>
-              Close
+            <Button variant="outline" onClick={() => { setPresentingModalOpen(false); setPresentingLeadId(null); }}>
+              Cancel
+            </Button>
+            <Button onClick={handlePresentingSubmit}>
+              Move to Presenting
             </Button>
           </DialogFooter>
         </DialogContent>
