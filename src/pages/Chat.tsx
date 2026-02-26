@@ -812,11 +812,16 @@ export default function Chat() {
     return patterns.some(p => p.test(t));
   };
 
-  const send = async (text: string) => {
+  /**
+   * Send a message to AI. If displayText is provided, show that in the chat bubble
+   * but send the full `text` to the AI backend (for hiding internal prompts).
+   */
+  const send = async (text: string, displayText?: string) => {
     if (!text.trim() || isLoading) return;
 
     // Intercept intake link requests BEFORE anything else
-    if (isIntakeLinkIntent(text) && user) {
+    // Skip intake detection for internal/hidden prompts (displayText means it's an internal prompt)
+    if (!displayText && isIntakeLinkIntent(text) && user) {
       const userMsg: Msg = { role: "user", content: text.trim() };
       setMessages((prev) => [...prev, userMsg]);
       setInput("");
@@ -896,7 +901,7 @@ export default function Chat() {
       content += `\n\n[${attachedFiles.length} file(s) attached: ${attachedFiles.map((f) => f.name).join(", ")}]`;
     }
 
-    const userMsg: Msg = { role: "user", content };
+    const userMsg: Msg = { role: "user", content: displayText || content };
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
     setAttachedFiles([]);
@@ -1025,7 +1030,7 @@ export default function Chat() {
 
     try {
       await streamChat({
-        messages: [...messages, userMsg].map((m) => ({ role: m.role, content: m.content })),
+        messages: [...messages, { role: userMsg.role, content: content }].map((m) => ({ role: m.role, content: m.content })),
         trainingMode,
         onDelta: upsert,
         onDone: () => {
@@ -1146,7 +1151,7 @@ export default function Chat() {
     if (!subId) {
       setIsLoading(false);
       bypassIntentRef.current = true;
-      send("I want to fill an ACORD form — please ask me a few short targeted questions (2-3 at a time) to gather the client information. Do NOT show the standard intake form or use [FIELD:] markers. Ask conversational questions instead.");
+      send("I want to fill an ACORD form — please ask me a few short targeted questions (2-3 at a time) to gather the client information. Do NOT show the standard intake form or use [FIELD:] markers. Ask conversational questions instead.", "🧠 Starting AI-assisted form filling…");
       return;
     }
 
@@ -1154,7 +1159,7 @@ export default function Chat() {
     setIsLoading(false);
     if (!result) {
       bypassIntentRef.current = true;
-      send("I want to fill an ACORD form — please ask me targeted follow-up questions about the client. Do NOT show the standard intake form.");
+      send("I want to fill an ACORD form — please ask me targeted follow-up questions about the client. Do NOT show the standard intake form.", "🧠 Starting AI-assisted form filling…");
       return;
     }
 
@@ -1165,7 +1170,7 @@ export default function Chat() {
     const dataContext = `\n\nCurrent coverage: ${percent}% (${filled}/${total} fields filled).\n\nAlready extracted:\n${filledEntries.slice(0, 30).map(([k, v]) => `- ${k}: ${v}`).join("\n")}\n\nFields still missing (${missingEntries.length}): ${missingEntries.map(([k]) => k).join(", ")}\n\nIMPORTANT: Keep asking me targeted questions about the MISSING fields, 2-3 at a time, until we reach at least 85% coverage. Do NOT show the intake form. Ask conversational questions. After I answer, acknowledge and ask the next batch. Current target: 85-90% coverage.`;
 
     bypassIntentRef.current = true;
-    send(`Please help me fill in the remaining gaps from this submission. Use AI inference where possible and ask me targeted follow-up questions for the rest. Do NOT show the standard intake form.${dataContext}`);
+    send(`Please help me fill in the remaining gaps from this submission. Use AI inference where possible and ask me targeted follow-up questions for the rest. Do NOT show the standard intake form.${dataContext}`, "🧠 Analyzing gaps and asking follow-up questions…");
   };
 
   /** Find leads using fuzzy matching */
@@ -1787,7 +1792,7 @@ export default function Chat() {
                           } else {
                             const formContext = requestedFormIds.length > 0 ? ` The agent has already specified these ACORD forms: ${requestedFormIds.map(id => id.replace("acord-", "ACORD ")).join(", ")}.` : "";
                             bypassIntentRef.current = true;
-                            send(`I want to fill an ACORD form — please ask me a few short targeted questions (2-3 at a time) to gather the client information. Do NOT show the standard intake form or use [FIELD:] markers. Ask conversational questions instead.${formContext}`);
+                            send(`I want to fill an ACORD form — please ask me a few short targeted questions (2-3 at a time) to gather the client information. Do NOT show the standard intake form or use [FIELD:] markers. Ask conversational questions instead.${formContext}`, "🧠 Starting AI-assisted form filling…");
                           }
                         }}
                         className="flex items-center gap-3 rounded-lg border bg-background hover:bg-muted/60 px-4 py-3 text-left transition-colors"
