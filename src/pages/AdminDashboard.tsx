@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { ClientDocuments } from "@/components/ClientDocuments";
 import { useAuth } from "@/hooks/useAuth";
 import { useAdmin } from "@/hooks/useAdmin";
 import { AppLayout } from "@/components/AppLayout";
@@ -8,12 +9,17 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Users, FileText, CheckCircle, Clock, Bug, Lightbulb,
   BarChart3, DollarSign, AlertTriangle, Eye, TrendingUp,
+  XCircle, Edit3, ShieldCheck,
 } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
+import { toast } from "sonner";
 
 const statusColor: Record<string, string> = {
   pending: "bg-muted text-muted-foreground",
@@ -37,6 +43,9 @@ export default function AdminDashboard() {
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [corrections, setCorrections] = useState<any[]>([]);
   const [profiles, setProfiles] = useState<any[]>([]);
+  const [rejectId, setRejectId] = useState<string | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
+  const [policyFilter, setPolicyFilter] = useState<"pending" | "all">("pending");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -44,7 +53,7 @@ export default function AdminDashboard() {
     Promise.all([
       supabase.from("business_submissions").select("*").order("created_at", { ascending: false }),
       supabase.from("insurance_applications").select("*").order("created_at", { ascending: false }),
-      supabase.from("policies").select("*").order("created_at", { ascending: false }),
+      supabase.from("policies").select("*, leads(id, account_name, submission_id)").order("created_at", { ascending: false }),
       supabase.from("feature_suggestions" as any).select("*").order("created_at", { ascending: false }),
       supabase.from("extraction_corrections" as any).select("*").order("created_at", { ascending: false }),
       supabase.from("profiles").select("*").order("created_at", { ascending: false }),
@@ -68,6 +77,32 @@ export default function AdminDashboard() {
     await supabase.from("extraction_corrections" as any).update({ status } as any).eq("id", id);
     setCorrections(prev => prev.map(c => c.id === id ? { ...c, status } : c));
   };
+
+  // ── Policy approval functions ──
+  const approvePolicy = async (policyId: string) => {
+    if (!user) return;
+    const { data: docs } = await supabase.from("policy_documents").select("id").eq("policy_id", policyId);
+    if (!docs || docs.length === 0) { toast.error("Cannot approve — no proof documents uploaded"); return; }
+    const { error } = await supabase.from("policies").update({ status: "approved" as any, approved_at: new Date().toISOString(), approved_by_user_id: user.id, locked: true }).eq("id", policyId);
+    if (error) { toast.error("Failed to approve"); return; }
+    await supabase.from("audit_log").insert({ user_id: user.id, action: "approve", object_type: "policy", object_id: policyId });
+    toast.success("Policy approved!");
+    setPolicies(prev => prev.map(p => p.id === policyId ? { ...p, status: "approved", locked: true } : p));
+  };
+
+  const rejectPolicy = async () => {
+    if (!user || !rejectId) return;
+    const { error } = await supabase.from("policies").update({ status: "rejected" as any, rejected_at: new Date().toISOString(), rejected_by_user_id: user.id, rejection_reason: rejectReason || "No reason provided" }).eq("id", rejectId);
+    if (error) { toast.error("Failed to reject"); return; }
+    await supabase.from("audit_log").insert({ user_id: user.id, action: "reject", object_type: "policy", object_id: rejectId, metadata: { reason: rejectReason } });
+    toast.success("Policy rejected");
+    setPolicies(prev => prev.map(p => p.id === rejectId ? { ...p, status: "rejected", rejection_reason: rejectReason } : p));
+    setRejectId(null);
+    setRejectReason("");
+  };
+
+  const filteredPolicies = policyFilter === "pending" ? policies.filter(p => p.status === "pending") : policies;
+  const pendingPolicyCount = policies.filter(p => p.status === "pending").length;
 
   // ── Analytics: Extraction accuracy over time ──
   const accuracyData = useMemo(() => {
@@ -150,8 +185,12 @@ export default function AdminDashboard() {
       <h1 className="text-4xl mb-6">Admin Dashboard</h1>
 
       <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4 max-w-lg">
+        <TabsList className="grid w-full grid-cols-5 max-w-2xl">
           <TabsTrigger value="overview" className="gap-1.5 text-xs"><BarChart3 className="h-3.5 w-3.5" />Overview</TabsTrigger>
+          <TabsTrigger value="policies" className="gap-1.5 text-xs">
+            <ShieldCheck className="h-3.5 w-3.5" />Policies
+            {pendingPolicyCount > 0 && <Badge variant="destructive" className="ml-1 h-4 px-1 text-[9px]">{pendingPolicyCount}</Badge>}
+          </TabsTrigger>
           <TabsTrigger value="users" className="gap-1.5 text-xs"><Users className="h-3.5 w-3.5" />Users</TabsTrigger>
           <TabsTrigger value="suggestions" className="gap-1.5 text-xs"><Lightbulb className="h-3.5 w-3.5" />Features</TabsTrigger>
           <TabsTrigger value="bugs" className="gap-1.5 text-xs"><Bug className="h-3.5 w-3.5" />Bug Fixes</TabsTrigger>
@@ -257,6 +296,75 @@ export default function AdminDashboard() {
               ))}
             </div>
           </div>
+        </TabsContent>
+
+        {/* ── Policies (formerly Approvals) ── */}
+        <TabsContent value="policies" className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold">Policy Approvals</h2>
+            <div className="flex gap-2">
+              <Button variant={policyFilter === "pending" ? "default" : "outline"} size="sm" onClick={() => setPolicyFilter("pending")}>
+                Pending ({pendingPolicyCount})
+              </Button>
+              <Button variant={policyFilter === "all" ? "default" : "outline"} size="sm" onClick={() => setPolicyFilter("all")}>
+                All
+              </Button>
+            </div>
+          </div>
+          {filteredPolicies.length === 0 ? (
+            <Card>
+              <CardContent className="py-12 text-center">
+                <CheckCircle className="h-8 w-8 text-success mx-auto mb-3" />
+                <p className="text-sm text-muted-foreground">No policies awaiting approval.</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-3">
+              {filteredPolicies.map((p: any) => (
+                <Card key={p.id}>
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-medium text-sm">{p.leads?.account_name || "Unknown Lead"}</span>
+                          <Badge variant="outline" className="text-[10px] uppercase tracking-wider">{p.status}</Badge>
+                        </div>
+                        <div className="text-xs text-muted-foreground space-y-0.5">
+                          <p>{p.carrier} · {p.line_of_business} · #{p.policy_number}</p>
+                          <p>Effective: {new Date(p.effective_date).toLocaleDateString()}</p>
+                          <p>Premium: ${Number(p.annual_premium).toLocaleString()} · Revenue: ${Number(p.revenue || 0).toLocaleString()}</p>
+                          <p>Submitted: {new Date(p.submitted_at).toLocaleString()}</p>
+                          {p.rejection_reason && <p className="text-destructive">Reason: {p.rejection_reason}</p>}
+                          <div className="flex items-center gap-2 mt-1.5">
+                            {p.leads?.submission_id && (
+                              <Link to={`/acord/acord-125/${p.leads.submission_id}`}>
+                                <Badge variant="outline" className="text-[9px] cursor-pointer hover:bg-accent gap-0.5">
+                                  <Edit3 className="h-2.5 w-2.5" />Workspace
+                                </Badge>
+                              </Link>
+                            )}
+                            {p.leads?.id && (
+                              <ClientDocuments leadId={p.leads.id} submissionId={p.leads.submission_id} compact />
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      {p.status === "pending" && (
+                        <div className="flex gap-2">
+                          <Button size="sm" variant="outline" className="gap-1 text-success" onClick={() => approvePolicy(p.id)}>
+                            <CheckCircle className="h-3.5 w-3.5" />Approve
+                          </Button>
+                          <Button size="sm" variant="outline" className="gap-1 text-destructive" onClick={() => setRejectId(p.id)}>
+                            <XCircle className="h-3.5 w-3.5" />Reject
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </TabsContent>
 
         {/* ── Users ── */}
@@ -365,6 +473,17 @@ export default function AdminDashboard() {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Reject policy dialog */}
+      <Dialog open={!!rejectId} onOpenChange={(open) => !open && setRejectId(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reject Policy</DialogTitle>
+          </DialogHeader>
+          <Textarea value={rejectReason} onChange={(e) => setRejectReason(e.target.value)} placeholder="Reason for rejection…" />
+          <Button variant="destructive" onClick={rejectPolicy}>Reject Policy</Button>
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 }
