@@ -250,6 +250,53 @@ export type Database = {
           },
         ]
       }
+      extraction_corrections: {
+        Row: {
+          ai_value: string | null
+          corrected_value: string
+          created_at: string
+          field_key: string
+          field_label: string | null
+          form_id: string
+          id: string
+          status: string
+          submission_id: string | null
+          user_id: string
+        }
+        Insert: {
+          ai_value?: string | null
+          corrected_value: string
+          created_at?: string
+          field_key: string
+          field_label?: string | null
+          form_id: string
+          id?: string
+          status?: string
+          submission_id?: string | null
+          user_id: string
+        }
+        Update: {
+          ai_value?: string | null
+          corrected_value?: string
+          created_at?: string
+          field_key?: string
+          field_label?: string | null
+          form_id?: string
+          id?: string
+          status?: string
+          submission_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "extraction_corrections_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "business_submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       feature_suggestions: {
         Row: {
           category: string | null

@@ -6,7 +6,12 @@ import { AppLayout } from "@/components/AppLayout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, FileText, CheckCircle, Clock } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Users, FileText, CheckCircle, Clock, Bug, Lightbulb,
+  BarChart3, DollarSign, AlertTriangle, Eye,
+} from "lucide-react";
 
 const statusColor: Record<string, string> = {
   pending: "bg-muted text-muted-foreground",
@@ -14,31 +19,52 @@ const statusColor: Record<string, string> = {
   extracted: "bg-accent/20 text-accent-foreground",
   draft: "bg-warning/20 text-warning",
   complete: "bg-success/20 text-success",
+  new: "bg-destructive/10 text-destructive",
+  reviewed: "bg-accent/20 text-accent-foreground",
+  planned: "bg-primary/10 text-primary",
+  done: "bg-success/20 text-success",
+  dismissed: "bg-muted text-muted-foreground",
 };
 
 export default function AdminDashboard() {
   const { user } = useAuth();
   const [submissions, setSubmissions] = useState<any[]>([]);
   const [applications, setApplications] = useState<any[]>([]);
+  const [policies, setPolicies] = useState<any[]>([]);
+  const [suggestions, setSuggestions] = useState<any[]>([]);
+  const [corrections, setCorrections] = useState<any[]>([]);
+  const [profiles, setProfiles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!user) return;
     Promise.all([
-      supabase
-        .from("business_submissions")
-        .select("*")
-        .order("created_at", { ascending: false }),
-      supabase
-        .from("insurance_applications")
-        .select("*")
-        .order("created_at", { ascending: false }),
-    ]).then(([subRes, appRes]) => {
+      supabase.from("business_submissions").select("*").order("created_at", { ascending: false }),
+      supabase.from("insurance_applications").select("*").order("created_at", { ascending: false }),
+      supabase.from("policies").select("*").order("created_at", { ascending: false }),
+      supabase.from("feature_suggestions" as any).select("*").order("created_at", { ascending: false }),
+      supabase.from("extraction_corrections" as any).select("*").order("created_at", { ascending: false }),
+      supabase.from("profiles").select("*").order("created_at", { ascending: false }),
+    ]).then(([subRes, appRes, polRes, sugRes, corRes, profRes]) => {
       setSubmissions(subRes.data ?? []);
       setApplications(appRes.data ?? []);
+      setPolicies(polRes.data ?? []);
+      setSuggestions(sugRes.data ?? []);
+      setCorrections(corRes.data ?? []);
+      setProfiles(profRes.data ?? []);
       setLoading(false);
     });
   }, [user]);
+
+  const updateSuggestionStatus = async (id: string, status: string) => {
+    await supabase.from("feature_suggestions" as any).update({ status } as any).eq("id", id);
+    setSuggestions(prev => prev.map(s => s.id === id ? { ...s, status } : s));
+  };
+
+  const updateCorrectionStatus = async (id: string, status: string) => {
+    await supabase.from("extraction_corrections" as any).update({ status } as any).eq("id", id);
+    setCorrections(prev => prev.map(c => c.id === id ? { ...c, status } : c));
+  };
 
   if (loading) {
     return (
@@ -50,106 +76,185 @@ export default function AdminDashboard() {
     );
   }
 
-  const completedApps = applications.filter((a) => a.status === "complete").length;
-  const pendingSubs = submissions.filter((s) => s.status === "pending" || s.status === "processing").length;
+  const completedApps = applications.filter(a => a.status === "complete").length;
+  const pendingSubs = submissions.filter(s => s.status === "pending" || s.status === "processing").length;
+  const totalRevenue = policies.reduce((sum: number, p: any) => sum + (p.revenue || 0), 0);
+  const newBugs = corrections.filter(c => c.status === "new").length;
+  const newSuggestions = suggestions.filter(s => s.status === "new").length;
 
   return (
     <AppLayout>
-      <h1 className="text-4xl mb-8">Admin Dashboard</h1>
+      <h1 className="text-4xl mb-6">Admin Dashboard</h1>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className="rounded-full bg-primary/10 p-2.5">
-                <FileText className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <p className="text-2xl font-semibold font-sans">{submissions.length}</p>
-                <p className="text-xs text-muted-foreground font-sans">Total Submissions</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className="rounded-full bg-warning/10 p-2.5">
-                <Clock className="h-5 w-5 text-warning" />
-              </div>
-              <div>
-                <p className="text-2xl font-semibold font-sans">{pendingSubs}</p>
-                <p className="text-xs text-muted-foreground font-sans">Pending</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className="rounded-full bg-accent/10 p-2.5">
-                <Users className="h-5 w-5 text-accent" />
-              </div>
-              <div>
-                <p className="text-2xl font-semibold font-sans">{applications.length}</p>
-                <p className="text-xs text-muted-foreground font-sans">Applications</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-3">
-              <div className="rounded-full bg-success/10 p-2.5">
-                <CheckCircle className="h-5 w-5 text-success" />
-              </div>
-              <div>
-                <p className="text-2xl font-semibold font-sans">{completedApps}</p>
-                <p className="text-xs text-muted-foreground font-sans">Completed</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      <Tabs defaultValue="overview" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-4 max-w-lg">
+          <TabsTrigger value="overview" className="gap-1.5 text-xs"><BarChart3 className="h-3.5 w-3.5" />Overview</TabsTrigger>
+          <TabsTrigger value="users" className="gap-1.5 text-xs"><Users className="h-3.5 w-3.5" />Users</TabsTrigger>
+          <TabsTrigger value="suggestions" className="gap-1.5 text-xs"><Lightbulb className="h-3.5 w-3.5" />Features</TabsTrigger>
+          <TabsTrigger value="bugs" className="gap-1.5 text-xs"><Bug className="h-3.5 w-3.5" />Bug Fixes</TabsTrigger>
+        </TabsList>
 
-      {/* All submissions */}
-      <h2 className="text-2xl mb-4">All Submissions</h2>
-      <div className="grid gap-3">
-        {submissions.map((s) => (
-          <div
-            key={s.id}
-            className="flex items-center justify-between rounded-lg border bg-card p-4 hover:shadow-sm transition-shadow"
-          >
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-3 mb-1">
-                <span className="font-medium text-sm font-sans truncate">
-                  {s.company_name || "Untitled"}
-                </span>
-                <Badge
-                  variant="outline"
-                  className={`text-[10px] uppercase tracking-wider font-sans ${statusColor[s.status] || ""}`}
-                >
-                  {s.status}
-                </Badge>
-              </div>
-              <p className="text-xs text-muted-foreground font-sans">
-                User: {s.user_id.slice(0, 8)}… · {new Date(s.created_at).toLocaleDateString()}
-              </p>
-            </div>
-            <Link to={`/application/${s.id}`}>
-              <Button variant="ghost" size="sm" className="text-xs">
-                View Application
-              </Button>
-            </Link>
+        {/* ── Overview ── */}
+        <TabsContent value="overview" className="space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <StatCard icon={Users} label="Total Users" value={profiles.length} color="primary" />
+            <StatCard icon={FileText} label="Submissions" value={submissions.length} color="primary" />
+            <StatCard icon={DollarSign} label="Revenue" value={`$${totalRevenue.toLocaleString()}`} color="success" />
+            <StatCard icon={CheckCircle} label="Completed Apps" value={completedApps} color="success" />
           </div>
-        ))}
-        {submissions.length === 0 && (
-          <p className="text-center text-muted-foreground font-sans text-sm py-12">
-            No submissions yet.
-          </p>
-        )}
-      </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <StatCard icon={Clock} label="Pending Submissions" value={pendingSubs} color="warning" />
+            <StatCard icon={Bug} label="New Bug Reports" value={newBugs} color="destructive" />
+            <StatCard icon={Lightbulb} label="New Suggestions" value={newSuggestions} color="accent" />
+          </div>
+
+          {/* Recent submissions */}
+          <div>
+            <h2 className="text-lg font-semibold mb-3">Recent Submissions</h2>
+            <div className="grid gap-2">
+              {submissions.slice(0, 5).map(s => (
+                <div key={s.id} className="flex items-center justify-between rounded-lg border bg-card p-3 hover:shadow-sm transition-shadow">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <span className="font-medium text-sm truncate">{s.company_name || "Untitled"}</span>
+                      <Badge variant="outline" className={`text-[10px] uppercase tracking-wider ${statusColor[s.status] || ""}`}>{s.status}</Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground">{new Date(s.created_at).toLocaleDateString()}</p>
+                  </div>
+                  <Link to={`/application/${s.id}`}>
+                    <Button variant="ghost" size="sm" className="text-xs gap-1"><Eye className="h-3 w-3" />View</Button>
+                  </Link>
+                </div>
+              ))}
+            </div>
+          </div>
+        </TabsContent>
+
+        {/* ── Users ── */}
+        <TabsContent value="users" className="space-y-4">
+          <h2 className="text-lg font-semibold">All Users</h2>
+          <div className="grid gap-2">
+            {profiles.map((p: any) => (
+              <div key={p.id} className="flex items-center justify-between rounded-lg border bg-card p-4">
+                <div>
+                  <p className="font-medium text-sm">{p.full_name || "Unnamed User"}</p>
+                  <p className="text-xs text-muted-foreground">{p.agency_name || "No agency"} · {p.phone || "No phone"}</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">ID: {p.user_id?.slice(0, 8)}… · Joined {new Date(p.created_at).toLocaleDateString()}</p>
+                </div>
+              </div>
+            ))}
+            {profiles.length === 0 && <p className="text-center text-muted-foreground text-sm py-8">No users yet.</p>}
+          </div>
+        </TabsContent>
+
+        {/* ── Feature Suggestions ── */}
+        <TabsContent value="suggestions" className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold">Feature Suggestions</h2>
+            <Badge variant="outline" className="text-xs">{suggestions.length} total</Badge>
+          </div>
+          <div className="grid gap-3">
+            {suggestions.map((s: any) => (
+              <div key={s.id} className="rounded-lg border bg-card p-4 space-y-2">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm">{s.suggestion}</p>
+                    <div className="flex items-center gap-2 mt-1.5">
+                      <Badge variant="secondary" className="text-[10px]">{s.category || "general"}</Badge>
+                      <span className="text-[11px] text-muted-foreground">User {s.user_id?.slice(0, 8)}… · {new Date(s.created_at).toLocaleDateString()}</span>
+                    </div>
+                  </div>
+                  <Select value={s.status} onValueChange={(v) => updateSuggestionStatus(s.id, v)}>
+                    <SelectTrigger className="w-28 h-7 text-[11px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="new">New</SelectItem>
+                      <SelectItem value="reviewed">Reviewed</SelectItem>
+                      <SelectItem value="planned">Planned</SelectItem>
+                      <SelectItem value="done">Done</SelectItem>
+                      <SelectItem value="dismissed">Dismissed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            ))}
+            {suggestions.length === 0 && <p className="text-center text-muted-foreground text-sm py-8">No feature suggestions yet.</p>}
+          </div>
+        </TabsContent>
+
+        {/* ── Bug Fixes (Extraction Corrections) ── */}
+        <TabsContent value="bugs" className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold">Extraction Corrections</h2>
+            <Badge variant="outline" className="text-xs">{corrections.length} total · {newBugs} new</Badge>
+          </div>
+          <p className="text-xs text-muted-foreground">When users correct AI-extracted data, it's flagged here as a potential extraction bug for review.</p>
+          <div className="grid gap-3">
+            {corrections.map((c: any) => (
+              <div key={c.id} className="rounded-lg border bg-card p-4 space-y-2">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0 space-y-1">
+                    <div className="flex items-center gap-2">
+                      <AlertTriangle className="h-3.5 w-3.5 text-warning shrink-0" />
+                      <span className="font-medium text-sm">{c.field_label || c.field_key}</span>
+                      <Badge variant="secondary" className="text-[10px]">{c.form_id}</Badge>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 text-xs mt-1">
+                      <div className="rounded bg-destructive/5 border border-destructive/20 p-2">
+                        <span className="text-[10px] uppercase tracking-wider text-destructive font-medium">AI Extracted</span>
+                        <p className="mt-0.5 text-foreground break-all">{c.ai_value || "—"}</p>
+                      </div>
+                      <div className="rounded bg-success/5 border border-success/20 p-2">
+                        <span className="text-[10px] uppercase tracking-wider text-success font-medium">User Corrected</span>
+                        <p className="mt-0.5 text-foreground break-all">{c.corrected_value || "—"}</p>
+                      </div>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground">User {c.user_id?.slice(0, 8)}… · {new Date(c.created_at).toLocaleDateString()}</p>
+                  </div>
+                  <Select value={c.status} onValueChange={(v) => updateCorrectionStatus(c.id, v)}>
+                    <SelectTrigger className="w-28 h-7 text-[11px]">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="new">New</SelectItem>
+                      <SelectItem value="reviewed">Reviewed</SelectItem>
+                      <SelectItem value="fixed">Fixed</SelectItem>
+                      <SelectItem value="dismissed">Dismissed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            ))}
+            {corrections.length === 0 && (
+              <div className="text-center py-12 space-y-2">
+                <Bug className="h-8 w-8 text-muted-foreground mx-auto" />
+                <p className="text-sm text-muted-foreground">No extraction corrections yet.</p>
+                <p className="text-xs text-muted-foreground">When users edit AI-extracted form data, corrections will appear here.</p>
+              </div>
+            )}
+          </div>
+        </TabsContent>
+      </Tabs>
     </AppLayout>
+  );
+}
+
+function StatCard({ icon: Icon, label, value, color }: { icon: any; label: string; value: string | number; color: string }) {
+  return (
+    <Card>
+      <CardContent className="pt-6">
+        <div className="flex items-center gap-3">
+          <div className={`rounded-full bg-${color}/10 p-2.5`}>
+            <Icon className={`h-5 w-5 text-${color}`} />
+          </div>
+          <div>
+            <p className="text-2xl font-semibold">{value}</p>
+            <p className="text-xs text-muted-foreground">{label}</p>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
