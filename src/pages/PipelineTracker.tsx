@@ -10,8 +10,10 @@ export default function PipelineTracker() {
   const userId = searchParams.get("uid");
   const [stats, setStats] = useState({
     totalProspects: 0,
-    totalPremiumPipeline: 0,
-    totalRevenuePipeline: 0,
+    quotingCount: 0,
+    presentingCount: 0,
+    presentingPremium: 0,
+    presentingRevenue: 0,
     totalPremiumSold: 0,
     totalRevenueSold: 0,
   });
@@ -23,7 +25,7 @@ export default function PipelineTracker() {
     if (!userId) { setError(true); setLoading(false); return; }
 
     const [leadsRes, policiesRes, profileRes] = await Promise.all([
-      supabase.from("leads").select("id, stage").eq("owner_user_id", userId),
+      supabase.from("leads").select("id, stage, presenting_details").eq("owner_user_id", userId),
       supabase.from("policies").select("annual_premium, revenue, status").eq("producer_user_id", userId),
       supabase.from("profiles").select("full_name, agency_name").eq("user_id", userId).maybeSingle(),
     ]);
@@ -31,16 +33,29 @@ export default function PipelineTracker() {
     const leads = leadsRes.data ?? [];
     const policies = policiesRes.data ?? [];
 
-    const activeLeads = leads.filter(l => l.stage !== "lost");
+    const prospectLeads = leads.filter((l: any) => l.stage === "prospect");
+    const quotingLeads = leads.filter((l: any) => l.stage === "quoting");
+    const presentingLeads = leads.filter((l: any) => l.stage === "presenting");
     const approvedPolicies = policies.filter((p: any) => p.status === "approved");
-    const allPolicies = policies;
+
+    let presentingPremium = 0;
+    presentingLeads.forEach((l: any) => {
+      const lines = l.presenting_details?.lines;
+      if (Array.isArray(lines)) {
+        lines.forEach((line: any) => { presentingPremium += Number(line.premium) || 0; });
+      } else if (l.presenting_details?.quoted_premium) {
+        presentingPremium += Number(l.presenting_details.quoted_premium) || 0;
+      }
+    });
 
     setStats({
-      totalProspects: activeLeads.length,
-      totalPremiumPipeline: allPolicies.reduce((s: number, p: any) => s + Number(p.annual_premium || 0), 0),
-      totalRevenuePipeline: allPolicies.reduce((s: number, p: any) => s + Number(p.revenue || p.annual_premium * 0.12 || 0), 0),
+      totalProspects: prospectLeads.length,
+      quotingCount: quotingLeads.length,
+      presentingCount: presentingLeads.length,
+      presentingPremium,
+      presentingRevenue: presentingPremium * 0.12,
       totalPremiumSold: approvedPolicies.reduce((s: number, p: any) => s + Number(p.annual_premium || 0), 0),
-      totalRevenueSold: approvedPolicies.reduce((s: number, p: any) => s + Number(p.revenue || p.annual_premium * 0.12 || 0), 0),
+      totalRevenueSold: approvedPolicies.reduce((s: number, p: any) => s + Number(p.revenue || Number(p.annual_premium) * 0.12 || 0), 0),
     });
 
     if (profileRes.data) {
@@ -98,7 +113,21 @@ export default function PipelineTracker() {
                 </div>
                 <div>
                   <p className="text-2xl font-semibold font-sans">{stats.totalProspects}</p>
-                  <p className="text-xs text-muted-foreground font-sans">Active Prospects</p>
+                  <p className="text-xs text-muted-foreground font-sans">Prospects</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-3">
+                <div className="rounded-full bg-primary/10 p-2.5">
+                  <Users className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-2xl font-semibold font-sans">{stats.quotingCount}</p>
+                  <p className="text-xs text-muted-foreground font-sans">Quoting</p>
                 </div>
               </div>
             </CardContent>
@@ -108,11 +137,27 @@ export default function PipelineTracker() {
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
                 <div className="rounded-full bg-accent/10 p-2.5">
+                  <Users className="h-5 w-5 text-accent" />
+                </div>
+                <div>
+                  <p className="text-2xl font-semibold font-sans">{stats.presentingCount}</p>
+                  <p className="text-xs text-muted-foreground font-sans">Presenting</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-3">
+                <div className="rounded-full bg-accent/10 p-2.5">
                   <DollarSign className="h-5 w-5 text-accent" />
                 </div>
                 <div>
-                  <p className="text-2xl font-semibold font-sans">{fmt(stats.totalPremiumPipeline)}</p>
-                  <p className="text-xs text-muted-foreground font-sans">Total Premium in Pipeline</p>
+                  <p className="text-2xl font-semibold font-sans">{fmt(stats.presentingPremium)}</p>
+                  <p className="text-xs text-muted-foreground font-sans">Presenting Premium</p>
                 </div>
               </div>
             </CardContent>
@@ -125,8 +170,8 @@ export default function PipelineTracker() {
                   <TrendingUp className="h-5 w-5 text-accent" />
                 </div>
                 <div>
-                  <p className="text-2xl font-semibold font-sans">{fmt(stats.totalRevenuePipeline)}</p>
-                  <p className="text-xs text-muted-foreground font-sans">Total Revenue in Pipeline</p>
+                  <p className="text-2xl font-semibold font-sans">{fmt(stats.presentingRevenue)}</p>
+                  <p className="text-xs text-muted-foreground font-sans">Potential Revenue (12%)</p>
                 </div>
               </div>
             </CardContent>
