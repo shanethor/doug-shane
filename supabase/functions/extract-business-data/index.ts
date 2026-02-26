@@ -77,7 +77,10 @@ async function callLovableGateway(
     }
   }
 
-  const model = hasPdfs ? "google/gemini-2.5-pro" : "google/gemini-2.5-flash";
+  // Use Flash for speed — Pro is too slow for extraction
+  const model = "google/gemini-2.5-flash";
+  const t0 = Date.now();
+  console.log(`[extract] Calling Gemini ${model}...`);
 
   const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
@@ -93,6 +96,8 @@ async function callLovableGateway(
       ],
     }),
   });
+
+  console.log(`[extract] Gemini responded in ${Date.now() - t0}ms (status: ${response.status})`);
 
   if (!response.ok) {
     const t = await response.text();
@@ -237,10 +242,10 @@ ${file_contents ? `\nAdditional text content:\n${file_contents}` : ""}`;
     const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
 
     let rawContent: string;
+    const t0 = Date.now();
 
     if (ANTHROPIC_API_KEY && hasPdfs) {
-      // Use Claude Sonnet 4 for PDF extraction — faster and more accurate
-      console.log("Using Claude Sonnet 4 for extraction");
+      console.log(`[extract] Starting Claude Sonnet 4 extraction (${pdf_files.length} file(s), ${Math.round(pdf_files.reduce((s: number, f: any) => s + (f.base64?.length || 0), 0) / 1024)}KB base64)`);
 
       // Build Claude messages with document content blocks
       const claudeContent: any[] = [];
@@ -264,6 +269,9 @@ ${file_contents ? `\nAdditional text content:\n${file_contents}` : ""}`;
       }
       claudeContent.push({ type: "text", text: userPromptText });
 
+      const t1 = Date.now();
+      console.log(`[extract] Payload built in ${t1 - t0}ms, calling Claude...`);
+
       const response = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
         headers: {
@@ -279,20 +287,25 @@ ${file_contents ? `\nAdditional text content:\n${file_contents}` : ""}`;
         }),
       });
 
+      const t2 = Date.now();
+      console.log(`[extract] Claude responded in ${t2 - t1}ms (status: ${response.status})`);
+
       if (!response.ok) {
         const errText = await response.text();
         console.error("Claude API error:", response.status, errText);
-        // Fall back to Lovable AI gateway
-        console.log("Falling back to Lovable AI gateway");
+        // Fall back to Lovable AI gateway with faster model
+        console.log("[extract] Falling back to Gemini 2.5 Flash");
         rawContent = await callLovableGateway(LOVABLE_API_KEY!, systemPrompt, userPromptText, pdf_files, hasPdfs, corsHeaders);
       } else {
         const result = await response.json();
         rawContent = result.content?.[0]?.text || "{}";
       }
     } else {
-      // Use Lovable AI gateway (Gemini) for text-only or when no Anthropic key
+      console.log(`[extract] Using Lovable AI gateway (hasPdfs: ${hasPdfs})`);
       rawContent = await callLovableGateway(LOVABLE_API_KEY!, systemPrompt, userPromptText, pdf_files, hasPdfs, corsHeaders);
     }
+
+    console.log(`[extract] Total AI call completed in ${Date.now() - t0}ms`);
 
 
     if (!rawContent) {
