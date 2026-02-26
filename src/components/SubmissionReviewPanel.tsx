@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { getAuthHeaders } from "@/lib/auth-fetch";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -162,14 +163,12 @@ export default function SubmissionReviewPanel({ submissionId }: SubmissionReview
       const fileNames = files.map(f => f.name).join(", ");
       toast.info(`Extracting data from ${fileNames}…`);
 
+      const extractHeaders = await getAuthHeaders();
       const extractResp = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/extract-business-data`,
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-          },
+          headers: extractHeaders,
           body: JSON.stringify({
             description: `Supplemental document upload: ${fileNames}`,
             file_contents: textContents || undefined,
@@ -231,14 +230,12 @@ export default function SubmissionReviewPanel({ submissionId }: SubmissionReview
 
     setFillingGaps(true);
     try {
+      const fillHeaders = await getAuthHeaders();
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/fill-gaps`,
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-          },
+          headers: fillHeaders,
           body: JSON.stringify({ application_id: application.id, answers: nonEmpty }),
         }
       );
@@ -303,14 +300,12 @@ export default function SubmissionReviewPanel({ submissionId }: SubmissionReview
       }
 
       try {
+        const auditHeaders = await getAuthHeaders();
         const auditResponse = await fetch(
           `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/audit-form`,
           {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-            },
+            headers: auditHeaders,
             body: JSON.stringify({
               form_data: filled,
               form_id: form.id,

@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import JSZip from "jszip";
 import { supabase } from "@/integrations/supabase/client";
+import { getAuthHeaders } from "@/lib/auth-fetch";
 import { ACORD_FORM_LIST, type AcordFormDefinition } from "@/lib/acord-forms";
 import { FILLABLE_PDF_PATHS, ACORD_INDEX_MAPS } from "@/lib/acord-field-map";
 import { getMergedIndexMap } from "@/lib/acord-pdf-fields";
@@ -231,12 +232,10 @@ export default function SubmitPackageDialog({
 
       const formsIncluded = enabledFormList.map(f => f.name).join(", ");
 
+      const chatHeaders = await getAuthHeaders();
       const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/agent-chat`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-        },
+        headers: chatHeaders,
         body: JSON.stringify({
           messages: [
             {
@@ -398,12 +397,10 @@ Keep it professional, factual, and specific. Do NOT include placeholders or brac
            <p>Please review and let me know if you need any changes.</p>
            <p style="font-size:12px;">Sent via AURA</p>`;
 
+      const emailHeaders = await getAuthHeaders();
       const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-email`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-        },
+        headers: emailHeaders,
         body: JSON.stringify({
           to: emailTo,
           from_email: fromEmail,

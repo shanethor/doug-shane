@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -11,6 +12,26 @@ serve(async (req) => {
   }
 
   try {
+    // Authenticate the request
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const token = authHeader.replace("Bearer ", "");
+    const supabaseClient = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+    const { data: claimsData, error: claimsError } = await supabaseClient.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
+      return new Response(JSON.stringify({ error: "Invalid token" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
     if (!RESEND_API_KEY) {
       console.error("RESEND_API_KEY not configured");
@@ -20,8 +41,10 @@ serve(async (req) => {
       });
     }
 
-    const { to, from_email, subject, html, attachments } = await req.json();
+    const body = await req.json();
+    const { to, from_email, subject, html, attachments } = body;
 
+    // Input validation
     if (!to || !subject) {
       return new Response(JSON.stringify({ error: "Missing required fields: to, subject" }), {
         status: 400,
@@ -29,17 +52,56 @@ serve(async (req) => {
       });
     }
 
+    // Validate email recipients
+    const recipients = Array.isArray(to) ? to : [to];
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    for (const email of recipients) {
+      if (typeof email !== "string" || !emailRegex.test(email) || email.length > 255) {
+        return new Response(JSON.stringify({ error: "Invalid email address" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+
+    // Validate subject length
+    if (typeof subject !== "string" || subject.length > 500) {
+      return new Response(JSON.stringify({ error: "Subject too long" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Validate HTML content length
+    if (html && (typeof html !== "string" || html.length > 100000)) {
+      return new Response(JSON.stringify({ error: "Email body too large" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Validate attachments
+    if (attachments && Array.isArray(attachments)) {
+      for (const a of attachments) {
+        if (!a.filename || typeof a.filename !== "string" || a.filename.length > 255) {
+          return new Response(JSON.stringify({ error: "Invalid attachment filename" }), {
+            status: 400,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+      }
+    }
+
     // Always send from our verified domain
     const fromAddress = "AURA <noreply@buildingaura.site>";
 
     const resendPayload: Record<string, unknown> = {
       from: fromAddress,
-      to: Array.isArray(to) ? to : [to],
+      to: recipients,
       subject,
       html: html || "",
     };
 
-    // Attachments should be array of { filename, content (base64) }
     if (attachments && Array.isArray(attachments) && attachments.length > 0) {
       resendPayload.attachments = attachments.map((a: { filename: string; content: string }) => ({
         filename: a.filename,
@@ -60,7 +122,7 @@ serve(async (req) => {
 
     if (!resp.ok) {
       console.error("Resend error:", result);
-      return new Response(JSON.stringify({ error: result.message || "Failed to send email" }), {
+      return new Response(JSON.stringify({ error: "Failed to send email" }), {
         status: resp.status,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });

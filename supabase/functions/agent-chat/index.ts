@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -346,6 +347,26 @@ serve(async (req) => {
   }
 
   try {
+    // Authenticate the request
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const token = authHeader.replace("Bearer ", "");
+    const supabaseClient = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+    const { data: claimsData, error: claimsError } = await supabaseClient.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
+      return new Response(JSON.stringify({ error: "Invalid token" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const { messages, trainingMode } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("Service temporarily unavailable");
@@ -380,13 +401,11 @@ serve(async (req) => {
       if (!claudeResp.ok) {
         const errText = await claudeResp.text();
         console.error("Claude API error in agent-chat:", claudeResp.status, errText);
-        // Fall back to Lovable AI gateway
         return await callLovableGatewayForChat(LOVABLE_API_KEY, systemPrompt, messages, corsHeaders);
       }
 
       const claudeResult = await claudeResp.json();
       
-      // Check for error in response
       if (claudeResult.type === "error") {
         console.error("Claude response error:", JSON.stringify(claudeResult));
         return await callLovableGatewayForChat(LOVABLE_API_KEY, systemPrompt, messages, corsHeaders);
@@ -398,7 +417,6 @@ serve(async (req) => {
         return await callLovableGatewayForChat(LOVABLE_API_KEY, systemPrompt, messages, corsHeaders);
       }
 
-      // Convert Claude's response to SSE format matching what the frontend expects
       const encoder = new TextEncoder();
       const chunks = claudeText.match(/.{1,80}/g) || [claudeText];
       const stream = new ReadableStream({
@@ -417,7 +435,6 @@ serve(async (req) => {
       });
     }
 
-    // Fallback: Lovable AI gateway (Gemini)
     return await callLovableGatewayForChat(LOVABLE_API_KEY, systemPrompt, messages, corsHeaders);
   } catch (e) {
     console.error("agent-chat error:", e);

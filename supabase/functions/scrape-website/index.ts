@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -6,13 +7,68 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+/** Validate URL is safe (not internal/private IPs) */
+function isValidPublicUrl(urlString: string): boolean {
+  try {
+    const url = new URL(urlString);
+
+    if (!["http:", "https:"].includes(url.protocol)) {
+      return false;
+    }
+
+    const hostname = url.hostname;
+    const blockedPatterns = [
+      /^localhost$/i,
+      /^127\.\d+\.\d+\.\d+$/,
+      /^10\.\d+\.\d+\.\d+$/,
+      /^192\.168\.\d+\.\d+$/,
+      /^172\.(1[6-9]|2\d|3[01])\.\d+\.\d+$/,
+      /^169\.254\.\d+\.\d+$/, // AWS/GCP metadata
+      /^\[::1\]$/, // IPv6 localhost
+      /^0\.0\.0\.0$/,
+      /^fc00:/i, // IPv6 private
+      /^fe80:/i, // IPv6 link-local
+    ];
+
+    if (blockedPatterns.some((pattern) => pattern.test(hostname))) {
+      return false;
+    }
+
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
+    // Authenticate the request
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const token = authHeader.replace("Bearer ", "");
+    const supabaseClient = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+    const { data: claimsData, error: claimsError } = await supabaseClient.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
+      return new Response(JSON.stringify({ error: "Invalid token" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const { url } = await req.json();
-    if (!url) {
-      return new Response(JSON.stringify({ error: "URL is required" }), {
+
+    // Input validation
+    if (!url || typeof url !== "string" || url.length > 2048) {
+      return new Response(JSON.stringify({ error: "Invalid URL" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -41,6 +97,14 @@ serve(async (req) => {
       formattedUrl = `https://${formattedUrl}`;
     }
 
+    // SSRF protection: block internal/private IPs
+    if (!isValidPublicUrl(formattedUrl)) {
+      return new Response(JSON.stringify({ error: "URL not allowed" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     console.log("Scraping URL:", formattedUrl);
 
     // Step 1: Scrape the website with Firecrawl
@@ -62,7 +126,7 @@ serve(async (req) => {
     if (!scrapeResp.ok) {
       console.error("Firecrawl error:", scrapeData);
       return new Response(
-        JSON.stringify({ error: `Failed to scrape: ${scrapeData.error || scrapeResp.status}` }),
+        JSON.stringify({ error: "Failed to scrape website" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -131,7 +195,6 @@ Return ONLY a valid JSON object. No explanations.`,
     if (!aiResp.ok) {
       const errText = await aiResp.text();
       console.error("AI extraction error:", aiResp.status, errText);
-      // Return scraped content even if AI fails
       return new Response(
         JSON.stringify({ scraped_content: markdown.slice(0, 5000), extracted_data: {}, source_url: formattedUrl }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -149,7 +212,6 @@ Return ONLY a valid JSON object. No explanations.`,
       console.error("Failed to parse AI extraction:", content);
     }
 
-    // Always include source URL
     extractedData.website = extractedData.website || formattedUrl;
 
     return new Response(

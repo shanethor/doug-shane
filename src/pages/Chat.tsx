@@ -20,6 +20,7 @@ import { buildAutofilledData, buildAutofilledDataWithAI } from "@/lib/acord-auto
 import { generateAcordPdfAsync } from "@/lib/pdf-generator";
 import { generateSubmissionPackage } from "@/lib/submission-package";
 import { useAuth } from "@/hooks/useAuth";
+import { getAuthHeaders } from "@/lib/auth-fetch";
 import { useVoiceInput } from "@/hooks/useVoiceInput";
 import { useTrainingMode } from "@/hooks/useTrainingMode";
 import { ensurePipelineLead } from "@/lib/pipeline-sync";
@@ -53,12 +54,10 @@ async function streamChat({
   onDone: () => void;
   onError: (err: string) => void;
 }) {
+  const headers = await getAuthHeaders();
   const resp = await fetch(CHAT_URL, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-    },
+    headers,
     body: JSON.stringify({ messages, trainingMode }),
   });
 
@@ -577,11 +576,12 @@ export default function Chat() {
         .single();
       if (subErr) throw subErr;
 
+      const extractHeaders = await getAuthHeaders();
       const extractResp = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/extract-business-data`,
         {
           method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
+          headers: extractHeaders,
           body: JSON.stringify({
             description: `HANDWRITTEN NOTES — apply aggressive OCR fuzzy matching. Characters may be ambiguous: 0/O, 1/l/I, 5/S, 8/B, Z/2, etc. Use contextual clues (addresses, names, numbers) to resolve ambiguous characters. If a word is partially illegible, use the most likely insurance/business term that fits.\n\nScanned from: ${fileNames}`,
             pdf_files: pdfFiles,
@@ -678,11 +678,12 @@ export default function Chat() {
       if (subErr) throw subErr;
 
       // Run extraction — send PDFs as base64 for Gemini multimodal reading
+      const extractHeaders2 = await getAuthHeaders();
       const extractResp = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/extract-business-data`,
         {
           method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
+          headers: extractHeaders2,
           body: JSON.stringify({
             description,
             file_contents: textContents || undefined,
@@ -1086,11 +1087,12 @@ export default function Chat() {
         if (subErr) throw subErr;
         subId = sub.id;
 
+        const extractHeaders3 = await getAuthHeaders();
         const extractResp = await fetch(
           `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/extract-business-data`,
           {
             method: "POST",
-            headers: { "Content-Type": "application/json", Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
+            headers: extractHeaders3,
             body: JSON.stringify({ description, file_contents: textContents || undefined, pdf_files: pdfFiles.length > 0 ? pdfFiles : undefined, submission_id: sub.id }),
           }
         );
@@ -1332,14 +1334,12 @@ export default function Chat() {
 
       if (subErr) throw subErr;
 
+      const extractHeaders4 = await getAuthHeaders();
       const extractResp = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/extract-business-data`,
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-          },
+          headers: extractHeaders4,
           body: JSON.stringify({ description: fullDescription, submission_id: sub.id }),
         }
       );

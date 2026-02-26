@@ -3,6 +3,7 @@ import JSZip from "jszip";
 import FillablePdfViewer, { type FillablePdfViewerHandle } from "@/components/FillablePdfViewer";
 import ReactMarkdown from "react-markdown";
 import { supabase } from "@/integrations/supabase/client";
+import { getAuthHeaders } from "@/lib/auth-fetch";
 import { useAuth } from "@/hooks/useAuth";
 import { ACORD_FORMS, ACORD_FORM_LIST, type AcordFormField, type AcordFormDefinition } from "@/lib/acord-forms";
 import { buildAutofilledData, buildAutofilledDataWithAI, formatUSD, CURRENCY_FIELDS, MANUAL_CODE_FIELDS } from "@/lib/acord-autofill";
@@ -620,12 +621,10 @@ export default function FormFillingView({ submissionId, initialMessages, initial
     setIsLoading(true);
 
     try {
+      const chatHeaders = await getAuthHeaders();
       const resp = await fetch(CHAT_URL, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-        },
+        headers: chatHeaders,
         body: JSON.stringify({
           messages: [...messages, userMsg].map((m) => ({ role: m.role, content: m.content })),
         }),
@@ -907,12 +906,10 @@ export default function FormFillingView({ submissionId, initialMessages, initial
       const subject = `ACORD Forms - ${companyName}`;
       const html = `<p>Please find the attached ACORD form package for <strong>${companyName}</strong>.</p><p>Please review and let me know if you need any changes.</p><p style="color:#888;font-size:12px;">Sent via AURA</p>`;
 
+      const emailHeaders = await getAuthHeaders();
       const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-email`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-        },
+        headers: emailHeaders,
         body: JSON.stringify({
           to: emailTo,
           from_email: fromEmail,
