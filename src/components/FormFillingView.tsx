@@ -1145,7 +1145,7 @@ export default function FormFillingView({ submissionId, initialMessages, initial
                     {f.name}
                   </span>
                   {(f.id === "acord-125" || f.id === "acord-126") && (
-                    <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-primary/15 text-primary font-semibold shrink-0" title="Most AI training data available">
+                    <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-yellow-400/30 text-yellow-700 dark:text-yellow-400 font-semibold shrink-0" title="Most AI training data available">
                       AI+
                     </span>
                   )}
