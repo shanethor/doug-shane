@@ -71,6 +71,12 @@ export default function ExtractionSummary({ submissionId, requestedFormIds = [],
         for (const [k, v] of Object.entries(defaults)) {
           if (v && !filled[k]) filled[k] = v;
         }
+        // Apply form-definition defaults (e.g. Y/N → "No") for fields with no value yet
+        for (const field of form.fields) {
+          if (field.default && !isMeaningful(filled[field.key])) {
+            filled[field.key] = field.default;
+          }
+        }
         const total = form.fields.length;
         // Only count fields with meaningful data (exclude N/A)
         const filledCount = form.fields.filter(
