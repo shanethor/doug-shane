@@ -62,6 +62,8 @@ function ClientDocCategory({
 interface SubmitPackageDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  narrativeOpen: boolean;
+  onNarrativeOpenChange: (open: boolean) => void;
   enabledFormIds: Set<string>;
   formData: Record<string, any>;
   savedPdfBytesMap: Record<string, Uint8Array>;
@@ -73,6 +75,8 @@ interface SubmitPackageDialogProps {
 export default function SubmitPackageDialog({
   open,
   onOpenChange,
+  narrativeOpen,
+  onNarrativeOpenChange,
   enabledFormIds,
   formData,
   savedPdfBytesMap,
@@ -91,8 +95,6 @@ export default function SubmitPackageDialog({
   const [emailTo, setEmailTo] = useState("");
   const [sendingEmail, setSendingEmail] = useState(false);
 
-  // Narrative popup state
-  const [narrativeOpen, setNarrativeOpen] = useState(false);
 
   // Client docs state
   const [clientDocChecked, setClientDocChecked] = useState<Record<string, boolean>>({
@@ -536,7 +538,7 @@ Keep it professional, factual, and specific. Do NOT include placeholders or brac
                   <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Narrative Note</p>
                   <div
                     className="flex items-center gap-3 py-2 px-3 rounded-md bg-muted/20 cursor-pointer hover:bg-muted/40 transition-colors"
-                    onClick={() => setNarrativeOpen(true)}
+                    onClick={() => onNarrativeOpenChange(true)}
                   >
                     <StickyNote className="h-4 w-4 text-muted-foreground/50 shrink-0" />
                     <p className="text-xs text-muted-foreground flex-1">
@@ -718,7 +720,7 @@ Keep it professional, factual, and specific. Do NOT include placeholders or brac
     </Dialog>
 
     {/* Narrative Popup */}
-    <Dialog open={narrativeOpen} onOpenChange={setNarrativeOpen}>
+    <Dialog open={narrativeOpen} onOpenChange={onNarrativeOpenChange}>
       <DialogContent className="sm:max-w-lg max-h-[70vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-base">
@@ -752,7 +754,7 @@ Keep it professional, factual, and specific. Do NOT include placeholders or brac
           className="flex-1 text-xs resize-none min-h-[250px]"
         />
         <DialogFooter>
-          <Button size="sm" className="text-xs" onClick={() => setNarrativeOpen(false)}>
+          <Button size="sm" className="text-xs" onClick={() => onNarrativeOpenChange(false)}>
             Done
           </Button>
         </DialogFooter>

@@ -81,6 +81,7 @@ export default function FormFillingView({ submissionId, initialMessages, initial
 
   // Submit Package dialog
   const [submitPackageOpen, setSubmitPackageOpen] = useState(false);
+  const [narrativeOpen, setNarrativeOpen] = useState(false);
 
   // Email dialog state (kept for backward compat)
   const [emailDialogOpen, setEmailDialogOpen] = useState(false);
@@ -1151,7 +1152,7 @@ export default function FormFillingView({ submissionId, initialMessages, initial
           {/* Narrative / Executive Summary — opens Submit Package dialog */}
           <div
             onClick={() => {
-              setSubmitPackageOpen(true);
+              setNarrativeOpen(true);
             }}
             className="flex items-center gap-2 rounded-md px-2 py-1 transition-colors cursor-pointer hover:bg-muted/50"
           >
@@ -1793,6 +1794,8 @@ export default function FormFillingView({ submissionId, initialMessages, initial
         <SubmitPackageDialog
           open={submitPackageOpen}
           onOpenChange={setSubmitPackageOpen}
+          narrativeOpen={narrativeOpen}
+          onNarrativeOpenChange={setNarrativeOpen}
           enabledFormIds={enabledFormIds}
           formData={formData}
           savedPdfBytesMap={savedPdfBytesMap}
@@ -1877,6 +1880,8 @@ export default function FormFillingView({ submissionId, initialMessages, initial
       <SubmitPackageDialog
         open={submitPackageOpen}
         onOpenChange={setSubmitPackageOpen}
+        narrativeOpen={narrativeOpen}
+        onNarrativeOpenChange={setNarrativeOpen}
         enabledFormIds={enabledFormIds}
         formData={formData}
         savedPdfBytesMap={savedPdfBytesMap}
