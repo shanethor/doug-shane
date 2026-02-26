@@ -821,15 +821,20 @@ export default function Chat() {
       try {
         const result = await generateIntakeLink({ agentId: user.id });
         if (result) {
-          await navigator.clipboard.writeText(result.url);
+          // Clipboard can fail in iframes / unfocused docs — don't let it block success
+          let copied = false;
+          try {
+            await navigator.clipboard.writeText(result.url);
+            copied = true;
+          } catch (_) { /* clipboard not available */ }
           setMessages((prev) => [
             ...prev,
             {
               role: "assistant",
-              content: `✅ **Intake link generated and copied to clipboard!**\n\nShare this link with your customer:\n\`${result.url}\`\n\nWhen they fill it out, their info will automatically sync to your pipeline and pre-fill ACORD forms. The link expires in 7 days.`,
+              content: `✅ **Intake link generated${copied ? " and copied to clipboard" : ""}!**\n\nShare this link with your customer:\n\`${result.url}\`\n\nWhen they fill it out, their info will automatically sync to your pipeline and pre-fill ACORD forms. The link expires in 7 days.`,
             },
           ]);
-          toast({ title: "Intake link copied!", description: "Share this link with your customer." });
+          toast({ title: copied ? "Intake link copied!" : "Intake link generated!", description: "Share this link with your customer." });
         } else {
           throw new Error("Link generation returned null");
         }
