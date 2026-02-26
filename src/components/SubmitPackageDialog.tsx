@@ -83,6 +83,9 @@ export default function SubmitPackageDialog({
   const [emailTo, setEmailTo] = useState("");
   const [sendingEmail, setSendingEmail] = useState(false);
 
+  // Narrative popup state
+  const [narrativeOpen, setNarrativeOpen] = useState(false);
+
   // Client docs state
   const [clientDocChecked, setClientDocChecked] = useState<Record<string, boolean>>({
     signed_supplemental: false,
@@ -413,6 +416,7 @@ Keep it professional, factual, and specific. Do NOT include placeholders or brac
   };
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl max-h-[85vh] flex flex-col">
         <DialogHeader>
@@ -426,14 +430,10 @@ Keep it professional, factual, and specific. Do NOT include placeholders or brac
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
-          <TabsList className="grid grid-cols-4 w-full">
+          <TabsList className="grid grid-cols-3 w-full">
             <TabsTrigger value="review" className="text-xs gap-1.5">
               <FileCheck className="h-3.5 w-3.5" />
               Producer
-            </TabsTrigger>
-            <TabsTrigger value="narrative" className="text-xs gap-1.5">
-              <StickyNote className="h-3.5 w-3.5" />
-              Narrative
             </TabsTrigger>
             <TabsTrigger value="client" className="text-xs gap-1.5">
               <Upload className="h-3.5 w-3.5" />
@@ -469,18 +469,28 @@ Keep it professional, factual, and specific. Do NOT include placeholders or brac
                     const total = form.fields.length;
                     const isIncluded = localEnabledIds.has(form.id);
                     const hasPdf = !!mergedPdfMap[form.id];
+                    const toggleForm = () => {
+                      setLocalEnabledIds(prev => {
+                        const next = new Set(prev);
+                        if (isIncluded) next.delete(form.id);
+                        else next.add(form.id);
+                        return next;
+                      });
+                    };
                     return (
-                      <div key={form.id} className={`flex items-center gap-3 py-2 px-3 rounded-md hover:bg-muted/30 ${!isIncluded ? "opacity-50" : ""}`}>
+                      <div
+                        key={form.id}
+                        onClick={toggleForm}
+                        className={`flex items-center gap-3 py-2 px-3 rounded-md cursor-pointer transition-colors ${
+                          isIncluded
+                            ? "bg-primary/10 border border-primary/30 hover:bg-primary/15"
+                            : "opacity-50 hover:bg-muted/30 border border-transparent"
+                        }`}
+                      >
                         <Checkbox
                           checked={isIncluded}
-                          onCheckedChange={(checked) => {
-                            setLocalEnabledIds(prev => {
-                              const next = new Set(prev);
-                              if (checked) next.add(form.id);
-                              else next.delete(form.id);
-                              return next;
-                            });
-                          }}
+                          onCheckedChange={() => toggleForm()}
+                          onClick={(e) => e.stopPropagation()}
                           className="h-3.5 w-3.5 shrink-0"
                         />
                         <div className="flex-1 min-w-0">
@@ -513,10 +523,13 @@ Keep it professional, factual, and specific. Do NOT include placeholders or brac
                   </div>
                 </div>
 
-                {/* Narrative Note status */}
+                {/* Narrative Note status - opens popup */}
                 <div className="mb-4">
                   <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Narrative Note</p>
-                  <div className="flex items-center gap-3 py-2 px-3 rounded-md bg-muted/20">
+                  <div
+                    className="flex items-center gap-3 py-2 px-3 rounded-md bg-muted/20 cursor-pointer hover:bg-muted/40 transition-colors"
+                    onClick={() => setNarrativeOpen(true)}
+                  >
                     <StickyNote className="h-4 w-4 text-muted-foreground/50 shrink-0" />
                     <p className="text-xs text-muted-foreground flex-1">
                       {narrative.trim() ? `${narrative.slice(0, 80)}…` : "No narrative added yet"}
@@ -524,14 +537,7 @@ Keep it professional, factual, and specific. Do NOT include placeholders or brac
                     {narrative.trim() ? (
                       <CheckCircle className="h-3.5 w-3.5 text-green-500 shrink-0" />
                     ) : (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-[10px] h-6 px-2 text-primary shrink-0"
-                        onClick={() => setActiveTab("narrative")}
-                      >
-                        Add →
-                      </Button>
+                      <span className="text-[10px] text-primary shrink-0 font-medium">Add →</span>
                     )}
                   </div>
                 </div>
@@ -546,38 +552,6 @@ Keep it professional, factual, and specific. Do NOT include placeholders or brac
                 </div>
               </div>
             </ScrollArea>
-          </TabsContent>
-
-          {/* ── Tab 2: Narrative ── */}
-          <TabsContent value="narrative" className="flex-1 overflow-hidden mt-3">
-            <div className="flex flex-col h-[400px]">
-              <div className="flex items-center justify-between mb-2">
-                <Label className="text-xs font-semibold">Narrative Note</Label>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-[10px] h-7 gap-1.5 border-primary/40 text-primary hover:bg-primary/10"
-                  onClick={generateNarrative}
-                  disabled={generatingNarrative}
-                >
-                  {generatingNarrative ? (
-                    <Loader2 className="h-3 w-3 animate-spin" />
-                  ) : (
-                    <BrainCircuit className="h-3 w-3" />
-                  )}
-                  {generatingNarrative ? "Generating…" : "Write with AI"}
-                </Button>
-              </div>
-              <p className="text-[10px] text-muted-foreground mb-2">
-                This note will be included as a .txt file in ZIP downloads, or as the email body when sending.
-              </p>
-              <Textarea
-                value={narrative}
-                onChange={(e) => setNarrative(e.target.value)}
-                placeholder="Write a summary of the business and policies for this submission…"
-                className="flex-1 text-xs resize-none min-h-0"
-              />
-            </div>
           </TabsContent>
 
           {/* ── Tab 3: Client Documents ── */}
@@ -734,5 +708,48 @@ Keep it professional, factual, and specific. Do NOT include placeholders or brac
         </Tabs>
       </DialogContent>
     </Dialog>
+
+    {/* Narrative Popup */}
+    <Dialog open={narrativeOpen} onOpenChange={setNarrativeOpen}>
+      <DialogContent className="sm:max-w-lg max-h-[70vh] flex flex-col">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-base">
+            <StickyNote className="h-5 w-5 text-primary" />
+            Narrative / Executive Summary
+          </DialogTitle>
+          <DialogDescription className="text-xs">
+            This note will be included as a .txt file in ZIP downloads, or as the email body when sending.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="flex items-center justify-end">
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-[10px] h-7 gap-1.5 border-primary/40 text-primary hover:bg-primary/10"
+            onClick={generateNarrative}
+            disabled={generatingNarrative}
+          >
+            {generatingNarrative ? (
+              <Loader2 className="h-3 w-3 animate-spin" />
+            ) : (
+              <BrainCircuit className="h-3 w-3" />
+            )}
+            {generatingNarrative ? "Generating…" : "Write with AI"}
+          </Button>
+        </div>
+        <Textarea
+          value={narrative}
+          onChange={(e) => setNarrative(e.target.value)}
+          placeholder="Write a summary of the business and policies for this submission…"
+          className="flex-1 text-xs resize-none min-h-[250px]"
+        />
+        <DialogFooter>
+          <Button size="sm" className="text-xs" onClick={() => setNarrativeOpen(false)}>
+            Done
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }
