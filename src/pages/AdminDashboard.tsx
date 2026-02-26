@@ -241,13 +241,22 @@ export default function AdminDashboard() {
   );
 }
 
+const colorMap: Record<string, { bg: string; text: string }> = {
+  primary: { bg: "bg-primary/10", text: "text-primary" },
+  success: { bg: "bg-success/10", text: "text-success" },
+  warning: { bg: "bg-warning/10", text: "text-warning" },
+  destructive: { bg: "bg-destructive/10", text: "text-destructive" },
+  accent: { bg: "bg-accent/10", text: "text-accent" },
+};
+
 function StatCard({ icon: Icon, label, value, color }: { icon: any; label: string; value: string | number; color: string }) {
+  const c = colorMap[color] || colorMap.primary;
   return (
     <Card>
       <CardContent className="pt-6">
         <div className="flex items-center gap-3">
-          <div className={`rounded-full bg-${color}/10 p-2.5`}>
-            <Icon className={`h-5 w-5 text-${color}`} />
+          <div className={`rounded-full ${c.bg} p-2.5`}>
+            <Icon className={`h-5 w-5 ${c.text}`} />
           </div>
           <div>
             <p className="text-2xl font-semibold">{value}</p>
