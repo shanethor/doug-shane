@@ -375,7 +375,7 @@ export default function AdminDashboard() {
               <div key={p.id} className="flex items-center justify-between rounded-lg border bg-card p-4">
                 <div>
                   <p className="font-medium text-sm">{p.full_name || "Unnamed User"}</p>
-                  <p className="text-xs text-muted-foreground">{p.agency_name || "No agency"} · {p.phone || "No phone"}</p>
+                  <p className="text-xs text-muted-foreground">{p.from_email || "No email"} · {p.agency_name || "No agency"} · {p.phone || "No phone"}</p>
                   <p className="text-[11px] text-muted-foreground mt-0.5">ID: {p.user_id?.slice(0, 8)}… · Joined {new Date(p.created_at).toLocaleDateString()}</p>
                 </div>
               </div>
