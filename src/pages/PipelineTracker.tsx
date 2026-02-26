@@ -16,6 +16,8 @@ export default function PipelineTracker() {
     presentingRevenue: 0,
     totalPremiumSold: 0,
     totalRevenueSold: 0,
+    targetPremium: 0,
+    targetRevenue: 0,
   });
   const [agencyName, setAgencyName] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -25,7 +27,7 @@ export default function PipelineTracker() {
     if (!userId) { setError(true); setLoading(false); return; }
 
     const [leadsRes, policiesRes, profileRes] = await Promise.all([
-      supabase.from("leads").select("id, stage, presenting_details").eq("owner_user_id", userId),
+      supabase.from("leads").select("id, stage, presenting_details, target_premium").eq("owner_user_id", userId),
       supabase.from("policies").select("annual_premium, revenue, status").eq("producer_user_id", userId),
       supabase.from("profiles").select("full_name, agency_name").eq("user_id", userId).maybeSingle(),
     ]);
@@ -48,6 +50,9 @@ export default function PipelineTracker() {
       }
     });
 
+    const activeLeads = leads.filter((l: any) => l.stage !== "lost");
+    const targetPremium = activeLeads.reduce((s: number, l: any) => s + (Number(l.target_premium) || 0), 0);
+
     setStats({
       totalProspects: prospectLeads.length,
       quotingCount: quotingLeads.length,
@@ -56,6 +61,8 @@ export default function PipelineTracker() {
       presentingRevenue: presentingPremium * 0.12,
       totalPremiumSold: approvedPolicies.reduce((s: number, p: any) => s + Number(p.annual_premium || 0), 0),
       totalRevenueSold: approvedPolicies.reduce((s: number, p: any) => s + Number(p.revenue || Number(p.annual_premium) * 0.12 || 0), 0),
+      targetPremium,
+      targetRevenue: targetPremium * 0.12,
     });
 
     if (profileRes.data) {
@@ -149,6 +156,36 @@ export default function PipelineTracker() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+          <Card className="border-primary/20">
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-3">
+                <div className="rounded-full bg-primary/10 p-2.5">
+                  <DollarSign className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-2xl font-semibold font-sans">{fmt(stats.targetPremium)}</p>
+                  <p className="text-xs text-muted-foreground font-sans">Target Premium</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-primary/20">
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-3">
+                <div className="rounded-full bg-primary/10 p-2.5">
+                  <TrendingUp className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-2xl font-semibold font-sans">{fmt(stats.targetRevenue)}</p>
+                  <p className="text-xs text-muted-foreground font-sans">Target Revenue (12%)</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
@@ -157,7 +194,7 @@ export default function PipelineTracker() {
                 </div>
                 <div>
                   <p className="text-2xl font-semibold font-sans">{fmt(stats.presentingPremium)}</p>
-                  <p className="text-xs text-muted-foreground font-sans">Presenting Premium</p>
+                  <p className="text-xs text-muted-foreground font-sans">Quoted Premium</p>
                 </div>
               </div>
             </CardContent>
@@ -171,7 +208,7 @@ export default function PipelineTracker() {
                 </div>
                 <div>
                   <p className="text-2xl font-semibold font-sans">{fmt(stats.presentingRevenue)}</p>
-                  <p className="text-xs text-muted-foreground font-sans">Potential Revenue (12%)</p>
+                  <p className="text-xs text-muted-foreground font-sans">Quoted Revenue (12%)</p>
                 </div>
               </div>
             </CardContent>

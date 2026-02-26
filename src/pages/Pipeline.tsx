@@ -98,6 +98,7 @@ export default function Pipeline() {
     state: "",
     business_type: "",
     lead_source: "",
+    target_premium: "",
   });
 
   const [lossRunStatuses, setLossRunStatuses] = useState<Record<string, string>>({});
@@ -148,6 +149,8 @@ export default function Pipeline() {
     presentingRevenue: 0,
     totalPremiumSold: 0,
     totalRevenueSold: 0,
+    targetPremium: 0,
+    targetRevenue: 0,
   });
 
   // Share tracker
@@ -206,6 +209,10 @@ export default function Pipeline() {
       }
     });
 
+    // Sum target premiums from all non-sold, non-lost leads
+    const activeLeads = leadsData.filter((l: any) => !approvedLeadIds.has(l.id) && l.stage !== "lost");
+    const targetPremium = activeLeads.reduce((s: number, l: any) => s + (Number(l.target_premium) || 0), 0);
+
     setPipelineStats({
       totalProspects: prospectLeads.length,
       quotingCount: quotingLeads.length,
@@ -216,6 +223,8 @@ export default function Pipeline() {
       presentingRevenue: presentingPremium * 0.12,
       totalPremiumSold: approved.reduce((s: number, p: any) => s + Number(p.annual_premium || 0), 0),
       totalRevenueSold: approved.reduce((s: number, p: any) => s + Number(p.revenue || Number(p.annual_premium) * 0.12 || 0), 0),
+      targetPremium,
+      targetRevenue: targetPremium * 0.12,
     });
 
     setLoading(false);
@@ -287,7 +296,8 @@ export default function Pipeline() {
       business_type: newLead.business_type || null,
       lead_source: newLead.lead_source || null,
       owner_user_id: user.id,
-    }).select("id").single();
+      target_premium: newLead.target_premium ? parseFloat(newLead.target_premium) : null,
+    } as any).select("id").single();
 
     if (error) {
       toast.error("Failed to add lead");
@@ -299,7 +309,7 @@ export default function Pipeline() {
         object_id: lead?.id || "00000000-0000-0000-0000-000000000000",
       });
       toast.success("Lead added!");
-      setNewLead({ account_name: "", contact_name: "", phone: "", email: "", state: "", business_type: "", lead_source: "" });
+      setNewLead({ account_name: "", contact_name: "", phone: "", email: "", state: "", business_type: "", lead_source: "", target_premium: "" });
       setAddOpen(false);
       setAddMode("choose");
       loadLeads();
@@ -643,7 +653,7 @@ export default function Pipeline() {
   return (
     <AppLayout>
       {/* Command Center Stats Bar */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-9 gap-3 mb-6">
         <Card>
           <CardContent className="p-3 flex items-center gap-2">
             <Users className="h-4 w-4 text-primary shrink-0" />
@@ -671,12 +681,30 @@ export default function Pipeline() {
             </div>
           </CardContent>
         </Card>
+        <Card className="border-primary/20">
+          <CardContent className="p-3 flex items-center gap-2">
+            <DollarSign className="h-4 w-4 text-primary shrink-0" />
+            <div>
+              <p className="text-lg font-semibold font-sans leading-tight">{fmt(pipelineStats.targetPremium)}</p>
+              <p className="text-[10px] text-muted-foreground font-sans">Target Premium</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-primary/20">
+          <CardContent className="p-3 flex items-center gap-2">
+            <TrendingUp className="h-4 w-4 text-primary shrink-0" />
+            <div>
+              <p className="text-lg font-semibold font-sans leading-tight">{fmt(pipelineStats.targetRevenue)}</p>
+              <p className="text-[10px] text-muted-foreground font-sans">Target Revenue</p>
+            </div>
+          </CardContent>
+        </Card>
         <Card>
           <CardContent className="p-3 flex items-center gap-2">
             <DollarSign className="h-4 w-4 text-accent shrink-0" />
             <div>
               <p className="text-lg font-semibold font-sans leading-tight">{fmt(pipelineStats.presentingPremium)}</p>
-              <p className="text-[10px] text-muted-foreground font-sans">Presenting Premium</p>
+              <p className="text-[10px] text-muted-foreground font-sans">Quoted Premium</p>
             </div>
           </CardContent>
         </Card>
@@ -685,7 +713,7 @@ export default function Pipeline() {
             <TrendingUp className="h-4 w-4 text-accent shrink-0" />
             <div>
               <p className="text-lg font-semibold font-sans leading-tight">{fmt(pipelineStats.presentingRevenue)}</p>
-              <p className="text-[10px] text-muted-foreground font-sans">Potential Revenue</p>
+              <p className="text-[10px] text-muted-foreground font-sans">Quoted Revenue</p>
             </div>
           </CardContent>
         </Card>
@@ -828,12 +856,26 @@ export default function Pipeline() {
                     />
                   </div>
                   <div>
-                    <Label>Lead Source</Label>
+                  <Label>Lead Source</Label>
                     <Input
                       value={newLead.lead_source}
                       onChange={(e) => setNewLead({ ...newLead, lead_source: e.target.value })}
                     />
                   </div>
+                </div>
+                <div>
+                  <Label>Target Premium</Label>
+                  <Input
+                    type="number"
+                    value={newLead.target_premium}
+                    onChange={(e) => setNewLead({ ...newLead, target_premium: e.target.value })}
+                    placeholder="e.g. 15000"
+                  />
+                  {newLead.target_premium && parseFloat(newLead.target_premium) > 0 && (
+                    <p className="text-[11px] text-muted-foreground font-sans mt-1">
+                      Target Revenue: {fmt(parseFloat(newLead.target_premium) * 0.12)}
+                    </p>
+                  )}
                 </div>
                 <DialogFooter>
                   <Button variant="outline" onClick={() => setAddMode("choose")}>Back</Button>
@@ -916,7 +958,7 @@ export default function Pipeline() {
                   The client will fill out their business details, EIN, address, and coverage needs. Their responses will automatically populate your forms.
                 </p>
                 <DialogFooter>
-                  <Button onClick={() => { setAddOpen(false); setAddMode("choose"); setIntakeLink(null); setNewLead({ account_name: "", contact_name: "", phone: "", email: "", state: "", business_type: "", lead_source: "" }); }}>
+                  <Button onClick={() => { setAddOpen(false); setAddMode("choose"); setIntakeLink(null); setNewLead({ account_name: "", contact_name: "", phone: "", email: "", state: "", business_type: "", lead_source: "", target_premium: "" }); }}>
                     Done
                   </Button>
                 </DialogFooter>
@@ -999,15 +1041,31 @@ export default function Pipeline() {
                                 <span className="text-[10px] text-muted-foreground font-sans">{lead.business_type}</span>
                               )}
                             </div>
+                            {/* Show target premium on prospect/quoting cards */}
+                            {(stage === "prospect" || stage === "quoting") && (lead as any).target_premium > 0 && (
+                              <div className="ml-[18px] mt-1">
+                                <span className="text-[10px] text-primary font-sans">
+                                  Target: {fmt((lead as any).target_premium)}
+                                </span>
+                                <span className="text-[10px] text-muted-foreground font-sans ml-1">
+                                  ({fmt((lead as any).target_premium * 0.12)} rev)
+                                </span>
+                              </div>
+                            )}
                             {/* Show premium on presenting cards */}
                             {stage === "presenting" && lead.presenting_details && (
                               <div className="ml-[18px] mt-1">
                                 <span className="text-[10px] font-semibold text-accent font-sans">
-                                  {fmt(lead.presenting_details.total_premium || 0)} premium
+                                  {fmt(lead.presenting_details.total_premium || 0)} quoted
                                 </span>
                                 <span className="text-[10px] text-muted-foreground font-sans ml-1">
                                   ({fmt((lead.presenting_details.total_premium || 0) * 0.12)} rev)
                                 </span>
+                                {(lead as any).target_premium > 0 && (
+                                  <span className="text-[10px] text-primary/70 font-sans ml-1">
+                                    · Target: {fmt((lead as any).target_premium)}
+                                  </span>
+                                )}
                               </div>
                             )}
                           </div>
