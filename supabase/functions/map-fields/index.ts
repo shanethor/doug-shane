@@ -61,7 +61,7 @@ serve(async (req) => {
     }
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
+    if (!LOVABLE_API_KEY) throw new Error("Service temporarily unavailable");
 
     // Build a concise representation of what we have and what we need
     const extractedSummary = Object.entries(extracted_data)
@@ -216,7 +216,7 @@ Return a JSON object mapping field keys to inferred values. Only include fields 
     });
   } catch (e) {
     console.error("map-fields error:", e);
-    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error", mappings: {} }), {
+    return new Response(JSON.stringify({ error: "An error occurred processing your request", mappings: {} }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

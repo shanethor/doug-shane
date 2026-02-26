@@ -14,8 +14,9 @@ serve(async (req) => {
   try {
     const ELEVENLABS_API_KEY = Deno.env.get("ELEVENLABS_API_KEY");
     if (!ELEVENLABS_API_KEY) {
+      console.error("ELEVENLABS_API_KEY is not configured");
       return new Response(
-        JSON.stringify({ error: "ELEVENLABS_API_KEY is not configured" }),
+        JSON.stringify({ error: "Transcription service unavailable" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -47,7 +48,7 @@ serve(async (req) => {
   } catch (e) {
     console.error("scribe-token error:", e);
     return new Response(
-      JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }),
+      JSON.stringify({ error: "An error occurred processing your request" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

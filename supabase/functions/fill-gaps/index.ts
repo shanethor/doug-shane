@@ -129,7 +129,7 @@ serve(async (req) => {
 
     // Now use AI to infer missing fields from context and regenerate gaps
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
+    if (!LOVABLE_API_KEY) throw new Error("Service temporarily unavailable");
 
     // Collect all target fields across all forms
     const allFields = new Set<string>();
@@ -291,7 +291,7 @@ Return inferred values (only those supported by known data) and remaining gaps.`
   } catch (e) {
     console.error("fill-gaps error:", e);
     return new Response(
-      JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }),
+      JSON.stringify({ error: "An error occurred processing your request" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

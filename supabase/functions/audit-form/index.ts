@@ -18,7 +18,7 @@ serve(async (req) => {
     // agent_defaults: Record<string, any> — agent's saved defaults
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
+    if (!LOVABLE_API_KEY) throw new Error("Service temporarily unavailable");
 
     // Merge agent defaults first (don't override existing values)
     const merged = { ...form_data };
@@ -198,7 +198,7 @@ Return the COMPLETE set of corrections/additions as field key-value pairs.`;
   } catch (e) {
     console.error("audit error:", e);
     return new Response(
-      JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }),
+      JSON.stringify({ error: "An error occurred processing your request" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
