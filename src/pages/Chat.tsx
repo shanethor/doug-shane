@@ -784,8 +784,40 @@ export default function Chat() {
       || detectRequestedForms(text).length > 0; // direct form number/coverage mention always triggers
   };
 
+  /** Detect if user is asking for a customer intake link/form */
+  const isIntakeLinkIntent = (text: string) => {
+    const t = text.trim().toLowerCase();
+    return /\bintake\s*(form|link)\b|\bclient\s*intake\b|\bcustomer\s*(intake|form|link)\b|\bsend\s*(a|an|the)?\s*(intake|customer)\b|\bneed\s*(a|an)?\s*(client|customer)?\s*intake\b|\bgenerate\s*(an?\s*)?(intake|customer)\s*(link|form)\b|\bcollect\s*(customer|client)\s*(info|information|details)\b/.test(t);
+  };
+
   const send = async (text: string) => {
     if (!text.trim() || isLoading) return;
+
+    // Intercept intake link requests BEFORE anything else
+    if (isIntakeLinkIntent(text) && user) {
+      const userMsg: Msg = { role: "user", content: text.trim() };
+      setMessages((prev) => [...prev, userMsg]);
+      setInput("");
+      setIsLoading(true);
+      try {
+        const result = await generateIntakeLink({ agentId: user.id });
+        if (result) {
+          await navigator.clipboard.writeText(result.url);
+          setMessages((prev) => [
+            ...prev,
+            {
+              role: "assistant",
+              content: `✅ **Intake link generated and copied to clipboard!**\n\nShare this link with your customer:\n\`${result.url}\`\n\nWhen they fill it out, their info will automatically sync to your pipeline and pre-fill ACORD forms. The link expires in 7 days.`,
+            },
+          ]);
+          toast({ title: "Intake link copied!", description: "Share this link with your customer." });
+        }
+      } catch (err) {
+        setMessages((prev) => [...prev, { role: "assistant", content: "Sorry, I couldn't generate the intake link. Please try again." }]);
+      }
+      setIsLoading(false);
+      return;
+    }
 
     // Intercept skip intent BEFORE sending to AI — go directly to blank form editor
     const isSkipIntent = /\bskip\b|\bgo\s*(straight\s*)?to\s*(the\s*)?form\b|\bjump\s*to\s*form\b|\bskip\s*(intake|questions)\b/i.test(text);
@@ -794,11 +826,9 @@ export default function Chat() {
       setMessages((prev) => [...prev, userMsg]);
       setInput("");
       if (!trainingMode) {
-        // Non-training mode: show the 3-bucket selector so user can choose their path
         setShowIntentButtons(true);
         return;
       }
-      // Training mode: skip directly to blank form editor
       openBlankFormEditor();
       return;
     }
