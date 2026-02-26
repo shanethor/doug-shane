@@ -1144,6 +1144,11 @@ export default function FormFillingView({ submissionId, initialMessages, initial
                   >
                     {f.name}
                   </span>
+                  {(f.id === "acord-125" || f.id === "acord-126") && (
+                    <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-primary/15 text-primary font-semibold shrink-0" title="Most AI training data available">
+                      AI+
+                    </span>
+                  )}
                   <span className="text-[9px] font-mono text-muted-foreground shrink-0">{fFilled}/{fTotal}</span>
                 </div>
               );
