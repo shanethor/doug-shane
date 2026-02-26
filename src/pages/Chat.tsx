@@ -328,6 +328,7 @@ export default function Chat() {
   const inCoverageLoopRef = useRef(false);
   const [coverageInfo, setCoverageInfo] = useState<{ filled: number; total: number; percent: number } | null>(null);
   const [showFeatureSuggestion, setShowFeatureSuggestion] = useState(false);
+  const pendingPipelineActionRef = useRef<{ action: PipelineAction; leads: { id: string; account_name: string; stage: string }[] } | null>(null);
 
   // Calculate coverage from form_data for a given submission
   const calculateCoverage = useCallback(async (submissionId: string) => {
@@ -1177,64 +1178,72 @@ export default function Chat() {
     return matches.map(m => m.item);
   };
 
+  /** Execute a pipeline action on a single confirmed lead */
+  const executeActionOnLead = async (action: PipelineAction, lead: { id: string; account_name: string; stage?: string }) => {
+    if (action.type === "move_lead" && action.stage) {
+      const validStages = ["prospect", "quoting", "presenting", "lost"];
+      const targetStage = action.stage.toLowerCase().replace(/\s+/g, "_");
+      const mapped = targetStage === "dead" || targetStage === "dead_leads" ? "lost" : targetStage;
+      if (validStages.includes(mapped)) {
+        await supabase
+          .from("leads")
+          .update({ stage: mapped as any, updated_at: new Date().toISOString() })
+          .eq("id", lead.id);
+        toast({ title: "Pipeline updated", description: `Moved "${lead.account_name}" to "${mapped}".` });
+      }
+    } else if (action.type === "update_lead" && action.field && action.value) {
+      const allowedFields = ["contact_name", "email", "phone", "business_type", "state", "lead_source"];
+      if (allowedFields.includes(action.field)) {
+        await supabase
+          .from("leads")
+          .update({ [action.field]: action.value, updated_at: new Date().toISOString() })
+          .eq("id", lead.id);
+        toast({ title: "Lead updated", description: `Updated ${action.field} for "${lead.account_name}".` });
+      }
+      if (action.field === "renewal_date" || action.field === "effective_date") {
+        const { data: policies } = await supabase
+          .from("policies")
+          .select("id")
+          .eq("lead_id", lead.id);
+        if (policies && policies.length > 0) {
+          for (const pol of policies) {
+            await supabase
+              .from("policies")
+              .update({ effective_date: action.value, updated_at: new Date().toISOString() })
+              .eq("id", pol.id);
+          }
+          toast({ title: "Renewal updated", description: `Updated renewal date.` });
+        }
+      }
+    }
+  };
+
   /** Execute pipeline actions parsed from AI response */
   const executePipelineActions = async (actions: PipelineAction[]) => {
     if (!user) return;
     for (const action of actions) {
       try {
-        if (action.type === "move_lead" && action.stage) {
-          const leads = await findLeadsFuzzy(action.account_name);
+        const leads = await findLeadsFuzzy(action.account_name);
 
-          if (leads.length > 0) {
-            const validStages = ["prospect", "quoting", "presenting", "lost"];
-            const targetStage = action.stage.toLowerCase().replace(/\s+/g, "_");
-            const mapped = targetStage === "dead" || targetStage === "dead_leads" ? "lost" : targetStage;
-            if (validStages.includes(mapped)) {
-              for (const lead of leads) {
-                await supabase
-                  .from("leads")
-                  .update({ stage: mapped as any, updated_at: new Date().toISOString() })
-                  .eq("id", lead.id);
-              }
-              toast({ title: "Pipeline updated", description: `Moved "${leads[0].account_name}" to "${mapped}".` });
-            }
-          } else {
-            toast({ variant: "destructive", title: "Lead not found", description: `No lead matching "${action.account_name}".` });
-          }
-        } else if (action.type === "update_lead" && action.field && action.value) {
-          const leads = await findLeadsFuzzy(action.account_name);
-
-          if (leads.length > 0) {
-            const allowedFields = ["contact_name", "email", "phone", "business_type", "state", "lead_source"];
-            if (allowedFields.includes(action.field)) {
-              for (const lead of leads) {
-                await supabase
-                  .from("leads")
-                  .update({ [action.field]: action.value, updated_at: new Date().toISOString() })
-                  .eq("id", lead.id);
-              }
-              toast({ title: "Lead updated", description: `Updated ${action.field} for "${leads[0].account_name}".` });
-            }
-
-            // Handle policy-level updates (renewal date = effective_date on policies)
-            if (action.field === "renewal_date" || action.field === "effective_date") {
-              const { data: policies } = await supabase
-                .from("policies")
-                .select("id")
-                .in("lead_id", leads.map(l => l.id));
-              if (policies && policies.length > 0) {
-                for (const pol of policies) {
-                  await supabase
-                    .from("policies")
-                    .update({ effective_date: action.value, updated_at: new Date().toISOString() })
-                    .eq("id", pol.id);
-                }
-                toast({ title: "Renewal updated", description: `Updated renewal date for ${policies.length} polic(ies).` });
-              }
-            }
-          } else {
-            toast({ variant: "destructive", title: "Lead not found", description: `No lead matching "${action.account_name}".` });
-          }
+        if (leads.length === 0) {
+          toast({ variant: "destructive", title: "Lead not found", description: `No lead matching "${action.account_name}".` });
+        } else if (leads.length === 1) {
+          await executeActionOnLead(action, leads[0]);
+        } else {
+          // Multiple matches — ask the user to pick
+          pendingPipelineActionRef.current = { action, leads };
+          const actionDesc = action.type === "move_lead" ? `move to "${action.stage}"` : `update ${action.field}`;
+          setMessages(prev => [
+            ...prev,
+            {
+              role: "assistant",
+              content: `I found ${leads.length} leads matching "${action.account_name}". Which one did you mean?`,
+              buttons: leads.map(l => ({
+                label: `${l.account_name} (${l.stage})`,
+                action: `pick-lead:${l.id}`,
+              })),
+            },
+          ]);
         }
       } catch (err) {
         console.error("Pipeline action failed:", err);
@@ -2003,6 +2012,17 @@ export default function Chat() {
                                   setCoverageInfo(null);
                                   inCoverageLoopRef.current = false;
                                   send("Skip straight to fillable forms — take me to the ACORD forms with the data we have.");
+                                } else if (b.action.startsWith("pick-lead:")) {
+                                  const leadId = b.action.replace("pick-lead:", "");
+                                  const pending = pendingPipelineActionRef.current;
+                                  if (pending) {
+                                    const lead = pending.leads.find(l => l.id === leadId);
+                                    if (lead) {
+                                      pendingPipelineActionRef.current = null;
+                                      setMessages(prev => [...prev, { role: "user", content: lead.account_name }]);
+                                      executeActionOnLead(pending.action, lead);
+                                    }
+                                  }
                                 } else if (b.action.startsWith("/") || b.action.startsWith("http")) {
                                   navigate(b.action);
                                 } else {
