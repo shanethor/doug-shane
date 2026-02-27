@@ -378,10 +378,20 @@ export default function UserDashboard() {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); addPolicyToClient(s); }} className="gap-2">
-                      <Plus className="h-3.5 w-3.5" />
-                      Add Policy
-                    </DropdownMenuItem>
+                    {(() => {
+                      const lead = getLeadForSubmission(s.id);
+                      const isSold = lead ? soldLeadIds.has(lead.id) : false;
+                      return (
+                        <DropdownMenuItem
+                          disabled={!isSold}
+                          onClick={(e) => { e.stopPropagation(); if (isSold) addPolicyToClient(s); }}
+                          className="gap-2"
+                        >
+                          <Plus className="h-3.5 w-3.5" />
+                          {isSold ? "Add Policy" : "Add Policy (must be sold)"}
+                        </DropdownMenuItem>
+                      );
+                    })()}
                     <DropdownMenuItem onClick={(e) => { e.stopPropagation(); duplicateSubmission(s); }} className="gap-2">
                       <Copy className="h-3.5 w-3.5" />
                       Duplicate
