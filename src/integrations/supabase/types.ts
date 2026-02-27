@@ -52,6 +52,7 @@ export type Database = {
           description: string | null
           file_urls: Json | null
           id: string
+          lead_id: string | null
           narrative: string | null
           status: string
           updated_at: string
@@ -64,6 +65,7 @@ export type Database = {
           description?: string | null
           file_urls?: Json | null
           id?: string
+          lead_id?: string | null
           narrative?: string | null
           status?: string
           updated_at?: string
@@ -76,12 +78,21 @@ export type Database = {
           description?: string | null
           file_urls?: Json | null
           id?: string
+          lead_id?: string | null
           narrative?: string | null
           status?: string
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "business_submissions_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       client_documents: {
         Row: {

@@ -23,7 +23,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { getAuthHeaders } from "@/lib/auth-fetch";
 import { useVoiceInput } from "@/hooks/useVoiceInput";
 import { useTrainingMode } from "@/hooks/useTrainingMode";
-import { ensurePipelineLead } from "@/lib/pipeline-sync";
+import { ensurePipelineLead, findExistingLeads } from "@/lib/pipeline-sync";
 import { generateIntakeLink } from "@/lib/intake-links";
 import { fuzzyMatch } from "@/lib/fuzzy-match";
 
@@ -747,6 +747,86 @@ export default function Chat() {
     }
   };
 
+  /** Extract documents and link to an existing lead (multi-policy) */
+  const triggerDocumentExtractionForLead = async (files: File[], leadId: string, accountName: string) => {
+    if (!user || files.length === 0) return;
+    setIsLoading(true);
+
+    const fileNames = files.map(f => f.name).join(", ");
+    toast({ title: "Extracting from documents…", description: `Linking to ${accountName}.` });
+
+    try {
+      let textContents = "";
+      const pdfFiles: { name: string; base64: string; mimeType: string }[] = [];
+      for (const file of files) {
+        if (file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")) {
+          const base64 = await readFileAsBase64(file);
+          pdfFiles.push({ name: file.name, base64, mimeType: "application/pdf" });
+        } else if (file.type.startsWith("text/") || /\.(txt|md|csv)$/i.test(file.name)) {
+          const content = await readFileAsText(file);
+          textContents += `\n--- ${file.name} ---\n${content}`;
+        } else if (file.type.startsWith("image/")) {
+          const base64 = await readFileAsBase64(file);
+          pdfFiles.push({ name: file.name, base64, mimeType: file.type });
+        }
+      }
+
+      const description = `Additional policy document for ${accountName}: ${fileNames}${textContents ? `\n\nFile contents:\n${textContents}` : ""}`;
+
+      // Create new submission linked to the existing lead
+      const { data: sub, error: subErr } = await supabase
+        .from("business_submissions")
+        .insert({ user_id: user.id, company_name: accountName, description, status: "processing", lead_id: leadId } as any)
+        .select()
+        .single();
+      if (subErr) throw subErr;
+
+      const extractHeaders = await getAuthHeaders();
+      const extractResp = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/extract-business-data`,
+        {
+          method: "POST",
+          headers: extractHeaders,
+          body: JSON.stringify({
+            description,
+            file_contents: textContents || undefined,
+            pdf_files: pdfFiles.length > 0 ? pdfFiles : undefined,
+            submission_id: sub.id,
+          }),
+        }
+      );
+
+      if (!extractResp.ok) {
+        const errBody = await extractResp.json().catch(() => ({}));
+        throw new Error(errBody.error || `Extraction failed (${extractResp.status})`);
+      }
+
+      const extracted = await extractResp.json();
+      const fd = extracted?.form_data || {};
+      const detectedForms = detectFormsFromLOBFlags(fd);
+      setRequestedFormIds(detectedForms);
+      if (detectedForms.length > 0) setActiveFormId(detectedForms[0]);
+
+      // Persist files
+      await persistFilesToDocuments(files, user.id, sub.id, leadId, "application");
+
+      setMessages(prev => [...prev, {
+        role: "assistant",
+        content: `✅ Extracted data from **${fileNames}** and linked to **${accountName}**. Found **${Object.keys(fd).filter(k => fd[k]).length}** fields. Opening workspace… [SUBMISSION_ID:${sub.id}]`,
+      }]);
+
+      setTimeout(() => {
+        setPendingSubmissionId(sub.id);
+        setIsLoading(false);
+      }, 1200);
+    } catch (err: any) {
+      console.error("Multi-policy extraction error:", err);
+      toast({ variant: "destructive", title: "Extraction failed", description: err.message || "Could not extract" });
+      setIsLoading(false);
+    }
+  };
+
+
   const handleFiles = (files: FileList | null) => {
     if (!files) return;
     const newFiles = Array.from(files).slice(0, 10);
@@ -812,6 +892,25 @@ export default function Chat() {
     return patterns.some(p => p.test(t));
   };
 
+  /** Detect if user wants to add a policy/document to an existing client */
+  const parseAddToClientIntent = (text: string): { clientName: string } | null => {
+    const t = text.trim();
+    const patterns = [
+      /\badd\s+(?:a\s+)?(?:policy|document|submission|coverage|line)\s+(?:to|for)\s+(.+)/i,
+      /\bnew\s+(?:policy|submission|coverage)\s+(?:for|to)\s+(.+)/i,
+      /\b(?:upload|attach)\s+(?:to|for)\s+(.+)/i,
+      /\badd\s+(?:to|for)\s+(.+)/i,
+    ];
+    for (const p of patterns) {
+      const m = t.match(p);
+      if (m && m[1]) {
+        // Clean up the client name
+        const name = m[1].replace(/[.!?]+$/, '').trim();
+        if (name.length > 1 && name.length < 80) return { clientName: name };
+      }
+    }
+    return null;
+  };
   /**
    * Send a message to AI. If displayText is provided, show that in the chat bubble
    * but send the full `text` to the AI backend (for hiding internal prompts).
@@ -852,6 +951,55 @@ export default function Chat() {
       }
       setIsLoading(false);
       return;
+    }
+
+    // Intercept "add policy to [client]" — detect existing client and link new submission
+    if (!displayText && user) {
+      const addToClient = parseAddToClientIntent(text);
+      if (addToClient) {
+        const userMsg: Msg = { role: "user", content: text.trim() };
+        setMessages(prev => [...prev, userMsg]);
+        setInput("");
+        setIsLoading(true);
+
+        try {
+          const matches = await findExistingLeads(user.id, addToClient.clientName);
+          if (matches.length === 1) {
+            // Exact match — proceed
+            const lead = matches[0];
+            setMessages(prev => [...prev, {
+              role: "assistant",
+              content: `📋 Found **${lead.account_name}** in your pipeline. ${attachedFiles.length > 0 ? "Extracting documents and linking to this client..." : "You can upload documents or describe the new policy, and I'll link it to this client."}`
+            }]);
+
+            if (attachedFiles.length > 0) {
+              // Auto-extract and link to existing lead
+              const filesToExtract = [...attachedFiles];
+              setAttachedFiles([]);
+              await triggerDocumentExtractionForLead(filesToExtract, lead.id, lead.account_name);
+            } else {
+              // Show intent buttons for the user to choose how to add
+              setShowIntentButtons(true);
+            }
+          } else if (matches.length > 1) {
+            // Multiple matches — show disambiguation
+            setMessages(prev => [...prev, {
+              role: "assistant",
+              content: `I found multiple clients matching "**${addToClient.clientName}**":\n\n${matches.slice(0, 5).map((l, i) => `${i + 1}. **${l.account_name}** (${l.stage})`).join("\n")}\n\nWhich client would you like to add the policy to? Just say the name or number.`
+            }]);
+          } else {
+            // No match — offer to create new
+            setMessages(prev => [...prev, {
+              role: "assistant",
+              content: `I don't see a client named "**${addToClient.clientName}**" in your pipeline. Would you like me to create a new client with that name, or did you mean someone else?`
+            }]);
+          }
+        } catch (err) {
+          console.error("Add-to-client lookup failed:", err);
+        }
+        setIsLoading(false);
+        return;
+      }
     }
 
     // Intercept skip intent BEFORE sending to AI — go directly to blank form editor

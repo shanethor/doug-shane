@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { getLeadSubmissions } from "@/lib/pipeline-sync";
 import { AppLayout } from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -51,6 +52,7 @@ export default function LeadDetail() {
   const [policies, setPolicies] = useState<any[]>([]);
   const [notes, setNotes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [submissions, setSubmissions] = useState<{ id: string; company_name: string | null; status: string; created_at: string }[]>([]);
   const [noteText, setNoteText] = useState("");
   const [policyOpen, setPolicyOpen] = useState(false);
   const [newPolicy, setNewPolicy] = useState({
@@ -63,15 +65,17 @@ export default function LeadDetail() {
 
   const loadData = useCallback(async () => {
     if (!user || !leadId) return;
-    const [leadRes, policiesRes, notesRes] = await Promise.all([
+    const [leadRes, policiesRes, notesRes, subs] = await Promise.all([
       supabase.from("leads").select("*").eq("id", leadId).single(),
       supabase.from("policies").select("*").eq("lead_id", leadId).order("created_at", { ascending: false }),
       supabase.from("lead_notes").select("*").eq("lead_id", leadId).order("created_at", { ascending: false }),
+      getLeadSubmissions(leadId),
     ]);
 
     setLead(leadRes.data);
     setPolicies(policiesRes.data ?? []);
     setNotes(notesRes.data ?? []);
+    setSubmissions(subs);
     setLoading(false);
   }, [user, leadId]);
 
@@ -217,12 +221,34 @@ export default function LeadDetail() {
           </div>
 
           <div className="flex gap-2">
-            {lead.submission_id && (
+            {/* Show workspace buttons for all linked submissions */}
+            {submissions.length > 0 ? (
+              submissions.length === 1 ? (
+                <Button size="sm" variant="outline" className="gap-1.5" onClick={() => navigate(`/acord/acord-125/${submissions[0].id}`)}>
+                  <Edit3 className="h-3.5 w-3.5" />
+                  Open Workspace
+                </Button>
+              ) : (
+                <Select onValueChange={(subId) => navigate(`/acord/acord-125/${subId}`)}>
+                  <SelectTrigger className="w-[180px] h-9 text-xs">
+                    <Edit3 className="h-3.5 w-3.5 mr-1.5" />
+                    <SelectValue placeholder={`Open Workspace (${submissions.length})`} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {submissions.map((s, i) => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {s.company_name || `Submission ${i + 1}`} — {new Date(s.created_at).toLocaleDateString()}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )
+            ) : lead.submission_id ? (
               <Button size="sm" variant="outline" className="gap-1.5" onClick={() => navigate(`/acord/acord-125/${lead.submission_id}`)}>
                 <Edit3 className="h-3.5 w-3.5" />
                 Open Workspace
               </Button>
-            )}
+            ) : null}
             {!hasApprovedPolicy && (
               <Select value={lead.stage} onValueChange={moveStage}>
                 <SelectTrigger className="w-[140px] h-9 text-xs">
@@ -365,6 +391,29 @@ export default function LeadDetail() {
                     );
                   })}
                 </div>
+              )}
+
+              {/* Submissions / Policies linked to this lead */}
+              {submissions.length > 1 && (
+                <>
+                  <h2 className="text-xl mt-6">Submissions</h2>
+                  <div className="space-y-2">
+                    {submissions.map((s, i) => (
+                      <Card key={s.id} className="cursor-pointer hover:border-primary/50 transition-colors" onClick={() => navigate(`/acord/acord-125/${s.id}`)}>
+                        <CardContent className="p-3 flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-medium font-sans">{s.company_name || `Submission ${i + 1}`}</p>
+                            <p className="text-xs text-muted-foreground font-sans">{new Date(s.created_at).toLocaleDateString()} · {s.status}</p>
+                          </div>
+                          <Button size="sm" variant="ghost" className="gap-1 text-xs">
+                            <Edit3 className="h-3 w-3" />
+                            Open
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </>
               )}
 
               {/* Lead Details Card */}
