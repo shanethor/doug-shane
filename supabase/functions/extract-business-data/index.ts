@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { PDFDocument } from "https://esm.sh/pdf-lib@1.17.1";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -53,6 +54,40 @@ const ACORD_FIELDS = {
   additional_insureds: "",
   special_conditions: "",
 };
+
+const MAX_PDF_PAGES = 15;
+
+/** Truncate a PDF to the first N pages to reduce payload size and speed up extraction */
+async function truncatePdf(base64Data: string, maxPages: number): Promise<string> {
+  try {
+    const pdfBytes = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
+    const srcDoc = await PDFDocument.load(pdfBytes, { ignoreEncryption: true });
+    const pageCount = srcDoc.getPageCount();
+    
+    if (pageCount <= maxPages) {
+      console.log(`[extract] PDF has ${pageCount} pages — no truncation needed`);
+      return base64Data;
+    }
+    
+    console.log(`[extract] Truncating PDF from ${pageCount} to ${maxPages} pages`);
+    const newDoc = await PDFDocument.create();
+    const indices = Array.from({ length: maxPages }, (_, i) => i);
+    const copiedPages = await newDoc.copyPages(srcDoc, indices);
+    copiedPages.forEach(page => newDoc.addPage(page));
+    
+    const newBytes = await newDoc.save();
+    // Convert back to base64
+    let binary = '';
+    const bytes = new Uint8Array(newBytes);
+    for (let i = 0; i < bytes.length; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    return btoa(binary);
+  } catch (err) {
+    console.warn("[extract] PDF truncation failed, using original:", err);
+    return base64Data;
+  }
+}
 
 /** Helper: call Lovable AI Gateway (Gemini) for extraction */
 async function callLovableGateway(
@@ -265,11 +300,22 @@ ${file_contents ? `\nAdditional text content:\n${file_contents}` : ""}`;
     const t0 = Date.now();
 
     if (ANTHROPIC_API_KEY && hasPdfs) {
-      console.log(`[extract] Starting Claude Sonnet 4 extraction (${pdf_files.length} file(s), ${Math.round(pdf_files.reduce((s: number, f: any) => s + (f.base64?.length || 0), 0) / 1024)}KB base64)`);
+      // Truncate PDFs to first N pages to reduce payload and speed up extraction
+      const truncatedPdfFiles = [];
+      for (const pf of pdf_files) {
+        if (pf.base64 && (pf.mimeType === "application/pdf" || !pf.mimeType?.startsWith("image/"))) {
+          const truncated = await truncatePdf(pf.base64, MAX_PDF_PAGES);
+          truncatedPdfFiles.push({ ...pf, base64: truncated });
+        } else {
+          truncatedPdfFiles.push(pf);
+        }
+      }
+      
+      console.log(`[extract] Starting Claude Sonnet 4 extraction (${truncatedPdfFiles.length} file(s), ${Math.round(truncatedPdfFiles.reduce((s: number, f: any) => s + (f.base64?.length || 0), 0) / 1024)}KB base64)`);
 
       // Build Claude messages with document content blocks
       const claudeContent: any[] = [];
-      for (const pf of pdf_files) {
+      for (const pf of truncatedPdfFiles) {
         if (pf.base64) {
           const mediaType = pf.mimeType === "application/pdf" ? "application/pdf"
             : pf.mimeType?.startsWith("image/") ? pf.mimeType : "application/pdf";
