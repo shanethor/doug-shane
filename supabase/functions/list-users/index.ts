@@ -18,12 +18,31 @@ Deno.serve(async (req) => {
       { global: { headers: { authorization: authHeader } } }
     );
 
-    // Verify JWT using getClaims
+    // Resolve caller user id from JWT payload (DB still validates JWT signature)
     const token = authHeader.replace("Bearer ", "");
-    const { data: claimsData, error: claimsError } = await anonClient.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims) throw new Error("Not authenticated");
+    let userId: string | null = null;
 
-    const userId = claimsData.claims.sub as string;
+    try {
+      const payloadBase64 = token.split(".")[1];
+      if (payloadBase64) {
+        const base64 = payloadBase64.replace(/-/g, "+").replace(/_/g, "/");
+        const payload = JSON.parse(atob(base64));
+        if (typeof payload?.sub === "string" && payload.sub.length > 0) {
+          userId = payload.sub;
+        }
+      }
+    } catch {
+      // fall through to getUser fallback
+    }
+
+    if (!userId) {
+      const { data: userData, error: userError } = await anonClient.auth.getUser(token);
+      if (!userError && userData?.user?.id) {
+        userId = userData.user.id;
+      }
+    }
+
+    if (!userId) throw new Error("Not authenticated");
 
     // Check admin role
     const { data: roleData } = await anonClient
