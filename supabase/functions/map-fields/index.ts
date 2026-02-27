@@ -181,47 +181,11 @@ ${filteredUnfilled.join(", ")}
 
 Return a JSON object mapping field keys to inferred values. Only include fields you can confidently fill.`;
 
-    const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
-    let mappings: Record<string, any> = {};
-
-    if (ANTHROPIC_API_KEY) {
-      // Use Claude Sonnet 4 for field mapping — faster and more accurate
-      console.log("map-fields: Using Claude Sonnet 4");
-      const claudeResp = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "x-api-key": ANTHROPIC_API_KEY,
-          "anthropic-version": "2023-06-01",
-          "content-type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 4096,
-          system: systemPrompt,
-          messages: [{ role: "user", content: userPrompt }],
-          temperature: 0.1,
-        }),
-      });
-
-      if (!claudeResp.ok) {
-        const errText = await claudeResp.text();
-        console.error("Claude API error in map-fields:", claudeResp.status, errText);
-        // Fall back to Lovable AI gateway
-        mappings = await callLovableGatewayForMapping(LOVABLE_API_KEY!, systemPrompt, userPrompt, corsHeaders);
-      } else {
-        const result = await claudeResp.json();
-        const content = result.content?.[0]?.text || "{}";
-        try {
-          const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/) || [null, content];
-          mappings = JSON.parse(jsonMatch[1].trim());
-        } catch {
-          console.error("Failed to parse Claude mapping response:", content);
-          mappings = {};
-        }
-      }
-    } else {
-      mappings = await callLovableGatewayForMapping(LOVABLE_API_KEY!, systemPrompt, userPrompt, corsHeaders);
-    }
+    // Use Gemini for field mapping — avoids Claude rate limits since multiple forms
+    // call map-fields in parallel. Gemini is fast and accurate enough for mapping.
+    let mappings: Record<string, any> = await callLovableGatewayForMapping(
+      LOVABLE_API_KEY!, systemPrompt, userPrompt, corsHeaders
+    );
 
     // Filter to only include keys that are in the target fields list
     const validMappings: Record<string, any> = {};
