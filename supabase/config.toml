@@ -29,3 +29,6 @@ verify_jwt = false
 
 [functions.benchmark-extraction]
 verify_jwt = false
+
+[functions.list-users]
+verify_jwt = false
