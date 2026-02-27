@@ -105,6 +105,8 @@ export default function Pipeline() {
   // Analytics data
   const [allPoliciesData, setAllPoliciesData] = useState<any[]>([]);
   const [auditLogData, setAuditLogData] = useState<any[]>([]);
+  // Map lead_id -> array of approved policy premiums for sold card display
+  const [leadPolicyPremiums, setLeadPolicyPremiums] = useState<Record<string, number[]>>({});
 
   const [lossRunStatuses, setLossRunStatuses] = useState<Record<string, string>>({});
 
@@ -234,6 +236,15 @@ export default function Pipeline() {
     });
 
     setAllPoliciesData(allPolicies.map((p: any) => ({ lead_id: p.lead_id, annual_premium: Number(p.annual_premium || 0), status: p.status })));
+    
+    // Build per-lead premium map for sold cards
+    const premiumMap: Record<string, number[]> = {};
+    approved.forEach((p: any) => {
+      if (!premiumMap[p.lead_id]) premiumMap[p.lead_id] = [];
+      premiumMap[p.lead_id].push(Number(p.annual_premium || 0));
+    });
+    setLeadPolicyPremiums(premiumMap);
+
     setAuditLogData(auditRes.data ?? []);
     setLoading(false);
   }, [user]);
@@ -1066,6 +1077,26 @@ export default function Pipeline() {
                                 <span className="text-[10px] text-muted-foreground font-sans ml-1">
                                   ({fmt((lead as any).target_premium * 0.12)} rev)
                                 </span>
+                              </div>
+                            )}
+                            {/* Show sold premium from all approved policies */}
+                            {stage === "sold" && lead.has_approved_policy && (
+                              <div className="ml-[18px] mt-1">
+                                {(() => {
+                                  const premiums = leadPolicyPremiums[lead.id] || [];
+                                  const totalPremium = premiums.reduce((s, p) => s + p, 0);
+                                  return (
+                                    <>
+                                      <span className="text-[10px] font-semibold text-success font-sans">
+                                        {fmt(totalPremium)} sold
+                                        {premiums.length > 1 && ` (${premiums.length} policies)`}
+                                      </span>
+                                      <span className="text-[10px] text-muted-foreground font-sans ml-1">
+                                        ({fmt(totalPremium * 0.12)} rev)
+                                      </span>
+                                    </>
+                                  );
+                                })()}
                               </div>
                             )}
                             {/* Show premium on presenting cards */}
