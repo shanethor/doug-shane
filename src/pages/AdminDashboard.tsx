@@ -66,7 +66,7 @@ export default function AdminDashboard() {
       setProfiles(profRes.data ?? []);
       setLoading(false);
     });
-  }, [user]);
+  }, [user, isAdmin]);
 
   const updateSuggestionStatus = async (id: string, status: string) => {
     await supabase.from("feature_suggestions" as any).update({ status } as any).eq("id", id);
