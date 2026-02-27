@@ -39,6 +39,7 @@ import { toast } from "sonner";
 import { LossRunBadge } from "@/components/LossRunBadge";
 import { ClientDocuments } from "@/components/ClientDocuments";
 import { generateIntakeLink } from "@/lib/intake-links";
+import { PipelineAnalytics } from "@/components/PipelineAnalytics";
 
 type PresentingLine = {
   line_of_business: string;
@@ -101,6 +102,10 @@ export default function Pipeline() {
     target_premium: "",
   });
 
+  // Analytics data
+  const [allPoliciesData, setAllPoliciesData] = useState<any[]>([]);
+  const [auditLogData, setAuditLogData] = useState<any[]>([]);
+
   const [lossRunStatuses, setLossRunStatuses] = useState<Record<string, string>>({});
 
   // Drag-and-drop state
@@ -158,11 +163,12 @@ export default function Pipeline() {
 
   const loadLeads = useCallback(async () => {
     if (!user) return;
-    const [leadsRes, approvedRes, lossRunRes, allPoliciesRes] = await Promise.all([
+    const [leadsRes, approvedRes, lossRunRes, allPoliciesRes, auditRes] = await Promise.all([
       supabase.from("leads").select("*").order("updated_at", { ascending: false }),
       supabase.from("policies").select("lead_id").eq("status", "approved"),
       supabase.from("loss_run_requests").select("lead_id, status"),
-      supabase.from("policies").select("annual_premium, revenue, status").eq("producer_user_id", user.id),
+      supabase.from("policies").select("lead_id, annual_premium, revenue, status").eq("producer_user_id", user.id),
+      supabase.from("audit_log").select("object_id, action, metadata, created_at").eq("object_type", "lead").order("created_at", { ascending: true }).limit(1000),
     ]);
 
     const leadsData = leadsRes.data;
@@ -227,6 +233,8 @@ export default function Pipeline() {
       targetRevenue: targetPremium * 0.12,
     });
 
+    setAllPoliciesData(allPolicies.map((p: any) => ({ lead_id: p.lead_id, annual_premium: Number(p.annual_premium || 0), status: p.status })));
+    setAuditLogData(auditRes.data ?? []);
     setLoading(false);
   }, [user]);
 
@@ -1109,6 +1117,17 @@ export default function Pipeline() {
           </div>
         ))}
       </div>
+
+      {/* Pipeline Analytics */}
+      <PipelineAnalytics
+        leads={leads.map((l: any) => ({
+          ...l,
+          target_premium: l.target_premium ?? null,
+          loss_reason: l.loss_reason ?? null,
+        }))}
+        policies={allPoliciesData}
+        auditLog={auditLogData}
+      />
 
 
       {/* Lost Modal */}
