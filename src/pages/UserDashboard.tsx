@@ -12,7 +12,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { FilePlus, FileText, MoreVertical, Copy, Pencil, Trash2, Search, Edit3, ArrowRight } from "lucide-react";
+import { FilePlus, FileText, MoreVertical, Copy, Pencil, Trash2, Search, Edit3, ArrowRight, Plus } from "lucide-react";
 import { ClientDocuments } from "@/components/ClientDocuments";
 import { toast } from "sonner";
 
@@ -149,6 +149,35 @@ export default function UserDashboard() {
       loadData();
     } catch (err: any) {
       toast.error(err.message || "Failed to duplicate");
+    }
+  };
+
+  /** Add a new policy/submission to an existing client (linked to same lead) */
+  const addPolicyToClient = async (submission: any) => {
+    if (!user) return;
+    const lead = getLeadForSubmission(submission.id);
+    const leadId = lead?.id || null;
+    const companyName = submission.company_name || "Untitled";
+
+    try {
+      const { data: newSub, error } = await supabase
+        .from("business_submissions")
+        .insert({
+          user_id: user.id,
+          company_name: companyName,
+          description: `Additional policy for ${companyName}`,
+          status: "pending",
+          ...(leadId ? { lead_id: leadId } : {}),
+        } as any)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      toast.success("New policy created — opening workspace");
+      navigate(`/acord/acord-125/${newSub.id}`);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to create policy");
     }
   };
 
@@ -349,16 +378,20 @@ export default function UserDashboard() {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => duplicateSubmission(s)} className="gap-2">
+                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); addPolicyToClient(s); }} className="gap-2">
+                      <Plus className="h-3.5 w-3.5" />
+                      Add Policy
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); duplicateSubmission(s); }} className="gap-2">
                       <Copy className="h-3.5 w-3.5" />
                       Duplicate
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => renameSubmission(s.id, s.company_name)} className="gap-2">
+                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); renameSubmission(s.id, s.company_name); }} className="gap-2">
                       <Pencil className="h-3.5 w-3.5" />
                       Rename
                     </DropdownMenuItem>
                     <DropdownMenuItem
-                      onClick={() => deleteSubmission(s.id)}
+                      onClick={(e) => { e.stopPropagation(); deleteSubmission(s.id); }}
                       className="gap-2 text-destructive focus:text-destructive"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
