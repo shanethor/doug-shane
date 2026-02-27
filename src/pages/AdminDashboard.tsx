@@ -46,6 +46,7 @@ export default function AdminDashboard() {
   const [rejectId, setRejectId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState("");
   const [policyFilter, setPolicyFilter] = useState<"pending" | "all">("pending");
+  const [adminUsers, setAdminUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -65,6 +66,11 @@ export default function AdminDashboard() {
       setCorrections(corRes.data ?? []);
       setProfiles(profRes.data ?? []);
       setLoading(false);
+    });
+
+    // Fetch full user list via edge function
+    supabase.functions.invoke("list-users").then(({ data, error }) => {
+      if (!error && data) setAdminUsers(data);
     });
   }, [user, isAdmin]);
 
@@ -199,7 +205,7 @@ export default function AdminDashboard() {
         {/* ── Overview ── */}
         <TabsContent value="overview" className="space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard icon={Users} label="Total Users" value={profiles.length} color="primary" />
+            <StatCard icon={Users} label="Total Users" value={adminUsers.length || profiles.length} color="primary" />
             <StatCard icon={FileText} label="Submissions" value={submissions.length} color="primary" />
             <StatCard icon={DollarSign} label="Revenue" value={`$${totalRevenue.toLocaleString()}`} color="success" />
             <StatCard icon={CheckCircle} label="Completed Apps" value={completedApps} color="success" />
@@ -369,18 +375,59 @@ export default function AdminDashboard() {
 
         {/* ── Users ── */}
         <TabsContent value="users" className="space-y-4">
-          <h2 className="text-lg font-semibold">All Users</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold">All Users</h2>
+            <Badge variant="outline" className="text-xs">{(adminUsers.length || profiles.length)} total</Badge>
+          </div>
           <div className="grid gap-2">
-            {profiles.map((p: any) => (
-              <div key={p.id} className="flex items-center justify-between rounded-lg border bg-card p-4">
-                <div>
-                  <p className="font-medium text-sm">{p.full_name || "Unnamed User"}</p>
-                  <p className="text-xs text-muted-foreground">{p.from_email || "No email"} · {p.agency_name || "No agency"} · {p.phone || "No phone"}</p>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">ID: {p.user_id?.slice(0, 8)}… · Joined {new Date(p.created_at).toLocaleDateString()}</p>
-                </div>
-              </div>
+            {(adminUsers.length > 0 ? adminUsers : profiles.map((p: any) => ({
+              id: p.user_id,
+              email: p.from_email,
+              full_name: p.full_name,
+              agency_name: p.agency_name,
+              phone: p.phone,
+              roles: [],
+              created_at: p.created_at,
+              last_sign_in_at: null,
+              email_confirmed: true,
+              submission_count: 0,
+            }))).map((u: any) => (
+              <Card key={u.id}>
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium text-sm">{u.full_name || "Unnamed User"}</p>
+                        {u.roles?.includes("admin") && (
+                          <Badge className="text-[9px] bg-primary/10 text-primary border-0">Admin</Badge>
+                        )}
+                        {u.email_confirmed ? (
+                          <Badge variant="outline" className="text-[9px] text-success border-success/30">Verified</Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-[9px] text-warning border-warning/30">Unverified</Badge>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground">{u.email || "No email"}</p>
+                      <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
+                        <span>{u.agency_name || "No agency"}</span>
+                        <span>·</span>
+                        <span>{u.submission_count} submissions</span>
+                        <span>·</span>
+                        <span>Joined {new Date(u.created_at).toLocaleDateString()}</span>
+                      </div>
+                      {u.last_sign_in_at && (
+                        <p className="text-[10px] text-muted-foreground/70">
+                          Last active: {new Date(u.last_sign_in_at).toLocaleString()}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             ))}
-            {profiles.length === 0 && <p className="text-center text-muted-foreground text-sm py-8">No users yet.</p>}
+            {adminUsers.length === 0 && profiles.length === 0 && (
+              <p className="text-center text-muted-foreground text-sm py-8">No users yet.</p>
+            )}
           </div>
         </TabsContent>
 
