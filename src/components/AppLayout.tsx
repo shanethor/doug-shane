@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useAdmin } from "@/hooks/useAdmin";
-import { LayoutDashboard, LogOut, ShieldCheck, MessageCircle, GraduationCap, GitBranch, BarChart3 } from "lucide-react";
+import { LayoutDashboard, LogOut, ShieldCheck, MessageCircle, GraduationCap, GitBranch, BarChart3, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { useTrainingMode } from "@/hooks/useTrainingMode";
@@ -21,6 +21,7 @@ export function AppLayout({ children, onLogoClick }: { children: React.ReactNode
     ...(isAdmin ? [
       { to: "/admin", label: "Admin", icon: ShieldCheck },
     ] : []),
+    { to: "/settings", label: "Settings", icon: Settings },
   ];
 
   return (
