@@ -687,87 +687,27 @@ export default function Pipeline() {
     <AppLayout>
       {/* Command Center Stats Bar */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-9 gap-3 mb-6">
-        <Card>
-          <CardContent className="p-3 flex items-center gap-2">
-            <Users className="h-4 w-4 text-primary shrink-0" />
-            <div>
-              <p className="text-lg font-semibold font-sans leading-tight">{pipelineStats.totalProspects}</p>
-              <p className="text-[10px] text-muted-foreground font-sans">Leads</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-3 flex items-center gap-2">
-            <Users className="h-4 w-4 text-primary shrink-0" />
-            <div>
-              <p className="text-lg font-semibold font-sans leading-tight">{pipelineStats.quotingCount}</p>
-              <p className="text-[10px] text-muted-foreground font-sans">Quoting</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-3 flex items-center gap-2">
-            <Users className="h-4 w-4 text-accent shrink-0" />
-            <div>
-              <p className="text-lg font-semibold font-sans leading-tight">{pipelineStats.presentingCount}</p>
-              <p className="text-[10px] text-muted-foreground font-sans">Presenting</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-primary/20">
-          <CardContent className="p-3 flex items-center gap-2">
-            <DollarSign className="h-4 w-4 text-primary shrink-0" />
-            <div>
-              <p className="text-lg font-semibold font-sans leading-tight">{fmt(pipelineStats.targetPremium)}</p>
-              <p className="text-[10px] text-muted-foreground font-sans">Target Premium</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-primary/20">
-          <CardContent className="p-3 flex items-center gap-2">
-            <TrendingUp className="h-4 w-4 text-primary shrink-0" />
-            <div>
-              <p className="text-lg font-semibold font-sans leading-tight">{fmt(pipelineStats.targetRevenue)}</p>
-              <p className="text-[10px] text-muted-foreground font-sans">Target Revenue</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-3 flex items-center gap-2">
-            <DollarSign className="h-4 w-4 text-accent shrink-0" />
-            <div>
-              <p className="text-lg font-semibold font-sans leading-tight">{fmt(pipelineStats.presentingPremium)}</p>
-              <p className="text-[10px] text-muted-foreground font-sans">Quoted Premium</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-3 flex items-center gap-2">
-            <TrendingUp className="h-4 w-4 text-accent shrink-0" />
-            <div>
-              <p className="text-lg font-semibold font-sans leading-tight">{fmt(pipelineStats.presentingRevenue)}</p>
-              <p className="text-[10px] text-muted-foreground font-sans">Quoted Revenue</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-success/30">
-          <CardContent className="p-3 flex items-center gap-2">
-            <CheckCircle className="h-4 w-4 text-success shrink-0" />
-            <div>
-              <p className="text-lg font-semibold font-sans leading-tight">{fmt(pipelineStats.totalPremiumSold)}</p>
-              <p className="text-[10px] text-muted-foreground font-sans">Premium Sold</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-success/30">
-          <CardContent className="p-3 flex items-center gap-2">
-            <TrendingUp className="h-4 w-4 text-success shrink-0" />
-            <div>
-              <p className="text-lg font-semibold font-sans leading-tight">{fmt(pipelineStats.totalRevenueSold)}</p>
-              <p className="text-[10px] text-muted-foreground font-sans">Revenue Sold</p>
-            </div>
-          </CardContent>
-        </Card>
+        {[
+          { icon: Users, color: "text-primary", value: pipelineStats.totalProspects, label: "Leads", border: "" },
+          { icon: Users, color: "text-primary", value: pipelineStats.quotingCount, label: "Quoting", border: "" },
+          { icon: Users, color: "text-accent", value: pipelineStats.presentingCount, label: "Presenting", border: "" },
+          { icon: DollarSign, color: "text-primary", value: fmt(pipelineStats.targetPremium), label: "Target Premium", border: "border-primary/20" },
+          { icon: TrendingUp, color: "text-primary", value: fmt(pipelineStats.targetRevenue), label: "Target Revenue", border: "border-primary/20" },
+          { icon: DollarSign, color: "text-accent", value: fmt(pipelineStats.presentingPremium), label: "Quoted Premium", border: "" },
+          { icon: TrendingUp, color: "text-accent", value: fmt(pipelineStats.presentingRevenue), label: "Quoted Revenue", border: "" },
+          { icon: CheckCircle, color: "text-success", value: fmt(pipelineStats.totalPremiumSold), label: "Premium Sold", border: "border-success/30" },
+          { icon: TrendingUp, color: "text-success", value: fmt(pipelineStats.totalRevenueSold), label: "Revenue Sold", border: "border-success/30" },
+        ].map((s, i) => (
+          <Card key={i} className={s.border}>
+            <CardContent className="p-3 flex items-center gap-2 overflow-hidden">
+              <s.icon className={`h-4 w-4 ${s.color} shrink-0`} />
+              <div className="min-w-0">
+                <p className="text-lg font-semibold font-sans leading-tight truncate">{s.value}</p>
+                <p className="text-[10px] text-muted-foreground font-sans truncate">{s.label}</p>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       <div className="flex items-end justify-between mb-6">
