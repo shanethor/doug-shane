@@ -456,6 +456,63 @@ export default function FormFillingView({ submissionId, initialMessages, initial
         loaded = data.form_data as Record<string, any>;
       }
 
+      // Expand drivers[] and vehicles[] arrays into flat keys if they exist
+      // This handles previously-extracted data that may only have arrays
+      const vehicles: any[] = Array.isArray(loaded.vehicles) ? loaded.vehicles : [];
+      vehicles.forEach((v: any, idx: number) => {
+        const n = idx + 1;
+        if (v.year && !loaded[`vehicle_${n}_year`])         loaded[`vehicle_${n}_year`]      = String(v.year);
+        if (v.make && !loaded[`vehicle_${n}_make`])         loaded[`vehicle_${n}_make`]      = String(v.make);
+        if (v.model && !loaded[`vehicle_${n}_model`])       loaded[`vehicle_${n}_model`]     = String(v.model);
+        if ((v.vin || v.VIN) && !loaded[`vehicle_${n}_vin`]) loaded[`vehicle_${n}_vin`]     = String(v.vin || v.VIN);
+        if ((v.body_type || v.bodyType || v.type) && !loaded[`vehicle_${n}_body_type`])
+          loaded[`vehicle_${n}_body_type`] = String(v.body_type || v.bodyType || v.type);
+        const costNew = v.cost_new || v.stated_amount || "";
+        if (costNew && !loaded[`vehicle_${n}_cost_new`])    loaded[`vehicle_${n}_cost_new`]  = String(costNew);
+        if (v.gvw && !loaded[`vehicle_${n}_gvw`])           loaded[`vehicle_${n}_gvw`]      = String(v.gvw);
+        if (v.radius && !loaded[`vehicle_${n}_radius`])     loaded[`vehicle_${n}_radius`]   = String(v.radius);
+        if (v.sic && !loaded[`vehicle_${n}_sic`])           loaded[`vehicle_${n}_sic`]      = String(v.sic);
+      });
+
+      const drivers: any[] = Array.isArray(loaded.drivers) ? loaded.drivers : [];
+      drivers.forEach((d: any, idx: number) => {
+        const n = idx + 1;
+        let firstName = d.first_name || "";
+        let middleName = d.middle_name || d.middle || "";
+        let lastName = d.last_name || "";
+        const fullName = d.name || d.full_name || d.driver_name || "";
+        if (!firstName && !lastName && fullName) {
+          const parts = fullName.trim().split(/\s+/);
+          if (parts.length === 1) { firstName = parts[0]; }
+          else if (parts.length === 2) { firstName = parts[0]; lastName = parts[1]; }
+          else { firstName = parts[0]; middleName = parts.slice(1, -1).join(" "); lastName = parts[parts.length - 1]; }
+        }
+        if (firstName && !loaded[`driver_${n}_first_name`]) loaded[`driver_${n}_first_name`] = firstName;
+        if (middleName && !loaded[`driver_${n}_middle`])    loaded[`driver_${n}_middle`]     = middleName;
+        if (lastName && !loaded[`driver_${n}_last_name`])   loaded[`driver_${n}_last_name`]  = lastName;
+        if (fullName && !loaded[`driver_${n}_name`])        loaded[`driver_${n}_name`]       = fullName;
+        if (!loaded[`driver_${n}_name`] && (firstName || lastName))
+          loaded[`driver_${n}_name`] = [firstName, middleName, lastName].filter(Boolean).join(" ");
+        if ((d.dob || d.date_of_birth) && !loaded[`driver_${n}_dob`])
+          loaded[`driver_${n}_dob`] = String(d.dob || d.date_of_birth);
+        if ((d.license_number || d.license) && !loaded[`driver_${n}_license`])
+          loaded[`driver_${n}_license`] = String(d.license_number || d.license);
+        if ((d.license_state || d.state) && !loaded[`driver_${n}_license_state`])
+          loaded[`driver_${n}_license_state`] = String(d.license_state || d.state);
+        if ((d.sex || d.gender) && !loaded[`driver_${n}_sex`])
+          loaded[`driver_${n}_sex`] = String(d.sex || d.gender);
+        if ((d.marital_status || d.marital) && !loaded[`driver_${n}_marital`])
+          loaded[`driver_${n}_marital`] = String(d.marital_status || d.marital);
+        if ((d.years_experience || d.experience) && !loaded[`driver_${n}_experience`])
+          loaded[`driver_${n}_experience`] = String(d.years_experience || d.experience);
+        if ((d.year_first_licensed || d.licensed_year) && !loaded[`driver_${n}_licensed_year`])
+          loaded[`driver_${n}_licensed_year`] = String(d.year_first_licensed || d.licensed_year);
+        if ((d.hired_date || d.date_hired) && !loaded[`driver_${n}_hired_date`])
+          loaded[`driver_${n}_hired_date`] = String(d.hired_date || d.date_hired);
+        if (d.city && !loaded[`driver_${n}_city`])          loaded[`driver_${n}_city`]       = String(d.city);
+        if (d.zip && !loaded[`driver_${n}_zip`])            loaded[`driver_${n}_zip`]        = String(d.zip);
+      });
+
       // Count how many non-empty fields exist
       const filledCount = Object.values(loaded).filter(v => v && String(v).trim()).length;
 
