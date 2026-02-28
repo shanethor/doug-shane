@@ -1730,7 +1730,7 @@ export default function Chat() {
                     ))}
                   </div>
                 )}
-                <div className="flex items-end gap-2 rounded-xl border bg-card p-3 aura-glow-shadow focus-within:ring-2 focus-within:ring-ring">
+                <div className="flex items-end gap-2 rounded-xl border bg-card p-4 aura-glow-shadow focus-within:ring-2 focus-within:ring-ring max-w-2xl w-full mx-auto">
                   <input type="file" ref={fileInputRef} className="hidden" multiple onChange={(e) => { const files = Array.from(e.target.files || []); if (files.length > 0) { setAttachedFiles(prev => [...prev, ...files].slice(0, 10)); const fileNames = files.map(f => f.name).join(", "); setMessages(prev => [...prev, { role: "user" as const, content: `📎 Attached: ${fileNames}` }]); setShowIntentButtons(true); } e.target.value = ""; }} />
                   <Button
                     variant="ghost"
@@ -1754,8 +1754,8 @@ export default function Chat() {
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={handleKeyDown}
                     placeholder="Ask me anything about your clients..."
-                    rows={2}
-                    className="flex-1 resize-none bg-transparent border-0 outline-none text-sm placeholder:text-muted-foreground min-h-[52px] max-h-40 py-2"
+                    rows={3}
+                    className="flex-1 resize-none bg-transparent border-0 outline-none text-sm placeholder:text-muted-foreground min-h-[72px] max-h-40 py-2"
                   />
                   <Button
                     variant={voice.isListening ? "destructive" : "ghost"}
