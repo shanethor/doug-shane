@@ -396,23 +396,23 @@ const acord127Fields: AcordFormField[] = [
     ];
   }).flat(),
 
-  // General Information
+  // General Information — keys aligned to ACORD_127_INDEX_MAP
   { key: "vehicles_not_solely_owned", label: "1. Any vehicles not solely owned by applicant?", type: "select", options: ["Yes", "No"], section: "General Information", default: "No" },
   { key: "over_50pct_employees_use_autos", label: "2. Over 50% of employees use autos in business?", type: "select", options: ["Yes", "No"], section: "General Information", default: "No" },
   { key: "vehicle_maintenance_program", label: "3. Vehicle maintenance program in operation?", type: "select", options: ["Yes", "No"], section: "General Information", default: "No" },
   { key: "vehicles_leased_to_others", label: "4. Any vehicles leased to others?", type: "select", options: ["Yes", "No"], section: "General Information", default: "No" },
-  { key: "modified_vehicles", label: "5. Any car modified / special equipment?", type: "select", options: ["Yes", "No"], section: "General Information", default: "No" },
+  { key: "modified_special_equipment", label: "5. Any car modified / special equipment?", type: "select", options: ["Yes", "No"], section: "General Information", default: "No" },
   { key: "icc_puc_filings", label: "6. ICC, PUC or other filings required?", type: "select", options: ["Yes", "No"], section: "General Information", default: "No" },
   { key: "transporting_hazmat", label: "7. Operations involve transporting hazardous material?", type: "select", options: ["Yes", "No"], section: "General Information", default: "No" },
   { key: "hold_harmless_agreements", label: "8. Any hold harmless agreements?", type: "select", options: ["Yes", "No"], section: "General Information", default: "No" },
   { key: "vehicles_used_by_family", label: "9. Any vehicles used by family members?", type: "select", options: ["Yes", "No"], section: "General Information", default: "No" },
   { key: "mvr_verifications", label: "10. Does applicant obtain MVR verifications?", type: "select", options: ["Yes", "No"], section: "General Information", default: "No" },
   { key: "driver_recruiting_method", label: "11. Specific driver recruiting method?", type: "select", options: ["Yes", "No"], section: "General Information", default: "No" },
-  { key: "drivers_no_wc", label: "12. Any drivers not covered by Workers Compensation?", type: "select", options: ["Yes", "No"], section: "General Information", default: "No" },
+  { key: "drivers_not_wc", label: "12. Any drivers not covered by Workers Compensation?", type: "select", options: ["Yes", "No"], section: "General Information", default: "No" },
   { key: "vehicles_not_scheduled", label: "13. Vehicles owned but not scheduled?", type: "select", options: ["Yes", "No"], section: "General Information", default: "No" },
-  { key: "drivers_with_violations", label: "14. Drivers with moving traffic violations?", type: "select", options: ["Yes", "No"], section: "General Information", default: "No" },
+  { key: "driver_moving_violations", label: "14. Drivers with moving traffic violations?", type: "select", options: ["Yes", "No"], section: "General Information", default: "No" },
   { key: "agent_inspected_vehicles", label: "15. Has agent inspected vehicles?", type: "select", options: ["Yes", "No"], section: "General Information", default: "No" },
-  { key: "all_vehicles_in_fleet", label: "16. All vehicles part of a fleet?", type: "select", options: ["Yes", "No"], section: "General Information", default: "No" },
+  { key: "fleet_monitoring", label: "16. Fleet monitoring / all vehicles in fleet?", type: "select", options: ["Yes", "No"], section: "General Information", default: "No" },
   { key: "auto_general_remarks", label: "Explain all Yes responses", type: "textarea", section: "General Information" },
 
   // Garage / Storage
