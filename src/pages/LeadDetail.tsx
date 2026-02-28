@@ -2,7 +2,6 @@ import { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { getLeadSubmissions } from "@/lib/pipeline-sync";
 import { AppLayout } from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -65,17 +64,17 @@ export default function LeadDetail() {
 
   const loadData = useCallback(async () => {
     if (!user || !leadId) return;
-    const [leadRes, policiesRes, notesRes, subs] = await Promise.all([
+    const [leadRes, policiesRes, notesRes, subsRes] = await Promise.all([
       supabase.from("leads").select("*").eq("id", leadId).single(),
       supabase.from("policies").select("*").eq("lead_id", leadId).order("created_at", { ascending: false }),
-      supabase.from("lead_notes").select("*").eq("lead_id", leadId).order("created_at", { ascending: false }),
-      getLeadSubmissions(leadId),
+      supabase.from("lead_notes").select("*").eq("lead_id", leadId).order("created_at", { ascending: false }).limit(50),
+      supabase.from("business_submissions").select("id, company_name, status, created_at").eq("lead_id", leadId).order("created_at", { ascending: false }),
     ]);
 
     setLead(leadRes.data);
     setPolicies(policiesRes.data ?? []);
     setNotes(notesRes.data ?? []);
-    setSubmissions(subs);
+    setSubmissions((subsRes.data as any[]) ?? []);
     setLoading(false);
   }, [user, leadId]);
 
@@ -269,6 +268,32 @@ export default function LeadDetail() {
               <Send className="h-3.5 w-3.5" />
               Request Loss Runs
             </Button>
+            {hasApprovedPolicy && (
+              <Button size="sm" variant="outline" className="gap-1.5" onClick={async () => {
+                if (!user || !leadId) return;
+                try {
+                  const { data: newSub, error } = await supabase
+                    .from("business_submissions")
+                    .insert({
+                      user_id: user.id,
+                      company_name: lead.account_name,
+                      description: `Additional policy for ${lead.account_name}`,
+                      status: "pending",
+                      lead_id: leadId,
+                    } as any)
+                    .select()
+                    .single();
+                  if (error) throw error;
+                  toast.success("New policy created — opening workspace");
+                  navigate(`/acord/acord-125/${newSub.id}`);
+                } catch (err: any) {
+                  toast.error(err.message || "Failed to create policy");
+                }
+              }}>
+                <Plus className="h-3.5 w-3.5" />
+                Add Policy
+              </Button>
+            )}
             <Dialog open={policyOpen} onOpenChange={setPolicyOpen}>
               <DialogTrigger asChild>
                 <Button size="sm" className="gap-2">

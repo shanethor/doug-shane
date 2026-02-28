@@ -166,7 +166,7 @@ export default function Pipeline() {
   const loadLeads = useCallback(async () => {
     if (!user) return;
     const [leadsRes, approvedRes, lossRunRes, allPoliciesRes, auditRes] = await Promise.all([
-      supabase.from("leads").select("*").order("updated_at", { ascending: false }),
+      supabase.from("leads").select("*").eq("owner_user_id", user.id).order("updated_at", { ascending: false }),
       supabase.from("policies").select("lead_id").eq("status", "approved"),
       supabase.from("loss_run_requests").select("lead_id, status"),
       supabase.from("policies").select("lead_id, annual_premium, revenue, status").eq("producer_user_id", user.id),
@@ -251,7 +251,7 @@ export default function Pipeline() {
 
   useEffect(() => {
     loadLeads();
-    const interval = setInterval(loadLeads, 15000);
+    const interval = setInterval(loadLeads, 30000); // 30s instead of 15s
     return () => clearInterval(interval);
   }, [loadLeads]);
 
@@ -653,6 +653,13 @@ export default function Pipeline() {
     }
   });
 
+  // "Show All" expansion state per column
+  const [expandedColumns, setExpandedColumns] = useState<Record<string, boolean>>({});
+  const COLUMN_LIMIT = 5;
+  const toggleColumnExpand = (stage: string) => {
+    setExpandedColumns(prev => ({ ...prev, [stage]: !prev[stage] }));
+  };
+
   if (loading) {
     return (
       <AppLayout>
@@ -1028,7 +1035,7 @@ export default function Pipeline() {
               onDragLeave={handleDragLeave}
               onDrop={(e) => handleDrop(e, stage)}
             >
-              {grouped[stage].map((lead) => (
+              {(expandedColumns[stage] ? grouped[stage] : grouped[stage].slice(0, COLUMN_LIMIT)).map((lead) => (
                 <div
                   key={lead.id}
                   draggable
@@ -1139,6 +1146,22 @@ export default function Pipeline() {
                   </Link>
                 </div>
               ))}
+              {grouped[stage].length > COLUMN_LIMIT && !expandedColumns[stage] && (
+                <button
+                  onClick={() => toggleColumnExpand(stage)}
+                  className="w-full py-2 text-[11px] text-primary font-sans font-medium hover:underline"
+                >
+                  Show All ({grouped[stage].length - COLUMN_LIMIT} more)
+                </button>
+              )}
+              {grouped[stage].length > COLUMN_LIMIT && expandedColumns[stage] && (
+                <button
+                  onClick={() => toggleColumnExpand(stage)}
+                  className="w-full py-2 text-[11px] text-muted-foreground font-sans hover:underline"
+                >
+                  Show Less
+                </button>
+              )}
               {grouped[stage].length === 0 && (
                 <p className="text-[10px] text-muted-foreground text-center py-8 font-sans">
                   {stage === "sold" ? "Drop here to mark as sold" : "No leads"}
