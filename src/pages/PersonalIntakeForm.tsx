@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Car, Home, Sailboat, Umbrella, Plus, Trash2, CheckCircle, AlertTriangle, Loader2 } from "lucide-react";
+import { Car, Home, Sailboat, Umbrella, Plus, Trash2, CheckCircle, AlertTriangle, Loader2, Upload, FileText, X } from "lucide-react";
 import { toast } from "sonner";
 
 type Driver = { name: string; dob: string; license_number: string; license_state: string; gender: string; marital_status: string; violations: string };
@@ -59,6 +59,39 @@ export default function PersonalIntakeForm() {
   const [umbrella, setUmbrella] = useState<UmbrellaInfo>(emptyUmbrella());
 
   const [notes, setNotes] = useState("");
+
+  // Document upload
+  const DOCUMENT_CHECKLIST = [
+    { key: "dec_pages", label: "Current Declaration Pages" },
+    { key: "drivers_license", label: "Driver's License (all drivers)" },
+    { key: "vehicle_registration", label: "Vehicle Registration" },
+    { key: "prior_policy", label: "Prior Insurance Policy" },
+    { key: "home_inspection", label: "Home Inspection / 4-Point" },
+    { key: "roof_cert", label: "Roof Certification" },
+    { key: "flood_elevation", label: "Flood Elevation Certificate" },
+    { key: "photos", label: "Property Photos" },
+    { key: "other", label: "Other Documents" },
+  ];
+  const [uploadedFiles, setUploadedFiles] = useState<{ file: File; category: string }[]>([]);
+  const [dragActive, setDragActive] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setDragActive(false);
+    const files = Array.from(e.dataTransfer.files);
+    setUploadedFiles(prev => [...prev, ...files.map(f => ({ file: f, category: "other" }))]);
+  }, []);
+
+  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files) return;
+    const files = Array.from(e.target.files);
+    setUploadedFiles(prev => [...prev, ...files.map(f => ({ file: f, category: "other" }))]);
+    e.target.value = "";
+  }, []);
+
+  const removeFile = (idx: number) => setUploadedFiles(prev => prev.filter((_, i) => i !== idx));
+  const updateFileCategory = (idx: number, cat: string) => setUploadedFiles(prev => prev.map((f, i) => i === idx ? { ...f, category: cat } : f));
 
   useEffect(() => {
     if (!token) return;
@@ -113,6 +146,20 @@ export default function PersonalIntakeForm() {
     }
     setSubmitting(true);
 
+    // Convert files to base64 for storage in form_data
+    const fileAttachments: { name: string; category: string; size: number; base64: string }[] = [];
+    for (const uf of uploadedFiles) {
+      try {
+        const base64 = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve((reader.result as string).split(",")[1] || "");
+          reader.onerror = reject;
+          reader.readAsDataURL(uf.file);
+        });
+        fileAttachments.push({ name: uf.file.name, category: uf.category, size: uf.file.size, base64 });
+      } catch { /* skip failed files */ }
+    }
+
     const formData = {
       applicant: { name: applicantName, email: applicantEmail, phone: applicantPhone, address: applicantAddress },
       sections: {
@@ -121,6 +168,7 @@ export default function PersonalIntakeForm() {
         boat: enableBoat ? { boats } : null,
         umbrella: enableUmbrella ? umbrella : null,
       },
+      documents: fileAttachments.map(({ name, category, size }) => ({ name, category, size })),
       notes,
     };
 
@@ -560,6 +608,79 @@ export default function PersonalIntakeForm() {
             </CardContent>
           </Card>
         )}
+
+        {/* Document Upload */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <Upload className="h-4 w-4" /> Documents
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Checklist */}
+            <div className="space-y-1.5">
+              <p className="text-xs text-muted-foreground font-medium">Please upload any of the following if available:</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                {DOCUMENT_CHECKLIST.map(item => {
+                  const hasFile = uploadedFiles.some(f => f.category === item.key);
+                  return (
+                    <div key={item.key} className={`flex items-center gap-2 text-xs px-2.5 py-1.5 rounded-md border transition-colors ${hasFile ? "bg-primary/10 border-primary/30 text-foreground" : "bg-muted/30 border-border text-muted-foreground"}`}>
+                      {hasFile ? <CheckCircle className="h-3.5 w-3.5 text-primary shrink-0" /> : <div className="h-3.5 w-3.5 rounded-full border border-muted-foreground/40 shrink-0" />}
+                      {item.label}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Drop zone */}
+            <div
+              onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
+              onDragLeave={() => setDragActive(false)}
+              onDrop={handleFileDrop}
+              onClick={() => fileInputRef.current?.click()}
+              className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${dragActive ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"}`}
+            >
+              <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+              <p className="text-sm font-medium">Drag & drop files here</p>
+              <p className="text-xs text-muted-foreground mt-1">or click to browse · PDF, JPG, PNG accepted</p>
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                className="hidden"
+                onChange={handleFileSelect}
+              />
+            </div>
+
+            {/* Uploaded files list */}
+            {uploadedFiles.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-xs font-medium">{uploadedFiles.length} file(s) attached</p>
+                {uploadedFiles.map((uf, idx) => (
+                  <div key={idx} className="flex items-center gap-2 p-2 rounded-md border bg-muted/20">
+                    <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <span className="text-xs truncate flex-1 min-w-0">{uf.file.name}</span>
+                    <Select value={uf.category} onValueChange={(v) => updateFileCategory(idx, v)}>
+                      <SelectTrigger className="h-7 text-[10px] w-[160px] shrink-0">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {DOCUMENT_CHECKLIST.map(c => (
+                          <SelectItem key={c.key} value={c.key} className="text-xs">{c.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => removeFile(idx)}>
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Notes */}
         <Card>

@@ -25,6 +25,7 @@ import { useVoiceInput } from "@/hooks/useVoiceInput";
 import { useTrainingMode } from "@/hooks/useTrainingMode";
 import { ensurePipelineLead, findExistingLeads } from "@/lib/pipeline-sync";
 import { generateIntakeLink, generatePersonalIntakeLink } from "@/lib/intake-links";
+import { PersonalIntakeDialog } from "@/components/PersonalIntakeDialog";
 import { fuzzyMatch } from "@/lib/fuzzy-match";
 
 type ButtonMarker = { label: string; action: string };
@@ -329,6 +330,8 @@ export default function Chat() {
   const [showFeatureSuggestion, setShowFeatureSuggestion] = useState(false);
   const pendingPipelineActionRef = useRef<{ action: PipelineAction; leads: { id: string; account_name: string; stage: string }[] } | null>(null);
   const [soldStats, setSoldStats] = useState({ premium: 0, revenue: 0 });
+  const [showPersonalIntakeDialog, setShowPersonalIntakeDialog] = useState(false);
+  const [personalIntakeLoading, setPersonalIntakeLoading] = useState(false);
   const mountedRef = useRef(true);
   useEffect(() => {
     return () => {
@@ -898,6 +901,41 @@ export default function Chat() {
     return /\bpersonal\s*(lines?)?\s*(intake|form|link)\b/.test(t) || /\bpersonal\s*(auto|home|boat|umbrella)\s*(intake|form)\b/.test(t);
   };
 
+  const handlePersonalIntakeGenerate = async (config: { clientEmail: string; teamMemberEmail: string; ccProducer: boolean }) => {
+    if (!user) return;
+    setPersonalIntakeLoading(true);
+    try {
+      const deliveryEmails = [config.teamMemberEmail];
+      if (config.ccProducer && user.email) deliveryEmails.push(user.email);
+
+      const result = await generatePersonalIntakeLink({
+        agentId: user.id,
+        deliveryEmails,
+        clientEmail: config.clientEmail,
+        ccProducer: config.ccProducer,
+      });
+      if (!result) throw new Error("Link generation returned null");
+
+      let copied = false;
+      try { await navigator.clipboard.writeText(result.url); copied = true; } catch (_) {}
+
+      const recipients = deliveryEmails.join(", ");
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: `✅ **Personal lines intake link generated${copied ? " & copied to clipboard" : ""}!**\n\nLink sent to **${config.clientEmail}**:\n\`${result.url}\`\n\nWhen submitted, a summary will be delivered to: **${recipients}**.\n\nThe form covers **Auto, Home, Boat, and Umbrella** coverage plus document uploads. The link expires in 7 days.`,
+        },
+      ]);
+      toast({ title: copied ? "Link copied!" : "Link generated!", description: `Intake link sent to ${config.clientEmail}` });
+      setShowPersonalIntakeDialog(false);
+    } catch (err: any) {
+      setMessages((prev) => [...prev, { role: "assistant", content: `Sorry, I couldn't generate the personal intake link. Error: ${err?.message || "Unknown error"}.` }]);
+      setShowPersonalIntakeDialog(false);
+    }
+    setPersonalIntakeLoading(false);
+  };
+
   /** Detect if user is asking for a customer intake link/form */
   const isIntakeLinkIntent = (text: string) => {
     const t = text.trim().toLowerCase();
@@ -951,35 +989,12 @@ export default function Chat() {
   const send = async (text: string, displayText?: string) => {
     if (!text.trim() || isLoading) return;
 
-    // Intercept personal lines intake requests
+    // Intercept personal lines intake requests — open dialog
     if (!displayText && isPersonalIntakeIntent(text) && user) {
       const userMsg: Msg = { role: "user", content: text.trim() };
       setMessages((prev) => [...prev, userMsg]);
       setInput("");
-      setIsLoading(true);
-      try {
-        // Extract delivery email preferences from message
-        const emailMatch = text.match(/[\w.-]+@[\w.-]+\.\w+/g);
-        const deliveryEmails = emailMatch && emailMatch.length > 0 ? emailMatch : [user.email || ""];
-        const result = await generatePersonalIntakeLink({ agentId: user.id, deliveryEmails: deliveryEmails.filter(Boolean) as string[] });
-        if (result) {
-          let copied = false;
-          try { await navigator.clipboard.writeText(result.url); copied = true; } catch (_) {}
-          setMessages((prev) => [
-            ...prev,
-            {
-              role: "assistant",
-              content: `✅ **Personal lines intake link generated${copied ? " and copied to clipboard" : ""}!**\n\nShare this link with your customer:\n\`${result.url}\`\n\nThe form covers **Auto, Home, Boat, and Umbrella** coverage. When submitted, a summary email will be sent to ${deliveryEmails.join(", ")}. The link expires in 7 days.`,
-            },
-          ]);
-          toast({ title: copied ? "Personal intake link copied!" : "Personal intake link generated!", description: "Share this link with your customer." });
-        } else {
-          throw new Error("Link generation returned null");
-        }
-      } catch (err: any) {
-        setMessages((prev) => [...prev, { role: "assistant", content: `Sorry, I couldn't generate the personal intake link. Error: ${err?.message || "Unknown error"}.` }]);
-      }
-      setIsLoading(false);
+      setShowPersonalIntakeDialog(true);
       return;
     }
 
@@ -2575,6 +2590,13 @@ export default function Chat() {
         </DialogContent>
       </Dialog>
       <FeatureSuggestionDialog open={showFeatureSuggestion} onOpenChange={setShowFeatureSuggestion} />
+      <PersonalIntakeDialog
+        open={showPersonalIntakeDialog}
+        onClose={() => setShowPersonalIntakeDialog(false)}
+        onGenerate={handlePersonalIntakeGenerate}
+        isLoading={personalIntakeLoading}
+        producerEmail={user?.email || undefined}
+      />
     </AppLayout>
   );
 }

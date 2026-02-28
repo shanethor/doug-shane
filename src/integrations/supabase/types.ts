@@ -783,6 +783,8 @@ export type Database = {
       personal_intake_submissions: {
         Row: {
           agent_id: string
+          cc_producer: boolean
+          client_email: string | null
           created_at: string
           delivery_emails: string[]
           expires_at: string
@@ -795,6 +797,8 @@ export type Database = {
         }
         Insert: {
           agent_id: string
+          cc_producer?: boolean
+          client_email?: string | null
           created_at?: string
           delivery_emails?: string[]
           expires_at?: string
@@ -807,6 +811,8 @@ export type Database = {
         }
         Update: {
           agent_id?: string
+          cc_producer?: boolean
+          client_email?: string | null
           created_at?: string
           delivery_emails?: string[]
           expires_at?: string
