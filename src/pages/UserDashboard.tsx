@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -59,6 +59,9 @@ export default function UserDashboard() {
   const [sortBy, setSortBy] = useState<SortOption>("newest");
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
+  const mountedRef = useRef(true);
+  useEffect(() => { return () => { mountedRef.current = false; }; }, []);
+
   useEffect(() => {
     if (!user) return;
     loadData();
@@ -81,6 +84,9 @@ export default function UserDashboard() {
         .select("lead_id")
         .eq("status", "approved"),
     ]);
+
+    if (!mountedRef.current) return;
+
     setSubmissions(subRes.data ?? []);
     const leadsData = (leadRes.data ?? []) as LeadInfo[];
     setLeads(leadsData);
