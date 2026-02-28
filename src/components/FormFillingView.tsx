@@ -1118,10 +1118,13 @@ export default function FormFillingView({ submissionId, initialMessages, initial
                 <div
                   key={f.id}
                   onClick={() => {
-                    if (isEnabled) setActiveFormId(f.id);
+                    if (!isEnabled) {
+                      setEnabledFormIds((prev) => new Set([...prev, f.id]));
+                    }
+                    setActiveFormId(f.id);
                   }}
                   className={`flex items-center gap-2 rounded-md px-2 py-1 transition-colors cursor-pointer ${
-                    isEnabled ? "opacity-100" : "opacity-40 cursor-default"
+                    isEnabled ? "opacity-100" : "opacity-40"
                   } ${isActive && isEnabled ? "bg-primary/10 border border-primary/30" : "hover:bg-muted/50"}`}
                 >
                   <Checkbox
