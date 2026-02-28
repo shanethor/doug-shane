@@ -88,6 +88,17 @@ serve(async (req) => {
       }
     }
 
+    // Boat section
+    if (fd.boat && fd.boat.boats?.length) {
+      html += `<h2 style="font-size: 16px; color: #1a2744; margin: 20px 0 12px; border-top: 1px solid #e2e8f0; padding-top: 16px;">⛵ Boat</h2>`;
+      html += `<table style="width: 100%; border-collapse: collapse; margin-bottom: 12px; font-size: 13px;">
+        <tr style="background: #f7fafc;"><th style="text-align: left; padding: 6px 8px;">Year</th><th style="text-align: left; padding: 6px 8px;">Make</th><th style="text-align: left; padding: 6px 8px;">Model</th><th style="text-align: left; padding: 6px 8px;">Hull ID</th><th style="text-align: left; padding: 6px 8px;">Length</th><th style="text-align: left; padding: 6px 8px;">Engine</th></tr>`;
+      for (const b of fd.boat.boats) {
+        html += `<tr><td style="padding: 6px 8px; border-bottom: 1px solid #f0f0f0;">${b.year || "—"}</td><td style="padding: 6px 8px; border-bottom: 1px solid #f0f0f0;">${b.make || "—"}</td><td style="padding: 6px 8px; border-bottom: 1px solid #f0f0f0;">${b.model || "—"}</td><td style="padding: 6px 8px; border-bottom: 1px solid #f0f0f0;">${b.hull_id || "—"}</td><td style="padding: 6px 8px; border-bottom: 1px solid #f0f0f0;">${b.length ? b.length + " ft" : "—"}</td><td style="padding: 6px 8px; border-bottom: 1px solid #f0f0f0;">${b.engine_type || "—"}</td></tr>`;
+      }
+      html += `</table>`;
+    }
+
     // Home section
     if (fd.home) {
       html += `<h2 style="font-size: 16px; color: #1a2744; margin: 20px 0 12px; border-top: 1px solid #e2e8f0; padding-top: 16px;">🏠 Home</h2>`;
