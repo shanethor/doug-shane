@@ -219,44 +219,6 @@ Return this exact structure:
     "lob_commercial_general_liability": "false",
     "cgl_premium": "",
 
-    "prior_carrier_1": "", "prior_policy_number_1": "", "prior_eff_date_1": "", "prior_exp_date_1": "",
-    "prior_premium_1": "",
-    "prior_carrier_2": "", "prior_policy_number_2": "", "prior_eff_date_2": "", "prior_exp_date_2": "",
-    "prior_premium_2": "",
-
-    "underlying_gl_carrier": "", "underlying_gl_policy_number": "",
-    "underlying_gl_eff_date": "", "underlying_gl_exp_date": "",
-    "underlying_gl_occurrence": "", "underlying_gl_aggregate": "", "underlying_gl_products": "",
-    "underlying_gl_personal": "", "underlying_gl_fire_damage": "", "underlying_gl_med_expense": "",
-    "underlying_gl_prem_ops_premium": "", "underlying_gl_products_premium": "", "underlying_gl_other_premium": "",
-    "underlying_gl_premium": "", "underlying_gl_mod_factor": "",
-    "underlying_auto_carrier": "", "underlying_auto_policy_number": "",
-    "underlying_auto_eff_date": "", "underlying_auto_exp_date": "",
-    "underlying_auto_csl": "", "underlying_auto_bi_ea_acc": "", "underlying_auto_bi_ea_per": "", "underlying_auto_pd": "",
-    "underlying_auto_csl_premium": "", "underlying_auto_bi_premium": "", "underlying_auto_pd_premium": "",
-    "underlying_auto_premium": "", "underlying_auto_mod_factor": "",
-    "underlying_el_carrier": "", "underlying_el_policy_number": "",
-    "underlying_el_eff_date": "", "underlying_el_exp_date": "",
-    "underlying_el_each_accident": "", "underlying_el_disease_employee": "",
-    "underlying_el_disease_policy": "", "underlying_el_premium": "", "underlying_el_mod_factor": "",
-    "underlying_excess_carrier_1": "", "underlying_excess_policy_number_1": "",
-    "underlying_excess_limit_1": "", "underlying_excess_premium_1": "",
-    "underlying_excess_carrier_2": "", "underlying_excess_policy_number_2": "",
-    "underlying_excess_limit_2": "", "underlying_excess_premium_2": "",
-
-    "chk_131_new": "false", "chk_131_renewal": "false",
-    "chk_131_umbrella": "false", "chk_131_excess": "false",
-    "chk_131_occurrence": "false", "chk_131_claims_made": "false",
-
-    "umbrella_premium": "", "umbrella_policy_number": "",
-    "umbrella_carrier": "",
-
-    "producer_name": "", "producer_agency": "", "producer_phone": "", "producer_address": "",
-    "surplus_lines_tax": "", "broker_fee": "", "inspection_fee": "", "stamping_fee": "",
-    "carrier_fee": "",
-
-    "key_endorsements": "",
-
     "chk_commercial_general_liability": "false",
     "chk_claims_made": "false",
     "chk_occurrence": "false",
@@ -320,80 +282,11 @@ EXTRACTION RULES:
 - SCHEDULE OF HAZARDS: Extract ALL class code rows from the document. Use hazard_loc_1/hazard_code_1/hazard_classification_1/hazard_premium_basis_1/hazard_exposure_1/hazard_terr_1/hazard_rate_premops_1/hazard_premium_premops_1 for the first row, then hazard_*_2 for the second row, hazard_*_3 for the third row. Many policies have 2-3 class codes — extract ALL of them.
 - PREMIUM TOTALS: Extract total_premium, total_premium_premops, total_premium_products if listed
 - ENDORSEMENTS: Look for "Per Project" aggregate endorsement (sets chk_limit_project) and deductible endorsements
-- vehicles[]: include ALL vehicles found — each: { year, make, model, vin, body_type, stated_amount, garaging_zip, cost_new, gvw, radius, sic, vehicle_class }
-- drivers[]: include ALL drivers found — each: { first_name, middle_name, last_name, sex (M/F), marital_status (S/M/W/D), dob, license_number, license_state, city, state, zip, years_experience, year_first_licensed, hired_date }
-  - IMPORTANT: Split driver names into first_name, middle_name, last_name. If only full name is available, parse it (e.g., "John A. Smith" → first_name: "John", middle_name: "A.", last_name: "Smith")
-  - Look for driver schedules, driver lists, or named driver endorsements in auto policies
-  - Extract sex as M or F, marital status as S (Single), M (Married), W (Widowed), D (Divorced)
+- vehicles[]: include ALL vehicles found — each: { year, make, model, vin, body_type, stated_amount, garaging_zip }
+- drivers[]: include ALL drivers found — each: { name, dob, license, license_state }
 - gaps[]: list fields that are missing and important — { field, question, priority: required|recommended|optional }
 - If document is an insurance policy/dec page, extract carrier, NAIC code, policy number, limits, premiums, class codes, and all schedules
-- If no meaningful business data is provided, return all fields as empty strings and list all critical fields as gaps
-
-PRIOR CARRIER / RENEWAL EXTRACTION:
-- When processing a current policy document for renewal quoting, the CURRENT carrier/policy become the PRIOR carrier for the new application
-- prior_carrier_1: the current policy's carrier name (e.g. "Allied World Surplus Lines Insurance Company")
-- prior_policy_number_1: the current policy number
-- prior_eff_date_1 / prior_exp_date_1: the current policy period dates
-- prior_premium_1: the current policy premium
-- If multiple policies are provided, use prior_carrier_2/prior_policy_number_2 for the second
-
-UNDERLYING INSURANCE (for ACORD 131 Umbrella/Excess):
-- Extract the COMPLETE underlying insurance schedule from umbrella/excess policies
-- GENERAL LIABILITY underlying:
-  - underlying_gl_carrier: GL carrier name; underlying_gl_policy_number: GL policy number
-  - underlying_gl_eff_date / underlying_gl_exp_date: GL policy period dates
-  - underlying_gl_occurrence: GL each occurrence limit; underlying_gl_aggregate: GL general aggregate
-  - underlying_gl_products: GL products-completed ops aggregate
-  - underlying_gl_personal: GL personal & advertising injury limit
-  - underlying_gl_fire_damage: GL damage to rented premises (fire damage) limit
-  - underlying_gl_med_expense: GL medical expense limit
-  - underlying_gl_prem_ops_premium: GL premises/operations premium; underlying_gl_products_premium: GL products premium
-  - underlying_gl_other_premium: GL other premium; underlying_gl_premium: GL total premium (if only one number given)
-- AUTOMOBILE underlying:
-  - underlying_auto_carrier / underlying_auto_policy_number: auto carrier and policy
-  - underlying_auto_eff_date / underlying_auto_exp_date: auto policy period dates
-  - underlying_auto_csl: combined single limit; underlying_auto_bi_ea_acc: BI each accident; underlying_auto_bi_ea_per: BI each person; underlying_auto_pd: PD limit
-  - underlying_auto_csl_premium: CSL premium; underlying_auto_bi_premium: BI premium; underlying_auto_pd_premium: PD premium
-- EMPLOYERS LIABILITY underlying:
-  - underlying_el_carrier / underlying_el_policy_number: EL carrier and policy
-  - underlying_el_eff_date / underlying_el_exp_date: EL policy period dates
-  - underlying_el_each_accident / underlying_el_disease_employee / underlying_el_disease_policy: EL limits
-  - underlying_el_mod_factor: EL rating modification factor
-- RATING MODIFICATION FACTORS:
-  - underlying_auto_mod_factor: auto rating mod factor (e.g. "1.000" or "0.950")
-  - underlying_gl_mod_factor: GL rating mod factor
-  - underlying_el_mod_factor: EL/WC rating mod factor (experience modification)
-  - These appear in the "RATING MOD" column of the underlying insurance schedule
-- EXCESS/OTHER underlying layers:
-  - underlying_excess_carrier_1/underlying_excess_policy_number_1/underlying_excess_limit_1: stacked excess
-- If underlying coverage says "NOT COVERED", leave those fields empty
-
-ACORD 131 TRANSACTION TYPE FLAGS:
-- chk_131_new: "true" if this is a new policy (not a renewal)
-- chk_131_renewal: "true" if this is a renewal
-- chk_131_umbrella: "true" if the policy type is Umbrella
-- chk_131_excess: "true" if the policy type is Excess
-- chk_131_occurrence: "true" if occurrence-based umbrella/excess
-- chk_131_claims_made: "true" if claims-made umbrella/excess
-
-PRODUCER / BROKER EXTRACTION:
-- producer_name: the producing agent or broker name (person or company)
-- producer_agency: the brokerage/agency firm name
-- producer_phone: broker phone number
-- producer_address: broker address
-
-PREMIUM BREAKDOWN:
-- surplus_lines_tax, broker_fee, inspection_fee, carrier_fee, stamping_fee: extract if listed
-- umbrella_premium: the umbrella/excess policy premium
-- umbrella_policy_number: umbrella policy number
-- umbrella_carrier: umbrella carrier name
-
-KEY ENDORSEMENTS:
-- key_endorsements: semicolon-separated list of significant endorsements (e.g. "CG 20 10 - Additional Insured; CG 20 37 - Additional Insured Completed Ops; CG 24 04 - Waiver of Subrogation")
-- Focus on: Additional Insured, Waiver of Subrogation, Primary & Non-Contributing, Per Project Aggregate, blanket endorsements
-
-LOB FLAGS:
-- lob_umbrella: set "true" if any umbrella or excess liability policy is present`;
+- If no meaningful business data is provided, return all fields as empty strings and list all critical fields as gaps`;
 
     const userPromptText = `Extract all insurance data from the following document(s).
 
@@ -526,16 +419,10 @@ ${file_contents ? `\nAdditional text content:\n${file_contents}` : ""}`;
       if ((v.vin || v.VIN) && !fd[`vehicle_${n}_vin`]) fd[`vehicle_${n}_vin`]     = String(v.vin || v.VIN);
       if ((v.body_type || v.bodyType || v.type) && !fd[`vehicle_${n}_body_type`])
         fd[`vehicle_${n}_body_type`] = String(v.body_type || v.bodyType || v.type);
-      const costNew = v.cost_new || v.stated_amount || v.statedAmount || "";
-      if (costNew && !fd[`vehicle_${n}_cost_new`])
-        fd[`vehicle_${n}_cost_new`] = String(costNew);
+      if ((v.stated_amount || v.cost_new) && !fd[`vehicle_${n}_stated_amount`])
+        fd[`vehicle_${n}_stated_amount`] = String(v.stated_amount || v.cost_new);
       if ((v.garaging_zip || v.zip) && !fd[`vehicle_${n}_garaging_zip`])
         fd[`vehicle_${n}_garaging_zip`] = String(v.garaging_zip || v.zip);
-      if (v.gvw && !fd[`vehicle_${n}_gvw`])           fd[`vehicle_${n}_gvw`]      = String(v.gvw);
-      if (v.radius && !fd[`vehicle_${n}_radius`])     fd[`vehicle_${n}_radius`]   = String(v.radius);
-      if (v.sic && !fd[`vehicle_${n}_sic`])           fd[`vehicle_${n}_sic`]      = String(v.sic);
-      if ((v.vehicle_class || v.class) && !fd[`vehicle_${n}_class`])
-        fd[`vehicle_${n}_class`] = String(v.vehicle_class || v.class);
     });
     if (vehicles.length > 0 && !fd.number_of_vehicles) {
       fd.number_of_vehicles = String(vehicles.length);
@@ -544,43 +431,14 @@ ${file_contents ? `\nAdditional text content:\n${file_contents}` : ""}`;
     const drivers: any[] = Array.isArray(fd.drivers) ? fd.drivers : [];
     drivers.forEach((d: any, idx: number) => {
       const n = idx + 1;
-      // Parse name into first/middle/last
-      let firstName = d.first_name || "";
-      let middleName = d.middle_name || d.middle || "";
-      let lastName = d.last_name || "";
-      const fullName = d.name || d.full_name || d.driver_name || "";
-      if (!firstName && !lastName && fullName) {
-        const parts = fullName.trim().split(/\s+/);
-        if (parts.length === 1) { firstName = parts[0]; }
-        else if (parts.length === 2) { firstName = parts[0]; lastName = parts[1]; }
-        else { firstName = parts[0]; middleName = parts.slice(1, -1).join(" "); lastName = parts[parts.length - 1]; }
-      }
-      if (firstName && !fd[`driver_${n}_first_name`]) fd[`driver_${n}_first_name`] = firstName;
-      if (middleName && !fd[`driver_${n}_middle`])    fd[`driver_${n}_middle`]     = middleName;
-      if (lastName && !fd[`driver_${n}_last_name`])   fd[`driver_${n}_last_name`]  = lastName;
-      if (fullName && !fd[`driver_${n}_name`])        fd[`driver_${n}_name`]       = fullName;
-      if (!fd[`driver_${n}_name`] && (firstName || lastName))
-        fd[`driver_${n}_name`] = [firstName, middleName, lastName].filter(Boolean).join(" ");
-
-      if ((d.dob || d.date_of_birth || d.birth_date) && !fd[`driver_${n}_dob`])
-        fd[`driver_${n}_dob`] = String(d.dob || d.date_of_birth || d.birth_date);
-      if ((d.license_number || d.license || d.dl_number) && !fd[`driver_${n}_license`])
-        fd[`driver_${n}_license`] = String(d.license_number || d.license || d.dl_number);
+      if ((d.name || d.full_name) && !fd[`driver_${n}_name`])
+        fd[`driver_${n}_name`] = String(d.name || d.full_name);
+      if ((d.dob || d.date_of_birth) && !fd[`driver_${n}_dob`])
+        fd[`driver_${n}_dob`] = String(d.dob || d.date_of_birth);
+      if ((d.license || d.license_number || d.dl_number) && !fd[`driver_${n}_license`])
+        fd[`driver_${n}_license`] = String(d.license || d.license_number || d.dl_number);
       if ((d.license_state || d.state) && !fd[`driver_${n}_license_state`])
         fd[`driver_${n}_license_state`] = String(d.license_state || d.state);
-      if ((d.sex || d.gender) && !fd[`driver_${n}_sex`])
-        fd[`driver_${n}_sex`] = String(d.sex || d.gender);
-      if ((d.marital_status || d.marital) && !fd[`driver_${n}_marital`])
-        fd[`driver_${n}_marital`] = String(d.marital_status || d.marital);
-      if ((d.years_experience || d.experience) && !fd[`driver_${n}_experience`])
-        fd[`driver_${n}_experience`] = String(d.years_experience || d.experience);
-      if ((d.year_first_licensed || d.licensed_year) && !fd[`driver_${n}_licensed_year`])
-        fd[`driver_${n}_licensed_year`] = String(d.year_first_licensed || d.licensed_year);
-      if ((d.hired_date || d.date_hired) && !fd[`driver_${n}_hired_date`])
-        fd[`driver_${n}_hired_date`] = String(d.hired_date || d.date_hired);
-      if (d.city && !fd[`driver_${n}_city`])          fd[`driver_${n}_city`]       = String(d.city);
-      if (d.state && !fd[`driver_${n}_state`])        fd[`driver_${n}_state`]      = String(d.state);
-      if (d.zip && !fd[`driver_${n}_zip`])            fd[`driver_${n}_zip`]        = String(d.zip);
     });
     if (drivers.length > 0 && !fd.number_of_drivers) {
       fd.number_of_drivers = String(drivers.length);
@@ -666,76 +524,6 @@ ${file_contents ? `\nAdditional text content:\n${file_contents}` : ""}`;
       else if (/\bCorp\.?\b/i.test(name)) fd.business_type = "Corporation";
       else if (/\bLLP\b/i.test(name)) fd.business_type = "Partnership";
       else if (/\bLP\b/i.test(name)) fd.business_type = "Partnership";
-    }
-
-    // ── Post-processing: auto-set lob_umbrella if umbrella data present ──
-    if (fd.lob_umbrella !== "true") {
-      const hasUmbrellaData = fd.umbrella_carrier || fd.umbrella_policy_number || fd.umbrella_premium
-        || fd.each_occurrence_limit || fd.aggregate_limit
-        || fd.underlying_gl_carrier || fd.underlying_excess_carrier_1;
-      if (hasUmbrellaData) fd.lob_umbrella = "true";
-    }
-
-    // ── Post-processing: cross-populate GL limits to underlying if GL present ──
-    if (fd.underlying_gl_carrier && !fd.underlying_gl_occurrence && fd.each_occurrence) {
-      fd.underlying_gl_occurrence = fd.each_occurrence;
-    }
-    if (fd.underlying_gl_carrier && !fd.underlying_gl_aggregate && fd.general_aggregate) {
-      fd.underlying_gl_aggregate = fd.general_aggregate;
-    }
-    if (fd.underlying_gl_carrier && !fd.underlying_gl_products && fd.products_aggregate) {
-      fd.underlying_gl_products = fd.products_aggregate;
-    }
-    if (fd.underlying_gl_carrier && !fd.underlying_gl_personal && fd.personal_adv_injury) {
-      fd.underlying_gl_personal = fd.personal_adv_injury;
-    }
-    if (fd.underlying_gl_carrier && !fd.underlying_gl_fire_damage && fd.fire_damage) {
-      fd.underlying_gl_fire_damage = fd.fire_damage;
-    }
-    if (fd.underlying_gl_carrier && !fd.underlying_gl_med_expense && fd.medical_payments) {
-      fd.underlying_gl_med_expense = fd.medical_payments;
-    }
-
-    // Cross-populate underlying policy dates from main effective/expiration if not extracted separately
-    if (fd.underlying_gl_carrier && !fd.underlying_gl_eff_date && fd.effective_date) {
-      fd.underlying_gl_eff_date = fd.effective_date;
-    }
-    if (fd.underlying_gl_carrier && !fd.underlying_gl_exp_date && fd.expiration_date) {
-      fd.underlying_gl_exp_date = fd.expiration_date;
-    }
-    if (fd.underlying_auto_carrier && !fd.underlying_auto_eff_date && fd.effective_date) {
-      fd.underlying_auto_eff_date = fd.effective_date;
-    }
-    if (fd.underlying_auto_carrier && !fd.underlying_auto_exp_date && fd.expiration_date) {
-      fd.underlying_auto_exp_date = fd.expiration_date;
-    }
-    if (fd.underlying_el_carrier && !fd.underlying_el_eff_date && fd.effective_date) {
-      fd.underlying_el_eff_date = fd.effective_date;
-    }
-    if (fd.underlying_el_carrier && !fd.underlying_el_exp_date && fd.expiration_date) {
-      fd.underlying_el_exp_date = fd.expiration_date;
-    }
-
-    // Auto-set 131 transaction type checkboxes based on umbrella_or_excess and coverage_basis
-    if (fd.chk_131_umbrella !== "true" && fd.chk_131_excess !== "true") {
-      if (fd.umbrella_or_excess === "Excess" || /excess/i.test(fd.umbrella_carrier || "")) {
-        fd.chk_131_excess = "true";
-      } else {
-        fd.chk_131_umbrella = "true";
-      }
-    }
-    if (fd.chk_131_occurrence !== "true" && fd.chk_131_claims_made !== "true" && fd.lob_umbrella === "true") {
-      fd.chk_131_occurrence = "true"; // Default to occurrence
-    }
-
-    // ── Post-processing: populate prior carrier from current policy if not set ──
-    if (!fd.prior_carrier_1 && fd.current_carrier) {
-      fd.prior_carrier_1 = fd.current_carrier;
-    }
-
-    // ── Post-processing: set annual_revenue from gross_sales exposure if present ──
-    if (!fd.annual_revenue && fd.hazard_exposure_1) {
-      fd.annual_revenue = fd.hazard_exposure_1;
     }
 
     extracted.form_data = fd;

@@ -265,89 +265,6 @@ const AI_TO_FORM_ALIASES: Record<string, string[]> = {
   retained_limit_aggregate: ["retained_limit_aggregate"],
   self_insured_retention: ["self_insured_retention"],
 
-  // ── Underlying Insurance (ACORD 131) ──
-  underlying_gl_carrier: ["underlying_gl_carrier"],
-  underlying_gl_policy_number: ["underlying_gl_policy_number"],
-  underlying_gl_eff_date: ["underlying_gl_eff_date"],
-  underlying_gl_exp_date: ["underlying_gl_exp_date"],
-  underlying_gl_occurrence: ["underlying_gl_occurrence"],
-  underlying_gl_aggregate: ["underlying_gl_aggregate"],
-  underlying_gl_products: ["underlying_gl_products"],
-  underlying_gl_personal: ["underlying_gl_personal"],
-  underlying_gl_fire_damage: ["underlying_gl_fire_damage"],
-  underlying_gl_med_expense: ["underlying_gl_med_expense"],
-  underlying_gl_prem_ops_premium: ["underlying_gl_prem_ops_premium"],
-  underlying_gl_products_premium: ["underlying_gl_products_premium"],
-  underlying_gl_other_premium: ["underlying_gl_other_premium"],
-  underlying_gl_premium: ["underlying_gl_prem_ops_premium"],
-  underlying_auto_carrier: ["underlying_auto_carrier"],
-  underlying_auto_policy_number: ["underlying_auto_policy_number"],
-  underlying_auto_eff_date: ["underlying_auto_eff_date"],
-  underlying_auto_exp_date: ["underlying_auto_exp_date"],
-  underlying_auto_csl: ["underlying_auto_csl"],
-  underlying_auto_bi_ea_acc: ["underlying_auto_bi_ea_acc"],
-  underlying_auto_bi_ea_per: ["underlying_auto_bi_ea_per"],
-  underlying_auto_pd: ["underlying_auto_pd"],
-  underlying_auto_csl_premium: ["underlying_auto_csl_premium"],
-  underlying_auto_bi_premium: ["underlying_auto_bi_premium"],
-  underlying_auto_pd_premium: ["underlying_auto_pd_premium"],
-  underlying_auto_premium: ["underlying_auto_csl_premium"],
-  underlying_el_carrier: ["underlying_el_carrier"],
-  underlying_el_policy_number: ["underlying_el_policy_number"],
-  underlying_el_eff_date: ["underlying_el_eff_date"],
-  underlying_el_exp_date: ["underlying_el_exp_date"],
-  underlying_el_each_accident: ["underlying_el_each_accident"],
-  underlying_el_disease_employee: ["underlying_el_disease_employee"],
-  underlying_el_disease_policy: ["underlying_el_disease_policy"],
-  underlying_el_premium: ["underlying_el_premium"],
-  underlying_el_mod_factor: ["underlying_el_mod_factor"],
-  underlying_auto_mod_factor: ["underlying_auto_mod_factor"],
-  underlying_gl_mod_factor: ["underlying_gl_mod_factor"],
-  underlying_excess_carrier_1: ["underlying_excess_carrier_1"],
-  underlying_excess_policy_number_1: ["underlying_excess_policy_number_1"],
-  underlying_excess_limit_1: ["underlying_excess_limit_1"],
-  underlying_excess_premium_1: ["underlying_excess_premium_1"],
-  underlying_excess_carrier_2: ["underlying_excess_carrier_2"],
-  underlying_excess_policy_number_2: ["underlying_excess_policy_number_2"],
-  underlying_excess_limit_2: ["underlying_excess_limit_2"],
-  underlying_excess_premium_2: ["underlying_excess_premium_2"],
-
-  // ── ACORD 131 Transaction Type Checkboxes ──
-  chk_131_new: ["chk_131_new"],
-  chk_131_renewal: ["chk_131_renewal"],
-  chk_131_umbrella: ["chk_131_umbrella"],
-  chk_131_excess: ["chk_131_excess"],
-  chk_131_occurrence: ["chk_131_occurrence"],
-  chk_131_claims_made: ["chk_131_claims_made"],
-
-  // ── Umbrella premium / policy ──
-  umbrella_premium: ["umbrella_premium"],
-  umbrella_policy_number: ["umbrella_policy_number"],
-  umbrella_carrier: ["umbrella_carrier"],
-
-  // ── Prior Carrier (multi-row) ──
-  prior_carrier_1: ["prior_carrier_1", "prior_wc_carrier_1", "current_carrier"],
-  prior_policy_number_1: ["prior_policy_number_1", "prior_wc_policy_1"],
-  prior_eff_date_1: ["prior_eff_date_1"],
-  prior_exp_date_1: ["prior_exp_date_1"],
-  prior_premium_1: ["prior_premium_1", "prior_wc_premium_1"],
-  prior_carrier_2: ["prior_carrier_2"],
-  prior_policy_number_2: ["prior_policy_number_2"],
-  prior_eff_date_2: ["prior_eff_date_2"],
-  prior_exp_date_2: ["prior_exp_date_2"],
-  prior_premium_2: ["prior_premium_2"],
-
-  // ── Producer / Broker ──
-  producer_agency: ["agency_name"],
-  producer_phone: ["agency_phone"],
-  producer_address: ["producer_address"],
-
-  // ── Premium Breakdown ──
-  carrier_fee: ["carrier_fee"],
-
-  // ── Key Endorsements ──
-  key_endorsements: ["key_endorsements"],
-
   // ── CGL Limits — including common dec page extraction keys ──
   general_aggregate: ["general_aggregate"],
   aggregate_limits_of_liability: ["general_aggregate"],
@@ -493,14 +410,9 @@ const DATE_FIELDS = new Set([
   "proposed_eff_date", "proposed_exp_date", "effective_date", "expiration_date",
   "date_business_started", "prior_eff_date", "prior_exp_date", "retroactive_date",
   "pending_litigation_date", "signature_date", "mod_effective_date",
-  "prior_eff_date_1", "prior_exp_date_1",
+  "prior_eff_date_1", "prior_exp_date_1", "driver_1_dob", "driver_2_dob",
   "officer_1_dob", "ebl_retroactive_date", "entry_date_claims_made",
   "anniversary_rating_date", "transaction_date",
-  "underlying_gl_eff_date", "underlying_gl_exp_date",
-  "underlying_auto_eff_date", "underlying_auto_exp_date",
-  "underlying_el_eff_date", "underlying_el_exp_date",
-  ...Array.from({ length: 30 }, (_, i) => `driver_${i + 1}_dob`),
-  ...Array.from({ length: 30 }, (_, i) => `driver_${i + 1}_hired_date`),
 ]);
 
 /** Code fields that must NEVER be AI-inferred — only from documents or manual entry */
@@ -539,12 +451,9 @@ export const CURRENCY_FIELDS = new Set([
   "prior_gl_premium_1", "prior_auto_premium_1", "prior_property_premium_1",
   "prior_wc_premium_1", "prior_wc_paid_1", "prior_wc_reserve_1",
   "retained_limit_occurrence", "retained_limit_aggregate",
-  "underlying_auto_csl", "underlying_auto_bi_ea_acc", "underlying_auto_bi_ea_per", "underlying_auto_pd",
-  "underlying_auto_csl_premium", "underlying_auto_bi_premium", "underlying_auto_pd_premium",
+  "underlying_auto_bi_ea_acc", "underlying_auto_bi_ea_per", "underlying_auto_pd",
   "underlying_auto_premium", "underlying_gl_occurrence", "underlying_gl_aggregate",
-  "underlying_gl_products", "underlying_gl_personal", "underlying_gl_fire_damage", "underlying_gl_med_expense",
-  "underlying_gl_prem_ops_premium", "underlying_gl_products_premium", "underlying_gl_other_premium",
-  "underlying_gl_premium",
+  "underlying_gl_products", "underlying_gl_personal", "underlying_gl_premium",
   "underlying_el_each_accident", "underlying_el_disease_employee", "underlying_el_disease_policy",
   "underlying_el_premium", "ebl_limit", "ebl_deductible_per_claim", "ebl_retained_limit",
   "wc_each_accident", "wc_disease_policy_limit", "wc_disease_each_employee",
@@ -592,13 +501,6 @@ export function buildAutofilledData(
 ): Record<string, any> {
   const formFieldKeys = new Set(form.fields.map((f) => f.key));
   const mapped: Record<string, any> = {};
-
-  // 0. Apply form-definition defaults (e.g. Y/N → "No") FIRST as baseline
-  for (const field of form.fields) {
-    if (field.default) {
-      mapped[field.key] = field.default;
-    }
-  }
 
   // 1. Agent profile basics
   if (profile) {
@@ -657,48 +559,21 @@ export function buildAutofilledData(
       [`vehicle_${n}_body_type`]: v.body_type || v.bodyType || v.type || "",
       [`vehicle_${n}_cost_new`]: v.stated_amount || v.cost_new || v.statedAmount || "",
       [`vehicle_${n}_garaging_zip`]: v.garaging_zip || v.zip || "",
-      [`vehicle_${n}_gvw`]: v.gvw || v.gcw || "",
-      [`vehicle_${n}_radius`]: v.radius || "",
-      [`vehicle_${n}_sic`]: v.sic || "",
     };
     for (const [k, val] of Object.entries(vFields)) {
       if (val && formFieldKeys.has(k) && !mapped[k]) mapped[k] = val;
     }
   });
 
-  // 5c. Expand drivers[] array → driver_N_first_name/last_name/dob/license/etc. fields
+  // 5c. Expand drivers[] array → driver_N_name/dob/license fields
   const drivers: any[] = Array.isArray(aiData.drivers) ? aiData.drivers : [];
   drivers.forEach((d: any, idx: number) => {
     const n = idx + 1;
-    // Parse name into first/middle/last if only full name given
-    let firstName = d.first_name || "";
-    let middleName = d.middle_name || d.middle || "";
-    let lastName = d.last_name || "";
-    if (!firstName && !lastName) {
-      const fullName = d.name || d.driver_name || d.full_name || "";
-      if (fullName) {
-        const parts = fullName.trim().split(/\s+/);
-        if (parts.length === 1) { firstName = parts[0]; }
-        else if (parts.length === 2) { firstName = parts[0]; lastName = parts[1]; }
-        else { firstName = parts[0]; middleName = parts.slice(1, -1).join(" "); lastName = parts[parts.length - 1]; }
-      }
-    }
     const dFields: Record<string, string> = {
-      [`driver_${n}_first_name`]: firstName,
-      [`driver_${n}_middle`]: middleName,
-      [`driver_${n}_last_name`]: lastName,
-      [`driver_${n}_name`]: d.name || d.driver_name || d.full_name || [firstName, middleName, lastName].filter(Boolean).join(" "),
-      [`driver_${n}_sex`]: d.sex || d.gender || "",
-      [`driver_${n}_marital`]: d.marital_status || d.marital || "",
+      [`driver_${n}_name`]: d.name || d.driver_name || d.full_name || "",
       [`driver_${n}_dob`]: d.dob || d.date_of_birth || d.birth_date || "",
-      [`driver_${n}_experience`]: d.years_experience || d.experience || "",
-      [`driver_${n}_licensed_year`]: d.year_first_licensed || d.licensed_year || "",
-      [`driver_${n}_license`]: d.license_number || d.license || d.dl_number || "",
-      [`driver_${n}_license_state`]: d.license_state || "",
-      [`driver_${n}_city`]: d.city || "",
-      [`driver_${n}_state`]: d.state || d.license_state || "",
-      [`driver_${n}_zip`]: d.zip || "",
-      [`driver_${n}_hired_date`]: d.hired_date || d.date_hired || "",
+      [`driver_${n}_license`]: d.license || d.license_number || d.dl_number || "",
+      [`driver_${n}_license_state`]: d.license_state || d.state || "",
     };
     for (const [k, val] of Object.entries(dFields)) {
       if (val && formFieldKeys.has(k) && !mapped[k]) mapped[k] = normalizeValue(k, val);
@@ -717,35 +592,9 @@ export function buildAutofilledData(
     for (const [k, val] of Object.entries(vKeys)) {
       if (val && formFieldKeys.has(k) && !mapped[k]) mapped[k] = val;
     }
-
-    // Parse composite driver_N_name into first/middle/last if individual parts are missing
-    let dFirstName = aiData[`driver_${n}_first_name`] || "";
-    let dMiddleName = aiData[`driver_${n}_middle`] || aiData[`driver_${n}_middle_name`] || "";
-    let dLastName = aiData[`driver_${n}_last_name`] || "";
-    const dCompositeName = aiData[`driver_${n}_name`] || "";
-    if (!dFirstName && !dLastName && dCompositeName) {
-      const parts = dCompositeName.trim().split(/\s+/);
-      if (parts.length === 1) { dFirstName = parts[0]; }
-      else if (parts.length === 2) { dFirstName = parts[0]; dLastName = parts[1]; }
-      else { dFirstName = parts[0]; dMiddleName = parts.slice(1, -1).join(" "); dLastName = parts[parts.length - 1]; }
-    }
-
     const dKeys: Record<string, string> = {
-      [`driver_${n}_first_name`]: dFirstName,
-      [`driver_${n}_middle`]: dMiddleName,
-      [`driver_${n}_last_name`]: dLastName,
-      [`driver_${n}_name`]: dCompositeName || [dFirstName, dMiddleName, dLastName].filter(Boolean).join(" "),
-      [`driver_${n}_sex`]: aiData[`driver_${n}_sex`] || "",
-      [`driver_${n}_marital`]: aiData[`driver_${n}_marital`] || "",
+      [`driver_${n}_name`]: aiData[`driver_${n}_name`] || "",
       [`driver_${n}_dob`]: aiData[`driver_${n}_dob`] || "",
-      [`driver_${n}_experience`]: aiData[`driver_${n}_experience`] || "",
-      [`driver_${n}_licensed_year`]: aiData[`driver_${n}_licensed_year`] || "",
-      [`driver_${n}_license`]: aiData[`driver_${n}_license`] || "",
-      [`driver_${n}_license_state`]: aiData[`driver_${n}_license_state`] || "",
-      [`driver_${n}_city`]: aiData[`driver_${n}_city`] || "",
-      [`driver_${n}_state`]: aiData[`driver_${n}_state`] || "",
-      [`driver_${n}_zip`]: aiData[`driver_${n}_zip`] || "",
-      [`driver_${n}_hired_date`]: aiData[`driver_${n}_hired_date`] || "",
     };
     for (const [k, val] of Object.entries(dKeys)) {
       if (val && formFieldKeys.has(k) && !mapped[k]) mapped[k] = normalizeValue(k, val);

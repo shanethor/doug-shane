@@ -8,7 +8,7 @@ const defaultNoFields = ACORD_FORM_LIST.flatMap(form =>
 
 describe("ACORD Y/N default fields", () => {
   it("should have exactly 99 fields with default 'No'", () => {
-    expect(defaultNoFields.length).toBeGreaterThanOrEqual(90);
+    expect(defaultNoFields.length).toBe(100);
   });
 
   it("defaults should NOT override existing extracted values", () => {

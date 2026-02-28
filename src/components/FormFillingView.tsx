@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import JSZip from "jszip";
 import FillablePdfViewer, { type FillablePdfViewerHandle } from "@/components/FillablePdfViewer";
 import ReactMarkdown from "react-markdown";
@@ -179,15 +179,12 @@ export default function FormFillingView({ submissionId, initialMessages, initial
    * Build prefillByIndex for the active form: maps field INDEX → formatted string value.
    * Uses runtime-merged index map (PDF field names + semantic aliases) for full coverage.
    */
-  const buildPrefillByIndex = useCallback((
-    fId: string,
-    data: Record<string, any>,
-    indexMap: Record<string, number>
-  ): Record<number, string> => {
-    if (!indexMap || Object.keys(indexMap).length === 0) return {};
+  const buildPrefillByIndex = useCallback(async (fId: string, data: Record<string, any>): Promise<Record<number, string>> => {
+    // Try runtime merged map first (covers ALL fields), fall back to static
+    const indexMap = await getMergedIndexMap(fId).catch(() => null) || ACORD_INDEX_MAPS[fId];
+    if (!indexMap) return {};
     const result: Record<number, string> = {};
     const debugEntries: string[] = [];
-
     for (const [internalKey, rawIdx] of Object.entries(indexMap)) {
       const idx = rawIdx as number;
       const val = data[internalKey];
@@ -203,35 +200,19 @@ export default function FormFillingView({ submissionId, initialMessages, initial
       result[idx] = display;
       debugEntries.push(`  [${idx}] ${internalKey} = "${display.slice(0, 40)}"`);
     }
-
     console.warn(`[prefill] ${fId}: ${debugEntries.length} fields mapped:\n${debugEntries.join("\n")}`);
     return result;
   }, []);
 
-  const [activeIndexMap, setActiveIndexMap] = useState<Record<string, number>>({});
-  const indexMapLoadIdRef = useRef(0);
-
-  // Load index map once per active form and ignore stale async responses.
+  // Compute prefill data from live formData — used at viewer mount time
+  const [prefillByIndex, setPrefillByIndex] = useState<Record<number, string>>({});
   useEffect(() => {
-    if (!activeFormId || activeFormId === "all") {
-      setActiveIndexMap({});
-      return;
+    if (activeFormId && activeFormId !== "all") {
+      buildPrefillByIndex(activeFormId, formData).then(setPrefillByIndex);
+    } else {
+      setPrefillByIndex({});
     }
-
-    const loadId = ++indexMapLoadIdRef.current;
-    (async () => {
-      const mergedMap = (await getMergedIndexMap(activeFormId).catch(() => null)) || ACORD_INDEX_MAPS[activeFormId] || {};
-      if (indexMapLoadIdRef.current !== loadId) return;
-      setActiveIndexMap(mergedMap);
-    })();
-  }, [activeFormId]);
-
-  // Compute prefill data synchronously from latest formData + latest index map.
-  // This avoids async races that can desync left panel and center PDF.
-  const prefillByIndex = useMemo(() => {
-    if (!activeFormId || activeFormId === "all") return {};
-    return buildPrefillByIndex(activeFormId, formData, activeIndexMap);
-  }, [activeFormId, formData, activeIndexMap, buildPrefillByIndex]);
+  }, [activeFormId, formData, buildPrefillByIndex]);
 
   // Viewer key: remounts on form switch, initial DB load, debounced revision, OR when prefill data becomes available
   const prefillCount = Object.keys(prefillByIndex).length;
@@ -474,63 +455,6 @@ export default function FormFillingView({ submissionId, initialMessages, initial
       if (data?.form_data && typeof data.form_data === "object") {
         loaded = data.form_data as Record<string, any>;
       }
-
-      // Expand drivers[] and vehicles[] arrays into flat keys if they exist
-      // This handles previously-extracted data that may only have arrays
-      const vehicles: any[] = Array.isArray(loaded.vehicles) ? loaded.vehicles : [];
-      vehicles.forEach((v: any, idx: number) => {
-        const n = idx + 1;
-        if (v.year && !loaded[`vehicle_${n}_year`])         loaded[`vehicle_${n}_year`]      = String(v.year);
-        if (v.make && !loaded[`vehicle_${n}_make`])         loaded[`vehicle_${n}_make`]      = String(v.make);
-        if (v.model && !loaded[`vehicle_${n}_model`])       loaded[`vehicle_${n}_model`]     = String(v.model);
-        if ((v.vin || v.VIN) && !loaded[`vehicle_${n}_vin`]) loaded[`vehicle_${n}_vin`]     = String(v.vin || v.VIN);
-        if ((v.body_type || v.bodyType || v.type) && !loaded[`vehicle_${n}_body_type`])
-          loaded[`vehicle_${n}_body_type`] = String(v.body_type || v.bodyType || v.type);
-        const costNew = v.cost_new || v.stated_amount || "";
-        if (costNew && !loaded[`vehicle_${n}_cost_new`])    loaded[`vehicle_${n}_cost_new`]  = String(costNew);
-        if (v.gvw && !loaded[`vehicle_${n}_gvw`])           loaded[`vehicle_${n}_gvw`]      = String(v.gvw);
-        if (v.radius && !loaded[`vehicle_${n}_radius`])     loaded[`vehicle_${n}_radius`]   = String(v.radius);
-        if (v.sic && !loaded[`vehicle_${n}_sic`])           loaded[`vehicle_${n}_sic`]      = String(v.sic);
-      });
-
-      const drivers: any[] = Array.isArray(loaded.drivers) ? loaded.drivers : [];
-      drivers.forEach((d: any, idx: number) => {
-        const n = idx + 1;
-        let firstName = d.first_name || "";
-        let middleName = d.middle_name || d.middle || "";
-        let lastName = d.last_name || "";
-        const fullName = d.name || d.full_name || d.driver_name || "";
-        if (!firstName && !lastName && fullName) {
-          const parts = fullName.trim().split(/\s+/);
-          if (parts.length === 1) { firstName = parts[0]; }
-          else if (parts.length === 2) { firstName = parts[0]; lastName = parts[1]; }
-          else { firstName = parts[0]; middleName = parts.slice(1, -1).join(" "); lastName = parts[parts.length - 1]; }
-        }
-        if (firstName && !loaded[`driver_${n}_first_name`]) loaded[`driver_${n}_first_name`] = firstName;
-        if (middleName && !loaded[`driver_${n}_middle`])    loaded[`driver_${n}_middle`]     = middleName;
-        if (lastName && !loaded[`driver_${n}_last_name`])   loaded[`driver_${n}_last_name`]  = lastName;
-        if (fullName && !loaded[`driver_${n}_name`])        loaded[`driver_${n}_name`]       = fullName;
-        if (!loaded[`driver_${n}_name`] && (firstName || lastName))
-          loaded[`driver_${n}_name`] = [firstName, middleName, lastName].filter(Boolean).join(" ");
-        if ((d.dob || d.date_of_birth) && !loaded[`driver_${n}_dob`])
-          loaded[`driver_${n}_dob`] = String(d.dob || d.date_of_birth);
-        if ((d.license_number || d.license) && !loaded[`driver_${n}_license`])
-          loaded[`driver_${n}_license`] = String(d.license_number || d.license);
-        if ((d.license_state || d.state) && !loaded[`driver_${n}_license_state`])
-          loaded[`driver_${n}_license_state`] = String(d.license_state || d.state);
-        if ((d.sex || d.gender) && !loaded[`driver_${n}_sex`])
-          loaded[`driver_${n}_sex`] = String(d.sex || d.gender);
-        if ((d.marital_status || d.marital) && !loaded[`driver_${n}_marital`])
-          loaded[`driver_${n}_marital`] = String(d.marital_status || d.marital);
-        if ((d.years_experience || d.experience) && !loaded[`driver_${n}_experience`])
-          loaded[`driver_${n}_experience`] = String(d.years_experience || d.experience);
-        if ((d.year_first_licensed || d.licensed_year) && !loaded[`driver_${n}_licensed_year`])
-          loaded[`driver_${n}_licensed_year`] = String(d.year_first_licensed || d.licensed_year);
-        if ((d.hired_date || d.date_hired) && !loaded[`driver_${n}_hired_date`])
-          loaded[`driver_${n}_hired_date`] = String(d.hired_date || d.date_hired);
-        if (d.city && !loaded[`driver_${n}_city`])          loaded[`driver_${n}_city`]       = String(d.city);
-        if (d.zip && !loaded[`driver_${n}_zip`])            loaded[`driver_${n}_zip`]        = String(d.zip);
-      });
 
       // Count how many non-empty fields exist
       const filledCount = Object.values(loaded).filter(v => v && String(v).trim()).length;
@@ -1194,13 +1118,10 @@ export default function FormFillingView({ submissionId, initialMessages, initial
                 <div
                   key={f.id}
                   onClick={() => {
-                    if (!isEnabled) {
-                      setEnabledFormIds((prev) => new Set([...prev, f.id]));
-                    }
-                    setActiveFormId(f.id);
+                    if (isEnabled) setActiveFormId(f.id);
                   }}
                   className={`flex items-center gap-2 rounded-md px-2 py-1 transition-colors cursor-pointer ${
-                    isEnabled ? "opacity-100" : "opacity-40"
+                    isEnabled ? "opacity-100" : "opacity-40 cursor-default"
                   } ${isActive && isEnabled ? "bg-primary/10 border border-primary/30" : "hover:bg-muted/50"}`}
                 >
                   <Checkbox

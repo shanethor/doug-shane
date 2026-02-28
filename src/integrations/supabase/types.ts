@@ -780,45 +780,6 @@ export type Database = {
           },
         ]
       }
-      personal_intake_submissions: {
-        Row: {
-          agent_id: string
-          created_at: string
-          delivery_emails: string[]
-          expires_at: string
-          form_data: Json
-          id: string
-          is_used: boolean
-          status: string
-          submitted_at: string | null
-          token: string
-        }
-        Insert: {
-          agent_id: string
-          created_at?: string
-          delivery_emails?: string[]
-          expires_at?: string
-          form_data?: Json
-          id?: string
-          is_used?: boolean
-          status?: string
-          submitted_at?: string | null
-          token?: string
-        }
-        Update: {
-          agent_id?: string
-          created_at?: string
-          delivery_emails?: string[]
-          expires_at?: string
-          form_data?: Json
-          id?: string
-          is_used?: boolean
-          status?: string
-          submitted_at?: string | null
-          token?: string
-        }
-        Relationships: []
-      }
       policies: {
         Row: {
           annual_premium: number

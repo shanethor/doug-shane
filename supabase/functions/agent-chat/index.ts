@@ -106,8 +106,8 @@ CRITICAL: When the agent provides a block of business data (e.g., from a supplem
 - Business type → description_of_operations, business_type, business_category, primary_description
 - Industry info → sic_code, naics_code, gl_code, class_code_1, class_description_1
 - Building info → construction_type, year_built, num_stories, total_area_sq_ft, occupied_sq_ft
-- Vehicle info → vehicle_1_year, vehicle_1_make, vehicle_1_model, vehicle_1_vin, vehicle_1_body_type, vehicle_1_cost_new, vehicle_1_gvw AND vehicle_2_*, vehicle_3_* for additional vehicles. Always set number_of_vehicles.
-- Driver info → driver_1_first_name, driver_1_last_name, driver_1_dob, driver_1_license, driver_1_license_state, driver_1_sex, driver_1_marital AND driver_2_*, driver_3_*, driver_4_* for additional drivers. Always set number_of_drivers.
+- Vehicle info → vehicle_1_year, vehicle_1_make, vehicle_1_model, vehicle_1_vin, vehicle_1_body_type
+- Driver info → driver_1_name, driver_1_dob, driver_1_license
 - WC info → class_code_1, class_description_1, annual_remuneration_1, rating_state, wc_part1_states
 - Umbrella info → each_occurrence_limit, aggregate_limit
 - Property values → building_amount, bpp_amount
@@ -124,7 +124,7 @@ Common field keys you can update (IMPORTANT — output ALL relevant fields acros
 - Operations: description_of_operations, annual_revenues, premises_address, premises_city, premises_state, premises_zip, occupied_sq_ft
 - CGL (126) Limits: general_aggregate, products_aggregate, each_occurrence, personal_adv_injury, fire_damage, medical_payments, coverage_type, hazard_code_1, hazard_classification_1, hazard_exposure_1
 - CGL Questions: draws_plans_for_others, blasting_explosives, installs_services_products, alcohol_served, products_sold, professional_services
-- Auto (127): driver_1_name, driver_1_first_name, driver_1_last_name, driver_1_dob, driver_1_license, driver_1_license_state, driver_1_sex, driver_1_marital, driver_2_name, driver_2_first_name, driver_2_last_name, driver_2_dob, driver_2_license, driver_2_license_state, driver_3_name, driver_3_first_name, driver_3_last_name, driver_3_dob, driver_3_license, driver_4_name, driver_4_first_name, driver_4_last_name, driver_4_dob, driver_4_license, number_of_drivers, vehicle_1_year, vehicle_1_make, vehicle_1_model, vehicle_1_vin, vehicle_1_body_type, vehicle_1_cost_new, vehicle_1_gvw, vehicle_1_radius, vehicle_2_year, vehicle_2_make, vehicle_2_model, vehicle_2_vin, vehicle_2_body_type, vehicle_3_year, vehicle_3_make, vehicle_3_model, vehicle_3_vin, number_of_vehicles, garaging_street, garaging_city, garaging_state, garaging_zip, transporting_hazmat, vehicle_maintenance_program
+- Auto (127): driver_1_name, driver_1_dob, driver_1_license, vehicle_1_year, vehicle_1_make, vehicle_1_model, vehicle_1_vin, vehicle_1_body_type, vehicle_1_radius, garaging_street, garaging_city, garaging_state, garaging_zip, transporting_hazmat, vehicle_maintenance_program
 - WC (130): class_code_1, class_description_1, num_employees_1, annual_remuneration_1, class_code_2, class_description_2, annual_remuneration_2, officer_1_name, officer_1_title, officer_1_ownership, officer_1_inc_exc, officer_1_remuneration, rating_state, wc_part1_states, wc_each_accident, wc_disease_policy_limit, wc_disease_each_employee, subcontractors_used, workplace_safety_program, seasonal_employees, wc_travel_out_of_state, prior_wc_carrier_1, experience_mod
 - Umbrella (131): umbrella_or_excess, coverage_basis, each_occurrence_limit, aggregate_limit, retained_limit_occurrence, underlying_gl_carrier, underlying_gl_occurrence, underlying_gl_aggregate, underlying_auto_carrier, underlying_el_carrier, annual_payroll, annual_gross_sales, primary_description
 - Property (140): construction_type, year_built, num_stories, total_area_sq_ft, building_amount, bpp_amount, building_valuation, building_causes_of_loss, building_deductible, bpp_valuation, business_income_amount, extra_expense_amount, roof_type, sprinkler_pct, fire_alarm_type, burglar_alarm_type, primary_heat_type, protection_class, building_street_address
@@ -136,12 +136,6 @@ CRITICAL CROSS-FORM RULE: When the agent provides information that applies to MU
 - If they say "effective date is 01/01/2026" → output proposed_eff_date, effective_date, AND proposed_exp_date/expiration_date (auto-calc +1 year)
 - If they say "2 employees" → output full_time_employees, num_employees_1, total_employees
 - If they say "the address is 123 Main St, Austin TX 78701" → output mailing_address, city, state, zip, premises_address, premises_city, premises_state, premises_zip, garaging_street, garaging_city, garaging_state, garaging_zip, building_street_address
-
-CRITICAL MULTI-DRIVER/VEHICLE RULE: When the agent provides information about MULTIPLE drivers or vehicles, you MUST output indexed fields for EACH one:
-- "John Smith DOB 1/1/1980, Jane Doe DOB 3/15/1985" → driver_1_first_name: John, driver_1_last_name: Smith, driver_1_dob: 01/01/1980, driver_2_first_name: Jane, driver_2_last_name: Doe, driver_2_dob: 03/15/1985, number_of_drivers: 2
-- "2016 Ford F-150 and 2020 Chevy Silverado" → vehicle_1_year: 2016, vehicle_1_make: Ford, vehicle_1_model: F-150, vehicle_2_year: 2020, vehicle_2_make: Chevrolet, vehicle_2_model: Silverado, number_of_vehicles: 2
-- Support up to 15 drivers (driver_1_* through driver_15_*) and 15 vehicles (vehicle_1_* through vehicle_15_*)
-- ALWAYS include number_of_drivers and number_of_vehicles with the correct count
 
 When the agent says things like "set the company name to ABC Corp" or "the effective date is 01/01/2025", output:
 applicant_name: ABC Corp
