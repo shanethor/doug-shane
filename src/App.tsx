@@ -23,6 +23,7 @@ import LeadDetail from "./pages/LeadDetail";
 import ProducerDashboard from "./pages/ProducerDashboard";
 import Approvals from "./pages/Approvals";
 import IntakeForm from "./pages/IntakeForm";
+import PersonalIntakeForm from "./pages/PersonalIntakeForm";
 import PipelineTracker from "./pages/PipelineTracker";
 import Settings from "./pages/Settings";
 import { Navigate } from "react-router-dom";
@@ -54,6 +55,7 @@ const App = () => (
           <Route path="/my-dashboard" element={<ProtectedRoute><ProducerDashboard /></ProtectedRoute>} />
           <Route path="/approvals" element={<Navigate to="/admin" replace />} />
           <Route path="/intake/:token" element={<IntakeForm />} />
+          <Route path="/personal-intake/:token" element={<PersonalIntakeForm />} />
           <Route path="/tracker" element={<PipelineTracker />} />
           <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
