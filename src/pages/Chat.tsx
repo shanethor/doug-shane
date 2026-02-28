@@ -1691,7 +1691,7 @@ export default function Chat() {
         {/* Messages area */}
         <div ref={scrollRef} className="flex-1 overflow-y-auto">
           {isEmpty ? (
-            <div className="flex flex-col items-center justify-center min-h-full gap-6 px-4 pb-12" style={{ paddingTop: "8vh" }}>
+            <div className="flex flex-col items-center min-h-full gap-6 px-4 pt-[12vh]">
               {/* Sold stats cards */}
               <div className="flex gap-4 justify-center">
                 <div className="flex items-center gap-2.5 rounded-xl border border-border bg-card px-5 py-3 shadow-sm">
