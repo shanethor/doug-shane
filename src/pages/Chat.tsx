@@ -1688,24 +1688,24 @@ export default function Chat() {
           </div>
         )}
 
-        {/* Sold stats bar */}
-        <div className="flex gap-4 px-2 py-2 shrink-0">
-          <div className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-1.5">
-            <DollarSign className="h-3.5 w-3.5 text-primary" />
-            <span className="text-xs text-muted-foreground">Sold Premium</span>
-            <span className="text-sm font-semibold font-sans">${soldStats.premium.toLocaleString()}</span>
-          </div>
-          <div className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-1.5">
-            <TrendingUp className="h-3.5 w-3.5 text-success" />
-            <span className="text-xs text-muted-foreground">Sold Revenue</span>
-            <span className="text-sm font-semibold font-sans">${soldStats.revenue.toLocaleString()}</span>
-          </div>
-        </div>
-
         {/* Messages area */}
         <div ref={scrollRef} className="flex-1 overflow-y-auto">
           {isEmpty ? (
             <div className="flex flex-col items-center justify-center min-h-full gap-6 px-4 py-12">
+              {/* Sold stats cards */}
+              <div className="flex gap-4 justify-center">
+                <div className="flex items-center gap-2.5 rounded-xl border border-border bg-card px-5 py-3 shadow-sm">
+                  <DollarSign className="h-4 w-4 text-primary" />
+                  <span className="text-sm text-muted-foreground">Sold Premium</span>
+                  <span className="text-base font-semibold font-sans">${soldStats.premium.toLocaleString()}</span>
+                </div>
+                <div className="flex items-center gap-2.5 rounded-xl border border-border bg-card px-5 py-3 shadow-sm">
+                  <TrendingUp className="h-4 w-4 text-success" />
+                  <span className="text-sm text-muted-foreground">Sold Revenue</span>
+                  <span className="text-base font-semibold font-sans">${soldStats.revenue.toLocaleString()}</span>
+                </div>
+              </div>
+
               <div className="text-center space-y-2">
                 <h1 className="text-4xl tracking-tight aura-gradient-text">
                   What are we working on?
