@@ -229,16 +229,16 @@ Return this exact structure:
     "underlying_gl_occurrence": "", "underlying_gl_aggregate": "", "underlying_gl_products": "",
     "underlying_gl_personal": "", "underlying_gl_fire_damage": "", "underlying_gl_med_expense": "",
     "underlying_gl_prem_ops_premium": "", "underlying_gl_products_premium": "", "underlying_gl_other_premium": "",
-    "underlying_gl_premium": "",
+    "underlying_gl_premium": "", "underlying_gl_mod_factor": "",
     "underlying_auto_carrier": "", "underlying_auto_policy_number": "",
     "underlying_auto_eff_date": "", "underlying_auto_exp_date": "",
     "underlying_auto_csl": "", "underlying_auto_bi_ea_acc": "", "underlying_auto_bi_ea_per": "", "underlying_auto_pd": "",
     "underlying_auto_csl_premium": "", "underlying_auto_bi_premium": "", "underlying_auto_pd_premium": "",
-    "underlying_auto_premium": "",
+    "underlying_auto_premium": "", "underlying_auto_mod_factor": "",
     "underlying_el_carrier": "", "underlying_el_policy_number": "",
     "underlying_el_eff_date": "", "underlying_el_exp_date": "",
     "underlying_el_each_accident": "", "underlying_el_disease_employee": "",
-    "underlying_el_disease_policy": "", "underlying_el_premium": "",
+    "underlying_el_disease_policy": "", "underlying_el_premium": "", "underlying_el_mod_factor": "",
     "underlying_excess_carrier_1": "", "underlying_excess_policy_number_1": "",
     "underlying_excess_limit_1": "", "underlying_excess_premium_1": "",
     "underlying_excess_carrier_2": "", "underlying_excess_policy_number_2": "",
@@ -355,6 +355,12 @@ UNDERLYING INSURANCE (for ACORD 131 Umbrella/Excess):
   - underlying_el_carrier / underlying_el_policy_number: EL carrier and policy
   - underlying_el_eff_date / underlying_el_exp_date: EL policy period dates
   - underlying_el_each_accident / underlying_el_disease_employee / underlying_el_disease_policy: EL limits
+  - underlying_el_mod_factor: EL rating modification factor
+- RATING MODIFICATION FACTORS:
+  - underlying_auto_mod_factor: auto rating mod factor (e.g. "1.000" or "0.950")
+  - underlying_gl_mod_factor: GL rating mod factor
+  - underlying_el_mod_factor: EL/WC rating mod factor (experience modification)
+  - These appear in the "RATING MOD" column of the underlying insurance schedule
 - EXCESS/OTHER underlying layers:
   - underlying_excess_carrier_1/underlying_excess_policy_number_1/underlying_excess_limit_1: stacked excess
 - If underlying coverage says "NOT COVERED", leave those fields empty
