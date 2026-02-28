@@ -80,20 +80,25 @@ export async function generatePersonalIntakeLink({
   clientEmail?: string;
   ccProducer?: boolean;
 }): Promise<{ url: string; token: string } | null> {
+  const insertPayload = {
+    agent_id: agentId,
+    delivery_emails: deliveryEmails,
+    client_email: clientEmail || null,
+    cc_producer: ccProducer ?? false,
+  };
+  console.log("Inserting personal intake link:", insertPayload);
+
   const { data, error } = await supabase
     .from("personal_intake_submissions")
-    .insert({
-      agent_id: agentId,
-      delivery_emails: deliveryEmails,
-      client_email: clientEmail || null,
-      cc_producer: ccProducer ?? false,
-    } as any)
+    .insert(insertPayload as any)
     .select("token")
     .single();
 
+  console.log("Personal intake insert result:", { data, error });
+
   if (error || !data) {
     console.error("Failed to create personal intake link:", error);
-    return null;
+    throw new Error(error?.message || "Insert returned no data");
   }
 
   const token = (data as any).token;
