@@ -31,8 +31,18 @@ interface Vehicle {
   vin: string;
 }
 
+interface Boat {
+  year: string;
+  make: string;
+  model: string;
+  hull_id: string;
+  length: string;
+  engine_type: string;
+}
+
 const emptyDriver = (): Driver => ({ full_name: "", dob: "", license_number: "" });
 const emptyVehicle = (): Vehicle => ({ year: "", make: "", model: "", vin: "" });
+const emptyBoat = (): Boat => ({ year: "", make: "", model: "", hull_id: "", length: "", engine_type: "" });
 
 function CollapsibleSection({ title, children, defaultOpen = false }: { title: string; children: React.ReactNode; defaultOpen?: boolean }) {
   const [open, setOpen] = useState(defaultOpen);
@@ -73,6 +83,9 @@ export default function PersonalIntakeForm() {
   // Auto
   const [drivers, setDrivers] = useState<Driver[]>([emptyDriver()]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([emptyVehicle()]);
+
+  // Boat
+  const [boats, setBoats] = useState<Boat[]>([emptyBoat()]);
 
   // Home
   const [homeNames, setHomeNames] = useState("");
@@ -125,6 +138,14 @@ export default function PersonalIntakeForm() {
     setVehicles(copy);
   };
 
+  const addBoat = () => { if (boats.length < 5) setBoats([...boats, emptyBoat()]); };
+  const removeBoat = (i: number) => setBoats(boats.filter((_, idx) => idx !== i));
+  const updateBoat = (i: number, field: keyof Boat, value: string) => {
+    const copy = [...boats];
+    copy[i] = { ...copy[i], [field]: value };
+    setBoats(copy);
+  };
+
   const toggleOccupancy = (val: string) => {
     setOccupancy(prev => prev.includes(val) ? prev.filter(v => v !== val) : [...prev, val]);
   };
@@ -145,6 +166,7 @@ export default function PersonalIntakeForm() {
         umbrella: wantUmbrella,
       },
       auto: wantAuto ? { drivers, vehicles } : null,
+      boat: wantBoat ? { boats } : null,
       home: wantHome ? {
         names: homeNames,
         dobs: homeDobs,
@@ -472,6 +494,58 @@ export default function PersonalIntakeForm() {
                   </div>
                 </div>
               )}
+            </CollapsibleSection>
+          )}
+
+          {/* Boat Section */}
+          {wantBoat && (
+            <CollapsibleSection title="⛵ Boat Information" defaultOpen>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs uppercase tracking-wider text-muted-foreground">Boats</Label>
+                  {boats.length < 5 && (
+                    <Button type="button" variant="ghost" size="sm" onClick={addBoat} className="h-7 text-xs gap-1">
+                      <Plus className="h-3 w-3" /> Add Boat
+                    </Button>
+                  )}
+                </div>
+                {boats.map((b, i) => (
+                  <div key={i} className="border border-border rounded-md p-3 space-y-3 relative">
+                    {boats.length > 1 && (
+                      <button type="button" onClick={() => removeBoat(i)} className="absolute top-2 right-2 text-muted-foreground hover:text-destructive">
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                    <p className="text-xs font-medium text-muted-foreground">Boat {i + 1}</p>
+                    <div className="grid gap-3 sm:grid-cols-3">
+                      <div className="space-y-1">
+                        <Label className="text-xs text-muted-foreground">Year</Label>
+                        <Input value={b.year} onChange={e => updateBoat(i, "year", e.target.value)} placeholder="2022" />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs text-muted-foreground">Make</Label>
+                        <Input value={b.make} onChange={e => updateBoat(i, "make", e.target.value)} placeholder="Boston Whaler" />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs text-muted-foreground">Model</Label>
+                        <Input value={b.model} onChange={e => updateBoat(i, "model", e.target.value)} placeholder="Montauk 170" />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs text-muted-foreground">Hull ID</Label>
+                        <Input value={b.hull_id} onChange={e => updateBoat(i, "hull_id", e.target.value)} placeholder="BWC12345A222" />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs text-muted-foreground">Length (ft)</Label>
+                        <Input value={b.length} onChange={e => updateBoat(i, "length", e.target.value)} placeholder="17" />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs text-muted-foreground">Engine Type</Label>
+                        <Input value={b.engine_type} onChange={e => updateBoat(i, "engine_type", e.target.value)} placeholder="Outboard" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </CollapsibleSection>
           )}
 
