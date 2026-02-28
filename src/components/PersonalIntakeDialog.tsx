@@ -34,7 +34,7 @@ export function PersonalIntakeDialog({ open, onClose, onGenerate, isLoading, pro
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-lg">
             <Mail className="h-5 w-5 text-primary" />
-            Personal Lines Intake Link
+            Client Intake Link
           </DialogTitle>
         </DialogHeader>
 
