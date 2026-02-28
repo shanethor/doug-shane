@@ -332,7 +332,7 @@ export default function Chat() {
 
   // Personal lines intake dialog state
   const [showPersonalIntakeDialog, setShowPersonalIntakeDialog] = useState(false);
-  const [personalIntakeEmailMode, setPersonalIntakeEmailMode] = useState<"self" | "team" | null>(null);
+  const [personalIntakeEmailMode, setPersonalIntakeEmailMode] = useState<"self" | "team" | "both" | null>(null);
   const [personalIntakeTeamEmail, setPersonalIntakeTeamEmail] = useState("");
 
   // Calculate coverage from form_data for a given submission
@@ -2603,6 +2603,18 @@ export default function Chat() {
                     <p className="text-xs text-muted-foreground">Enter their email address</p>
                   </div>
                 </button>
+                <button
+                  onClick={() => setPersonalIntakeEmailMode("both")}
+                  className="flex items-center gap-3 rounded-lg border bg-background hover:bg-muted/60 px-4 py-3 text-left transition-colors"
+                >
+                  <div className="h-8 w-8 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
+                    <Plus className="h-4 w-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">Send to both</p>
+                    <p className="text-xs text-muted-foreground">My email + a team member</p>
+                  </div>
+                </button>
               </div>
             )}
 
@@ -2638,6 +2650,62 @@ export default function Chat() {
                     disabled={!personalIntakeTeamEmail.trim()}
                     onClick={() => {
                       generatePersonalIntakeLink([personalIntakeTeamEmail.trim()]);
+                      setPersonalIntakeTeamEmail("");
+                      setPersonalIntakeEmailMode(null);
+                    }}
+                  >
+                    Generate Link
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {personalIntakeEmailMode === "both" && (
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <Label className="text-xs uppercase tracking-wider text-muted-foreground">Team Member's Email</Label>
+                  <Input
+                    type="email"
+                    value={personalIntakeTeamEmail}
+                    onChange={e => setPersonalIntakeTeamEmail(e.target.value)}
+                    placeholder="assistant@agency.com"
+                    autoFocus
+                    onKeyDown={async e => {
+                      if (e.key === "Enter" && personalIntakeTeamEmail.trim() && user) {
+                        const { data: profile } = await supabase
+                          .from("profiles")
+                          .select("from_email")
+                          .eq("user_id", user.id)
+                          .single();
+                        const myEmail = profile?.from_email || user.email || "";
+                        generatePersonalIntakeLink([myEmail, personalIntakeTeamEmail.trim()]);
+                        setPersonalIntakeTeamEmail("");
+                        setPersonalIntakeEmailMode(null);
+                      }
+                    }}
+                  />
+                  <p className="text-xs text-muted-foreground">Will also send to: {user?.email}</p>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => { setPersonalIntakeEmailMode(null); setPersonalIntakeTeamEmail(""); }}
+                  >
+                    Back
+                  </Button>
+                  <Button
+                    size="sm"
+                    disabled={!personalIntakeTeamEmail.trim()}
+                    onClick={async () => {
+                      if (!user) return;
+                      const { data: profile } = await supabase
+                        .from("profiles")
+                        .select("from_email")
+                        .eq("user_id", user.id)
+                        .single();
+                      const myEmail = profile?.from_email || user.email || "";
+                      generatePersonalIntakeLink([myEmail, personalIntakeTeamEmail.trim()]);
                       setPersonalIntakeTeamEmail("");
                       setPersonalIntakeEmailMode(null);
                     }}
