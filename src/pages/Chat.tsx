@@ -989,47 +989,12 @@ export default function Chat() {
   const send = async (text: string, displayText?: string) => {
     if (!text.trim() || isLoading) return;
 
-    // Intercept personal lines intake requests — open dialog
-    if (!displayText && isPersonalIntakeIntent(text) && user) {
+    // Intercept any intake link requests — open unified dialog
+    if (!displayText && (isPersonalIntakeIntent(text) || isIntakeLinkIntent(text)) && user) {
       const userMsg: Msg = { role: "user", content: text.trim() };
       setMessages((prev) => [...prev, userMsg]);
       setInput("");
       setShowPersonalIntakeDialog(true);
-      return;
-    }
-
-    // Intercept intake link requests BEFORE anything else
-    // Skip intake detection for internal/hidden prompts (displayText means it's an internal prompt)
-    if (!displayText && isIntakeLinkIntent(text) && user) {
-      const userMsg: Msg = { role: "user", content: text.trim() };
-      setMessages((prev) => [...prev, userMsg]);
-      setInput("");
-      setIsLoading(true);
-      try {
-        const result = await generateIntakeLink({ agentId: user.id });
-        if (result) {
-          // Clipboard can fail in iframes / unfocused docs — don't let it block success
-          let copied = false;
-          try {
-            await navigator.clipboard.writeText(result.url);
-            copied = true;
-          } catch (_) { /* clipboard not available */ }
-          setMessages((prev) => [
-            ...prev,
-            {
-              role: "assistant",
-              content: `✅ **Intake link generated${copied ? " and copied to clipboard" : ""}!**\n\nShare this link with your customer:\n\`${result.url}\`\n\nWhen they fill it out, their info will automatically sync to your pipeline and pre-fill ACORD forms. The link expires in 7 days.`,
-            },
-          ]);
-          toast({ title: copied ? "Intake link copied!" : "Intake link generated!", description: "Share this link with your customer." });
-        } else {
-          throw new Error("Link generation returned null");
-        }
-      } catch (err: any) {
-        console.error("Intake link generation failed:", err);
-        setMessages((prev) => [...prev, { role: "assistant", content: `Sorry, I couldn't generate the intake link. Error: ${err?.message || "Unknown error"}. Please try again.` }]);
-      }
-      setIsLoading(false);
       return;
     }
 
