@@ -375,6 +375,26 @@ const acord127Fields: AcordFormField[] = [
   { key: "driver_3_dob", label: "Driver 3 Date of Birth", type: "date", section: "Driver Information" },
   { key: "driver_3_license", label: "Driver 3 License #", type: "text", section: "Driver Information" },
   { key: "driver_3_license_state", label: "Driver 3 License State", type: "text", section: "Driver Information" },
+  // Drivers 4-13 — generated to match PDF index map slots
+  ...Array.from({ length: 10 }, (_, i) => {
+    const n = i + 4;
+    return [
+      { key: `driver_${n}_first_name`, label: `Driver ${n} First Name`, type: "text" as const, section: "Driver Information" },
+      { key: `driver_${n}_middle`, label: `Driver ${n} Middle Name`, type: "text" as const, section: "Driver Information" },
+      { key: `driver_${n}_last_name`, label: `Driver ${n} Last Name`, type: "text" as const, section: "Driver Information" },
+      { key: `driver_${n}_city`, label: `Driver ${n} City`, type: "text" as const, section: "Driver Information" },
+      { key: `driver_${n}_state`, label: `Driver ${n} State`, type: "text" as const, section: "Driver Information" },
+      { key: `driver_${n}_zip`, label: `Driver ${n} ZIP`, type: "text" as const, section: "Driver Information" },
+      { key: `driver_${n}_sex`, label: `Driver ${n} Sex`, type: "select" as const, options: ["M", "F"], section: "Driver Information" },
+      { key: `driver_${n}_marital`, label: `Driver ${n} Marital Status`, type: "select" as const, options: ["S", "M", "W", "D"], section: "Driver Information" },
+      { key: `driver_${n}_dob`, label: `Driver ${n} Date of Birth`, type: "date" as const, section: "Driver Information" },
+      { key: `driver_${n}_experience`, label: `Driver ${n} Years Experience`, type: "text" as const, section: "Driver Information" },
+      { key: `driver_${n}_licensed_year`, label: `Driver ${n} Year First Licensed`, type: "text" as const, section: "Driver Information" },
+      { key: `driver_${n}_license`, label: `Driver ${n} License #`, type: "text" as const, section: "Driver Information" },
+      { key: `driver_${n}_license_state`, label: `Driver ${n} License State`, type: "text" as const, section: "Driver Information" },
+      { key: `driver_${n}_hired_date`, label: `Driver ${n} Date Hired`, type: "date" as const, section: "Driver Information" },
+    ];
+  }).flat(),
 
   // General Information
   { key: "vehicles_not_solely_owned", label: "1. Any vehicles not solely owned by applicant?", type: "select", options: ["Yes", "No"], section: "General Information", default: "No" },
