@@ -494,7 +494,16 @@ export default function AdminDashboard() {
                         <p className="mt-0.5 text-foreground break-all">{c.corrected_value || "—"}</p>
                       </div>
                     </div>
-                    <p className="text-[11px] text-muted-foreground">User {c.user_id?.slice(0, 8)}… · {new Date(c.created_at).toLocaleDateString()}</p>
+                    <div className="flex items-center gap-3 mt-1">
+                      <p className="text-[11px] text-muted-foreground">User {c.user_id?.slice(0, 8)}… · {new Date(c.created_at).toLocaleDateString()}</p>
+                      {c.submission_id && (
+                        <Link to={`/acord/${c.form_id}/${c.submission_id}`}>
+                          <Badge variant="outline" className="text-[9px] cursor-pointer hover:bg-accent gap-0.5">
+                            <FileText className="h-2.5 w-2.5" />Retest in PDF
+                          </Badge>
+                        </Link>
+                      )}
+                    </div>
                   </div>
                   <Select value={c.status} onValueChange={(v) => updateCorrectionStatus(c.id, v)}>
                     <SelectTrigger className="w-28 h-7 text-[11px]">
