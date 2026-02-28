@@ -373,6 +373,8 @@ ${file_contents ? `\nAdditional text content:\n${file_contents}` : ""}`;
 
     console.log(`[extract] Total AI call completed in ${Date.now() - t0}ms`);
 
+    // Debug: log raw AI response (first 500 chars)
+    console.log(`[extract] Raw AI response (${rawContent?.length || 0} chars): ${rawContent?.substring(0, 500)}`);
 
     if (!rawContent) {
       throw new Error("No content returned from AI");
@@ -380,7 +382,13 @@ ${file_contents ? `\nAdditional text content:\n${file_contents}` : ""}`;
 
     // Strip markdown code fences if present
     const jsonStr = rawContent.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/i, "").trim();
-    const extracted = JSON.parse(jsonStr);
+    let extracted: any;
+    try {
+      extracted = JSON.parse(jsonStr);
+    } catch (parseErr) {
+      console.error("[extract] JSON parse failed:", parseErr, "Raw (first 1000):", jsonStr.substring(0, 1000));
+      throw new Error("Failed to parse AI response as JSON");
+    }
 
     // Pre-expand vehicles[] and drivers[] arrays into flat vehicle_N_* / driver_N_* keys
     // This ensures the form fill pipeline has exact flat keys identical to the benchmark ground-truth format
@@ -528,6 +536,10 @@ ${file_contents ? `\nAdditional text content:\n${file_contents}` : ""}`;
 
     extracted.form_data = fd;
 
+    // Debug: log key extracted fields
+    const fdKeys = Object.entries(fd).filter(([_, v]) => v && String(v).trim() && String(v).trim() !== "false" && String(v).trim() !== "No" && String(v).trim() !== "[]");
+    console.log(`[extract] Extracted ${fdKeys.length} non-empty fields. Key fields: applicant_name="${fd.applicant_name}", city="${fd.city}", state="${fd.state}", business_type="${fd.business_type}"`);
+
     // Save to database if submission_id provided
     if (submission_id) {
       const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -535,25 +547,37 @@ ${file_contents ? `\nAdditional text content:\n${file_contents}` : ""}`;
       const supabase = createClient(supabaseUrl, supabaseKey);
 
       // Get the submission to find user_id
-      const { data: submission } = await supabase
+      const { data: submission, error: subError } = await supabase
         .from("business_submissions")
         .select("user_id")
         .eq("id", submission_id)
         .single();
 
+      if (subError) {
+        console.error("[extract] Failed to fetch submission:", subError);
+      }
+
       if (submission) {
-        await supabase.from("insurance_applications").insert({
+        const { data: insertData, error: insertError } = await supabase.from("insurance_applications").insert({
           submission_id,
           user_id: submission.user_id,
           form_data: extracted.form_data,
           gaps: extracted.gaps,
           status: "draft",
-        });
+        }).select("id").single();
+
+        if (insertError) {
+          console.error("[extract] DB insert FAILED:", insertError);
+        } else {
+          console.log(`[extract] DB insert SUCCESS: application id=${insertData?.id}, form_data has ${fdKeys.length} non-empty fields`);
+        }
 
         await supabase
           .from("business_submissions")
           .update({ status: "extracted" })
           .eq("id", submission_id);
+      } else {
+        console.error("[extract] No submission found for id:", submission_id);
       }
     }
 
