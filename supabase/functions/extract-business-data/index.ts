@@ -146,6 +146,21 @@ async function callLovableGateway(
   return aiResult.choices?.[0]?.message?.content || "{}";
 }
 
+/**
+ * Claude can return multiple content blocks; concatenate all text blocks.
+ * This avoids false empty-results when the first block is not usable text.
+ */
+function extractClaudeText(result: any): string {
+  const blocks = Array.isArray(result?.content) ? result.content : [];
+  const text = blocks
+    .filter((b: any) => b?.type === "text" && typeof b?.text === "string")
+    .map((b: any) => b.text)
+    .join("\n")
+    .trim();
+
+  return text || "";
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -343,6 +358,7 @@ ${file_contents ? `\nAdditional text content:\n${file_contents}` : ""}`;
         headers: {
           "x-api-key": ANTHROPIC_API_KEY,
           "anthropic-version": "2023-06-01",
+          "anthropic-beta": "pdfs-2024-09-25",
           "content-type": "application/json",
         },
         body: JSON.stringify({
@@ -364,7 +380,13 @@ ${file_contents ? `\nAdditional text content:\n${file_contents}` : ""}`;
         rawContent = await callLovableGateway(LOVABLE_API_KEY!, systemPrompt, userPromptText, pdf_files, hasPdfs, corsHeaders);
       } else {
         const result = await response.json();
-        rawContent = result.content?.[0]?.text || "{}";
+        console.log(`[extract] Claude stop_reason=${result?.stop_reason || "unknown"}, usage=${JSON.stringify(result?.usage || {})}`);
+        rawContent = extractClaudeText(result);
+
+        if (!rawContent) {
+          console.warn("[extract] Claude returned HTTP 200 but no usable text content — falling back to Gemini");
+          rawContent = await callLovableGateway(LOVABLE_API_KEY!, systemPrompt, userPromptText, pdf_files, hasPdfs, corsHeaders);
+        }
       }
     } else {
       console.log(`[extract] Using Lovable AI gateway (hasPdfs: ${hasPdfs})`);
