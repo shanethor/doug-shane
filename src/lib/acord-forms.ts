@@ -336,17 +336,45 @@ const acord127Fields: AcordFormField[] = [
   { key: "effective_date", label: "Effective Date", type: "date", section: "Header", required: true },
   { key: "insured_name", label: "Named Insured(s)", type: "text", section: "Header", required: true },
 
-  // Driver Information
-  { key: "driver_1_name", label: "Driver 1 Name", type: "text", section: "Driver Information" },
+  // Driver Information — Driver 1
+  { key: "driver_1_first_name", label: "Driver 1 First Name", type: "text", section: "Driver Information" },
+  { key: "driver_1_middle", label: "Driver 1 Middle Name", type: "text", section: "Driver Information" },
+  { key: "driver_1_last_name", label: "Driver 1 Last Name", type: "text", section: "Driver Information" },
+  { key: "driver_1_city", label: "Driver 1 City", type: "text", section: "Driver Information" },
+  { key: "driver_1_state", label: "Driver 1 State", type: "text", section: "Driver Information" },
+  { key: "driver_1_zip", label: "Driver 1 ZIP", type: "text", section: "Driver Information" },
   { key: "driver_1_sex", label: "Driver 1 Sex", type: "select", options: ["M", "F"], section: "Driver Information" },
   { key: "driver_1_marital", label: "Driver 1 Marital Status", type: "select", options: ["S", "M", "W", "D"], section: "Driver Information" },
   { key: "driver_1_dob", label: "Driver 1 Date of Birth", type: "date", section: "Driver Information" },
-  { key: "driver_1_license", label: "Driver 1 License # / State", type: "text", section: "Driver Information" },
-  { key: "driver_2_name", label: "Driver 2 Name", type: "text", section: "Driver Information" },
+  { key: "driver_1_experience", label: "Driver 1 Years Experience", type: "text", section: "Driver Information" },
+  { key: "driver_1_licensed_year", label: "Driver 1 Year First Licensed", type: "text", section: "Driver Information" },
+  { key: "driver_1_license", label: "Driver 1 License #", type: "text", section: "Driver Information" },
+  { key: "driver_1_license_state", label: "Driver 1 License State", type: "text", section: "Driver Information" },
+  { key: "driver_1_hired_date", label: "Driver 1 Date Hired", type: "date", section: "Driver Information" },
+  // Driver Information — Driver 2
+  { key: "driver_2_first_name", label: "Driver 2 First Name", type: "text", section: "Driver Information" },
+  { key: "driver_2_middle", label: "Driver 2 Middle Name", type: "text", section: "Driver Information" },
+  { key: "driver_2_last_name", label: "Driver 2 Last Name", type: "text", section: "Driver Information" },
+  { key: "driver_2_city", label: "Driver 2 City", type: "text", section: "Driver Information" },
+  { key: "driver_2_state", label: "Driver 2 State", type: "text", section: "Driver Information" },
+  { key: "driver_2_zip", label: "Driver 2 ZIP", type: "text", section: "Driver Information" },
   { key: "driver_2_sex", label: "Driver 2 Sex", type: "select", options: ["M", "F"], section: "Driver Information" },
   { key: "driver_2_marital", label: "Driver 2 Marital Status", type: "select", options: ["S", "M", "W", "D"], section: "Driver Information" },
   { key: "driver_2_dob", label: "Driver 2 Date of Birth", type: "date", section: "Driver Information" },
-  { key: "driver_2_license", label: "Driver 2 License # / State", type: "text", section: "Driver Information" },
+  { key: "driver_2_experience", label: "Driver 2 Years Experience", type: "text", section: "Driver Information" },
+  { key: "driver_2_licensed_year", label: "Driver 2 Year First Licensed", type: "text", section: "Driver Information" },
+  { key: "driver_2_license", label: "Driver 2 License #", type: "text", section: "Driver Information" },
+  { key: "driver_2_license_state", label: "Driver 2 License State", type: "text", section: "Driver Information" },
+  { key: "driver_2_hired_date", label: "Driver 2 Date Hired", type: "date", section: "Driver Information" },
+  // Driver Information — Driver 3
+  { key: "driver_3_first_name", label: "Driver 3 First Name", type: "text", section: "Driver Information" },
+  { key: "driver_3_middle", label: "Driver 3 Middle Name", type: "text", section: "Driver Information" },
+  { key: "driver_3_last_name", label: "Driver 3 Last Name", type: "text", section: "Driver Information" },
+  { key: "driver_3_sex", label: "Driver 3 Sex", type: "select", options: ["M", "F"], section: "Driver Information" },
+  { key: "driver_3_marital", label: "Driver 3 Marital Status", type: "select", options: ["S", "M", "W", "D"], section: "Driver Information" },
+  { key: "driver_3_dob", label: "Driver 3 Date of Birth", type: "date", section: "Driver Information" },
+  { key: "driver_3_license", label: "Driver 3 License #", type: "text", section: "Driver Information" },
+  { key: "driver_3_license_state", label: "Driver 3 License State", type: "text", section: "Driver Information" },
 
   // General Information
   { key: "vehicles_not_solely_owned", label: "1. Any vehicles not solely owned by applicant?", type: "select", options: ["Yes", "No"], section: "General Information", default: "No" },
@@ -371,7 +399,7 @@ const acord127Fields: AcordFormField[] = [
   { key: "garage_storage_description", label: "Description of Garage / Storage Locations", type: "textarea", section: "Garage / Storage" },
   { key: "max_dollar_value_at_risk", label: "Maximum Dollar Value Subject to Loss", type: "currency", section: "Garage / Storage" },
 
-  // Vehicle Description
+  // Vehicle Description — Vehicle 1
   { key: "vehicle_1_year", label: "Vehicle 1 Year", type: "text", section: "Vehicle Description" },
   { key: "vehicle_1_make", label: "Vehicle 1 Make", type: "text", section: "Vehicle Description" },
   { key: "vehicle_1_model", label: "Vehicle 1 Model", type: "text", section: "Vehicle Description" },
@@ -379,6 +407,27 @@ const acord127Fields: AcordFormField[] = [
   { key: "vehicle_1_vin", label: "Vehicle 1 V.I.N.", type: "text", section: "Vehicle Description" },
   { key: "vehicle_1_cost_new", label: "Vehicle 1 Cost New", type: "currency", section: "Vehicle Description" },
   { key: "vehicle_1_type", label: "Vehicle 1 Type", type: "select", options: ["PP", "Spec", "Coml"], section: "Vehicle Description" },
+  // Vehicle Description — Vehicle 2
+  { key: "vehicle_2_year", label: "Vehicle 2 Year", type: "text", section: "Vehicle Description" },
+  { key: "vehicle_2_make", label: "Vehicle 2 Make", type: "text", section: "Vehicle Description" },
+  { key: "vehicle_2_model", label: "Vehicle 2 Model", type: "text", section: "Vehicle Description" },
+  { key: "vehicle_2_body_type", label: "Vehicle 2 Body Type", type: "text", section: "Vehicle Description" },
+  { key: "vehicle_2_vin", label: "Vehicle 2 V.I.N.", type: "text", section: "Vehicle Description" },
+  { key: "vehicle_2_cost_new", label: "Vehicle 2 Cost New", type: "currency", section: "Vehicle Description" },
+  // Vehicle Description — Vehicle 3
+  { key: "vehicle_3_year", label: "Vehicle 3 Year", type: "text", section: "Vehicle Description" },
+  { key: "vehicle_3_make", label: "Vehicle 3 Make", type: "text", section: "Vehicle Description" },
+  { key: "vehicle_3_model", label: "Vehicle 3 Model", type: "text", section: "Vehicle Description" },
+  { key: "vehicle_3_body_type", label: "Vehicle 3 Body Type", type: "text", section: "Vehicle Description" },
+  { key: "vehicle_3_vin", label: "Vehicle 3 V.I.N.", type: "text", section: "Vehicle Description" },
+  { key: "vehicle_3_cost_new", label: "Vehicle 3 Cost New", type: "currency", section: "Vehicle Description" },
+  // Vehicle Description — Vehicle 4
+  { key: "vehicle_4_year", label: "Vehicle 4 Year", type: "text", section: "Vehicle Description" },
+  { key: "vehicle_4_make", label: "Vehicle 4 Make", type: "text", section: "Vehicle Description" },
+  { key: "vehicle_4_model", label: "Vehicle 4 Model", type: "text", section: "Vehicle Description" },
+  { key: "vehicle_4_body_type", label: "Vehicle 4 Body Type", type: "text", section: "Vehicle Description" },
+  { key: "vehicle_4_vin", label: "Vehicle 4 V.I.N.", type: "text", section: "Vehicle Description" },
+  { key: "vehicle_4_cost_new", label: "Vehicle 4 Cost New", type: "currency", section: "Vehicle Description" },
 
   // Garaging Address
   { key: "garaging_street", label: "Garaging Street", type: "text", section: "Garaging Address" },

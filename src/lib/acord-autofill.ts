@@ -493,12 +493,14 @@ const DATE_FIELDS = new Set([
   "proposed_eff_date", "proposed_exp_date", "effective_date", "expiration_date",
   "date_business_started", "prior_eff_date", "prior_exp_date", "retroactive_date",
   "pending_litigation_date", "signature_date", "mod_effective_date",
-  "prior_eff_date_1", "prior_exp_date_1", "driver_1_dob", "driver_2_dob",
+  "prior_eff_date_1", "prior_exp_date_1",
   "officer_1_dob", "ebl_retroactive_date", "entry_date_claims_made",
   "anniversary_rating_date", "transaction_date",
   "underlying_gl_eff_date", "underlying_gl_exp_date",
   "underlying_auto_eff_date", "underlying_auto_exp_date",
   "underlying_el_eff_date", "underlying_el_exp_date",
+  ...Array.from({ length: 30 }, (_, i) => `driver_${i + 1}_dob`),
+  ...Array.from({ length: 30 }, (_, i) => `driver_${i + 1}_hired_date`),
 ]);
 
 /** Code fields that must NEVER be AI-inferred — only from documents or manual entry */
@@ -648,21 +650,48 @@ export function buildAutofilledData(
       [`vehicle_${n}_body_type`]: v.body_type || v.bodyType || v.type || "",
       [`vehicle_${n}_cost_new`]: v.stated_amount || v.cost_new || v.statedAmount || "",
       [`vehicle_${n}_garaging_zip`]: v.garaging_zip || v.zip || "",
+      [`vehicle_${n}_gvw`]: v.gvw || v.gcw || "",
+      [`vehicle_${n}_radius`]: v.radius || "",
+      [`vehicle_${n}_sic`]: v.sic || "",
     };
     for (const [k, val] of Object.entries(vFields)) {
       if (val && formFieldKeys.has(k) && !mapped[k]) mapped[k] = val;
     }
   });
 
-  // 5c. Expand drivers[] array → driver_N_name/dob/license fields
+  // 5c. Expand drivers[] array → driver_N_first_name/last_name/dob/license/etc. fields
   const drivers: any[] = Array.isArray(aiData.drivers) ? aiData.drivers : [];
   drivers.forEach((d: any, idx: number) => {
     const n = idx + 1;
+    // Parse name into first/middle/last if only full name given
+    let firstName = d.first_name || "";
+    let middleName = d.middle_name || d.middle || "";
+    let lastName = d.last_name || "";
+    if (!firstName && !lastName) {
+      const fullName = d.name || d.driver_name || d.full_name || "";
+      if (fullName) {
+        const parts = fullName.trim().split(/\s+/);
+        if (parts.length === 1) { firstName = parts[0]; }
+        else if (parts.length === 2) { firstName = parts[0]; lastName = parts[1]; }
+        else { firstName = parts[0]; middleName = parts.slice(1, -1).join(" "); lastName = parts[parts.length - 1]; }
+      }
+    }
     const dFields: Record<string, string> = {
-      [`driver_${n}_name`]: d.name || d.driver_name || d.full_name || "",
+      [`driver_${n}_first_name`]: firstName,
+      [`driver_${n}_middle`]: middleName,
+      [`driver_${n}_last_name`]: lastName,
+      [`driver_${n}_name`]: d.name || d.driver_name || d.full_name || [firstName, middleName, lastName].filter(Boolean).join(" "),
+      [`driver_${n}_sex`]: d.sex || d.gender || "",
+      [`driver_${n}_marital`]: d.marital_status || d.marital || "",
       [`driver_${n}_dob`]: d.dob || d.date_of_birth || d.birth_date || "",
-      [`driver_${n}_license`]: d.license || d.license_number || d.dl_number || "",
-      [`driver_${n}_license_state`]: d.license_state || d.state || "",
+      [`driver_${n}_experience`]: d.years_experience || d.experience || "",
+      [`driver_${n}_licensed_year`]: d.year_first_licensed || d.licensed_year || "",
+      [`driver_${n}_license`]: d.license_number || d.license || d.dl_number || "",
+      [`driver_${n}_license_state`]: d.license_state || "",
+      [`driver_${n}_city`]: d.city || "",
+      [`driver_${n}_state`]: d.state || d.license_state || "",
+      [`driver_${n}_zip`]: d.zip || "",
+      [`driver_${n}_hired_date`]: d.hired_date || d.date_hired || "",
     };
     for (const [k, val] of Object.entries(dFields)) {
       if (val && formFieldKeys.has(k) && !mapped[k]) mapped[k] = normalizeValue(k, val);
@@ -682,8 +711,21 @@ export function buildAutofilledData(
       if (val && formFieldKeys.has(k) && !mapped[k]) mapped[k] = val;
     }
     const dKeys: Record<string, string> = {
+      [`driver_${n}_first_name`]: aiData[`driver_${n}_first_name`] || "",
+      [`driver_${n}_middle`]: aiData[`driver_${n}_middle`] || aiData[`driver_${n}_middle_name`] || "",
+      [`driver_${n}_last_name`]: aiData[`driver_${n}_last_name`] || "",
       [`driver_${n}_name`]: aiData[`driver_${n}_name`] || "",
+      [`driver_${n}_sex`]: aiData[`driver_${n}_sex`] || "",
+      [`driver_${n}_marital`]: aiData[`driver_${n}_marital`] || "",
       [`driver_${n}_dob`]: aiData[`driver_${n}_dob`] || "",
+      [`driver_${n}_experience`]: aiData[`driver_${n}_experience`] || "",
+      [`driver_${n}_licensed_year`]: aiData[`driver_${n}_licensed_year`] || "",
+      [`driver_${n}_license`]: aiData[`driver_${n}_license`] || "",
+      [`driver_${n}_license_state`]: aiData[`driver_${n}_license_state`] || "",
+      [`driver_${n}_city`]: aiData[`driver_${n}_city`] || "",
+      [`driver_${n}_state`]: aiData[`driver_${n}_state`] || "",
+      [`driver_${n}_zip`]: aiData[`driver_${n}_zip`] || "",
+      [`driver_${n}_hired_date`]: aiData[`driver_${n}_hired_date`] || "",
     };
     for (const [k, val] of Object.entries(dKeys)) {
       if (val && formFieldKeys.has(k) && !mapped[k]) mapped[k] = normalizeValue(k, val);

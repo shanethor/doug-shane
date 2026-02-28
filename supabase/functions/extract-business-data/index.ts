@@ -320,8 +320,11 @@ EXTRACTION RULES:
 - SCHEDULE OF HAZARDS: Extract ALL class code rows from the document. Use hazard_loc_1/hazard_code_1/hazard_classification_1/hazard_premium_basis_1/hazard_exposure_1/hazard_terr_1/hazard_rate_premops_1/hazard_premium_premops_1 for the first row, then hazard_*_2 for the second row, hazard_*_3 for the third row. Many policies have 2-3 class codes — extract ALL of them.
 - PREMIUM TOTALS: Extract total_premium, total_premium_premops, total_premium_products if listed
 - ENDORSEMENTS: Look for "Per Project" aggregate endorsement (sets chk_limit_project) and deductible endorsements
-- vehicles[]: include ALL vehicles found — each: { year, make, model, vin, body_type, stated_amount, garaging_zip }
-- drivers[]: include ALL drivers found — each: { name, dob, license, license_state }
+- vehicles[]: include ALL vehicles found — each: { year, make, model, vin, body_type, stated_amount, garaging_zip, cost_new, gvw, radius, sic, vehicle_class }
+- drivers[]: include ALL drivers found — each: { first_name, middle_name, last_name, sex (M/F), marital_status (S/M/W/D), dob, license_number, license_state, city, state, zip, years_experience, year_first_licensed, hired_date }
+  - IMPORTANT: Split driver names into first_name, middle_name, last_name. If only full name is available, parse it (e.g., "John A. Smith" → first_name: "John", middle_name: "A.", last_name: "Smith")
+  - Look for driver schedules, driver lists, or named driver endorsements in auto policies
+  - Extract sex as M or F, marital status as S (Single), M (Married), W (Widowed), D (Divorced)
 - gaps[]: list fields that are missing and important — { field, question, priority: required|recommended|optional }
 - If document is an insurance policy/dec page, extract carrier, NAIC code, policy number, limits, premiums, class codes, and all schedules
 - If no meaningful business data is provided, return all fields as empty strings and list all critical fields as gaps
