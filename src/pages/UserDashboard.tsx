@@ -316,12 +316,23 @@ export default function UserDashboard() {
             <div
               key={s.id}
               className="flex items-center justify-between rounded-lg border bg-card p-4 hover:shadow-sm transition-shadow cursor-pointer"
-              onClick={() => {
+              onClick={async () => {
                 const lead = getLeadForSubmission(s.id);
                 if (lead) {
                   navigate(`/pipeline/${lead.id}`);
                 } else {
-                  navigate(`/application/${s.id}`);
+                  // Auto-create a pipeline lead for this orphan submission
+                  const { ensurePipelineLead } = await import("@/lib/pipeline-sync");
+                  const leadId = await ensurePipelineLead({
+                    userId: user!.id,
+                    accountName: s.company_name || "Untitled",
+                    submissionId: s.id,
+                  });
+                  if (leadId) {
+                    navigate(`/pipeline/${leadId}`);
+                  } else {
+                    navigate(`/application/${s.id}`);
+                  }
                 }
               }}
             >
