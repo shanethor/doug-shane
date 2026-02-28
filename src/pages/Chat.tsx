@@ -335,6 +335,55 @@ export default function Chat() {
   const [personalIntakeEmailMode, setPersonalIntakeEmailMode] = useState<"self" | "team" | "both" | null>(null);
   const [personalIntakeTeamEmail, setPersonalIntakeTeamEmail] = useState("");
 
+  /**
+   * Parse field_key: value pairs from AI assistant text.
+   * Matches lines like "applicant_name: ABC Corp" or "proposed_eff_date: 2025-01-01"
+   */
+  const parseFieldKVFromText = useCallback((text: string): Record<string, string> => {
+    const result: Record<string, string> = {};
+    // Known field key pattern: lowercase_with_underscores_and_numbers, followed by colon + value
+    const lines = text.split("\n");
+    for (const line of lines) {
+      const match = line.match(/^([a-z][a-z0-9_]{2,60}):\s*(.+)$/);
+      if (match) {
+        const key = match[1];
+        const value = match[2].trim();
+        // Skip markdown headers, URLs, generic labels
+        if (value && !value.startsWith("#") && !value.startsWith("http") && key !== "data" && key !== "example") {
+          result[key] = value;
+        }
+      }
+    }
+    return result;
+  }, []);
+
+  /**
+   * Persist parsed field key-value pairs from AI chat into the insurance_applications table.
+   * Merges with existing form_data so nothing is lost.
+   */
+  const persistParsedFieldsToDb = useCallback(async (submissionId: string, newFields: Record<string, string>) => {
+    try {
+      const { data: existing } = await supabase
+        .from("insurance_applications")
+        .select("id, form_data")
+        .eq("submission_id", submissionId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (existing) {
+        const merged = { ...(existing.form_data as Record<string, any> || {}), ...newFields };
+        await supabase
+          .from("insurance_applications")
+          .update({ form_data: merged, updated_at: new Date().toISOString() })
+          .eq("id", existing.id);
+        console.log(`[chat] Persisted ${Object.keys(newFields).length} fields from AI response to submission ${submissionId}`);
+      }
+    } catch (err) {
+      console.warn("Failed to persist AI-parsed fields:", err);
+    }
+  }, []);
+
   // Calculate coverage from form_data for a given submission
   const calculateCoverage = useCallback(async (submissionId: string) => {
     const { data } = await supabase
@@ -1185,6 +1234,24 @@ export default function Chat() {
         executePipelineActions(pipelineActions);
       }
 
+      // Parse field key-value pairs from AI response and persist to DB
+      // The AI outputs lines like "field_key: value" which need to be saved
+      if (inCoverageLoopRef.current || finalText.includes(":")) {
+        const subId = getSessionSubmissionId();
+        if (subId) {
+          const parsedFields = parseFieldKVFromText(finalText);
+          if (Object.keys(parsedFields).length > 0) {
+            persistParsedFieldsToDb(subId, parsedFields).then(() => {
+              // Recalculate coverage after persisting new fields
+              calculateCoverage(subId);
+            });
+          } else if (inCoverageLoopRef.current) {
+            // Still recalculate even if no new fields (e.g. question-only response)
+            setTimeout(() => calculateCoverage(subId), 500);
+          }
+        }
+      }
+
       setMessages((prev) => {
         const last = prev[prev.length - 1];
         if (last?.role === "assistant") {
@@ -1195,14 +1262,6 @@ export default function Chat() {
         return [...prev, { role: "assistant", content: finalText, fields, buttons }];
       });
       setIsLoading(false);
-
-      // In coverage loop mode, recalculate coverage after each AI response
-      if (inCoverageLoopRef.current) {
-        const subId = getSessionSubmissionId();
-        if (subId) {
-          setTimeout(() => calculateCoverage(subId), 500);
-        }
-      }
     };
 
     setTimeout(() => startTypewriter(), 50);
