@@ -23,7 +23,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { ArrowLeft, Plus, FileText, CheckCircle, Clock, XCircle, MessageSquare, Send, Edit3, AlertTriangle, ExternalLink, Copy, Check } from "lucide-react";
+import { ArrowLeft, Plus, FileText, CheckCircle, Clock, XCircle, MessageSquare, Send, Edit3, AlertTriangle, ExternalLink, Copy, Check, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LossRunsTab } from "@/components/LossRunsTab";
@@ -155,23 +155,45 @@ export default function LeadDetail() {
         policy_number: newPolicy.policy_number,
         effective_date: newPolicy.effective_date,
         annual_premium: parseFloat(newPolicy.annual_premium),
+        status: "approved" as any,
+        approved_at: new Date().toISOString(),
+        approved_by_user_id: user.id,
         ...(formDataSnapshot ? { form_data_snapshot: formDataSnapshot } : {}),
       } as any)
       .select()
       .single();
 
     if (error) {
-      toast.error("Failed to submit policy");
+      toast.error("Failed to add policy");
     } else {
       await supabase.from("audit_log").insert({
         user_id: user.id,
-        action: "submit",
+        action: "policy_added",
         object_type: "policy",
         object_id: data.id,
       });
-      toast.success("Policy submitted for approval!");
+      toast.success("Policy added!");
       setNewPolicy({ carrier: "", line_of_business: "", policy_number: "", effective_date: "", annual_premium: "" });
       setPolicyOpen(false);
+      loadData();
+    }
+  };
+
+  const deletePolicy = async (policyId: string) => {
+    if (!user || !confirm("Delete this policy? This cannot be undone.")) return;
+    // Delete associated documents first
+    await supabase.from("policy_documents").delete().eq("policy_id", policyId);
+    const { error } = await supabase.from("policies").delete().eq("id", policyId);
+    if (error) {
+      toast.error("Failed to delete policy");
+    } else {
+      await supabase.from("audit_log").insert({
+        user_id: user.id,
+        action: "delete",
+        object_type: "policy",
+        object_id: policyId,
+      });
+      toast.success("Policy deleted");
       loadData();
     }
   };
@@ -303,12 +325,12 @@ export default function LeadDetail() {
               <DialogTrigger asChild>
                 <Button size="sm" className="gap-2">
                   <Plus className="h-4 w-4" />
-                  Submit Bound Policy
+                  Add Policy
                 </Button>
               </DialogTrigger>
               <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Submit Bound Policy</DialogTitle>
+              <DialogHeader>
+                  <DialogTitle>Add Policy</DialogTitle>
                 </DialogHeader>
                 <div className="grid gap-3 mt-2">
                   <div>
@@ -355,7 +377,7 @@ export default function LeadDetail() {
                   <p className="text-xs text-muted-foreground font-sans">
                     Revenue: ${newPolicy.annual_premium ? (parseFloat(newPolicy.annual_premium) * 0.12).toFixed(2) : "0.00"} (12% of premium)
                   </p>
-                  <Button onClick={submitPolicy}>Submit for Approval</Button>
+                  <Button onClick={submitPolicy}>Add Policy</Button>
                 </div>
               </DialogContent>
             </Dialog>
@@ -409,11 +431,20 @@ export default function LeadDetail() {
                                 )}
                               </div>
                             </div>
-                            <div className="text-right">
-                              <p className="font-semibold text-sm font-sans">${Number(p.annual_premium).toLocaleString()}</p>
-                              <p className="text-[10px] text-muted-foreground font-sans">
-                                Rev: ${Number(p.revenue).toLocaleString()}
-                              </p>
+                            <div className="text-right flex items-start gap-2">
+                              <div>
+                                <p className="font-semibold text-sm font-sans">${Number(p.annual_premium).toLocaleString()}</p>
+                                <p className="text-[10px] text-muted-foreground font-sans">
+                                  Rev: ${Number(p.revenue).toLocaleString()}
+                                </p>
+                              </div>
+                              <button
+                                onClick={() => deletePolicy(p.id)}
+                                className="p-1 rounded hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
+                                title="Delete policy"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
                             </div>
                           </div>
                         </CardContent>
