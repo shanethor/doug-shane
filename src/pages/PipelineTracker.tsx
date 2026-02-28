@@ -23,22 +23,27 @@ export default function PipelineTracker() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
+  const [userName, setUserName] = useState<string | null>(null);
+
   const loadStats = useCallback(async () => {
     if (!userId) { setError(true); setLoading(false); return; }
 
     const [leadsRes, policiesRes, profileRes] = await Promise.all([
       supabase.from("leads").select("id, stage, presenting_details, target_premium").eq("owner_user_id", userId),
-      supabase.from("policies").select("annual_premium, revenue, status").eq("producer_user_id", userId),
+      supabase.from("policies").select("lead_id, annual_premium, revenue, status").eq("producer_user_id", userId),
       supabase.from("profiles").select("full_name, agency_name").eq("user_id", userId).maybeSingle(),
     ]);
 
     const leads = leadsRes.data ?? [];
-    const policies = policiesRes.data ?? [];
+    const allPolicies = policiesRes.data ?? [];
+    const approved = allPolicies.filter((p: any) => p.status === "approved");
 
-    const prospectLeads = leads.filter((l: any) => l.stage === "prospect");
-    const quotingLeads = leads.filter((l: any) => l.stage === "quoting");
-    const presentingLeads = leads.filter((l: any) => l.stage === "presenting");
-    const approvedPolicies = policies.filter((p: any) => p.status === "approved");
+    // Mirror Pipeline.tsx logic: exclude leads with approved policies from stage counts
+    const approvedLeadIds = new Set(approved.map((p: any) => p.lead_id));
+
+    const prospectLeads = leads.filter((l: any) => l.stage === "prospect" && !approvedLeadIds.has(l.id));
+    const quotingLeads = leads.filter((l: any) => l.stage === "quoting" && !approvedLeadIds.has(l.id));
+    const presentingLeads = leads.filter((l: any) => l.stage === "presenting" && !approvedLeadIds.has(l.id));
 
     let presentingPremium = 0;
     presentingLeads.forEach((l: any) => {
@@ -50,7 +55,8 @@ export default function PipelineTracker() {
       }
     });
 
-    const activeLeads = leads.filter((l: any) => l.stage !== "lost");
+    // Target premium from non-sold, non-lost leads (matches Pipeline.tsx)
+    const activeLeads = leads.filter((l: any) => !approvedLeadIds.has(l.id) && l.stage !== "lost");
     const targetPremium = activeLeads.reduce((s: number, l: any) => s + (Number(l.target_premium) || 0), 0);
 
     setStats({
@@ -59,14 +65,15 @@ export default function PipelineTracker() {
       presentingCount: presentingLeads.length,
       presentingPremium,
       presentingRevenue: presentingPremium * 0.12,
-      totalPremiumSold: approvedPolicies.reduce((s: number, p: any) => s + Number(p.annual_premium || 0), 0),
-      totalRevenueSold: approvedPolicies.reduce((s: number, p: any) => s + Number(p.revenue || Number(p.annual_premium) * 0.12 || 0), 0),
+      totalPremiumSold: approved.reduce((s: number, p: any) => s + Number(p.annual_premium || 0), 0),
+      totalRevenueSold: approved.reduce((s: number, p: any) => s + Number(p.revenue || Number(p.annual_premium) * 0.12 || 0), 0),
       targetPremium,
       targetRevenue: targetPremium * 0.12,
     });
 
     if (profileRes.data) {
       setAgencyName(profileRes.data.agency_name || profileRes.data.full_name || null);
+      setUserName(profileRes.data.full_name || null);
     }
 
     setLoading(false);
@@ -105,7 +112,11 @@ export default function PipelineTracker() {
             <BarChart3 className="h-6 w-6 text-primary" />
             <h1 className="text-3xl font-semibold">Pipeline Tracker</h1>
           </div>
-          {agencyName && <p className="text-muted-foreground font-sans text-sm">{agencyName}</p>}
+          {(userName || agencyName) && (
+            <p className="text-foreground font-sans text-base font-medium mt-1">
+              {userName}{agencyName && userName ? ` · ${agencyName}` : agencyName || ""}
+            </p>
+          )}
           <Badge variant="outline" className="mt-3 text-[10px] uppercase tracking-wider font-sans">
             Live · Updates every 15s
           </Badge>
