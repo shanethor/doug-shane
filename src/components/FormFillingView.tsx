@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import JSZip from "jszip";
 import FillablePdfViewer, { type FillablePdfViewerHandle } from "@/components/FillablePdfViewer";
 import ReactMarkdown from "react-markdown";
@@ -179,12 +179,15 @@ export default function FormFillingView({ submissionId, initialMessages, initial
    * Build prefillByIndex for the active form: maps field INDEX → formatted string value.
    * Uses runtime-merged index map (PDF field names + semantic aliases) for full coverage.
    */
-  const buildPrefillByIndex = useCallback(async (fId: string, data: Record<string, any>): Promise<Record<number, string>> => {
-    // Try runtime merged map first (covers ALL fields), fall back to static
-    const indexMap = await getMergedIndexMap(fId).catch(() => null) || ACORD_INDEX_MAPS[fId];
-    if (!indexMap) return {};
+  const buildPrefillByIndex = useCallback((
+    fId: string,
+    data: Record<string, any>,
+    indexMap: Record<string, number>
+  ): Record<number, string> => {
+    if (!indexMap || Object.keys(indexMap).length === 0) return {};
     const result: Record<number, string> = {};
     const debugEntries: string[] = [];
+
     for (const [internalKey, rawIdx] of Object.entries(indexMap)) {
       const idx = rawIdx as number;
       const val = data[internalKey];
@@ -200,19 +203,35 @@ export default function FormFillingView({ submissionId, initialMessages, initial
       result[idx] = display;
       debugEntries.push(`  [${idx}] ${internalKey} = "${display.slice(0, 40)}"`);
     }
+
     console.warn(`[prefill] ${fId}: ${debugEntries.length} fields mapped:\n${debugEntries.join("\n")}`);
     return result;
   }, []);
 
-  // Compute prefill data from live formData — used at viewer mount time
-  const [prefillByIndex, setPrefillByIndex] = useState<Record<number, string>>({});
+  const [activeIndexMap, setActiveIndexMap] = useState<Record<string, number>>({});
+  const indexMapLoadIdRef = useRef(0);
+
+  // Load index map once per active form and ignore stale async responses.
   useEffect(() => {
-    if (activeFormId && activeFormId !== "all") {
-      buildPrefillByIndex(activeFormId, formData).then(setPrefillByIndex);
-    } else {
-      setPrefillByIndex({});
+    if (!activeFormId || activeFormId === "all") {
+      setActiveIndexMap({});
+      return;
     }
-  }, [activeFormId, formData, buildPrefillByIndex]);
+
+    const loadId = ++indexMapLoadIdRef.current;
+    (async () => {
+      const mergedMap = (await getMergedIndexMap(activeFormId).catch(() => null)) || ACORD_INDEX_MAPS[activeFormId] || {};
+      if (indexMapLoadIdRef.current !== loadId) return;
+      setActiveIndexMap(mergedMap);
+    })();
+  }, [activeFormId]);
+
+  // Compute prefill data synchronously from latest formData + latest index map.
+  // This avoids async races that can desync left panel and center PDF.
+  const prefillByIndex = useMemo(() => {
+    if (!activeFormId || activeFormId === "all") return {};
+    return buildPrefillByIndex(activeFormId, formData, activeIndexMap);
+  }, [activeFormId, formData, activeIndexMap, buildPrefillByIndex]);
 
   // Viewer key: remounts on form switch, initial DB load, debounced revision, OR when prefill data becomes available
   const prefillCount = Object.keys(prefillByIndex).length;
