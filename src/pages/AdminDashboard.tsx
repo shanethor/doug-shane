@@ -83,6 +83,11 @@ export default function AdminDashboard() {
     await supabase.from("extraction_corrections" as any).update({ status } as any).eq("id", id);
     setCorrections(prev => prev.map(c => c.id === id ? { ...c, status } : c));
   };
+  const profileNameMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    profiles.forEach((p: any) => { if (p.user_id && p.full_name) map[p.user_id] = p.full_name; });
+    return map;
+  }, [profiles]);
 
   // ── Policy approval functions ──
   const approvePolicy = async (policyId: string) => {
@@ -494,7 +499,14 @@ export default function AdminDashboard() {
                         <p className="mt-0.5 text-foreground break-all">{c.corrected_value || "—"}</p>
                       </div>
                     </div>
-                    <p className="text-[11px] text-muted-foreground">User {c.user_id?.slice(0, 8)}… · {new Date(c.created_at).toLocaleDateString()}</p>
+                    <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
+                      <span>{profileNameMap[c.user_id] || `User ${c.user_id?.slice(0, 8)}…`} · {new Date(c.created_at).toLocaleDateString()}</span>
+                      {c.submission_id && (
+                        <Link to={`/application/${c.submission_id}`} className="text-primary hover:underline flex items-center gap-1">
+                          <Eye className="h-3 w-3" /> View Workspace
+                        </Link>
+                      )}
+                    </div>
                   </div>
                   <Select value={c.status} onValueChange={(v) => updateCorrectionStatus(c.id, v)}>
                     <SelectTrigger className="w-28 h-7 text-[11px]">
