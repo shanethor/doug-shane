@@ -921,6 +921,56 @@ export const ACORD_126_INDEX_MAP: AcordIndexMap = {
   insured_126_signature:        252,   // Named Insured Signature
   signature_126_date:           253,   // Signature Date
   national_producer_126:        254,   // National Producer Identifier
+
+  // ── Semantic Aliases (forms.ts keys → same indices) ──
+  // Claims-Made questions
+  excluded_from_previous:       82,    // → claims_made_q1_code
+  tail_coverage_purchased:      84,    // → claims_made_q2_code
+  // Employee Benefits
+  ebl_covered_employees:        88,    // → ebl_num_covered
+  // Contractors questions
+  draws_plans_for_others:       90,    // → contractors_q1_code
+  blasting_explosives:          92,    // → contractors_q2_code
+  excavation_underground:       94,    // → contractors_q3_code
+  subs_less_coverage:           96,    // → contractors_q4_code
+  subs_without_coi:             98,    // → contractors_q5_code
+  leases_equipment:            100,    // → contractors_q6_code
+  contractor_full_time:        104,    // → contractors_ft_employees
+  contractor_part_time:        105,    // → contractors_pt_employees
+  // Products / Completed Operations questions
+  installs_services_products:  128,    // → products_q1_code
+  foreign_products_sold:       130,    // → products_q2_code
+  rd_new_products:             131,    // → products_q3_code
+  guarantees_warranties:       133,    // → products_q4_code
+  aircraft_space_products:     135,    // → products_q5_code
+  products_recalled:           137,    // → products_q6_code
+  products_others_label:       139,    // → products_q7_code
+  products_under_others_label: 141,    // → products_q8_code
+  vendors_coverage_required:   143,    // → products_q9_code
+  named_insured_sells_to_named:145,    // → products_q10_code
+  // General Information questions (Page 3)
+  medical_facilities:          171,    // → gi_q1_code
+  radioactive_exposure:        173,    // → gi_q2_code
+  hazardous_material_ops:      175,    // → gi_q3_code
+  ops_sold_acquired:           177,    // → gi_q4_code
+  rent_equipment_to_others:    179,    // → gi_q5_code
+  watercraft_docks:            188,    // → gi_q6_code
+  parking_facilities:          190,    // → gi_q7_code
+  parking_fee_charged:         192,    // → gi_q8_code
+  recreation_facilities:       194,    // → gi_q9_code
+  swimming_pool:               200,    // → gi_q11_code
+  social_events:               208,    // → gi_q12_code
+  structural_alterations:      223,    // → gi_q14_code
+  demolition_exposure:         225,    // → gi_q15_code
+  joint_ventures:              227,    // → gi_q16_code
+  lease_employees:             229,    // → gi_q17_code
+  // General Information (cont.) — Page 4
+  labor_interchange:           238,    // → gi_q18_code
+  day_care_facilities:         240,    // → gi_q19_code
+  crimes_on_premises:          242,    // → gi_q20_code
+  safety_security_policy:      244,    // → gi_q21_code
+  safety_claims_in_literature: 246,    // → gi_q22_code
+  general_questions_remarks:   248,    // → remarks_126 (same field)
 };
 
 // ── ACORD 127 — Business Auto Section — 472 TXT fields ──
@@ -1833,6 +1883,50 @@ export const ACORD_130_INDEX_MAP: AcordIndexMap = {
   signature_date:          481,  // NamedInsured_SignatureDate
   producer_signature:      482,  // Producer_AuthorizedRepresentative_Signature
   national_producer_number: 483, // Producer_NationalIdentifier
+
+  // ── Semantic Aliases (forms.ts keys → same indices) ──
+  // Location aliases
+  location_1_address:           67,    // → location_address_a
+  location_1_floor:             66,    // → location_floors_a
+  // Date aliases
+  expiration_date:              90,    // → proposed_exp_date
+  // Prior carrier aliases
+  prior_wc_mod_1:              391,    // → prior_mod_1
+  prior_wc_claims_1:           392,    // → prior_claims_1
+  prior_wc_paid_1:             393,    // → prior_paid_1
+  prior_wc_reserve_1:          394,    // → prior_reserved_1
+  // prior_year_1 already defined above at 387
+  // Rating aliases
+  num_employees_1:             197,    // → full_time_employees (rate class row A)
+  schedule_rating:             368,    // → schedule_rating_mod
+  pct_down:                     58,    // → down_payment_percent
+  other_bureau_id:              45,    // → rating_bureau_id
+  retro_plan:                   94,    // → retrospective_rating_plan
+  // WC General Information questions
+  wc_aircraft_watercraft:      428,    // → q_aircraft_watercraft_code
+  wc_hazardous_material:       430,    // → q_hazardous_material_code
+  wc_underground_above_15ft:   432,    // → q_underground_above15_code
+  wc_barges_vessels_docks:     434,    // → q_vessels_docks_bridges_code
+  wc_other_business:           436,    // → q_other_business_code
+  subcontractors_used:         438,    // → q_subcontractors_code
+  wc_work_sublet_no_coi:       440,    // → q_sublet_no_certs_code
+  workplace_safety_program:    442,    // → q_safety_program_code
+  wc_group_transportation:     444,    // → q_group_transport_code
+  wc_under_16_over_60:         446,    // → q_under16_over60_code
+  seasonal_employees:          448,    // → q_seasonal_employees_code
+  wc_volunteer_labor:          450,    // → q_volunteer_labor_code
+  wc_physical_handicaps:       452,    // → q_handicap_code
+  wc_travel_out_of_state:      454,    // → q_travel_out_state_code
+  wc_athletic_teams:           456,    // → q_athletic_teams_code
+  wc_physicals_required:       459,    // → q_physicals_code
+  wc_other_insurance_same:     461,    // → q_other_insurance_code
+  wc_prior_declined:           463,    // → q_declined_cancelled_code
+  wc_health_plans:             465,    // → q_health_plans_code
+  wc_employees_other_business: 467,    // → q_work_other_biz_code
+  wc_lease_employees:          469,    // → q_lease_employees_code
+  wc_work_at_home:             471,    // → q_at_home_code
+  wc_tax_liens_bankruptcy:     474,    // → q_tax_liens_code
+  wc_unpaid_premium:           476,    // → q_unpaid_premium_code
 };
 
 // ── ACORD 131 (2016/04) — Umbrella / Excess Liability — 396 fields ──
@@ -2261,6 +2355,31 @@ export const ACORD_131_INDEX_MAP: AcordIndexMap = {
   insured_signature:       393,
   signature_date:          394,
   national_producer_number: 395,
+
+  // ── Semantic Aliases (forms.ts keys → same indices) ──
+  retroactive_date:             18,    // → proposed_retroactive_date
+  primary_location_name:        32,    // → location_name_a
+  primary_location_address:     33,    // → location_address_a
+  primary_description:          37,    // → operations_description_a
+  annual_payroll:               38,    // → total_payroll_a
+  annual_gross_sales:           39,    // → annual_gross_receipts_a
+  total_employees:              41,    // → employee_count_a
+  underlying_iso_edition:      156,    // → gl_form_edition_date
+  excluded_from_previous_coverage: 157,// → q_excluded_uninsured_code
+  // Vehicle fleet
+  private_passenger_owned:     247,    // → fleet_pp_owned
+  light_trucks_owned:          254,    // → fleet_lt_owned
+  medium_trucks_owned:         261,    // → fleet_mt_owned
+  heavy_trucks_owned:          268,    // → fleet_ht_owned
+  buses_owned:                 296,    // → fleet_bus_owned
+  // Exposure questions
+  explosives_hauled:           312,    // → q_explosives_code
+  passengers_for_fee:          314,    // → q_passengers_fee_code
+  hired_non_owned_coverage:    320,    // → q_hired_nonowned_code
+  contractor_bridge_dam:       322,    // → q_bridge_dam_marine_code
+  contractor_uses_cranes:      326,    // → q_cranes_code
+  employer_self_insured:       330,    // → q_self_insured_code
+  pollution_hazardous_disposal:346,    // → q_hazardous_materials_code
 };
 
 // ── ACORD 140 (2014/12) — Property Section — 355 fields ──
@@ -2831,6 +2950,45 @@ export const ACORD_125_INDEX_MAP: AcordIndexMap = {
   insured_signature:      548,   // NamedInsured_Signature_A
   signature_date:         549,   // NamedInsured_SignatureDate_A
   national_producer_number: 550, // Producer_NationalIdentifier_A
+
+  // ── Semantic Aliases (forms.ts keys → same indices) ──
+  // General Information Y/N questions
+  subsidiary_of_another:        374,   // → q1a_code
+  parent_company_name:          375,   // → q1a_parent_name
+  has_subsidiaries:             378,   // → q1b_code
+  safety_program:               382,   // → q2_code
+  safety_manual:                383,   // → chk_safety_manual
+  safety_position:              384,   // → chk_safety_position
+  monthly_meetings:             385,   // → chk_monthly_meetings
+  osha_compliance:              386,   // → chk_osha
+  exposure_flammables:          389,   // → q3_code
+  other_insurance_same_company: 391,   // → q4_code
+  policy_declined_cancelled:    400,   // → q5_code
+  past_sexual_abuse_claims:     409,   // → q6_code
+  fraud_conviction:             411,   // → q7_code
+  fire_safety_violations:       413,   // → q8_code
+  bankruptcy:                   422,   // → q9_code
+  judgement_or_lien:            431,   // → q10_code
+  business_in_trust:            440,   // → q11_code
+  trust_name:                   441,   // → q11_trust_name
+  foreign_operations:           442,   // → q12_code
+  other_business_ventures:      443,   // → q13_code
+  operates_drones:              445,   // → q14_code
+  hires_drone_operators:        447,   // → q15_code
+  general_info_remarks:         449,   // → remarks
+  // LOB checkboxes
+  lob_commercial_property:       41,   // → chk_lob_property
+  lob_business_auto:             33,   // → chk_lob_auto
+  lob_umbrella:                  57,   // → chk_lob_umbrella
+  lob_crime:                     43,   // → chk_lob_crime
+  lob_cyber:                     45,   // → chk_lob_cyber
+  lob_inland_marine:             39,   // → chk_lob_inland_marine
+  lob_boiler_machinery:          31,   // → chk_lob_boiler
+  lob_bop:                       35,   // → chk_lob_bop
+  lob_garage:                    49,   // → chk_lob_garage
+  lob_liquor_liability:          51,   // → chk_lob_liquor
+  // Loss history
+  no_losses:                    516,   // → chk_no_prior_losses
 };
 
 export const ACORD_INDEX_MAPS: Record<string, AcordIndexMap> = {
