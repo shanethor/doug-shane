@@ -1,25 +1,26 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Car, Home, Sailboat, Umbrella, Plus, Trash2, CheckCircle, AlertTriangle,
+  Loader2, Upload, FileText, X, Shield, Building2, User, Check, AlertCircle as AlertCircleIcon,
+} from "lucide-react";
 import { toast } from "sonner";
-import { Check, AlertCircle, Shield } from "lucide-react";
 import auraLogo from "@/assets/aura-logo.png";
 
+/* ─── Shared Constants ─── */
 const COVERAGE_OPTIONS = [
-  "General Liability",
-  "Workers Compensation",
-  "Commercial Auto",
-  "Commercial Property",
-  "Umbrella / Excess",
-  "Professional Liability (E&O)",
-  "Cyber Liability",
-  "Business Owners Policy (BOP)",
-  "Other",
+  "General Liability", "Workers Compensation", "Commercial Auto",
+  "Commercial Property", "Umbrella / Excess", "Professional Liability (E&O)",
+  "Cyber Liability", "Business Owners Policy (BOP)", "Other",
 ];
 
 const US_STATES = [
@@ -29,121 +30,270 @@ const US_STATES = [
   "VA","WA","WV","WI","WY","DC",
 ];
 
-interface IntakeFormData {
-  customer_name: string;
-  customer_email: string;
-  customer_phone: string;
-  business_name: string;
-  ein: string;
-  business_type: string;
-  street_address: string;
-  city: string;
-  state: string;
-  zip: string;
-  employee_count: string;
-  annual_revenue: string;
-  years_in_business: string;
-  requested_coverage: string;
-  requested_premium: string;
-  additional_notes: string;
+const DOCUMENT_CHECKLIST = [
+  { key: "dec_pages", label: "Current Declaration Pages" },
+  { key: "drivers_license", label: "Driver's License (all drivers)" },
+  { key: "vehicle_registration", label: "Vehicle Registration" },
+  { key: "prior_policy", label: "Prior Insurance Policy" },
+  { key: "home_inspection", label: "Home Inspection / 4-Point" },
+  { key: "roof_cert", label: "Roof Certification" },
+  { key: "flood_elevation", label: "Flood Elevation Certificate" },
+  { key: "photos", label: "Property Photos" },
+  { key: "loss_runs", label: "Loss Runs" },
+  { key: "financials", label: "Financial Statements" },
+  { key: "other", label: "Other Documents" },
+];
+
+/* ─── Personal Lines Types ─── */
+type Driver = { name: string; dob: string; license_number: string; license_state: string; gender: string; marital_status: string; violations: string };
+type Vehicle = { year: string; make: string; model: string; vin: string; usage: string; annual_miles: string; garaging_zip: string };
+type HomeInfo = { address: string; city: string; state: string; zip: string; year_built: string; square_footage: string; construction_type: string; roof_type: string; roof_year: string; occupancy: string; rent_roll: string; heating_type: string; electrical_update_year: string; plumbing_update_year: string; has_pool: boolean; has_trampoline: boolean; has_dog: boolean; dog_breed: string; alarm_type: string; fire_extinguishers: boolean; smoke_detectors: boolean; deadbolts: boolean; sprinkler_system: boolean; claims_5_years: string };
+type Boat = { year: string; make: string; model: string; length: string; hull_type: string; engine_type: string; horsepower: string; value: string; storage_location: string };
+type UmbrellaInfo = { requested_limit: string; num_drivers_household: string; num_vehicles_household: string; num_watercraft: string; rental_properties: string; has_business: boolean; business_description: string };
+
+const emptyDriver = (): Driver => ({ name: "", dob: "", license_number: "", license_state: "", gender: "", marital_status: "", violations: "" });
+const emptyVehicle = (): Vehicle => ({ year: "", make: "", model: "", vin: "", usage: "", annual_miles: "", garaging_zip: "" });
+const emptyHome = (): HomeInfo => ({ address: "", city: "", state: "", zip: "", year_built: "", square_footage: "", construction_type: "", roof_type: "", roof_year: "", occupancy: "", rent_roll: "", heating_type: "", electrical_update_year: "", plumbing_update_year: "", has_pool: false, has_trampoline: false, has_dog: false, dog_breed: "", alarm_type: "", fire_extinguishers: false, smoke_detectors: false, deadbolts: false, sprinkler_system: false, claims_5_years: "" });
+const emptyBoat = (): Boat => ({ year: "", make: "", model: "", length: "", hull_type: "", engine_type: "", horsepower: "", value: "", storage_location: "" });
+const emptyUmbrella = (): UmbrellaInfo => ({ requested_limit: "", num_drivers_household: "", num_vehicles_household: "", num_watercraft: "", rental_properties: "", has_business: false, business_description: "" });
+
+/* ─── Commercial Lines Types ─── */
+interface CommercialFormData {
+  customer_name: string; customer_email: string; customer_phone: string;
+  business_name: string; ein: string; business_type: string;
+  street_address: string; city: string; state: string; zip: string;
+  employee_count: string; annual_revenue: string; years_in_business: string;
+  requested_coverage: string; requested_premium: string; additional_notes: string;
 }
 
+const emptyCommercial = (): CommercialFormData => ({
+  customer_name: "", customer_email: "", customer_phone: "",
+  business_name: "", ein: "", business_type: "",
+  street_address: "", city: "", state: "", zip: "",
+  employee_count: "", annual_revenue: "", years_in_business: "",
+  requested_coverage: "", requested_premium: "", additional_notes: "",
+});
+
+/* ─── Main Component ─── */
 export default function IntakeForm() {
   const { token } = useParams<{ token: string }>();
-  const [linkData, setLinkData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [expired, setExpired] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [expired, setExpired] = useState(false);
+  const [record, setRecord] = useState<any>(null);
+  // Which table does this token belong to?
+  const [tokenSource, setTokenSource] = useState<"intake_links" | "personal_intake_submissions" | null>(null);
 
-  const [form, setForm] = useState<IntakeFormData>({
-    customer_name: "",
-    customer_email: "",
-    customer_phone: "",
-    business_name: "",
-    ein: "",
-    business_type: "",
-    street_address: "",
-    city: "",
-    state: "",
-    zip: "",
-    employee_count: "",
-    annual_revenue: "",
-    years_in_business: "",
-    requested_coverage: "",
-    requested_premium: "",
-    additional_notes: "",
-  });
+  // Type selector — null means not chosen yet
+  const [intakeType, setIntakeType] = useState<"personal" | "commercial" | null>(null);
 
+  // ─── Personal State ───
+  const [applicantName, setApplicantName] = useState("");
+  const [applicantEmail, setApplicantEmail] = useState("");
+  const [applicantPhone, setApplicantPhone] = useState("");
+  const [applicantAddress, setApplicantAddress] = useState("");
+  const [enableAuto, setEnableAuto] = useState(true);
+  const [enableHome, setEnableHome] = useState(true);
+  const [enableBoat, setEnableBoat] = useState(false);
+  const [enableUmbrella, setEnableUmbrella] = useState(false);
+  const [drivers, setDrivers] = useState<Driver[]>([emptyDriver()]);
+  const [vehicles, setVehicles] = useState<Vehicle[]>([emptyVehicle()]);
+  const [homes, setHomes] = useState<HomeInfo[]>([emptyHome()]);
+  const [boats, setBoats] = useState<Boat[]>([emptyBoat()]);
+  const [umbrella, setUmbrella] = useState<UmbrellaInfo>(emptyUmbrella());
+
+  // ─── Commercial State ───
+  const [commercialForm, setCommercialForm] = useState<CommercialFormData>(emptyCommercial());
+
+  // ─── Shared State ───
+  const [notes, setNotes] = useState("");
+  const [uploadedFiles, setUploadedFiles] = useState<{ file: File; category: string }[]>([]);
+  const [dragActive, setDragActive] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  /* ─── Token Validation ─── */
   useEffect(() => {
     if (!token) return;
-    supabase
-      .from("intake_links" as any)
-      .select("*")
-      .eq("token", token)
-      .single()
-      .then(({ data, error }: any) => {
-        if (error || !data) {
-          setExpired(true);
-          setLoading(false);
-          return;
-        }
-        if (data.is_used || new Date(data.expires_at) < new Date()) {
-          setExpired(true);
-        }
-        if (data.customer_name) setForm(f => ({ ...f, customer_name: data.customer_name }));
-        if (data.customer_email) setForm(f => ({ ...f, customer_email: data.customer_email }));
-        setLinkData(data);
+    (async () => {
+      // Try personal_intake_submissions first
+      const { data: pData } = await supabase
+        .from("personal_intake_submissions")
+        .select("*")
+        .eq("token", token)
+        .maybeSingle();
+
+      if (pData) {
+        if (pData.is_used || pData.status === "submitted") { setSubmitted(true); setLoading(false); return; }
+        if (new Date(pData.expires_at) < new Date()) { setExpired(true); setLoading(false); return; }
+        setRecord(pData);
+        setTokenSource("personal_intake_submissions");
         setLoading(false);
-      });
+        return;
+      }
+
+      // Try intake_links
+      const { data: iData, error } = await supabase
+        .from("intake_links" as any)
+        .select("*")
+        .eq("token", token)
+        .single() as any;
+
+      if (error || !iData) { setExpired(true); setLoading(false); return; }
+      if (iData.is_used || new Date(iData.expires_at) < new Date()) { setExpired(true); setLoading(false); return; }
+      if (iData.customer_name) setCommercialForm(f => ({ ...f, customer_name: iData.customer_name }));
+      if (iData.customer_email) setCommercialForm(f => ({ ...f, customer_email: iData.customer_email }));
+      setRecord(iData);
+      setTokenSource("intake_links");
+      setLoading(false);
+    })();
   }, [token]);
 
-  const update = (field: keyof IntakeFormData, value: string) =>
-    setForm((prev) => ({ ...prev, [field]: value }));
-
-  /** Build a structured notes block from all fields so process-intake can extract everything */
-  const buildStructuredNotes = (): string => {
-    const lines: string[] = [];
-    if (form.ein) lines.push(`FEIN / EIN: ${form.ein}`);
-    if (form.customer_phone) lines.push(`Phone: ${form.customer_phone}`);
-    if (form.business_type) lines.push(`Business Type: ${form.business_type}`);
-    if (form.street_address) lines.push(`Address: ${form.street_address}`);
-    if (form.city || form.state || form.zip) {
-      lines.push(`City/State/Zip: ${[form.city, form.state, form.zip].filter(Boolean).join(", ")}`);
-    }
-    if (form.employee_count) lines.push(`Number of Employees: ${form.employee_count}`);
-    if (form.annual_revenue) lines.push(`Annual Revenue: ${form.annual_revenue}`);
-    if (form.years_in_business) lines.push(`Years in Business: ${form.years_in_business}`);
-    if (form.additional_notes) lines.push(`Notes: ${form.additional_notes}`);
-    return lines.join("\n");
+  /* ─── Helpers ─── */
+  const addItem = <T,>(arr: T[], setArr: (v: T[]) => void, factory: () => T, max: number) => {
+    if (arr.length < max) setArr([...arr, factory()]);
+  };
+  const removeItem = <T,>(arr: T[], setArr: (v: T[]) => void, idx: number) => {
+    if (arr.length > 1) setArr(arr.filter((_, i) => i !== idx));
+  };
+  const updateItem = <T,>(arr: T[], setArr: (v: T[]) => void, idx: number, field: keyof T, value: any) => {
+    const copy = [...arr]; (copy[idx] as any)[field] = value; setArr(copy);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!linkData) return;
+  const handleFileDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault(); setDragActive(false);
+    setUploadedFiles(prev => [...prev, ...Array.from(e.dataTransfer.files).map(f => ({ file: f, category: "other" }))]);
+  }, []);
+  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files) return;
+    setUploadedFiles(prev => [...prev, ...Array.from(e.target.files!).map(f => ({ file: f, category: "other" }))]);
+    e.target.value = "";
+  }, []);
+  const removeFile = (idx: number) => setUploadedFiles(prev => prev.filter((_, i) => i !== idx));
+  const updateFileCategory = (idx: number, cat: string) => setUploadedFiles(prev => prev.map((f, i) => i === idx ? { ...f, category: cat } : f));
+
+  const updateCommercial = (field: keyof CommercialFormData, value: string) =>
+    setCommercialForm(prev => ({ ...prev, [field]: value }));
+
+  /* ─── Submit ─── */
+  const handleSubmit = async () => {
+    if (!record || !intakeType) return;
+
+    if (intakeType === "personal" && !applicantName.trim()) {
+      toast.error("Please enter your name"); return;
+    }
+    if (intakeType === "commercial" && !commercialForm.business_name.trim()) {
+      toast.error("Please enter your business name"); return;
+    }
+
     setSubmitting(true);
 
+    // Build doc metadata (skip base64 for form_data to keep it small)
+    const docMeta = uploadedFiles.map(uf => ({ name: uf.file.name, category: uf.category, size: uf.file.size }));
+
     try {
-      const structuredNotes = buildStructuredNotes();
+      if (intakeType === "personal") {
+        const formData = {
+          intake_type: "personal",
+          applicant: { name: applicantName, email: applicantEmail, phone: applicantPhone, address: applicantAddress },
+          sections: {
+            auto: enableAuto ? { drivers, vehicles } : null,
+            home: enableHome ? { properties: homes } : null,
+            boat: enableBoat ? { boats } : null,
+            umbrella: enableUmbrella ? umbrella : null,
+          },
+          documents: docMeta,
+          notes,
+        };
 
-      const { error: subError } = await supabase.from("intake_submissions" as any).insert({
-        intake_link_id: linkData.id,
-        customer_name: form.customer_name,
-        customer_email: form.customer_email,
-        business_name: form.business_name,
-        requested_coverage: form.requested_coverage,
-        requested_premium: form.requested_premium,
-        additional_notes: structuredNotes,
-      } as any);
-      if (subError) throw subError;
+        if (tokenSource === "personal_intake_submissions") {
+          const { error } = await supabase
+            .from("personal_intake_submissions")
+            .update({ form_data: formData as any, status: "submitted", submitted_at: new Date().toISOString(), is_used: true })
+            .eq("id", record.id);
+          if (error) throw error;
 
-      await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/process-intake`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
-        body: JSON.stringify({ intake_link_id: linkData.id }),
-      });
+          // Trigger email
+          try {
+            const deliveryEmails = record.delivery_emails;
+            if (deliveryEmails?.length > 0) {
+              const sections = [enableAuto && "Auto", enableHome && "Home", enableBoat && "Boat", enableUmbrella && "Umbrella"].filter(Boolean).join(", ");
+              await supabase.functions.invoke("send-personal-intake-email", { body: { token: record.token, applicant_name: applicantName, sections } });
+            }
+          } catch { /* email failure shouldn't block */ }
+        } else {
+          // Commercial token but user chose personal — store in intake_submissions with structured notes
+          const structuredNotes = `Intake Type: Personal Lines\nApplicant: ${applicantName}\nEmail: ${applicantEmail}\nPhone: ${applicantPhone}\nAddress: ${applicantAddress}\nSections: ${[enableAuto && "Auto", enableHome && "Home", enableBoat && "Boat", enableUmbrella && "Umbrella"].filter(Boolean).join(", ")}\nNotes: ${notes}`;
+          await supabase.from("intake_submissions" as any).insert({
+            intake_link_id: record.id,
+            customer_name: applicantName,
+            customer_email: applicantEmail,
+            business_name: applicantName,
+            additional_notes: structuredNotes,
+          } as any);
+          await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/process-intake`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
+            body: JSON.stringify({ intake_link_id: record.id }),
+          });
+        }
+      } else {
+        // Commercial submission
+        const buildStructuredNotes = () => {
+          const f = commercialForm;
+          const lines: string[] = [`Intake Type: Commercial Lines`];
+          if (f.ein) lines.push(`FEIN / EIN: ${f.ein}`);
+          if (f.customer_phone) lines.push(`Phone: ${f.customer_phone}`);
+          if (f.business_type) lines.push(`Business Type: ${f.business_type}`);
+          if (f.street_address) lines.push(`Address: ${f.street_address}`);
+          if (f.city || f.state || f.zip) lines.push(`City/State/Zip: ${[f.city, f.state, f.zip].filter(Boolean).join(", ")}`);
+          if (f.employee_count) lines.push(`Number of Employees: ${f.employee_count}`);
+          if (f.annual_revenue) lines.push(`Annual Revenue: ${f.annual_revenue}`);
+          if (f.years_in_business) lines.push(`Years in Business: ${f.years_in_business}`);
+          if (docMeta.length > 0) lines.push(`Documents Attached: ${docMeta.length}`);
+          if (f.additional_notes) lines.push(`Notes: ${f.additional_notes}`);
+          if (notes) lines.push(`Additional Notes: ${notes}`);
+          return lines.join("\n");
+        };
+
+        if (tokenSource === "intake_links") {
+          await supabase.from("intake_submissions" as any).insert({
+            intake_link_id: record.id,
+            customer_name: commercialForm.customer_name,
+            customer_email: commercialForm.customer_email,
+            business_name: commercialForm.business_name,
+            requested_coverage: commercialForm.requested_coverage,
+            requested_premium: commercialForm.requested_premium,
+            additional_notes: buildStructuredNotes(),
+          } as any);
+          await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/process-intake`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
+            body: JSON.stringify({ intake_link_id: record.id }),
+          });
+        } else {
+          // Personal token but user chose commercial — store in personal_intake_submissions
+          const formData = {
+            intake_type: "commercial",
+            commercial: commercialForm,
+            documents: docMeta,
+            notes,
+          };
+          const { error } = await supabase
+            .from("personal_intake_submissions")
+            .update({ form_data: formData as any, status: "submitted", submitted_at: new Date().toISOString(), is_used: true })
+            .eq("id", record.id);
+          if (error) throw error;
+          try {
+            if (record.delivery_emails?.length > 0) {
+              await supabase.functions.invoke("send-personal-intake-email", { body: { token: record.token, applicant_name: commercialForm.customer_name, sections: "Commercial Lines" } });
+            }
+          } catch { /* email failure */ }
+        }
+      }
 
       setSubmitted(true);
+      toast.success("Submitted successfully!");
     } catch (err: any) {
       toast.error(err.message || "Submission failed");
     } finally {
@@ -151,48 +301,48 @@ export default function IntakeForm() {
     }
   };
 
+  /* ─── Render States ─── */
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
 
-  if (expired || !linkData) {
+  if (expired) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background p-4">
-        <div className="text-center max-w-sm">
-          <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-          <h1 className="text-3xl mb-2">Link Expired</h1>
-          <p className="text-muted-foreground text-sm font-sans">
-            This intake form link has expired or has already been used. Please contact your insurance agent for a new link.
-          </p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-background px-4">
+        <Card className="max-w-md w-full">
+          <CardContent className="pt-8 text-center space-y-3">
+            <AlertTriangle className="h-10 w-10 text-warning mx-auto" />
+            <h2 className="text-xl font-semibold">Link Expired or Invalid</h2>
+            <p className="text-sm text-muted-foreground">This intake link is no longer valid. Please contact your agent for a new one.</p>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   if (submitted) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background p-4">
-        <div className="text-center max-w-sm">
-          <div className="rounded-full bg-accent/10 p-4 inline-block mb-4">
-            <Check className="h-8 w-8 text-accent" />
-          </div>
-          <h1 className="text-3xl mb-2">Thank You!</h1>
-          <p className="text-muted-foreground text-sm font-sans">
-            Your information has been securely submitted. Your insurance agent will review your details and be in touch soon.
-          </p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-background px-4">
+        <Card className="max-w-md w-full">
+          <CardContent className="pt-8 text-center space-y-3">
+            <CheckCircle className="h-10 w-10 text-primary mx-auto" />
+            <h2 className="text-xl font-semibold">Thank You!</h2>
+            <p className="text-sm text-muted-foreground">Your information has been securely submitted. Your agent will be in touch soon.</p>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Header */}
       <header className="border-b bg-card">
-        <div className="mx-auto flex h-14 max-w-2xl items-center px-4">
+        <div className="mx-auto flex h-14 max-w-3xl items-center px-4">
           <img src={auraLogo} alt="AURA Risk Group" className="h-7" />
           <span className="ml-2 text-xs text-muted-foreground font-sans flex items-center gap-1">
             <Shield className="h-3 w-3" /> Secure Intake Form
@@ -200,131 +350,429 @@ export default function IntakeForm() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-2xl px-4 py-8">
-        <h1 className="text-4xl mb-1">Insurance Coverage Request</h1>
-        <p className="text-muted-foreground text-sm font-sans mb-8">
-          Please provide your business details below. This information will help your agent prepare the right coverage options for you.
-        </p>
+      <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
+        {/* Title */}
+        <div className="text-center space-y-1">
+          <h1 className="text-3xl font-bold tracking-tight">Insurance Intake</h1>
+          <p className="text-sm text-muted-foreground">Please provide your information below to get started.</p>
+        </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Contact Info */}
-          <fieldset className="space-y-4">
-            <legend className="text-sm font-semibold text-foreground mb-2">Contact Information</legend>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label className="text-xs uppercase tracking-wider text-muted-foreground">Your Name *</Label>
-                <Input value={form.customer_name} onChange={(e) => update("customer_name", e.target.value)} required placeholder="John Smith" />
+        {/* ─── Type Selector (FIRST QUESTION) ─── */}
+        <Card>
+          <CardHeader><CardTitle className="text-base">What type of coverage are you looking for?</CardTitle></CardHeader>
+          <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <button
+              onClick={() => setIntakeType("personal")}
+              className={`flex items-center gap-3 p-4 rounded-lg border-2 text-left transition-all ${intakeType === "personal" ? "border-primary bg-primary/5 shadow-sm" : "border-border hover:border-primary/40"}`}
+            >
+              <div className={`p-2 rounded-lg ${intakeType === "personal" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
+                <User className="h-5 w-5" />
               </div>
-              <div className="space-y-2">
-                <Label className="text-xs uppercase tracking-wider text-muted-foreground">Email Address *</Label>
-                <Input type="email" value={form.customer_email} onChange={(e) => update("customer_email", e.target.value)} required placeholder="john@company.com" />
+              <div>
+                <p className="font-semibold text-sm">Personal Lines</p>
+                <p className="text-xs text-muted-foreground">Auto, Home, Boat, Umbrella</p>
               </div>
-              <div className="space-y-2">
-                <Label className="text-xs uppercase tracking-wider text-muted-foreground">Phone Number</Label>
-                <Input type="tel" value={form.customer_phone} onChange={(e) => update("customer_phone", e.target.value)} placeholder="(555) 123-4567" />
+            </button>
+            <button
+              onClick={() => setIntakeType("commercial")}
+              className={`flex items-center gap-3 p-4 rounded-lg border-2 text-left transition-all ${intakeType === "commercial" ? "border-primary bg-primary/5 shadow-sm" : "border-border hover:border-primary/40"}`}
+            >
+              <div className={`p-2 rounded-lg ${intakeType === "commercial" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
+                <Building2 className="h-5 w-5" />
               </div>
-            </div>
-          </fieldset>
+              <div>
+                <p className="font-semibold text-sm">Commercial Lines</p>
+                <p className="text-xs text-muted-foreground">GL, WC, Auto, Property & more</p>
+              </div>
+            </button>
+          </CardContent>
+        </Card>
 
-          {/* Business Info */}
-          <fieldset className="space-y-4">
-            <legend className="text-sm font-semibold text-foreground mb-2">Business Details</legend>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2 sm:col-span-2">
-                <Label className="text-xs uppercase tracking-wider text-muted-foreground">Business Name *</Label>
-                <Input value={form.business_name} onChange={(e) => update("business_name", e.target.value)} required placeholder="Acme Construction LLC" />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-xs uppercase tracking-wider text-muted-foreground">FEIN / EIN</Label>
-                <Input value={form.ein} onChange={(e) => update("ein", e.target.value)} placeholder="XX-XXXXXXX" />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-xs uppercase tracking-wider text-muted-foreground">Business Type</Label>
-                <Input value={form.business_type} onChange={(e) => update("business_type", e.target.value)} placeholder="e.g. General Contractor, Restaurant" />
-              </div>
-              <div className="space-y-2 sm:col-span-2">
-                <Label className="text-xs uppercase tracking-wider text-muted-foreground">Street Address</Label>
-                <Input value={form.street_address} onChange={(e) => update("street_address", e.target.value)} placeholder="123 Main St, Suite 100" />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-xs uppercase tracking-wider text-muted-foreground">City</Label>
-                <Input value={form.city} onChange={(e) => update("city", e.target.value)} placeholder="Dallas" />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-xs uppercase tracking-wider text-muted-foreground">State</Label>
-                <Select value={form.state} onValueChange={(v) => update("state", v)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select state" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {US_STATES.map(s => (
-                      <SelectItem key={s} value={s}>{s}</SelectItem>
+        {/* ─── PERSONAL LINES FORM ─── */}
+        {intakeType === "personal" && (
+          <>
+            {/* Applicant */}
+            <Card>
+              <CardHeader><CardTitle className="text-base">Your Information</CardTitle></CardHeader>
+              <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div><Label className="text-xs">Full Name *</Label><Input value={applicantName} onChange={e => setApplicantName(e.target.value)} placeholder="John Doe" /></div>
+                <div><Label className="text-xs">Email</Label><Input type="email" value={applicantEmail} onChange={e => setApplicantEmail(e.target.value)} placeholder="john@example.com" /></div>
+                <div><Label className="text-xs">Phone</Label><Input value={applicantPhone} onChange={e => setApplicantPhone(e.target.value)} placeholder="(555) 123-4567" /></div>
+                <div><Label className="text-xs">Mailing Address</Label><Input value={applicantAddress} onChange={e => setApplicantAddress(e.target.value)} placeholder="123 Main St, City, ST 12345" /></div>
+              </CardContent>
+            </Card>
+
+            {/* Coverage toggles */}
+            <Card>
+              <CardHeader><CardTitle className="text-base">Coverage Sections</CardTitle></CardHeader>
+              <CardContent className="flex flex-wrap gap-3">
+                {[
+                  { label: "Auto", icon: Car, enabled: enableAuto, toggle: setEnableAuto },
+                  { label: "Home", icon: Home, enabled: enableHome, toggle: setEnableHome },
+                  { label: "Boat", icon: Sailboat, enabled: enableBoat, toggle: setEnableBoat },
+                  { label: "Umbrella", icon: Umbrella, enabled: enableUmbrella, toggle: setEnableUmbrella },
+                ].map(s => (
+                  <button key={s.label} onClick={() => s.toggle(!s.enabled)}
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-lg border text-sm font-medium transition-colors ${s.enabled ? "bg-primary text-primary-foreground border-primary" : "bg-card text-muted-foreground border-border hover:border-primary/50"}`}>
+                    <s.icon className="h-4 w-4" />{s.label}
+                  </button>
+                ))}
+              </CardContent>
+            </Card>
+
+            {/* Auto */}
+            {enableAuto && (
+              <Card>
+                <CardHeader><CardTitle className="text-base flex items-center gap-2"><Car className="h-4 w-4" /> Auto</CardTitle></CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-sm font-medium">Drivers</h3>
+                      <Badge variant="secondary" className="text-[10px]">{drivers.length}/5</Badge>
+                    </div>
+                    {drivers.map((d, i) => (
+                      <div key={i} className="rounded-lg border p-3 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-medium text-muted-foreground">Driver {i + 1}</span>
+                          {drivers.length > 1 && <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => removeItem(drivers, setDrivers, i)}><Trash2 className="h-3 w-3" /></Button>}
+                        </div>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                          <div><Label className="text-[10px]">Full Name</Label><Input className="h-8 text-sm" value={d.name} onChange={e => updateItem(drivers, setDrivers, i, "name", e.target.value)} /></div>
+                          <div><Label className="text-[10px]">Date of Birth</Label><Input className="h-8 text-sm" type="date" value={d.dob} onChange={e => updateItem(drivers, setDrivers, i, "dob", e.target.value)} /></div>
+                          <div><Label className="text-[10px]">License #</Label><Input className="h-8 text-sm" value={d.license_number} onChange={e => updateItem(drivers, setDrivers, i, "license_number", e.target.value)} /></div>
+                          <div><Label className="text-[10px]">License State</Label><Input className="h-8 text-sm" value={d.license_state} onChange={e => updateItem(drivers, setDrivers, i, "license_state", e.target.value)} /></div>
+                          <div>
+                            <Label className="text-[10px]">Gender</Label>
+                            <Select value={d.gender} onValueChange={v => updateItem(drivers, setDrivers, i, "gender", v)}>
+                              <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+                              <SelectContent><SelectItem value="male">Male</SelectItem><SelectItem value="female">Female</SelectItem><SelectItem value="other">Other</SelectItem></SelectContent>
+                            </Select>
+                          </div>
+                          <div>
+                            <Label className="text-[10px]">Marital Status</Label>
+                            <Select value={d.marital_status} onValueChange={v => updateItem(drivers, setDrivers, i, "marital_status", v)}>
+                              <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+                              <SelectContent><SelectItem value="single">Single</SelectItem><SelectItem value="married">Married</SelectItem><SelectItem value="divorced">Divorced</SelectItem><SelectItem value="widowed">Widowed</SelectItem></SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                        <div><Label className="text-[10px]">Violations / Accidents (last 5 years)</Label><Input className="h-8 text-sm" value={d.violations} onChange={e => updateItem(drivers, setDrivers, i, "violations", e.target.value)} placeholder="None, or describe..." /></div>
+                      </div>
                     ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label className="text-xs uppercase tracking-wider text-muted-foreground">ZIP Code</Label>
-                <Input value={form.zip} onChange={(e) => update("zip", e.target.value)} placeholder="75201" />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-xs uppercase tracking-wider text-muted-foreground">Number of Employees</Label>
-                <Input value={form.employee_count} onChange={(e) => update("employee_count", e.target.value)} placeholder="e.g. 25" />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-xs uppercase tracking-wider text-muted-foreground">Annual Revenue</Label>
-                <Input value={form.annual_revenue} onChange={(e) => update("annual_revenue", e.target.value)} placeholder="$1,500,000" />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-xs uppercase tracking-wider text-muted-foreground">Years in Business</Label>
-                <Input value={form.years_in_business} onChange={(e) => update("years_in_business", e.target.value)} placeholder="e.g. 8" />
-              </div>
-            </div>
-          </fieldset>
-
-          {/* Coverage */}
-          <fieldset className="space-y-4">
-            <legend className="text-sm font-semibold text-foreground mb-2">Coverage Request</legend>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label className="text-xs uppercase tracking-wider text-muted-foreground">Requested Coverage</Label>
-                <Select value={form.requested_coverage} onValueChange={(v) => update("requested_coverage", v)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select coverage type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {COVERAGE_OPTIONS.map(c => (
-                      <SelectItem key={c} value={c}>{c}</SelectItem>
+                    {drivers.length < 5 && <Button variant="outline" size="sm" className="w-full text-xs" onClick={() => addItem(drivers, setDrivers, emptyDriver, 5)}><Plus className="h-3 w-3 mr-1" /> Add Driver</Button>}
+                  </div>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-sm font-medium">Vehicles</h3>
+                      <Badge variant="secondary" className="text-[10px]">{vehicles.length}/5</Badge>
+                    </div>
+                    {vehicles.map((v, i) => (
+                      <div key={i} className="rounded-lg border p-3 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-medium text-muted-foreground">Vehicle {i + 1}</span>
+                          {vehicles.length > 1 && <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => removeItem(vehicles, setVehicles, i)}><Trash2 className="h-3 w-3" /></Button>}
+                        </div>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                          <div><Label className="text-[10px]">Year</Label><Input className="h-8 text-sm" value={v.year} onChange={e => updateItem(vehicles, setVehicles, i, "year", e.target.value)} placeholder="2024" /></div>
+                          <div><Label className="text-[10px]">Make</Label><Input className="h-8 text-sm" value={v.make} onChange={e => updateItem(vehicles, setVehicles, i, "make", e.target.value)} placeholder="Toyota" /></div>
+                          <div><Label className="text-[10px]">Model</Label><Input className="h-8 text-sm" value={v.model} onChange={e => updateItem(vehicles, setVehicles, i, "model", e.target.value)} placeholder="Camry" /></div>
+                          <div><Label className="text-[10px]">VIN</Label><Input className="h-8 text-sm" value={v.vin} onChange={e => updateItem(vehicles, setVehicles, i, "vin", e.target.value)} /></div>
+                          <div>
+                            <Label className="text-[10px]">Usage</Label>
+                            <Select value={v.usage} onValueChange={val => updateItem(vehicles, setVehicles, i, "usage", val)}>
+                              <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+                              <SelectContent><SelectItem value="commute">Commute</SelectItem><SelectItem value="pleasure">Pleasure</SelectItem><SelectItem value="business">Business</SelectItem></SelectContent>
+                            </Select>
+                          </div>
+                          <div><Label className="text-[10px]">Annual Miles</Label><Input className="h-8 text-sm" value={v.annual_miles} onChange={e => updateItem(vehicles, setVehicles, i, "annual_miles", e.target.value)} placeholder="12000" /></div>
+                          <div><Label className="text-[10px]">Garaging ZIP</Label><Input className="h-8 text-sm" value={v.garaging_zip} onChange={e => updateItem(vehicles, setVehicles, i, "garaging_zip", e.target.value)} /></div>
+                        </div>
+                      </div>
                     ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label className="text-xs uppercase tracking-wider text-muted-foreground">Desired Premium Budget</Label>
-                <Input value={form.requested_premium} onChange={(e) => update("requested_premium", e.target.value)} placeholder="$5,000 / year" />
-              </div>
-            </div>
-          </fieldset>
+                    {vehicles.length < 5 && <Button variant="outline" size="sm" className="w-full text-xs" onClick={() => addItem(vehicles, setVehicles, emptyVehicle, 5)}><Plus className="h-3 w-3 mr-1" /> Add Vehicle</Button>}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
-          <div className="space-y-2">
-            <Label className="text-xs uppercase tracking-wider text-muted-foreground">Additional Notes</Label>
-            <Textarea
-              value={form.additional_notes}
-              onChange={(e) => update("additional_notes", e.target.value)}
-              placeholder="Any other details about your business or coverage needs…"
-              className="min-h-[80px]"
-            />
-          </div>
+            {/* Home */}
+            {enableHome && (
+              <Card>
+                <CardHeader><CardTitle className="text-base flex items-center gap-2"><Home className="h-4 w-4" /> Home / Property</CardTitle></CardHeader>
+                <CardContent className="space-y-3">
+                  {homes.map((h, i) => (
+                    <div key={i} className="rounded-lg border p-3 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-medium text-muted-foreground">Property {i + 1}</span>
+                        {homes.length > 1 && <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => removeItem(homes, setHomes, i)}><Trash2 className="h-3 w-3" /></Button>}
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        <div className="sm:col-span-2"><Label className="text-[10px]">Address</Label><Input className="h-8 text-sm" value={h.address} onChange={e => updateItem(homes, setHomes, i, "address", e.target.value)} /></div>
+                        <div><Label className="text-[10px]">City</Label><Input className="h-8 text-sm" value={h.city} onChange={e => updateItem(homes, setHomes, i, "city", e.target.value)} /></div>
+                        <div><Label className="text-[10px]">State</Label><Input className="h-8 text-sm" value={h.state} onChange={e => updateItem(homes, setHomes, i, "state", e.target.value)} /></div>
+                        <div><Label className="text-[10px]">ZIP</Label><Input className="h-8 text-sm" value={h.zip} onChange={e => updateItem(homes, setHomes, i, "zip", e.target.value)} /></div>
+                        <div><Label className="text-[10px]">Year Built</Label><Input className="h-8 text-sm" value={h.year_built} onChange={e => updateItem(homes, setHomes, i, "year_built", e.target.value)} /></div>
+                        <div><Label className="text-[10px]">Sq Footage</Label><Input className="h-8 text-sm" value={h.square_footage} onChange={e => updateItem(homes, setHomes, i, "square_footage", e.target.value)} /></div>
+                        <div>
+                          <Label className="text-[10px]">Construction</Label>
+                          <Select value={h.construction_type} onValueChange={v => updateItem(homes, setHomes, i, "construction_type", v)}>
+                            <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+                            <SelectContent><SelectItem value="frame">Frame</SelectItem><SelectItem value="masonry">Masonry</SelectItem><SelectItem value="brick">Brick</SelectItem><SelectItem value="stucco">Stucco</SelectItem><SelectItem value="log">Log</SelectItem></SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label className="text-[10px]">Roof Type</Label>
+                          <Select value={h.roof_type} onValueChange={v => updateItem(homes, setHomes, i, "roof_type", v)}>
+                            <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+                            <SelectContent><SelectItem value="asphalt_shingle">Asphalt Shingle</SelectItem><SelectItem value="metal">Metal</SelectItem><SelectItem value="tile">Tile</SelectItem><SelectItem value="slate">Slate</SelectItem><SelectItem value="flat">Flat/Built-up</SelectItem></SelectContent>
+                          </Select>
+                        </div>
+                        <div><Label className="text-[10px]">Roof Year</Label><Input className="h-8 text-sm" value={h.roof_year} onChange={e => updateItem(homes, setHomes, i, "roof_year", e.target.value)} /></div>
+                        <div>
+                          <Label className="text-[10px]">Occupancy</Label>
+                          <Select value={h.occupancy} onValueChange={v => updateItem(homes, setHomes, i, "occupancy", v)}>
+                            <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+                            <SelectContent><SelectItem value="owner_occupied">Owner Occupied</SelectItem><SelectItem value="tenant_occupied">Tenant Occupied</SelectItem><SelectItem value="investment">Investment/Rental</SelectItem><SelectItem value="vacant">Vacant</SelectItem><SelectItem value="seasonal">Seasonal</SelectItem></SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label className="text-[10px]">Heating Type</Label>
+                          <Select value={h.heating_type} onValueChange={v => updateItem(homes, setHomes, i, "heating_type", v)}>
+                            <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+                            <SelectContent><SelectItem value="forced_air">Forced Air</SelectItem><SelectItem value="baseboard">Baseboard</SelectItem><SelectItem value="radiant">Radiant</SelectItem><SelectItem value="heat_pump">Heat Pump</SelectItem><SelectItem value="wood_stove">Wood Stove</SelectItem></SelectContent>
+                          </Select>
+                        </div>
+                        <div><Label className="text-[10px]">Electrical Update Year</Label><Input className="h-8 text-sm" value={h.electrical_update_year} onChange={e => updateItem(homes, setHomes, i, "electrical_update_year", e.target.value)} /></div>
+                        <div><Label className="text-[10px]">Plumbing Update Year</Label><Input className="h-8 text-sm" value={h.plumbing_update_year} onChange={e => updateItem(homes, setHomes, i, "plumbing_update_year", e.target.value)} /></div>
+                      </div>
+                      {h.occupancy === "investment" && (
+                        <div><Label className="text-[10px]">Monthly Rent Roll</Label><Input className="h-8 text-sm" value={h.rent_roll} onChange={e => updateItem(homes, setHomes, i, "rent_roll", e.target.value)} placeholder="$2,500" /></div>
+                      )}
+                      <div className="space-y-2">
+                        <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Safety & Disclosures</p>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                          {([
+                            { key: "smoke_detectors" as const, label: "Smoke Detectors" },
+                            { key: "fire_extinguishers" as const, label: "Fire Extinguishers" },
+                            { key: "deadbolts" as const, label: "Deadbolt Locks" },
+                            { key: "sprinkler_system" as const, label: "Sprinkler System" },
+                            { key: "has_pool" as const, label: "Swimming Pool" },
+                            { key: "has_trampoline" as const, label: "Trampoline" },
+                          ]).map(item => (
+                            <label key={item.key} className="flex items-center gap-2 text-xs cursor-pointer">
+                              <Checkbox checked={h[item.key]} onCheckedChange={v => updateItem(homes, setHomes, i, item.key, !!v)} />
+                              {item.label}
+                            </label>
+                          ))}
+                        </div>
+                        <div>
+                          <Label className="text-[10px]">Alarm System</Label>
+                          <Select value={h.alarm_type} onValueChange={v => updateItem(homes, setHomes, i, "alarm_type", v)}>
+                            <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="None" /></SelectTrigger>
+                            <SelectContent><SelectItem value="none">None</SelectItem><SelectItem value="local">Local Alarm</SelectItem><SelectItem value="central">Central Station</SelectItem></SelectContent>
+                          </Select>
+                        </div>
+                        <label className="flex items-center gap-2 text-xs cursor-pointer">
+                          <Checkbox checked={h.has_dog} onCheckedChange={v => updateItem(homes, setHomes, i, "has_dog", !!v)} /> Dog(s) on premises
+                        </label>
+                        {h.has_dog && <div><Label className="text-[10px]">Breed(s)</Label><Input className="h-8 text-sm" value={h.dog_breed} onChange={e => updateItem(homes, setHomes, i, "dog_breed", e.target.value)} placeholder="Labrador, Golden Retriever" /></div>}
+                        <div><Label className="text-[10px]">Claims in last 5 years</Label><Input className="h-8 text-sm" value={h.claims_5_years} onChange={e => updateItem(homes, setHomes, i, "claims_5_years", e.target.value)} placeholder="None, or describe..." /></div>
+                      </div>
+                    </div>
+                  ))}
+                  {homes.length < 5 && <Button variant="outline" size="sm" className="w-full text-xs" onClick={() => addItem(homes, setHomes, emptyHome, 5)}><Plus className="h-3 w-3 mr-1" /> Add Property</Button>}
+                </CardContent>
+              </Card>
+            )}
 
-          <Button type="submit" disabled={submitting} className="w-full h-11">
-            {submitting ? "Submitting…" : "Submit Coverage Request"}
-          </Button>
+            {/* Boat */}
+            {enableBoat && (
+              <Card>
+                <CardHeader><CardTitle className="text-base flex items-center gap-2"><Sailboat className="h-4 w-4" /> Boat / Watercraft</CardTitle></CardHeader>
+                <CardContent className="space-y-3">
+                  {boats.map((b, i) => (
+                    <div key={i} className="rounded-lg border p-3 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-medium text-muted-foreground">Boat {i + 1}</span>
+                        {boats.length > 1 && <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => removeItem(boats, setBoats, i)}><Trash2 className="h-3 w-3" /></Button>}
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        <div><Label className="text-[10px]">Year</Label><Input className="h-8 text-sm" value={b.year} onChange={e => updateItem(boats, setBoats, i, "year", e.target.value)} /></div>
+                        <div><Label className="text-[10px]">Make</Label><Input className="h-8 text-sm" value={b.make} onChange={e => updateItem(boats, setBoats, i, "make", e.target.value)} /></div>
+                        <div><Label className="text-[10px]">Model</Label><Input className="h-8 text-sm" value={b.model} onChange={e => updateItem(boats, setBoats, i, "model", e.target.value)} /></div>
+                        <div><Label className="text-[10px]">Length (ft)</Label><Input className="h-8 text-sm" value={b.length} onChange={e => updateItem(boats, setBoats, i, "length", e.target.value)} /></div>
+                        <div>
+                          <Label className="text-[10px]">Hull Type</Label>
+                          <Select value={b.hull_type} onValueChange={v => updateItem(boats, setBoats, i, "hull_type", v)}>
+                            <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+                            <SelectContent><SelectItem value="fiberglass">Fiberglass</SelectItem><SelectItem value="aluminum">Aluminum</SelectItem><SelectItem value="wood">Wood</SelectItem><SelectItem value="inflatable">Inflatable</SelectItem></SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label className="text-[10px]">Engine Type</Label>
+                          <Select value={b.engine_type} onValueChange={v => updateItem(boats, setBoats, i, "engine_type", v)}>
+                            <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+                            <SelectContent><SelectItem value="outboard">Outboard</SelectItem><SelectItem value="inboard">Inboard</SelectItem><SelectItem value="sterndrive">Sterndrive</SelectItem><SelectItem value="jet">Jet</SelectItem><SelectItem value="sail">Sail Only</SelectItem></SelectContent>
+                          </Select>
+                        </div>
+                        <div><Label className="text-[10px]">Horsepower</Label><Input className="h-8 text-sm" value={b.horsepower} onChange={e => updateItem(boats, setBoats, i, "horsepower", e.target.value)} /></div>
+                        <div><Label className="text-[10px]">Estimated Value</Label><Input className="h-8 text-sm" value={b.value} onChange={e => updateItem(boats, setBoats, i, "value", e.target.value)} placeholder="$25,000" /></div>
+                        <div><Label className="text-[10px]">Storage Location</Label><Input className="h-8 text-sm" value={b.storage_location} onChange={e => updateItem(boats, setBoats, i, "storage_location", e.target.value)} placeholder="Marina / Home" /></div>
+                      </div>
+                    </div>
+                  ))}
+                  {boats.length < 5 && <Button variant="outline" size="sm" className="w-full text-xs" onClick={() => addItem(boats, setBoats, emptyBoat, 5)}><Plus className="h-3 w-3 mr-1" /> Add Boat</Button>}
+                </CardContent>
+              </Card>
+            )}
 
-          <p className="text-center text-[11px] text-muted-foreground font-sans">
-            Your data is encrypted and securely transmitted. It will only be shared with your insurance agent.
-          </p>
-        </form>
-      </main>
+            {/* Umbrella */}
+            {enableUmbrella && (
+              <Card>
+                <CardHeader><CardTitle className="text-base flex items-center gap-2"><Umbrella className="h-4 w-4" /> Umbrella / Excess Liability</CardTitle></CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    <div>
+                      <Label className="text-[10px]">Requested Limit</Label>
+                      <Select value={umbrella.requested_limit} onValueChange={v => setUmbrella({ ...umbrella, requested_limit: v })}>
+                        <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+                        <SelectContent><SelectItem value="1000000">$1,000,000</SelectItem><SelectItem value="2000000">$2,000,000</SelectItem><SelectItem value="3000000">$3,000,000</SelectItem><SelectItem value="5000000">$5,000,000</SelectItem></SelectContent>
+                      </Select>
+                    </div>
+                    <div><Label className="text-[10px]"># Drivers in Household</Label><Input className="h-8 text-sm" value={umbrella.num_drivers_household} onChange={e => setUmbrella({ ...umbrella, num_drivers_household: e.target.value })} /></div>
+                    <div><Label className="text-[10px]"># Vehicles in Household</Label><Input className="h-8 text-sm" value={umbrella.num_vehicles_household} onChange={e => setUmbrella({ ...umbrella, num_vehicles_household: e.target.value })} /></div>
+                    <div><Label className="text-[10px]"># Watercraft</Label><Input className="h-8 text-sm" value={umbrella.num_watercraft} onChange={e => setUmbrella({ ...umbrella, num_watercraft: e.target.value })} /></div>
+                    <div><Label className="text-[10px]"># Rental Properties</Label><Input className="h-8 text-sm" value={umbrella.rental_properties} onChange={e => setUmbrella({ ...umbrella, rental_properties: e.target.value })} /></div>
+                  </div>
+                  <label className="flex items-center gap-2 text-xs cursor-pointer">
+                    <Checkbox checked={umbrella.has_business} onCheckedChange={v => setUmbrella({ ...umbrella, has_business: !!v })} /> Do you own or operate a business?
+                  </label>
+                  {umbrella.has_business && <div><Label className="text-[10px]">Business Description</Label><Input className="h-8 text-sm" value={umbrella.business_description} onChange={e => setUmbrella({ ...umbrella, business_description: e.target.value })} /></div>}
+                </CardContent>
+              </Card>
+            )}
+          </>
+        )}
+
+        {/* ─── COMMERCIAL LINES FORM ─── */}
+        {intakeType === "commercial" && (
+          <>
+            <Card>
+              <CardHeader><CardTitle className="text-base">Contact Information</CardTitle></CardHeader>
+              <CardContent className="grid gap-3 sm:grid-cols-2">
+                <div><Label className="text-xs">Your Name *</Label><Input value={commercialForm.customer_name} onChange={e => updateCommercial("customer_name", e.target.value)} placeholder="John Smith" /></div>
+                <div><Label className="text-xs">Email *</Label><Input type="email" value={commercialForm.customer_email} onChange={e => updateCommercial("customer_email", e.target.value)} placeholder="john@company.com" /></div>
+                <div><Label className="text-xs">Phone</Label><Input type="tel" value={commercialForm.customer_phone} onChange={e => updateCommercial("customer_phone", e.target.value)} placeholder="(555) 123-4567" /></div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader><CardTitle className="text-base">Business Details</CardTitle></CardHeader>
+              <CardContent className="grid gap-3 sm:grid-cols-2">
+                <div className="sm:col-span-2"><Label className="text-xs">Business Name *</Label><Input value={commercialForm.business_name} onChange={e => updateCommercial("business_name", e.target.value)} placeholder="Acme Construction LLC" /></div>
+                <div><Label className="text-xs">FEIN / EIN</Label><Input value={commercialForm.ein} onChange={e => updateCommercial("ein", e.target.value)} placeholder="XX-XXXXXXX" /></div>
+                <div><Label className="text-xs">Business Type</Label><Input value={commercialForm.business_type} onChange={e => updateCommercial("business_type", e.target.value)} placeholder="e.g. General Contractor" /></div>
+                <div className="sm:col-span-2"><Label className="text-xs">Street Address</Label><Input value={commercialForm.street_address} onChange={e => updateCommercial("street_address", e.target.value)} placeholder="123 Main St, Suite 100" /></div>
+                <div><Label className="text-xs">City</Label><Input value={commercialForm.city} onChange={e => updateCommercial("city", e.target.value)} placeholder="Dallas" /></div>
+                <div>
+                  <Label className="text-xs">State</Label>
+                  <Select value={commercialForm.state} onValueChange={v => updateCommercial("state", v)}>
+                    <SelectTrigger><SelectValue placeholder="Select state" /></SelectTrigger>
+                    <SelectContent>{US_STATES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+                <div><Label className="text-xs">ZIP Code</Label><Input value={commercialForm.zip} onChange={e => updateCommercial("zip", e.target.value)} placeholder="75201" /></div>
+                <div><Label className="text-xs"># of Employees</Label><Input value={commercialForm.employee_count} onChange={e => updateCommercial("employee_count", e.target.value)} placeholder="25" /></div>
+                <div><Label className="text-xs">Annual Revenue</Label><Input value={commercialForm.annual_revenue} onChange={e => updateCommercial("annual_revenue", e.target.value)} placeholder="$1,500,000" /></div>
+                <div><Label className="text-xs">Years in Business</Label><Input value={commercialForm.years_in_business} onChange={e => updateCommercial("years_in_business", e.target.value)} placeholder="8" /></div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader><CardTitle className="text-base">Coverage Request</CardTitle></CardHeader>
+              <CardContent className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <Label className="text-xs">Requested Coverage</Label>
+                  <Select value={commercialForm.requested_coverage} onValueChange={v => updateCommercial("requested_coverage", v)}>
+                    <SelectTrigger><SelectValue placeholder="Select coverage type" /></SelectTrigger>
+                    <SelectContent>{COVERAGE_OPTIONS.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+                <div><Label className="text-xs">Desired Premium Budget</Label><Input value={commercialForm.requested_premium} onChange={e => updateCommercial("requested_premium", e.target.value)} placeholder="$5,000 / year" /></div>
+              </CardContent>
+            </Card>
+          </>
+        )}
+
+        {/* ─── SHARED: Documents + Notes + Submit (only after type is chosen) ─── */}
+        {intakeType && (
+          <>
+            {/* Document Upload */}
+            <Card>
+              <CardHeader><CardTitle className="text-base flex items-center gap-2"><Upload className="h-4 w-4" /> Documents</CardTitle></CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-1.5">
+                  <p className="text-xs text-muted-foreground font-medium">Please upload any of the following if available:</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                    {DOCUMENT_CHECKLIST.map(item => {
+                      const hasFile = uploadedFiles.some(f => f.category === item.key);
+                      return (
+                        <div key={item.key} className={`flex items-center gap-2 text-xs px-2.5 py-1.5 rounded-md border transition-colors ${hasFile ? "bg-primary/10 border-primary/30 text-foreground" : "bg-muted/30 border-border text-muted-foreground"}`}>
+                          {hasFile ? <CheckCircle className="h-3.5 w-3.5 text-primary shrink-0" /> : <div className="h-3.5 w-3.5 rounded-full border border-muted-foreground/40 shrink-0" />}
+                          {item.label}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+                <div
+                  onDragOver={e => { e.preventDefault(); setDragActive(true); }}
+                  onDragLeave={() => setDragActive(false)}
+                  onDrop={handleFileDrop}
+                  onClick={() => fileInputRef.current?.click()}
+                  className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${dragActive ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"}`}
+                >
+                  <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                  <p className="text-sm font-medium">Drag & drop files here</p>
+                  <p className="text-xs text-muted-foreground mt-1">or click to browse · PDF, JPG, PNG accepted</p>
+                  <input ref={fileInputRef} type="file" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" className="hidden" onChange={handleFileSelect} />
+                </div>
+                {uploadedFiles.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-xs font-medium">{uploadedFiles.length} file(s) attached</p>
+                    {uploadedFiles.map((uf, idx) => (
+                      <div key={idx} className="flex items-center gap-2 p-2 rounded-md border bg-muted/20">
+                        <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+                        <span className="text-xs truncate flex-1 min-w-0">{uf.file.name}</span>
+                        <Select value={uf.category} onValueChange={v => updateFileCategory(idx, v)}>
+                          <SelectTrigger className="h-7 text-[10px] w-[160px] shrink-0"><SelectValue /></SelectTrigger>
+                          <SelectContent>{DOCUMENT_CHECKLIST.map(c => <SelectItem key={c.key} value={c.key} className="text-xs">{c.label}</SelectItem>)}</SelectContent>
+                        </Select>
+                        <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => removeFile(idx)}><X className="h-3 w-3" /></Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Notes */}
+            <Card>
+              <CardHeader><CardTitle className="text-base">Additional Notes</CardTitle></CardHeader>
+              <CardContent>
+                <Textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="Anything else your agent should know..." rows={3} />
+              </CardContent>
+            </Card>
+
+            {/* Submit */}
+            <Button className="w-full h-11 text-base" onClick={handleSubmit} disabled={submitting}>
+              {submitting ? <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Submitting...</> : "Submit Information"}
+            </Button>
+
+            <p className="text-[10px] text-center text-muted-foreground">Your information is transmitted securely. By submitting, you authorize your agent to use this data for quoting purposes.</p>
+          </>
+        )}
+      </div>
     </div>
   );
 }
