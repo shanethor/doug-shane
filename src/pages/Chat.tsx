@@ -328,6 +328,13 @@ export default function Chat() {
   const [coverageInfo, setCoverageInfo] = useState<{ filled: number; total: number; percent: number } | null>(null);
   const [showFeatureSuggestion, setShowFeatureSuggestion] = useState(false);
   const pendingPipelineActionRef = useRef<{ action: PipelineAction; leads: { id: string; account_name: string; stage: string }[] } | null>(null);
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+      if (typewriterRef.current) { clearTimeout(typewriterRef.current); typewriterRef.current = null; }
+    };
+  }, []);
 
   // Calculate coverage from form_data for a given submission
   const calculateCoverage = useCallback(async (submissionId: string) => {
@@ -1060,6 +1067,7 @@ export default function Chat() {
     streamDoneRef.current = false;
 
     const upsert = (chunk: string) => {
+      if (!mountedRef.current) return;
       fullTextRef.current += chunk;
       setMessages((prev) => {
         const last = prev[prev.length - 1];
@@ -1069,6 +1077,7 @@ export default function Chat() {
     };
 
     const finalizeMessage = () => {
+      if (!mountedRef.current) return;
       const finalText = fullTextRef.current;
       const fields = parseFields(finalText);
       const buttons = parseButtons(finalText);

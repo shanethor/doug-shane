@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -51,6 +51,9 @@ export default function Dashboard() {
   const [copied, setCopied] = useState(false);
   const [creating, setCreating] = useState(false);
 
+  const mountedRef = useRef(true);
+  useEffect(() => { return () => { mountedRef.current = false; }; }, []);
+
   useEffect(() => {
     if (!user) return;
     supabase
@@ -58,6 +61,7 @@ export default function Dashboard() {
       .select("*")
       .order("created_at", { ascending: false })
       .then(({ data }) => {
+        if (!mountedRef.current) return;
         setQuotes(data ?? []);
         setLoading(false);
       });
