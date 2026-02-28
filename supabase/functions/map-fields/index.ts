@@ -7,42 +7,43 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-/** Helper: call Claude Sonnet for high-quality field mapping */
-async function callClaudeForMapping(
+/** Helper: call Lovable AI Gateway for field mapping (fallback) */
+async function callLovableGatewayForMapping(
   apiKey: string,
   systemPrompt: string,
   userPrompt: string,
+  corsHeaders: Record<string, string>,
 ): Promise<Record<string, any>> {
-  console.log("map-fields: Using Claude Sonnet 4 for field mapping");
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
+  console.log("map-fields: Using Lovable AI gateway (Gemini)");
+  const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
     headers: {
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
-      "content-type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 4096,
-      system: systemPrompt,
-      messages: [{ role: "user", content: userPrompt }],
+      model: "google/gemini-2.5-flash",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
       temperature: 0.1,
     }),
   });
 
   if (!response.ok) {
     const errText = await response.text();
-    console.error("Claude error in map-fields:", response.status, errText);
+    console.error("AI gateway error in map-fields:", response.status, errText);
     return {};
   }
 
   const result = await response.json();
-  const content = result.content?.[0]?.text || "{}";
+  const content = result.choices?.[0]?.message?.content || "{}";
   try {
     const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/) || [null, content];
     return JSON.parse(jsonMatch[1].trim());
   } catch {
-    console.error("Failed to parse Claude mapping response:", content);
+    console.error("Failed to parse AI mapping response:", content);
     return {};
   }
 }
@@ -80,8 +81,8 @@ serve(async (req) => {
       });
     }
 
-    const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
-    if (!ANTHROPIC_API_KEY) throw new Error("Service temporarily unavailable");
+    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    if (!LOVABLE_API_KEY) throw new Error("Service temporarily unavailable");
 
     // Build a concise representation of what we have and what we need
     const extractedSummary = Object.entries(extracted_data)
@@ -180,10 +181,10 @@ ${filteredUnfilled.join(", ")}
 
 Return a JSON object mapping field keys to inferred values. Only include fields you can confidently fill.`;
 
-    // Use Claude Sonnet for highest quality field mapping.
-    // Client-side calls are serialized to avoid TPM rate limits.
-    let mappings: Record<string, any> = await callClaudeForMapping(
-      ANTHROPIC_API_KEY!, systemPrompt, userPrompt
+    // Use Gemini for field mapping — avoids Claude rate limits since multiple forms
+    // call map-fields in parallel. Gemini is fast and accurate enough for mapping.
+    let mappings: Record<string, any> = await callLovableGatewayForMapping(
+      LOVABLE_API_KEY!, systemPrompt, userPrompt, corsHeaders
     );
 
     // Filter to only include keys that are in the target fields list
