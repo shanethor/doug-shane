@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import { AppLayout } from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -328,6 +329,11 @@ export default function Chat() {
   const [coverageInfo, setCoverageInfo] = useState<{ filled: number; total: number; percent: number } | null>(null);
   const [showFeatureSuggestion, setShowFeatureSuggestion] = useState(false);
   const pendingPipelineActionRef = useRef<{ action: PipelineAction; leads: { id: string; account_name: string; stage: string }[] } | null>(null);
+
+  // Personal lines intake dialog state
+  const [showPersonalIntakeDialog, setShowPersonalIntakeDialog] = useState(false);
+  const [personalIntakeEmailMode, setPersonalIntakeEmailMode] = useState<"self" | "team" | null>(null);
+  const [personalIntakeTeamEmail, setPersonalIntakeTeamEmail] = useState("");
 
   // Calculate coverage from form_data for a given submission
   const calculateCoverage = useCallback(async (submissionId: string) => {
@@ -892,6 +898,22 @@ export default function Chat() {
     return patterns.some(p => p.test(t));
   };
 
+  /** Detect if user is asking for a personal lines intake form */
+  const isPersonalLinesIntent = (text: string) => {
+    const t = text.trim().toLowerCase();
+    const patterns = [
+      /\bpersonal\s*(lines?)?\s*(intake|form|insurance)\b/,
+      /\bpersonal\s*(line|lines)\b/,
+      /\bneed\s*(a\s*)?personal\s*(lines?)?\s*(form|intake)\b/,
+      /\bpersonal\s*intake\b/,
+      /\bi\s*need\s*(a\s*)?personal\s*(line|form|intake)\b/,
+      /\bpersonal\s*(lines?)?\s*insurance\s*(intake|form)\b/,
+      /\bgenerate\s*(a\s*)?personal\s*(lines?)?\s*(intake|form)\b/,
+      /\bsend\s*(a\s*)?personal\s*(lines?)?\s*(intake|form)\b/,
+    ];
+    return patterns.some(p => p.test(t));
+  };
+
   /** Detect if user wants to add a policy/document to an existing client */
   const parseAddToClientIntent = (text: string): { clientName: string } | null => {
     const t = text.trim();
@@ -917,6 +939,15 @@ export default function Chat() {
    */
   const send = async (text: string, displayText?: string) => {
     if (!text.trim() || isLoading) return;
+
+    // Intercept personal lines intake requests FIRST
+    if (!displayText && isPersonalLinesIntent(text) && user) {
+      const userMsg: Msg = { role: "user", content: text.trim() };
+      setMessages((prev) => [...prev, userMsg]);
+      setInput("");
+      setShowPersonalIntakeDialog(true);
+      return;
+    }
 
     // Intercept intake link requests BEFORE anything else
     // Skip intake detection for internal/hidden prompts (displayText means it's an internal prompt)
@@ -1560,6 +1591,39 @@ export default function Chat() {
       console.error("Failed to open blank form editor:", err);
       toast({ title: "Error", description: "Could not open form editor. Please try again.", variant: "destructive" });
     }
+  };
+
+  /** Generate a personal lines intake link and send it via email */
+  const generatePersonalIntakeLink = async (deliveryEmails: string[]) => {
+    if (!user) return;
+    setShowPersonalIntakeDialog(false);
+    setIsLoading(true);
+
+    try {
+      const { data, error } = await supabase
+        .from("personal_intake_submissions" as any)
+        .insert({
+          agent_id: user.id,
+          delivery_emails: deliveryEmails,
+        } as any)
+        .select("token")
+        .single();
+      if (error || !data) throw error || new Error("Failed to create link");
+
+      const url = `${window.location.origin}/personal-intake/${(data as any).token}`;
+      let copied = false;
+      try { await navigator.clipboard.writeText(url); copied = true; } catch (_) {}
+
+      setMessages(prev => [...prev, {
+        role: "assistant",
+        content: `✅ **Personal lines intake link generated${copied ? " and copied to clipboard" : ""}!**\n\nShare this with your customer:\n\`${url}\`\n\nWhen they submit, the results will be emailed to: **${deliveryEmails.join(", ")}**\n\nThe link expires in 7 days.`,
+      }]);
+      toast({ title: copied ? "Link copied!" : "Link generated!", description: "Personal lines intake form is ready." });
+    } catch (err: any) {
+      console.error("Personal intake link generation failed:", err);
+      setMessages(prev => [...prev, { role: "assistant", content: `Sorry, I couldn't generate the personal lines intake link. Error: ${err?.message || "Unknown error"}` }]);
+    }
+    setIsLoading(false);
   };
 
   const skipToForm = async (fields: FieldBubble[]) => {
@@ -2494,6 +2558,98 @@ export default function Chat() {
         </DialogContent>
       </Dialog>
       <FeatureSuggestionDialog open={showFeatureSuggestion} onOpenChange={setShowFeatureSuggestion} />
+
+      {/* Personal Lines Intake Email Dialog */}
+      <Dialog open={showPersonalIntakeDialog} onOpenChange={setShowPersonalIntakeDialog}>
+        <DialogContent className="sm:max-w-md">
+          <div className="space-y-4">
+            <div>
+              <h3 className="text-lg font-semibold text-foreground">Personal Lines Intake Form</h3>
+              <p className="text-sm text-muted-foreground mt-1">Where should the completed intake be sent?</p>
+            </div>
+
+            {!personalIntakeEmailMode && (
+              <div className="flex flex-col gap-2">
+                <button
+                  onClick={async () => {
+                    if (!user) return;
+                    const { data: profile } = await supabase
+                      .from("profiles")
+                      .select("from_email")
+                      .eq("user_id", user.id)
+                      .single();
+                    const myEmail = profile?.from_email || user.email || "";
+                    generatePersonalIntakeLink([myEmail]);
+                  }}
+                  className="flex items-center gap-3 rounded-lg border bg-background hover:bg-muted/60 px-4 py-3 text-left transition-colors"
+                >
+                  <div className="h-8 w-8 rounded-md bg-primary/10 flex items-center justify-center shrink-0">
+                    <Mail className="h-4 w-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">Send to my email</p>
+                    <p className="text-xs text-muted-foreground">{user?.email}</p>
+                  </div>
+                </button>
+                <button
+                  onClick={() => setPersonalIntakeEmailMode("team")}
+                  className="flex items-center gap-3 rounded-lg border bg-background hover:bg-muted/60 px-4 py-3 text-left transition-colors"
+                >
+                  <div className="h-8 w-8 rounded-md bg-accent/10 flex items-center justify-center shrink-0">
+                    <Users className="h-4 w-4 text-accent" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">Send to a team member's email</p>
+                    <p className="text-xs text-muted-foreground">Enter their email address</p>
+                  </div>
+                </button>
+              </div>
+            )}
+
+            {personalIntakeEmailMode === "team" && (
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <Label className="text-xs uppercase tracking-wider text-muted-foreground">Team Member's Email</Label>
+                  <Input
+                    type="email"
+                    value={personalIntakeTeamEmail}
+                    onChange={e => setPersonalIntakeTeamEmail(e.target.value)}
+                    placeholder="assistant@agency.com"
+                    autoFocus
+                    onKeyDown={e => {
+                      if (e.key === "Enter" && personalIntakeTeamEmail.trim()) {
+                        generatePersonalIntakeLink([personalIntakeTeamEmail.trim()]);
+                        setPersonalIntakeTeamEmail("");
+                        setPersonalIntakeEmailMode(null);
+                      }
+                    }}
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => { setPersonalIntakeEmailMode(null); setPersonalIntakeTeamEmail(""); }}
+                  >
+                    Back
+                  </Button>
+                  <Button
+                    size="sm"
+                    disabled={!personalIntakeTeamEmail.trim()}
+                    onClick={() => {
+                      generatePersonalIntakeLink([personalIntakeTeamEmail.trim()]);
+                      setPersonalIntakeTeamEmail("");
+                      setPersonalIntakeEmailMode(null);
+                    }}
+                  >
+                    Generate Link
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 }
