@@ -593,6 +593,13 @@ export function buildAutofilledData(
   const formFieldKeys = new Set(form.fields.map((f) => f.key));
   const mapped: Record<string, any> = {};
 
+  // 0. Apply form-definition defaults (e.g. Y/N → "No") FIRST as baseline
+  for (const field of form.fields) {
+    if (field.default) {
+      mapped[field.key] = field.default;
+    }
+  }
+
   // 1. Agent profile basics
   if (profile) {
     if (profile.agency_name && formFieldKeys.has("agency_name")) mapped.agency_name = profile.agency_name;
