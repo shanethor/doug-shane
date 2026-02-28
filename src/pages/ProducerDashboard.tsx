@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { AppLayout } from "@/components/AppLayout";
@@ -27,6 +27,8 @@ export default function ProducerDashboard() {
     end: new Date().toISOString().split("T")[0],
   });
   const [loading, setLoading] = useState(true);
+  const mountedRef = useRef(true);
+  useEffect(() => { return () => { mountedRef.current = false; }; }, []);
 
   useEffect(() => {
     if (!user) return;
@@ -47,6 +49,8 @@ export default function ProducerDashboard() {
         .select("id")
         .eq("owner_user_id", user.id),
     ]);
+
+    if (!mountedRef.current) return;
 
     const allPolicies = policiesRes.data ?? [];
     const approvedInRange = allPolicies.filter(

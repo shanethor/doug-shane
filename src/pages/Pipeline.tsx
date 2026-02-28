@@ -163,6 +163,9 @@ export default function Pipeline() {
   // Share tracker
   const [trackerCopied, setTrackerCopied] = useState(false);
 
+  const mountedRef = useRef(true);
+  useEffect(() => { return () => { mountedRef.current = false; }; }, []);
+
   const loadLeads = useCallback(async () => {
     if (!user) return;
     const [leadsRes, approvedRes, lossRunRes, allPoliciesRes, auditRes] = await Promise.all([
@@ -172,6 +175,8 @@ export default function Pipeline() {
       supabase.from("policies").select("lead_id, annual_premium, revenue, status").eq("producer_user_id", user.id),
       supabase.from("audit_log").select("object_id, action, metadata, created_at").eq("object_type", "lead").order("created_at", { ascending: true }).limit(1000),
     ]);
+
+    if (!mountedRef.current) return;
 
     const leadsData = leadsRes.data;
     if (!leadsData) {
@@ -251,7 +256,7 @@ export default function Pipeline() {
 
   useEffect(() => {
     loadLeads();
-    const interval = setInterval(loadLeads, 30000); // 30s instead of 15s
+    const interval = setInterval(loadLeads, 30000);
     return () => clearInterval(interval);
   }, [loadLeads]);
 

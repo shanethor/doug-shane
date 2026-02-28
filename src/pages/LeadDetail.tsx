@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -62,6 +62,9 @@ export default function LeadDetail() {
     annual_premium: "",
   });
 
+  const mountedRef = useRef(true);
+  useEffect(() => { return () => { mountedRef.current = false; }; }, []);
+
   const loadData = useCallback(async () => {
     if (!user || !leadId) return;
     const [leadRes, policiesRes, notesRes, subsRes] = await Promise.all([
@@ -70,6 +73,8 @@ export default function LeadDetail() {
       supabase.from("lead_notes").select("*").eq("lead_id", leadId).order("created_at", { ascending: false }).limit(50),
       supabase.from("business_submissions").select("id, company_name, status, created_at").eq("lead_id", leadId).order("created_at", { ascending: false }),
     ]);
+
+    if (!mountedRef.current) return;
 
     setLead(leadRes.data);
     setPolicies(policiesRes.data ?? []);
