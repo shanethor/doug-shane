@@ -5,10 +5,15 @@ import { AppLayout } from "@/components/AppLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 import { DollarSign, FileText, TrendingUp, CheckCircle } from "lucide-react";
+import { format } from "date-fns";
 
 export default function ProducerDashboard() {
   const { user } = useAuth();
+  const [policies, setPolicies] = useState<any[]>([]);
+  const [leadNames, setLeadNames] = useState<Record<string, string>>({});
   const [stats, setStats] = useState({
     totalPolicies: 0,
     approvedPolicies: 0,
@@ -51,6 +56,21 @@ export default function ProducerDashboard() {
         p.approved_at >= dateRange.start &&
         p.approved_at <= dateRange.end + "T23:59:59"
     );
+
+    const activeSold = allPolicies.filter((p: any) => p.status === "approved");
+    setPolicies(activeSold);
+
+    // Fetch lead names for the policies
+    const leadIds = [...new Set(activeSold.map((p: any) => p.lead_id))];
+    if (leadIds.length > 0) {
+      const { data: leads } = await supabase
+        .from("leads")
+        .select("id, account_name")
+        .in("id", leadIds);
+      const names: Record<string, string> = {};
+      (leads ?? []).forEach((l: any) => { names[l.id] = l.account_name; });
+      setLeadNames(names);
+    }
 
     setStats({
       totalPolicies: allPolicies.length,
@@ -157,6 +177,47 @@ export default function ProducerDashboard() {
             <p className="text-sm font-sans text-muted-foreground">
               {stats.pendingPolicies} pending approval · {stats.totalPolicies} total submitted
             </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Active Sold Policies Table */}
+      <div className="mt-6">
+        <h2 className="text-xl font-semibold mb-3">Active Policies</h2>
+        <Card>
+          <CardContent className="p-0">
+            {policies.length === 0 ? (
+              <p className="text-sm text-muted-foreground p-6 text-center">No sold policies yet.</p>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Client</TableHead>
+                    <TableHead>Line of Business</TableHead>
+                    <TableHead>Carrier</TableHead>
+                    <TableHead>Policy #</TableHead>
+                    <TableHead className="text-right">Premium</TableHead>
+                    <TableHead className="text-right">Revenue</TableHead>
+                    <TableHead>Effective</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {policies.map((p) => (
+                    <TableRow key={p.id}>
+                      <TableCell className="font-medium">{leadNames[p.lead_id] || "—"}</TableCell>
+                      <TableCell>
+                        <Badge variant="secondary" className="font-normal">{p.line_of_business}</Badge>
+                      </TableCell>
+                      <TableCell>{p.carrier}</TableCell>
+                      <TableCell className="font-mono text-xs">{p.policy_number}</TableCell>
+                      <TableCell className="text-right">${Number(p.annual_premium).toLocaleString()}</TableCell>
+                      <TableCell className="text-right">${Number(p.revenue || Number(p.annual_premium) * 0.12).toLocaleString()}</TableCell>
+                      <TableCell>{format(new Date(p.effective_date), "MM/dd/yyyy")}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
           </CardContent>
         </Card>
       </div>
