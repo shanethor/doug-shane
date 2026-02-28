@@ -526,10 +526,16 @@ ${file_contents ? `\nAdditional text content:\n${file_contents}` : ""}`;
       if ((v.vin || v.VIN) && !fd[`vehicle_${n}_vin`]) fd[`vehicle_${n}_vin`]     = String(v.vin || v.VIN);
       if ((v.body_type || v.bodyType || v.type) && !fd[`vehicle_${n}_body_type`])
         fd[`vehicle_${n}_body_type`] = String(v.body_type || v.bodyType || v.type);
-      if ((v.stated_amount || v.cost_new) && !fd[`vehicle_${n}_stated_amount`])
-        fd[`vehicle_${n}_stated_amount`] = String(v.stated_amount || v.cost_new);
+      const costNew = v.cost_new || v.stated_amount || v.statedAmount || "";
+      if (costNew && !fd[`vehicle_${n}_cost_new`])
+        fd[`vehicle_${n}_cost_new`] = String(costNew);
       if ((v.garaging_zip || v.zip) && !fd[`vehicle_${n}_garaging_zip`])
         fd[`vehicle_${n}_garaging_zip`] = String(v.garaging_zip || v.zip);
+      if (v.gvw && !fd[`vehicle_${n}_gvw`])           fd[`vehicle_${n}_gvw`]      = String(v.gvw);
+      if (v.radius && !fd[`vehicle_${n}_radius`])     fd[`vehicle_${n}_radius`]   = String(v.radius);
+      if (v.sic && !fd[`vehicle_${n}_sic`])           fd[`vehicle_${n}_sic`]      = String(v.sic);
+      if ((v.vehicle_class || v.class) && !fd[`vehicle_${n}_class`])
+        fd[`vehicle_${n}_class`] = String(v.vehicle_class || v.class);
     });
     if (vehicles.length > 0 && !fd.number_of_vehicles) {
       fd.number_of_vehicles = String(vehicles.length);
@@ -538,14 +544,43 @@ ${file_contents ? `\nAdditional text content:\n${file_contents}` : ""}`;
     const drivers: any[] = Array.isArray(fd.drivers) ? fd.drivers : [];
     drivers.forEach((d: any, idx: number) => {
       const n = idx + 1;
-      if ((d.name || d.full_name) && !fd[`driver_${n}_name`])
-        fd[`driver_${n}_name`] = String(d.name || d.full_name);
-      if ((d.dob || d.date_of_birth) && !fd[`driver_${n}_dob`])
-        fd[`driver_${n}_dob`] = String(d.dob || d.date_of_birth);
-      if ((d.license || d.license_number || d.dl_number) && !fd[`driver_${n}_license`])
-        fd[`driver_${n}_license`] = String(d.license || d.license_number || d.dl_number);
+      // Parse name into first/middle/last
+      let firstName = d.first_name || "";
+      let middleName = d.middle_name || d.middle || "";
+      let lastName = d.last_name || "";
+      const fullName = d.name || d.full_name || d.driver_name || "";
+      if (!firstName && !lastName && fullName) {
+        const parts = fullName.trim().split(/\s+/);
+        if (parts.length === 1) { firstName = parts[0]; }
+        else if (parts.length === 2) { firstName = parts[0]; lastName = parts[1]; }
+        else { firstName = parts[0]; middleName = parts.slice(1, -1).join(" "); lastName = parts[parts.length - 1]; }
+      }
+      if (firstName && !fd[`driver_${n}_first_name`]) fd[`driver_${n}_first_name`] = firstName;
+      if (middleName && !fd[`driver_${n}_middle`])    fd[`driver_${n}_middle`]     = middleName;
+      if (lastName && !fd[`driver_${n}_last_name`])   fd[`driver_${n}_last_name`]  = lastName;
+      if (fullName && !fd[`driver_${n}_name`])        fd[`driver_${n}_name`]       = fullName;
+      if (!fd[`driver_${n}_name`] && (firstName || lastName))
+        fd[`driver_${n}_name`] = [firstName, middleName, lastName].filter(Boolean).join(" ");
+
+      if ((d.dob || d.date_of_birth || d.birth_date) && !fd[`driver_${n}_dob`])
+        fd[`driver_${n}_dob`] = String(d.dob || d.date_of_birth || d.birth_date);
+      if ((d.license_number || d.license || d.dl_number) && !fd[`driver_${n}_license`])
+        fd[`driver_${n}_license`] = String(d.license_number || d.license || d.dl_number);
       if ((d.license_state || d.state) && !fd[`driver_${n}_license_state`])
         fd[`driver_${n}_license_state`] = String(d.license_state || d.state);
+      if ((d.sex || d.gender) && !fd[`driver_${n}_sex`])
+        fd[`driver_${n}_sex`] = String(d.sex || d.gender);
+      if ((d.marital_status || d.marital) && !fd[`driver_${n}_marital`])
+        fd[`driver_${n}_marital`] = String(d.marital_status || d.marital);
+      if ((d.years_experience || d.experience) && !fd[`driver_${n}_experience`])
+        fd[`driver_${n}_experience`] = String(d.years_experience || d.experience);
+      if ((d.year_first_licensed || d.licensed_year) && !fd[`driver_${n}_licensed_year`])
+        fd[`driver_${n}_licensed_year`] = String(d.year_first_licensed || d.licensed_year);
+      if ((d.hired_date || d.date_hired) && !fd[`driver_${n}_hired_date`])
+        fd[`driver_${n}_hired_date`] = String(d.hired_date || d.date_hired);
+      if (d.city && !fd[`driver_${n}_city`])          fd[`driver_${n}_city`]       = String(d.city);
+      if (d.state && !fd[`driver_${n}_state`])        fd[`driver_${n}_state`]      = String(d.state);
+      if (d.zip && !fd[`driver_${n}_zip`])            fd[`driver_${n}_zip`]        = String(d.zip);
     });
     if (drivers.length > 0 && !fd.number_of_drivers) {
       fd.number_of_drivers = String(drivers.length);
