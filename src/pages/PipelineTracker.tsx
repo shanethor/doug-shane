@@ -26,56 +26,26 @@ export default function PipelineTracker() {
   const [userName, setUserName] = useState<string | null>(null);
 
   const loadStats = useCallback(async () => {
-    if (!userId) { setError(true); setLoading(false); return; }
-
-    const [leadsRes, policiesRes, profileRes] = await Promise.all([
-      supabase.from("leads").select("id, stage, presenting_details, target_premium").eq("owner_user_id", userId),
-      supabase.from("policies").select("lead_id, annual_premium, revenue, status").eq("producer_user_id", userId),
-      supabase.from("profiles").select("full_name, agency_name").eq("user_id", userId).maybeSingle(),
-    ]);
-
-    const leads = leadsRes.data ?? [];
-    const allPolicies = policiesRes.data ?? [];
-    const approved = allPolicies.filter((p: any) => p.status === "approved");
-
-    // Mirror Pipeline.tsx logic: exclude leads with approved policies from stage counts
-    const approvedLeadIds = new Set(approved.map((p: any) => p.lead_id));
-
-    const prospectLeads = leads.filter((l: any) => l.stage === "prospect" && !approvedLeadIds.has(l.id));
-    const quotingLeads = leads.filter((l: any) => l.stage === "quoting" && !approvedLeadIds.has(l.id));
-    const presentingLeads = leads.filter((l: any) => l.stage === "presenting" && !approvedLeadIds.has(l.id));
-
-    let presentingPremium = 0;
-    presentingLeads.forEach((l: any) => {
-      const lines = l.presenting_details?.lines;
-      if (Array.isArray(lines)) {
-        lines.forEach((line: any) => { presentingPremium += Number(line.premium) || 0; });
-      } else if (l.presenting_details?.quoted_premium) {
-        presentingPremium += Number(l.presenting_details.quoted_premium) || 0;
-      }
-    });
-
-    // Target premium from non-sold, non-lost leads (matches Pipeline.tsx)
-    const activeLeads = leads.filter((l: any) => !approvedLeadIds.has(l.id) && l.stage !== "lost");
-    const targetPremium = activeLeads.reduce((s: number, l: any) => s + (Number(l.target_premium) || 0), 0);
-
-    setStats({
-      totalProspects: prospectLeads.length,
-      quotingCount: quotingLeads.length,
-      presentingCount: presentingLeads.length,
-      presentingPremium,
-      presentingRevenue: presentingPremium * 0.12,
-      totalPremiumSold: approved.reduce((s: number, p: any) => s + Number(p.annual_premium || 0), 0),
-      totalRevenueSold: approved.reduce((s: number, p: any) => s + Number(p.revenue || Number(p.annual_premium) * 0.12 || 0), 0),
-      targetPremium,
-      targetRevenue: targetPremium * 0.12,
-    });
-
-    if (profileRes.data) {
-      setAgencyName(profileRes.data.agency_name || profileRes.data.full_name || null);
-      setUserName(profileRes.data.full_name || null);
+    if (!userId) {
+      setError(true);
+      setLoading(false);
+      return;
     }
 
+    const { data, error: fnError } = await supabase.functions.invoke("tracker-stats", {
+      body: { uid: userId },
+    });
+
+    if (fnError || !data?.stats) {
+      setError(true);
+      setLoading(false);
+      return;
+    }
+
+    setStats(data.stats);
+    setAgencyName(data.agency_name || null);
+    setUserName(data.full_name || null);
+    setError(false);
     setLoading(false);
   }, [userId]);
 
