@@ -381,13 +381,40 @@ ${file_contents ? `\nAdditional text content:\n${file_contents}` : ""}`;
     }
 
     // Strip markdown code fences if present
-    const jsonStr = rawContent.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/i, "").trim();
+    let jsonStr = rawContent.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/i, "").trim();
     let extracted: any;
     try {
       extracted = JSON.parse(jsonStr);
     } catch (parseErr) {
       console.error("[extract] JSON parse failed:", parseErr, "Raw (first 1000):", jsonStr.substring(0, 1000));
       throw new Error("Failed to parse AI response as JSON");
+    }
+
+    // ── Fallback: if Claude returned all-empty fields, retry with Gemini ──
+    const fd0 = extracted.form_data || {};
+    const IGNORE_KEYS = new Set(["vehicles", "drivers", "coverage_types_needed"]);
+    const meaningfulCount = Object.entries(fd0).filter(
+      ([k, v]) => !IGNORE_KEYS.has(k) && v && String(v).trim() && String(v).trim() !== "false" && String(v).trim() !== "No" && String(v).trim() !== "[]"
+    ).length;
+
+    if (meaningfulCount < 3 && LOVABLE_API_KEY && hasPdfs) {
+      console.warn(`[extract] Claude returned only ${meaningfulCount} meaningful fields — falling back to Gemini`);
+      try {
+        const geminiRaw = await callLovableGateway(LOVABLE_API_KEY, systemPrompt, userPromptText, pdf_files, hasPdfs, corsHeaders);
+        const geminiJson = geminiRaw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/i, "").trim();
+        const geminiExtracted = JSON.parse(geminiJson);
+        const gfd = geminiExtracted.form_data || {};
+        const geminiCount = Object.entries(gfd).filter(
+          ([k, v]) => !IGNORE_KEYS.has(k) && v && String(v).trim() && String(v).trim() !== "false" && String(v).trim() !== "No" && String(v).trim() !== "[]"
+        ).length;
+        console.log(`[extract] Gemini fallback returned ${geminiCount} meaningful fields`);
+        if (geminiCount > meaningfulCount) {
+          extracted = geminiExtracted;
+          console.log(`[extract] Using Gemini results (${geminiCount} fields) over Claude (${meaningfulCount} fields)`);
+        }
+      } catch (geminiErr) {
+        console.warn("[extract] Gemini fallback also failed:", geminiErr);
+      }
     }
 
     // Pre-expand vehicles[] and drivers[] arrays into flat vehicle_N_* / driver_N_* keys
