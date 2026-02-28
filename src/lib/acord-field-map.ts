@@ -1854,6 +1854,12 @@ export const ACORD_131_INDEX_MAP: AcordIndexMap = {
   insured_name:             7,
 
   // [8-15] CHK = Transaction type checkboxes
+  chk_131_new:              8,
+  chk_131_renewal:          9,
+  chk_131_umbrella:        10,
+  chk_131_excess:          11,
+  chk_131_occurrence:      12,
+  chk_131_claims_made:     13,
 
   // ── Policy / Limits ──
   transaction_type_other:  16,
@@ -1966,7 +1972,9 @@ export const ACORD_131_INDEX_MAP: AcordIndexMap = {
   underlying_auto_pd_premium:  107,
   underlying_auto_mod_factor:  108,
 
-  // [109-110] CHK
+  // [109-110] CHK — GL policy type
+  chk_underlying_gl_occur: 109,
+  chk_underlying_gl_claims_made: 110,
 
   // ── Underlying Insurance — GL ──
   underlying_gl_carrier:       111,

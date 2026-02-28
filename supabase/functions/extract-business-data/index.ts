@@ -225,17 +225,28 @@ Return this exact structure:
     "prior_premium_2": "",
 
     "underlying_gl_carrier": "", "underlying_gl_policy_number": "",
+    "underlying_gl_eff_date": "", "underlying_gl_exp_date": "",
     "underlying_gl_occurrence": "", "underlying_gl_aggregate": "", "underlying_gl_products": "",
+    "underlying_gl_personal": "", "underlying_gl_fire_damage": "", "underlying_gl_med_expense": "",
+    "underlying_gl_prem_ops_premium": "", "underlying_gl_products_premium": "", "underlying_gl_other_premium": "",
     "underlying_gl_premium": "",
     "underlying_auto_carrier": "", "underlying_auto_policy_number": "",
-    "underlying_auto_bi_ea_acc": "", "underlying_auto_pd": "", "underlying_auto_premium": "",
+    "underlying_auto_eff_date": "", "underlying_auto_exp_date": "",
+    "underlying_auto_csl": "", "underlying_auto_bi_ea_acc": "", "underlying_auto_bi_ea_per": "", "underlying_auto_pd": "",
+    "underlying_auto_csl_premium": "", "underlying_auto_bi_premium": "", "underlying_auto_pd_premium": "",
+    "underlying_auto_premium": "",
     "underlying_el_carrier": "", "underlying_el_policy_number": "",
+    "underlying_el_eff_date": "", "underlying_el_exp_date": "",
     "underlying_el_each_accident": "", "underlying_el_disease_employee": "",
     "underlying_el_disease_policy": "", "underlying_el_premium": "",
     "underlying_excess_carrier_1": "", "underlying_excess_policy_number_1": "",
     "underlying_excess_limit_1": "", "underlying_excess_premium_1": "",
     "underlying_excess_carrier_2": "", "underlying_excess_policy_number_2": "",
     "underlying_excess_limit_2": "", "underlying_excess_premium_2": "",
+
+    "chk_131_new": "false", "chk_131_renewal": "false",
+    "chk_131_umbrella": "false", "chk_131_excess": "false",
+    "chk_131_occurrence": "false", "chk_131_claims_made": "false",
 
     "umbrella_premium": "", "umbrella_policy_number": "",
     "umbrella_carrier": "",
@@ -324,16 +335,37 @@ PRIOR CARRIER / RENEWAL EXTRACTION:
 - If multiple policies are provided, use prior_carrier_2/prior_policy_number_2 for the second
 
 UNDERLYING INSURANCE (for ACORD 131 Umbrella/Excess):
-- Extract the full underlying insurance schedule from umbrella/excess policies
-- underlying_gl_carrier: the GL carrier name; underlying_gl_policy_number: the GL policy number
-- underlying_gl_occurrence: GL each occurrence limit; underlying_gl_aggregate: GL general aggregate; underlying_gl_products: GL products-completed ops aggregate
-- underlying_gl_premium: GL premium if listed
-- underlying_auto_carrier/underlying_auto_policy_number: auto carrier and policy number
-- underlying_auto_bi_ea_acc: auto BI each accident limit; underlying_auto_pd: auto PD limit
-- underlying_el_carrier/underlying_el_policy_number: employers liability carrier and policy
-- underlying_el_each_accident/underlying_el_disease_employee/underlying_el_disease_policy: EL limits
-- underlying_excess_carrier_1/underlying_excess_policy_number_1/underlying_excess_limit_1: for stacked excess layers
+- Extract the COMPLETE underlying insurance schedule from umbrella/excess policies
+- GENERAL LIABILITY underlying:
+  - underlying_gl_carrier: GL carrier name; underlying_gl_policy_number: GL policy number
+  - underlying_gl_eff_date / underlying_gl_exp_date: GL policy period dates
+  - underlying_gl_occurrence: GL each occurrence limit; underlying_gl_aggregate: GL general aggregate
+  - underlying_gl_products: GL products-completed ops aggregate
+  - underlying_gl_personal: GL personal & advertising injury limit
+  - underlying_gl_fire_damage: GL damage to rented premises (fire damage) limit
+  - underlying_gl_med_expense: GL medical expense limit
+  - underlying_gl_prem_ops_premium: GL premises/operations premium; underlying_gl_products_premium: GL products premium
+  - underlying_gl_other_premium: GL other premium; underlying_gl_premium: GL total premium (if only one number given)
+- AUTOMOBILE underlying:
+  - underlying_auto_carrier / underlying_auto_policy_number: auto carrier and policy
+  - underlying_auto_eff_date / underlying_auto_exp_date: auto policy period dates
+  - underlying_auto_csl: combined single limit; underlying_auto_bi_ea_acc: BI each accident; underlying_auto_bi_ea_per: BI each person; underlying_auto_pd: PD limit
+  - underlying_auto_csl_premium: CSL premium; underlying_auto_bi_premium: BI premium; underlying_auto_pd_premium: PD premium
+- EMPLOYERS LIABILITY underlying:
+  - underlying_el_carrier / underlying_el_policy_number: EL carrier and policy
+  - underlying_el_eff_date / underlying_el_exp_date: EL policy period dates
+  - underlying_el_each_accident / underlying_el_disease_employee / underlying_el_disease_policy: EL limits
+- EXCESS/OTHER underlying layers:
+  - underlying_excess_carrier_1/underlying_excess_policy_number_1/underlying_excess_limit_1: stacked excess
 - If underlying coverage says "NOT COVERED", leave those fields empty
+
+ACORD 131 TRANSACTION TYPE FLAGS:
+- chk_131_new: "true" if this is a new policy (not a renewal)
+- chk_131_renewal: "true" if this is a renewal
+- chk_131_umbrella: "true" if the policy type is Umbrella
+- chk_131_excess: "true" if the policy type is Excess
+- chk_131_occurrence: "true" if occurrence-based umbrella/excess
+- chk_131_claims_made: "true" if claims-made umbrella/excess
 
 PRODUCER / BROKER EXTRACTION:
 - producer_name: the producing agent or broker name (person or company)
@@ -609,6 +641,47 @@ ${file_contents ? `\nAdditional text content:\n${file_contents}` : ""}`;
     }
     if (fd.underlying_gl_carrier && !fd.underlying_gl_products && fd.products_aggregate) {
       fd.underlying_gl_products = fd.products_aggregate;
+    }
+    if (fd.underlying_gl_carrier && !fd.underlying_gl_personal && fd.personal_adv_injury) {
+      fd.underlying_gl_personal = fd.personal_adv_injury;
+    }
+    if (fd.underlying_gl_carrier && !fd.underlying_gl_fire_damage && fd.fire_damage) {
+      fd.underlying_gl_fire_damage = fd.fire_damage;
+    }
+    if (fd.underlying_gl_carrier && !fd.underlying_gl_med_expense && fd.medical_payments) {
+      fd.underlying_gl_med_expense = fd.medical_payments;
+    }
+
+    // Cross-populate underlying policy dates from main effective/expiration if not extracted separately
+    if (fd.underlying_gl_carrier && !fd.underlying_gl_eff_date && fd.effective_date) {
+      fd.underlying_gl_eff_date = fd.effective_date;
+    }
+    if (fd.underlying_gl_carrier && !fd.underlying_gl_exp_date && fd.expiration_date) {
+      fd.underlying_gl_exp_date = fd.expiration_date;
+    }
+    if (fd.underlying_auto_carrier && !fd.underlying_auto_eff_date && fd.effective_date) {
+      fd.underlying_auto_eff_date = fd.effective_date;
+    }
+    if (fd.underlying_auto_carrier && !fd.underlying_auto_exp_date && fd.expiration_date) {
+      fd.underlying_auto_exp_date = fd.expiration_date;
+    }
+    if (fd.underlying_el_carrier && !fd.underlying_el_eff_date && fd.effective_date) {
+      fd.underlying_el_eff_date = fd.effective_date;
+    }
+    if (fd.underlying_el_carrier && !fd.underlying_el_exp_date && fd.expiration_date) {
+      fd.underlying_el_exp_date = fd.expiration_date;
+    }
+
+    // Auto-set 131 transaction type checkboxes based on umbrella_or_excess and coverage_basis
+    if (fd.chk_131_umbrella !== "true" && fd.chk_131_excess !== "true") {
+      if (fd.umbrella_or_excess === "Excess" || /excess/i.test(fd.umbrella_carrier || "")) {
+        fd.chk_131_excess = "true";
+      } else {
+        fd.chk_131_umbrella = "true";
+      }
+    }
+    if (fd.chk_131_occurrence !== "true" && fd.chk_131_claims_made !== "true" && fd.lob_umbrella === "true") {
+      fd.chk_131_occurrence = "true"; // Default to occurrence
     }
 
     // ── Post-processing: populate prior carrier from current policy if not set ──
