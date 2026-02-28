@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { AppLayout } from "@/components/AppLayout";
@@ -12,6 +13,7 @@ import { format } from "date-fns";
 
 export default function ProducerDashboard() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [policies, setPolicies] = useState<any[]>([]);
   const [leadNames, setLeadNames] = useState<Record<string, string>>({});
   const [stats, setStats] = useState({
@@ -207,7 +209,7 @@ export default function ProducerDashboard() {
                 </TableHeader>
                 <TableBody>
                   {policies.map((p) => (
-                    <TableRow key={p.id}>
+                    <TableRow key={p.id} className="cursor-pointer hover:bg-muted/50" onClick={() => navigate(`/pipeline/${p.lead_id}`)}>
                       <TableCell className="font-medium">{leadNames[p.lead_id] || "—"}</TableCell>
                       <TableCell>
                         <Badge variant="secondary" className="font-normal">{p.line_of_business}</Badge>
