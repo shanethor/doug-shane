@@ -717,11 +717,24 @@ export function buildAutofilledData(
     for (const [k, val] of Object.entries(vKeys)) {
       if (val && formFieldKeys.has(k) && !mapped[k]) mapped[k] = val;
     }
+
+    // Parse composite driver_N_name into first/middle/last if individual parts are missing
+    let dFirstName = aiData[`driver_${n}_first_name`] || "";
+    let dMiddleName = aiData[`driver_${n}_middle`] || aiData[`driver_${n}_middle_name`] || "";
+    let dLastName = aiData[`driver_${n}_last_name`] || "";
+    const dCompositeName = aiData[`driver_${n}_name`] || "";
+    if (!dFirstName && !dLastName && dCompositeName) {
+      const parts = dCompositeName.trim().split(/\s+/);
+      if (parts.length === 1) { dFirstName = parts[0]; }
+      else if (parts.length === 2) { dFirstName = parts[0]; dLastName = parts[1]; }
+      else { dFirstName = parts[0]; dMiddleName = parts.slice(1, -1).join(" "); dLastName = parts[parts.length - 1]; }
+    }
+
     const dKeys: Record<string, string> = {
-      [`driver_${n}_first_name`]: aiData[`driver_${n}_first_name`] || "",
-      [`driver_${n}_middle`]: aiData[`driver_${n}_middle`] || aiData[`driver_${n}_middle_name`] || "",
-      [`driver_${n}_last_name`]: aiData[`driver_${n}_last_name`] || "",
-      [`driver_${n}_name`]: aiData[`driver_${n}_name`] || "",
+      [`driver_${n}_first_name`]: dFirstName,
+      [`driver_${n}_middle`]: dMiddleName,
+      [`driver_${n}_last_name`]: dLastName,
+      [`driver_${n}_name`]: dCompositeName || [dFirstName, dMiddleName, dLastName].filter(Boolean).join(" "),
       [`driver_${n}_sex`]: aiData[`driver_${n}_sex`] || "",
       [`driver_${n}_marital`]: aiData[`driver_${n}_marital`] || "",
       [`driver_${n}_dob`]: aiData[`driver_${n}_dob`] || "",
