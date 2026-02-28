@@ -217,15 +217,35 @@ const FillablePdfViewer = forwardRef<FillablePdfViewerHandle, FillablePdfViewerP
                 const f = field as any;
                 // Use method-existence checks instead of constructor.name
                 // (ACORD PDFs often have non-standard constructor names like PDFTextField2)
-                if (typeof f.setText === "function") {
+                // Dropdown/select fields first (ACORD Y/N questions are dropdowns)
+                if (typeof f.select === "function" && typeof f.setText !== "function") {
+                  const v = String(value);
+                  // ACORD dropdowns use codes like "Y"/"N", try variants
+                  const variants = [v];
+                  if (v === "Yes" || v === "yes") variants.push("Y", "YES");
+                  if (v === "No" || v === "no") variants.push("N", "NO");
+                  let selected = false;
+                  for (const variant of variants) {
+                    try { f.select(variant); selected = true; break; } catch (_) {}
+                  }
+                  if (selected) filled++;
+                } else if (typeof f.setText === "function") {
                   f.setText(String(value));
                   try { f.defaultUpdateAppearances(helvetica); } catch (_) {}
                   filled++;
                 } else if (typeof f.check === "function") {
-                  if (value === "true" || value === "Yes" || value === "1") f.check();
+                  if (value === "true" || value === "Yes" || value === "1" || value === "Y") f.check();
+                  else try { f.uncheck(); } catch (_) {}
                   filled++;
                 } else if (typeof f.select === "function") {
-                  try { f.select(String(value)); filled++; } catch (_) {}
+                  const v = String(value);
+                  const variants = [v];
+                  if (v === "Yes" || v === "yes") variants.push("Y", "YES");
+                  if (v === "No" || v === "no") variants.push("N", "NO");
+                  for (const variant of variants) {
+                    try { f.select(variant); break; } catch (_) {}
+                  }
+                  filled++;
                 }
               } catch (fieldErr) {
                 console.warn(`[pdf-lib] Failed to set field ${idx} (${field.getName()}):`, fieldErr);

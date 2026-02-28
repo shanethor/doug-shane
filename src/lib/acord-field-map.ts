@@ -1208,7 +1208,7 @@ export const ACORD_127_INDEX_MAP: AcordIndexMap = {
   driver_13_vehicle_pct: 268,
 
   // ── Page 1 — Questions / Modified Equipment ──
-  question_aaj_code:     269,   // AAJCode
+  vehicles_not_solely_owned: 269,  // AAJCode — Q1
   modified_equip_veh_id_1: 270, // Vehicle_ProducerIdentifier_AA
   modified_equip_name_1: 271,   // AdditionalInterest_FullName_C
   modified_equip_veh_id_2: 272, // Vehicle_ProducerIdentifier_AB
