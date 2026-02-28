@@ -9,7 +9,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import SubmissionReviewPanel from "@/components/SubmissionReviewPanel";
 import FormFillingView from "@/components/FormFillingView";
 import ExtractionSummary from "@/components/ExtractionSummary";
-import { Send, FileUp, ClipboardList, Search, Loader2, Paperclip, X, Download, Mic, MicOff, Globe, Lightbulb, ChevronDown, ChevronUp, FileText, BrainCircuit, PenLine, Users, BarChart3, Mail, FileSearch, Camera, Plus, ArrowRight, Sparkles, LinkIcon } from "lucide-react";
+import { Send, FileUp, ClipboardList, Search, Loader2, Paperclip, X, Download, Mic, MicOff, Globe, Lightbulb, ChevronDown, ChevronUp, FileText, BrainCircuit, PenLine, Users, BarChart3, Mail, FileSearch, Camera, Plus, ArrowRight, Sparkles, LinkIcon, DollarSign, TrendingUp } from "lucide-react";
 import { FeatureSuggestionDialog } from "@/components/FeatureSuggestionDialog";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
@@ -328,6 +328,7 @@ export default function Chat() {
   const [coverageInfo, setCoverageInfo] = useState<{ filled: number; total: number; percent: number } | null>(null);
   const [showFeatureSuggestion, setShowFeatureSuggestion] = useState(false);
   const pendingPipelineActionRef = useRef<{ action: PipelineAction; leads: { id: string; account_name: string; stage: string }[] } | null>(null);
+  const [soldStats, setSoldStats] = useState({ premium: 0, revenue: 0 });
   const mountedRef = useRef(true);
   useEffect(() => {
     return () => {
@@ -335,6 +336,23 @@ export default function Chat() {
       if (typewriterRef.current) { clearTimeout(typewriterRef.current); typewriterRef.current = null; }
     };
   }, []);
+
+  // Load sold premium/revenue stats
+  useEffect(() => {
+    if (!user) return;
+    (async () => {
+      const { data } = await supabase
+        .from("policies")
+        .select("annual_premium, revenue")
+        .eq("producer_user_id", user.id)
+        .eq("status", "approved");
+      if (!mountedRef.current) return;
+      const policies = data ?? [];
+      const premium = policies.reduce((s: number, p: any) => s + Number(p.annual_premium || 0), 0);
+      const revenue = policies.reduce((s: number, p: any) => s + Number(p.revenue || Number(p.annual_premium) * 0.12 || 0), 0);
+      setSoldStats({ premium, revenue });
+    })();
+  }, [user]);
 
   // Calculate coverage from form_data for a given submission
   const calculateCoverage = useCallback(async (submissionId: string) => {
@@ -1669,6 +1687,20 @@ export default function Chat() {
             </div>
           </div>
         )}
+
+        {/* Sold stats bar */}
+        <div className="flex gap-4 px-2 py-2 shrink-0">
+          <div className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-1.5">
+            <DollarSign className="h-3.5 w-3.5 text-primary" />
+            <span className="text-xs text-muted-foreground">Sold Premium</span>
+            <span className="text-sm font-semibold font-sans">${soldStats.premium.toLocaleString()}</span>
+          </div>
+          <div className="flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-1.5">
+            <TrendingUp className="h-3.5 w-3.5 text-success" />
+            <span className="text-xs text-muted-foreground">Sold Revenue</span>
+            <span className="text-sm font-semibold font-sans">${soldStats.revenue.toLocaleString()}</span>
+          </div>
+        </div>
 
         {/* Messages area */}
         <div ref={scrollRef} className="flex-1 overflow-y-auto">
