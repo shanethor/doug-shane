@@ -424,12 +424,14 @@ export const ACORD_131_FIELD_MAP: AcordFieldMap = {
 
   // Underlying Insurance — Auto
   underlying_auto_carrier:       "AUTO CARRIER POLICY",
+  underlying_auto_policy_number: "AUTO POLICY NUMBER",
   underlying_auto_bi_ea_acc:     "AUTO BI EACH ACCIDENT",
   underlying_auto_pd:            "AUTO PD",
   underlying_auto_premium:       "AUTO PREMIUM",
 
   // Underlying Insurance — GL
   underlying_gl_carrier:         "GL CARRIER POLICY",
+  underlying_gl_policy_number:   "GL POLICY NUMBER",
   underlying_gl_occurrence:      "GL EACH OCCURRENCE",
   underlying_gl_aggregate:       "GL GENERAL AGGREGATE",
   underlying_gl_products:        "GL PRODUCTS",
@@ -437,10 +439,16 @@ export const ACORD_131_FIELD_MAP: AcordFieldMap = {
 
   // Underlying Insurance — Employers Liability
   underlying_el_carrier:         "EL CARRIER POLICY",
+  underlying_el_policy_number:   "EL POLICY NUMBER",
   underlying_el_each_accident:   "EL EACH ACCIDENT",
   underlying_el_disease_employee:"EL DISEASE EMPLOYEE",
   underlying_el_disease_policy:  "EL DISEASE POLICY",
   underlying_el_premium:         "EL PREMIUM",
+
+  // Umbrella-specific
+  umbrella_premium:              "UMBRELLA PREMIUM",
+  umbrella_carrier:              "UMBRELLA CARRIER",
+  umbrella_policy_number:        "UMBRELLA POLICY NUMBER",
 
   // Remarks
   umbrella_remarks:         "REMARKS",

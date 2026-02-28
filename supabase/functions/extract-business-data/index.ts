@@ -219,6 +219,33 @@ Return this exact structure:
     "lob_commercial_general_liability": "false",
     "cgl_premium": "",
 
+    "prior_carrier_1": "", "prior_policy_number_1": "", "prior_eff_date_1": "", "prior_exp_date_1": "",
+    "prior_premium_1": "",
+    "prior_carrier_2": "", "prior_policy_number_2": "", "prior_eff_date_2": "", "prior_exp_date_2": "",
+    "prior_premium_2": "",
+
+    "underlying_gl_carrier": "", "underlying_gl_policy_number": "",
+    "underlying_gl_occurrence": "", "underlying_gl_aggregate": "", "underlying_gl_products": "",
+    "underlying_gl_premium": "",
+    "underlying_auto_carrier": "", "underlying_auto_policy_number": "",
+    "underlying_auto_bi_ea_acc": "", "underlying_auto_pd": "", "underlying_auto_premium": "",
+    "underlying_el_carrier": "", "underlying_el_policy_number": "",
+    "underlying_el_each_accident": "", "underlying_el_disease_employee": "",
+    "underlying_el_disease_policy": "", "underlying_el_premium": "",
+    "underlying_excess_carrier_1": "", "underlying_excess_policy_number_1": "",
+    "underlying_excess_limit_1": "", "underlying_excess_premium_1": "",
+    "underlying_excess_carrier_2": "", "underlying_excess_policy_number_2": "",
+    "underlying_excess_limit_2": "", "underlying_excess_premium_2": "",
+
+    "umbrella_premium": "", "umbrella_policy_number": "",
+    "umbrella_carrier": "",
+
+    "producer_name": "", "producer_agency": "", "producer_phone": "", "producer_address": "",
+    "surplus_lines_tax": "", "broker_fee": "", "inspection_fee": "", "stamping_fee": "",
+    "carrier_fee": "",
+
+    "key_endorsements": "",
+
     "chk_commercial_general_liability": "false",
     "chk_claims_made": "false",
     "chk_occurrence": "false",
@@ -286,7 +313,46 @@ EXTRACTION RULES:
 - drivers[]: include ALL drivers found — each: { name, dob, license, license_state }
 - gaps[]: list fields that are missing and important — { field, question, priority: required|recommended|optional }
 - If document is an insurance policy/dec page, extract carrier, NAIC code, policy number, limits, premiums, class codes, and all schedules
-- If no meaningful business data is provided, return all fields as empty strings and list all critical fields as gaps`;
+- If no meaningful business data is provided, return all fields as empty strings and list all critical fields as gaps
+
+PRIOR CARRIER / RENEWAL EXTRACTION:
+- When processing a current policy document for renewal quoting, the CURRENT carrier/policy become the PRIOR carrier for the new application
+- prior_carrier_1: the current policy's carrier name (e.g. "Allied World Surplus Lines Insurance Company")
+- prior_policy_number_1: the current policy number
+- prior_eff_date_1 / prior_exp_date_1: the current policy period dates
+- prior_premium_1: the current policy premium
+- If multiple policies are provided, use prior_carrier_2/prior_policy_number_2 for the second
+
+UNDERLYING INSURANCE (for ACORD 131 Umbrella/Excess):
+- Extract the full underlying insurance schedule from umbrella/excess policies
+- underlying_gl_carrier: the GL carrier name; underlying_gl_policy_number: the GL policy number
+- underlying_gl_occurrence: GL each occurrence limit; underlying_gl_aggregate: GL general aggregate; underlying_gl_products: GL products-completed ops aggregate
+- underlying_gl_premium: GL premium if listed
+- underlying_auto_carrier/underlying_auto_policy_number: auto carrier and policy number
+- underlying_auto_bi_ea_acc: auto BI each accident limit; underlying_auto_pd: auto PD limit
+- underlying_el_carrier/underlying_el_policy_number: employers liability carrier and policy
+- underlying_el_each_accident/underlying_el_disease_employee/underlying_el_disease_policy: EL limits
+- underlying_excess_carrier_1/underlying_excess_policy_number_1/underlying_excess_limit_1: for stacked excess layers
+- If underlying coverage says "NOT COVERED", leave those fields empty
+
+PRODUCER / BROKER EXTRACTION:
+- producer_name: the producing agent or broker name (person or company)
+- producer_agency: the brokerage/agency firm name
+- producer_phone: broker phone number
+- producer_address: broker address
+
+PREMIUM BREAKDOWN:
+- surplus_lines_tax, broker_fee, inspection_fee, carrier_fee, stamping_fee: extract if listed
+- umbrella_premium: the umbrella/excess policy premium
+- umbrella_policy_number: umbrella policy number
+- umbrella_carrier: umbrella carrier name
+
+KEY ENDORSEMENTS:
+- key_endorsements: semicolon-separated list of significant endorsements (e.g. "CG 20 10 - Additional Insured; CG 20 37 - Additional Insured Completed Ops; CG 24 04 - Waiver of Subrogation")
+- Focus on: Additional Insured, Waiver of Subrogation, Primary & Non-Contributing, Per Project Aggregate, blanket endorsements
+
+LOB FLAGS:
+- lob_umbrella: set "true" if any umbrella or excess liability policy is present`;
 
     const userPromptText = `Extract all insurance data from the following document(s).
 
@@ -524,6 +590,35 @@ ${file_contents ? `\nAdditional text content:\n${file_contents}` : ""}`;
       else if (/\bCorp\.?\b/i.test(name)) fd.business_type = "Corporation";
       else if (/\bLLP\b/i.test(name)) fd.business_type = "Partnership";
       else if (/\bLP\b/i.test(name)) fd.business_type = "Partnership";
+    }
+
+    // ── Post-processing: auto-set lob_umbrella if umbrella data present ──
+    if (fd.lob_umbrella !== "true") {
+      const hasUmbrellaData = fd.umbrella_carrier || fd.umbrella_policy_number || fd.umbrella_premium
+        || fd.each_occurrence_limit || fd.aggregate_limit
+        || fd.underlying_gl_carrier || fd.underlying_excess_carrier_1;
+      if (hasUmbrellaData) fd.lob_umbrella = "true";
+    }
+
+    // ── Post-processing: cross-populate GL limits to underlying if GL present ──
+    if (fd.underlying_gl_carrier && !fd.underlying_gl_occurrence && fd.each_occurrence) {
+      fd.underlying_gl_occurrence = fd.each_occurrence;
+    }
+    if (fd.underlying_gl_carrier && !fd.underlying_gl_aggregate && fd.general_aggregate) {
+      fd.underlying_gl_aggregate = fd.general_aggregate;
+    }
+    if (fd.underlying_gl_carrier && !fd.underlying_gl_products && fd.products_aggregate) {
+      fd.underlying_gl_products = fd.products_aggregate;
+    }
+
+    // ── Post-processing: populate prior carrier from current policy if not set ──
+    if (!fd.prior_carrier_1 && fd.current_carrier) {
+      fd.prior_carrier_1 = fd.current_carrier;
+    }
+
+    // ── Post-processing: set annual_revenue from gross_sales exposure if present ──
+    if (!fd.annual_revenue && fd.hazard_exposure_1) {
+      fd.annual_revenue = fd.hazard_exposure_1;
     }
 
     extracted.form_data = fd;
