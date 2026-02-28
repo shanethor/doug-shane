@@ -415,6 +415,15 @@ export default function LeadDetail() {
                       </Card>
                     );
                   })}
+
+                  {/* Add Policy bubble button */}
+                  <button
+                    onClick={() => setPolicyOpen(true)}
+                    className="w-full flex items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border hover:border-primary/50 hover:bg-primary/5 transition-colors py-3 text-sm font-sans text-muted-foreground hover:text-primary"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Add Another Policy
+                  </button>
                 </div>
               )}
 

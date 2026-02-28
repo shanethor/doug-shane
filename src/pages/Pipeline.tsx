@@ -117,13 +117,13 @@ export default function Pipeline() {
   // Sold modal state
   const [soldModalOpen, setSoldModalOpen] = useState(false);
   const [soldLeadId, setSoldLeadId] = useState<string | null>(null);
-  const [policyForm, setPolicyForm] = useState({
-    carrier: "",
-    line_of_business: "",
-    policy_number: "",
-    effective_date: "",
-    annual_premium: "",
-  });
+  const [soldPolicies, setSoldPolicies] = useState<Array<{
+    carrier: string;
+    line_of_business: string;
+    policy_number: string;
+    effective_date: string;
+    annual_premium: string;
+  }>>([{ carrier: "", line_of_business: "", policy_number: "", effective_date: "", annual_premium: "" }]);
   const [submittingSold, setSubmittingSold] = useState(false);
 
   // Presenting modal state
@@ -432,7 +432,7 @@ export default function Pipeline() {
     if (targetStage === "sold") {
       // Open sold modal to collect policy details
       setSoldLeadId(leadId);
-      setPolicyForm({ carrier: "", line_of_business: "", policy_number: "", effective_date: "", annual_premium: "" });
+      setSoldPolicies([{ carrier: "", line_of_business: "", policy_number: "", effective_date: "", annual_premium: "" }]);
       setSoldModalOpen(true);
     } else if (targetStage === "presenting") {
       // Open presenting modal to collect premium lines
@@ -542,8 +542,9 @@ export default function Pipeline() {
 
   const handleSoldSubmit = async () => {
     if (!user || !soldLeadId) return;
-    if (!policyForm.carrier.trim() || !policyForm.policy_number.trim() || !policyForm.effective_date || !policyForm.annual_premium) {
-      toast.error("Please fill in all required fields");
+    const validPolicies = soldPolicies.filter(p => p.carrier.trim() && p.policy_number.trim() && p.effective_date && p.annual_premium);
+    if (validPolicies.length === 0) {
+      toast.error("Please fill in at least one policy with all required fields");
       return;
     }
 
@@ -563,32 +564,33 @@ export default function Pipeline() {
         if (app?.form_data) formDataSnapshot = app.form_data as Record<string, any>;
       }
 
-      // Create an approved policy for this lead
-      const { error } = await supabase.from("policies").insert({
-        lead_id: soldLeadId,
-        producer_user_id: user.id,
-        carrier: policyForm.carrier.trim(),
-        line_of_business: policyForm.line_of_business.trim() || "General",
-        policy_number: policyForm.policy_number.trim(),
-        effective_date: policyForm.effective_date,
-        annual_premium: parseFloat(policyForm.annual_premium) || 0,
-        status: "approved" as any,
-        approved_at: new Date().toISOString(),
-        approved_by_user_id: user.id,
-        ...(formDataSnapshot ? { form_data_snapshot: formDataSnapshot } : {}),
-      } as any);
-
-      if (error) throw error;
+      // Create approved policies for this lead
+      await Promise.all(validPolicies.map(async (pf) => {
+        const { error } = await supabase.from("policies").insert({
+          lead_id: soldLeadId,
+          producer_user_id: user.id,
+          carrier: pf.carrier.trim(),
+          line_of_business: pf.line_of_business.trim() || "General",
+          policy_number: pf.policy_number.trim(),
+          effective_date: pf.effective_date,
+          annual_premium: parseFloat(pf.annual_premium) || 0,
+          status: "approved" as any,
+          approved_at: new Date().toISOString(),
+          approved_by_user_id: user.id,
+          ...(formDataSnapshot ? { form_data_snapshot: formDataSnapshot } : {}),
+        } as any);
+        if (error) throw error;
+      }));
 
       await supabase.from("audit_log").insert({
         user_id: user.id,
         action: "policy_sold",
         object_type: "lead",
         object_id: soldLeadId,
-        metadata: { carrier: policyForm.carrier, policy_number: policyForm.policy_number },
+        metadata: { policy_count: validPolicies.length, carriers: validPolicies.map(p => p.carrier) },
       });
 
-      toast.success("Policy added — lead moved to Sold!");
+      toast.success(`${validPolicies.length} ${validPolicies.length === 1 ? "policy" : "policies"} added — lead moved to Sold!`);
       setSoldModalOpen(false);
       setSoldLeadId(null);
       loadLeads();
@@ -1241,66 +1243,114 @@ export default function Pipeline() {
 
       {/* Sold Policy Modal */}
       <Dialog open={soldModalOpen} onOpenChange={(open) => { if (!open) { setSoldModalOpen(false); setSoldLeadId(null); } }}>
-        <DialogContent>
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Add Policy Details — {soldLead?.account_name}</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground font-sans">
-            Enter the bound policy details to move this lead to Sold.
+            Enter the bound policy details to move this lead to Sold. Add multiple policies if needed.
           </p>
-          <div className="grid gap-3 mt-2">
-            <div>
-              <Label>Carrier *</Label>
-              <Input
-                value={policyForm.carrier}
-                onChange={(e) => setPolicyForm({ ...policyForm, carrier: e.target.value })}
-                placeholder="e.g. Hartford, Travelers"
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label>Line of Business</Label>
-                <Input
-                  value={policyForm.line_of_business}
-                  onChange={(e) => setPolicyForm({ ...policyForm, line_of_business: e.target.value })}
-                  placeholder="e.g. General Liability"
-                />
-              </div>
-              <div>
-                <Label>Policy Number *</Label>
-                <Input
-                  value={policyForm.policy_number}
-                  onChange={(e) => setPolicyForm({ ...policyForm, policy_number: e.target.value })}
-                  placeholder="e.g. GL-12345"
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label>Effective Date *</Label>
-                <Input
-                  type="date"
-                  value={policyForm.effective_date}
-                  onChange={(e) => setPolicyForm({ ...policyForm, effective_date: e.target.value })}
-                />
-              </div>
-              <div>
-                <Label>Annual Premium *</Label>
-                <Input
-                  type="number"
-                  value={policyForm.annual_premium}
-                  onChange={(e) => setPolicyForm({ ...policyForm, annual_premium: e.target.value })}
-                  placeholder="e.g. 12000"
-                />
-              </div>
-            </div>
+          <div className="space-y-4 mt-2">
+            {soldPolicies.map((pf, i) => {
+              const updateField = (field: string, value: string) => {
+                const updated = [...soldPolicies];
+                updated[i] = { ...updated[i], [field]: value };
+                setSoldPolicies(updated);
+              };
+              return (
+                <div key={i} className="rounded-lg border p-3 space-y-3 relative">
+                  {soldPolicies.length > 1 && (
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-semibold font-sans text-muted-foreground">Policy {i + 1}</span>
+                      <button
+                        onClick={() => setSoldPolicies(soldPolicies.filter((_, idx) => idx !== i))}
+                        className="text-xs text-muted-foreground hover:text-destructive transition-colors"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  )}
+                  <div>
+                    <Label className="text-xs">Carrier *</Label>
+                    <Input
+                      value={pf.carrier}
+                      onChange={(e) => updateField("carrier", e.target.value)}
+                      placeholder="e.g. Hartford, Travelers"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-xs">Line of Business</Label>
+                      <Input
+                        value={pf.line_of_business}
+                        onChange={(e) => updateField("line_of_business", e.target.value)}
+                        placeholder="e.g. General Liability"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Policy Number *</Label>
+                      <Input
+                        value={pf.policy_number}
+                        onChange={(e) => updateField("policy_number", e.target.value)}
+                        placeholder="e.g. GL-12345"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-xs">Effective Date *</Label>
+                      <Input
+                        type="date"
+                        value={pf.effective_date}
+                        onChange={(e) => updateField("effective_date", e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Annual Premium *</Label>
+                      <Input
+                        type="number"
+                        value={pf.annual_premium}
+                        onChange={(e) => updateField("annual_premium", e.target.value)}
+                        placeholder="e.g. 12000"
+                      />
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* Add another policy button */}
+            <button
+              onClick={() => setSoldPolicies([...soldPolicies, { carrier: "", line_of_business: "", policy_number: "", effective_date: "", annual_premium: "" }])}
+              className="w-full flex items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border hover:border-primary/50 hover:bg-primary/5 transition-colors py-2.5 text-sm font-sans text-muted-foreground hover:text-primary"
+            >
+              <Plus className="h-4 w-4" />
+              Add Another Policy
+            </button>
+
+            {/* Totals */}
+            {(() => {
+              const totalPrem = soldPolicies.reduce((s, p) => s + (parseFloat(p.annual_premium) || 0), 0);
+              return totalPrem > 0 ? (
+                <div className="rounded-lg bg-muted/50 border p-3">
+                  <div className="flex justify-between text-sm font-sans">
+                    <span className="text-muted-foreground">Total Premium ({soldPolicies.filter(p => p.carrier.trim()).length} {soldPolicies.filter(p => p.carrier.trim()).length === 1 ? "policy" : "policies"}):</span>
+                    <span className="font-semibold">{fmt(totalPrem)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm font-sans mt-1">
+                    <span className="text-muted-foreground">Revenue (12%):</span>
+                    <span className="font-semibold text-success">{fmt(totalPrem * 0.12)}</span>
+                  </div>
+                </div>
+              ) : null;
+            })()}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { setSoldModalOpen(false); setSoldLeadId(null); }}>
               Cancel
             </Button>
             <Button onClick={handleSoldSubmit} disabled={submittingSold}>
-              {submittingSold ? "Saving…" : "Mark as Sold"}
+              {submittingSold ? "Saving…" : `Mark as Sold (${soldPolicies.filter(p => p.carrier.trim() && p.annual_premium).length} ${soldPolicies.filter(p => p.carrier.trim() && p.annual_premium).length === 1 ? "policy" : "policies"})`}
             </Button>
           </DialogFooter>
         </DialogContent>
