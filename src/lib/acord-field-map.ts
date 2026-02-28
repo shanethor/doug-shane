@@ -971,6 +971,21 @@ export const ACORD_126_INDEX_MAP: AcordIndexMap = {
   safety_security_policy:      244,    // → gi_q21_code
   safety_claims_in_literature: 246,    // → gi_q22_code
   general_questions_remarks:   248,    // → remarks_126 (same field)
+  // Products / Completed Ops — alias form keys to product row A indices
+  hazard_haz_1:                 48,    // → hazard_bldg_1
+  hazard_haz_2:                 59,    // → hazard_bldg_2
+  products_annual_gross_sales: 108,    // → product_gross_sales_a
+  products_num_units:          109,    // → product_units_a
+  products_time_in_market:     110,    // → product_months_market_a
+  products_expected_life:      111,    // → product_expected_life_a
+  products_intended_use:       112,    // → product_intended_use_a
+  products_principal_components:113,   // → product_components_a
+  // Additional Interest — alias form keys to 126-specific AI indices
+  add_interest_name_1:         158,    // → addl_interest_126_name
+  add_interest_rank_1:         156,    // → addl_interest_126_rank
+  add_interest_item_1:         170,    // → addl_interest_126_item_desc
+  // NOTE: coverage_type, aggregate_applies_per, add_interest_type_1 are
+  // select fields that map to multiple PDF checkboxes — cannot be aliased.
 };
 
 // ── ACORD 127 — Business Auto Section — 472 TXT fields ──
@@ -1927,6 +1942,19 @@ export const ACORD_130_INDEX_MAP: AcordIndexMap = {
   wc_work_at_home:             471,    // → q_at_home_code
   wc_tax_liens_bankruptcy:     474,    // → q_tax_liens_code
   wc_unpaid_premium:           476,    // → q_unpaid_premium_code
+  // WC coverage option checkboxes
+  wc_uslh:                     123,    // → CHK coverage option
+  wc_voluntary_comp:           124,    // → CHK coverage option
+  wc_foreign_coverage:         125,    // → CHK coverage option
+  wc_managed_care:             126,    // → CHK coverage option
+  // Loss run checkbox
+  loss_run_attached:           386,    // → CHK loss run attached
+  // Percentage subcontracted — text field between q6 and q7
+  pct_subcontracted:           439,    // between subcontractors_used(438) and sublet(440)
+  // NOTE: business_type, credit_code, sub_code, submission_status,
+  // billing_plan, participating, deductible_type, mod_effective_date
+  // are select/checkbox fields mapping to PDF checkboxes — cannot alias.
+  // wc_general_remarks and wc_remarks need field audit for exact indices.
 };
 
 // ── ACORD 131 (2016/04) — Umbrella / Excess Liability — 396 fields ──
@@ -2380,6 +2408,15 @@ export const ACORD_131_INDEX_MAP: AcordIndexMap = {
   contractor_uses_cranes:      326,    // → q_cranes_code
   employer_self_insured:       330,    // → q_self_insured_code
   pollution_hazardous_disposal:346,    // → q_hazardous_materials_code
+  // Previous experience checkbox
+  no_previous_claims:          236,    // → CHK no previous claims
+  // NOTE: umbrella_transaction_type, umbrella_or_excess, coverage_basis,
+  // defense_costs_treatment, retained_limit_aggregate, has_any_auto,
+  // has_cgl_occurrence, has_cgl_claims_made, has_aircraft_liability,
+  // has_professional_liability, has_pollution_liability, has_watercraft_liability,
+  // has_liquor_liability, foreign_operations_131 are select/checkbox fields
+  // mapping to PDF checkboxes [8-15, 153-155, 164-204] — need field audit.
+  // previous_experience_details has no single text field on the PDF.
 };
 
 // ── ACORD 140 (2014/12) — Property Section — 355 fields ──
@@ -2989,6 +3026,12 @@ export const ACORD_125_INDEX_MAP: AcordIndexMap = {
   lob_liquor_liability:          51,   // → chk_lob_liquor
   // Loss history
   no_losses:                    516,   // → chk_no_prior_losses
+  // Prior coverage
+  prior_property_premium_1:    463,   // → prior_prop_premium_1
+  // NOTE: transaction_type, payment_plan, business_type, premises_interest,
+  // area_leased_to_others, business_category are select fields that map to
+  // multiple PDF checkboxes — cannot be aliased to a single index.
+  // loss_history is a textarea with no single PDF text field equivalent.
 };
 
 export const ACORD_INDEX_MAPS: Record<string, AcordIndexMap> = {
