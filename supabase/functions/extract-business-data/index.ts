@@ -317,16 +317,29 @@ ${file_contents ? `\nAdditional text content:\n${file_contents}` : ""}`;
     if (ANTHROPIC_API_KEY && hasPdfs) {
       // Truncate PDFs to first N pages to reduce payload and speed up extraction
       const truncatedPdfFiles = [];
-      for (const pf of pdf_files) {
+      for (let fi = 0; fi < pdf_files.length; fi++) {
+        const pf = pdf_files[fi];
         if (pf.base64 && (pf.mimeType === "application/pdf" || !pf.mimeType?.startsWith("image/"))) {
+          // Get page count before truncation
+          let origPages = "?";
+          try {
+            const tmpBytes = Uint8Array.from(atob(pf.base64), c => c.charCodeAt(0));
+            const tmpDoc = await PDFDocument.load(tmpBytes, { ignoreEncryption: true });
+            origPages = String(tmpDoc.getPageCount());
+          } catch (_) {}
           const truncated = await truncatePdf(pf.base64, MAX_PDF_PAGES);
+          const b64SizeKB = Math.round(truncated.length / 1024);
+          console.log(`[extract] File ${fi + 1}: mime=${pf.mimeType || "pdf"}, pages=${origPages}→${Math.min(Number(origPages) || MAX_PDF_PAGES, MAX_PDF_PAGES)}, base64=${b64SizeKB}KB`);
           truncatedPdfFiles.push({ ...pf, base64: truncated });
         } else {
+          const b64SizeKB = pf.base64 ? Math.round(pf.base64.length / 1024) : 0;
+          console.log(`[extract] File ${fi + 1}: mime=${pf.mimeType || "unknown"}, type=image, base64=${b64SizeKB}KB`);
           truncatedPdfFiles.push(pf);
         }
       }
       
-      console.log(`[extract] Starting Claude Sonnet 4 extraction (${truncatedPdfFiles.length} file(s), ${Math.round(truncatedPdfFiles.reduce((s: number, f: any) => s + (f.base64?.length || 0), 0) / 1024)}KB base64)`);
+      const totalB64KB = Math.round(truncatedPdfFiles.reduce((s: number, f: any) => s + (f.base64?.length || 0), 0) / 1024);
+      console.log(`[extract] Starting Claude Sonnet 4 extraction (${truncatedPdfFiles.length} file(s), ${totalB64KB}KB total base64)`);
 
       // Build Claude messages with document content blocks
       const claudeContent: any[] = [];
@@ -380,11 +393,12 @@ ${file_contents ? `\nAdditional text content:\n${file_contents}` : ""}`;
         rawContent = await callLovableGateway(LOVABLE_API_KEY!, systemPrompt, userPromptText, pdf_files, hasPdfs, corsHeaders);
       } else {
         const result = await response.json();
-        console.log(`[extract] Claude stop_reason=${result?.stop_reason || "unknown"}, usage=${JSON.stringify(result?.usage || {})}`);
+        const contentBlocks = Array.isArray(result?.content) ? result.content.length : 0;
+        console.log(`[extract] Claude stop_reason=${result?.stop_reason || "unknown"}, content_blocks=${contentBlocks}, usage=${JSON.stringify(result?.usage || {})}`);
         rawContent = extractClaudeText(result);
 
         if (!rawContent) {
-          console.warn("[extract] Claude returned HTTP 200 but no usable text content — falling back to Gemini");
+          console.warn("[extract] Claude returned HTTP 200 but no usable text content (0 text blocks out of " + contentBlocks + ") — falling back to Gemini");
           rawContent = await callLovableGateway(LOVABLE_API_KEY!, systemPrompt, userPromptText, pdf_files, hasPdfs, corsHeaders);
         }
       }
