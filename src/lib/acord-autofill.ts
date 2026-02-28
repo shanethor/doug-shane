@@ -265,6 +265,61 @@ const AI_TO_FORM_ALIASES: Record<string, string[]> = {
   retained_limit_aggregate: ["retained_limit_aggregate"],
   self_insured_retention: ["self_insured_retention"],
 
+  // ── Underlying Insurance (ACORD 131) ──
+  underlying_gl_carrier: ["underlying_gl_carrier"],
+  underlying_gl_policy_number: ["underlying_gl_policy_number"],
+  underlying_gl_occurrence: ["underlying_gl_occurrence"],
+  underlying_gl_aggregate: ["underlying_gl_aggregate"],
+  underlying_gl_products: ["underlying_gl_products"],
+  underlying_gl_premium: ["underlying_gl_premium"],
+  underlying_auto_carrier: ["underlying_auto_carrier"],
+  underlying_auto_policy_number: ["underlying_auto_policy_number"],
+  underlying_auto_bi_ea_acc: ["underlying_auto_bi_ea_acc"],
+  underlying_auto_pd: ["underlying_auto_pd"],
+  underlying_auto_premium: ["underlying_auto_premium"],
+  underlying_el_carrier: ["underlying_el_carrier"],
+  underlying_el_policy_number: ["underlying_el_policy_number"],
+  underlying_el_each_accident: ["underlying_el_each_accident"],
+  underlying_el_disease_employee: ["underlying_el_disease_employee"],
+  underlying_el_disease_policy: ["underlying_el_disease_policy"],
+  underlying_el_premium: ["underlying_el_premium"],
+  underlying_excess_carrier_1: ["underlying_excess_carrier_1"],
+  underlying_excess_policy_number_1: ["underlying_excess_policy_number_1"],
+  underlying_excess_limit_1: ["underlying_excess_limit_1"],
+  underlying_excess_premium_1: ["underlying_excess_premium_1"],
+  underlying_excess_carrier_2: ["underlying_excess_carrier_2"],
+  underlying_excess_policy_number_2: ["underlying_excess_policy_number_2"],
+  underlying_excess_limit_2: ["underlying_excess_limit_2"],
+  underlying_excess_premium_2: ["underlying_excess_premium_2"],
+
+  // ── Umbrella premium / policy ──
+  umbrella_premium: ["umbrella_premium"],
+  umbrella_policy_number: ["umbrella_policy_number"],
+  umbrella_carrier: ["umbrella_carrier"],
+
+  // ── Prior Carrier (multi-row) ──
+  prior_carrier_1: ["prior_carrier_1", "prior_wc_carrier_1", "current_carrier"],
+  prior_policy_number_1: ["prior_policy_number_1", "prior_wc_policy_1"],
+  prior_eff_date_1: ["prior_eff_date_1"],
+  prior_exp_date_1: ["prior_exp_date_1"],
+  prior_premium_1: ["prior_premium_1", "prior_wc_premium_1"],
+  prior_carrier_2: ["prior_carrier_2"],
+  prior_policy_number_2: ["prior_policy_number_2"],
+  prior_eff_date_2: ["prior_eff_date_2"],
+  prior_exp_date_2: ["prior_exp_date_2"],
+  prior_premium_2: ["prior_premium_2"],
+
+  // ── Producer / Broker ──
+  producer_agency: ["agency_name"],
+  producer_phone: ["agency_phone"],
+  producer_address: ["producer_address"],
+
+  // ── Premium Breakdown ──
+  carrier_fee: ["carrier_fee"],
+
+  // ── Key Endorsements ──
+  key_endorsements: ["key_endorsements"],
+
   // ── CGL Limits — including common dec page extraction keys ──
   general_aggregate: ["general_aggregate"],
   aggregate_limits_of_liability: ["general_aggregate"],
