@@ -64,3 +64,33 @@ export async function processIntakeSubmission(intakeSubmission: any, intakeLink:
 
   return leadId;
 }
+
+/**
+ * Generate a personal lines intake link.
+ * Delivery emails specify who receives the summary email on submission.
+ */
+export async function generatePersonalIntakeLink({
+  agentId,
+  deliveryEmails,
+}: {
+  agentId: string;
+  deliveryEmails: string[];
+}): Promise<{ url: string; token: string } | null> {
+  const { data, error } = await supabase
+    .from("personal_intake_submissions")
+    .insert({
+      agent_id: agentId,
+      delivery_emails: deliveryEmails,
+    } as any)
+    .select("token")
+    .single();
+
+  if (error || !data) {
+    console.error("Failed to create personal intake link:", error);
+    return null;
+  }
+
+  const token = (data as any).token;
+  const url = `${window.location.origin}/personal-intake/${token}`;
+  return { url, token };
+}

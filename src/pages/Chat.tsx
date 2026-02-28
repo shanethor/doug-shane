@@ -24,7 +24,7 @@ import { getAuthHeaders } from "@/lib/auth-fetch";
 import { useVoiceInput } from "@/hooks/useVoiceInput";
 import { useTrainingMode } from "@/hooks/useTrainingMode";
 import { ensurePipelineLead, findExistingLeads } from "@/lib/pipeline-sync";
-import { generateIntakeLink } from "@/lib/intake-links";
+import { generateIntakeLink, generatePersonalIntakeLink } from "@/lib/intake-links";
 import { fuzzyMatch } from "@/lib/fuzzy-match";
 
 type ButtonMarker = { label: string; action: string };
@@ -892,9 +892,17 @@ export default function Chat() {
       || detectRequestedForms(text).length > 0; // direct form number/coverage mention always triggers
   };
 
+  /** Detect if user is asking for a personal lines intake */
+  const isPersonalIntakeIntent = (text: string) => {
+    const t = text.trim().toLowerCase();
+    return /\bpersonal\s*(lines?)?\s*(intake|form|link)\b/.test(t) || /\bpersonal\s*(auto|home|boat|umbrella)\s*(intake|form)\b/.test(t);
+  };
+
   /** Detect if user is asking for a customer intake link/form */
   const isIntakeLinkIntent = (text: string) => {
     const t = text.trim().toLowerCase();
+    // Don't match personal lines intent here
+    if (isPersonalIntakeIntent(text)) return false;
     const patterns = [
       /\bintake\s*(form|link)\b/,
       /\bclient\s*intake\b/,
@@ -942,6 +950,38 @@ export default function Chat() {
    */
   const send = async (text: string, displayText?: string) => {
     if (!text.trim() || isLoading) return;
+
+    // Intercept personal lines intake requests
+    if (!displayText && isPersonalIntakeIntent(text) && user) {
+      const userMsg: Msg = { role: "user", content: text.trim() };
+      setMessages((prev) => [...prev, userMsg]);
+      setInput("");
+      setIsLoading(true);
+      try {
+        // Extract delivery email preferences from message
+        const emailMatch = text.match(/[\w.-]+@[\w.-]+\.\w+/g);
+        const deliveryEmails = emailMatch && emailMatch.length > 0 ? emailMatch : [user.email || ""];
+        const result = await generatePersonalIntakeLink({ agentId: user.id, deliveryEmails: deliveryEmails.filter(Boolean) as string[] });
+        if (result) {
+          let copied = false;
+          try { await navigator.clipboard.writeText(result.url); copied = true; } catch (_) {}
+          setMessages((prev) => [
+            ...prev,
+            {
+              role: "assistant",
+              content: `✅ **Personal lines intake link generated${copied ? " and copied to clipboard" : ""}!**\n\nShare this link with your customer:\n\`${result.url}\`\n\nThe form covers **Auto, Home, Boat, and Umbrella** coverage. When submitted, a summary email will be sent to ${deliveryEmails.join(", ")}. The link expires in 7 days.`,
+            },
+          ]);
+          toast({ title: copied ? "Personal intake link copied!" : "Personal intake link generated!", description: "Share this link with your customer." });
+        } else {
+          throw new Error("Link generation returned null");
+        }
+      } catch (err: any) {
+        setMessages((prev) => [...prev, { role: "assistant", content: `Sorry, I couldn't generate the personal intake link. Error: ${err?.message || "Unknown error"}.` }]);
+      }
+      setIsLoading(false);
+      return;
+    }
 
     // Intercept intake link requests BEFORE anything else
     // Skip intake detection for internal/hidden prompts (displayText means it's an internal prompt)
