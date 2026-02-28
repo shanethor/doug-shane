@@ -179,11 +179,19 @@ export default function IntakeForm() {
   const handleSubmit = async () => {
     if (!record || !intakeType) return;
 
-    if (intakeType === "personal" && !applicantName.trim()) {
-      toast.error("Please enter your name"); return;
-    }
+    // Shared required fields
+    const name = intakeType === "personal" ? applicantName : commercialForm.customer_name;
+    const email = intakeType === "personal" ? applicantEmail : commercialForm.customer_email;
+    const phone = intakeType === "personal" ? applicantPhone : commercialForm.customer_phone;
+    const address = intakeType === "personal" ? applicantAddress : commercialForm.street_address;
+
+    if (!name.trim()) { toast.error("Name is required"); return; }
+    if (!email.trim() || !/^[\w.-]+@[\w.-]+\.\w+$/.test(email.trim())) { toast.error("A valid email is required"); return; }
+    if (!phone.trim()) { toast.error("Phone number is required"); return; }
+    if (!address.trim()) { toast.error("Mailing address is required"); return; }
+
     if (intakeType === "commercial" && !commercialForm.business_name.trim()) {
-      toast.error("Please enter your business name"); return;
+      toast.error("Business name is required"); return;
     }
 
     setSubmitting(true);
@@ -396,9 +404,9 @@ export default function IntakeForm() {
               <CardHeader><CardTitle className="text-base">Your Information</CardTitle></CardHeader>
               <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div><Label className="text-xs">Full Name *</Label><Input value={applicantName} onChange={e => setApplicantName(e.target.value)} placeholder="John Doe" /></div>
-                <div><Label className="text-xs">Email</Label><Input type="email" value={applicantEmail} onChange={e => setApplicantEmail(e.target.value)} placeholder="john@example.com" /></div>
-                <div><Label className="text-xs">Phone</Label><Input value={applicantPhone} onChange={e => setApplicantPhone(e.target.value)} placeholder="(555) 123-4567" /></div>
-                <div><Label className="text-xs">Mailing Address</Label><Input value={applicantAddress} onChange={e => setApplicantAddress(e.target.value)} placeholder="123 Main St, City, ST 12345" /></div>
+                <div><Label className="text-xs">Email *</Label><Input type="email" value={applicantEmail} onChange={e => setApplicantEmail(e.target.value)} placeholder="john@example.com" /></div>
+                <div><Label className="text-xs">Phone *</Label><Input value={applicantPhone} onChange={e => setApplicantPhone(e.target.value)} placeholder="(555) 123-4567" /></div>
+                <div><Label className="text-xs">Mailing Address *</Label><Input value={applicantAddress} onChange={e => setApplicantAddress(e.target.value)} placeholder="123 Main St, City, ST 12345" /></div>
               </CardContent>
             </Card>
 
@@ -662,7 +670,8 @@ export default function IntakeForm() {
               <CardContent className="grid gap-3 sm:grid-cols-2">
                 <div><Label className="text-xs">Your Name *</Label><Input value={commercialForm.customer_name} onChange={e => updateCommercial("customer_name", e.target.value)} placeholder="John Smith" /></div>
                 <div><Label className="text-xs">Email *</Label><Input type="email" value={commercialForm.customer_email} onChange={e => updateCommercial("customer_email", e.target.value)} placeholder="john@company.com" /></div>
-                <div><Label className="text-xs">Phone</Label><Input type="tel" value={commercialForm.customer_phone} onChange={e => updateCommercial("customer_phone", e.target.value)} placeholder="(555) 123-4567" /></div>
+                <div><Label className="text-xs">Phone *</Label><Input type="tel" value={commercialForm.customer_phone} onChange={e => updateCommercial("customer_phone", e.target.value)} placeholder="(555) 123-4567" /></div>
+                <div><Label className="text-xs">Mailing Address *</Label><Input value={commercialForm.street_address} onChange={e => updateCommercial("street_address", e.target.value)} placeholder="123 Main St, Suite 100" /></div>
               </CardContent>
             </Card>
 
@@ -672,7 +681,7 @@ export default function IntakeForm() {
                 <div className="sm:col-span-2"><Label className="text-xs">Business Name *</Label><Input value={commercialForm.business_name} onChange={e => updateCommercial("business_name", e.target.value)} placeholder="Acme Construction LLC" /></div>
                 <div><Label className="text-xs">FEIN / EIN</Label><Input value={commercialForm.ein} onChange={e => updateCommercial("ein", e.target.value)} placeholder="XX-XXXXXXX" /></div>
                 <div><Label className="text-xs">Business Type</Label><Input value={commercialForm.business_type} onChange={e => updateCommercial("business_type", e.target.value)} placeholder="e.g. General Contractor" /></div>
-                <div className="sm:col-span-2"><Label className="text-xs">Street Address</Label><Input value={commercialForm.street_address} onChange={e => updateCommercial("street_address", e.target.value)} placeholder="123 Main St, Suite 100" /></div>
+                
                 <div><Label className="text-xs">City</Label><Input value={commercialForm.city} onChange={e => updateCommercial("city", e.target.value)} placeholder="Dallas" /></div>
                 <div>
                   <Label className="text-xs">State</Label>
