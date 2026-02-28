@@ -64,27 +64,25 @@ export default function ExtractionSummary({ submissionId, requestedFormIds = [],
       return s !== "" && s !== "N/A" && s !== "n/a" && s !== "[]";
     };
 
-    // Run AI field mapping for all forms in PARALLEL (not sequentially) — major speed gain
-    const results = await Promise.all(
-      scopedForms.map(async (form) => {
-        const { data: filled } = await buildAutofilledDataWithAI(form, appData, profile, defaults);
-        for (const [k, v] of Object.entries(defaults)) {
-          if (v && !filled[k]) filled[k] = v;
+    // Run AI field mapping SEQUENTIALLY to avoid Claude TPM rate limits
+    const results: { form: typeof scopedForms[0]; filled: Record<string, any>; total: number; filledCount: number; pct: number }[] = [];
+    for (const form of scopedForms) {
+      const { data: filled } = await buildAutofilledDataWithAI(form, appData, profile, defaults);
+      for (const [k, v] of Object.entries(defaults)) {
+        if (v && !filled[k]) filled[k] = v;
+      }
+      // Apply form-definition defaults (e.g. Y/N → "No") for fields with no value yet
+      for (const field of form.fields) {
+        if (field.default && !isMeaningful(filled[field.key])) {
+          filled[field.key] = field.default;
         }
-        // Apply form-definition defaults (e.g. Y/N → "No") for fields with no value yet
-        for (const field of form.fields) {
-          if (field.default && !isMeaningful(filled[field.key])) {
-            filled[field.key] = field.default;
-          }
-        }
-        const total = form.fields.length;
-        // Only count fields with meaningful data (exclude N/A)
-        const filledCount = form.fields.filter(
-          (f) => isMeaningful(filled[f.key])
-        ).length;
-        return { form, filled, total, filledCount, pct: Math.round((filledCount / total) * 100) };
-      })
-    );
+      }
+      const total = form.fields.length;
+      const filledCount = form.fields.filter(
+        (f) => isMeaningful(filled[f.key])
+      ).length;
+      results.push({ form, filled, total, filledCount, pct: Math.round((filledCount / total) * 100) });
+    }
 
     const mergedAllForms: Record<string, any> = {};
     const formStats: FormStat[] = [];
