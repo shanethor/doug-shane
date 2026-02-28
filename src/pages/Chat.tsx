@@ -942,7 +942,8 @@ export default function Chat() {
     // Don't match personal lines intent here
     if (isPersonalIntakeIntent(text)) return false;
     const patterns = [
-      /\bintake\s*(form|link)\b/,
+      /\bintake\s*(form|link)?\b/,
+      /\bneed\s*(a|an)?\s*(intake|form)\b/,
       /\bclient\s*intake\b/,
       /\bcustomer\s*(intake|form|link)\b/,
       /\bsend\s*(a|an|the)?\s*(intake|customer)\b/,
