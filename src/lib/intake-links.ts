@@ -72,15 +72,21 @@ export async function processIntakeSubmission(intakeSubmission: any, intakeLink:
 export async function generatePersonalIntakeLink({
   agentId,
   deliveryEmails,
+  clientEmail,
+  ccProducer,
 }: {
   agentId: string;
   deliveryEmails: string[];
+  clientEmail?: string;
+  ccProducer?: boolean;
 }): Promise<{ url: string; token: string } | null> {
   const { data, error } = await supabase
     .from("personal_intake_submissions")
     .insert({
       agent_id: agentId,
       delivery_emails: deliveryEmails,
+      client_email: clientEmail || null,
+      cc_producer: ccProducer ?? false,
     } as any)
     .select("token")
     .single();
