@@ -38,3 +38,9 @@ verify_jwt = false
 
 [functions.compose-email]
 verify_jwt = false
+
+[functions.email-oauth]
+verify_jwt = false
+
+[functions.email-sync]
+verify_jwt = false
