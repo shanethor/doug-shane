@@ -23,12 +23,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { ArrowLeft, Plus, FileText, CheckCircle, Clock, XCircle, MessageSquare, Send, Edit3, AlertTriangle, ExternalLink, Copy, Check, Trash2 } from "lucide-react";
+import { ArrowLeft, Plus, FileText, CheckCircle, Clock, XCircle, MessageSquare, Send, Edit3, AlertTriangle, ExternalLink, Copy, Check, Trash2, Shield, Download } from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LossRunsTab } from "@/components/LossRunsTab";
 import { ClientDocuments } from "@/components/ClientDocuments";
 import { generateIntakeLink } from "@/lib/intake-links";
+import { generateBorPdf, applySignatureToBorPdf, downloadPdf } from "@/lib/bor-pdf-generator";
 
 const STAGE_COLORS: Record<string, string> = {
   prospect: "bg-muted text-muted-foreground",
@@ -52,6 +53,7 @@ export default function LeadDetail() {
   const [notes, setNotes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [submissions, setSubmissions] = useState<{ id: string; company_name: string | null; status: string; created_at: string }[]>([]);
+  const [borSignatures, setBorSignatures] = useState<any[]>([]);
   const [noteText, setNoteText] = useState("");
   const [policyOpen, setPolicyOpen] = useState(false);
   const [newPolicy, setNewPolicy] = useState({
@@ -67,11 +69,12 @@ export default function LeadDetail() {
 
   const loadData = useCallback(async () => {
     if (!user || !leadId) return;
-    const [leadRes, policiesRes, notesRes, subsRes] = await Promise.all([
+    const [leadRes, policiesRes, notesRes, subsRes, borRes] = await Promise.all([
       supabase.from("leads").select("*").eq("id", leadId).single(),
       supabase.from("policies").select("*").eq("lead_id", leadId).order("created_at", { ascending: false }),
       supabase.from("lead_notes").select("*").eq("lead_id", leadId).order("created_at", { ascending: false }).limit(50),
       supabase.from("business_submissions").select("id, company_name, status, created_at").eq("lead_id", leadId).order("created_at", { ascending: false }),
+      (supabase.from("bor_signatures" as any).select("*").eq("lead_id", leadId).order("created_at", { ascending: false }) as any),
     ]);
 
     if (!mountedRef.current) return;
@@ -80,6 +83,7 @@ export default function LeadDetail() {
     setPolicies(policiesRes.data ?? []);
     setNotes(notesRes.data ?? []);
     setSubmissions((subsRes.data as any[]) ?? []);
+    setBorSignatures((borRes.data as any[]) ?? []);
     setLoading(false);
   }, [user, leadId]);
 
@@ -542,6 +546,7 @@ export default function LeadDetail() {
                 <CardContent className="p-4 space-y-3">
                   <ReadinessItem label="Loss runs requested" done={false} />
                   <ReadinessItem label="Loss runs received" done={false} />
+                  <ReadinessItem label="BOR authorized" done={borSignatures.some(b => b.status === "signed")} />
                   <ReadinessItem label="Policy submitted" done={policies.length > 0} />
                   <ReadinessItem label="Policy approved" done={hasApprovedPolicy} />
                   <p className="text-[10px] text-muted-foreground font-sans mt-2">
@@ -549,6 +554,115 @@ export default function LeadDetail() {
                   </p>
                 </CardContent>
               </Card>
+
+              {/* BOR Status Tracker */}
+              {borSignatures.length > 0 && (
+                <>
+                  <h2 className="text-xl flex items-center gap-2">
+                    <Shield className="h-5 w-5" />
+                    Broker of Record
+                  </h2>
+                  {borSignatures.map((bor) => (
+                    <Card key={bor.id} className={bor.status === "signed" ? "border-primary/30" : ""}>
+                      <CardContent className="p-4 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            {bor.status === "signed" ? (
+                              <CheckCircle className="h-4 w-4 text-primary" />
+                            ) : (
+                              <Clock className="h-4 w-4 text-muted-foreground animate-pulse" />
+                            )}
+                            <span className="text-sm font-medium font-sans">
+                              {bor.status === "signed" ? "Signed" : "Pending Signature"}
+                            </span>
+                          </div>
+                          <Badge variant={bor.status === "signed" ? "default" : "secondary"} className="text-[10px] uppercase tracking-wider">
+                            {bor.status === "signed" ? "Executed" : "Awaiting"}
+                          </Badge>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2 text-xs font-sans">
+                          {bor.carrier_name && (
+                            <div>
+                              <span className="text-muted-foreground">Carrier</span>
+                              <p className="font-medium">{bor.carrier_name}</p>
+                            </div>
+                          )}
+                          {bor.policy_number && (
+                            <div>
+                              <span className="text-muted-foreground">Policy #</span>
+                              <p className="font-medium">{bor.policy_number}</p>
+                            </div>
+                          )}
+                          {bor.selected_lines?.length > 0 && (
+                            <div className="col-span-2">
+                              <span className="text-muted-foreground">Lines</span>
+                              <p className="font-medium">{bor.selected_lines.join(", ")}</p>
+                            </div>
+                          )}
+                          <div>
+                            <span className="text-muted-foreground">Created</span>
+                            <p>{new Date(bor.created_at).toLocaleDateString()}</p>
+                          </div>
+                          {bor.signed_at && (
+                            <div>
+                              <span className="text-muted-foreground">Signed</span>
+                              <p>{new Date(bor.signed_at).toLocaleDateString()}</p>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex gap-2 pt-1">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-xs gap-1.5 flex-1"
+                            onClick={async () => {
+                              try {
+                                const borPdfBytes = await generateBorPdf({
+                                  insuredName: bor.insured_name,
+                                  insuredAddress: bor.insured_address || "",
+                                  carrierName: bor.carrier_name || "",
+                                  policyNumber: bor.policy_number || "",
+                                  policyEffectiveDate: bor.policy_effective_date || "",
+                                  policyExpirationDate: bor.policy_expiration_date || "",
+                                  selectedLines: bor.selected_lines || [],
+                                  producerName: "", producerEmail: "", producerPhone: "",
+                                });
+                                if (bor.status === "signed" && bor.signature_data) {
+                                  const signedBytes = await applySignatureToBorPdf(borPdfBytes, bor.signature_data, bor.insured_name);
+                                  downloadPdf(signedBytes, `BOR_${bor.insured_name.replace(/\s+/g, "_")}_Signed.pdf`);
+                                } else {
+                                  downloadPdf(borPdfBytes, `BOR_${bor.insured_name.replace(/\s+/g, "_")}.pdf`);
+                                }
+                              } catch {
+                                toast.error("Failed to generate PDF");
+                              }
+                            }}
+                          >
+                            <Download className="h-3 w-3" />
+                            {bor.status === "signed" ? "Download Signed" : "Download Draft"}
+                          </Button>
+                          {bor.status !== "signed" && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-xs gap-1.5"
+                              onClick={() => {
+                                const url = `${window.location.origin}/bor-sign/${bor.token}`;
+                                navigator.clipboard.writeText(url).then(() => toast.success("Signing link copied!")).catch(() => {});
+                              }}
+                            >
+                              <Copy className="h-3 w-3" />
+                              Copy Link
+                            </Button>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </>
+              )}
             </div>
           </div>
         </TabsContent>
