@@ -57,6 +57,7 @@ type Lead = {
   lead_source: string | null;
   owner_user_id: string;
   stage: "prospect" | "quoting" | "presenting" | "lost";
+  line_type: "commercial" | "personal";
   created_at: string;
   updated_at: string;
   has_approved_policy?: boolean;
@@ -86,6 +87,7 @@ export default function Pipeline() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [pipelineView, setPipelineView] = useState<"commercial" | "personal">("commercial");
   const [addOpen, setAddOpen] = useState(false);
   const [addMode, setAddMode] = useState<"choose" | "manual" | "intake">("choose");
   const [intakeLink, setIntakeLink] = useState<string | null>(null);
@@ -321,6 +323,7 @@ export default function Pipeline() {
       lead_source: newLead.lead_source || null,
       owner_user_id: user.id,
       target_premium: newLead.target_premium ? parseFloat(newLead.target_premium) : null,
+      line_type: pipelineView,
     } as any).select("id").single();
 
     if (error) {
@@ -354,6 +357,7 @@ export default function Pipeline() {
         business_type: newLead.business_type || null,
         lead_source: "customer_intake",
         owner_user_id: user.id,
+        line_type: pipelineView,
       }).select("id").single();
 
       if (error || !lead) throw error || new Error("Failed to create lead");
@@ -639,6 +643,9 @@ export default function Pipeline() {
   const trackerUrl = user ? `${window.location.origin}/tracker?uid=${user.id}` : "";
 
   const filtered = leads.filter((l) => {
+    // Filter by line type for the kanban view
+    const lineType = (l as any).line_type || "commercial";
+    if (lineType !== pipelineView) return false;
     if (!search) return true;
     const q = search.toLowerCase();
     return (
@@ -711,11 +718,35 @@ export default function Pipeline() {
       </div>
 
       <div className="flex items-end justify-between mb-6">
-        <div>
-          <h1 className="text-4xl">Pipeline</h1>
-          <p className="text-muted-foreground font-sans text-sm mt-1">
-            {leads.length} lead{leads.length !== 1 ? "s" : ""} — drag between stages to manage your pipeline.
-          </p>
+        <div className="flex items-center gap-4">
+          <div>
+            <h1 className="text-4xl">Pipeline</h1>
+            <p className="text-muted-foreground font-sans text-sm mt-1">
+              {filtered.length} lead{filtered.length !== 1 ? "s" : ""} — drag between stages to manage your pipeline.
+            </p>
+          </div>
+          <div className="flex items-center rounded-lg border bg-muted/50 p-0.5 ml-4">
+            <button
+              onClick={() => setPipelineView("commercial")}
+              className={`px-3 py-1.5 rounded-md text-xs font-sans font-medium transition-colors ${
+                pipelineView === "commercial"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Commercial
+            </button>
+            <button
+              onClick={() => setPipelineView("personal")}
+              className={`px-3 py-1.5 rounded-md text-xs font-sans font-medium transition-colors ${
+                pipelineView === "personal"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Personal
+            </button>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <Button
