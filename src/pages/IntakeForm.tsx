@@ -51,7 +51,7 @@ type Driver = { name: string; dob: string; license_number: string; license_state
 type Vehicle = { year: string; make: string; model: string; vin: string; usage: string; garaging_zip: string };
 type HomeInfo = { address: string; city: string; state: string; zip: string; year_built: string; square_footage: string; construction_type: string; roof_type: string; roof_year: string; occupancy: string; rent_roll: string; heating_type: string; electrical_update_year: string; plumbing_update_year: string; has_pool: boolean; has_trampoline: boolean; has_dog: boolean; dog_breed: string; alarm_type: string; fire_extinguishers: boolean; smoke_detectors: boolean; deadbolts: boolean; sprinkler_system: boolean; claims_5_years: string };
 type Boat = { year: string; make: string; model: string; length: string; hull_type: string; engine_type: string; horsepower: string; value: string; storage_location: string };
-type UmbrellaInfo = { requested_limit: string; num_drivers_household: string; num_vehicles_household: string; num_watercraft: string; rental_properties: string; has_business: boolean; business_description: string };
+type UmbrellaInfo = { wants_umbrella: "" | "yes" | "no"; requested_limit: string; major_violations: "" | "yes" | "no"; has_watercraft_unlisted: "" | "yes" | "no"; has_rental_unlisted: "" | "yes" | "no"; has_pool_trampoline_unlisted: "" | "yes" | "no"; acknowledge_umbrella: boolean };
 type FloodInfo = { flood_zone: string; has_flood_insurance: string; current_flood_carrier: string; current_flood_premium: string; flood_policy_number: string; building_coverage: string; contents_coverage: string; elevation_cert: string; foundation_type: string; lowest_floor_elevation: string; num_flood_claims: string; preferred_deductible: string };
 
 interface AutoCoverage {
@@ -97,7 +97,7 @@ const emptyDriver = (): Driver => ({ name: "", dob: "", license_number: "", lice
 const emptyVehicle = (): Vehicle => ({ year: "", make: "", model: "", vin: "", usage: "", garaging_zip: "" });
 const emptyHome = (): HomeInfo => ({ address: "", city: "", state: "", zip: "", year_built: "", square_footage: "", construction_type: "", roof_type: "", roof_year: "", occupancy: "", rent_roll: "", heating_type: "", electrical_update_year: "", plumbing_update_year: "", has_pool: false, has_trampoline: false, has_dog: false, dog_breed: "", alarm_type: "", fire_extinguishers: false, smoke_detectors: false, deadbolts: false, sprinkler_system: false, claims_5_years: "" });
 const emptyBoat = (): Boat => ({ year: "", make: "", model: "", length: "", hull_type: "", engine_type: "", horsepower: "", value: "", storage_location: "" });
-const emptyUmbrella = (): UmbrellaInfo => ({ requested_limit: "", num_drivers_household: "", num_vehicles_household: "", num_watercraft: "", rental_properties: "", has_business: false, business_description: "" });
+const emptyUmbrella = (): UmbrellaInfo => ({ wants_umbrella: "", requested_limit: "", major_violations: "", has_watercraft_unlisted: "", has_rental_unlisted: "", has_pool_trampoline_unlisted: "", acknowledge_umbrella: false });
 const emptyFlood = (): FloodInfo => ({ flood_zone: "", has_flood_insurance: "", current_flood_carrier: "", current_flood_premium: "", flood_policy_number: "", building_coverage: "", contents_coverage: "", elevation_cert: "", foundation_type: "", lowest_floor_elevation: "", num_flood_claims: "", preferred_deductible: "" });
 
 /* ─── Commercial Lines Types ─── */
@@ -266,6 +266,11 @@ export default function IntakeForm() {
       }
       if (!autoCoverage.acknowledge_disclosure) { toast.error("You must acknowledge the auto applicant disclosure"); return false; }
       if (!autoCoverage.authorize_underwriting) { toast.error("You must authorize underwriting reports"); return false; }
+    }
+    if (currentStep === "boat_umbrella" && enableUmbrella) {
+      if (umbrella.wants_umbrella === "yes" && !umbrella.acknowledge_umbrella) {
+        toast.error("You must acknowledge the umbrella disclosure"); return false;
+      }
     }
     return true;
   };
@@ -1113,25 +1118,92 @@ export default function IntakeForm() {
 
       {enableUmbrella && (
         <Card>
-          <CardHeader><CardTitle className="text-base flex items-center gap-2"><Umbrella className="h-4 w-4" /> Umbrella / Excess Liability</CardTitle></CardHeader>
-          <CardContent className="space-y-3">
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              <div>
-                <Label className="text-[10px]">Requested Limit</Label>
-                <Select value={umbrella.requested_limit} onValueChange={v => setUmbrella({ ...umbrella, requested_limit: v })}>
-                  <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
-                  <SelectContent><SelectItem value="1000000">$1,000,000</SelectItem><SelectItem value="2000000">$2,000,000</SelectItem><SelectItem value="3000000">$3,000,000</SelectItem><SelectItem value="5000000">$5,000,000</SelectItem></SelectContent>
-                </Select>
-              </div>
-              <div><Label className="text-[10px]"># Drivers in Household</Label><Input className="h-8 text-sm" value={umbrella.num_drivers_household} onChange={e => setUmbrella({ ...umbrella, num_drivers_household: e.target.value })} /></div>
-              <div><Label className="text-[10px]"># Vehicles in Household</Label><Input className="h-8 text-sm" value={umbrella.num_vehicles_household} onChange={e => setUmbrella({ ...umbrella, num_vehicles_household: e.target.value })} /></div>
-              <div><Label className="text-[10px]"># Watercraft</Label><Input className="h-8 text-sm" value={umbrella.num_watercraft} onChange={e => setUmbrella({ ...umbrella, num_watercraft: e.target.value })} /></div>
-              <div><Label className="text-[10px]"># Rental Properties</Label><Input className="h-8 text-sm" value={umbrella.rental_properties} onChange={e => setUmbrella({ ...umbrella, rental_properties: e.target.value })} /></div>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2"><Umbrella className="h-4 w-4" /> Personal Umbrella Liability</CardTitle>
+            <p className="text-[10px] text-muted-foreground">AURA Risk Group</p>
+          </CardHeader>
+          <CardContent className="space-y-5">
+            {/* Want umbrella? */}
+            <div>
+              <Label className="text-[10px]">Would you like a Personal Umbrella quote?</Label>
+              <Select value={umbrella.wants_umbrella} onValueChange={v => setUmbrella({ ...umbrella, wants_umbrella: v as any })}>
+                <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+                <SelectContent><SelectItem value="yes">Yes</SelectItem><SelectItem value="no">No</SelectItem></SelectContent>
+              </Select>
             </div>
-            <label className="flex items-center gap-2 text-xs cursor-pointer">
-              <Checkbox checked={umbrella.has_business} onCheckedChange={v => setUmbrella({ ...umbrella, has_business: !!v })} /> Do you own or operate a business?
-            </label>
-            {umbrella.has_business && <div><Label className="text-[10px]">Business Description</Label><Input className="h-8 text-sm" value={umbrella.business_description} onChange={e => setUmbrella({ ...umbrella, business_description: e.target.value })} /></div>}
+
+            {umbrella.wants_umbrella === "yes" && (
+              <div className="space-y-5 pl-3 border-l-2 border-primary/20">
+                {/* Desired limit */}
+                <div>
+                  <Label className="text-[10px]">Desired Umbrella Limit</Label>
+                  <Select value={umbrella.requested_limit} onValueChange={v => setUmbrella({ ...umbrella, requested_limit: v })}>
+                    <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select limit" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1000000">$1,000,000</SelectItem>
+                      <SelectItem value="2000000">$2,000,000</SelectItem>
+                      <SelectItem value="3000000">$3,000,000</SelectItem>
+                      <SelectItem value="5000000">$5,000,000</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Major violations */}
+                <div>
+                  <Label className="text-[10px]">Any Drivers in the Household with Major Violations, DUI, or Reckless Driving in the Last 5 Years?</Label>
+                  <Select value={umbrella.major_violations} onValueChange={v => setUmbrella({ ...umbrella, major_violations: v as any })}>
+                    <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+                    <SelectContent><SelectItem value="yes">Yes</SelectItem><SelectItem value="no">No</SelectItem></SelectContent>
+                  </Select>
+                </div>
+
+                {/* Additional exposures */}
+                <div className="space-y-3">
+                  <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Do You Own Any Additional Exposures Not Listed Above?</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <Label className="text-[10px]">Watercraft</Label>
+                      <Select value={umbrella.has_watercraft_unlisted} onValueChange={v => setUmbrella({ ...umbrella, has_watercraft_unlisted: v as any })}>
+                        <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+                        <SelectContent><SelectItem value="yes">Yes</SelectItem><SelectItem value="no">No</SelectItem></SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label className="text-[10px]">Investment or Rental Properties Not Listed</Label>
+                      <Select value={umbrella.has_rental_unlisted} onValueChange={v => setUmbrella({ ...umbrella, has_rental_unlisted: v as any })}>
+                        <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+                        <SelectContent><SelectItem value="yes">Yes</SelectItem><SelectItem value="no">No</SelectItem></SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label className="text-[10px]">Pools or Trampolines Not Listed</Label>
+                      <Select value={umbrella.has_pool_trampoline_unlisted} onValueChange={v => setUmbrella({ ...umbrella, has_pool_trampoline_unlisted: v as any })}>
+                        <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+                        <SelectContent><SelectItem value="yes">Yes</SelectItem><SelectItem value="no">No</SelectItem></SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Explanation */}
+                <div className="rounded-md bg-muted/50 p-3 space-y-2">
+                  <p className="text-[10px] text-muted-foreground leading-relaxed">Personal Umbrella Liability provides excess liability protection above your underlying home and auto policies. Most carriers require minimum underlying limits of $250,000/$500,000 and $100,000 Property Damage (or $300,000 Combined Single Limit) on auto, and $300,000 personal liability on home.</p>
+                </div>
+
+                {/* Disclosure */}
+                <div className="space-y-3 border-t pt-4">
+                  <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Umbrella Disclosure</h4>
+                  <div className="rounded-md bg-muted/50 p-3">
+                    <p className="text-[10px] text-muted-foreground leading-relaxed">Umbrella coverage is subject to underwriting review and requires qualifying underlying liability limits. Coverage is not bound until written confirmation is provided by AURA Risk Group.</p>
+                  </div>
+                  <label className="flex items-start gap-2 text-xs cursor-pointer">
+                    <Checkbox checked={umbrella.acknowledge_umbrella} onCheckedChange={v => setUmbrella({ ...umbrella, acknowledge_umbrella: !!v })} className="mt-0.5" />
+                    <span>I understand umbrella coverage requires qualifying underlying limits and underwriting approval. <span className="text-destructive">*</span></span>
+                  </label>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
