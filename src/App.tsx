@@ -24,6 +24,7 @@ import ProducerDashboard from "./pages/ProducerDashboard";
 import Approvals from "./pages/Approvals";
 import IntakeForm from "./pages/IntakeForm";
 import PipelineTracker from "./pages/PipelineTracker";
+import BorSign from "./pages/BorSign";
 
 import Settings from "./pages/Settings";
 import { Navigate } from "react-router-dom";
@@ -57,6 +58,7 @@ const App = () => (
           <Route path="/intake/:token" element={<IntakeForm />} />
           <Route path="/tracker" element={<PipelineTracker />} />
           <Route path="/personal-intake/:token" element={<IntakeForm />} />
+          <Route path="/bor-sign/:token" element={<BorSign />} />
           <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
