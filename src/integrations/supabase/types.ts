@@ -261,6 +261,45 @@ export type Database = {
           },
         ]
       }
+      email_connections: {
+        Row: {
+          access_token: string
+          created_at: string
+          email_address: string
+          id: string
+          is_active: boolean
+          provider: string
+          refresh_token: string
+          token_expires_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_token: string
+          created_at?: string
+          email_address: string
+          id?: string
+          is_active?: boolean
+          provider: string
+          refresh_token: string
+          token_expires_at: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_token?: string
+          created_at?: string
+          email_address?: string
+          id?: string
+          is_active?: boolean
+          provider?: string
+          refresh_token?: string
+          token_expires_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       email_drafts: {
         Row: {
           body_html: string
@@ -1174,6 +1213,62 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      synced_emails: {
+        Row: {
+          body_html: string | null
+          body_preview: string | null
+          connection_id: string
+          external_id: string
+          from_address: string
+          from_name: string | null
+          id: string
+          is_read: boolean
+          received_at: string
+          subject: string
+          synced_at: string
+          to_addresses: string[]
+          user_id: string
+        }
+        Insert: {
+          body_html?: string | null
+          body_preview?: string | null
+          connection_id: string
+          external_id: string
+          from_address: string
+          from_name?: string | null
+          id?: string
+          is_read?: boolean
+          received_at: string
+          subject?: string
+          synced_at?: string
+          to_addresses?: string[]
+          user_id: string
+        }
+        Update: {
+          body_html?: string | null
+          body_preview?: string | null
+          connection_id?: string
+          external_id?: string
+          from_address?: string
+          from_name?: string | null
+          id?: string
+          is_read?: boolean
+          received_at?: string
+          subject?: string
+          synced_at?: string
+          to_addresses?: string[]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "synced_emails_connection_id_fkey"
+            columns: ["connection_id"]
+            isOneToOne: false
+            referencedRelation: "email_connections"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {

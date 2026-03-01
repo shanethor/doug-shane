@@ -9,9 +9,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Building2, Mail, Save, User, BrainCircuit, Eye, EyeOff, Info } from "lucide-react";
+import { Building2, Mail, Save, User, BrainCircuit, Eye, EyeOff, Info, Loader2, Link2, Unlink, CheckCircle } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { getAuthHeaders } from "@/lib/auth-fetch";
 
 const AGENCY_FIELDS = [
   { key: "agency_name", label: "Agency Name", placeholder: "ABC Insurance Agency" },
@@ -23,6 +24,14 @@ const AGENCY_FIELDS = [
   { key: "from_email", label: "Send-From Email", placeholder: "submissions@agency.com" },
 ];
 
+type EmailConnection = {
+  id: string;
+  provider: string;
+  email_address: string;
+  is_active: boolean;
+  created_at: string;
+};
+
 export default function Settings() {
   const { user } = useAuth();
   const [values, setValues] = useState<Record<string, string>>({});
@@ -31,6 +40,10 @@ export default function Settings() {
   const [aiProvider, setAiProvider] = useState("lovable");
   const [openaiKey, setOpenaiKey] = useState("");
   const [showKey, setShowKey] = useState(false);
+
+  // Email connections
+  const [emailConnections, setEmailConnections] = useState<EmailConnection[]>([]);
+  const [connectingProvider, setConnectingProvider] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -55,7 +68,67 @@ export default function Settings() {
         }
         setLoaded(true);
       });
+
+    loadEmailConnections();
   }, [user]);
+
+  const loadEmailConnections = async () => {
+    try {
+      const headers = await getAuthHeaders();
+      const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/email-oauth`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ action: "list" }),
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        setEmailConnections(data.connections || []);
+      }
+    } catch (err) {
+      console.error("Failed to load email connections:", err);
+    }
+  };
+
+  const connectEmail = async (provider: "gmail" | "outlook") => {
+    setConnectingProvider(provider);
+    try {
+      const headers = await getAuthHeaders();
+      const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/email-oauth`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          action: "get_auth_url",
+          provider,
+          redirect_uri: `${window.location.origin}/email-callback`,
+        }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.error || "Failed to get auth URL");
+
+      // Add state parameter (provider) to the URL
+      const authUrl = new URL(data.url);
+      authUrl.searchParams.set("state", provider);
+      window.location.href = authUrl.toString();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to connect");
+      setConnectingProvider(null);
+    }
+  };
+
+  const disconnectEmail = async (provider: string) => {
+    try {
+      const headers = await getAuthHeaders();
+      await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/email-oauth`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ action: "disconnect", provider }),
+      });
+      setEmailConnections((prev) => prev.filter((c) => c.provider !== provider));
+      toast.success(`${provider === "gmail" ? "Gmail" : "Outlook"} disconnected`);
+    } catch {
+      toast.error("Failed to disconnect");
+    }
+  };
 
   const handleSave = async () => {
     if (!user) return;
@@ -84,6 +157,9 @@ export default function Settings() {
       setSaving(false);
     }
   };
+
+  const gmailConn = emailConnections.find((c) => c.provider === "gmail");
+  const outlookConn = emailConnections.find((c) => c.provider === "outlook");
 
   if (!loaded) {
     return (
@@ -161,6 +237,89 @@ export default function Settings() {
             <Save className="h-4 w-4" />
             {saving ? "Saving…" : "Save Changes"}
           </Button>
+        </CardContent>
+      </Card>
+
+      {/* Email Connections */}
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Mail className="h-4 w-4 text-accent" />
+            Email Accounts
+          </CardTitle>
+          <p className="text-xs text-muted-foreground mt-1">
+            Connect your Gmail or Outlook account to send emails from your own address and sync your inbox with AURA.
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Gmail */}
+          <div className="flex items-center justify-between rounded-lg border p-4">
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 rounded-lg bg-destructive/10 flex items-center justify-center">
+                <Mail className="h-4 w-4 text-destructive" />
+              </div>
+              <div>
+                <p className="text-sm font-medium">Gmail</p>
+                {gmailConn ? (
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <CheckCircle className="h-3 w-3 text-primary" />
+                    {gmailConn.email_address}
+                  </p>
+                ) : (
+                  <p className="text-xs text-muted-foreground">Not connected</p>
+                )}
+              </div>
+            </div>
+            {gmailConn ? (
+              <Button variant="outline" size="sm" onClick={() => disconnectEmail("gmail")} className="gap-1.5">
+                <Unlink className="h-3.5 w-3.5" />
+                Disconnect
+              </Button>
+            ) : (
+              <Button size="sm" onClick={() => connectEmail("gmail")} disabled={connectingProvider === "gmail"} className="gap-1.5">
+                {connectingProvider === "gmail" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Link2 className="h-3.5 w-3.5" />}
+                Connect
+              </Button>
+            )}
+          </div>
+
+          {/* Outlook */}
+          <div className="flex items-center justify-between rounded-lg border p-4">
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 rounded-lg bg-accent/10 flex items-center justify-center">
+                <Mail className="h-4 w-4 text-accent" />
+              </div>
+              <div>
+                <p className="text-sm font-medium">Outlook / Microsoft 365</p>
+                {outlookConn ? (
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <CheckCircle className="h-3 w-3 text-primary" />
+                    {outlookConn.email_address}
+                  </p>
+                ) : (
+                  <p className="text-xs text-muted-foreground">Not connected</p>
+                )}
+              </div>
+            </div>
+            {outlookConn ? (
+              <Button variant="outline" size="sm" onClick={() => disconnectEmail("outlook")} className="gap-1.5">
+                <Unlink className="h-3.5 w-3.5" />
+                Disconnect
+              </Button>
+            ) : (
+              <Button size="sm" onClick={() => connectEmail("outlook")} disabled={connectingProvider === "outlook"} className="gap-1.5">
+                {connectingProvider === "outlook" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Link2 className="h-3.5 w-3.5" />}
+                Connect
+              </Button>
+            )}
+          </div>
+
+          <div className="rounded-md bg-muted/50 p-3">
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
+              <strong>How it works:</strong> When connected, AURA syncs your recent emails into the Inbox and lets you send emails directly from your own address. 
+              Your email credentials are stored securely and never shared. You can disconnect at any time.
+            </p>
+          </div>
         </CardContent>
       </Card>
 
