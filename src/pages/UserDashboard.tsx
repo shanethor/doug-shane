@@ -82,6 +82,7 @@ export default function UserDashboard() {
       supabase
         .from("policies")
         .select("lead_id")
+        .eq("producer_user_id", user.id)
         .eq("status", "approved"),
     ]);
 
