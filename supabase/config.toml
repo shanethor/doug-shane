@@ -32,3 +32,6 @@ verify_jwt = false
 
 [functions.list-users]
 verify_jwt = false
+
+[functions.complete-bor-signing]
+verify_jwt = false

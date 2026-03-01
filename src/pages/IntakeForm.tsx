@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +16,7 @@ import {
   ChevronLeft, ChevronRight, Droplets,
 } from "lucide-react";
 import { toast } from "sonner";
+import { generateBorPdf, downloadPdf } from "@/lib/bor-pdf-generator";
 import auraLogo from "@/assets/aura-logo.png";
 
 /* ─── Shared Constants ─── */
@@ -182,6 +183,7 @@ export default function IntakeForm() {
   const [commercialForm, setCommercialForm] = useState<CommercialFormData>(emptyCommercial());
   const [commercialStep, setCommercialStep] = useState<CommercialStepKey>("business_info");
   const [borGenerated, setBorGenerated] = useState(false);
+  const [borSignToken, setBorSignToken] = useState<string | null>(null);
 
   // ─── Shared State ───
   const [notes, setNotes] = useState("");
@@ -463,6 +465,49 @@ export default function IntakeForm() {
       }
 
       if (intakeType === "commercial") {
+        // If BOR authorized, create a BOR signature record and generate signing link
+        if (commercialForm.wants_bor === "yes" && commercialForm.bor_authorized) {
+          try {
+            const fullAddress = [commercialForm.street_address, commercialForm.city, commercialForm.state, commercialForm.zip].filter(Boolean).join(", ");
+            const { data: borData } = await (supabase
+              .from("bor_signatures" as any)
+              .insert({
+                agent_id: record.agent_id,
+                insured_name: commercialForm.business_name,
+                insured_email: commercialForm.customer_email,
+                insured_address: fullAddress,
+                carrier_name: commercialForm.current_carrier_name || null,
+                policy_number: commercialForm.policy_number || null,
+                policy_effective_date: commercialForm.policy_effective_date || null,
+                policy_expiration_date: commercialForm.policy_expiration_date || null,
+                selected_lines: commercialForm.bor_lines,
+                carrier_email: commercialForm.carrier_email || null,
+                intake_record_id: record.id,
+                lead_id: record.lead_id || null,
+              } as any)
+              .select("token")
+              .single() as any);
+
+            if (borData?.token) {
+              setBorSignToken(borData.token);
+
+              // Send signing link via email
+              try {
+                const signingUrl = `${window.location.origin}/bor-sign/${borData.token}`;
+                await supabase.functions.invoke("send-email", {
+                  body: {
+                    to: commercialForm.customer_email,
+                    subject: `Broker of Record Authorization – ${commercialForm.business_name}`,
+                    body: `<p>Dear ${commercialForm.customer_name},</p><p>Please sign your Broker of Record authorization letter by clicking the link below:</p><p><a href="${signingUrl}" style="display:inline-block;padding:12px 24px;background:#142D5A;color:#fff;text-decoration:none;border-radius:6px;font-weight:bold;">Sign BOR Letter</a></p><p>This link expires in 7 days.</p><p>Best regards,<br/>AURA Risk Group</p>`,
+                  },
+                });
+              } catch { /* email failure non-blocking */ }
+            }
+          } catch (err) {
+            console.error("BOR creation failed:", err);
+          }
+        }
+
         setBorGenerated(true);
         toast.success("Submitted successfully!");
       } else {
@@ -1747,9 +1792,36 @@ export default function IntakeForm() {
                 </h2>
                 <p className="text-sm text-muted-foreground max-w-md mx-auto">
                   {commercialForm.wants_bor === "yes"
-                    ? "Your BOR authorization has been recorded. A signed copy will be generated and sent for execution."
+                    ? "Your BOR authorization has been recorded. A secure e-signature link has been sent to your email."
                     : "Your information has been securely submitted. Your agent will be in touch shortly."}
                 </p>
+                {commercialForm.wants_bor === "yes" && (
+                  <div className="flex flex-col items-center gap-2 pt-2">
+                    <Button variant="outline" size="sm" onClick={async () => {
+                      try {
+                        const fullAddress = [commercialForm.street_address, commercialForm.city, commercialForm.state, commercialForm.zip].filter(Boolean).join(", ");
+                        const borPdfBytes = await generateBorPdf({
+                          insuredName: commercialForm.business_name,
+                          insuredAddress: fullAddress,
+                          carrierName: commercialForm.current_carrier_name,
+                          policyNumber: commercialForm.policy_number,
+                          policyEffectiveDate: commercialForm.policy_effective_date,
+                          policyExpirationDate: commercialForm.policy_expiration_date,
+                          selectedLines: commercialForm.bor_lines,
+                          producerName: "", producerEmail: "", producerPhone: "",
+                        });
+                        downloadPdf(borPdfBytes, `BOR_${commercialForm.business_name.replace(/\s+/g, "_")}.pdf`);
+                      } catch { toast.error("Failed to generate PDF"); }
+                    }}>
+                      <FileText className="h-4 w-4 mr-2" /> Download BOR Letter (Unsigned)
+                    </Button>
+                    {borSignToken && (
+                      <p className="text-[10px] text-muted-foreground">
+                        Signing link: <a href={`/bor-sign/${borSignToken}`} className="text-primary underline" target="_blank" rel="noopener noreferrer">Open E-Signature Page</a>
+                      </p>
+                    )}
+                  </div>
+                )}
               </CardContent>
             </Card>
 
