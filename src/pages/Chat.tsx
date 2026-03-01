@@ -1893,21 +1893,19 @@ export default function Chat() {
                 </button>
               </div>
 
-              {/* Coming Soon — Email in chat */}
-              <div className="w-full max-w-2xl relative rounded-xl border border-dashed border-muted-foreground/30 bg-muted/30 p-4 opacity-70">
-                <Badge variant="outline" className="absolute top-3 right-3 text-[10px] uppercase tracking-wider font-sans bg-muted text-muted-foreground border-muted-foreground/30">
-                  Coming Soon
-                </Badge>
-                <div className="flex items-start gap-3">
-                  <div className="h-9 w-9 rounded-lg bg-muted flex items-center justify-center shrink-0">
-                    <Mail className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-foreground">Email in your chat request to have a client ready to go when you get back to the office.</p>
-                    <p className="text-xs text-muted-foreground mt-1">Send client details via email and AURA will pre-fill everything before you arrive.</p>
-                  </div>
+              {/* Inbox Link */}
+              <button
+                onClick={() => navigate("/inbox")}
+                className="group flex items-start gap-3 rounded-xl border bg-card p-4 text-left hover:shadow-md hover:border-primary/30 transition-all w-full max-w-2xl"
+              >
+                <div className="h-9 w-9 rounded-lg bg-accent/10 flex items-center justify-center shrink-0">
+                  <Mail className="h-4 w-4 text-accent" />
                 </div>
-              </div>
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Open your Inbox — emails, notifications, and AI drafts.</p>
+                  <p className="text-xs text-muted-foreground mt-1">Compose AI-powered emails, view pipeline updates, and manage all communications in one place.</p>
+                </div>
+              </button>
 
               {/* Suggest a Feature */}
               <button
