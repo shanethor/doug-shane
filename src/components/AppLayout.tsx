@@ -1,6 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useAdmin } from "@/hooks/useAdmin";
+import { useUnreadCount } from "@/hooks/useUnreadCount";
 import { LayoutDashboard, LogOut, ShieldCheck, MessageCircle, GraduationCap, GitBranch, BarChart3, Settings, Inbox } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -12,6 +13,7 @@ export function AppLayout({ children, onLogoClick }: { children: React.ReactNode
   const { isAdmin } = useAdmin();
   const location = useLocation();
   const { trainingMode, setTrainingMode } = useTrainingMode();
+  const unreadCount = useUnreadCount();
 
   const navItems = [
     { to: "/", label: "Chat", icon: MessageCircle },
@@ -47,10 +49,15 @@ export function AppLayout({ children, onLogoClick }: { children: React.ReactNode
                 <Button
                   variant={location.pathname === item.to ? "secondary" : "ghost"}
                   size="sm"
-                  className={`gap-2 text-xs ${location.pathname === item.to ? "aura-glow-shadow" : ""}`}
+                  className={`gap-2 text-xs relative ${location.pathname === item.to ? "aura-glow-shadow" : ""}`}
                 >
                   <item.icon className="h-3.5 w-3.5" />
                   {item.label}
+                  {item.to === "/inbox" && unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 h-4 min-w-[16px] px-1 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center">
+                      {unreadCount > 99 ? "99+" : unreadCount}
+                    </span>
+                  )}
                 </Button>
               </Link>
             ))}
