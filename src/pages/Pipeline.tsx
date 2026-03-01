@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { AppLayout } from "@/components/AppLayout";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -677,8 +678,51 @@ export default function Pipeline() {
   if (loading) {
     return (
       <AppLayout>
-        <div className="flex items-center justify-center py-20">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+        {/* Stats bar skeleton */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-9 gap-3 mb-6">
+          {Array.from({ length: 9 }).map((_, i) => (
+            <Card key={i}>
+              <CardContent className="p-3 flex items-center gap-2">
+                <Skeleton className="h-4 w-4 rounded-full shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <Skeleton className="h-5 w-16 mb-1" />
+                  <Skeleton className="h-3 w-20" />
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        {/* Header skeleton */}
+        <div className="flex items-end justify-between mb-6">
+          <div>
+            <Skeleton className="h-10 w-40 mb-2" />
+            <Skeleton className="h-4 w-56" />
+          </div>
+          <div className="flex gap-2">
+            <Skeleton className="h-9 w-24" />
+            <Skeleton className="h-10 flex-1 min-w-[200px]" />
+          </div>
+        </div>
+        {/* Kanban columns skeleton */}
+        <div className="grid grid-cols-5 gap-4">
+          {Array.from({ length: 5 }).map((_, col) => (
+            <div key={col} className="space-y-3">
+              <div className="flex items-center justify-between mb-2">
+                <Skeleton className="h-5 w-20" />
+                <Skeleton className="h-5 w-6 rounded-full" />
+              </div>
+              {Array.from({ length: col === 0 ? 3 : col === 4 ? 1 : 2 }).map((_, row) => (
+                <div key={row} className="rounded-lg border bg-card p-3 space-y-2">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-3 w-2/3" />
+                  <div className="flex gap-2">
+                    <Skeleton className="h-5 w-14 rounded-full" />
+                    <Skeleton className="h-5 w-10 rounded-full" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ))}
         </div>
       </AppLayout>
     );
