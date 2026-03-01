@@ -110,7 +110,7 @@ Deno.serve(async (req) => {
               state: state || null,
               lead_source: "customer_intake",
               owner_user_id: agentId,
-              stage: "quoting",
+              stage: "prospect",
             })
             .select("id")
             .single();
@@ -262,7 +262,7 @@ Deno.serve(async (req) => {
             state: state || null,
             lead_source: "customer_intake",
             owner_user_id: agentId,
-            stage: "quoting",
+            stage: "prospect",
             submission_id: link.submission_id,
           })
           .select("id")
