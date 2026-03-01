@@ -261,6 +261,53 @@ export type Database = {
           },
         ]
       }
+      email_drafts: {
+        Row: {
+          body_html: string
+          created_at: string
+          id: string
+          lead_id: string | null
+          sent_at: string | null
+          status: string
+          subject: string
+          to_addresses: string[]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          body_html?: string
+          created_at?: string
+          id?: string
+          lead_id?: string | null
+          sent_at?: string | null
+          status?: string
+          subject?: string
+          to_addresses?: string[]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          body_html?: string
+          created_at?: string
+          id?: string
+          lead_id?: string | null
+          sent_at?: string | null
+          status?: string
+          subject?: string
+          to_addresses?: string[]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_drafts_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       extraction_corrections: {
         Row: {
           ai_value: string | null
@@ -783,6 +830,42 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          body: string | null
+          created_at: string
+          id: string
+          is_read: boolean
+          link: string | null
+          metadata: Json | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          link?: string | null
+          metadata?: Json | null
+          title: string
+          type?: string
+          user_id: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          link?: string | null
+          metadata?: Json | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       personal_intake_submissions: {
         Row: {
           agent_id: string
@@ -946,33 +1029,39 @@ export type Database = {
       profiles: {
         Row: {
           agency_name: string | null
+          ai_provider: string
           created_at: string
           form_defaults: Json | null
           from_email: string | null
           full_name: string | null
           id: string
+          openai_api_key_encrypted: string | null
           phone: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
           agency_name?: string | null
+          ai_provider?: string
           created_at?: string
           form_defaults?: Json | null
           from_email?: string | null
           full_name?: string | null
           id?: string
+          openai_api_key_encrypted?: string | null
           phone?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
           agency_name?: string | null
+          ai_provider?: string
           created_at?: string
           form_defaults?: Json | null
           from_email?: string | null
           full_name?: string | null
           id?: string
+          openai_api_key_encrypted?: string | null
           phone?: string | null
           updated_at?: string
           user_id?: string

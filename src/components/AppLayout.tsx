@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useAdmin } from "@/hooks/useAdmin";
-import { LayoutDashboard, LogOut, ShieldCheck, MessageCircle, GraduationCap, GitBranch, BarChart3, Settings } from "lucide-react";
+import { LayoutDashboard, LogOut, ShieldCheck, MessageCircle, GraduationCap, GitBranch, BarChart3, Settings, Inbox } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { useTrainingMode } from "@/hooks/useTrainingMode";
@@ -15,6 +15,7 @@ export function AppLayout({ children, onLogoClick }: { children: React.ReactNode
 
   const navItems = [
     { to: "/", label: "Chat", icon: MessageCircle },
+    { to: "/inbox", label: "Inbox", icon: Inbox },
     { to: "/clients", label: "Clients", icon: LayoutDashboard },
     { to: "/pipeline", label: "Pipeline", icon: GitBranch },
     { to: "/my-dashboard", label: "Production", icon: BarChart3 },

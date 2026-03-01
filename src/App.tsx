@@ -25,7 +25,7 @@ import Approvals from "./pages/Approvals";
 import IntakeForm from "./pages/IntakeForm";
 import PipelineTracker from "./pages/PipelineTracker";
 import BorSign from "./pages/BorSign";
-
+import InboxPage from "./pages/Inbox";
 import Settings from "./pages/Settings";
 import { Navigate } from "react-router-dom";
 const queryClient = new QueryClient();
@@ -59,6 +59,7 @@ const App = () => (
           <Route path="/tracker" element={<PipelineTracker />} />
           <Route path="/personal-intake/:token" element={<IntakeForm />} />
           <Route path="/bor-sign/:token" element={<BorSign />} />
+          <Route path="/inbox" element={<ProtectedRoute><InboxPage /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
