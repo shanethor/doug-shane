@@ -101,20 +101,43 @@ const emptyUmbrella = (): UmbrellaInfo => ({ wants_umbrella: "", requested_limit
 const emptyFlood = (): FloodInfo => ({ flood_zone: "", has_flood_insurance: "", current_flood_carrier: "", current_flood_premium: "", flood_policy_number: "", building_coverage: "", contents_coverage: "", elevation_cert: "", foundation_type: "", lowest_floor_elevation: "", num_flood_claims: "", preferred_deductible: "" });
 
 /* ─── Commercial Lines Types ─── */
+type CommercialStepKey = "business_info" | "policy_info" | "bor_auth" | "commercial_docs";
+
+const COMMERCIAL_LINES = [
+  "General Liability", "Workers Compensation", "Commercial Auto",
+  "Property", "Umbrella", "Other",
+] as const;
+
 interface CommercialFormData {
   customer_name: string; customer_email: string; customer_phone: string;
-  business_name: string; ein: string; business_type: string;
+  business_name: string; dba: string; ein: string; business_type: string;
   street_address: string; city: string; state: string; zip: string;
   employee_count: string; annual_revenue: string; years_in_business: string;
   requested_coverage: string; requested_premium: string; additional_notes: string;
+  // Step 2: Policy Info
+  has_current_insurance: "" | "yes" | "no";
+  current_carrier_name: string;
+  policy_number: string;
+  policy_effective_date: string;
+  policy_expiration_date: string;
+  lines_in_force: string[];
+  // Step 3: BOR
+  wants_bor: "" | "yes" | "no";
+  bor_lines: string[];
+  bor_authorized: boolean;
+  carrier_email: string;
 }
 
 const emptyCommercial = (): CommercialFormData => ({
   customer_name: "", customer_email: "", customer_phone: "",
-  business_name: "", ein: "", business_type: "",
+  business_name: "", dba: "", ein: "", business_type: "",
   street_address: "", city: "", state: "", zip: "",
   employee_count: "", annual_revenue: "", years_in_business: "",
   requested_coverage: "", requested_premium: "", additional_notes: "",
+  has_current_insurance: "", current_carrier_name: "", policy_number: "",
+  policy_effective_date: "", policy_expiration_date: "",
+  lines_in_force: [], wants_bor: "", bor_lines: [], bor_authorized: false,
+  carrier_email: "",
 });
 
 /* ─── Step definitions for personal lines ─── */
@@ -157,6 +180,8 @@ export default function IntakeForm() {
 
   // ─── Commercial State ───
   const [commercialForm, setCommercialForm] = useState<CommercialFormData>(emptyCommercial());
+  const [commercialStep, setCommercialStep] = useState<CommercialStepKey>("business_info");
+  const [borGenerated, setBorGenerated] = useState(false);
 
   // ─── Shared State ───
   const [notes, setNotes] = useState("");
@@ -245,7 +270,7 @@ export default function IntakeForm() {
   const removeFile = (idx: number) => setUploadedFiles(prev => prev.filter((_, i) => i !== idx));
   const updateFileCategory = (idx: number, cat: string) => setUploadedFiles(prev => prev.map((f, i) => i === idx ? { ...f, category: cat } : f));
 
-  const updateCommercial = (field: keyof CommercialFormData, value: string) =>
+  const updateCommercial = (field: keyof CommercialFormData, value: any) =>
     setCommercialForm(prev => ({ ...prev, [field]: value }));
 
   /* ─── Step validation ─── */
@@ -366,6 +391,7 @@ export default function IntakeForm() {
           const f = commercialForm;
           const lines: string[] = [`Intake Type: Commercial Lines`];
           if (f.ein) lines.push(`FEIN / EIN: ${f.ein}`);
+          if (f.dba) lines.push(`DBA: ${f.dba}`);
           if (f.customer_phone) lines.push(`Phone: ${f.customer_phone}`);
           if (f.business_type) lines.push(`Business Type: ${f.business_type}`);
           if (f.street_address) lines.push(`Address: ${f.street_address}`);
@@ -373,6 +399,18 @@ export default function IntakeForm() {
           if (f.employee_count) lines.push(`Number of Employees: ${f.employee_count}`);
           if (f.annual_revenue) lines.push(`Annual Revenue: ${f.annual_revenue}`);
           if (f.years_in_business) lines.push(`Years in Business: ${f.years_in_business}`);
+          if (f.has_current_insurance === "yes") {
+            lines.push(`Current Carrier: ${f.current_carrier_name}`);
+            if (f.policy_number) lines.push(`Policy #: ${f.policy_number}`);
+            if (f.policy_effective_date) lines.push(`Effective: ${f.policy_effective_date}`);
+            if (f.policy_expiration_date) lines.push(`Expiration: ${f.policy_expiration_date}`);
+            if (f.lines_in_force.length > 0) lines.push(`Lines in Force: ${f.lines_in_force.join(", ")}`);
+          }
+          if (f.wants_bor === "yes") {
+            lines.push(`BOR Authorized: Yes`);
+            lines.push(`BOR Lines: ${f.bor_lines.join(", ")}`);
+            if (f.carrier_email) lines.push(`Carrier Email: ${f.carrier_email}`);
+          }
           if (docMeta.length > 0) lines.push(`Documents Attached: ${docMeta.length}`);
           if (f.additional_notes) lines.push(`Notes: ${f.additional_notes}`);
           if (notes) lines.push(`Additional Notes: ${notes}`);
@@ -424,8 +462,13 @@ export default function IntakeForm() {
         }
       }
 
-      setSubmitted(true);
-      toast.success("Submitted successfully!");
+      if (intakeType === "commercial") {
+        setBorGenerated(true);
+        toast.success("Submitted successfully!");
+      } else {
+        setSubmitted(true);
+        toast.success("Submitted successfully!");
+      }
     } catch (err: any) {
       toast.error(err.message || "Submission failed");
     } finally {
@@ -1388,62 +1431,349 @@ export default function IntakeForm() {
           </>
         )}
 
-        {/* ─── COMMERCIAL LINES FORM (unchanged — single page) ─── */}
-        {intakeType === "commercial" && (
+        {/* ─── COMMERCIAL LINES WIZARD ─── */}
+        {intakeType === "commercial" && !borGenerated && (
           <>
-            <Card>
-              <CardHeader><CardTitle className="text-base">Contact Information</CardTitle></CardHeader>
-              <CardContent className="grid gap-3 sm:grid-cols-2">
-                <div><Label className="text-xs">Your Name *</Label><Input value={commercialForm.customer_name} onChange={e => updateCommercial("customer_name", e.target.value)} placeholder="John Smith" /></div>
-                <div><Label className="text-xs">Email *</Label><Input type="email" value={commercialForm.customer_email} onChange={e => updateCommercial("customer_email", e.target.value)} placeholder="john@company.com" /></div>
-                <div><Label className="text-xs">Phone *</Label><Input type="tel" value={commercialForm.customer_phone} onChange={e => updateCommercial("customer_phone", e.target.value)} placeholder="(555) 123-4567" /></div>
-                <div><Label className="text-xs">Mailing Address *</Label><Input value={commercialForm.street_address} onChange={e => updateCommercial("street_address", e.target.value)} placeholder="123 Main St, Suite 100" /></div>
-              </CardContent>
-            </Card>
+            {/* Commercial Step Progress */}
+            {(() => {
+              const commSteps: CommercialStepKey[] = ["business_info", "policy_info", "bor_auth", "commercial_docs"];
+              const commStepLabels: Record<CommercialStepKey, string> = {
+                business_info: "Business Info",
+                policy_info: "Current Policy",
+                bor_auth: "Broker of Record",
+                commercial_docs: "Documents & Submit",
+              };
+              const commIdx = commSteps.indexOf(commercialStep);
+              const commProgress = ((commIdx + 1) / commSteps.length) * 100;
 
-            <Card>
-              <CardHeader><CardTitle className="text-base">Business Details</CardTitle></CardHeader>
-              <CardContent className="grid gap-3 sm:grid-cols-2">
-                <div className="sm:col-span-2"><Label className="text-xs">Business Name *</Label><Input value={commercialForm.business_name} onChange={e => updateCommercial("business_name", e.target.value)} placeholder="Acme Construction LLC" /></div>
-                <div><Label className="text-xs">FEIN / EIN</Label><Input value={commercialForm.ein} onChange={e => updateCommercial("ein", e.target.value)} placeholder="XX-XXXXXXX" /></div>
-                <div><Label className="text-xs">Business Type</Label><Input value={commercialForm.business_type} onChange={e => updateCommercial("business_type", e.target.value)} placeholder="e.g. General Contractor" /></div>
-                <div><Label className="text-xs">City</Label><Input value={commercialForm.city} onChange={e => updateCommercial("city", e.target.value)} placeholder="Dallas" /></div>
-                <div>
-                  <Label className="text-xs">State</Label>
-                  <Select value={commercialForm.state} onValueChange={v => updateCommercial("state", v)}>
-                    <SelectTrigger><SelectValue placeholder="Select state" /></SelectTrigger>
-                    <SelectContent>{US_STATES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
-                  </Select>
-                </div>
-                <div><Label className="text-xs">ZIP Code</Label><Input value={commercialForm.zip} onChange={e => updateCommercial("zip", e.target.value)} placeholder="75201" /></div>
-                <div><Label className="text-xs"># of Employees</Label><Input value={commercialForm.employee_count} onChange={e => updateCommercial("employee_count", e.target.value)} placeholder="25" /></div>
-                <div><Label className="text-xs">Annual Revenue</Label><Input value={commercialForm.annual_revenue} onChange={e => updateCommercial("annual_revenue", e.target.value)} placeholder="$1,500,000" /></div>
-                <div><Label className="text-xs">Years in Business</Label><Input value={commercialForm.years_in_business} onChange={e => updateCommercial("years_in_business", e.target.value)} placeholder="8" /></div>
-              </CardContent>
-            </Card>
+              const validateCommStep = (): boolean => {
+                if (commercialStep === "business_info") {
+                  if (!commercialForm.customer_name.trim()) { toast.error("Primary contact name is required"); return false; }
+                  if (!commercialForm.customer_email.trim() || !/^[\w.-]+@[\w.-]+\.\w+$/.test(commercialForm.customer_email.trim())) { toast.error("A valid email is required"); return false; }
+                  if (!commercialForm.customer_phone.trim()) { toast.error("Phone is required"); return false; }
+                  if (!commercialForm.business_name.trim()) { toast.error("Legal business name is required"); return false; }
+                  if (!commercialForm.street_address.trim()) { toast.error("Business address is required"); return false; }
+                }
+                if (commercialStep === "bor_auth") {
+                  if (commercialForm.wants_bor === "yes" && !commercialForm.bor_authorized) {
+                    toast.error("You must authorize AURA Risk Group as Broker of Record"); return false;
+                  }
+                  if (commercialForm.wants_bor === "yes" && commercialForm.bor_lines.length === 0) {
+                    toast.error("Please select at least one line of coverage for BOR"); return false;
+                  }
+                }
+                return true;
+              };
 
-            <Card>
-              <CardHeader><CardTitle className="text-base">Coverage Request</CardTitle></CardHeader>
-              <CardContent className="grid gap-3 sm:grid-cols-2">
-                <div>
-                  <Label className="text-xs">Requested Coverage</Label>
-                  <Select value={commercialForm.requested_coverage} onValueChange={v => updateCommercial("requested_coverage", v)}>
-                    <SelectTrigger><SelectValue placeholder="Select coverage type" /></SelectTrigger>
-                    <SelectContent>{COVERAGE_OPTIONS.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
-                  </Select>
-                </div>
-                <div><Label className="text-xs">Desired Premium Budget</Label><Input value={commercialForm.requested_premium} onChange={e => updateCommercial("requested_premium", e.target.value)} placeholder="$5,000 / year" /></div>
-              </CardContent>
-            </Card>
+              const goCommNext = () => {
+                if (!validateCommStep()) return;
+                if (commIdx < commSteps.length - 1) {
+                  setCommercialStep(commSteps[commIdx + 1]);
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }
+              };
+              const goCommBack = () => {
+                if (commIdx > 0) {
+                  setCommercialStep(commSteps[commIdx - 1]);
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }
+              };
 
-            {/* Documents + Notes + Submit for commercial (inline) */}
-            {renderDocumentsStep()}
+              const toggleLine = (line: string, field: "lines_in_force" | "bor_lines") => {
+                setCommercialForm(prev => ({
+                  ...prev,
+                  [field]: prev[field].includes(line)
+                    ? prev[field].filter((l: string) => l !== line)
+                    : [...prev[field], line],
+                }));
+              };
 
-            <Button className="w-full h-11 text-base" onClick={handleSubmit} disabled={submitting}>
-              {submitting ? <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Submitting...</> : "Submit Information"}
-            </Button>
-            <p className="text-[10px] text-center text-muted-foreground">Your information is transmitted securely. By submitting, you authorize your agent to use this data for quoting purposes.</p>
+              return (
+                <>
+                  {/* Progress */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <span>Step {commIdx + 1} of {commSteps.length}</span>
+                      <span>{commStepLabels[commercialStep]}</span>
+                    </div>
+                    <Progress value={commProgress} className="h-1.5" />
+                    <div className="flex gap-1 justify-center">
+                      {commSteps.map((step, idx) => (
+                        <button key={step} onClick={() => { if (idx < commIdx) setCommercialStep(step); }}
+                          className={`h-2 rounded-full transition-all ${idx === commIdx ? "w-8 bg-primary" : idx < commIdx ? "w-2 bg-primary/50 cursor-pointer hover:bg-primary/70" : "w-2 bg-muted"}`} />
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* ── STEP 1: BUSINESS INFORMATION ── */}
+                  {commercialStep === "business_info" && (
+                    <div className="space-y-6">
+                      <div className="text-center space-y-1">
+                        <h2 className="text-lg font-bold uppercase tracking-wider">Required Business Information</h2>
+                        <p className="text-xs text-muted-foreground">This is the minimum information required to begin structuring and negotiating your insurance program.</p>
+                      </div>
+
+                      <Card>
+                        <CardHeader><CardTitle className="text-base">Primary Contact</CardTitle></CardHeader>
+                        <CardContent className="grid gap-3 sm:grid-cols-2">
+                          <div className="sm:col-span-2"><Label className="text-xs">Primary Contact Name <span className="text-destructive">*</span></Label><Input value={commercialForm.customer_name} onChange={e => updateCommercial("customer_name", e.target.value)} placeholder="John Smith" /></div>
+                          <div><Label className="text-xs">Phone <span className="text-destructive">*</span></Label><Input type="tel" value={commercialForm.customer_phone} onChange={e => updateCommercial("customer_phone", e.target.value)} placeholder="(555) 123-4567" /></div>
+                          <div><Label className="text-xs">Email <span className="text-destructive">*</span></Label><Input type="email" value={commercialForm.customer_email} onChange={e => updateCommercial("customer_email", e.target.value)} placeholder="john@company.com" /></div>
+                        </CardContent>
+                      </Card>
+
+                      <Card>
+                        <CardHeader><CardTitle className="text-base">Business Entity</CardTitle></CardHeader>
+                        <CardContent className="grid gap-3 sm:grid-cols-2">
+                          <div className="sm:col-span-2"><Label className="text-xs">Legal Business Name <span className="text-destructive">*</span></Label><Input value={commercialForm.business_name} onChange={e => updateCommercial("business_name", e.target.value)} placeholder="Acme Construction LLC" /></div>
+                          <div><Label className="text-xs">DBA (if applicable)</Label><Input value={commercialForm.dba} onChange={e => updateCommercial("dba", e.target.value)} placeholder="Acme Builders" /></div>
+                          <div><Label className="text-xs">FEIN</Label><Input value={commercialForm.ein} onChange={e => updateCommercial("ein", e.target.value)} placeholder="XX-XXXXXXX" /></div>
+                          <div className="sm:col-span-2"><Label className="text-xs">Business Address <span className="text-destructive">*</span></Label><Input value={commercialForm.street_address} onChange={e => updateCommercial("street_address", e.target.value)} placeholder="123 Main St, Suite 100" /></div>
+                          <div><Label className="text-xs">City</Label><Input value={commercialForm.city} onChange={e => updateCommercial("city", e.target.value)} placeholder="Dallas" /></div>
+                          <div>
+                            <Label className="text-xs">State</Label>
+                            <Select value={commercialForm.state} onValueChange={v => updateCommercial("state", v)}>
+                              <SelectTrigger><SelectValue placeholder="Select state" /></SelectTrigger>
+                              <SelectContent>{US_STATES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+                            </Select>
+                          </div>
+                          <div><Label className="text-xs">ZIP Code</Label><Input value={commercialForm.zip} onChange={e => updateCommercial("zip", e.target.value)} placeholder="75201" /></div>
+                          <div><Label className="text-xs">Business Type</Label><Input value={commercialForm.business_type} onChange={e => updateCommercial("business_type", e.target.value)} placeholder="e.g. General Contractor" /></div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  )}
+
+                  {/* ── STEP 2: CURRENT POLICY INFORMATION ── */}
+                  {commercialStep === "policy_info" && (
+                    <div className="space-y-6">
+                      <div className="text-center space-y-1">
+                        <h2 className="text-lg font-bold uppercase tracking-wider">Current Policy Information</h2>
+                        <p className="text-xs text-muted-foreground">We cannot negotiate what we cannot see.</p>
+                      </div>
+
+                      <Card>
+                        <CardHeader><CardTitle className="text-base">Do you currently carry insurance?</CardTitle></CardHeader>
+                        <CardContent className="space-y-4">
+                          <div className="flex gap-3">
+                            {(["yes", "no"] as const).map(v => (
+                              <button key={v} onClick={() => updateCommercial("has_current_insurance", v)}
+                                className={`flex-1 py-3 rounded-lg border-2 text-sm font-medium transition-all ${commercialForm.has_current_insurance === v ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"}`}>
+                                {v === "yes" ? "Yes" : "No"}
+                              </button>
+                            ))}
+                          </div>
+
+                          {commercialForm.has_current_insurance === "yes" && (
+                            <div className="space-y-4 pt-2">
+                              <div className="grid gap-3 sm:grid-cols-2">
+                                <div><Label className="text-xs">Current Carrier Name</Label><Input value={commercialForm.current_carrier_name} onChange={e => updateCommercial("current_carrier_name", e.target.value)} placeholder="The Hartford" /></div>
+                                <div><Label className="text-xs">Policy Number</Label><Input value={commercialForm.policy_number} onChange={e => updateCommercial("policy_number", e.target.value)} placeholder="31 SBA BC20AJ" /></div>
+                                <div><Label className="text-xs">Policy Effective Date</Label><Input type="date" value={commercialForm.policy_effective_date} onChange={e => updateCommercial("policy_effective_date", e.target.value)} /></div>
+                                <div><Label className="text-xs">Policy Expiration Date</Label><Input type="date" value={commercialForm.policy_expiration_date} onChange={e => updateCommercial("policy_expiration_date", e.target.value)} /></div>
+                              </div>
+
+                              <div className="space-y-2">
+                                <Label className="text-xs font-medium">Lines Currently in Force</Label>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                  {COMMERCIAL_LINES.map(line => (
+                                    <button key={line} onClick={() => toggleLine(line, "lines_in_force")}
+                                      className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-xs font-medium transition-colors ${commercialForm.lines_in_force.includes(line) ? "bg-primary text-primary-foreground border-primary" : "bg-card text-muted-foreground border-border hover:border-primary/50"}`}>
+                                      {commercialForm.lines_in_force.includes(line) ? <Check className="h-3 w-3" /> : <div className="h-3 w-3 rounded-full border" />}
+                                      {line}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+
+                              {/* Upload Dec Pages */}
+                              <div className="space-y-2">
+                                <Label className="text-xs font-medium">Upload Current Declaration Pages</Label>
+                                <div
+                                  onDragOver={e => { e.preventDefault(); setDragActive(true); }}
+                                  onDragLeave={() => setDragActive(false)}
+                                  onDrop={handleFileDrop}
+                                  onClick={() => fileInputRef.current?.click()}
+                                  className={`border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-colors ${dragActive ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"}`}>
+                                  <Upload className="h-6 w-6 mx-auto mb-1 text-muted-foreground" />
+                                  <p className="text-xs font-medium">Drag & drop or click to upload</p>
+                                  <p className="text-[10px] text-muted-foreground mt-0.5">PDF, JPG, PNG accepted</p>
+                                  <input ref={fileInputRef} type="file" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" className="hidden" onChange={handleFileSelect} />
+                                </div>
+                                {uploadedFiles.length > 0 && (
+                                  <div className="space-y-1">
+                                    {uploadedFiles.map((uf, idx) => (
+                                      <div key={idx} className="flex items-center gap-2 p-2 rounded-md border bg-muted/20">
+                                        <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                                        <span className="text-xs truncate flex-1">{uf.file.name}</span>
+                                        <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => removeFile(idx)}><X className="h-3 w-3" /></Button>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+
+                      <div className="rounded-md bg-muted/50 p-4">
+                        <p className="text-[10px] text-muted-foreground leading-relaxed">
+                          <span className="font-semibold text-foreground">Why this matters:</span> Underwriters prioritize submissions that are controlled. If multiple brokers are involved or the account is being loosely marketed, leverage weakens and pricing suffers. If we are going to negotiate aggressively, we need clarity and authority.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ── STEP 3: BROKER OF RECORD AUTHORIZATION ── */}
+                  {commercialStep === "bor_auth" && (
+                    <div className="space-y-6">
+                      <div className="text-center space-y-1">
+                        <h2 className="text-lg font-bold uppercase tracking-wider">Broker of Record Authorization</h2>
+                        <p className="text-xs text-muted-foreground">Broker of Record is how we take control of the negotiation.</p>
+                      </div>
+
+                      <Card>
+                        <CardContent className="pt-6 space-y-4">
+                          <div className="rounded-md bg-muted/50 p-4 space-y-2">
+                            <p className="text-xs font-semibold">When AURA Risk Group is Broker of Record:</p>
+                            <ul className="text-[11px] text-muted-foreground space-y-1.5 list-none">
+                              <li className="flex items-start gap-2"><Check className="h-3.5 w-3.5 text-primary mt-0.5 shrink-0" /> We control the negotiation path.</li>
+                              <li className="flex items-start gap-2"><Check className="h-3.5 w-3.5 text-primary mt-0.5 shrink-0" /> We communicate directly with underwriters.</li>
+                              <li className="flex items-start gap-2"><Check className="h-3.5 w-3.5 text-primary mt-0.5 shrink-0" /> We request underwriting information and loss history.</li>
+                              <li className="flex items-start gap-2"><Check className="h-3.5 w-3.5 text-primary mt-0.5 shrink-0" /> We prevent the account from being shopped inefficiently.</li>
+                              <li className="flex items-start gap-2"><Check className="h-3.5 w-3.5 text-primary mt-0.5 shrink-0" /> We protect your reputation in the marketplace.</li>
+                            </ul>
+                            <p className="text-[10px] text-muted-foreground pt-2 border-t">This does not cancel your existing coverage. It authorizes us to represent you while we work on your program.</p>
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label className="text-xs font-medium">Would you like AURA Risk Group to send a Broker of Record letter?</Label>
+                            <div className="flex gap-3">
+                              {(["yes", "no"] as const).map(v => (
+                                <button key={v} onClick={() => updateCommercial("wants_bor", v)}
+                                  className={`flex-1 py-3 rounded-lg border-2 text-sm font-medium transition-all ${commercialForm.wants_bor === v ? "border-primary bg-primary/5" : "border-border hover:border-primary/40"}`}>
+                                  {v === "yes" ? "Yes" : "No"}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+
+                          {commercialForm.wants_bor === "yes" && (
+                            <div className="space-y-4 pt-2">
+                              <div className="space-y-2">
+                                <Label className="text-xs font-medium">Select Lines of Coverage</Label>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                  {[...COMMERCIAL_LINES.filter(l => l !== "Other"), "All Lines"].map(line => (
+                                    <button key={line} onClick={() => {
+                                      if (line === "All Lines") {
+                                        const allSelected = COMMERCIAL_LINES.filter(l => l !== "Other").every(l => commercialForm.bor_lines.includes(l));
+                                        setCommercialForm(prev => ({
+                                          ...prev,
+                                          bor_lines: allSelected ? [] : [...COMMERCIAL_LINES.filter(l => l !== "Other")],
+                                        }));
+                                      } else {
+                                        toggleLine(line, "bor_lines");
+                                      }
+                                    }}
+                                      className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-xs font-medium transition-colors ${
+                                        line === "All Lines"
+                                          ? (COMMERCIAL_LINES.filter(l => l !== "Other").every(l => commercialForm.bor_lines.includes(l)) ? "bg-primary text-primary-foreground border-primary" : "bg-card text-muted-foreground border-border hover:border-primary/50")
+                                          : (commercialForm.bor_lines.includes(line) ? "bg-primary text-primary-foreground border-primary" : "bg-card text-muted-foreground border-border hover:border-primary/50")
+                                      }`}>
+                                      {(line === "All Lines" ? COMMERCIAL_LINES.filter(l => l !== "Other").every(l => commercialForm.bor_lines.includes(l)) : commercialForm.bor_lines.includes(line))
+                                        ? <Check className="h-3 w-3" /> : <div className="h-3 w-3 rounded-full border" />}
+                                      {line}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+
+                              <div><Label className="text-xs">Carrier Email (optional — for automatic BOR delivery)</Label><Input value={commercialForm.carrier_email} onChange={e => updateCommercial("carrier_email", e.target.value)} placeholder="underwriter@carrier.com" /></div>
+
+                              <div className="space-y-3 border-t pt-4">
+                                <label className="flex items-start gap-3 cursor-pointer">
+                                  <Checkbox checked={commercialForm.bor_authorized} onCheckedChange={v => setCommercialForm(prev => ({ ...prev, bor_authorized: !!v }))} className="mt-0.5" />
+                                  <span className="text-xs leading-relaxed">
+                                    I authorize <span className="font-semibold">AURA Risk Group</span> to act as Broker of Record for the selected lines of coverage. <span className="text-destructive">*</span>
+                                  </span>
+                                </label>
+                              </div>
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    </div>
+                  )}
+
+                  {/* ── STEP 4: DOCUMENTS & SUBMIT ── */}
+                  {commercialStep === "commercial_docs" && renderDocumentsStep()}
+
+                  {/* Navigation Buttons */}
+                  <div className="flex gap-3 pt-2">
+                    {commIdx > 0 && (
+                      <Button variant="outline" className="flex-1 h-11" onClick={goCommBack}>
+                        <ChevronLeft className="h-4 w-4 mr-1" /> Back
+                      </Button>
+                    )}
+                    {commIdx < commSteps.length - 1 ? (
+                      <Button className="flex-1 h-11" onClick={goCommNext}>
+                        Next <ChevronRight className="h-4 w-4 ml-1" />
+                      </Button>
+                    ) : (
+                      <Button className="flex-1 h-11 text-base" onClick={handleSubmit} disabled={submitting}>
+                        {submitting ? <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Submitting...</> : "Submit & Generate BOR"}
+                      </Button>
+                    )}
+                  </div>
+
+                  <p className="text-[10px] text-center text-muted-foreground">Your information is transmitted securely. By submitting, you authorize your agent to use this data for quoting and negotiation purposes.</p>
+                </>
+              );
+            })()}
           </>
+        )}
+
+        {/* ─── POST-BOR SUCCESS SCREEN ─── */}
+        {intakeType === "commercial" && borGenerated && (
+          <div className="space-y-6">
+            <Card className="border-primary/30">
+              <CardContent className="pt-8 text-center space-y-4">
+                <div className="rounded-full bg-primary/10 p-4 inline-block">
+                  <CheckCircle className="h-10 w-10 text-primary" />
+                </div>
+                <h2 className="text-2xl font-bold">
+                  {commercialForm.wants_bor === "yes" ? "Broker of Record Successfully Executed" : "Submission Complete"}
+                </h2>
+                <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                  {commercialForm.wants_bor === "yes"
+                    ? "Your BOR authorization has been recorded. A signed copy will be generated and sent for execution."
+                    : "Your information has been securely submitted. Your agent will be in touch shortly."}
+                </p>
+              </CardContent>
+            </Card>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <button
+                onClick={() => {
+                  // Reset to allow continuing with full review
+                  setBorGenerated(false);
+                  setCommercialStep("commercial_docs");
+                }}
+                className="flex flex-col items-center gap-2 p-6 rounded-lg border-2 border-border hover:border-primary/40 transition-all text-center">
+                <Building2 className="h-6 w-6 text-primary" />
+                <p className="text-sm font-semibold">Continue & Complete Full Insurance Review</p>
+                <p className="text-[10px] text-muted-foreground">Proceed with your complete insurance program review</p>
+              </button>
+              <button
+                onClick={() => setSubmitted(true)}
+                className="flex flex-col items-center gap-2 p-6 rounded-lg border-2 border-border hover:border-primary/40 transition-all text-center">
+                <Shield className="h-6 w-6 text-muted-foreground" />
+                <p className="text-sm font-semibold">Close</p>
+                <p className="text-[10px] text-muted-foreground">We will begin working on your account immediately</p>
+              </button>
+            </div>
+          </div>
         )}
       </div>
     </div>
