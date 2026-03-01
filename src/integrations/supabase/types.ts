@@ -584,6 +584,7 @@ export type Database = {
           estimated_renewal_date: string | null
           id: string
           lead_source: string | null
+          line_type: string
           loss_reason: string | null
           owner_user_id: string
           phone: string | null
@@ -603,6 +604,7 @@ export type Database = {
           estimated_renewal_date?: string | null
           id?: string
           lead_source?: string | null
+          line_type?: string
           loss_reason?: string | null
           owner_user_id: string
           phone?: string | null
@@ -622,6 +624,7 @@ export type Database = {
           estimated_renewal_date?: string | null
           id?: string
           lead_source?: string | null
+          line_type?: string
           loss_reason?: string | null
           owner_user_id?: string
           phone?: string | null
