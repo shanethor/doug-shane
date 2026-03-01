@@ -51,6 +51,45 @@ type HomeInfo = { address: string; city: string; state: string; zip: string; yea
 type Boat = { year: string; make: string; model: string; length: string; hull_type: string; engine_type: string; horsepower: string; value: string; storage_location: string };
 type UmbrellaInfo = { requested_limit: string; num_drivers_household: string; num_vehicles_household: string; num_watercraft: string; rental_properties: string; has_business: boolean; business_description: string };
 
+interface AutoCoverage {
+  liability_type: "" | "split" | "csl";
+  bi_limit: string;
+  pd_limit: string;
+  csl_limit: string;
+  um_uim_limit: string;
+  med_pay_limit: string;
+  wants_comprehensive: "" | "yes" | "no";
+  comp_deductible: string;
+  wants_collision: "" | "yes" | "no";
+  collision_deductible: string;
+  wants_towing: "" | "yes" | "no";
+  towing_limit: string;
+  wants_rental: "" | "yes" | "no";
+  rental_limit: string;
+  current_carrier: string;
+  policy_expiration: string;
+  current_liability_limits: string;
+  continuous_coverage: "" | "yes" | "no";
+  vehicle_ownership: string;
+  lienholder_name: string;
+  lienholder_address: string;
+  acknowledge_disclosure: boolean;
+  authorize_underwriting: boolean;
+}
+
+const emptyAutoCoverage = (): AutoCoverage => ({
+  liability_type: "", bi_limit: "", pd_limit: "", csl_limit: "",
+  um_uim_limit: "", med_pay_limit: "",
+  wants_comprehensive: "", comp_deductible: "",
+  wants_collision: "", collision_deductible: "",
+  wants_towing: "", towing_limit: "",
+  wants_rental: "", rental_limit: "",
+  current_carrier: "", policy_expiration: "", current_liability_limits: "",
+  continuous_coverage: "", vehicle_ownership: "",
+  lienholder_name: "", lienholder_address: "",
+  acknowledge_disclosure: false, authorize_underwriting: false,
+});
+
 const emptyDriver = (): Driver => ({ name: "", dob: "", license_number: "", license_state: "", gender: "", marital_status: "", violations: "" });
 const emptyVehicle = (): Vehicle => ({ year: "", make: "", model: "", vin: "", usage: "", garaging_zip: "" });
 const emptyHome = (): HomeInfo => ({ address: "", city: "", state: "", zip: "", year_built: "", square_footage: "", construction_type: "", roof_type: "", roof_year: "", occupancy: "", rent_roll: "", heating_type: "", electrical_update_year: "", plumbing_update_year: "", has_pool: false, has_trampoline: false, has_dog: false, dog_breed: "", alarm_type: "", fire_extinguishers: false, smoke_detectors: false, deadbolts: false, sprinkler_system: false, claims_5_years: "" });
@@ -102,6 +141,8 @@ export default function IntakeForm() {
   const [homes, setHomes] = useState<HomeInfo[]>([emptyHome()]);
   const [boats, setBoats] = useState<Boat[]>([emptyBoat()]);
   const [umbrella, setUmbrella] = useState<UmbrellaInfo>(emptyUmbrella());
+  const [autoCoverage, setAutoCoverage] = useState<AutoCoverage>(emptyAutoCoverage());
+  const updateCov = (field: keyof AutoCoverage, value: any) => setAutoCoverage(prev => ({ ...prev, [field]: value }));
 
   // ─── Commercial State ───
   const [commercialForm, setCommercialForm] = useState<CommercialFormData>(emptyCommercial());
@@ -203,6 +244,12 @@ export default function IntakeForm() {
           return;
         }
       }
+      if (!autoCoverage.acknowledge_disclosure) {
+        toast.error("You must acknowledge the auto applicant disclosure"); return;
+      }
+      if (!autoCoverage.authorize_underwriting) {
+        toast.error("You must authorize underwriting reports"); return;
+      }
     }
 
     setSubmitting(true);
@@ -216,7 +263,7 @@ export default function IntakeForm() {
           intake_type: "personal",
           applicant: { name: applicantName, email: applicantEmail, phone: applicantPhone, address: applicantAddress },
           sections: {
-            auto: enableAuto ? { drivers, vehicles } : null,
+            auto: enableAuto ? { drivers, vehicles, coverage: autoCoverage } : null,
             home: enableHome ? { properties: homes } : null,
             boat: enableBoat ? { boats } : null,
             umbrella: enableUmbrella ? umbrella : null,
@@ -508,6 +555,352 @@ export default function IntakeForm() {
                       </div>
                     ))}
                     {vehicles.length < 5 && <Button variant="outline" size="sm" className="w-full text-xs" onClick={() => addItem(vehicles, setVehicles, emptyVehicle, 5)}><Plus className="h-3 w-3 mr-1" /> Add Vehicle</Button>}
+                  </div>
+
+                  {/* ─── AUTO COVERAGE ELECTION — CONNECTICUT ─── */}
+                  <div className="border-t pt-6 mt-4 space-y-6">
+                    <div className="text-center space-y-1">
+                      <h3 className="text-sm font-bold uppercase tracking-wider">Auto Coverage Election — Connecticut</h3>
+                      <p className="text-[10px] text-muted-foreground">AURA Risk Group</p>
+                    </div>
+
+                    {/* Liability Coverage Selection */}
+                    <div className="space-y-3">
+                      <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Liability Coverage Selection</h4>
+                      <p className="text-[10px] text-muted-foreground">Please select one liability structure.</p>
+                      <div>
+                        <Label className="text-[10px]">Liability Type</Label>
+                        <Select value={autoCoverage.liability_type} onValueChange={v => updateCov("liability_type", v)}>
+                          <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select liability structure" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="split">Split Limits</SelectItem>
+                            <SelectItem value="csl">Combined Single Limit</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {autoCoverage.liability_type === "split" && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pl-3 border-l-2 border-primary/20">
+                          <div>
+                            <Label className="text-[10px]">Bodily Injury Limit</Label>
+                            <Select value={autoCoverage.bi_limit} onValueChange={v => updateCov("bi_limit", v)}>
+                              <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select BI limit" /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="25000/50000">$25,000 / $50,000</SelectItem>
+                                <SelectItem value="50000/100000">$50,000 / $100,000</SelectItem>
+                                <SelectItem value="100000/300000">$100,000 / $300,000</SelectItem>
+                                <SelectItem value="250000/500000">$250,000 / $500,000</SelectItem>
+                                <SelectItem value="other">Other</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div>
+                            <Label className="text-[10px]">Property Damage Limit</Label>
+                            <Select value={autoCoverage.pd_limit} onValueChange={v => updateCov("pd_limit", v)}>
+                              <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select PD limit" /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="25000">$25,000</SelectItem>
+                                <SelectItem value="50000">$50,000</SelectItem>
+                                <SelectItem value="100000">$100,000</SelectItem>
+                                <SelectItem value="250000">$250,000</SelectItem>
+                                <SelectItem value="500000">$500,000</SelectItem>
+                                <SelectItem value="other">Other</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <p className="text-[10px] text-muted-foreground sm:col-span-2">Bodily Injury limits are fixed per person and per accident pairings and cannot be altered independently. Property Damage is selected separately.</p>
+                        </div>
+                      )}
+
+                      {autoCoverage.liability_type === "csl" && (
+                        <div className="pl-3 border-l-2 border-primary/20 space-y-2">
+                          <div>
+                            <Label className="text-[10px]">Combined Single Limit</Label>
+                            <Select value={autoCoverage.csl_limit} onValueChange={v => updateCov("csl_limit", v)}>
+                              <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select CSL" /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="100000">$100,000</SelectItem>
+                                <SelectItem value="300000">$300,000</SelectItem>
+                                <SelectItem value="500000">$500,000</SelectItem>
+                                <SelectItem value="1000000">$1,000,000</SelectItem>
+                                <SelectItem value="2000000">$2,000,000</SelectItem>
+                                <SelectItem value="other">Other</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                      )}
+
+                      {autoCoverage.liability_type && (
+                        <div className="rounded-md bg-muted/50 p-3">
+                          <p className="text-[10px] text-muted-foreground leading-relaxed">
+                            {autoCoverage.liability_type === "split"
+                              ? "Split Limits apply separate caps to injuries and property damage. The first number is the maximum paid for injuries to one person. The second number is the maximum paid for all injuries combined in one accident. Property Damage is the maximum paid for damage to another person's vehicle or property."
+                              : "Combined Single Limit provides one total amount available for both bodily injury and property damage combined for a single accident. There are no separate per person or property damage caps within that total."}
+                          </p>
+                          <p className="text-[10px] text-destructive mt-2 font-medium">If damages exceed your selected liability limit, you may be personally responsible for the amount above your policy limit.</p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Uninsured / Underinsured Motorist */}
+                    <div className="space-y-3">
+                      <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Uninsured & Underinsured Motorist Coverage</h4>
+                      <div>
+                        <Label className="text-[10px]">UM/UIM Limit</Label>
+                        {autoCoverage.liability_type === "split" ? (
+                          <Select value={autoCoverage.um_uim_limit} onValueChange={v => updateCov("um_uim_limit", v)}>
+                            <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select UM/UIM limit" /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="match_bi">Match Bodily Injury Liability</SelectItem>
+                              <SelectItem value="25000/50000">$25,000 / $50,000</SelectItem>
+                              <SelectItem value="50000/100000">$50,000 / $100,000</SelectItem>
+                              <SelectItem value="100000/300000">$100,000 / $300,000</SelectItem>
+                              <SelectItem value="250000/500000">$250,000 / $500,000</SelectItem>
+                              <SelectItem value="other">Other</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <Select value={autoCoverage.um_uim_limit} onValueChange={v => updateCov("um_uim_limit", v)}>
+                            <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select UM/UIM limit" /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="match_csl">Match Combined Single Limit</SelectItem>
+                              <SelectItem value="100000">$100,000</SelectItem>
+                              <SelectItem value="300000">$300,000</SelectItem>
+                              <SelectItem value="500000">$500,000</SelectItem>
+                              <SelectItem value="1000000">$1,000,000</SelectItem>
+                              <SelectItem value="other">Other</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        )}
+                      </div>
+                      <p className="text-[10px] text-muted-foreground">Uninsured and Underinsured Motorist coverage protects you if you are injured by a driver who has no insurance or insufficient insurance. In Connecticut, this coverage typically mirrors your Bodily Injury limits unless you elect otherwise.</p>
+                    </div>
+
+                    {/* Medical Payments */}
+                    <div className="space-y-3">
+                      <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Medical Payments Coverage</h4>
+                      <div>
+                        <Label className="text-[10px]">Medical Payments Limit</Label>
+                        <Select value={autoCoverage.med_pay_limit} onValueChange={v => updateCov("med_pay_limit", v)}>
+                          <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select MedPay limit" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">No Coverage</SelectItem>
+                            <SelectItem value="1000">$1,000</SelectItem>
+                            <SelectItem value="2000">$2,000</SelectItem>
+                            <SelectItem value="5000">$5,000</SelectItem>
+                            <SelectItem value="10000">$10,000</SelectItem>
+                            <SelectItem value="25000">$25,000</SelectItem>
+                            <SelectItem value="other">Other</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground">Medical Payments coverage helps pay medical expenses for you and your passengers regardless of fault.</p>
+                    </div>
+
+                    {/* Comprehensive */}
+                    <div className="space-y-3">
+                      <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Comprehensive Coverage</h4>
+                      <div>
+                        <Label className="text-[10px]">Would you like Comprehensive Coverage?</Label>
+                        <Select value={autoCoverage.wants_comprehensive} onValueChange={v => updateCov("wants_comprehensive", v)}>
+                          <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="yes">Yes</SelectItem>
+                            <SelectItem value="no">No</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground">Comprehensive covers damage to your vehicle caused by events other than collision. This includes theft, vandalism, fire, falling objects, weather damage, and animal strikes. Full glass coverage, when available, is included within Comprehensive.</p>
+                      {autoCoverage.wants_comprehensive === "yes" && (
+                        <div className="pl-3 border-l-2 border-primary/20">
+                          <Label className="text-[10px]">Comprehensive Deductible</Label>
+                          <Select value={autoCoverage.comp_deductible} onValueChange={v => updateCov("comp_deductible", v)}>
+                            <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select deductible" /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="100">$100</SelectItem>
+                              <SelectItem value="250">$250</SelectItem>
+                              <SelectItem value="500">$500</SelectItem>
+                              <SelectItem value="1000">$1,000</SelectItem>
+                              <SelectItem value="2500">$2,500</SelectItem>
+                              <SelectItem value="other">Other</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Collision */}
+                    <div className="space-y-3">
+                      <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Collision Coverage</h4>
+                      <div>
+                        <Label className="text-[10px]">Would you like Collision Coverage?</Label>
+                        <Select value={autoCoverage.wants_collision} onValueChange={v => {
+                          updateCov("wants_collision", v);
+                          if (v === "yes" && autoCoverage.wants_comprehensive !== "yes") {
+                            updateCov("wants_comprehensive", "yes");
+                            toast.info("Comprehensive coverage has been enabled — it is required for Collision.");
+                          }
+                        }}>
+                          <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="yes">Yes</SelectItem>
+                            <SelectItem value="no">No</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <p className="text-[10px] text-destructive font-medium">Collision coverage cannot be selected unless Comprehensive coverage is also selected.</p>
+                      <p className="text-[10px] text-muted-foreground">Collision covers damage to your vehicle resulting from impact with another vehicle or object regardless of fault.</p>
+                      {autoCoverage.wants_collision === "yes" && (
+                        <div className="pl-3 border-l-2 border-primary/20">
+                          <Label className="text-[10px]">Collision Deductible</Label>
+                          <Select value={autoCoverage.collision_deductible} onValueChange={v => updateCov("collision_deductible", v)}>
+                            <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select deductible" /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="100">$100</SelectItem>
+                              <SelectItem value="250">$250</SelectItem>
+                              <SelectItem value="500">$500</SelectItem>
+                              <SelectItem value="1000">$1,000</SelectItem>
+                              <SelectItem value="2500">$2,500</SelectItem>
+                              <SelectItem value="other">Other</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Full Glass Note */}
+                    <div className="rounded-md bg-muted/50 p-3">
+                      <p className="text-[10px] text-muted-foreground"><span className="font-medium">Full Glass Coverage:</span> Full glass coverage, if available by carrier, is included within Comprehensive coverage. No separate election is required unless a carrier-specific endorsement applies.</p>
+                    </div>
+
+                    {/* Towing and Labor */}
+                    <div className="space-y-3">
+                      <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Towing & Labor Coverage</h4>
+                      <div>
+                        <Label className="text-[10px]">Would you like Towing & Labor Coverage?</Label>
+                        <Select value={autoCoverage.wants_towing} onValueChange={v => updateCov("wants_towing", v)}>
+                          <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="yes">Yes</SelectItem>
+                            <SelectItem value="no">No</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground">Towing and Labor helps cover roadside assistance expenses such as towing, battery service, lockout assistance, and minor roadside repairs.</p>
+                      {autoCoverage.wants_towing === "yes" && (
+                        <div className="pl-3 border-l-2 border-primary/20">
+                          <Label className="text-[10px]">Towing Limit</Label>
+                          <Select value={autoCoverage.towing_limit} onValueChange={v => updateCov("towing_limit", v)}>
+                            <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select limit" /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="50">$50</SelectItem>
+                              <SelectItem value="75">$75</SelectItem>
+                              <SelectItem value="100">$100</SelectItem>
+                              <SelectItem value="150">$150</SelectItem>
+                              <SelectItem value="200">$200</SelectItem>
+                              <SelectItem value="other">Other</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Rental Reimbursement */}
+                    <div className="space-y-3">
+                      <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Rental Reimbursement Coverage</h4>
+                      <div>
+                        <Label className="text-[10px]">Would you like Rental Reimbursement Coverage?</Label>
+                        <Select value={autoCoverage.wants_rental} onValueChange={v => updateCov("wants_rental", v)}>
+                          <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="yes">Yes</SelectItem>
+                            <SelectItem value="no">No</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground">Rental Reimbursement helps pay for a rental vehicle while your covered auto is being repaired due to a covered claim.</p>
+                      {autoCoverage.wants_rental === "yes" && (
+                        <div className="pl-3 border-l-2 border-primary/20">
+                          <Label className="text-[10px]">Rental Limit</Label>
+                          <Select value={autoCoverage.rental_limit} onValueChange={v => updateCov("rental_limit", v)}>
+                            <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select limit" /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="30/900">$30/day — $900 max</SelectItem>
+                              <SelectItem value="40/1200">$40/day — $1,200 max</SelectItem>
+                              <SelectItem value="50/1500">$50/day — $1,500 max</SelectItem>
+                              <SelectItem value="60/1800">$60/day — $1,800 max</SelectItem>
+                              <SelectItem value="other">Other</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Additional Information */}
+                    <div className="space-y-3">
+                      <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Additional Information</h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div><Label className="text-[10px]">Current Insurance Carrier</Label><Input className="h-8 text-sm" value={autoCoverage.current_carrier} onChange={e => updateCov("current_carrier", e.target.value)} placeholder="e.g. Progressive, GEICO" /></div>
+                        <div><Label className="text-[10px]">Policy Expiration Date</Label><Input className="h-8 text-sm" type="date" value={autoCoverage.policy_expiration} onChange={e => updateCov("policy_expiration", e.target.value)} /></div>
+                        <div><Label className="text-[10px]">Current Liability Limits</Label><Input className="h-8 text-sm" value={autoCoverage.current_liability_limits} onChange={e => updateCov("current_liability_limits", e.target.value)} placeholder="e.g. 100/300/100" /></div>
+                        <div>
+                          <Label className="text-[10px]">Continuous Coverage in Last 3 Years?</Label>
+                          <Select value={autoCoverage.continuous_coverage} onValueChange={v => updateCov("continuous_coverage", v)}>
+                            <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="yes">Yes</SelectItem>
+                              <SelectItem value="no">No</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label className="text-[10px]">Vehicle Ownership</Label>
+                          <Select value={autoCoverage.vehicle_ownership} onValueChange={v => updateCov("vehicle_ownership", v)}>
+                            <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="owned">Owned</SelectItem>
+                              <SelectItem value="financed">Financed</SelectItem>
+                              <SelectItem value="leased">Leased</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      {(autoCoverage.vehicle_ownership === "financed" || autoCoverage.vehicle_ownership === "leased") && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pl-3 border-l-2 border-primary/20">
+                          <div><Label className="text-[10px]">Lienholder Name</Label><Input className="h-8 text-sm" value={autoCoverage.lienholder_name} onChange={e => updateCov("lienholder_name", e.target.value)} /></div>
+                          <div><Label className="text-[10px]">Lienholder Address</Label><Input className="h-8 text-sm" value={autoCoverage.lienholder_address} onChange={e => updateCov("lienholder_address", e.target.value)} /></div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Disclosure */}
+                    <div className="space-y-4 border-t pt-4">
+                      <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Auto Applicant Disclosure & Acknowledgment</h4>
+                      <div className="rounded-md bg-muted/50 p-3 space-y-2">
+                        <p className="text-[10px] text-muted-foreground leading-relaxed">By submitting this information to AURA Risk Group, I understand that coverage is not bound, modified, or confirmed until I receive written confirmation from a licensed representative of AURA Risk Group.</p>
+                        <p className="text-[10px] text-muted-foreground leading-relaxed">I understand that all quotes are estimates based on the information provided and are subject to underwriting review, eligibility guidelines, carrier approval, inspection, and verification of motor vehicle and claims history.</p>
+                        <p className="text-[10px] text-muted-foreground leading-relaxed">I certify that the information provided is true, accurate, and complete to the best of my knowledge. I understand that inaccurate, incomplete, or omitted information may affect eligibility, premium, coverage terms, or claims payment.</p>
+                        <p className="text-[10px] text-muted-foreground leading-relaxed">I understand that selecting lower liability limits may expose me to personal financial responsibility in the event of a serious accident.</p>
+                        <p className="text-[10px] text-muted-foreground leading-relaxed">I understand that declining Comprehensive, Collision, Rental Reimbursement, Towing and Labor, or Uninsured and Underinsured Motorist coverage may result in no payment for certain types of losses.</p>
+                      </div>
+                      <label className="flex items-start gap-2 text-xs cursor-pointer">
+                        <Checkbox checked={autoCoverage.acknowledge_disclosure} onCheckedChange={v => updateCov("acknowledge_disclosure", !!v)} className="mt-0.5" />
+                        <span>I acknowledge and agree to the above terms. <span className="text-destructive">*</span></span>
+                      </label>
+                    </div>
+
+                    {/* Underwriting Authorization */}
+                    <div className="space-y-4 border-t pt-4">
+                      <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Underwriting Authorization</h4>
+                      <div className="rounded-md bg-muted/50 p-3">
+                        <p className="text-[10px] text-muted-foreground leading-relaxed">By submitting this form, I authorize AURA Risk Group and its insurance partners to obtain motor vehicle reports, claims history reports including CLUE, prior insurance verification, insurance scores where permitted by law, and other consumer reports necessary for underwriting and rating purposes.</p>
+                      </div>
+                      <label className="flex items-start gap-2 text-xs cursor-pointer">
+                        <Checkbox checked={autoCoverage.authorize_underwriting} onCheckedChange={v => updateCov("authorize_underwriting", !!v)} className="mt-0.5" />
+                        <span>I authorize underwriting reports to be obtained. <span className="text-destructive">*</span></span>
+                      </label>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
