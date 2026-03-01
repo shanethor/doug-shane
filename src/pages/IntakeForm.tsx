@@ -406,6 +406,16 @@ export default function IntakeForm() {
             .update({ form_data: formData as any, status: "submitted", submitted_at: new Date().toISOString(), is_used: true })
             .eq("id", record.id);
           if (error) throw error;
+
+          // Create lead + business_submission so data flows into pipeline & ACORDs
+          try {
+            await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/process-intake`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json", Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
+              body: JSON.stringify({ personal_intake_id: record.id }),
+            });
+          } catch { /* pipeline sync failure shouldn't block submission */ }
+
           try {
             if (record.delivery_emails?.length > 0) {
               await supabase.functions.invoke("send-personal-intake-email", { body: { token: record.token, applicant_name: commercialForm.customer_name, sections: "Commercial Lines" } });
