@@ -46,13 +46,13 @@ const DOCUMENT_CHECKLIST = [
 
 /* ─── Personal Lines Types ─── */
 type Driver = { name: string; dob: string; license_number: string; license_state: string; gender: string; marital_status: string; violations: string };
-type Vehicle = { year: string; make: string; model: string; vin: string; usage: string; annual_miles: string; garaging_zip: string };
+type Vehicle = { year: string; make: string; model: string; vin: string; usage: string; garaging_zip: string };
 type HomeInfo = { address: string; city: string; state: string; zip: string; year_built: string; square_footage: string; construction_type: string; roof_type: string; roof_year: string; occupancy: string; rent_roll: string; heating_type: string; electrical_update_year: string; plumbing_update_year: string; has_pool: boolean; has_trampoline: boolean; has_dog: boolean; dog_breed: string; alarm_type: string; fire_extinguishers: boolean; smoke_detectors: boolean; deadbolts: boolean; sprinkler_system: boolean; claims_5_years: string };
 type Boat = { year: string; make: string; model: string; length: string; hull_type: string; engine_type: string; horsepower: string; value: string; storage_location: string };
 type UmbrellaInfo = { requested_limit: string; num_drivers_household: string; num_vehicles_household: string; num_watercraft: string; rental_properties: string; has_business: boolean; business_description: string };
 
 const emptyDriver = (): Driver => ({ name: "", dob: "", license_number: "", license_state: "", gender: "", marital_status: "", violations: "" });
-const emptyVehicle = (): Vehicle => ({ year: "", make: "", model: "", vin: "", usage: "", annual_miles: "", garaging_zip: "" });
+const emptyVehicle = (): Vehicle => ({ year: "", make: "", model: "", vin: "", usage: "", garaging_zip: "" });
 const emptyHome = (): HomeInfo => ({ address: "", city: "", state: "", zip: "", year_built: "", square_footage: "", construction_type: "", roof_type: "", roof_year: "", occupancy: "", rent_roll: "", heating_type: "", electrical_update_year: "", plumbing_update_year: "", has_pool: false, has_trampoline: false, has_dog: false, dog_breed: "", alarm_type: "", fire_extinguishers: false, smoke_detectors: false, deadbolts: false, sprinkler_system: false, claims_5_years: "" });
 const emptyBoat = (): Boat => ({ year: "", make: "", model: "", length: "", hull_type: "", engine_type: "", horsepower: "", value: "", storage_location: "" });
 const emptyUmbrella = (): UmbrellaInfo => ({ requested_limit: "", num_drivers_household: "", num_vehicles_household: "", num_watercraft: "", rental_properties: "", has_business: false, business_description: "" });
@@ -192,6 +192,17 @@ export default function IntakeForm() {
 
     if (intakeType === "commercial" && !commercialForm.business_name.trim()) {
       toast.error("Business name is required"); return;
+    }
+
+    // Validate vehicle required fields (personal auto)
+    if (intakeType === "personal" && enableAuto) {
+      for (let i = 0; i < vehicles.length; i++) {
+        const v = vehicles[i];
+        if (!v.year.trim() || !v.make.trim() || !v.model.trim() || !v.vin.trim() || !v.garaging_zip.trim()) {
+          toast.error(`Vehicle ${i + 1}: Year, Make, Model, VIN, and Garaging ZIP are required`);
+          return;
+        }
+      }
     }
 
     setSubmitting(true);
@@ -481,10 +492,10 @@ export default function IntakeForm() {
                           {vehicles.length > 1 && <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => removeItem(vehicles, setVehicles, i)}><Trash2 className="h-3 w-3" /></Button>}
                         </div>
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                          <div><Label className="text-[10px]">Year</Label><Input className="h-8 text-sm" value={v.year} onChange={e => updateItem(vehicles, setVehicles, i, "year", e.target.value)} placeholder="2024" /></div>
-                          <div><Label className="text-[10px]">Make</Label><Input className="h-8 text-sm" value={v.make} onChange={e => updateItem(vehicles, setVehicles, i, "make", e.target.value)} placeholder="Toyota" /></div>
-                          <div><Label className="text-[10px]">Model</Label><Input className="h-8 text-sm" value={v.model} onChange={e => updateItem(vehicles, setVehicles, i, "model", e.target.value)} placeholder="Camry" /></div>
-                          <div><Label className="text-[10px]">VIN</Label><Input className="h-8 text-sm" value={v.vin} onChange={e => updateItem(vehicles, setVehicles, i, "vin", e.target.value)} /></div>
+                          <div><Label className="text-[10px]">Year <span className="text-destructive">*</span></Label><Input className="h-8 text-sm" value={v.year} onChange={e => updateItem(vehicles, setVehicles, i, "year", e.target.value)} placeholder="2024" required /></div>
+                          <div><Label className="text-[10px]">Make <span className="text-destructive">*</span></Label><Input className="h-8 text-sm" value={v.make} onChange={e => updateItem(vehicles, setVehicles, i, "make", e.target.value)} placeholder="Toyota" required /></div>
+                          <div><Label className="text-[10px]">Model <span className="text-destructive">*</span></Label><Input className="h-8 text-sm" value={v.model} onChange={e => updateItem(vehicles, setVehicles, i, "model", e.target.value)} placeholder="Camry" required /></div>
+                          <div><Label className="text-[10px]">VIN <span className="text-destructive">*</span></Label><Input className="h-8 text-sm" value={v.vin} onChange={e => updateItem(vehicles, setVehicles, i, "vin", e.target.value)} required /></div>
                           <div>
                             <Label className="text-[10px]">Usage</Label>
                             <Select value={v.usage} onValueChange={val => updateItem(vehicles, setVehicles, i, "usage", val)}>
@@ -492,8 +503,7 @@ export default function IntakeForm() {
                               <SelectContent><SelectItem value="commute">Commute</SelectItem><SelectItem value="pleasure">Pleasure</SelectItem><SelectItem value="business">Business</SelectItem></SelectContent>
                             </Select>
                           </div>
-                          <div><Label className="text-[10px]">Annual Miles</Label><Input className="h-8 text-sm" value={v.annual_miles} onChange={e => updateItem(vehicles, setVehicles, i, "annual_miles", e.target.value)} placeholder="12000" /></div>
-                          <div><Label className="text-[10px]">Garaging ZIP</Label><Input className="h-8 text-sm" value={v.garaging_zip} onChange={e => updateItem(vehicles, setVehicles, i, "garaging_zip", e.target.value)} /></div>
+                          <div><Label className="text-[10px]">Garaging ZIP <span className="text-destructive">*</span></Label><Input className="h-8 text-sm" value={v.garaging_zip} onChange={e => updateItem(vehicles, setVehicles, i, "garaging_zip", e.target.value)} required /></div>
                         </div>
                       </div>
                     ))}
