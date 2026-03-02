@@ -94,6 +94,7 @@ export default function Inbox() {
   const [composeBody, setComposeBody] = useState("");
   const [composeTone, setComposeTone] = useState("professional");
   const [sendVia, setSendVia] = useState<string>("aura");
+  const [sendViaInitialized, setSendViaInitialized] = useState(false);
   const [aiPrompt, setAiPrompt] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
   const [sending, setSending] = useState(false);
@@ -145,7 +146,13 @@ export default function Inbox() {
 
     setNotifications((notifRes.data as Notification[]) || []);
     setSyncedEmails((emailRes.data as SyncedEmail[]) || []);
-    setEmailConnections(connRes.connections || []);
+    const conns = connRes.connections || [];
+    setEmailConnections(conns);
+    // Default "Send from" to the user's connected account if available
+    if (!sendViaInitialized && conns.length > 0) {
+      setSendVia(conns[0].provider);
+      setSendViaInitialized(true);
+    }
     setLoading(false);
   };
 
