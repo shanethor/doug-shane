@@ -16,5 +16,11 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
     return <Navigate to="/auth" replace />;
   }
 
+  // Check 2FA verification
+  const is2FAVerified = sessionStorage.getItem("aura_2fa_verified") === "true";
+  if (!is2FAVerified) {
+    return <Navigate to="/auth" replace />;
+  }
+
   return <>{children}</>;
 }
