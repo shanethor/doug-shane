@@ -132,7 +132,8 @@ export default function Inbox() {
 
   const syncEmails = async () => {
     if (emailConnections.length === 0) {
-      toast.error("No email accounts connected. Go to Settings to connect Gmail or Outlook.");
+      toast.info("Let's connect your email first.");
+      navigate("/settings?section=email&returnTo=/inbox");
       return;
     }
     setSyncing(true);

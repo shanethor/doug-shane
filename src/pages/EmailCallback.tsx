@@ -46,8 +46,10 @@ export default function EmailCallback() {
         setStatus("success");
         setMessage(`Connected ${data.email} via ${data.provider === "gmail" ? "Gmail" : "Outlook"}`);
 
-        // Redirect back to settings after 2s
-        setTimeout(() => navigate("/settings", { replace: true }), 2000);
+        // Redirect back — prefer stored returnTo, fallback to settings
+        const returnTo = sessionStorage.getItem("email_connect_return") || "/settings";
+        sessionStorage.removeItem("email_connect_return");
+        setTimeout(() => navigate(returnTo, { replace: true }), 2000);
       } catch (err: any) {
         setStatus("error");
         setMessage(err.message || "Connection failed");
