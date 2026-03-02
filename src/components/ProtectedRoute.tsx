@@ -1,5 +1,6 @@
 import { useAuth } from "@/hooks/useAuth";
 import { Navigate } from "react-router-dom";
+import { is2FAVerified } from "@/lib/2fa-storage";
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -16,9 +17,8 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
     return <Navigate to="/auth" replace />;
   }
 
-  // Check 2FA verification
-  const is2FAVerified = sessionStorage.getItem("aura_2fa_verified") === "true";
-  if (!is2FAVerified) {
+  // Check 2FA verification (now persisted in localStorage with TTL)
+  if (!is2FAVerified()) {
     return <Navigate to="/auth" replace />;
   }
 
