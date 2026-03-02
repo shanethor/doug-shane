@@ -44,3 +44,6 @@ verify_jwt = false
 
 [functions.email-sync]
 verify_jwt = false
+
+[functions.submit-personal-intake]
+verify_jwt = false
