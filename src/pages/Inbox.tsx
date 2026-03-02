@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { AppLayout } from "@/components/AppLayout";
@@ -17,9 +17,9 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import {
   Bell, Mail, GitBranch, FileText, Check, CheckCheck, Sparkles,
-  Send, Loader2, Inbox as InboxIcon, MailOpen, RefreshCw, User
+  Send, Loader2, Inbox as InboxIcon, MailOpen, RefreshCw, User, Reply, ArrowLeft, X
 } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow, format } from "date-fns";
 import { getAuthHeaders } from "@/lib/auth-fetch";
 
 type Notification = {
@@ -40,6 +40,7 @@ type SyncedEmail = {
   to_addresses: string[];
   subject: string;
   body_preview: string | null;
+  body_html: string | null;
   is_read: boolean;
   received_at: string;
 };
@@ -48,6 +49,20 @@ type EmailConnection = {
   id: string;
   provider: string;
   email_address: string;
+};
+
+// Unified item for All / Unread tabs
+type UnifiedItem = {
+  id: string;
+  kind: "notification" | "email";
+  title: string;
+  body: string | null;
+  is_read: boolean;
+  timestamp: string;
+  icon: React.ElementType;
+  iconColor: string;
+  label: string;
+  raw: Notification | SyncedEmail;
 };
 
 const TYPE_CONFIG: Record<string, { icon: React.ElementType; color: string; label: string }> = {
@@ -66,9 +81,12 @@ export default function Inbox() {
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [tab, setTab] = useState("all");
-  const [composeOpen, setComposeOpen] = useState(false);
+
+  // Email detail dialog
+  const [selectedEmail, setSelectedEmail] = useState<SyncedEmail | null>(null);
 
   // Compose state
+  const [composeOpen, setComposeOpen] = useState(false);
   const [composeTo, setComposeTo] = useState("");
   const [composeSubject, setComposeSubject] = useState("");
   const [composeBody, setComposeBody] = useState("");
@@ -100,7 +118,6 @@ export default function Inbox() {
     if (!user) return;
     setLoading(true);
 
-    // Load notifications, synced emails, and connections in parallel
     const [notifRes, emailRes, connRes] = await Promise.all([
       supabase
         .from("notifications")
@@ -110,7 +127,7 @@ export default function Inbox() {
         .limit(100),
       supabase
         .from("synced_emails")
-        .select("id, from_address, from_name, to_addresses, subject, body_preview, is_read, received_at")
+        .select("id, from_address, from_name, to_addresses, subject, body_preview, body_html, is_read, received_at")
         .eq("user_id", user.id)
         .order("received_at", { ascending: false })
         .limit(100),
@@ -149,10 +166,9 @@ export default function Inbox() {
           toast.success(`Synced ${data.synced} emails from ${conn.provider === "gmail" ? "Gmail" : "Outlook"}`);
         }
       }
-      // Reload emails
       const { data } = await supabase
         .from("synced_emails")
-        .select("id, from_address, from_name, to_addresses, subject, body_preview, is_read, received_at")
+        .select("id, from_address, from_name, to_addresses, subject, body_preview, body_html, is_read, received_at")
         .eq("user_id", user!.id)
         .order("received_at", { ascending: false })
         .limit(100);
@@ -164,23 +180,109 @@ export default function Inbox() {
     }
   };
 
-  const markRead = async (id: string) => {
+  const markNotifRead = async (id: string) => {
     await supabase.from("notifications").update({ is_read: true }).eq("id", id);
     setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, is_read: true } : n)));
   };
 
+  const markEmailRead = async (email: SyncedEmail) => {
+    if (email.is_read) return;
+    await supabase.from("synced_emails").update({ is_read: true }).eq("id", email.id);
+    setSyncedEmails((prev) => prev.map((e) => (e.id === email.id ? { ...e, is_read: true } : e)));
+  };
+
   const markAllRead = async () => {
     if (!user) return;
-    await supabase.from("notifications").update({ is_read: true }).eq("user_id", user.id).eq("is_read", false);
+    await Promise.all([
+      supabase.from("notifications").update({ is_read: true }).eq("user_id", user.id).eq("is_read", false),
+      supabase.from("synced_emails").update({ is_read: true }).eq("user_id", user.id).eq("is_read", false),
+    ]);
     setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
-    toast.success("All notifications marked as read");
+    setSyncedEmails((prev) => prev.map((e) => ({ ...e, is_read: true })));
+    toast.success("All marked as read");
   };
 
   const handleNotificationClick = (n: Notification) => {
-    if (!n.is_read) markRead(n.id);
+    if (!n.is_read) markNotifRead(n.id);
     if (n.link) navigate(n.link);
   };
 
+  const openEmailDetail = (email: SyncedEmail) => {
+    setSelectedEmail(email);
+    markEmailRead(email);
+  };
+
+  const handleReply = (email: SyncedEmail) => {
+    setSelectedEmail(null);
+    setComposeTo(email.from_address);
+    setComposeSubject(email.subject.startsWith("Re:") ? email.subject : `Re: ${email.subject}`);
+    setComposeBody("");
+    setComposeOpen(true);
+  };
+
+  // Build unified items
+  const buildUnified = useCallback((): UnifiedItem[] => {
+    const items: UnifiedItem[] = [];
+
+    for (const n of notifications) {
+      const cfg = TYPE_CONFIG[n.type] || TYPE_CONFIG.info;
+      items.push({
+        id: `n-${n.id}`,
+        kind: "notification",
+        title: n.title,
+        body: n.body,
+        is_read: n.is_read,
+        timestamp: n.created_at,
+        icon: cfg.icon,
+        iconColor: cfg.color,
+        label: cfg.label,
+        raw: n,
+      });
+    }
+
+    for (const e of syncedEmails) {
+      items.push({
+        id: `e-${e.id}`,
+        kind: "email",
+        title: `${e.from_name || e.from_address}: ${e.subject}`,
+        body: e.body_preview,
+        is_read: e.is_read,
+        timestamp: e.received_at,
+        icon: Mail,
+        iconColor: "text-accent",
+        label: "Email",
+        raw: e,
+      });
+    }
+
+    items.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    return items;
+  }, [notifications, syncedEmails]);
+
+  const unified = buildUnified();
+  const filtered = tab === "all"
+    ? unified
+    : tab === "unread"
+      ? unified.filter((u) => !u.is_read)
+      : tab === "pipeline"
+        ? unified.filter((u) => u.kind === "notification" && (u.raw as Notification).type === "pipeline")
+        : tab === "document"
+          ? unified.filter((u) => u.kind === "notification" && (u.raw as Notification).type === "document")
+          : tab === "emails"
+            ? unified.filter((u) => u.kind === "email")
+            : unified;
+
+  const unreadCount = unified.filter((u) => !u.is_read).length;
+
+  const handleUnifiedClick = (item: UnifiedItem) => {
+    if (item.kind === "notification") {
+      handleNotificationClick(item.raw as Notification);
+    } else {
+      openEmailDetail(item.raw as SyncedEmail);
+    }
+  };
+
+  // AI draft handler
   const handleAiDraft = async () => {
     if (!aiPrompt.trim()) return;
     setAiLoading(true);
@@ -217,7 +319,6 @@ export default function Inbox() {
       const htmlBody = composeBody.replace(/\n/g, "<br/>");
 
       if (sendVia === "aura") {
-        // Send via AURA (Resend)
         const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-email`, {
           method: "POST", headers,
           body: JSON.stringify({ to: recipients, subject: composeSubject, html: htmlBody }),
@@ -225,7 +326,6 @@ export default function Inbox() {
         if (!resp.ok) throw new Error("Failed to send via AURA");
         toast.success("Email sent via AURA!");
       } else {
-        // Send via connected account
         const provider = sendVia;
         const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/email-sync`, {
           method: "POST", headers,
@@ -256,14 +356,6 @@ export default function Inbox() {
       setSending(false);
     }
   };
-
-  const filtered = tab === "all"
-    ? notifications
-    : tab === "unread"
-      ? notifications.filter((n) => !n.is_read)
-      : notifications.filter((n) => n.type === tab);
-
-  const unreadCount = notifications.filter((n) => !n.is_read).length;
 
   // Build send-via options
   const sendOptions = [
@@ -318,120 +410,109 @@ export default function Inbox() {
         <TabsList className="mb-4">
           <TabsTrigger value="all">All</TabsTrigger>
           <TabsTrigger value="unread">Unread {unreadCount > 0 && `(${unreadCount})`}</TabsTrigger>
-          <TabsTrigger value="synced">
+          <TabsTrigger value="emails">
             <Mail className="h-3.5 w-3.5 mr-1" />
-            Emails {syncedEmails.length > 0 && `(${syncedEmails.length})`}
+            Emails
           </TabsTrigger>
           <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
           <TabsTrigger value="document">Documents</TabsTrigger>
         </TabsList>
 
-        {/* Notifications tabs */}
-        {tab !== "synced" && (
-          <TabsContent value={tab}>
-            <ScrollArea className="h-[calc(100vh-280px)]">
-              {filtered.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
-                  <MailOpen className="h-10 w-10 mb-3 opacity-40" />
-                  <p className="text-sm">No notifications yet</p>
-                </div>
-              ) : (
-                <div className="space-y-1">
-                  {filtered.map((n) => {
-                    const cfg = TYPE_CONFIG[n.type] || TYPE_CONFIG.info;
-                    const Icon = cfg.icon;
-                    return (
-                      <Card
-                        key={n.id}
-                        className={`cursor-pointer hover-lift transition-smooth ${!n.is_read ? "border-l-2 border-l-primary bg-primary/[0.02]" : "opacity-75"}`}
-                        onClick={() => handleNotificationClick(n)}
-                      >
-                        <CardContent className="flex items-start gap-3 py-3 px-4">
-                          <div className={`mt-0.5 ${cfg.color}`}>
-                            <Icon className="h-4 w-4" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <p className={`text-sm truncate ${!n.is_read ? "font-medium" : ""}`}>{n.title}</p>
-                              <Badge variant="outline" className="text-[10px] shrink-0">{cfg.label}</Badge>
-                            </div>
-                            {n.body && <p className="text-xs text-muted-foreground truncate mt-0.5">{n.body}</p>}
-                          </div>
-                          <span className="text-[11px] text-muted-foreground whitespace-nowrap">
-                            {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
-                          </span>
-                          {!n.is_read && <div className="h-2 w-2 rounded-full bg-primary shrink-0 mt-1.5" />}
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
-                </div>
-              )}
-            </ScrollArea>
-          </TabsContent>
-        )}
-
-        {/* Synced Emails tab */}
-        {tab === "synced" && (
-          <TabsContent value="synced">
-            <ScrollArea className="h-[calc(100vh-280px)]">
-              {syncedEmails.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
-                  <Mail className="h-10 w-10 mb-3 opacity-40" />
-                  <p className="text-sm">No synced emails yet</p>
-                  {emailConnections.length === 0 ? (
-                    <Button variant="link" size="sm" onClick={() => navigate("/settings")} className="mt-2">
-                      Connect Gmail or Outlook in Settings
-                    </Button>
-                  ) : (
-                    <Button variant="link" size="sm" onClick={syncEmails} className="mt-2">
-                      Click "Sync Mail" to pull in your latest emails
-                    </Button>
-                  )}
-                </div>
-              ) : (
-                <div className="space-y-1">
-                  {syncedEmails.map((e) => (
+        <TabsContent value={tab}>
+          <ScrollArea className="h-[calc(100vh-280px)]">
+            {filtered.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
+                <MailOpen className="h-10 w-10 mb-3 opacity-40" />
+                <p className="text-sm">
+                  {tab === "unread" ? "All caught up" : tab === "emails" && emailConnections.length === 0
+                    ? "No email connected yet"
+                    : "No items yet"}
+                </p>
+                {tab === "emails" && emailConnections.length === 0 && (
+                  <Button variant="link" size="sm" onClick={() => navigate("/settings")} className="mt-2">
+                    Connect Gmail or Outlook in Settings
+                  </Button>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-1">
+                {filtered.map((item) => {
+                  const Icon = item.icon;
+                  return (
                     <Card
-                      key={e.id}
-                      className={`cursor-pointer hover-lift transition-smooth ${!e.is_read ? "border-l-2 border-l-accent bg-accent/[0.02]" : "opacity-75"}`}
-                      onClick={() => {
-                        // Pre-fill reply
-                        setComposeTo(e.from_address);
-                        setComposeSubject(`Re: ${e.subject}`);
-                        setComposeBody("");
-                        setComposeOpen(true);
-                      }}
+                      key={item.id}
+                      className={`cursor-pointer hover-lift transition-smooth ${!item.is_read ? "border-l-2 border-l-primary bg-primary/[0.02]" : "opacity-75"}`}
+                      onClick={() => handleUnifiedClick(item)}
                     >
                       <CardContent className="flex items-start gap-3 py-3 px-4">
-                        <div className="mt-0.5 text-accent">
-                          <User className="h-4 w-4" />
+                        <div className={`mt-0.5 ${item.iconColor}`}>
+                          <Icon className="h-4 w-4" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <p className={`text-sm truncate ${!e.is_read ? "font-medium" : ""}`}>
-                              {e.from_name || e.from_address}
-                            </p>
-                            <span className="text-[10px] text-muted-foreground truncate">{e.from_address}</span>
+                            <p className={`text-sm truncate ${!item.is_read ? "font-medium" : ""}`}>{item.title}</p>
+                            <Badge variant="outline" className="text-[10px] shrink-0">{item.label}</Badge>
                           </div>
-                          <p className="text-sm truncate mt-0.5">{e.subject}</p>
-                          {e.body_preview && (
-                            <p className="text-xs text-muted-foreground truncate mt-0.5">{e.body_preview}</p>
-                          )}
+                          {item.body && <p className="text-xs text-muted-foreground truncate mt-0.5">{item.body}</p>}
                         </div>
                         <span className="text-[11px] text-muted-foreground whitespace-nowrap">
-                          {formatDistanceToNow(new Date(e.received_at), { addSuffix: true })}
+                          {formatDistanceToNow(new Date(item.timestamp), { addSuffix: true })}
                         </span>
-                        {!e.is_read && <div className="h-2 w-2 rounded-full bg-accent shrink-0 mt-1.5" />}
+                        {!item.is_read && <div className="h-2 w-2 rounded-full bg-primary shrink-0 mt-1.5" />}
                       </CardContent>
                     </Card>
-                  ))}
-                </div>
-              )}
-            </ScrollArea>
-          </TabsContent>
-        )}
+                  );
+                })}
+              </div>
+            )}
+          </ScrollArea>
+        </TabsContent>
       </Tabs>
+
+      {/* Email Detail Dialog */}
+      <Dialog open={!!selectedEmail} onOpenChange={(open) => { if (!open) setSelectedEmail(null); }}>
+        <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
+          {selectedEmail && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2 text-base">
+                  <Mail className="h-4 w-4 text-accent shrink-0" />
+                  <span className="truncate">{selectedEmail.subject || "(no subject)"}</span>
+                </DialogTitle>
+              </DialogHeader>
+
+              <div className="space-y-1 text-xs text-muted-foreground border-b pb-3">
+                <p><span className="font-medium text-foreground">From:</span> {selectedEmail.from_name ? `${selectedEmail.from_name} <${selectedEmail.from_address}>` : selectedEmail.from_address}</p>
+                <p><span className="font-medium text-foreground">To:</span> {selectedEmail.to_addresses?.join(", ")}</p>
+                <p><span className="font-medium text-foreground">Date:</span> {format(new Date(selectedEmail.received_at), "MMM d, yyyy 'at' h:mm a")}</p>
+              </div>
+
+              <ScrollArea className="flex-1 min-h-0">
+                {selectedEmail.body_html ? (
+                  <div
+                    className="prose prose-sm max-w-none text-sm py-3"
+                    dangerouslySetInnerHTML={{ __html: selectedEmail.body_html }}
+                  />
+                ) : (
+                  <p className="text-sm py-3 whitespace-pre-wrap text-muted-foreground">
+                    {selectedEmail.body_preview || "No content available"}
+                  </p>
+                )}
+              </ScrollArea>
+
+              <div className="flex justify-end gap-2 pt-3 border-t">
+                <Button variant="outline" size="sm" onClick={() => setSelectedEmail(null)}>
+                  Close
+                </Button>
+                <Button size="sm" onClick={() => handleReply(selectedEmail)} className="gap-1.5">
+                  <Reply className="h-3.5 w-3.5" />
+                  Reply
+                </Button>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* AI Email Composer Dialog */}
       <Dialog open={composeOpen} onOpenChange={setComposeOpen}>
@@ -444,7 +525,6 @@ export default function Inbox() {
           </DialogHeader>
 
           <div className="space-y-3">
-            {/* AI Prompt Section */}
             <div className="rounded-lg border border-dashed border-accent/30 bg-accent/5 p-3 space-y-2">
               <Label className="text-xs uppercase tracking-wider text-accent">AI Draft Assistant</Label>
               <Textarea
@@ -472,7 +552,6 @@ export default function Inbox() {
               </div>
             </div>
 
-            {/* Send via selector */}
             <div className="space-y-1">
               <Label className="text-xs uppercase tracking-wider text-muted-foreground">Send From</Label>
               <Select value={sendVia} onValueChange={setSendVia}>
