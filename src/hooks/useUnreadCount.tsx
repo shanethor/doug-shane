@@ -1,12 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
 export function useUnreadCount() {
   const { user } = useAuth();
   const [count, setCount] = useState(0);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const fetchCount = async (userId: string) => {
+  const fetchCount = useCallback(async (userId: string) => {
     const [notifRes, emailRes] = await Promise.all([
       supabase
         .from("notifications")
@@ -20,7 +21,13 @@ export function useUnreadCount() {
         .eq("is_read", false),
     ]);
     setCount((notifRes.count ?? 0) + (emailRes.count ?? 0));
-  };
+  }, []);
+
+  // Debounced fetch to avoid rapid re-queries from bulk updates
+  const debouncedFetch = useCallback((userId: string) => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => fetchCount(userId), 500);
+  }, [fetchCount]);
 
   useEffect(() => {
     if (!user) return;
@@ -32,17 +39,20 @@ export function useUnreadCount() {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` },
-        () => fetchCount(user.id)
+        () => debouncedFetch(user.id)
       )
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "synced_emails", filter: `user_id=eq.${user.id}` },
-        () => fetchCount(user.id)
+        () => debouncedFetch(user.id)
       )
       .subscribe();
 
-    return () => { supabase.removeChannel(channel); };
-  }, [user]);
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      supabase.removeChannel(channel);
+    };
+  }, [user, fetchCount, debouncedFetch]);
 
   return count;
 }

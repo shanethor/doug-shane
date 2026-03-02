@@ -112,6 +112,14 @@ export default function Inbox() {
           setNotifications((prev) => [payload.new as Notification, ...prev]);
         }
       )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` },
+        (payload) => {
+          const updated = payload.new as Notification;
+          setNotifications((prev) => prev.map((n) => n.id === updated.id ? updated : n));
+        }
+      )
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };

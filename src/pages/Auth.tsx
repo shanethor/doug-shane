@@ -10,6 +10,7 @@ import { Navigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Loader2, ShieldCheck } from "lucide-react";
 import auraLogo from "@/assets/aura-logo.png";
+import { set2FAVerified, is2FAVerified, clear2FAVerified } from "@/lib/2fa-storage";
 
 /* Generate a stable device fingerprint for trusted-device tracking */
 function getDeviceHash(): string {
@@ -38,9 +39,6 @@ export default function Auth() {
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
   const [resending, setResending] = useState(false);
 
-  // Check if user is already 2FA-verified (stored in sessionStorage)
-  const is2FAVerified = () => sessionStorage.getItem("aura_2fa_verified") === "true";
-
   // Auto-check trusted device when session exists but 2FA not yet verified
   const [autoChecking, setAutoChecking] = useState(false);
   useEffect(() => {
@@ -60,7 +58,7 @@ export default function Auth() {
         .then((r) => r.json())
         .then((result) => {
           if (result.trusted) {
-            sessionStorage.setItem("aura_2fa_verified", "true");
+            set2FAVerified();
             navigate("/", { replace: true });
           } else {
             // Device not trusted — show 2FA screen
@@ -130,7 +128,7 @@ export default function Auth() {
 
         if (result.trusted) {
           // Device is trusted, skip 2FA
-          sessionStorage.setItem("aura_2fa_verified", "true");
+          set2FAVerified();
           navigate("/");
         } else if (result.sent) {
           setNeeds2FA(true);
@@ -168,7 +166,7 @@ export default function Auth() {
       const result = await resp.json();
 
       if (result.verified) {
-        sessionStorage.setItem("aura_2fa_verified", "true");
+        set2FAVerified();
         toast.success("Verified successfully");
         navigate("/");
       } else {
