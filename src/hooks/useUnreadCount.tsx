@@ -6,32 +6,38 @@ export function useUnreadCount() {
   const { user } = useAuth();
   const [count, setCount] = useState(0);
 
+  const fetchCount = async (userId: string) => {
+    const [notifRes, emailRes] = await Promise.all([
+      supabase
+        .from("notifications")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", userId)
+        .eq("is_read", false),
+      supabase
+        .from("synced_emails")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", userId)
+        .eq("is_read", false),
+    ]);
+    setCount((notifRes.count ?? 0) + (emailRes.count ?? 0));
+  };
+
   useEffect(() => {
     if (!user) return;
 
-    // Initial fetch
-    supabase
-      .from("notifications")
-      .select("id", { count: "exact", head: true })
-      .eq("user_id", user.id)
-      .eq("is_read", false)
-      .then(({ count: c }) => setCount(c ?? 0));
+    fetchCount(user.id);
 
-    // Realtime subscription
     const channel = supabase
       .channel("unread-count")
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` },
-        () => {
-          // Re-fetch count on any change
-          supabase
-            .from("notifications")
-            .select("id", { count: "exact", head: true })
-            .eq("user_id", user.id)
-            .eq("is_read", false)
-            .then(({ count: c }) => setCount(c ?? 0));
-        }
+        () => fetchCount(user.id)
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "synced_emails", filter: `user_id=eq.${user.id}` },
+        () => fetchCount(user.id)
       )
       .subscribe();
 
