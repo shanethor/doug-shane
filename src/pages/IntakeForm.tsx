@@ -658,11 +658,11 @@ export default function IntakeForm() {
         };
 
         if (tokenSource === "personal_intake_submissions") {
-          const { error } = await supabase
-            .from("personal_intake_submissions")
-            .update({ form_data: formData as any, status: "submitted", submitted_at: new Date().toISOString(), is_used: true })
-            .eq("id", record.id);
+          const { data: submitResult, error } = await supabase.functions.invoke("submit-personal-intake", {
+            body: { token: record.token, form_data: formData },
+          });
           if (error) throw error;
+          if (submitResult?.error) throw new Error(submitResult.error);
 
           try {
             const deliveryEmails = record.delivery_emails;
@@ -740,11 +740,11 @@ export default function IntakeForm() {
             documents: docMeta,
             notes,
           };
-          const { error } = await supabase
-            .from("personal_intake_submissions")
-            .update({ form_data: formData as any, status: "submitted", submitted_at: new Date().toISOString(), is_used: true })
-            .eq("id", record.id);
+          const { data: submitResult, error } = await supabase.functions.invoke("submit-personal-intake", {
+            body: { token: record.token, form_data: formData },
+          });
           if (error) throw error;
+          if (submitResult?.error) throw new Error(submitResult.error);
 
           try {
             await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/process-intake`, {
