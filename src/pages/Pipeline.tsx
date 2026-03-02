@@ -1239,14 +1239,14 @@ export default function Pipeline() {
               />
             </div>
             <div>
-              <Label>Estimated Renewal Date *</Label>
+              <Label>Estimated Coverage Start Date *</Label>
               <Input
                 type="date"
                 value={lostRenewalDate}
                 onChange={(e) => setLostRenewalDate(e.target.value)}
               />
               <p className="text-[11px] text-muted-foreground font-sans mt-1">
-                Two months before this date, the lead will automatically move back to Prospect.
+                * 10 months from this date, AURA will automatically move this client back to Prospect and surface their info so you can pitch them again.
               </p>
             </div>
           </div>
