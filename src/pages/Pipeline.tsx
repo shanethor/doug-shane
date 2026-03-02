@@ -25,7 +25,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Search, CheckCircle, GripVertical, Edit3, Send, PenLine, Copy, Check, ExternalLink, FileText, Trash2, Users, DollarSign, TrendingUp, Share2, BarChart3 } from "lucide-react";
+import { Plus, Search, CheckCircle, GripVertical, Edit3, Send, PenLine, Copy, Check, ExternalLink, FileText, Trash2, Users, DollarSign, TrendingUp, Share2, BarChart3, Info } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -81,6 +87,14 @@ const STAGE_COLORS: Record<string, string> = {
   presenting: "bg-accent/20 text-accent-foreground",
   lost: "bg-destructive/10 text-destructive",
   sold: "bg-success/20 text-success",
+};
+
+const STAGE_TOOLTIPS: Record<string, string> = {
+  prospect: "Potential client, attempting to move into quoting stage and progress the sale.",
+  quoting: "Client agreed to hear quotes, looking to collect information and fill out forms before sending policy info off.",
+  presenting: "You have received quotes, you must present them to the client to see if they'd like to move forward.",
+  lost: "Client went in another direction.",
+  sold: "You closed the deal! Enter policy information.",
 };
 
 export default function Pipeline() {
@@ -656,7 +670,8 @@ export default function Pipeline() {
     );
   });
 
-  const columns = [...STAGES, "sold" as const];
+  const columns = [...STAGES.filter(s => s !== "lost"), "sold" as const];
+  const lostStage = "lost";
   const grouped: Record<string, Lead[]> = {};
   columns.forEach((s) => (grouped[s] = []));
 
@@ -704,7 +719,7 @@ export default function Pipeline() {
           </div>
         </div>
         {/* Kanban columns skeleton */}
-        <div className="grid grid-cols-5 gap-4">
+        <div className="grid grid-cols-4 gap-4">
           {Array.from({ length: 5 }).map((_, col) => (
             <div key={col} className="space-y-3">
               <div className="flex items-center justify-between mb-2">
@@ -1030,13 +1045,22 @@ export default function Pipeline() {
       )}
 
       {/* Kanban Board with drag-and-drop */}
-      <div className="grid grid-cols-5 gap-3 min-h-[60vh]">
+      <TooltipProvider delayDuration={200}>
+      <div className="grid grid-cols-4 gap-3 min-h-[60vh]">
         {columns.map((stage) => (
           <div key={stage} className="flex flex-col">
             <div className="flex items-center gap-2 mb-3">
               <Badge variant="outline" className={`text-[10px] uppercase tracking-wider font-sans ${STAGE_COLORS[stage]}`}>
                 {STAGE_LABELS[stage]}
               </Badge>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-3 w-3 text-muted-foreground/60 cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-[220px] text-xs font-sans">
+                  {STAGE_TOOLTIPS[stage]}
+                </TooltipContent>
+              </Tooltip>
               <span className="text-xs text-muted-foreground font-sans">{grouped[stage].length}</span>
               {stage === "prospect" && (
                 <span className="relative group">
@@ -1193,6 +1217,99 @@ export default function Pipeline() {
           </div>
         ))}
       </div>
+
+      {/* Lost Row — horizontal drop zone below main columns */}
+      <div className="mt-4">
+        <div className="flex items-center gap-2 mb-2">
+          <Badge variant="outline" className={`text-[10px] uppercase tracking-wider font-sans ${STAGE_COLORS.lost}`}>
+            {STAGE_LABELS.lost}
+          </Badge>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Info className="h-3 w-3 text-muted-foreground/60 cursor-help" />
+            </TooltipTrigger>
+            <TooltipContent side="top" className="max-w-[220px] text-xs font-sans">
+              {STAGE_TOOLTIPS.lost}
+            </TooltipContent>
+          </Tooltip>
+          <span className="text-xs text-muted-foreground font-sans">{grouped.lost.length}</span>
+        </div>
+        <div
+          className={`rounded-lg border border-dashed p-3 min-h-[80px] transition-colors ${
+            dragOverStage === "lost"
+              ? "border-destructive bg-destructive/5"
+              : "border-border/50 bg-muted/30"
+          }`}
+          onDragOver={(e) => handleDragOver(e, "lost")}
+          onDragLeave={handleDragLeave}
+          onDrop={(e) => handleDrop(e, "lost")}
+        >
+          {grouped.lost.length === 0 ? (
+            <p className="text-[10px] text-muted-foreground text-center py-4 font-sans">
+              Drop here to mark as lost
+            </p>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {(expandedColumns.lost ? grouped.lost : grouped.lost.slice(0, 10)).map((lead) => (
+                <div
+                  key={lead.id}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, lead.id)}
+                  onDragEnd={handleDragEnd}
+                  className={`transition-opacity ${draggedLeadId === lead.id ? "opacity-40" : ""}`}
+                >
+                  <Link to={`/pipeline/${lead.id}`}>
+                    <Card className="hover-lift cursor-grab active:cursor-grabbing group w-[220px]">
+                      <CardContent className="p-3">
+                        <div className="flex items-start justify-between">
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-1.5">
+                              <GripVertical className="h-3 w-3 text-muted-foreground/50 shrink-0" />
+                              <p className="font-medium text-sm font-sans truncate">{lead.account_name}</p>
+                            </div>
+                            {lead.contact_name && (
+                              <p className="text-xs text-muted-foreground font-sans truncate ml-[18px]">{lead.contact_name}</p>
+                            )}
+                          </div>
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setDeleteLeadId(lead.id);
+                              setDeleteAlertOpen(true);
+                            }}
+                            className="p-0.5 rounded hover:bg-destructive/10 transition-colors opacity-0 group-hover:opacity-100"
+                            title="Delete lead"
+                          >
+                            <Trash2 className="h-3 w-3 text-muted-foreground hover:text-destructive" />
+                          </button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                </div>
+              ))}
+              {grouped.lost.length > 10 && !expandedColumns.lost && (
+                <button
+                  onClick={() => toggleColumnExpand("lost")}
+                  className="self-center px-3 py-2 text-[11px] text-primary font-sans font-medium hover:underline"
+                >
+                  +{grouped.lost.length - 10} more
+                </button>
+              )}
+              {grouped.lost.length > 10 && expandedColumns.lost && (
+                <button
+                  onClick={() => toggleColumnExpand("lost")}
+                  className="self-center px-3 py-2 text-[11px] text-muted-foreground font-sans hover:underline"
+                >
+                  Show Less
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+      </TooltipProvider>
 
       {/* Pipeline Analytics */}
       <PipelineAnalytics
