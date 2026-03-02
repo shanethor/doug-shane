@@ -26,6 +26,7 @@ export function useAuth() {
   }, []);
 
   const signOut = async () => {
+    sessionStorage.removeItem("aura_2fa_verified");
     await supabase.auth.signOut();
   };
 
