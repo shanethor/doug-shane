@@ -69,6 +69,7 @@ const TYPE_CONFIG: Record<string, { icon: React.ElementType; color: string; labe
   pipeline: { icon: GitBranch, color: "text-accent", label: "Pipeline" },
   document: { icon: FileText, color: "text-primary", label: "Document" },
   email: { icon: Mail, color: "text-primary", label: "Email" },
+  loss_run: { icon: FileText, color: "text-warning", label: "Loss Runs" },
   info: { icon: Bell, color: "text-muted-foreground", label: "Info" },
 };
 
