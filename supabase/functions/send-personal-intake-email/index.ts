@@ -63,10 +63,35 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Find the lead created for this submission to build the "View Full Submission" link
+    let viewLink = "";
+    const { data: leadMatch } = await supabase
+      .from("leads")
+      .select("id")
+      .eq("owner_user_id", record.agent_id)
+      .ilike("account_name", (applicant_name || "").trim())
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (leadMatch) {
+      // Use the published app URL from the origin or fallback
+      const appUrl = Deno.env.get("APP_URL") || "https://doug-shane.lovable.app";
+      viewLink = `${appUrl}/lead/${leadMatch.id}`;
+    }
+
     // Build summary from form_data
     const fd = record.form_data as any;
     const applicant = fd?.applicant || {};
     const sectionList = sections || "Not specified";
+
+    const viewButton = viewLink ? `
+      <div style="margin: 24px 0; text-align: center;">
+        <a href="${viewLink}" style="display: inline-block; background-color: #1a1a2e; color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 6px; font-weight: 600; font-size: 14px;">
+          View Full Submission →
+        </a>
+      </div>
+    ` : "";
 
     const html = `
       <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
@@ -83,6 +108,7 @@ Deno.serve(async (req) => {
         ${fd?.sections?.boat ? `<p><strong>Boat:</strong> ${fd.sections.boat.boats?.length || 0} watercraft</p>` : ""}
         ${fd?.sections?.umbrella ? `<p><strong>Umbrella:</strong> Requested limit $${Number(fd.sections.umbrella.requested_limit || 0).toLocaleString()}</p>` : ""}
         ${fd?.notes ? `<p><strong>Notes:</strong> ${fd.notes}</p>` : ""}
+        ${viewButton}
         <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;" />
         <p style="color: #888; font-size: 12px;">Sent via ${agencyName} · Powered by AURA</p>
       </div>
