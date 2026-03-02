@@ -674,6 +674,7 @@ export default function Pipeline() {
   const lostStage = "lost";
   const grouped: Record<string, Lead[]> = {};
   columns.forEach((s) => (grouped[s] = []));
+  grouped["lost"] = [];
 
   filtered.forEach((l) => {
     if (l.has_approved_policy) {
