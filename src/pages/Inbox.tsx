@@ -267,11 +267,13 @@ export default function Inbox() {
       ? unified.filter((u) => !u.is_read)
       : tab === "pipeline"
         ? unified.filter((u) => u.kind === "notification" && (u.raw as Notification).type === "pipeline")
-        : tab === "document"
-          ? unified.filter((u) => u.kind === "notification" && (u.raw as Notification).type === "document")
-          : tab === "emails"
-            ? unified.filter((u) => u.kind === "email")
-            : unified;
+        : tab === "loss_run"
+          ? unified.filter((u) => u.kind === "notification" && (u.raw as Notification).type === "loss_run")
+          : tab === "document"
+            ? unified.filter((u) => u.kind === "notification" && (u.raw as Notification).type === "document")
+            : tab === "emails"
+              ? unified.filter((u) => u.kind === "email")
+              : unified;
 
   const unreadCount = unified.filter((u) => !u.is_read).length;
 
@@ -416,6 +418,7 @@ export default function Inbox() {
             Emails
           </TabsTrigger>
           <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
+          <TabsTrigger value="loss_run">Loss Runs</TabsTrigger>
           <TabsTrigger value="document">Documents</TabsTrigger>
         </TabsList>
 
