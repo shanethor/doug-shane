@@ -48,9 +48,14 @@ export function useUnreadCount() {
       )
       .subscribe();
 
+    // Listen for manual refresh events (e.g. after marking items read in Inbox)
+    const onRefresh = () => fetchCount(user.id);
+    window.addEventListener("unread-count-refresh", onRefresh);
+
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
       supabase.removeChannel(channel);
+      window.removeEventListener("unread-count-refresh", onRefresh);
     };
   }, [user, fetchCount, debouncedFetch]);
 

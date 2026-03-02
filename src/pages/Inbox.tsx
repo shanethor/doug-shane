@@ -238,12 +238,14 @@ export default function Inbox() {
   const markNotifRead = async (id: string) => {
     await supabase.from("notifications").update({ is_read: true }).eq("id", id);
     setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, is_read: true } : n)));
+    window.dispatchEvent(new Event("unread-count-refresh"));
   };
 
   const markEmailRead = async (email: SyncedEmail) => {
     if (email.is_read) return;
     await supabase.from("synced_emails").update({ is_read: true }).eq("id", email.id);
     setSyncedEmails((prev) => prev.map((e) => (e.id === email.id ? { ...e, is_read: true } : e)));
+    window.dispatchEvent(new Event("unread-count-refresh"));
   };
 
   const markAllRead = async () => {
@@ -254,6 +256,7 @@ export default function Inbox() {
     ]);
     setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
     setSyncedEmails((prev) => prev.map((e) => ({ ...e, is_read: true })));
+    window.dispatchEvent(new Event("unread-count-refresh"));
     toast.success("All marked as read");
   };
 
