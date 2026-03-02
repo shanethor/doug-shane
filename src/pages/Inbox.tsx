@@ -98,6 +98,14 @@ export default function Inbox() {
   const [aiPrompt, setAiPrompt] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
   const [sending, setSending] = useState(false);
+  const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(null);
+  const [, setTick] = useState(0); // force re-render for relative time
+
+  // Tick every 30s to keep "Last synced X ago" fresh
+  useEffect(() => {
+    const t = setInterval(() => setTick((n) => n + 1), 30_000);
+    return () => clearInterval(t);
+  }, []);
 
   // Auto-sync emails every 5 minutes
   const autoSyncEmails = useCallback(async () => {
@@ -117,6 +125,7 @@ export default function Inbox() {
         .order("received_at", { ascending: false })
         .limit(100);
       if (data) setSyncedEmails(data as SyncedEmail[]);
+      setLastSyncedAt(new Date());
     } catch {
       // silent background sync failure
     }
@@ -228,6 +237,7 @@ export default function Inbox() {
         .order("received_at", { ascending: false })
         .limit(100);
       setSyncedEmails((data as SyncedEmail[]) || []);
+      setLastSyncedAt(new Date());
     } catch (err: any) {
       toast.error("Sync failed: " + (err.message || "Unknown error"));
     } finally {
@@ -450,6 +460,11 @@ export default function Inbox() {
           <h1 className="text-3xl font-semibold tracking-tight">Inbox</h1>
           {unreadCount > 0 && (
             <Badge variant="default" className="text-xs">{unreadCount} new</Badge>
+          )}
+          {lastSyncedAt && (
+            <span className="text-[11px] text-muted-foreground ml-1">
+              Synced {formatDistanceToNow(lastSyncedAt, { addSuffix: true })}
+            </span>
           )}
         </div>
         <div className="flex items-center gap-2">
