@@ -36,7 +36,7 @@ Deno.serve(async (req) => {
     }
 
     // Build the intake URL using the project's public URL
-    const siteUrl = Deno.env.get("SITE_URL") || "https://doug-shane.lovable.app";
+    const siteUrl = Deno.env.get("SITE_URL") || "https://buildingaura.site";
     const intakeUrl = `${siteUrl}/personal-intake/${token}`;
 
     const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
