@@ -49,11 +49,21 @@ const DOCUMENT_CHECKLIST = [
 
 /* ─── Personal Lines Types ─── */
 type Driver = { name: string; dob: string; license_number: string; license_state: string; gender: string; marital_status: string; violations: string };
-type Vehicle = { year: string; make: string; model: string; vin: string; usage: string; garaging_zip: string };
+type ExcludedDriver = { name: string; reason: string };
+type Vehicle = { year: string; make: string; model: string; vin: string; usage: string; garaging_zip: string; is_rideshare_delivery: "" | "yes" | "no"; rideshare_service: string };
 type HomeInfo = { address: string; city: string; state: string; zip: string; year_built: string; square_footage: string; construction_type: string; roof_type: string; roof_year: string; occupancy: string; rent_roll: string; heating_type: string; electrical_update_year: string; plumbing_update_year: string; has_pool: boolean; has_trampoline: boolean; has_dog: boolean; dog_breed: string; alarm_type: string; fire_extinguishers: boolean; smoke_detectors: boolean; deadbolts: boolean; sprinkler_system: boolean; claims_5_years: string };
 type Boat = { year: string; make: string; model: string; length: string; hull_type: string; engine_type: string; horsepower: string; value: string; storage_location: string };
 type UmbrellaInfo = { wants_umbrella: "" | "yes" | "no"; requested_limit: string; major_violations: "" | "yes" | "no"; has_watercraft_unlisted: "" | "yes" | "no"; has_rental_unlisted: "" | "yes" | "no"; has_pool_trampoline_unlisted: "" | "yes" | "no"; acknowledge_umbrella: boolean };
 type FloodInfo = { flood_zone: string; has_flood_insurance: string; current_flood_carrier: string; current_flood_premium: string; flood_policy_number: string; building_coverage: string; contents_coverage: string; elevation_cert: string; foundation_type: string; lowest_floor_elevation: string; num_flood_claims: string; preferred_deductible: string };
+type RecreationalVehicle = {
+  rec_type: string; year: string; make: string; model: string;
+  vin_serial: string; garaging_zip: string; usage_type: string;
+  liability_limit: string; wants_comp: "" | "yes" | "no";
+  wants_collision: "" | "yes" | "no"; comp_deductible: string;
+  collision_deductible: string; trailer_coverage: "" | "yes" | "no";
+  accessories_value: string; um_uim: "" | "yes" | "no";
+  med_pay: "" | "yes" | "no"; towing: "" | "yes" | "no";
+};
 
 interface AutoCoverage {
   liability_type: "" | "split" | "csl";
@@ -62,6 +72,7 @@ interface AutoCoverage {
   csl_limit: string;
   um_uim_limit: string;
   med_pay_limit: string;
+  pip_limit: string;
   wants_comprehensive: "" | "yes" | "no";
   comp_deductible: string;
   wants_collision: "" | "yes" | "no";
@@ -83,7 +94,7 @@ interface AutoCoverage {
 
 const emptyAutoCoverage = (): AutoCoverage => ({
   liability_type: "", bi_limit: "", pd_limit: "", csl_limit: "",
-  um_uim_limit: "", med_pay_limit: "",
+  um_uim_limit: "", med_pay_limit: "", pip_limit: "",
   wants_comprehensive: "", comp_deductible: "",
   wants_collision: "", collision_deductible: "",
   wants_towing: "", towing_limit: "",
@@ -95,11 +106,13 @@ const emptyAutoCoverage = (): AutoCoverage => ({
 });
 
 const emptyDriver = (): Driver => ({ name: "", dob: "", license_number: "", license_state: "", gender: "", marital_status: "", violations: "" });
-const emptyVehicle = (): Vehicle => ({ year: "", make: "", model: "", vin: "", usage: "", garaging_zip: "" });
+const emptyExcludedDriver = (): ExcludedDriver => ({ name: "", reason: "" });
+const emptyVehicle = (): Vehicle => ({ year: "", make: "", model: "", vin: "", usage: "", garaging_zip: "", is_rideshare_delivery: "", rideshare_service: "" });
 const emptyHome = (): HomeInfo => ({ address: "", city: "", state: "", zip: "", year_built: "", square_footage: "", construction_type: "", roof_type: "", roof_year: "", occupancy: "", rent_roll: "", heating_type: "", electrical_update_year: "", plumbing_update_year: "", has_pool: false, has_trampoline: false, has_dog: false, dog_breed: "", alarm_type: "", fire_extinguishers: false, smoke_detectors: false, deadbolts: false, sprinkler_system: false, claims_5_years: "" });
 const emptyBoat = (): Boat => ({ year: "", make: "", model: "", length: "", hull_type: "", engine_type: "", horsepower: "", value: "", storage_location: "" });
 const emptyUmbrella = (): UmbrellaInfo => ({ wants_umbrella: "", requested_limit: "", major_violations: "", has_watercraft_unlisted: "", has_rental_unlisted: "", has_pool_trampoline_unlisted: "", acknowledge_umbrella: false });
 const emptyFlood = (): FloodInfo => ({ flood_zone: "", has_flood_insurance: "", current_flood_carrier: "", current_flood_premium: "", flood_policy_number: "", building_coverage: "", contents_coverage: "", elevation_cert: "", foundation_type: "", lowest_floor_elevation: "", num_flood_claims: "", preferred_deductible: "" });
+const emptyRecVehicle = (): RecreationalVehicle => ({ rec_type: "", year: "", make: "", model: "", vin_serial: "", garaging_zip: "", usage_type: "", liability_limit: "", wants_comp: "", wants_collision: "", comp_deductible: "", collision_deductible: "", trailer_coverage: "", accessories_value: "", um_uim: "", med_pay: "", towing: "" });
 
 /* ─── Commercial Lines Types ─── */
 type CommercialStepKey = "business_info" | "policy_info" | "bor_auth" | "commercial_docs";
@@ -142,7 +155,7 @@ const emptyCommercial = (): CommercialFormData => ({
 });
 
 /* ─── Step definitions for personal lines ─── */
-type StepKey = "info" | "auto" | "home_flood" | "boat_umbrella" | "documents";
+type StepKey = "info" | "auto" | "home_flood" | "recreational" | "boat_umbrella" | "documents";
 
 /* ─── Main Component ─── */
 export default function IntakeForm() {
@@ -166,10 +179,15 @@ export default function IntakeForm() {
   const [enableFlood, setEnableFlood] = useState(false);
   const [enableBoat, setEnableBoat] = useState(false);
   const [enableUmbrella, setEnableUmbrella] = useState(false);
+  const [enableRecreational, setEnableRecreational] = useState(false);
+  const [enableArticles, setEnableArticles] = useState(false);
   const [drivers, setDrivers] = useState<Driver[]>([emptyDriver()]);
+  const [excludedDrivers, setExcludedDrivers] = useState<ExcludedDriver[]>([]);
+  const [hasExcludedDrivers, setHasExcludedDrivers] = useState<"" | "yes" | "no">("");
   const [vehicles, setVehicles] = useState<Vehicle[]>([emptyVehicle()]);
   const [homes, setHomes] = useState<HomeInfo[]>([emptyHome()]);
   const [boats, setBoats] = useState<Boat[]>([emptyBoat()]);
+  const [recVehicles, setRecVehicles] = useState<RecreationalVehicle[]>([emptyRecVehicle()]);
   const [umbrella, setUmbrella] = useState<UmbrellaInfo>(emptyUmbrella());
   const [flood, setFlood] = useState<FloodInfo>(emptyFlood());
   const [autoCoverage, setAutoCoverage] = useState<AutoCoverage>(emptyAutoCoverage());
@@ -196,6 +214,7 @@ export default function IntakeForm() {
     const steps: StepKey[] = ["info"];
     if (enableAuto) steps.push("auto");
     if (enableHome || enableFlood) steps.push("home_flood");
+    if (enableRecreational) steps.push("recreational");
     if (enableBoat || enableUmbrella) steps.push("boat_umbrella");
     steps.push("documents");
     return steps;
@@ -210,6 +229,7 @@ export default function IntakeForm() {
     info: "Your Info",
     auto: "Auto",
     home_flood: enableHome && enableFlood ? "Home & Flood" : enableFlood ? "Flood" : "Home",
+    recreational: "Recreational",
     boat_umbrella: enableBoat && enableUmbrella ? "Boat & Umbrella" : enableUmbrella ? "Umbrella" : "Boat",
     documents: "Documents & Submit",
   };
@@ -348,11 +368,12 @@ export default function IntakeForm() {
           intake_type: "personal",
           applicant: { name: applicantName, email: applicantEmail, phone: applicantPhone, address: applicantAddress },
           sections: {
-            auto: enableAuto ? { drivers, vehicles, coverage: autoCoverage } : null,
+            auto: enableAuto ? { drivers, excluded_drivers: hasExcludedDrivers === "yes" ? excludedDrivers : [], vehicles, coverage: autoCoverage } : null,
             home: enableHome ? { properties: homes } : null,
             flood: enableFlood ? flood : null,
             boat: enableBoat ? { boats } : null,
             umbrella: enableUmbrella ? umbrella : null,
+            recreational: enableRecreational ? { vehicles: recVehicles } : null,
           },
           documents: docMeta,
           notes,
@@ -646,6 +667,53 @@ export default function IntakeForm() {
             ))}
             {drivers.length < 5 && <Button variant="outline" size="sm" className="w-full text-xs" onClick={() => addItem(drivers, setDrivers, emptyDriver, 5)}><Plus className="h-3 w-3 mr-1" /> Add Driver</Button>}
           </div>
+
+          {/* ── Excluded Drivers ── */}
+          <div className="space-y-3">
+            <h3 className="text-sm font-medium">Excluded Drivers</h3>
+            <div>
+              <Label className="text-[10px]">Would you like to exclude any household driver from coverage?</Label>
+              <Select value={hasExcludedDrivers} onValueChange={v => {
+                setHasExcludedDrivers(v as any);
+                if (v === "yes" && excludedDrivers.length === 0) setExcludedDrivers([emptyExcludedDriver()]);
+                if (v === "no") setExcludedDrivers([]);
+              }}>
+                <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+                <SelectContent><SelectItem value="yes">Yes</SelectItem><SelectItem value="no">No</SelectItem></SelectContent>
+              </Select>
+            </div>
+            {hasExcludedDrivers === "yes" && (
+              <div className="space-y-2 pl-3 border-l-2 border-primary/20">
+                {excludedDrivers.map((ed, i) => (
+                  <div key={i} className="rounded-lg border p-3 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium text-muted-foreground">Excluded Driver {i + 1}</span>
+                      {excludedDrivers.length > 1 && <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => removeItem(excludedDrivers, setExcludedDrivers, i)}><Trash2 className="h-3 w-3" /></Button>}
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <div><Label className="text-[10px]">Driver Name</Label><Input className="h-8 text-sm" value={ed.name} onChange={e => updateItem(excludedDrivers, setExcludedDrivers, i, "name", e.target.value)} /></div>
+                      <div>
+                        <Label className="text-[10px]">Reason for Exclusion</Label>
+                        <Select value={ed.reason} onValueChange={v => updateItem(excludedDrivers, setExcludedDrivers, i, "reason", v)}>
+                          <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select reason" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="invalid_suspended">Invalid or Suspended License</SelectItem>
+                            <SelectItem value="poor_history">Poor Driving History</SelectItem>
+                            <SelectItem value="own_policy">Has Their Own Insurance Policy</SelectItem>
+                            <SelectItem value="other">Other</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {excludedDrivers.length < 5 && <Button variant="outline" size="sm" className="w-full text-xs" onClick={() => addItem(excludedDrivers, setExcludedDrivers, emptyExcludedDriver, 5)}><Plus className="h-3 w-3 mr-1" /> Add Excluded Driver</Button>}
+              </div>
+            )}
+            <div className="rounded-md bg-muted/50 p-3">
+              <p className="text-[10px] text-muted-foreground"><span className="font-medium">Educational Note:</span> Most carriers require all licensed household members to be listed or formally excluded. Failure to disclose drivers can result in claim denial or policy rescission.</p>
+            </div>
+          </div>
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-medium">Vehicles</h3>
@@ -666,10 +734,40 @@ export default function IntakeForm() {
                     <Label className="text-[10px]">Usage</Label>
                     <Select value={v.usage} onValueChange={val => updateItem(vehicles, setVehicles, i, "usage", val)}>
                       <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
-                      <SelectContent><SelectItem value="commute">Commute</SelectItem><SelectItem value="pleasure">Pleasure</SelectItem><SelectItem value="business">Business</SelectItem></SelectContent>
+                      <SelectContent><SelectItem value="commute">Commute</SelectItem><SelectItem value="pleasure">Pleasure</SelectItem><SelectItem value="business">Business</SelectItem><SelectItem value="farm">Farm</SelectItem></SelectContent>
                     </Select>
                   </div>
                   <div><Label className="text-[10px]">Garaging ZIP <span className="text-destructive">*</span></Label><Input className="h-8 text-sm" value={v.garaging_zip} onChange={e => updateItem(vehicles, setVehicles, i, "garaging_zip", e.target.value)} required /></div>
+                </div>
+                {/* Rideshare / Delivery */}
+                <div className="space-y-2 pt-2 border-t border-border/50">
+                  <div>
+                    <Label className="text-[10px]">Is this vehicle used for Rideshare or Delivery Service?</Label>
+                    <Select value={v.is_rideshare_delivery} onValueChange={val => updateItem(vehicles, setVehicles, i, "is_rideshare_delivery", val)}>
+                      <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+                      <SelectContent><SelectItem value="yes">Yes</SelectItem><SelectItem value="no">No</SelectItem></SelectContent>
+                    </Select>
+                  </div>
+                  {v.is_rideshare_delivery === "yes" && (
+                    <div className="pl-3 border-l-2 border-primary/20">
+                      <Label className="text-[10px]">Service</Label>
+                      <Select value={v.rideshare_service} onValueChange={val => updateItem(vehicles, setVehicles, i, "rideshare_service", val)}>
+                        <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select service" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="uber">Uber</SelectItem>
+                          <SelectItem value="lyft">Lyft</SelectItem>
+                          <SelectItem value="doordash">DoorDash</SelectItem>
+                          <SelectItem value="instacart">Instacart</SelectItem>
+                          <SelectItem value="other">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                  {v.is_rideshare_delivery === "yes" && (
+                    <div className="rounded-md bg-muted/50 p-2">
+                      <p className="text-[10px] text-muted-foreground"><span className="font-medium">Educational Note:</span> Many personal auto policies exclude commercial or delivery use. Rideshare exposure must be disclosed to ensure proper coverage.</p>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
@@ -815,6 +913,27 @@ export default function IntakeForm() {
                 </Select>
               </div>
               <p className="text-[10px] text-muted-foreground">Helps pay medical expenses for you and your passengers regardless of fault.</p>
+            </div>
+
+            {/* Personal Injury Protection */}
+            <div className="space-y-3">
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Personal Injury Protection (PIP)</h4>
+              <div>
+                <Label className="text-[10px]">Select PIP Limit</Label>
+                <Select value={autoCoverage.pip_limit} onValueChange={v => updateCov("pip_limit", v)}>
+                  <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select PIP limit" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">No Coverage</SelectItem>
+                    <SelectItem value="2500">$2,500</SelectItem>
+                    <SelectItem value="5000">$5,000</SelectItem>
+                    <SelectItem value="10000">$10,000</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="rounded-md bg-muted/50 p-3">
+                <p className="text-[10px] text-muted-foreground"><span className="font-medium">Educational Note:</span> Personal Injury Protection provides medical expense coverage for you and eligible passengers regardless of fault, subject to policy terms and state regulations. Coverage limits selected will determine the maximum amount available per person.</p>
+              </div>
             </div>
 
             {/* Comprehensive */}
@@ -1308,6 +1427,175 @@ export default function IntakeForm() {
     </div>
   );
 
+  /* ─── RENDER: Recreational Vehicles Step ─── */
+  const renderRecreationalStep = () => (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2"><Car className="h-4 w-4" /> Recreational Vehicles</CardTitle>
+          <p className="text-[10px] text-muted-foreground">Add each recreational unit below.</p>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {recVehicles.map((rv, i) => (
+            <div key={i} className="rounded-lg border p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium text-muted-foreground">Unit {i + 1}</span>
+                {recVehicles.length > 1 && <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => removeItem(recVehicles, setRecVehicles, i)}><Trash2 className="h-3 w-3" /></Button>}
+              </div>
+
+              {/* Type */}
+              <div>
+                <Label className="text-[10px]">Vehicle Type</Label>
+                <Select value={rv.rec_type} onValueChange={v => updateItem(recVehicles, setRecVehicles, i, "rec_type", v)}>
+                  <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select type" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="motorhome">Motorhome</SelectItem>
+                    <SelectItem value="travel_trailer">Travel Trailer</SelectItem>
+                    <SelectItem value="fifth_wheel">Fifth Wheel</SelectItem>
+                    <SelectItem value="atv">ATV</SelectItem>
+                    <SelectItem value="utv">UTV</SelectItem>
+                    <SelectItem value="snowmobile">Snowmobile</SelectItem>
+                    <SelectItem value="boat">Boat</SelectItem>
+                    <SelectItem value="pwc">Personal Watercraft</SelectItem>
+                    <SelectItem value="golf_cart">Golf Cart</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Unit details */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                <div><Label className="text-[10px]">Year</Label><Input className="h-8 text-sm" value={rv.year} onChange={e => updateItem(recVehicles, setRecVehicles, i, "year", e.target.value)} placeholder="2024" /></div>
+                <div><Label className="text-[10px]">Make</Label><Input className="h-8 text-sm" value={rv.make} onChange={e => updateItem(recVehicles, setRecVehicles, i, "make", e.target.value)} /></div>
+                <div><Label className="text-[10px]">Model</Label><Input className="h-8 text-sm" value={rv.model} onChange={e => updateItem(recVehicles, setRecVehicles, i, "model", e.target.value)} /></div>
+                <div><Label className="text-[10px]">VIN / Serial Number</Label><Input className="h-8 text-sm" value={rv.vin_serial} onChange={e => updateItem(recVehicles, setRecVehicles, i, "vin_serial", e.target.value)} /></div>
+                <div><Label className="text-[10px]">Garaging ZIP</Label><Input className="h-8 text-sm" value={rv.garaging_zip} onChange={e => updateItem(recVehicles, setRecVehicles, i, "garaging_zip", e.target.value)} /></div>
+                <div>
+                  <Label className="text-[10px]">Usage Type</Label>
+                  <Select value={rv.usage_type} onValueChange={v => updateItem(recVehicles, setRecVehicles, i, "usage_type", v)}>
+                    <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="personal">Personal Use</SelectItem>
+                      <SelectItem value="seasonal">Seasonal Use</SelectItem>
+                      <SelectItem value="stored">Stored Only</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Liability */}
+              <div>
+                <Label className="text-[10px]">Liability Coverage Limit</Label>
+                <Select value={rv.liability_limit} onValueChange={v => updateItem(recVehicles, setRecVehicles, i, "liability_limit", v)}>
+                  <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select limit" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="state_min">State Minimum</SelectItem>
+                    <SelectItem value="100000">$100,000</SelectItem>
+                    <SelectItem value="300000">$300,000</SelectItem>
+                    <SelectItem value="500000">$500,000</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Physical damage */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label className="text-[10px]">Comprehensive Coverage?</Label>
+                  <Select value={rv.wants_comp} onValueChange={v => updateItem(recVehicles, setRecVehicles, i, "wants_comp", v)}>
+                    <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+                    <SelectContent><SelectItem value="yes">Yes</SelectItem><SelectItem value="no">No</SelectItem></SelectContent>
+                  </Select>
+                  {rv.wants_comp === "yes" && (
+                    <div className="pl-3 border-l-2 border-primary/20">
+                      <Label className="text-[10px]">Comprehensive Deductible</Label>
+                      <Select value={rv.comp_deductible} onValueChange={v => updateItem(recVehicles, setRecVehicles, i, "comp_deductible", v)}>
+                        <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="250">$250</SelectItem><SelectItem value="500">$500</SelectItem>
+                          <SelectItem value="1000">$1,000</SelectItem><SelectItem value="2500">$2,500</SelectItem>
+                          <SelectItem value="other">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[10px]">Collision Coverage?</Label>
+                  <Select value={rv.wants_collision} onValueChange={v => updateItem(recVehicles, setRecVehicles, i, "wants_collision", v)}>
+                    <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+                    <SelectContent><SelectItem value="yes">Yes</SelectItem><SelectItem value="no">No</SelectItem></SelectContent>
+                  </Select>
+                  {rv.wants_collision === "yes" && (
+                    <div className="pl-3 border-l-2 border-primary/20">
+                      <Label className="text-[10px]">Collision Deductible</Label>
+                      <Select value={rv.collision_deductible} onValueChange={v => updateItem(recVehicles, setRecVehicles, i, "collision_deductible", v)}>
+                        <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="250">$250</SelectItem><SelectItem value="500">$500</SelectItem>
+                          <SelectItem value="1000">$1,000</SelectItem><SelectItem value="2500">$2,500</SelectItem>
+                          <SelectItem value="other">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Additional */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <div>
+                  <Label className="text-[10px]">Trailer Coverage Needed?</Label>
+                  <Select value={rv.trailer_coverage} onValueChange={v => updateItem(recVehicles, setRecVehicles, i, "trailer_coverage", v)}>
+                    <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+                    <SelectContent><SelectItem value="yes">Yes</SelectItem><SelectItem value="no">No</SelectItem></SelectContent>
+                  </Select>
+                </div>
+                <div className="sm:col-span-2">
+                  <Label className="text-[10px]">Accessories / Custom Equipment Value</Label>
+                  <Input className="h-8 text-sm" value={rv.accessories_value} onChange={e => updateItem(recVehicles, setRecVehicles, i, "accessories_value", e.target.value)} placeholder="$0" />
+                </div>
+              </div>
+
+              {/* Optional add-ons */}
+              <div className="space-y-2 border-t pt-3">
+                <h4 className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Optional Add-Ons</h4>
+                <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <Label className="text-[10px]">UM/UIM</Label>
+                    <Select value={rv.um_uim} onValueChange={v => updateItem(recVehicles, setRecVehicles, i, "um_uim", v)}>
+                      <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+                      <SelectContent><SelectItem value="yes">Yes</SelectItem><SelectItem value="no">No</SelectItem></SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="text-[10px]">Medical Payments</Label>
+                    <Select value={rv.med_pay} onValueChange={v => updateItem(recVehicles, setRecVehicles, i, "med_pay", v)}>
+                      <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+                      <SelectContent><SelectItem value="yes">Yes</SelectItem><SelectItem value="no">No</SelectItem></SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="text-[10px]">Emergency Towing</Label>
+                    <Select value={rv.towing} onValueChange={v => updateItem(recVehicles, setRecVehicles, i, "towing", v)}>
+                      <SelectTrigger className="h-8 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+                      <SelectContent><SelectItem value="yes">Yes</SelectItem><SelectItem value="no">No</SelectItem></SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+          {recVehicles.length < 10 && <Button variant="outline" size="sm" className="w-full text-xs" onClick={() => addItem(recVehicles, setRecVehicles, emptyRecVehicle, 10)}><Plus className="h-3 w-3 mr-1" /> Add Vehicle</Button>}
+
+          <div className="rounded-md bg-muted/50 p-3">
+            <p className="text-[10px] text-muted-foreground"><span className="font-medium">Educational Note:</span> Recreational vehicles often require separate liability and physical damage coverage. Coverage availability and limits vary by carrier and state.</p>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+
   /* ─── RENDER: Documents Step Content ─── */
   const renderDocumentsStep = () => (
     <div className="space-y-6">
@@ -1402,7 +1690,7 @@ export default function IntakeForm() {
               </div>
               <div>
                 <p className="font-semibold text-sm">Personal Lines</p>
-                <p className="text-xs text-muted-foreground">Auto, Home, Flood, Boat, Umbrella</p>
+                <p className="text-xs text-muted-foreground">Auto, Home, Recreational, Boat, Umbrella & more</p>
               </div>
             </button>
             <button
@@ -1440,13 +1728,18 @@ export default function IntakeForm() {
                 </Card>
 
                 <Card>
-                  <CardHeader><CardTitle className="text-base">Coverage Sections</CardTitle></CardHeader>
+                  <CardHeader>
+                    <CardTitle className="text-base">What would you like us to review?</CardTitle>
+                    <p className="text-[10px] text-muted-foreground">Select all that apply. Each selection opens its own module.</p>
+                  </CardHeader>
                   <CardContent className="flex flex-wrap gap-3">
                     {[
-                      { label: "Auto", icon: Car, enabled: enableAuto, toggle: setEnableAuto },
-                      { label: "Home", icon: Home, enabled: enableHome, toggle: setEnableHome },
+                      { label: "Personal Auto", icon: Car, enabled: enableAuto, toggle: setEnableAuto },
+                      { label: "Homeowners / Renters", icon: Home, enabled: enableHome, toggle: setEnableHome },
                       { label: "Flood", icon: Droplets, enabled: enableFlood, toggle: setEnableFlood },
+                      { label: "Recreational Vehicles", icon: Car, enabled: enableRecreational, toggle: setEnableRecreational },
                       { label: "Boat", icon: Sailboat, enabled: enableBoat, toggle: setEnableBoat },
+                      { label: "Personal Articles", icon: Shield, enabled: enableArticles, toggle: setEnableArticles },
                       { label: "Umbrella", icon: Umbrella, enabled: enableUmbrella, toggle: setEnableUmbrella },
                     ].map(s => (
                       <button key={s.label} onClick={() => s.toggle(!s.enabled)}
@@ -1467,6 +1760,9 @@ export default function IntakeForm() {
 
             {/* Step: Boat & Umbrella */}
             {currentStep === "boat_umbrella" && renderBoatUmbrellaStep()}
+
+            {/* Step: Recreational Vehicles */}
+            {currentStep === "recreational" && renderRecreationalStep()}
 
             {/* Step: Documents & Submit */}
             {currentStep === "documents" && renderDocumentsStep()}
