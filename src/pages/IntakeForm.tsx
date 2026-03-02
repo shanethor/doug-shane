@@ -664,6 +664,15 @@ export default function IntakeForm() {
           if (error) throw error;
           if (submitResult?.error) throw new Error(submitResult.error);
 
+          // Create pipeline lead + business_submission for personal lines
+          try {
+            await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/process-intake`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json", Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
+              body: JSON.stringify({ personal_intake_id: record.id }),
+            });
+          } catch { /* pipeline sync failure shouldn't block submission */ }
+
           try {
             const deliveryEmails = record.delivery_emails;
             if (deliveryEmails?.length > 0) {

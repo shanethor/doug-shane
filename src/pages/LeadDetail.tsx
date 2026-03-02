@@ -24,7 +24,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { ArrowLeft, Plus, FileText, CheckCircle, Clock, XCircle, MessageSquare, Send, Edit3, AlertTriangle, ExternalLink, Copy, Check, Trash2, Shield, Download } from "lucide-react";
+import { ArrowLeft, Plus, FileText, CheckCircle, Clock, XCircle, MessageSquare, Send, Edit3, AlertTriangle, ExternalLink, Copy, Check, Trash2, Shield, Download, User, Car, Home, Umbrella, Ship } from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LossRunsTab } from "@/components/LossRunsTab";
@@ -53,7 +53,7 @@ export default function LeadDetail() {
   const [policies, setPolicies] = useState<any[]>([]);
   const [notes, setNotes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [submissions, setSubmissions] = useState<{ id: string; company_name: string | null; status: string; created_at: string }[]>([]);
+  const [submissions, setSubmissions] = useState<{ id: string; company_name: string | null; status: string; created_at: string; file_urls: any }[]>([]);
   const [borSignatures, setBorSignatures] = useState<any[]>([]);
   const [noteText, setNoteText] = useState("");
   const [policyOpen, setPolicyOpen] = useState(false);
@@ -74,7 +74,7 @@ export default function LeadDetail() {
       supabase.from("leads").select("*").eq("id", leadId).single(),
       supabase.from("policies").select("*").eq("lead_id", leadId).order("created_at", { ascending: false }),
       supabase.from("lead_notes").select("*").eq("lead_id", leadId).order("created_at", { ascending: false }).limit(50),
-      supabase.from("business_submissions").select("id, company_name, status, created_at").eq("lead_id", leadId).order("created_at", { ascending: false }),
+      supabase.from("business_submissions").select("id, company_name, status, created_at, file_urls").eq("lead_id", leadId).order("created_at", { ascending: false }),
       (supabase.from("bor_signatures" as any).select("*").eq("lead_id", leadId).order("created_at", { ascending: false }) as any),
     ]);
 
@@ -434,6 +434,7 @@ export default function LeadDetail() {
       <Tabs defaultValue="overview" className="mt-6">
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="intake-data">Intake Data</TabsTrigger>
           <TabsTrigger value="documents">Documents</TabsTrigger>
           <TabsTrigger value="loss-runs" data-tab-loss-runs>Loss Runs</TabsTrigger>
           <TabsTrigger value="notes">Notes</TabsTrigger>
@@ -709,6 +710,12 @@ export default function LeadDetail() {
           </div>
         </TabsContent>
 
+        <TabsContent value="intake-data">
+          <div className="mt-4 max-w-3xl">
+            <PersonalIntakeDataView submissions={submissions} />
+          </div>
+        </TabsContent>
+
         <TabsContent value="documents">
           <div className="mt-4 max-w-2xl space-y-6">
             {/* Intake Link Section */}
@@ -843,6 +850,262 @@ function ReadinessItem({ label, done }: { label: string; done: boolean }) {
         {done && <CheckCircle className="h-2.5 w-2.5 text-success-foreground" />}
       </div>
       <span className={`text-xs font-sans ${done ? "text-foreground" : "text-muted-foreground"}`}>{label}</span>
+    </div>
+  );
+}
+
+function PersonalIntakeDataView({ submissions }: { submissions: { file_urls: any }[] }) {
+  // Find the submission that has personal intake form_data
+  const intakeSub = submissions.find((s) => s.file_urls?.form_data?.intake_type);
+  const fd = intakeSub?.file_urls?.form_data;
+
+  if (!fd) {
+    return (
+      <Card>
+        <CardContent className="py-12 text-center">
+          <FileText className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
+          <p className="text-sm text-muted-foreground font-sans">No intake submission data available for this lead.</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const applicant = fd.applicant || {};
+  const sections = fd.sections || {};
+  const docs = fd.documents || [];
+
+  return (
+    <div className="space-y-4">
+      {/* Applicant Info */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base font-sans flex items-center gap-2">
+            <User className="h-4 w-4" />
+            Applicant Information
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 gap-3 text-sm font-sans">
+            {applicant.name && <div><span className="text-muted-foreground text-xs">Name</span><p>{applicant.name}</p></div>}
+            {applicant.email && <div><span className="text-muted-foreground text-xs">Email</span><p>{applicant.email}</p></div>}
+            {applicant.phone && <div><span className="text-muted-foreground text-xs">Phone</span><p>{applicant.phone}</p></div>}
+            {applicant.address && <div className="col-span-2"><span className="text-muted-foreground text-xs">Address</span><p>{[applicant.address, applicant.city, applicant.state, applicant.zip].filter(Boolean).join(", ")}</p></div>}
+            {applicant.ownership_status && <div><span className="text-muted-foreground text-xs">Ownership</span><p className="capitalize">{applicant.ownership_status}</p></div>}
+            {applicant.has_licensed_drivers && <div><span className="text-muted-foreground text-xs">Licensed Drivers</span><p className="capitalize">{applicant.has_licensed_drivers}</p></div>}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Auto Section */}
+      {sections.auto && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base font-sans flex items-center gap-2">
+              <Car className="h-4 w-4" />
+              Auto — {sections.auto.drivers?.length || 0} Driver(s), {sections.auto.vehicles?.length || 0} Vehicle(s)
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {sections.auto.drivers?.length > 0 && (
+              <div>
+                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Drivers</h4>
+                <div className="space-y-2">
+                  {sections.auto.drivers.map((d: any, i: number) => (
+                    <div key={i} className="rounded-lg border p-3 text-sm font-sans">
+                      <p className="font-medium">{d.first_name} {d.last_name}</p>
+                      <div className="grid grid-cols-3 gap-2 mt-1 text-xs text-muted-foreground">
+                        {d.date_of_birth && <span>DOB: {d.date_of_birth}</span>}
+                        {d.license_number && <span>License: {d.license_number}</span>}
+                        {d.license_state && <span>State: {d.license_state}</span>}
+                        {d.gender && <span>Gender: {d.gender}</span>}
+                        {d.marital_status && <span>Status: {d.marital_status}</span>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {sections.auto.vehicles?.length > 0 && (
+              <div>
+                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Vehicles</h4>
+                <div className="space-y-2">
+                  {sections.auto.vehicles.map((v: any, i: number) => (
+                    <div key={i} className="rounded-lg border p-3 text-sm font-sans">
+                      <p className="font-medium">{v.year} {v.make} {v.model}</p>
+                      <div className="grid grid-cols-3 gap-2 mt-1 text-xs text-muted-foreground">
+                        {v.vin && <span>VIN: {v.vin}</span>}
+                        {v.usage && <span>Usage: {v.usage}</span>}
+                        {v.annual_mileage && <span>Miles: {v.annual_mileage}</span>}
+                        {v.ownership && <span>Ownership: {v.ownership}</span>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {sections.auto.coverage && (
+              <div>
+                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Coverage Preferences</h4>
+                <div className="grid grid-cols-2 gap-2 text-sm font-sans">
+                  {sections.auto.coverage.bodily_injury && <div><span className="text-muted-foreground text-xs">Bodily Injury</span><p>{sections.auto.coverage.bodily_injury}</p></div>}
+                  {sections.auto.coverage.property_damage && <div><span className="text-muted-foreground text-xs">Property Damage</span><p>{sections.auto.coverage.property_damage}</p></div>}
+                  {sections.auto.coverage.comprehensive_deductible && <div><span className="text-muted-foreground text-xs">Comp Deductible</span><p>{sections.auto.coverage.comprehensive_deductible}</p></div>}
+                  {sections.auto.coverage.collision_deductible && <div><span className="text-muted-foreground text-xs">Collision Deductible</span><p>{sections.auto.coverage.collision_deductible}</p></div>}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Home Section */}
+      {sections.home && sections.home.properties?.length > 0 && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base font-sans flex items-center gap-2">
+              <Home className="h-4 w-4" />
+              Homeowners — {sections.home.properties.length} Property/Properties
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {sections.home.properties.map((p: any, i: number) => (
+                <div key={i} className="rounded-lg border p-3 text-sm font-sans">
+                  <p className="font-medium">{p.address || `Property ${i + 1}`}</p>
+                  <div className="grid grid-cols-3 gap-2 mt-1 text-xs text-muted-foreground">
+                    {p.year_built && <span>Year Built: {p.year_built}</span>}
+                    {p.square_footage && <span>Sq Ft: {p.square_footage}</span>}
+                    {p.construction_type && <span>Construction: {p.construction_type}</span>}
+                    {p.dwelling_value && <span>Dwelling: ${Number(p.dwelling_value).toLocaleString()}</span>}
+                    {p.roof_type && <span>Roof: {p.roof_type}</span>}
+                    {p.heating_type && <span>Heating: {p.heating_type}</span>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Umbrella Section */}
+      {sections.umbrella && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base font-sans flex items-center gap-2">
+              <Umbrella className="h-4 w-4" />
+              Umbrella
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-sm font-sans">
+              <span className="text-muted-foreground text-xs">Requested Limit</span>
+              <p>${Number(sections.umbrella.requested_limit || 0).toLocaleString()}</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Boat Section */}
+      {sections.boat?.boats?.length > 0 && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base font-sans flex items-center gap-2">
+              <Ship className="h-4 w-4" />
+              Watercraft — {sections.boat.boats.length} Boat(s)
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {sections.boat.boats.map((b: any, i: number) => (
+                <div key={i} className="rounded-lg border p-3 text-sm font-sans">
+                  <p className="font-medium">{b.year} {b.make} {b.model}</p>
+                  <div className="grid grid-cols-3 gap-2 mt-1 text-xs text-muted-foreground">
+                    {b.hull_id && <span>Hull ID: {b.hull_id}</span>}
+                    {b.length && <span>Length: {b.length}ft</span>}
+                    {b.value && <span>Value: ${Number(b.value).toLocaleString()}</span>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Flood */}
+      {sections.flood && (
+        <Card>
+          <CardHeader className="pb-3"><CardTitle className="text-base font-sans">Flood Insurance</CardTitle></CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-2 text-sm font-sans">
+              {sections.flood.property_address && <div className="col-span-2"><span className="text-muted-foreground text-xs">Property</span><p>{sections.flood.property_address}</p></div>}
+              {sections.flood.flood_zone && <div><span className="text-muted-foreground text-xs">Flood Zone</span><p>{sections.flood.flood_zone}</p></div>}
+              {sections.flood.building_value && <div><span className="text-muted-foreground text-xs">Building Value</span><p>${Number(sections.flood.building_value).toLocaleString()}</p></div>}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Recreational Vehicles */}
+      {sections.recreational?.vehicles?.length > 0 && (
+        <Card>
+          <CardHeader className="pb-3"><CardTitle className="text-base font-sans">Recreational Vehicles — {sections.recreational.vehicles.length}</CardTitle></CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {sections.recreational.vehicles.map((v: any, i: number) => (
+                <div key={i} className="rounded-lg border p-3 text-sm font-sans">
+                  <p className="font-medium">{v.type}: {v.year} {v.make} {v.model}</p>
+                  {v.vin && <p className="text-xs text-muted-foreground mt-1">VIN: {v.vin}</p>}
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Personal Articles */}
+      {sections.personal_articles?.items?.length > 0 && (
+        <Card>
+          <CardHeader className="pb-3"><CardTitle className="text-base font-sans">Personal Articles — {sections.personal_articles.items.length} Item(s)</CardTitle></CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {sections.personal_articles.items.map((item: any, i: number) => (
+                <div key={i} className="rounded-lg border p-3 text-sm font-sans flex items-center justify-between">
+                  <span>{item.description || `Item ${i + 1}`}</span>
+                  {item.value && <span className="font-medium">${Number(item.value).toLocaleString()}</span>}
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Attached Documents */}
+      {docs.length > 0 && (
+        <Card>
+          <CardHeader className="pb-3"><CardTitle className="text-base font-sans">Attached Documents — {docs.length}</CardTitle></CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {docs.map((doc: any, i: number) => (
+                <div key={i} className="flex items-center gap-2 rounded-lg border p-3 text-sm font-sans">
+                  <FileText className="h-4 w-4 text-muted-foreground" />
+                  <span>{doc.name || `Document ${i + 1}`}</span>
+                  <Badge variant="secondary" className="text-[10px] ml-auto">{doc.type || "file"}</Badge>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Notes */}
+      {fd.notes && (
+        <Card>
+          <CardHeader className="pb-3"><CardTitle className="text-base font-sans">Client Notes</CardTitle></CardHeader>
+          <CardContent>
+            <p className="text-sm font-sans text-muted-foreground whitespace-pre-wrap">{fd.notes}</p>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
