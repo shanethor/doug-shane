@@ -13,7 +13,7 @@ import { Progress } from "@/components/ui/progress";
 import {
   Car, Home, Sailboat, Umbrella, Plus, Trash2, CheckCircle, AlertTriangle,
   Loader2, Upload, FileText, X, Shield, Building2, User, Check, AlertCircle as AlertCircleIcon,
-  ChevronLeft, ChevronRight, Droplets, Gem,
+  ChevronLeft, ChevronRight, Droplets, Gem, Download,
 } from "lucide-react";
 import { toast } from "sonner";
 import { generateBorPdf, downloadPdf } from "@/lib/bor-pdf-generator";
@@ -208,6 +208,7 @@ export default function IntakeForm() {
   const [decExtracting, setDecExtracting] = useState(false);
   const [decExtracted, setDecExtracted] = useState(false);
   const [decFiles, setDecFiles] = useState<File[]>([]);
+  const [decDragOver, setDecDragOver] = useState(false);
   const decInputRef = useRef<HTMLInputElement>(null);
   const updateCov = (field: keyof AutoCoverage, value: any) => setAutoCoverage(prev => ({ ...prev, [field]: value }));
   const updateFlood = (field: keyof FloodInfo, value: string) => setFlood(prev => ({ ...prev, [field]: value }));
@@ -1027,20 +1028,34 @@ export default function IntakeForm() {
               </p>
               <div
                 onClick={() => decInputRef.current?.click()}
-                onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); e.currentTarget.classList.add("border-primary", "bg-primary/5"); }}
-                onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); e.currentTarget.classList.remove("border-primary", "bg-primary/5"); }}
+                onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); setDecDragOver(true); }}
+                onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setDecDragOver(true); }}
+                onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); setDecDragOver(false); }}
                 onDrop={(e) => {
                   e.preventDefault(); e.stopPropagation();
-                  e.currentTarget.classList.remove("border-primary", "bg-primary/5");
-                  const files = Array.from(e.dataTransfer.files).filter(f =>
+                  setDecDragOver(false);
+                  const droppedFiles = Array.from(e.dataTransfer.files).filter(f =>
                     [".pdf", ".jpg", ".jpeg", ".png"].some(ext => f.name.toLowerCase().endsWith(ext))
                   );
-                  if (files.length) { setDecFiles(prev => [...prev, ...files]); setDecExtracted(false); }
+                  if (droppedFiles.length) { setDecFiles(prev => [...prev, ...droppedFiles]); setDecExtracted(false); }
                 }}
-                className="border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors border-border hover:border-primary/50"
+                className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-all duration-200 ${
+                  decDragOver
+                    ? "border-primary bg-primary/5 scale-[1.02] shadow-lg"
+                    : "border-border hover:border-primary/50"
+                }`}
               >
-                <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-                <p className="text-sm font-medium">Click or drag & drop dec pages</p>
+                {decDragOver ? (
+                  <>
+                    <Download className="h-8 w-8 mx-auto mb-2 text-primary animate-bounce" />
+                    <p className="text-sm font-medium text-primary">Drop files here</p>
+                  </>
+                ) : (
+                  <>
+                    <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                    <p className="text-sm font-medium">Click or drag & drop dec pages</p>
+                  </>
+                )}
                 <p className="text-xs text-muted-foreground mt-1">PDF, JPG, PNG accepted</p>
                 <input
                   ref={decInputRef}
