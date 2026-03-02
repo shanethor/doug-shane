@@ -41,13 +41,50 @@ export default function Auth() {
   // Check if user is already 2FA-verified (stored in sessionStorage)
   const is2FAVerified = () => sessionStorage.getItem("aura_2fa_verified") === "true";
 
+  // Auto-check trusted device when session exists but 2FA not yet verified
+  const [autoChecking, setAutoChecking] = useState(false);
   useEffect(() => {
-    if (!loading && user && is2FAVerified()) {
+    if (!loading && user && !is2FAVerified() && !needs2FA && !autoChecking) {
+      setAutoChecking(true);
+      const deviceHash = getDeviceHash();
+      fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-2fa`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "send_code",
+          user_id: user.id,
+          email: user.email,
+          device_hash: deviceHash,
+        }),
+      })
+        .then((r) => r.json())
+        .then((result) => {
+          if (result.trusted) {
+            sessionStorage.setItem("aura_2fa_verified", "true");
+            navigate("/", { replace: true });
+          } else {
+            // Device not trusted — show 2FA screen
+            setPendingUserId(user.id);
+            setPendingEmail(user.email!);
+            setNeeds2FA(true);
+          }
+        })
+        .catch(() => {
+          setPendingUserId(user.id);
+          setPendingEmail(user.email!);
+          setNeeds2FA(true);
+        })
+        .finally(() => setAutoChecking(false));
+    } else if (!loading && user && is2FAVerified()) {
       navigate("/", { replace: true });
     }
   }, [user, loading]);
 
-  if (loading) return null;
+  if (loading || autoChecking) return (
+    <div className="flex min-h-screen items-center justify-center bg-background">
+      <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+    </div>
+  );
   if (user && is2FAVerified()) return <Navigate to="/" replace />;
 
   const handleSubmit = async (e: React.FormEvent) => {
