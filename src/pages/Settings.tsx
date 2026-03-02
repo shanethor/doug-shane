@@ -13,6 +13,7 @@ import { Building2, Mail, Save, User, BrainCircuit, Eye, EyeOff, Info, Loader2, 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { getAuthHeaders } from "@/lib/auth-fetch";
+import { useSearchParams } from "react-router-dom";
 
 const AGENCY_FIELDS = [
   { key: "agency_name", label: "Agency Name", placeholder: "ABC Insurance Agency" },
@@ -34,6 +35,7 @@ type EmailConnection = {
 
 export default function Settings() {
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
   const [values, setValues] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [loaded, setLoaded] = useState(false);
@@ -44,6 +46,20 @@ export default function Settings() {
   // Email connections
   const [emailConnections, setEmailConnections] = useState<EmailConnection[]>([]);
   const [connectingProvider, setConnectingProvider] = useState<string | null>(null);
+
+  // Auto-scroll to email section and store returnTo
+  useEffect(() => {
+    const section = searchParams.get("section");
+    const returnTo = searchParams.get("returnTo");
+    if (returnTo) {
+      sessionStorage.setItem("email_connect_return", returnTo);
+    }
+    if (section === "email" && loaded) {
+      setTimeout(() => {
+        document.getElementById("email-accounts-section")?.scrollIntoView({ behavior: "smooth" });
+      }, 200);
+    }
+  }, [searchParams, loaded]);
 
   useEffect(() => {
     if (!user) return;
@@ -241,7 +257,7 @@ export default function Settings() {
       </Card>
 
       {/* Email Connections */}
-      <Card className="mt-6">
+      <Card className="mt-6" id="email-accounts-section">
         <CardHeader>
           <CardTitle className="text-lg flex items-center gap-2">
             <Mail className="h-4 w-4 text-accent" />
