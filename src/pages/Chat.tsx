@@ -916,6 +916,18 @@ export default function Chat() {
       });
       if (!result) throw new Error("Link generation returned null");
 
+      // Send the intake link to the client via email
+      try {
+        const headers = await getAuthHeaders();
+        await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-intake-link-email`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ token: result.token, clientEmail: config.clientEmail, agentId: user.id }),
+        });
+      } catch (emailErr) {
+        console.warn("Failed to send intake link email:", emailErr);
+      }
+
       let copied = false;
       try { await navigator.clipboard.writeText(result.url); copied = true; } catch (_) {}
 

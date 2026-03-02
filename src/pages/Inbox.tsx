@@ -70,6 +70,7 @@ const TYPE_CONFIG: Record<string, { icon: React.ElementType; color: string; labe
   document: { icon: FileText, color: "text-primary", label: "Document" },
   email: { icon: Mail, color: "text-primary", label: "Email" },
   loss_run: { icon: FileText, color: "text-warning", label: "Loss Runs" },
+  intake: { icon: User, color: "text-primary", label: "Intake" },
   info: { icon: Bell, color: "text-muted-foreground", label: "Info" },
 };
 
@@ -269,11 +270,13 @@ export default function Inbox() {
         ? unified.filter((u) => u.kind === "notification" && (u.raw as Notification).type === "pipeline")
         : tab === "loss_run"
           ? unified.filter((u) => u.kind === "notification" && (u.raw as Notification).type === "loss_run")
-          : tab === "document"
-            ? unified.filter((u) => u.kind === "notification" && (u.raw as Notification).type === "document")
-            : tab === "emails"
-              ? unified.filter((u) => u.kind === "email")
-              : unified;
+          : tab === "intake"
+            ? unified.filter((u) => u.kind === "notification" && (u.raw as Notification).type === "intake")
+            : tab === "document"
+              ? unified.filter((u) => u.kind === "notification" && (u.raw as Notification).type === "document")
+              : tab === "emails"
+                ? unified.filter((u) => u.kind === "email")
+                : unified;
 
   const unreadCount = unified.filter((u) => !u.is_read).length;
 
@@ -419,6 +422,7 @@ export default function Inbox() {
           </TabsTrigger>
           <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
           <TabsTrigger value="loss_run">Loss Runs</TabsTrigger>
+          <TabsTrigger value="intake">Intake</TabsTrigger>
           <TabsTrigger value="document">Documents</TabsTrigger>
         </TabsList>
 
