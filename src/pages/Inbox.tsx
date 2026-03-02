@@ -99,6 +99,29 @@ export default function Inbox() {
   const [aiLoading, setAiLoading] = useState(false);
   const [sending, setSending] = useState(false);
 
+  // Auto-sync emails every 5 minutes
+  const autoSyncEmails = useCallback(async () => {
+    if (!user || emailConnections.length === 0) return;
+    try {
+      const headers = await getAuthHeaders();
+      for (const conn of emailConnections) {
+        await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/email-sync`, {
+          method: "POST", headers,
+          body: JSON.stringify({ action: "sync", provider: conn.provider }),
+        });
+      }
+      const { data } = await supabase
+        .from("synced_emails")
+        .select("id, from_address, from_name, to_addresses, subject, body_preview, body_html, is_read, received_at")
+        .eq("user_id", user.id)
+        .order("received_at", { ascending: false })
+        .limit(100);
+      if (data) setSyncedEmails(data as SyncedEmail[]);
+    } catch {
+      // silent background sync failure
+    }
+  }, [user, emailConnections]);
+
   useEffect(() => {
     if (!user) return;
     loadAll();
@@ -120,10 +143,25 @@ export default function Inbox() {
           setNotifications((prev) => prev.map((n) => n.id === updated.id ? updated : n));
         }
       )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "synced_emails", filter: `user_id=eq.${user.id}` },
+        (payload) => {
+          const updated = payload.new as SyncedEmail;
+          setSyncedEmails((prev) => prev.map((e) => e.id === updated.id ? updated : e));
+        }
+      )
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
   }, [user]);
+
+  // 5-minute auto-sync interval
+  useEffect(() => {
+    if (!user || emailConnections.length === 0) return;
+    const interval = setInterval(autoSyncEmails, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [user, emailConnections, autoSyncEmails]);
 
   const loadAll = async () => {
     if (!user) return;
