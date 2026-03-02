@@ -1027,10 +1027,20 @@ export default function IntakeForm() {
               </p>
               <div
                 onClick={() => decInputRef.current?.click()}
+                onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); e.currentTarget.classList.add("border-primary", "bg-primary/5"); }}
+                onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); e.currentTarget.classList.remove("border-primary", "bg-primary/5"); }}
+                onDrop={(e) => {
+                  e.preventDefault(); e.stopPropagation();
+                  e.currentTarget.classList.remove("border-primary", "bg-primary/5");
+                  const files = Array.from(e.dataTransfer.files).filter(f =>
+                    [".pdf", ".jpg", ".jpeg", ".png"].some(ext => f.name.toLowerCase().endsWith(ext))
+                  );
+                  if (files.length) { setDecFiles(prev => [...prev, ...files]); setDecExtracted(false); }
+                }}
                 className="border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors border-border hover:border-primary/50"
               >
                 <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-                <p className="text-sm font-medium">Click to upload dec pages</p>
+                <p className="text-sm font-medium">Click or drag & drop dec pages</p>
                 <p className="text-xs text-muted-foreground mt-1">PDF, JPG, PNG accepted</p>
                 <input
                   ref={decInputRef}
