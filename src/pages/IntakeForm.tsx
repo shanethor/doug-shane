@@ -156,7 +156,7 @@ const emptyCommercial = (): CommercialFormData => ({
 
 /* ─── Personal step keys (dynamic flow) ─── */
 type PersonalStep =
-  | "coverage_select" | "contact_info" | "address" | "household"
+  | "coverage_select" | "current_insurance" | "contact_info" | "address" | "household"
   | "homeowners" | "auto" | "flood" | "boat" | "recreational" | "personal_articles" | "umbrella"
   | "prompt_add_auto" | "prompt_add_property" | "prompt_additional_vehicles"
   | "prompt_personal_articles" | "prompt_flood" | "prompt_umbrella"
@@ -204,6 +204,11 @@ export default function IntakeForm() {
   const [autoCoverage, setAutoCoverage] = useState<AutoCoverage>(emptyAutoCoverage());
   const [articles, setArticles] = useState<PersonalArticle[]>([emptyArticle()]);
   const [disclosureAcknowledged, setDisclosureAcknowledged] = useState(false);
+  const [isCurrentlyInsured, setIsCurrentlyInsured] = useState<"" | "yes" | "no">("");
+  const [decExtracting, setDecExtracting] = useState(false);
+  const [decExtracted, setDecExtracted] = useState(false);
+  const [decFiles, setDecFiles] = useState<File[]>([]);
+  const decInputRef = useRef<HTMLInputElement>(null);
   const updateCov = (field: keyof AutoCoverage, value: any) => setAutoCoverage(prev => ({ ...prev, [field]: value }));
   const updateFlood = (field: keyof FloodInfo, value: string) => setFlood(prev => ({ ...prev, [field]: value }));
 
@@ -229,7 +234,7 @@ export default function IntakeForm() {
 
   /* ─── Compute dynamic steps ─── */
   const computePersonalSteps = (): PersonalStep[] => {
-    const steps: PersonalStep[] = ["coverage_select", "contact_info", "address", "household"];
+    const steps: PersonalStep[] = ["coverage_select", "current_insurance", "contact_info", "address", "household"];
 
     const hasProperty = enableHome || enableRenters;
 
@@ -287,6 +292,7 @@ export default function IntakeForm() {
 
   const stepLabels: Record<PersonalStep, string> = {
     coverage_select: "Coverage",
+    current_insurance: "Current Insurance",
     contact_info: "Contact",
     address: "Address",
     household: "Household",
@@ -374,6 +380,9 @@ export default function IntakeForm() {
       const hasAny = enableAuto || enableHome || enableRenters || enableFlood || enableBoat || enableUmbrella || enableRecreational || enableArticles;
       if (!hasAny) { toast.error("Select at least one coverage type"); return false; }
     }
+    if (currentStep === "current_insurance") {
+      if (!isCurrentlyInsured) { toast.error("Please indicate if you are currently insured"); return false; }
+    }
     if (currentStep === "contact_info") {
       if (!applicantName.trim()) { toast.error("Full name is required"); return false; }
       if (!applicantEmail.trim() || !/^[\w.-]+@[\w.-]+\.\w+$/.test(applicantEmail.trim())) { toast.error("A valid email is required"); return false; }
@@ -454,6 +463,148 @@ export default function IntakeForm() {
       }
       window.scrollTo({ top: 0, behavior: "smooth" });
     }, 0);
+  };
+
+  /* ─── Dec Page Extraction ─── */
+  const handleDecExtraction = async () => {
+    if (decFiles.length === 0) return;
+    setDecExtracting(true);
+    try {
+      const filesPayload: { base64: string; mimeType: string }[] = [];
+      for (const file of decFiles) {
+        const buffer = await file.arrayBuffer();
+        const bytes = new Uint8Array(buffer);
+        let binary = "";
+        for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+        const b64 = btoa(binary);
+        const mimeType = file.type || (file.name.toLowerCase().endsWith(".pdf") ? "application/pdf" : "image/jpeg");
+        filesPayload.push({ base64: b64, mimeType });
+      }
+
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/extract-dec-pages`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({ files: filesPayload }),
+      });
+
+      const result = await res.json();
+      if (!result.success || !result.data) {
+        toast.error("Could not extract data from your documents. You can still fill out the form manually.");
+        setDecExtracting(false);
+        return;
+      }
+
+      const d = result.data;
+
+      // Pre-fill applicant info
+      if (d.applicant_name) setApplicantName(d.applicant_name);
+      if (d.applicant_email) setApplicantEmail(d.applicant_email);
+      if (d.applicant_phone) setApplicantPhone(d.applicant_phone);
+      if (d.applicant_address) setApplicantAddress(d.applicant_address);
+      if (d.applicant_city) setApplicantCity(d.applicant_city);
+      if (d.applicant_state) setApplicantState(d.applicant_state);
+      if (d.applicant_zip) setApplicantZip(d.applicant_zip);
+
+      // Enable detected coverage types
+      const detected = d.coverage_types_detected || [];
+      if (detected.includes("auto")) setEnableAuto(true);
+      if (detected.includes("homeowners")) setEnableHome(true);
+      if (detected.includes("renters")) setEnableRenters(true);
+      if (detected.includes("flood")) setEnableFlood(true);
+      if (detected.includes("boat")) setEnableBoat(true);
+      if (detected.includes("umbrella")) setEnableUmbrella(true);
+
+      // Pre-fill drivers
+      if (d.drivers?.length > 0) {
+        setDrivers(d.drivers.map((dr: any) => ({
+          name: dr.name || "", dob: dr.dob || "", license_number: dr.license_number || "",
+          license_state: dr.license_state || "", gender: dr.gender || "", marital_status: dr.marital_status || "",
+          violations: "",
+        })));
+        setHasLicensedDrivers("yes");
+      }
+
+      // Pre-fill vehicles
+      if (d.vehicles?.length > 0) {
+        setVehicles(d.vehicles.map((v: any) => ({
+          year: v.year || "", make: v.make || "", model: v.model || "",
+          vin: v.vin || "", usage: v.usage || "", garaging_zip: v.garaging_zip || "",
+          is_rideshare_delivery: "" as const, rideshare_service: "",
+        })));
+      }
+
+      // Pre-fill home
+      if (d.home && (d.home.address || d.home.year_built)) {
+        setHomes([{
+          address: d.home.address || "", city: d.home.city || "", state: d.home.state || "",
+          zip: d.home.zip || "", year_built: d.home.year_built || "", square_footage: d.home.square_footage || "",
+          construction_type: d.home.construction_type || "", roof_type: d.home.roof_type || "",
+          roof_year: d.home.roof_year || "", occupancy: "", rent_roll: "", heating_type: "",
+          electrical_update_year: "", plumbing_update_year: "",
+          has_pool: false, has_trampoline: false, has_dog: false, dog_breed: "",
+          alarm_type: "", fire_extinguishers: false, smoke_detectors: false, deadbolts: false,
+          sprinkler_system: false, claims_5_years: "",
+        }]);
+      }
+
+      // Pre-fill auto coverage
+      if (d.auto_coverage) {
+        const ac = d.auto_coverage;
+        setAutoCoverage(prev => ({
+          ...prev,
+          liability_type: ac.liability_type || prev.liability_type,
+          bi_limit: ac.bi_limit || prev.bi_limit,
+          pd_limit: ac.pd_limit || prev.pd_limit,
+          csl_limit: ac.csl_limit || prev.csl_limit,
+          um_uim_limit: ac.um_uim_limit || prev.um_uim_limit,
+          med_pay_limit: ac.med_pay_limit || prev.med_pay_limit,
+          comp_deductible: ac.comp_deductible || prev.comp_deductible,
+          collision_deductible: ac.collision_deductible || prev.collision_deductible,
+          current_carrier: ac.current_carrier || prev.current_carrier,
+          policy_expiration: ac.policy_expiration || prev.policy_expiration,
+          wants_comprehensive: ac.comp_deductible ? "yes" as const : prev.wants_comprehensive,
+          wants_collision: ac.collision_deductible ? "yes" as const : prev.wants_collision,
+        }));
+      }
+
+      // Pre-fill flood
+      if (d.flood && (d.flood.flood_zone || d.flood.building_coverage)) {
+        setFlood(prev => ({
+          ...prev,
+          flood_zone: d.flood.flood_zone || prev.flood_zone,
+          building_coverage: d.flood.building_coverage || prev.building_coverage,
+          contents_coverage: d.flood.contents_coverage || prev.contents_coverage,
+          current_flood_carrier: d.flood.current_flood_carrier || prev.current_flood_carrier,
+          current_flood_premium: d.flood.current_flood_premium || prev.current_flood_premium,
+        }));
+      }
+
+      // Pre-fill boats
+      if (d.boats?.length > 0) {
+        setBoats(d.boats.map((b: any) => ({
+          year: b.year || "", make: b.make || "", model: b.model || "",
+          length: b.length || "", hull_type: b.hull_type || "", engine_type: b.engine_type || "",
+          horsepower: b.horsepower || "", value: b.value || "", storage_location: "",
+        })));
+      }
+
+      // Pre-fill umbrella
+      if (d.umbrella?.has_umbrella === "yes") {
+        setEnableUmbrella(true);
+        setUmbrella(prev => ({ ...prev, wants_umbrella: "yes", requested_limit: d.umbrella.limit || prev.requested_limit }));
+      }
+
+      setDecExtracted(true);
+      toast.success("We extracted your policy info! Review and edit as needed.");
+    } catch (err: any) {
+      console.error("Dec extraction error:", err);
+      toast.error("Extraction failed. You can still fill out the form manually.");
+    } finally {
+      setDecExtracting(false);
+    }
   };
 
   /* ─── Submit ─── */
@@ -839,6 +990,109 @@ export default function IntakeForm() {
             <s.icon className="h-4 w-4" />{s.label}
           </button>
         ))}
+      </CardContent>
+    </Card>
+  );
+
+  /* ─── RENDER: Current Insurance (after coverage select) ─── */
+  const renderCurrentInsurance = () => (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base flex items-center gap-2">
+          <Shield className="h-4 w-4" /> Are you currently insured?
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-5">
+        <p className="text-sm text-muted-foreground">
+          If you have current coverage, uploading your declaration pages helps us pre-fill much of the form for you.
+        </p>
+
+        <div className="flex gap-3">
+          <button
+            onClick={() => setIsCurrentlyInsured("yes")}
+            className={`flex-1 py-3 rounded-lg border text-sm font-medium transition-colors ${isCurrentlyInsured === "yes" ? "bg-primary text-primary-foreground border-primary" : "border-border hover:border-primary/50"}`}
+          >Yes</button>
+          <button
+            onClick={() => { setIsCurrentlyInsured("no"); setDecFiles([]); setDecExtracted(false); }}
+            className={`flex-1 py-3 rounded-lg border text-sm font-medium transition-colors ${isCurrentlyInsured === "no" ? "bg-primary text-primary-foreground border-primary" : "border-border hover:border-primary/50"}`}
+          >No</button>
+        </div>
+
+        {isCurrentlyInsured === "yes" && (
+          <div className="space-y-4 pt-2">
+            <div className="space-y-2">
+              <Label className="text-xs font-medium">Upload your declaration pages</Label>
+              <p className="text-[11px] text-muted-foreground">
+                We'll extract your policy details and pre-fill the form. You can review and edit everything afterwards.
+              </p>
+              <div
+                onClick={() => decInputRef.current?.click()}
+                className="border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors border-border hover:border-primary/50"
+              >
+                <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                <p className="text-sm font-medium">Click to upload dec pages</p>
+                <p className="text-xs text-muted-foreground mt-1">PDF, JPG, PNG accepted</p>
+                <input
+                  ref={decInputRef}
+                  type="file"
+                  multiple
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  className="hidden"
+                  onChange={(e) => {
+                    if (e.target.files) {
+                      setDecFiles(prev => [...prev, ...Array.from(e.target.files!)]);
+                      setDecExtracted(false);
+                    }
+                    e.target.value = "";
+                  }}
+                />
+              </div>
+            </div>
+
+            {decFiles.length > 0 && (
+              <div className="space-y-2">
+                {decFiles.map((f, i) => (
+                  <div key={i} className="flex items-center gap-2 text-sm bg-muted/50 rounded-md px-3 py-2">
+                    <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <span className="truncate flex-1">{f.name}</span>
+                    <span className="text-xs text-muted-foreground">{(f.size / 1024).toFixed(0)}KB</span>
+                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => {
+                      setDecFiles(prev => prev.filter((_, idx) => idx !== i));
+                      setDecExtracted(false);
+                    }}><X className="h-3 w-3" /></Button>
+                  </div>
+                ))}
+
+                {!decExtracted && (
+                  <Button
+                    className="w-full h-11"
+                    onClick={handleDecExtraction}
+                    disabled={decExtracting}
+                  >
+                    {decExtracting ? (
+                      <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Extracting your policy info...</>
+                    ) : (
+                      <><FileText className="h-4 w-4 mr-2" /> Extract & Pre-Fill Form</>
+                    )}
+                  </Button>
+                )}
+
+                {decExtracted && (
+                  <div className="flex items-center gap-2 text-sm text-primary bg-primary/10 rounded-md px-3 py-2">
+                    <CheckCircle className="h-4 w-4 shrink-0" />
+                    <span>Policy info extracted! Continue to review and edit.</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {decFiles.length === 0 && (
+              <p className="text-xs text-muted-foreground italic">
+                You can skip the upload and fill out the form manually.
+              </p>
+            )}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
@@ -1885,6 +2139,7 @@ export default function IntakeForm() {
   const renderPersonalStep = () => {
     switch (currentStep) {
       case "coverage_select": return renderCoverageSelect();
+      case "current_insurance": return renderCurrentInsurance();
       case "contact_info": return renderContactInfo();
       case "address": return renderAddress();
       case "household": return renderHousehold();
