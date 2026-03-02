@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS "Public can submit personal intake" ON public.personal_intake_submissions;
