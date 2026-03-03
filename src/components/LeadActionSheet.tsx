@@ -96,8 +96,15 @@ export function LeadActionSheet({
     }
   };
 
+  // Haptic feedback when sheet opens
+  const triggerHaptic = () => {
+    if (navigator.vibrate) {
+      navigator.vibrate(10);
+    }
+  };
+
   return (
-    <Drawer open={open} onOpenChange={(o) => { if (!o) handleClose(); else onOpenChange(true); }}>
+    <Drawer open={open} onOpenChange={(o) => { if (!o) handleClose(); else { triggerHaptic(); onOpenChange(true); } }}>
       <DrawerContent>
         <DrawerHeader className="text-left">
           <DrawerTitle className="text-base font-sans">{lead.account_name}</DrawerTitle>
