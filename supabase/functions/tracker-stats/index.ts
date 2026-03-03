@@ -102,7 +102,7 @@ Deno.serve(async (req) => {
     const targetPremium = activeLeads.reduce((s: number, l: any) => s + (Number(l.target_premium) || 0), 0);
 
     const stats: TrackerStats = {
-      totalProspects: prospectLeads.length,
+      totalProspects: prospectLeads.length + quotingLeads.length + presentingLeads.length,
       quotingCount: quotingLeads.length,
       presentingCount: presentingLeads.length,
       presentingPremium,
