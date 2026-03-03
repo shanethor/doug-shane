@@ -94,6 +94,71 @@ export type Database = {
           },
         ]
       }
+      calendar_events: {
+        Row: {
+          attendees: string[] | null
+          created_at: string
+          description: string | null
+          end_time: string
+          event_type: Database["public"]["Enums"]["calendar_event_type"]
+          external_event_id: string | null
+          id: string
+          lead_id: string | null
+          location: string | null
+          metadata: Json | null
+          provider: string | null
+          start_time: string
+          status: Database["public"]["Enums"]["calendar_event_status"]
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          attendees?: string[] | null
+          created_at?: string
+          description?: string | null
+          end_time: string
+          event_type?: Database["public"]["Enums"]["calendar_event_type"]
+          external_event_id?: string | null
+          id?: string
+          lead_id?: string | null
+          location?: string | null
+          metadata?: Json | null
+          provider?: string | null
+          start_time: string
+          status?: Database["public"]["Enums"]["calendar_event_status"]
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          attendees?: string[] | null
+          created_at?: string
+          description?: string | null
+          end_time?: string
+          event_type?: Database["public"]["Enums"]["calendar_event_type"]
+          external_event_id?: string | null
+          id?: string
+          lead_id?: string | null
+          location?: string | null
+          metadata?: Json | null
+          provider?: string | null
+          start_time?: string
+          status?: Database["public"]["Enums"]["calendar_event_status"]
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "calendar_events_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_documents: {
         Row: {
           created_at: string
@@ -346,6 +411,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      external_calendars: {
+        Row: {
+          access_token: string
+          calendar_id: string | null
+          created_at: string
+          email_address: string | null
+          id: string
+          is_active: boolean
+          provider: string
+          refresh_token: string
+          token_expires_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_token: string
+          calendar_id?: string | null
+          created_at?: string
+          email_address?: string | null
+          id?: string
+          is_active?: boolean
+          provider: string
+          refresh_token: string
+          token_expires_at: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_token?: string
+          calendar_id?: string | null
+          created_at?: string
+          email_address?: string | null
+          id?: string
+          is_active?: boolean
+          provider?: string
+          refresh_token?: string
+          token_expires_at?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       extraction_corrections: {
         Row: {
@@ -1354,6 +1461,14 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user"
+      calendar_event_status: "scheduled" | "completed" | "cancelled" | "no_show"
+      calendar_event_type:
+        | "presentation"
+        | "coverage_review"
+        | "renewal_review"
+        | "claim_review"
+        | "follow_up"
+        | "other"
       document_type: "binder" | "dec" | "invoice" | "other"
       lead_stage: "prospect" | "quoting" | "presenting" | "lost"
       loss_run_status:
@@ -1492,6 +1607,15 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user"],
+      calendar_event_status: ["scheduled", "completed", "cancelled", "no_show"],
+      calendar_event_type: [
+        "presentation",
+        "coverage_review",
+        "renewal_review",
+        "claim_review",
+        "follow_up",
+        "other",
+      ],
       document_type: ["binder", "dec", "invoice", "other"],
       lead_stage: ["prospect", "quoting", "presenting", "lost"],
       loss_run_status: [
