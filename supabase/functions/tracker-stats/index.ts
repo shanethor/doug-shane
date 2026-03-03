@@ -5,6 +5,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+type TimePeriod = "all" | "month" | "quarter" | "year";
+
 type TrackerStats = {
   totalProspects: number;
   quotingCount: number;
@@ -17,11 +19,22 @@ type TrackerStats = {
   targetRevenue: number;
 };
 
+function getDateCutoff(period: TimePeriod): string | null {
+  if (period === "all") return null;
+  const now = new Date();
+  if (period === "month") return new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+  if (period === "quarter") {
+    const q = Math.floor(now.getMonth() / 3) * 3;
+    return new Date(now.getFullYear(), q, 1).toISOString();
+  }
+  return new Date(now.getFullYear(), 0, 1).toISOString();
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
-    const { uid } = await req.json();
+    const { uid, period: rawPeriod } = await req.json();
     if (!uid || typeof uid !== "string") {
       return new Response(JSON.stringify({ error: "uid required" }), {
         status: 400,
@@ -29,20 +42,30 @@ Deno.serve(async (req) => {
       });
     }
 
+    const period: TimePeriod = ["month", "quarter", "year", "all"].includes(rawPeriod) ? rawPeriod : "all";
+    const cutoff = getDateCutoff(period);
+
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
+    // Build queries with optional date filter
+    let leadsQuery = supabase
+      .from("leads")
+      .select("id, stage, presenting_details, target_premium, created_at")
+      .eq("owner_user_id", uid);
+    if (cutoff) leadsQuery = leadsQuery.gte("created_at", cutoff);
+
+    let policiesQuery = supabase
+      .from("policies")
+      .select("lead_id, annual_premium, revenue, status, created_at")
+      .eq("producer_user_id", uid);
+    if (cutoff) policiesQuery = policiesQuery.gte("created_at", cutoff);
+
     const [leadsRes, policiesRes, profileRes, authUserRes] = await Promise.all([
-      supabase
-        .from("leads")
-        .select("id, stage, presenting_details, target_premium")
-        .eq("owner_user_id", uid),
-      supabase
-        .from("policies")
-        .select("lead_id, annual_premium, revenue, status")
-        .eq("producer_user_id", uid),
+      leadsQuery,
+      policiesQuery,
       supabase
         .from("profiles")
         .select("full_name, agency_name")

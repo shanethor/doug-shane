@@ -182,11 +182,29 @@ serve(async (req) => {
         }));
       }
 
-      // Upsert emails
+      // Upsert emails — preserve local is_read state for existing emails
       if (emails.length > 0) {
+        // Fetch existing external_ids so we don't overwrite is_read on re-sync
+        const externalIds = emails.map((e: any) => e.external_id);
+        const { data: existingRows } = await adminClient
+          .from("synced_emails")
+          .select("external_id")
+          .eq("connection_id", conn.id)
+          .in("external_id", externalIds);
+        const existingSet = new Set((existingRows || []).map((r: any) => r.external_id));
+
+        // For existing emails, strip is_read so the user's manual read state persists
+        const upsertData = emails.map((e: any) => {
+          if (existingSet.has(e.external_id)) {
+            const { is_read, ...rest } = e;
+            return rest;
+          }
+          return e;
+        });
+
         const { error: upsertErr } = await adminClient
           .from("synced_emails")
-          .upsert(emails, { onConflict: "connection_id,external_id", ignoreDuplicates: false });
+          .upsert(upsertData, { onConflict: "connection_id,external_id", ignoreDuplicates: false });
         if (upsertErr) console.error("Email upsert error:", upsertErr);
       }
 
