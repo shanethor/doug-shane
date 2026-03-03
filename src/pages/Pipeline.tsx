@@ -25,7 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Search, CheckCircle, GripVertical, Edit3, Send, PenLine, Copy, Check, ExternalLink, FileText, Trash2, Users, DollarSign, TrendingUp, Share2, BarChart3, Info, CalendarDays, Paperclip } from "lucide-react";
+import { Plus, Search, CheckCircle, GripVertical, Edit3, Send, PenLine, Copy, Check, ExternalLink, FileText, Trash2, Users, DollarSign, TrendingUp, Share2, BarChart3, Info, CalendarDays } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -130,7 +130,7 @@ export default function Pipeline() {
   const [leadPolicyPremiums, setLeadPolicyPremiums] = useState<Record<string, number[]>>({});
 
   const [lossRunStatuses, setLossRunStatuses] = useState<Record<string, string>>({});
-  const [docCounts, setDocCounts] = useState<Record<string, number>>({});
+  
 
   // Drag-and-drop state
   const [draggedLeadId, setDraggedLeadId] = useState<string | null>(null);
@@ -198,13 +198,12 @@ export default function Pipeline() {
 
   const loadLeads = useCallback(async () => {
     if (!user) return;
-    const [leadsRes, approvedRes, lossRunRes, allPoliciesRes, auditRes, docCountRes] = await Promise.all([
+    const [leadsRes, approvedRes, lossRunRes, allPoliciesRes, auditRes] = await Promise.all([
       supabase.from("leads").select("*").eq("owner_user_id", user.id).order("updated_at", { ascending: false }),
       supabase.from("policies").select("lead_id").eq("status", "approved"),
       supabase.from("loss_run_requests").select("lead_id, status"),
       supabase.from("policies").select("lead_id, annual_premium, revenue, status, created_at").eq("producer_user_id", user.id),
       supabase.from("audit_log").select("object_id, action, metadata, created_at").eq("object_type", "lead").order("created_at", { ascending: true }).limit(1000),
-      supabase.from("client_documents").select("lead_id").not("lead_id", "is", null),
     ]);
 
     if (!mountedRef.current) return;
@@ -226,12 +225,6 @@ export default function Pipeline() {
     });
     setLossRunStatuses(lrMap);
 
-    // Build doc count map from batch query
-    const dcMap: Record<string, number> = {};
-    (docCountRes.data ?? []).forEach((d: any) => {
-      if (d.lead_id) dcMap[d.lead_id] = (dcMap[d.lead_id] || 0) + 1;
-    });
-    setDocCounts(dcMap);
 
     setLeads(
       leadsData.map((l: any) => ({
@@ -1155,10 +1148,6 @@ export default function Pipeline() {
                               <p className="text-xs text-muted-foreground font-sans truncate ml-[18px]">{lead.contact_name}</p>
                             )}
                             <div className="flex items-center gap-1 ml-[18px] mt-0.5">
-                              <Badge variant="outline" className="text-[10px] gap-1">
-                                <Paperclip className="h-2.5 w-2.5" />
-                                {docCounts[lead.id] || 0}
-                              </Badge>
                               {lead.submission_id && (
                                 <Link
                                   to={`/acord/acord-125/${lead.submission_id}`}
