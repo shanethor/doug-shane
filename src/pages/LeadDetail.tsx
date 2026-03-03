@@ -67,6 +67,21 @@ export default function LeadDetail() {
     annual_premium: "",
   });
   const [scheduleOpen, setScheduleOpen] = useState(false);
+
+  // Presenting modal state
+  const [presentingModalOpen, setPresentingModalOpen] = useState(false);
+  const [presentingLines, setPresentingLines] = useState<{ line_of_business: string; premium: string }[]>([{ line_of_business: "", premium: "" }]);
+  const [presentingNotes, setPresentingNotes] = useState("");
+
+  // Lost modal state
+  const [lostModalOpen, setLostModalOpen] = useState(false);
+  const [lostReason, setLostReason] = useState("");
+  const [lostRenewalDate, setLostRenewalDate] = useState("");
+
+  // Sold modal state
+  const [soldModalOpen, setSoldModalOpen] = useState(false);
+  const [soldPolicies, setSoldPolicies] = useState<{ carrier: string; line_of_business: string; policy_number: string; effective_date: string; annual_premium: string }[]>([{ carrier: "", line_of_business: "", policy_number: "", effective_date: "", annual_premium: "" }]);
+  const [submittingSold, setSubmittingSold] = useState(false);
   const mountedRef = useRef(true);
   useEffect(() => { return () => { mountedRef.current = false; }; }, []);
 
@@ -94,6 +109,31 @@ export default function LeadDetail() {
     loadData();
   }, [loadData]);
 
+  const handleStageChange = (newStage: string) => {
+    if (newStage === lead.stage) return;
+
+    if (newStage === "presenting") {
+      // Pre-populate with existing presenting_details if any
+      if (lead.presenting_details?.lines) {
+        setPresentingLines(lead.presenting_details.lines);
+        setPresentingNotes(lead.presenting_details.notes || "");
+      } else {
+        setPresentingLines([{ line_of_business: "", premium: "" }]);
+        setPresentingNotes("");
+      }
+      setPresentingModalOpen(true);
+    } else if (newStage === "lost") {
+      setLostReason("");
+      setLostRenewalDate("");
+      setLostModalOpen(true);
+    } else if (newStage === "sold") {
+      setSoldPolicies([{ carrier: "", line_of_business: "", policy_number: "", effective_date: "", annual_premium: "" }]);
+      setSoldModalOpen(true);
+    } else {
+      moveStage(newStage);
+    }
+  };
+
   const moveStage = async (newStage: string) => {
     if (!user || !leadId) return;
     const { error } = await supabase
@@ -113,6 +153,141 @@ export default function LeadDetail() {
       });
       toast.success("Stage updated");
       loadData();
+    }
+  };
+
+  const handlePresentingSubmit = async () => {
+    if (!user || !leadId) return;
+    const validLines = presentingLines.filter(l => l.line_of_business.trim() && l.premium);
+    if (validLines.length === 0) {
+      toast.error("Add at least one line of business with a premium");
+      return;
+    }
+    try {
+      const totalPremium = validLines.reduce((s, l) => s + (parseFloat(l.premium) || 0), 0);
+      const details = {
+        lines: validLines,
+        total_premium: totalPremium,
+        total_revenue: totalPremium * 0.12,
+        notes: presentingNotes,
+        presented_at: new Date().toISOString(),
+      };
+
+      await supabase
+        .from("leads")
+        .update({
+          stage: "presenting" as any,
+          presenting_details: details,
+        } as any)
+        .eq("id", leadId);
+
+      await supabase.from("audit_log").insert({
+        user_id: user.id,
+        action: "stage_move",
+        object_type: "lead",
+        object_id: leadId,
+        metadata: { new_stage: "presenting", total_premium: totalPremium },
+      });
+
+      toast.success("Moved to Presenting!");
+      setPresentingModalOpen(false);
+      setScheduleOpen(true);
+      loadData();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update");
+    }
+  };
+
+  const handleLostSubmit = async () => {
+    if (!user || !leadId) return;
+    if (!lostReason.trim()) {
+      toast.error("Please provide a reason");
+      return;
+    }
+    if (!lostRenewalDate) {
+      toast.error("Please provide an estimated renewal date");
+      return;
+    }
+    try {
+      await supabase
+        .from("leads")
+        .update({
+          stage: "lost" as any,
+          loss_reason: lostReason.trim(),
+          estimated_renewal_date: lostRenewalDate,
+        } as any)
+        .eq("id", leadId);
+
+      await supabase.from("audit_log").insert({
+        user_id: user.id,
+        action: "stage_move",
+        object_type: "lead",
+        object_id: leadId,
+        metadata: { new_stage: "lost", loss_reason: lostReason.trim(), estimated_renewal_date: lostRenewalDate },
+      });
+
+      toast.success("Moved to Lost");
+      setLostModalOpen(false);
+      loadData();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update");
+    }
+  };
+
+  const handleSoldSubmit = async () => {
+    if (!user || !leadId) return;
+    const validPolicies = soldPolicies.filter(p => p.carrier.trim() && p.policy_number.trim() && p.effective_date && p.annual_premium);
+    if (validPolicies.length === 0) {
+      toast.error("Please fill in at least one policy with all required fields");
+      return;
+    }
+
+    setSubmittingSold(true);
+    try {
+      let formDataSnapshot: Record<string, any> | null = null;
+      if (lead?.submission_id) {
+        const { data: app } = await supabase
+          .from("insurance_applications")
+          .select("form_data")
+          .eq("submission_id", lead.submission_id)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (app?.form_data) formDataSnapshot = app.form_data as Record<string, any>;
+      }
+
+      await Promise.all(validPolicies.map(async (pf) => {
+        const { error } = await supabase.from("policies").insert({
+          lead_id: leadId,
+          producer_user_id: user.id,
+          carrier: pf.carrier.trim(),
+          line_of_business: pf.line_of_business.trim() || "General",
+          policy_number: pf.policy_number.trim(),
+          effective_date: pf.effective_date,
+          annual_premium: parseFloat(pf.annual_premium) || 0,
+          status: "approved" as any,
+          approved_at: new Date().toISOString(),
+          approved_by_user_id: user.id,
+          ...(formDataSnapshot ? { form_data_snapshot: formDataSnapshot } : {}),
+        } as any);
+        if (error) throw error;
+      }));
+
+      await supabase.from("audit_log").insert({
+        user_id: user.id,
+        action: "policy_sold",
+        object_type: "lead",
+        object_id: leadId,
+        metadata: { policies_count: validPolicies.length },
+      });
+
+      toast.success(`Marked as Sold with ${validPolicies.length} ${validPolicies.length === 1 ? "policy" : "policies"}!`);
+      setSoldModalOpen(false);
+      loadData();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to save");
+    } finally {
+      setSubmittingSold(false);
     }
   };
 
@@ -324,7 +499,7 @@ export default function LeadDetail() {
               </Button>
             ) : null}
             {!hasApprovedPolicy && (
-              <Select value={lead.stage} onValueChange={moveStage}>
+              <Select value={lead.stage} onValueChange={handleStageChange}>
                 <SelectTrigger className="w-[140px] h-9 text-xs">
                   <SelectValue />
                 </SelectTrigger>
@@ -332,6 +507,7 @@ export default function LeadDetail() {
                   <SelectItem value="prospect">Prospect</SelectItem>
                   <SelectItem value="quoting">Quoting</SelectItem>
                   <SelectItem value="presenting">Presenting</SelectItem>
+                  <SelectItem value="sold">Sold</SelectItem>
                   <SelectItem value="lost">Lost</SelectItem>
                 </SelectContent>
               </Select>
@@ -867,6 +1043,153 @@ export default function LeadDetail() {
           userId={user?.id || ""}
         />
       )}
+
+      {/* Presenting Modal */}
+      <Dialog open={presentingModalOpen} onOpenChange={(open) => { if (!open) setPresentingModalOpen(false); }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Move to Presenting</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground font-sans mb-4">Add the premium lines you are presenting to the client.</p>
+          <div className="space-y-3">
+            {presentingLines.map((line, i) => (
+              <div key={i} className="grid grid-cols-[1fr_120px_auto] gap-2 items-end">
+                <div>
+                  <Label className="text-xs">Line of Business</Label>
+                  <Input
+                    placeholder="e.g. General Liability"
+                    value={line.line_of_business}
+                    onChange={(e) => {
+                      const updated = [...presentingLines];
+                      updated[i].line_of_business = e.target.value;
+                      setPresentingLines(updated);
+                    }}
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs">Premium</Label>
+                  <Input
+                    type="number"
+                    placeholder="$0"
+                    value={line.premium}
+                    onChange={(e) => {
+                      const updated = [...presentingLines];
+                      updated[i].premium = e.target.value;
+                      setPresentingLines(updated);
+                    }}
+                  />
+                </div>
+                {presentingLines.length > 1 && (
+                  <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => setPresentingLines(presentingLines.filter((_, j) => j !== i))}>
+                    <XCircle className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            ))}
+            <Button variant="outline" size="sm" onClick={() => setPresentingLines([...presentingLines, { line_of_business: "", premium: "" }])}>
+              <Plus className="h-3.5 w-3.5 mr-1" /> Add Line
+            </Button>
+            <div>
+              <Label className="text-xs">Notes (optional)</Label>
+              <Textarea value={presentingNotes} onChange={(e) => setPresentingNotes(e.target.value)} placeholder="Any notes about the presentation..." rows={2} />
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 mt-4">
+            <Button variant="outline" onClick={() => setPresentingModalOpen(false)}>Cancel</Button>
+            <Button onClick={handlePresentingSubmit}>Move to Presenting</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Lost Modal */}
+      <Dialog open={lostModalOpen} onOpenChange={(open) => { if (!open) setLostModalOpen(false); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Mark as Lost</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-2">
+            <div>
+              <Label>Reason *</Label>
+              <Textarea
+                value={lostReason}
+                onChange={(e) => setLostReason(e.target.value)}
+                placeholder="Why was this lead lost?"
+                rows={3}
+              />
+            </div>
+            <div>
+              <Label>Estimated Coverage Start Date *</Label>
+              <Input
+                type="date"
+                value={lostRenewalDate}
+                onChange={(e) => setLostRenewalDate(e.target.value)}
+              />
+              <p className="text-[11px] text-muted-foreground mt-1 font-sans">10 months after this date, the lead will be moved back to Prospect for re-engagement.</p>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 mt-4">
+            <Button variant="outline" onClick={() => setLostModalOpen(false)}>Cancel</Button>
+            <Button variant="destructive" onClick={handleLostSubmit}>Mark as Lost</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Sold Modal */}
+      <Dialog open={soldModalOpen} onOpenChange={(open) => { if (!open) setSoldModalOpen(false); }}>
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Mark as Sold — Enter Policy Details</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-2">
+            {soldPolicies.map((p, i) => (
+              <div key={i} className="rounded-lg border p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium font-sans">Policy {i + 1}</span>
+                  {soldPolicies.length > 1 && (
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setSoldPolicies(soldPolicies.filter((_, j) => j !== i))}>
+                      <XCircle className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-xs">Carrier *</Label>
+                    <Input value={p.carrier} onChange={(e) => { const u = [...soldPolicies]; u[i].carrier = e.target.value; setSoldPolicies(u); }} />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Line of Business</Label>
+                    <Input value={p.line_of_business} onChange={(e) => { const u = [...soldPolicies]; u[i].line_of_business = e.target.value; setSoldPolicies(u); }} />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Policy Number *</Label>
+                    <Input value={p.policy_number} onChange={(e) => { const u = [...soldPolicies]; u[i].policy_number = e.target.value; setSoldPolicies(u); }} />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Effective Date *</Label>
+                    <Input type="date" value={p.effective_date} onChange={(e) => { const u = [...soldPolicies]; u[i].effective_date = e.target.value; setSoldPolicies(u); }} />
+                  </div>
+                  <div className="col-span-2">
+                    <Label className="text-xs">Annual Premium *</Label>
+                    <Input type="number" step="0.01" placeholder="$0.00" value={p.annual_premium} onChange={(e) => { const u = [...soldPolicies]; u[i].annual_premium = e.target.value; setSoldPolicies(u); }} />
+                  </div>
+                </div>
+              </div>
+            ))}
+            <button
+              onClick={() => setSoldPolicies([...soldPolicies, { carrier: "", line_of_business: "", policy_number: "", effective_date: "", annual_premium: "" }])}
+              className="w-full flex items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border hover:border-primary/50 hover:bg-primary/5 transition-colors py-2.5 text-sm font-sans text-muted-foreground hover:text-primary"
+            >
+              <Plus className="h-4 w-4" /> Add Another Policy
+            </button>
+          </div>
+          <div className="flex justify-end gap-2 mt-4">
+            <Button variant="outline" onClick={() => setSoldModalOpen(false)}>Cancel</Button>
+            <Button onClick={handleSoldSubmit} disabled={submittingSold}>
+              {submittingSold ? "Saving…" : "Mark as Sold"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 }
