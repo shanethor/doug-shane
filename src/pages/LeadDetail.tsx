@@ -449,10 +449,10 @@ export default function LeadDetail() {
           Back to Pipeline
         </Button>
 
-        <div className="flex items-start justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
           <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-3xl">{lead.account_name}</h1>
+            <div className="flex items-center gap-3 flex-wrap">
+              <h1 className="text-2xl sm:text-3xl">{lead.account_name}</h1>
               {hasApprovedPolicy ? (
                 <Badge className="bg-success/20 text-success text-[10px] uppercase tracking-wider">Sold</Badge>
               ) : (
@@ -461,7 +461,7 @@ export default function LeadDetail() {
                 </Badge>
               )}
             </div>
-            <div className="flex gap-4 mt-2 text-sm text-muted-foreground font-sans">
+            <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-xs sm:text-sm text-muted-foreground font-sans">
               {lead.contact_name && <span>{lead.contact_name}</span>}
               {lead.email && <span>{lead.email}</span>}
               {lead.phone && <span>{lead.phone}</span>}
@@ -469,19 +469,19 @@ export default function LeadDetail() {
             </div>
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             {/* Show workspace buttons for all linked submissions */}
             {submissions.length > 0 ? (
               submissions.length === 1 ? (
                 <Button size="sm" variant="outline" className="gap-1.5" onClick={() => navigate(`/acord/acord-125/${submissions[0].id}`)}>
                   <Edit3 className="h-3.5 w-3.5" />
-                  Open Workspace
+                  <span className="hidden sm:inline">Open </span>Workspace
                 </Button>
               ) : (
                 <Select onValueChange={(subId) => navigate(`/acord/acord-125/${subId}`)}>
-                  <SelectTrigger className="w-[180px] h-9 text-xs">
+                  <SelectTrigger className="w-[160px] sm:w-[180px] h-9 text-xs">
                     <Edit3 className="h-3.5 w-3.5 mr-1.5" />
-                    <SelectValue placeholder={`Open Workspace (${submissions.length})`} />
+                    <SelectValue placeholder={`Workspace (${submissions.length})`} />
                   </SelectTrigger>
                   <SelectContent>
                     {submissions.map((s, i) => (
@@ -495,12 +495,12 @@ export default function LeadDetail() {
             ) : lead.submission_id ? (
               <Button size="sm" variant="outline" className="gap-1.5" onClick={() => navigate(`/acord/acord-125/${lead.submission_id}`)}>
                 <Edit3 className="h-3.5 w-3.5" />
-                Open Workspace
+                <span className="hidden sm:inline">Open </span>Workspace
               </Button>
             ) : null}
             {!hasApprovedPolicy && (
               <Select value={lead.stage} onValueChange={handleStageChange}>
-                <SelectTrigger className="w-[140px] h-9 text-xs">
+                <SelectTrigger className="w-[120px] sm:w-[140px] h-9 text-xs">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -517,7 +517,7 @@ export default function LeadDetail() {
               if (tabList) (tabList as HTMLElement).click();
             }}>
               <Send className="h-3.5 w-3.5" />
-              Request Loss Runs
+              <span className="hidden sm:inline">Request </span>Loss Runs
             </Button>
             {hasApprovedPolicy && (
               <Button size="sm" variant="outline" className="gap-1.5" onClick={async () => {
@@ -609,14 +609,16 @@ export default function LeadDetail() {
         </div>
       </div>
 
-      <Tabs defaultValue="overview" className="mt-6">
-        <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="intake-data">Intake Data</TabsTrigger>
-          <TabsTrigger value="documents">Documents</TabsTrigger>
-          <TabsTrigger value="loss-runs" data-tab-loss-runs>Loss Runs</TabsTrigger>
-          <TabsTrigger value="notes">Notes</TabsTrigger>
-        </TabsList>
+      <Tabs defaultValue="overview" className="mt-4 sm:mt-6">
+        <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0 scrollbar-hide">
+          <TabsList className="inline-flex w-auto min-w-max">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="intake-data">Intake Data</TabsTrigger>
+            <TabsTrigger value="documents">Documents</TabsTrigger>
+            <TabsTrigger value="loss-runs" data-tab-loss-runs>Loss Runs</TabsTrigger>
+            <TabsTrigger value="notes">Notes</TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="overview">
           {/* Renewal Reminders */}

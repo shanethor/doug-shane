@@ -114,7 +114,7 @@ export default function Dashboard() {
     <AppLayout>
       {/* Feature boxes */}
       <div className="mb-10 space-y-4">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-3 sm:gap-4">
           {FEATURE_BOXES.map((box) => (
             <button
               key={box.title}
@@ -152,10 +152,10 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className="flex items-end justify-between mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-8">
         <div>
-          <h1 className="text-4xl">Quote Requests</h1>
-          <p className="text-muted-foreground font-sans text-sm mt-1">
+          <h1 className="text-2xl sm:text-4xl">Quote Requests</h1>
+          <p className="text-muted-foreground font-sans text-xs sm:text-sm mt-1">
             {quotes.length} submission{quotes.length !== 1 ? "s" : ""}
           </p>
         </div>
