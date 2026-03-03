@@ -1,6 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { useAdmin } from "@/hooks/useAdmin";
 import { useUnreadCount } from "@/hooks/useUnreadCount";
+import { useNavConfig, ALL_NAV_TABS } from "@/hooks/useNavConfig";
 import {
   Inbox,
   LayoutDashboard,
@@ -8,6 +9,11 @@ import {
   CalendarDays,
   BarChart3,
   MoreHorizontal,
+  MessageCircle,
+  ShieldCheck,
+  Settings,
+  GraduationCap,
+  LogOut,
 } from "lucide-react";
 import { useState } from "react";
 import {
@@ -19,21 +25,15 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { useTrainingMode } from "@/hooks/useTrainingMode";
 import { Switch } from "@/components/ui/switch";
-import {
-  MessageCircle,
-  ShieldCheck,
-  Settings,
-  GraduationCap,
-  LogOut,
-} from "lucide-react";
 
-const PRIMARY_TABS = [
-  { to: "/inbox", label: "Inbox", icon: Inbox },
-  { to: "/clients", label: "Clients", icon: LayoutDashboard },
-  { to: "/pipeline", label: "Pipeline", icon: GitBranch },
-  { to: "/calendar", label: "Calendar", icon: CalendarDays },
-  { to: "/my-dashboard", label: "Production", icon: BarChart3 },
-];
+const ICON_MAP: Record<string, any> = {
+  chat: MessageCircle,
+  inbox: Inbox,
+  clients: LayoutDashboard,
+  pipeline: GitBranch,
+  calendar: CalendarDays,
+  production: BarChart3,
+};
 
 export function MobileBottomNav() {
   const location = useLocation();
@@ -41,38 +41,51 @@ export function MobileBottomNav() {
   const { signOut } = useAuth();
   const { trainingMode, setTrainingMode } = useTrainingMode();
   const unreadCount = useUnreadCount();
+  const { config } = useNavConfig();
   const [moreOpen, setMoreOpen] = useState(false);
 
+  const visibleTabs = config.selectedTabIds
+    .slice(0, config.tabCount)
+    .map((id) => ALL_NAV_TABS.find((t) => t.id === id))
+    .filter(Boolean) as typeof ALL_NAV_TABS;
+
+  // Items that go in the "More" sheet = all tabs NOT visible + standard more items
+  const hiddenTabIds = new Set(ALL_NAV_TABS.map((t) => t.id));
+  visibleTabs.forEach((t) => hiddenTabIds.delete(t.id));
+  const hiddenTabs = ALL_NAV_TABS.filter((t) => hiddenTabIds.has(t.id));
+
   const isActive = (to: string) => location.pathname === to;
-  const moreActive = ["/", "/admin", "/settings"].some(
-    (p) => location.pathname === p
-  );
+  const moreRoutes = ["/admin", "/settings", ...hiddenTabs.map((t) => t.to)];
+  const moreActive = moreRoutes.some((p) => location.pathname === p);
 
   return (
     <>
       <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background/95 backdrop-blur-md md:hidden safe-area-bottom">
         <div className="flex items-stretch justify-around">
-          {PRIMARY_TABS.map((tab) => (
-            <Link
-              key={tab.to}
-              to={tab.to}
-              className={`relative flex flex-col items-center justify-center gap-0.5 py-2 px-1 min-w-[56px] min-h-[52px] transition-colors ${
-                isActive(tab.to)
-                  ? "text-primary"
-                  : "text-muted-foreground"
-              }`}
-            >
-              <tab.icon className="h-5 w-5" />
-              <span className="text-[10px] font-medium leading-tight">
-                {tab.label}
-              </span>
-              {tab.to === "/inbox" && unreadCount > 0 && (
-                <span className="absolute top-1 right-0.5 h-4 min-w-[16px] px-1 rounded-full bg-destructive text-destructive-foreground text-[9px] font-bold flex items-center justify-center">
-                  {unreadCount > 99 ? "99+" : unreadCount}
+          {visibleTabs.map((tab) => {
+            const Icon = ICON_MAP[tab.id] || MessageCircle;
+            return (
+              <Link
+                key={tab.to}
+                to={tab.to}
+                className={`relative flex flex-col items-center justify-center gap-0.5 py-2 px-1 min-w-[56px] min-h-[52px] transition-colors ${
+                  isActive(tab.to)
+                    ? "text-primary"
+                    : "text-muted-foreground"
+                }`}
+              >
+                <Icon className="h-5 w-5" />
+                <span className="text-[10px] font-medium leading-tight">
+                  {tab.label}
                 </span>
-              )}
-            </Link>
-          ))}
+                {tab.id === "inbox" && unreadCount > 0 && (
+                  <span className="absolute top-1 right-0.5 h-4 min-w-[16px] px-1 rounded-full bg-destructive text-destructive-foreground text-[9px] font-bold flex items-center justify-center">
+                    {unreadCount > 99 ? "99+" : unreadCount}
+                  </span>
+                )}
+              </Link>
+            );
+          })}
           <button
             onClick={() => setMoreOpen(true)}
             className={`relative flex flex-col items-center justify-center gap-0.5 py-2 px-1 min-w-[56px] min-h-[52px] transition-colors ${
@@ -94,18 +107,28 @@ export function MobileBottomNav() {
             <SheetTitle className="text-left text-base">More</SheetTitle>
           </SheetHeader>
           <div className="space-y-1">
-            <Link
-              to="/"
-              onClick={() => setMoreOpen(false)}
-              className={`flex items-center gap-3 rounded-lg px-3 py-3 text-sm transition-colors ${
-                isActive("/")
-                  ? "bg-primary/10 text-primary font-medium"
-                  : "text-foreground hover:bg-muted"
-              }`}
-            >
-              <MessageCircle className="h-5 w-5" />
-              Chat
-            </Link>
+            {/* Hidden nav tabs */}
+            {hiddenTabs.map((tab) => {
+              const Icon = ICON_MAP[tab.id] || MessageCircle;
+              return (
+                <Link
+                  key={tab.to}
+                  to={tab.to}
+                  onClick={() => setMoreOpen(false)}
+                  className={`flex items-center gap-3 rounded-lg px-3 py-3 text-sm transition-colors ${
+                    isActive(tab.to)
+                      ? "bg-primary/10 text-primary font-medium"
+                      : "text-foreground hover:bg-muted"
+                  }`}
+                >
+                  <Icon className="h-5 w-5" />
+                  {tab.label}
+                </Link>
+              );
+            })}
+
+            {hiddenTabs.length > 0 && <div className="border-t my-2" />}
+
             {isAdmin && (
               <Link
                 to="/admin"
