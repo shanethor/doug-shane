@@ -313,10 +313,10 @@ export default function Calendar() {
   return (
     <AppLayout>
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div className="flex items-center gap-3">
-          <CalendarDays className="h-6 w-6 text-primary" />
-          <h1 className="text-3xl font-semibold tracking-tight">Calendar</h1>
+          <CalendarDays className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+          <h1 className="text-xl sm:text-3xl font-semibold tracking-tight">Calendar</h1>
           {todayEvents.length > 0 && (
             <Badge variant="default" className="text-xs">
               {todayEvents.length} today
@@ -327,20 +327,20 @@ export default function Calendar() {
           {calendars.some((c) => c.is_active) && (
             <Button variant="outline" size="sm" onClick={syncOutlookCalendar} disabled={syncing} className="gap-1.5">
               <RefreshCw className={`h-3.5 w-3.5 ${syncing ? "animate-spin" : ""}`} />
-              {syncing ? "Syncing…" : "Sync Calendar"}
+              <span className="hidden sm:inline">{syncing ? "Syncing…" : "Sync Calendar"}</span>
             </Button>
           )}
           {!calendars.some((c) => c.is_active) && (
             <Button variant="outline" size="sm" onClick={() => navigate("/settings?section=calendar")} className="gap-1.5">
               <ExternalLink className="h-3.5 w-3.5" />
-              Connect Outlook
+              <span className="hidden sm:inline">Connect Outlook</span>
             </Button>
           )}
           <Dialog open={createOpen} onOpenChange={setCreateOpen}>
             <DialogTrigger asChild>
               <Button size="sm" className="gap-1.5">
                 <Plus className="h-3.5 w-3.5" />
-                New Event
+                <span className="hidden sm:inline">New Event</span>
               </Button>
             </DialogTrigger>
             <DialogContent className="max-w-lg">
@@ -435,7 +435,7 @@ export default function Calendar() {
                     rows={3}
                   />
                 </div>
-                <Button onClick={createEvent}>Create Event</Button>
+                <Button onClick={createEvent} className="w-full">Create Event</Button>
               </div>
             </DialogContent>
           </Dialog>
@@ -443,18 +443,18 @@ export default function Calendar() {
       </div>
 
       {/* View switcher + filters */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
         <Tabs value={view} onValueChange={(v) => setView(v as any)}>
           <TabsList>
             <TabsTrigger value="agenda">Agenda</TabsTrigger>
-            <TabsTrigger value="week">Week</TabsTrigger>
+            <TabsTrigger value="week" className="hidden sm:inline-flex">Week</TabsTrigger>
             <TabsTrigger value="month">Month</TabsTrigger>
           </TabsList>
         </Tabs>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <Select value={filterType} onValueChange={setFilterType}>
-            <SelectTrigger className="w-[150px] h-8 text-xs">
+            <SelectTrigger className="w-[130px] sm:w-[150px] h-8 text-xs">
               <SelectValue placeholder="Filter by type" />
             </SelectTrigger>
             <SelectContent>

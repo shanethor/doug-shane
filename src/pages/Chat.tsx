@@ -1835,7 +1835,7 @@ export default function Chat() {
 
               {trainingMode && (
                 <>
-              <div className="grid grid-cols-3 gap-3 w-full max-w-2xl">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 w-full max-w-2xl">
                 {SUGGESTIONS.map((s) => (
                   <button
                     key={s.label}

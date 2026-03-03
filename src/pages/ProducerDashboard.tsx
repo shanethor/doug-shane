@@ -116,10 +116,10 @@ export default function ProducerDashboard() {
 
   return (
     <AppLayout>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div>
-          <h1 className="text-4xl mb-1">My Dashboard</h1>
-          <p className="text-muted-foreground font-sans text-sm">Production stats for approved policies.</p>
+          <h1 className="text-2xl sm:text-4xl mb-1">My Dashboard</h1>
+          <p className="text-muted-foreground font-sans text-xs sm:text-sm">Production stats for approved policies.</p>
         </div>
         <div className="flex items-center gap-2">
           <CalendarDays className="h-4 w-4 text-muted-foreground" />
@@ -142,55 +142,55 @@ export default function ProducerDashboard() {
           <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-3">
-                <div className="rounded-full bg-primary/10 p-2.5">
-                  <FileText className="h-5 w-5 text-primary" />
+            <CardContent className="p-4 sm:pt-6">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="rounded-full bg-primary/10 p-2 sm:p-2.5">
+                  <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                 </div>
                 <div>
-                  <p className="text-2xl font-semibold font-sans">{stats.totalLeads}</p>
-                  <p className="text-xs text-muted-foreground font-sans">Total Leads</p>
+                  <p className="text-xl sm:text-2xl font-semibold font-sans">{stats.totalLeads}</p>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground font-sans">Total Leads</p>
                 </div>
               </div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-3">
-                <div className="rounded-full bg-success/10 p-2.5">
-                  <CheckCircle className="h-5 w-5 text-success" />
+            <CardContent className="p-4 sm:pt-6">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="rounded-full bg-success/10 p-2 sm:p-2.5">
+                  <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-success" />
                 </div>
                 <div>
-                  <p className="text-2xl font-semibold font-sans">{stats.approvedPolicies}</p>
-                  <p className="text-xs text-muted-foreground font-sans">Policies Sold</p>
+                  <p className="text-xl sm:text-2xl font-semibold font-sans">{stats.approvedPolicies}</p>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground font-sans">Policies Sold</p>
                 </div>
               </div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-3">
-                <div className="rounded-full bg-accent/10 p-2.5">
-                  <DollarSign className="h-5 w-5 text-accent" />
+            <CardContent className="p-4 sm:pt-6">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="rounded-full bg-accent/10 p-2 sm:p-2.5">
+                  <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 text-accent" />
                 </div>
                 <div>
-                  <p className="text-2xl font-semibold font-sans">${stats.totalPremium.toLocaleString()}</p>
-                  <p className="text-xs text-muted-foreground font-sans">Total Premium</p>
+                  <p className="text-xl sm:text-2xl font-semibold font-sans">${stats.totalPremium.toLocaleString()}</p>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground font-sans">Total Premium</p>
                 </div>
               </div>
             </CardContent>
           </Card>
           <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-3">
-                <div className="rounded-full bg-warning/10 p-2.5">
-                  <TrendingUp className="h-5 w-5 text-warning" />
+            <CardContent className="p-4 sm:pt-6">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="rounded-full bg-warning/10 p-2 sm:p-2.5">
+                  <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-warning" />
                 </div>
                 <div>
-                  <p className="text-2xl font-semibold font-sans">${stats.totalRevenue.toLocaleString()}</p>
-                  <p className="text-xs text-muted-foreground font-sans">Total Revenue (12%)</p>
+                  <p className="text-xl sm:text-2xl font-semibold font-sans">${stats.totalRevenue.toLocaleString()}</p>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground font-sans">Total Revenue (12%)</p>
                 </div>
               </div>
             </CardContent>
@@ -198,52 +198,79 @@ export default function ProducerDashboard() {
         </div>
       )}
 
-      <div className="mt-6">
+      <div className="mt-4 sm:mt-6">
         <Card>
-          <CardContent className="p-4">
-            <p className="text-sm font-sans text-muted-foreground">
+          <CardContent className="p-3 sm:p-4">
+            <p className="text-xs sm:text-sm font-sans text-muted-foreground">
               {stats.pendingPolicies} pending approval · {stats.totalPolicies} total submitted
             </p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Active Sold Policies Table */}
-      <div className="mt-6">
-        <h2 className="text-xl font-semibold mb-3">Active Policies</h2>
+      {/* Active Sold Policies — Table on desktop, Cards on mobile */}
+      <div className="mt-4 sm:mt-6">
+        <h2 className="text-lg sm:text-xl font-semibold mb-3">Active Policies</h2>
         <Card>
           <CardContent className="p-0">
             {policies.length === 0 ? (
               <p className="text-sm text-muted-foreground p-6 text-center">No sold policies yet.</p>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Client</TableHead>
-                    <TableHead>Line of Business</TableHead>
-                    <TableHead>Carrier</TableHead>
-                    <TableHead>Policy #</TableHead>
-                    <TableHead className="text-right">Premium</TableHead>
-                    <TableHead className="text-right">Revenue</TableHead>
-                    <TableHead>Effective</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
+              <>
+                {/* Mobile: card list */}
+                <div className="block md:hidden divide-y">
                   {policies.map((p) => (
-                    <TableRow key={p.id} className="cursor-pointer hover:bg-muted/50" onClick={() => navigate(`/pipeline/${p.lead_id}`)}>
-                      <TableCell className="font-medium">{leadNames[p.lead_id] || "—"}</TableCell>
-                      <TableCell>
-                        <Badge variant="secondary" className="font-normal">{p.line_of_business}</Badge>
-                      </TableCell>
-                      <TableCell>{p.carrier}</TableCell>
-                      <TableCell className="font-mono text-xs">{p.policy_number}</TableCell>
-                      <TableCell className="text-right">${Number(p.annual_premium).toLocaleString()}</TableCell>
-                      <TableCell className="text-right">${Number(p.revenue || Number(p.annual_premium) * 0.12).toLocaleString()}</TableCell>
-                      <TableCell>{format(new Date(p.effective_date), "MM/dd/yyyy")}</TableCell>
-                    </TableRow>
+                    <div
+                      key={p.id}
+                      className="p-4 cursor-pointer active:bg-muted/50 transition-colors"
+                      onClick={() => navigate(`/pipeline/${p.lead_id}`)}
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <p className="font-medium text-sm truncate">{leadNames[p.lead_id] || "—"}</p>
+                        <Badge variant="secondary" className="font-normal text-[10px] shrink-0 ml-2">{p.line_of_business}</Badge>
+                      </div>
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span>{p.carrier} · {p.policy_number}</span>
+                        <span className="font-semibold text-foreground">${Number(p.annual_premium).toLocaleString()}</span>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground mt-1">
+                        Effective: {format(new Date(p.effective_date), "MM/dd/yyyy")}
+                      </p>
+                    </div>
                   ))}
-                </TableBody>
-              </Table>
+                </div>
+                {/* Desktop: table */}
+                <div className="hidden md:block">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Client</TableHead>
+                        <TableHead>Line of Business</TableHead>
+                        <TableHead>Carrier</TableHead>
+                        <TableHead>Policy #</TableHead>
+                        <TableHead className="text-right">Premium</TableHead>
+                        <TableHead className="text-right">Revenue</TableHead>
+                        <TableHead>Effective</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {policies.map((p) => (
+                        <TableRow key={p.id} className="cursor-pointer hover:bg-muted/50" onClick={() => navigate(`/pipeline/${p.lead_id}`)}>
+                          <TableCell className="font-medium">{leadNames[p.lead_id] || "—"}</TableCell>
+                          <TableCell>
+                            <Badge variant="secondary" className="font-normal">{p.line_of_business}</Badge>
+                          </TableCell>
+                          <TableCell>{p.carrier}</TableCell>
+                          <TableCell className="font-mono text-xs">{p.policy_number}</TableCell>
+                          <TableCell className="text-right">${Number(p.annual_premium).toLocaleString()}</TableCell>
+                          <TableCell className="text-right">${Number(p.revenue || Number(p.annual_premium) * 0.12).toLocaleString()}</TableCell>
+                          <TableCell>{format(new Date(p.effective_date), "MM/dd/yyyy")}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </>
             )}
           </CardContent>
         </Card>
