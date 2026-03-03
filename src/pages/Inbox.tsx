@@ -492,14 +492,27 @@ export default function Inbox() {
         <TabsList className="mb-4">
           <TabsTrigger value="all">All</TabsTrigger>
           <TabsTrigger value="unread">Unread {unreadCount > 0 && `(${unreadCount})`}</TabsTrigger>
-          <TabsTrigger value="emails">
+          <TabsTrigger value="emails" className="relative">
             <Mail className="h-3.5 w-3.5 mr-1" />
             Emails
+            {(() => { const c = syncedEmails.filter(e => !e.is_read).length; return c > 0 ? <span className="absolute -top-1.5 -right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground px-1">{c}</span> : null; })()}
           </TabsTrigger>
-          <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
-          <TabsTrigger value="loss_run">Loss Runs</TabsTrigger>
-          <TabsTrigger value="intake">Intake</TabsTrigger>
-          <TabsTrigger value="document">Documents</TabsTrigger>
+          <TabsTrigger value="pipeline" className="relative">
+            Pipeline
+            {(() => { const c = notifications.filter(n => n.type === "pipeline" && !n.is_read).length; return c > 0 ? <span className="absolute -top-1.5 -right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground px-1">{c}</span> : null; })()}
+          </TabsTrigger>
+          <TabsTrigger value="loss_run" className="relative">
+            Loss Runs
+            {(() => { const c = notifications.filter(n => n.type === "loss_run" && !n.is_read).length; return c > 0 ? <span className="absolute -top-1.5 -right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground px-1">{c}</span> : null; })()}
+          </TabsTrigger>
+          <TabsTrigger value="intake" className="relative">
+            Intake
+            {(() => { const c = notifications.filter(n => n.type === "intake" && !n.is_read).length; return c > 0 ? <span className="absolute -top-1.5 -right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground px-1">{c}</span> : null; })()}
+          </TabsTrigger>
+          <TabsTrigger value="document" className="relative">
+            Documents
+            {(() => { const c = notifications.filter(n => n.type === "document" && !n.is_read).length; return c > 0 ? <span className="absolute -top-1.5 -right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground px-1">{c}</span> : null; })()}
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value={tab}>
