@@ -24,13 +24,15 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { ArrowLeft, Plus, FileText, CheckCircle, Clock, XCircle, MessageSquare, Send, Edit3, AlertTriangle, ExternalLink, Copy, Check, Trash2, Shield, Download, User, Car, Home, Umbrella, Ship } from "lucide-react";
+import { ArrowLeft, Plus, FileText, CheckCircle, Clock, XCircle, MessageSquare, Send, Edit3, AlertTriangle, ExternalLink, Copy, Check, Trash2, Shield, Download, User, Car, Home, Umbrella, Ship, CalendarDays } from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LossRunsTab } from "@/components/LossRunsTab";
 import { ClientDocuments } from "@/components/ClientDocuments";
 import { generateIntakeLink } from "@/lib/intake-links";
 import { generateBorPdf, applySignatureToBorPdf, downloadPdf } from "@/lib/bor-pdf-generator";
+import { SchedulePresentationDialog } from "@/components/SchedulePresentationDialog";
+import { differenceInDays, parseISO, addYears } from "date-fns";
 
 const STAGE_COLORS: Record<string, string> = {
   prospect: "bg-muted text-muted-foreground",
@@ -64,7 +66,7 @@ export default function LeadDetail() {
     effective_date: "",
     annual_premium: "",
   });
-
+  const [scheduleOpen, setScheduleOpen] = useState(false);
   const mountedRef = useRef(true);
   useEffect(() => { return () => { mountedRef.current = false; }; }, []);
 
@@ -441,6 +443,90 @@ export default function LeadDetail() {
         </TabsList>
 
         <TabsContent value="overview">
+          {/* Renewal Reminders */}
+          {(() => {
+            const renewalPolicies = policies.filter((p) => {
+              if (p.status !== "approved") return false;
+              const renewalDate = addYears(parseISO(p.effective_date), 1);
+              const daysUntil = differenceInDays(renewalDate, new Date());
+              return daysUntil >= 0 && daysUntil <= 90;
+            });
+            if (renewalPolicies.length === 0) return null;
+            return (
+              <div className="mb-4 space-y-2">
+                {renewalPolicies.map((p) => {
+                  const renewalDate = addYears(parseISO(p.effective_date), 1);
+                  const daysUntil = differenceInDays(renewalDate, new Date());
+                  const urgency = daysUntil <= 30 ? "destructive" : daysUntil <= 60 ? "warning" : "muted";
+                  return (
+                    <div key={p.id} className={`flex items-center justify-between rounded-lg border p-3 ${
+                      urgency === "destructive" ? "border-destructive/40 bg-destructive/5" :
+                      urgency === "warning" ? "border-accent/40 bg-accent/5" :
+                      "border-border bg-muted/30"
+                    }`}>
+                      <div className="flex items-center gap-2">
+                        <AlertTriangle className={`h-4 w-4 ${
+                          urgency === "destructive" ? "text-destructive" :
+                          urgency === "warning" ? "text-accent" :
+                          "text-muted-foreground"
+                        }`} />
+                        <div>
+                          <p className="text-sm font-medium font-sans">
+                            {p.carrier} — {p.line_of_business} renews in {daysUntil} days
+                          </p>
+                          <p className="text-xs text-muted-foreground font-sans">
+                            #{p.policy_number} · Renewal: {renewalDate.toLocaleDateString()}
+                          </p>
+                        </div>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="gap-1.5 text-xs"
+                        onClick={async () => {
+                          // Auto-create renewal review event
+                          const { error } = await supabase.from("calendar_events").insert({
+                            user_id: user!.id,
+                            title: `Renewal Review — ${lead.account_name} (${p.line_of_business})`,
+                            event_type: "renewal_review" as any,
+                            start_time: new Date().toISOString(),
+                            end_time: new Date(Date.now() + 30 * 60000).toISOString(),
+                            description: `Policy ${p.policy_number} with ${p.carrier} renews on ${renewalDate.toLocaleDateString()}.\n\nPremium: $${Number(p.annual_premium).toLocaleString()}\n\n🔗 View in AURA: /pipeline/${leadId}`,
+                            lead_id: leadId,
+                            provider: "aura",
+                            status: "scheduled" as any,
+                          } as any);
+                          if (error) {
+                            toast.error("Failed to create renewal event");
+                          } else {
+                            toast.success("Renewal review event created on your calendar!");
+                          }
+                        }}
+                      >
+                        <CalendarDays className="h-3.5 w-3.5" />
+                        Schedule Review
+                      </Button>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
+
+          {/* Schedule Presentation button for presenting stage */}
+          {lead.stage === "presenting" && !hasApprovedPolicy && (
+            <div className="mb-4">
+              <Button
+                variant="outline"
+                className="gap-2"
+                onClick={() => setScheduleOpen(true)}
+              >
+                <CalendarDays className="h-4 w-4" />
+                Schedule Presentation
+              </Button>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-4">
             {/* Policies */}
             <div className="lg:col-span-2 space-y-4">
@@ -769,6 +855,18 @@ export default function LeadDetail() {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Schedule Presentation Dialog */}
+      {leadId && (
+        <SchedulePresentationDialog
+          open={scheduleOpen}
+          onOpenChange={setScheduleOpen}
+          leadId={leadId}
+          leadName={lead.account_name}
+          leadEmail={lead.email}
+          userId={user?.id || ""}
+        />
+      )}
     </AppLayout>
   );
 }
