@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { CheckCircle, XCircle, Clock, FileText, ShieldAlert, Edit3 } from "lucide-react";
-import { ClientDocuments } from "@/components/ClientDocuments";
+
 import { toast } from "sonner";
 
 export default function Approvals() {
@@ -197,9 +197,6 @@ export default function Approvals() {
                               Workspace
                             </Badge>
                           </Link>
-                        )}
-                        {p.leads?.id && (
-                          <ClientDocuments leadId={p.leads.id} submissionId={p.leads.submission_id} compact />
                         )}
                       </div>
                     </div>

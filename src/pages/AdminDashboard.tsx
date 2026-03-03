@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { ClientDocuments } from "@/components/ClientDocuments";
+
 import { useAuth } from "@/hooks/useAuth";
 import { useAdmin } from "@/hooks/useAdmin";
 import { AppLayout } from "@/components/AppLayout";
@@ -353,9 +353,6 @@ export default function AdminDashboard() {
                                   <Edit3 className="h-2.5 w-2.5" />Workspace
                                 </Badge>
                               </Link>
-                            )}
-                            {p.leads?.id && (
-                              <ClientDocuments leadId={p.leads.id} submissionId={p.leads.submission_id} compact />
                             )}
                           </div>
                         </div>
