@@ -64,6 +64,8 @@ export default function UserDashboard() {
   const mountedRef = useRef(true);
   useEffect(() => { return () => { mountedRef.current = false; }; }, []);
 
+
+
   useEffect(() => {
     if (!user) return;
     loadData();
@@ -101,6 +103,8 @@ export default function UserDashboard() {
 
     setLoading(false);
   };
+
+  const { containerRef: pullRef, PullIndicator } = usePullToRefresh({ onRefresh: loadData });
 
   const getLeadForSubmission = (submissionId: string): LeadInfo | undefined => {
     return leads.find(l => l.submission_id === submissionId);
@@ -286,7 +290,7 @@ export default function UserDashboard() {
     );
   }
 
-  const { containerRef: pullRef, PullIndicator } = usePullToRefresh({ onRefresh: loadData });
+
 
   return (
     <AppLayout>
