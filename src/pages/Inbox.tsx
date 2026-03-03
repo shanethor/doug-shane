@@ -542,7 +542,7 @@ export default function Inbox() {
                       onClick={() => handleUnifiedClick(item)}
                     >
                       <CardContent className="flex items-start gap-3 py-3 px-4">
-                        <div className={`mt-0.5 ${item.iconColor}`}>
+                        <div className={`mt-0.5 shrink-0 ${item.iconColor}`}>
                           <Icon className="h-4 w-4" />
                         </div>
                         <div className="flex-1 min-w-0">
@@ -551,10 +551,10 @@ export default function Inbox() {
                             <Badge variant="outline" className="text-[10px] shrink-0">{item.label}</Badge>
                           </div>
                           {item.body && <p className="text-xs text-muted-foreground truncate mt-0.5">{item.body}</p>}
+                          <span className="text-[10px] text-muted-foreground mt-1 block">
+                            {formatDistanceToNow(new Date(item.timestamp), { addSuffix: true })}
+                          </span>
                         </div>
-                        <span className="text-[11px] text-muted-foreground whitespace-nowrap">
-                          {formatDistanceToNow(new Date(item.timestamp), { addSuffix: true })}
-                        </span>
                         {!item.is_read && <div className="h-2 w-2 rounded-full bg-primary shrink-0 mt-1.5" />}
                       </CardContent>
                     </Card>
