@@ -48,6 +48,8 @@ import { ClientDocuments } from "@/components/ClientDocuments";
 import { generateIntakeLink } from "@/lib/intake-links";
 import { PipelineAnalytics } from "@/components/PipelineAnalytics";
 import { SchedulePresentationDialog } from "@/components/SchedulePresentationDialog";
+import { LeadActionSheet } from "@/components/LeadActionSheet";
+import { MoreVertical } from "lucide-react";
 
 type PresentingLine = {
   line_of_business: string;
@@ -166,6 +168,10 @@ export default function Pipeline() {
   // Delete lead state
   const [deleteLeadId, setDeleteLeadId] = useState<string | null>(null);
   const [deleteAlertOpen, setDeleteAlertOpen] = useState(false);
+
+  // Mobile action sheet state
+  const [actionSheetOpen, setActionSheetOpen] = useState(false);
+  const [actionSheetLead, setActionSheetLead] = useState<Lead | null>(null);
 
   // Pipeline stats
   const [pipelineStats, setPipelineStats] = useState({
@@ -1198,6 +1204,19 @@ export default function Pipeline() {
                             {lead.has_approved_policy && (
                               <CheckCircle className="h-3.5 w-3.5 text-success" />
                             )}
+                            {/* Mobile action sheet trigger */}
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setActionSheetLead(lead);
+                                setActionSheetOpen(true);
+                              }}
+                              className="p-1 rounded hover:bg-muted transition-colors md:hidden"
+                              title="Actions"
+                            >
+                              <MoreVertical className="h-3.5 w-3.5 text-muted-foreground" />
+                            </button>
                             <button
                               onClick={(e) => {
                                 e.preventDefault();
@@ -1205,7 +1224,7 @@ export default function Pipeline() {
                                 setDeleteLeadId(lead.id);
                                 setDeleteAlertOpen(true);
                               }}
-                              className="p-0.5 rounded hover:bg-destructive/10 transition-colors opacity-0 group-hover:opacity-100"
+                              className="p-0.5 rounded hover:bg-destructive/10 transition-colors opacity-0 group-hover:opacity-100 hidden md:block"
                               title="Delete lead"
                             >
                               <Trash2 className="h-3 w-3 text-muted-foreground hover:text-destructive" />
@@ -1647,6 +1666,48 @@ export default function Pipeline() {
           userId={user?.id || ""}
         />
       )}
+
+      {/* Mobile Lead Action Sheet */}
+      <LeadActionSheet
+        open={actionSheetOpen}
+        onOpenChange={setActionSheetOpen}
+        lead={actionSheetLead}
+        userId={user?.id || ""}
+        onStageMove={async (leadId, stage) => {
+          if (stage === "sold") {
+            setSoldLeadId(leadId);
+            setSoldPolicies([{ carrier: "", line_of_business: "", policy_number: "", effective_date: "", annual_premium: "" }]);
+            setSoldModalOpen(true);
+          } else if (stage === "presenting") {
+            setPresentingLeadId(leadId);
+            const existingLead = leads.find(l => l.id === leadId);
+            if (existingLead?.presenting_details?.lines) {
+              setPresentingLines(existingLead.presenting_details.lines);
+              setPresentingNotes(existingLead.presenting_details.notes || "");
+            } else {
+              setPresentingLines([{ line_of_business: "", premium: "" }]);
+              setPresentingNotes("");
+            }
+            setPresentingModalOpen(true);
+          } else if (stage === "lost") {
+            setLostLeadId(leadId);
+            setLostReason("");
+            setLostRenewalDate("");
+            setLostModalOpen(true);
+          } else {
+            await moveStage(leadId, stage);
+          }
+        }}
+        onSchedule={(leadId) => {
+          setScheduleLeadId(leadId);
+          setScheduleOpen(true);
+        }}
+        onDelete={(leadId) => {
+          setDeleteLeadId(leadId);
+          setDeleteAlertOpen(true);
+        }}
+        onRefresh={loadLeads}
+      />
     </AppLayout>
   );
 }
