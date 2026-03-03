@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -39,9 +39,15 @@ export default function Auth() {
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
   const [resending, setResending] = useState(false);
 
+  // Prevent the useEffect from sending a duplicate code when handleSubmit already handled it
+  const loginHandled2FA = useRef(false);
+
   // Auto-check trusted device when session exists but 2FA not yet verified
   const [autoChecking, setAutoChecking] = useState(false);
   useEffect(() => {
+    // Skip if login flow already handled 2FA
+    if (loginHandled2FA.current) return;
+
     if (!loading && user && !is2FAVerified() && !needs2FA && !autoChecking) {
       setAutoChecking(true);
       const deviceHash = getDeviceHash();
@@ -112,6 +118,7 @@ export default function Auth() {
         setPendingEmail(userEmail);
 
         // Send 2FA code (check trusted device first)
+        loginHandled2FA.current = true;
         const deviceHash = getDeviceHash();
         const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-2fa`, {
           method: "POST",
