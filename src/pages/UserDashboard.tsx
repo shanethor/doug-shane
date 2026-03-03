@@ -287,15 +287,15 @@ export default function UserDashboard() {
 
   return (
     <AppLayout>
-      <div className="flex items-end justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-6">
         <div>
-          <h1 className="text-4xl">My Clients</h1>
-          <p className="text-muted-foreground font-sans text-sm mt-1">
+          <h1 className="text-2xl sm:text-4xl">My Clients</h1>
+          <p className="text-muted-foreground font-sans text-xs sm:text-sm mt-1">
             {submissions.length} account{submissions.length !== 1 ? "s" : ""} — save, duplicate, and manage submissions.
           </p>
         </div>
         <Link to="/submit-plan">
-          <Button size="sm" className="gap-2">
+          <Button size="sm" className="gap-2 w-full sm:w-auto">
             <FilePlus className="h-4 w-4" />
             Add Client
           </Button>
@@ -347,117 +347,127 @@ export default function UserDashboard() {
         </div>
       ) : (
         <div className="grid gap-3">
-          {visible.map((s) => (
-            <div
-              key={s.id}
-              className="flex items-center justify-between rounded-lg border bg-card p-4 hover:shadow-sm transition-shadow cursor-pointer"
-              onClick={async () => {
-                const lead = getLeadForSubmission(s.id);
-                if (lead) {
-                  navigate(`/pipeline/${lead.id}`);
-                } else {
-                  // Auto-create a pipeline lead for this orphan submission
-                  const { ensurePipelineLead } = await import("@/lib/pipeline-sync");
-                  const leadId = await ensurePipelineLead({
-                    userId: user!.id,
-                    accountName: s.company_name || "Untitled",
-                    submissionId: s.id,
-                  });
-                  if (leadId) {
-                    navigate(`/pipeline/${leadId}`);
-                  } else {
-                    navigate(`/application/${s.id}`);
-                  }
-                }
-              }}
-            >
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-3 mb-1">
-                  <span className="font-medium text-sm font-sans truncate">
-                    {s.company_name || "Untitled Submission"}
-                  </span>
-                  <Badge
-                    variant="outline"
-                    className={`text-[10px] uppercase tracking-wider font-sans ${statusColor[s.status] || ""}`}
-                  >
-                    {s.status}
-                  </Badge>
-                  {(() => {
-                    const lead = getLeadForSubmission(s.id);
-                    if (!lead) return null;
-                    const stage = getPipelineStage(lead);
-                    return (
-                      <Badge variant="outline" className={`text-[10px] uppercase tracking-wider font-sans ${stage.colorClass}`}>
-                        {stage.label}
-                      </Badge>
-                    );
-                  })()}
-                  <ClientDocuments submissionId={s.id} compact />
-                  {s.coverage_lines && (s.coverage_lines as string[]).length > 0 && (
-                    <span className="text-[10px] text-muted-foreground font-sans">
-                      {(s.coverage_lines as string[]).join(", ")}
-                    </span>
-                  )}
-                </div>
-                <p className="text-xs text-muted-foreground font-sans">
-                  {new Date(s.created_at).toLocaleDateString()}
-                  {s.description && ` · ${s.description.slice(0, 60)}…`}
-                </p>
-              </div>
+          {visible.map((s) => {
+            const lead = getLeadForSubmission(s.id);
+            const stage = lead ? getPipelineStage(lead) : null;
+            const isSold = lead ? soldLeadIds.has(lead.id) : false;
 
-              <div className="flex items-center gap-1 ml-4">
-                <Link to={`/acord/acord-125/${s.id}`}>
-                  <Button variant="ghost" size="sm" className="text-xs gap-1.5">
-                    <Edit3 className="h-3.5 w-3.5" />
-                    Workspace
-                  </Button>
-                </Link>
-                <Link to={`/application/${s.id}`}>
-                  <Button variant="ghost" size="sm" className="text-xs">
-                    {s.status === "extracted" || s.status === "complete" ? "Review" : "View"}
-                  </Button>
-                </Link>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    {(() => {
-                      const lead = getLeadForSubmission(s.id);
-                      const isSold = lead ? soldLeadIds.has(lead.id) : false;
-                      return (
-                        <DropdownMenuItem
-                          disabled={!isSold}
-                          onClick={(e) => { e.stopPropagation(); if (isSold) addPolicyToClient(s); }}
-                          className="gap-2"
-                        >
-                          <Plus className="h-3.5 w-3.5" />
-                          {isSold ? "Add Policy" : "Add Policy (must be sold)"}
-                        </DropdownMenuItem>
-                      );
-                    })()}
-                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); duplicateSubmission(s); }} className="gap-2">
-                      <Copy className="h-3.5 w-3.5" />
-                      Duplicate
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); renameSubmission(s.id, s.company_name); }} className="gap-2">
-                      <Pencil className="h-3.5 w-3.5" />
-                      Rename
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={(e) => { e.stopPropagation(); deleteSubmission(s.id); }}
-                      className="gap-2 text-destructive focus:text-destructive"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                      Delete
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+            return (
+              <div
+                key={s.id}
+                className="rounded-xl border bg-card hover:shadow-sm transition-shadow cursor-pointer active:bg-muted/30"
+                onClick={async () => {
+                  if (lead) {
+                    navigate(`/pipeline/${lead.id}`);
+                  } else {
+                    const { ensurePipelineLead } = await import("@/lib/pipeline-sync");
+                    const leadId = await ensurePipelineLead({
+                      userId: user!.id,
+                      accountName: s.company_name || "Untitled",
+                      submissionId: s.id,
+                    });
+                    if (leadId) {
+                      navigate(`/pipeline/${leadId}`);
+                    } else {
+                      navigate(`/application/${s.id}`);
+                    }
+                  }
+                }}
+              >
+                <div className="p-4">
+                  {/* Top row: name + badges */}
+                  <div className="flex items-start justify-between gap-2 mb-1.5">
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-sm font-sans truncate">
+                        {s.company_name || "Untitled Submission"}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <Badge
+                        variant="outline"
+                        className={`text-[10px] uppercase tracking-wider font-sans ${statusColor[s.status] || ""}`}
+                      >
+                        {s.status}
+                      </Badge>
+                      {stage && (
+                        <Badge variant="outline" className={`text-[10px] uppercase tracking-wider font-sans ${stage.colorClass}`}>
+                          {stage.label}
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Meta row */}
+                  <div className="flex items-center gap-2 flex-wrap mb-2">
+                    <span className="text-xs text-muted-foreground font-sans">
+                      {new Date(s.created_at).toLocaleDateString()}
+                    </span>
+                    {s.description && (
+                      <span className="text-xs text-muted-foreground font-sans truncate max-w-[200px]">
+                        · {s.description.slice(0, 50)}
+                      </span>
+                    )}
+                    <ClientDocuments submissionId={s.id} compact />
+                    {s.coverage_lines && (s.coverage_lines as string[]).length > 0 && (
+                      <span className="text-[10px] text-muted-foreground font-sans">
+                        {(s.coverage_lines as string[]).join(", ")}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Action row — stacks on mobile */}
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <Link to={`/acord/acord-125/${s.id}`} onClick={(e) => e.stopPropagation()}>
+                      <Button variant="outline" size="sm" className="text-xs gap-1.5 h-8">
+                        <Edit3 className="h-3 w-3" />
+                        <span className="hidden sm:inline">Workspace</span>
+                        <span className="sm:hidden">Work</span>
+                      </Button>
+                    </Link>
+                    <Link to={`/application/${s.id}`} onClick={(e) => e.stopPropagation()}>
+                      <Button variant="ghost" size="sm" className="text-xs h-8">
+                        {s.status === "extracted" || s.status === "complete" ? "Review" : "View"}
+                      </Button>
+                    </Link>
+                    <div className="ml-auto">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={(e) => e.stopPropagation()}>
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            disabled={!isSold}
+                            onClick={(e) => { e.stopPropagation(); if (isSold) addPolicyToClient(s); }}
+                            className="gap-2"
+                          >
+                            <Plus className="h-3.5 w-3.5" />
+                            {isSold ? "Add Policy" : "Add Policy (must be sold)"}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); duplicateSubmission(s); }} className="gap-2">
+                            <Copy className="h-3.5 w-3.5" />
+                            Duplicate
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); renameSubmission(s.id, s.company_name); }} className="gap-2">
+                            <Pencil className="h-3.5 w-3.5" />
+                            Rename
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={(e) => { e.stopPropagation(); deleteSubmission(s.id); }}
+                            className="gap-2 text-destructive focus:text-destructive"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
           {filtered.length === 0 && search && (
             <p className="text-center text-sm text-muted-foreground py-8 font-sans">
               No clients matching "{search}"

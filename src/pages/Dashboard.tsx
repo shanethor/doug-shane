@@ -183,22 +183,20 @@ export default function Dashboard() {
           {quotes.map((q) => (
             <div
               key={q.id}
-              className="flex items-center justify-between rounded-lg border bg-card p-4 hover:shadow-sm transition-shadow"
+              className="rounded-xl border bg-card p-4 hover:shadow-sm transition-shadow"
             >
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-3 mb-1">
-                  <span className="font-medium text-sm font-sans truncate">{q.company_name}</span>
-                  <Badge variant="outline" className={`text-[10px] uppercase tracking-wider font-sans ${statusColor[q.status] || ""}`}>
-                    {q.status.replace("_", " ")}
-                  </Badge>
-                </div>
-                <p className="text-xs text-muted-foreground font-sans">
-                  {q.coverage_type} · {new Date(q.created_at).toLocaleDateString()}
-                  {q.contact_name && ` · ${q.contact_name}`}
-                </p>
+              <div className="flex items-start justify-between gap-2 mb-1.5">
+                <span className="font-medium text-sm font-sans truncate">{q.company_name}</span>
+                <Badge variant="outline" className={`text-[10px] uppercase tracking-wider font-sans shrink-0 ${statusColor[q.status] || ""}`}>
+                  {q.status.replace("_", " ")}
+                </Badge>
               </div>
+              <p className="text-xs text-muted-foreground font-sans mb-3">
+                {q.coverage_type} · {new Date(q.created_at).toLocaleDateString()}
+                {q.contact_name && ` · ${q.contact_name}`}
+              </p>
 
-              <div className="flex items-center gap-2 ml-4">
+              <div className="flex items-center gap-2 flex-wrap">
                 <Dialog
                   onOpenChange={(open) => {
                     if (open) {
@@ -209,9 +207,9 @@ export default function Dashboard() {
                   }}
                 >
                   <DialogTrigger asChild>
-                    <Button variant="outline" size="sm" className="gap-1.5 text-xs">
+                    <Button variant="outline" size="sm" className="gap-1.5 text-xs h-8">
                       <ExternalLink className="h-3 w-3" />
-                      Share Link
+                      Share
                     </Button>
                   </DialogTrigger>
                   <DialogContent>
@@ -253,7 +251,7 @@ export default function Dashboard() {
                 </Dialog>
 
                 <Link to={`/quote/${q.id}`}>
-                  <Button variant="ghost" size="sm" className="text-xs">
+                  <Button variant="ghost" size="sm" className="text-xs h-8">
                     View
                   </Button>
                 </Link>
