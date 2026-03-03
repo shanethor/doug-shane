@@ -444,6 +444,8 @@ export default function Inbox() {
     })),
   ];
 
+  const { containerRef: pullRef, PullIndicator } = usePullToRefresh({ onRefresh: loadAll });
+
   if (loading) {
     return (
       <AppLayout>
@@ -457,8 +459,6 @@ export default function Inbox() {
       </AppLayout>
     );
   }
-
-  const { containerRef: pullRef, PullIndicator } = usePullToRefresh({ onRefresh: loadAll });
 
   return (
     <AppLayout>
