@@ -51,6 +51,7 @@ import { SchedulePresentationDialog } from "@/components/SchedulePresentationDia
 import { LeadActionSheet } from "@/components/LeadActionSheet";
 import { MoreVertical } from "lucide-react";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
+import { ProductionScoreboard } from "@/components/ProductionScoreboard";
 
 type PresentingLine = {
   line_of_business: string;
@@ -774,33 +775,14 @@ export default function Pipeline() {
     <AppLayout>
       <div ref={pullRef} className="overflow-y-auto">
       <PullIndicator />
-      {/* Command Center Stats Bar */}
-      {/* Stats bar — horizontally scrollable on mobile */}
-      <div className="overflow-x-auto -mx-4 px-4 mb-6 scrollbar-hide">
-        <div className="flex md:grid md:grid-cols-9 gap-3 min-w-max md:min-w-0">
-          {[
-            { icon: Users, color: "text-primary", value: pipelineStats.totalProspects, label: "Leads", border: "" },
-            { icon: Users, color: "text-primary", value: pipelineStats.quotingCount, label: "Quoting", border: "" },
-            { icon: Users, color: "text-accent", value: pipelineStats.presentingCount, label: "Presenting", border: "" },
-            { icon: DollarSign, color: "text-primary", value: fmt(pipelineStats.targetPremium), label: "Target Premium", border: "border-primary/20" },
-            { icon: TrendingUp, color: "text-primary", value: fmt(pipelineStats.targetRevenue), label: "Target Revenue", border: "border-primary/20" },
-            { icon: DollarSign, color: "text-accent", value: fmt(pipelineStats.presentingPremium), label: "Quoted Premium", border: "" },
-            { icon: TrendingUp, color: "text-accent", value: fmt(pipelineStats.presentingRevenue), label: "Quoted Revenue", border: "" },
-            { icon: CheckCircle, color: "text-success", value: fmt(pipelineStats.totalPremiumSold), label: "Premium Sold", border: "border-success/30" },
-            { icon: TrendingUp, color: "text-success", value: fmt(pipelineStats.totalRevenueSold), label: "Revenue Sold", border: "border-success/30" },
-          ].map((s, i) => (
-            <Card key={i} className={`${s.border} min-w-[120px] md:min-w-0`}>
-              <CardContent className="p-3 flex items-center gap-2 overflow-hidden">
-                <s.icon className={`h-4 w-4 ${s.color} shrink-0`} />
-                <div className="min-w-0">
-                  <p className="text-lg font-semibold font-sans leading-tight truncate">{s.value}</p>
-                  <p className="text-[10px] text-muted-foreground font-sans truncate">{s.label}</p>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
+      {/* Production Scoreboard */}
+      {user && (
+        <ProductionScoreboard
+          userId={user.id}
+          premiumSold={pipelineStats.totalPremiumSold}
+          revenueSold={pipelineStats.totalRevenueSold}
+        />
+      )}
 
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-6">
         <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
@@ -858,7 +840,7 @@ export default function Pipeline() {
           <DialogContent>
             <DialogHeader>
               <DialogTitle>
-                {addMode === "choose" ? "Add New Lead" : addMode === "manual" ? "Enter Lead Details" : addMode === "intake" && intakeLink ? "Intake Link Ready" : "Send Intake Form"}
+                {addMode === "choose" ? "Add New Lead" : addMode === "manual" ? "Enter Lead Details" : "Intake Link Ready"}
               </DialogTitle>
             </DialogHeader>
 
@@ -923,9 +905,9 @@ export default function Pipeline() {
                   <div>
                     <Label>Email</Label>
                     <Input
+                      type="email"
                       value={newLead.email}
                       onChange={(e) => setNewLead({ ...newLead, email: e.target.value })}
-                      type="email"
                     />
                   </div>
                   <div>
@@ -933,6 +915,8 @@ export default function Pipeline() {
                     <Input
                       value={newLead.state}
                       onChange={(e) => setNewLead({ ...newLead, state: e.target.value })}
+                      maxLength={2}
+                      placeholder="TX"
                     />
                   </div>
                 </div>
@@ -942,14 +926,27 @@ export default function Pipeline() {
                     <Input
                       value={newLead.business_type}
                       onChange={(e) => setNewLead({ ...newLead, business_type: e.target.value })}
+                      placeholder="e.g. Restaurant"
                     />
                   </div>
                   <div>
-                  <Label>Lead Source</Label>
-                    <Input
+                    <Label>Lead Source</Label>
+                    <Select
                       value={newLead.lead_source}
-                      onChange={(e) => setNewLead({ ...newLead, lead_source: e.target.value })}
-                    />
+                      onValueChange={(v) => setNewLead({ ...newLead, lead_source: v })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select…" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="referral">Referral</SelectItem>
+                        <SelectItem value="cold_call">Cold Call</SelectItem>
+                        <SelectItem value="website">Website</SelectItem>
+                        <SelectItem value="walk_in">Walk-In</SelectItem>
+                        <SelectItem value="social_media">Social Media</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
                 <div>
@@ -958,13 +955,8 @@ export default function Pipeline() {
                     type="number"
                     value={newLead.target_premium}
                     onChange={(e) => setNewLead({ ...newLead, target_premium: e.target.value })}
-                    placeholder="e.g. 15000"
+                    placeholder="$0"
                   />
-                  {newLead.target_premium && parseFloat(newLead.target_premium) > 0 && (
-                    <p className="text-[11px] text-muted-foreground font-sans mt-1">
-                      Target Revenue: {fmt(parseFloat(newLead.target_premium) * 0.12)}
-                    </p>
-                  )}
                 </div>
                 <DialogFooter>
                   <Button variant="outline" onClick={() => setAddMode("choose")}>Back</Button>
@@ -975,18 +967,15 @@ export default function Pipeline() {
               </div>
             )}
 
-            {/* Step 2b: Intake link — collect minimal info then generate */}
+            {/* Step 2b: Intake – pre-fill + generate link */}
             {addMode === "intake" && !intakeLink && (
               <div className="grid gap-3 mt-2">
-                <p className="text-sm text-muted-foreground font-sans">
-                  Enter the client's name and email, then we'll generate a secure intake form link you can send them.
-                </p>
                 <div>
-                  <Label>Account / Business Name *</Label>
+                  <Label>Account Name *</Label>
                   <Input
                     value={newLead.account_name}
                     onChange={(e) => setNewLead({ ...newLead, account_name: e.target.value })}
-                    placeholder="Company name"
+                    placeholder="Client's company name"
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
@@ -995,46 +984,41 @@ export default function Pipeline() {
                     <Input
                       value={newLead.contact_name}
                       onChange={(e) => setNewLead({ ...newLead, contact_name: e.target.value })}
-                      placeholder="John Smith"
                     />
                   </div>
                   <div>
                     <Label>Email</Label>
                     <Input
+                      type="email"
                       value={newLead.email}
                       onChange={(e) => setNewLead({ ...newLead, email: e.target.value })}
-                      type="email"
-                      placeholder="john@company.com"
                     />
                   </div>
                 </div>
                 <DialogFooter>
                   <Button variant="outline" onClick={() => setAddMode("choose")}>Back</Button>
-                  <Button onClick={handleSendIntake} disabled={!newLead.account_name.trim() || creatingIntake} className="gap-2">
-                    <Send className="h-4 w-4" />
-                    {creatingIntake ? "Generating…" : "Generate Intake Link"}
+                  <Button onClick={handleSendIntake} disabled={!newLead.account_name.trim() || creatingIntake} className="gap-1.5">
+                    {creatingIntake ? "Creating…" : "Generate Intake Link"}
+                    <ExternalLink className="h-3.5 w-3.5" />
                   </Button>
                 </DialogFooter>
               </div>
             )}
 
-            {/* Step 3: Show generated link */}
+            {/* Step 3: Intake link generated */}
             {addMode === "intake" && intakeLink && (
-              <div className="space-y-4 mt-2">
-                <div className="rounded-lg bg-muted/50 border p-4">
-                  <p className="text-xs text-muted-foreground font-sans mb-2">Share this link with your client:</p>
+              <div className="space-y-3 mt-2">
+                <div className="rounded-lg bg-muted/50 border p-3">
+                  <p className="text-xs text-muted-foreground font-sans mb-1.5">Share this link with the client:</p>
                   <div className="flex items-center gap-2">
-                    <code className="flex-1 text-xs bg-background rounded px-2 py-1.5 border truncate font-mono">
-                      {intakeLink}
-                    </code>
+                    <code className="text-xs break-all flex-1 bg-background rounded px-2 py-1.5">{intakeLink}</code>
                     <Button
                       size="sm"
                       variant="outline"
-                      className="shrink-0 gap-1.5"
-                      onClick={async () => {
-                        try { await navigator.clipboard.writeText(intakeLink); } catch { /* ignore */ }
+                      className="gap-1.5 shrink-0"
+                      onClick={() => {
+                        navigator.clipboard.writeText(intakeLink!);
                         setIntakeCopied(true);
-                        toast.success("Link copied!");
                         setTimeout(() => setIntakeCopied(false), 2000);
                       }}
                     >
@@ -1080,46 +1064,29 @@ export default function Pipeline() {
               <Badge variant="outline" className={`text-[10px] uppercase tracking-wider font-sans ${STAGE_COLORS[stage]}`}>
                 {STAGE_LABELS[stage]}
               </Badge>
+              <span className="text-xs text-muted-foreground font-sans">{grouped[stage]?.length ?? 0}</span>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Info className="h-3 w-3 text-muted-foreground/60 cursor-help" />
+                  <Info className="h-3 w-3 text-muted-foreground/40 cursor-help" />
                 </TooltipTrigger>
-                <TooltipContent side="top" className="max-w-[220px] text-xs font-sans">
+                <TooltipContent side="top" className="max-w-[200px] text-xs font-sans">
                   {STAGE_TOOLTIPS[stage]}
                 </TooltipContent>
               </Tooltip>
-              <span className="text-xs text-muted-foreground font-sans">{grouped[stage].length}</span>
-              {stage === "prospect" && (
-                <span className="relative group">
-                  <span className="text-[9px] text-muted-foreground/60 cursor-help">*</span>
-                  <span className="absolute left-0 top-full mt-1 z-50 w-52 rounded-md bg-popover border p-2 text-[10px] text-popover-foreground font-sans shadow-md opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-opacity">
-                    Over time AURA can generate external leads and automatically drop them in your pipeline based on your current clientele
-                  </span>
-                </span>
-              )}
             </div>
             <div
-              className={`flex-1 space-y-2 rounded-lg border border-dashed p-2 min-h-[200px] transition-colors ${
-                dragOverStage === stage
-                  ? "border-primary bg-primary/5"
-                  : "border-border/50 bg-muted/30"
+              className={`flex-1 rounded-lg border-2 border-dashed p-2 space-y-2 transition-colors ${
+                dragOverStage === stage ? "border-primary bg-primary/5" : "border-transparent"
               }`}
               onDragOver={(e) => handleDragOver(e, stage)}
               onDragLeave={handleDragLeave}
               onDrop={(e) => handleDrop(e, stage)}
             >
-              {(expandedColumns[stage] ? grouped[stage] : grouped[stage].slice(0, COLUMN_LIMIT)).map((lead) => {
-                let longPressTimer: ReturnType<typeof setTimeout> | null = null;
-                const handleTouchStart = () => {
-                  longPressTimer = setTimeout(() => {
-                    if (navigator.vibrate) navigator.vibrate(10);
-                    setActionSheetLead(lead);
-                    setActionSheetOpen(true);
-                    longPressTimer = null;
-                  }, 500);
-                };
-                const handleTouchEnd = () => {
-                  if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+              {(grouped[stage] || [])
+                .slice(0, expandedColumns[stage] ? undefined : COLUMN_LIMIT)
+                .map((lead) => {
+                const handleTouchEnd = (e: React.TouchEvent) => {
+                  if (Math.abs(e.changedTouches[0]?.clientX - (e as any).__startX) > 30) return;
                 };
                 return (
                 <div
@@ -1127,8 +1094,13 @@ export default function Pipeline() {
                   draggable
                   onDragStart={(e) => handleDragStart(e, lead.id)}
                   onDragEnd={handleDragEnd}
-                  onTouchStart={handleTouchStart}
-                  onTouchEnd={handleTouchEnd}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    if (navigator.vibrate) navigator.vibrate(10);
+                    setActionSheetLead(lead);
+                    setActionSheetOpen(true);
+                  }}
+                  onTouchStart={(e: any) => { e.__startX = e.touches[0]?.clientX; }}
                   onTouchMove={handleTouchEnd}
                   className={`transition-opacity ${draggedLeadId === lead.id ? "opacity-40" : ""}`}
                 >
@@ -1169,90 +1141,42 @@ export default function Pipeline() {
                                 <span className="text-[10px] text-primary font-sans">
                                   Target: {fmt((lead as any).target_premium)}
                                 </span>
-                                <span className="text-[10px] text-muted-foreground font-sans ml-1">
-                                  ({fmt((lead as any).target_premium * 0.12)} rev)
-                                </span>
                               </div>
                             )}
-                            {/* Show sold premium from all approved policies */}
-                            {stage === "sold" && lead.has_approved_policy && (
-                              <div className="ml-[18px] mt-1">
-                                {(() => {
-                                  const premiums = leadPolicyPremiums[lead.id] || [];
-                                  const totalPremium = premiums.reduce((s, p) => s + p, 0);
-                                  return (
-                                    <>
-                                      <span className="text-[10px] font-semibold text-success font-sans">
-                                        {fmt(totalPremium)} sold
-                                        {premiums.length > 1 && ` (${premiums.length} policies)`}
-                                      </span>
-                                      <span className="text-[10px] text-muted-foreground font-sans ml-1">
-                                        ({fmt(totalPremium * 0.12)} rev)
-                                      </span>
-                                    </>
-                                  );
-                                })()}
+                            {/* Show presenting premium on presenting cards */}
+                            {stage === "presenting" && lead.presenting_details?.lines && (
+                              <div className="ml-[18px] mt-1 space-y-0.5">
+                                {(lead.presenting_details.lines as PresentingLine[]).map((line: PresentingLine, i: number) => (
+                                  <div key={i} className="flex items-center gap-1.5">
+                                    <span className="text-[10px] text-accent font-sans">{line.line_of_business}:</span>
+                                    <span className="text-[10px] font-medium text-accent font-sans">{fmt(Number(line.premium))}</span>
+                                  </div>
+                                ))}
                               </div>
                             )}
-                            {/* Show premium on presenting cards */}
-                            {stage === "presenting" && lead.presenting_details && (
+                            {/* Show sold premium on sold cards */}
+                            {stage === "sold" && leadPolicyPremiums[lead.id] && (
                               <div className="ml-[18px] mt-1">
-                                <span className="text-[10px] font-semibold text-accent font-sans">
-                                  {fmt(lead.presenting_details.total_premium || 0)} quoted
+                                <span className="text-[10px] text-success font-sans font-medium">
+                                  Sold: {fmt(leadPolicyPremiums[lead.id].reduce((a: number, b: number) => a + b, 0))}
                                 </span>
-                                <span className="text-[10px] text-muted-foreground font-sans ml-1">
-                                  ({fmt((lead.presenting_details.total_premium || 0) * 0.12)} rev)
-                                </span>
-                                {(lead as any).target_premium > 0 && (
-                                  <span className="text-[10px] text-primary/70 font-sans ml-1">
-                                    · Target: {fmt((lead as any).target_premium)}
-                                  </span>
-                                )}
-                                <button
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    setScheduleLeadId(lead.id);
-                                    setScheduleOpen(true);
-                                  }}
-                                  className="flex items-center gap-1 mt-1 text-[10px] text-primary font-sans font-medium hover:underline"
-                                >
-                                  <CalendarDays className="h-3 w-3" />
-                                  Schedule Presentation
-                                </button>
                               </div>
                             )}
                           </div>
-                          <div className="flex items-center gap-1 shrink-0 mt-0.5">
-                            {lead.has_approved_policy && (
-                              <CheckCircle className="h-3.5 w-3.5 text-success" />
-                            )}
-                            {/* Mobile action sheet trigger */}
-                            <button
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                setActionSheetLead(lead);
-                                setActionSheetOpen(true);
-                              }}
-                              className="p-1 rounded hover:bg-muted transition-colors md:hidden"
-                              title="Actions"
-                            >
-                              <MoreVertical className="h-3.5 w-3.5 text-muted-foreground" />
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                setDeleteLeadId(lead.id);
-                                setDeleteAlertOpen(true);
-                              }}
-                              className="p-0.5 rounded hover:bg-destructive/10 transition-colors opacity-0 group-hover:opacity-100 hidden md:block"
-                              title="Delete lead"
-                            >
-                              <Trash2 className="h-3 w-3 text-muted-foreground hover:text-destructive" />
-                            </button>
-                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 text-muted-foreground md:opacity-0 md:group-hover:opacity-100 transition-opacity shrink-0"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              if (navigator.vibrate) navigator.vibrate(10);
+                              setActionSheetLead(lead);
+                              setActionSheetOpen(true);
+                            }}
+                          >
+                            <MoreVertical className="h-3.5 w-3.5" />
+                          </Button>
                         </div>
                       </CardContent>
                     </Card>
@@ -1260,26 +1184,18 @@ export default function Pipeline() {
                 </div>
                 );
               })}
-              {grouped[stage].length > COLUMN_LIMIT && !expandedColumns[stage] && (
+              {(grouped[stage] || []).length > COLUMN_LIMIT && (
                 <button
                   onClick={() => toggleColumnExpand(stage)}
-                  className="w-full py-2 text-[11px] text-primary font-sans font-medium hover:underline"
+                  className="w-full text-center text-xs text-muted-foreground hover:text-foreground py-2 transition-colors font-sans"
                 >
-                  Show All ({grouped[stage].length - COLUMN_LIMIT} more)
+                  {expandedColumns[stage]
+                    ? "Show less"
+                    : `Show all ${(grouped[stage] || []).length} leads`}
                 </button>
               )}
-              {grouped[stage].length > COLUMN_LIMIT && expandedColumns[stage] && (
-                <button
-                  onClick={() => toggleColumnExpand(stage)}
-                  className="w-full py-2 text-[11px] text-muted-foreground font-sans hover:underline"
-                >
-                  Show Less
-                </button>
-              )}
-              {grouped[stage].length === 0 && (
-                <p className="text-[10px] text-muted-foreground text-center py-8 font-sans">
-                  {stage === "sold" ? "Drop here to mark as sold" : "No leads"}
-                </p>
+              {(grouped[stage] || []).length === 0 && (
+                <p className="text-xs text-muted-foreground font-sans text-center py-8">No leads</p>
               )}
             </div>
           </div>
@@ -1287,243 +1203,170 @@ export default function Pipeline() {
       </div>
       </div>
 
-      {/* Lost Row — horizontal drop zone below main columns */}
-      <div className="mt-4">
+      {/* Lost row */}
+      <div
+        className={`mt-4 rounded-lg border-2 border-dashed p-3 transition-colors ${
+          dragOverStage === lostStage ? "border-destructive bg-destructive/5" : "border-border"
+        }`}
+        onDragOver={(e) => handleDragOver(e, lostStage)}
+        onDragLeave={handleDragLeave}
+        onDrop={(e) => handleDrop(e, lostStage)}
+      >
         <div className="flex items-center gap-2 mb-2">
-          <Badge variant="outline" className={`text-[10px] uppercase tracking-wider font-sans ${STAGE_COLORS.lost}`}>
-            {STAGE_LABELS.lost}
+          <Badge variant="outline" className={`text-[10px] uppercase tracking-wider font-sans ${STAGE_COLORS[lostStage]}`}>
+            {STAGE_LABELS[lostStage]}
           </Badge>
+          <span className="text-xs text-muted-foreground font-sans">{grouped[lostStage]?.length ?? 0}</span>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Info className="h-3 w-3 text-muted-foreground/60 cursor-help" />
+              <Info className="h-3 w-3 text-muted-foreground/40 cursor-help" />
             </TooltipTrigger>
-            <TooltipContent side="top" className="max-w-[220px] text-xs font-sans">
-              {STAGE_TOOLTIPS.lost}
+            <TooltipContent side="top" className="max-w-[200px] text-xs font-sans">
+              {STAGE_TOOLTIPS[lostStage]}
             </TooltipContent>
           </Tooltip>
-          <span className="text-xs text-muted-foreground font-sans">{grouped.lost.length}</span>
         </div>
-        <div
-          className={`rounded-lg border border-dashed p-3 min-h-[80px] transition-colors ${
-            dragOverStage === "lost"
-              ? "border-destructive bg-destructive/5"
-              : "border-border/50 bg-muted/30"
-          }`}
-          onDragOver={(e) => handleDragOver(e, "lost")}
-          onDragLeave={handleDragLeave}
-          onDrop={(e) => handleDrop(e, "lost")}
-        >
-          {grouped.lost.length === 0 ? (
-            <p className="text-[10px] text-muted-foreground text-center py-4 font-sans">
-              Drop here to mark as lost
-            </p>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              {(expandedColumns.lost ? grouped.lost : grouped.lost.slice(0, 10)).map((lead) => (
-                <div
-                  key={lead.id}
-                  draggable
-                  onDragStart={(e) => handleDragStart(e, lead.id)}
-                  onDragEnd={handleDragEnd}
-                  className={`transition-opacity ${draggedLeadId === lead.id ? "opacity-40" : ""}`}
-                >
-                  <Link to={`/pipeline/${lead.id}`}>
-                    <Card className="hover-lift cursor-grab active:cursor-grabbing group w-[220px]">
-                      <CardContent className="p-3">
-                        <div className="flex items-start justify-between">
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-1.5">
-                              <GripVertical className="h-3 w-3 text-muted-foreground/50 shrink-0" />
-                              <p className="font-medium text-sm font-sans truncate">{lead.account_name}</p>
-                            </div>
-                            {lead.contact_name && (
-                              <p className="text-xs text-muted-foreground font-sans truncate ml-[18px]">{lead.contact_name}</p>
-                            )}
-                          </div>
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              setDeleteLeadId(lead.id);
-                              setDeleteAlertOpen(true);
-                            }}
-                            className="p-0.5 rounded hover:bg-destructive/10 transition-colors opacity-0 group-hover:opacity-100"
-                            title="Delete lead"
-                          >
-                            <Trash2 className="h-3 w-3 text-muted-foreground hover:text-destructive" />
-                          </button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </Link>
-                </div>
-              ))}
-              {grouped.lost.length > 10 && !expandedColumns.lost && (
-                <button
-                  onClick={() => toggleColumnExpand("lost")}
-                  className="self-center px-3 py-2 text-[11px] text-primary font-sans font-medium hover:underline"
-                >
-                  +{grouped.lost.length - 10} more
-                </button>
-              )}
-              {grouped.lost.length > 10 && expandedColumns.lost && (
-                <button
-                  onClick={() => toggleColumnExpand("lost")}
-                  className="self-center px-3 py-2 text-[11px] text-muted-foreground font-sans hover:underline"
-                >
-                  Show Less
-                </button>
-              )}
-            </div>
+        <div className="flex flex-wrap gap-2">
+          {(grouped[lostStage] || []).map((lead) => (
+            <Link key={lead.id} to={`/pipeline/${lead.id}`}>
+              <Card
+                draggable
+                onDragStart={(e) => handleDragStart(e, lead.id)}
+                onDragEnd={handleDragEnd}
+                className="hover-lift cursor-grab active:cursor-grabbing"
+              >
+                <CardContent className="p-2 px-3 flex items-center gap-2">
+                  <GripVertical className="h-3 w-3 text-muted-foreground/50 shrink-0" />
+                  <span className="text-sm font-sans">{lead.account_name}</span>
+                  {(lead as any).estimated_renewal_date && (
+                    <Badge variant="outline" className="text-[9px] gap-0.5 font-sans">
+                      <CalendarDays className="h-2.5 w-2.5" />
+                      {(lead as any).estimated_renewal_date}
+                    </Badge>
+                  )}
+                  {(lead as any).loss_reason && (
+                    <span className="text-[10px] text-muted-foreground font-sans">{(lead as any).loss_reason}</span>
+                  )}
+                </CardContent>
+              </Card>
+            </Link>
+          ))}
+          {(grouped[lostStage] || []).length === 0 && (
+            <p className="text-xs text-muted-foreground font-sans py-2">Drop leads here to mark as lost</p>
           )}
         </div>
       </div>
       </TooltipProvider>
 
-      {/* Pipeline Analytics */}
-      <PipelineAnalytics
-        leads={leads.map((l: any) => ({
-          ...l,
-          target_premium: l.target_premium ?? null,
-          loss_reason: l.loss_reason ?? null,
-        }))}
-        policies={allPoliciesData}
-        auditLog={auditLogData}
-      />
+      {/* Pipeline Analytics Accordion */}
+      {user && <PipelineAnalytics leads={leads} policies={allPoliciesData} auditLog={auditLogData} />}
 
-
-      {/* Lost Modal */}
+      {/* Lost Reason Modal */}
       <Dialog open={lostModalOpen} onOpenChange={(open) => { if (!open) { setLostModalOpen(false); setLostLeadId(null); } }}>
-        <DialogContent>
+        <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle>Mark as Lost — {lostLead?.account_name}</DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-muted-foreground font-sans">
-            Why was this lead lost? This helps track patterns and improve your win rate.
-          </p>
-          <div className="grid gap-3 mt-2">
-            <div className="flex flex-wrap gap-2">
-              {["Price", "Coverage", "Competitor", "Client unresponsive", "Not a fit"].map((reason) => (
-                <Button
-                  key={reason}
-                  variant={lostReason === reason ? "default" : "outline"}
-                  size="sm"
-                  className="text-xs"
-                  onClick={() => setLostReason(reason)}
-                >
-                  {reason}
-                </Button>
-              ))}
-            </div>
+          <div className="space-y-3 mt-2">
             <div>
-              <Label>Details</Label>
+              <Label>Reason *</Label>
               <Textarea
                 value={lostReason}
                 onChange={(e) => setLostReason(e.target.value)}
-                placeholder="Describe why this lead was lost…"
+                placeholder="Why was this lead lost?"
                 className="min-h-[80px]"
               />
             </div>
             <div>
-              <Label>Estimated Coverage Start Date *</Label>
+              <Label>Estimated Renewal Date</Label>
               <Input
                 type="date"
                 value={lostRenewalDate}
                 onChange={(e) => setLostRenewalDate(e.target.value)}
               />
-              <p className="text-[11px] text-muted-foreground font-sans mt-1">
-                * 10 months from this date, AURA will automatically move this client back to Prospect and surface their info so you can pitch them again.
+              <p className="text-[10px] text-muted-foreground font-sans mt-1">
+                If provided, the lead will auto-move back to Prospect 2 months before renewal.
               </p>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setLostModalOpen(false); setLostLeadId(null); }}>
-              Cancel
-            </Button>
-            <Button variant="destructive" onClick={handleLostSubmit} disabled={!lostReason.trim() || !lostRenewalDate}>
-              Mark as Lost
-            </Button>
+            <Button variant="outline" onClick={() => { setLostModalOpen(false); setLostLeadId(null); }}>Cancel</Button>
+            <Button variant="destructive" onClick={handleLostSubmit} disabled={!lostReason.trim()}>Mark as Lost</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Sold Policy Modal */}
+      {/* Sold Modal — collect policy details */}
       <Dialog open={soldModalOpen} onOpenChange={(open) => { if (!open) { setSoldModalOpen(false); setSoldLeadId(null); } }}>
-        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+        <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Add Policy Details — {soldLead?.account_name}</DialogTitle>
+            <DialogTitle>🎉 Close the Deal — {soldLead?.account_name}</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground font-sans">
-            Enter the bound policy details to move this lead to Sold. Add multiple policies if needed.
+            Enter the policy details below. You can add multiple policies.
           </p>
-          <div className="space-y-4 mt-2">
-            {soldPolicies.map((pf, i) => {
-              const updateField = (field: string, value: string) => {
-                const updated = [...soldPolicies];
-                updated[i] = { ...updated[i], [field]: value };
-                setSoldPolicies(updated);
-              };
-              return (
-                <div key={i} className="rounded-lg border p-3 space-y-3 relative">
+          <div className="space-y-4 mt-2 max-h-[50vh] overflow-y-auto">
+            {soldPolicies.map((p, i) => (
+              <div key={i} className="rounded-lg border bg-card p-3 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium text-muted-foreground font-sans">Policy {i + 1}</span>
                   {soldPolicies.length > 1 && (
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-semibold font-sans text-muted-foreground">Policy {i + 1}</span>
-                      <button
-                        onClick={() => setSoldPolicies(soldPolicies.filter((_, idx) => idx !== i))}
-                        className="text-xs text-muted-foreground hover:text-destructive transition-colors"
-                      >
-                        Remove
-                      </button>
-                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-muted-foreground hover:text-destructive"
+                      onClick={() => setSoldPolicies(soldPolicies.filter((_, idx) => idx !== i))}
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
                   )}
+                </div>
+                <div className="grid grid-cols-2 gap-2">
                   <div>
                     <Label className="text-xs">Carrier *</Label>
                     <Input
-                      value={pf.carrier}
-                      onChange={(e) => updateField("carrier", e.target.value)}
-                      placeholder="e.g. Hartford, Travelers"
+                      value={p.carrier}
+                      onChange={(e) => { const u = [...soldPolicies]; u[i] = { ...u[i], carrier: e.target.value }; setSoldPolicies(u); }}
+                      placeholder="e.g. Progressive"
                     />
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label className="text-xs">Line of Business</Label>
-                      <Input
-                        value={pf.line_of_business}
-                        onChange={(e) => updateField("line_of_business", e.target.value)}
-                        placeholder="e.g. General Liability"
-                      />
-                    </div>
-                    <div>
-                      <Label className="text-xs">Policy Number *</Label>
-                      <Input
-                        value={pf.policy_number}
-                        onChange={(e) => updateField("policy_number", e.target.value)}
-                        placeholder="e.g. GL-12345"
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label className="text-xs">Effective Date *</Label>
-                      <Input
-                        type="date"
-                        value={pf.effective_date}
-                        onChange={(e) => updateField("effective_date", e.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <Label className="text-xs">Annual Premium *</Label>
-                      <Input
-                        type="number"
-                        value={pf.annual_premium}
-                        onChange={(e) => updateField("annual_premium", e.target.value)}
-                        placeholder="e.g. 12000"
-                      />
-                    </div>
+                  <div>
+                    <Label className="text-xs">Line of Business</Label>
+                    <Input
+                      value={p.line_of_business}
+                      onChange={(e) => { const u = [...soldPolicies]; u[i] = { ...u[i], line_of_business: e.target.value }; setSoldPolicies(u); }}
+                      placeholder="e.g. GL"
+                    />
                   </div>
                 </div>
-              );
-            })}
+                <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <Label className="text-xs">Policy #</Label>
+                    <Input
+                      value={p.policy_number}
+                      onChange={(e) => { const u = [...soldPolicies]; u[i] = { ...u[i], policy_number: e.target.value }; setSoldPolicies(u); }}
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Effective Date *</Label>
+                    <Input
+                      type="date"
+                      value={p.effective_date}
+                      onChange={(e) => { const u = [...soldPolicies]; u[i] = { ...u[i], effective_date: e.target.value }; setSoldPolicies(u); }}
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Annual Premium *</Label>
+                    <Input
+                      type="number"
+                      value={p.annual_premium}
+                      onChange={(e) => { const u = [...soldPolicies]; u[i] = { ...u[i], annual_premium: e.target.value }; setSoldPolicies(u); }}
+                      placeholder="$0"
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
 
             {/* Add another policy button */}
             <button

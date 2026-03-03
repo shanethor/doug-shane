@@ -1172,6 +1172,36 @@ export type Database = {
           },
         ]
       }
+      producer_goals: {
+        Row: {
+          annual_premium_goal: number
+          annual_revenue_goal: number
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+          year: number
+        }
+        Insert: {
+          annual_premium_goal?: number
+          annual_revenue_goal?: number
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+          year: number
+        }
+        Update: {
+          annual_premium_goal?: number
+          annual_revenue_goal?: number
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+          year?: number
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           agency_name: string | null
