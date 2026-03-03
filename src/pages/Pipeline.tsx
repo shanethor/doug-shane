@@ -25,7 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Search, CheckCircle, GripVertical, Edit3, Send, PenLine, Copy, Check, ExternalLink, FileText, Trash2, Users, DollarSign, TrendingUp, Share2, BarChart3, Info } from "lucide-react";
+import { Plus, Search, CheckCircle, GripVertical, Edit3, Send, PenLine, Copy, Check, ExternalLink, FileText, Trash2, Users, DollarSign, TrendingUp, Share2, BarChart3, Info, CalendarDays } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -47,6 +47,7 @@ import { LossRunBadge } from "@/components/LossRunBadge";
 import { ClientDocuments } from "@/components/ClientDocuments";
 import { generateIntakeLink } from "@/lib/intake-links";
 import { PipelineAnalytics } from "@/components/PipelineAnalytics";
+import { SchedulePresentationDialog } from "@/components/SchedulePresentationDialog";
 
 type PresentingLine = {
   line_of_business: string;
@@ -157,6 +158,10 @@ export default function Pipeline() {
   const [lostReason, setLostReason] = useState("");
   const [lostRenewalDate, setLostRenewalDate] = useState("");
   
+
+  // Schedule presentation state
+  const [scheduleLeadId, setScheduleLeadId] = useState<string | null>(null);
+  const [scheduleOpen, setScheduleOpen] = useState(false);
 
   // Delete lead state
   const [deleteLeadId, setDeleteLeadId] = useState<string | null>(null);
@@ -520,6 +525,9 @@ export default function Pipeline() {
 
       toast.success("Moved to Presenting!");
       setPresentingModalOpen(false);
+      // Offer to schedule presentation
+      setScheduleLeadId(presentingLeadId);
+      setScheduleOpen(true);
       setPresentingLeadId(null);
       loadLeads();
     } catch (err: any) {
@@ -1167,6 +1175,18 @@ export default function Pipeline() {
                                     · Target: {fmt((lead as any).target_premium)}
                                   </span>
                                 )}
+                                <button
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    setScheduleLeadId(lead.id);
+                                    setScheduleOpen(true);
+                                  }}
+                                  className="flex items-center gap-1 mt-1 text-[10px] text-primary font-sans font-medium hover:underline"
+                                >
+                                  <CalendarDays className="h-3 w-3" />
+                                  Schedule Presentation
+                                </button>
                               </div>
                             )}
                           </div>
@@ -1611,6 +1631,17 @@ export default function Pipeline() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      {/* Schedule Presentation Dialog */}
+      {scheduleLeadId && (
+        <SchedulePresentationDialog
+          open={scheduleOpen}
+          onOpenChange={(open) => { setScheduleOpen(open); if (!open) setScheduleLeadId(null); }}
+          leadId={scheduleLeadId}
+          leadName={leads.find(l => l.id === scheduleLeadId)?.account_name || ""}
+          leadEmail={leads.find(l => l.id === scheduleLeadId)?.email}
+          userId={user?.id || ""}
+        />
+      )}
     </AppLayout>
   );
 }

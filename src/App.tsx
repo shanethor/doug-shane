@@ -28,6 +28,7 @@ import BorSign from "./pages/BorSign";
 import InboxPage from "./pages/Inbox";
 import EmailCallback from "./pages/EmailCallback";
 import CalendarPage from "./pages/Calendar";
+import BookingPage from "./pages/BookingPage";
 import Settings from "./pages/Settings";
 import { Navigate } from "react-router-dom";
 const queryClient = new QueryClient();
@@ -65,6 +66,7 @@ const App = () => (
           <Route path="/email-callback" element={<ProtectedRoute><EmailCallback /></ProtectedRoute>} />
           <Route path="/calendar" element={<ProtectedRoute><CalendarPage /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+          <Route path="/book/:producerId" element={<BookingPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
