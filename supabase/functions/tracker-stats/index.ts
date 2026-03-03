@@ -11,6 +11,7 @@ type TrackerStats = {
   totalProspects: number;
   quotingCount: number;
   presentingCount: number;
+  soldCount: number;
   presentingPremium: number;
   presentingRevenue: number;
   totalPremiumSold: number;
@@ -105,6 +106,7 @@ Deno.serve(async (req) => {
       totalProspects: prospectLeads.length + quotingLeads.length + presentingLeads.length,
       quotingCount: quotingLeads.length,
       presentingCount: presentingLeads.length,
+      soldCount: approvedLeadIds.size,
       presentingPremium,
       presentingRevenue: presentingPremium * 0.12,
       totalPremiumSold: approved.reduce((s: number, p: any) => s + Number(p.annual_premium || 0), 0),

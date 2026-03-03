@@ -22,6 +22,7 @@ export default function PipelineTracker() {
     totalProspects: 0,
     quotingCount: 0,
     presentingCount: 0,
+    soldCount: 0,
     presentingPremium: 0,
     presentingRevenue: 0,
     totalPremiumSold: 0,
@@ -133,7 +134,7 @@ export default function PipelineTracker() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
@@ -142,7 +143,7 @@ export default function PipelineTracker() {
                 </div>
                 <div>
                   <p className="text-2xl font-semibold font-sans">{stats.totalProspects}</p>
-                  <p className="text-xs text-muted-foreground font-sans">Leads</p>
+                  <p className="text-xs text-muted-foreground font-sans">Prospects</p>
                 </div>
               </div>
             </CardContent>
@@ -171,6 +172,20 @@ export default function PipelineTracker() {
                 <div>
                   <p className="text-2xl font-semibold font-sans">{stats.presentingCount}</p>
                   <p className="text-xs text-muted-foreground font-sans">Presenting</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-success/30">
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-3">
+                <div className="rounded-full bg-success/10 p-2.5">
+                  <CheckCircle className="h-5 w-5 text-success" />
+                </div>
+                <div>
+                  <p className="text-2xl font-semibold font-sans">{stats.soldCount}</p>
+                  <p className="text-xs text-muted-foreground font-sans">Sold</p>
                 </div>
               </div>
             </CardContent>
