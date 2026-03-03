@@ -1100,12 +1100,28 @@ export default function Pipeline() {
               onDragLeave={handleDragLeave}
               onDrop={(e) => handleDrop(e, stage)}
             >
-              {(expandedColumns[stage] ? grouped[stage] : grouped[stage].slice(0, COLUMN_LIMIT)).map((lead) => (
+              {(expandedColumns[stage] ? grouped[stage] : grouped[stage].slice(0, COLUMN_LIMIT)).map((lead) => {
+                let longPressTimer: ReturnType<typeof setTimeout> | null = null;
+                const handleTouchStart = () => {
+                  longPressTimer = setTimeout(() => {
+                    if (navigator.vibrate) navigator.vibrate(10);
+                    setActionSheetLead(lead);
+                    setActionSheetOpen(true);
+                    longPressTimer = null;
+                  }, 500);
+                };
+                const handleTouchEnd = () => {
+                  if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+                };
+                return (
                 <div
                   key={lead.id}
                   draggable
                   onDragStart={(e) => handleDragStart(e, lead.id)}
                   onDragEnd={handleDragEnd}
+                  onTouchStart={handleTouchStart}
+                  onTouchEnd={handleTouchEnd}
+                  onTouchMove={handleTouchEnd}
                   className={`transition-opacity ${draggedLeadId === lead.id ? "opacity-40" : ""}`}
                 >
                   <Link to={`/pipeline/${lead.id}`}>
@@ -1235,7 +1251,8 @@ export default function Pipeline() {
                     </Card>
                   </Link>
                 </div>
-              ))}
+                );
+              })}
               {grouped[stage].length > COLUMN_LIMIT && !expandedColumns[stage] && (
                 <button
                   onClick={() => toggleColumnExpand(stage)}
