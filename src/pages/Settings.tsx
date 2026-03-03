@@ -9,11 +9,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Building2, Mail, Save, User, BrainCircuit, Eye, EyeOff, Info, Loader2, Link2, Unlink, CheckCircle } from "lucide-react";
+import { Building2, Mail, Save, User, BrainCircuit, Eye, EyeOff, Info, Loader2, Link2, Unlink, CheckCircle, Smartphone, GripVertical } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { getAuthHeaders } from "@/lib/auth-fetch";
 import { useSearchParams } from "react-router-dom";
+import { useNavConfig, ALL_NAV_TABS } from "@/hooks/useNavConfig";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const AGENCY_FIELDS = [
   { key: "agency_name", label: "Agency Name", placeholder: "ABC Insurance Agency" },
@@ -36,12 +38,15 @@ type EmailConnection = {
 export default function Settings() {
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
+  const { config: navConfig, setConfig: setNavConfig } = useNavConfig();
   const [values, setValues] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [aiProvider, setAiProvider] = useState("lovable");
   const [openaiKey, setOpenaiKey] = useState("");
   const [showKey, setShowKey] = useState(false);
+  const [navTabCount, setNavTabCount] = useState(navConfig.tabCount);
+  const [navSelectedIds, setNavSelectedIds] = useState<string[]>(navConfig.selectedTabIds);
 
   // Email connections
   const [emailConnections, setEmailConnections] = useState<EmailConnection[]>([]);
@@ -334,6 +339,89 @@ export default function Settings() {
             <p className="text-[11px] text-muted-foreground leading-relaxed">
               <strong>How it works:</strong> When connected, AURA syncs your recent emails into the Inbox and lets you send emails directly from your own address. 
               Your email credentials are stored securely and never shared. You can disconnect at any time.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Mobile Navigation */}
+      <Card className="mb-4 sm:mb-6">
+        <CardHeader className="p-4 sm:p-6 pb-2 sm:pb-2">
+          <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+            <Smartphone className="h-4 w-4 text-primary" />
+            Mobile Navigation
+          </CardTitle>
+          <p className="text-xs text-muted-foreground mt-1">
+            Choose how many tabs appear on the bottom bar and which ones to show.
+          </p>
+        </CardHeader>
+        <CardContent className="p-4 sm:p-6 pt-2 sm:pt-2 space-y-4">
+          <div className="space-y-1">
+            <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+              Number of tabs
+            </Label>
+            <Select
+              value={String(navTabCount)}
+              onValueChange={(v) => {
+                const count = Number(v);
+                setNavTabCount(count);
+                // Auto-trim selection if needed
+                const trimmed = navSelectedIds.slice(0, count);
+                setNavSelectedIds(trimmed);
+                setNavConfig({ tabCount: count, selectedTabIds: trimmed });
+              }}
+            >
+              <SelectTrigger className="w-full sm:w-40 h-11 sm:h-10">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {[3, 4, 5].map((n) => (
+                  <SelectItem key={n} value={String(n)}>
+                    {n} tabs
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-xs uppercase tracking-wider text-muted-foreground">
+              Visible tabs (select {navTabCount})
+            </Label>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {ALL_NAV_TABS.map((tab) => {
+                const isSelected = navSelectedIds.includes(tab.id);
+                const isFull = navSelectedIds.length >= navTabCount && !isSelected;
+                return (
+                  <button
+                    key={tab.id}
+                    disabled={isFull}
+                    onClick={() => {
+                      let updated: string[];
+                      if (isSelected) {
+                        updated = navSelectedIds.filter((id) => id !== tab.id);
+                      } else {
+                        updated = [...navSelectedIds, tab.id];
+                      }
+                      setNavSelectedIds(updated);
+                      setNavConfig({ tabCount: navTabCount, selectedTabIds: updated });
+                    }}
+                    className={`flex items-center gap-2 rounded-lg border p-3 text-sm transition-colors ${
+                      isSelected
+                        ? "border-primary bg-primary/5 text-primary font-medium"
+                        : isFull
+                        ? "border-muted text-muted-foreground/50 cursor-not-allowed"
+                        : "border-border text-foreground hover:bg-muted"
+                    }`}
+                  >
+                    <div className={`h-2 w-2 rounded-full ${isSelected ? "bg-primary" : "bg-muted-foreground/30"}`} />
+                    {tab.label}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-[11px] text-muted-foreground">
+              Tabs not shown on the bar will appear in the "More" menu.
             </p>
           </div>
         </CardContent>
