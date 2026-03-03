@@ -16,6 +16,7 @@ import {
 import { FilePlus, FileText, MoreVertical, Copy, Pencil, Trash2, Search, Edit3, ArrowRight, Plus } from "lucide-react";
 import { ClientDocuments } from "@/components/ClientDocuments";
 import { toast } from "sonner";
+import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 
 const statusColor: Record<string, string> = {
   pending: "bg-muted text-muted-foreground",
@@ -285,8 +286,12 @@ export default function UserDashboard() {
     );
   }
 
+  const { containerRef: pullRef, PullIndicator } = usePullToRefresh({ onRefresh: loadData });
+
   return (
     <AppLayout>
+      <div ref={pullRef} className="overflow-y-auto">
+      <PullIndicator />
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-6">
         <div>
           <h1 className="text-2xl sm:text-4xl">My Clients</h1>
@@ -482,6 +487,7 @@ export default function UserDashboard() {
           )}
         </div>
       )}
+      </div>
     </AppLayout>
   );
 }
