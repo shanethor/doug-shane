@@ -872,26 +872,28 @@ export default function IntakeForm() {
     const displayProgress = ((Math.max(0, actualDisplayIdx) + 1) / displaySteps.length) * 100;
 
     return (
-      <div className="space-y-3">
-        <div className="flex items-center justify-between text-xs text-muted-foreground">
-          <span>Step {Math.max(1, actualDisplayIdx + 1)} of {displaySteps.length}</span>
-          <span>{stepLabels[currentStep]}</span>
-        </div>
-        <Progress value={displayProgress} className="h-1.5" />
-        <div className="flex gap-1 justify-center">
-          {displaySteps.map((step, idx) => (
-            <button
-              key={step}
-              onClick={() => {
-                if (idx < actualDisplayIdx) setCurrentStep(step);
-              }}
-              className={`h-2 rounded-full transition-all ${
-                idx === actualDisplayIdx ? "w-8 bg-primary" :
-                idx < actualDisplayIdx ? "w-2 bg-primary/50 cursor-pointer hover:bg-primary/70" :
-                "w-2 bg-muted"
-              }`}
-            />
-          ))}
+      <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm -mx-4 px-4 py-3 border-b border-border/50 shadow-sm">
+        <div className="space-y-2">
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <span>Step {Math.max(1, actualDisplayIdx + 1)} of {displaySteps.length}</span>
+            <span>{stepLabels[currentStep]}</span>
+          </div>
+          <Progress value={displayProgress} className="h-1.5" />
+          <div className="flex gap-1 justify-center">
+            {displaySteps.map((step, idx) => (
+              <button
+                key={step}
+                onClick={() => {
+                  if (idx < actualDisplayIdx) setCurrentStep(step);
+                }}
+                className={`h-2 rounded-full transition-all ${
+                  idx === actualDisplayIdx ? "w-8 bg-primary" :
+                  idx < actualDisplayIdx ? "w-2 bg-primary/50 cursor-pointer hover:bg-primary/70" :
+                  "w-2 bg-muted"
+                }`}
+              />
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -2297,12 +2299,14 @@ export default function IntakeForm() {
 
               return (
                 <>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between text-xs text-muted-foreground">
-                      <span>Step {commIdx + 1} of {commSteps.length}</span>
-                      <span>{commStepLabels[commercialStep]}</span>
+                  <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm -mx-4 px-4 py-3 border-b border-border/50 shadow-sm">
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span>Step {commIdx + 1} of {commSteps.length}</span>
+                        <span>{commStepLabels[commercialStep]}</span>
+                      </div>
+                      <Progress value={commProgress} className="h-1.5" />
                     </div>
-                    <Progress value={commProgress} className="h-1.5" />
                   </div>
 
                   {commercialStep === "business_info" && (
