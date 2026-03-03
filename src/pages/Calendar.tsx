@@ -170,7 +170,7 @@ export default function Calendar() {
       .map((a) => a.trim())
       .filter(Boolean);
 
-    const leadId = newEvent.lead_id || null;
+    const leadId = newEvent.lead_id && newEvent.lead_id !== "none" ? newEvent.lead_id : null;
     const lead = leadId ? leads.find((l) => l.id === leadId) : null;
 
     // Build description with coverage snapshot if lead linked
@@ -376,7 +376,7 @@ export default function Calendar() {
                     <Select value={newEvent.lead_id} onValueChange={(v) => setNewEvent({ ...newEvent, lead_id: v })}>
                       <SelectTrigger><SelectValue placeholder="Optional" /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">None</SelectItem>
+                        <SelectItem value="none">None</SelectItem>
                         {leads.map((l) => (
                           <SelectItem key={l.id} value={l.id}>{l.account_name}</SelectItem>
                         ))}
