@@ -50,6 +50,7 @@ import { PipelineAnalytics } from "@/components/PipelineAnalytics";
 import { SchedulePresentationDialog } from "@/components/SchedulePresentationDialog";
 import { LeadActionSheet } from "@/components/LeadActionSheet";
 import { MoreVertical } from "lucide-react";
+import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 
 type PresentingLine = {
   line_of_business: string;
@@ -764,8 +765,12 @@ export default function Pipeline() {
 
   const fmt = (n: number) => "$" + n.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 
+  const { containerRef: pullRef, PullIndicator } = usePullToRefresh({ onRefresh: loadLeads });
+
   return (
     <AppLayout>
+      <div ref={pullRef} className="overflow-y-auto">
+      <PullIndicator />
       {/* Command Center Stats Bar */}
       {/* Stats bar — horizontally scrollable on mobile */}
       <div className="overflow-x-auto -mx-4 px-4 mb-6 scrollbar-hide">
@@ -1725,6 +1730,7 @@ export default function Pipeline() {
         }}
         onRefresh={loadLeads}
       />
+      </div>
     </AppLayout>
   );
 }

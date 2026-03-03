@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { formatDistanceToNow, format } from "date-fns";
 import { getAuthHeaders } from "@/lib/auth-fetch";
+import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 
 type Notification = {
   id: string;
@@ -457,8 +458,12 @@ export default function Inbox() {
     );
   }
 
+  const { containerRef: pullRef, PullIndicator } = usePullToRefresh({ onRefresh: loadAll });
+
   return (
     <AppLayout>
+      <div ref={pullRef} className="overflow-y-auto">
+      <PullIndicator />
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div className="flex items-center gap-3">
           <InboxIcon className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
@@ -703,6 +708,7 @@ export default function Inbox() {
           </div>
         </DialogContent>
       </Dialog>
+      </div>
     </AppLayout>
   );
 }
