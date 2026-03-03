@@ -122,6 +122,15 @@ export default function PipelineTracker() {
               </Select>
             </div>
           </div>
+          <div className="flex items-center justify-center gap-2 mt-4 text-xs font-sans text-muted-foreground">
+            <span className="font-medium text-foreground">Prospects</span>
+            <span>/</span>
+            <span className="font-medium text-foreground">Submitted</span>
+            <span>/</span>
+            <span className="font-medium text-foreground">Presenting</span>
+            <span>/</span>
+            <span className="font-medium text-foreground">Sold</span>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
@@ -147,7 +156,7 @@ export default function PipelineTracker() {
                 </div>
                 <div>
                   <p className="text-2xl font-semibold font-sans">{stats.quotingCount}</p>
-                  <p className="text-xs text-muted-foreground font-sans">Quoting</p>
+                  <p className="text-xs text-muted-foreground font-sans">Submitted</p>
                 </div>
               </div>
             </CardContent>
