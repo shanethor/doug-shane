@@ -1726,16 +1726,16 @@ export default function Chat() {
           {isEmpty ? (
             <div className="flex flex-col items-center min-h-full gap-6 px-4 pt-[12vh]">
               {/* Sold stats cards */}
-              <div className="flex gap-4 justify-center">
-                <div className="flex items-center gap-2.5 rounded-xl border border-border bg-card px-5 py-3 shadow-sm">
-                  <DollarSign className="h-4 w-4 text-primary" />
-                  <span className="text-sm text-muted-foreground">Sold Premium</span>
-                  <span className="text-base font-semibold font-sans">${soldStats.premium.toLocaleString()}</span>
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 justify-center w-full max-w-md sm:max-w-none">
+                <div className="flex items-center gap-2.5 rounded-xl border border-border bg-card px-4 sm:px-5 py-2.5 sm:py-3 shadow-sm justify-center">
+                  <DollarSign className="h-4 w-4 text-primary shrink-0" />
+                  <span className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">Sold Premium</span>
+                  <span className="text-sm sm:text-base font-semibold font-sans truncate">${soldStats.premium.toLocaleString()}</span>
                 </div>
-                <div className="flex items-center gap-2.5 rounded-xl border border-border bg-card px-5 py-3 shadow-sm">
-                  <TrendingUp className="h-4 w-4 text-success" />
-                  <span className="text-sm text-muted-foreground">Sold Revenue</span>
-                  <span className="text-base font-semibold font-sans">${soldStats.revenue.toLocaleString()}</span>
+                <div className="flex items-center gap-2.5 rounded-xl border border-border bg-card px-4 sm:px-5 py-2.5 sm:py-3 shadow-sm justify-center">
+                  <TrendingUp className="h-4 w-4 text-success shrink-0" />
+                  <span className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">Sold Revenue</span>
+                  <span className="text-sm sm:text-base font-semibold font-sans truncate">${soldStats.revenue.toLocaleString()}</span>
                 </div>
               </div>
 

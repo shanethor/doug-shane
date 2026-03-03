@@ -5,19 +5,33 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Building2, ArrowRight, SkipForward } from "lucide-react";
+import { Building2, ArrowRight, SkipForward, User, Phone, Mail, FileText, CheckCircle2 } from "lucide-react";
 import auraLogo from "@/assets/aura-logo.png";
 
-const AGENCY_FIELDS = [
-  { key: "agency_name", label: "Agency Name", placeholder: "ABC Insurance Agency" },
-  { key: "agency_phone", label: "Agency Phone", placeholder: "(555) 123-4567" },
-  { key: "agency_fax", label: "Agency Fax", placeholder: "(555) 123-4568" },
-  { key: "agency_email", label: "Agency Email", placeholder: "info@agency.com" },
-  { key: "producer_name", label: "Producer Name", placeholder: "Jane Smith" },
-  { key: "producer_license_no", label: "Producer License No.", placeholder: "LIC-123456" },
-  { key: "from_email", label: "Send-From Email", placeholder: "submissions@agency.com" },
+const STEPS = [
+  {
+    title: "Agency Info",
+    subtitle: "Let's set up your agency basics",
+    icon: Building2,
+    fields: [
+      { key: "agency_name", label: "Agency Name", placeholder: "ABC Insurance Agency", icon: Building2 },
+      { key: "agency_phone", label: "Phone", placeholder: "(555) 123-4567", icon: Phone, type: "tel" },
+      { key: "agency_fax", label: "Fax (optional)", placeholder: "(555) 123-4568", icon: Phone, type: "tel" },
+      { key: "agency_email", label: "Agency Email", placeholder: "info@agency.com", icon: Mail, type: "email" },
+    ],
+  },
+  {
+    title: "Producer Details",
+    subtitle: "Your personal producer info",
+    icon: User,
+    fields: [
+      { key: "producer_name", label: "Your Name", placeholder: "Jane Smith", icon: User },
+      { key: "producer_license_no", label: "License No.", placeholder: "LIC-123456", icon: FileText },
+      { key: "from_email", label: "Send-From Email", placeholder: "submissions@agency.com", icon: Mail, type: "email" },
+    ],
+  },
 ];
 
 export default function Onboarding() {
@@ -25,6 +39,12 @@ export default function Onboarding() {
   const navigate = useNavigate();
   const [values, setValues] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+  const [step, setStep] = useState(0);
+
+  const currentStep = STEPS[step];
+  const isLast = step === STEPS.length - 1;
+  const filledCount = STEPS.flatMap((s) => s.fields).filter((f) => values[f.key]?.trim()).length;
+  const totalFields = STEPS.flatMap((s) => s.fields).length;
 
   const handleSave = async () => {
     if (!user) return;
@@ -34,7 +54,6 @@ export default function Onboarding() {
         Object.entries(values).filter(([, v]) => v.trim())
       );
 
-      // Update profile with agency name and form defaults
       const { error } = await supabase
         .from("profiles")
         .update({
@@ -56,54 +75,108 @@ export default function Onboarding() {
     }
   };
 
-  const handleSkip = () => {
-    navigate("/");
+  const handleNext = () => {
+    if (isLast) {
+      handleSave();
+    } else {
+      setStep((s) => s + 1);
+    }
+  };
+
+  const handleBack = () => {
+    if (step > 0) setStep((s) => s - 1);
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6 aura-subtle-mesh">
-      <div className="w-full max-w-lg">
-        <div className="flex items-center gap-3 mb-8">
-          <img src={auraLogo} alt="AURA" className="h-8" />
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 sm:p-6 aura-subtle-mesh">
+      <div className="w-full max-w-md">
+        {/* Logo */}
+        <div className="flex items-center gap-3 mb-6">
+          <img src={auraLogo} alt="AURA" className="h-7" />
         </div>
 
+        {/* Progress dots */}
+        <div className="flex items-center gap-2 mb-5">
+          {STEPS.map((_, i) => (
+            <div
+              key={i}
+              className={`h-1.5 flex-1 rounded-full transition-colors ${
+                i <= step ? "bg-primary" : "bg-muted"
+              }`}
+            />
+          ))}
+        </div>
+
+        {/* Step indicator */}
+        <p className="text-xs text-muted-foreground mb-1">
+          Step {step + 1} of {STEPS.length} · {filledCount}/{totalFields} fields filled
+        </p>
+
         <Card className="aura-glass">
-          <CardHeader>
-            <CardTitle className="text-2xl flex items-center gap-3">
-              <Building2 className="h-6 w-6 text-primary" />
-              Set up your agency
-            </CardTitle>
-            <p className="text-sm text-muted-foreground mt-1">
-              These details auto-fill on every ACORD form you generate. You can update them anytime in Settings.
-            </p>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {AGENCY_FIELDS.map((f) => (
+          <CardContent className="pt-6 pb-5 px-5">
+            {/* Step header */}
+            <div className="flex items-center gap-3 mb-1">
+              <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                <currentStep.icon className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold leading-tight">{currentStep.title}</h2>
+                <p className="text-xs text-muted-foreground">{currentStep.subtitle}</p>
+              </div>
+            </div>
+
+            {/* Fields */}
+            <div className="space-y-3 mt-5">
+              {currentStep.fields.map((f) => (
                 <div key={f.key} className="space-y-1">
                   <Label className="text-xs uppercase tracking-wider text-muted-foreground">
                     {f.label}
                   </Label>
-                  <Input
-                    value={values[f.key] || ""}
-                    onChange={(e) => setValues((prev) => ({ ...prev, [f.key]: e.target.value }))}
-                    placeholder={f.placeholder}
-                    className="h-10"
-                  />
+                  <div className="relative">
+                    <f.icon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                    <Input
+                      value={values[f.key] || ""}
+                      onChange={(e) =>
+                        setValues((prev) => ({ ...prev, [f.key]: e.target.value }))
+                      }
+                      placeholder={f.placeholder}
+                      type={(f as any).type || "text"}
+                      className="h-12 pl-10 text-base"
+                    />
+                    {values[f.key]?.trim() && (
+                      <CheckCircle2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-primary" />
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
 
-            <div className="flex items-center gap-3 pt-2">
-              <Button onClick={handleSave} disabled={saving} className="flex-1 gap-2">
-                {saving ? "Saving…" : "Save & Continue"}
+            {/* Navigation */}
+            <div className="flex items-center gap-3 mt-6">
+              {step > 0 && (
+                <Button variant="outline" onClick={handleBack} className="h-12 px-5">
+                  Back
+                </Button>
+              )}
+              <Button
+                onClick={handleNext}
+                disabled={saving}
+                className="flex-1 h-12 gap-2 text-base"
+              >
+                {saving ? "Saving…" : isLast ? "Save & Start" : "Next"}
                 <ArrowRight className="h-4 w-4" />
               </Button>
-              <Button variant="ghost" onClick={handleSkip} className="gap-2 text-muted-foreground">
-                <SkipForward className="h-4 w-4" />
-                Skip for now
-              </Button>
             </div>
+
+            {/* Skip */}
+            <Button
+              variant="ghost"
+              onClick={() => navigate("/")}
+              className="w-full mt-2 gap-2 text-muted-foreground h-11"
+            >
+              <SkipForward className="h-4 w-4" />
+              Skip for now
+            </Button>
           </CardContent>
         </Card>
       </div>
