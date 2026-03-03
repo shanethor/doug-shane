@@ -3,11 +3,21 @@ import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Users, DollarSign, TrendingUp, CheckCircle, BarChart3 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Users, DollarSign, TrendingUp, CheckCircle, BarChart3, CalendarDays } from "lucide-react";
+
+type TimePeriod = "all" | "month" | "quarter" | "year";
 
 export default function PipelineTracker() {
   const [searchParams] = useSearchParams();
   const userId = searchParams.get("uid");
+  const [period, setPeriod] = useState<TimePeriod>("all");
   const [stats, setStats] = useState({
     totalProspects: 0,
     quotingCount: 0,
@@ -22,7 +32,6 @@ export default function PipelineTracker() {
   const [agencyName, setAgencyName] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-
   const [userName, setUserName] = useState<string | null>(null);
 
   const loadStats = useCallback(async () => {
@@ -33,7 +42,7 @@ export default function PipelineTracker() {
     }
 
     const { data, error: fnError } = await supabase.functions.invoke("tracker-stats", {
-      body: { uid: userId },
+      body: { uid: userId, period },
     });
 
     if (fnError || !data?.stats) {
@@ -47,7 +56,7 @@ export default function PipelineTracker() {
     setUserName(data.full_name || null);
     setError(false);
     setLoading(false);
-  }, [userId]);
+  }, [userId, period]);
 
   // Live-update every 15 seconds
   useEffect(() => {
@@ -74,6 +83,13 @@ export default function PipelineTracker() {
 
   const fmt = (n: number) => "$" + n.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 
+  const PERIOD_LABELS: Record<TimePeriod, string> = {
+    all: "All Time",
+    month: "This Month",
+    quarter: "This Quarter",
+    year: "This Year",
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-4xl mx-auto px-6 py-12">
@@ -87,9 +103,25 @@ export default function PipelineTracker() {
               {userName}{agencyName && userName ? ` · ${agencyName}` : agencyName || ""}
             </p>
           )}
-          <Badge variant="outline" className="mt-3 text-[10px] uppercase tracking-wider font-sans">
-            Live · Updates every 15s
-          </Badge>
+          <div className="flex items-center justify-center gap-3 mt-3">
+            <Badge variant="outline" className="text-[10px] uppercase tracking-wider font-sans">
+              Live · Updates every 15s
+            </Badge>
+            <div className="flex items-center gap-1.5">
+              <CalendarDays className="h-3.5 w-3.5 text-muted-foreground" />
+              <Select value={period} onValueChange={(v) => setPeriod(v as TimePeriod)}>
+                <SelectTrigger className="w-[130px] h-7 text-[11px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="month">This Month</SelectItem>
+                  <SelectItem value="quarter">This Quarter</SelectItem>
+                  <SelectItem value="year">This Year</SelectItem>
+                  <SelectItem value="all">All Time</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">

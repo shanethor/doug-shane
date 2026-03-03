@@ -1,6 +1,13 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   BarChart,
   Bar,
@@ -19,6 +26,7 @@ import {
   Percent,
   Building2,
   BarChart3,
+  CalendarDays,
 } from "lucide-react";
 
 type Lead = {
@@ -38,6 +46,7 @@ type Policy = {
   lead_id: string;
   annual_premium: number;
   status: string;
+  created_at?: string;
 };
 
 type AuditEntry = {
@@ -47,10 +56,15 @@ type AuditEntry = {
   created_at: string;
 };
 
+export type TimePeriod = "all" | "month" | "quarter" | "year";
+
 interface PipelineAnalyticsProps {
   leads: Lead[];
   policies: Policy[];
   auditLog: AuditEntry[];
+  timePeriod?: TimePeriod;
+  onTimePeriodChange?: (period: TimePeriod) => void;
+  showPeriodFilter?: boolean;
 }
 
 const CHART_COLORS = [
@@ -73,25 +87,64 @@ const fmt = (n: number) =>
 
 const pct = (n: number) => (n * 100).toFixed(1) + "%";
 
+function getDateCutoff(period: TimePeriod): Date | null {
+  if (period === "all") return null;
+  const now = new Date();
+  if (period === "month") return new Date(now.getFullYear(), now.getMonth(), 1);
+  if (period === "quarter") {
+    const q = Math.floor(now.getMonth() / 3) * 3;
+    return new Date(now.getFullYear(), q, 1);
+  }
+  // year
+  return new Date(now.getFullYear(), 0, 1);
+}
+
+const PERIOD_LABELS: Record<TimePeriod, string> = {
+  all: "All Time",
+  month: "This Month",
+  quarter: "This Quarter",
+  year: "This Year",
+};
+
 export function PipelineAnalytics({
   leads,
   policies,
   auditLog,
+  timePeriod: externalPeriod,
+  onTimePeriodChange,
+  showPeriodFilter = true,
 }: PipelineAnalyticsProps) {
+  const [internalPeriod, setInternalPeriod] = useState<TimePeriod>("all");
+  const period = externalPeriod ?? internalPeriod;
+  const setPeriod = onTimePeriodChange ?? setInternalPeriod;
+
   const analytics = useMemo(() => {
-    const approvedPolicies = policies.filter((p) => p.status === "approved");
+    const cutoff = getDateCutoff(period);
+
+    // Filter leads/policies/audit by period
+    const filteredLeads = cutoff
+      ? leads.filter((l) => new Date(l.created_at) >= cutoff)
+      : leads;
+    const filteredPolicies = cutoff
+      ? policies.filter((p) => p.created_at ? new Date(p.created_at) >= cutoff : true)
+      : policies;
+    const filteredAudit = cutoff
+      ? auditLog.filter((e) => new Date(e.created_at) >= cutoff)
+      : auditLog;
+
+    const approvedPolicies = filteredPolicies.filter((p) => p.status === "approved");
     const approvedLeadIds = new Set(approvedPolicies.map((p) => p.lead_id));
 
     // --- Close Rate ---
     const totalClosed = approvedLeadIds.size;
-    const totalLost = leads.filter((l) => l.stage === "lost").length;
+    const totalLost = filteredLeads.filter((l) => l.stage === "lost").length;
     const totalDecided = totalClosed + totalLost;
     const closeRate = totalDecided > 0 ? totalClosed / totalDecided : 0;
     const winCount = totalClosed;
     const lossCount = totalLost;
 
     // --- Target vs Actual Premium ---
-    const leadsWithTarget = leads.filter(
+    const leadsWithTarget = filteredLeads.filter(
       (l) => (l.target_premium ?? 0) > 0 && approvedLeadIds.has(l.id)
     );
     let totalTargetPremium = 0;
@@ -104,20 +157,17 @@ export function PipelineAnalytics({
     const premiumAccuracy =
       totalTargetPremium > 0 ? totalActualPremium / totalTargetPremium : 0;
 
-    // Also compute overall premium stats
     const allSoldPremium = approvedPolicies.reduce(
       (s, p) => s + p.annual_premium,
       0
     );
-    const allTargetPremium = leads
+    const allTargetPremium = filteredLeads
       .filter((l) => (l.target_premium ?? 0) > 0)
       .reduce((s, l) => s + (l.target_premium || 0), 0);
 
     // --- Average Time at Each Stage ---
-    // Build stage transitions from audit log
     const stageEntries: Record<string, { stage: string; at: number }[]> = {};
-    // Sort audit log chronologically
-    const sorted = [...auditLog]
+    const sorted = [...filteredAudit]
       .filter((e) => e.action === "stage_move" || e.action === "create")
       .sort(
         (a, b) =>
@@ -146,8 +196,7 @@ export function PipelineAnalytics({
       presenting: [],
     };
 
-    // For leads with no audit trail, use created_at → updated_at as time in current stage
-    leads.forEach((lead) => {
+    filteredLeads.forEach((lead) => {
       const entries = stageEntries[lead.id];
       if (entries && entries.length > 1) {
         for (let i = 0; i < entries.length - 1; i++) {
@@ -165,7 +214,7 @@ export function PipelineAnalytics({
       if (durations.length > 0) {
         const avg =
           durations.reduce((s, d) => s + d, 0) / durations.length;
-        avgStageDays[stage] = avg / (1000 * 60 * 60 * 24); // convert ms to days
+        avgStageDays[stage] = avg / (1000 * 60 * 60 * 24);
       } else {
         avgStageDays[stage] = 0;
       }
@@ -177,7 +226,7 @@ export function PipelineAnalytics({
       { total: number; won: number; lost: number; premium: number; targetPremium: number }
     > = {};
 
-    leads.forEach((lead) => {
+    filteredLeads.forEach((lead) => {
       const biz = lead.business_type?.trim() || "Unknown";
       if (!industryMap[biz])
         industryMap[biz] = { total: 0, won: 0, lost: 0, premium: 0, targetPremium: 0 };
@@ -208,7 +257,7 @@ export function PipelineAnalytics({
 
     // --- Loss Reasons ---
     const lossReasons: Record<string, number> = {};
-    leads
+    filteredLeads
       .filter((l) => l.stage === "lost" && l.loss_reason)
       .forEach((l) => {
         const reason = l.loss_reason || "Unknown";
@@ -233,7 +282,7 @@ export function PipelineAnalytics({
       industryStats,
       lossReasonData,
     };
-  }, [leads, policies, auditLog]);
+  }, [leads, policies, auditLog, period]);
 
   const stageTimeData = [
     { stage: "Prospect", days: Number(analytics.avgStageDays.prospect.toFixed(1)) },
@@ -248,9 +297,27 @@ export function PipelineAnalytics({
 
   return (
     <div className="mt-10 space-y-6">
-      <div className="flex items-center gap-2">
-        <BarChart3 className="h-5 w-5 text-primary" />
-        <h2 className="text-2xl font-semibold">Pipeline Analytics</h2>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <BarChart3 className="h-5 w-5 text-primary" />
+          <h2 className="text-2xl font-semibold">Pipeline Analytics</h2>
+        </div>
+        {showPeriodFilter && (
+          <div className="flex items-center gap-2">
+            <CalendarDays className="h-4 w-4 text-muted-foreground" />
+            <Select value={period} onValueChange={(v) => setPeriod(v as TimePeriod)}>
+              <SelectTrigger className="w-[140px] h-8 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="month">This Month</SelectItem>
+                <SelectItem value="quarter">This Quarter</SelectItem>
+                <SelectItem value="year">This Year</SelectItem>
+                <SelectItem value="all">All Time</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
       </div>
 
       {/* Row 1: KPI Cards */}

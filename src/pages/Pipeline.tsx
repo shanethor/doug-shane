@@ -194,7 +194,7 @@ export default function Pipeline() {
       supabase.from("leads").select("*").eq("owner_user_id", user.id).order("updated_at", { ascending: false }),
       supabase.from("policies").select("lead_id").eq("status", "approved"),
       supabase.from("loss_run_requests").select("lead_id, status"),
-      supabase.from("policies").select("lead_id, annual_premium, revenue, status").eq("producer_user_id", user.id),
+      supabase.from("policies").select("lead_id, annual_premium, revenue, status, created_at").eq("producer_user_id", user.id),
       supabase.from("audit_log").select("object_id, action, metadata, created_at").eq("object_type", "lead").order("created_at", { ascending: true }).limit(1000),
     ]);
 
@@ -262,7 +262,7 @@ export default function Pipeline() {
       targetRevenue: targetPremium * 0.12,
     });
 
-    setAllPoliciesData(allPolicies.map((p: any) => ({ lead_id: p.lead_id, annual_premium: Number(p.annual_premium || 0), status: p.status })));
+    setAllPoliciesData(allPolicies.map((p: any) => ({ lead_id: p.lead_id, annual_premium: Number(p.annual_premium || 0), status: p.status, created_at: p.created_at })));
     
     // Build per-lead premium map for sold cards
     const premiumMap: Record<string, number[]> = {};
