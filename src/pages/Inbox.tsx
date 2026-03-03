@@ -107,7 +107,8 @@ export default function Inbox() {
     return () => clearInterval(t);
   }, []);
 
-  // Auto-sync emails every 5 minutes
+  // Auto-sync emails every 5 minutes — only triggers edge function;
+  // realtime INSERT/UPDATE handlers keep local state in sync without full replacement.
   const autoSyncEmails = useCallback(async () => {
     if (!user || emailConnections.length === 0) return;
     try {
@@ -118,13 +119,6 @@ export default function Inbox() {
           body: JSON.stringify({ action: "sync", provider: conn.provider }),
         });
       }
-      const { data } = await supabase
-        .from("synced_emails")
-        .select("id, from_address, from_name, to_addresses, subject, body_preview, body_html, is_read, received_at")
-        .eq("user_id", user.id)
-        .order("received_at", { ascending: false })
-        .limit(100);
-      if (data) setSyncedEmails(data as SyncedEmail[]);
       setLastSyncedAt(new Date());
     } catch {
       // silent background sync failure
@@ -150,6 +144,17 @@ export default function Inbox() {
         (payload) => {
           const updated = payload.new as Notification;
           setNotifications((prev) => prev.map((n) => n.id === updated.id ? updated : n));
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "synced_emails", filter: `user_id=eq.${user.id}` },
+        (payload) => {
+          setSyncedEmails((prev) => {
+            const ne = payload.new as SyncedEmail;
+            if (prev.some((e) => e.id === ne.id)) return prev;
+            return [ne, ...prev];
+          });
         }
       )
       .on(
