@@ -6,7 +6,7 @@ import { LayoutDashboard, LogOut, ShieldCheck, MessageCircle, GraduationCap, Git
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { useTrainingMode } from "@/hooks/useTrainingMode";
-import auraLogo from "@/assets/aura-logo.png";
+import { MobileBottomNav } from "@/components/MobileBottomNav";
 
 export function AppLayout({ children, onLogoClick }: { children: React.ReactNode; onLogoClick?: () => void }) {
   const { signOut } = useAuth();
@@ -31,7 +31,7 @@ export function AppLayout({ children, onLogoClick }: { children: React.ReactNode
   return (
     <div className="min-h-screen aura-subtle-mesh">
       <header className="border-b aura-glass animate-page-fade sticky top-0 z-40">
-        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
+        <div className="mx-auto flex h-14 md:h-14 max-w-6xl items-center justify-between px-4">
           {onLogoClick ? (
             <button onClick={onLogoClick} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
               <span className="text-lg font-bold tracking-tight">AURA</span>
@@ -44,7 +44,8 @@ export function AppLayout({ children, onLogoClick }: { children: React.ReactNode
             </Link>
           )}
 
-          <nav className="flex items-center gap-1">
+          {/* Desktop nav — hidden on mobile */}
+          <nav className="hidden md:flex items-center gap-1">
             {navItems.map((item) => (
               <Link key={item.to} to={item.to}>
                 <Button
@@ -86,9 +87,12 @@ export function AppLayout({ children, onLogoClick }: { children: React.ReactNode
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-4 py-8 animate-page-enter">
+      <main className="mx-auto max-w-6xl px-4 py-6 md:py-8 pb-24 md:pb-8 animate-page-enter">
         {children}
       </main>
+
+      {/* Mobile bottom tab bar */}
+      <MobileBottomNav />
     </div>
   );
 }

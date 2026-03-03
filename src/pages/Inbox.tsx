@@ -459,15 +459,15 @@ export default function Inbox() {
 
   return (
     <AppLayout>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div className="flex items-center gap-3">
-          <InboxIcon className="h-6 w-6 text-primary" />
-          <h1 className="text-3xl font-semibold tracking-tight">Inbox</h1>
+          <InboxIcon className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+          <h1 className="text-xl sm:text-3xl font-semibold tracking-tight">Inbox</h1>
           {unreadCount > 0 && (
             <Badge variant="default" className="text-xs">{unreadCount} new</Badge>
           )}
           {lastSyncedAt && (
-            <span className="text-[11px] text-muted-foreground ml-1">
+            <span className="text-[11px] text-muted-foreground ml-1 hidden sm:inline">
               Synced {formatDistanceToNow(lastSyncedAt, { addSuffix: true })}
             </span>
           )}
@@ -475,45 +475,47 @@ export default function Inbox() {
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={syncEmails} disabled={syncing} className="gap-1.5">
             <RefreshCw className={`h-3.5 w-3.5 ${syncing ? "animate-spin" : ""}`} />
-            {syncing ? "Syncing…" : "Sync Mail"}
+            <span className="hidden sm:inline">{syncing ? "Syncing…" : "Sync Mail"}</span>
           </Button>
           <Button variant="outline" size="sm" onClick={markAllRead} disabled={unreadCount === 0}>
-            <CheckCheck className="h-3.5 w-3.5 mr-1.5" />
-            Mark all read
+            <CheckCheck className="h-3.5 w-3.5 sm:mr-1.5" />
+            <span className="hidden sm:inline">Mark all read</span>
           </Button>
           <Button size="sm" onClick={() => setComposeOpen(true)} className="gap-1.5">
             <Sparkles className="h-3.5 w-3.5" />
-            Compose
+            <span className="hidden sm:inline">Compose</span>
           </Button>
         </div>
       </div>
 
       <Tabs value={tab} onValueChange={setTab}>
-        <TabsList className="mb-4">
-          <TabsTrigger value="all">All</TabsTrigger>
-          <TabsTrigger value="unread">Unread {unreadCount > 0 && `(${unreadCount})`}</TabsTrigger>
-          <TabsTrigger value="emails" className="relative">
-            <Mail className="h-3.5 w-3.5 mr-1" />
-            Emails
-            {(() => { const c = syncedEmails.filter(e => !e.is_read).length; return c > 0 ? <span className="absolute -top-1.5 -right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground px-1">{c}</span> : null; })()}
-          </TabsTrigger>
-          <TabsTrigger value="pipeline" className="relative">
-            Pipeline
-            {(() => { const c = notifications.filter(n => n.type === "pipeline" && !n.is_read).length; return c > 0 ? <span className="absolute -top-1.5 -right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground px-1">{c}</span> : null; })()}
-          </TabsTrigger>
-          <TabsTrigger value="loss_run" className="relative">
-            Loss Runs
-            {(() => { const c = notifications.filter(n => n.type === "loss_run" && !n.is_read).length; return c > 0 ? <span className="absolute -top-1.5 -right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground px-1">{c}</span> : null; })()}
-          </TabsTrigger>
-          <TabsTrigger value="intake" className="relative">
-            Intake
-            {(() => { const c = notifications.filter(n => n.type === "intake" && !n.is_read).length; return c > 0 ? <span className="absolute -top-1.5 -right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground px-1">{c}</span> : null; })()}
-          </TabsTrigger>
-          <TabsTrigger value="document" className="relative">
-            Documents
-            {(() => { const c = notifications.filter(n => n.type === "document" && !n.is_read).length; return c > 0 ? <span className="absolute -top-1.5 -right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground px-1">{c}</span> : null; })()}
-          </TabsTrigger>
-        </TabsList>
+        <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0 scrollbar-hide mb-4">
+          <TabsList className="inline-flex w-auto min-w-max">
+            <TabsTrigger value="all">All</TabsTrigger>
+            <TabsTrigger value="unread">Unread {unreadCount > 0 && `(${unreadCount})`}</TabsTrigger>
+            <TabsTrigger value="emails" className="relative">
+              <Mail className="h-3.5 w-3.5 mr-1" />
+              Emails
+              {(() => { const c = syncedEmails.filter(e => !e.is_read).length; return c > 0 ? <span className="absolute -top-1.5 -right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground px-1">{c}</span> : null; })()}
+            </TabsTrigger>
+            <TabsTrigger value="pipeline" className="relative">
+              Pipeline
+              {(() => { const c = notifications.filter(n => n.type === "pipeline" && !n.is_read).length; return c > 0 ? <span className="absolute -top-1.5 -right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground px-1">{c}</span> : null; })()}
+            </TabsTrigger>
+            <TabsTrigger value="loss_run" className="relative">
+              Loss Runs
+              {(() => { const c = notifications.filter(n => n.type === "loss_run" && !n.is_read).length; return c > 0 ? <span className="absolute -top-1.5 -right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground px-1">{c}</span> : null; })()}
+            </TabsTrigger>
+            <TabsTrigger value="intake" className="relative">
+              Intake
+              {(() => { const c = notifications.filter(n => n.type === "intake" && !n.is_read).length; return c > 0 ? <span className="absolute -top-1.5 -right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground px-1">{c}</span> : null; })()}
+            </TabsTrigger>
+            <TabsTrigger value="document" className="relative">
+              Documents
+              {(() => { const c = notifications.filter(n => n.type === "document" && !n.is_read).length; return c > 0 ? <span className="absolute -top-1.5 -right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground px-1">{c}</span> : null; })()}
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value={tab}>
           <ScrollArea className="h-[calc(100vh-280px)]">
