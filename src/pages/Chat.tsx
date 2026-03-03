@@ -2505,8 +2505,8 @@ export default function Chat() {
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
                   placeholder="Ask me anything about your clients..."
-                  rows={2}
-                  className="flex-1 resize-none bg-transparent border-0 outline-none text-sm placeholder:text-muted-foreground min-h-[52px] max-h-40 py-2"
+                     rows={3}
+                   className="flex-1 resize-none bg-transparent border-0 outline-none text-sm placeholder:text-muted-foreground min-h-[72px] max-h-48 py-2"
                 />
                 <Button
                   variant={voice.isListening ? "destructive" : "ghost"}
