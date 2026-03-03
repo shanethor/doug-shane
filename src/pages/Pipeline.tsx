@@ -761,39 +761,42 @@ export default function Pipeline() {
   return (
     <AppLayout>
       {/* Command Center Stats Bar */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-9 gap-3 mb-6">
-        {[
-          { icon: Users, color: "text-primary", value: pipelineStats.totalProspects, label: "Leads", border: "" },
-          { icon: Users, color: "text-primary", value: pipelineStats.quotingCount, label: "Quoting", border: "" },
-          { icon: Users, color: "text-accent", value: pipelineStats.presentingCount, label: "Presenting", border: "" },
-          { icon: DollarSign, color: "text-primary", value: fmt(pipelineStats.targetPremium), label: "Target Premium", border: "border-primary/20" },
-          { icon: TrendingUp, color: "text-primary", value: fmt(pipelineStats.targetRevenue), label: "Target Revenue", border: "border-primary/20" },
-          { icon: DollarSign, color: "text-accent", value: fmt(pipelineStats.presentingPremium), label: "Quoted Premium", border: "" },
-          { icon: TrendingUp, color: "text-accent", value: fmt(pipelineStats.presentingRevenue), label: "Quoted Revenue", border: "" },
-          { icon: CheckCircle, color: "text-success", value: fmt(pipelineStats.totalPremiumSold), label: "Premium Sold", border: "border-success/30" },
-          { icon: TrendingUp, color: "text-success", value: fmt(pipelineStats.totalRevenueSold), label: "Revenue Sold", border: "border-success/30" },
-        ].map((s, i) => (
-          <Card key={i} className={s.border}>
-            <CardContent className="p-3 flex items-center gap-2 overflow-hidden">
-              <s.icon className={`h-4 w-4 ${s.color} shrink-0`} />
-              <div className="min-w-0">
-                <p className="text-lg font-semibold font-sans leading-tight truncate">{s.value}</p>
-                <p className="text-[10px] text-muted-foreground font-sans truncate">{s.label}</p>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+      {/* Stats bar — horizontally scrollable on mobile */}
+      <div className="overflow-x-auto -mx-4 px-4 mb-6 scrollbar-hide">
+        <div className="flex md:grid md:grid-cols-9 gap-3 min-w-max md:min-w-0">
+          {[
+            { icon: Users, color: "text-primary", value: pipelineStats.totalProspects, label: "Leads", border: "" },
+            { icon: Users, color: "text-primary", value: pipelineStats.quotingCount, label: "Quoting", border: "" },
+            { icon: Users, color: "text-accent", value: pipelineStats.presentingCount, label: "Presenting", border: "" },
+            { icon: DollarSign, color: "text-primary", value: fmt(pipelineStats.targetPremium), label: "Target Premium", border: "border-primary/20" },
+            { icon: TrendingUp, color: "text-primary", value: fmt(pipelineStats.targetRevenue), label: "Target Revenue", border: "border-primary/20" },
+            { icon: DollarSign, color: "text-accent", value: fmt(pipelineStats.presentingPremium), label: "Quoted Premium", border: "" },
+            { icon: TrendingUp, color: "text-accent", value: fmt(pipelineStats.presentingRevenue), label: "Quoted Revenue", border: "" },
+            { icon: CheckCircle, color: "text-success", value: fmt(pipelineStats.totalPremiumSold), label: "Premium Sold", border: "border-success/30" },
+            { icon: TrendingUp, color: "text-success", value: fmt(pipelineStats.totalRevenueSold), label: "Revenue Sold", border: "border-success/30" },
+          ].map((s, i) => (
+            <Card key={i} className={`${s.border} min-w-[120px] md:min-w-0`}>
+              <CardContent className="p-3 flex items-center gap-2 overflow-hidden">
+                <s.icon className={`h-4 w-4 ${s.color} shrink-0`} />
+                <div className="min-w-0">
+                  <p className="text-lg font-semibold font-sans leading-tight truncate">{s.value}</p>
+                  <p className="text-[10px] text-muted-foreground font-sans truncate">{s.label}</p>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       </div>
 
-      <div className="flex items-end justify-between mb-6">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
           <div>
-            <h1 className="text-4xl">Pipeline</h1>
-            <p className="text-muted-foreground font-sans text-sm mt-1">
-              {filtered.length} lead{filtered.length !== 1 ? "s" : ""} — drag between stages to manage your pipeline.
+            <h1 className="text-2xl sm:text-4xl">Pipeline</h1>
+            <p className="text-muted-foreground font-sans text-xs sm:text-sm mt-1">
+              {filtered.length} lead{filtered.length !== 1 ? "s" : ""} — {typeof window !== "undefined" && window.innerWidth < 768 ? "tap to manage" : "drag between stages to manage your pipeline"}.
             </p>
           </div>
-          <div className="flex items-center rounded-lg border bg-muted/50 p-0.5 ml-4">
+          <div className="flex items-center rounded-lg border bg-muted/50 p-0.5">
             <button
               onClick={() => setPipelineView("commercial")}
               className={`px-3 py-1.5 rounded-md text-xs font-sans font-medium transition-colors ${
@@ -1055,9 +1058,10 @@ export default function Pipeline() {
 
       {/* Kanban Board with drag-and-drop */}
       <TooltipProvider delayDuration={200}>
-      <div className="grid grid-cols-4 gap-3 min-h-[60vh]">
+      <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0 scrollbar-hide">
+      <div className="flex md:grid md:grid-cols-4 gap-3 min-h-[60vh] min-w-max md:min-w-0">
         {columns.map((stage) => (
-          <div key={stage} className="flex flex-col">
+          <div key={stage} className="flex flex-col w-[280px] md:w-auto shrink-0 md:shrink">
             <div className="flex items-center gap-2 mb-3">
               <Badge variant="outline" className={`text-[10px] uppercase tracking-wider font-sans ${STAGE_COLORS[stage]}`}>
                 {STAGE_LABELS[stage]}
@@ -1237,6 +1241,7 @@ export default function Pipeline() {
             </div>
           </div>
         ))}
+      </div>
       </div>
 
       {/* Lost Row — horizontal drop zone below main columns */}

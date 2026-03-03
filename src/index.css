@@ -266,3 +266,17 @@
   transform: translateY(-2px);
   box-shadow: 0 8px 25px -8px hsl(var(--aura-navy) / 0.1), 0 4px 12px -4px hsl(var(--aura-glow) / 0.06);
 }
+
+/* Hide scrollbar but allow scroll */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Safe area for bottom nav on notched devices */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
