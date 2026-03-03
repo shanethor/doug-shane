@@ -70,7 +70,7 @@ export default function ProducerDashboard() {
         .eq("producer_user_id", user.id),
       supabase
         .from("leads")
-        .select("id")
+        .select("id, stage")
         .eq("owner_user_id", user.id),
     ]);
 
@@ -106,7 +106,10 @@ export default function ProducerDashboard() {
       totalPremium: approvedInRange.reduce((s: number, p: any) => s + Number(p.annual_premium), 0),
       totalRevenue: approvedInRange.reduce((s: number, p: any) => s + Number(p.revenue), 0),
       pendingPolicies: allPolicies.filter((p: any) => p.status === "pending").length,
-      totalLeads: leadsRes.data?.length ?? 0,
+      totalLeads: (leadsRes.data ?? []).filter((l: any) => {
+        const isSold = allPolicies.some((p: any) => p.lead_id === l.id && p.status === "approved");
+        return !isSold && l.stage !== "lost";
+      }).length,
     });
     setLoading(false);
   };
