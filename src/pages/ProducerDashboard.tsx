@@ -4,18 +4,42 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { AppLayout } from "@/components/AppLayout";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { DollarSign, FileText, TrendingUp, CheckCircle } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { DollarSign, FileText, TrendingUp, CheckCircle, CalendarDays } from "lucide-react";
 import { format } from "date-fns";
+
+type TimePeriod = "month" | "quarter" | "year" | "all";
+
+function getDateRange(period: TimePeriod): { start: string; end: string } {
+  const now = new Date();
+  const end = now.toISOString().split("T")[0];
+  if (period === "month") {
+    return { start: new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0], end };
+  }
+  if (period === "quarter") {
+    const q = Math.floor(now.getMonth() / 3) * 3;
+    return { start: new Date(now.getFullYear(), q, 1).toISOString().split("T")[0], end };
+  }
+  if (period === "year") {
+    return { start: new Date(now.getFullYear(), 0, 1).toISOString().split("T")[0], end };
+  }
+  return { start: "2000-01-01", end };
+}
 
 export default function ProducerDashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [policies, setPolicies] = useState<any[]>([]);
   const [leadNames, setLeadNames] = useState<Record<string, string>>({});
+  const [period, setPeriod] = useState<TimePeriod>("year");
   const [stats, setStats] = useState({
     totalPolicies: 0,
     approvedPolicies: 0,
@@ -24,10 +48,6 @@ export default function ProducerDashboard() {
     pendingPolicies: 0,
     totalLeads: 0,
   });
-  const [dateRange, setDateRange] = useState({
-    start: new Date(new Date().getFullYear(), 0, 1).toISOString().split("T")[0],
-    end: new Date().toISOString().split("T")[0],
-  });
   const [loading, setLoading] = useState(true);
   const mountedRef = useRef(true);
   useEffect(() => { return () => { mountedRef.current = false; }; }, []);
@@ -35,11 +55,13 @@ export default function ProducerDashboard() {
   useEffect(() => {
     if (!user) return;
     loadStats();
-  }, [user, dateRange]);
+  }, [user, period]);
 
   const loadStats = async () => {
     if (!user) return;
     setLoading(true);
+
+    const dateRange = getDateRange(period);
 
     const [policiesRes, leadsRes] = await Promise.all([
       supabase
@@ -91,28 +113,24 @@ export default function ProducerDashboard() {
 
   return (
     <AppLayout>
-      <h1 className="text-4xl mb-2">My Dashboard</h1>
-      <p className="text-muted-foreground font-sans text-sm mb-6">Production stats for approved policies.</p>
-
-      {/* Date range filter */}
-      <div className="flex gap-3 mb-6 items-end">
+      <div className="flex items-center justify-between mb-6">
         <div>
-          <Label className="text-xs">Start Date</Label>
-          <Input
-            type="date"
-            value={dateRange.start}
-            onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
-            className="w-[160px] h-9"
-          />
+          <h1 className="text-4xl mb-1">My Dashboard</h1>
+          <p className="text-muted-foreground font-sans text-sm">Production stats for approved policies.</p>
         </div>
-        <div>
-          <Label className="text-xs">End Date</Label>
-          <Input
-            type="date"
-            value={dateRange.end}
-            onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })}
-            className="w-[160px] h-9"
-          />
+        <div className="flex items-center gap-2">
+          <CalendarDays className="h-4 w-4 text-muted-foreground" />
+          <Select value={period} onValueChange={(v) => setPeriod(v as TimePeriod)}>
+            <SelectTrigger className="w-[140px] h-8 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="month">This Month</SelectItem>
+              <SelectItem value="quarter">This Quarter</SelectItem>
+              <SelectItem value="year">This Year</SelectItem>
+              <SelectItem value="all">All Time</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
