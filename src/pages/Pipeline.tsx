@@ -283,6 +283,8 @@ export default function Pipeline() {
     setLoading(false);
   }, [user]);
 
+  const { containerRef: pullRef, PullIndicator } = usePullToRefresh({ onRefresh: loadLeads });
+
   useEffect(() => {
     loadLeads();
     const interval = setInterval(loadLeads, 30000);
@@ -765,7 +767,6 @@ export default function Pipeline() {
 
   const fmt = (n: number) => "$" + n.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 
-  const { containerRef: pullRef, PullIndicator } = usePullToRefresh({ onRefresh: loadLeads });
 
   return (
     <AppLayout>
