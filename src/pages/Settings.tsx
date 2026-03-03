@@ -189,40 +189,40 @@ export default function Settings() {
 
   return (
     <AppLayout>
-      <h1 className="text-4xl mb-6">Settings</h1>
+      <h1 className="text-2xl sm:text-4xl mb-6">Settings</h1>
 
       {/* Account Info */}
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
+      <Card className="mb-4 sm:mb-6">
+        <CardHeader className="p-4 sm:p-6 pb-2 sm:pb-2">
+          <CardTitle className="text-base sm:text-lg flex items-center gap-2">
             <User className="h-4 w-4 text-primary" />
             Account
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex items-center gap-3">
-            <Label className="text-xs uppercase tracking-wider text-muted-foreground w-32">Email</Label>
+        <CardContent className="p-4 sm:p-6 pt-2 sm:pt-2 space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+            <Label className="text-xs uppercase tracking-wider text-muted-foreground sm:w-32">Email</Label>
             <div className="flex items-center gap-2">
               <Mail className="h-3.5 w-3.5 text-muted-foreground" />
-              <span className="text-sm">{user?.email}</span>
+              <span className="text-sm truncate">{user?.email}</span>
               <Badge variant="outline" className="text-[10px]">Verified</Badge>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <Label className="text-xs uppercase tracking-wider text-muted-foreground w-32">User ID</Label>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+            <Label className="text-xs uppercase tracking-wider text-muted-foreground sm:w-32">User ID</Label>
             <span className="text-xs text-muted-foreground font-mono">{user?.id?.slice(0, 12)}…</span>
           </div>
-          <div className="flex items-center gap-3">
-            <Label className="text-xs uppercase tracking-wider text-muted-foreground w-32">Member Since</Label>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+            <Label className="text-xs uppercase tracking-wider text-muted-foreground sm:w-32">Member Since</Label>
             <span className="text-sm">{user?.created_at ? new Date(user.created_at).toLocaleDateString() : "—"}</span>
           </div>
         </CardContent>
       </Card>
 
       {/* Agency Info */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
+      <Card className="mb-4 sm:mb-6">
+        <CardHeader className="p-4 sm:p-6 pb-2 sm:pb-2">
+          <CardTitle className="text-base sm:text-lg flex items-center gap-2">
             <Building2 className="h-4 w-4 text-primary" />
             Agency Information
           </CardTitle>
@@ -230,7 +230,7 @@ export default function Settings() {
             These details auto-fill on every ACORD form you generate.
           </p>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="p-4 sm:p-6 pt-2 sm:pt-2 space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {AGENCY_FIELDS.map((f) => (
               <div key={f.key} className="space-y-1">
@@ -241,7 +241,7 @@ export default function Settings() {
                   value={values[f.key] || ""}
                   onChange={(e) => setValues((prev) => ({ ...prev, [f.key]: e.target.value }))}
                   placeholder={f.placeholder}
-                  className="h-10"
+                  className="h-11 sm:h-10"
                 />
               </div>
             ))}
@@ -249,7 +249,7 @@ export default function Settings() {
 
           <Separator />
 
-          <Button onClick={handleSave} disabled={saving} className="gap-2">
+          <Button onClick={handleSave} disabled={saving} className="gap-2 w-full sm:w-auto h-11 sm:h-10">
             <Save className="h-4 w-4" />
             {saving ? "Saving…" : "Save Changes"}
           </Button>
@@ -257,28 +257,28 @@ export default function Settings() {
       </Card>
 
       {/* Email Connections */}
-      <Card className="mt-6" id="email-accounts-section">
-        <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
+      <Card className="mb-4 sm:mb-6" id="email-accounts-section">
+        <CardHeader className="p-4 sm:p-6 pb-2 sm:pb-2">
+          <CardTitle className="text-base sm:text-lg flex items-center gap-2">
             <Mail className="h-4 w-4 text-accent" />
             Email Accounts
           </CardTitle>
           <p className="text-xs text-muted-foreground mt-1">
-            Connect your Gmail or Outlook account to send emails from your own address and sync your inbox with AURA.
+            Connect your Gmail or Outlook account to send emails and sync your inbox.
           </p>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="p-4 sm:p-6 pt-2 sm:pt-2 space-y-3">
           {/* Gmail */}
-          <div className="flex items-center justify-between rounded-lg border p-4">
-            <div className="flex items-center gap-3">
-              <div className="h-9 w-9 rounded-lg bg-destructive/10 flex items-center justify-center">
+          <div className="flex items-center justify-between rounded-lg border p-3 sm:p-4 min-h-[56px]">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="h-9 w-9 rounded-lg bg-destructive/10 flex items-center justify-center shrink-0">
                 <Mail className="h-4 w-4 text-destructive" />
               </div>
-              <div>
+              <div className="min-w-0">
                 <p className="text-sm font-medium">Gmail</p>
                 {gmailConn ? (
-                  <p className="text-xs text-muted-foreground flex items-center gap-1">
-                    <CheckCircle className="h-3 w-3 text-primary" />
+                  <p className="text-xs text-muted-foreground flex items-center gap-1 truncate">
+                    <CheckCircle className="h-3 w-3 text-primary shrink-0" />
                     {gmailConn.email_address}
                   </p>
                 ) : (
@@ -287,12 +287,12 @@ export default function Settings() {
               </div>
             </div>
             {gmailConn ? (
-              <Button variant="outline" size="sm" onClick={() => disconnectEmail("gmail")} className="gap-1.5">
+              <Button variant="outline" size="sm" onClick={() => disconnectEmail("gmail")} className="gap-1.5 shrink-0 h-9">
                 <Unlink className="h-3.5 w-3.5" />
-                Disconnect
+                <span className="hidden sm:inline">Disconnect</span>
               </Button>
             ) : (
-              <Button size="sm" onClick={() => connectEmail("gmail")} disabled={connectingProvider === "gmail"} className="gap-1.5">
+              <Button size="sm" onClick={() => connectEmail("gmail")} disabled={connectingProvider === "gmail"} className="gap-1.5 shrink-0 h-9">
                 {connectingProvider === "gmail" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Link2 className="h-3.5 w-3.5" />}
                 Connect
               </Button>
@@ -300,16 +300,16 @@ export default function Settings() {
           </div>
 
           {/* Outlook */}
-          <div className="flex items-center justify-between rounded-lg border p-4">
-            <div className="flex items-center gap-3">
-              <div className="h-9 w-9 rounded-lg bg-accent/10 flex items-center justify-center">
+          <div className="flex items-center justify-between rounded-lg border p-3 sm:p-4 min-h-[56px]">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="h-9 w-9 rounded-lg bg-accent/10 flex items-center justify-center shrink-0">
                 <Mail className="h-4 w-4 text-accent" />
               </div>
-              <div>
+              <div className="min-w-0">
                 <p className="text-sm font-medium">Outlook / Microsoft 365</p>
                 {outlookConn ? (
-                  <p className="text-xs text-muted-foreground flex items-center gap-1">
-                    <CheckCircle className="h-3 w-3 text-primary" />
+                  <p className="text-xs text-muted-foreground flex items-center gap-1 truncate">
+                    <CheckCircle className="h-3 w-3 text-primary shrink-0" />
                     {outlookConn.email_address}
                   </p>
                 ) : (
@@ -318,12 +318,12 @@ export default function Settings() {
               </div>
             </div>
             {outlookConn ? (
-              <Button variant="outline" size="sm" onClick={() => disconnectEmail("outlook")} className="gap-1.5">
+              <Button variant="outline" size="sm" onClick={() => disconnectEmail("outlook")} className="gap-1.5 shrink-0 h-9">
                 <Unlink className="h-3.5 w-3.5" />
-                Disconnect
+                <span className="hidden sm:inline">Disconnect</span>
               </Button>
             ) : (
-              <Button size="sm" onClick={() => connectEmail("outlook")} disabled={connectingProvider === "outlook"} className="gap-1.5">
+              <Button size="sm" onClick={() => connectEmail("outlook")} disabled={connectingProvider === "outlook"} className="gap-1.5 shrink-0 h-9">
                 {connectingProvider === "outlook" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Link2 className="h-3.5 w-3.5" />}
                 Connect
               </Button>
@@ -340,21 +340,21 @@ export default function Settings() {
       </Card>
 
       {/* AI & Email Settings */}
-      <Card className="mt-6">
-        <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
+      <Card>
+        <CardHeader className="p-4 sm:p-6 pb-2 sm:pb-2">
+          <CardTitle className="text-base sm:text-lg flex items-center gap-2">
             <BrainCircuit className="h-4 w-4 text-accent" />
             AI & Email
           </CardTitle>
           <p className="text-xs text-muted-foreground mt-1">
-            Configure which AI provider drafts your emails and notes. The built-in AURA AI works out of the box — or connect your own OpenAI API key to use your GPT with its memory.
+            Configure which AI provider drafts your emails and notes.
           </p>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="p-4 sm:p-6 pt-2 sm:pt-2 space-y-4">
           <div className="space-y-1">
             <Label className="text-xs uppercase tracking-wider text-muted-foreground">AI Provider</Label>
             <Select value={aiProvider} onValueChange={setAiProvider}>
-              <SelectTrigger className="w-64 h-10">
+              <SelectTrigger className="w-full sm:w-64 h-11 sm:h-10">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -365,7 +365,7 @@ export default function Settings() {
           </div>
 
           {aiProvider === "openai" && (
-            <div className="space-y-2 rounded-lg border border-dashed border-accent/30 bg-accent/5 p-4">
+            <div className="space-y-2 rounded-lg border border-dashed border-accent/30 bg-accent/5 p-3 sm:p-4">
               <div className="flex items-center gap-2">
                 <Label className="text-xs uppercase tracking-wider text-muted-foreground">OpenAI API Key</Label>
                 <Tooltip>
@@ -390,13 +390,13 @@ export default function Settings() {
                   value={openaiKey}
                   onChange={(e) => setOpenaiKey(e.target.value)}
                   placeholder="sk-..."
-                  className="h-10 pr-10 font-mono text-xs"
+                  className="h-11 sm:h-10 pr-10 font-mono text-xs"
                 />
                 <Button
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className="absolute right-1 top-1 h-8 w-8 p-0"
+                  className="absolute right-1 top-1.5 sm:top-1 h-8 w-8 p-0"
                   onClick={() => setShowKey(!showKey)}
                 >
                   {showKey ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
@@ -409,7 +409,7 @@ export default function Settings() {
           )}
 
           <Separator />
-          <Button onClick={handleSave} disabled={saving} className="gap-2">
+          <Button onClick={handleSave} disabled={saving} className="gap-2 w-full sm:w-auto h-11 sm:h-10">
             <Save className="h-4 w-4" />
             {saving ? "Saving…" : "Save Changes"}
           </Button>
