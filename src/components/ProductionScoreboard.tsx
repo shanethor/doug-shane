@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Target, Trophy, Sparkles } from "lucide-react";
 import { useCountdown } from "@/hooks/useCountdown";
-import { LineChart, Line, ResponsiveContainer, Tooltip, XAxis } from "recharts";
+import { BarChart, Bar, ResponsiveContainer, Tooltip, XAxis } from "recharts";
 
 type Props = {
   userId: string;
@@ -28,7 +28,7 @@ const rawPct = (value: number, goal: number) =>
   goal > 0 ? (value / goal) * 100 : 0;
 
 const pctLabel = (value: number, goal: number) =>
-  goal > 0 ? ((value / goal) * 100).toFixed(1).replace(/\.0$/, "") + "%" : "—";
+  goal > 0 ? ((value / goal) * 100).toFixed(1).replace(/\.0$/, "") + "% complete" : "—";
 
 /* ─── Countdown display sub-component ─── */
 function CountdownLine({ label, targetDate }: { label: string; targetDate: Date }) {
@@ -58,25 +58,25 @@ function GoalExceeded({ percent }: { percent: number }) {
   );
 }
 
-/* ─── Revenue Sparkline ─── */
-function RevenueSparkline({ data, color }: { data: { name: string; rev: number }[]; color: string }) {
+/* ─── Revenue Bar Chart ─── */
+function RevenueChart({ data, color }: { data: { name: string; rev: number }[]; color: string }) {
   if (!data.length) {
     return <p className="text-[10px] text-muted-foreground font-sans italic">No revenue data yet</p>;
   }
   return (
     <div className="mt-1">
       <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-sans font-medium mb-0.5">Revenue</p>
-      <div className="h-10 w-full">
+      <div className="h-12 w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={data}>
-            <XAxis dataKey="name" hide />
+          <BarChart data={data}>
+            <XAxis dataKey="name" tick={{ fontSize: 8 }} tickLine={false} axisLine={false} />
             <Tooltip
               contentStyle={{ fontSize: 10, padding: "2px 6px", borderRadius: 6, background: "hsl(var(--card))", border: "1px solid hsl(var(--border))" }}
               formatter={(v: number) => [fmt(v), "Revenue"]}
               labelStyle={{ fontSize: 9, color: "hsl(var(--muted-foreground))" }}
             />
-            <Line type="monotone" dataKey="rev" stroke={color} strokeWidth={1.5} dot={false} />
-          </LineChart>
+            <Bar dataKey="rev" fill={color} radius={[2, 2, 0, 0]} />
+          </BarChart>
         </ResponsiveContainer>
       </div>
     </div>
@@ -246,7 +246,12 @@ export function ProductionScoreboard({ userId, premiumSold, revenueSold }: Props
 
   const remainingPrem = Math.max(0, annualPrem - premiumSold);
   const remainingRev = Math.max(0, annualRev - revenueSold);
-  const dailyPrem = daysLeftInYear > 0 ? remainingPrem / daysLeftInYear : 0;
+  const dailyPremYear = daysLeftInYear > 0 ? remainingPrem / daysLeftInYear : 0;
+
+  // Monthly daily needed
+  const daysLeftInMonth = Math.max(1, Math.ceil((endOfMonth.getTime() - now.getTime()) / 86400000));
+  const remainingMonthlyPrem = Math.max(0, monthlyPrem - premiumSold);
+  const dailyPremMonth = remainingMonthlyPrem / daysLeftInMonth;
 
   // Monthly premium stats
   const monthPercent = pct(premiumSold, monthlyPrem);
@@ -283,7 +288,7 @@ export function ProductionScoreboard({ userId, premiumSold, revenueSold }: Props
               {fmt(premiumSold)}
             </p>
             <p className="text-[10px] sm:text-[11px] text-muted-foreground font-sans leading-none">
-              of {fmt(monthlyPrem)} · {pctLabel(premiumSold, monthlyPrem)}
+              {fmt(dailyPremMonth)}/day needed · {pctLabel(premiumSold, monthlyPrem)}
             </p>
             <div className="w-full h-1 rounded-full bg-muted overflow-hidden">
               <div
@@ -295,7 +300,7 @@ export function ProductionScoreboard({ userId, premiumSold, revenueSold }: Props
             {!monthExceeded && <CountdownLine label="Month ends in" targetDate={endOfMonth} />}
 
             {/* Revenue sparkline */}
-            <RevenueSparkline data={monthlyRevData} color="hsl(var(--primary))" />
+            <RevenueChart data={monthlyRevData} color="hsl(var(--primary))" />
           </div>
 
           {/* ── RIGHT: Yearly ── */}
@@ -307,7 +312,7 @@ export function ProductionScoreboard({ userId, premiumSold, revenueSold }: Props
               {fmt(premiumSold)}
             </p>
             <p className="text-[10px] sm:text-[11px] text-muted-foreground font-sans leading-none">
-              {fmt(dailyPrem)}/day needed · {pctLabel(premiumSold, annualPrem)}
+              {fmt(dailyPremYear)}/day needed · {pctLabel(premiumSold, annualPrem)}
             </p>
             <div className="w-full h-1 rounded-full bg-muted overflow-hidden">
               <div
@@ -319,7 +324,7 @@ export function ProductionScoreboard({ userId, premiumSold, revenueSold }: Props
             {!yearExceeded && <CountdownLine label="Year ends in" targetDate={endOfYear} />}
 
             {/* Revenue sparkline */}
-            <RevenueSparkline data={yearlyRevData} color="hsl(var(--primary))" />
+            <RevenueChart data={yearlyRevData} color="hsl(var(--primary))" />
           </div>
         </div>
       </div>
