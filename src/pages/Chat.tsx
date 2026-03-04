@@ -333,6 +333,7 @@ export default function Chat() {
   const [soldStats, setSoldStats] = useState({ premium: 0, revenue: 0 });
   const [showPersonalIntakeDialog, setShowPersonalIntakeDialog] = useState(false);
   const [personalIntakeLoading, setPersonalIntakeLoading] = useState(false);
+  const [personalIntakeLink, setPersonalIntakeLink] = useState<string | null>(null);
   const mountedRef = useRef(true);
   useEffect(() => {
     return () => {
@@ -912,36 +913,38 @@ export default function Chat() {
       const result = await generatePersonalIntakeLink({
         agentId: user.id,
         deliveryEmails,
-        clientEmail: config.clientEmail,
+        clientEmail: config.clientEmail || undefined,
         ccProducer: config.ccProducer,
       });
       if (!result) throw new Error("Link generation returned null");
 
-      // Send the intake link to the client via email
-      try {
-        const headers = await getAuthHeaders();
-        await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-intake-link-email`, {
-          method: "POST",
-          headers,
-          body: JSON.stringify({ token: result.token, clientEmail: config.clientEmail, agentId: user.id }),
-        });
-      } catch (emailErr) {
-        console.warn("Failed to send intake link email:", emailErr);
+      // Store the generated link for the dialog copy feature
+      setPersonalIntakeLink(result.url);
+
+      // Only send email if client email was provided
+      if (config.clientEmail) {
+        try {
+          const headers = await getAuthHeaders();
+          await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-intake-link-email`, {
+            method: "POST",
+            headers,
+            body: JSON.stringify({ token: result.token, clientEmail: config.clientEmail, agentId: user.id }),
+          });
+        } catch (emailErr) {
+          console.warn("Failed to send intake link email:", emailErr);
+        }
       }
 
-      let copied = false;
-      try { await navigator.clipboard.writeText(result.url); copied = true; } catch (_) {}
-
       const recipients = deliveryEmails.join(", ");
+      const emailNote = config.clientEmail ? `\n\nLink sent to **${config.clientEmail}**.` : "\n\nNo client email provided — share the link manually.";
       setMessages((prev) => [
         ...prev,
         {
           role: "assistant",
-          content: `✅ **Personal lines intake link generated${copied ? " & copied to clipboard" : ""}!**\n\nLink sent to **${config.clientEmail}**:\n\`${result.url}\`\n\nWhen submitted, a summary will be delivered to: **${recipients}**.\n\nThe form covers **Auto, Home, Boat, and Umbrella** coverage plus document uploads. The link expires in 7 days.`,
+          content: `✅ **Personal lines intake link generated!**${emailNote}\n\n\`${result.url}\`\n\nWhen submitted, a summary will be delivered to: **${recipients}**.\n\nThe form covers **Auto, Home, Boat, and Umbrella** coverage plus document uploads. The link expires in 7 days.`,
         },
       ]);
-      toast({ title: copied ? "Link copied!" : "Link generated!", description: `Intake link sent to ${config.clientEmail}` });
-      setShowPersonalIntakeDialog(false);
+      toast({ title: "Link generated!", description: config.clientEmail ? `Intake link sent to ${config.clientEmail}` : "Copy the link to share with your client." });
     } catch (err: any) {
       setMessages((prev) => [...prev, { role: "assistant", content: `Sorry, I couldn't generate the personal intake link. Error: ${err?.message || "Unknown error"}.` }]);
       setShowPersonalIntakeDialog(false);
@@ -1061,9 +1064,18 @@ export default function Chat() {
       }
     }
 
-    // Intercept skip intent BEFORE sending to AI — go directly to blank form editor
-    const isSkipIntent = /\bskip\b|\bgo\s*(straight\s*)?to\s*(the\s*)?form\b|\bjump\s*to\s*form\b|\bskip\s*(intake|questions)\b/i.test(text);
+    // Intercept skip intent — if in coverage loop, skip current questions and ask next batch
+    const isSkipIntent = /\bskip\b|\bgo\s*(straight\s*)?to\s*(the\s*)?form\b|\bjump\s*to\s*form\b|\bskip\s*(intake|questions|this|that|these|step|section)\b|\bnext\s*(question|step|section)\b|\bmove\s*on\b|\bpass\b/i.test(text);
     if (isSkipIntent) {
+      if (inCoverageLoopRef.current) {
+        // In coverage loop — skip current questions and tell AI to move on
+        bypassIntentRef.current = true;
+        send(
+          "The user wants to skip these questions. Move on to the next batch of different missing fields. Do NOT re-ask the same questions. Pick entirely new fields to ask about. If coverage is already above 80%, offer to finish and go to the form editor.",
+          "⏭️ Skipping — moving to next questions…"
+        );
+        return;
+      }
       const userMsg: Msg = { role: "user", content: text.trim() };
       setMessages((prev) => [...prev, userMsg]);
       setInput("");
@@ -2572,10 +2584,11 @@ export default function Chat() {
       <FeatureSuggestionDialog open={showFeatureSuggestion} onOpenChange={setShowFeatureSuggestion} />
       <PersonalIntakeDialog
         open={showPersonalIntakeDialog}
-        onClose={() => setShowPersonalIntakeDialog(false)}
+        onClose={() => { setShowPersonalIntakeDialog(false); setPersonalIntakeLink(null); }}
         onGenerate={handlePersonalIntakeGenerate}
         isLoading={personalIntakeLoading}
         producerEmail={user?.email || undefined}
+        generatedLink={personalIntakeLink}
       />
     </AppLayout>
   );
