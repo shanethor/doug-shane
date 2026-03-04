@@ -9,76 +9,178 @@ import {
 import Pipeline from "./Pipeline";
 import ProducerDashboard from "./ProducerDashboard";
 
-const TOOLS = [
+type ToolTab = {
+  id: string;
+  icon: React.ElementType;
+  label: string;
+  title: string;
+  description: string;
+  details?: string[];
+};
+
+const TOOL_TABS: ToolTab[] = [
   {
+    id: "documents",
+    icon: FolderOpen,
+    label: "Doc Hub",
+    title: "Document Hub",
+    description: "Drag and drop custom form templates — AURA auto-maps fields for instant pre-fill across all your submissions.",
+    details: [
+      "Upload carrier-specific supplemental forms",
+      "Auto-detect field names and map to ACORD data",
+      "Reuse templates across clients instantly",
+    ],
+  },
+  {
+    id: "loss-runs",
     icon: FileSearch,
+    label: "Loss Runs",
     title: "Loss Run Requests",
     description: "Integrated with Loss Run Pro — request, track, and receive loss run documents directly from carriers without manual emails.",
-    status: "coming-soon" as const,
+    details: [
+      "One-click loss run requests to carriers",
+      "Automatic status tracking and follow-ups",
+      "Documents auto-attach to lead records",
+    ],
   },
   {
+    id: "bor",
     icon: FileSignature,
+    label: "BOR",
     title: "BOR Generator",
-    description: "Create signable Broker of Record letters with custom agency letterhead. Clients sign digitally and documents attach to the lead automatically.",
-    status: "coming-soon" as const,
+    description: "Create signable Broker of Record letters with custom agency letterhead. Clients sign digitally and documents auto-attach to the lead.",
+    details: [
+      "Custom letterhead per agency",
+      "Digital signature portal for clients",
+      "Auto-transitions lead to Presenting stage",
+    ],
   },
   {
+    id: "id-cards",
     icon: CreditCard,
+    label: "ID Cards",
     title: "ID Card Generator",
     description: "Generate proof-of-insurance ID cards instantly for auto, commercial, and specialty lines policies.",
-    status: "coming-soon" as const,
+    details: [
+      "Auto-fill from policy data",
+      "Print-ready and digital formats",
+      "Bulk generation for fleet accounts",
+    ],
   },
   {
+    id: "binders",
     icon: FileStack,
+    label: "Binders",
     title: "Binder Generator",
     description: "Produce professional binder documents with policy details, effective dates, and carrier information pre-filled from your submissions.",
-    status: "coming-soon" as const,
+    details: [
+      "Pre-populated from submission data",
+      "Carrier-compliant formatting",
+      "Instant PDF download and email",
+    ],
   },
   {
+    id: "lpr",
     icon: FileText,
+    label: "LPR",
     title: "LPR Generator",
     description: "Create Loss Payable Request documents with lender and lienholder details auto-populated from policy data.",
-    status: "coming-soon" as const,
+    details: [
+      "Auto-pull lender info from existing records",
+      "Standardized format across carriers",
+      "Track request status in pipeline",
+    ],
   },
   {
+    id: "coi",
     icon: Shield,
+    label: "COI",
     title: "COI Generator",
     description: "Generate Certificates of Insurance with additional insured endorsements, holder information, and custom formatting per carrier requirements.",
-    status: "coming-soon" as const,
+    details: [
+      "Additional insured & holder management",
+      "Carrier-specific formatting rules",
+      "Batch generation for multi-location accounts",
+    ],
   },
   {
+    id: "smart-quote",
     icon: Sparkles,
+    label: "Smart Quote",
     title: "AURA Smart Quote",
     description: "AI-powered quote simulator — model different coverage scenarios, compare carrier pricing, and generate professional coverage comparison sheets for clients.",
-    status: "coming-soon" as const,
+    details: [
+      "Simulate various coverage scenarios",
+      "Side-by-side carrier comparisons",
+      "Generate client-ready comparison PDFs",
+      "AI recommendations for optimal coverage",
+    ],
   },
 ];
+
+function ComingSoonPanel({ tool }: { tool: ToolTab }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-12 sm:py-16 text-center max-w-lg mx-auto px-4">
+      <div className="rounded-full bg-primary/10 p-5 mb-5">
+        <tool.icon className="h-10 w-10 text-primary" />
+      </div>
+      <h2 className="text-xl font-bold mb-2">{tool.title}</h2>
+      <p className="text-muted-foreground text-sm leading-relaxed mb-5">
+        {tool.description}
+      </p>
+      {tool.details && (
+        <ul className="text-left w-full space-y-2 mb-6">
+          {tool.details.map((d, i) => (
+            <li key={i} className="flex items-start gap-2 text-xs text-muted-foreground">
+              <span className="mt-0.5 h-1.5 w-1.5 rounded-full bg-primary/40 shrink-0" />
+              {d}
+            </li>
+          ))}
+        </ul>
+      )}
+      {tool.id === "documents" && (
+        <div className="w-full border-2 border-dashed border-border rounded-xl p-6 opacity-40 pointer-events-none mb-4">
+          <div className="flex flex-col items-center gap-2">
+            <Upload className="h-7 w-7 text-muted-foreground" />
+            <p className="text-xs text-muted-foreground">Drop forms here to auto-map</p>
+          </div>
+        </div>
+      )}
+      <span className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.25em] text-muted-foreground font-semibold border border-border rounded-full px-5 py-2">
+        <Clock className="h-3 w-3" />
+        Coming Soon
+      </span>
+    </div>
+  );
+}
 
 export default function ProducerHub() {
   const [activeTab, setActiveTab] = useState("pipeline");
 
   return (
     <AppLayout>
-      <div className="flex items-center gap-3 mb-6">
+      <div className="flex items-center gap-3 mb-4 sm:mb-6">
         <GitBranch className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
         <h1 className="text-xl sm:text-3xl font-semibold tracking-tight">Producer Hub</h1>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0 scrollbar-hide mb-4">
-          <TabsList className="inline-flex w-auto min-w-max">
-            <TabsTrigger value="pipeline" className="gap-1.5">
-              <GitBranch className="h-3.5 w-3.5" />
+          <TabsList className="inline-flex w-auto min-w-max h-auto flex-wrap sm:flex-nowrap gap-0">
+            <TabsTrigger value="pipeline" className="gap-1.5 text-xs px-2.5 sm:px-3">
+              <GitBranch className="h-3.5 w-3.5 hidden sm:block" />
               Pipeline
             </TabsTrigger>
-            <TabsTrigger value="production" className="gap-1.5">
-              <BarChart3 className="h-3.5 w-3.5" />
+            <TabsTrigger value="production" className="gap-1.5 text-xs px-2.5 sm:px-3">
+              <BarChart3 className="h-3.5 w-3.5 hidden sm:block" />
               Production
             </TabsTrigger>
-            <TabsTrigger value="tools" className="gap-1.5">
-              <FolderOpen className="h-3.5 w-3.5" />
-              Tools
-            </TabsTrigger>
+            {TOOL_TABS.map((tool) => (
+              <TabsTrigger key={tool.id} value={tool.id} className="gap-1.5 text-xs px-2.5 sm:px-3">
+                <tool.icon className="h-3.5 w-3.5 hidden sm:block" />
+                {tool.label}
+              </TabsTrigger>
+            ))}
           </TabsList>
         </div>
 
@@ -90,51 +192,11 @@ export default function ProducerHub() {
           <ProducerDashboard embedded />
         </TabsContent>
 
-        <TabsContent value="tools">
-          {/* Document Hub */}
-          <div className="mb-8">
-            <h2 className="text-lg font-semibold mb-1">Document Hub</h2>
-            <p className="text-sm text-muted-foreground mb-4">
-              Drag and drop custom form templates — AURA auto-maps fields for instant pre-fill.
-            </p>
-            <div className="border-2 border-dashed border-border rounded-xl p-8 opacity-40 pointer-events-none">
-              <div className="flex flex-col items-center gap-3">
-                <Upload className="h-8 w-8 text-muted-foreground" />
-                <p className="text-sm text-muted-foreground">Drop forms here to auto-map</p>
-              </div>
-            </div>
-            <div className="flex justify-center mt-3">
-              <span className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground font-semibold border border-border rounded-full px-4 py-1.5">
-                Coming Soon
-              </span>
-            </div>
-          </div>
-
-          {/* Producer Tools Grid */}
-          <h2 className="text-lg font-semibold mb-1">Producer Tools</h2>
-          <p className="text-sm text-muted-foreground mb-4">
-            Generators, integrations, and AI-powered tools to streamline your workflow.
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {TOOLS.map((tool) => (
-              <Card key={tool.title} className="relative overflow-hidden opacity-75 hover:opacity-100 transition-opacity">
-                <CardContent className="p-4 space-y-2">
-                  <div className="flex items-start justify-between">
-                    <div className="rounded-lg bg-primary/10 p-2">
-                      <tool.icon className="h-4.5 w-4.5 text-primary" />
-                    </div>
-                    <span className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-muted-foreground font-semibold bg-muted/60 rounded-full px-2.5 py-1">
-                      <Clock className="h-3 w-3" />
-                      Soon
-                    </span>
-                  </div>
-                  <h3 className="text-sm font-semibold">{tool.title}</h3>
-                  <p className="text-xs text-muted-foreground leading-relaxed">{tool.description}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </TabsContent>
+        {TOOL_TABS.map((tool) => (
+          <TabsContent key={tool.id} value={tool.id}>
+            <ComingSoonPanel tool={tool} />
+          </TabsContent>
+        ))}
       </Tabs>
     </AppLayout>
   );
