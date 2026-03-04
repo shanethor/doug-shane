@@ -117,18 +117,21 @@ const emptyRecVehicle = (): RecreationalVehicle => ({ rec_type: "", year: "", ma
 const emptyArticle = (): PersonalArticle => ({ description: "", category: "", estimated_value: "" });
 
 /* ─── Commercial Lines Types ─── */
-type CommercialStepKey = "business_info" | "industry" | "insurance_check" | "upload_dec" | "loss_run_info" | "loss_run_consent" | "bor_auth" | "commercial_docs";
+type CommercialStepKey = "industry" | "insurance_check" | "upload_dec" | "loss_run_info" | "loss_run_consent" | "bor_auth" | "business_info" | "commercial_docs";
 
 const COMMERCIAL_LINES = [
   "General Liability", "Workers Compensation", "Commercial Auto",
   "Property", "Umbrella", "Other",
 ] as const;
 
-const INDUSTRY_OPTIONS = [
-  "Non-Profit", "Contractors", "Restaurants & Bars", "Auto / Garage",
-  "Convenience / Grocery", "Office / Professional", "Health Clubs",
-  "Lessors Risk", "Manufacturing", "Retail", "Technology",
-  "Real Estate", "Transportation", "Hospitality", "Education", "Other",
+const COMMERCIAL_INDUSTRY_OPTIONS = [
+  { key: "nonprofit", label: "Non-Profit", icon: "🏛️" },
+  { key: "real_estate", label: "Real Estate", icon: "🏢" },
+  { key: "contractor", label: "Contractor", icon: "🔨" },
+  { key: "hospitality", label: "Hospitality", icon: "🏨" },
+  { key: "trucking", label: "Trucking", icon: "🚛" },
+  { key: "retail", label: "Retail", icon: "🛍️" },
+  { key: "other", label: "Other", icon: "📋" },
 ] as const;
 
 interface LossRunPolicyInfo {
@@ -260,7 +263,7 @@ export default function IntakeForm() {
 
   // ─── Commercial State ───
   const [commercialForm, setCommercialForm] = useState<CommercialFormData>(emptyCommercial());
-  const [commercialStep, setCommercialStep] = useState<CommercialStepKey>("business_info");
+  const [commercialStep, setCommercialStep] = useState<CommercialStepKey>("industry");
   const [borGenerated, setBorGenerated] = useState(false);
   const [borSignToken, setBorSignToken] = useState<string | null>(null);
 
@@ -2305,7 +2308,7 @@ export default function IntakeForm() {
             {(() => {
               // Dynamic steps based on user choices
               const buildCommSteps = (): CommercialStepKey[] => {
-                const steps: CommercialStepKey[] = ["business_info", "industry", "insurance_check"];
+                const steps: CommercialStepKey[] = ["industry", "insurance_check"];
                 if (commercialForm.has_current_insurance === "yes") {
                   steps.push("upload_dec");
                   if (!commercialForm.has_uploaded_dec_pages) {
@@ -2314,18 +2317,19 @@ export default function IntakeForm() {
                   steps.push("loss_run_consent");
                 }
                 steps.push("bor_auth");
+                steps.push("business_info");
                 steps.push("commercial_docs");
                 return steps;
               };
               const commSteps = buildCommSteps();
               const commStepLabels: Record<CommercialStepKey, string> = {
-                business_info: "Business Info",
                 industry: "Industry",
                 insurance_check: "Current Insurance",
                 upload_dec: "Upload Dec Pages",
                 loss_run_info: "Loss Run Details",
                 loss_run_consent: "Loss Run Consent",
                 bor_auth: "Broker Authorization",
+                business_info: "Your Information",
                 commercial_docs: "Documents & Submit",
               };
               const commIdx = commSteps.indexOf(commercialStep);
@@ -2333,18 +2337,17 @@ export default function IntakeForm() {
               const commProgress = ((safeIdx + 1) / commSteps.length) * 100;
 
               const validateCommStep = (): boolean => {
-                if (commercialStep === "business_info") {
-                  if (!commercialForm.customer_name.trim()) { toast.error("Primary contact name is required"); return false; }
-                  if (!commercialForm.customer_email.trim() || !/^[\w.-]+@[\w.-]+\.\w+$/.test(commercialForm.customer_email.trim())) { toast.error("A valid email is required"); return false; }
-                  if (!commercialForm.customer_phone.trim()) { toast.error("Phone number is required"); return false; }
-                  if (!commercialForm.business_name.trim()) { toast.error("Business name is required"); return false; }
-                  if (!commercialForm.street_address.trim()) { toast.error("Business address is required"); return false; }
-                }
                 if (commercialStep === "industry") {
                   if (!commercialForm.industry) { toast.error("Please select your industry"); return false; }
                 }
                 if (commercialStep === "insurance_check") {
                   if (!commercialForm.has_current_insurance) { toast.error("Please indicate if you currently have insurance"); return false; }
+                }
+                if (commercialStep === "business_info") {
+                  if (!commercialForm.business_name.trim()) { toast.error("Business name is required"); return false; }
+                  if (!commercialForm.customer_name.trim()) { toast.error("Primary contact name is required"); return false; }
+                  if (!commercialForm.customer_email.trim() || !/^[\w.-]+@[\w.-]+\.\w+$/.test(commercialForm.customer_email.trim())) { toast.error("A valid email is required"); return false; }
+                  if (!commercialForm.customer_phone.trim()) { toast.error("Phone number is required"); return false; }
                 }
                 if (commercialStep === "loss_run_info") {
                   if (!commercialForm.loss_run_authorized_first_name.trim() || !commercialForm.loss_run_authorized_last_name.trim()) {
@@ -2392,18 +2395,21 @@ export default function IntakeForm() {
 
                   {commercialStep === "business_info" && (
                     <Card>
-                      <CardHeader><CardTitle className="text-base">Business Information</CardTitle></CardHeader>
+                      <CardHeader>
+                        <CardTitle className="text-base">Your Information</CardTitle>
+                        <p className="text-sm text-muted-foreground">Please confirm your contact and business details below. Some fields may be pre-filled from information you've already provided.</p>
+                      </CardHeader>
                       <CardContent className="space-y-3">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div><Label className="text-xs">Business Name *</Label><Input value={commercialForm.business_name} onChange={e => updateCommercial("business_name", e.target.value)} /></div>
+                          <div><Label className="text-xs">DBA (if applicable)</Label><Input value={commercialForm.dba} onChange={e => updateCommercial("dba", e.target.value)} /></div>
                           <div><Label className="text-xs">Primary Contact Name *</Label><Input value={commercialForm.customer_name} onChange={e => updateCommercial("customer_name", e.target.value)} /></div>
                           <div><Label className="text-xs">Email *</Label><Input type="email" value={commercialForm.customer_email} onChange={e => updateCommercial("customer_email", e.target.value)} /></div>
                           <div><Label className="text-xs">Phone *</Label><Input value={commercialForm.customer_phone} onChange={e => updateCommercial("customer_phone", e.target.value)} /></div>
-                          <div><Label className="text-xs">Business Name *</Label><Input value={commercialForm.business_name} onChange={e => updateCommercial("business_name", e.target.value)} /></div>
-                          <div><Label className="text-xs">DBA (if applicable)</Label><Input value={commercialForm.dba} onChange={e => updateCommercial("dba", e.target.value)} /></div>
                           <div><Label className="text-xs">FEIN / EIN</Label><Input value={commercialForm.ein} onChange={e => updateCommercial("ein", e.target.value)} /></div>
                           <div>
-                            <Label className="text-xs">Business Type</Label>
-                            <Select value={commercialForm.business_type} onValueChange={v => updateCommercial("business_type", v)}>
+                            <Label className="text-xs">Business Entity Type</Label>
+                            <Select value={commercialForm.business_type === commercialForm.business_type ? commercialForm.business_type : ""} onValueChange={v => updateCommercial("business_type", v)}>
                               <SelectTrigger className="h-10 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="sole_proprietor">Sole Proprietor</SelectItem><SelectItem value="partnership">Partnership</SelectItem>
@@ -2412,7 +2418,7 @@ export default function IntakeForm() {
                               </SelectContent>
                             </Select>
                           </div>
-                          <div><Label className="text-xs">Street Address *</Label><Input value={commercialForm.street_address} onChange={e => updateCommercial("street_address", e.target.value)} /></div>
+                          <div><Label className="text-xs">Street Address</Label><Input value={commercialForm.street_address} onChange={e => updateCommercial("street_address", e.target.value)} /></div>
                           <div><Label className="text-xs">City</Label><Input value={commercialForm.city} onChange={e => updateCommercial("city", e.target.value)} /></div>
                           <div>
                             <Label className="text-xs">State</Label>
@@ -2432,20 +2438,32 @@ export default function IntakeForm() {
 
                   {commercialStep === "industry" && (
                     <Card>
-                      <CardHeader><CardTitle className="text-base">Industry Classification</CardTitle></CardHeader>
+                      <CardHeader><CardTitle className="text-base">What industry is your business in?</CardTitle></CardHeader>
                       <CardContent className="space-y-4">
-                        <p className="text-sm text-muted-foreground">Select the industry that best describes your business. This helps us tailor the right coverage recommendations.</p>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                          {INDUSTRY_OPTIONS.map(ind => {
-                            const sel = commercialForm.industry === ind;
+                        <p className="text-sm text-muted-foreground">Select the category that best describes your business so we can tailor the right coverage.</p>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                          {COMMERCIAL_INDUSTRY_OPTIONS.map(ind => {
+                            const sel = commercialForm.industry === ind.label;
                             return (
-                              <button key={ind} onClick={() => updateCommercial("industry", ind)}
-                                className={`px-3 py-2.5 rounded-lg border text-xs font-medium transition-all text-left ${sel ? "bg-primary text-primary-foreground border-primary shadow-sm" : "border-border hover:border-primary/50 hover:bg-muted/30"}`}>
-                                {ind}
+                              <button key={ind.key} onClick={() => updateCommercial("industry", ind.label)}
+                                className={`flex flex-col items-center gap-2 p-4 rounded-xl border-2 text-center transition-all ${sel ? "bg-primary/10 border-primary shadow-sm" : "border-border hover:border-primary/40 hover:bg-muted/30"}`}>
+                                <span className="text-2xl">{ind.icon}</span>
+                                <span className={`text-sm font-medium ${sel ? "text-primary" : ""}`}>{ind.label}</span>
                               </button>
                             );
                           })}
                         </div>
+                        {commercialForm.industry === "Other" && (
+                          <div className="pt-2">
+                            <Label className="text-xs">Please describe your industry</Label>
+                            <Input
+                              placeholder="e.g. Manufacturing, Technology, etc."
+                              value={commercialForm.business_type}
+                              onChange={e => updateCommercial("business_type", e.target.value)}
+                              className="mt-1"
+                            />
+                          </div>
+                        )}
                       </CardContent>
                     </Card>
                   )}

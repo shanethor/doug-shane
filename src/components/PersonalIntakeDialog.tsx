@@ -25,7 +25,7 @@ export function PersonalIntakeDialog({ open, onClose, onGenerate, isLoading, pro
 
   const isValidEmail = (e: string) => /^[\w.-]+@[\w.-]+\.\w+$/.test(e.trim());
 
-  const canSubmit = isValidEmail(teamMemberEmail);
+  const canSubmit = true; // both emails are now optional
   const canSendEmail = isValidEmail(clientEmail) && isValidEmail(teamMemberEmail);
 
   const handleGenerate = () => {
@@ -87,7 +87,7 @@ export function PersonalIntakeDialog({ open, onClose, onGenerate, isLoading, pro
             <div className="space-y-1.5">
               <Label className="text-sm font-medium flex items-center gap-1.5">
                 <Users className="h-3.5 w-3.5 text-muted-foreground" />
-                Team Member Email
+                Team Member Email <span className="text-muted-foreground text-[10px] font-normal">(optional)</span>
               </Label>
               <Input
                 type="email"
