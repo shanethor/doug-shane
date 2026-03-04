@@ -141,6 +141,12 @@ Deno.serve(async (req) => {
       // If remember device, save trusted device
       if (device_hash) {
         const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(); // 7 days
+        // Delete any existing entry for this user+device combo first to avoid duplicates
+        await supabaseAdmin
+          .from("trusted_devices")
+          .delete()
+          .eq("user_id", user_id)
+          .eq("device_hash", device_hash);
         await supabaseAdmin.from("trusted_devices").insert({
           user_id,
           device_hash,
