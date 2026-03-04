@@ -13,6 +13,7 @@ export const ALL_NAV_TABS: NavTab[] = [
   { id: "pipeline", label: "Pipeline", to: "/pipeline" },
   { id: "calendar", label: "Calendar", to: "/calendar" },
   { id: "production", label: "Production", to: "/my-dashboard" },
+  { id: "pulse", label: "Pulse", to: "/pulse" },
 ];
 
 const DEFAULT_TAB_IDS = ["chat", "inbox", "clients", "pipeline", "calendar"];
