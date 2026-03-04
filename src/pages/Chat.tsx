@@ -1745,15 +1745,6 @@ export default function Chat() {
         <div ref={scrollRef} className="flex-1 overflow-y-auto">
           {isEmpty ? (
             <div className="flex flex-col items-center min-h-full gap-6 px-4 pt-4 md:pt-[12vh] animate-fade-in">
-              <div className="text-center space-y-2">
-                <h1 className="text-4xl tracking-tight aura-gradient-text">
-                  What are we working on?
-                </h1>
-                <p className="text-muted-foreground text-sm">
-                  I'm <span className="font-bold text-foreground">AURA</span> — your insurance trained AI co-pilot
-                </p>
-              </div>
-
               {/* Production Scoreboard */}
               {user && (
                 <div className="w-full max-w-2xl">
@@ -1764,6 +1755,15 @@ export default function Chat() {
                   />
                 </div>
               )}
+
+              <div className="text-center space-y-2">
+                <h1 className="text-4xl tracking-tight aura-gradient-text">
+                  What are we working on?
+                </h1>
+                <p className="text-muted-foreground text-sm">
+                  I'm <span className="font-bold text-foreground">AURA</span> — your insurance trained AI co-pilot
+                </p>
+              </div>
 
               {/* Chat input inline */}
               <div className="w-full max-w-2xl">
