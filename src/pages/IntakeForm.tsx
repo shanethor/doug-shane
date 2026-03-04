@@ -2353,19 +2353,7 @@ export default function IntakeForm() {
                   if (!commercialForm.customer_email.trim() || !/^[\w.-]+@[\w.-]+\.\w+$/.test(commercialForm.customer_email.trim())) { toast.error("A valid email is required"); return false; }
                   if (!commercialForm.customer_phone.trim()) { toast.error("Phone number is required"); return false; }
                 }
-                if (commercialStep === "loss_run_info") {
-                  if (!commercialForm.loss_run_authorized_first_name.trim() || !commercialForm.loss_run_authorized_last_name.trim()) {
-                    toast.error("Authorized signer name is required"); return false;
-                  }
-                  if (!commercialForm.loss_run_authorized_email.trim()) {
-                    toast.error("Authorized signer email is required"); return false;
-                  }
-                  const hasValidPolicy = commercialForm.loss_run_policies.some(p => p.carrier.trim() && p.policy_number.trim());
-                  if (!hasValidPolicy) { toast.error("At least one policy with carrier and policy number is required"); return false; }
-                }
-                if (commercialStep === "loss_run_consent") {
-                  if (!commercialForm.loss_run_consent) { toast.error("Loss run consent is required to proceed"); return false; }
-                }
+                // loss_run_info and loss_run_consent are optional — no validation required
                 return true;
               };
 
