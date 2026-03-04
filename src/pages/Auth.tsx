@@ -64,7 +64,7 @@ export default function Auth() {
         .then((r) => r.json())
         .then((result) => {
           if (result.trusted) {
-            set2FAVerified();
+            set2FAVerified(true);
             navigate("/", { replace: true });
           } else {
             // Device not trusted — show 2FA screen
@@ -134,8 +134,8 @@ export default function Auth() {
         const result = await resp.json();
 
         if (result.trusted) {
-          // Device is trusted, skip 2FA
-          set2FAVerified();
+          // Device is trusted from previous "remember me", skip 2FA
+          set2FAVerified(true);
           navigate("/");
         } else if (result.sent) {
           setNeeds2FA(true);
@@ -173,7 +173,7 @@ export default function Auth() {
       const result = await resp.json();
 
       if (result.verified) {
-        set2FAVerified();
+        set2FAVerified(rememberDevice);
         toast.success("Verified successfully");
         navigate("/");
       } else {
