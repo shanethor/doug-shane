@@ -322,9 +322,13 @@ export default function BorSign() {
           </CardContent>
         </Card>
 
-        <p className="text-[10px] text-center text-muted-foreground">
-          This document is legally binding. A timestamp and signature will be recorded for compliance purposes.
-        </p>
+        <div className="text-center pb-4 space-y-1">
+          <p className="text-[10px] text-muted-foreground">
+            This document is legally binding. A timestamp and signature will be recorded for compliance purposes.
+          </p>
+          <p className="text-[10px] text-muted-foreground/50 tracking-widest uppercase">Insurance runs on <span className="font-semibold">AURA</span></p>
+          <p className="text-[9px] text-muted-foreground/40">Automated Universal Risk Advisor</p>
+        </div>
       </div>
     </div>
   );
