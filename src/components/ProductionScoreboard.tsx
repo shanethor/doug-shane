@@ -7,11 +7,7 @@ import { Label } from "@/components/ui/label";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
-import { Target, TrendingUp, TrendingDown } from "lucide-react";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
-} from "recharts";
+import { Target } from "lucide-react";
 
 type Props = {
   userId: string;
@@ -19,175 +15,74 @@ type Props = {
   revenueSold: number;
 };
 
-/* ─── Formatters ─── */
 const fmt = (n: number) =>
   "$" + Math.round(n).toLocaleString();
 
 const pctOf = (v: number, g: number) =>
   g > 0 ? ((v / g) * 100).toFixed(1).replace(/\.0$/, "") : "0";
 
-/* ─── Section renderers ─── */
-
-function ProductionSection({
-  label,
-  premiumSold, premiumGoal,
-  revenueSold, revenueGoal,
+/* ─── Single Tile ─── */
+function ScoreboardTile({
+  title,
+  actual,
+  goal,
+  remaining,
+  paceNeeded,
+  paceUnit,
+  daysLeft,
+  countdownLabel,
 }: {
-  label: string;
-  premiumSold: number; premiumGoal: number;
-  revenueSold: number; revenueGoal: number;
+  title: string;
+  actual: number;
+  goal: number;
+  remaining: number;
+  paceNeeded: number;
+  paceUnit: string;
+  daysLeft: number;
+  countdownLabel: string;
 }) {
+  const percent = goal > 0 ? Math.min((actual / goal) * 100, 100) : 0;
+  const exceeded = goal > 0 && actual >= goal;
+
   return (
     <div className="space-y-2">
-      <h3 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">{label} NB Production</h3>
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Premium</p>
-          <p className="text-sm font-bold text-foreground">{fmt(premiumSold)} / {fmt(premiumGoal)}</p>
-          <div className="w-full h-1.5 rounded-full bg-muted overflow-hidden mt-1">
-            <div className="h-full rounded-full bg-primary transition-all duration-500" style={{ width: `${Math.min(Number(pctOf(premiumSold, premiumGoal)), 100)}%` }} />
-          </div>
-          <p className="text-[10px] text-muted-foreground mt-0.5">{pctOf(premiumSold, premiumGoal)}% to Goal</p>
-        </div>
-        <div>
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Revenue</p>
-          <p className="text-sm font-bold text-foreground">{fmt(revenueSold)} / {fmt(revenueGoal)}</p>
-          <div className="w-full h-1.5 rounded-full bg-muted overflow-hidden mt-1">
-            <div className="h-full rounded-full bg-primary/60 transition-all duration-500" style={{ width: `${Math.min(Number(pctOf(revenueSold, revenueGoal)), 100)}%` }} />
-          </div>
-          <p className="text-[10px] text-muted-foreground mt-0.5">{pctOf(revenueSold, revenueGoal)}% to Goal</p>
-        </div>
+      <p className="text-[11px] font-semibold text-foreground tracking-wide">{title}</p>
+
+      {/* Main number */}
+      <p className={`text-lg sm:text-xl font-bold leading-none ${exceeded ? "text-emerald-600" : "text-foreground"}`}>
+        {fmt(actual)} <span className="text-xs font-normal text-muted-foreground">/ {fmt(goal)}</span>
+      </p>
+
+      {/* Progress bar */}
+      <div className="w-full h-1.5 rounded-full bg-muted overflow-hidden">
+        <div
+          className={`h-full rounded-full transition-all duration-500 ${exceeded ? "bg-emerald-500" : "bg-primary"}`}
+          style={{ width: `${percent}%` }}
+        />
+      </div>
+
+      <p className="text-[10px] text-muted-foreground">{pctOf(actual, goal)}% to Goal</p>
+
+      {/* Remaining */}
+      <div className="flex justify-between items-baseline">
+        <span className="text-[10px] text-muted-foreground">Remaining</span>
+        <span className="text-xs font-semibold text-foreground">{fmt(remaining)}</span>
+      </div>
+
+      {/* Pace */}
+      <div className="flex justify-between items-baseline">
+        <span className="text-[10px] text-muted-foreground">Pace Needed</span>
+        <span className="text-xs font-semibold text-foreground">{fmt(paceNeeded)}<span className="text-[10px] font-normal text-muted-foreground">/{paceUnit}</span></span>
+      </div>
+
+      {/* Countdown */}
+      <div className="flex justify-between items-baseline">
+        <span className="text-[10px] text-muted-foreground">{countdownLabel}</span>
+        <span className="text-xs font-semibold text-foreground">{daysLeft} Days</span>
       </div>
     </div>
   );
 }
-
-function PaceSection({
-  label, paceUnit,
-  premiumRequired, premiumCurrent,
-  revenueRequired, revenueCurrent,
-}: {
-  label: string; paceUnit: string;
-  premiumRequired: number; premiumCurrent: number;
-  revenueRequired: number; revenueCurrent: number;
-}) {
-  return (
-    <div className="space-y-2">
-      <h3 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">{label} Pace</h3>
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Premium Pace</p>
-          <p className="text-[11px] text-muted-foreground">Required: <span className="font-medium text-foreground">{fmt(premiumRequired)}/{paceUnit}</span></p>
-          <p className="text-[11px] text-muted-foreground">Current: <span className={`font-medium ${premiumCurrent >= premiumRequired ? "text-emerald-600" : "text-destructive"}`}>{fmt(premiumCurrent)}/{paceUnit}</span></p>
-        </div>
-        <div>
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Revenue Pace</p>
-          <p className="text-[11px] text-muted-foreground">Required: <span className="font-medium text-foreground">{fmt(revenueRequired)}/{paceUnit}</span></p>
-          <p className="text-[11px] text-muted-foreground">Current: <span className={`font-medium ${revenueCurrent >= revenueRequired ? "text-emerald-600" : "text-destructive"}`}>{fmt(revenueCurrent)}/{paceUnit}</span></p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function ProjectionSection({
-  premiumProjected, premiumGap, premiumGoal,
-  revenueProjected, revenueGap, revenueGoal,
-}: {
-  premiumProjected: number; premiumGap: number; premiumGoal: number;
-  revenueProjected: number; revenueGap: number; revenueGoal: number;
-}) {
-  const premOnTrack = premiumProjected >= premiumGoal;
-  const revOnTrack = revenueProjected >= revenueGoal;
-  return (
-    <div className="space-y-2">
-      <h3 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold flex items-center gap-1">
-        Projected at Current Pace
-        {premOnTrack ? <TrendingUp className="h-3 w-3 text-emerald-600" /> : <TrendingDown className="h-3 w-3 text-destructive" />}
-      </h3>
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Premium</p>
-          <p className="text-[11px] text-muted-foreground">Projected: <span className={`font-medium ${premOnTrack ? "text-emerald-600" : "text-foreground"}`}>{fmt(premiumProjected)}</span></p>
-          <p className="text-[11px] text-muted-foreground">Gap: <span className={`font-medium ${premiumGap <= 0 ? "text-emerald-600" : "text-destructive"}`}>
-            {premiumGap <= 0 ? "+" + fmt(Math.abs(premiumGap)) : "–" + fmt(premiumGap)}
-          </span></p>
-        </div>
-        <div>
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Revenue</p>
-          <p className="text-[11px] text-muted-foreground">Projected: <span className={`font-medium ${revOnTrack ? "text-emerald-600" : "text-foreground"}`}>{fmt(revenueProjected)}</span></p>
-          <p className="text-[11px] text-muted-foreground">Gap: <span className={`font-medium ${revenueGap <= 0 ? "text-emerald-600" : "text-destructive"}`}>
-            {revenueGap <= 0 ? "+" + fmt(Math.abs(revenueGap)) : "–" + fmt(revenueGap)}
-          </span></p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function VarianceSection({
-  premiumActual, premiumTarget,
-  revenueActual, revenueTarget,
-}: {
-  premiumActual: number; premiumTarget: number;
-  revenueActual: number; revenueTarget: number;
-}) {
-  const premVar = premiumActual - premiumTarget;
-  const revVar = revenueActual - revenueTarget;
-  return (
-    <div className="space-y-2">
-      <h3 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Today vs Target</h3>
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Premium</p>
-          <p className="text-[11px] text-muted-foreground">Actual: <span className="font-medium text-foreground">{fmt(premiumActual)}</span></p>
-          <p className="text-[11px] text-muted-foreground">Target: <span className="font-medium text-foreground">{fmt(premiumTarget)}</span></p>
-          <p className="text-[11px] text-muted-foreground">Variance: <span className={`font-medium ${premVar >= 0 ? "text-emerald-600" : "text-destructive"}`}>
-            {premVar >= 0 ? "+" : "–"}{fmt(Math.abs(premVar))}
-          </span></p>
-        </div>
-        <div>
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Revenue</p>
-          <p className="text-[11px] text-muted-foreground">Actual: <span className="font-medium text-foreground">{fmt(revenueActual)}</span></p>
-          <p className="text-[11px] text-muted-foreground">Target: <span className="font-medium text-foreground">{fmt(revenueTarget)}</span></p>
-          <p className="text-[11px] text-muted-foreground">Variance: <span className={`font-medium ${revVar >= 0 ? "text-emerald-600" : "text-destructive"}`}>
-            {revVar >= 0 ? "+" : "–"}{fmt(Math.abs(revVar))}
-          </span></p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ─── Chart ─── */
-
-function PaceChart({
-  chartData, premiumGoal, revenueGoal, xKey, label,
-}: {
-  chartData: any[]; premiumGoal: number; revenueGoal: number; xKey: string; label: string;
-}) {
-  return (
-    <div className="space-y-2">
-      <h3 className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">{label} Production Pace</h3>
-      <div className="h-48 sm:h-56">
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-            <XAxis dataKey={xKey} tick={{ fontSize: 10 }} className="fill-muted-foreground" />
-            <YAxis tick={{ fontSize: 10 }} tickFormatter={(v: number) => v >= 1000 ? `$${(v / 1000).toFixed(0)}k` : `$${v}`} className="fill-muted-foreground" />
-            <Tooltip formatter={(v: number) => fmt(v)} labelClassName="text-xs" />
-            <Legend wrapperStyle={{ fontSize: 10 }} />
-            <Line type="monotone" dataKey="premiumTarget" name="Premium Target" stroke="hsl(var(--primary))" strokeWidth={2} strokeDasharray="6 3" dot={false} />
-            <Line type="monotone" dataKey="premiumActual" name="Premium Actual" stroke="hsl(var(--primary))" strokeWidth={3} dot={false} />
-            <Line type="monotone" dataKey="revenueTarget" name="Revenue Target" stroke="hsl(var(--primary) / 0.4)" strokeWidth={1.5} strokeDasharray="6 3" dot={false} />
-            <Line type="monotone" dataKey="revenueActual" name="Revenue Actual" stroke="hsl(var(--primary) / 0.5)" strokeWidth={2} dot={false} />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
-    </div>
-  );
-}
-
 
 /* ─── Main Component ─── */
 export function ProductionScoreboard({ userId, premiumSold, revenueSold }: Props) {
@@ -203,7 +98,6 @@ export function ProductionScoreboard({ userId, premiumSold, revenueSold }: Props
 
   const now = new Date();
   const year = now.getFullYear();
-  const monthName = now.toLocaleString("default", { month: "long" });
 
   const endOfMonth = useMemo(() => new Date(year, now.getMonth() + 1, 1), [year, now.getMonth()]);
   const endOfYear = useMemo(() => new Date(year + 1, 0, 1), [year]);
@@ -217,7 +111,6 @@ export function ProductionScoreboard({ userId, premiumSold, revenueSold }: Props
   const dayOfYear = Math.floor((now.getTime() - startOfYear.getTime()) / 86400000) + 1;
   const daysInYear = Math.floor((endOfYear.getTime() - startOfYear.getTime()) / 86400000);
   const daysLeftInYear = Math.max(1, daysInYear - dayOfYear);
-  const currentMonth0 = now.getMonth(); // 0-indexed
 
   useEffect(() => { loadGoals(); }, [userId, year]);
 
@@ -264,62 +157,15 @@ export function ProductionScoreboard({ userId, premiumSold, revenueSold }: Props
   const monthlyPrem = annualPrem / 12;
   const monthlyRev = annualRev / 12;
 
-  /* ─── Monthly chart data ─── */
-  const monthlyChartData = useMemo(() => {
-    if (!annualPrem) return [];
-    const data = [];
-    for (let d = 1; d <= daysInMonth; d++) {
-      const entry: any = { day: d };
-      entry.premiumTarget = Math.round((monthlyPrem / daysInMonth) * d);
-      entry.revenueTarget = Math.round((monthlyRev / daysInMonth) * d);
-      if (d <= dayOfMonth) {
-        entry.premiumActual = Math.round((premiumSold / dayOfMonth) * d);
-        entry.revenueActual = Math.round((revenueSold / dayOfMonth) * d);
-      }
-      data.push(entry);
-    }
-    return data;
-  }, [premiumSold, revenueSold, dayOfMonth, daysInMonth, monthlyPrem, monthlyRev, annualPrem]);
+  const mPremRemaining = Math.max(0, monthlyPrem - premiumSold);
+  const mRevRemaining = Math.max(0, monthlyRev - revenueSold);
+  const mPremPace = daysLeftInMonth > 0 ? mPremRemaining / daysLeftInMonth : 0;
+  const mRevPace = daysLeftInMonth > 0 ? mRevRemaining / daysLeftInMonth : 0;
 
-  /* ─── Annual chart data ─── */
-  const annualChartData = useMemo(() => {
-    if (!annualPrem) return [];
-    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-    return months.map((m, i) => {
-      const entry: any = { month: m };
-      entry.premiumTarget = Math.round((annualPrem / 12) * (i + 1));
-      entry.revenueTarget = Math.round((annualRev / 12) * (i + 1));
-      if (i <= currentMonth0) {
-        entry.premiumActual = Math.round((premiumSold / Math.max(currentMonth0, 1)) * (i + 1));
-        entry.revenueActual = Math.round((revenueSold / Math.max(currentMonth0, 1)) * (i + 1));
-      }
-      return entry;
-    });
-  }, [premiumSold, revenueSold, currentMonth0, annualPrem, annualRev]);
-
-  /* ─── Monthly calculations ─── */
-  const mPremRequired = daysInMonth > 0 ? monthlyPrem / daysInMonth : 0;
-  const mPremCurrent = dayOfMonth > 0 ? premiumSold / dayOfMonth : 0;
-  const mRevRequired = daysInMonth > 0 ? monthlyRev / daysInMonth : 0;
-  const mRevCurrent = dayOfMonth > 0 ? revenueSold / dayOfMonth : 0;
-  const mPremProjected = mPremCurrent * daysInMonth;
-  const mPremGap = monthlyPrem - mPremProjected;
-  const mRevProjected = mRevCurrent * daysInMonth;
-  const mRevGap = monthlyRev - mRevProjected;
-  const mPremTargetToday = mPremRequired * dayOfMonth;
-  const mRevTargetToday = mRevRequired * dayOfMonth;
-
-  /* ─── Annual calculations ─── */
-  const yPremRequired = monthlyPrem;
-  const yPremCurrent = currentMonth0 > 0 ? premiumSold / currentMonth0 : premiumSold;
-  const yRevRequired = monthlyRev;
-  const yRevCurrent = currentMonth0 > 0 ? revenueSold / currentMonth0 : revenueSold;
-  const yPremProjected = yPremCurrent * 12;
-  const yPremGap = annualPrem - yPremProjected;
-  const yRevProjected = yRevCurrent * 12;
-  const yRevGap = annualRev - yRevProjected;
-  const yPremTargetToday = (annualPrem / daysInYear) * dayOfYear;
-  const yRevTargetToday = (annualRev / daysInYear) * dayOfYear;
+  const yPremRemaining = Math.max(0, annualPrem - premiumSold);
+  const yRevRemaining = Math.max(0, annualRev - revenueSold);
+  const yPremPace = daysLeftInYear > 0 ? yPremRemaining / daysLeftInYear : 0;
+  const yRevPace = daysLeftInYear > 0 ? yRevRemaining / daysLeftInYear : 0;
 
   if (loading) return null;
 
@@ -348,7 +194,6 @@ export function ProductionScoreboard({ userId, premiumSold, revenueSold }: Props
     );
   }
 
-
   return (
     <>
       <div className="relative rounded-xl bg-card border border-border shadow-sm overflow-hidden mb-6">
@@ -364,74 +209,57 @@ export function ProductionScoreboard({ userId, premiumSold, revenueSold }: Props
           <Target className="h-3.5 w-3.5" />
         </button>
 
-        <Tabs defaultValue="monthly" className="w-full">
-          <div className="px-3 pt-3 sm:px-4 sm:pt-4">
-            <TabsList className="w-full grid grid-cols-2">
-              <TabsTrigger value="monthly">Monthly</TabsTrigger>
-              <TabsTrigger value="annual">Annual</TabsTrigger>
-            </TabsList>
+        {/* ── MONTHLY row ── */}
+        <div className="px-3 pt-3 sm:px-4 sm:pt-4">
+          <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-2">Monthly</p>
+        </div>
+        <div className="grid grid-cols-2 divide-x divide-border">
+          <div className="px-3 pb-3 sm:px-4 sm:pb-4">
+            <ScoreboardTile
+              title="NB Production"
+              actual={premiumSold} goal={monthlyPrem}
+              remaining={mPremRemaining}
+              paceNeeded={mPremPace} paceUnit="day"
+              daysLeft={daysLeftInMonth} countdownLabel="Month Ends In"
+            />
           </div>
+          <div className="px-3 pb-3 sm:px-4 sm:pb-4">
+            <ScoreboardTile
+              title="Revenue"
+              actual={revenueSold} goal={monthlyRev}
+              remaining={mRevRemaining}
+              paceNeeded={mRevPace} paceUnit="day"
+              daysLeft={daysLeftInMonth} countdownLabel="Month Ends In"
+            />
+          </div>
+        </div>
 
-          {/* ── Monthly Tab ── */}
-          <TabsContent value="monthly" className="px-3 pb-4 sm:px-4 space-y-4 mt-0">
-            <ProductionSection
-              label={monthName}
-              premiumSold={premiumSold} premiumGoal={monthlyPrem}
-              revenueSold={revenueSold} revenueGoal={monthlyRev}
-            />
-            <div className="border-t border-border" />
-            <PaceSection
-              label="Monthly" paceUnit="day"
-              premiumRequired={mPremRequired} premiumCurrent={mPremCurrent}
-              revenueRequired={mRevRequired} revenueCurrent={mRevCurrent}
-            />
-            <div className="border-t border-border" />
-            <ProjectionSection
-              premiumProjected={mPremProjected} premiumGap={mPremGap} premiumGoal={monthlyPrem}
-              revenueProjected={mRevProjected} revenueGap={mRevGap} revenueGoal={monthlyRev}
-            />
-            <div className="border-t border-border" />
-            <PaceChart
-              chartData={monthlyChartData} premiumGoal={monthlyPrem} revenueGoal={monthlyRev}
-              xKey="day" label="Monthly"
-            />
-            <div className="border-t border-border" />
-            <VarianceSection
-              premiumActual={premiumSold} premiumTarget={mPremTargetToday}
-              revenueActual={revenueSold} revenueTarget={mRevTargetToday}
-            />
-          </TabsContent>
+        <div className="border-t border-border" />
 
-          {/* ── Annual Tab ── */}
-          <TabsContent value="annual" className="px-3 pb-4 sm:px-4 space-y-4 mt-0">
-            <ProductionSection
-              label={`${year}`}
-              premiumSold={premiumSold} premiumGoal={annualPrem}
-              revenueSold={revenueSold} revenueGoal={annualRev}
+        {/* ── ANNUAL row ── */}
+        <div className="px-3 pt-3 sm:px-4 sm:pt-4">
+          <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-2">Annual</p>
+        </div>
+        <div className="grid grid-cols-2 divide-x divide-border">
+          <div className="px-3 pb-3 sm:px-4 sm:pb-4">
+            <ScoreboardTile
+              title="NB Production"
+              actual={premiumSold} goal={annualPrem}
+              remaining={yPremRemaining}
+              paceNeeded={yPremPace} paceUnit="day"
+              daysLeft={daysLeftInYear} countdownLabel="Year Ends In"
             />
-            <div className="border-t border-border" />
-            <PaceSection
-              label="Annual" paceUnit="month"
-              premiumRequired={yPremRequired} premiumCurrent={yPremCurrent}
-              revenueRequired={yRevRequired} revenueCurrent={yRevCurrent}
+          </div>
+          <div className="px-3 pb-3 sm:px-4 sm:pb-4">
+            <ScoreboardTile
+              title="Revenue"
+              actual={revenueSold} goal={annualRev}
+              remaining={yRevRemaining}
+              paceNeeded={yRevPace} paceUnit="day"
+              daysLeft={daysLeftInYear} countdownLabel="Year Ends In"
             />
-            <div className="border-t border-border" />
-            <ProjectionSection
-              premiumProjected={yPremProjected} premiumGap={yPremGap} premiumGoal={annualPrem}
-              revenueProjected={yRevProjected} revenueGap={yRevGap} revenueGoal={annualRev}
-            />
-            <div className="border-t border-border" />
-            <PaceChart
-              chartData={annualChartData} premiumGoal={annualPrem} revenueGoal={annualRev}
-              xKey="month" label="Annual"
-            />
-            <div className="border-t border-border" />
-            <VarianceSection
-              premiumActual={premiumSold} premiumTarget={yPremTargetToday}
-              revenueActual={revenueSold} revenueTarget={yRevTargetToday}
-            />
-          </TabsContent>
-        </Tabs>
+          </div>
+        </div>
       </div>
 
       <GoalDialog
