@@ -68,7 +68,7 @@ const STATUS_STYLES: Record<string, string> = {
   no_show: "border-l-warning opacity-60",
 };
 
-export default function Calendar() {
+export default function Calendar({ embedded }: { embedded?: boolean } = {}) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [events, setEvents] = useState<CalendarEvent[]>([]);
@@ -299,19 +299,18 @@ export default function Calendar() {
   const todayEvents = events.filter((e) => isSameDay(parseISO(e.start_time), new Date()) && e.status === "scheduled");
 
   if (loading) {
-    return (
-      <AppLayout>
-        <div className="space-y-4">
-          <Skeleton className="h-10 w-48" />
-          <Skeleton className="h-10 w-full" />
-          {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-20 w-full" />)}
-        </div>
-      </AppLayout>
+    const loadingContent = (
+      <div className="space-y-4">
+        <Skeleton className="h-10 w-48" />
+        <Skeleton className="h-10 w-full" />
+        {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-20 w-full" />)}
+      </div>
     );
+    return embedded ? loadingContent : <AppLayout>{loadingContent}</AppLayout>;
   }
 
-  return (
-    <AppLayout>
+  const mainContent = (
+    <>
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div className="flex items-center gap-3">
@@ -644,8 +643,9 @@ export default function Calendar() {
           </div>
         </div>
       )}
-    </AppLayout>
+    </>
   );
+  return embedded ? mainContent : <AppLayout>{mainContent}</AppLayout>;
 }
 
 function EventCard({

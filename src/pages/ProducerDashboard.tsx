@@ -35,7 +35,7 @@ function getDateRange(period: TimePeriod): { start: string; end: string } {
   return { start: "2000-01-01", end };
 }
 
-export default function ProducerDashboard() {
+export default function ProducerDashboard({ embedded }: { embedded?: boolean } = {}) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [policies, setPolicies] = useState<any[]>([]);
@@ -115,8 +115,8 @@ export default function ProducerDashboard() {
     setLoading(false);
   };
 
-  return (
-    <AppLayout>
+  const content = (
+    <>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div>
           <h1 className="text-2xl sm:text-4xl mb-1">My Dashboard</h1>
@@ -283,6 +283,7 @@ export default function ProducerDashboard() {
           </CardContent>
         </Card>
       </div>
-    </AppLayout>
+    </>
   );
+  return embedded ? content : <AppLayout>{content}</AppLayout>;
 }
