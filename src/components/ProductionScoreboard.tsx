@@ -152,105 +152,75 @@ export function ProductionScoreboard({ userId, premiumSold, revenueSold }: Props
   const dailyPrem = daysLeftInYear > 0 ? remainingPrem / daysLeftInYear : 0;
   const dailyRev = daysLeftInYear > 0 ? remainingRev / daysLeftInYear : 0;
 
+  const slots = [
+    {
+      label: `Premium · ${monthName}`,
+      value: premiumSold,
+      goal: monthlyPrem,
+      sub: `${daysLeftInMonth}d left`,
+    },
+    {
+      label: `Revenue · ${monthName}`,
+      value: revenueSold,
+      goal: monthlyRev,
+      sub: `${daysLeftInMonth}d left`,
+    },
+    {
+      label: `Premium · ${year}`,
+      value: premiumSold,
+      goal: annualPrem,
+      sub: `${fmt(dailyPrem)}/day needed`,
+    },
+    {
+      label: `Revenue · ${year}`,
+      value: revenueSold,
+      goal: annualRev,
+      sub: `${fmt(dailyRev)}/day needed`,
+    },
+  ];
+
   return (
     <>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
-        {/* This Month */}
-        <Card>
-          <CardContent className="p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider font-sans">
-                This Month
-              </span>
-              <button
-                className="text-muted-foreground hover:text-foreground"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setGoalPremium(annualPrem.toString());
-                  setGoalRevenue(annualRev.toString());
-                  setGoalDialogOpen(true);
-                }}
-              >
-                <Target className="h-3.5 w-3.5" />
-              </button>
-            </div>
+      <div className="relative rounded-xl bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border border-white/10 shadow-lg overflow-hidden mb-6">
+        {/* Edit goals button */}
+        <button
+          className="absolute top-2 right-2 z-10 text-white/40 hover:text-white/80 transition-colors"
+          onClick={() => {
+            setGoalPremium(annualPrem.toString());
+            setGoalRevenue(annualRev.toString());
+            setGoalDialogOpen(true);
+          }}
+        >
+          <Target className="h-3.5 w-3.5" />
+        </button>
 
-            <div className="space-y-1.5">
-              <div className="flex items-baseline justify-between">
-                <span className="text-xs text-muted-foreground font-sans">Premium</span>
-                <span className="text-xs text-muted-foreground font-sans">
-                  {pctLabel(premiumSold, monthlyPrem)}
-                </span>
+        <div className="grid grid-cols-2 lg:grid-cols-4 divide-x divide-white/10">
+          {slots.map((slot, i) => {
+            const percent = pct(slot.value, slot.goal);
+            return (
+              <div key={i} className="px-3 py-3 sm:px-4 sm:py-3.5 space-y-1.5">
+                <p className="text-[10px] sm:text-[11px] uppercase tracking-wider text-white/50 font-sans font-medium truncate">
+                  {slot.label}
+                </p>
+                <p className="text-base sm:text-lg font-bold text-white font-sans leading-none">
+                  {fmt(slot.value)}
+                </p>
+                <p className="text-[10px] sm:text-[11px] text-white/40 font-sans leading-none">
+                  of {fmt(slot.goal)} · {pctLabel(slot.value, slot.goal)}
+                </p>
+                <div className="w-full h-1 rounded-full bg-white/10 overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-emerald-500 transition-all duration-500"
+                    style={{ width: `${Math.min(percent, 100)}%` }}
+                  />
+                </div>
+                <p className="text-[9px] sm:text-[10px] text-white/30 font-sans">
+                  {slot.sub}
+                </p>
               </div>
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-sm font-semibold font-sans">{fmt(premiumSold)}</span>
-                <span className="text-xs text-muted-foreground font-sans">/ {fmt(monthlyPrem)}</span>
-              </div>
-              <Progress value={pct(premiumSold, monthlyPrem)} className="h-1.5" />
-            </div>
-
-            <div className="space-y-1.5">
-              <div className="flex items-baseline justify-between">
-                <span className="text-xs text-muted-foreground font-sans">Revenue</span>
-                <span className="text-xs text-muted-foreground font-sans">
-                  {pctLabel(revenueSold, monthlyRev)}
-                </span>
-              </div>
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-sm font-semibold font-sans">{fmt(revenueSold)}</span>
-                <span className="text-xs text-muted-foreground font-sans">/ {fmt(monthlyRev)}</span>
-              </div>
-              <Progress value={pct(revenueSold, monthlyRev)} className="h-1.5" />
-            </div>
-
-            <p className="text-[11px] text-muted-foreground font-sans">
-              {daysLeftInMonth} day{daysLeftInMonth !== 1 ? "s" : ""} left in {monthName}
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* This Year */}
-        <Card>
-          <CardContent className="p-4 space-y-3">
-            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider font-sans">
-              This Year
-            </span>
-
-            <div className="space-y-1.5">
-              <div className="flex items-baseline justify-between">
-                <span className="text-xs text-muted-foreground font-sans">Premium</span>
-                <span className="text-xs text-muted-foreground font-sans">
-                  {pctLabel(premiumSold, annualPrem)}
-                </span>
-              </div>
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-sm font-semibold font-sans">{fmt(premiumSold)}</span>
-                <span className="text-xs text-muted-foreground font-sans">/ {fmt(annualPrem)}</span>
-              </div>
-              <Progress value={pct(premiumSold, annualPrem)} className="h-1.5" />
-            </div>
-
-            <div className="space-y-1.5">
-              <div className="flex items-baseline justify-between">
-                <span className="text-xs text-muted-foreground font-sans">Revenue</span>
-                <span className="text-xs text-muted-foreground font-sans">
-                  {pctLabel(revenueSold, annualRev)}
-                </span>
-              </div>
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-sm font-semibold font-sans">{fmt(revenueSold)}</span>
-                <span className="text-xs text-muted-foreground font-sans">/ {fmt(annualRev)}</span>
-              </div>
-              <Progress value={pct(revenueSold, annualRev)} className="h-1.5" />
-            </div>
-
-            <div className="border-t pt-2 mt-1">
-              <p className="text-[11px] text-muted-foreground font-sans">
-                {yearPct}% of year elapsed · Need {fmt(dailyPrem)}/day premium
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+            );
+          })}
+        </div>
       </div>
 
       <GoalDialog
