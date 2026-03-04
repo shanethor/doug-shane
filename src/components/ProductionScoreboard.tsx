@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
-import { Target } from "lucide-react";
+import { Target, Trophy, Sparkles } from "lucide-react";
 
 type Props = {
   userId: string;
@@ -31,6 +31,7 @@ function ScoreboardTile({
   paceUnit,
   daysLeft,
   countdownLabel,
+  compact = false,
 }: {
   title: string;
   actual: number;
@@ -40,9 +41,11 @@ function ScoreboardTile({
   paceUnit: string;
   daysLeft: number;
   countdownLabel: string;
+  compact?: boolean;
 }) {
   const percent = goal > 0 ? Math.min((actual / goal) * 100, 100) : 0;
-  const exceeded = goal > 0 && actual >= goal;
+  const rawPercent = goal > 0 ? (actual / goal) * 100 : 0;
+  const exceeded = rawPercent >= 100;
 
   return (
     <div className="space-y-2">
@@ -54,32 +57,43 @@ function ScoreboardTile({
       </p>
 
       {/* Progress bar */}
-      <div className="w-full h-1.5 rounded-full bg-muted overflow-hidden">
+      <div className={`w-full rounded-full bg-muted overflow-hidden ${exceeded ? "h-2" : "h-1.5"}`}>
         <div
-          className={`h-full rounded-full transition-all duration-500 ${exceeded ? "bg-emerald-500" : "bg-primary"}`}
+          className={`h-full rounded-full transition-all duration-500 ${exceeded ? "bg-gradient-to-r from-emerald-400 to-emerald-500 animate-pulse" : "bg-primary"}`}
           style={{ width: `${percent}%` }}
         />
       </div>
 
-      <p className="text-[10px] text-muted-foreground">{pctOf(actual, goal)}% to Goal</p>
+      {exceeded ? (
+        <div className="flex items-center gap-1.5">
+          <Trophy className="h-3.5 w-3.5 text-emerald-600" />
+          <span className="text-[11px] font-bold text-emerald-600">
+            {rawPercent.toFixed(0)}% — Goal Complete!
+          </span>
+          <Sparkles className="h-3.5 w-3.5 text-emerald-500 animate-pulse" />
+        </div>
+      ) : (
+        <>
+          <p className="text-[10px] text-muted-foreground">{pctOf(actual, goal)}% to Goal</p>
 
-      {/* Remaining */}
-      <div className="flex justify-between items-baseline">
-        <span className="text-[10px] text-muted-foreground">Remaining</span>
-        <span className="text-xs font-semibold text-foreground">{fmt(remaining)}</span>
-      </div>
-
-      {/* Pace */}
-      <div className="flex justify-between items-baseline">
-        <span className="text-[10px] text-muted-foreground">Pace Needed</span>
-        <span className="text-xs font-semibold text-foreground">{fmt(paceNeeded)}<span className="text-[10px] font-normal text-muted-foreground">/{paceUnit}</span></span>
-      </div>
-
-      {/* Countdown */}
-      <div className="flex justify-between items-baseline">
-        <span className="text-[10px] text-muted-foreground">{countdownLabel}</span>
-        <span className="text-xs font-semibold text-foreground">{daysLeft} Days</span>
-      </div>
+          {!compact && (
+            <>
+              <div className="flex justify-between items-baseline">
+                <span className="text-[10px] text-muted-foreground">Remaining</span>
+                <span className="text-xs font-semibold text-foreground">{fmt(remaining)}</span>
+              </div>
+              <div className="flex justify-between items-baseline">
+                <span className="text-[10px] text-muted-foreground">Pace Needed</span>
+                <span className="text-xs font-semibold text-foreground">{fmt(paceNeeded)}<span className="text-[10px] font-normal text-muted-foreground">/{paceUnit}</span></span>
+              </div>
+              <div className="flex justify-between items-baseline">
+                <span className="text-[10px] text-muted-foreground">{countdownLabel}</span>
+                <span className="text-xs font-semibold text-foreground">{daysLeft} Days</span>
+              </div>
+            </>
+          )}
+        </>
+      )}
     </div>
   );
 }
@@ -227,6 +241,7 @@ export function ProductionScoreboard({ userId, premiumSold, revenueSold }: Props
               remaining={mRevRemaining}
               paceNeeded={mRevPace} paceUnit="day"
               daysLeft={daysLeftInMonth} countdownLabel="Month Ends In"
+              compact
             />
           </div>
 
@@ -247,6 +262,7 @@ export function ProductionScoreboard({ userId, premiumSold, revenueSold }: Props
               remaining={yRevRemaining}
               paceNeeded={yRevPace} paceUnit="day"
               daysLeft={daysLeftInYear} countdownLabel="Year Ends In"
+              compact
             />
           </div>
         </div>
