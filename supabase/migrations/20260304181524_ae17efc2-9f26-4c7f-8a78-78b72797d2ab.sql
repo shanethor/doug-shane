@@ -1,0 +1,1 @@
+UPDATE public.profiles SET form_defaults = jsonb_set(COALESCE(form_defaults::jsonb, '{}'::jsonb), '{_training_mode}', 'false'::jsonb);
