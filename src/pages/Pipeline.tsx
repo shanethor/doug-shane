@@ -102,7 +102,7 @@ const STAGE_TOOLTIPS: Record<string, string> = {
   sold: "You closed the deal! Enter policy information.",
 };
 
-export default function Pipeline() {
+export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
   const { user } = useAuth();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
@@ -712,8 +712,8 @@ export default function Pipeline() {
   };
 
   if (loading) {
-    return (
-      <AppLayout>
+    const loadingContent = (
+      <>
         {/* Stats bar skeleton */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-9 gap-3 mb-6">
           {Array.from({ length: 9 }).map((_, i) => (
@@ -760,8 +760,9 @@ export default function Pipeline() {
             </div>
           ))}
         </div>
-      </AppLayout>
+      </>
     );
+    return embedded ? loadingContent : <AppLayout>{loadingContent}</AppLayout>;
   }
 
   const soldLead = soldLeadId ? leads.find((l) => l.id === soldLeadId) : null;
@@ -771,8 +772,8 @@ export default function Pipeline() {
   const fmt = (n: number) => "$" + n.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
 
 
-  return (
-    <AppLayout>
+  const mainContent = (
+    <>
       <div ref={pullRef} className="overflow-y-auto">
       <PullIndicator />
       {/* Production Scoreboard */}
@@ -1576,6 +1577,7 @@ export default function Pipeline() {
         onRefresh={loadLeads}
       />
       </div>
-    </AppLayout>
+    </>
   );
+  return embedded ? mainContent : <AppLayout>{mainContent}</AppLayout>;
 }

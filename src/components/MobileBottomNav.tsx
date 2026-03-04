@@ -3,16 +3,13 @@ import { useAdmin } from "@/hooks/useAdmin";
 import { useUnreadCount } from "@/hooks/useUnreadCount";
 import { useNavConfig, ALL_NAV_TABS } from "@/hooks/useNavConfig";
 import {
-  Inbox,
-  LayoutDashboard,
+  Mail,
   GitBranch,
-  CalendarDays,
-  BarChart3,
   MoreHorizontal,
   MessageCircle,
   ShieldCheck,
   Settings,
-  GraduationCap,
+  HelpCircle,
   LogOut,
   HeartPulse,
 } from "lucide-react";
@@ -28,13 +25,10 @@ import { useTrainingMode } from "@/hooks/useTrainingMode";
 import { Switch } from "@/components/ui/switch";
 
 const ICON_MAP: Record<string, any> = {
-  chat: MessageCircle,
-  inbox: Inbox,
-  clients: LayoutDashboard,
-  pipeline: GitBranch,
-  calendar: CalendarDays,
-  production: BarChart3,
+  aura: MessageCircle,
+  email: Mail,
   pulse: HeartPulse,
+  hub: GitBranch,
 };
 
 export function MobileBottomNav() {
@@ -51,7 +45,6 @@ export function MobileBottomNav() {
     .map((id) => ALL_NAV_TABS.find((t) => t.id === id))
     .filter(Boolean) as typeof ALL_NAV_TABS;
 
-  // Items that go in the "More" sheet = all tabs NOT visible + standard more items
   const hiddenTabIds = new Set(ALL_NAV_TABS.map((t) => t.id));
   visibleTabs.forEach((t) => hiddenTabIds.delete(t.id));
   const hiddenTabs = ALL_NAV_TABS.filter((t) => hiddenTabIds.has(t.id));
@@ -80,7 +73,7 @@ export function MobileBottomNav() {
                 <span className="text-[10px] font-medium leading-tight">
                   {tab.label}
                 </span>
-                {tab.id === "inbox" && unreadCount > 0 && (
+                {tab.id === "email" && unreadCount > 0 && (
                   <span className="absolute top-1 right-0.5 h-4 min-w-[16px] px-1 rounded-full bg-destructive text-destructive-foreground text-[9px] font-bold flex items-center justify-center">
                     {unreadCount > 99 ? "99+" : unreadCount}
                   </span>
@@ -102,14 +95,12 @@ export function MobileBottomNav() {
         </div>
       </nav>
 
-      {/* More Sheet */}
       <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
         <SheetContent side="bottom" className="rounded-t-2xl pb-8">
           <SheetHeader className="pb-2">
             <SheetTitle className="text-left text-base">More</SheetTitle>
           </SheetHeader>
           <div className="space-y-1">
-            {/* Hidden nav tabs */}
             {hiddenTabs.map((tab) => {
               const Icon = ICON_MAP[tab.id] || MessageCircle;
               return (
@@ -162,12 +153,12 @@ export function MobileBottomNav() {
 
             <div className="flex items-center justify-between px-3 py-3">
               <div className="flex items-center gap-3">
-                <GraduationCap
+                <HelpCircle
                   className={`h-5 w-5 ${
                     trainingMode ? "text-accent" : "text-muted-foreground"
                   }`}
                 />
-                <span className="text-sm">Training Mode</span>
+                <span className="text-sm">Help</span>
               </div>
               <Switch
                 checked={trainingMode}

@@ -7,17 +7,14 @@ export type NavTab = {
 };
 
 export const ALL_NAV_TABS: NavTab[] = [
-  { id: "chat", label: "Chat", to: "/" },
-  { id: "inbox", label: "Inbox", to: "/inbox" },
-  { id: "clients", label: "Clients", to: "/clients" },
-  { id: "pipeline", label: "Pipeline", to: "/pipeline" },
-  { id: "calendar", label: "Calendar", to: "/calendar" },
-  { id: "production", label: "Production", to: "/my-dashboard" },
+  { id: "aura", label: "AURA", to: "/" },
+  { id: "email", label: "Email", to: "/email" },
   { id: "pulse", label: "Pulse", to: "/pulse" },
+  { id: "hub", label: "Producer Hub", to: "/hub" },
 ];
 
-const DEFAULT_TAB_IDS = ["chat", "inbox", "clients", "pipeline", "calendar"];
-const DEFAULT_COUNT = 5;
+const DEFAULT_TAB_IDS = ["aura", "email", "pulse", "hub"];
+const DEFAULT_COUNT = 4;
 const STORAGE_KEY = "nav_config";
 
 export type NavConfig = {
@@ -30,7 +27,12 @@ function loadFromStorage(): NavConfig {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (parsed.tabCount && parsed.selectedTabIds) return parsed;
+      // Validate that stored IDs still exist in ALL_NAV_TABS
+      const validIds = new Set(ALL_NAV_TABS.map(t => t.id));
+      const filteredIds = (parsed.selectedTabIds || []).filter((id: string) => validIds.has(id));
+      if (filteredIds.length > 0) {
+        return { tabCount: parsed.tabCount || DEFAULT_COUNT, selectedTabIds: filteredIds };
+      }
     }
   } catch {}
   return { tabCount: DEFAULT_COUNT, selectedTabIds: DEFAULT_TAB_IDS };
@@ -48,7 +50,6 @@ export function useNavConfig() {
     saveNavConfig(c);
   }, []);
 
-  // Listen for storage changes from other components
   useEffect(() => {
     const handler = () => setConfigState(loadFromStorage());
     window.addEventListener("storage", handler);

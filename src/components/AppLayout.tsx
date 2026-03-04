@@ -2,7 +2,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useAdmin } from "@/hooks/useAdmin";
 import { useUnreadCount } from "@/hooks/useUnreadCount";
-import { LayoutDashboard, LogOut, ShieldCheck, MessageCircle, GraduationCap, GitBranch, BarChart3, Settings, Inbox, CalendarDays, HeartPulse } from "lucide-react";
+import { LogOut, ShieldCheck, MessageCircle, HelpCircle, GitBranch, Settings, Mail, HeartPulse } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { useTrainingMode } from "@/hooks/useTrainingMode";
@@ -16,13 +16,10 @@ export function AppLayout({ children, onLogoClick }: { children: React.ReactNode
   const unreadCount = useUnreadCount();
 
   const navItems = [
-    { to: "/", label: "Chat", icon: MessageCircle },
-    { to: "/inbox", label: "Inbox", icon: Inbox },
-    { to: "/clients", label: "Clients", icon: LayoutDashboard },
-    { to: "/pipeline", label: "Pipeline", icon: GitBranch },
-    { to: "/calendar", label: "Calendar", icon: CalendarDays },
-    { to: "/my-dashboard", label: "Production", icon: BarChart3 },
+    { to: "/", label: "AURA", icon: MessageCircle },
+    { to: "/email", label: "Email", icon: Mail },
     { to: "/pulse", label: "Pulse", icon: HeartPulse },
+    { to: "/hub", label: "Producer Hub", icon: GitBranch },
     ...(isAdmin ? [
       { to: "/admin", label: "Admin", icon: ShieldCheck },
     ] : []),
@@ -56,7 +53,7 @@ export function AppLayout({ children, onLogoClick }: { children: React.ReactNode
                 >
                   <item.icon className="h-3.5 w-3.5" />
                   {item.label}
-                  {item.to === "/inbox" && unreadCount > 0 && (
+                  {item.to === "/email" && unreadCount > 0 && (
                     <span className="absolute -top-1 -right-1 h-4 min-w-[16px] px-1 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center">
                       {unreadCount > 99 ? "99+" : unreadCount}
                     </span>
@@ -66,11 +63,11 @@ export function AppLayout({ children, onLogoClick }: { children: React.ReactNode
             ))}
             <div className="ml-2 h-4 w-px bg-border" />
 
-            {/* Training mode toggle */}
+            {/* Help toggle */}
             <div className="flex items-center gap-1.5 ml-1 px-2 py-1 rounded-md hover:bg-muted/60 transition-colors cursor-default">
-              <GraduationCap className={`h-3.5 w-3.5 transition-colors ${trainingMode ? "text-accent" : "text-muted-foreground"}`} />
+              <HelpCircle className={`h-3.5 w-3.5 transition-colors ${trainingMode ? "text-accent" : "text-muted-foreground"}`} />
               <span className={`text-[11px] font-medium transition-colors ${trainingMode ? "text-foreground" : "text-muted-foreground"}`}>
-                Training
+                Help
               </span>
               <Switch
                 checked={trainingMode}

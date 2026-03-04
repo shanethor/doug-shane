@@ -31,6 +31,8 @@ import CalendarPage from "./pages/Calendar";
 import BookingPage from "./pages/BookingPage";
 import Settings from "./pages/Settings";
 import AuraPulse from "./pages/AuraPulse";
+import EmailHub from "./pages/EmailHub";
+import ProducerHub from "./pages/ProducerHub";
 import { Navigate } from "react-router-dom";
 const queryClient = new QueryClient();
 
@@ -43,6 +45,9 @@ const App = () => (
         <Routes>
           <Route path="/auth" element={<Auth />} />
           <Route path="/" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
+          <Route path="/email" element={<ProtectedRoute><EmailHub /></ProtectedRoute>} />
+          <Route path="/hub" element={<ProtectedRoute><ProducerHub /></ProtectedRoute>} />
+          <Route path="/pulse" element={<ProtectedRoute><AuraPulse /></ProtectedRoute>} />
           <Route path="/clients" element={<ProtectedRoute><UserDashboard /></ProtectedRoute>} />
           <Route path="/submit-plan" element={<ProtectedRoute><SubmitPlan /></ProtectedRoute>} />
           <Route path="/application/:submissionId" element={<ProtectedRoute><ApplicationReview /></ProtectedRoute>} />
@@ -63,11 +68,10 @@ const App = () => (
           <Route path="/tracker" element={<PipelineTracker />} />
           <Route path="/personal-intake/:token" element={<IntakeForm />} />
           <Route path="/bor-sign/:token" element={<BorSign />} />
-          <Route path="/inbox" element={<ProtectedRoute><InboxPage /></ProtectedRoute>} />
+          <Route path="/inbox" element={<Navigate to="/email" replace />} />
           <Route path="/email-callback" element={<ProtectedRoute><EmailCallback /></ProtectedRoute>} />
-          <Route path="/calendar" element={<ProtectedRoute><CalendarPage /></ProtectedRoute>} />
+          <Route path="/calendar" element={<Navigate to="/email" replace />} />
           <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-          <Route path="/pulse" element={<ProtectedRoute><AuraPulse /></ProtectedRoute>} />
           <Route path="/book/:producerId" element={<BookingPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

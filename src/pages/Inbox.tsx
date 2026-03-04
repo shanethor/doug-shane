@@ -75,7 +75,7 @@ const TYPE_CONFIG: Record<string, { icon: React.ElementType; color: string; labe
   info: { icon: Bell, color: "text-muted-foreground", label: "Info" },
 };
 
-export default function Inbox() {
+export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; embedded?: boolean } = {}) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -334,21 +334,22 @@ export default function Inbox() {
   }, [notifications, syncedEmails]);
 
   const unified = buildUnified();
+  const baseUnified = emailOnly ? unified.filter((u) => u.kind === "email") : unified;
   const filtered = tab === "all"
-    ? unified
+    ? baseUnified
     : tab === "unread"
-      ? unified.filter((u) => !u.is_read)
+      ? baseUnified.filter((u) => !u.is_read)
       : tab === "pipeline"
-        ? unified.filter((u) => u.kind === "notification" && (u.raw as Notification).type === "pipeline")
+        ? baseUnified.filter((u) => u.kind === "notification" && (u.raw as Notification).type === "pipeline")
         : tab === "loss_run"
-          ? unified.filter((u) => u.kind === "notification" && (u.raw as Notification).type === "loss_run")
+          ? baseUnified.filter((u) => u.kind === "notification" && (u.raw as Notification).type === "loss_run")
           : tab === "intake"
-            ? unified.filter((u) => u.kind === "notification" && (u.raw as Notification).type === "intake")
+            ? baseUnified.filter((u) => u.kind === "notification" && (u.raw as Notification).type === "intake")
             : tab === "document"
-              ? unified.filter((u) => u.kind === "notification" && (u.raw as Notification).type === "document")
+              ? baseUnified.filter((u) => u.kind === "notification" && (u.raw as Notification).type === "document")
               : tab === "emails"
-                ? unified.filter((u) => u.kind === "email")
-                : unified;
+                ? baseUnified.filter((u) => u.kind === "email")
+                : baseUnified;
 
   const unreadCount = unified.filter((u) => !u.is_read).length;
 
@@ -447,27 +448,26 @@ export default function Inbox() {
   const { containerRef: pullRef, PullIndicator } = usePullToRefresh({ onRefresh: loadAll });
 
   if (loading) {
-    return (
-      <AppLayout>
-        <div className="space-y-4">
-          <Skeleton className="h-10 w-48" />
-          <Skeleton className="h-10 w-full" />
-          {Array.from({ length: 6 }).map((_, i) => (
-            <Skeleton key={i} className="h-16 w-full" />
-          ))}
-        </div>
-      </AppLayout>
+    const loadingContent = (
+      <div className="space-y-4">
+        <Skeleton className="h-10 w-48" />
+        <Skeleton className="h-10 w-full" />
+        {Array.from({ length: 6 }).map((_, i) => (
+          <Skeleton key={i} className="h-16 w-full" />
+        ))}
+      </div>
     );
+    return embedded ? loadingContent : <AppLayout>{loadingContent}</AppLayout>;
   }
 
-  return (
-    <AppLayout>
+  const mainContent = (
+    <>
       <div ref={pullRef} className="overflow-y-auto">
       <PullIndicator />
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div className="flex items-center gap-3">
           <InboxIcon className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
-          <h1 className="text-xl sm:text-3xl font-semibold tracking-tight">Inbox</h1>
+          <h1 className="text-xl sm:text-3xl font-semibold tracking-tight">{emailOnly ? "Email" : "Inbox"}</h1>
           {unreadCount > 0 && (
             <Badge variant="default" className="text-xs">{unreadCount} new</Badge>
           )}
@@ -498,27 +498,31 @@ export default function Inbox() {
           <TabsList className="inline-flex w-auto min-w-max">
             <TabsTrigger value="all">All</TabsTrigger>
             <TabsTrigger value="unread">Unread {unreadCount > 0 && `(${unreadCount})`}</TabsTrigger>
-            <TabsTrigger value="emails" className="relative">
-              <Mail className="h-3.5 w-3.5 mr-1" />
-              Emails
-              {(() => { const c = syncedEmails.filter(e => !e.is_read).length; return c > 0 ? <span className="absolute -top-1.5 -right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground px-1">{c}</span> : null; })()}
-            </TabsTrigger>
-            <TabsTrigger value="pipeline" className="relative">
-              Pipeline
-              {(() => { const c = notifications.filter(n => n.type === "pipeline" && !n.is_read).length; return c > 0 ? <span className="absolute -top-1.5 -right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground px-1">{c}</span> : null; })()}
-            </TabsTrigger>
-            <TabsTrigger value="loss_run" className="relative">
-              Loss Runs
-              {(() => { const c = notifications.filter(n => n.type === "loss_run" && !n.is_read).length; return c > 0 ? <span className="absolute -top-1.5 -right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground px-1">{c}</span> : null; })()}
-            </TabsTrigger>
-            <TabsTrigger value="intake" className="relative">
-              Intake
-              {(() => { const c = notifications.filter(n => n.type === "intake" && !n.is_read).length; return c > 0 ? <span className="absolute -top-1.5 -right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground px-1">{c}</span> : null; })()}
-            </TabsTrigger>
-            <TabsTrigger value="document" className="relative">
-              Documents
-              {(() => { const c = notifications.filter(n => n.type === "document" && !n.is_read).length; return c > 0 ? <span className="absolute -top-1.5 -right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground px-1">{c}</span> : null; })()}
-            </TabsTrigger>
+            {!emailOnly && (
+              <>
+                <TabsTrigger value="emails" className="relative">
+                  <Mail className="h-3.5 w-3.5 mr-1" />
+                  Emails
+                  {(() => { const c = syncedEmails.filter(e => !e.is_read).length; return c > 0 ? <span className="absolute -top-1.5 -right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground px-1">{c}</span> : null; })()}
+                </TabsTrigger>
+                <TabsTrigger value="pipeline" className="relative">
+                  Pipeline
+                  {(() => { const c = notifications.filter(n => n.type === "pipeline" && !n.is_read).length; return c > 0 ? <span className="absolute -top-1.5 -right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground px-1">{c}</span> : null; })()}
+                </TabsTrigger>
+                <TabsTrigger value="loss_run" className="relative">
+                  Loss Runs
+                  {(() => { const c = notifications.filter(n => n.type === "loss_run" && !n.is_read).length; return c > 0 ? <span className="absolute -top-1.5 -right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground px-1">{c}</span> : null; })()}
+                </TabsTrigger>
+                <TabsTrigger value="intake" className="relative">
+                  Intake
+                  {(() => { const c = notifications.filter(n => n.type === "intake" && !n.is_read).length; return c > 0 ? <span className="absolute -top-1.5 -right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground px-1">{c}</span> : null; })()}
+                </TabsTrigger>
+                <TabsTrigger value="document" className="relative">
+                  Documents
+                  {(() => { const c = notifications.filter(n => n.type === "document" && !n.is_read).length; return c > 0 ? <span className="absolute -top-1.5 -right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground px-1">{c}</span> : null; })()}
+                </TabsTrigger>
+              </>
+            )}
           </TabsList>
         </div>
 
@@ -709,6 +713,7 @@ export default function Inbox() {
         </DialogContent>
       </Dialog>
       </div>
-    </AppLayout>
+    </>
   );
+  return embedded ? mainContent : <AppLayout>{mainContent}</AppLayout>;
 }
