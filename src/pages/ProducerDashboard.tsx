@@ -120,7 +120,6 @@ export default function ProducerDashboard() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div>
           <h1 className="text-2xl sm:text-4xl mb-1">My Dashboard</h1>
-          <p className="text-muted-foreground font-sans text-xs sm:text-sm">Production stats for approved policies.</p>
         </div>
         <div className="flex items-center gap-2">
           <CalendarDays className="h-4 w-4 text-muted-foreground" />

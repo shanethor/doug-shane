@@ -4,11 +4,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/hooks/useAuth";
 import { Navigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Loader2, ShieldCheck } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import auraLogo from "@/assets/aura-logo.png";
 import { set2FAVerified, is2FAVerified, clear2FAVerified } from "@/lib/2fa-storage";
 
@@ -267,10 +267,10 @@ export default function Auth() {
                 />
               </div>
 
-              <label className="flex items-center gap-2 cursor-pointer">
-                <Checkbox
+              <label className="flex items-center gap-3 cursor-pointer">
+                <Switch
                   checked={rememberDevice}
-                  onCheckedChange={(v) => setRememberDevice(!!v)}
+                  onCheckedChange={(v) => setRememberDevice(v)}
                 />
                 <span className="text-sm text-muted-foreground">Keep me signed in for 7 days</span>
               </label>
