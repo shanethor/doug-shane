@@ -51,7 +51,6 @@ import { SchedulePresentationDialog } from "@/components/SchedulePresentationDia
 import { LeadActionSheet } from "@/components/LeadActionSheet";
 import { MoreVertical } from "lucide-react";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
-import { ProductionScoreboard } from "@/components/ProductionScoreboard";
 
 type PresentingLine = {
   line_of_business: string;
@@ -776,14 +775,6 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
     <>
       <div ref={pullRef} className="overflow-y-auto">
       <PullIndicator />
-      {/* Production Scoreboard */}
-      {user && (
-        <ProductionScoreboard
-          userId={user.id}
-          premiumSold={pipelineStats.totalPremiumSold}
-          revenueSold={pipelineStats.totalRevenueSold}
-        />
-      )}
 
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-6">
         <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
