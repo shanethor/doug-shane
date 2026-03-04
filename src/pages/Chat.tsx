@@ -1662,6 +1662,13 @@ export default function Chat() {
 
   const isEmpty = messages.length === 0;
 
+  // Scroll to bottom on mount so users don't have to scroll up
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, []);
+
   if (activeSubmissionId) {
     const handleBackFromForm = () => { setActiveSubmissionId(null); setBlankFormMode(false); };
     return (
@@ -1831,8 +1838,8 @@ export default function Chat() {
                 )}
               </div>
 
-              {/* Suggestions & feature boxes — hidden on mobile unless training mode */}
-              <div className={`${!trainingMode ? 'hidden md:contents' : 'contents'}`}>
+              {/* Suggestions & feature boxes — only shown when Help/training mode is ON */}
+              {trainingMode && (<>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 w-full max-w-2xl">
                 {SUGGESTIONS.map((s) => (
                   <button
@@ -1925,7 +1932,7 @@ export default function Chat() {
                 <Sparkles className="h-3.5 w-3.5" />
                 <span>Suggest a feature to our team</span>
               </button>
-              </div>
+              </>)}
               {/* Intent buttons — shown when files dropped or form filling intent detected */}
               {showIntentButtons && (
                 <div className="w-full max-w-2xl animate-smooth-reveal">
