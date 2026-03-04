@@ -489,7 +489,7 @@ export default function Chat() {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, []);
 
-  useEffect(() => { scrollToBottom(); }, [messages, displayedText, scrollToBottom]);
+  useEffect(() => { if (messages.length > 0) scrollToBottom(); }, [messages, displayedText, scrollToBottom]);
 
   // Typewriter: drains fullTextRef into displayedText char-by-char
   const startTypewriter = useCallback(() => {
