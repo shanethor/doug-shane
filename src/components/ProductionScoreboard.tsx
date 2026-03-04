@@ -49,11 +49,11 @@ function CountdownLine({ label, targetDate }: { label: string; targetDate: Date 
 function GoalExceeded({ percent }: { percent: number }) {
   return (
     <div className="flex items-center gap-1 mt-0.5">
-      <Trophy className="h-3 w-3 text-amber-600" />
-      <span className="text-[10px] font-bold text-amber-600 font-sans">
+      <Trophy className="h-3 w-3 text-emerald-600" />
+      <span className="text-[10px] font-bold text-emerald-600 font-sans">
         {percent.toFixed(0)}% — Goal crushed!
       </span>
-      <Sparkles className="h-3 w-3 text-amber-500 animate-pulse" />
+      <Sparkles className="h-3 w-3 text-emerald-500 animate-pulse" />
     </div>
   );
 }
@@ -237,7 +237,7 @@ export function ProductionScoreboard({ userId, premiumSold, revenueSold }: Props
 
                 {/* Main value */}
                 <p className={`text-base sm:text-lg font-bold font-sans leading-none ${
-                  exceeded ? "text-amber-600" : "text-foreground"
+                  exceeded ? "text-emerald-600" : "text-foreground"
                 }`}>
                   {fmt(slot.value)}
                 </p>
@@ -252,7 +252,7 @@ export function ProductionScoreboard({ userId, premiumSold, revenueSold }: Props
                   <div
                     className={`h-full rounded-full transition-all duration-500 ${
                       exceeded
-                        ? "bg-gradient-to-r from-yellow-400 to-amber-500"
+                        ? "bg-gradient-to-r from-green-400 to-emerald-500"
                         : "bg-accent"
                     }`}
                     style={{ width: `${Math.min(percent, 100)}%` }}
