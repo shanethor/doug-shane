@@ -209,12 +209,10 @@ export function ProductionScoreboard({ userId, premiumSold, revenueSold }: Props
           <Target className="h-3.5 w-3.5" />
         </button>
 
-        {/* ── MONTHLY row ── */}
-        <div className="px-3 pt-3 sm:px-4 sm:pt-4">
-          <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-2">Monthly</p>
-        </div>
         <div className="grid grid-cols-2 divide-x divide-border">
-          <div className="px-3 pb-3 sm:px-4 sm:pb-4">
+          {/* ── LEFT: Monthly ── */}
+          <div className="px-3 py-3 sm:px-4 sm:py-4 space-y-4">
+            <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">Monthly</p>
             <ScoreboardTile
               title="NB Production"
               actual={premiumSold} goal={monthlyPrem}
@@ -222,8 +220,7 @@ export function ProductionScoreboard({ userId, premiumSold, revenueSold }: Props
               paceNeeded={mPremPace} paceUnit="day"
               daysLeft={daysLeftInMonth} countdownLabel="Month Ends In"
             />
-          </div>
-          <div className="px-3 pb-3 sm:px-4 sm:pb-4">
+            <div className="border-t border-border" />
             <ScoreboardTile
               title="Revenue"
               actual={revenueSold} goal={monthlyRev}
@@ -232,16 +229,10 @@ export function ProductionScoreboard({ userId, premiumSold, revenueSold }: Props
               daysLeft={daysLeftInMonth} countdownLabel="Month Ends In"
             />
           </div>
-        </div>
 
-        <div className="border-t border-border" />
-
-        {/* ── ANNUAL row ── */}
-        <div className="px-3 pt-3 sm:px-4 sm:pt-4">
-          <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-2">Annual</p>
-        </div>
-        <div className="grid grid-cols-2 divide-x divide-border">
-          <div className="px-3 pb-3 sm:px-4 sm:pb-4">
+          {/* ── RIGHT: Annual ── */}
+          <div className="px-3 py-3 sm:px-4 sm:py-4 space-y-4">
+            <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">Annual</p>
             <ScoreboardTile
               title="NB Production"
               actual={premiumSold} goal={annualPrem}
@@ -249,8 +240,7 @@ export function ProductionScoreboard({ userId, premiumSold, revenueSold }: Props
               paceNeeded={yPremPace} paceUnit="day"
               daysLeft={daysLeftInYear} countdownLabel="Year Ends In"
             />
-          </div>
-          <div className="px-3 pb-3 sm:px-4 sm:pb-4">
+            <div className="border-t border-border" />
             <ScoreboardTile
               title="Revenue"
               actual={revenueSold} goal={annualRev}
