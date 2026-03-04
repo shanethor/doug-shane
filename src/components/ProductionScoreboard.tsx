@@ -34,11 +34,11 @@ function CountdownLine({ label, targetDate }: { label: string; targetDate: Date 
   const { formatted, expired } = useCountdown(targetDate);
   if (expired) return null;
   return (
-    <p className="text-[9px] sm:text-[10px] font-sans leading-none text-accent/80 flex items-center gap-1">
-      {/* Pulsing live dot — uses accent color */}
+    <p className="text-[9px] sm:text-[10px] font-sans leading-none text-primary/70 flex items-center gap-1">
+      {/* Pulsing live dot */}
       <span className="relative flex h-1.5 w-1.5">
-        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent/60" />
-        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-accent" />
+        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary/40" />
+        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-primary" />
       </span>
       <span className="opacity-70">{label}:</span> {formatted}
     </p>
@@ -49,11 +49,11 @@ function CountdownLine({ label, targetDate }: { label: string; targetDate: Date 
 function GoalExceeded({ percent }: { percent: number }) {
   return (
     <div className="flex items-center gap-1 mt-0.5">
-      <Trophy className="h-3 w-3 text-yellow-400" />
-      <span className="text-[10px] font-bold text-yellow-400 font-sans">
+      <Trophy className="h-3 w-3 text-amber-600" />
+      <span className="text-[10px] font-bold text-amber-600 font-sans">
         {percent.toFixed(0)}% — Goal crushed!
       </span>
-      <Sparkles className="h-3 w-3 text-yellow-400 animate-pulse" />
+      <Sparkles className="h-3 w-3 text-amber-500 animate-pulse" />
     </div>
   );
 }
@@ -187,6 +187,7 @@ export function ProductionScoreboard({ userId, premiumSold, revenueSold }: Props
       value: revenueSold,
       goal: monthlyRev,
       sub: `of ${fmt(monthlyRev)}`,
+      countdown: { label: "Month ends in", target: endOfMonth },
     },
     {
       label: `Premium · ${year}`,
@@ -201,16 +202,17 @@ export function ProductionScoreboard({ userId, premiumSold, revenueSold }: Props
       value: revenueSold,
       goal: annualRev,
       sub: `${fmt(dailyRev)}/day needed`,
+      countdown: { label: "Year ends in", target: endOfYear },
     },
   ];
 
   return (
     <>
       {/* Scoreboard bar — uses primary (AURA navy) as background, primary-foreground for text */}
-      <div className="relative rounded-xl bg-primary border border-primary/80 shadow-lg overflow-hidden mb-6">
+      <div className="relative rounded-xl bg-card border border-border shadow-sm overflow-hidden mb-6">
         {/* Edit goals button */}
         <button
-          className="absolute top-2 right-2 z-10 text-primary-foreground/40 hover:text-primary-foreground/80 transition-colors"
+          className="absolute top-2 right-2 z-10 text-muted-foreground/40 hover:text-foreground transition-colors"
           onClick={() => {
             setGoalPremium(annualPrem.toString());
             setGoalRevenue(annualRev.toString());
@@ -220,7 +222,7 @@ export function ProductionScoreboard({ userId, premiumSold, revenueSold }: Props
           <Target className="h-3.5 w-3.5" />
         </button>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 divide-x divide-primary-foreground/10">
+        <div className="grid grid-cols-2 lg:grid-cols-4 divide-x divide-border">
           {slots.map((slot, i) => {
             const percent = pct(slot.value, slot.goal);
             const raw = rawPct(slot.value, slot.goal);
@@ -229,24 +231,24 @@ export function ProductionScoreboard({ userId, premiumSold, revenueSold }: Props
             return (
               <div key={i} className="px-3 py-3 sm:px-4 sm:py-3.5 space-y-1.5">
                 {/* Label */}
-                <p className="text-[10px] sm:text-[11px] uppercase tracking-wider text-primary-foreground/50 font-sans font-medium truncate">
+                <p className="text-[10px] sm:text-[11px] uppercase tracking-wider text-muted-foreground font-sans font-medium truncate">
                   {slot.label}
                 </p>
 
                 {/* Main value */}
                 <p className={`text-base sm:text-lg font-bold font-sans leading-none ${
-                  exceeded ? "text-yellow-400" : "text-primary-foreground"
+                  exceeded ? "text-amber-600" : "text-foreground"
                 }`}>
                   {fmt(slot.value)}
                 </p>
 
                 {/* Secondary line */}
-                <p className="text-[10px] sm:text-[11px] text-primary-foreground/40 font-sans leading-none">
+                <p className="text-[10px] sm:text-[11px] text-muted-foreground font-sans leading-none">
                   {slot.sub} · {pctLabel(slot.value, slot.goal)}
                 </p>
 
                 {/* Progress bar — accent color for fill, primary-foreground/10 for track */}
-                <div className="w-full h-1 rounded-full bg-primary-foreground/10 overflow-hidden">
+                <div className="w-full h-1 rounded-full bg-muted overflow-hidden">
                   <div
                     className={`h-full rounded-full transition-all duration-500 ${
                       exceeded
