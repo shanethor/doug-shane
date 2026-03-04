@@ -1662,10 +1662,10 @@ export default function Chat() {
 
   const isEmpty = messages.length === 0;
 
-  // Scroll to bottom on mount so users don't have to scroll up
+  // Ensure page starts at top on mount
   useEffect(() => {
     if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      scrollRef.current.scrollTop = 0;
     }
   }, []);
 
