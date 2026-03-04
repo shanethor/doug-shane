@@ -27,8 +27,8 @@ export function AppLayout({ children, onLogoClick }: { children: React.ReactNode
   ];
 
   return (
-    <div className="min-h-screen aura-subtle-mesh">
-      <header className="border-b aura-glass animate-page-fade sticky top-0 z-40">
+    <div className="min-h-screen aura-subtle-mesh animate-page-fade">
+      <header className="border-b aura-glass sticky top-0 z-40">
         <div className="mx-auto flex h-14 md:h-14 max-w-6xl items-center justify-between px-4">
           {onLogoClick ? (
             <button onClick={onLogoClick} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
@@ -85,7 +85,7 @@ export function AppLayout({ children, onLogoClick }: { children: React.ReactNode
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-4 py-6 md:py-8 pb-24 md:pb-8 animate-page-enter">
+      <main className="mx-auto max-w-6xl px-4 py-6 md:py-8 pb-24 md:pb-8">
         {children}
       </main>
 
