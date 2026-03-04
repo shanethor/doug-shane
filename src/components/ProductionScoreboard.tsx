@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Target, Trophy, Sparkles } from "lucide-react";
 import { useCountdown } from "@/hooks/useCountdown";
+import { LineChart, Line, ResponsiveContainer, Tooltip, XAxis } from "recharts";
 
 type Props = {
   userId: string;
@@ -35,7 +36,6 @@ function CountdownLine({ label, targetDate }: { label: string; targetDate: Date 
   if (expired) return null;
   return (
     <p className="text-[9px] sm:text-[10px] font-sans leading-none text-primary/70 flex items-center gap-1">
-      {/* Pulsing live dot */}
       <span className="relative flex h-1.5 w-1.5">
         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary/40" />
         <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-primary" />
@@ -58,6 +58,31 @@ function GoalExceeded({ percent }: { percent: number }) {
   );
 }
 
+/* ─── Revenue Sparkline ─── */
+function RevenueSparkline({ data, color }: { data: { name: string; rev: number }[]; color: string }) {
+  if (!data.length) {
+    return <p className="text-[10px] text-muted-foreground font-sans italic">No revenue data yet</p>;
+  }
+  return (
+    <div className="mt-1">
+      <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-sans font-medium mb-0.5">Revenue</p>
+      <div className="h-10 w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={data}>
+            <XAxis dataKey="name" hide />
+            <Tooltip
+              contentStyle={{ fontSize: 10, padding: "2px 6px", borderRadius: 6, background: "hsl(var(--card))", border: "1px solid hsl(var(--border))" }}
+              formatter={(v: number) => [fmt(v), "Revenue"]}
+              labelStyle={{ fontSize: 9, color: "hsl(var(--muted-foreground))" }}
+            />
+            <Line type="monotone" dataKey="rev" stroke={color} strokeWidth={1.5} dot={false} />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}
+
 /* ─── Main Component ─── */
 export function ProductionScoreboard({ userId, premiumSold, revenueSold }: Props) {
   const [goals, setGoals] = useState<{
@@ -70,11 +95,14 @@ export function ProductionScoreboard({ userId, premiumSold, revenueSold }: Props
   const [goalRevenue, setGoalRevenue] = useState("");
   const [saving, setSaving] = useState(false);
 
+  // Revenue chart data
+  const [monthlyRevData, setMonthlyRevData] = useState<{ name: string; rev: number }[]>([]);
+  const [yearlyRevData, setYearlyRevData] = useState<{ name: string; rev: number }[]>([]);
+
   const now = new Date();
   const year = now.getFullYear();
   const monthName = now.toLocaleString("default", { month: "long" });
 
-  // Countdown target dates — adjust here if needed
   const endOfMonth = useMemo(() => new Date(year, now.getMonth() + 1, 1), [year, now.getMonth()]);
   const endOfYear = useMemo(() => new Date(year + 1, 0, 1), [year]);
 
@@ -84,6 +112,63 @@ export function ProductionScoreboard({ userId, premiumSold, revenueSold }: Props
   const daysLeftInYear = daysInYear - dayOfYear;
 
   useEffect(() => { loadGoals(); }, [userId, year]);
+
+  // Load policies for sparkline data
+  useEffect(() => {
+    if (!userId) return;
+    (async () => {
+      const { data } = await supabase
+        .from("policies")
+        .select("annual_premium, revenue, approved_at")
+        .eq("producer_user_id", userId)
+        .eq("status", "approved");
+      if (!data) return;
+
+      const currentMonth = now.getMonth();
+      const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+      // Yearly: group by month
+      const byMonth: Record<number, number> = {};
+      for (let m = 0; m <= currentMonth; m++) byMonth[m] = 0;
+      data.forEach((p: any) => {
+        const d = new Date(p.approved_at || p.created_at);
+        if (d.getFullYear() === year) {
+          const m = d.getMonth();
+          const rev = Number(p.revenue || Number(p.annual_premium) * 0.12 || 0);
+          byMonth[m] = (byMonth[m] || 0) + rev;
+        }
+      });
+      // Cumulative
+      let cumY = 0;
+      const yData = Object.keys(byMonth).sort((a, b) => +a - +b).map(m => {
+        cumY += byMonth[+m];
+        return { name: monthNames[+m], rev: Math.round(cumY) };
+      });
+      setYearlyRevData(yData);
+
+      // Monthly: group by week of current month
+      const startOfMonth = new Date(year, currentMonth, 1);
+      const thisMonthPolicies = data.filter((p: any) => {
+        const d = new Date(p.approved_at || p.created_at);
+        return d.getFullYear() === year && d.getMonth() === currentMonth;
+      });
+      // Group into ~4 week buckets
+      const weeks: number[] = [0, 0, 0, 0];
+      thisMonthPolicies.forEach((p: any) => {
+        const d = new Date(p.approved_at || p.created_at);
+        const dayInMonth = d.getDate();
+        const week = Math.min(Math.floor((dayInMonth - 1) / 7), 3);
+        const rev = Number(p.revenue || Number(p.annual_premium) * 0.12 || 0);
+        weeks[week] += rev;
+      });
+      let cumM = 0;
+      const mData = weeks.map((w, i) => {
+        cumM += w;
+        return { name: `W${i + 1}`, rev: Math.round(cumM) };
+      });
+      setMonthlyRevData(mData);
+    })();
+  }, [userId, year]);
 
   const loadGoals = async () => {
     setLoading(true);
@@ -162,53 +247,19 @@ export function ProductionScoreboard({ userId, premiumSold, revenueSold }: Props
   const remainingPrem = Math.max(0, annualPrem - premiumSold);
   const remainingRev = Math.max(0, annualRev - revenueSold);
   const dailyPrem = daysLeftInYear > 0 ? remainingPrem / daysLeftInYear : 0;
-  const dailyRev = daysLeftInYear > 0 ? remainingRev / daysLeftInYear : 0;
 
-  type SlotConfig = {
-    label: string;
-    value: number;
-    goal: number;
-    sub: string;
-    /** Show live countdown in this slot */
-    countdown?: { label: string; target: Date };
-  };
+  // Monthly premium stats
+  const monthPercent = pct(premiumSold, monthlyPrem);
+  const monthRaw = rawPct(premiumSold, monthlyPrem);
+  const monthExceeded = monthRaw > 100;
 
-  const slots: SlotConfig[] = [
-    {
-      label: `Premium · ${monthName}`,
-      value: premiumSold,
-      goal: monthlyPrem,
-      sub: `of ${fmt(monthlyPrem)}`,
-      // Countdown: time left this month
-      countdown: { label: "Month ends in", target: endOfMonth },
-    },
-    {
-      label: `Revenue · ${monthName}`,
-      value: revenueSold,
-      goal: monthlyRev,
-      sub: `of ${fmt(monthlyRev)}`,
-      countdown: { label: "Month ends in", target: endOfMonth },
-    },
-    {
-      label: `Premium · ${year}`,
-      value: premiumSold,
-      goal: annualPrem,
-      sub: `${fmt(dailyPrem)}/day needed`,
-      // Countdown: time left this year
-      countdown: { label: "Year ends in", target: endOfYear },
-    },
-    {
-      label: `Revenue · ${year}`,
-      value: revenueSold,
-      goal: annualRev,
-      sub: `${fmt(dailyRev)}/day needed`,
-      countdown: { label: "Year ends in", target: endOfYear },
-    },
-  ];
+  // Yearly premium stats
+  const yearPercent = pct(premiumSold, annualPrem);
+  const yearRaw = rawPct(premiumSold, annualPrem);
+  const yearExceeded = yearRaw > 100;
 
   return (
     <>
-      {/* Scoreboard bar — uses primary (AURA navy) as background, primary-foreground for text */}
       <div className="relative rounded-xl bg-card border border-border shadow-sm overflow-hidden mb-6">
         {/* Edit goals button */}
         <button
@@ -222,53 +273,54 @@ export function ProductionScoreboard({ userId, premiumSold, revenueSold }: Props
           <Target className="h-3.5 w-3.5" />
         </button>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 divide-x divide-border">
-          {slots.map((slot, i) => {
-            const percent = pct(slot.value, slot.goal);
-            const raw = rawPct(slot.value, slot.goal);
-            const exceeded = raw > 100;
+        <div className="grid grid-cols-2 divide-x divide-border">
+          {/* ── LEFT: Monthly ── */}
+          <div className="px-3 py-3 sm:px-4 sm:py-3.5 space-y-1.5">
+            <p className="text-[10px] sm:text-[11px] uppercase tracking-wider text-muted-foreground font-sans font-medium">
+              Premium · {monthName}
+            </p>
+            <p className={`text-base sm:text-lg font-bold font-sans leading-none ${monthExceeded ? "text-emerald-600" : "text-foreground"}`}>
+              {fmt(premiumSold)}
+            </p>
+            <p className="text-[10px] sm:text-[11px] text-muted-foreground font-sans leading-none">
+              of {fmt(monthlyPrem)} · {pctLabel(premiumSold, monthlyPrem)}
+            </p>
+            <div className="w-full h-1 rounded-full bg-muted overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all duration-500 ${monthExceeded ? "bg-gradient-to-r from-green-400 to-emerald-500" : "bg-accent"}`}
+                style={{ width: `${Math.min(monthPercent, 100)}%` }}
+              />
+            </div>
+            {monthExceeded && <GoalExceeded percent={monthRaw} />}
+            {!monthExceeded && <CountdownLine label="Month ends in" targetDate={endOfMonth} />}
 
-            return (
-              <div key={i} className="px-3 py-3 sm:px-4 sm:py-3.5 space-y-1.5">
-                {/* Label */}
-                <p className="text-[10px] sm:text-[11px] uppercase tracking-wider text-muted-foreground font-sans font-medium truncate">
-                  {slot.label}
-                </p>
+            {/* Revenue sparkline */}
+            <RevenueSparkline data={monthlyRevData} color="hsl(var(--primary))" />
+          </div>
 
-                {/* Main value */}
-                <p className={`text-base sm:text-lg font-bold font-sans leading-none ${
-                  exceeded ? "text-emerald-600" : "text-foreground"
-                }`}>
-                  {fmt(slot.value)}
-                </p>
+          {/* ── RIGHT: Yearly ── */}
+          <div className="px-3 py-3 sm:px-4 sm:py-3.5 space-y-1.5">
+            <p className="text-[10px] sm:text-[11px] uppercase tracking-wider text-muted-foreground font-sans font-medium">
+              Premium · {year}
+            </p>
+            <p className={`text-base sm:text-lg font-bold font-sans leading-none ${yearExceeded ? "text-emerald-600" : "text-foreground"}`}>
+              {fmt(premiumSold)}
+            </p>
+            <p className="text-[10px] sm:text-[11px] text-muted-foreground font-sans leading-none">
+              {fmt(dailyPrem)}/day needed · {pctLabel(premiumSold, annualPrem)}
+            </p>
+            <div className="w-full h-1 rounded-full bg-muted overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all duration-500 ${yearExceeded ? "bg-gradient-to-r from-green-400 to-emerald-500" : "bg-accent"}`}
+                style={{ width: `${Math.min(yearPercent, 100)}%` }}
+              />
+            </div>
+            {yearExceeded && <GoalExceeded percent={yearRaw} />}
+            {!yearExceeded && <CountdownLine label="Year ends in" targetDate={endOfYear} />}
 
-                {/* Secondary line */}
-                <p className="text-[10px] sm:text-[11px] text-muted-foreground font-sans leading-none">
-                  {slot.sub} · {pctLabel(slot.value, slot.goal)}
-                </p>
-
-                {/* Progress bar — accent color for fill, primary-foreground/10 for track */}
-                <div className="w-full h-1 rounded-full bg-muted overflow-hidden">
-                  <div
-                    className={`h-full rounded-full transition-all duration-500 ${
-                      exceeded
-                        ? "bg-gradient-to-r from-green-400 to-emerald-500"
-                        : "bg-accent"
-                    }`}
-                    style={{ width: `${Math.min(percent, 100)}%` }}
-                  />
-                </div>
-
-                {/* Goal exceeded celebration */}
-                {exceeded && <GoalExceeded percent={raw} />}
-
-                {/* Live countdown (only on month/year premium slots) */}
-                {slot.countdown && !exceeded && (
-                  <CountdownLine label={slot.countdown.label} targetDate={slot.countdown.target} />
-                )}
-              </div>
-            );
-          })}
+            {/* Revenue sparkline */}
+            <RevenueSparkline data={yearlyRevData} color="hsl(var(--primary))" />
+          </div>
         </div>
       </div>
 
