@@ -147,11 +147,14 @@ export function SchedulePresentationDialog({ open, onOpenChange, leadId, leadNam
               <Label className="text-xs">Notes</Label>
               <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Agenda items..." rows={2} />
             </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-              <Button onClick={handleSchedule} disabled={saving}>
-                {saving ? "Scheduling…" : "Schedule"}
-              </Button>
+            <DialogFooter className="flex-col sm:flex-row gap-2">
+              <Button variant="ghost" className="text-muted-foreground" onClick={() => onOpenChange(false)}>Skip for now</Button>
+              <div className="flex gap-2 ml-auto">
+                <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+                <Button onClick={handleSchedule} disabled={saving}>
+                  {saving ? "Scheduling…" : "Schedule"}
+                </Button>
+              </div>
             </DialogFooter>
           </div>
         ) : (
