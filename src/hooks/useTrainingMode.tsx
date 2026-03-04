@@ -7,7 +7,7 @@ const EVENT_KEY = "aura_training_mode_change";
 export function useTrainingMode() {
   const [trainingMode, setTrainingModeState] = useState<boolean>(() => {
     const stored = localStorage.getItem(LOCAL_KEY);
-    return stored === null ? true : stored === "true";
+    return stored === "true";
   });
   const dbLoadedRef = useRef(false);
 

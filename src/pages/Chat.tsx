@@ -9,7 +9,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import SubmissionReviewPanel from "@/components/SubmissionReviewPanel";
 import FormFillingView from "@/components/FormFillingView";
 import ExtractionSummary from "@/components/ExtractionSummary";
-import { Send, FileUp, ClipboardList, Search, Loader2, Paperclip, X, Download, Mic, MicOff, Globe, Lightbulb, ChevronDown, ChevronUp, FileText, BrainCircuit, PenLine, Users, BarChart3, Mail, FileSearch, Camera, Plus, ArrowRight, Sparkles, LinkIcon, DollarSign, TrendingUp } from "lucide-react";
+import { Send, FileUp, ClipboardList, Search, Loader2, Paperclip, X, Download, Mic, MicOff, Globe, Lightbulb, ChevronDown, ChevronUp, FileText, BrainCircuit, PenLine, Users, BarChart3, Mail, FileSearch, Camera, Plus, ArrowRight, Sparkles, LinkIcon } from "lucide-react";
+import { ProductionScoreboard } from "@/components/ProductionScoreboard";
 import { FeatureSuggestionDialog } from "@/components/FeatureSuggestionDialog";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
@@ -1724,20 +1725,17 @@ export default function Chat() {
         {/* Messages area */}
         <div ref={scrollRef} className="flex-1 overflow-y-auto">
           {isEmpty ? (
-            <div className="flex flex-col items-center min-h-full gap-6 px-4 pt-[12vh]">
-              {/* Sold stats cards */}
-              <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 justify-center w-full max-w-md sm:max-w-none">
-                <div className="flex items-center gap-2.5 rounded-xl border border-border bg-card px-4 sm:px-5 py-2.5 sm:py-3 shadow-sm justify-center">
-                  <DollarSign className="h-4 w-4 text-primary shrink-0" />
-                  <span className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">Sold Premium</span>
-                  <span className="text-sm sm:text-base font-semibold font-sans truncate">${soldStats.premium.toLocaleString()}</span>
+            <div className="flex flex-col items-center min-h-full gap-6 px-4 pt-4 md:pt-[12vh]">
+              {/* Production Scoreboard */}
+              {user && (
+                <div className="w-full max-w-2xl">
+                  <ProductionScoreboard
+                    userId={user.id}
+                    premiumSold={soldStats.premium}
+                    revenueSold={soldStats.revenue}
+                  />
                 </div>
-                <div className="flex items-center gap-2.5 rounded-xl border border-border bg-card px-4 sm:px-5 py-2.5 sm:py-3 shadow-sm justify-center">
-                  <TrendingUp className="h-4 w-4 text-success shrink-0" />
-                  <span className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">Sold Revenue</span>
-                  <span className="text-sm sm:text-base font-semibold font-sans truncate">${soldStats.revenue.toLocaleString()}</span>
-                </div>
-              </div>
+              )}
 
               <div className="text-center space-y-2">
                 <h1 className="text-4xl tracking-tight aura-gradient-text">
@@ -1833,8 +1831,8 @@ export default function Chat() {
                 )}
               </div>
 
-              {trainingMode && (
-                <>
+              {/* Suggestions & feature boxes — hidden on mobile unless training mode */}
+              <div className={`${!trainingMode ? 'hidden md:contents' : 'contents'}`}>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 w-full max-w-2xl">
                 {SUGGESTIONS.map((s) => (
                   <button
@@ -1927,8 +1925,7 @@ export default function Chat() {
                 <Sparkles className="h-3.5 w-3.5" />
                 <span>Suggest a feature to our team</span>
               </button>
-                </>
-              )}
+              </div>
               {/* Intent buttons — shown when files dropped or form filling intent detected */}
               {showIntentButtons && (
                 <div className="w-full max-w-2xl animate-smooth-reveal">
