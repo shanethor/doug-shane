@@ -318,10 +318,15 @@ export default function Auth() {
           <span className="ml-1.5 text-xs text-white/50 tracking-widest uppercase">Risk Group</span>
         </div>
         <div className="relative z-10 max-w-md">
-          <h1 className="text-5xl text-white/95 leading-tight tracking-tight">
-            Smarter submissions, faster closes
+          <p className="text-sm text-white/40 tracking-widest uppercase mb-3">Insurance runs on</p>
+          <h1 className="text-6xl font-bold text-white/95 leading-none tracking-tight">
+            AURA
           </h1>
-          <p className="mt-6 text-white/50 text-lg">
+          <p className="mt-5 text-white/60 text-lg tracking-wide">
+            Automated Universal Risk Advisor
+          </p>
+          <div className="mt-8 h-px w-16 bg-white/20" />
+          <p className="mt-6 text-white/40 text-sm leading-relaxed">
             AI-powered submissions, ACORD compliance, and carrier-ready packages — all in one place.
           </p>
         </div>
