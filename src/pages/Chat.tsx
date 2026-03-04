@@ -884,12 +884,25 @@ export default function Chat() {
       || /\bmanage\s*(my\s*)?(pipeline|leads?|production|renewals?)\b/.test(t);
   };
 
+  /** Detect calendar / scheduling intent — should pass through to AI, NOT trigger form filling */
+  const isCalendarIntent = (text: string) => {
+    const t = text.trim().toLowerCase();
+    return /\b(add|create|schedule|book|set\s*up|put)\b.+\b(calendar|event|meeting|appointment|reminder|agenda)\b/.test(t)
+      || /\b(calendar|schedule|meeting|appointment|agenda|event)\b.+\b(add|create|schedule|book|set\s*up)\b/.test(t)
+      || /\bmy\s*calendar\b/.test(t)
+      || /\bschedule\s*(a|an|the|this|that|my)\b/.test(t)
+      || /\b(block|book)\s*(time|slot|hour)\b/.test(t)
+      || /\bremind\s*me\b/.test(t);
+  };
+
   const isFormFillingIntent = (text: string) => {
     const t = text.trim().toLowerCase();
     // First: if this looks like an informational question, let AI handle it naturally
     if (isInformationalQuery(text)) return false;
     // Pipeline/production management should not trigger form filling
     if (isPipelineIntent(text)) return false;
+    // Calendar/scheduling intent should pass through to AI
+    if (isCalendarIntent(text)) return false;
     // Match forms, ACORD, coverage lines, submission intent, or specific form/coverage mentions
     return /\bforms?\b|\bacord\b|\bsubmit|\bnew\s*client|\binsurance\b|\bcoverage\b|\bapplication\b/.test(t)
       || /need\s*(a|an|to|help|forms?)|\bstart\b|\bget\s*start|\bfill\b|\bcreate\b/.test(t)
