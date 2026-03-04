@@ -867,7 +867,134 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
             )}
 
             {/* Step 2a: Manual entry */}
-            {addMode === "manual" && (
+            {addMode === "manual" && pipelineView === "personal" && (
+              <div className="grid gap-3 mt-2">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>First Name *</Label>
+                    <Input
+                      value={newLead.contact_name.split(" ")[0] || ""}
+                      onChange={(e) => {
+                        const last = newLead.contact_name.split(" ").slice(1).join(" ");
+                        setNewLead({ ...newLead, contact_name: `${e.target.value}${last ? " " + last : ""}` });
+                      }}
+                      placeholder="John"
+                    />
+                  </div>
+                  <div>
+                    <Label>Last Name *</Label>
+                    <Input
+                      value={newLead.contact_name.split(" ").slice(1).join(" ") || ""}
+                      onChange={(e) => {
+                        const first = newLead.contact_name.split(" ")[0] || "";
+                        setNewLead({ ...newLead, contact_name: `${first} ${e.target.value}`.trim(), account_name: `${first} ${e.target.value}`.trim() });
+                      }}
+                      placeholder="Doe"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>Phone *</Label>
+                    <Input
+                      value={newLead.phone}
+                      onChange={(e) => setNewLead({ ...newLead, phone: e.target.value })}
+                      placeholder="(555) 123-4567"
+                    />
+                  </div>
+                  <div>
+                    <Label>Email *</Label>
+                    <Input
+                      type="email"
+                      value={newLead.email}
+                      onChange={(e) => setNewLead({ ...newLead, email: e.target.value })}
+                      placeholder="john@email.com"
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>State</Label>
+                    <Input
+                      value={newLead.state}
+                      onChange={(e) => setNewLead({ ...newLead, state: e.target.value })}
+                      maxLength={2}
+                      placeholder="TX"
+                    />
+                  </div>
+                  <div>
+                    <Label>Coverage Type</Label>
+                    <Select
+                      value={newLead.business_type}
+                      onValueChange={(v) => setNewLead({ ...newLead, business_type: v })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select…" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Auto">Auto</SelectItem>
+                        <SelectItem value="Home">Home</SelectItem>
+                        <SelectItem value="Auto + Home">Auto + Home</SelectItem>
+                        <SelectItem value="Umbrella">Umbrella</SelectItem>
+                        <SelectItem value="Recreational">Recreational</SelectItem>
+                        <SelectItem value="Personal Articles">Personal Articles</SelectItem>
+                        <SelectItem value="Other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>Lead Source</Label>
+                    <Select
+                      value={newLead.lead_source}
+                      onValueChange={(v) => setNewLead({ ...newLead, lead_source: v })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select…" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="referral">Referral</SelectItem>
+                        <SelectItem value="cold_call">Cold Call</SelectItem>
+                        <SelectItem value="website">Website</SelectItem>
+                        <SelectItem value="walk_in">Walk-In</SelectItem>
+                        <SelectItem value="social_media">Social Media</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Target Premium</Label>
+                    <Input
+                      type="number"
+                      value={newLead.target_premium}
+                      onChange={(e) => setNewLead({ ...newLead, target_premium: e.target.value })}
+                      placeholder="$0"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label>Entity / Named Insured</Label>
+                  <Input
+                    value={newLead.account_name !== newLead.contact_name ? newLead.account_name : ""}
+                    onChange={(e) => setNewLead({ ...newLead, account_name: e.target.value || newLead.contact_name })}
+                    placeholder="e.g. Smith Family Trust (optional)"
+                  />
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setAddMode("choose")}>Back</Button>
+                  <Button
+                    onClick={handleAddLead}
+                    disabled={!newLead.contact_name.trim() || !newLead.phone.trim() || !newLead.email.trim()}
+                  >
+                    Add Lead
+                  </Button>
+                </DialogFooter>
+              </div>
+            )}
+
+            {/* Step 2a: Manual entry — Commercial */}
+            {addMode === "manual" && pipelineView === "commercial" && (
               <div className="grid gap-3 mt-2">
                 <div>
                   <Label>Account Name *</Label>
