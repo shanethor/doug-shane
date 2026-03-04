@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Target, Trophy, Sparkles } from "lucide-react";
 import { useCountdown } from "@/hooks/useCountdown";
-import { BarChart, Bar, ResponsiveContainer, Tooltip, XAxis } from "recharts";
+
 
 type Props = {
   userId: string;
@@ -58,30 +58,6 @@ function GoalExceeded({ percent }: { percent: number }) {
   );
 }
 
-/* ─── Revenue Bar Chart ─── */
-function RevenueChart({ data, color }: { data: { name: string; rev: number }[]; color: string }) {
-  if (!data.length) {
-    return <p className="text-[10px] text-muted-foreground font-sans italic">No revenue data yet</p>;
-  }
-  return (
-    <div className="mt-1">
-      <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-sans font-medium mb-0.5">Revenue</p>
-      <div className="h-12 w-full">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data}>
-            <XAxis dataKey="name" tick={{ fontSize: 8 }} tickLine={false} axisLine={false} />
-            <Tooltip
-              contentStyle={{ fontSize: 10, padding: "2px 6px", borderRadius: 6, background: "hsl(var(--card))", border: "1px solid hsl(var(--border))" }}
-              formatter={(v: number) => [fmt(v), "Revenue"]}
-              labelStyle={{ fontSize: 9, color: "hsl(var(--muted-foreground))" }}
-            />
-            <Bar dataKey="rev" fill={color} radius={[2, 2, 0, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
-    </div>
-  );
-}
 
 /* ─── Main Component ─── */
 export function ProductionScoreboard({ userId, premiumSold, revenueSold }: Props) {
@@ -94,10 +70,6 @@ export function ProductionScoreboard({ userId, premiumSold, revenueSold }: Props
   const [goalPremium, setGoalPremium] = useState("");
   const [goalRevenue, setGoalRevenue] = useState("");
   const [saving, setSaving] = useState(false);
-
-  // Revenue chart data
-  const [monthlyRevData, setMonthlyRevData] = useState<{ name: string; rev: number }[]>([]);
-  const [yearlyRevData, setYearlyRevData] = useState<{ name: string; rev: number }[]>([]);
 
   const now = new Date();
   const year = now.getFullYear();
@@ -112,63 +84,6 @@ export function ProductionScoreboard({ userId, premiumSold, revenueSold }: Props
   const daysLeftInYear = daysInYear - dayOfYear;
 
   useEffect(() => { loadGoals(); }, [userId, year]);
-
-  // Load policies for sparkline data
-  useEffect(() => {
-    if (!userId) return;
-    (async () => {
-      const { data } = await supabase
-        .from("policies")
-        .select("annual_premium, revenue, approved_at")
-        .eq("producer_user_id", userId)
-        .eq("status", "approved");
-      if (!data) return;
-
-      const currentMonth = now.getMonth();
-      const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-
-      // Yearly: group by month
-      const byMonth: Record<number, number> = {};
-      for (let m = 0; m <= currentMonth; m++) byMonth[m] = 0;
-      data.forEach((p: any) => {
-        const d = new Date(p.approved_at || p.created_at);
-        if (d.getFullYear() === year) {
-          const m = d.getMonth();
-          const rev = Number(p.revenue || Number(p.annual_premium) * 0.12 || 0);
-          byMonth[m] = (byMonth[m] || 0) + rev;
-        }
-      });
-      // Cumulative
-      let cumY = 0;
-      const yData = Object.keys(byMonth).sort((a, b) => +a - +b).map(m => {
-        cumY += byMonth[+m];
-        return { name: monthNames[+m], rev: Math.round(cumY) };
-      });
-      setYearlyRevData(yData);
-
-      // Monthly: group by week of current month
-      const startOfMonth = new Date(year, currentMonth, 1);
-      const thisMonthPolicies = data.filter((p: any) => {
-        const d = new Date(p.approved_at || p.created_at);
-        return d.getFullYear() === year && d.getMonth() === currentMonth;
-      });
-      // Group into ~4 week buckets
-      const weeks: number[] = [0, 0, 0, 0];
-      thisMonthPolicies.forEach((p: any) => {
-        const d = new Date(p.approved_at || p.created_at);
-        const dayInMonth = d.getDate();
-        const week = Math.min(Math.floor((dayInMonth - 1) / 7), 3);
-        const rev = Number(p.revenue || Number(p.annual_premium) * 0.12 || 0);
-        weeks[week] += rev;
-      });
-      let cumM = 0;
-      const mData = weeks.map((w, i) => {
-        cumM += w;
-        return { name: `W${i + 1}`, rev: Math.round(cumM) };
-      });
-      setMonthlyRevData(mData);
-    })();
-  }, [userId, year]);
 
   const loadGoals = async () => {
     setLoading(true);
@@ -263,6 +178,14 @@ export function ProductionScoreboard({ userId, premiumSold, revenueSold }: Props
   const yearRaw = rawPct(premiumSold, annualPrem);
   const yearExceeded = yearRaw > 100;
 
+  // Revenue stats
+  const monthRevExceeded = rawPct(revenueSold, monthlyRev) > 100;
+  const yearRevExceeded = rawPct(revenueSold, annualRev) > 100;
+  const remainingMonthlyRev = Math.max(0, monthlyRev - revenueSold);
+  const dailyRevMonth = daysLeftInMonth > 0 ? remainingMonthlyRev / daysLeftInMonth : 0;
+  const remainingYearlyRev = Math.max(0, annualRev - revenueSold);
+  const dailyRevYear = daysLeftInYear > 0 ? remainingYearlyRev / daysLeftInYear : 0;
+
   return (
     <>
       <div className="relative rounded-xl bg-card border border-border shadow-sm overflow-hidden mb-6">
@@ -299,8 +222,25 @@ export function ProductionScoreboard({ userId, premiumSold, revenueSold }: Props
             {monthExceeded && <GoalExceeded percent={monthRaw} />}
             {!monthExceeded && <CountdownLine label="Month ends in" targetDate={endOfMonth} />}
 
-            {/* Revenue sparkline */}
-            <RevenueChart data={monthlyRevData} color="hsl(var(--primary))" />
+            {/* Revenue — same progress bar style */}
+            <div className="mt-2 pt-2 border-t border-border/50 space-y-1">
+              <p className="text-[10px] sm:text-[11px] uppercase tracking-wider text-muted-foreground font-sans font-medium">
+                Revenue · {monthName}
+              </p>
+              <p className={`text-sm sm:text-base font-bold font-sans leading-none ${monthRevExceeded ? "text-emerald-600" : "text-foreground"}`}>
+                {fmt(revenueSold)}
+              </p>
+              <p className="text-[10px] sm:text-[11px] text-muted-foreground font-sans leading-none">
+                {fmt(dailyRevMonth)}/day needed · {pctLabel(revenueSold, monthlyRev)}
+              </p>
+              <div className="w-full h-1 rounded-full bg-muted overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all duration-500 ${monthRevExceeded ? "bg-gradient-to-r from-green-400 to-emerald-500" : "bg-accent"}`}
+                  style={{ width: `${Math.min(pct(revenueSold, monthlyRev), 100)}%` }}
+                />
+              </div>
+              {monthRevExceeded && <GoalExceeded percent={rawPct(revenueSold, monthlyRev)} />}
+            </div>
           </div>
 
           {/* ── RIGHT: Yearly ── */}
@@ -323,8 +263,25 @@ export function ProductionScoreboard({ userId, premiumSold, revenueSold }: Props
             {yearExceeded && <GoalExceeded percent={yearRaw} />}
             {!yearExceeded && <CountdownLine label="Year ends in" targetDate={endOfYear} />}
 
-            {/* Revenue sparkline */}
-            <RevenueChart data={yearlyRevData} color="hsl(var(--primary))" />
+            {/* Revenue — same progress bar style */}
+            <div className="mt-2 pt-2 border-t border-border/50 space-y-1">
+              <p className="text-[10px] sm:text-[11px] uppercase tracking-wider text-muted-foreground font-sans font-medium">
+                Revenue · {year}
+              </p>
+              <p className={`text-sm sm:text-base font-bold font-sans leading-none ${yearRevExceeded ? "text-emerald-600" : "text-foreground"}`}>
+                {fmt(revenueSold)}
+              </p>
+              <p className="text-[10px] sm:text-[11px] text-muted-foreground font-sans leading-none">
+                {fmt(dailyRevYear)}/day needed · {pctLabel(revenueSold, annualRev)}
+              </p>
+              <div className="w-full h-1 rounded-full bg-muted overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all duration-500 ${yearRevExceeded ? "bg-gradient-to-r from-green-400 to-emerald-500" : "bg-accent"}`}
+                  style={{ width: `${Math.min(pct(revenueSold, annualRev), 100)}%` }}
+                />
+              </div>
+              {yearRevExceeded && <GoalExceeded percent={rawPct(revenueSold, annualRev)} />}
+            </div>
           </div>
         </div>
       </div>
