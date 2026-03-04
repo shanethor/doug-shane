@@ -48,16 +48,14 @@ function ScoreboardTile({
   const exceeded = rawPercent >= 100;
 
   return (
-    <div className="space-y-2">
-      <p className="text-[11px] font-semibold text-foreground tracking-wide">{title}</p>
+    <div className="space-y-1.5">
+      <p className="text-[10px] font-semibold text-foreground tracking-wide">{title}</p>
 
-      {/* Main number */}
-      <p className={`text-lg sm:text-xl font-bold leading-none ${exceeded ? "text-emerald-600" : "text-foreground"}`}>
-        {fmt(actual)} <span className="text-xs font-normal text-muted-foreground">/ {fmt(goal)}</span>
+      <p className={`text-base sm:text-lg font-bold leading-none ${exceeded ? "text-emerald-600" : "text-foreground"}`}>
+        {fmt(actual)} <span className="text-[10px] font-normal text-muted-foreground">/ {fmt(goal)}</span>
       </p>
 
-      {/* Progress bar */}
-      <div className={`w-full rounded-full bg-muted overflow-hidden ${exceeded ? "h-2" : "h-1.5"}`}>
+      <div className={`w-full rounded-full bg-muted overflow-hidden ${exceeded ? "h-1.5" : "h-1"}`}>
         <div
           className={`h-full rounded-full transition-all duration-500 ${exceeded ? "bg-gradient-to-r from-emerald-400 to-emerald-500 animate-pulse" : "bg-primary"}`}
           style={{ width: `${percent}%` }}
@@ -65,30 +63,30 @@ function ScoreboardTile({
       </div>
 
       {exceeded ? (
-        <div className="flex items-center gap-1.5">
-          <Trophy className="h-3.5 w-3.5 text-emerald-600" />
-          <span className="text-[11px] font-bold text-emerald-600">
+        <div className="flex items-center gap-1">
+          <Trophy className="h-3 w-3 text-emerald-600" />
+          <span className="text-[10px] font-bold text-emerald-600">
             {rawPercent.toFixed(0)}% — Goal Complete!
           </span>
-          <Sparkles className="h-3.5 w-3.5 text-emerald-500 animate-pulse" />
+          <Sparkles className="h-3 w-3 text-emerald-500 animate-pulse" />
         </div>
       ) : (
         <>
-          <p className="text-[10px] text-muted-foreground">{pctOf(actual, goal)}% to Goal</p>
+          <p className="text-[9px] text-muted-foreground">{pctOf(actual, goal)}% to Goal</p>
 
           {!compact && (
             <>
               <div className="flex justify-between items-baseline">
-                <span className="text-[10px] text-muted-foreground">Remaining</span>
-                <span className="text-xs font-semibold text-foreground">{fmt(remaining)}</span>
+                <span className="text-[9px] text-muted-foreground">Remaining</span>
+                <span className="text-[11px] font-semibold text-foreground">{fmt(remaining)}</span>
               </div>
               <div className="flex justify-between items-baseline">
-                <span className="text-[10px] text-muted-foreground">Pace Needed</span>
-                <span className="text-xs font-semibold text-foreground">{fmt(paceNeeded)}<span className="text-[10px] font-normal text-muted-foreground">/{paceUnit}</span></span>
+                <span className="text-[9px] text-muted-foreground">Pace Needed</span>
+                <span className="text-[11px] font-semibold text-foreground">{fmt(paceNeeded)}<span className="text-[9px] font-normal text-muted-foreground">/{paceUnit}</span></span>
               </div>
               <div className="flex justify-between items-baseline">
-                <span className="text-[10px] text-muted-foreground">{countdownLabel}</span>
-                <span className="text-xs font-semibold text-foreground">{daysLeft} Days</span>
+                <span className="text-[9px] text-muted-foreground">{countdownLabel}</span>
+                <span className="text-[11px] font-semibold text-foreground">{daysLeft} Days</span>
               </div>
             </>
           )}
@@ -223,10 +221,15 @@ export function ProductionScoreboard({ userId, premiumSold, revenueSold }: Props
           <Target className="h-3.5 w-3.5" />
         </button>
 
+        {/* Headers */}
+        <div className="grid grid-cols-2 divide-x divide-border px-2.5 pt-2.5 sm:px-3 sm:pt-3">
+          <p className="text-[9px] uppercase tracking-widest text-muted-foreground font-bold pb-1.5">Monthly</p>
+          <p className="text-[9px] uppercase tracking-widest text-muted-foreground font-bold pb-1.5 pl-2.5 sm:pl-3">Annual</p>
+        </div>
+
+        {/* NB Production row */}
         <div className="grid grid-cols-2 divide-x divide-border">
-          {/* ── LEFT: Monthly ── */}
-          <div className="px-3 py-3 sm:px-4 sm:py-4 space-y-4">
-            <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">Monthly</p>
+          <div className="px-2.5 pb-2.5 sm:px-3 sm:pb-3">
             <ScoreboardTile
               title="NB Production"
               actual={premiumSold} goal={monthlyPrem}
@@ -234,7 +237,23 @@ export function ProductionScoreboard({ userId, premiumSold, revenueSold }: Props
               paceNeeded={mPremPace} paceUnit="day"
               daysLeft={daysLeftInMonth} countdownLabel="Month Ends In"
             />
-            <div className="border-t border-border" />
+          </div>
+          <div className="px-2.5 pb-2.5 sm:px-3 sm:pb-3">
+            <ScoreboardTile
+              title="NB Production"
+              actual={premiumSold} goal={annualPrem}
+              remaining={yPremRemaining}
+              paceNeeded={yPremPace} paceUnit="day"
+              daysLeft={daysLeftInYear} countdownLabel="Year Ends In"
+            />
+          </div>
+        </div>
+
+        <div className="border-t border-border mx-2.5 sm:mx-3" />
+
+        {/* Revenue row */}
+        <div className="grid grid-cols-2 divide-x divide-border">
+          <div className="px-2.5 py-2.5 sm:px-3 sm:py-3">
             <ScoreboardTile
               title="Revenue"
               actual={revenueSold} goal={monthlyRev}
@@ -244,18 +263,7 @@ export function ProductionScoreboard({ userId, premiumSold, revenueSold }: Props
               compact
             />
           </div>
-
-          {/* ── RIGHT: Annual ── */}
-          <div className="px-3 py-3 sm:px-4 sm:py-4 space-y-4">
-            <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">Annual</p>
-            <ScoreboardTile
-              title="NB Production"
-              actual={premiumSold} goal={annualPrem}
-              remaining={yPremRemaining}
-              paceNeeded={yPremPace} paceUnit="day"
-              daysLeft={daysLeftInYear} countdownLabel="Year Ends In"
-            />
-            <div className="border-t border-border" />
+          <div className="px-2.5 py-2.5 sm:px-3 sm:py-3">
             <ScoreboardTile
               title="Revenue"
               actual={revenueSold} goal={annualRev}
