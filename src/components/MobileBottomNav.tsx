@@ -14,6 +14,7 @@ import {
   Settings,
   GraduationCap,
   LogOut,
+  HeartPulse,
 } from "lucide-react";
 import { useState } from "react";
 import {
@@ -33,6 +34,7 @@ const ICON_MAP: Record<string, any> = {
   pipeline: GitBranch,
   calendar: CalendarDays,
   production: BarChart3,
+  pulse: HeartPulse,
 };
 
 export function MobileBottomNav() {
