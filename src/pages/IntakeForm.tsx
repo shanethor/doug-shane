@@ -946,7 +946,11 @@ export default function IntakeForm() {
 
     return (
       <div className="flex gap-3 pt-2">
-        {!isFirstStep && (
+        {isFirstStep ? (
+          <Button variant="outline" className="flex-1 h-11" onClick={() => setIntakeType(null)}>
+            <ChevronLeft className="h-4 w-4 mr-1" /> Back
+          </Button>
+        ) : (
           <Button variant="outline" className="flex-1 h-11" onClick={goBack}>
             <ChevronLeft className="h-4 w-4 mr-1" /> Back
           </Button>
@@ -2715,7 +2719,11 @@ export default function IntakeForm() {
                   )}
 
                   <div className="flex gap-3 pt-2">
-                    {safeIdx > 0 && (
+                    {safeIdx === 0 ? (
+                      <Button variant="outline" className="flex-1 h-11" onClick={() => setIntakeType(null)}>
+                        <ChevronLeft className="h-4 w-4 mr-1" /> Back
+                      </Button>
+                    ) : (
                       <Button variant="outline" className="flex-1 h-11" onClick={commGoBack}>
                         <ChevronLeft className="h-4 w-4 mr-1" /> Back
                       </Button>
