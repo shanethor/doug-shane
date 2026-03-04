@@ -117,12 +117,27 @@ const emptyRecVehicle = (): RecreationalVehicle => ({ rec_type: "", year: "", ma
 const emptyArticle = (): PersonalArticle => ({ description: "", category: "", estimated_value: "" });
 
 /* ─── Commercial Lines Types ─── */
-type CommercialStepKey = "business_info" | "policy_info" | "bor_auth" | "commercial_docs";
+type CommercialStepKey = "business_info" | "industry" | "insurance_check" | "upload_dec" | "loss_run_info" | "loss_run_consent" | "bor_auth" | "commercial_docs";
 
 const COMMERCIAL_LINES = [
   "General Liability", "Workers Compensation", "Commercial Auto",
   "Property", "Umbrella", "Other",
 ] as const;
+
+const INDUSTRY_OPTIONS = [
+  "Non-Profit", "Contractors", "Restaurants & Bars", "Auto / Garage",
+  "Convenience / Grocery", "Office / Professional", "Health Clubs",
+  "Lessors Risk", "Manufacturing", "Retail", "Technology",
+  "Real Estate", "Transportation", "Hospitality", "Education", "Other",
+] as const;
+
+interface LossRunPolicyInfo {
+  carrier: string;
+  coverage: string;
+  policy_number: string;
+  effective_date: string;
+  expiration_date: string;
+}
 
 interface CommercialFormData {
   customer_name: string; customer_email: string; customer_phone: string;
@@ -130,17 +145,32 @@ interface CommercialFormData {
   street_address: string; city: string; state: string; zip: string;
   employee_count: string; annual_revenue: string; years_in_business: string;
   requested_coverage: string; requested_premium: string; additional_notes: string;
+  industry: string;
   has_current_insurance: "" | "yes" | "no";
   current_carrier_name: string;
   policy_number: string;
   policy_effective_date: string;
   policy_expiration_date: string;
   lines_in_force: string[];
+  has_uploaded_dec_pages: boolean;
+  // Loss run request info (when no dec pages uploaded)
+  loss_run_authorized_first_name: string;
+  loss_run_authorized_last_name: string;
+  loss_run_authorized_email: string;
+  loss_run_authorized_title: string;
+  loss_run_policies: LossRunPolicyInfo[];
+  loss_run_consent: boolean;
+  // BOR
+  has_other_broker: "" | "yes" | "no";
   wants_bor: "" | "yes" | "no";
   bor_lines: string[];
   bor_authorized: boolean;
   carrier_email: string;
 }
+
+const emptyLossRunPolicy = (): LossRunPolicyInfo => ({
+  carrier: "", coverage: "", policy_number: "", effective_date: "", expiration_date: "",
+});
 
 const emptyCommercial = (): CommercialFormData => ({
   customer_name: "", customer_email: "", customer_phone: "",
@@ -148,9 +178,16 @@ const emptyCommercial = (): CommercialFormData => ({
   street_address: "", city: "", state: "", zip: "",
   employee_count: "", annual_revenue: "", years_in_business: "",
   requested_coverage: "", requested_premium: "", additional_notes: "",
+  industry: "",
   has_current_insurance: "", current_carrier_name: "", policy_number: "",
   policy_effective_date: "", policy_expiration_date: "",
-  lines_in_force: [], wants_bor: "", bor_lines: [], bor_authorized: false,
+  lines_in_force: [],
+  has_uploaded_dec_pages: false,
+  loss_run_authorized_first_name: "", loss_run_authorized_last_name: "",
+  loss_run_authorized_email: "", loss_run_authorized_title: "",
+  loss_run_policies: [emptyLossRunPolicy()],
+  loss_run_consent: false,
+  has_other_broker: "", wants_bor: "", bor_lines: [], bor_authorized: false,
   carrier_email: "",
 });
 
@@ -2266,15 +2303,34 @@ export default function IntakeForm() {
           <>
             {/* Commercial Step Progress */}
             {(() => {
-              const commSteps: CommercialStepKey[] = ["business_info", "policy_info", "bor_auth", "commercial_docs"];
+              // Dynamic steps based on user choices
+              const buildCommSteps = (): CommercialStepKey[] => {
+                const steps: CommercialStepKey[] = ["business_info", "industry", "insurance_check"];
+                if (commercialForm.has_current_insurance === "yes") {
+                  steps.push("upload_dec");
+                  if (!commercialForm.has_uploaded_dec_pages) {
+                    steps.push("loss_run_info");
+                  }
+                  steps.push("loss_run_consent");
+                }
+                steps.push("bor_auth");
+                steps.push("commercial_docs");
+                return steps;
+              };
+              const commSteps = buildCommSteps();
               const commStepLabels: Record<CommercialStepKey, string> = {
                 business_info: "Business Info",
-                policy_info: "Current Policy",
-                bor_auth: "Broker of Record",
+                industry: "Industry",
+                insurance_check: "Current Insurance",
+                upload_dec: "Upload Dec Pages",
+                loss_run_info: "Loss Run Details",
+                loss_run_consent: "Loss Run Consent",
+                bor_auth: "Broker Authorization",
                 commercial_docs: "Documents & Submit",
               };
               const commIdx = commSteps.indexOf(commercialStep);
-              const commProgress = ((commIdx + 1) / commSteps.length) * 100;
+              const safeIdx = commIdx >= 0 ? commIdx : 0;
+              const commProgress = ((safeIdx + 1) / commSteps.length) * 100;
 
               const validateCommStep = (): boolean => {
                 if (commercialStep === "business_info") {
@@ -2284,17 +2340,42 @@ export default function IntakeForm() {
                   if (!commercialForm.business_name.trim()) { toast.error("Business name is required"); return false; }
                   if (!commercialForm.street_address.trim()) { toast.error("Business address is required"); return false; }
                 }
+                if (commercialStep === "industry") {
+                  if (!commercialForm.industry) { toast.error("Please select your industry"); return false; }
+                }
+                if (commercialStep === "insurance_check") {
+                  if (!commercialForm.has_current_insurance) { toast.error("Please indicate if you currently have insurance"); return false; }
+                }
+                if (commercialStep === "loss_run_info") {
+                  if (!commercialForm.loss_run_authorized_first_name.trim() || !commercialForm.loss_run_authorized_last_name.trim()) {
+                    toast.error("Authorized signer name is required"); return false;
+                  }
+                  if (!commercialForm.loss_run_authorized_email.trim()) {
+                    toast.error("Authorized signer email is required"); return false;
+                  }
+                  const hasValidPolicy = commercialForm.loss_run_policies.some(p => p.carrier.trim() && p.policy_number.trim());
+                  if (!hasValidPolicy) { toast.error("At least one policy with carrier and policy number is required"); return false; }
+                }
+                if (commercialStep === "loss_run_consent") {
+                  if (!commercialForm.loss_run_consent) { toast.error("Loss run consent is required to proceed"); return false; }
+                }
                 return true;
               };
 
               const commGoNext = () => {
                 if (!validateCommStep()) return;
-                const next = commSteps[commIdx + 1];
+                const next = commSteps[safeIdx + 1];
                 if (next) { setCommercialStep(next); window.scrollTo({ top: 0, behavior: "smooth" }); }
               };
               const commGoBack = () => {
-                const prev = commSteps[commIdx - 1];
+                const prev = commSteps[safeIdx - 1];
                 if (prev) { setCommercialStep(prev); window.scrollTo({ top: 0, behavior: "smooth" }); }
+              };
+
+              const updateLossRunPolicy = (idx: number, field: keyof LossRunPolicyInfo, value: string) => {
+                const updated = [...commercialForm.loss_run_policies];
+                updated[idx] = { ...updated[idx], [field]: value };
+                updateCommercial("loss_run_policies", updated);
               };
 
               return (
@@ -2302,7 +2383,7 @@ export default function IntakeForm() {
                   <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm -mx-4 px-4 py-3 border-b border-border/50 shadow-sm">
                     <div className="space-y-2">
                       <div className="flex items-center justify-between text-xs text-muted-foreground">
-                        <span>Step {commIdx + 1} of {commSteps.length}</span>
+                        <span>Step {safeIdx + 1} of {commSteps.length}</span>
                         <span>{commStepLabels[commercialStep]}</span>
                       </div>
                       <Progress value={commProgress} className="h-1.5" />
@@ -2349,14 +2430,34 @@ export default function IntakeForm() {
                     </Card>
                   )}
 
-                  {commercialStep === "policy_info" && (
+                  {commercialStep === "industry" && (
+                    <Card>
+                      <CardHeader><CardTitle className="text-base">Industry Classification</CardTitle></CardHeader>
+                      <CardContent className="space-y-4">
+                        <p className="text-sm text-muted-foreground">Select the industry that best describes your business. This helps us tailor the right coverage recommendations.</p>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                          {INDUSTRY_OPTIONS.map(ind => {
+                            const sel = commercialForm.industry === ind;
+                            return (
+                              <button key={ind} onClick={() => updateCommercial("industry", ind)}
+                                className={`px-3 py-2.5 rounded-lg border text-xs font-medium transition-all text-left ${sel ? "bg-primary text-primary-foreground border-primary shadow-sm" : "border-border hover:border-primary/50 hover:bg-muted/30"}`}>
+                                {ind}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {commercialStep === "insurance_check" && (
                     <Card>
                       <CardHeader><CardTitle className="text-base">Current Insurance</CardTitle></CardHeader>
                       <CardContent className="space-y-4">
                         <div>
-                          <Label className="text-xs">Do you currently have business insurance?</Label>
+                          <Label className="text-xs font-medium">Do you currently have business insurance?</Label>
                           <Select value={commercialForm.has_current_insurance} onValueChange={v => updateCommercial("has_current_insurance", v)}>
-                            <SelectTrigger className="h-10 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+                            <SelectTrigger className="h-10 text-sm mt-1"><SelectValue placeholder="Select" /></SelectTrigger>
                             <SelectContent><SelectItem value="yes">Yes</SelectItem><SelectItem value="no">No</SelectItem></SelectContent>
                           </Select>
                         </div>
@@ -2386,19 +2487,145 @@ export default function IntakeForm() {
                     </Card>
                   )}
 
+                  {commercialStep === "upload_dec" && (
+                    <Card>
+                      <CardHeader><CardTitle className="text-base flex items-center gap-2"><Upload className="h-4 w-4" /> Upload Declaration Pages</CardTitle></CardHeader>
+                      <CardContent className="space-y-4">
+                        <p className="text-sm text-muted-foreground">Upload your current declaration pages so we can review your existing coverage and request loss runs on your behalf.</p>
+                        <div
+                          onDragOver={e => { e.preventDefault(); setDragActive(true); }}
+                          onDragLeave={() => setDragActive(false)}
+                          onDrop={(e) => { e.preventDefault(); setDragActive(false); const files = Array.from(e.dataTransfer.files).filter(f => /\.(pdf|jpg|jpeg|png)$/i.test(f.name)); if (files.length > 0) { setUploadedFiles(prev => [...prev, ...files.map(f => ({ file: f, category: "dec_pages" }))]); updateCommercial("has_uploaded_dec_pages", true); } }}
+                          onClick={() => fileInputRef.current?.click()}
+                          className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-all ${dragActive ? "border-primary bg-primary/5 scale-[1.02] shadow-lg" : "border-border hover:border-primary/50"}`}
+                        >
+                          <Upload className={`h-8 w-8 mx-auto mb-2 text-muted-foreground transition-transform ${dragActive ? "animate-bounce" : ""}`} />
+                          <p className="text-sm font-medium">Drag & drop declaration pages here</p>
+                          <p className="text-xs text-muted-foreground mt-1">PDF, JPG, PNG accepted</p>
+                          <input ref={fileInputRef} type="file" multiple accept=".pdf,.jpg,.jpeg,.png" className="hidden" onChange={(e) => { const files = Array.from(e.target.files || []).filter(f => /\.(pdf|jpg|jpeg|png)$/i.test(f.name)); if (files.length > 0) { setUploadedFiles(prev => [...prev, ...files.map(f => ({ file: f, category: "dec_pages" }))]); updateCommercial("has_uploaded_dec_pages", true); } e.target.value = ""; }} />
+                        </div>
+                        {uploadedFiles.filter(f => f.category === "dec_pages").length > 0 && (
+                          <div className="space-y-2">
+                            <p className="text-xs font-medium flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-primary" /> {uploadedFiles.filter(f => f.category === "dec_pages").length} file(s) uploaded</p>
+                            {uploadedFiles.filter(f => f.category === "dec_pages").map((uf, idx) => (
+                              <div key={idx} className="flex items-center gap-2 p-2 rounded-md border bg-muted/20">
+                                <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+                                <span className="text-xs truncate flex-1 min-w-0">{uf.file.name}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        <p className="text-xs text-muted-foreground italic">If you don't have dec pages available, click Continue and we'll collect the information needed to request loss runs.</p>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {commercialStep === "loss_run_info" && (
+                    <div className="space-y-4">
+                      <Card>
+                        <CardHeader><CardTitle className="text-base">Loss Run Request Information</CardTitle></CardHeader>
+                        <CardContent className="space-y-4">
+                          <p className="text-sm text-muted-foreground">Since you did not upload declaration pages, please provide the following information so we can request loss runs from your carrier(s) on your behalf.</p>
+                          
+                          <div className="space-y-3">
+                            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Authorized Signer</p>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                              <div><Label className="text-xs">First Name *</Label><Input value={commercialForm.loss_run_authorized_first_name} onChange={e => updateCommercial("loss_run_authorized_first_name", e.target.value)} /></div>
+                              <div><Label className="text-xs">Last Name *</Label><Input value={commercialForm.loss_run_authorized_last_name} onChange={e => updateCommercial("loss_run_authorized_last_name", e.target.value)} /></div>
+                              <div><Label className="text-xs">Email *</Label><Input type="email" value={commercialForm.loss_run_authorized_email} onChange={e => updateCommercial("loss_run_authorized_email", e.target.value)} /></div>
+                              <div><Label className="text-xs">Title</Label><Input value={commercialForm.loss_run_authorized_title} onChange={e => updateCommercial("loss_run_authorized_title", e.target.value)} placeholder="e.g. Owner, CFO" /></div>
+                            </div>
+                          </div>
+
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between">
+                              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Policy Information</p>
+                              <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => updateCommercial("loss_run_policies", [...commercialForm.loss_run_policies, emptyLossRunPolicy()])}>
+                                <Plus className="h-3 w-3" /> Add Policy
+                              </Button>
+                            </div>
+                            {commercialForm.loss_run_policies.map((pol, idx) => (
+                              <div key={idx} className="space-y-3 p-3 rounded-lg border bg-muted/10">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-xs font-medium">Policy {idx + 1}</span>
+                                  {commercialForm.loss_run_policies.length > 1 && (
+                                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => updateCommercial("loss_run_policies", commercialForm.loss_run_policies.filter((_, i) => i !== idx))}>
+                                      <Trash2 className="h-3 w-3" />
+                                    </Button>
+                                  )}
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                  <div><Label className="text-xs">Carrier *</Label><Input value={pol.carrier} onChange={e => updateLossRunPolicy(idx, "carrier", e.target.value)} /></div>
+                                  <div><Label className="text-xs">Coverage Type</Label><Input value={pol.coverage} onChange={e => updateLossRunPolicy(idx, "coverage", e.target.value)} placeholder="e.g. General Liability" /></div>
+                                  <div><Label className="text-xs">Policy Number *</Label><Input value={pol.policy_number} onChange={e => updateLossRunPolicy(idx, "policy_number", e.target.value)} /></div>
+                                  <div><Label className="text-xs">Effective Date</Label><Input type="date" value={pol.effective_date} onChange={e => updateLossRunPolicy(idx, "effective_date", e.target.value)} /></div>
+                                  <div><Label className="text-xs">Expiration Date</Label><Input type="date" value={pol.expiration_date} onChange={e => updateLossRunPolicy(idx, "expiration_date", e.target.value)} /></div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  )}
+
+                  {commercialStep === "loss_run_consent" && (
+                    <Card>
+                      <CardHeader><CardTitle className="text-base flex items-center gap-2"><Shield className="h-4 w-4" /> Loss Run Authorization</CardTitle></CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-3">
+                          <p className="text-sm leading-relaxed">
+                            By providing your consent below, you authorize <strong>AURA Risk Group</strong> to request loss run reports from your current and prior insurance carriers on your behalf. 
+                          </p>
+                          <p className="text-sm leading-relaxed text-muted-foreground">
+                            Loss runs are historical records of claims filed under your insurance policies. They are essential for obtaining competitive quotes and ensuring proper risk assessment. This authorization does not modify, cancel, or alter any of your existing insurance policies.
+                          </p>
+                        </div>
+                        <label className="flex items-start gap-3 p-4 rounded-lg border border-border bg-card cursor-pointer hover:bg-muted/30 transition-colors">
+                          <Checkbox
+                            checked={commercialForm.loss_run_consent}
+                            onCheckedChange={v => updateCommercial("loss_run_consent", !!v)}
+                            className="mt-0.5"
+                          />
+                          <div className="space-y-1">
+                            <span className="text-sm font-medium">I consent to loss run requests</span>
+                            <p className="text-[11px] text-muted-foreground leading-relaxed">
+                              I, <strong>{commercialForm.customer_name || "(your name)"}</strong>, authorize AURA Risk Group to request loss run reports from my current and prior carriers for <strong>{commercialForm.business_name || "(business name)"}</strong>. I understand this does not cancel or modify any existing policies.
+                            </p>
+                          </div>
+                        </label>
+                        <p className="text-[10px] text-muted-foreground text-center">A formal loss run authorization letter will be generated and sent to you for electronic signature.</p>
+                      </CardContent>
+                    </Card>
+                  )}
+
                   {commercialStep === "bor_auth" && (
                     <Card>
-                      <CardHeader><CardTitle className="text-base">Broker of Record</CardTitle></CardHeader>
+                      <CardHeader><CardTitle className="text-base">Broker Authorization</CardTitle></CardHeader>
                       <CardContent className="space-y-4">
                         <div>
-                          <Label className="text-xs">Would you like to authorize a Broker of Record letter?</Label>
-                          <Select value={commercialForm.wants_bor} onValueChange={v => updateCommercial("wants_bor", v)}>
-                            <SelectTrigger className="h-10 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+                          <Label className="text-xs font-medium">Are you currently working with another insurance broker or agent for this policy?</Label>
+                          <Select value={commercialForm.has_other_broker} onValueChange={v => updateCommercial("has_other_broker", v)}>
+                            <SelectTrigger className="h-10 text-sm mt-1"><SelectValue placeholder="Select" /></SelectTrigger>
                             <SelectContent><SelectItem value="yes">Yes</SelectItem><SelectItem value="no">No</SelectItem></SelectContent>
                           </Select>
                         </div>
-                        {commercialForm.wants_bor === "yes" && (
+                        {commercialForm.has_other_broker === "yes" && (
                           <div className="space-y-4 pl-3 border-l-2 border-primary/20">
+                            <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-3">
+                              <p className="text-sm leading-relaxed">
+                                AURA will generate a <strong>Broker of Record (BOR) letter</strong> for your review and signature. This letter simply authorizes our firm to represent you with the insurance carrier so we can access policy information, request loss runs, and work directly with the carrier on your behalf.
+                              </p>
+                              <p className="text-sm leading-relaxed text-muted-foreground">
+                                This allows us to properly review how the account is structured and leverage our relationships in the marketplace to negotiate terms, explore alternatives, and position the risk correctly with carriers.
+                              </p>
+                              <p className="text-sm leading-relaxed text-muted-foreground">
+                                <strong>A Broker of Record letter does not cancel your current policy or change your coverage on its own.</strong> It simply gives us the ability to step in, communicate with the carrier, and begin working the account properly.
+                              </p>
+                              <p className="text-sm leading-relaxed text-muted-foreground">
+                                Once selected, the system will automatically generate the letter and send it to you for electronic signature so we can get started immediately.
+                              </p>
+                            </div>
                             <div>
                               <Label className="text-xs">Select Lines for BOR</Label>
                               <div className="flex flex-wrap gap-2 mt-1">
@@ -2420,6 +2647,11 @@ export default function IntakeForm() {
                             </label>
                           </div>
                         )}
+                        {commercialForm.has_other_broker === "no" && (
+                          <p className="text-sm text-muted-foreground pl-3 border-l-2 border-muted">
+                            Great — no Broker of Record letter is needed. We'll proceed with reviewing your coverage directly.
+                          </p>
+                        )}
                       </CardContent>
                     </Card>
                   )}
@@ -2427,7 +2659,7 @@ export default function IntakeForm() {
                   {commercialStep === "commercial_docs" && (
                     <div className="space-y-6">
                       <Card>
-                        <CardHeader><CardTitle className="text-base flex items-center gap-2"><Upload className="h-4 w-4" /> Documents</CardTitle></CardHeader>
+                        <CardHeader><CardTitle className="text-base flex items-center gap-2"><Upload className="h-4 w-4" /> Additional Documents</CardTitle></CardHeader>
                         <CardContent className="space-y-4">
                           <div
                             onDragOver={e => { e.preventDefault(); setDragActive(true); }}
@@ -2465,12 +2697,12 @@ export default function IntakeForm() {
                   )}
 
                   <div className="flex gap-3 pt-2">
-                    {commIdx > 0 && (
+                    {safeIdx > 0 && (
                       <Button variant="outline" className="flex-1 h-11" onClick={commGoBack}>
                         <ChevronLeft className="h-4 w-4 mr-1" /> Back
                       </Button>
                     )}
-                    {commIdx < commSteps.length - 1 ? (
+                    {safeIdx < commSteps.length - 1 ? (
                       <Button className="flex-1 h-11" onClick={commGoNext}>
                         Continue <ChevronRight className="h-4 w-4 ml-1" />
                       </Button>
