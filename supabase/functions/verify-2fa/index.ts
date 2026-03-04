@@ -39,15 +39,59 @@ Deno.serve(async (req) => {
           .maybeSingle();
 
         if (trusted) {
+          console.log("Device trusted, skipping 2FA for user:", user_id);
           return new Response(JSON.stringify({ trusted: true }), {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         }
       }
 
+      // Check if a valid unexpired code already exists (prevent race condition overwrites)
+      const { data: existingCode } = await supabaseAdmin
+        .from("two_factor_codes")
+        .select("id, code, expires_at")
+        .eq("user_id", user_id)
+        .eq("verified", false)
+        .gt("expires_at", new Date().toISOString())
+        .maybeSingle();
+
+      if (existingCode) {
+        console.log("Reusing existing valid code for user:", user_id, "code:", existingCode.code);
+        // Re-send the same code instead of generating a new one
+        const resendKey = Deno.env.get("RESEND_API_KEY");
+        if (resendKey) {
+          await fetch("https://api.resend.com/emails", {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${resendKey}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              from: "AURA <noreply@buildingaura.site>",
+              to: [email],
+              subject: `Your AURA verification code: ${existingCode.code}`,
+              html: `
+                <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;padding:40px 20px;">
+                  <h2 style="color:#142D5A;margin-bottom:8px;">AURA Risk Group</h2>
+                  <p style="color:#555;font-size:14px;margin-bottom:24px;">Here is your verification code:</p>
+                  <div style="background:#f4f4f5;border-radius:8px;padding:24px;text-align:center;margin-bottom:24px;">
+                    <span style="font-size:32px;font-weight:bold;letter-spacing:8px;color:#142D5A;">${existingCode.code}</span>
+                  </div>
+                  <p style="color:#888;font-size:12px;">This code expires in 10 minutes. If you didn't request this, you can safely ignore this email.</p>
+                </div>
+              `,
+            }),
+          });
+        }
+        return new Response(JSON.stringify({ sent: true }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
       // Generate 6-digit code
       const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
       const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString(); // 10 min
+      console.log("Generated new 2FA code for user:", user_id, "code:", verificationCode);
 
       // Delete old codes for this user
       await supabaseAdmin
@@ -56,11 +100,14 @@ Deno.serve(async (req) => {
         .eq("user_id", user_id);
 
       // Insert new code
-      await supabaseAdmin.from("two_factor_codes").insert({
+      const { error: insertErr } = await supabaseAdmin.from("two_factor_codes").insert({
         user_id,
         code: verificationCode,
         expires_at: expiresAt,
       });
+      if (insertErr) {
+        console.error("Failed to insert 2FA code:", insertErr);
+      }
 
       // Send email via existing send-email function
       const resendKey = Deno.env.get("RESEND_API_KEY");
@@ -116,6 +163,13 @@ Deno.serve(async (req) => {
         });
       }
 
+      // Also fetch any code for this user to debug mismatches
+      const { data: allCodes } = await supabaseAdmin
+        .from("two_factor_codes")
+        .select("code, verified, expires_at")
+        .eq("user_id", user_id);
+      console.log("Verify attempt - user:", user_id, "submitted code:", code, "DB codes:", JSON.stringify(allCodes));
+
       const { data: record } = await supabaseAdmin
         .from("two_factor_codes")
         .select("*")
@@ -126,6 +180,7 @@ Deno.serve(async (req) => {
         .maybeSingle();
 
       if (!record) {
+        console.log("Code verification FAILED for user:", user_id);
         return new Response(JSON.stringify({ verified: false, error: "Invalid or expired code" }), {
           status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
