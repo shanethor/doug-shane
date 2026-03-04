@@ -995,6 +995,8 @@ export default function Chat() {
 
   /** Detect if user wants to add a policy/document to an existing client */
   const parseAddToClientIntent = (text: string): { clientName: string } | null => {
+    // Calendar/scheduling messages should never be treated as "add to client"
+    if (isCalendarIntent(text)) return null;
     const t = text.trim();
     const patterns = [
       /\badd\s+(?:a\s+)?(?:policy|document|submission|coverage|line)\s+(?:to|for)\s+(.+)/i,
