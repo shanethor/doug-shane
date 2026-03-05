@@ -59,10 +59,13 @@ export default function Settings() {
     if (returnTo) {
       sessionStorage.setItem("email_connect_return", returnTo);
     }
-    if (section === "email" && loaded) {
-      setTimeout(() => {
-        document.getElementById("email-accounts-section")?.scrollIntoView({ behavior: "smooth" });
-      }, 200);
+    if (section && loaded) {
+      const targetId = section === "email" ? "email-accounts-section" : section === "calendar" ? "calendar-sync-section" : null;
+      if (targetId) {
+        setTimeout(() => {
+          document.getElementById(targetId)?.scrollIntoView({ behavior: "smooth" });
+        }, 200);
+      }
     }
   }, [searchParams, loaded]);
 
@@ -339,6 +342,86 @@ export default function Settings() {
             <p className="text-[11px] text-muted-foreground leading-relaxed">
               <strong>How it works:</strong> When connected, AURA syncs your recent emails into the Inbox and lets you send emails directly from your own address. 
               Your email credentials are stored securely and never shared. You can disconnect at any time.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Calendar Sync */}
+      <Card className="mb-4 sm:mb-6" id="calendar-sync-section">
+        <CardHeader className="p-4 sm:p-6 pb-2 sm:pb-2">
+          <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+            📅 Calendar Sync
+          </CardTitle>
+          <p className="text-xs text-muted-foreground mt-1">
+            Connect your Google or Outlook calendar to sync events into AURA.
+          </p>
+        </CardHeader>
+        <CardContent className="p-4 sm:p-6 pt-2 sm:pt-2 space-y-3">
+          {/* Gmail Calendar */}
+          <div className="flex items-center justify-between rounded-lg border p-3 sm:p-4 min-h-[56px]">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="h-9 w-9 rounded-lg bg-destructive/10 flex items-center justify-center shrink-0">
+                <Mail className="h-4 w-4 text-destructive" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-medium">Google Calendar</p>
+                {gmailConn ? (
+                  <p className="text-xs text-muted-foreground flex items-center gap-1 truncate">
+                    <CheckCircle className="h-3 w-3 text-primary shrink-0" />
+                    Uses {gmailConn.email_address}
+                  </p>
+                ) : (
+                  <p className="text-xs text-muted-foreground">Connect Gmail first in Email Accounts above</p>
+                )}
+              </div>
+            </div>
+            {gmailConn ? (
+              <Badge variant="outline" className="text-[10px] shrink-0">Connected</Badge>
+            ) : (
+              <Button size="sm" variant="outline" onClick={() => {
+                document.getElementById("email-accounts-section")?.scrollIntoView({ behavior: "smooth" });
+              }} className="gap-1.5 shrink-0 h-9">
+                <Link2 className="h-3.5 w-3.5" />
+                Setup
+              </Button>
+            )}
+          </div>
+
+          {/* Outlook Calendar */}
+          <div className="flex items-center justify-between rounded-lg border p-3 sm:p-4 min-h-[56px]">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="h-9 w-9 rounded-lg bg-accent/10 flex items-center justify-center shrink-0">
+                <Mail className="h-4 w-4 text-accent" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-medium">Outlook Calendar</p>
+                {outlookConn ? (
+                  <p className="text-xs text-muted-foreground flex items-center gap-1 truncate">
+                    <CheckCircle className="h-3 w-3 text-primary shrink-0" />
+                    Uses {outlookConn.email_address}
+                  </p>
+                ) : (
+                  <p className="text-xs text-muted-foreground">Connect Outlook first in Email Accounts above</p>
+                )}
+              </div>
+            </div>
+            {outlookConn ? (
+              <Badge variant="outline" className="text-[10px] shrink-0">Connected</Badge>
+            ) : (
+              <Button size="sm" variant="outline" onClick={() => {
+                document.getElementById("email-accounts-section")?.scrollIntoView({ behavior: "smooth" });
+              }} className="gap-1.5 shrink-0 h-9">
+                <Link2 className="h-3.5 w-3.5" />
+                Setup
+              </Button>
+            )}
+          </div>
+
+          <div className="rounded-md bg-muted/50 p-3">
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
+              <strong>How it works:</strong> Calendar sync uses your connected email account. Once Gmail or Outlook is connected above, AURA automatically syncs your calendar events.
+              Events from your external calendar will appear alongside AURA-created events.
             </p>
           </div>
         </CardContent>
