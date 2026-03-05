@@ -224,6 +224,12 @@ export default function BetaVideo() {
       <p className="text-[10px] text-center text-muted-foreground">
         Only Jane and Douglas should use this room for the demo.
       </p>
+
+      <div className="rounded-lg border border-primary/20 bg-primary/5 px-4 py-3 mt-4">
+        <p className="text-xs text-muted-foreground text-center leading-relaxed">
+          <strong className="text-foreground">AURA Pulse</strong> will notify users they are being recorded. Our system will determine consistent pain points and issues that arise and notify management with proposed solutions.
+        </p>
+      </div>
     </div>
   );
 }

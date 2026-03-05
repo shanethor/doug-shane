@@ -1400,10 +1400,27 @@ export default function Chat() {
 
     setTimeout(() => startTypewriter(), 50);
 
+    // Safety timeout: if nothing comes back in 45s, abort gracefully
+    const safetyTimeout = window.setTimeout(() => {
+      if (fullTextRef.current === "" && mountedRef.current) {
+        killTypewriter();
+        setMessages((prev) => {
+          const last = prev[prev.length - 1];
+          if (last?.role === "assistant") {
+            return prev.map((m, i) =>
+              i === prev.length - 1 ? { ...m, content: "I'm sorry, that request timed out. Please try again." } : m
+            );
+          }
+          return [...prev, { role: "assistant", content: "I'm sorry, that request timed out. Please try again." }];
+        });
+        setIsLoading(false);
+      }
+    }, 45000);
+
     try {
       // Inject current date + recent leads context for calendar/pipeline actions
       const today = new Date();
-      const dateContext = `[CONTEXT: Today is ${today.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })} (${today.toISOString().split("T")[0]})]`;
+      const dateContext = `[CONTEXT: Today is ${today.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })} (${today.toISOString().split("T")[0]}). Current time is ${today.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true })}]`;
       
       // Fetch recent leads so the AI can resolve "my most recent client", etc.
       let leadsContext = "";
@@ -1427,17 +1444,20 @@ export default function Chat() {
         trainingMode,
         onDelta: upsert,
         onDone: () => {
+          clearTimeout(safetyTimeout);
           // Signal stream done — typewriter will call finalizeMessage when it catches up
           streamDoneRef.current = true;
           onFinishRef.current = finalizeMessage;
         },
         onError: (err) => {
+          clearTimeout(safetyTimeout);
           killTypewriter();
           toast({ variant: "destructive", title: "Error", description: err });
           setIsLoading(false);
         },
       });
     } catch {
+      clearTimeout(safetyTimeout);
       killTypewriter();
       toast({ variant: "destructive", title: "Connection error", description: "Could not reach the assistant." });
       setIsLoading(false);
