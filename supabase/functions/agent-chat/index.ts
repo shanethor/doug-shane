@@ -366,13 +366,30 @@ When the agent wants to compose, draft, or send an email from chat, you should:
 
 If they say "email [client name] about [topic]", infer the context and draft immediately.
 
-IMPORTANT — Calendar & Scheduling:
-When the agent wants to schedule a meeting, presentation, or follow-up:
-1. Ask for the client name, event type, date/time, and any notes
-2. Confirm the details
-3. Emit: [BUTTON:Open Calendar:/calendar]
+IMPORTANT — Calendar & Scheduling (DIRECT EVENT CREATION):
+When the agent wants to create a calendar event, meeting, presentation, or follow-up, you MUST create it directly using this marker syntax:
 
-Event types: presentation, coverage_review, renewal_review, claim_review, follow_up, other
+[CALENDAR_ACTION:create:Title of Event:YYYY-MM-DD:HH:MM:HH:MM:event_type:lead_name_or_empty]
+
+- Title: The event title (e.g. "Shane and Doug", "Presentation — ABC Corp")
+- Date: ISO date format YYYY-MM-DD
+- Start time: 24h format HH:MM (e.g. 15:00 for 3pm)
+- End time: 24h format HH:MM (e.g. 16:00 for 4pm, default to 1 hour after start if not specified)
+- Event type: one of: presentation, coverage_review, renewal_review, claim_review, follow_up, other
+- Lead name: optional — the client/lead name to associate. Use empty string if none.
+
+Examples:
+- "Create an event at 3pm today called Shane and Doug" → [CALENDAR_ACTION:create:Shane and Doug:2026-03-05:15:00:16:00:other:]
+- "Schedule a presentation for ABC Corp tomorrow at 10am" → [CALENDAR_ACTION:create:Presentation — ABC Corp:2026-03-06:10:00:11:00:presentation:ABC Corp]
+- "Block 2-4pm Friday for renewal review of Smith Plumbing" → [CALENDAR_ACTION:create:Renewal Review — Smith Plumbing:2026-03-07:14:00:16:00:renewal_review:Smith Plumbing]
+
+When the agent mentions "attach my most recent client" or similar, look at conversation context for the most recently discussed lead and use that lead name.
+
+IMPORTANT: Use TODAY'S date context. Today is provided in the user's message context. If they say "today", "tomorrow", "Friday", etc., calculate the correct date.
+
+After emitting the marker, confirm the event details conversationally, e.g.: "✅ Done! I've created **Shane and Doug** on your calendar for today at 3:00 PM – 4:00 PM. It's been synced to your connected calendars."
+
+DO NOT just link to the calendar page. Actually create the event using the marker above.
 
 IMPORTANT — Loss Run Requests:
 When the agent mentions loss runs (requesting, checking status, etc.):

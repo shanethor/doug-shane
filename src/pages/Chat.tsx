@@ -132,6 +132,7 @@ function stripMarkers(text: string): string {
     .replace(/\[BUTTON:[^\]]+\]/g, "")
     .replace(/\[SUBMISSION_ID:[^\]]+\]/g, "")
     .replace(/\[PIPELINE_ACTION:[^\]]+\]/g, "")
+    .replace(/\[CALENDAR_ACTION:[^\]]+\]/g, "")
     .trim();
 }
 
@@ -160,6 +161,33 @@ function parsePipelineActions(text: string): PipelineAction[] {
       action.value = m[4];
     }
     actions.push(action);
+  }
+  return actions;
+}
+
+type CalendarAction = {
+  title: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  eventType: string;
+  leadName: string;
+};
+
+/** Parse calendar action markers like [CALENDAR_ACTION:create:Title:2026-03-05:15:00:16:00:other:LeadName] */
+function parseCalendarActions(text: string): CalendarAction[] {
+  const regex = /\[CALENDAR_ACTION:create:([^:]+):(\d{4}-\d{2}-\d{2}):(\d{2}:\d{2}):(\d{2}:\d{2}):([^:]*):([^\]]*)\]/g;
+  const actions: CalendarAction[] = [];
+  let m: RegExpExecArray | null;
+  while ((m = regex.exec(text)) !== null) {
+    actions.push({
+      title: m[1].trim(),
+      date: m[2],
+      startTime: m[3],
+      endTime: m[4],
+      eventType: m[5] || "other",
+      leadName: m[6]?.trim() || "",
+    });
   }
   return actions;
 }
@@ -1344,6 +1372,12 @@ export default function Chat() {
         executePipelineActions(pipelineActions);
       }
 
+      // Execute calendar actions if present
+      const calendarActions = parseCalendarActions(finalText);
+      if (calendarActions.length > 0) {
+        executeCalendarActions(calendarActions);
+      }
+
       setMessages((prev) => {
         const last = prev[prev.length - 1];
         if (last?.role === "assistant") {
@@ -1367,8 +1401,13 @@ export default function Chat() {
     setTimeout(() => startTypewriter(), 50);
 
     try {
+      // Inject current date context for calendar actions
+      const today = new Date();
+      const dateContext = `[CONTEXT: Today is ${today.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })} (${today.toISOString().split("T")[0]})]`;
+      const contentWithContext = `${dateContext}\n${content}`;
+      
       await streamChat({
-        messages: [...messages, { role: userMsg.role, content: content }].map((m) => ({ role: m.role, content: m.content })),
+        messages: [...messages, { role: userMsg.role, content: contentWithContext }].map((m) => ({ role: m.role, content: m.content })),
         trainingMode,
         onDelta: upsert,
         onDone: () => {
@@ -1593,6 +1632,83 @@ export default function Chat() {
       } catch (err) {
         console.error("Pipeline action failed:", err);
         toast({ variant: "destructive", title: "Action failed", description: `Could not execute: ${action.type}` });
+      }
+    }
+  };
+
+  /** Execute calendar actions parsed from AI response */
+  const executeCalendarActions = async (actions: CalendarAction[]) => {
+    if (!user) return;
+    for (const action of actions) {
+      try {
+        const startDt = new Date(`${action.date}T${action.startTime}:00`);
+        const endDt = new Date(`${action.date}T${action.endTime}:00`);
+
+        if (isNaN(startDt.getTime()) || isNaN(endDt.getTime())) {
+          toast({ variant: "destructive", title: "Invalid date/time", description: `Could not parse calendar event date.` });
+          continue;
+        }
+
+        // Find lead if specified
+        let leadId: string | null = null;
+        if (action.leadName) {
+          const leads = await findLeadsFuzzy(action.leadName);
+          if (leads.length >= 1) {
+            leadId = leads[0].id;
+          }
+        }
+
+        const validTypes = ["presentation", "coverage_review", "renewal_review", "claim_review", "follow_up", "other"];
+        const eventType = validTypes.includes(action.eventType) ? action.eventType : "other";
+
+        // Insert into calendar_events
+        const { error } = await supabase.from("calendar_events").insert({
+          user_id: user.id,
+          title: action.title,
+          event_type: eventType as any,
+          start_time: startDt.toISOString(),
+          end_time: endDt.toISOString(),
+          lead_id: leadId,
+          provider: "aura",
+          status: "scheduled" as any,
+        } as any);
+
+        if (error) {
+          console.error("Calendar insert error:", error);
+          toast({ variant: "destructive", title: "Failed to create event", description: error.message });
+          continue;
+        }
+
+        // Push to connected external calendars (best-effort)
+        try {
+          const { data: calendars } = await supabase
+            .from("external_calendars")
+            .select("provider")
+            .eq("user_id", user.id)
+            .eq("is_active", true);
+
+          if (calendars?.length) {
+            const headers = await getAuthHeaders();
+            for (const cal of calendars) {
+              await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/calendar-sync`, {
+                method: "POST",
+                headers,
+                body: JSON.stringify({
+                  action: "create_event",
+                  provider: cal.provider,
+                  title: action.title,
+                  start: startDt.toISOString(),
+                  end: endDt.toISOString(),
+                }),
+              });
+            }
+          }
+        } catch { /* silent — external push is best-effort */ }
+
+        toast({ title: "📅 Event created", description: `"${action.title}" added to your calendar.` });
+      } catch (err) {
+        console.error("Calendar action failed:", err);
+        toast({ variant: "destructive", title: "Calendar error", description: "Failed to create event." });
       }
     }
   };
