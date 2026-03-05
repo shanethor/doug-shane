@@ -898,11 +898,53 @@ export default function Chat() {
       || /\bremind\s*me\b/.test(t);
   };
 
+  /** Detect email compose intent */
+  const isEmailComposeIntent = (text: string) => {
+    const t = text.trim().toLowerCase();
+    return /\b(compose|draft|write|send)\s+(a\s*|an\s*)?(email|message|letter)\b/.test(t)
+      || /\b(email|write)\s+(to|a|my|the)\s*(client|carrier|underwriter|customer)\b/.test(t)
+      || /\bneed\s+to\s+(email|write|send)\b/.test(t);
+  };
+
+  /** Detect requests for coming-soon features */
+  const isComingSoonIntent = (text: string): string | null => {
+    const t = text.trim().toLowerCase();
+    if (/\bbinder\s*(generator|gen|create|make|build)?\b/.test(t) && /\bgenerat|creat|make|build|need\b/.test(t)) return "Binder Generator";
+    if (/\blpr\b|\bloss\s*payable\s*request\b/.test(t)) return "LPR Generator";
+    if (/\bcoi\b|\bcertificate\s*of\s*insurance\b/.test(t)) return "COI Generator";
+    if (/\bsmart\s*quote\b|\bquote\s*simul/i.test(t)) return "AURA Smart Quote";
+    if (/\bid\s*card\s*(generator|gen|create|make|build)\b/.test(t)) return "ID Card Generator";
+    if (/\bstatement\s*of\s*values?\b|\bsov\b/.test(t)) return "Statement of Values";
+    if (/\bsupplemental\s*form\b/.test(t)) return "Supplemental Forms";
+    if (/\b(ai\s*)?concierge\b|\banswering\s*machine\b/.test(t)) return "AI Concierge";
+    if (/\bdiscussion\s*board\b|\bteam\s*discussion\b/.test(t)) return "Team Discussion Boards";
+    if (/\bemail.?to.?intake\b/.test(t)) return "Email-to-Intake";
+    if (/\bdoc(ument)?\s*auto.?map\b/.test(t)) return "Document Auto-Map";
+    if (/\b(voice\s*call|video\s*call)\b/.test(t)) return "Voice & Video Calls";
+    return null;
+  };
+
+  /** Detect navigation to built features */
+  const detectFeatureNavigation = (text: string): { route: string; label: string } | null => {
+    const t = text.trim().toLowerCase();
+    if (/\b(go\s*to|open|show|view|check|take\s*me\s*to|navigate)\s+(my\s*)?(inbox|emails?)\b/.test(t)) return { route: "/email", label: "Email Hub" };
+    if (/\b(go\s*to|open|show|view|check|take\s*me\s*to|navigate)\s+(my\s*)?calendar\b/.test(t) || /\bmy\s*calendar\b/.test(t)) return { route: "/email?tab=calendar", label: "Calendar" };
+    if (/\b(go\s*to|open|show|view|check|take\s*me\s*to|navigate)\s+(my\s*)?pipeline\b/.test(t)) return { route: "/pipeline", label: "Pipeline" };
+    if (/\b(go\s*to|open|show|view|check|take\s*me\s*to|navigate)\s+(my\s*)?approvals?\b/.test(t)) return { route: "/approvals", label: "Approvals" };
+    if (/\b(go\s*to|open|show|view|check|take\s*me\s*to|navigate)\s+(my\s*)?settings?\b/.test(t)) return { route: "/settings", label: "Settings" };
+    if (/\b(go\s*to|open|show|view|check|take\s*me\s*to|navigate)\s+(my\s*)?(producer\s*)?hub\b/.test(t)) return { route: "/producer-hub", label: "Producer Hub" };
+    if (/\b(go\s*to|open|show|view|check|take\s*me\s*to|navigate)\s+(my\s*)?dashboard\b/.test(t)) return { route: "/dashboard", label: "Dashboard" };
+    if (/\b(go\s*to|open|show|view|check|take\s*me\s*to|navigate)\s+(my\s*)?admin\b/.test(t)) return { route: "/admin", label: "Admin" };
+    if (/\b(go\s*to|open|show|view|check|take\s*me\s*to|navigate)\s+(my\s*)?generated\s*forms?\b/.test(t)) return { route: "/generated-forms", label: "Generated Forms" };
+    return null;
+  };
+
   /** Detect navigation / feature requests that should pass through to AI */
   const isNavigationIntent = (text: string) => {
     const t = text.trim().toLowerCase();
-    return /\b(go\s*to|open|take\s*me\s*to|navigate|show\s*me|view|check)\s+(my\s*)?(inbox|email|calendar|pipeline|approvals|settings|hub|pulse|quotes?|admin|dashboard|beta|team|clients?|bor|generated|forms?|bookings?)\b/.test(t)
-      || /\b(compose|draft|write|send)\s+(a\s*|an\s*)?(email|message|letter)\b/.test(t)
+    return !!detectFeatureNavigation(text)
+      || isEmailComposeIntent(text)
+      || !!isComingSoonIntent(text)
       || /\b(loss\s*runs?|bor\s*letter|broker\s*of\s*record)\b/.test(t)
       || /\b(new\s*quote|quote\s*request|create\s*quote)\b/.test(t)
       || /\b(voice\s*call|video\s*call|team\s*chat|collaboration|to.?do)\b/.test(t)
@@ -1044,6 +1086,50 @@ export default function Chat() {
       setInput("");
       setShowPersonalIntakeDialog(true);
       return;
+    }
+
+    // Intercept email compose intent — navigate to Email Hub
+    if (!displayText && isEmailComposeIntent(text)) {
+      const userMsg: Msg = { role: "user", content: text.trim() };
+      setMessages((prev) => [...prev, userMsg]);
+      setInput("");
+      setMessages((prev) => [...prev, {
+        role: "assistant",
+        content: "✉️ Opening the **Email Hub** so you can compose your email. One moment..."
+      }]);
+      setTimeout(() => navigate("/email", { state: { compose: true } }), 800);
+      return;
+    }
+
+    // Intercept coming-soon feature requests
+    if (!displayText) {
+      const comingSoonFeature = isComingSoonIntent(text);
+      if (comingSoonFeature) {
+        const userMsg: Msg = { role: "user", content: text.trim() };
+        setMessages((prev) => [...prev, userMsg]);
+        setInput("");
+        setMessages((prev) => [...prev, {
+          role: "assistant",
+          content: `🚧 **${comingSoonFeature}** is coming soon! We're actively building this feature and it will be available in a future update. In the meantime, is there anything else I can help you with?`
+        }]);
+        return;
+      }
+    }
+
+    // Intercept navigation to built features
+    if (!displayText) {
+      const navTarget = detectFeatureNavigation(text);
+      if (navTarget) {
+        const userMsg: Msg = { role: "user", content: text.trim() };
+        setMessages((prev) => [...prev, userMsg]);
+        setInput("");
+        setMessages((prev) => [...prev, {
+          role: "assistant",
+          content: `📍 Taking you to **${navTarget.label}** now...`
+        }]);
+        setTimeout(() => navigate(navTarget.route), 600);
+        return;
+      }
     }
 
     // Intercept "add policy to [client]" — detect existing client and link new submission
