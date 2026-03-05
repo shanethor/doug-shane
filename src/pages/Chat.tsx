@@ -1401,10 +1401,26 @@ export default function Chat() {
     setTimeout(() => startTypewriter(), 50);
 
     try {
-      // Inject current date context for calendar actions
+      // Inject current date + recent leads context for calendar/pipeline actions
       const today = new Date();
       const dateContext = `[CONTEXT: Today is ${today.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })} (${today.toISOString().split("T")[0]})]`;
-      const contentWithContext = `${dateContext}\n${content}`;
+      
+      // Fetch recent leads so the AI can resolve "my most recent client", etc.
+      let leadsContext = "";
+      if (user) {
+        const { data: recentLeads } = await supabase
+          .from("leads")
+          .select("account_name, stage, updated_at")
+          .eq("owner_user_id", user.id)
+          .order("updated_at", { ascending: false })
+          .limit(10);
+        if (recentLeads?.length) {
+          const leadsList = recentLeads.map((l, i) => `${i + 1}. "${l.account_name}" (${l.stage}, updated ${new Date(l.updated_at).toLocaleDateString()})`).join("; ");
+          leadsContext = `\n[CONTEXT: User's recent clients (most recent first): ${leadsList}]`;
+        }
+      }
+      
+      const contentWithContext = `${dateContext}${leadsContext}\n${content}`;
       
       await streamChat({
         messages: [...messages, { role: userMsg.role, content: contentWithContext }].map((m) => ({ role: m.role, content: m.content })),
@@ -1656,6 +1672,17 @@ export default function Chat() {
           if (leads.length >= 1) {
             leadId = leads[0].id;
           }
+        }
+        // Fallback: if no lead found but user mentioned a client, try most recent lead
+        if (!leadId && action.leadName && action.leadName.toLowerCase().includes("recent")) {
+          const { data: mostRecent } = await supabase
+            .from("leads")
+            .select("id, account_name")
+            .eq("owner_user_id", user.id)
+            .order("updated_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          if (mostRecent) leadId = mostRecent.id;
         }
 
         const validTypes = ["presentation", "coverage_review", "renewal_review", "claim_review", "follow_up", "other"];

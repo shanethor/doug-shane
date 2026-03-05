@@ -383,7 +383,7 @@ Examples:
 - "Schedule a presentation for ABC Corp tomorrow at 10am" → [CALENDAR_ACTION:create:Presentation — ABC Corp:2026-03-06:10:00:11:00:presentation:ABC Corp]
 - "Block 2-4pm Friday for renewal review of Smith Plumbing" → [CALENDAR_ACTION:create:Renewal Review — Smith Plumbing:2026-03-07:14:00:16:00:renewal_review:Smith Plumbing]
 
-When the agent mentions "attach my most recent client" or similar, look at conversation context for the most recently discussed lead and use that lead name.
+When the user says "tie it to my most recent client", "attach my most recent client", "link to my latest client", or similar — look at the [CONTEXT: User's recent clients...] provided in the message. The FIRST client listed is the most recent. Use that client's EXACT account_name in the lead_name field of the CALENDAR_ACTION marker. If the user names a specific client, use that name instead. ALWAYS fill in the lead_name field when a client association is requested.
 
 IMPORTANT: Use TODAY'S date context. Today is provided in the user's message context. If they say "today", "tomorrow", "Friday", etc., calculate the correct date.
 
