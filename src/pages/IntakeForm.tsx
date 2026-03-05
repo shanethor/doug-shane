@@ -116,7 +116,7 @@ const emptyRecVehicle = (): RecreationalVehicle => ({ rec_type: "", year: "", ma
 const emptyArticle = (): PersonalArticle => ({ description: "", category: "", estimated_value: "" });
 
 /* ─── Commercial Lines Types ─── */
-type CommercialStepKey = "industry" | "insurance_check" | "owner_experience" | "upload_dec" | "loss_run_info" | "loss_run_consent" | "bor_auth" | "business_info" | "commercial_docs";
+type CommercialStepKey = "industry" | "insurance_check" | "owner_experience" | "upload_dec" | "loss_run_auth" | "bor_auth" | "business_info" | "commercial_docs";
 
 const COMMERCIAL_LINES = [
   "General Liability", "Workers Compensation", "Commercial Auto",
@@ -2332,10 +2332,7 @@ export default function IntakeForm() {
                 const steps: CommercialStepKey[] = ["industry", "insurance_check"];
                 if (commercialForm.has_current_insurance === "yes") {
                   steps.push("upload_dec");
-                  if (!commercialForm.has_uploaded_dec_pages) {
-                    steps.push("loss_run_info");
-                  }
-                  steps.push("loss_run_consent");
+                  steps.push("loss_run_auth");
                 } else if (commercialForm.has_current_insurance === "no") {
                   steps.push("owner_experience");
                 }
@@ -2350,8 +2347,7 @@ export default function IntakeForm() {
                 insurance_check: "Current Insurance",
                 owner_experience: "Experience",
                 upload_dec: "Upload Dec Pages",
-                loss_run_info: "Loss Run Details",
-                loss_run_consent: "Loss Run Consent",
+                loss_run_auth: "Loss Run Authorization",
                 bor_auth: "Broker Authorization",
                 business_info: "Your Information",
                 commercial_docs: "Documents & Submit",
@@ -2380,6 +2376,12 @@ export default function IntakeForm() {
               const isCommStepValid = (): boolean => {
                 if (commercialStep === "industry") return !!commercialForm.industry;
                 if (commercialStep === "insurance_check") return !!commercialForm.has_current_insurance;
+                if (commercialStep === "loss_run_auth") {
+                  const hasName = !!(commercialForm.loss_run_authorized_first_name.trim() && commercialForm.loss_run_authorized_last_name.trim());
+                  const hasEmail = !!(commercialForm.loss_run_authorized_email.trim() && /^[\w.-]+@[\w.-]+\.\w+$/.test(commercialForm.loss_run_authorized_email.trim()));
+                  const hasPolicy = commercialForm.loss_run_policies.some(p => p.carrier.trim() && p.policy_number.trim());
+                  return hasName && hasEmail && hasPolicy && commercialForm.loss_run_consent;
+                }
                 if (commercialStep === "business_info") {
                   return !!(commercialForm.business_name.trim() && commercialForm.customer_name.trim() && commercialForm.customer_email.trim() && /^[\w.-]+@[\w.-]+\.\w+$/.test(commercialForm.customer_email.trim()) && commercialForm.customer_phone.trim());
                 }
@@ -2559,27 +2561,47 @@ export default function IntakeForm() {
                     </Card>
                   )}
 
-                  {commercialStep === "loss_run_info" && (
+                  {commercialStep === "loss_run_auth" && (
                     <div className="space-y-4">
                       <Card>
-                        <CardHeader><CardTitle className="text-base">Loss Run Request Information</CardTitle></CardHeader>
-                        <CardContent className="space-y-4">
-                          <p className="text-sm text-muted-foreground">Since you did not upload declaration pages, please provide the following information so we can request loss runs from your carrier(s) on your behalf.</p>
-                          
+                        <CardHeader>
+                          <CardTitle className="text-base flex items-center gap-2"><Shield className="h-4 w-4" /> Loss Run Authorization</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-5">
+                          <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-2">
+                            <p className="text-sm leading-relaxed">
+                              Please provide the information below so we can request loss runs from your insurance carriers on your behalf.
+                            </p>
+                            <p className="text-sm leading-relaxed text-muted-foreground">
+                              Loss runs are the official claims history associated with your insurance policies. Insurance carriers review this history when evaluating and quoting coverage.
+                            </p>
+                            <p className="text-sm leading-relaxed text-muted-foreground">
+                              AURA will use this information to request your loss runs directly from your carriers.
+                            </p>
+                          </div>
+
+                          {/* Authorized Signer */}
                           <div className="space-y-3">
-                            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Authorized Signer</p>
+                            <div>
+                              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Authorized Signer</p>
+                              <p className="text-[11px] text-muted-foreground mt-0.5">The person completing this section must be authorized to request information related to the company's insurance policies.</p>
+                            </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                               <div><Label className="text-xs">First Name *</Label><Input value={commercialForm.loss_run_authorized_first_name} onChange={e => updateCommercial("loss_run_authorized_first_name", e.target.value)} /></div>
                               <div><Label className="text-xs">Last Name *</Label><Input value={commercialForm.loss_run_authorized_last_name} onChange={e => updateCommercial("loss_run_authorized_last_name", e.target.value)} /></div>
                               <div><Label className="text-xs">Email *</Label><Input type="email" value={commercialForm.loss_run_authorized_email} onChange={e => updateCommercial("loss_run_authorized_email", e.target.value)} /></div>
-                              <div><Label className="text-xs">Title</Label><Input value={commercialForm.loss_run_authorized_title} onChange={e => updateCommercial("loss_run_authorized_title", e.target.value)} placeholder="e.g. Owner, CFO" /></div>
+                              <div><Label className="text-xs">Title</Label><Input value={commercialForm.loss_run_authorized_title} onChange={e => updateCommercial("loss_run_authorized_title", e.target.value)} placeholder="Owner, President, CFO" /></div>
                             </div>
                           </div>
 
+                          {/* Policy Information */}
                           <div className="space-y-3">
                             <div className="flex items-center justify-between">
-                              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Policy Information</p>
-                              <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => updateCommercial("loss_run_policies", [...commercialForm.loss_run_policies, emptyLossRunPolicy()])}>
+                              <div>
+                                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Policy Information</p>
+                                <p className="text-[11px] text-muted-foreground mt-0.5">Please provide the policies associated with your business so we can request the appropriate loss run reports from your carriers.</p>
+                              </div>
+                              <Button variant="outline" size="sm" className="h-7 text-xs gap-1 shrink-0" onClick={() => updateCommercial("loss_run_policies", [...commercialForm.loss_run_policies, emptyLossRunPolicy()])}>
                                 <Plus className="h-3 w-3" /> Add Policy
                               </Button>
                             </div>
@@ -2595,7 +2617,7 @@ export default function IntakeForm() {
                                 </div>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                   <div><Label className="text-xs">Carrier *</Label><Input value={pol.carrier} onChange={e => updateLossRunPolicy(idx, "carrier", e.target.value)} /></div>
-                                  <div><Label className="text-xs">Coverage Type</Label><Input value={pol.coverage} onChange={e => updateLossRunPolicy(idx, "coverage", e.target.value)} placeholder="e.g. General Liability" /></div>
+                                  <div><Label className="text-xs">Coverage Type</Label><Input value={pol.coverage} onChange={e => updateLossRunPolicy(idx, "coverage", e.target.value)} placeholder="General Liability, Workers Compensation, Commercial Auto" /></div>
                                   <div><Label className="text-xs">Policy Number *</Label><Input value={pol.policy_number} onChange={e => updateLossRunPolicy(idx, "policy_number", e.target.value)} /></div>
                                   <div><Label className="text-xs">Effective Date</Label><Input type="date" value={pol.effective_date} onChange={e => updateLossRunPolicy(idx, "effective_date", e.target.value)} /></div>
                                   <div><Label className="text-xs">Expiration Date</Label><Input type="date" value={pol.expiration_date} onChange={e => updateLossRunPolicy(idx, "expiration_date", e.target.value)} /></div>
@@ -2603,39 +2625,34 @@ export default function IntakeForm() {
                               </div>
                             ))}
                           </div>
+
+                          {/* Authorization Consent */}
+                          <div className="space-y-3">
+                            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Authorization Consent</p>
+                            <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-2">
+                              <p className="text-sm leading-relaxed">
+                                By providing your consent below, you authorize <strong>AURA Risk Group</strong> to request loss run reports from your current and prior insurance carriers on your behalf.
+                              </p>
+                              <p className="text-sm leading-relaxed text-muted-foreground">
+                                This authorization does not modify, cancel, or change any of your existing insurance policies.
+                              </p>
+                            </div>
+                            <label className="flex items-start gap-3 p-4 rounded-lg border border-border bg-card cursor-pointer hover:bg-muted/30 transition-colors">
+                              <Checkbox
+                                checked={commercialForm.loss_run_consent}
+                                onCheckedChange={v => updateCommercial("loss_run_consent", !!v)}
+                                className="mt-0.5"
+                              />
+                              <div className="space-y-1">
+                                <span className="text-sm font-medium">I authorize AURA Risk Group to request loss run reports from my current and prior insurance carriers for {commercialForm.business_name || "(business name)"}.</span>
+                              </div>
+                            </label>
+                          </div>
+
+                          <p className="text-[10px] text-muted-foreground text-center italic">After submitting this form, a formal loss run authorization letter will be generated and sent to you for electronic signature.</p>
                         </CardContent>
                       </Card>
                     </div>
-                  )}
-
-                  {commercialStep === "loss_run_consent" && (
-                    <Card>
-                      <CardHeader><CardTitle className="text-base flex items-center gap-2"><Shield className="h-4 w-4" /> Loss Run Authorization</CardTitle></CardHeader>
-                      <CardContent className="space-y-4">
-                        <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-3">
-                          <p className="text-sm leading-relaxed">
-                            By providing your consent below, you authorize <strong>AURA Risk Group</strong> to request loss run reports from your current and prior insurance carriers on your behalf. 
-                          </p>
-                          <p className="text-sm leading-relaxed text-muted-foreground">
-                            Loss runs are historical records of claims filed under your insurance policies. They are essential for obtaining competitive quotes and ensuring proper risk assessment. This authorization does not modify, cancel, or alter any of your existing insurance policies.
-                          </p>
-                        </div>
-                        <label className="flex items-start gap-3 p-4 rounded-lg border border-border bg-card cursor-pointer hover:bg-muted/30 transition-colors">
-                          <Checkbox
-                            checked={commercialForm.loss_run_consent}
-                            onCheckedChange={v => updateCommercial("loss_run_consent", !!v)}
-                            className="mt-0.5"
-                          />
-                          <div className="space-y-1">
-                            <span className="text-sm font-medium">I consent to loss run requests</span>
-                            <p className="text-[11px] text-muted-foreground leading-relaxed">
-                              I, <strong>{commercialForm.customer_name || "(your name)"}</strong>, authorize AURA Risk Group to request loss run reports from my current and prior carriers for <strong>{commercialForm.business_name || "(business name)"}</strong>. I understand this does not cancel or modify any existing policies.
-                            </p>
-                          </div>
-                        </label>
-                        <p className="text-[10px] text-muted-foreground text-center">A formal loss run authorization letter will be generated and sent to you for electronic signature.</p>
-                      </CardContent>
-                    </Card>
                   )}
 
                   {commercialStep === "bor_auth" && (
