@@ -2331,7 +2331,6 @@ export default function IntakeForm() {
               const buildCommSteps = (): CommercialStepKey[] => {
                 const steps: CommercialStepKey[] = ["industry", "insurance_check"];
                 if (commercialForm.has_current_insurance === "yes") {
-                  steps.push("upload_dec");
                   steps.push("loss_run_auth");
                 } else if (commercialForm.has_current_insurance === "no") {
                   steps.push("owner_experience");
@@ -2377,10 +2376,7 @@ export default function IntakeForm() {
                 if (commercialStep === "industry") return !!commercialForm.industry;
                 if (commercialStep === "insurance_check") return !!commercialForm.has_current_insurance;
                 if (commercialStep === "loss_run_auth") {
-                  const hasName = !!(commercialForm.loss_run_authorized_first_name.trim() && commercialForm.loss_run_authorized_last_name.trim());
-                  const hasEmail = !!(commercialForm.loss_run_authorized_email.trim() && /^[\w.-]+@[\w.-]+\.\w+$/.test(commercialForm.loss_run_authorized_email.trim()));
-                  const hasPolicy = commercialForm.loss_run_policies.some(p => p.carrier.trim() && p.policy_number.trim());
-                  return hasName && hasEmail && hasPolicy && commercialForm.loss_run_consent;
+                  return true; // Loss run authorization is optional
                 }
                 if (commercialStep === "bor_auth") {
                   if (!commercialForm.has_other_broker) return false;
@@ -2510,24 +2506,55 @@ export default function IntakeForm() {
                           </Select>
                         </div>
                         {commercialForm.has_current_insurance === "yes" && (
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pl-3 border-l-2 border-primary/20">
-                            <div><Label className="text-xs">Carrier Name</Label><Input value={commercialForm.current_carrier_name} onChange={e => updateCommercial("current_carrier_name", e.target.value)} /></div>
-                            <div><Label className="text-xs">Policy Number</Label><Input value={commercialForm.policy_number} onChange={e => updateCommercial("policy_number", e.target.value)} /></div>
-                            <div><Label className="text-xs">Effective Date</Label><Input type="date" value={commercialForm.policy_effective_date} onChange={e => updateCommercial("policy_effective_date", e.target.value)} /></div>
-                            <div><Label className="text-xs">Expiration Date</Label><Input type="date" value={commercialForm.policy_expiration_date} onChange={e => updateCommercial("policy_expiration_date", e.target.value)} /></div>
-                            <div className="sm:col-span-2">
-                              <Label className="text-xs">Current Policies</Label>
-                              <div className="flex flex-wrap gap-2 mt-1">
-                                {COMMERCIAL_LINES.map(line => {
-                                  const sel = commercialForm.lines_in_force.includes(line);
-                                  return (
-                                    <button key={line} onClick={() => updateCommercial("lines_in_force", sel ? commercialForm.lines_in_force.filter(l => l !== line) : [...commercialForm.lines_in_force, line])}
-                                      className={`px-3 py-1.5 rounded-md border text-xs font-medium transition-colors ${sel ? "bg-primary text-primary-foreground border-primary" : "border-border hover:border-primary/50"}`}>
-                                      {line}
-                                    </button>
-                                  );
-                                })}
+                          <div className="space-y-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pl-3 border-l-2 border-primary/20">
+                              <div><Label className="text-xs">Carrier Name</Label><Input value={commercialForm.current_carrier_name} onChange={e => updateCommercial("current_carrier_name", e.target.value)} /></div>
+                              <div><Label className="text-xs">Policy Number</Label><Input value={commercialForm.policy_number} onChange={e => updateCommercial("policy_number", e.target.value)} /></div>
+                              <div><Label className="text-xs">Effective Date</Label><Input type="date" value={commercialForm.policy_effective_date} onChange={e => updateCommercial("policy_effective_date", e.target.value)} /></div>
+                              <div><Label className="text-xs">Expiration Date</Label><Input type="date" value={commercialForm.policy_expiration_date} onChange={e => updateCommercial("policy_expiration_date", e.target.value)} /></div>
+                              <div className="sm:col-span-2">
+                                <Label className="text-xs">Current Policies</Label>
+                                <div className="flex flex-wrap gap-2 mt-1">
+                                  {COMMERCIAL_LINES.map(line => {
+                                    const sel = commercialForm.lines_in_force.includes(line);
+                                    return (
+                                      <button key={line} onClick={() => updateCommercial("lines_in_force", sel ? commercialForm.lines_in_force.filter(l => l !== line) : [...commercialForm.lines_in_force, line])}
+                                        className={`px-3 py-1.5 rounded-md border text-xs font-medium transition-colors ${sel ? "bg-primary text-primary-foreground border-primary" : "border-border hover:border-primary/50"}`}>
+                                        {line}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
                               </div>
+                            </div>
+
+                            {/* Dec Pages Upload - inline */}
+                            <div className="pt-2 border-t border-border/50">
+                              <Label className="text-xs font-medium flex items-center gap-1.5"><Upload className="h-3.5 w-3.5" /> Upload Declaration Pages (optional)</Label>
+                              <p className="text-[11px] text-muted-foreground mt-1 mb-2">Upload your current dec pages so we can review your coverage structure.</p>
+                              <div
+                                onDragOver={e => { e.preventDefault(); setDragActive(true); }}
+                                onDragLeave={() => setDragActive(false)}
+                                onDrop={(e) => { e.preventDefault(); setDragActive(false); const files = Array.from(e.dataTransfer.files).filter(f => /\.(pdf|jpg|jpeg|png)$/i.test(f.name)); if (files.length > 0) { setUploadedFiles(prev => [...prev, ...files.map(f => ({ file: f, category: "dec_pages" }))]); updateCommercial("has_uploaded_dec_pages", true); } }}
+                                onClick={() => fileInputRef.current?.click()}
+                                className={`border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-all ${dragActive ? "border-primary bg-primary/5 scale-[1.02] shadow-lg" : "border-border hover:border-primary/50"}`}
+                              >
+                                <Upload className={`h-6 w-6 mx-auto mb-1.5 text-muted-foreground transition-transform ${dragActive ? "animate-bounce" : ""}`} />
+                                <p className="text-xs font-medium">Click or drag & drop dec pages</p>
+                                <p className="text-[10px] text-muted-foreground mt-0.5">PDF, JPG, PNG accepted</p>
+                                <input ref={fileInputRef} type="file" multiple accept=".pdf,.jpg,.jpeg,.png" className="hidden" onChange={(e) => { const files = Array.from(e.target.files || []).filter(f => /\.(pdf|jpg|jpeg|png)$/i.test(f.name)); if (files.length > 0) { setUploadedFiles(prev => [...prev, ...files.map(f => ({ file: f, category: "dec_pages" }))]); updateCommercial("has_uploaded_dec_pages", true); } e.target.value = ""; }} />
+                              </div>
+                              {uploadedFiles.filter(f => f.category === "dec_pages").length > 0 && (
+                                <div className="space-y-1.5 mt-2">
+                                  <p className="text-xs font-medium flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-primary" /> {uploadedFiles.filter(f => f.category === "dec_pages").length} file(s) uploaded</p>
+                                  {uploadedFiles.filter(f => f.category === "dec_pages").map((uf, idx) => (
+                                    <div key={idx} className="flex items-center gap-2 p-2 rounded-md border bg-muted/20">
+                                      <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                                      <span className="text-xs truncate flex-1 min-w-0">{uf.file.name}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
                             </div>
                           </div>
                         )}
@@ -2535,38 +2562,8 @@ export default function IntakeForm() {
                     </Card>
                   )}
 
-                  {commercialStep === "upload_dec" && (
-                    <Card>
-                      <CardHeader><CardTitle className="text-base flex items-center gap-2"><Upload className="h-4 w-4" /> Upload Declaration Pages</CardTitle></CardHeader>
-                      <CardContent className="space-y-4">
-                        <p className="text-sm text-muted-foreground">Upload your current declaration pages so we can review how your insurance is structured and request loss runs from your insurance carriers.</p>
-                        <div
-                          onDragOver={e => { e.preventDefault(); setDragActive(true); }}
-                          onDragLeave={() => setDragActive(false)}
-                          onDrop={(e) => { e.preventDefault(); setDragActive(false); const files = Array.from(e.dataTransfer.files).filter(f => /\.(pdf|jpg|jpeg|png)$/i.test(f.name)); if (files.length > 0) { setUploadedFiles(prev => [...prev, ...files.map(f => ({ file: f, category: "dec_pages" }))]); updateCommercial("has_uploaded_dec_pages", true); } }}
-                          onClick={() => fileInputRef.current?.click()}
-                          className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-all ${dragActive ? "border-primary bg-primary/5 scale-[1.02] shadow-lg" : "border-border hover:border-primary/50"}`}
-                        >
-                          <Upload className={`h-8 w-8 mx-auto mb-2 text-muted-foreground transition-transform ${dragActive ? "animate-bounce" : ""}`} />
-                          <p className="text-sm font-medium">Drag & drop declaration pages here</p>
-                          <p className="text-xs text-muted-foreground mt-1">PDF, JPG, PNG accepted</p>
-                          <input ref={fileInputRef} type="file" multiple accept=".pdf,.jpg,.jpeg,.png" className="hidden" onChange={(e) => { const files = Array.from(e.target.files || []).filter(f => /\.(pdf|jpg|jpeg|png)$/i.test(f.name)); if (files.length > 0) { setUploadedFiles(prev => [...prev, ...files.map(f => ({ file: f, category: "dec_pages" }))]); updateCommercial("has_uploaded_dec_pages", true); } e.target.value = ""; }} />
-                        </div>
-                        {uploadedFiles.filter(f => f.category === "dec_pages").length > 0 && (
-                          <div className="space-y-2">
-                            <p className="text-xs font-medium flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-primary" /> {uploadedFiles.filter(f => f.category === "dec_pages").length} file(s) uploaded</p>
-                            {uploadedFiles.filter(f => f.category === "dec_pages").map((uf, idx) => (
-                              <div key={idx} className="flex items-center gap-2 p-2 rounded-md border bg-muted/20">
-                                <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
-                                <span className="text-xs truncate flex-1 min-w-0">{uf.file.name}</span>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                        <p className="text-xs text-muted-foreground italic">If you do not have declaration pages available, click Continue and we will collect the information needed!</p>
-                      </CardContent>
-                    </Card>
-                  )}
+
+
 
                   {commercialStep === "loss_run_auth" && (
                     <div className="space-y-4">
