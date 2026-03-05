@@ -34,29 +34,19 @@ export function useUnreadCount() {
 
     fetchCount(user.id);
 
-    let channel: ReturnType<typeof supabase.channel> | null = null;
-
-    try {
-      channel = supabase
-        .channel("unread-count")
-        .on(
-          "postgres_changes",
-          { event: "*", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` },
-          () => debouncedFetch(user.id)
-        )
-        .on(
-          "postgres_changes",
-          { event: "*", schema: "public", table: "synced_emails", filter: `user_id=eq.${user.id}` },
-          () => debouncedFetch(user.id)
-        );
-
-      channel.subscribe();
-    } catch (error) {
-      // Some mobile browsers can block websocket initialization ("operation is insecure").
-      // Keep app functional by falling back to polling-only unread count updates.
-      console.warn("[useUnreadCount] Realtime unavailable; continuing without websocket", error);
-      channel = null;
-    }
+    const channel = supabase
+      .channel("unread-count")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` },
+        () => debouncedFetch(user.id)
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "synced_emails", filter: `user_id=eq.${user.id}` },
+        () => debouncedFetch(user.id)
+      )
+      .subscribe();
 
     // Listen for manual refresh events (e.g. after marking items read in Inbox)
     const onRefresh = () => fetchCount(user.id);
@@ -64,7 +54,7 @@ export function useUnreadCount() {
 
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
-      if (channel) supabase.removeChannel(channel);
+      supabase.removeChannel(channel);
       window.removeEventListener("unread-count-refresh", onRefresh);
     };
   }, [user, fetchCount, debouncedFetch]);
