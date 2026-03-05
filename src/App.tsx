@@ -33,6 +33,7 @@ import Settings from "./pages/Settings";
 import AuraPulse from "./pages/AuraPulse";
 import EmailHub from "./pages/EmailHub";
 import ProducerHub from "./pages/ProducerHub";
+import AuraBeta from "./pages/AuraBeta";
 import { Navigate } from "react-router-dom";
 const queryClient = new QueryClient();
 
@@ -73,6 +74,7 @@ const App = () => (
           <Route path="/calendar" element={<Navigate to="/email" replace />} />
           <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
           <Route path="/book/:producerId" element={<BookingPage />} />
+          <Route path="/beta" element={<AuraBeta />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
