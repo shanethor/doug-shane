@@ -68,6 +68,36 @@ export type Database = {
         }
         Relationships: []
       }
+      beta_todos: {
+        Row: {
+          assignee_id: string | null
+          created_at: string
+          created_by: string
+          id: string
+          is_done: boolean
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assignee_id?: string | null
+          created_at?: string
+          created_by: string
+          id?: string
+          is_done?: boolean
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assignee_id?: string | null
+          created_at?: string
+          created_by?: string
+          id?: string
+          is_done?: boolean
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       business_submissions: {
         Row: {
           company_name: string | null
