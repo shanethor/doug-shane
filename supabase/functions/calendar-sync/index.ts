@@ -128,7 +128,11 @@ async function syncOutlook(accessToken: string, userId: string, adminClient: any
       updated_at: new Date().toISOString(),
     }, { onConflict: "user_id,external_event_id" });
 
-    if (!error) synced++;
+    if (error) {
+      console.error(`Outlook upsert error for event ${oe.id}:`, JSON.stringify(error));
+    } else {
+      synced++;
+    }
   }
 
   return { synced, total: events.length };
@@ -167,7 +171,7 @@ async function syncGoogle(accessToken: string, userId: string, adminClient: any)
     const { error } = await adminClient.from("calendar_events").upsert({
       user_id: userId,
       external_event_id: ge.id,
-      provider: "gmail",
+      provider: "google",
       title: ge.summary || "(No title)",
       description: ge.description || null,
       location: ge.location || null,
@@ -184,7 +188,11 @@ async function syncGoogle(accessToken: string, userId: string, adminClient: any)
       updated_at: new Date().toISOString(),
     }, { onConflict: "user_id,external_event_id" });
 
-    if (!error) synced++;
+    if (error) {
+      console.error(`Google upsert error for event ${ge.id}:`, JSON.stringify(error));
+    } else {
+      synced++;
+    }
   }
 
   return { synced, total: events.length };
