@@ -6,6 +6,8 @@ import { AppLayout } from "@/components/AppLayout";
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
 
+  console.log("[ProtectedRoute] loading:", loading, "user:", !!user, "2fa:", is2FAVerified());
+
   if (loading) {
     return (
       <AppLayout>
@@ -17,11 +19,13 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (!user) {
+    console.log("[ProtectedRoute] No user, redirecting to /auth");
     return <Navigate to="/auth" replace />;
   }
 
   // Check 2FA verification (now persisted in localStorage with TTL)
   if (!is2FAVerified()) {
+    console.log("[ProtectedRoute] 2FA not verified, redirecting to /auth");
     return <Navigate to="/auth" replace />;
   }
 
