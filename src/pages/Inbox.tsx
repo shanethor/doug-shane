@@ -44,6 +44,7 @@ type SyncedEmail = {
   body_html: string | null;
   is_read: boolean;
   received_at: string;
+  synced_at?: string;
 };
 
 type EmailConnection = {
@@ -102,29 +103,66 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
   const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(null);
   const [, setTick] = useState(0); // force re-render for relative time
 
+  const updateLastSyncedFromEmails = useCallback((emails: SyncedEmail[]) => {
+    const syncedTimes = emails
+      .map((e) => e.synced_at)
+      .filter((value): value is string => Boolean(value));
+
+    if (syncedTimes.length === 0) return;
+
+    const latest = syncedTimes.reduce((currentLatest, value) => (
+      new Date(value).getTime() > new Date(currentLatest).getTime() ? value : currentLatest
+    ));
+
+    setLastSyncedAt(new Date(latest));
+  }, []);
+
+  const fetchLatestEmails = useCallback(async () => {
+    if (!user) return [] as SyncedEmail[];
+
+    const { data } = await supabase
+      .from("synced_emails")
+      .select("id, from_address, from_name, to_addresses, subject, body_preview, body_html, is_read, received_at, synced_at")
+      .eq("user_id", user.id)
+      .order("received_at", { ascending: false })
+      .limit(100);
+
+    const emails = (data as SyncedEmail[]) || [];
+    setSyncedEmails(emails);
+    updateLastSyncedFromEmails(emails);
+    return emails;
+  }, [user, updateLastSyncedFromEmails]);
+
   // Tick every 30s to keep "Last synced X ago" fresh
   useEffect(() => {
     const t = setInterval(() => setTick((n) => n + 1), 30_000);
     return () => clearInterval(t);
   }, []);
 
-  // Auto-sync emails every 5 minutes — only triggers edge function;
-  // realtime INSERT/UPDATE handlers keep local state in sync without full replacement.
+  // Auto-sync emails every 5 minutes — triggers edge function and refreshes list.
   const autoSyncEmails = useCallback(async () => {
     if (!user || emailConnections.length === 0) return;
     try {
       const headers = await getAuthHeaders();
       for (const conn of emailConnections) {
-        await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/email-sync`, {
-          method: "POST", headers,
+        const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/email-sync`, {
+          method: "POST",
+          headers,
           body: JSON.stringify({ action: "sync", provider: conn.provider }),
         });
+
+        if (!response.ok) {
+          const errorBody = await response.text();
+          throw new Error(errorBody || "Email sync failed");
+        }
       }
+
+      await fetchLatestEmails();
       setLastSyncedAt(new Date());
-    } catch {
-      // silent background sync failure
+    } catch (error) {
+      console.error("Auto-sync failed", error);
     }
-  }, [user, emailConnections]);
+  }, [user, emailConnections, fetchLatestEmails]);
 
   useEffect(() => {
     if (!user) return;
@@ -171,9 +209,11 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
     return () => { supabase.removeChannel(channel); };
   }, [user]);
 
-  // 5-minute auto-sync interval
+  // 5-minute auto-sync interval (run once immediately, then repeat)
   useEffect(() => {
     if (!user || emailConnections.length === 0) return;
+
+    void autoSyncEmails();
     const interval = setInterval(autoSyncEmails, 5 * 60 * 1000);
     return () => clearInterval(interval);
   }, [user, emailConnections, autoSyncEmails]);
@@ -191,7 +231,7 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
         .limit(100),
       supabase
         .from("synced_emails")
-        .select("id, from_address, from_name, to_addresses, subject, body_preview, body_html, is_read, received_at")
+        .select("id, from_address, from_name, to_addresses, subject, body_preview, body_html, is_read, received_at, synced_at")
         .eq("user_id", user.id)
         .order("received_at", { ascending: false })
         .limit(100),
@@ -206,7 +246,10 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
     ]);
 
     setNotifications((notifRes.data as Notification[]) || []);
-    setSyncedEmails((emailRes.data as SyncedEmail[]) || []);
+    const emails = (emailRes.data as SyncedEmail[]) || [];
+    setSyncedEmails(emails);
+    updateLastSyncedFromEmails(emails);
+
     const conns = connRes.connections || [];
     setEmailConnections(conns);
     // Default "Send from" to the user's connected account if available
@@ -236,13 +279,7 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
           toast.success(`Synced ${data.synced} emails from ${conn.provider === "gmail" ? "Gmail" : "Outlook"}`);
         }
       }
-      const { data } = await supabase
-        .from("synced_emails")
-        .select("id, from_address, from_name, to_addresses, subject, body_preview, body_html, is_read, received_at")
-        .eq("user_id", user!.id)
-        .order("received_at", { ascending: false })
-        .limit(100);
-      setSyncedEmails((data as SyncedEmail[]) || []);
+      await fetchLatestEmails();
       setLastSyncedAt(new Date());
     } catch (err: any) {
       toast.error("Sync failed: " + (err.message || "Unknown error"));
@@ -471,11 +508,11 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
           {unreadCount > 0 && (
             <Badge variant="default" className="text-xs">{unreadCount} new</Badge>
           )}
-          {lastSyncedAt && (
-            <span className="text-[11px] text-muted-foreground ml-1 hidden sm:inline">
-              Synced {formatDistanceToNow(lastSyncedAt, { addSuffix: true })}
-            </span>
-          )}
+          <span className="text-[11px] text-muted-foreground ml-1">
+            {lastSyncedAt
+              ? `Last synced ${formatDistanceToNow(lastSyncedAt, { addSuffix: true })}`
+              : "Last synced: pending"}
+          </span>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={syncEmails} disabled={syncing} className="gap-1.5">
