@@ -33,12 +33,13 @@ export default function BetaVoice() {
 
       const { token, roomUrl } = await res.json();
 
-      // Load Daily Prebuilt via iframe
-      const frame = iframeRef.current;
-      if (frame) {
-        frame.src = `${roomUrl}?t=${token}&showLeaveButton=true&showFullscreenButton=false`;
-        setStatus("joined");
-      }
+      // Set status first so iframe mounts, then set src in next tick
+      setStatus("joined");
+      setTimeout(() => {
+        if (iframeRef.current) {
+          iframeRef.current.src = `${roomUrl}?t=${token}&showLeaveButton=true&showFullscreenButton=false`;
+        }
+      }, 0);
     } catch (err: any) {
       setErrorMsg(err.message || "Unable to join call, please try again.");
       setStatus("error");
