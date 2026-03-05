@@ -179,7 +179,13 @@ export function ProductionScoreboard({ userId, premiumSold, revenueSold }: Props
   const yPremPace = daysLeftInYear > 0 ? yPremRemaining / daysLeftInYear : 0;
   const yRevPace = daysLeftInYear > 0 ? yRevRemaining / daysLeftInYear : 0;
 
-  if (loading) return null;
+  if (loading) return (
+    <Card className="mb-6 animate-pulse">
+      <CardContent className="p-4">
+        <div className="h-[120px] rounded bg-muted/40" />
+      </CardContent>
+    </Card>
+  );
 
   if (!goals || (annualPrem === 0 && annualRev === 0)) {
     return (
