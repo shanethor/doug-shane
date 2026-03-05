@@ -1881,8 +1881,8 @@ export default function Chat() {
                 )}
               </div>
 
-              {/* Suggestions & feature boxes — always visible */}
-              {(<>
+              {/* Suggestions & feature boxes — only in training/help mode */}
+              {trainingMode && (<>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 w-full max-w-2xl">
                 {SUGGESTIONS.map((s) => (
                   <button
