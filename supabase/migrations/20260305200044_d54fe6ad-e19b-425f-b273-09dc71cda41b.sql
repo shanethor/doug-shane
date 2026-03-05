@@ -1,0 +1,1 @@
+ALTER TABLE public.calendar_events ADD CONSTRAINT calendar_events_user_external_unique UNIQUE (user_id, external_event_id);
