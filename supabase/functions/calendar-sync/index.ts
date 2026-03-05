@@ -306,7 +306,10 @@ serve(async (req) => {
 
     // --- CREATE EVENT: Push to connected calendar ---
     if (action === "create_event") {
-      const targetProvider = requestedProvider || "outlook";
+      // Normalize provider: accept "gmail" or "google" for Google Calendar
+      let targetProvider = requestedProvider || "outlook";
+      if (targetProvider === "gmail") targetProvider = "google";
+      
       const { data: calConn } = await adminClient
         .from("external_calendars")
         .select("*")
@@ -328,7 +331,7 @@ serve(async (req) => {
         });
       }
 
-      if (targetProvider === "gmail") {
+      if (targetProvider === "google") {
         const created = await createGoogleEvent(accessToken, body);
         if (!created) {
           return new Response(JSON.stringify({ error: "Failed to create Google Calendar event" }), {

@@ -75,7 +75,41 @@ export default function BookingPage() {
         status: "scheduled" as any,
       } as any);
 
-      if (error) throw error;
+      // Best-effort push to producer's connected calendars
+      try {
+        const { data: calendars } = await supabase
+          .from("external_calendars")
+          .select("provider")
+          .eq("user_id", producerId)
+          .eq("is_active", true);
+
+        if (calendars?.length) {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.access_token) {
+            const headers: Record<string, string> = {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${session.access_token}`,
+              apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            };
+            for (const cal of calendars) {
+              await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/calendar-sync`, {
+                method: "POST",
+                headers,
+                body: JSON.stringify({
+                  action: "create_event",
+                  provider: cal.provider,
+                  title: `${eventType?.label || selectedType} — ${clientName}`,
+                  start: startDt.toISOString(),
+                  end: endDt.toISOString(),
+                  description: `Booked via AURA booking page\n\nClient: ${clientName}\nEmail: ${clientEmail}`,
+                  attendees: [clientEmail],
+                }),
+              });
+            }
+          }
+        }
+      } catch { /* silent */ }
+
       setSubmitted(true);
     } catch (err: any) {
       toast.error(err.message || "Failed to book");

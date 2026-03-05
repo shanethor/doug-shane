@@ -208,7 +208,7 @@ export default function Calendar({ embedded }: { embedded?: boolean } = {}) {
           headers,
           body: JSON.stringify({
             action: "create_event",
-            provider: cal.provider === "outlook" ? "outlook" : "gmail",
+            provider: cal.provider,
             title: newEvent.title,
             start: startTime.toISOString(),
             end: endTime.toISOString(),
