@@ -193,19 +193,29 @@ serve(async (req) => {
           .in("external_id", externalIds);
         const existingSet = new Set((existingRows || []).map((r: any) => r.external_id));
 
-        // For existing emails, strip is_read so the user's manual read state persists
-        const upsertData = emails.map((e: any) => {
-          if (existingSet.has(e.external_id)) {
+        // Split into new emails (full insert) and existing emails (update without is_read)
+        const newEmails = emails.filter((e: any) => !existingSet.has(e.external_id));
+        const existingEmails = emails.filter((e: any) => existingSet.has(e.external_id));
+
+        // Insert new emails with is_read included
+        if (newEmails.length > 0) {
+          const { error: insertErr } = await adminClient
+            .from("synced_emails")
+            .upsert(newEmails, { onConflict: "connection_id,external_id", ignoreDuplicates: false });
+          if (insertErr) console.error("Email insert error:", insertErr);
+        }
+
+        // Update existing emails without is_read to preserve user's read state
+        if (existingEmails.length > 0) {
+          const updateData = existingEmails.map((e: any) => {
             const { is_read, ...rest } = e;
             return rest;
-          }
-          return e;
-        });
-
-        const { error: upsertErr } = await adminClient
-          .from("synced_emails")
-          .upsert(upsertData, { onConflict: "connection_id,external_id", ignoreDuplicates: false });
-        if (upsertErr) console.error("Email upsert error:", upsertErr);
+          });
+          const { error: updateErr } = await adminClient
+            .from("synced_emails")
+            .upsert(updateData, { onConflict: "connection_id,external_id", ignoreDuplicates: false });
+          if (updateErr) console.error("Email update error:", updateErr);
+        }
       }
 
       return new Response(JSON.stringify({ synced: emails.length, provider: conn.provider }), {
