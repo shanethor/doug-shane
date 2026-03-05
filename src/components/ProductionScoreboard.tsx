@@ -180,11 +180,36 @@ export function ProductionScoreboard({ userId, premiumSold, revenueSold }: Props
   const yRevPace = daysLeftInYear > 0 ? yRevRemaining / daysLeftInYear : 0;
 
   if (loading) return (
-    <Card className="mb-6 animate-pulse">
-      <CardContent className="p-4">
-        <div className="h-[120px] rounded bg-muted/40" />
-      </CardContent>
-    </Card>
+    <div className="relative rounded-xl bg-card border border-border shadow-sm overflow-hidden mb-6 animate-pulse">
+      <div className="grid grid-cols-2 divide-x divide-border px-2.5 pt-2.5 sm:px-3 sm:pt-3">
+        <div className="h-3 w-16 rounded bg-muted/50 mb-1.5" />
+        <div className="h-3 w-16 rounded bg-muted/50 mb-1.5 ml-2.5 sm:ml-3" />
+      </div>
+      <div className="grid grid-cols-2 divide-x divide-border">
+        <div className="px-2.5 pb-2.5 sm:px-3 sm:pb-3 space-y-2">
+          <div className="h-4 w-24 rounded bg-muted/40" />
+          <div className="h-6 w-32 rounded bg-muted/40" />
+          <div className="h-3 w-full rounded bg-muted/30" />
+          <div className="h-3 w-20 rounded bg-muted/30" />
+        </div>
+        <div className="px-2.5 pb-2.5 sm:px-3 sm:pb-3 space-y-2">
+          <div className="h-4 w-24 rounded bg-muted/40" />
+          <div className="h-6 w-32 rounded bg-muted/40" />
+          <div className="h-3 w-full rounded bg-muted/30" />
+          <div className="h-3 w-20 rounded bg-muted/30" />
+        </div>
+      </div>
+      <div className="grid grid-cols-2 divide-x divide-border border-t border-border">
+        <div className="px-2.5 py-2 sm:px-3 space-y-1.5">
+          <div className="h-3 w-16 rounded bg-muted/40" />
+          <div className="h-4 w-24 rounded bg-muted/40" />
+        </div>
+        <div className="px-2.5 py-2 sm:px-3 space-y-1.5">
+          <div className="h-3 w-16 rounded bg-muted/40" />
+          <div className="h-4 w-24 rounded bg-muted/40" />
+        </div>
+      </div>
+    </div>
   );
 
   if (!goals || (annualPrem === 0 && annualRev === 0)) {
