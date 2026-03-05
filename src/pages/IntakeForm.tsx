@@ -2382,6 +2382,13 @@ export default function IntakeForm() {
                   const hasPolicy = commercialForm.loss_run_policies.some(p => p.carrier.trim() && p.policy_number.trim());
                   return hasName && hasEmail && hasPolicy && commercialForm.loss_run_consent;
                 }
+                if (commercialStep === "bor_auth") {
+                  if (!commercialForm.has_other_broker) return false;
+                  if (commercialForm.has_other_broker === "yes") {
+                    return commercialForm.bor_lines.length > 0 && commercialForm.bor_authorized;
+                  }
+                  return true;
+                }
                 if (commercialStep === "business_info") {
                   return !!(commercialForm.business_name.trim() && commercialForm.customer_name.trim() && commercialForm.customer_email.trim() && /^[\w.-]+@[\w.-]+\.\w+$/.test(commercialForm.customer_email.trim()) && commercialForm.customer_phone.trim());
                 }
@@ -2656,60 +2663,92 @@ export default function IntakeForm() {
                   )}
 
                   {commercialStep === "bor_auth" && (
-                    <Card>
-                      <CardHeader><CardTitle className="text-base">Broker Authorization</CardTitle></CardHeader>
-                      <CardContent className="space-y-4">
-                        <div>
-                          <Label className="text-xs font-medium">Are you currently working with another insurance broker or agent for this policy?</Label>
-                          <Select value={commercialForm.has_other_broker} onValueChange={v => updateCommercial("has_other_broker", v)}>
-                            <SelectTrigger className="h-10 text-sm mt-1"><SelectValue placeholder="Select" /></SelectTrigger>
-                            <SelectContent><SelectItem value="yes">Yes</SelectItem><SelectItem value="no">No</SelectItem></SelectContent>
-                          </Select>
-                        </div>
-                        {commercialForm.has_other_broker === "yes" && (
-                          <div className="space-y-4 pl-3 border-l-2 border-primary/20">
-                            <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-3">
-                              <p className="text-sm leading-relaxed">
-                                AURA will generate a <strong>Broker of Record (BOR) letter</strong> for your review and signature. This letter simply authorizes our firm to represent you with the insurance carrier so we can access policy information, request loss runs, and work directly with the carrier on your behalf.
-                              </p>
-                              <p className="text-sm leading-relaxed text-muted-foreground">
-                                This allows us to properly review how the account is structured and leverage our relationships in the marketplace to negotiate terms, explore alternatives, and position the risk correctly with carriers.
-                              </p>
-                              <p className="text-sm leading-relaxed text-muted-foreground">
-                                <strong>A Broker of Record letter does not cancel your current policy or change your coverage on its own.</strong> It simply gives us the ability to step in, communicate with the carrier, and begin working the account properly.
-                              </p>
-                              <p className="text-sm leading-relaxed text-muted-foreground">
-                                Once selected, the system will automatically generate the letter and send it to you for electronic signature so we can get started immediately.
-                              </p>
-                            </div>
-                            <div>
-                              <Label className="text-xs">Select Lines for BOR</Label>
-                              <div className="flex flex-wrap gap-2 mt-1">
-                                {(commercialForm.lines_in_force.length > 0 ? commercialForm.lines_in_force : COMMERCIAL_LINES.map(String)).map(line => {
-                                  const sel = commercialForm.bor_lines.includes(line);
-                                  return (
-                                    <button key={line} onClick={() => updateCommercial("bor_lines", sel ? commercialForm.bor_lines.filter(l => l !== line) : [...commercialForm.bor_lines, line])}
-                                      className={`px-3 py-1.5 rounded-md border text-xs font-medium transition-colors ${sel ? "bg-primary text-primary-foreground border-primary" : "border-border hover:border-primary/50"}`}>
-                                      {line}
-                                    </button>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                            <div><Label className="text-xs">Carrier Email (for BOR delivery)</Label><Input type="email" value={commercialForm.carrier_email} onChange={e => updateCommercial("carrier_email", e.target.value)} /></div>
-                            <label className="flex items-start gap-2 text-xs cursor-pointer">
-                              <Checkbox checked={commercialForm.bor_authorized} onCheckedChange={v => updateCommercial("bor_authorized", !!v)} className="mt-0.5" />
-                              <span>I authorize AURA Risk Group to act as Broker of Record for the selected lines. <span className="text-destructive">*</span></span>
-                            </label>
+                    <div className="space-y-6">
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="text-base">Broker Authorization</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-5">
+                          {/* Question */}
+                          <div>
+                            <Label className="text-xs font-medium">Are you currently working with another insurance broker or agent for this policy?</Label>
+                            <Select value={commercialForm.has_other_broker} onValueChange={v => updateCommercial("has_other_broker", v)}>
+                              <SelectTrigger className="h-10 text-sm mt-1"><SelectValue placeholder="Select" /></SelectTrigger>
+                              <SelectContent><SelectItem value="yes">Yes</SelectItem><SelectItem value="no">No</SelectItem></SelectContent>
+                            </Select>
                           </div>
-                        )}
-                        {commercialForm.has_other_broker === "no" && (
-                          <p className="text-sm text-muted-foreground pl-3 border-l-2 border-muted">
-                            Great — no Broker of Record letter is needed. We'll proceed with reviewing your coverage directly.
-                          </p>
-                        )}
-                      </CardContent>
-                    </Card>
+
+                          {commercialForm.has_other_broker === "yes" && (
+                            <div className="space-y-5">
+                              {/* Explanation */}
+                              <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-3">
+                                <p className="text-sm leading-relaxed">
+                                  If you are currently working with another broker, AURA can generate a Broker of Record letter for your review and signature.
+                                </p>
+                                <p className="text-sm leading-relaxed text-muted-foreground">
+                                  A Broker of Record letter authorizes AURA Risk Group to represent you with the insurance carrier. This allows us to access policy information, request loss runs, and communicate directly with the carrier on your behalf.
+                                </p>
+                                <p className="text-sm leading-relaxed text-muted-foreground">
+                                  This is an important step in the insurance negotiation process. Insurance carriers want to know which broker represents the account before they invest time negotiating pricing and terms. When a single broker represents the account, carriers know they have a legitimate opportunity to win the business and are far more willing to compete aggressively.
+                                </p>
+                                <p className="text-sm leading-relaxed text-muted-foreground">
+                                  By authorizing AURA to represent the account, we are able to properly review how your program is structured, access your claims history, and leverage our relationships in the marketplace to negotiate terms and position your risk with the right carriers.
+                                </p>
+                              </div>
+
+                              {/* Important Clarification */}
+                              <div className="rounded-lg border border-amber-200 bg-amber-50/50 dark:border-amber-900/50 dark:bg-amber-950/20 p-4 space-y-2">
+                                <p className="text-sm font-semibold flex items-center gap-2"><AlertCircleIcon className="h-4 w-4 text-amber-600" /> Important Clarification</p>
+                                <p className="text-sm text-muted-foreground">A Broker of Record letter <strong>does not cancel</strong> your current policy and <strong>does not change your coverage</strong> on its own.</p>
+                                <p className="text-sm text-muted-foreground">It simply allows AURA Risk Group to represent your account with the insurance carrier.</p>
+                              </div>
+
+                              {/* What Happens Next */}
+                              <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-3">
+                                <p className="text-sm font-semibold">What Happens Next</p>
+                                <p className="text-sm text-muted-foreground">Once submitted, AURA will generate the Broker of Record letter and send it to you for electronic signature.</p>
+                                <p className="text-sm text-muted-foreground">After the letter is delivered to the insurance carrier, your current broker will be notified that a Broker of Record request has been submitted.</p>
+                                <p className="text-sm text-muted-foreground">Most carriers allow a short countermand or rescission period. During this time, your current broker may contact you to confirm whether you intend to move representation. This is a normal part of the process and simply ensures the request was made intentionally.</p>
+                                <p className="text-sm text-muted-foreground">Once the carrier confirms the authorization, AURA Risk Group will be recognized as the broker of record and can begin working directly with the carrier on your behalf.</p>
+                                <p className="text-sm text-muted-foreground">Your advisor will keep you informed as the carrier processes the request.</p>
+                              </div>
+
+                              {/* Select Lines for BOR */}
+                              <div>
+                                <Label className="text-xs font-medium">Select Lines for BOR</Label>
+                                <div className="flex flex-wrap gap-2 mt-2">
+                                  {(commercialForm.lines_in_force.length > 0 ? commercialForm.lines_in_force : COMMERCIAL_LINES.map(String)).map(line => {
+                                    const sel = commercialForm.bor_lines.includes(line);
+                                    return (
+                                      <button key={line} onClick={() => updateCommercial("bor_lines", sel ? commercialForm.bor_lines.filter(l => l !== line) : [...commercialForm.bor_lines, line])}
+                                        className={`px-3 py-1.5 rounded-md border text-xs font-medium transition-colors ${sel ? "bg-primary text-primary-foreground border-primary" : "border-border hover:border-primary/50"}`}>
+                                        {line}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+
+                              {/* Authorization Checkbox */}
+                              <label className="flex items-start gap-3 text-sm cursor-pointer p-3 rounded-lg border border-border bg-muted/20">
+                                <Checkbox checked={commercialForm.bor_authorized} onCheckedChange={v => updateCommercial("bor_authorized", !!v)} className="mt-0.5" />
+                                <span>I authorize AURA Risk Group to act as Broker of Record for the selected lines of coverage. <span className="text-destructive">*</span></span>
+                              </label>
+                            </div>
+                          )}
+
+                          {commercialForm.has_other_broker === "no" && (
+                            <p className="text-sm text-muted-foreground pl-3 border-l-2 border-muted">
+                              Great — no Broker of Record letter is needed. We'll proceed with reviewing your coverage directly.
+                            </p>
+                          )}
+                        </CardContent>
+                      </Card>
+
+                      {/* Footer */}
+                      <p className="text-[10px] text-muted-foreground text-center">Your information is transmitted securely.</p>
+                      <p className="text-[10px] text-center font-medium tracking-wide text-muted-foreground">Insurance runs on <span className="text-primary font-bold">AURA</span></p>
+                    </div>
                   )}
 
                   {commercialStep === "commercial_docs" && (
