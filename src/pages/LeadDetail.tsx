@@ -678,6 +678,30 @@ export default function LeadDetail() {
                             toast.error("Failed to create renewal event");
                           } else {
                             toast.success("Renewal review event created on your calendar!");
+                            // Best-effort push to connected calendars
+                            try {
+                              const { getAuthHeaders } = await import("@/lib/auth-fetch");
+                              const headers = await getAuthHeaders();
+                              const { data: calendars } = await supabase
+                                .from("external_calendars")
+                                .select("provider")
+                                .eq("user_id", user!.id)
+                                .eq("is_active", true);
+                              for (const cal of calendars || []) {
+                                await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/calendar-sync`, {
+                                  method: "POST",
+                                  headers,
+                                  body: JSON.stringify({
+                                    action: "create_event",
+                                    provider: cal.provider,
+                                    title: `Renewal Review — ${lead.account_name} (${p.line_of_business})`,
+                                    start: new Date().toISOString(),
+                                    end: new Date(Date.now() + 30 * 60000).toISOString(),
+                                    description: `Policy ${p.policy_number} with ${p.carrier} renews on ${renewalDate.toLocaleDateString()}.`,
+                                  }),
+                                });
+                              }
+                            } catch { /* silent */ }
                           }
                         }}
                       >

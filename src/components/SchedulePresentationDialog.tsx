@@ -66,22 +66,31 @@ export function SchedulePresentationDialog({ open, onOpenChange, leadId, leadNam
 
       if (error) throw error;
 
-      // Best-effort push to Outlook
+      // Best-effort push to all connected calendars
       try {
         const headers = await getAuthHeaders();
-        await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/calendar-sync`, {
-          method: "POST",
-          headers,
-          body: JSON.stringify({
-            action: "create_event",
-            title: `Presentation — ${leadName}`,
-            start: startDt.toISOString(),
-            end: endDt.toISOString(),
-            description,
-            location,
-            attendees: leadEmail ? [leadEmail] : [],
-          }),
-        });
+        const { data: calendars } = await supabase
+          .from("external_calendars")
+          .select("provider, is_active")
+          .eq("user_id", userId)
+          .eq("is_active", true);
+
+        for (const cal of calendars || []) {
+          await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/calendar-sync`, {
+            method: "POST",
+            headers,
+            body: JSON.stringify({
+              action: "create_event",
+              provider: cal.provider,
+              title: `Presentation — ${leadName}`,
+              start: startDt.toISOString(),
+              end: endDt.toISOString(),
+              description,
+              location,
+              attendees: leadEmail ? [leadEmail] : [],
+            }),
+          });
+        }
       } catch { /* silent */ }
 
       toast.success("Presentation scheduled!");
