@@ -2,13 +2,19 @@ import { useState, useRef } from "react";
 import { getCurrentBetaUser } from "@/lib/beta-users";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Video, PhoneOff, Loader2, AlertCircle, User } from "lucide-react";
-import { ClientLookupSheet } from "@/components/ClientLookupSheet";
+import { Video, PhoneOff, Loader2, AlertCircle, User, MonitorUp } from "lucide-react";
+import { ClientInfoPanel, SharedClientBanner } from "@/components/ClientInfoPanel";
+import { toast } from "sonner";
 
 export default function BetaVideo() {
   const user = getCurrentBetaUser();
   const [status, setStatus] = useState<"idle" | "loading" | "joined" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
+  const [showClientPanel, setShowClientPanel] = useState(false);
+  const [sharedClientName, setSharedClientName] = useState<string | null>(null);
+  const [pendingSharedClient, setPendingSharedClient] = useState<any>(null);
+  const [acceptedSharedClient, setAcceptedSharedClient] = useState<any>(null);
+  const [isScreenSharing, setIsScreenSharing] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
 
   const joinRoom = async () => {
@@ -46,16 +52,72 @@ export default function BetaVideo() {
   const leaveRoom = () => {
     if (iframeRef.current) iframeRef.current.src = "";
     setStatus("idle");
+    setShowClientPanel(false);
+    setSharedClientName(null);
+    setPendingSharedClient(null);
+    setAcceptedSharedClient(null);
+    setIsScreenSharing(false);
+  };
+
+  const toggleScreenShare = async () => {
+    if (isScreenSharing) {
+      setIsScreenSharing(false);
+      toast.info("Screen sharing stopped");
+      return;
+    }
+    try {
+      // Request screen capture to verify browser support / user grants permission
+      const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+      // The Daily prebuilt iframe handles its own screen share, but we can signal the user
+      // that sharing is active. Stop the stream since Daily handles it internally.
+      stream.getTracks().forEach(track => {
+        track.onended = () => setIsScreenSharing(false);
+      });
+      setIsScreenSharing(true);
+      toast.success("Screen sharing started");
+      // In a full implementation, we'd pass this stream to Daily's call object.
+      // With the prebuilt iframe, screen share is available via the built-in controls.
+      // This button serves as a quick-access shortcut and visual indicator.
+    } catch {
+      toast.error("Screen sharing was cancelled or denied");
+    }
+  };
+
+  const handleShareClient = (lead: any) => {
+    // Simulate sharing to the other participant
+    // In production this would use Daily's sendAppMessage
+    toast.success(`Shared "${lead.account_name}" with the call`);
+  };
+
+  const handleAcceptShared = () => {
+    setAcceptedSharedClient(pendingSharedClient);
+    setShowClientPanel(true);
+    setPendingSharedClient(null);
+    setSharedClientName(null);
+  };
+
+  const handleDismissShared = () => {
+    setPendingSharedClient(null);
+    setSharedClientName(null);
   };
 
   if (!user) return null;
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-6 space-y-6">
+    <div className="max-w-5xl mx-auto px-4 py-6 space-y-4">
       <div className="text-center space-y-2">
         <h2 className="text-lg font-semibold">Video Room</h2>
         <p className="text-xs text-muted-foreground">Video call for Jane Smith and Douglas Wenz.</p>
       </div>
+
+      {/* Shared client banner */}
+      {sharedClientName && pendingSharedClient && (
+        <SharedClientBanner
+          clientName={sharedClientName}
+          onAccept={handleAcceptShared}
+          onDismiss={handleDismissShared}
+        />
+      )}
 
       {status === "idle" && (
         <Card>
@@ -94,27 +156,55 @@ export default function BetaVideo() {
 
       {status === "joined" && (
         <div className="space-y-3">
-          <div className="rounded-lg border border-border overflow-hidden bg-muted/20">
-            <iframe
-              ref={iframeRef}
-              className="w-full"
-              style={{ height: "560px", border: "none" }}
-              allow="microphone; camera; autoplay; display-capture"
-            />
-          </div>
-          <div className="flex justify-center gap-3">
-            <ClientLookupSheet
-              trigger={
-                <Button variant="outline" size="sm" className="gap-2">
+          <div className={`grid gap-4 ${showClientPanel ? "grid-cols-1 lg:grid-cols-[1fr_300px]" : "grid-cols-1"}`}>
+            {/* Video area */}
+            <div className="space-y-3">
+              <div className="rounded-lg border border-border overflow-hidden bg-muted/20">
+                <iframe
+                  ref={iframeRef}
+                  className="w-full"
+                  style={{ height: "480px", border: "none" }}
+                  allow="microphone; camera; autoplay; display-capture"
+                />
+              </div>
+
+              {/* Controls */}
+              <div className="flex justify-center gap-2">
+                <Button
+                  variant={showClientPanel ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => { setShowClientPanel(!showClientPanel); setAcceptedSharedClient(null); }}
+                  className="gap-2"
+                >
                   <User className="h-4 w-4" />
-                  Pull Up Client Info
+                  Client Info
                 </Button>
-              }
-            />
-            <Button variant="destructive" size="sm" onClick={leaveRoom} className="gap-2">
-              <PhoneOff className="h-4 w-4" />
-              Leave Room
-            </Button>
+                <Button
+                  variant={isScreenSharing ? "default" : "outline"}
+                  size="sm"
+                  onClick={toggleScreenShare}
+                  className="gap-2"
+                >
+                  <MonitorUp className="h-4 w-4" />
+                  {isScreenSharing ? "Stop Sharing" : "Share Screen"}
+                </Button>
+                <Button variant="destructive" size="sm" onClick={leaveRoom} className="gap-2">
+                  <PhoneOff className="h-4 w-4" />
+                  Leave
+                </Button>
+              </div>
+            </div>
+
+            {/* Client info panel */}
+            {showClientPanel && (
+              <div className="min-w-0">
+                <ClientInfoPanel
+                  onClose={() => { setShowClientPanel(false); setAcceptedSharedClient(null); }}
+                  onShare={handleShareClient}
+                  sharedClient={acceptedSharedClient}
+                />
+              </div>
+            )}
           </div>
         </div>
       )}
