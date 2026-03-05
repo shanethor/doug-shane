@@ -1493,6 +1493,7 @@ export type Database = {
           code: string
           created_at: string
           expires_at: string
+          failed_attempts: number
           id: string
           user_id: string
           verified: boolean
@@ -1501,6 +1502,7 @@ export type Database = {
           code: string
           created_at?: string
           expires_at: string
+          failed_attempts?: number
           id?: string
           user_id: string
           verified?: boolean
@@ -1509,6 +1511,7 @@ export type Database = {
           code?: string
           created_at?: string
           expires_at?: string
+          failed_attempts?: number
           id?: string
           user_id?: string
           verified?: boolean
@@ -1544,6 +1547,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      increment_2fa_failed_attempts: {
+        Args: { row_id: string }
+        Returns: undefined
       }
     }
     Enums: {
