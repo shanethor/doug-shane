@@ -12,6 +12,14 @@ import { Switch } from "@/components/ui/switch";
 import auraLogo from "@/assets/aura-logo.png";
 import { set2FAVerified, is2FAVerified, clear2FAVerified } from "@/lib/2fa-storage";
 
+async function getAuthHeaders(): Promise<Record<string, string>> {
+  const { data } = await supabase.auth.getSession();
+  const token = data?.session?.access_token;
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+  return headers;
+}
+
 /* Generate a stable device fingerprint for trusted-device tracking */
 function getDeviceHash(): string {
   const stored = localStorage.getItem("aura_device_hash");
@@ -51,16 +59,15 @@ export default function Auth() {
     if (!loading && user && !is2FAVerified() && !needs2FA && !autoChecking) {
       setAutoChecking(true);
       const deviceHash = getDeviceHash();
-      fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-2fa`, {
+      getAuthHeaders().then(hdrs => fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-2fa`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: hdrs,
         body: JSON.stringify({
           action: "send_code",
           user_id: user.id,
-          email: user.email,
           device_hash: deviceHash,
         }),
-      })
+      }))
         .then((r) => r.json())
         .then((result) => {
           if (result.trusted) {
@@ -120,13 +127,13 @@ export default function Auth() {
         // Send 2FA code (check trusted device first)
         loginHandled2FA.current = true;
         const deviceHash = getDeviceHash();
+        const authHdrs = await getAuthHeaders();
         const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-2fa`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: authHdrs,
           body: JSON.stringify({
             action: "send_code",
             user_id: userId,
-            email: userEmail,
             device_hash: deviceHash,
           }),
         });
@@ -159,9 +166,10 @@ export default function Auth() {
     setVerifying2FA(true);
 
     try {
+      const authHdrs = await getAuthHeaders();
       const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-2fa`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: authHdrs,
         body: JSON.stringify({
           action: "verify_code",
           user_id: pendingUserId,
@@ -190,13 +198,13 @@ export default function Auth() {
     if (!pendingUserId || !pendingEmail) return;
     setResending(true);
     try {
+      const authHdrs = await getAuthHeaders();
       const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-2fa`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: authHdrs,
         body: JSON.stringify({
           action: "send_code",
           user_id: pendingUserId,
-          email: pendingEmail,
         }),
       });
       const result = await resp.json();
