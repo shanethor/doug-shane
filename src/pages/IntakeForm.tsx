@@ -2847,7 +2847,7 @@ export default function IntakeForm() {
         )}
 
         <div className="text-center pb-8 pt-4 space-y-1">
-          <p className="text-[10px] text-muted-foreground">Your information is transmitted securely.</p>
+          <p className="text-[10px] text-muted-foreground/50 tracking-widest uppercase">Insurance runs on <span className="font-semibold">AURA</span></p>
         </div>
       </div>
     </div>
