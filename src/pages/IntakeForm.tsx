@@ -2281,7 +2281,7 @@ export default function IntakeForm() {
       <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
         {/* Title */}
         <div className="text-center space-y-1">
-          <h1 className="text-3xl font-bold tracking-tight">Start Your Insurance Review</h1>
+          <h1 className="text-3xl font-bold tracking-tight">AURA Intake</h1>
         </div>
 
         {/* ─── Type Selector ─── */}
