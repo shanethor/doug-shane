@@ -41,6 +41,9 @@ const SUGGESTIONS = [
   { icon: ClipboardList, label: "Fill an ACORD form", message: "Help me fill out an ACORD form for a client." },
   { icon: Users, label: "Manage my pipeline", message: "Help me manage my sales pipeline — I need to move some leads and update statuses." },
   { icon: Search, label: "Review a submission", message: "I need to review an existing client submission." },
+  { icon: Mail, label: "Compose an email", message: "Help me draft a professional email to a client." },
+  { icon: FileSearch, label: "Request loss runs", message: "I need to request loss runs for a client." },
+  { icon: BarChart3, label: "Check my production", message: "Show me my production numbers and pending approvals." },
 ];
 
 async function streamChat({
@@ -895,6 +898,17 @@ export default function Chat() {
       || /\bremind\s*me\b/.test(t);
   };
 
+  /** Detect navigation / feature requests that should pass through to AI */
+  const isNavigationIntent = (text: string) => {
+    const t = text.trim().toLowerCase();
+    return /\b(go\s*to|open|take\s*me\s*to|navigate|show\s*me|view|check)\s+(my\s*)?(inbox|email|calendar|pipeline|approvals|settings|hub|pulse|quotes?|admin|dashboard|beta|team|clients?|bor|generated|forms?|bookings?)\b/.test(t)
+      || /\b(compose|draft|write|send)\s+(a\s*|an\s*)?(email|message|letter)\b/.test(t)
+      || /\b(loss\s*runs?|bor\s*letter|broker\s*of\s*record)\b/.test(t)
+      || /\b(new\s*quote|quote\s*request|create\s*quote)\b/.test(t)
+      || /\b(voice\s*call|video\s*call|team\s*chat|collaboration|to.?do)\b/.test(t)
+      || /\bwhat\s+(can\s+you|do\s+you|features?|capabilities?)\b/.test(t);
+  };
+
   const isFormFillingIntent = (text: string) => {
     const t = text.trim().toLowerCase();
     // First: if this looks like an informational question, let AI handle it naturally
@@ -903,6 +917,8 @@ export default function Chat() {
     if (isPipelineIntent(text)) return false;
     // Calendar/scheduling intent should pass through to AI
     if (isCalendarIntent(text)) return false;
+    // Navigation / feature requests should pass through to AI
+    if (isNavigationIntent(text)) return false;
     // Match forms, ACORD, coverage lines, submission intent, or specific form/coverage mentions
     return /\bforms?\b|\bacord\b|\bsubmit|\bnew\s*client|\binsurance\b|\bcoverage\b|\bapplication\b/.test(t)
       || /need\s*(a|an|to|help|forms?)|\bstart\b|\bget\s*start|\bfill\b|\bcreate\b/.test(t)
@@ -1865,9 +1881,9 @@ export default function Chat() {
                 )}
               </div>
 
-              {/* Suggestions & feature boxes — only shown when Help/training mode is ON */}
-              {trainingMode && (<>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 w-full max-w-2xl">
+              {/* Suggestions & feature boxes — always visible */}
+              {(<>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 w-full max-w-2xl">
                 {SUGGESTIONS.map((s) => (
                   <button
                     key={s.label}
@@ -1884,72 +1900,7 @@ export default function Chat() {
                     <span className="text-sm font-medium">{s.label}</span>
                   </button>
                 ))}
-                {/* Run Loss Runs */}
-                <button
-                  onClick={() => navigate("/pipeline")}
-                  className="flex flex-col items-start gap-2 rounded-xl border bg-card/80 backdrop-blur-sm p-4 text-left hover-lift aura-glow-shadow transition-colors group"
-                >
-                  <FileSearch className="h-5 w-5 text-accent group-hover:text-primary transition-colors" />
-                  <span className="text-sm font-medium">Run loss runs</span>
-                </button>
-                {/* Send Intake Form */}
-                <button
-                  onClick={async () => {
-                    if (!user) return;
-                    const result = await generateIntakeLink({ agentId: user.id });
-                    if (result) {
-                      await navigator.clipboard.writeText(result.url);
-                      toast({ title: "Intake link copied!", description: "Share this link with your customer to collect their details." });
-                    }
-                  }}
-                  className="flex flex-col items-start gap-2 rounded-xl border bg-card/80 backdrop-blur-sm p-4 text-left hover-lift aura-glow-shadow transition-colors group"
-                >
-                  <LinkIcon className="h-5 w-5 text-accent group-hover:text-primary transition-colors" />
-                  <span className="text-sm font-medium">Send intake form</span>
-                </button>
               </div>
-
-              {/* Feature action boxes */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-2xl">
-                <button
-                  onClick={() => navigate("/pipeline")}
-                  className="group flex items-start gap-3 rounded-xl border bg-card p-4 text-left hover:shadow-md hover:border-primary/30 transition-all"
-                >
-                  <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                    <Users className="h-4 w-4 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-foreground">Add a lead to our sales pipeline.</p>
-                    <p className="text-xs text-muted-foreground mt-1">Track prospects through quoting, presenting, and closing stages.</p>
-                  </div>
-                </button>
-                <button
-                  onClick={() => navigate("/approvals")}
-                  className="group flex items-start gap-3 rounded-xl border bg-card p-4 text-left hover:shadow-md hover:border-primary/30 transition-all"
-                >
-                  <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                    <BarChart3 className="h-4 w-4 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-foreground">Manage your production and renewals.</p>
-                    <p className="text-xs text-muted-foreground mt-1">View approved policies, pending approvals, and upcoming renewal dates.</p>
-                  </div>
-                </button>
-              </div>
-
-              {/* Inbox Link */}
-              <button
-                onClick={() => navigate("/inbox")}
-                className="group flex items-start gap-3 rounded-xl border bg-card p-4 text-left hover:shadow-md hover:border-primary/30 transition-all w-full max-w-2xl"
-              >
-                <div className="h-9 w-9 rounded-lg bg-accent/10 flex items-center justify-center shrink-0">
-                  <Mail className="h-4 w-4 text-accent" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold text-foreground">Open your Inbox — emails, notifications, and AI drafts.</p>
-                  <p className="text-xs text-muted-foreground mt-1">Compose AI-powered emails, view pipeline updates, and manage all communications in one place.</p>
-                </div>
-              </button>
 
               {/* Suggest a Feature */}
               <button
