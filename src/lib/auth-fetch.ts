@@ -5,7 +5,12 @@ import { supabase } from "@/integrations/supabase/client";
  * Falls back to the publishable key if no session exists (should not happen for protected routes).
  */
 export async function getAuthHeaders(): Promise<Record<string, string>> {
-  const { data: { session } } = await supabase.auth.getSession();
+  // Try getSession first; if the token is expired, force a refresh
+  let { data: { session } } = await supabase.auth.getSession();
+  if (!session?.access_token) {
+    const { data } = await supabase.auth.refreshSession();
+    session = data.session;
+  }
   const token = session?.access_token || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
   return {
     "Content-Type": "application/json",
