@@ -2,7 +2,8 @@ import { useState, useRef } from "react";
 import { getCurrentBetaUser } from "@/lib/beta-users";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Video, PhoneOff, Loader2, AlertCircle } from "lucide-react";
+import { Video, PhoneOff, Loader2, AlertCircle, User } from "lucide-react";
+import { ClientLookupSheet } from "@/components/ClientLookupSheet";
 
 export default function BetaVideo() {
   const user = getCurrentBetaUser();
@@ -101,7 +102,15 @@ export default function BetaVideo() {
               allow="microphone; camera; autoplay; display-capture"
             />
           </div>
-          <div className="flex justify-center">
+          <div className="flex justify-center gap-3">
+            <ClientLookupSheet
+              trigger={
+                <Button variant="outline" size="sm" className="gap-2">
+                  <User className="h-4 w-4" />
+                  Pull Up Client Info
+                </Button>
+              }
+            />
             <Button variant="destructive" size="sm" onClick={leaveRoom} className="gap-2">
               <PhoneOff className="h-4 w-4" />
               Leave Room

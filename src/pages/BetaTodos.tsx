@@ -9,8 +9,10 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { Plus, AlertCircle, CalendarIcon, X } from "lucide-react";
+import { Plus, AlertCircle, CalendarIcon, X, Link2, ExternalLink } from "lucide-react";
 import { format } from "date-fns";
+import { Link } from "react-router-dom";
+import { ClientLookupSheet } from "@/components/ClientLookupSheet";
 
 interface Todo {
   id: string;
@@ -23,6 +25,9 @@ interface Todo {
   due_date: string | null;
 }
 
+// Local state for linked clients (not persisted to DB in this demo)
+const linkedClients: Record<string, { id: string; name: string }> = {};
+
 export default function BetaTodos() {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [title, setTitle] = useState("");
@@ -30,6 +35,7 @@ export default function BetaTodos() {
   const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
   const [adding, setAdding] = useState(false);
   const [rtError, setRtError] = useState(false);
+  const [, forceUpdate] = useState(0);
   const user = getCurrentBetaUser();
 
   // Default assignee to current user
@@ -92,6 +98,16 @@ export default function BetaTodos() {
 
   const updateDueDate = async (todo: Todo, date: Date | undefined) => {
     await supabase.from("beta_todos").update({ due_date: date ? date.toISOString() : null, updated_at: new Date().toISOString() } as any).eq("id", todo.id);
+  };
+
+  const linkClient = (todoId: string, client: { id: string; name: string }) => {
+    linkedClients[todoId] = client;
+    forceUpdate(n => n + 1);
+  };
+
+  const unlinkClient = (todoId: string) => {
+    delete linkedClients[todoId];
+    forceUpdate(n => n + 1);
   };
 
   if (!user) return null;
@@ -160,7 +176,16 @@ export default function BetaTodos() {
         <div className="space-y-2">
           <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Open ({pending.length})</p>
           {pending.map((todo) => (
-            <TodoRow key={todo.id} todo={todo} onToggle={toggleDone} onAssigneeChange={updateAssignee} onDueDateChange={updateDueDate} />
+            <TodoRow
+              key={todo.id}
+              todo={todo}
+              onToggle={toggleDone}
+              onAssigneeChange={updateAssignee}
+              onDueDateChange={updateDueDate}
+              linkedClient={linkedClients[todo.id]}
+              onLinkClient={(client) => linkClient(todo.id, client)}
+              onUnlinkClient={() => unlinkClient(todo.id)}
+            />
           ))}
         </div>
       )}
@@ -170,7 +195,16 @@ export default function BetaTodos() {
         <div className="space-y-2">
           <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Completed ({done.length})</p>
           {done.map((todo) => (
-            <TodoRow key={todo.id} todo={todo} onToggle={toggleDone} onAssigneeChange={updateAssignee} onDueDateChange={updateDueDate} />
+            <TodoRow
+              key={todo.id}
+              todo={todo}
+              onToggle={toggleDone}
+              onAssigneeChange={updateAssignee}
+              onDueDateChange={updateDueDate}
+              linkedClient={linkedClients[todo.id]}
+              onLinkClient={(client) => linkClient(todo.id, client)}
+              onUnlinkClient={() => unlinkClient(todo.id)}
+            />
           ))}
         </div>
       )}
@@ -182,53 +216,84 @@ export default function BetaTodos() {
   );
 }
 
-function TodoRow({ todo, onToggle, onAssigneeChange, onDueDateChange }: {
+function TodoRow({ todo, onToggle, onAssigneeChange, onDueDateChange, linkedClient, onLinkClient, onUnlinkClient }: {
   todo: Todo;
   onToggle: (t: Todo) => void;
   onAssigneeChange: (t: Todo, v: string) => void;
   onDueDateChange: (t: Todo, d: Date | undefined) => void;
+  linkedClient?: { id: string; name: string };
+  onLinkClient: (client: { id: string; name: string }) => void;
+  onUnlinkClient: () => void;
 }) {
   const assignee = todo.assignee_id ? BETA_USERS[todo.assignee_id] : null;
   const isOverdue = todo.due_date && !todo.is_done && new Date(todo.due_date) < new Date();
 
   return (
     <Card className={todo.is_done ? "opacity-60" : ""}>
-      <CardContent className="p-3 flex items-center gap-3 flex-wrap">
-        <Checkbox checked={todo.is_done} onCheckedChange={() => onToggle(todo)} />
-        <span className={`flex-1 text-sm min-w-0 ${todo.is_done ? "line-through text-muted-foreground" : ""}`}>
-          {todo.title}
-        </span>
-        <div className="flex items-center gap-2 shrink-0">
-          {/* Assignee selector — always editable */}
-          <Select value={todo.assignee_id || "unassigned"} onValueChange={(v) => onAssigneeChange(todo, v)}>
-            <SelectTrigger className={`h-7 w-[110px] text-[10px] ${assignee ? "" : "border-dashed"}`}>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="unassigned">Unassigned</SelectItem>
-              {Object.values(BETA_USERS).map((u) => (
-                <SelectItem key={u.id} value={u.id}>
-                  <span className="flex items-center gap-1.5">
-                    <span className={`inline-block h-2 w-2 rounded-full ${u.avatarColor}`} />
-                    {u.name.split(" ")[0]}
-                  </span>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+      <CardContent className="p-3 space-y-2">
+        <div className="flex items-center gap-3 flex-wrap">
+          <Checkbox checked={todo.is_done} onCheckedChange={() => onToggle(todo)} />
+          <span className={`flex-1 text-sm min-w-0 ${todo.is_done ? "line-through text-muted-foreground" : ""}`}>
+            {todo.title}
+          </span>
+          <div className="flex items-center gap-2 shrink-0">
+            {/* Assignee selector */}
+            <Select value={todo.assignee_id || "unassigned"} onValueChange={(v) => onAssigneeChange(todo, v)}>
+              <SelectTrigger className={`h-7 w-[110px] text-[10px] ${assignee ? "" : "border-dashed"}`}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="unassigned">Unassigned</SelectItem>
+                {Object.values(BETA_USERS).map((u) => (
+                  <SelectItem key={u.id} value={u.id}>
+                    <span className="flex items-center gap-1.5">
+                      <span className={`inline-block h-2 w-2 rounded-full ${u.avatarColor}`} />
+                      {u.name.split(" ")[0]}
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-          {/* Due date */}
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="ghost" size="sm" className={`h-7 text-[10px] gap-1 px-2 ${isOverdue ? "text-destructive" : "text-muted-foreground"}`}>
-                <CalendarIcon className="h-3 w-3" />
-                {todo.due_date ? format(new Date(todo.due_date), "MMM d") : "—"}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="end">
-              <Calendar mode="single" selected={todo.due_date ? new Date(todo.due_date) : undefined} onSelect={(d) => onDueDateChange(todo, d)} initialFocus />
-            </PopoverContent>
-          </Popover>
+            {/* Due date */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="ghost" size="sm" className={`h-7 text-[10px] gap-1 px-2 ${isOverdue ? "text-destructive" : "text-muted-foreground"}`}>
+                  <CalendarIcon className="h-3 w-3" />
+                  {todo.due_date ? format(new Date(todo.due_date), "MMM d") : "—"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="end">
+                <Calendar mode="single" selected={todo.due_date ? new Date(todo.due_date) : undefined} onSelect={(d) => onDueDateChange(todo, d)} initialFocus />
+              </PopoverContent>
+            </Popover>
+          </div>
+        </div>
+
+        {/* Linked client row */}
+        <div className="flex items-center gap-2 pl-7">
+          {linkedClient ? (
+            <div className="flex items-center gap-1.5">
+              <Link to={`/lead/${linkedClient.id}`} className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline font-medium">
+                <ExternalLink className="h-3 w-3" />
+                {linkedClient.name}
+              </Link>
+              <button onClick={onUnlinkClient} className="text-muted-foreground hover:text-destructive">
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+          ) : (
+            <ClientLookupSheet
+              trigger={
+                <button className="inline-flex items-center gap-1 text-[10px] text-muted-foreground hover:text-primary transition-colors">
+                  <Link2 className="h-3 w-3" />
+                  Link to client
+                </button>
+              }
+              onSelect={(lead) => onLinkClient({ id: lead.id, name: lead.account_name })}
+              closeOnSelect
+            />
+          )}
         </div>
       </CardContent>
     </Card>

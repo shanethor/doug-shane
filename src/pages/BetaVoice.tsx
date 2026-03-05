@@ -1,7 +1,8 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { getCurrentBetaUser, getOtherUser, BETA_USERS } from "@/lib/beta-users";
 import { Button } from "@/components/ui/button";
-import { Mic, MicOff, PhoneOff, Loader2, AlertCircle, Headphones, Volume2 } from "lucide-react";
+import { Mic, MicOff, PhoneOff, Loader2, AlertCircle, Headphones, Volume2, User } from "lucide-react";
+import { ClientLookupSheet } from "@/components/ClientLookupSheet";
 import DailyIframe from "@daily-co/daily-js";
 
 interface Participant {
@@ -96,7 +97,6 @@ export default function BetaVoice() {
       });
 
       await call.join({ url: roomUrl, token });
-      // Disable camera explicitly
       call.setLocalVideo(false);
     } catch (err: any) {
       setErrorMsg(err.message || "Unable to join call, please try again.");
@@ -186,8 +186,7 @@ export default function BetaVoice() {
                 key={p.id}
                 className="flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-muted/50 transition-colors"
               >
-                {/* Avatar with speaking ring */}
-                <div className={`relative flex-shrink-0`}>
+                <div className="relative flex-shrink-0">
                   <div
                     className={`h-9 w-9 rounded-full flex items-center justify-center text-white text-xs font-bold ${p.color} ${
                       p.isSpeaking ? "ring-2 ring-green-400 ring-offset-2 ring-offset-card" : ""
@@ -202,7 +201,6 @@ export default function BetaVoice() {
                   )}
                 </div>
 
-                {/* Name */}
                 <span className="text-sm font-medium truncate">
                   {p.name}
                   {p.isLocal && (
@@ -210,7 +208,6 @@ export default function BetaVoice() {
                   )}
                 </span>
 
-                {/* Speaking indicator */}
                 {p.isSpeaking && (
                   <div className="ml-auto flex gap-0.5">
                     {[1, 2, 3].map(i => (
@@ -248,6 +245,13 @@ export default function BetaVoice() {
           >
             {muted ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
           </Button>
+          <ClientLookupSheet
+            trigger={
+              <Button variant="outline" size="icon" className="h-10 w-10 rounded-full">
+                <User className="h-4 w-4" />
+              </Button>
+            }
+          />
           <Button
             variant="destructive"
             size="icon"
