@@ -53,7 +53,7 @@ serve(async (req) => {
             status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         }
-        const scopes = "https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/userinfo.email";
+        const scopes = "https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/calendar.events";
         const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirect_uri)}&response_type=code&scope=${encodeURIComponent(scopes)}&access_type=offline&prompt=consent`;
         return new Response(JSON.stringify({ url }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -65,7 +65,7 @@ serve(async (req) => {
             status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         }
-        const scopes = "openid email Mail.Read Mail.Send offline_access";
+        const scopes = "openid email Mail.Read Mail.Send Calendars.ReadWrite offline_access";
         const url = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirect_uri)}&response_type=code&scope=${encodeURIComponent(scopes)}`;
         return new Response(JSON.stringify({ url }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -132,6 +132,20 @@ serve(async (req) => {
           });
         }
 
+        // Also upsert into external_calendars so calendar sync works
+        await adminClient
+          .from("external_calendars")
+          .upsert({
+            user_id: userId,
+            provider: "gmail",
+            email_address: email,
+            access_token: tokenData.access_token,
+            refresh_token: tokenData.refresh_token,
+            token_expires_at: expiresAt,
+            is_active: true,
+            updated_at: new Date().toISOString(),
+          }, { onConflict: "user_id,provider" });
+
         return new Response(JSON.stringify({ success: true, email, provider: "gmail" }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
@@ -148,7 +162,7 @@ serve(async (req) => {
             client_secret: clientSecret,
             redirect_uri: redirect_uri,
             grant_type: "authorization_code",
-            scope: "openid email Mail.Read Mail.Send offline_access",
+            scope: "openid email Mail.Read Mail.Send Calendars.ReadWrite offline_access",
           }),
         });
         tokenData = await tokenResp.json();
@@ -187,6 +201,20 @@ serve(async (req) => {
             status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         }
+
+        // Also upsert into external_calendars so calendar sync works
+        await adminClient
+          .from("external_calendars")
+          .upsert({
+            user_id: userId,
+            provider: "outlook",
+            email_address: email,
+            access_token: tokenData.access_token,
+            refresh_token: tokenData.refresh_token,
+            token_expires_at: expiresAt,
+            is_active: true,
+            updated_at: new Date().toISOString(),
+          }, { onConflict: "user_id,provider" });
 
         return new Response(JSON.stringify({ success: true, email, provider: "outlook" }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },

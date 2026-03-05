@@ -127,7 +127,7 @@ export default function Calendar({ embedded }: { embedded?: boolean } = {}) {
 
   useEffect(() => { loadData(); }, [loadData]);
 
-  const syncOutlookCalendar = async () => {
+  const syncCalendars = async () => {
     setSyncing(true);
     try {
       const headers = await getAuthHeaders();
@@ -199,8 +199,8 @@ export default function Calendar({ embedded }: { embedded?: boolean } = {}) {
       return;
     }
 
-    // Also push to Outlook if connected
-    if (calendars.some((c) => c.provider === "outlook" && c.is_active)) {
+    // Push to connected calendars (best-effort)
+    for (const cal of calendars.filter((c) => c.is_active)) {
       try {
         const headers = await getAuthHeaders();
         await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/calendar-sync`, {
@@ -208,6 +208,7 @@ export default function Calendar({ embedded }: { embedded?: boolean } = {}) {
           headers,
           body: JSON.stringify({
             action: "create_event",
+            provider: cal.provider === "outlook" ? "outlook" : "gmail",
             title: newEvent.title,
             start: startTime.toISOString(),
             end: endTime.toISOString(),
@@ -217,7 +218,7 @@ export default function Calendar({ embedded }: { embedded?: boolean } = {}) {
           }),
         });
       } catch {
-        // Silent — Outlook push is best-effort
+        // Silent — external push is best-effort
       }
     }
 
@@ -324,7 +325,7 @@ export default function Calendar({ embedded }: { embedded?: boolean } = {}) {
         </div>
         <div className="flex items-center gap-2">
           {calendars.some((c) => c.is_active) && (
-            <Button variant="outline" size="sm" onClick={syncOutlookCalendar} disabled={syncing} className="gap-1.5">
+            <Button variant="outline" size="sm" onClick={syncCalendars} disabled={syncing} className="gap-1.5">
               <RefreshCw className={`h-3.5 w-3.5 ${syncing ? "animate-spin" : ""}`} />
               <span className="hidden sm:inline">{syncing ? "Syncing…" : "Sync Calendar"}</span>
             </Button>
