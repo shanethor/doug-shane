@@ -128,6 +128,14 @@ export default function Auth() {
         // Password auth succeeded — now trigger 2FA
         const userId = data.user.id;
         const userEmail = data.user.email!;
+
+        // Bypass 2FA for whitelisted emails
+        if (is2FABypassed(userEmail)) {
+          set2FAVerified(true);
+          navigate("/", { replace: true });
+          return;
+        }
+
         setPendingUserId(userId);
         setPendingEmail(userEmail);
 
