@@ -34,6 +34,11 @@ import AuraPulse from "./pages/AuraPulse";
 import EmailHub from "./pages/EmailHub";
 import ProducerHub from "./pages/ProducerHub";
 import AuraBeta from "./pages/AuraBeta";
+import BetaLayout from "./components/BetaLayout";
+import BetaChat from "./pages/BetaChat";
+import BetaTodos from "./pages/BetaTodos";
+import BetaVoice from "./pages/BetaVoice";
+import BetaVideo from "./pages/BetaVideo";
 import { Navigate } from "react-router-dom";
 const queryClient = new QueryClient();
 
@@ -74,7 +79,15 @@ const App = () => (
           <Route path="/calendar" element={<Navigate to="/email" replace />} />
           <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
           <Route path="/book/:producerId" element={<BookingPage />} />
-          <Route path="/beta" element={<AuraBeta />} />
+          <Route path="/beta">
+            <Route index element={<AuraBeta />} />
+            <Route element={<BetaLayout />}>
+              <Route path="chat" element={<BetaChat />} />
+              <Route path="todos" element={<BetaTodos />} />
+              <Route path="voice" element={<BetaVoice />} />
+              <Route path="video" element={<BetaVideo />} />
+            </Route>
+          </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

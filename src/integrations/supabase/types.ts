@@ -44,6 +44,30 @@ export type Database = {
         }
         Relationships: []
       }
+      beta_messages: {
+        Row: {
+          created_at: string
+          id: string
+          recipient_id: string
+          sender_id: string
+          text: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          recipient_id: string
+          sender_id: string
+          text: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          recipient_id?: string
+          sender_id?: string
+          text?: string
+        }
+        Relationships: []
+      }
       business_submissions: {
         Row: {
           company_name: string | null
