@@ -7,7 +7,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Plus, AlertCircle } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { Plus, AlertCircle, CalendarIcon, X } from "lucide-react";
 import { format } from "date-fns";
 
 interface Todo {
@@ -18,15 +20,22 @@ interface Todo {
   created_by: string;
   created_at: string;
   updated_at: string;
+  due_date: string | null;
 }
 
 export default function BetaTodos() {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [title, setTitle] = useState("");
-  const [assignee, setAssignee] = useState<string>("unassigned");
+  const [assignee, setAssignee] = useState<string>("");
+  const [dueDate, setDueDate] = useState<Date | undefined>(undefined);
   const [adding, setAdding] = useState(false);
   const [rtError, setRtError] = useState(false);
   const user = getCurrentBetaUser();
+
+  // Default assignee to current user
+  useEffect(() => {
+    if (user && !assignee) setAssignee(user.id);
+  }, [user]);
 
   // Load todos
   useEffect(() => {
@@ -44,29 +53,17 @@ export default function BetaTodos() {
   useEffect(() => {
     const channel = supabase
       .channel("beta-todos")
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "beta_todos" },
-        (payload) => {
-          const newTodo = payload.new as Todo;
-          setTodos((prev) => {
-            if (prev.some((t) => t.id === newTodo.id)) return prev;
-            return [...prev, newTodo];
-          });
-        }
-      )
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "beta_todos" },
-        (payload) => {
-          const updated = payload.new as Todo;
-          setTodos((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
-        }
-      )
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "beta_todos" }, (payload) => {
+        const newTodo = payload.new as Todo;
+        setTodos((prev) => prev.some((t) => t.id === newTodo.id) ? prev : [...prev, newTodo]);
+      })
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "beta_todos" }, (payload) => {
+        const updated = payload.new as Todo;
+        setTodos((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
+      })
       .subscribe((status) => {
         if (status === "CHANNEL_ERROR") setRtError(true);
       });
-
     return () => { supabase.removeChannel(channel); };
   }, []);
 
@@ -77,24 +74,24 @@ export default function BetaTodos() {
       title: title.trim(),
       assignee_id: assignee === "unassigned" ? null : assignee,
       created_by: user.id,
-    });
+      due_date: dueDate ? dueDate.toISOString() : null,
+    } as any);
     setTitle("");
-    setAssignee("unassigned");
+    setAssignee(user.id);
+    setDueDate(undefined);
     setAdding(false);
   };
 
   const toggleDone = async (todo: Todo) => {
-    await supabase
-      .from("beta_todos")
-      .update({ is_done: !todo.is_done, updated_at: new Date().toISOString() })
-      .eq("id", todo.id);
+    await supabase.from("beta_todos").update({ is_done: !todo.is_done, updated_at: new Date().toISOString() } as any).eq("id", todo.id);
   };
 
   const updateAssignee = async (todo: Todo, newAssignee: string) => {
-    await supabase
-      .from("beta_todos")
-      .update({ assignee_id: newAssignee === "unassigned" ? null : newAssignee, updated_at: new Date().toISOString() })
-      .eq("id", todo.id);
+    await supabase.from("beta_todos").update({ assignee_id: newAssignee === "unassigned" ? null : newAssignee, updated_at: new Date().toISOString() } as any).eq("id", todo.id);
+  };
+
+  const updateDueDate = async (todo: Todo, date: Date | undefined) => {
+    await supabase.from("beta_todos").update({ due_date: date ? date.toISOString() : null, updated_at: new Date().toISOString() } as any).eq("id", todo.id);
   };
 
   if (!user) return null;
@@ -113,7 +110,7 @@ export default function BetaTodos() {
 
       {/* Add task */}
       <Card>
-        <CardContent className="p-4">
+        <CardContent className="p-4 space-y-3">
           <div className="flex gap-2">
             <Input
               value={title}
@@ -122,9 +119,14 @@ export default function BetaTodos() {
               className="flex-1"
               onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addTodo(); } }}
             />
+            <Button onClick={addTodo} disabled={!title.trim() || adding} size="icon">
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
+          <div className="flex gap-2 flex-wrap">
             <Select value={assignee} onValueChange={setAssignee}>
-              <SelectTrigger className="w-[140px]">
-                <SelectValue placeholder="Assignee" />
+              <SelectTrigger className="w-[150px] h-8 text-xs">
+                <SelectValue placeholder="Assign to…" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="unassigned">Unassigned</SelectItem>
@@ -133,9 +135,22 @@ export default function BetaTodos() {
                 ))}
               </SelectContent>
             </Select>
-            <Button onClick={addTodo} disabled={!title.trim() || adding} size="icon">
-              <Plus className="h-4 w-4" />
-            </Button>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5">
+                  <CalendarIcon className="h-3.5 w-3.5" />
+                  {dueDate ? format(dueDate, "MMM d") : "Due date"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar mode="single" selected={dueDate} onSelect={setDueDate} initialFocus />
+              </PopoverContent>
+            </Popover>
+            {dueDate && (
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDueDate(undefined)}>
+                <X className="h-3.5 w-3.5" />
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -145,7 +160,7 @@ export default function BetaTodos() {
         <div className="space-y-2">
           <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Open ({pending.length})</p>
           {pending.map((todo) => (
-            <TodoRow key={todo.id} todo={todo} onToggle={toggleDone} onAssigneeChange={updateAssignee} />
+            <TodoRow key={todo.id} todo={todo} onToggle={toggleDone} onAssigneeChange={updateAssignee} onDueDateChange={updateDueDate} />
           ))}
         </div>
       )}
@@ -155,7 +170,7 @@ export default function BetaTodos() {
         <div className="space-y-2">
           <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">Completed ({done.length})</p>
           {done.map((todo) => (
-            <TodoRow key={todo.id} todo={todo} onToggle={toggleDone} onAssigneeChange={updateAssignee} />
+            <TodoRow key={todo.id} todo={todo} onToggle={toggleDone} onAssigneeChange={updateAssignee} onDueDateChange={updateDueDate} />
           ))}
         </div>
       )}
@@ -167,40 +182,54 @@ export default function BetaTodos() {
   );
 }
 
-function TodoRow({ todo, onToggle, onAssigneeChange }: { todo: Todo; onToggle: (t: Todo) => void; onAssigneeChange: (t: Todo, v: string) => void }) {
+function TodoRow({ todo, onToggle, onAssigneeChange, onDueDateChange }: {
+  todo: Todo;
+  onToggle: (t: Todo) => void;
+  onAssigneeChange: (t: Todo, v: string) => void;
+  onDueDateChange: (t: Todo, d: Date | undefined) => void;
+}) {
   const assignee = todo.assignee_id ? BETA_USERS[todo.assignee_id] : null;
+  const isOverdue = todo.due_date && !todo.is_done && new Date(todo.due_date) < new Date();
 
   return (
     <Card className={todo.is_done ? "opacity-60" : ""}>
-      <CardContent className="p-3 flex items-center gap-3">
-        <Checkbox
-          checked={todo.is_done}
-          onCheckedChange={() => onToggle(todo)}
-        />
-        <span className={`flex-1 text-sm ${todo.is_done ? "line-through text-muted-foreground" : ""}`}>
+      <CardContent className="p-3 flex items-center gap-3 flex-wrap">
+        <Checkbox checked={todo.is_done} onCheckedChange={() => onToggle(todo)} />
+        <span className={`flex-1 text-sm min-w-0 ${todo.is_done ? "line-through text-muted-foreground" : ""}`}>
           {todo.title}
         </span>
-        {assignee ? (
-          <Badge variant="secondary" className="text-[10px] gap-1 shrink-0">
-            <span className={`inline-block h-2 w-2 rounded-full ${assignee.avatarColor}`} />
-            {assignee.name.split(" ")[0]}
-          </Badge>
-        ) : (
-          <Select value="unassigned" onValueChange={(v) => onAssigneeChange(todo, v)}>
-            <SelectTrigger className="h-7 w-[100px] text-[10px] border-dashed">
-              <SelectValue placeholder="Assign" />
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Assignee selector — always editable */}
+          <Select value={todo.assignee_id || "unassigned"} onValueChange={(v) => onAssigneeChange(todo, v)}>
+            <SelectTrigger className={`h-7 w-[110px] text-[10px] ${assignee ? "" : "border-dashed"}`}>
+              <SelectValue />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="unassigned">Unassigned</SelectItem>
               {Object.values(BETA_USERS).map((u) => (
-                <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>
+                <SelectItem key={u.id} value={u.id}>
+                  <span className="flex items-center gap-1.5">
+                    <span className={`inline-block h-2 w-2 rounded-full ${u.avatarColor}`} />
+                    {u.name.split(" ")[0]}
+                  </span>
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
-        )}
-        <span className="text-[10px] text-muted-foreground shrink-0">
-          {format(new Date(todo.created_at), "MMM d")}
-        </span>
+
+          {/* Due date */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="ghost" size="sm" className={`h-7 text-[10px] gap-1 px-2 ${isOverdue ? "text-destructive" : "text-muted-foreground"}`}>
+                <CalendarIcon className="h-3 w-3" />
+                {todo.due_date ? format(new Date(todo.due_date), "MMM d") : "—"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="end">
+              <Calendar mode="single" selected={todo.due_date ? new Date(todo.due_date) : undefined} onSelect={(d) => onDueDateChange(todo, d)} initialFocus />
+            </PopoverContent>
+          </Popover>
+        </div>
       </CardContent>
     </Card>
   );

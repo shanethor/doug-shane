@@ -1,0 +1,1 @@
+ALTER TABLE public.beta_todos ADD COLUMN IF NOT EXISTS due_date timestamptz;
