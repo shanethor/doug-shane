@@ -133,11 +133,12 @@ serve(async (req) => {
         }
 
         // Also upsert into external_calendars so calendar sync works
-        await adminClient
+        // Note: external_calendars uses "google" not "gmail" per CHECK constraint
+        const { error: calErr } = await adminClient
           .from("external_calendars")
           .upsert({
             user_id: userId,
-            provider: "gmail",
+            provider: "google",
             email_address: email,
             access_token: tokenData.access_token,
             refresh_token: tokenData.refresh_token,
@@ -145,6 +146,7 @@ serve(async (req) => {
             is_active: true,
             updated_at: new Date().toISOString(),
           }, { onConflict: "user_id,provider" });
+        if (calErr) console.error("external_calendars upsert error (google):", calErr);
 
         return new Response(JSON.stringify({ success: true, email, provider: "gmail" }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -203,7 +205,7 @@ serve(async (req) => {
         }
 
         // Also upsert into external_calendars so calendar sync works
-        await adminClient
+        const { error: calErr } = await adminClient
           .from("external_calendars")
           .upsert({
             user_id: userId,
@@ -215,6 +217,7 @@ serve(async (req) => {
             is_active: true,
             updated_at: new Date().toISOString(),
           }, { onConflict: "user_id,provider" });
+        if (calErr) console.error("external_calendars upsert error (outlook):", calErr);
 
         return new Response(JSON.stringify({ success: true, email, provider: "outlook" }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },

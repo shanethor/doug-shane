@@ -285,7 +285,7 @@ serve(async (req) => {
 
         const result = conn.provider === "outlook"
           ? await syncOutlook(accessToken, userId, adminClient)
-          : await syncGoogle(accessToken, userId, adminClient);
+          : await syncGoogle(accessToken, userId, adminClient); // handles "google" and "gmail"
 
         results.push({ provider: conn.provider, ...result });
       }
