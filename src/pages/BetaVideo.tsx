@@ -30,10 +30,12 @@ export default function BetaVideo() {
 
       const { token, roomUrl } = await res.json();
 
-      if (iframeRef.current) {
-        iframeRef.current.src = `${roomUrl}?t=${token}&showLeaveButton=true&showFullscreenButton=true`;
-        setStatus("joined");
-      }
+      setStatus("joined");
+      setTimeout(() => {
+        if (iframeRef.current) {
+          iframeRef.current.src = `${roomUrl}?t=${token}&showLeaveButton=true&showFullscreenButton=true`;
+        }
+      }, 0);
     } catch (err: any) {
       setErrorMsg(err.message || "Unable to join call, please try again.");
       setStatus("error");
