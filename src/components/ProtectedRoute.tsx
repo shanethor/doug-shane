@@ -1,6 +1,7 @@
 import { useAuth } from "@/hooks/useAuth";
 import { Navigate } from "react-router-dom";
 import { is2FAVerified } from "@/lib/2fa-storage";
+import { is2FABypassed } from "@/lib/2fa-bypass";
 import { AppLayout } from "@/components/AppLayout";
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -21,7 +22,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   }
 
   // Check 2FA verification (now persisted in localStorage with TTL)
-  if (!is2FAVerified()) {
+  if (!is2FAVerified() && !is2FABypassed(user.email)) {
     return <Navigate to="/auth" replace />;
   }
 

@@ -11,6 +11,7 @@ import { Loader2, ShieldCheck } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import auraLogo from "@/assets/aura-logo.png";
 import { set2FAVerified, is2FAVerified, clear2FAVerified } from "@/lib/2fa-storage";
+import { is2FABypassed } from "@/lib/2fa-bypass";
 
 async function getAuthHeaders(): Promise<Record<string, string>> {
   const { data } = await supabase.auth.getSession();
@@ -57,6 +58,12 @@ export default function Auth() {
     if (loginHandled2FA.current) return;
 
     if (!loading && user && !is2FAVerified() && !needs2FA && !autoChecking) {
+      // Bypass 2FA for whitelisted emails
+      if (is2FABypassed(user.email)) {
+        set2FAVerified(true);
+        navigate("/", { replace: true });
+        return;
+      }
       setAutoChecking(true);
       const deviceHash = getDeviceHash();
       getAuthHeaders().then(hdrs => fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-2fa`, {
