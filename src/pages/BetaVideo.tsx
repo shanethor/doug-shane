@@ -2,8 +2,10 @@ import { useState, useRef } from "react";
 import { getCurrentBetaUser } from "@/lib/beta-users";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Video, PhoneOff, Loader2, AlertCircle, User, MonitorUp } from "lucide-react";
+import { Video, PhoneOff, Loader2, AlertCircle, User, MonitorUp, MessageSquare } from "lucide-react";
 import { ClientInfoPanel, SharedClientBanner } from "@/components/ClientInfoPanel";
+import { InCallChat } from "@/components/InCallChat";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { toast } from "sonner";
 
 export default function BetaVideo() {
@@ -11,6 +13,7 @@ export default function BetaVideo() {
   const [status, setStatus] = useState<"idle" | "loading" | "joined" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
   const [showClientPanel, setShowClientPanel] = useState(false);
+  const [showChat, setShowChat] = useState(false);
   const [sharedClientName, setSharedClientName] = useState<string | null>(null);
   const [pendingSharedClient, setPendingSharedClient] = useState<any>(null);
   const [acceptedSharedClient, setAcceptedSharedClient] = useState<any>(null);
@@ -53,6 +56,7 @@ export default function BetaVideo() {
     if (iframeRef.current) iframeRef.current.src = "";
     setStatus("idle");
     setShowClientPanel(false);
+    setShowChat(false);
     setSharedClientName(null);
     setPendingSharedClient(null);
     setAcceptedSharedClient(null);
@@ -66,26 +70,18 @@ export default function BetaVideo() {
       return;
     }
     try {
-      // Request screen capture to verify browser support / user grants permission
       const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
-      // The Daily prebuilt iframe handles its own screen share, but we can signal the user
-      // that sharing is active. Stop the stream since Daily handles it internally.
       stream.getTracks().forEach(track => {
         track.onended = () => setIsScreenSharing(false);
       });
       setIsScreenSharing(true);
       toast.success("Screen sharing started");
-      // In a full implementation, we'd pass this stream to Daily's call object.
-      // With the prebuilt iframe, screen share is available via the built-in controls.
-      // This button serves as a quick-access shortcut and visual indicator.
     } catch {
       toast.error("Screen sharing was cancelled or denied");
     }
   };
 
   const handleShareClient = (lead: any) => {
-    // Simulate sharing to the other participant
-    // In production this would use Daily's sendAppMessage
     toast.success(`Shared "${lead.account_name}" with the call`);
   };
 
@@ -156,8 +152,8 @@ export default function BetaVideo() {
 
       {status === "joined" && (
         <div className="space-y-3">
-          <div className={`grid gap-4 ${showClientPanel ? "grid-cols-1 lg:grid-cols-[1fr_300px]" : "grid-cols-1"}`}>
-            {/* Video area */}
+          <div className={`grid gap-4 ${showChat ? "grid-cols-1 lg:grid-cols-[1fr_300px]" : "grid-cols-1"}`}>
+            {/* Video + controls column */}
             <div className="space-y-3">
               <div className="rounded-lg border border-border overflow-hidden bg-muted/20">
                 <iframe
@@ -180,6 +176,15 @@ export default function BetaVideo() {
                   Client Info
                 </Button>
                 <Button
+                  variant={showChat ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setShowChat(!showChat)}
+                  className="gap-2"
+                >
+                  <MessageSquare className="h-4 w-4" />
+                  Chat
+                </Button>
+                <Button
                   variant={isScreenSharing ? "default" : "outline"}
                   size="sm"
                   onClick={toggleScreenShare}
@@ -195,19 +200,26 @@ export default function BetaVideo() {
               </div>
             </div>
 
-            {/* Client info panel */}
-            {showClientPanel && (
-              <div className="min-w-0">
-                <ClientInfoPanel
-                  onClose={() => { setShowClientPanel(false); setAcceptedSharedClient(null); }}
-                  onShare={handleShareClient}
-                  sharedClient={acceptedSharedClient}
-                />
+            {/* In-call chat sidebar */}
+            {showChat && (
+              <div className="rounded-xl border border-border overflow-hidden" style={{ height: "540px" }}>
+                <InCallChat onClose={() => setShowChat(false)} />
               </div>
             )}
           </div>
         </div>
       )}
+
+      {/* Client info as full-screen dialog overlay */}
+      <Dialog open={showClientPanel && status === "joined"} onOpenChange={(open) => { setShowClientPanel(open); if (!open) setAcceptedSharedClient(null); }}>
+        <DialogContent className="max-w-3xl w-[90vw] h-[85vh] p-0 flex flex-col overflow-hidden">
+          <ClientInfoPanel
+            onClose={() => { setShowClientPanel(false); setAcceptedSharedClient(null); }}
+            onShare={handleShareClient}
+            sharedClient={acceptedSharedClient}
+          />
+        </DialogContent>
+      </Dialog>
 
       <p className="text-[10px] text-center text-muted-foreground">
         Only Jane and Douglas should use this room for the demo.

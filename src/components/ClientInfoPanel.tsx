@@ -150,7 +150,7 @@ export function ClientInfoPanel({ onClose, onShare, sharedClient }: ClientInfoPa
   const totalRevenue = policies.reduce((s, p) => s + (p.revenue || 0), 0);
 
   return (
-    <div className="rounded-xl border border-border bg-card shadow-lg overflow-hidden flex flex-col h-full" style={{ maxHeight: "calc(100vh - 180px)", minHeight: "400px" }}>
+    <div className="bg-card overflow-hidden flex flex-col h-full">
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2 border-b border-border bg-muted/30 shrink-0">
         <div className="flex items-center gap-2 min-w-0">
