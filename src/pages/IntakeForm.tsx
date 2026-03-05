@@ -17,7 +17,6 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { generateBorPdf, downloadPdf } from "@/lib/bor-pdf-generator";
-import auraLogo from "@/assets/aura-logo.png";
 
 /* ─── Shared Constants ─── */
 const COVERAGE_OPTIONS = [
@@ -117,7 +116,7 @@ const emptyRecVehicle = (): RecreationalVehicle => ({ rec_type: "", year: "", ma
 const emptyArticle = (): PersonalArticle => ({ description: "", category: "", estimated_value: "" });
 
 /* ─── Commercial Lines Types ─── */
-type CommercialStepKey = "industry" | "insurance_check" | "upload_dec" | "loss_run_info" | "loss_run_consent" | "bor_auth" | "business_info" | "commercial_docs";
+type CommercialStepKey = "industry" | "insurance_check" | "owner_experience" | "upload_dec" | "loss_run_info" | "loss_run_consent" | "bor_auth" | "business_info" | "commercial_docs";
 
 const COMMERCIAL_LINES = [
   "General Liability", "Workers Compensation", "Commercial Auto",
@@ -131,6 +130,7 @@ const COMMERCIAL_INDUSTRY_OPTIONS = [
   { key: "hospitality", label: "Hospitality", icon: "🏨" },
   { key: "trucking", label: "Trucking", icon: "🚛" },
   { key: "retail", label: "Retail", icon: "🛍️" },
+  { key: "professional_services", label: "Professional Services", icon: "💼" },
   { key: "other", label: "Other", icon: "📋" },
 ] as const;
 
@@ -169,6 +169,9 @@ interface CommercialFormData {
   bor_lines: string[];
   bor_authorized: boolean;
   carrier_email: string;
+  // No-insurance experience flow
+  owner_resume_text: string;
+  owner_resume_files: string[];
 }
 
 const emptyLossRunPolicy = (): LossRunPolicyInfo => ({
@@ -192,6 +195,7 @@ const emptyCommercial = (): CommercialFormData => ({
   loss_run_consent: false,
   has_other_broker: "", wants_bor: "", bor_lines: [], bor_authorized: false,
   carrier_email: "",
+  owner_resume_text: "", owner_resume_files: [],
 });
 
 /* ─── Personal step keys (dynamic flow) ─── */
@@ -454,6 +458,18 @@ export default function IntakeForm() {
     if (currentStep === "disclosure") {
       if (!disclosureAcknowledged) { toast.error("You must acknowledge and authorize underwriting review"); return false; }
     }
+    return true;
+  };
+
+  // Passive check for greying out Continue (no toasts)
+  const isPersonalStepValid = (): boolean => {
+    if (currentStep === "coverage_select") return enableAuto || enableHome || enableRenters || enableFlood || enableBoat || enableUmbrella || enableRecreational || enableArticles;
+    if (currentStep === "current_insurance") return !!isCurrentlyInsured;
+    if (currentStep === "contact_info") return !!(applicantName.trim() && applicantEmail.trim() && /^[\w.-]+@[\w.-]+\.\w+$/.test(applicantEmail.trim()) && applicantPhone.trim());
+    if (currentStep === "address") return !!(applicantAddress.trim() && applicantCity.trim() && applicantState.trim() && applicantZip.trim());
+    if (currentStep === "household") return !!(ownershipStatus && hasLicensedDrivers);
+    if (currentStep === "disclosure") return disclosureAcknowledged;
+    if (currentStep === "umbrella" && umbrella.wants_umbrella === "yes") return umbrella.acknowledge_umbrella;
     return true;
   };
 
@@ -956,11 +972,11 @@ export default function IntakeForm() {
           </Button>
         )}
         {isLastStep ? (
-          <Button className="flex-1 h-11 text-base" onClick={handleSubmit} disabled={submitting}>
+          <Button className="flex-1 h-11 text-base" onClick={handleSubmit} disabled={submitting || !isPersonalStepValid()}>
             {submitting ? <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Submitting...</> : "Submit"}
           </Button>
         ) : (
-          <Button className="flex-1 h-11" onClick={goNext}>
+          <Button className="flex-1 h-11" onClick={goNext} disabled={!isPersonalStepValid()}>
             Continue <ChevronRight className="h-4 w-4 ml-1" />
           </Button>
         )}
@@ -2254,8 +2270,9 @@ export default function IntakeForm() {
       {/* Header */}
       <header className="border-b bg-card">
         <div className="mx-auto flex h-14 max-w-3xl items-center px-4">
-          <img src={auraLogo} alt="AURA Risk Group" className="h-7" />
-          <span className="ml-2 text-xs text-muted-foreground font-sans flex items-center gap-1">
+          <span className="text-lg font-bold tracking-tight">AURA</span>
+          <span className="ml-1.5 text-[10px] text-muted-foreground font-medium tracking-wide">Risk Group</span>
+          <span className="ml-auto text-xs text-muted-foreground font-sans flex items-center gap-1">
             <Shield className="h-3 w-3" /> Secure Intake
           </span>
         </div>
@@ -2264,7 +2281,7 @@ export default function IntakeForm() {
       <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
         {/* Title */}
         <div className="text-center space-y-1">
-          <h1 className="text-3xl font-bold tracking-tight">Insurance Intake</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Start Your Insurance Review</h1>
         </div>
 
         {/* ─── Type Selector ─── */}
@@ -2319,6 +2336,8 @@ export default function IntakeForm() {
                     steps.push("loss_run_info");
                   }
                   steps.push("loss_run_consent");
+                } else if (commercialForm.has_current_insurance === "no") {
+                  steps.push("owner_experience");
                 }
                 steps.push("bor_auth");
                 steps.push("business_info");
@@ -2329,6 +2348,7 @@ export default function IntakeForm() {
               const commStepLabels: Record<CommercialStepKey, string> = {
                 industry: "Industry",
                 insurance_check: "Current Insurance",
+                owner_experience: "Experience",
                 upload_dec: "Upload Dec Pages",
                 loss_run_info: "Loss Run Details",
                 loss_run_consent: "Loss Run Consent",
@@ -2353,7 +2373,16 @@ export default function IntakeForm() {
                   if (!commercialForm.customer_email.trim() || !/^[\w.-]+@[\w.-]+\.\w+$/.test(commercialForm.customer_email.trim())) { toast.error("A valid email is required"); return false; }
                   if (!commercialForm.customer_phone.trim()) { toast.error("Phone number is required"); return false; }
                 }
-                // loss_run_info and loss_run_consent are optional — no validation required
+                return true;
+              };
+
+              // Passive check (no toasts) for greying out Continue
+              const isCommStepValid = (): boolean => {
+                if (commercialStep === "industry") return !!commercialForm.industry;
+                if (commercialStep === "insurance_check") return !!commercialForm.has_current_insurance;
+                if (commercialStep === "business_info") {
+                  return !!(commercialForm.business_name.trim() && commercialForm.customer_name.trim() && commercialForm.customer_email.trim() && /^[\w.-]+@[\w.-]+\.\w+$/.test(commercialForm.customer_email.trim()) && commercialForm.customer_phone.trim());
+                }
                 return true;
               };
 
@@ -2432,7 +2461,7 @@ export default function IntakeForm() {
                     <Card>
                       <CardHeader><CardTitle className="text-base">What industry is your business in?</CardTitle></CardHeader>
                       <CardContent className="space-y-4">
-                        <p className="text-sm text-muted-foreground">Select the category that best describes your business so we can tailor the right coverage.</p>
+                        <p className="text-sm text-muted-foreground">Select the category that best describes your business so we can tailor the underwriting and insurance review.</p>
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                           {COMMERCIAL_INDUSTRY_OPTIONS.map(ind => {
                             const sel = commercialForm.industry === ind.label;
@@ -2478,7 +2507,7 @@ export default function IntakeForm() {
                             <div><Label className="text-xs">Effective Date</Label><Input type="date" value={commercialForm.policy_effective_date} onChange={e => updateCommercial("policy_effective_date", e.target.value)} /></div>
                             <div><Label className="text-xs">Expiration Date</Label><Input type="date" value={commercialForm.policy_expiration_date} onChange={e => updateCommercial("policy_expiration_date", e.target.value)} /></div>
                             <div className="sm:col-span-2">
-                              <Label className="text-xs">Lines of Coverage In Force</Label>
+                              <Label className="text-xs">Current Policies</Label>
                               <div className="flex flex-wrap gap-2 mt-1">
                                 {COMMERCIAL_LINES.map(line => {
                                   const sel = commercialForm.lines_in_force.includes(line);
@@ -2501,7 +2530,7 @@ export default function IntakeForm() {
                     <Card>
                       <CardHeader><CardTitle className="text-base flex items-center gap-2"><Upload className="h-4 w-4" /> Upload Declaration Pages</CardTitle></CardHeader>
                       <CardContent className="space-y-4">
-                        <p className="text-sm text-muted-foreground">Upload your current declaration pages so we can review your existing coverage and request loss runs on your behalf.</p>
+                        <p className="text-sm text-muted-foreground">Upload your current declaration pages so we can review how your insurance is structured and request loss runs from your insurance carriers.</p>
                         <div
                           onDragOver={e => { e.preventDefault(); setDragActive(true); }}
                           onDragLeave={() => setDragActive(false)}
@@ -2525,7 +2554,7 @@ export default function IntakeForm() {
                             ))}
                           </div>
                         )}
-                        <p className="text-xs text-muted-foreground italic">If you don't have dec pages available, click Continue and we'll collect the information needed to request loss runs.</p>
+                        <p className="text-xs text-muted-foreground italic">If you do not have declaration pages available, click Continue and we will collect the information needed!</p>
                       </CardContent>
                     </Card>
                   )}
@@ -2706,6 +2735,72 @@ export default function IntakeForm() {
                     </div>
                   )}
 
+                  {commercialStep === "owner_experience" && (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-base">Ownership & Industry Experience</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-2">
+                          <p className="text-sm leading-relaxed">
+                            New businesses typically do not have prior insurance history. Insurance carriers will review the ownership and management team's experience when evaluating coverage.
+                          </p>
+                          <p className="text-sm leading-relaxed text-muted-foreground">
+                            You may upload a resume or provide a summary of your experience in this industry.
+                          </p>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label className="text-xs font-medium">Upload Resume (optional)</Label>
+                          <div
+                            onClick={() => {
+                              const inp = document.createElement("input");
+                              inp.type = "file";
+                              inp.accept = ".pdf,.doc,.docx,.txt";
+                              inp.onchange = (ev: any) => {
+                                const files = Array.from(ev.target.files || []) as File[];
+                                if (files.length > 0) {
+                                  setUploadedFiles(prev => [...prev, ...files.map(f => ({ file: f, category: "resume" }))]);
+                                  updateCommercial("owner_resume_files", [...commercialForm.owner_resume_files, ...files.map(f => f.name)]);
+                                }
+                              };
+                              inp.click();
+                            }}
+                            className="border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-colors border-border hover:border-primary/50"
+                          >
+                            <Upload className="h-6 w-6 mx-auto mb-1 text-muted-foreground" />
+                            <p className="text-sm font-medium">Click to upload resume</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">PDF, DOC, TXT accepted</p>
+                          </div>
+                          {uploadedFiles.filter(f => f.category === "resume").length > 0 && (
+                            <div className="space-y-1">
+                              {uploadedFiles.filter(f => f.category === "resume").map((uf, idx) => (
+                                <div key={idx} className="flex items-center gap-2 p-2 rounded-md border bg-muted/20">
+                                  <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+                                  <span className="text-xs truncate flex-1">{uf.file.name}</span>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label className="text-xs font-medium">Experience Summary (optional)</Label>
+                          <Textarea
+                            value={commercialForm.owner_resume_text}
+                            onChange={e => updateCommercial("owner_resume_text", e.target.value)}
+                            placeholder="Describe your experience in this industry — years of experience, relevant roles, certifications, etc."
+                            rows={5}
+                          />
+                          <p className="text-[10px] text-muted-foreground italic">
+                            AURA will help format your experience summary so it can be shared with insurance carriers during underwriting.
+                          </p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+
+
                   <div className="flex gap-3 pt-2">
                     {safeIdx === 0 ? (
                       <Button variant="outline" className="flex-1 h-11" onClick={() => setIntakeType(null)}>
@@ -2717,7 +2812,7 @@ export default function IntakeForm() {
                       </Button>
                     )}
                     {safeIdx < commSteps.length - 1 ? (
-                      <Button className="flex-1 h-11" onClick={commGoNext}>
+                      <Button className="flex-1 h-11" onClick={commGoNext} disabled={!isCommStepValid()}>
                         Continue <ChevronRight className="h-4 w-4 ml-1" />
                       </Button>
                     ) : (
@@ -2753,8 +2848,6 @@ export default function IntakeForm() {
 
         <div className="text-center pb-8 pt-4 space-y-1">
           <p className="text-[10px] text-muted-foreground">Your information is transmitted securely.</p>
-          <p className="text-[10px] text-muted-foreground/50 tracking-widest uppercase">Insurance runs on <span className="font-semibold">AURA</span></p>
-          <p className="text-[9px] text-muted-foreground/40">Automated Universal Risk Advisor</p>
         </div>
       </div>
     </div>

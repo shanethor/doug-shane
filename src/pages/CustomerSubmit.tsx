@@ -196,8 +196,6 @@ export default function CustomerSubmit() {
             <p className="text-[11px] text-muted-foreground font-sans">
               Your data is encrypted and securely transmitted. It will only be shared with your insurance agent.
             </p>
-            <p className="text-[10px] text-muted-foreground/50 tracking-widest uppercase">Insurance runs on <span className="font-semibold">AURA</span></p>
-            <p className="text-[9px] text-muted-foreground/40">Automated Universal Risk Advisor</p>
           </div>
         </form>
       </main>

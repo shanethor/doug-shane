@@ -326,8 +326,6 @@ export default function BorSign() {
           <p className="text-[10px] text-muted-foreground">
             This document is legally binding. A timestamp and signature will be recorded for compliance purposes.
           </p>
-          <p className="text-[10px] text-muted-foreground/50 tracking-widest uppercase">Insurance runs on <span className="font-semibold">AURA</span></p>
-          <p className="text-[9px] text-muted-foreground/40">Automated Universal Risk Advisor</p>
         </div>
       </div>
     </div>
