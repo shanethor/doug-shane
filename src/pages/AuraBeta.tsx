@@ -10,6 +10,13 @@ import { BETA_USERS, setBetaUser } from "@/lib/beta-users";
 
 const COMING_SOON_FEATURES = [
   {
+    category: "AURA Pulse",
+    items: [
+      { icon: HeartPulse, title: "AI Concierge", description: "AURA Pulse acts as your automated answering machine — captures client information, delivers intake forms, and syncs data directly into the sales pipeline." },
+      { icon: HeartPulse, title: "Team Discussion Boards", description: "Organize team conversations by topic, client, or project with threaded discussion boards." },
+    ],
+  },
+  {
     category: "Dashboard",
     items: [
       { icon: Mail, title: "Email-to-Intake", description: "Email client details via email and AURA will pre-fill everything before you arrive." },
@@ -23,12 +30,6 @@ const COMING_SOON_FEATURES = [
       { icon: Shield, title: "COI Generator", description: "Generate Certificates of Insurance with additional insured endorsements, holder information, and custom formatting per carrier requirements." },
       { icon: Sparkles, title: "AURA Smart Quote", description: "AI-powered quote simulator — model different coverage scenarios, compare carrier pricing, and generate professional coverage comparison sheets." },
       { icon: Upload, title: "Document Auto-Map", description: "Drop forms into Producer Hub to auto-map fields and extract data." },
-    ],
-  },
-  {
-    category: "AURA Pulse",
-    items: [
-      { icon: HeartPulse, title: "Team Communication Hub", description: "Send messages, organize team discussion boards and to-do lists, or hop on a video or voice call — all in one place." },
     ],
   },
   {
@@ -73,32 +74,63 @@ export default function AuraBeta() {
           </Badge>
         </div>
 
-        {/* Demo User Selector */}
-        <Card className="mb-12 border-primary/30 bg-primary/5">
-          <CardContent className="p-6 text-center space-y-4">
-            <p className="text-sm font-semibold">Demo the Communication Hub</p>
-            <p className="text-xs text-muted-foreground">Select a demo user to try real-time chat, shared to‑dos, voice and video.</p>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-              {Object.values(BETA_USERS).map((u) => (
-                <Button
-                  key={u.id}
-                  variant="outline"
-                  className="w-full sm:w-auto gap-2 h-11"
-                  onClick={() => loginAs(u.id)}
-                >
-                  <div className={`h-6 w-6 rounded-full ${u.avatarColor} flex items-center justify-center`}>
-                    <span className="text-[9px] font-bold text-white">{u.initials}</span>
-                  </div>
-                  Continue as {u.name}
-                </Button>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+        {/* AURA Pulse Demo Section — prominent at top */}
+        <div className="mb-12 space-y-4">
+          <div className="flex items-center gap-2 mb-1">
+            <HeartPulse className="h-5 w-5 text-primary" />
+            <h2 className="text-base font-bold tracking-tight">Demo AURA Pulse</h2>
+          </div>
+          <p className="text-xs text-muted-foreground max-w-md leading-relaxed">
+            AURA Pulse is your team's communication hub — real-time chat, shared to-dos, voice channels, and video calls, all in one place.
+          </p>
+          <Card className="border-primary/30 bg-primary/5">
+            <CardContent className="p-6 text-center space-y-4">
+              <p className="text-sm font-semibold">Choose a demo profile to enter AURA Pulse</p>
+              <p className="text-xs text-muted-foreground">
+                Try real-time chat, shared to-dos, voice &amp; video — synced across users.
+              </p>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                {Object.values(BETA_USERS).map((u) => (
+                  <Button
+                    key={u.id}
+                    variant="outline"
+                    className="w-full sm:w-auto gap-2 h-11"
+                    onClick={() => loginAs(u.id)}
+                  >
+                    <div className={`h-6 w-6 rounded-full ${u.avatarColor} flex items-center justify-center`}>
+                      <span className="text-[9px] font-bold text-white">{u.initials}</span>
+                    </div>
+                    Continue as {u.name}
+                  </Button>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
 
-        {/* Feature List */}
+          {/* Pulse coming soon items right below the demo card */}
+          <div className="space-y-2 pt-2">
+            {COMING_SOON_FEATURES.filter(c => c.category === "AURA Pulse").flatMap(c => c.items).map((item) => (
+              <Card key={item.title} className="border-dashed border-border/60 bg-muted/10">
+                <CardContent className="flex items-start gap-3 p-4">
+                  <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                    <item.icon className="h-4 w-4 text-primary" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-semibold">{item.title}</p>
+                      <Badge variant="outline" className="text-[8px] uppercase tracking-wider px-1.5 py-0 text-muted-foreground border-muted-foreground/30">Coming Soon</Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{item.description}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+
+        {/* Other Feature Categories */}
         <div className="space-y-8">
-          {COMING_SOON_FEATURES.map((category) => (
+          {COMING_SOON_FEATURES.filter(c => c.category !== "AURA Pulse").map((category) => (
             <div key={category.category}>
               <div className="flex items-center gap-2 mb-3">
                 <h2 className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">{category.category}</h2>
