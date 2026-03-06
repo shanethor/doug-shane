@@ -47,6 +47,7 @@ export default function Settings() {
   const [showKey, setShowKey] = useState(false);
   const [navTabCount, setNavTabCount] = useState(navConfig.tabCount);
   const [navSelectedIds, setNavSelectedIds] = useState<string[]>(navConfig.selectedTabIds);
+  const [timezone, setTimezone] = useState(Intl.DateTimeFormat().resolvedOptions().timeZone);
 
   // Email connections
   const [emailConnections, setEmailConnections] = useState<EmailConnection[]>([]);
