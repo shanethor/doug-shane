@@ -204,7 +204,7 @@ export default function LeadDetail() {
   };
 
   const handleLostSubmit = async () => {
-    if (!user || !leadId) return;
+    if (!user || !leadId || submittingLost) return;
     if (!lostReason.trim()) {
       toast.error("Please provide a reason");
       return;
