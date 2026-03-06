@@ -429,52 +429,83 @@ export default function AdminDashboard() {
         </TabsContent>
 
         {/* ── Users ── */}
-        <TabsContent value="users" className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">All Users</h2>
-            <Badge variant="outline" className="text-xs">{(adminUsers.length || profiles.length)} total</Badge>
-          </div>
-          <div className="grid gap-2">
-            {(adminUsers.length > 0 ? adminUsers : profiles.map((p: any) => ({
-              id: p.user_id,
-              email: p.from_email,
-              full_name: p.full_name,
-              agency_name: p.agency_name,
-              phone: p.phone,
-              roles: [],
-              primary_role: "producer",
-              created_at: p.created_at,
-              last_sign_in_at: null,
-              email_confirmed: true,
-              submission_count: 0,
-            }))).map((u: any) => (
-              <Card key={u.id}>
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <p className="font-medium text-sm">{u.full_name || "Unnamed User"}</p>
-                        {u.email_confirmed ? (
-                          <Badge variant="outline" className="text-[9px] text-success border-success/30">Verified</Badge>
-                        ) : (
-                          <Badge variant="outline" className="text-[9px] text-warning border-warning/30">Unverified</Badge>
+        <TabsContent value="users" className="space-y-6">
+          {/* Pending Approvals */}
+          {pendingUserCount > 0 && (
+            <div className="space-y-3">
+              <h2 className="text-lg font-semibold flex items-center gap-2">
+                Pending Approvals
+                <Badge variant="destructive" className="text-xs">{pendingUserCount}</Badge>
+              </h2>
+              <div className="grid gap-2">
+                {adminUsers.filter((u: any) => u.approval_status === "pending").map((u: any) => (
+                  <Card key={u.id} className="border-warning/30">
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="space-y-1 min-w-0">
+                          <p className="font-medium text-sm">{u.full_name || "Unnamed User"}</p>
+                          <p className="text-xs text-muted-foreground">{u.email}</p>
+                          <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                            <span>{u.agency_name || "No agency"}</span>
+                            <span>·</span>
+                            <span>Registered {new Date(u.created_at).toLocaleDateString()}</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <Select onValueChange={(role) => handleApproveUser(u.id, role)}>
+                            <SelectTrigger className="w-36 h-8 text-xs">
+                              <SelectValue placeholder="Approve as…" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="producer">Producer</SelectItem>
+                              <SelectItem value="manager">Manager</SelectItem>
+                              <SelectItem value="client_services">Client Services</SelectItem>
+                              <SelectItem value="admin">Admin</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* All Users */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold">All Users</h2>
+              <Badge variant="outline" className="text-xs">{adminUsers.filter((u: any) => u.approval_status !== "pending").length} active</Badge>
+            </div>
+            <div className="grid gap-2">
+              {adminUsers.filter((u: any) => u.approval_status !== "pending").map((u: any) => (
+                <Card key={u.id}>
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium text-sm">{u.full_name || "Unnamed User"}</p>
+                          {u.email_confirmed ? (
+                            <Badge variant="outline" className="text-[9px] text-success border-success/30">Verified</Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-[9px] text-warning border-warning/30">Unverified</Badge>
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground">{u.email || "No email"}</p>
+                        <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
+                          <span>{u.agency_name || "No agency"}</span>
+                          <span>·</span>
+                          <span>{u.submission_count} submissions</span>
+                          <span>·</span>
+                          <span>Joined {new Date(u.created_at).toLocaleDateString()}</span>
+                        </div>
+                        {u.last_sign_in_at && (
+                          <p className="text-[10px] text-muted-foreground/70">
+                            Last active: {new Date(u.last_sign_in_at).toLocaleString()}
+                          </p>
                         )}
                       </div>
-                      <p className="text-xs text-muted-foreground">{u.email || "No email"}</p>
-                      <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
-                        <span>{u.agency_name || "No agency"}</span>
-                        <span>·</span>
-                        <span>{u.submission_count} submissions</span>
-                        <span>·</span>
-                        <span>Joined {new Date(u.created_at).toLocaleDateString()}</span>
-                      </div>
-                      {u.last_sign_in_at && (
-                        <p className="text-[10px] text-muted-foreground/70">
-                          Last active: {new Date(u.last_sign_in_at).toLocaleString()}
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2">
                       <Select
                         value={u.primary_role || "producer"}
                         onValueChange={async (newRole) => {
@@ -504,13 +535,87 @@ export default function AdminDashboard() {
                         </SelectContent>
                       </Select>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-            {adminUsers.length === 0 && profiles.length === 0 && (
-              <p className="text-center text-muted-foreground text-sm py-8">No users yet.</p>
-            )}
+                  </CardContent>
+                </Card>
+              ))}
+              {adminUsers.length === 0 && profiles.length === 0 && (
+                <p className="text-center text-muted-foreground text-sm py-8">No users yet.</p>
+              )}
+            </div>
+          </div>
+        </TabsContent>
+
+        {/* ── Agencies ── */}
+        <TabsContent value="agencies" className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold">Agencies</h2>
+            <Badge variant="outline" className="text-xs">{agencies.length} total</Badge>
+          </div>
+
+          {/* Create new agency */}
+          <Card>
+            <CardContent className="p-4">
+              <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                Create New Agency
+              </h3>
+              <div className="flex gap-3 items-end flex-wrap">
+                <div className="flex-1 min-w-[180px] space-y-1">
+                  <label className="text-[11px] uppercase tracking-wider text-muted-foreground">Agency Name</label>
+                  <Input
+                    value={newAgencyName}
+                    onChange={(e) => setNewAgencyName(e.target.value)}
+                    placeholder="ABC Insurance"
+                    className="h-9"
+                  />
+                </div>
+                <div className="w-40 space-y-1">
+                  <label className="text-[11px] uppercase tracking-wider text-muted-foreground">Agency Code</label>
+                  <Input
+                    value={newAgencyCode}
+                    onChange={(e) => setNewAgencyCode(e.target.value.toUpperCase())}
+                    placeholder="ABC"
+                    className="h-9 uppercase font-mono tracking-wider"
+                  />
+                </div>
+                <Button
+                  onClick={handleCreateAgency}
+                  disabled={creatingAgency || !newAgencyName.trim() || !newAgencyCode.trim()}
+                  size="sm"
+                  className="h-9"
+                >
+                  {creatingAgency ? "Creating…" : "Create"}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Agency list */}
+          <div className="grid gap-2">
+            {agencies.map((a: any) => {
+              const agencyUsers = adminUsers.filter((u: any) => u.agency_id === a.id);
+              return (
+                <Card key={a.id}>
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <Building2 className="h-4 w-4 text-primary" />
+                          <p className="font-medium text-sm">{a.name}</p>
+                          <Badge variant="secondary" className="text-[10px] font-mono">{a.code}</Badge>
+                        </div>
+                        <p className="text-[11px] text-muted-foreground">
+                          {agencyUsers.length} member{agencyUsers.length !== 1 ? "s" : ""}
+                          {agencyUsers.length > 0 && (
+                            <span> · {agencyUsers.map((u: any) => u.full_name || u.email).join(", ")}</span>
+                          )}
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         </TabsContent>
 
