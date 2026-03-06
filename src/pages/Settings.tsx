@@ -230,7 +230,61 @@ export default function Settings() {
         </CardContent>
       </Card>
 
-      {/* Agency Info */}
+      {/* Timezone */}
+      <Card className="mb-4 sm:mb-6">
+        <CardHeader className="p-4 sm:p-6 pb-2 sm:pb-2">
+          <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+            <Globe className="h-4 w-4 text-primary" />
+            Timezone
+          </CardTitle>
+          <p className="text-xs text-muted-foreground mt-1">
+            All dates, calendar events, and scheduling use this timezone. Defaults to your browser's local time.
+          </p>
+        </CardHeader>
+        <CardContent className="p-4 sm:p-6 pt-2 sm:pt-2 space-y-3">
+          <Select value={timezone} onValueChange={setTimezone}>
+            <SelectTrigger className="w-full sm:w-80 h-11 sm:h-10">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="max-h-60">
+              {[
+                "America/New_York",
+                "America/Chicago",
+                "America/Denver",
+                "America/Los_Angeles",
+                "America/Anchorage",
+                "Pacific/Honolulu",
+                "America/Phoenix",
+                "America/Indiana/Indianapolis",
+                "America/Detroit",
+                "America/Boise",
+                "America/Juneau",
+                "America/Adak",
+                "US/Samoa",
+                "Pacific/Guam",
+              ].map((tz) => {
+                let label = tz.replace(/_/g, " ").replace("America/", "").replace("Pacific/", "").replace("US/", "");
+                try {
+                  const offset = new Intl.DateTimeFormat("en-US", { timeZone: tz, timeZoneName: "shortOffset" })
+                    .formatToParts(new Date())
+                    .find((p) => p.type === "timeZoneName")?.value || "";
+                  label = `${label} (${offset})`;
+                } catch {}
+                return (
+                  <SelectItem key={tz} value={tz}>
+                    {label}
+                  </SelectItem>
+                );
+              })}
+            </SelectContent>
+          </Select>
+          <Button onClick={handleSave} disabled={saving} size="sm" className="gap-2 h-9">
+            <Save className="h-3.5 w-3.5" />
+            {saving ? "Saving…" : "Save Timezone"}
+          </Button>
+        </CardContent>
+      </Card>
+
       <Card className="mb-4 sm:mb-6">
         <CardHeader className="p-4 sm:p-6 pb-2 sm:pb-2">
           <CardTitle className="text-base sm:text-lg flex items-center gap-2">
