@@ -72,16 +72,19 @@ export default function LeadDetail() {
   const [presentingModalOpen, setPresentingModalOpen] = useState(false);
   const [presentingLines, setPresentingLines] = useState<{ line_of_business: string; premium: string }[]>([{ line_of_business: "", premium: "" }]);
   const [presentingNotes, setPresentingNotes] = useState("");
+  const [submittingPresenting, setSubmittingPresenting] = useState(false);
 
   // Lost modal state
   const [lostModalOpen, setLostModalOpen] = useState(false);
   const [lostReason, setLostReason] = useState("");
   const [lostRenewalDate, setLostRenewalDate] = useState("");
+  const [submittingLost, setSubmittingLost] = useState(false);
 
   // Sold modal state
   const [soldModalOpen, setSoldModalOpen] = useState(false);
   const [soldPolicies, setSoldPolicies] = useState<{ carrier: string; line_of_business: string; policy_number: string; effective_date: string; annual_premium: string }[]>([{ carrier: "", line_of_business: "", policy_number: "", effective_date: "", annual_premium: "" }]);
   const [submittingSold, setSubmittingSold] = useState(false);
+  const [creatingRenewalEvent, setCreatingRenewalEvent] = useState<string | null>(null);
   const mountedRef = useRef(true);
   useEffect(() => { return () => { mountedRef.current = false; }; }, []);
 
@@ -157,12 +160,13 @@ export default function LeadDetail() {
   };
 
   const handlePresentingSubmit = async () => {
-    if (!user || !leadId) return;
+    if (!user || !leadId || submittingPresenting) return;
     const validLines = presentingLines.filter(l => l.line_of_business.trim() && l.premium);
     if (validLines.length === 0) {
       toast.error("Add at least one line of business with a premium");
       return;
     }
+    setSubmittingPresenting(true);
     try {
       const totalPremium = validLines.reduce((s, l) => s + (parseFloat(l.premium) || 0), 0);
       const details = {
@@ -195,11 +199,13 @@ export default function LeadDetail() {
       loadData();
     } catch (err: any) {
       toast.error(err.message || "Failed to update");
+    } finally {
+      setSubmittingPresenting(false);
     }
   };
 
   const handleLostSubmit = async () => {
-    if (!user || !leadId) return;
+    if (!user || !leadId || submittingLost) return;
     if (!lostReason.trim()) {
       toast.error("Please provide a reason");
       return;
@@ -208,6 +214,7 @@ export default function LeadDetail() {
       toast.error("Please provide an estimated renewal date");
       return;
     }
+    setSubmittingLost(true);
     try {
       await supabase
         .from("leads")
@@ -231,6 +238,8 @@ export default function LeadDetail() {
       loadData();
     } catch (err: any) {
       toast.error(err.message || "Failed to update");
+    } finally {
+      setSubmittingLost(false);
     }
   };
 
@@ -661,52 +670,57 @@ export default function LeadDetail() {
                         size="sm"
                         variant="outline"
                         className="gap-1.5 text-xs"
+                        disabled={creatingRenewalEvent === p.id}
                         onClick={async () => {
-                          // Auto-create renewal review event
-                          const { error } = await supabase.from("calendar_events").insert({
-                            user_id: user!.id,
-                            title: `Renewal Review — ${lead.account_name} (${p.line_of_business})`,
-                            event_type: "renewal_review" as any,
-                            start_time: new Date().toISOString(),
-                            end_time: new Date(Date.now() + 30 * 60000).toISOString(),
-                            description: `Policy ${p.policy_number} with ${p.carrier} renews on ${renewalDate.toLocaleDateString()}.\n\nPremium: $${Number(p.annual_premium).toLocaleString()}\n\n🔗 View in AURA: /pipeline/${leadId}`,
-                            lead_id: leadId,
-                            provider: "aura",
-                            status: "scheduled" as any,
-                          } as any);
-                          if (error) {
-                            toast.error("Failed to create renewal event");
-                          } else {
-                            toast.success("Renewal review event created on your calendar!");
-                            // Best-effort push to connected calendars
-                            try {
-                              const { getAuthHeaders } = await import("@/lib/auth-fetch");
-                              const headers = await getAuthHeaders();
-                              const { data: calendars } = await supabase
-                                .from("external_calendars")
-                                .select("provider")
-                                .eq("user_id", user!.id)
-                                .eq("is_active", true);
-                              for (const cal of calendars || []) {
-                                await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/calendar-sync`, {
-                                  method: "POST",
-                                  headers,
-                                  body: JSON.stringify({
-                                    action: "create_event",
-                                    provider: cal.provider,
-                                    title: `Renewal Review — ${lead.account_name} (${p.line_of_business})`,
-                                    start: new Date().toISOString(),
-                                    end: new Date(Date.now() + 30 * 60000).toISOString(),
-                                    description: `Policy ${p.policy_number} with ${p.carrier} renews on ${renewalDate.toLocaleDateString()}.`,
-                                  }),
-                                });
-                              }
-                            } catch { /* silent */ }
+                          if (creatingRenewalEvent) return;
+                          setCreatingRenewalEvent(p.id);
+                          try {
+                            const { error } = await supabase.from("calendar_events").insert({
+                              user_id: user!.id,
+                              title: `Renewal Review — ${lead.account_name} (${p.line_of_business})`,
+                              event_type: "renewal_review" as any,
+                              start_time: new Date().toISOString(),
+                              end_time: new Date(Date.now() + 30 * 60000).toISOString(),
+                              description: `Policy ${p.policy_number} with ${p.carrier} renews on ${renewalDate.toLocaleDateString()}.\n\nPremium: $${Number(p.annual_premium).toLocaleString()}\n\n🔗 View in AURA: /pipeline/${leadId}`,
+                              lead_id: leadId,
+                              provider: "aura",
+                              status: "scheduled" as any,
+                            } as any);
+                            if (error) {
+                              toast.error("Failed to create renewal event");
+                            } else {
+                              toast.success("Renewal review event created on your calendar!");
+                              try {
+                                const { getAuthHeaders } = await import("@/lib/auth-fetch");
+                                const headers = await getAuthHeaders();
+                                const { data: calendars } = await supabase
+                                  .from("external_calendars")
+                                  .select("provider")
+                                  .eq("user_id", user!.id)
+                                  .eq("is_active", true);
+                                for (const cal of calendars || []) {
+                                  await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/calendar-sync`, {
+                                    method: "POST",
+                                    headers,
+                                    body: JSON.stringify({
+                                      action: "create_event",
+                                      provider: cal.provider,
+                                      title: `Renewal Review — ${lead.account_name} (${p.line_of_business})`,
+                                      start: new Date().toISOString(),
+                                      end: new Date(Date.now() + 30 * 60000).toISOString(),
+                                      description: `Policy ${p.policy_number} with ${p.carrier} renews on ${renewalDate.toLocaleDateString()}.`,
+                                    }),
+                                  });
+                                }
+                              } catch { /* silent */ }
+                            }
+                          } finally {
+                            setCreatingRenewalEvent(null);
                           }
                         }}
                       >
                         <CalendarDays className="h-3.5 w-3.5" />
-                        Schedule Review
+                        {creatingRenewalEvent === p.id ? "Creating…" : "Schedule Review"}
                       </Button>
                     </div>
                   );
@@ -1122,7 +1136,9 @@ export default function LeadDetail() {
           </div>
           <div className="flex justify-end gap-2 mt-4">
             <Button variant="outline" onClick={() => setPresentingModalOpen(false)}>Cancel</Button>
-            <Button onClick={handlePresentingSubmit}>Move to Presenting</Button>
+            <Button onClick={handlePresentingSubmit} disabled={submittingPresenting}>
+              {submittingPresenting ? "Saving…" : "Move to Presenting"}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -1155,7 +1171,9 @@ export default function LeadDetail() {
           </div>
           <div className="flex justify-end gap-2 mt-4">
             <Button variant="outline" onClick={() => setLostModalOpen(false)}>Cancel</Button>
-            <Button variant="destructive" onClick={handleLostSubmit}>Mark as Lost</Button>
+            <Button variant="destructive" onClick={handleLostSubmit} disabled={submittingLost}>
+              {submittingLost ? "Saving…" : "Mark as Lost"}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

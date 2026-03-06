@@ -155,12 +155,14 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
     { line_of_business: "", premium: "" },
   ]);
   const [presentingNotes, setPresentingNotes] = useState("");
+  const [submittingPresenting, setSubmittingPresenting] = useState(false);
 
   // Lost modal state
   const [lostModalOpen, setLostModalOpen] = useState(false);
   const [lostLeadId, setLostLeadId] = useState<string | null>(null);
   const [lostReason, setLostReason] = useState("");
   const [lostRenewalDate, setLostRenewalDate] = useState("");
+  const [submittingLost, setSubmittingLost] = useState(false);
 
 
   // Schedule presentation state
@@ -502,12 +504,13 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
   };
 
   const handlePresentingSubmit = async () => {
-    if (!user || !presentingLeadId) return;
+    if (!user || !presentingLeadId || submittingPresenting) return;
     const validLines = presentingLines.filter(l => l.line_of_business.trim() && l.premium);
     if (validLines.length === 0) {
       toast.error("Add at least one line of business with a premium");
       return;
     }
+    setSubmittingPresenting(true);
     try {
       const totalPremium = validLines.reduce((s, l) => s + (parseFloat(l.premium) || 0), 0);
       const details = {
@@ -543,11 +546,13 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
       loadLeads();
     } catch (err: any) {
       toast.error(err.message || "Failed to update");
+    } finally {
+      setSubmittingPresenting(false);
     }
   };
 
   const handleLostSubmit = async () => {
-    if (!user || !lostLeadId) return;
+    if (!user || !lostLeadId || submittingLost) return;
     if (!lostReason.trim()) {
       toast.error("Please provide a reason");
       return;
@@ -556,6 +561,7 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
       toast.error("Please provide an estimated renewal date");
       return;
     }
+    setSubmittingLost(true);
     try {
       await supabase
         .from("leads")
@@ -580,6 +586,8 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
       loadLeads();
     } catch (err: any) {
       toast.error(err.message || "Failed to update");
+    } finally {
+      setSubmittingLost(false);
     }
   };
 
@@ -1410,7 +1418,9 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { setLostModalOpen(false); setLostLeadId(null); }}>Cancel</Button>
-            <Button variant="destructive" onClick={handleLostSubmit} disabled={!lostReason.trim()}>Mark as Lost</Button>
+            <Button variant="destructive" onClick={handleLostSubmit} disabled={!lostReason.trim() || submittingLost}>
+              {submittingLost ? "Saving…" : "Mark as Lost"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -1535,8 +1545,8 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
           </p>
           <div className="space-y-3 mt-2 max-h-[40vh] overflow-y-auto">
             {presentingLines.map((line, i) => (
-              <div key={i} className="grid grid-cols-[1fr_120px_32px] gap-2 items-end">
-                <div>
+              <div key={i} className="flex gap-2 items-end">
+                <div className="flex-1 min-w-0">
                   {i === 0 && <Label className="text-xs">Line of Business</Label>}
                   <Input
                     value={line.line_of_business}
@@ -1548,7 +1558,7 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
                     placeholder="e.g. General Liability"
                   />
                 </div>
-                <div>
+                <div className="w-28 shrink-0">
                   {i === 0 && <Label className="text-xs">Premium</Label>}
                   <Input
                     type="number"
@@ -1617,8 +1627,8 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
             <Button variant="outline" onClick={() => { setPresentingModalOpen(false); setPresentingLeadId(null); }}>
               Cancel
             </Button>
-            <Button onClick={handlePresentingSubmit}>
-              Move to Presenting
+            <Button onClick={handlePresentingSubmit} disabled={submittingPresenting}>
+              {submittingPresenting ? "Saving…" : "Move to Presenting"}
             </Button>
           </DialogFooter>
         </DialogContent>
