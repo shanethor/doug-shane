@@ -534,7 +534,23 @@ export default function AdminDashboard() {
                           </p>
                         )}
                       </div>
-                      <Select
+                      <div className="flex items-center gap-2 shrink-0 flex-wrap">
+                        <Select
+                          value={u.agency_id || "none"}
+                          onValueChange={(val) => {
+                            if (val !== "none") handleChangeAgency(u.id, val);
+                          }}
+                        >
+                          <SelectTrigger className="w-40 h-8 text-xs">
+                            <SelectValue placeholder="Set agency" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none" disabled>No agency</SelectItem>
+                            {agencies.map((a: any) => (
+                              <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                         value={u.primary_role || "producer"}
                         onValueChange={async (newRole) => {
                           const { data, error } = await supabase.functions.invoke("update-user-role", {
