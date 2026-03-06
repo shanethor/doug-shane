@@ -217,6 +217,24 @@ export default function AdminDashboard() {
     );
   };
 
+  const handleChangeAgency = async (userId: string, agencyId: string) => {
+    const agency = agencies.find((a: any) => a.id === agencyId);
+    const { error } = await supabase
+      .from("profiles")
+      .update({ agency_id: agencyId })
+      .eq("user_id", userId);
+    if (error) {
+      toast.error("Failed to update agency");
+      return;
+    }
+    toast.success(`Agency updated to ${agency?.name || "Unknown"}`);
+    setAdminUsers((prev) =>
+      prev.map((u: any) =>
+        u.id === userId ? { ...u, agency_id: agencyId, agency_name: agency?.name } : u
+      )
+    );
+  };
+
   const handleCreateAgency = async () => {
     if (!newAgencyName.trim() || !newAgencyCode.trim()) {
       toast.error("Agency name and code are required");
@@ -451,7 +469,17 @@ export default function AdminDashboard() {
                             <span>Registered {new Date(u.created_at).toLocaleDateString()}</span>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2 shrink-0">
+                        <div className="flex items-center gap-2 shrink-0 flex-wrap">
+                          <Select onValueChange={(agencyId) => handleChangeAgency(u.id, agencyId)} value={u.agency_id || ""}>
+                            <SelectTrigger className="w-40 h-8 text-xs">
+                              <SelectValue placeholder="Set agency…" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {agencies.map((a: any) => (
+                                <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                           <Select onValueChange={(role) => handleApproveUser(u.id, role)}>
                             <SelectTrigger className="w-36 h-8 text-xs">
                               <SelectValue placeholder="Approve as…" />
@@ -506,34 +534,52 @@ export default function AdminDashboard() {
                           </p>
                         )}
                       </div>
-                      <Select
-                        value={u.primary_role || "producer"}
-                        onValueChange={async (newRole) => {
-                          const { data, error } = await supabase.functions.invoke("update-user-role", {
-                            body: { target_user_id: u.id, new_role: newRole },
-                          });
-                          if (error || data?.error) {
-                            toast.error(data?.error || "Failed to update role");
-                            return;
-                          }
-                          toast.success(`Role updated to ${newRole}`);
-                          setAdminUsers((prev) =>
-                            prev.map((au: any) =>
-                              au.id === u.id ? { ...au, primary_role: newRole, roles: [newRole] } : au
-                            )
-                          );
-                        }}
-                      >
-                        <SelectTrigger className="w-36 h-8 text-xs">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="admin">Admin</SelectItem>
-                          <SelectItem value="producer">Producer</SelectItem>
-                          <SelectItem value="manager">Manager</SelectItem>
-                          <SelectItem value="client_services">Client Services</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <div className="flex items-center gap-2 shrink-0 flex-wrap">
+                        <Select
+                          value={u.agency_id || "none"}
+                          onValueChange={(val) => {
+                            if (val !== "none") handleChangeAgency(u.id, val);
+                          }}
+                        >
+                          <SelectTrigger className="w-40 h-8 text-xs">
+                            <SelectValue placeholder="Set agency" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none" disabled>No agency</SelectItem>
+                            {agencies.map((a: any) => (
+                              <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Select
+                          value={u.primary_role || "producer"}
+                          onValueChange={async (newRole) => {
+                            const { data, error } = await supabase.functions.invoke("update-user-role", {
+                              body: { target_user_id: u.id, new_role: newRole },
+                            });
+                            if (error || data?.error) {
+                              toast.error(data?.error || "Failed to update role");
+                              return;
+                            }
+                            toast.success(`Role updated to ${newRole}`);
+                            setAdminUsers((prev) =>
+                              prev.map((au: any) =>
+                                au.id === u.id ? { ...au, primary_role: newRole, roles: [newRole] } : au
+                              )
+                            );
+                          }}
+                        >
+                          <SelectTrigger className="w-36 h-8 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="admin">Admin</SelectItem>
+                            <SelectItem value="producer">Producer</SelectItem>
+                            <SelectItem value="manager">Manager</SelectItem>
+                            <SelectItem value="client_services">Client Services</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
