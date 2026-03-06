@@ -78,6 +78,7 @@ export default function LeadDetail() {
   const [lostModalOpen, setLostModalOpen] = useState(false);
   const [lostReason, setLostReason] = useState("");
   const [lostRenewalDate, setLostRenewalDate] = useState("");
+  const [submittingLost, setSubmittingLost] = useState(false);
 
   // Sold modal state
   const [soldModalOpen, setSoldModalOpen] = useState(false);
