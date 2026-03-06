@@ -1130,7 +1130,9 @@ export default function LeadDetail() {
           </div>
           <div className="flex justify-end gap-2 mt-4">
             <Button variant="outline" onClick={() => setPresentingModalOpen(false)}>Cancel</Button>
-            <Button onClick={handlePresentingSubmit}>Move to Presenting</Button>
+            <Button onClick={handlePresentingSubmit} disabled={submittingPresenting}>
+              {submittingPresenting ? "Saving…" : "Move to Presenting"}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
