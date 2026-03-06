@@ -72,6 +72,7 @@ export default function LeadDetail() {
   const [presentingModalOpen, setPresentingModalOpen] = useState(false);
   const [presentingLines, setPresentingLines] = useState<{ line_of_business: string; premium: string }[]>([{ line_of_business: "", premium: "" }]);
   const [presentingNotes, setPresentingNotes] = useState("");
+  const [submittingPresenting, setSubmittingPresenting] = useState(false);
 
   // Lost modal state
   const [lostModalOpen, setLostModalOpen] = useState(false);
