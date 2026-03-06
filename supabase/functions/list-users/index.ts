@@ -18,7 +18,7 @@ Deno.serve(async (req) => {
       { global: { headers: { authorization: authHeader } } }
     );
 
-    // Resolve caller user id from JWT payload (DB still validates JWT signature)
+    // Resolve caller user id from JWT payload
     const token = authHeader.replace("Bearer ", "");
     let userId: string | null = null;
 
@@ -84,13 +84,17 @@ Deno.serve(async (req) => {
 
     const result = users.map((u: any) => {
       const profile = profileMap.get(u.id) as any;
+      const userRoles = roleMap.get(u.id) || [];
+      // Primary role: first non-'user' role, or 'producer' as default
+      const primaryRole = userRoles.find(r => r !== 'user') || (userRoles.includes('user') ? 'producer' : 'producer');
       return {
         id: u.id,
         email: u.email,
         full_name: profile?.full_name || u.user_metadata?.full_name || null,
         agency_name: profile?.agency_name || null,
         phone: profile?.phone || null,
-        roles: roleMap.get(u.id) || ["user"],
+        roles: userRoles,
+        primary_role: primaryRole,
         created_at: u.created_at,
         last_sign_in_at: u.last_sign_in_at,
         email_confirmed: !!u.email_confirmed_at,
