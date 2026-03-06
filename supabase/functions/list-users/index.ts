@@ -61,9 +61,10 @@ Deno.serve(async (req) => {
     const { data: { users }, error } = await adminClient.auth.admin.listUsers({ perPage: 200 });
     if (error) throw error;
 
-    // Get profiles
+    // Get profiles and agencies
     const { data: profiles } = await adminClient.from("profiles").select("*");
     const { data: roles } = await adminClient.from("user_roles").select("*");
+    const { data: agencies } = await adminClient.from("agencies").select("*");
     const { data: submissions } = await adminClient
       .from("business_submissions")
       .select("user_id");
@@ -75,6 +76,7 @@ Deno.serve(async (req) => {
     });
 
     const profileMap = new Map((profiles ?? []).map((p: any) => [p.user_id, p]));
+    const agencyMap = new Map((agencies ?? []).map((a: any) => [a.id, a]));
     const roleMap = new Map<string, string[]>();
     (roles ?? []).forEach((r: any) => {
       const arr = roleMap.get(r.user_id) || [];
@@ -85,16 +87,18 @@ Deno.serve(async (req) => {
     const result = users.map((u: any) => {
       const profile = profileMap.get(u.id) as any;
       const userRoles = roleMap.get(u.id) || [];
-      // Primary role: first non-'user' role, or 'producer' as default
       const primaryRole = userRoles.find(r => r !== 'user') || (userRoles.includes('user') ? 'producer' : 'producer');
+      const agency = profile?.agency_id ? agencyMap.get(profile.agency_id) : null;
       return {
         id: u.id,
         email: u.email,
         full_name: profile?.full_name || u.user_metadata?.full_name || null,
-        agency_name: profile?.agency_name || null,
+        agency_name: (agency as any)?.name || profile?.agency_name || null,
+        agency_id: profile?.agency_id || null,
         phone: profile?.phone || null,
         roles: userRoles,
         primary_role: primaryRole,
+        approval_status: profile?.approval_status || "approved",
         created_at: u.created_at,
         last_sign_in_at: u.last_sign_in_at,
         email_confirmed: !!u.email_confirmed_at,

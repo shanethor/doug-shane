@@ -21,6 +21,7 @@ import { buildAutofilledData, buildAutofilledDataWithAI } from "@/lib/acord-auto
 import { generateAcordPdfAsync } from "@/lib/pdf-generator";
 import { generateSubmissionPackage } from "@/lib/submission-package";
 import { useAuth } from "@/hooks/useAuth";
+import { useUserRole } from "@/hooks/useUserRole";
 import { getAuthHeaders } from "@/lib/auth-fetch";
 import { useVoiceInput } from "@/hooks/useVoiceInput";
 import { useTrainingMode } from "@/hooks/useTrainingMode";
@@ -345,6 +346,7 @@ export default function Chat() {
   const { toast } = useToast();
   const { user } = useAuth();
   const { trainingMode } = useTrainingMode();
+  const { role, isClientServices } = useUserRole();
   const navigate = useNavigate();
   const location = useLocation();
   const [reviewSubmissionId, setReviewSubmissionId] = useState<string | null>(null);
@@ -2031,8 +2033,8 @@ export default function Chat() {
         <div ref={scrollRef} className="flex-1 overflow-y-auto">
           {isEmpty ? (
             <div className="flex flex-col items-center min-h-full gap-6 px-4 pt-4 md:pt-[12vh] animate-fade-in">
-              {/* Production Scoreboard */}
-              {user && (
+              {/* Production Scoreboard — hidden for Client Services */}
+              {user && !isClientServices && (
                 <div className="w-full max-w-2xl">
                   <ProductionScoreboard
                     userId={user.id}
