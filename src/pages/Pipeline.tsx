@@ -1418,7 +1418,9 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { setLostModalOpen(false); setLostLeadId(null); }}>Cancel</Button>
-            <Button variant="destructive" onClick={handleLostSubmit} disabled={!lostReason.trim()}>Mark as Lost</Button>
+            <Button variant="destructive" onClick={handleLostSubmit} disabled={!lostReason.trim() || submittingLost}>
+              {submittingLost ? "Saving…" : "Mark as Lost"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
