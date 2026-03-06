@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { Navigate } from "react-router-dom";
+import { useUserRole } from "@/hooks/useUserRole";
 import { AppLayout } from "@/components/AppLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
@@ -155,7 +157,13 @@ function ComingSoonPanel({ tool }: { tool: ToolTab }) {
 }
 
 export default function ProducerHub() {
+  const { isClientServices } = useUserRole();
   const [activeTab, setActiveTab] = useState("pipeline");
+
+  // Client Services users cannot access Producer Hub
+  if (isClientServices) {
+    return <Navigate to="/" replace />;
+  }
 
   return (
     <AppLayout>

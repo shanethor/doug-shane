@@ -267,6 +267,66 @@ export type Database = {
           },
         ]
       }
+      client_service_assignments: {
+        Row: {
+          client_service_user_id: string
+          created_at: string
+          id: string
+          producer_user_id: string
+          scope: string
+        }
+        Insert: {
+          client_service_user_id: string
+          created_at?: string
+          id?: string
+          producer_user_id: string
+          scope?: string
+        }
+        Update: {
+          client_service_user_id?: string
+          created_at?: string
+          id?: string
+          producer_user_id?: string
+          scope?: string
+        }
+        Relationships: []
+      }
+      client_service_clients: {
+        Row: {
+          assignment_id: string
+          created_at: string
+          id: string
+          lead_id: string
+        }
+        Insert: {
+          assignment_id: string
+          created_at?: string
+          id?: string
+          lead_id: string
+        }
+        Update: {
+          assignment_id?: string
+          created_at?: string
+          id?: string
+          lead_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_service_clients_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "client_service_assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_service_clients_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       custom_form_templates: {
         Row: {
           created_at: string
@@ -1033,6 +1093,27 @@ export type Database = {
           },
         ]
       }
+      manager_producer_assignments: {
+        Row: {
+          created_at: string
+          id: string
+          manager_user_id: string
+          producer_user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          manager_user_id: string
+          producer_user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          manager_user_id?: string
+          producer_user_id?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           body: string | null
@@ -1544,6 +1625,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_accessible_lead_ids: { Args: { _user_id: string }; Returns: string[] }
+      get_user_role: { Args: { _user_id: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1557,7 +1640,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "user"
+      app_role: "admin" | "user" | "producer" | "manager" | "client_services"
       calendar_event_status: "scheduled" | "completed" | "cancelled" | "no_show"
       calendar_event_type:
         | "presentation"
@@ -1703,7 +1786,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "user"],
+      app_role: ["admin", "user", "producer", "manager", "client_services"],
       calendar_event_status: ["scheduled", "completed", "cancelled", "no_show"],
       calendar_event_type: [
         "presentation",

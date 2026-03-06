@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { useAdmin } from "@/hooks/useAdmin";
+import { useUserRole } from "@/hooks/useUserRole";
 import { useUnreadCount } from "@/hooks/useUnreadCount";
 import { useNavConfig, ALL_NAV_TABS } from "@/hooks/useNavConfig";
 import {
@@ -33,21 +33,27 @@ const ICON_MAP: Record<string, any> = {
 
 export function MobileBottomNav() {
   const location = useLocation();
-  const { isAdmin } = useAdmin();
+  const { canSeeProducerHub, canSeeAdmin } = useUserRole();
   const { signOut } = useAuth();
   const { trainingMode, setTrainingMode } = useTrainingMode();
   const unreadCount = useUnreadCount();
   const { config } = useNavConfig();
   const [moreOpen, setMoreOpen] = useState(false);
 
+  // Filter tabs based on role
+  const allowedTabs = ALL_NAV_TABS.filter((t) => {
+    if (t.id === "hub" && !canSeeProducerHub) return false;
+    return true;
+  });
+
   const visibleTabs = config.selectedTabIds
     .slice(0, config.tabCount)
-    .map((id) => ALL_NAV_TABS.find((t) => t.id === id))
+    .map((id) => allowedTabs.find((t) => t.id === id))
     .filter(Boolean) as typeof ALL_NAV_TABS;
 
-  const hiddenTabIds = new Set(ALL_NAV_TABS.map((t) => t.id));
+  const hiddenTabIds = new Set(allowedTabs.map((t) => t.id));
   visibleTabs.forEach((t) => hiddenTabIds.delete(t.id));
-  const hiddenTabs = ALL_NAV_TABS.filter((t) => hiddenTabIds.has(t.id));
+  const hiddenTabs = allowedTabs.filter((t) => hiddenTabIds.has(t.id));
 
   const isActive = (to: string) => location.pathname === to;
   const moreRoutes = ["/admin", "/settings", ...hiddenTabs.map((t) => t.to)];
@@ -122,7 +128,7 @@ export function MobileBottomNav() {
 
             {hiddenTabs.length > 0 && <div className="border-t my-2" />}
 
-            {isAdmin && (
+            {canSeeAdmin && (
               <Link
                 to="/admin"
                 onClick={() => setMoreOpen(false)}

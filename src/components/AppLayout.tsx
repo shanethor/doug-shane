@@ -1,6 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { useAdmin } from "@/hooks/useAdmin";
+import { useUserRole } from "@/hooks/useUserRole";
 import { useUnreadCount } from "@/hooks/useUnreadCount";
 import { LogOut, ShieldCheck, MessageCircle, HelpCircle, GitBranch, Settings, Mail, HeartPulse } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,7 @@ import { MobileBottomNav } from "@/components/MobileBottomNav";
 
 export function AppLayout({ children, onLogoClick }: { children: React.ReactNode; onLogoClick?: () => void }) {
   const { signOut } = useAuth();
-  const { isAdmin } = useAdmin();
+  const { canSeeProducerHub, canSeeAdmin } = useUserRole();
   const location = useLocation();
   const { trainingMode, setTrainingMode } = useTrainingMode();
   const unreadCount = useUnreadCount();
@@ -19,10 +19,8 @@ export function AppLayout({ children, onLogoClick }: { children: React.ReactNode
     { to: "/", label: "AURA", icon: MessageCircle },
     { to: "/email", label: "Email", icon: Mail },
     { to: "/pulse", label: "Pulse", icon: HeartPulse },
-    { to: "/hub", label: "Producer Hub", icon: GitBranch },
-    ...(isAdmin ? [
-      { to: "/admin", label: "Admin", icon: ShieldCheck },
-    ] : []),
+    ...(canSeeProducerHub ? [{ to: "/hub", label: "Producer Hub", icon: GitBranch }] : []),
+    ...(canSeeAdmin ? [{ to: "/admin", label: "Admin", icon: ShieldCheck }] : []),
     { to: "/settings", label: "Settings", icon: Settings },
   ];
 
