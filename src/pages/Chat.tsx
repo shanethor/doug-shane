@@ -21,6 +21,7 @@ import { buildAutofilledData, buildAutofilledDataWithAI } from "@/lib/acord-auto
 import { generateAcordPdfAsync } from "@/lib/pdf-generator";
 import { generateSubmissionPackage } from "@/lib/submission-package";
 import { useAuth } from "@/hooks/useAuth";
+import { useUserRole } from "@/hooks/useUserRole";
 import { getAuthHeaders } from "@/lib/auth-fetch";
 import { useVoiceInput } from "@/hooks/useVoiceInput";
 import { useTrainingMode } from "@/hooks/useTrainingMode";
