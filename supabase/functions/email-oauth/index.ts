@@ -64,7 +64,7 @@ serve(async (req) => {
             status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         }
-        const scopes = "openid email Mail.Read Mail.Send Calendars.ReadWrite offline_access";
+        const scopes = "openid email profile User.Read Mail.Read Mail.Send Calendars.ReadWrite offline_access";
         const url = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirect_uri)}&response_type=code&scope=${encodeURIComponent(scopes)}`;
         return new Response(JSON.stringify({ url }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -161,7 +161,7 @@ serve(async (req) => {
             client_secret: clientSecret,
             redirect_uri: redirect_uri,
             grant_type: "authorization_code",
-            scope: "openid email Mail.Read Mail.Send Calendars.ReadWrite offline_access",
+            scope: "openid email profile User.Read Mail.Read Mail.Send Calendars.ReadWrite offline_access",
           }),
         });
         tokenData = await tokenResp.json();
@@ -177,12 +177,36 @@ serve(async (req) => {
           });
         }
 
-        // Get user email from Microsoft Graph
-        const meResp = await fetch("https://graph.microsoft.com/v1.0/me", {
+        // Get user email from Microsoft Graph (requires User.Read)
+        let email: string | null = null;
+        const meResp = await fetch("https://graph.microsoft.com/v1.0/me?$select=mail,userPrincipalName", {
           headers: { Authorization: `Bearer ${tokenData.access_token}` },
         });
-        const me = await meResp.json();
-        const email = me.mail || me.userPrincipalName;
+
+        if (meResp.ok) {
+          const me = await meResp.json();
+          email = me.mail || me.userPrincipalName || null;
+        } else {
+          const meErr = await meResp.text();
+          console.error("Microsoft Graph /me error:", meResp.status, meErr);
+        }
+
+        // Fallback to id_token claims if /me doesn't provide an email
+        if (!email && tokenData.id_token) {
+          try {
+            const [, payload] = tokenData.id_token.split(".");
+            const decoded = JSON.parse(atob(payload));
+            email = decoded.email || decoded.preferred_username || decoded.upn || null;
+          } catch (decodeErr) {
+            console.error("Failed to decode Microsoft id_token", decodeErr);
+          }
+        }
+
+        if (!email) {
+          return new Response(JSON.stringify({ error: "Failed to resolve Microsoft account email. Ensure User.Read delegated permission is granted with admin consent." }), {
+            status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
 
         const expiresAt = new Date(Date.now() + (tokenData.expires_in || 3600) * 1000).toISOString();
 
