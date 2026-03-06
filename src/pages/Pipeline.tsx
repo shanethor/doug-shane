@@ -1546,7 +1546,7 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
           <div className="space-y-3 mt-2 max-h-[40vh] overflow-y-auto">
             {presentingLines.map((line, i) => (
               <div key={i} className="flex gap-2 items-end">
-                <div>
+                <div className="flex-1 min-w-0">
                   {i === 0 && <Label className="text-xs">Line of Business</Label>}
                   <Input
                     value={line.line_of_business}
@@ -1558,7 +1558,7 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
                     placeholder="e.g. General Liability"
                   />
                 </div>
-                <div>
+                <div className="w-28 shrink-0">
                   {i === 0 && <Label className="text-xs">Premium</Label>}
                   <Input
                     type="number"
