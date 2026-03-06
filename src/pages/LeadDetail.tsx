@@ -1165,7 +1165,9 @@ export default function LeadDetail() {
           </div>
           <div className="flex justify-end gap-2 mt-4">
             <Button variant="outline" onClick={() => setLostModalOpen(false)}>Cancel</Button>
-            <Button variant="destructive" onClick={handleLostSubmit}>Mark as Lost</Button>
+            <Button variant="destructive" onClick={handleLostSubmit} disabled={submittingLost}>
+              {submittingLost ? "Saving…" : "Mark as Lost"}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
