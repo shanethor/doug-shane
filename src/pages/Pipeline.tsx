@@ -155,12 +155,14 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
     { line_of_business: "", premium: "" },
   ]);
   const [presentingNotes, setPresentingNotes] = useState("");
+  const [submittingPresenting, setSubmittingPresenting] = useState(false);
 
   // Lost modal state
   const [lostModalOpen, setLostModalOpen] = useState(false);
   const [lostLeadId, setLostLeadId] = useState<string | null>(null);
   const [lostReason, setLostReason] = useState("");
   const [lostRenewalDate, setLostRenewalDate] = useState("");
+  const [submittingLost, setSubmittingLost] = useState(false);
 
 
   // Schedule presentation state
