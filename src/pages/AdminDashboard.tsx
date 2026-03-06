@@ -389,6 +389,7 @@ export default function AdminDashboard() {
               agency_name: p.agency_name,
               phone: p.phone,
               roles: [],
+              primary_role: "producer",
               created_at: p.created_at,
               last_sign_in_at: null,
               email_confirmed: true,
@@ -400,9 +401,6 @@ export default function AdminDashboard() {
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
                         <p className="font-medium text-sm">{u.full_name || "Unnamed User"}</p>
-                        {u.roles?.includes("admin") && (
-                          <Badge className="text-[9px] bg-primary/10 text-primary border-0">Admin</Badge>
-                        )}
                         {u.email_confirmed ? (
                           <Badge variant="outline" className="text-[9px] text-success border-success/30">Verified</Badge>
                         ) : (
@@ -422,6 +420,36 @@ export default function AdminDashboard() {
                           Last active: {new Date(u.last_sign_in_at).toLocaleString()}
                         </p>
                       )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Select
+                        value={u.primary_role || "producer"}
+                        onValueChange={async (newRole) => {
+                          const { data, error } = await supabase.functions.invoke("update-user-role", {
+                            body: { target_user_id: u.id, new_role: newRole },
+                          });
+                          if (error || data?.error) {
+                            toast.error(data?.error || "Failed to update role");
+                            return;
+                          }
+                          toast.success(`Role updated to ${newRole}`);
+                          setAdminUsers((prev) =>
+                            prev.map((au: any) =>
+                              au.id === u.id ? { ...au, primary_role: newRole, roles: [newRole] } : au
+                            )
+                          );
+                        }}
+                      >
+                        <SelectTrigger className="w-36 h-8 text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="admin">Admin</SelectItem>
+                          <SelectItem value="producer">Producer</SelectItem>
+                          <SelectItem value="manager">Manager</SelectItem>
+                          <SelectItem value="client_services">Client Services</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
                 </CardContent>
