@@ -76,6 +76,7 @@ Deno.serve(async (req) => {
     });
 
     const profileMap = new Map((profiles ?? []).map((p: any) => [p.user_id, p]));
+    const agencyMap = new Map((agencies ?? []).map((a: any) => [a.id, a]));
     const roleMap = new Map<string, string[]>();
     (roles ?? []).forEach((r: any) => {
       const arr = roleMap.get(r.user_id) || [];
