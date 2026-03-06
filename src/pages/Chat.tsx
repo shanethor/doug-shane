@@ -1419,8 +1419,14 @@ export default function Chat() {
 
     try {
       // Inject current date + recent leads context for calendar/pipeline actions
+      // Use local date parts (not toISOString which is UTC and can shift the day)
       const today = new Date();
-      const dateContext = `[CONTEXT: Today is ${today.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })} (${today.toISOString().split("T")[0]}). Current time is ${today.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true })}]`;
+      const localYear = today.getFullYear();
+      const localMonth = String(today.getMonth() + 1).padStart(2, "0");
+      const localDay = String(today.getDate()).padStart(2, "0");
+      const localIsoDate = `${localYear}-${localMonth}-${localDay}`;
+      const userTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const dateContext = `[CONTEXT: Today is ${today.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })} (${localIsoDate}). Current time is ${today.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true })}. User timezone: ${userTz}]`;
       
       // Fetch recent leads so the AI can resolve "my most recent client", etc.
       let leadsContext = "";
