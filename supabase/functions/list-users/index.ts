@@ -61,9 +61,10 @@ Deno.serve(async (req) => {
     const { data: { users }, error } = await adminClient.auth.admin.listUsers({ perPage: 200 });
     if (error) throw error;
 
-    // Get profiles
+    // Get profiles and agencies
     const { data: profiles } = await adminClient.from("profiles").select("*");
     const { data: roles } = await adminClient.from("user_roles").select("*");
+    const { data: agencies } = await adminClient.from("agencies").select("*");
     const { data: submissions } = await adminClient
       .from("business_submissions")
       .select("user_id");
