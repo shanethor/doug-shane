@@ -84,6 +84,7 @@ export default function LeadDetail() {
   const [soldModalOpen, setSoldModalOpen] = useState(false);
   const [soldPolicies, setSoldPolicies] = useState<{ carrier: string; line_of_business: string; policy_number: string; effective_date: string; annual_premium: string }[]>([{ carrier: "", line_of_business: "", policy_number: "", effective_date: "", annual_premium: "" }]);
   const [submittingSold, setSubmittingSold] = useState(false);
+  const [creatingRenewalEvent, setCreatingRenewalEvent] = useState<string | null>(null);
   const mountedRef = useRef(true);
   useEffect(() => { return () => { mountedRef.current = false; }; }, []);
 
