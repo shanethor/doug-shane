@@ -469,7 +469,17 @@ export default function AdminDashboard() {
                             <span>Registered {new Date(u.created_at).toLocaleDateString()}</span>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2 shrink-0">
+                        <div className="flex items-center gap-2 shrink-0 flex-wrap">
+                          <Select onValueChange={(agencyId) => handleChangeAgency(u.id, agencyId)} value={u.agency_id || ""}>
+                            <SelectTrigger className="w-40 h-8 text-xs">
+                              <SelectValue placeholder="Set agency…" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {agencies.map((a: any) => (
+                                <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                           <Select onValueChange={(role) => handleApproveUser(u.id, role)}>
                             <SelectTrigger className="w-36 h-8 text-xs">
                               <SelectValue placeholder="Approve as…" />
