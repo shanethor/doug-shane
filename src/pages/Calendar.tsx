@@ -79,6 +79,7 @@ export default function Calendar({ embedded }: { embedded?: boolean } = {}) {
   const [view, setView] = useState<"agenda" | "week" | "month">("agenda");
   const [currentDate, setCurrentDate] = useState(new Date());
   const [createOpen, setCreateOpen] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
   const [filterType, setFilterType] = useState<string>("all");
   const [newEvent, setNewEvent] = useState({
     title: "",
@@ -151,7 +152,9 @@ export default function Calendar({ embedded }: { embedded?: boolean } = {}) {
   };
 
   const createEvent = async () => {
-    if (!user) return;
+    if (!user || isCreating) return;
+    setIsCreating(true);
+    try {
     if (!newEvent.title.trim() || !newEvent.start_date) {
       toast.error("Title and date are required");
       return;
@@ -196,6 +199,7 @@ export default function Calendar({ embedded }: { embedded?: boolean } = {}) {
     if (error) {
       toast.error("Failed to create event");
       console.error(error);
+      setIsCreating(false);
       return;
     }
 
@@ -229,6 +233,9 @@ export default function Calendar({ embedded }: { embedded?: boolean } = {}) {
       start_time: "09:00", end_time: "10:00", description: "", location: "", attendees: "", lead_id: "",
     });
     loadData();
+    } finally {
+      setIsCreating(false);
+    }
   };
 
   const updateEventStatus = async (eventId: string, status: string) => {
@@ -435,7 +442,9 @@ export default function Calendar({ embedded }: { embedded?: boolean } = {}) {
                     rows={3}
                   />
                 </div>
-                <Button onClick={createEvent} className="w-full">Create Event</Button>
+                <Button onClick={createEvent} disabled={isCreating} className="w-full">
+                  {isCreating ? <><Loader2 className="h-4 w-4 animate-spin mr-2" />Creating...</> : "Create Event"}
+                </Button>
               </div>
             </DialogContent>
           </Dialog>
