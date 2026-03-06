@@ -87,16 +87,18 @@ Deno.serve(async (req) => {
     const result = users.map((u: any) => {
       const profile = profileMap.get(u.id) as any;
       const userRoles = roleMap.get(u.id) || [];
-      // Primary role: first non-'user' role, or 'producer' as default
       const primaryRole = userRoles.find(r => r !== 'user') || (userRoles.includes('user') ? 'producer' : 'producer');
+      const agency = profile?.agency_id ? agencyMap.get(profile.agency_id) : null;
       return {
         id: u.id,
         email: u.email,
         full_name: profile?.full_name || u.user_metadata?.full_name || null,
-        agency_name: profile?.agency_name || null,
+        agency_name: (agency as any)?.name || profile?.agency_name || null,
+        agency_id: profile?.agency_id || null,
         phone: profile?.phone || null,
         roles: userRoles,
         primary_role: primaryRole,
+        approval_status: profile?.approval_status || "approved",
         created_at: u.created_at,
         last_sign_in_at: u.last_sign_in_at,
         email_confirmed: !!u.email_confirmed_at,
