@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { Navigate } from "react-router-dom";
+import { useUserRole } from "@/hooks/useUserRole";
 import { AppLayout } from "@/components/AppLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
