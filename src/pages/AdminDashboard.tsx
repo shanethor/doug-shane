@@ -76,6 +76,11 @@ export default function AdminDashboard() {
     supabase.functions.invoke("list-users").then(({ data, error }) => {
       if (!error && data) setAdminUsers(data);
     });
+
+    // Fetch agencies
+    supabase.from("agencies").select("*").order("name").then(({ data }) => {
+      if (data) setAgencies(data);
+    });
   }, [user, isAdmin]);
 
   const updateSuggestionStatus = async (id: string, status: string) => {
