@@ -90,6 +90,7 @@ export default function Settings() {
           setValues(merged);
           setAiProvider((data[0] as any).ai_provider || "lovable");
           setOpenaiKey((data[0] as any).openai_api_key_encrypted || "");
+          if ((data[0] as any).timezone) setTimezone((data[0] as any).timezone);
         }
         setLoaded(true);
       });
