@@ -552,7 +552,7 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
   };
 
   const handleLostSubmit = async () => {
-    if (!user || !lostLeadId) return;
+    if (!user || !lostLeadId || submittingLost) return;
     if (!lostReason.trim()) {
       toast.error("Please provide a reason");
       return;
