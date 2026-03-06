@@ -198,6 +198,8 @@ export default function LeadDetail() {
       loadData();
     } catch (err: any) {
       toast.error(err.message || "Failed to update");
+    } finally {
+      setSubmittingPresenting(false);
     }
   };
 
