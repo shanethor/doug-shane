@@ -36,7 +36,7 @@ const statusColor: Record<string, string> = {
 
 export default function AdminDashboard() {
   const { user } = useAuth();
-  const { isAdmin, loading: adminLoading } = useAdmin();
+  const { isAdmin, loading: adminLoading } = useUserRole();
   const [submissions, setSubmissions] = useState<any[]>([]);
   const [applications, setApplications] = useState<any[]>([]);
   const [policies, setPolicies] = useState<any[]>([]);
