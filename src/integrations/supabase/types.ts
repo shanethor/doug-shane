@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      agencies: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       audit_log: {
         Row: {
           action: string
@@ -1342,8 +1366,10 @@ export type Database = {
       }
       profiles: {
         Row: {
+          agency_id: string | null
           agency_name: string | null
           ai_provider: string
+          approval_status: string
           created_at: string
           form_defaults: Json | null
           from_email: string | null
@@ -1356,8 +1382,10 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          agency_id?: string | null
           agency_name?: string | null
           ai_provider?: string
+          approval_status?: string
           created_at?: string
           form_defaults?: Json | null
           from_email?: string | null
@@ -1370,8 +1398,10 @@ export type Database = {
           user_id: string
         }
         Update: {
+          agency_id?: string | null
           agency_name?: string | null
           ai_provider?: string
+          approval_status?: string
           created_at?: string
           form_defaults?: Json | null
           from_email?: string | null
@@ -1383,7 +1413,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       quote_documents: {
         Row: {
