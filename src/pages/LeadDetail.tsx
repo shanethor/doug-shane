@@ -159,12 +159,13 @@ export default function LeadDetail() {
   };
 
   const handlePresentingSubmit = async () => {
-    if (!user || !leadId) return;
+    if (!user || !leadId || submittingPresenting) return;
     const validLines = presentingLines.filter(l => l.line_of_business.trim() && l.premium);
     if (validLines.length === 0) {
       toast.error("Add at least one line of business with a premium");
       return;
     }
+    setSubmittingPresenting(true);
     try {
       const totalPremium = validLines.reduce((s, l) => s + (parseFloat(l.premium) || 0), 0);
       const details = {
