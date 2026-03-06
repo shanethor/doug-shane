@@ -173,6 +173,7 @@ export default function Settings() {
           form_defaults: nonEmpty,
           ai_provider: aiProvider,
           openai_api_key_encrypted: openaiKey || null,
+          timezone: timezone || null,
         } as any)
         .eq("user_id", user.id);
       if (error) throw error;
