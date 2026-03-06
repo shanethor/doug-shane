@@ -1627,8 +1627,8 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
             <Button variant="outline" onClick={() => { setPresentingModalOpen(false); setPresentingLeadId(null); }}>
               Cancel
             </Button>
-            <Button onClick={handlePresentingSubmit}>
-              Move to Presenting
+            <Button onClick={handlePresentingSubmit} disabled={submittingPresenting}>
+              {submittingPresenting ? "Saving…" : "Move to Presenting"}
             </Button>
           </DialogFooter>
         </DialogContent>
