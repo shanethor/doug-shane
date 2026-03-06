@@ -259,7 +259,6 @@ export default function AdminDashboard() {
             <TabsTrigger value="bugs" className="gap-1.5 text-xs"><Bug className="h-3.5 w-3.5" />Bug Fixes</TabsTrigger>
           </TabsList>
         </div>
-        </TabsList>
 
         {/* ── Overview ── */}
         <TabsContent value="overview" className="space-y-6">
