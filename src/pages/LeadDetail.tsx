@@ -670,52 +670,57 @@ export default function LeadDetail() {
                         size="sm"
                         variant="outline"
                         className="gap-1.5 text-xs"
+                        disabled={creatingRenewalEvent === p.id}
                         onClick={async () => {
-                          // Auto-create renewal review event
-                          const { error } = await supabase.from("calendar_events").insert({
-                            user_id: user!.id,
-                            title: `Renewal Review — ${lead.account_name} (${p.line_of_business})`,
-                            event_type: "renewal_review" as any,
-                            start_time: new Date().toISOString(),
-                            end_time: new Date(Date.now() + 30 * 60000).toISOString(),
-                            description: `Policy ${p.policy_number} with ${p.carrier} renews on ${renewalDate.toLocaleDateString()}.\n\nPremium: $${Number(p.annual_premium).toLocaleString()}\n\n🔗 View in AURA: /pipeline/${leadId}`,
-                            lead_id: leadId,
-                            provider: "aura",
-                            status: "scheduled" as any,
-                          } as any);
-                          if (error) {
-                            toast.error("Failed to create renewal event");
-                          } else {
-                            toast.success("Renewal review event created on your calendar!");
-                            // Best-effort push to connected calendars
-                            try {
-                              const { getAuthHeaders } = await import("@/lib/auth-fetch");
-                              const headers = await getAuthHeaders();
-                              const { data: calendars } = await supabase
-                                .from("external_calendars")
-                                .select("provider")
-                                .eq("user_id", user!.id)
-                                .eq("is_active", true);
-                              for (const cal of calendars || []) {
-                                await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/calendar-sync`, {
-                                  method: "POST",
-                                  headers,
-                                  body: JSON.stringify({
-                                    action: "create_event",
-                                    provider: cal.provider,
-                                    title: `Renewal Review — ${lead.account_name} (${p.line_of_business})`,
-                                    start: new Date().toISOString(),
-                                    end: new Date(Date.now() + 30 * 60000).toISOString(),
-                                    description: `Policy ${p.policy_number} with ${p.carrier} renews on ${renewalDate.toLocaleDateString()}.`,
-                                  }),
-                                });
-                              }
-                            } catch { /* silent */ }
+                          if (creatingRenewalEvent) return;
+                          setCreatingRenewalEvent(p.id);
+                          try {
+                            const { error } = await supabase.from("calendar_events").insert({
+                              user_id: user!.id,
+                              title: `Renewal Review — ${lead.account_name} (${p.line_of_business})`,
+                              event_type: "renewal_review" as any,
+                              start_time: new Date().toISOString(),
+                              end_time: new Date(Date.now() + 30 * 60000).toISOString(),
+                              description: `Policy ${p.policy_number} with ${p.carrier} renews on ${renewalDate.toLocaleDateString()}.\n\nPremium: $${Number(p.annual_premium).toLocaleString()}\n\n🔗 View in AURA: /pipeline/${leadId}`,
+                              lead_id: leadId,
+                              provider: "aura",
+                              status: "scheduled" as any,
+                            } as any);
+                            if (error) {
+                              toast.error("Failed to create renewal event");
+                            } else {
+                              toast.success("Renewal review event created on your calendar!");
+                              try {
+                                const { getAuthHeaders } = await import("@/lib/auth-fetch");
+                                const headers = await getAuthHeaders();
+                                const { data: calendars } = await supabase
+                                  .from("external_calendars")
+                                  .select("provider")
+                                  .eq("user_id", user!.id)
+                                  .eq("is_active", true);
+                                for (const cal of calendars || []) {
+                                  await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/calendar-sync`, {
+                                    method: "POST",
+                                    headers,
+                                    body: JSON.stringify({
+                                      action: "create_event",
+                                      provider: cal.provider,
+                                      title: `Renewal Review — ${lead.account_name} (${p.line_of_business})`,
+                                      start: new Date().toISOString(),
+                                      end: new Date(Date.now() + 30 * 60000).toISOString(),
+                                      description: `Policy ${p.policy_number} with ${p.carrier} renews on ${renewalDate.toLocaleDateString()}.`,
+                                    }),
+                                  });
+                                }
+                              } catch { /* silent */ }
+                            }
+                          } finally {
+                            setCreatingRenewalEvent(null);
                           }
                         }}
                       >
                         <CalendarDays className="h-3.5 w-3.5" />
-                        Schedule Review
+                        {creatingRenewalEvent === p.id ? "Creating…" : "Schedule Review"}
                       </Button>
                     </div>
                   );
