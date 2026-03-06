@@ -217,6 +217,24 @@ export default function AdminDashboard() {
     );
   };
 
+  const handleChangeAgency = async (userId: string, agencyId: string) => {
+    const agency = agencies.find((a: any) => a.id === agencyId);
+    const { error } = await supabase
+      .from("profiles")
+      .update({ agency_id: agencyId })
+      .eq("user_id", userId);
+    if (error) {
+      toast.error("Failed to update agency");
+      return;
+    }
+    toast.success(`Agency updated to ${agency?.name || "Unknown"}`);
+    setAdminUsers((prev) =>
+      prev.map((u: any) =>
+        u.id === userId ? { ...u, agency_id: agencyId, agency_name: agency?.name } : u
+      )
+    );
+  };
+
   const handleCreateAgency = async () => {
     if (!newAgencyName.trim() || !newAgencyCode.trim()) {
       toast.error("Agency name and code are required");
