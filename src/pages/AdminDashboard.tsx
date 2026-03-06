@@ -551,33 +551,35 @@ export default function AdminDashboard() {
                             ))}
                           </SelectContent>
                         </Select>
-                        value={u.primary_role || "producer"}
-                        onValueChange={async (newRole) => {
-                          const { data, error } = await supabase.functions.invoke("update-user-role", {
-                            body: { target_user_id: u.id, new_role: newRole },
-                          });
-                          if (error || data?.error) {
-                            toast.error(data?.error || "Failed to update role");
-                            return;
-                          }
-                          toast.success(`Role updated to ${newRole}`);
-                          setAdminUsers((prev) =>
-                            prev.map((au: any) =>
-                              au.id === u.id ? { ...au, primary_role: newRole, roles: [newRole] } : au
-                            )
-                          );
-                        }}
-                      >
-                        <SelectTrigger className="w-36 h-8 text-xs">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="admin">Admin</SelectItem>
-                          <SelectItem value="producer">Producer</SelectItem>
-                          <SelectItem value="manager">Manager</SelectItem>
-                          <SelectItem value="client_services">Client Services</SelectItem>
-                        </SelectContent>
-                      </Select>
+                        <Select
+                          value={u.primary_role || "producer"}
+                          onValueChange={async (newRole) => {
+                            const { data, error } = await supabase.functions.invoke("update-user-role", {
+                              body: { target_user_id: u.id, new_role: newRole },
+                            });
+                            if (error || data?.error) {
+                              toast.error(data?.error || "Failed to update role");
+                              return;
+                            }
+                            toast.success(`Role updated to ${newRole}`);
+                            setAdminUsers((prev) =>
+                              prev.map((au: any) =>
+                                au.id === u.id ? { ...au, primary_role: newRole, roles: [newRole] } : au
+                              )
+                            );
+                          }}
+                        >
+                          <SelectTrigger className="w-36 h-8 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="admin">Admin</SelectItem>
+                            <SelectItem value="producer">Producer</SelectItem>
+                            <SelectItem value="manager">Manager</SelectItem>
+                            <SelectItem value="client_services">Client Services</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
