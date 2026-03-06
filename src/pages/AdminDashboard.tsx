@@ -199,21 +199,66 @@ export default function AdminDashboard() {
   const totalRevenue = policies.reduce((sum: number, p: any) => sum + (p.revenue || 0), 0);
   const newBugs = corrections.filter(c => c.status === "new").length;
   const newSuggestions = suggestions.filter(s => s.status === "new").length;
+  const pendingUserCount = adminUsers.filter((u: any) => u.approval_status === "pending").length;
+
+  const handleApproveUser = async (userId: string, role: string) => {
+    const { data, error } = await supabase.functions.invoke("approve-user", {
+      body: { target_user_id: userId, action: "approve", role },
+    });
+    if (error || data?.error) {
+      toast.error(data?.error || "Failed to approve user");
+      return;
+    }
+    toast.success("User approved! They'll receive an email notification.");
+    setAdminUsers((prev) =>
+      prev.map((u: any) =>
+        u.id === userId ? { ...u, approval_status: "approved", primary_role: role, roles: [role] } : u
+      )
+    );
+  };
+
+  const handleCreateAgency = async () => {
+    if (!newAgencyName.trim() || !newAgencyCode.trim()) {
+      toast.error("Agency name and code are required");
+      return;
+    }
+    setCreatingAgency(true);
+    const { data, error } = await supabase.from("agencies").insert({
+      name: newAgencyName.trim(),
+      code: newAgencyCode.trim().toUpperCase(),
+    }).select().single();
+    if (error) {
+      toast.error(error.message.includes("duplicate") ? "Agency code already exists" : error.message);
+    } else {
+      toast.success("Agency created!");
+      setAgencies((prev) => [...prev, data]);
+      setNewAgencyName("");
+      setNewAgencyCode("");
+    }
+    setCreatingAgency(false);
+  };
 
   return (
     <AppLayout>
       <h1 className="text-4xl mb-6">Admin Dashboard</h1>
 
       <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5 max-w-2xl">
-          <TabsTrigger value="overview" className="gap-1.5 text-xs"><BarChart3 className="h-3.5 w-3.5" />Overview</TabsTrigger>
-          <TabsTrigger value="policies" className="gap-1.5 text-xs">
-            <ShieldCheck className="h-3.5 w-3.5" />Policies
-            {pendingPolicyCount > 0 && <Badge variant="destructive" className="ml-1 h-4 px-1 text-[9px]">{pendingPolicyCount}</Badge>}
-          </TabsTrigger>
-          <TabsTrigger value="users" className="gap-1.5 text-xs"><Users className="h-3.5 w-3.5" />Users</TabsTrigger>
-          <TabsTrigger value="suggestions" className="gap-1.5 text-xs"><Lightbulb className="h-3.5 w-3.5" />Features</TabsTrigger>
-          <TabsTrigger value="bugs" className="gap-1.5 text-xs"><Bug className="h-3.5 w-3.5" />Bug Fixes</TabsTrigger>
+        <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0 scrollbar-hide">
+          <TabsList className="inline-flex w-auto min-w-max">
+            <TabsTrigger value="overview" className="gap-1.5 text-xs"><BarChart3 className="h-3.5 w-3.5" />Overview</TabsTrigger>
+            <TabsTrigger value="policies" className="gap-1.5 text-xs">
+              <ShieldCheck className="h-3.5 w-3.5" />Policies
+              {pendingPolicyCount > 0 && <Badge variant="destructive" className="ml-1 h-4 px-1 text-[9px]">{pendingPolicyCount}</Badge>}
+            </TabsTrigger>
+            <TabsTrigger value="users" className="gap-1.5 text-xs">
+              <Users className="h-3.5 w-3.5" />Users
+              {pendingUserCount > 0 && <Badge variant="destructive" className="ml-1 h-4 px-1 text-[9px]">{pendingUserCount}</Badge>}
+            </TabsTrigger>
+            <TabsTrigger value="agencies" className="gap-1.5 text-xs"><Building2 className="h-3.5 w-3.5" />Agencies</TabsTrigger>
+            <TabsTrigger value="suggestions" className="gap-1.5 text-xs"><Lightbulb className="h-3.5 w-3.5" />Features</TabsTrigger>
+            <TabsTrigger value="bugs" className="gap-1.5 text-xs"><Bug className="h-3.5 w-3.5" />Bug Fixes</TabsTrigger>
+          </TabsList>
+        </div>
         </TabsList>
 
         {/* ── Overview ── */}
