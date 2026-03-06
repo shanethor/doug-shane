@@ -546,6 +546,8 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
       loadLeads();
     } catch (err: any) {
       toast.error(err.message || "Failed to update");
+    } finally {
+      setSubmittingPresenting(false);
     }
   };
 
