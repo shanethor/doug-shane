@@ -1545,7 +1545,7 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
           </p>
           <div className="space-y-3 mt-2 max-h-[40vh] overflow-y-auto">
             {presentingLines.map((line, i) => (
-              <div key={i} className="grid grid-cols-[1fr_120px_32px] gap-2 items-end">
+              <div key={i} className="flex gap-2 items-end">
                 <div>
                   {i === 0 && <Label className="text-xs">Line of Business</Label>}
                   <Input
