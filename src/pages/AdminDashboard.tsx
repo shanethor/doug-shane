@@ -47,6 +47,10 @@ export default function AdminDashboard() {
   const [rejectReason, setRejectReason] = useState("");
   const [policyFilter, setPolicyFilter] = useState<"pending" | "all">("pending");
   const [adminUsers, setAdminUsers] = useState<any[]>([]);
+  const [agencies, setAgencies] = useState<any[]>([]);
+  const [newAgencyName, setNewAgencyName] = useState("");
+  const [newAgencyCode, setNewAgencyCode] = useState("");
+  const [creatingAgency, setCreatingAgency] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
