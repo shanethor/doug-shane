@@ -20,21 +20,20 @@ serve(async (req) => {
       });
     }
 
-    const token = authHeader.replace("Bearer ", "");
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_ANON_KEY")!,
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims) {
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
       return new Response(JSON.stringify({ error: "Invalid token" }), {
         status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const userId = claimsData.claims.sub as string;
+    const userId = user.id;
     const body = await req.json();
     const { action, provider, code, redirect_uri } = body;
 
@@ -167,8 +166,13 @@ serve(async (req) => {
         });
         tokenData = await tokenResp.json();
         if (!tokenResp.ok) {
-          console.error("Microsoft token error:", tokenData);
-          return new Response(JSON.stringify({ error: "Failed to exchange Microsoft auth code" }), {
+          console.error("Microsoft token error:", JSON.stringify(tokenData));
+          console.error("Microsoft token status:", tokenResp.status);
+          console.error("Used client_id:", clientId);
+          console.error("Used redirect_uri:", redirect_uri);
+          return new Response(JSON.stringify({ 
+            error: `Failed to exchange Microsoft auth code: ${tokenData.error_description || tokenData.error || 'Unknown error'}` 
+          }), {
             status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
           });
         }
