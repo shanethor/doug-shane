@@ -213,6 +213,7 @@ export default function LeadDetail() {
       toast.error("Please provide an estimated renewal date");
       return;
     }
+    setSubmittingLost(true);
     try {
       await supabase
         .from("leads")
@@ -236,6 +237,8 @@ export default function LeadDetail() {
       loadData();
     } catch (err: any) {
       toast.error(err.message || "Failed to update");
+    } finally {
+      setSubmittingLost(false);
     }
   };
 
