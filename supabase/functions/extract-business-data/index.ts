@@ -490,10 +490,24 @@ ${file_contents ? `\nAdditional text content:\n${file_contents}` : ""}`;
       if ((v.vin || v.VIN) && !fd[`vehicle_${n}_vin`]) fd[`vehicle_${n}_vin`]     = String(v.vin || v.VIN);
       if ((v.body_type || v.bodyType || v.type) && !fd[`vehicle_${n}_body_type`])
         fd[`vehicle_${n}_body_type`] = String(v.body_type || v.bodyType || v.type);
-      if ((v.stated_amount || v.cost_new) && !fd[`vehicle_${n}_stated_amount`])
-        fd[`vehicle_${n}_stated_amount`] = String(v.stated_amount || v.cost_new);
+      if ((v.stated_amount || v.cost_new) && !fd[`vehicle_${n}_cost_new`])
+        fd[`vehicle_${n}_cost_new`] = String(v.stated_amount || v.cost_new);
       if ((v.garaging_zip || v.zip) && !fd[`vehicle_${n}_garaging_zip`])
         fd[`vehicle_${n}_garaging_zip`] = String(v.garaging_zip || v.zip);
+      if ((v.garaging_city) && !fd[`vehicle_${n}_garaging_city`])
+        fd[`vehicle_${n}_garaging_city`] = String(v.garaging_city);
+      if ((v.garaging_state) && !fd[`vehicle_${n}_garaging_state`])
+        fd[`vehicle_${n}_garaging_state`] = String(v.garaging_state);
+      if (v.gvw && !fd[`vehicle_${n}_gvw`]) fd[`vehicle_${n}_gvw`] = String(v.gvw);
+      if ((v.registration_state || v.reg_state) && !fd[`vehicle_${n}_reg_state`])
+        fd[`vehicle_${n}_reg_state`] = String(v.registration_state || v.reg_state);
+      if (v.comp_deductible && !fd[`vehicle_${n}_comp_deductible`])
+        fd[`vehicle_${n}_comp_deductible`] = String(v.comp_deductible);
+      if (v.coll_deductible && !fd[`vehicle_${n}_coll_deductible`])
+        fd[`vehicle_${n}_coll_deductible`] = String(v.coll_deductible);
+      if (v.premium && !fd[`vehicle_${n}_premium`]) fd[`vehicle_${n}_premium`] = String(v.premium);
+      if (v.radius && !fd[`vehicle_${n}_radius`]) fd[`vehicle_${n}_radius`] = String(v.radius);
+      if (v.territory && !fd[`vehicle_${n}_territory`]) fd[`vehicle_${n}_territory`] = String(v.territory);
     });
     if (vehicles.length > 0 && !fd.number_of_vehicles) {
       fd.number_of_vehicles = String(vehicles.length);
