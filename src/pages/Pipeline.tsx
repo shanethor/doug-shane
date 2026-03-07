@@ -1269,6 +1269,12 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
                                 <LossRunBadge status={lossRunStatuses[lead.id] || null} />
                               )}
                             </div>
+                            {(isManager || isAdmin) && ownerNames[lead.owner_user_id] && lead.owner_user_id !== user?.id && (
+                              <p className="text-[10px] text-primary/70 font-sans truncate ml-[18px]">
+                                <Users className="h-2.5 w-2.5 inline mr-0.5 -mt-px" />
+                                {ownerNames[lead.owner_user_id]}
+                              </p>
+                            )}
                             {lead.contact_name && (
                               <p className="text-xs text-muted-foreground font-sans truncate ml-[18px]">{lead.contact_name}</p>
                             )}
