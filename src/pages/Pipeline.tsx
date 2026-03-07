@@ -104,6 +104,7 @@ const STAGE_TOOLTIPS: Record<string, string> = {
 
 export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
   const { user } = useAuth();
+  const { role, isManager, isAdmin } = useUserRole();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
