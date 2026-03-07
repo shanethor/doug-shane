@@ -202,7 +202,7 @@ const FillablePdfViewer = forwardRef<FillablePdfViewerHandle, FillablePdfViewerP
         console.warn(`[pdf-lib] prefillByIndex has ${prefillEntries.length} entries`);
         if (prefillEntries.length > 0) {
           try {
-            const { PDFDocument, StandardFonts, PDFName, PDFDict, PDFArray, PDFString, PDFHexString, rgb } = await import("pdf-lib");
+            const { PDFDocument, StandardFonts, PDFName } = await import("pdf-lib");
             const doc = await PDFDocument.load(new Uint8Array(pdfBuffer), { ignoreEncryption: true });
             const helvetica = await doc.embedFont(StandardFonts.Helvetica);
             const form = doc.getForm();
