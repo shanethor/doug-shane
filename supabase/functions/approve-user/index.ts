@@ -54,6 +54,14 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
+    if (action === "create_user") {
+      const { email, password, full_name } = await req.json().catch(() => ({}));
+      const createEmail = email || (await req.json()).email;
+      // We already parsed the body above, so use destructured values from line 15
+      const body = { target_user_id, action, role, email: undefined as any, password: undefined as any, full_name: undefined as any };
+      // Actually let me restructure - the body was already parsed at line 15
+    }
+
     if (action === "approve") {
       if (!role) throw new Error("Missing role for approval");
 
