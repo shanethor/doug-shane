@@ -56,6 +56,7 @@ const ACORD_FIELDS = {
 };
 
 const MAX_PDF_PAGES = 15;
+const MAX_TOTAL_PAGES = 30; // Total page budget across all files
 
 /** Truncate a PDF to the first N pages to reduce payload size and speed up extraction */
 async function truncatePdf(base64Data: string, maxPages: number): Promise<string> {
