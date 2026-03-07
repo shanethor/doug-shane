@@ -791,6 +791,7 @@ export function buildAutofilledData(
     policyKeys.map(k => aiData[k] || mapped[k]).filter(Boolean)
   );
   if (distinctPolicies.size >= 2 || (aiData.policies && Array.isArray(aiData.policies) && aiData.policies.length > 1)) {
+    if (formFieldKeys.has("other_insurance_same_company")) mapped.other_insurance_same_company = "Yes";
     if (formFieldKeys.has("q4_code")) mapped.q4_code = "Y";
     // Fill Q4 detail rows from the policies
     const policies = aiData.policies || [];
