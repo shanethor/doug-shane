@@ -805,6 +805,82 @@ export function buildAutofilledData(
     }
   }
 
+  // 5e. Expand underlying_insurance[] → ACORD 131 underlying fields
+  const underlying: any[] = Array.isArray(aiData.underlying_insurance) ? aiData.underlying_insurance : [];
+  for (const u of underlying) {
+    const lob = (u.line_of_business || "").toUpperCase();
+    if (lob.includes("AUTO")) {
+      if (!mapped.underlying_auto_carrier && formFieldKeys.has("underlying_auto_carrier")) mapped.underlying_auto_carrier = u.carrier || "";
+      if (u.policy_number && formFieldKeys.has("underlying_auto_policy") && !mapped.underlying_auto_policy) mapped.underlying_auto_policy = u.policy_number;
+      if (u.limits?.csl && formFieldKeys.has("underlying_auto_csl") && !mapped.underlying_auto_csl) mapped.underlying_auto_csl = normalizeValue("underlying_auto_csl", u.limits.csl);
+      if (u.premium && formFieldKeys.has("underlying_auto_premium") && !mapped.underlying_auto_premium) mapped.underlying_auto_premium = normalizeValue("underlying_auto_premium", u.premium);
+    } else if (lob.includes("GL") || lob.includes("GENERAL") || lob.includes("CGL") || lob.includes("BOP")) {
+      if (!mapped.underlying_gl_carrier && formFieldKeys.has("underlying_gl_carrier")) mapped.underlying_gl_carrier = u.carrier || "";
+      if (u.policy_number && formFieldKeys.has("underlying_gl_policy") && !mapped.underlying_gl_policy) mapped.underlying_gl_policy = u.policy_number;
+      const lim = u.limits || {};
+      if (lim.each_occurrence && formFieldKeys.has("underlying_gl_occurrence") && !mapped.underlying_gl_occurrence) mapped.underlying_gl_occurrence = normalizeValue("underlying_gl_occurrence", lim.each_occurrence);
+      if (lim.general_aggregate && formFieldKeys.has("underlying_gl_aggregate") && !mapped.underlying_gl_aggregate) mapped.underlying_gl_aggregate = normalizeValue("underlying_gl_aggregate", lim.general_aggregate);
+      if (lim.products_completed_ops && formFieldKeys.has("underlying_gl_products") && !mapped.underlying_gl_products) mapped.underlying_gl_products = normalizeValue("underlying_gl_products", lim.products_completed_ops);
+      if (lim.personal_adv_injury && formFieldKeys.has("underlying_gl_personal") && !mapped.underlying_gl_personal) mapped.underlying_gl_personal = normalizeValue("underlying_gl_personal", lim.personal_adv_injury);
+      if (u.premium && formFieldKeys.has("underlying_gl_premium") && !mapped.underlying_gl_premium) mapped.underlying_gl_premium = normalizeValue("underlying_gl_premium", u.premium);
+    } else if (lob.includes("EMPLOYER") || lob.includes("EL") || lob.includes("WORKERS") || lob.includes("WC")) {
+      if (!mapped.underlying_el_carrier && formFieldKeys.has("underlying_el_carrier")) mapped.underlying_el_carrier = u.carrier || "";
+      if (u.policy_number && formFieldKeys.has("underlying_el_policy") && !mapped.underlying_el_policy) mapped.underlying_el_policy = u.policy_number;
+      const lim = u.limits || {};
+      if (lim.each_accident && formFieldKeys.has("underlying_el_each_accident") && !mapped.underlying_el_each_accident) mapped.underlying_el_each_accident = normalizeValue("underlying_el_each_accident", lim.each_accident);
+      if (lim.disease_each_employee && formFieldKeys.has("underlying_el_disease_employee") && !mapped.underlying_el_disease_employee) mapped.underlying_el_disease_employee = normalizeValue("underlying_el_disease_employee", lim.disease_each_employee);
+      if (lim.disease_policy && formFieldKeys.has("underlying_el_disease_policy") && !mapped.underlying_el_disease_policy) mapped.underlying_el_disease_policy = normalizeValue("underlying_el_disease_policy", lim.disease_policy);
+      if (u.premium && formFieldKeys.has("underlying_el_premium") && !mapped.underlying_el_premium) mapped.underlying_el_premium = normalizeValue("underlying_el_premium", u.premium);
+    }
+  }
+
+  // 5f. Expand wc_classifications[] → class_code_N fields
+  const wcClasses: any[] = Array.isArray(aiData.wc_classifications) ? aiData.wc_classifications : [];
+  wcClasses.forEach((c: any, idx: number) => {
+    const n = idx + 1;
+    if (n > 3) return;
+    const fields: Record<string, string> = {
+      [`class_code_${n}`]: c.class_code || "",
+      [`class_description_${n}`]: c.description || "",
+      [`annual_remuneration_${n}`]: c.annual_remuneration || "",
+      [`est_premium_${n}`]: c.estimated_premium || "",
+      [`num_employees_${n}`]: c.num_employees || "",
+    };
+    for (const [k, val] of Object.entries(fields)) {
+      if (val && formFieldKeys.has(k) && !mapped[k]) mapped[k] = normalizeValue(k, val);
+    }
+  });
+
+  // 5g. Expand mortgagees[] → mortgagee_N fields
+  const mortgagees: any[] = Array.isArray(aiData.mortgagees) ? aiData.mortgagees : [];
+  mortgagees.forEach((m: any, idx: number) => {
+    const n = idx + 1;
+    if (n > 3) return;
+    const fields: Record<string, string> = {
+      [`mortgagee_${n}_name`]: m.name || "",
+      [`mortgagee_${n}_address`]: m.address || "",
+      [`mortgagee_${n}_clause`]: m.clause || "",
+    };
+    for (const [k, val] of Object.entries(fields)) {
+      if (val && formFieldKeys.has(k) && !mapped[k]) mapped[k] = val;
+    }
+  });
+
+  // 5h. Expand vehicles with comp/coll deductible and territory fields
+  vehicles.forEach((v: any, idx: number) => {
+    const n = idx + 1;
+    const extraFields: Record<string, string> = {
+      [`vehicle_${n}_comp_deductible`]: v.comp_deductible || "",
+      [`vehicle_${n}_coll_deductible`]: v.coll_deductible || "",
+      [`vehicle_${n}_territory`]: v.territory || "",
+      [`vehicle_${n}_use_class`]: v.use_class || "",
+      [`vehicle_${n}_gvw`]: v.gvw || "",
+    };
+    for (const [k, val] of Object.entries(extraFields)) {
+      if (val && formFieldKeys.has(k) && !mapped[k]) mapped[k] = normalizeValue(k, val);
+    }
+  });
+
   // 6. Auto-calc expiration
   const effKey = formFieldKeys.has("proposed_exp_date") ? "proposed_eff_date" : "effective_date";
   const expKey = formFieldKeys.has("proposed_exp_date") ? "proposed_exp_date" : "expiration_date";
