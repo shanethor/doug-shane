@@ -1397,6 +1397,12 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
                 <CardContent className="p-2 px-3 flex items-center gap-2">
                   <GripVertical className="h-3 w-3 text-muted-foreground/50 shrink-0" />
                   <span className="text-sm font-sans">{lead.account_name}</span>
+                  {(isManager || isAdmin) && ownerNames[lead.owner_user_id] && lead.owner_user_id !== user?.id && (
+                    <Badge variant="outline" className="text-[9px] gap-0.5 font-sans text-primary/70">
+                      <Users className="h-2.5 w-2.5" />
+                      {ownerNames[lead.owner_user_id]}
+                    </Badge>
+                  )}
                   {(lead as any).estimated_renewal_date && (
                     <Badge variant="outline" className="text-[9px] gap-0.5 font-sans">
                       <CalendarDays className="h-2.5 w-2.5" />
