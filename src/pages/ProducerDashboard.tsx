@@ -58,7 +58,7 @@ export default function ProducerDashboard({ embedded }: { embedded?: boolean } =
   useEffect(() => {
     if (!user) return;
     loadStats();
-  }, [user, period]);
+  }, [user, period, isManager, isAdmin]);
 
   const loadStats = async () => {
     if (!user) return;

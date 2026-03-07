@@ -295,7 +295,7 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
 
     setAuditLogData(auditRes.data ?? []);
     setLoading(false);
-  }, [user]);
+  }, [user, isManager, isAdmin]);
 
   const { containerRef: pullRef, PullIndicator } = usePullToRefresh({ onRefresh: loadLeads });
 
