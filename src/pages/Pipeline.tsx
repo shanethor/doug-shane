@@ -239,12 +239,27 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
     setLossRunStatuses(lrMap);
 
 
-    setLeads(
-      leadsData.map((l: any) => ({
-        ...l,
-        has_approved_policy: approvedLeadIds.has(l.id),
-      }))
-    );
+    const mappedLeads = leadsData.map((l: any) => ({
+      ...l,
+      has_approved_policy: approvedLeadIds.has(l.id),
+    }));
+    setLeads(mappedLeads);
+
+    // For managers/admins, fetch producer names for all unique owner_user_ids
+    if (isManager || isAdmin) {
+      const ownerIds = [...new Set(leadsData.map((l: any) => l.owner_user_id))];
+      if (ownerIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("user_id, full_name")
+          .in("user_id", ownerIds);
+        const names: Record<string, string> = {};
+        (profiles ?? []).forEach((p: any) => {
+          names[p.user_id] = p.full_name || "Unknown";
+        });
+        setOwnerNames(names);
+      }
+    }
 
     // Compute pipeline stats
     const allPolicies = allPoliciesRes.data ?? [];
