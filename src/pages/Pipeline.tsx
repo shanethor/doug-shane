@@ -51,6 +51,7 @@ import { SchedulePresentationDialog } from "@/components/SchedulePresentationDia
 import { LeadActionSheet } from "@/components/LeadActionSheet";
 import { MoreVertical } from "lucide-react";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
+import { useUserRole } from "@/hooks/useUserRole";
 
 type PresentingLine = {
   line_of_business: string;
