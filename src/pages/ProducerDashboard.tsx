@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { DollarSign, FileText, TrendingUp, CheckCircle, CalendarDays } from "lucide-react";
 import { format } from "date-fns";
+import { useUserRole } from "@/hooks/useUserRole";
 
 type TimePeriod = "month" | "quarter" | "year" | "all";
 
@@ -38,6 +39,7 @@ function getDateRange(period: TimePeriod): { start: string; end: string } {
 export default function ProducerDashboard({ embedded }: { embedded?: boolean } = {}) {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { isManager, isAdmin } = useUserRole();
   const [policies, setPolicies] = useState<any[]>([]);
   const [leadNames, setLeadNames] = useState<Record<string, string>>({});
   const [period, setPeriod] = useState<TimePeriod>("year");
@@ -56,7 +58,7 @@ export default function ProducerDashboard({ embedded }: { embedded?: boolean } =
   useEffect(() => {
     if (!user) return;
     loadStats();
-  }, [user, period]);
+  }, [user, period, isManager, isAdmin]);
 
   const loadStats = async () => {
     if (!user) return;
@@ -64,15 +66,17 @@ export default function ProducerDashboard({ embedded }: { embedded?: boolean } =
 
     const dateRange = getDateRange(period);
 
+    // RLS handles visibility — managers see team data, producers see own
+    const policiesQuery = supabase.from("policies").select("*");
+    const leadsQuery = supabase.from("leads").select("id, stage");
+    if (!isManager && !isAdmin) {
+      policiesQuery.eq("producer_user_id", user.id);
+      leadsQuery.eq("owner_user_id", user.id);
+    }
+
     const [policiesRes, leadsRes] = await Promise.all([
-      supabase
-        .from("policies")
-        .select("*")
-        .eq("producer_user_id", user.id),
-      supabase
-        .from("leads")
-        .select("id, stage")
-        .eq("owner_user_id", user.id),
+      policiesQuery,
+      leadsQuery,
     ]);
 
     if (!mountedRef.current) return;
