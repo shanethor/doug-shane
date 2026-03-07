@@ -333,8 +333,11 @@ export default function FormFillingView({ submissionId, initialMessages, initial
     setSavedPdfBytesMap(prev => ({ ...prev, [formId]: bytes }));
 
     // Extract field values from the saved PDF
-    const indexMap = ACORD_INDEX_MAPS[formId];
-    if (!indexMap) return;
+    // Use runtime+static merged map so PDF→panel sync follows the active PDF version.
+    const runtimeMap = await getMergedIndexMap(formId).catch(() => null) || {};
+    const staticMap = ACORD_INDEX_MAPS[formId] || {};
+    const indexMap: Record<string, number> = { ...staticMap, ...runtimeMap };
+    if (Object.keys(indexMap).length === 0) return;
 
     try {
       const { PDFDocument } = await import("pdf-lib");
