@@ -148,6 +148,50 @@ Deno.serve(async (req) => {
       });
     }
 
+    if (action === "delete_user") {
+      // Delete related data first
+      await adminClient.from("user_roles").delete().eq("user_id", target_user_id);
+      await adminClient.from("profiles").delete().eq("user_id", target_user_id);
+      await adminClient.from("audit_log").delete().eq("user_id", target_user_id);
+      await adminClient.from("trusted_devices").delete().eq("user_id", target_user_id);
+      await adminClient.from("two_factor_codes").delete().eq("user_id", target_user_id);
+      // Delete the auth user
+      const { error: delError } = await adminClient.auth.admin.deleteUser(target_user_id);
+      if (delError) throw delError;
+
+      await adminClient.from("audit_log").insert({
+        user_id: callerId,
+        action: "delete_user",
+        object_type: "user",
+        object_id: target_user_id,
+      });
+
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (action === "delete_agency") {
+      // target_user_id is actually agency_id here
+      const agencyId = target_user_id;
+      // Unassign users from this agency
+      await adminClient.from("profiles").update({ agency_id: null }).eq("agency_id", agencyId);
+      // Delete the agency
+      const { error: delError } = await adminClient.from("agencies").delete().eq("id", agencyId);
+      if (delError) throw delError;
+
+      await adminClient.from("audit_log").insert({
+        user_id: callerId,
+        action: "delete_agency",
+        object_type: "agency",
+        object_id: agencyId,
+      });
+
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     throw new Error("Invalid action: " + action);
   } catch (err: any) {
     return new Response(JSON.stringify({ error: err.message }), {
