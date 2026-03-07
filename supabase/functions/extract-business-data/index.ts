@@ -734,9 +734,13 @@ serve(async (req) => {
           if (pageTexts.length > 0) {
             allOcrText += `\n--- FILE ${fi + 1} ---\n${pageTexts.join("\n--- PAGE BREAK ---\n")}`;
           }
-        } catch (ocrErr) {
+        } catch (ocrErr: any) {
+          const errMsg = ocrErr?.message || "";
+          if (errMsg.startsWith("VISION_KEY_INVALID") || errMsg.startsWith("VISION_QUOTA_EXCEEDED") || errMsg.startsWith("VISION_ERROR")) {
+            throw ocrErr;
+          }
           console.error(`[stage1] OCR failed for file ${fi + 1}:`, ocrErr);
-          // Continue with other files
+          // Continue with other files for transient errors
         }
       }
 
