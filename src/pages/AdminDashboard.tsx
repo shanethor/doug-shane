@@ -605,8 +605,16 @@ export default function AdminDashboard() {
                             <SelectItem value="manager">Manager</SelectItem>
                             <SelectItem value="client_services">Client Services</SelectItem>
                           </SelectContent>
-                        </Select>
-                      </div>
+                          </Select>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-destructive hover:text-destructive"
+                            onClick={() => handleDeleteUser(u.id, u.full_name || u.email)}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
                     </div>
                   </CardContent>
                 </Card>
