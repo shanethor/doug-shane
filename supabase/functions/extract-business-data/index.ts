@@ -439,7 +439,7 @@ ${file_contents ? `\nAdditional text content:\n${file_contents}` : ""}`;
     if (meaningfulCount < 3 && LOVABLE_API_KEY && hasPdfs) {
       console.warn(`[extract] Claude returned only ${meaningfulCount} meaningful fields — falling back to Gemini`);
       try {
-        const geminiRaw = await callLovableGateway(LOVABLE_API_KEY, systemPrompt, userPromptText, pdf_files, hasPdfs, corsHeaders);
+        const geminiRaw = await callLovableGateway(LOVABLE_API_KEY, systemPrompt, userPromptText, aiPdfFiles, hasPdfs, corsHeaders);
         const geminiJson = geminiRaw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/i, "").trim();
         const geminiExtracted = JSON.parse(geminiJson);
         const gfd = geminiExtracted.form_data || {};
