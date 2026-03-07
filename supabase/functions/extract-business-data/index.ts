@@ -155,7 +155,7 @@ async function runGoogleOcr(
 
   const resp = await fetch(url, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", "Referer": "https://buildingaura.site" },
     body: JSON.stringify(body),
   });
 
