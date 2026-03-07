@@ -895,11 +895,62 @@ serve(async (req) => {
       console.log(`[stage1] Total OCR: ${totalPagesProcessed} pages, ${allOcrText.length} chars`);
 
       if (allOcrText.trim().length < 20) {
-        // OCR produced no useful text — fall back to legacy
-        console.warn("[stage1] OCR produced insufficient text, falling back to legacy pipeline");
-        pipelineUsed = "legacy-ocr-empty";
-        const legacyResult = await runLegacyPipeline(LOVABLE_API_KEY, ANTHROPIC_API_KEY, pdf_files, additionalContext, hasPdfs);
-        extracted = legacyResult;
+        // OCR produced no useful text — PDF likely has embedded digital text.
+        // Use Gemini native PDF vision (sends raw PDF bytes to the model).
+        console.warn("[stage1] OCR empty — using Gemini native PDF extraction (not legacy fallback)");
+        pipelineUsed = "gemini-native-pdf";
+
+        try {
+          // Truncate to 50 pages for Gemini
+          const truncatedFiles = [];
+          for (const pf of pdf_files) {
+            if (!pf.base64) continue;
+            const mimeType = pf.mimeType || "application/pdf";
+            const truncated = mimeType === "application/pdf"
+              ? await truncatePdf(pf.base64, MAX_PDF_PAGES)
+              : pf.base64;
+            truncatedFiles.push({ base64: truncated, mimeType });
+          }
+
+          const geminiRaw = await callGeminiWithPdfs(
+            LOVABLE_API_KEY,
+            SCHEMA_PROMPT,
+            `Extract all insurance data from the attached PDF document(s).${additionalContext ? `\n\nAdditional context:\n${additionalContext}` : ""}`,
+            truncatedFiles,
+            "google/gemini-2.5-flash",
+          );
+          extracted = parseAiJson(geminiRaw);
+          const geminiCount = countMeaningfulFields(extracted.form_data || {});
+          console.log(`[gemini-native] Extracted ${geminiCount} meaningful fields`);
+
+          // If Gemini Flash got low results, try Pro
+          if (geminiCount < CONFIDENCE_THRESHOLD) {
+            console.log(`[gemini-native] Low confidence (${geminiCount}), trying Gemini Pro...`);
+            try {
+              const proRaw = await callGeminiWithPdfs(
+                LOVABLE_API_KEY,
+                SCHEMA_PROMPT,
+                `Extract all insurance data from the attached PDF document(s).${additionalContext ? `\n\nAdditional context:\n${additionalContext}` : ""}`,
+                truncatedFiles,
+                "google/gemini-2.5-pro",
+              );
+              const proExtracted = parseAiJson(proRaw);
+              const proCount = countMeaningfulFields(proExtracted.form_data || {});
+              console.log(`[gemini-native] Pro extracted ${proCount} fields`);
+              if (proCount > geminiCount) {
+                extracted = proExtracted;
+                pipelineUsed = "gemini-native-pdf-pro";
+              }
+            } catch (proErr) {
+              console.warn("[gemini-native] Pro fallback failed:", proErr);
+            }
+          }
+        } catch (geminiErr) {
+          console.error("[gemini-native] Failed, falling back to legacy:", geminiErr);
+          pipelineUsed = "legacy-ocr-empty";
+          const legacyResult = await runLegacyPipeline(LOVABLE_API_KEY, ANTHROPIC_API_KEY, pdf_files, additionalContext, hasPdfs);
+          extracted = legacyResult;
+        }
       } else {
         // ── Stage 2: Gemini Flash Schema Mapping ──
         try {
