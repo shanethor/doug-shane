@@ -195,51 +195,83 @@ async function runGoogleOcr(
 }
 
 /**
- * Google Cloud Vision files:asyncBatchAnnotate for PDFs.
- * For simplicity, we use the sync files:annotate endpoint (up to 5 pages).
- * For longer PDFs, we split into chunks.
+ * Google Cloud Vision files:annotate for PDFs.
+ * Send the ORIGINAL (unchunked) PDF — Vision will process the first 5 pages.
+ * pdf-lib copyPages corrupts content streams, so we avoid chunking entirely.
+ * For pages beyond 5, we make multiple requests specifying different page ranges.
  */
 async function runGoogleOcrPdf(apiKey: string, pdfBase64: string): Promise<OcrPage[]> {
-  // Split PDF into chunks of 5 pages (Vision API limit)
   const pdfBytes = Uint8Array.from(atob(pdfBase64), c => c.charCodeAt(0));
-  let srcDoc: any;
+  let totalPages = 5; // default guess
   try {
-    srcDoc = await PDFDocument.load(pdfBytes, { ignoreEncryption: true });
+    const srcDoc = await PDFDocument.load(pdfBytes, { ignoreEncryption: true });
+    totalPages = srcDoc.getPageCount();
   } catch (e) {
-    console.warn("[ocr] Failed to load PDF for chunking, trying as single:", e);
-    // Try as single image
-    return await runGoogleOcrSingleChunk(apiKey, pdfBase64, "application/pdf");
+    console.warn("[ocr] Could not count pages, defaulting to 5:", e);
   }
 
-  const totalPages = srcDoc.getPageCount();
-  const chunkSize = 5;
   const allPages: OcrPage[] = [];
+  const chunkSize = 5;
 
   for (let start = 0; start < totalPages; start += chunkSize) {
     const end = Math.min(start + chunkSize, totalPages);
-    const indices = Array.from({ length: end - start }, (_, i) => start + i);
+    // Build page indices (1-based for Vision API)
+    const pageIndices = Array.from({ length: end - start }, (_, i) => start + i + 1);
 
-    // Create a sub-PDF for this chunk
-    const chunkDoc = await PDFDocument.create();
-    const copiedPages = await chunkDoc.copyPages(srcDoc, indices);
-    copiedPages.forEach(page => chunkDoc.addPage(page));
-    const chunkBytes = await chunkDoc.save();
-    let chunkB64 = '';
-    const bytes = new Uint8Array(chunkBytes);
-    for (let i = 0; i < bytes.length; i++) {
-      chunkB64 += String.fromCharCode(bytes[i]);
-    }
-    chunkB64 = btoa(chunkB64);
+    const url = `https://vision.googleapis.com/v1/files:annotate?key=${apiKey}`;
+    const body = {
+      requests: [{
+        inputConfig: {
+          content: pdfBase64,
+          mimeType: "application/pdf",
+        },
+        features: [{ type: "DOCUMENT_TEXT_DETECTION" }],
+        pages: pageIndices,
+      }],
+    };
 
-    const chunkPages = await runGoogleOcrSingleChunk(apiKey, chunkB64, "application/pdf");
-    // Adjust page numbers to be global
-    chunkPages.forEach((p, idx) => {
-      p.pageNumber = start + idx + 1;
+    const resp = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Referer": "https://buildingaura.site" },
+      body: JSON.stringify(body),
     });
-    allPages.push(...chunkPages);
+
+    if (!resp.ok) {
+      const err = await resp.text();
+      console.error(`[ocr] Vision files:annotate error (pages ${pageIndices.join(",")}):`, resp.status, err);
+      // Add empty pages for this chunk and continue
+      pageIndices.forEach((p) => allPages.push({ pageNumber: p, text: "", confidence: 0 }));
+      continue;
+    }
+
+    const result = await resp.json();
+    const innerResponses = result.responses?.[0]?.responses || [];
+
+    if (start === 0) {
+      // Log first chunk raw sample for debugging
+      const sample = JSON.stringify(result).slice(0, 1500);
+      console.log(`[ocr-debug] First chunk raw (pages ${pageIndices.join(",")}): ${sample}`);
+    }
+
+    for (let i = 0; i < innerResponses.length; i++) {
+      const annotation = innerResponses[i]?.fullTextAnnotation;
+      allPages.push({
+        pageNumber: start + i + 1,
+        text: annotation?.text || "",
+        confidence: annotation?.pages?.[0]?.confidence || 0,
+      });
+    }
+
+    // If Vision returned fewer responses than requested pages, pad
+    for (let i = innerResponses.length; i < pageIndices.length; i++) {
+      allPages.push({ pageNumber: start + i + 1, text: "", confidence: 0 });
+    }
   }
 
-  return allPages;
+  const totalChars = allPages.reduce((sum, p) => sum + p.text.length, 0);
+  console.log(`[ocr] PDF OCR complete: ${allPages.length} pages, ${totalChars} total chars`);
+
+  return allPages.length > 0 ? allPages : [{ pageNumber: 1, text: "", confidence: 0 }];
 }
 
 async function runGoogleOcrSingleChunk(
