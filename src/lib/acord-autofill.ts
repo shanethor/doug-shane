@@ -273,28 +273,35 @@ const AI_TO_FORM_ALIASES: Record<string, string[]> = {
   has_workers_comp: ["wc_other_insurance_same"],
   contractor_license: ["producer_license_no"],
 
-  // ── Auto ──
-  driver_1_name: ["driver_1_name"],
-  driver_1_license: ["driver_1_license"],
-  driver_1_dob: ["driver_1_dob"],
-  driver_1_license_number: ["driver_1_license"],
-  driver_1_license_state: ["driver_1_license_state"],
-  driver_2_name: ["driver_2_name"],
-  driver_2_dob: ["driver_2_dob"],
-  driver_2_license: ["driver_2_license"],
-  driver_2_license_state: ["driver_2_license_state"],
-  driver_3_name: ["driver_3_name"],
-  driver_3_dob: ["driver_3_dob"],
-  driver_3_license: ["driver_3_license"],
-  driver_3_license_state: ["driver_3_license_state"],
-  driver_4_name: ["driver_4_name"],
-  driver_4_dob: ["driver_4_dob"],
-  driver_4_license: ["driver_4_license"],
-  driver_4_license_state: ["driver_4_license_state"],
-  driver_5_name: ["driver_5_name"],
-  driver_5_dob: ["driver_5_dob"],
-  driver_5_license: ["driver_5_license"],
-  driver_5_license_state: ["driver_5_license_state"],
+  // ── Auto / ACORD 127 Driver Fields ──
+  // For each driver, map composite name, split names, and all detail fields
+  ...(() => {
+    const driverAliases: Record<string, string[]> = {};
+    for (let n = 1; n <= 13; n++) {
+      driverAliases[`driver_${n}_full_name`] = [`driver_${n}_name`];
+      driverAliases[`driver_${n}_name`] = [`driver_${n}_name`];
+      driverAliases[`driver_${n}_first_name`] = [`driver_${n}_first_name`];
+      driverAliases[`driver_${n}_last_name`] = [`driver_${n}_last_name`];
+      driverAliases[`driver_${n}_dob`] = [`driver_${n}_dob`];
+      driverAliases[`driver_${n}_license`] = [`driver_${n}_license`];
+      driverAliases[`driver_${n}_license_number`] = [`driver_${n}_license`];
+      driverAliases[`driver_${n}_license_state`] = [`driver_${n}_license_state`];
+      driverAliases[`driver_${n}_sex`] = [`driver_${n}_sex`];
+      driverAliases[`driver_${n}_marital`] = [`driver_${n}_marital`];
+      driverAliases[`driver_${n}_marital_status`] = [`driver_${n}_marital`];
+      driverAliases[`driver_${n}_experience`] = [`driver_${n}_experience`];
+      driverAliases[`driver_${n}_years_experience`] = [`driver_${n}_experience`];
+      driverAliases[`driver_${n}_hired_date`] = [`driver_${n}_hired_date`];
+      driverAliases[`driver_${n}_ssn`] = [`driver_${n}_ssn`];
+      driverAliases[`driver_${n}_city`] = [`driver_${n}_city`];
+      driverAliases[`driver_${n}_state`] = [`driver_${n}_state`];
+      driverAliases[`driver_${n}_zip`] = [`driver_${n}_zip`];
+      driverAliases[`driver_${n}_middle`] = [`driver_${n}_middle`];
+      driverAliases[`driver_${n}_vehicle_id`] = [`driver_${n}_vehicle_id`];
+      driverAliases[`driver_${n}_vehicle_pct`] = [`driver_${n}_vehicle_pct`];
+    }
+    return driverAliases;
+  })(),
   vehicle_1_year: ["vehicle_1_year"],
   vehicle_1_make: ["vehicle_1_make"],
   vehicle_1_model: ["vehicle_1_model"],
