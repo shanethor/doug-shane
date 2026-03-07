@@ -249,12 +249,34 @@ const AI_TO_FORM_ALIASES: Record<string, string[]> = {
   driver_1_dob: ["driver_1_dob"],
   driver_1_license_number: ["driver_1_license"],
   driver_1_license_state: ["driver_1_license_state"],
+  driver_2_name: ["driver_2_name"],
+  driver_2_dob: ["driver_2_dob"],
+  driver_2_license: ["driver_2_license"],
+  driver_2_license_state: ["driver_2_license_state"],
+  driver_3_name: ["driver_3_name"],
+  driver_3_dob: ["driver_3_dob"],
+  driver_3_license: ["driver_3_license"],
+  driver_3_license_state: ["driver_3_license_state"],
+  driver_4_name: ["driver_4_name"],
+  driver_4_dob: ["driver_4_dob"],
+  driver_4_license: ["driver_4_license"],
+  driver_4_license_state: ["driver_4_license_state"],
+  driver_5_name: ["driver_5_name"],
+  driver_5_dob: ["driver_5_dob"],
+  driver_5_license: ["driver_5_license"],
+  driver_5_license_state: ["driver_5_license_state"],
   vehicle_1_year: ["vehicle_1_year"],
   vehicle_1_make: ["vehicle_1_make"],
   vehicle_1_model: ["vehicle_1_model"],
   vehicle_1_vin: ["vehicle_1_vin"],
   vehicle_1_body_type: ["vehicle_1_body_type"],
   vehicle_1_cost_new: ["vehicle_1_cost_new"],
+  auto_liability_limit: ["auto_liability_limit"],
+  auto_liability_premium: ["auto_liability_premium", "auto_premium"],
+  um_uim_limit: ["um_uim_limit"],
+  number_of_vehicles: ["number_of_vehicles"],
+  number_of_drivers: ["number_of_drivers"],
+  radius_of_operations: ["radius_of_operations"],
 
   // ── Umbrella / Excess ──
   each_occurrence_limit: ["each_occurrence_limit"],
@@ -410,7 +432,8 @@ const DATE_FIELDS = new Set([
   "proposed_eff_date", "proposed_exp_date", "effective_date", "expiration_date",
   "date_business_started", "prior_eff_date", "prior_exp_date", "retroactive_date",
   "pending_litigation_date", "signature_date", "mod_effective_date",
-  "prior_eff_date_1", "prior_exp_date_1", "driver_1_dob", "driver_2_dob",
+  "prior_eff_date_1", "prior_exp_date_1",
+  "driver_1_dob", "driver_2_dob", "driver_3_dob", "driver_4_dob", "driver_5_dob", "driver_6_dob",
   "officer_1_dob", "ebl_retroactive_date", "entry_date_claims_made",
   "anniversary_rating_date", "transaction_date",
 ]);
@@ -458,6 +481,9 @@ export const CURRENCY_FIELDS = new Set([
   "underlying_el_premium", "ebl_limit", "ebl_deductible_per_claim", "ebl_retained_limit",
   "wc_each_accident", "wc_disease_policy_limit", "wc_disease_each_employee",
   "vehicle_1_cost_new", "max_dollar_value_at_risk", "paid_to_subcontractors",
+  "vehicle_2_cost_new", "vehicle_3_cost_new", "vehicle_4_cost_new",
+  "vehicle_5_cost_new", "vehicle_6_cost_new", "vehicle_7_cost_new", "vehicle_8_cost_new",
+  "auto_liability_limit", "um_uim_limit",
   "deposit_amount", "minimum_premium", "policy_premium", "annual_gross_sales",
   "annual_payroll", "officer_1_remuneration", "sinkhole_limit", "mine_subsidence_limit",
   "spoilage_limit", "blanket_1_amount",
@@ -588,6 +614,9 @@ export function buildAutofilledData(
       [`vehicle_${n}_model`]: aiData[`vehicle_${n}_model`] || "",
       [`vehicle_${n}_vin`]: aiData[`vehicle_${n}_vin`] || "",
       [`vehicle_${n}_body_type`]: aiData[`vehicle_${n}_body_type`] || "",
+      [`vehicle_${n}_cost_new`]: aiData[`vehicle_${n}_cost_new`] || aiData[`vehicle_${n}_stated_amount`] || "",
+      [`vehicle_${n}_garaging_zip`]: aiData[`vehicle_${n}_garaging_zip`] || "",
+      [`vehicle_${n}_gvw`]: aiData[`vehicle_${n}_gvw`] || "",
     };
     for (const [k, val] of Object.entries(vKeys)) {
       if (val && formFieldKeys.has(k) && !mapped[k]) mapped[k] = val;
@@ -595,6 +624,8 @@ export function buildAutofilledData(
     const dKeys: Record<string, string> = {
       [`driver_${n}_name`]: aiData[`driver_${n}_name`] || "",
       [`driver_${n}_dob`]: aiData[`driver_${n}_dob`] || "",
+      [`driver_${n}_license`]: aiData[`driver_${n}_license`] || "",
+      [`driver_${n}_license_state`]: aiData[`driver_${n}_license_state`] || "",
     };
     for (const [k, val] of Object.entries(dKeys)) {
       if (val && formFieldKeys.has(k) && !mapped[k]) mapped[k] = normalizeValue(k, val);
