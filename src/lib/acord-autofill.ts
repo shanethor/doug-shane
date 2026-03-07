@@ -612,7 +612,7 @@ export function buildAutofilledData(
       [`vehicle_${n}_make`]: v.make || v.vehicle_make || "",
       [`vehicle_${n}_model`]: v.model || v.vehicle_model || "",
       [`vehicle_${n}_vin`]: v.vin || v.vehicle_vin || v.VIN || "",
-      [`vehicle_${n}_body_type`]: v.body_type || v.bodyType || v.type || "",
+      [`vehicle_${n}_body_type`]: v.body_type || v.bodyType || v.type || classifyVehicleBodyType(v.make || v.vehicle_make || "", v.model || v.vehicle_model || ""),
       [`vehicle_${n}_cost_new`]: v.stated_amount || v.cost_new || v.statedAmount || "",
       [`vehicle_${n}_garaging_zip`]: v.garaging_zip || v.zip || "",
     };
