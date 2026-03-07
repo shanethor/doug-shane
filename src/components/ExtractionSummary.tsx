@@ -191,13 +191,64 @@ export default function ExtractionSummary({ submissionId, requestedFormIds = [],
     }
   };
 
-  const handleAddForms = () => {
+  const handleAddForms = async () => {
     if (selectedAddForms.size === 0) return;
     const newIds = [...requestedFormIds, ...Array.from(selectedAddForms)];
     onFormsChanged?.(newIds);
     setShowAddForm(false);
     setSelectedAddForms(new Set());
     toast({ title: "Forms added", description: `${selectedAddForms.size} form(s) added to your package.` });
+
+    // Re-run stats computation immediately for the new forms using cached app data
+    if (applicationId) {
+      const { data } = await supabase
+        .from("insurance_applications")
+        .select("form_data")
+        .eq("id", applicationId)
+        .single();
+      if (data?.form_data) {
+        // Temporarily override scopedForms by computing stats with new IDs
+        const newScopedForms = ACORD_FORM_LIST.filter(f => newIds.includes(f.id));
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("full_name, agency_name, phone, form_defaults")
+          .eq("user_id", user!.id)
+          .single();
+        const defaults = (profile?.form_defaults || {}) as Record<string, string>;
+        const appData = data.form_data as Record<string, any>;
+
+        const isMeaningful = (v: any): boolean => {
+          if (v === undefined || v === null) return false;
+          const s = String(v).trim();
+          return s !== "" && s !== "N/A" && s !== "n/a" && s !== "[]";
+        };
+
+        const results = await Promise.all(
+          newScopedForms.map(async (form) => {
+            const { data: filled } = await buildAutofilledDataWithAI(form, appData, profile, defaults);
+            for (const [k, v] of Object.entries(defaults)) {
+              if (v && !filled[k]) filled[k] = v;
+            }
+            for (const field of form.fields) {
+              if (field.default && !isMeaningful(filled[field.key])) {
+                filled[field.key] = field.default;
+              }
+            }
+            const total = form.fields.length;
+            const filledCount = form.fields.filter((f) => isMeaningful(filled[f.key])).length;
+            return { form, filled: filledCount, total, pct: Math.round((filledCount / total) * 100) };
+          })
+        );
+
+        const formStats: FormStat[] = results.map(r => ({ form: r.form, filled: r.filled, total: r.total, pct: r.pct }));
+        formStats.sort((a, b) => (b.filled > 0 ? 1 : 0) - (a.filled > 0 ? 1 : 0) || b.pct - a.pct);
+        setStats(formStats);
+        let tFilled = 0, tTotal = 0;
+        for (const s of formStats) { tFilled += s.filled; tTotal += s.total; }
+        setTotalFilled(tFilled);
+        setTotalFields(tTotal);
+      }
+    }
   };
 
   const availableToAdd = ACORD_FORM_LIST.filter(f => !requestedFormIds.includes(f.id));

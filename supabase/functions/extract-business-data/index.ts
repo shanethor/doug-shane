@@ -863,11 +863,32 @@ serve(async (req) => {
     return new Response(JSON.stringify(extracted), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
-  } catch (e) {
+  } catch (e: any) {
     console.error("extract error:", e);
+    const errMsg = e?.message || "";
+    let userError = "An error occurred processing your request";
+    let statusCode = 500;
+
+    if (errMsg.startsWith("VISION_KEY_INVALID")) {
+      userError = "Google Cloud API key is invalid or the Vision API is not enabled. Please update your API key in settings.";
+      statusCode = 400;
+    } else if (errMsg.startsWith("VISION_QUOTA_EXCEEDED")) {
+      userError = "Google Cloud Vision API quota exceeded. Please wait a few minutes or increase your quota.";
+      statusCode = 429;
+    } else if (errMsg.startsWith("VISION_ERROR")) {
+      userError = errMsg.replace("VISION_ERROR: ", "");
+      statusCode = 400;
+    } else if (errMsg.includes("Rate limited")) {
+      userError = "AI service is rate limited. Please try again in a moment.";
+      statusCode = 429;
+    } else if (errMsg.includes("AI credits exhausted")) {
+      userError = "AI credits have been exhausted. Please check your plan.";
+      statusCode = 402;
+    }
+
     return new Response(
-      JSON.stringify({ error: "An error occurred processing your request" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      JSON.stringify({ error: userError }),
+      { status: statusCode, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 });
