@@ -374,15 +374,21 @@ const acord127Fields: AcordFormField[] = [
 
   // Driver Information
   { key: "driver_1_name", label: "Driver 1 Name", type: "text", section: "Driver Information" },
+  { key: "driver_1_first_name", label: "Driver 1 First Name", type: "text", section: "Driver Information" },
+  { key: "driver_1_last_name", label: "Driver 1 Last Name", type: "text", section: "Driver Information" },
   { key: "driver_1_sex", label: "Driver 1 Sex", type: "select", options: ["M", "F"], section: "Driver Information" },
   { key: "driver_1_marital", label: "Driver 1 Marital Status", type: "select", options: ["S", "M", "W", "D"], section: "Driver Information" },
   { key: "driver_1_dob", label: "Driver 1 Date of Birth", type: "date", section: "Driver Information" },
-  { key: "driver_1_license", label: "Driver 1 License # / State", type: "text", section: "Driver Information" },
+  { key: "driver_1_license", label: "Driver 1 License #", type: "text", section: "Driver Information" },
+  { key: "driver_1_license_state", label: "Driver 1 License State", type: "text", section: "Driver Information" },
   { key: "driver_2_name", label: "Driver 2 Name", type: "text", section: "Driver Information" },
+  { key: "driver_2_first_name", label: "Driver 2 First Name", type: "text", section: "Driver Information" },
+  { key: "driver_2_last_name", label: "Driver 2 Last Name", type: "text", section: "Driver Information" },
   { key: "driver_2_sex", label: "Driver 2 Sex", type: "select", options: ["M", "F"], section: "Driver Information" },
   { key: "driver_2_marital", label: "Driver 2 Marital Status", type: "select", options: ["S", "M", "W", "D"], section: "Driver Information" },
   { key: "driver_2_dob", label: "Driver 2 Date of Birth", type: "date", section: "Driver Information" },
-  { key: "driver_2_license", label: "Driver 2 License # / State", type: "text", section: "Driver Information" },
+  { key: "driver_2_license", label: "Driver 2 License #", type: "text", section: "Driver Information" },
+  { key: "driver_2_license_state", label: "Driver 2 License State", type: "text", section: "Driver Information" },
 
   // General Information
   { key: "vehicles_not_solely_owned", label: "1. Any vehicles not solely owned by applicant?", type: "select", options: ["Yes", "No"], section: "General Information", default: "No" },
