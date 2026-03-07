@@ -165,15 +165,32 @@ const acord125Fields: AcordFormField[] = [
   // Remarks
   { key: "remarks", label: "Remarks / Processing Instructions", type: "textarea", section: "Remarks" },
 
-  // Prior Carrier Information
+  // Prior Carrier Information — GL column
   { key: "prior_year_1", label: "Prior Year 1", type: "text", section: "Prior Carrier Information" },
-  { key: "prior_carrier_1", label: "Prior Carrier 1", type: "text", section: "Prior Carrier Information" },
-  { key: "prior_policy_number_1", label: "Prior Policy Number 1", type: "text", section: "Prior Carrier Information" },
-  { key: "prior_gl_premium_1", label: "Prior GL Premium 1", type: "currency", section: "Prior Carrier Information" },
-  { key: "prior_auto_premium_1", label: "Prior Auto Premium 1", type: "currency", section: "Prior Carrier Information" },
-  { key: "prior_property_premium_1", label: "Prior Property Premium 1", type: "currency", section: "Prior Carrier Information" },
-  { key: "prior_eff_date_1", label: "Prior Eff Date 1", type: "date", section: "Prior Carrier Information" },
-  { key: "prior_exp_date_1", label: "Prior Exp Date 1", type: "date", section: "Prior Carrier Information" },
+  { key: "prior_carrier_1", label: "Prior GL Carrier", type: "text", section: "Prior Carrier Information" },
+  { key: "prior_policy_number_1", label: "Prior GL Policy #", type: "text", section: "Prior Carrier Information" },
+  { key: "prior_gl_premium_1", label: "Prior GL Premium", type: "currency", section: "Prior Carrier Information" },
+  { key: "prior_eff_date_1", label: "Prior GL Eff Date", type: "date", section: "Prior Carrier Information" },
+  { key: "prior_exp_date_1", label: "Prior GL Exp Date", type: "date", section: "Prior Carrier Information" },
+  // Prior Carrier Information — Auto column
+  { key: "prior_auto_carrier_1", label: "Prior Auto Carrier", type: "text", section: "Prior Carrier Information" },
+  { key: "prior_auto_policy_1", label: "Prior Auto Policy #", type: "text", section: "Prior Carrier Information" },
+  { key: "prior_auto_premium_1", label: "Prior Auto Premium", type: "currency", section: "Prior Carrier Information" },
+  { key: "prior_auto_eff_1", label: "Prior Auto Eff Date", type: "date", section: "Prior Carrier Information" },
+  { key: "prior_auto_exp_1", label: "Prior Auto Exp Date", type: "date", section: "Prior Carrier Information" },
+  // Prior Carrier Information — Property column
+  { key: "prior_prop_carrier_1", label: "Prior Property Carrier", type: "text", section: "Prior Carrier Information" },
+  { key: "prior_prop_policy_1", label: "Prior Property Policy #", type: "text", section: "Prior Carrier Information" },
+  { key: "prior_prop_premium_1", label: "Prior Property Premium", type: "currency", section: "Prior Carrier Information" },
+  { key: "prior_prop_eff_1", label: "Prior Property Eff Date", type: "date", section: "Prior Carrier Information" },
+  { key: "prior_prop_exp_1", label: "Prior Property Exp Date", type: "date", section: "Prior Carrier Information" },
+  // Prior Carrier Information — Other LOB column (Umbrella/WC)
+  { key: "prior_other_lob_1", label: "Prior Other LOB", type: "text", section: "Prior Carrier Information" },
+  { key: "prior_other_carrier_1", label: "Prior Other Carrier", type: "text", section: "Prior Carrier Information" },
+  { key: "prior_other_policy_1", label: "Prior Other Policy #", type: "text", section: "Prior Carrier Information" },
+  { key: "prior_other_premium_1", label: "Prior Other Premium", type: "currency", section: "Prior Carrier Information" },
+  { key: "prior_other_eff_1", label: "Prior Other Eff Date", type: "date", section: "Prior Carrier Information" },
+  { key: "prior_other_exp_1", label: "Prior Other Exp Date", type: "date", section: "Prior Carrier Information" },
 
   // Loss History
   { key: "no_losses", label: "No losses to report", type: "checkbox", section: "Loss History" },
