@@ -10,7 +10,7 @@ serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { pdfBase64 } = await req.json();
+    const { pdfUrl } = await req.json();
     const GOOGLE_CLOUD_API_KEY = Deno.env.get("GOOGLE_CLOUD_API_KEY");
     if (!GOOGLE_CLOUD_API_KEY) {
       return new Response(JSON.stringify({ error: "GOOGLE_CLOUD_API_KEY not set" }), {
@@ -18,13 +18,31 @@ serve(async (req) => {
       });
     }
 
-    if (!pdfBase64 || pdfBase64.length < 100) {
-      return new Response(JSON.stringify({ error: "No pdfBase64 provided or too short" }), {
+    if (!pdfUrl) {
+      return new Response(JSON.stringify({ error: "No pdfUrl provided" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    console.log(`[diag] PDF base64 length: ${pdfBase64.length}`);
+    // Fetch the PDF from URL and convert to base64
+    console.log(`[diag] Fetching PDF from: ${pdfUrl}`);
+    const pdfResp = await fetch(pdfUrl);
+    if (!pdfResp.ok) {
+      return new Response(JSON.stringify({ error: `Failed to fetch PDF: ${pdfResp.status}` }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const pdfArrayBuffer = await pdfResp.arrayBuffer();
+    const pdfBytes = new Uint8Array(pdfArrayBuffer);
+    let pdfBase64 = "";
+    // Convert to base64 in chunks to avoid stack overflow
+    const chunkSize = 8192;
+    for (let i = 0; i < pdfBytes.length; i += chunkSize) {
+      const chunk = pdfBytes.subarray(i, i + chunkSize);
+      pdfBase64 += String.fromCharCode(...chunk);
+    }
+    pdfBase64 = btoa(pdfBase64);
+    console.log(`[diag] PDF base64 length: ${pdfBase64.length} (${pdfBytes.length} bytes)`);
 
     // Test 1: files:annotate (correct endpoint for PDFs)
     const filesUrl = `https://vision.googleapis.com/v1/files:annotate?key=${GOOGLE_CLOUD_API_KEY}`;
