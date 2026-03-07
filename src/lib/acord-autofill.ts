@@ -273,28 +273,35 @@ const AI_TO_FORM_ALIASES: Record<string, string[]> = {
   has_workers_comp: ["wc_other_insurance_same"],
   contractor_license: ["producer_license_no"],
 
-  // ── Auto ──
-  driver_1_name: ["driver_1_name"],
-  driver_1_license: ["driver_1_license"],
-  driver_1_dob: ["driver_1_dob"],
-  driver_1_license_number: ["driver_1_license"],
-  driver_1_license_state: ["driver_1_license_state"],
-  driver_2_name: ["driver_2_name"],
-  driver_2_dob: ["driver_2_dob"],
-  driver_2_license: ["driver_2_license"],
-  driver_2_license_state: ["driver_2_license_state"],
-  driver_3_name: ["driver_3_name"],
-  driver_3_dob: ["driver_3_dob"],
-  driver_3_license: ["driver_3_license"],
-  driver_3_license_state: ["driver_3_license_state"],
-  driver_4_name: ["driver_4_name"],
-  driver_4_dob: ["driver_4_dob"],
-  driver_4_license: ["driver_4_license"],
-  driver_4_license_state: ["driver_4_license_state"],
-  driver_5_name: ["driver_5_name"],
-  driver_5_dob: ["driver_5_dob"],
-  driver_5_license: ["driver_5_license"],
-  driver_5_license_state: ["driver_5_license_state"],
+  // ── Auto / ACORD 127 Driver Fields ──
+  // For each driver, map composite name, split names, and all detail fields
+  ...(() => {
+    const driverAliases: Record<string, string[]> = {};
+    for (let n = 1; n <= 13; n++) {
+      driverAliases[`driver_${n}_full_name`] = [`driver_${n}_name`];
+      driverAliases[`driver_${n}_name`] = [`driver_${n}_name`];
+      driverAliases[`driver_${n}_first_name`] = [`driver_${n}_first_name`];
+      driverAliases[`driver_${n}_last_name`] = [`driver_${n}_last_name`];
+      driverAliases[`driver_${n}_dob`] = [`driver_${n}_dob`];
+      driverAliases[`driver_${n}_license`] = [`driver_${n}_license`];
+      driverAliases[`driver_${n}_license_number`] = [`driver_${n}_license`];
+      driverAliases[`driver_${n}_license_state`] = [`driver_${n}_license_state`];
+      driverAliases[`driver_${n}_sex`] = [`driver_${n}_sex`];
+      driverAliases[`driver_${n}_marital`] = [`driver_${n}_marital`];
+      driverAliases[`driver_${n}_marital_status`] = [`driver_${n}_marital`];
+      driverAliases[`driver_${n}_experience`] = [`driver_${n}_experience`];
+      driverAliases[`driver_${n}_years_experience`] = [`driver_${n}_experience`];
+      driverAliases[`driver_${n}_hired_date`] = [`driver_${n}_hired_date`];
+      driverAliases[`driver_${n}_ssn`] = [`driver_${n}_ssn`];
+      driverAliases[`driver_${n}_city`] = [`driver_${n}_city`];
+      driverAliases[`driver_${n}_state`] = [`driver_${n}_state`];
+      driverAliases[`driver_${n}_zip`] = [`driver_${n}_zip`];
+      driverAliases[`driver_${n}_middle`] = [`driver_${n}_middle`];
+      driverAliases[`driver_${n}_vehicle_id`] = [`driver_${n}_vehicle_id`];
+      driverAliases[`driver_${n}_vehicle_pct`] = [`driver_${n}_vehicle_pct`];
+    }
+    return driverAliases;
+  })(),
   vehicle_1_year: ["vehicle_1_year"],
   vehicle_1_make: ["vehicle_1_make"],
   vehicle_1_model: ["vehicle_1_model"],
@@ -808,6 +815,17 @@ export function buildAutofilledData(
       [`driver_${n}_dob`]: d.dob || d.date_of_birth || d.birth_date || "",
       [`driver_${n}_license`]: d.license || d.license_number || d.dl_number || "",
       [`driver_${n}_license_state`]: d.license_state || d.state || insuredState,
+      [`driver_${n}_sex`]: d.sex || d.gender || "",
+      [`driver_${n}_marital`]: d.marital_status || d.marital || "",
+      [`driver_${n}_experience`]: d.years_experience || d.experience || "",
+      [`driver_${n}_hired_date`]: d.hired_date || d.hire_date || "",
+      [`driver_${n}_ssn`]: d.ssn || d.social_security || "",
+      [`driver_${n}_city`]: d.city || "",
+      [`driver_${n}_state`]: d.driver_state || "",
+      [`driver_${n}_zip`]: d.zip || "",
+      [`driver_${n}_middle`]: d.middle || d.middle_name || "",
+      [`driver_${n}_vehicle_id`]: d.vehicle_id || d.assigned_vehicle || "",
+      [`driver_${n}_vehicle_pct`]: d.vehicle_pct || d.pct_use || "",
     };
     for (const [k, val] of Object.entries(dFields)) {
       if (val && formFieldKeys.has(k) && !mapped[k]) mapped[k] = normalizeValue(k, val);
@@ -831,9 +849,22 @@ export function buildAutofilledData(
     }
     const dKeys: Record<string, string> = {
       [`driver_${n}_name`]: aiData[`driver_${n}_name`] || "",
+      [`driver_${n}_first_name`]: aiData[`driver_${n}_first_name`] || "",
+      [`driver_${n}_last_name`]: aiData[`driver_${n}_last_name`] || "",
       [`driver_${n}_dob`]: aiData[`driver_${n}_dob`] || "",
       [`driver_${n}_license`]: aiData[`driver_${n}_license`] || "",
       [`driver_${n}_license_state`]: aiData[`driver_${n}_license_state`] || "",
+      [`driver_${n}_sex`]: aiData[`driver_${n}_sex`] || "",
+      [`driver_${n}_marital`]: aiData[`driver_${n}_marital`] || "",
+      [`driver_${n}_experience`]: aiData[`driver_${n}_experience`] || "",
+      [`driver_${n}_hired_date`]: aiData[`driver_${n}_hired_date`] || "",
+      [`driver_${n}_ssn`]: aiData[`driver_${n}_ssn`] || "",
+      [`driver_${n}_city`]: aiData[`driver_${n}_city`] || "",
+      [`driver_${n}_state`]: aiData[`driver_${n}_state`] || "",
+      [`driver_${n}_zip`]: aiData[`driver_${n}_zip`] || "",
+      [`driver_${n}_middle`]: aiData[`driver_${n}_middle`] || "",
+      [`driver_${n}_vehicle_id`]: aiData[`driver_${n}_vehicle_id`] || "",
+      [`driver_${n}_vehicle_pct`]: aiData[`driver_${n}_vehicle_pct`] || "",
     };
     for (const [k, val] of Object.entries(dKeys)) {
       if (val && formFieldKeys.has(k) && !mapped[k]) mapped[k] = normalizeValue(k, val);

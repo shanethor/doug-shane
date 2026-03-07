@@ -67,21 +67,44 @@ function extractNumberedItems<T>(
 
 export function mapAcord127(data: Record<string, any>): Acord127Data {
   const drivers = extractNumberedItems<Acord127Driver>(data, "driver_", 13, (d, i) => {
-    const name = d[`driver_${i}_first_name`] || d[`driver_${i}_name`];
-    if (!name) return null;
+    const firstName = d[`driver_${i}_first_name`] || "";
+    const lastName = d[`driver_${i}_last_name`] || "";
+    const compositeName = d[`driver_${i}_name`] || "";
+    
+    // Accept driver row if ANY identifying field is present (name, DOB, or license)
+    const hasName = firstName || lastName || compositeName;
+    const hasDob = d[`driver_${i}_dob`];
+    const hasLicense = d[`driver_${i}_license`];
+    if (!hasName && !hasDob && !hasLicense) return null;
+
+    // Derive first/last from composite "LAST, FIRST" if split fields are empty
+    let derivedFirst = firstName;
+    let derivedLast = lastName;
+    if (!derivedFirst && !derivedLast && compositeName) {
+      if (compositeName.includes(",")) {
+        const parts = compositeName.split(",").map((s: string) => s.trim());
+        derivedLast = parts[0] || "";
+        derivedFirst = parts[1] || "";
+      } else {
+        const parts = compositeName.trim().split(/\s+/);
+        derivedFirst = parts[0] || "";
+        derivedLast = parts.slice(1).join(" ") || "";
+      }
+    }
+
     return {
       id: d[`driver_${i}_id`],
-      first_name: d[`driver_${i}_first_name`] || name,
+      first_name: derivedFirst || compositeName,
       middle: d[`driver_${i}_middle`],
-      last_name: d[`driver_${i}_last_name`] || "",
+      last_name: derivedLast || "",
       city: d[`driver_${i}_city`],
       state: d[`driver_${i}_state`],
       zip: d[`driver_${i}_zip`],
       sex: d[`driver_${i}_sex`],
       marital_status: d[`driver_${i}_marital`],
-      dob: d[`driver_${i}_dob`],
+      dob: d[`driver_${i}_dob`] || "",
       years_experience: d[`driver_${i}_experience`],
-      license_number: d[`driver_${i}_license`],
+      license_number: d[`driver_${i}_license`] || "",
       license_state: d[`driver_${i}_license_state`] || d[`driver_${i}_state_lic`],
       ssn: d[`driver_${i}_ssn`],
       hired_date: d[`driver_${i}_hired_date`],
