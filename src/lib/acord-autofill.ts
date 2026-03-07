@@ -362,8 +362,28 @@ const AI_TO_FORM_ALIASES: Record<string, string[]> = {
   lob_auto: ["chk_lob_auto"],
   lob_property: ["chk_lob_property"],
   lob_umbrella: ["chk_lob_umbrella"],
-  lob_wc: [],  // No checkbox on 125 for WC (separate 130 form)
+  lob_wc: ["lob_other"],  // WC maps to "Other LOB" on ACORD 125
   lob_commercial_general_liability: ["chk_lob_cgl", "lob_commercial_general_liability", "chk_commercial_general_liability"],
+
+  // ── Multi-policy carrier / premium aliases ──
+  wc_premium: ["other_lob_premium"],
+  wc_carrier: ["prior_other_carrier_1"],
+  wc_policy_number: ["prior_other_policy_1"],
+  umbrella_carrier: ["prior_other_carrier_1"],
+  umbrella_policy_number: ["prior_other_policy_1"],
+  bop_carrier: ["carrier", "prior_carrier_1"],
+  bop_policy_number: ["policy_number", "prior_policy_number_1"],
+  auto_carrier: ["prior_auto_carrier_1"],
+  auto_policy_number: ["prior_auto_policy_1"],
+  property_carrier: ["prior_prop_carrier_1"],
+  property_policy_number: ["prior_prop_policy_1"],
+
+  // ── Prior carrier premiums (per-LOB) ──
+  prior_gl_premium: ["prior_gl_premium_1"],
+  prior_auto_premium: ["prior_auto_premium_1"],
+  prior_property_premium: ["prior_prop_premium_1"],
+  prior_umbrella_premium: ["prior_other_premium_1"],
+  prior_wc_premium: ["prior_other_premium_1"],
 
   // ── ACORD 126 Checkboxes (coverage triggers, deductibles, limits) ──
   chk_commercial_general_liability: ["chk_commercial_general_liability", "chk_lob_cgl", "lob_commercial_general_liability"],
