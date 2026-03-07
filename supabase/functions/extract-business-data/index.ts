@@ -98,6 +98,7 @@ async function callLovableGateway(
   pdf_files: any[],
   hasPdfs: boolean,
   corsHeaders: Record<string, string>,
+  model = "google/gemini-2.5-flash",
 ): Promise<string> {
   type ContentPart = { type: string; text?: string; image_url?: { url: string } };
   const userContent: ContentPart[] = [{ type: "text", text: userPromptText }];
@@ -113,10 +114,8 @@ async function callLovableGateway(
     }
   }
 
-  // Use Flash for speed — Pro is too slow for extraction
-  const model = "google/gemini-2.5-flash";
   const t0 = Date.now();
-  console.log(`[extract] Calling Gemini ${model}...`);
+  console.log(`[extract] Calling ${model}...`);
 
   const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
@@ -133,25 +132,79 @@ async function callLovableGateway(
     }),
   });
 
-  console.log(`[extract] Gemini responded in ${Date.now() - t0}ms (status: ${response.status})`);
+  console.log(`[extract] ${model} responded in ${Date.now() - t0}ms (status: ${response.status})`);
 
   if (!response.ok) {
     const t = await response.text();
     console.error("AI gateway error:", response.status, t);
     if (response.status === 429) throw new Error("Rate limited, please try again shortly.");
     if (response.status === 402) throw new Error("AI credits exhausted.");
-    throw new Error("AI extraction failed");
+    throw new Error(`AI extraction failed (${response.status})`);
   }
 
   const aiResult = await response.json();
   return aiResult.choices?.[0]?.message?.content || "{}";
 }
 
-/**
- * Claude can return multiple content blocks; concatenate all text blocks.
- * This avoids false empty-results when the first block is not usable text.
- */
-function extractClaudeText(result: any): string {
+/** Helper: call Claude API for extraction (used as fallback for high-value extractions) */
+async function callClaude(
+  apiKey: string,
+  systemPrompt: string,
+  userPromptText: string,
+  pdf_files: any[],
+): Promise<string> {
+  const claudeContent: any[] = [];
+  for (const pf of pdf_files) {
+    if (pf.base64) {
+      const mediaType = pf.mimeType === "application/pdf" ? "application/pdf"
+        : pf.mimeType?.startsWith("image/") ? pf.mimeType : "application/pdf";
+
+      if (mediaType === "application/pdf") {
+        claudeContent.push({
+          type: "document",
+          source: { type: "base64", media_type: "application/pdf", data: pf.base64 },
+        });
+      } else {
+        claudeContent.push({
+          type: "image",
+          source: { type: "base64", media_type: mediaType, data: pf.base64 },
+        });
+      }
+    }
+  }
+  claudeContent.push({ type: "text", text: userPromptText });
+
+  const t0 = Date.now();
+  console.log(`[extract] Calling Claude Sonnet 4...`);
+
+  const response = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "x-api-key": apiKey,
+      "anthropic-version": "2023-06-01",
+      "anthropic-beta": "pdfs-2024-09-25",
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 8192,
+      system: systemPrompt,
+      messages: [{ role: "user", content: claudeContent }],
+    }),
+  });
+
+  console.log(`[extract] Claude responded in ${Date.now() - t0}ms (status: ${response.status})`);
+
+  if (!response.ok) {
+    const errText = await response.text();
+    console.error("Claude API error:", response.status, errText);
+    throw new Error(`Claude API error: ${response.status}`);
+  }
+
+  const result = await response.json();
+  const contentBlocks = Array.isArray(result?.content) ? result.content.length : 0;
+  console.log(`[extract] Claude stop_reason=${result?.stop_reason || "unknown"}, content_blocks=${contentBlocks}, usage=${JSON.stringify(result?.usage || {})}`);
+
   const blocks = Array.isArray(result?.content) ? result.content : [];
   const text = blocks
     .filter((b: any) => b?.type === "text" && typeof b?.text === "string")
@@ -159,7 +212,8 @@ function extractClaudeText(result: any): string {
     .join("\n")
     .trim();
 
-  return text || "";
+  if (!text) throw new Error("Claude returned empty content");
+  return text;
 }
 
 serve(async (req) => {
