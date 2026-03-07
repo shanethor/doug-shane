@@ -288,11 +288,35 @@ async function runGoogleOcrSingleChunk(
   }
 
   const result = await resp.json();
-  const responses = result.responses?.[0]?.responses || [];
+  
+  // Debug: log the response structure to diagnose empty OCR
+  const topKeys = Object.keys(result || {});
+  const firstResp = result.responses?.[0];
+  const firstRespKeys = firstResp ? Object.keys(firstResp) : [];
+  console.log(`[ocr-debug] Response keys: ${topKeys.join(",")}, firstResp keys: ${firstRespKeys.join(",")}, responses count: ${result.responses?.length || 0}`);
+  
+  // files:annotate wraps in responses[0].responses[]
+  const responses = firstResp?.responses || [];
+  console.log(`[ocr-debug] Inner responses count: ${responses.length}, first inner keys: ${responses[0] ? Object.keys(responses[0]).join(",") : "N/A"}`);
+  
+  // If no inner responses, try treating as flat (images:annotate style)
+  if (responses.length === 0 && firstResp?.fullTextAnnotation) {
+    console.log(`[ocr-debug] Found flat fullTextAnnotation, using images:annotate style`);
+    return [{
+      pageNumber: 1,
+      text: firstResp.fullTextAnnotation.text || "",
+      confidence: firstResp.fullTextAnnotation.pages?.[0]?.confidence || 0.9,
+    }];
+  }
+  
   const pages: OcrPage[] = [];
 
   for (let i = 0; i < responses.length; i++) {
     const annotation = responses[i]?.fullTextAnnotation;
+    const textLen = annotation?.text?.length || 0;
+    if (i === 0) {
+      console.log(`[ocr-debug] Page ${i+1}: hasAnnotation=${!!annotation}, textLen=${textLen}, respKeys=${Object.keys(responses[i] || {}).join(",")}`);
+    }
     pages.push({
       pageNumber: i + 1,
       text: annotation?.text || "",
