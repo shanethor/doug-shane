@@ -219,7 +219,21 @@ const FillablePdfViewer = forwardRef<FillablePdfViewerHandle, FillablePdfViewerP
                 // Use method-existence checks instead of constructor.name
                 // (ACORD PDFs often have non-standard constructor names like PDFTextField2)
                 if (typeof f.setText === "function") {
-                  f.setText(String(value));
+                  let textVal = String(value);
+                  // Handle maxLength fields (e.g., Y/N question fields with maxLength=1)
+                  const maxLen = f.getMaxLength?.();
+                  if (maxLen && textVal.length > maxLen) {
+                    // For Y/N fields: "Yes"→"Y", "No"→"N", "true"→"Y", "false"→"N"
+                    if (maxLen === 1) {
+                      const lower = textVal.toLowerCase();
+                      if (lower === "yes" || lower === "true" || lower === "y") textVal = "Y";
+                      else if (lower === "no" || lower === "false" || lower === "n") textVal = "N";
+                      else textVal = textVal.substring(0, 1);
+                    } else {
+                      textVal = textVal.substring(0, maxLen);
+                    }
+                  }
+                  f.setText(textVal);
                   try { f.defaultUpdateAppearances(helvetica); } catch (_) {}
                   filled++;
                 } else if (typeof f.check === "function") {
