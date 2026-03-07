@@ -202,13 +202,14 @@ const FillablePdfViewer = forwardRef<FillablePdfViewerHandle, FillablePdfViewerP
         console.warn(`[pdf-lib] prefillByIndex has ${prefillEntries.length} entries`);
         if (prefillEntries.length > 0) {
           try {
-            const { PDFDocument, StandardFonts } = await import("pdf-lib");
+            const { PDFDocument, StandardFonts, PDFName, PDFDict, PDFArray, PDFString, PDFHexString, rgb } = await import("pdf-lib");
             const doc = await PDFDocument.load(new Uint8Array(pdfBuffer), { ignoreEncryption: true });
             const helvetica = await doc.embedFont(StandardFonts.Helvetica);
             const form = doc.getForm();
             const allFields = form.getFields();
             console.warn(`[pdf-lib] PDF has ${allFields.length} form fields`);
             let filled = 0;
+            const checkboxIndices: number[] = [];
             for (const [idxStr, value] of prefillEntries) {
               const idx = Number(idxStr);
               const field = allFields[idx];
@@ -222,8 +223,61 @@ const FillablePdfViewer = forwardRef<FillablePdfViewerHandle, FillablePdfViewerP
                   try { f.defaultUpdateAppearances(helvetica); } catch (_) {}
                   filled++;
                 } else if (typeof f.check === "function") {
-                  if (value === "true" || value === "Yes" || value === "1") f.check();
-                  filled++;
+                  if (value === "true" || value === "Yes" || value === "1" || value === "X") {
+                    // For checkboxes: check the field AND manually create appearance if needed
+                    try {
+                      f.check();
+                      checkboxIndices.push(idx);
+                    } catch (chkErr) {
+                      console.warn(`[pdf-lib] check() failed for field ${idx}, trying manual approach:`, chkErr);
+                    }
+                    // Ensure the checkbox has a valid "On" appearance with an X mark
+                    try {
+                      const widgets = f.acroField?.getWidgets?.() || [];
+                      for (const widget of widgets) {
+                        const ap = widget.dict.get(PDFName.of("AP"));
+                        if (!ap) {
+                          // No appearance dict at all — create one with an X drawn
+                          const rect = widget.getRectangle();
+                          const w = rect.width || 10;
+                          const h = rect.height || 10;
+                          // Draw an X mark
+                          const xStream = `q\n0.2 0.2 0.2 rg\nBT\n/ZaDb 0 Tf\n${w * 0.15} ${h * 0.2} Td\n(4) Tj\nET\nQ`;
+                          // Fallback: just draw crossing lines
+                          const stream = `q\n0.1 0.1 0.1 RG\n1.5 w\n${w * 0.15} ${h * 0.15} m ${w * 0.85} ${h * 0.85} l S\n${w * 0.85} ${h * 0.15} m ${w * 0.15} ${h * 0.85} l S\nQ`;
+                          const appearance = doc.context.formXObject(stream, {
+                            BBox: [0, 0, w, h],
+                          });
+                          const normalAp = doc.context.obj({});
+                          (normalAp as any).set(PDFName.of("Yes"), appearance);
+                          const apDict = doc.context.obj({});
+                          (apDict as any).set(PDFName.of("N"), normalAp);
+                          widget.dict.set(PDFName.of("AP"), apDict);
+                          widget.dict.set(PDFName.of("AS"), PDFName.of("Yes"));
+                          widget.dict.set(PDFName.of("V"), PDFName.of("Yes"));
+                        } else {
+                          // Has AP dict — just make sure AS is set to the on state
+                          const normalDict = (ap as any).get?.(PDFName.of("N"));
+                          if (normalDict && typeof normalDict.entries === "function") {
+                            // Find the "on" state name (usually "Yes", "1", "On", etc.)
+                            for (const [key] of normalDict.entries()) {
+                              const keyName = key instanceof PDFName ? key.decodeText() : String(key);
+                              if (keyName !== "Off") {
+                                widget.dict.set(PDFName.of("AS"), PDFName.of(keyName));
+                                widget.dict.set(PDFName.of("V"), PDFName.of(keyName));
+                                break;
+                              }
+                            }
+                          } else {
+                            widget.dict.set(PDFName.of("AS"), PDFName.of("Yes"));
+                          }
+                        }
+                      }
+                    } catch (apErr) {
+                      console.warn(`[pdf-lib] Manual checkbox appearance failed for ${idx}:`, apErr);
+                    }
+                    filled++;
+                  }
                 } else if (typeof f.select === "function") {
                   try { f.select(String(value)); filled++; } catch (_) {}
                 }
@@ -231,9 +285,19 @@ const FillablePdfViewer = forwardRef<FillablePdfViewerHandle, FillablePdfViewerP
                 console.warn(`[pdf-lib] Failed to set field ${idx} (${field.getName()}):`, fieldErr);
               }
             }
-            // Force appearance streams to be generated for all fields
-            try { form.updateFieldAppearances(helvetica); } catch (_) {}
-            console.warn(`[pdf-lib] Pre-filled ${filled} fields into PDF`);
+            // Force appearance streams for TEXT fields only — skip checkboxes
+            // updateFieldAppearances overwrites checkbox AP streams, breaking them
+            try {
+              for (const [idxStr] of prefillEntries) {
+                const idx = Number(idxStr);
+                if (checkboxIndices.includes(idx)) continue;
+                const field = allFields[idx];
+                if (field && typeof (field as any).setText === "function") {
+                  try { (field as any).defaultUpdateAppearances(helvetica); } catch (_) {}
+                }
+              }
+            } catch (_) {}
+            console.warn(`[pdf-lib] Pre-filled ${filled} fields (${checkboxIndices.length} checkboxes) into PDF`);
             const savedBytes = await doc.save();
             pdfBuffer = savedBytes.buffer as ArrayBuffer;
             console.warn(`[pdf-lib] Saved PDF: ${savedBytes.length} bytes`);
