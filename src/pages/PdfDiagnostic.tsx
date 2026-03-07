@@ -1265,7 +1265,11 @@ export default function PdfDiagnostic() {
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(110px, 1fr))", gap: 4, marginBottom: 24 }}>
               {fields.map(f => {
                 const isMapped = currentIndexMap && Object.values(currentIndexMap).includes(f.index);
-                const isWrongType = isMapped && f.type !== "TXT";
+                const mappedKeyForGrid = currentIndexMap
+                  ? Object.entries(currentIndexMap).find(([, v]) => v === f.index)?.[0]
+                  : undefined;
+                const expectedTypeGrid = mappedKeyForGrid?.startsWith("chk_") ? "CHK" : "TXT";
+                const isWrongType = isMapped && f.type !== expectedTypeGrid;
                 const mappedKey = currentIndexMap
                   ? Object.entries(currentIndexMap).find(([, v]) => v === f.index)?.[0]
                   : undefined;
