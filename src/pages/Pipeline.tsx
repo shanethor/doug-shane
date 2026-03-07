@@ -132,7 +132,8 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
   const [leadPolicyPremiums, setLeadPolicyPremiums] = useState<Record<string, number[]>>({});
 
   const [lossRunStatuses, setLossRunStatuses] = useState<Record<string, string>>({});
-  
+  // Map owner_user_id -> producer name (for manager/admin view)
+  const [ownerNames, setOwnerNames] = useState<Record<string, string>>({});
 
   // Drag-and-drop state
   const [draggedLeadId, setDraggedLeadId] = useState<string | null>(null);
@@ -238,12 +239,27 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
     setLossRunStatuses(lrMap);
 
 
-    setLeads(
-      leadsData.map((l: any) => ({
-        ...l,
-        has_approved_policy: approvedLeadIds.has(l.id),
-      }))
-    );
+    const mappedLeads = leadsData.map((l: any) => ({
+      ...l,
+      has_approved_policy: approvedLeadIds.has(l.id),
+    }));
+    setLeads(mappedLeads);
+
+    // For managers/admins, fetch producer names for all unique owner_user_ids
+    if (isManager || isAdmin) {
+      const ownerIds = [...new Set(leadsData.map((l: any) => l.owner_user_id))];
+      if (ownerIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("user_id, full_name")
+          .in("user_id", ownerIds);
+        const names: Record<string, string> = {};
+        (profiles ?? []).forEach((p: any) => {
+          names[p.user_id] = p.full_name || "Unknown";
+        });
+        setOwnerNames(names);
+      }
+    }
 
     // Compute pipeline stats
     const allPolicies = allPoliciesRes.data ?? [];
@@ -1253,6 +1269,12 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
                                 <LossRunBadge status={lossRunStatuses[lead.id] || null} />
                               )}
                             </div>
+                            {(isManager || isAdmin) && ownerNames[lead.owner_user_id] && lead.owner_user_id !== user?.id && (
+                              <p className="text-[10px] text-primary/70 font-sans truncate ml-[18px]">
+                                <Users className="h-2.5 w-2.5 inline mr-0.5 -mt-px" />
+                                {ownerNames[lead.owner_user_id]}
+                              </p>
+                            )}
                             {lead.contact_name && (
                               <p className="text-xs text-muted-foreground font-sans truncate ml-[18px]">{lead.contact_name}</p>
                             )}
@@ -1375,6 +1397,12 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
                 <CardContent className="p-2 px-3 flex items-center gap-2">
                   <GripVertical className="h-3 w-3 text-muted-foreground/50 shrink-0" />
                   <span className="text-sm font-sans">{lead.account_name}</span>
+                  {(isManager || isAdmin) && ownerNames[lead.owner_user_id] && lead.owner_user_id !== user?.id && (
+                    <Badge variant="outline" className="text-[9px] gap-0.5 font-sans text-primary/70">
+                      <Users className="h-2.5 w-2.5" />
+                      {ownerNames[lead.owner_user_id]}
+                    </Badge>
+                  )}
                   {(lead as any).estimated_renewal_date && (
                     <Badge variant="outline" className="text-[9px] gap-0.5 font-sans">
                       <CalendarDays className="h-2.5 w-2.5" />
