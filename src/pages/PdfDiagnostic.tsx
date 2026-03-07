@@ -1194,7 +1194,8 @@ export default function PdfDiagnostic() {
             </div>
             {Object.entries(currentIndexMap).map(([key, idx]) => {
               const fieldType = fields[idx]?.type ?? "?";
-              const isCorrect = fieldType === "TXT";
+              const expectedType = key.startsWith("chk_") ? "CHK" : "TXT";
+              const isCorrect = fieldType === expectedType;
               return (
                 <div key={key} style={{ fontSize: 10, display: "flex", gap: 6, lineHeight: "15px" }}>
                   <span style={{ color: "#64748b", minWidth: 26 }}>[{idx}]</span>
