@@ -329,6 +329,12 @@ async function runGoogleOcrSingleChunk(
   console.log(`[ocr-debug] Response keys: ${topKeys.join(",")}`);
   console.log(`[ocr-debug] Selected payload key path: ${selectedPath || "none"}; page responses: ${responses.length}; first response keys: ${firstResponseKeys.join(",") || "N/A"}`);
 
+  // TEMP: dump raw payload sample when OCR finds nothing useful
+  if (responses.length === 0 || !firstResponse?.fullTextAnnotation) {
+    const raw = JSON.stringify(result).slice(0, 2000);
+    console.log(`[ocr-raw-dump] ${raw}`);
+  }
+
   // Flat fallback: single fullTextAnnotation at known wrapper levels
   if (responses.length === 0) {
     const flatCandidates = [
