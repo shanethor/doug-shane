@@ -509,6 +509,12 @@ const acord127Fields: AcordFormField[] = [
   { key: "driver_6_dob", label: "Driver 6 Date of Birth", type: "date", section: "Driver Information" },
   { key: "driver_6_license", label: "Driver 6 License #", type: "text", section: "Driver Information" },
   { key: "driver_6_license_state", label: "Driver 6 License State", type: "text", section: "Driver Information" },
+  { key: "driver_7_name", label: "Driver 7 Name", type: "text", section: "Driver Information" },
+  { key: "driver_7_first_name", label: "Driver 7 First Name", type: "text", section: "Driver Information" },
+  { key: "driver_7_last_name", label: "Driver 7 Last Name", type: "text", section: "Driver Information" },
+  { key: "driver_7_dob", label: "Driver 7 Date of Birth", type: "date", section: "Driver Information" },
+  { key: "driver_7_license", label: "Driver 7 License #", type: "text", section: "Driver Information" },
+  { key: "driver_7_license_state", label: "Driver 7 License State", type: "text", section: "Driver Information" },
 
   // Auto coverages
   { key: "auto_liability_limit", label: "Auto Liability Limit", type: "currency", section: "Coverages" },
