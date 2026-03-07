@@ -75,7 +75,7 @@ Return this exact structure:
     "property_premium": "", "property_deductible": "",
     "lob_auto": "false", "lob_gl": "false", "lob_property": "false", "lob_umbrella": "false", "lob_wc": "false",
     "lob_commercial_general_liability": "false",
-    "cgl_premium": "",
+    "cgl_premium": "", "auto_premium": "", "umbrella_premium": "", "wc_premium": "",
     "chk_commercial_general_liability": "false",
     "chk_claims_made": "false", "chk_occurrence": "false",
     "chk_owners_contractors": "false",
@@ -101,8 +101,14 @@ Return this exact structure:
     "deductible_amount": "", "retention_amount": "", "aggregate_applies_per": "",
     "ebl_limit": "", "ebl_deductible_per_claim": "", "ebl_aggregate": "", "ebl_num_employees": "",
     "audit_period": "", "tria_premium": "", "policy_fee": "",
+    "bop_carrier": "", "bop_policy_number": "",
+    "auto_carrier": "", "auto_policy_number": "",
+    "umbrella_carrier": "", "umbrella_policy_number": "",
+    "wc_carrier": "", "wc_policy_number": "",
+    "underwriter": "", "underwriter_office": "",
     "vehicles": [],
-    "drivers": []
+    "drivers": [],
+    "policies": []
   },
   "gaps": []
 }
