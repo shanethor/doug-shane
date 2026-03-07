@@ -204,7 +204,17 @@ export default function FormFillingView({ submissionId, initialMessages, initial
       result[idx] = display;
       debugEntries.push(`  [${idx}] ${internalKey} = "${display.slice(0, 40)}"`);
     }
+    // Log unmapped keys: fields in formData that have values but no PDF index
+    const unmappedKeys: string[] = [];
+    for (const [key, val] of Object.entries(data)) {
+      if (val === undefined || val === null || val === "" || String(val).trim() === "") continue;
+      if (key.startsWith("_") || key === "policies" || key === "drivers" || key === "vehicles" || key === "underlying_insurance" || key === "wc_classifications" || key === "locations" || key === "mortgagees") continue;
+      if (!(key in indexMap)) unmappedKeys.push(key);
+    }
     console.warn(`[prefill] ${fId}: ${debugEntries.length} fields mapped:\n${debugEntries.join("\n")}`);
+    if (unmappedKeys.length > 0) {
+      console.warn(`[prefill] ${fId}: ${unmappedKeys.length} UNMAPPED keys (no PDF index):\n  ${unmappedKeys.join("\n  ")}`);
+    }
     return result;
   }, []);
 
