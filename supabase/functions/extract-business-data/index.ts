@@ -543,6 +543,17 @@ function parseAiJson(raw: string): any {
 //  POST-PROCESSING (shared across all paths)
 // ═══════════════════════════════════════════════════════════
 
+function classifyVehicleBodyType(make: string, model: string): string {
+  const combined = `${make} ${model}`.toLowerCase().trim();
+  if (/trailer|flatbed|lowboy|reefer|tanker|semi[- ]?trailer|drop[- ]?deck|gooseneck|car\s*hauler|dump\s*trailer/i.test(combined)) return "Trailer";
+  if (/f[- ]?[5-9]\d{2}|peterbilt|kenworth|mack|freightliner|international\s*(4[0-9]|work|dura|pay)|hino|isuzu\s*n[prq]r|volvo\s*v[hn]|western\s*star/i.test(combined)) return "Truck";
+  if (/f[- ]?[1-4]50|silverado|sierra|ram\s*[1-5]\d{3}|tundra|titan|tacoma|ranger|colorado|canyon|frontier|ridgeline|maverick|gladiator/i.test(combined)) return "Pickup";
+  if (/sprinter|transit|promaster|express|savana|metris|nv\s*\d|e[- ]?\d{3}/i.test(combined)) return "Van";
+  if (/suburban|tahoe|yukon|expedition|explorer|4runner|sequoia|armada|pathfinder|pilot|highlander|durango|wrangler|bronco|defender/i.test(combined)) return "SUV";
+  if (/sedan|camry|accord|civic|altima|malibu|fusion|corolla|jetta|passat|sonata|elantra|mazda[36]|impreza|legacy/i.test(combined)) return "Sedan";
+  return "";
+}
+
 function postProcess(fd: Record<string, any>, sourceText: string, hasPdfs: boolean): void {
   // Strip potentially hallucinated code fields
   const CODE_FIELDS = [
