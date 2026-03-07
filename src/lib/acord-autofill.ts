@@ -863,16 +863,33 @@ export function buildAutofilledData(
           if (p.effective_date && formFieldKeys.has("prior_prop_eff_1")) mapped.prior_prop_eff_1 = parseDate(p.effective_date);
           if (p.expiration_date && formFieldKeys.has("prior_prop_exp_1")) mapped.prior_prop_exp_1 = parseDate(p.expiration_date);
         }
-      } else if (lob.includes("UMBRELLA") || lob.includes("EXCESS") || lob.includes("WORKERS") || lob.includes("WC")) {
-        // Umbrella/WC goes in "Other Line" column
+      } else if (lob.includes("UMBRELLA") || lob.includes("EXCESS")) {
+        // Umbrella goes in "Other Line" column Row 1
         if (!mapped.prior_other_carrier_1 && formFieldKeys.has("prior_other_carrier_1")) {
-          mapped.prior_other_lob_1 = lob.includes("UMBRELLA") || lob.includes("EXCESS")
-            ? "COMMERCIAL UMBRELLA" : "WORKERS COMPENSATION";
+          mapped.prior_other_lob_1 = "COMMERCIAL UMBRELLA";
           mapped.prior_other_carrier_1 = p.carrier_name || "";
           if (p.policy_number && formFieldKeys.has("prior_other_policy_1")) mapped.prior_other_policy_1 = p.policy_number;
           if (p.premium && formFieldKeys.has("prior_other_premium_1")) mapped.prior_other_premium_1 = normalizeValue("prior_other_premium_1", p.premium);
           if (p.effective_date && formFieldKeys.has("prior_other_eff_1")) mapped.prior_other_eff_1 = parseDate(p.effective_date);
           if (p.expiration_date && formFieldKeys.has("prior_other_exp_1")) mapped.prior_other_exp_1 = parseDate(p.expiration_date);
+        }
+      } else if (lob.includes("WORKERS") || lob.includes("WC") || lob.includes("COMP")) {
+        // WC: if Other Row 1 is taken (by Umbrella), use Row 2; otherwise Row 1
+        const useRow2 = !!mapped.prior_other_carrier_1;
+        const suffix = useRow2 ? "_2" : "_1";
+        const lobKey = `prior_other_lob${suffix}`;
+        const carrierKey = `prior_other_carrier${suffix}`;
+        const polKey = `prior_other_policy${suffix}`;
+        const premKey = `prior_other_premium${suffix}`;
+        const effKey = `prior_other_eff${suffix}`;
+        const expKey = `prior_other_exp${suffix}`;
+        if (!mapped[carrierKey]) {
+          if (formFieldKeys.has(lobKey)) mapped[lobKey] = "WORKERS COMPENSATION";
+          if (formFieldKeys.has(carrierKey)) mapped[carrierKey] = p.carrier_name || "";
+          if (p.policy_number && formFieldKeys.has(polKey)) mapped[polKey] = p.policy_number;
+          if (p.premium && formFieldKeys.has(premKey)) mapped[premKey] = normalizeValue(premKey, p.premium);
+          if (p.effective_date && formFieldKeys.has(effKey)) mapped[effKey] = parseDate(p.effective_date);
+          if (p.expiration_date && formFieldKeys.has(expKey)) mapped[expKey] = parseDate(p.expiration_date);
         }
       }
     }
