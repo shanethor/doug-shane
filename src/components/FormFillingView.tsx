@@ -233,7 +233,6 @@ export default function FormFillingView({ submissionId, initialMessages, initial
     }
     // Log unmapped keys: only warn about keys defined in THIS form's field list
     // that have values but no PDF index — ignore all cross-form data automatically
-    const formDef = ACORD_FORMS[fId as keyof typeof ACORD_FORMS];
     const formFieldKeys = new Set(formDef?.fields?.map((f: any) => f.key) || []);
     const unmappedKeys: string[] = [];
     for (const [key, val] of Object.entries(data)) {
