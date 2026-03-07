@@ -155,7 +155,7 @@ async function runGoogleOcr(
 
   const resp = await fetch(url, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", "Referer": "https://buildingaura.site" },
     body: JSON.stringify(body),
   });
 
@@ -261,7 +261,7 @@ async function runGoogleOcrSingleChunk(
 
   const resp = await fetch(url, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", "Referer": "https://buildingaura.site" },
     body: JSON.stringify(body),
   });
 
