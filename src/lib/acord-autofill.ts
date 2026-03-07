@@ -358,12 +358,14 @@ const AI_TO_FORM_ALIASES: Record<string, string[]> = {
   territory: ["hazard_terr_1"],
 
   // ── Lines of Business flags (ACORD 125 LOB checkboxes) ──
-  lob_gl: ["chk_lob_cgl", "lob_commercial_general_liability", "chk_commercial_general_liability"],
-  lob_auto: ["chk_lob_auto"],
-  lob_property: ["chk_lob_property"],
-  lob_umbrella: ["chk_lob_umbrella"],
+  lob_gl: ["lob_commercial_general_liability", "chk_commercial_general_liability"],
+  lob_auto: ["lob_business_auto"],
+  lob_property: ["lob_commercial_property"],
+  lob_umbrella: ["lob_umbrella"],
   lob_wc: ["lob_other"],  // WC maps to "Other LOB" on ACORD 125
-  lob_commercial_general_liability: ["chk_lob_cgl", "lob_commercial_general_liability", "chk_commercial_general_liability"],
+  lob_inland_marine: ["lob_inland_marine"],
+  lob_bop: ["lob_bop"],
+  lob_commercial_general_liability: ["lob_commercial_general_liability", "chk_commercial_general_liability"],
 
   // ── Multi-policy carrier / premium aliases ──
   wc_premium: ["other_lob_premium"],
@@ -373,8 +375,10 @@ const AI_TO_FORM_ALIASES: Record<string, string[]> = {
   umbrella_policy_number: ["prior_other_policy_1"],
   bop_carrier: ["carrier", "prior_carrier_1"],
   bop_policy_number: ["policy_number", "prior_policy_number_1"],
+  bop_premium: ["bop_premium", "cgl_premium"],
   auto_carrier: ["prior_auto_carrier_1"],
   auto_policy_number: ["prior_auto_policy_1"],
+  inland_marine_premium: ["inland_marine_premium"],
   property_carrier: ["prior_prop_carrier_1"],
   property_policy_number: ["prior_prop_policy_1"],
 
