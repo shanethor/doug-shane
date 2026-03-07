@@ -297,8 +297,8 @@ EXTRACTION RULES:
 - SCHEDULE OF HAZARDS: Extract ALL class code rows from the document. Use hazard_loc_1/hazard_code_1/hazard_classification_1/hazard_premium_basis_1/hazard_exposure_1/hazard_terr_1/hazard_rate_premops_1/hazard_premium_premops_1 for the first row, then hazard_*_2 for the second row, hazard_*_3 for the third row. Many policies have 2-3 class codes — extract ALL of them.
 - PREMIUM TOTALS: Extract total_premium, total_premium_premops, total_premium_products if listed
 - ENDORSEMENTS: Look for "Per Project" aggregate endorsement (sets chk_limit_project) and deductible endorsements
-- vehicles[]: include ALL vehicles found — each: { year, make, model, vin, body_type, stated_amount, cost_new, garaging_zip, garaging_city, garaging_state, gvw, registration_state, comp_deductible, coll_deductible, premium, radius, territory }
-- drivers[]: include ALL drivers found — each: { name, first_name, middle, last_name, city, state, zip, sex, marital_status, dob, years_licensed, license_number, license_state, ssn, hired_date }. Extract ALL columns from the driver table — not just names. Look for columns like DOB, License #, State, Yrs Licensed, Sex, Marital Status, City/State/ZIP.
+- vehicles[]: include ALL vehicles found — each: { year, make, model, vin, body_type, stated_amount, garaging_zip }
+- drivers[]: include ALL drivers found — each: { name, dob, license, license_state }
 - gaps[]: list fields that are missing and important — { field, question, priority: required|recommended|optional }
 - If document is an insurance policy/dec page, extract carrier, NAIC code, policy number, limits, premiums, class codes, and all schedules
 - If no meaningful business data is provided, return all fields as empty strings and list all critical fields as gaps`;
@@ -390,7 +390,7 @@ ${file_contents ? `\nAdditional text content:\n${file_contents}` : ""}`;
         console.error("Claude API error:", response.status, errText);
         // Fall back to Lovable AI gateway with faster model
         console.log("[extract] Falling back to Gemini 2.5 Flash");
-        rawContent = await callLovableGateway(LOVABLE_API_KEY!, systemPrompt, userPromptText, truncatedPdfFiles, hasPdfs, corsHeaders);
+        rawContent = await callLovableGateway(LOVABLE_API_KEY!, systemPrompt, userPromptText, pdf_files, hasPdfs, corsHeaders);
       } else {
         const result = await response.json();
         const contentBlocks = Array.isArray(result?.content) ? result.content.length : 0;
@@ -399,7 +399,7 @@ ${file_contents ? `\nAdditional text content:\n${file_contents}` : ""}`;
 
         if (!rawContent) {
           console.warn("[extract] Claude returned HTTP 200 but no usable text content (0 text blocks out of " + contentBlocks + ") — falling back to Gemini");
-          rawContent = await callLovableGateway(LOVABLE_API_KEY!, systemPrompt, userPromptText, truncatedPdfFiles, hasPdfs, corsHeaders);
+          rawContent = await callLovableGateway(LOVABLE_API_KEY!, systemPrompt, userPromptText, pdf_files, hasPdfs, corsHeaders);
         }
       }
     } else {
@@ -436,7 +436,7 @@ ${file_contents ? `\nAdditional text content:\n${file_contents}` : ""}`;
     if (meaningfulCount < 3 && LOVABLE_API_KEY && hasPdfs) {
       console.warn(`[extract] Claude returned only ${meaningfulCount} meaningful fields — falling back to Gemini`);
       try {
-        const geminiRaw = await callLovableGateway(LOVABLE_API_KEY, systemPrompt, userPromptText, truncatedPdfFiles, hasPdfs, corsHeaders);
+        const geminiRaw = await callLovableGateway(LOVABLE_API_KEY, systemPrompt, userPromptText, pdf_files, hasPdfs, corsHeaders);
         const geminiJson = geminiRaw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/i, "").trim();
         const geminiExtracted = JSON.parse(geminiJson);
         const gfd = geminiExtracted.form_data || {};
@@ -490,24 +490,10 @@ ${file_contents ? `\nAdditional text content:\n${file_contents}` : ""}`;
       if ((v.vin || v.VIN) && !fd[`vehicle_${n}_vin`]) fd[`vehicle_${n}_vin`]     = String(v.vin || v.VIN);
       if ((v.body_type || v.bodyType || v.type) && !fd[`vehicle_${n}_body_type`])
         fd[`vehicle_${n}_body_type`] = String(v.body_type || v.bodyType || v.type);
-      if ((v.stated_amount || v.cost_new) && !fd[`vehicle_${n}_cost_new`])
-        fd[`vehicle_${n}_cost_new`] = String(v.stated_amount || v.cost_new);
+      if ((v.stated_amount || v.cost_new) && !fd[`vehicle_${n}_stated_amount`])
+        fd[`vehicle_${n}_stated_amount`] = String(v.stated_amount || v.cost_new);
       if ((v.garaging_zip || v.zip) && !fd[`vehicle_${n}_garaging_zip`])
         fd[`vehicle_${n}_garaging_zip`] = String(v.garaging_zip || v.zip);
-      if ((v.garaging_city) && !fd[`vehicle_${n}_garaging_city`])
-        fd[`vehicle_${n}_garaging_city`] = String(v.garaging_city);
-      if ((v.garaging_state) && !fd[`vehicle_${n}_garaging_state`])
-        fd[`vehicle_${n}_garaging_state`] = String(v.garaging_state);
-      if (v.gvw && !fd[`vehicle_${n}_gvw`]) fd[`vehicle_${n}_gvw`] = String(v.gvw);
-      if ((v.registration_state || v.reg_state) && !fd[`vehicle_${n}_reg_state`])
-        fd[`vehicle_${n}_reg_state`] = String(v.registration_state || v.reg_state);
-      if (v.comp_deductible && !fd[`vehicle_${n}_comp_deductible`])
-        fd[`vehicle_${n}_comp_deductible`] = String(v.comp_deductible);
-      if (v.coll_deductible && !fd[`vehicle_${n}_coll_deductible`])
-        fd[`vehicle_${n}_coll_deductible`] = String(v.coll_deductible);
-      if (v.premium && !fd[`vehicle_${n}_premium`]) fd[`vehicle_${n}_premium`] = String(v.premium);
-      if (v.radius && !fd[`vehicle_${n}_radius`]) fd[`vehicle_${n}_radius`] = String(v.radius);
-      if (v.territory && !fd[`vehicle_${n}_territory`]) fd[`vehicle_${n}_territory`] = String(v.territory);
     });
     if (vehicles.length > 0 && !fd.number_of_vehicles) {
       fd.number_of_vehicles = String(vehicles.length);
@@ -516,35 +502,14 @@ ${file_contents ? `\nAdditional text content:\n${file_contents}` : ""}`;
     const drivers: any[] = Array.isArray(fd.drivers) ? fd.drivers : [];
     drivers.forEach((d: any, idx: number) => {
       const n = idx + 1;
-      // Name fields
-      const fullName = d.name || d.full_name || "";
-      if (fullName && !fd[`driver_${n}_name`]) fd[`driver_${n}_name`] = String(fullName);
-      if ((d.first_name || d.given_name) && !fd[`driver_${n}_first_name`])
-        fd[`driver_${n}_first_name`] = String(d.first_name || d.given_name);
-      if (d.middle && !fd[`driver_${n}_middle`]) fd[`driver_${n}_middle`] = String(d.middle);
-      if ((d.last_name || d.surname) && !fd[`driver_${n}_last_name`])
-        fd[`driver_${n}_last_name`] = String(d.last_name || d.surname);
-      // Location
-      if (d.city && !fd[`driver_${n}_city`]) fd[`driver_${n}_city`] = String(d.city);
-      if (d.state && !fd[`driver_${n}_state`]) fd[`driver_${n}_state`] = String(d.state);
-      if ((d.zip || d.zipcode) && !fd[`driver_${n}_zip`]) fd[`driver_${n}_zip`] = String(d.zip || d.zipcode);
-      // Demographics
-      if ((d.sex || d.gender) && !fd[`driver_${n}_sex`]) fd[`driver_${n}_sex`] = String(d.sex || d.gender);
-      if ((d.marital_status || d.marital) && !fd[`driver_${n}_marital`])
-        fd[`driver_${n}_marital`] = String(d.marital_status || d.marital);
+      if ((d.name || d.full_name) && !fd[`driver_${n}_name`])
+        fd[`driver_${n}_name`] = String(d.name || d.full_name);
       if ((d.dob || d.date_of_birth) && !fd[`driver_${n}_dob`])
         fd[`driver_${n}_dob`] = String(d.dob || d.date_of_birth);
-      // License
-      if ((d.years_licensed || d.experience || d.yrs_licensed) && !fd[`driver_${n}_experience`])
-        fd[`driver_${n}_experience`] = String(d.years_licensed || d.experience || d.yrs_licensed);
-      if ((d.license_number || d.license || d.dl_number) && !fd[`driver_${n}_license`])
-        fd[`driver_${n}_license`] = String(d.license_number || d.license || d.dl_number);
-      if ((d.license_state || d.dl_state) && !fd[`driver_${n}_license_state`])
-        fd[`driver_${n}_license_state`] = String(d.license_state || d.dl_state);
-      // Other
-      if (d.ssn && !fd[`driver_${n}_ssn`]) fd[`driver_${n}_ssn`] = String(d.ssn);
-      if ((d.hired_date || d.date_hired) && !fd[`driver_${n}_hired_date`])
-        fd[`driver_${n}_hired_date`] = String(d.hired_date || d.date_hired);
+      if ((d.license || d.license_number || d.dl_number) && !fd[`driver_${n}_license`])
+        fd[`driver_${n}_license`] = String(d.license || d.license_number || d.dl_number);
+      if ((d.license_state || d.state) && !fd[`driver_${n}_license_state`])
+        fd[`driver_${n}_license_state`] = String(d.license_state || d.state);
     });
     if (drivers.length > 0 && !fd.number_of_drivers) {
       fd.number_of_drivers = String(drivers.length);
