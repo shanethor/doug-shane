@@ -122,6 +122,9 @@ EXTRACTION RULES:
 - SCHEDULE OF HAZARDS: Extract ALL class code rows (hazard_*_1, hazard_*_2, hazard_*_3)
 - vehicles[]: include ALL vehicles — each: { year, make, model, vin, body_type, stated_amount, garaging_zip }
 - drivers[]: include ALL drivers — each: { name, dob, license, license_state }
+- policies[]: When MULTIPLE policy declarations are present (BOP, Auto, Umbrella, WC, etc.), extract EACH as a separate object: { line_of_business, carrier_name, policy_number, premium, effective_date, expiration_date, naic_code }. This is critical for multi-policy packets.
+- Per-LOB carrier/premium fields: Also populate the flat fields (bop_carrier, bop_policy_number, auto_carrier, auto_policy_number, umbrella_carrier, umbrella_policy_number, wc_carrier, wc_policy_number, auto_premium, umbrella_premium, wc_premium, cgl_premium, property_premium) from the corresponding policy declarations.
+- underwriter / underwriter_office: Extract if present on declarations page.
 - gaps[]: list missing important fields — { field, question, priority: required|recommended|optional }
 - If no meaningful data is provided, return all fields as empty strings`;
 
