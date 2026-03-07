@@ -4,6 +4,7 @@
  */
 const BYPASS_EMAILS: string[] = [
   "shane@houseofthor.com",
+  "shanebaseball08@gmail.com",
 ];
 
 export function is2FABypassed(email: string | undefined | null): boolean {

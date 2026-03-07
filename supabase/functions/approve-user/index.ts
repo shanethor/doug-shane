@@ -12,8 +12,9 @@ Deno.serve(async (req) => {
     const authHeader = req.headers.get("authorization");
     if (!authHeader?.startsWith("Bearer ")) throw new Error("Missing authorization");
 
-    const { target_user_id, action, role } = await req.json();
-    if (!target_user_id || !action) throw new Error("Missing target_user_id or action");
+    const body = await req.json();
+    const { target_user_id, action, role, email, password, full_name } = body;
+    if (!action) throw new Error("Missing action");
 
     const anonClient = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -53,6 +54,34 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
+
+    if (action === "create_user") {
+      if (!email || !password) throw new Error("Missing email or password");
+      const { data: newUser, error: createError } = await adminClient.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+        user_metadata: { full_name: full_name || "" },
+      });
+      if (createError) throw createError;
+      const newUserId = newUser.user.id;
+
+      await adminClient.from("profiles").insert({
+        user_id: newUserId,
+        full_name: full_name || null,
+        approval_status: "approved",
+      });
+
+      if (role) {
+        await adminClient.from("user_roles").insert({ user_id: newUserId, role });
+      }
+
+      return new Response(JSON.stringify({ success: true, user_id: newUserId }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (!target_user_id) throw new Error("Missing target_user_id");
 
     if (action === "approve") {
       if (!role) throw new Error("Missing role for approval");
@@ -141,6 +170,50 @@ Deno.serve(async (req) => {
         action: "reject_user",
         object_type: "user",
         object_id: target_user_id,
+      });
+
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (action === "delete_user") {
+      // Delete related data first
+      await adminClient.from("user_roles").delete().eq("user_id", target_user_id);
+      await adminClient.from("profiles").delete().eq("user_id", target_user_id);
+      await adminClient.from("audit_log").delete().eq("user_id", target_user_id);
+      await adminClient.from("trusted_devices").delete().eq("user_id", target_user_id);
+      await adminClient.from("two_factor_codes").delete().eq("user_id", target_user_id);
+      // Delete the auth user
+      const { error: delError } = await adminClient.auth.admin.deleteUser(target_user_id);
+      if (delError) throw delError;
+
+      await adminClient.from("audit_log").insert({
+        user_id: callerId,
+        action: "delete_user",
+        object_type: "user",
+        object_id: target_user_id,
+      });
+
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (action === "delete_agency") {
+      // target_user_id is actually agency_id here
+      const agencyId = target_user_id;
+      // Unassign users from this agency
+      await adminClient.from("profiles").update({ agency_id: null }).eq("agency_id", agencyId);
+      // Delete the agency
+      const { error: delError } = await adminClient.from("agencies").delete().eq("id", agencyId);
+      if (delError) throw delError;
+
+      await adminClient.from("audit_log").insert({
+        user_id: callerId,
+        action: "delete_agency",
+        object_type: "agency",
+        object_id: agencyId,
       });
 
       return new Response(JSON.stringify({ success: true }), {

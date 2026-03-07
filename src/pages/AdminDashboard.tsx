@@ -16,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   Users, FileText, CheckCircle, Clock, Bug, Lightbulb,
   BarChart3, DollarSign, AlertTriangle, Eye, TrendingUp,
-  XCircle, Edit3, ShieldCheck, Building2, Plus,
+  XCircle, Edit3, ShieldCheck, Building2, Plus, Trash2,
 } from "lucide-react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
 import { toast } from "sonner";
@@ -254,6 +254,33 @@ export default function AdminDashboard() {
       setNewAgencyCode("");
     }
     setCreatingAgency(false);
+  };
+
+  const handleDeleteUser = async (userId: string, userName: string) => {
+    if (!confirm(`Delete user "${userName}"? This cannot be undone.`)) return;
+    const { data, error } = await supabase.functions.invoke("approve-user", {
+      body: { target_user_id: userId, action: "delete_user" },
+    });
+    if (error || data?.error) {
+      toast.error(data?.error || "Failed to delete user");
+      return;
+    }
+    toast.success("User deleted");
+    setAdminUsers((prev) => prev.filter((u: any) => u.id !== userId));
+  };
+
+  const handleDeleteAgency = async (agencyId: string, agencyName: string) => {
+    if (!confirm(`Delete agency "${agencyName}"? Users will be unassigned.`)) return;
+    const { data, error } = await supabase.functions.invoke("approve-user", {
+      body: { target_user_id: agencyId, action: "delete_agency" },
+    });
+    if (error || data?.error) {
+      toast.error(data?.error || "Failed to delete agency");
+      return;
+    }
+    toast.success("Agency deleted");
+    setAgencies((prev) => prev.filter((a: any) => a.id !== agencyId));
+    setAdminUsers((prev) => prev.map((u: any) => u.agency_id === agencyId ? { ...u, agency_id: null, agency_name: null } : u));
   };
 
   return (
@@ -578,8 +605,16 @@ export default function AdminDashboard() {
                             <SelectItem value="manager">Manager</SelectItem>
                             <SelectItem value="client_services">Client Services</SelectItem>
                           </SelectContent>
-                        </Select>
-                      </div>
+                          </Select>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-destructive hover:text-destructive"
+                            onClick={() => handleDeleteUser(u.id, u.full_name || u.email)}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -657,6 +692,14 @@ export default function AdminDashboard() {
                           )}
                         </p>
                       </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-destructive hover:text-destructive"
+                        onClick={() => handleDeleteAgency(a.id, a.name)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
