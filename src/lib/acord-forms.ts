@@ -1020,9 +1020,10 @@ export const ACORD_FORMS: Record<string, AcordFormDefinition> = {
   "acord-75": {
     id: "acord-75",
     name: "ACORD 75",
-    fullName: "Cyber and Privacy Liability Section (2010/07)",
-    description: "Cyber and privacy liability coverages, limits, revenue, employees, and operations description.",
+    fullName: "Schedule of Underlying Insurance (Auto) (2010/07)",
+    description: "Vehicle schedule, hired/non-owned auto, driver cross-reference, UM/UIM, carrier NAIC, and enhancement endorsements.",
     fields: [
+      // Header
       { key: "agency_name", label: "Agency", type: "text", section: "Header", required: true },
       { key: "agency_customer_id", label: "Agency Customer ID", type: "text", section: "Header" },
       { key: "carrier", label: "Carrier", type: "text", section: "Header" },
@@ -1030,11 +1031,53 @@ export const ACORD_FORMS: Record<string, AcordFormDefinition> = {
       { key: "policy_number", label: "Policy Number", type: "text", section: "Header" },
       { key: "effective_date", label: "Effective Date", type: "date", section: "Header", required: true },
       { key: "insured_name", label: "Named Insured", type: "text", section: "Header", required: true },
-      { key: "annual_revenues", label: "Annual Revenues", type: "currency", section: "Coverage Information", required: true },
-      { key: "total_employees", label: "Total # of Employees", type: "number", section: "Coverage Information" },
-      { key: "description_of_operations", label: "Description of Operations", type: "textarea", section: "Coverage Information", required: true },
-      { key: "each_occurrence_limit", label: "Each Occurrence Limit", type: "currency", section: "Limits", required: true },
-      { key: "aggregate_limit", label: "Aggregate Limit", type: "currency", section: "Limits" },
+
+      // Vehicle Schedule (up to 8)
+      ...Array.from({ length: 8 }, (_, i) => {
+        const n = i + 1;
+        return [
+          { key: `vehicle_${n}_year`, label: `Vehicle ${n} Year`, type: "text" as const, section: "Vehicle Schedule" },
+          { key: `vehicle_${n}_make`, label: `Vehicle ${n} Make`, type: "text" as const, section: "Vehicle Schedule" },
+          { key: `vehicle_${n}_model`, label: `Vehicle ${n} Model`, type: "text" as const, section: "Vehicle Schedule" },
+          { key: `vehicle_${n}_vin`, label: `Vehicle ${n} VIN`, type: "text" as const, section: "Vehicle Schedule" },
+          { key: `vehicle_${n}_body_type`, label: `Vehicle ${n} Body Type`, type: "text" as const, section: "Vehicle Schedule" },
+          { key: `vehicle_${n}_cost_new`, label: `Vehicle ${n} Cost New`, type: "currency" as const, section: "Vehicle Schedule" },
+          { key: `vehicle_${n}_garaging_zip`, label: `Vehicle ${n} Garaging ZIP`, type: "text" as const, section: "Vehicle Schedule" },
+          { key: `vehicle_${n}_gvw`, label: `Vehicle ${n} GVW/GCW`, type: "text" as const, section: "Vehicle Schedule" },
+          { key: `vehicle_${n}_comp_deductible`, label: `Vehicle ${n} Comp Deductible`, type: "currency" as const, section: "Vehicle Schedule" },
+          { key: `vehicle_${n}_coll_deductible`, label: `Vehicle ${n} Collision Deductible`, type: "currency" as const, section: "Vehicle Schedule" },
+          { key: `vehicle_${n}_territory`, label: `Vehicle ${n} Territory`, type: "text" as const, section: "Vehicle Schedule" },
+          { key: `vehicle_${n}_use_class`, label: `Vehicle ${n} Use Class`, type: "text" as const, section: "Vehicle Schedule" },
+        ];
+      }).flat(),
+
+      // Liability & UM/UIM
+      { key: "auto_liability_limit", label: "Liability Limit (CSL)", type: "currency", section: "Coverages", required: true },
+      { key: "um_uim_limit", label: "UM/UIM Limit (Each Accident)", type: "currency", section: "Coverages" },
+      { key: "number_of_vehicles", label: "Number of Owned Vehicles", type: "text", section: "Coverages" },
+      { key: "number_of_drivers", label: "Number of Drivers", type: "text", section: "Coverages" },
+
+      // Hired Auto
+      { key: "hired_auto_liability", label: "Hired Auto Liability", type: "select", options: ["Yes", "No"], section: "Hired / Non-Owned" },
+      { key: "hired_auto_state", label: "Hired Auto State", type: "text", section: "Hired / Non-Owned" },
+      { key: "hired_auto_cost_of_hire", label: "Estimated Annual Cost of Hire", type: "currency", section: "Hired / Non-Owned" },
+      { key: "hired_auto_premium", label: "Hired Auto Premium", type: "currency", section: "Hired / Non-Owned" },
+
+      // Non-Owned
+      { key: "non_owned_liability", label: "Non-Owned Liability", type: "select", options: ["Yes", "No"], section: "Hired / Non-Owned" },
+      { key: "non_owned_class", label: "Non-Owned Class", type: "text", section: "Hired / Non-Owned" },
+      { key: "non_owned_num_employees", label: "Non-Owned # Employees", type: "number", section: "Hired / Non-Owned" },
+      { key: "non_owned_premium", label: "Non-Owned Premium", type: "currency", section: "Hired / Non-Owned" },
+
+      // Enhancement Endorsements
+      { key: "auto_coverage_plus", label: "Auto Coverage Plus", type: "checkbox", section: "Enhancement Endorsements" },
+      { key: "rental_reimbursement", label: "Rental Reimbursement", type: "checkbox", section: "Enhancement Endorsements" },
+      { key: "roadside_assistance", label: "Roadside Assistance", type: "checkbox", section: "Enhancement Endorsements" },
+      { key: "glass_deductible_waiver", label: "Glass Deductible Waiver", type: "checkbox", section: "Enhancement Endorsements" },
+      { key: "hired_auto_pd", label: "Hired Auto Physical Damage", type: "checkbox", section: "Enhancement Endorsements" },
+      { key: "gap_coverage", label: "GAP Coverage", type: "checkbox", section: "Enhancement Endorsements" },
+
+      // Remarks & Signature
       { key: "remarks", label: "Remarks", type: "textarea", section: "Remarks" },
       { key: "producer_name", label: "Producer's Name", type: "text", section: "Signature" },
       { key: "signature_date", label: "Date", type: "date", section: "Signature" },
