@@ -488,7 +488,7 @@ const DATE_FIELDS = new Set([
   "pending_litigation_date", "signature_date", "mod_effective_date",
   "prior_eff_date_1", "prior_exp_date_1",
   "prior_auto_eff_1", "prior_auto_exp_1", "prior_prop_eff_1", "prior_prop_exp_1",
-  "prior_other_eff_1", "prior_other_exp_1",
+  "prior_other_eff_1", "prior_other_exp_1", "prior_other_eff_2", "prior_other_exp_2",
   "driver_1_dob", "driver_2_dob", "driver_3_dob", "driver_4_dob", "driver_5_dob", "driver_6_dob",
   "officer_1_dob", "ebl_retroactive_date", "entry_date_claims_made",
   "anniversary_rating_date", "transaction_date",
