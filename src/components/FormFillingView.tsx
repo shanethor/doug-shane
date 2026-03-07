@@ -180,9 +180,13 @@ export default function FormFillingView({ submissionId, initialMessages, initial
    * Uses runtime-merged index map (PDF field names + semantic aliases) for full coverage.
    */
   const buildPrefillByIndex = useCallback(async (fId: string, data: Record<string, any>): Promise<Record<number, string>> => {
-    // Try runtime merged map first (covers ALL fields), fall back to static
-    const indexMap = await getMergedIndexMap(fId).catch(() => null) || ACORD_INDEX_MAPS[fId];
-    if (!indexMap) return {};
+    // Merge BOTH runtime discovery AND static verified index maps for full coverage.
+    // Static ACORD_INDEX_MAPS have verified field indices that may not be in SEMANTIC_ALIASES.
+    const runtimeMap = await getMergedIndexMap(fId).catch(() => null) || {};
+    const staticMap = ACORD_INDEX_MAPS[fId] || {};
+    // Static map takes priority (manually verified), runtime fills gaps
+    const indexMap: Record<string, number> = { ...runtimeMap, ...staticMap };
+    if (Object.keys(indexMap).length === 0) return {};
     const result: Record<number, string> = {};
     const debugEntries: string[] = [];
     for (const [internalKey, rawIdx] of Object.entries(indexMap)) {
