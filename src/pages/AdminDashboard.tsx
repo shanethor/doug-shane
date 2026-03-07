@@ -256,6 +256,33 @@ export default function AdminDashboard() {
     setCreatingAgency(false);
   };
 
+  const handleDeleteUser = async (userId: string, userName: string) => {
+    if (!confirm(`Delete user "${userName}"? This cannot be undone.`)) return;
+    const { data, error } = await supabase.functions.invoke("approve-user", {
+      body: { target_user_id: userId, action: "delete_user" },
+    });
+    if (error || data?.error) {
+      toast.error(data?.error || "Failed to delete user");
+      return;
+    }
+    toast.success("User deleted");
+    setAdminUsers((prev) => prev.filter((u: any) => u.id !== userId));
+  };
+
+  const handleDeleteAgency = async (agencyId: string, agencyName: string) => {
+    if (!confirm(`Delete agency "${agencyName}"? Users will be unassigned.`)) return;
+    const { data, error } = await supabase.functions.invoke("approve-user", {
+      body: { target_user_id: agencyId, action: "delete_agency" },
+    });
+    if (error || data?.error) {
+      toast.error(data?.error || "Failed to delete agency");
+      return;
+    }
+    toast.success("Agency deleted");
+    setAgencies((prev) => prev.filter((a: any) => a.id !== agencyId));
+    setAdminUsers((prev) => prev.map((u: any) => u.agency_id === agencyId ? { ...u, agency_id: null, agency_name: null } : u));
+  };
+
   return (
     <AppLayout>
       <h1 className="text-4xl mb-6">Admin Dashboard</h1>
