@@ -588,6 +588,9 @@ export function buildAutofilledData(
       [`vehicle_${n}_model`]: aiData[`vehicle_${n}_model`] || "",
       [`vehicle_${n}_vin`]: aiData[`vehicle_${n}_vin`] || "",
       [`vehicle_${n}_body_type`]: aiData[`vehicle_${n}_body_type`] || "",
+      [`vehicle_${n}_cost_new`]: aiData[`vehicle_${n}_cost_new`] || aiData[`vehicle_${n}_stated_amount`] || "",
+      [`vehicle_${n}_garaging_zip`]: aiData[`vehicle_${n}_garaging_zip`] || "",
+      [`vehicle_${n}_gvw`]: aiData[`vehicle_${n}_gvw`] || "",
     };
     for (const [k, val] of Object.entries(vKeys)) {
       if (val && formFieldKeys.has(k) && !mapped[k]) mapped[k] = val;
@@ -595,6 +598,8 @@ export function buildAutofilledData(
     const dKeys: Record<string, string> = {
       [`driver_${n}_name`]: aiData[`driver_${n}_name`] || "",
       [`driver_${n}_dob`]: aiData[`driver_${n}_dob`] || "",
+      [`driver_${n}_license`]: aiData[`driver_${n}_license`] || "",
+      [`driver_${n}_license_state`]: aiData[`driver_${n}_license_state`] || "",
     };
     for (const [k, val] of Object.entries(dKeys)) {
       if (val && formFieldKeys.has(k) && !mapped[k]) mapped[k] = normalizeValue(k, val);
