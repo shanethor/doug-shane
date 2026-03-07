@@ -399,7 +399,7 @@ ${file_contents ? `\nAdditional text content:\n${file_contents}` : ""}`;
 
         if (!rawContent) {
           console.warn("[extract] Claude returned HTTP 200 but no usable text content (0 text blocks out of " + contentBlocks + ") — falling back to Gemini");
-          rawContent = await callLovableGateway(LOVABLE_API_KEY!, systemPrompt, userPromptText, pdf_files, hasPdfs, corsHeaders);
+          rawContent = await callLovableGateway(LOVABLE_API_KEY!, systemPrompt, userPromptText, truncatedPdfFiles, hasPdfs, corsHeaders);
         }
       }
     } else {
