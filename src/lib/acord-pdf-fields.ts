@@ -221,13 +221,20 @@ export const SEMANTIC_ALIASES: Record<string, Record<string, string>> = {
     prior_prop_premium_1:       "PriorCoverage_Property_TotalPremiumAmount_A",
     prior_prop_eff_1:           "PriorCoverage_Property_EffectiveDate_A",
     prior_prop_exp_1:           "PriorCoverage_Property_ExpirationDate_A",
-    // Other LOB column (Umbrella/WC)
+    // Other LOB column (Umbrella/WC) — Row 1
     prior_other_lob_1:          "PriorCoverage_OtherLine_LineOfBusinessCode_A",
     prior_other_carrier_1:      "PriorCoverage_OtherLine_InsurerFullName_A",
     prior_other_policy_1:       "PriorCoverage_OtherLine_PolicyNumberIdentifier_A",
     prior_other_premium_1:      "PriorCoverage_OtherLine_TotalPremiumAmount_A",
     prior_other_eff_1:          "PriorCoverage_OtherLine_EffectiveDate_A",
     prior_other_exp_1:          "PriorCoverage_OtherLine_ExpirationDate_A",
+    // Other LOB column — Row 2 (second carrier row on ACORD 125 page 4)
+    prior_other_lob_2:          "PriorCoverage_OtherLine_LineOfBusinessCode_B",
+    prior_other_carrier_2:      "PriorCoverage_OtherLine_InsurerFullName_B",
+    prior_other_policy_2:       "PriorCoverage_OtherLine_PolicyNumberIdentifier_B",
+    prior_other_premium_2:      "PriorCoverage_OtherLine_TotalPremiumAmount_B",
+    prior_other_eff_2:          "PriorCoverage_OtherLine_EffectiveDate_B",
+    prior_other_exp_2:          "PriorCoverage_OtherLine_ExpirationDate_B",
   },
   "acord-126": {
     form_edition:           "Form_EditionIdentifier_A",
