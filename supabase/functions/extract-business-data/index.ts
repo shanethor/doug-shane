@@ -56,6 +56,7 @@ const ACORD_FIELDS = {
 };
 
 const MAX_PDF_PAGES = 15;
+const MAX_TOTAL_PAGES = 30; // Total page budget across all files
 
 /** Truncate a PDF to the first N pages to reduce payload size and speed up extraction */
 async function truncatePdf(base64Data: string, maxPages: number): Promise<string> {
@@ -97,6 +98,7 @@ async function callLovableGateway(
   pdf_files: any[],
   hasPdfs: boolean,
   corsHeaders: Record<string, string>,
+  model = "google/gemini-2.5-flash",
 ): Promise<string> {
   type ContentPart = { type: string; text?: string; image_url?: { url: string } };
   const userContent: ContentPart[] = [{ type: "text", text: userPromptText }];
@@ -112,10 +114,8 @@ async function callLovableGateway(
     }
   }
 
-  // Use Flash for speed — Pro is too slow for extraction
-  const model = "google/gemini-2.5-flash";
   const t0 = Date.now();
-  console.log(`[extract] Calling Gemini ${model}...`);
+  console.log(`[extract] Calling ${model}...`);
 
   const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
     method: "POST",
@@ -132,25 +132,79 @@ async function callLovableGateway(
     }),
   });
 
-  console.log(`[extract] Gemini responded in ${Date.now() - t0}ms (status: ${response.status})`);
+  console.log(`[extract] ${model} responded in ${Date.now() - t0}ms (status: ${response.status})`);
 
   if (!response.ok) {
     const t = await response.text();
     console.error("AI gateway error:", response.status, t);
     if (response.status === 429) throw new Error("Rate limited, please try again shortly.");
     if (response.status === 402) throw new Error("AI credits exhausted.");
-    throw new Error("AI extraction failed");
+    throw new Error(`AI extraction failed (${response.status})`);
   }
 
   const aiResult = await response.json();
   return aiResult.choices?.[0]?.message?.content || "{}";
 }
 
-/**
- * Claude can return multiple content blocks; concatenate all text blocks.
- * This avoids false empty-results when the first block is not usable text.
- */
-function extractClaudeText(result: any): string {
+/** Helper: call Claude API for extraction (used as fallback for high-value extractions) */
+async function callClaude(
+  apiKey: string,
+  systemPrompt: string,
+  userPromptText: string,
+  pdf_files: any[],
+): Promise<string> {
+  const claudeContent: any[] = [];
+  for (const pf of pdf_files) {
+    if (pf.base64) {
+      const mediaType = pf.mimeType === "application/pdf" ? "application/pdf"
+        : pf.mimeType?.startsWith("image/") ? pf.mimeType : "application/pdf";
+
+      if (mediaType === "application/pdf") {
+        claudeContent.push({
+          type: "document",
+          source: { type: "base64", media_type: "application/pdf", data: pf.base64 },
+        });
+      } else {
+        claudeContent.push({
+          type: "image",
+          source: { type: "base64", media_type: mediaType, data: pf.base64 },
+        });
+      }
+    }
+  }
+  claudeContent.push({ type: "text", text: userPromptText });
+
+  const t0 = Date.now();
+  console.log(`[extract] Calling Claude Sonnet 4...`);
+
+  const response = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "x-api-key": apiKey,
+      "anthropic-version": "2023-06-01",
+      "anthropic-beta": "pdfs-2024-09-25",
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 8192,
+      system: systemPrompt,
+      messages: [{ role: "user", content: claudeContent }],
+    }),
+  });
+
+  console.log(`[extract] Claude responded in ${Date.now() - t0}ms (status: ${response.status})`);
+
+  if (!response.ok) {
+    const errText = await response.text();
+    console.error("Claude API error:", response.status, errText);
+    throw new Error(`Claude API error: ${response.status}`);
+  }
+
+  const result = await response.json();
+  const contentBlocks = Array.isArray(result?.content) ? result.content.length : 0;
+  console.log(`[extract] Claude stop_reason=${result?.stop_reason || "unknown"}, content_blocks=${contentBlocks}, usage=${JSON.stringify(result?.usage || {})}`);
+
   const blocks = Array.isArray(result?.content) ? result.content : [];
   const text = blocks
     .filter((b: any) => b?.type === "text" && typeof b?.text === "string")
@@ -158,7 +212,8 @@ function extractClaudeText(result: any): string {
     .join("\n")
     .trim();
 
-  return text || "";
+  if (!text) throw new Error("Claude returned empty content");
+  return text;
 }
 
 serve(async (req) => {
@@ -314,100 +369,71 @@ ${file_contents ? `\nAdditional text content:\n${file_contents}` : ""}`;
     let rawContent: string;
     const t0 = Date.now();
 
-    let aiPdfFiles = pdf_files;
+    // ── Truncate PDFs with a total page budget ──
+    let aiPdfFiles: any[] = [];
+    let totalPagesUsed = 0;
 
-    if (ANTHROPIC_API_KEY && hasPdfs) {
-      // Truncate PDFs to first N pages to reduce payload and speed up extraction
-      const truncatedPdfFiles = [];
+    if (hasPdfs) {
       for (let fi = 0; fi < pdf_files.length; fi++) {
         const pf = pdf_files[fi];
         if (pf.base64 && (pf.mimeType === "application/pdf" || !pf.mimeType?.startsWith("image/"))) {
-          // Get page count before truncation
-          let origPages = "?";
+          let origPages = 0;
           try {
             const tmpBytes = Uint8Array.from(atob(pf.base64), c => c.charCodeAt(0));
             const tmpDoc = await PDFDocument.load(tmpBytes, { ignoreEncryption: true });
-            origPages = String(tmpDoc.getPageCount());
-          } catch (_) {}
-          const truncated = await truncatePdf(pf.base64, MAX_PDF_PAGES);
+            origPages = tmpDoc.getPageCount();
+          } catch (_) { origPages = MAX_PDF_PAGES; }
+
+          // Budget: how many pages can this file use?
+          const remainingBudget = MAX_TOTAL_PAGES - totalPagesUsed;
+          if (remainingBudget <= 0) {
+            console.log(`[extract] Skipping file ${fi + 1} — total page budget exhausted (${totalPagesUsed}/${MAX_TOTAL_PAGES})`);
+            continue;
+          }
+          const maxForThisFile = Math.min(MAX_PDF_PAGES, remainingBudget);
+          const truncated = await truncatePdf(pf.base64, maxForThisFile);
+          const pagesUsed = Math.min(origPages, maxForThisFile);
+          totalPagesUsed += pagesUsed;
           const b64SizeKB = Math.round(truncated.length / 1024);
-          console.log(`[extract] File ${fi + 1}: mime=${pf.mimeType || "pdf"}, pages=${origPages}→${Math.min(Number(origPages) || MAX_PDF_PAGES, MAX_PDF_PAGES)}, base64=${b64SizeKB}KB`);
-          truncatedPdfFiles.push({ ...pf, base64: truncated });
+          console.log(`[extract] File ${fi + 1}: pages=${origPages}→${pagesUsed}, base64=${b64SizeKB}KB, budget=${totalPagesUsed}/${MAX_TOTAL_PAGES}`);
+          aiPdfFiles.push({ ...pf, base64: truncated });
         } else {
           const b64SizeKB = pf.base64 ? Math.round(pf.base64.length / 1024) : 0;
           console.log(`[extract] File ${fi + 1}: mime=${pf.mimeType || "unknown"}, type=image, base64=${b64SizeKB}KB`);
-          truncatedPdfFiles.push(pf);
+          aiPdfFiles.push(pf);
         }
       }
+    }
 
-      aiPdfFiles = truncatedPdfFiles;
-      const totalB64KB = Math.round(aiPdfFiles.reduce((s: number, f: any) => s + (f.base64?.length || 0), 0) / 1024);
-      console.log(`[extract] Starting Claude Sonnet 4 extraction (${aiPdfFiles.length} file(s), ${totalB64KB}KB total base64)`);
+    const totalB64KB = Math.round(aiPdfFiles.reduce((s: number, f: any) => s + (f.base64?.length || 0), 0) / 1024);
+    console.log(`[extract] Prepared ${aiPdfFiles.length} file(s), ${totalB64KB}KB total, ${totalPagesUsed} pages`);
 
-      // Build Claude messages with document content blocks
-      const claudeContent: any[] = [];
-      for (const pf of aiPdfFiles) {
-        if (pf.base64) {
-          const mediaType = pf.mimeType === "application/pdf" ? "application/pdf"
-            : pf.mimeType?.startsWith("image/") ? pf.mimeType : "application/pdf";
+    // ── Strategy: Gemini 2.5 Pro as PRIMARY, Claude as FALLBACK ──
+    // Gemini handles large multimodal contexts better and doesn't have TPM rate limits.
+    // Claude is reserved for fallback when Gemini produces insufficient results.
+    const hasManyPages = totalPagesUsed > 10;
 
-          if (mediaType === "application/pdf") {
-            claudeContent.push({
-              type: "document",
-              source: { type: "base64", media_type: "application/pdf", data: pf.base64 },
-            });
-          } else {
-            claudeContent.push({
-              type: "image",
-              source: { type: "base64", media_type: mediaType, data: pf.base64 },
-            });
-          }
+    try {
+      // Primary: Gemini 2.5 Pro for PDFs (better at large documents), Flash for text-only
+      const primaryModel = hasPdfs ? "google/gemini-2.5-pro" : "google/gemini-2.5-flash";
+      console.log(`[extract] Primary extraction: ${primaryModel}`);
+      rawContent = await callLovableGateway(LOVABLE_API_KEY!, systemPrompt, userPromptText, aiPdfFiles, hasPdfs, corsHeaders, primaryModel);
+    } catch (primaryErr) {
+      console.warn(`[extract] Primary (Gemini) failed: ${primaryErr}`);
+      // Fallback 1: Try Gemini Flash if Pro failed
+      try {
+        console.log(`[extract] Fallback 1: Gemini 2.5 Flash`);
+        rawContent = await callLovableGateway(LOVABLE_API_KEY!, systemPrompt, userPromptText, aiPdfFiles, hasPdfs, corsHeaders, "google/gemini-2.5-flash");
+      } catch (flashErr) {
+        console.warn(`[extract] Fallback 1 (Flash) also failed: ${flashErr}`);
+        // Fallback 2: Claude (only if API key exists and we have PDFs — Claude excels at structured PDF extraction)
+        if (ANTHROPIC_API_KEY && hasPdfs) {
+          console.log(`[extract] Fallback 2: Claude Sonnet 4`);
+          rawContent = await callClaude(ANTHROPIC_API_KEY, systemPrompt, userPromptText, aiPdfFiles);
+        } else {
+          throw flashErr;
         }
       }
-      claudeContent.push({ type: "text", text: userPromptText });
-
-      const t1 = Date.now();
-      console.log(`[extract] Payload built in ${t1 - t0}ms, calling Claude...`);
-
-      const response = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "x-api-key": ANTHROPIC_API_KEY,
-          "anthropic-version": "2023-06-01",
-          "anthropic-beta": "pdfs-2024-09-25",
-          "content-type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 8192,
-          system: systemPrompt,
-          messages: [{ role: "user", content: claudeContent }],
-        }),
-      });
-
-      const t2 = Date.now();
-      console.log(`[extract] Claude responded in ${t2 - t1}ms (status: ${response.status})`);
-
-      if (!response.ok) {
-        const errText = await response.text();
-        console.error("Claude API error:", response.status, errText);
-        // Fall back to Lovable AI gateway with faster model
-        console.log("[extract] Falling back to Gemini 2.5 Flash");
-        rawContent = await callLovableGateway(LOVABLE_API_KEY!, systemPrompt, userPromptText, aiPdfFiles, hasPdfs, corsHeaders);
-      } else {
-        const result = await response.json();
-        const contentBlocks = Array.isArray(result?.content) ? result.content.length : 0;
-        console.log(`[extract] Claude stop_reason=${result?.stop_reason || "unknown"}, content_blocks=${contentBlocks}, usage=${JSON.stringify(result?.usage || {})}`);
-        rawContent = extractClaudeText(result);
-
-        if (!rawContent) {
-          console.warn("[extract] Claude returned HTTP 200 but no usable text content (0 text blocks out of " + contentBlocks + ") — falling back to Gemini");
-          rawContent = await callLovableGateway(LOVABLE_API_KEY!, systemPrompt, userPromptText, aiPdfFiles, hasPdfs, corsHeaders);
-        }
-      }
-    } else {
-      console.log(`[extract] Using Lovable AI gateway (hasPdfs: ${hasPdfs})`);
-      rawContent = await callLovableGateway(LOVABLE_API_KEY!, systemPrompt, userPromptText, aiPdfFiles, hasPdfs, corsHeaders);
     }
 
     console.log(`[extract] Total AI call completed in ${Date.now() - t0}ms`);
@@ -429,30 +455,48 @@ ${file_contents ? `\nAdditional text content:\n${file_contents}` : ""}`;
       throw new Error("Failed to parse AI response as JSON");
     }
 
-    // ── Fallback: if Claude returned all-empty fields, retry with Gemini ──
+    // ── Quality check: if primary returned too few fields, try Claude as enhancer ──
     const fd0 = extracted.form_data || {};
     const IGNORE_KEYS = new Set(["vehicles", "drivers", "coverage_types_needed"]);
     const meaningfulCount = Object.entries(fd0).filter(
       ([k, v]) => !IGNORE_KEYS.has(k) && v && String(v).trim() && String(v).trim() !== "false" && String(v).trim() !== "No" && String(v).trim() !== "[]"
     ).length;
 
-    if (meaningfulCount < 3 && LOVABLE_API_KEY && hasPdfs) {
-      console.warn(`[extract] Claude returned only ${meaningfulCount} meaningful fields — falling back to Gemini`);
+    if (meaningfulCount < 3 && ANTHROPIC_API_KEY && hasPdfs) {
+      console.warn(`[extract] Primary returned only ${meaningfulCount} meaningful fields — trying Claude enhancement`);
       try {
-        const geminiRaw = await callLovableGateway(LOVABLE_API_KEY, systemPrompt, userPromptText, aiPdfFiles, hasPdfs, corsHeaders);
-        const geminiJson = geminiRaw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/i, "").trim();
-        const geminiExtracted = JSON.parse(geminiJson);
-        const gfd = geminiExtracted.form_data || {};
-        const geminiCount = Object.entries(gfd).filter(
+        const claudeRaw = await callClaude(ANTHROPIC_API_KEY, systemPrompt, userPromptText, aiPdfFiles);
+        const claudeJson = claudeRaw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/i, "").trim();
+        const claudeExtracted = JSON.parse(claudeJson);
+        const cfd = claudeExtracted.form_data || {};
+        const claudeCount = Object.entries(cfd).filter(
           ([k, v]) => !IGNORE_KEYS.has(k) && v && String(v).trim() && String(v).trim() !== "false" && String(v).trim() !== "No" && String(v).trim() !== "[]"
         ).length;
-        console.log(`[extract] Gemini fallback returned ${geminiCount} meaningful fields`);
-        if (geminiCount > meaningfulCount) {
-          extracted = geminiExtracted;
-          console.log(`[extract] Using Gemini results (${geminiCount} fields) over Claude (${meaningfulCount} fields)`);
+        console.log(`[extract] Claude enhancement returned ${claudeCount} meaningful fields`);
+        if (claudeCount > meaningfulCount) {
+          extracted = claudeExtracted;
+          console.log(`[extract] Using Claude results (${claudeCount} fields) over Gemini (${meaningfulCount} fields)`);
         }
-      } catch (geminiErr) {
-        console.warn("[extract] Gemini fallback also failed:", geminiErr);
+      } catch (claudeErr) {
+        console.warn("[extract] Claude enhancement also failed:", claudeErr);
+      }
+    } else if (meaningfulCount < 3 && hasPdfs) {
+      // No Claude key — try Flash as a second opinion
+      console.warn(`[extract] Primary returned only ${meaningfulCount} meaningful fields — trying Flash`);
+      try {
+        const flashRaw = await callLovableGateway(LOVABLE_API_KEY!, systemPrompt, userPromptText, aiPdfFiles, hasPdfs, corsHeaders, "google/gemini-2.5-flash");
+        const flashJson = flashRaw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/i, "").trim();
+        const flashExtracted = JSON.parse(flashJson);
+        const ffd = flashExtracted.form_data || {};
+        const flashCount = Object.entries(ffd).filter(
+          ([k, v]) => !IGNORE_KEYS.has(k) && v && String(v).trim() && String(v).trim() !== "false" && String(v).trim() !== "No" && String(v).trim() !== "[]"
+        ).length;
+        if (flashCount > meaningfulCount) {
+          extracted = flashExtracted;
+          console.log(`[extract] Using Flash results (${flashCount} fields) over Pro (${meaningfulCount} fields)`);
+        }
+      } catch (flashErr) {
+        console.warn("[extract] Flash fallback also failed:", flashErr);
       }
     }
 
