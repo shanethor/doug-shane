@@ -213,6 +213,10 @@ async function runGoogleOcrPdf(apiKey: string, pdfBase64: string): Promise<OcrPa
   const allPages: OcrPage[] = [];
   const chunkSize = 5;
 
+  const extractTextFromPage = (pageResp: any): string => {
+    return pageResp?.fullTextAnnotation?.text || pageResp?.textAnnotations?.[0]?.description || "";
+  };
+
   for (let start = 0; start < totalPages; start += chunkSize) {
     const end = Math.min(start + chunkSize, totalPages);
     // Build page indices (1-based for Vision API)
@@ -229,6 +233,10 @@ async function runGoogleOcrPdf(apiKey: string, pdfBase64: string): Promise<OcrPa
         pages: pageIndices,
       }],
     };
+
+    if (start === 0) {
+      console.log(`[ocr-debug] Request shape: endpoint=files:annotate mime=application/pdf feature=DOCUMENT_TEXT_DETECTION pages=${pageIndices.join(",")}`);
+    }
 
     const resp = await fetch(url, {
       method: "POST",
@@ -248,18 +256,21 @@ async function runGoogleOcrPdf(apiKey: string, pdfBase64: string): Promise<OcrPa
     const innerResponses = result.responses?.[0]?.responses || [];
 
     if (start === 0) {
-      // Log first chunk raw sample for debugging
-      const sample = JSON.stringify(result).slice(0, 1500);
-      console.log(`[ocr-debug] First chunk raw (pages ${pageIndices.join(",")}): ${sample}`);
+      const firstPageRaw = JSON.stringify(innerResponses?.[0] || {}).slice(0, 2000);
+      console.log(`[ocr-debug] First page raw response (truncated): ${firstPageRaw}`);
     }
 
     for (let i = 0; i < innerResponses.length; i++) {
-      const annotation = innerResponses[i]?.fullTextAnnotation;
-      allPages.push({
-        pageNumber: start + i + 1,
-        text: annotation?.text || "",
-        confidence: annotation?.pages?.[0]?.confidence || 0,
-      });
+      const pageResp = innerResponses[i] || {};
+      const pageNumber = start + i + 1;
+      const pageError = pageResp?.error;
+      if (pageError) {
+        console.warn(`[ocr] Page ${pageNumber} error: code=${pageError.code || "unknown"}, message=${pageError.message || "unknown"}`);
+      }
+      const text = extractTextFromPage(pageResp);
+      const confidence = pageResp?.fullTextAnnotation?.pages?.[0]?.confidence || 0;
+
+      allPages.push({ pageNumber, text, confidence });
     }
 
     // If Vision returned fewer responses than requested pages, pad
