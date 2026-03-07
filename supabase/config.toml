@@ -50,3 +50,6 @@ verify_jwt = false
 
 [functions.calendar-sync]
 verify_jwt = false
+
+[functions.ai-router]
+verify_jwt = false
