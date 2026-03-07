@@ -191,6 +191,13 @@ const acord125Fields: AcordFormField[] = [
   { key: "prior_other_premium_1", label: "Prior Other Premium", type: "currency", section: "Prior Carrier Information" },
   { key: "prior_other_eff_1", label: "Prior Other Eff Date", type: "date", section: "Prior Carrier Information" },
   { key: "prior_other_exp_1", label: "Prior Other Exp Date", type: "date", section: "Prior Carrier Information" },
+  // Prior Carrier Information — Row 2 (for second Other LOB e.g. WC when Umbrella takes Row 1)
+  { key: "prior_other_lob_2", label: "Prior Other LOB (Row 2)", type: "text", section: "Prior Carrier Information" },
+  { key: "prior_other_carrier_2", label: "Prior Other Carrier (Row 2)", type: "text", section: "Prior Carrier Information" },
+  { key: "prior_other_policy_2", label: "Prior Other Policy # (Row 2)", type: "text", section: "Prior Carrier Information" },
+  { key: "prior_other_premium_2", label: "Prior Other Premium (Row 2)", type: "currency", section: "Prior Carrier Information" },
+  { key: "prior_other_eff_2", label: "Prior Other Eff Date (Row 2)", type: "date", section: "Prior Carrier Information" },
+  { key: "prior_other_exp_2", label: "Prior Other Exp Date (Row 2)", type: "date", section: "Prior Carrier Information" },
 
   // Loss History
   { key: "no_losses", label: "No losses to report", type: "checkbox", section: "Loss History" },

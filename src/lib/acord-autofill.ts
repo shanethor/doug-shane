@@ -358,12 +358,14 @@ const AI_TO_FORM_ALIASES: Record<string, string[]> = {
   territory: ["hazard_terr_1"],
 
   // ── Lines of Business flags (ACORD 125 LOB checkboxes) ──
-  lob_gl: ["chk_lob_cgl", "lob_commercial_general_liability", "chk_commercial_general_liability"],
-  lob_auto: ["chk_lob_auto"],
-  lob_property: ["chk_lob_property"],
-  lob_umbrella: ["chk_lob_umbrella"],
+  lob_gl: ["lob_commercial_general_liability", "chk_commercial_general_liability"],
+  lob_auto: ["lob_business_auto"],
+  lob_property: ["lob_commercial_property"],
+  lob_umbrella: ["lob_umbrella"],
   lob_wc: ["lob_other"],  // WC maps to "Other LOB" on ACORD 125
-  lob_commercial_general_liability: ["chk_lob_cgl", "lob_commercial_general_liability", "chk_commercial_general_liability"],
+  lob_inland_marine: ["lob_inland_marine"],
+  lob_bop: ["lob_bop"],
+  lob_commercial_general_liability: ["lob_commercial_general_liability", "chk_commercial_general_liability"],
 
   // ── Multi-policy carrier / premium aliases ──
   wc_premium: ["other_lob_premium"],
@@ -373,8 +375,10 @@ const AI_TO_FORM_ALIASES: Record<string, string[]> = {
   umbrella_policy_number: ["prior_other_policy_1"],
   bop_carrier: ["carrier", "prior_carrier_1"],
   bop_policy_number: ["policy_number", "prior_policy_number_1"],
+  bop_premium: ["bop_premium", "cgl_premium"],
   auto_carrier: ["prior_auto_carrier_1"],
   auto_policy_number: ["prior_auto_policy_1"],
+  inland_marine_premium: ["inland_marine_premium"],
   property_carrier: ["prior_prop_carrier_1"],
   property_policy_number: ["prior_prop_policy_1"],
 
@@ -484,7 +488,7 @@ const DATE_FIELDS = new Set([
   "pending_litigation_date", "signature_date", "mod_effective_date",
   "prior_eff_date_1", "prior_exp_date_1",
   "prior_auto_eff_1", "prior_auto_exp_1", "prior_prop_eff_1", "prior_prop_exp_1",
-  "prior_other_eff_1", "prior_other_exp_1",
+  "prior_other_eff_1", "prior_other_exp_1", "prior_other_eff_2", "prior_other_exp_2",
   "driver_1_dob", "driver_2_dob", "driver_3_dob", "driver_4_dob", "driver_5_dob", "driver_6_dob",
   "officer_1_dob", "ebl_retroactive_date", "entry_date_claims_made",
   "anniversary_rating_date", "transaction_date",
@@ -524,7 +528,7 @@ export const CURRENCY_FIELDS = new Set([
   "building_amount", "bpp_amount", "business_income_amount", "extra_expense_amount",
   "rental_value_amount", "building_deductible", "bpp_deductible",
   "prior_gl_premium_1", "prior_auto_premium_1", "prior_property_premium_1",
-  "prior_prop_premium_1", "prior_other_premium_1",
+  "prior_prop_premium_1", "prior_other_premium_1", "prior_other_premium_2",
   "prior_wc_premium_1", "prior_wc_paid_1", "prior_wc_reserve_1",
   "retained_limit_occurrence", "retained_limit_aggregate",
   "underlying_auto_bi_ea_acc", "underlying_auto_bi_ea_per", "underlying_auto_pd",
@@ -859,16 +863,33 @@ export function buildAutofilledData(
           if (p.effective_date && formFieldKeys.has("prior_prop_eff_1")) mapped.prior_prop_eff_1 = parseDate(p.effective_date);
           if (p.expiration_date && formFieldKeys.has("prior_prop_exp_1")) mapped.prior_prop_exp_1 = parseDate(p.expiration_date);
         }
-      } else if (lob.includes("UMBRELLA") || lob.includes("EXCESS") || lob.includes("WORKERS") || lob.includes("WC")) {
-        // Umbrella/WC goes in "Other Line" column
+      } else if (lob.includes("UMBRELLA") || lob.includes("EXCESS")) {
+        // Umbrella goes in "Other Line" column Row 1
         if (!mapped.prior_other_carrier_1 && formFieldKeys.has("prior_other_carrier_1")) {
-          mapped.prior_other_lob_1 = lob.includes("UMBRELLA") || lob.includes("EXCESS")
-            ? "COMMERCIAL UMBRELLA" : "WORKERS COMPENSATION";
+          mapped.prior_other_lob_1 = "COMMERCIAL UMBRELLA";
           mapped.prior_other_carrier_1 = p.carrier_name || "";
           if (p.policy_number && formFieldKeys.has("prior_other_policy_1")) mapped.prior_other_policy_1 = p.policy_number;
           if (p.premium && formFieldKeys.has("prior_other_premium_1")) mapped.prior_other_premium_1 = normalizeValue("prior_other_premium_1", p.premium);
           if (p.effective_date && formFieldKeys.has("prior_other_eff_1")) mapped.prior_other_eff_1 = parseDate(p.effective_date);
           if (p.expiration_date && formFieldKeys.has("prior_other_exp_1")) mapped.prior_other_exp_1 = parseDate(p.expiration_date);
+        }
+      } else if (lob.includes("WORKERS") || lob.includes("WC") || lob.includes("COMP")) {
+        // WC: if Other Row 1 is taken (by Umbrella), use Row 2; otherwise Row 1
+        const useRow2 = !!mapped.prior_other_carrier_1;
+        const suffix = useRow2 ? "_2" : "_1";
+        const lobKey = `prior_other_lob${suffix}`;
+        const carrierKey = `prior_other_carrier${suffix}`;
+        const polKey = `prior_other_policy${suffix}`;
+        const premKey = `prior_other_premium${suffix}`;
+        const effKey = `prior_other_eff${suffix}`;
+        const expKey = `prior_other_exp${suffix}`;
+        if (!mapped[carrierKey]) {
+          if (formFieldKeys.has(lobKey)) mapped[lobKey] = "WORKERS COMPENSATION";
+          if (formFieldKeys.has(carrierKey)) mapped[carrierKey] = p.carrier_name || "";
+          if (p.policy_number && formFieldKeys.has(polKey)) mapped[polKey] = p.policy_number;
+          if (p.premium && formFieldKeys.has(premKey)) mapped[premKey] = normalizeValue(premKey, p.premium);
+          if (p.effective_date && formFieldKeys.has(effKey)) mapped[effKey] = parseDate(p.effective_date);
+          if (p.expiration_date && formFieldKeys.has(expKey)) mapped[expKey] = parseDate(p.expiration_date);
         }
       }
     }
