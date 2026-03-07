@@ -509,6 +509,23 @@ export default function FormFillingView({ submissionId, initialMessages, initial
         }
       }
 
+      // Expand arrays (drivers[], vehicles[], wc_classifications[], etc.) into flat fields
+      // buildAutofilledData is the only place that does this expansion, so run it on DB load
+      try {
+        const { buildAutofilledData } = await import("@/lib/acord-autofill");
+        for (const form of ACORD_FORM_LIST) {
+          const expanded = buildAutofilledData(form, loaded);
+          for (const [k, v] of Object.entries(expanded)) {
+            if (v !== undefined && v !== null && v !== "" && (!loaded[k] || (typeof loaded[k] === "string" && !loaded[k].trim()))) {
+              loaded[k] = v;
+            }
+          }
+        }
+        console.info("[FormFilling] Expanded arrays into", Object.keys(loaded).length, "total fields");
+      } catch (e) {
+        console.warn("[FormFilling] Array expansion failed:", e);
+      }
+
       setFormData(loaded);
       formDataRef.current = loaded;
       // Snapshot AI-extracted values for correction tracking
