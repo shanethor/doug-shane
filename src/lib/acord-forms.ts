@@ -336,17 +336,13 @@ const acord127Fields: AcordFormField[] = [
   { key: "effective_date", label: "Effective Date", type: "date", section: "Header", required: true },
   { key: "insured_name", label: "Named Insured(s)", type: "text", section: "Header", required: true },
 
-  // Driver Information
-  { key: "driver_1_name", label: "Driver 1 Name", type: "text", section: "Driver Information" },
-  { key: "driver_1_sex", label: "Driver 1 Sex", type: "select", options: ["M", "F"], section: "Driver Information" },
-  { key: "driver_1_marital", label: "Driver 1 Marital Status", type: "select", options: ["S", "M", "W", "D"], section: "Driver Information" },
-  { key: "driver_1_dob", label: "Driver 1 Date of Birth", type: "date", section: "Driver Information" },
-  { key: "driver_1_license", label: "Driver 1 License # / State", type: "text", section: "Driver Information" },
-  { key: "driver_2_name", label: "Driver 2 Name", type: "text", section: "Driver Information" },
-  { key: "driver_2_sex", label: "Driver 2 Sex", type: "select", options: ["M", "F"], section: "Driver Information" },
-  { key: "driver_2_marital", label: "Driver 2 Marital Status", type: "select", options: ["S", "M", "W", "D"], section: "Driver Information" },
-  { key: "driver_2_dob", label: "Driver 2 Date of Birth", type: "date", section: "Driver Information" },
-  { key: "driver_2_license", label: "Driver 2 License # / State", type: "text", section: "Driver Information" },
+  // Driver Information — Drivers 1–6 (matches ACORD 127 PDF rows A–F)
+  ...generateDriverFields(1),
+  ...generateDriverFields(2),
+  ...generateDriverFields(3),
+  ...generateDriverFields(4),
+  ...generateDriverFields(5),
+  ...generateDriverFields(6),
 
   // General Information
   { key: "vehicles_not_solely_owned", label: "1. Any vehicles not solely owned by applicant?", type: "select", options: ["Yes", "No"], section: "General Information", default: "No" },
