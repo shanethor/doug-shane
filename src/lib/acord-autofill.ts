@@ -808,6 +808,17 @@ export function buildAutofilledData(
       [`driver_${n}_dob`]: d.dob || d.date_of_birth || d.birth_date || "",
       [`driver_${n}_license`]: d.license || d.license_number || d.dl_number || "",
       [`driver_${n}_license_state`]: d.license_state || d.state || insuredState,
+      [`driver_${n}_sex`]: d.sex || d.gender || "",
+      [`driver_${n}_marital`]: d.marital_status || d.marital || "",
+      [`driver_${n}_experience`]: d.years_experience || d.experience || "",
+      [`driver_${n}_hired_date`]: d.hired_date || d.hire_date || "",
+      [`driver_${n}_ssn`]: d.ssn || d.social_security || "",
+      [`driver_${n}_city`]: d.city || "",
+      [`driver_${n}_state`]: d.driver_state || "",
+      [`driver_${n}_zip`]: d.zip || "",
+      [`driver_${n}_middle`]: d.middle || d.middle_name || "",
+      [`driver_${n}_vehicle_id`]: d.vehicle_id || d.assigned_vehicle || "",
+      [`driver_${n}_vehicle_pct`]: d.vehicle_pct || d.pct_use || "",
     };
     for (const [k, val] of Object.entries(dFields)) {
       if (val && formFieldKeys.has(k) && !mapped[k]) mapped[k] = normalizeValue(k, val);
