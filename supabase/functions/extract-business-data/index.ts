@@ -268,6 +268,22 @@ async function runGoogleOcrSingleChunk(
   if (!resp.ok) {
     const err = await resp.text();
     console.error("[ocr] Vision files:annotate error:", resp.status, err);
+    try {
+      const errJson = JSON.parse(err);
+      const errCode = errJson?.error?.status || errJson?.error?.code || "";
+      const errMessage = errJson?.error?.message || "";
+      if (errCode === "API_KEY_INVALID" || errCode === 403 || String(errCode) === "403") {
+        throw new Error("VISION_KEY_INVALID: Your Google Cloud API key is invalid or the Vision API is not enabled.");
+      }
+      if (errCode === "RESOURCE_EXHAUSTED" || resp.status === 429) {
+        throw new Error("VISION_QUOTA_EXCEEDED: Google Cloud Vision API quota exceeded.");
+      }
+      if (errMessage) {
+        throw new Error(`VISION_ERROR: ${errMessage}`);
+      }
+    } catch (parseErr) {
+      if (parseErr instanceof Error && parseErr.message.startsWith("VISION_")) throw parseErr;
+    }
     throw new Error(`Vision API error: ${resp.status}`);
   }
 
