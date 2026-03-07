@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { ingestDocument } from "@/services/aiRouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -538,17 +539,12 @@ export default function IntakeForm() {
         filesPayload.push({ base64: b64, mimeType });
       }
 
-      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/extract-dec-pages`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-        },
-        body: JSON.stringify({ files: filesPayload }),
+      const result = await ingestDocument({
+        docType: "dec_page",
+        pdfFiles: filesPayload.map(f => ({ base64: f.base64, mimeType: f.mimeType })),
       });
 
-      const result = await res.json();
-      if (!result.success || !result.data) {
+      if (!result.data || Object.keys(result.data).length === 0) {
         toast.error("Could not extract data from your documents. You can still fill out the form manually.");
         setDecExtracting(false);
         return;
