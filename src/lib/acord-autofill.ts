@@ -742,6 +742,8 @@ export function buildAutofilledData(
     bop_premium:        ["lob_bop"],
     garage_premium:     ["lob_garage_dealers"],
     liquor_premium:     ["lob_liquor_liability"],
+    other_lob_premium:  ["lob_other"],
+    wc_premium:         ["lob_other"],
   };
 
   for (const [premiumKey, checkboxKeys] of Object.entries(PREMIUM_TO_CHECKBOX)) {
@@ -759,11 +761,123 @@ export function buildAutofilledData(
   const covType = String(mapped.coverage_type || aiData.coverage_type || "").toLowerCase();
   if (covType.includes("occurrence")) {
     if (formFieldKeys.has("chk_occurrence")) mapped.chk_occurrence = true;
-    // Ensure Claims Made is not checked for Occurrence policies
     if (formFieldKeys.has("chk_claims_made") && !mapped.chk_claims_made) mapped.chk_claims_made = false;
   } else if (covType.includes("claims") || covType.includes("claims-made") || covType.includes("claims made")) {
     if (formFieldKeys.has("chk_claims_made")) mapped.chk_claims_made = true;
     if (formFieldKeys.has("chk_occurrence") && !mapped.chk_occurrence) mapped.chk_occurrence = false;
+  }
+
+  // 13. Multi-policy packet: auto-populate "Other LOB" description for WC
+  if (mapped.lob_other || mapped.other_lob_premium || mapped.wc_premium || aiData.wc_premium) {
+    if (formFieldKeys.has("other_lob_description") && !mapped.other_lob_description) {
+      mapped.other_lob_description = "WORKERS COMPENSATION";
+    }
+    if (formFieldKeys.has("lob_other")) {
+      mapped.lob_other = true;
+    }
+    // Map WC premium to Other LOB premium
+    const wcPrem = mapped.wc_premium || aiData.wc_premium || aiData.total_estimated_premium;
+    if (wcPrem && formFieldKeys.has("other_lob_premium") && !mapped.other_lob_premium) {
+      mapped.other_lob_premium = normalizeValue("other_lob_premium", wcPrem);
+    }
+  }
+
+  // 14. Multi-policy packet: Q4 "Other insurance with this company"
+  //     When multiple policies from the same carrier are present, auto-check Q4
+  const policyKeys = ["policy_number", "auto_policy_number", "umbrella_policy_number", "wc_policy_number"];
+  const distinctPolicies = new Set(
+    policyKeys.map(k => aiData[k] || mapped[k]).filter(Boolean)
+  );
+  if (distinctPolicies.size >= 2 || (aiData.policies && Array.isArray(aiData.policies) && aiData.policies.length > 1)) {
+    if (formFieldKeys.has("q4_code")) mapped.q4_code = "Y";
+    // Fill Q4 detail rows from the policies
+    const policies = aiData.policies || [];
+    if (Array.isArray(policies)) {
+      const q4Slots = ["a", "b", "c", "d"];
+      policies.slice(0, 4).forEach((p: any, i: number) => {
+        const slot = q4Slots[i];
+        const lobKey = `q4_lob_${slot}`;
+        const polKey = `q4_policy_${slot}`;
+        if (p.line_of_business && formFieldKeys.has(lobKey) && !mapped[lobKey]) {
+          mapped[lobKey] = p.line_of_business;
+        }
+        if (p.policy_number && formFieldKeys.has(polKey) && !mapped[polKey]) {
+          mapped[polKey] = p.policy_number;
+        }
+      });
+    }
+  }
+
+  // 15. Multi-policy packet: auto-populate prior carrier rows from policy data
+  //     If aiData contains structured policy objects, map them to prior carrier grid
+  if (aiData.policies && Array.isArray(aiData.policies)) {
+    const policies = aiData.policies as Array<{
+      line_of_business?: string;
+      carrier_name?: string;
+      policy_number?: string;
+      premium?: string;
+      effective_date?: string;
+      expiration_date?: string;
+    }>;
+
+    // Separate by LOB category for ACORD 125 prior carrier grid
+    for (const p of policies) {
+      const lob = (p.line_of_business || "").toUpperCase();
+      const yr = p.effective_date ? parseDate(p.effective_date).slice(0, 4) : "";
+
+      // Determine which prior carrier column this maps to
+      let prefix = "";
+      let yearKey = "";
+      if (lob.includes("GENERAL") || lob.includes("BOP") || lob.includes("GL") || lob.includes("PACKAGE")) {
+        prefix = "prior_"; yearKey = "prior_year_1";
+        // GL/BOP goes in the GL column
+        if (!mapped.prior_carrier_1 && formFieldKeys.has("prior_carrier_1")) {
+          mapped.prior_carrier_1 = p.carrier_name || "";
+          if (yr && formFieldKeys.has("prior_year_1")) mapped.prior_year_1 = yr;
+          if (p.policy_number && formFieldKeys.has("prior_policy_number_1")) mapped.prior_policy_number_1 = p.policy_number;
+          if (p.premium && formFieldKeys.has("prior_gl_premium_1")) mapped.prior_gl_premium_1 = normalizeValue("prior_gl_premium_1", p.premium);
+          if (p.effective_date && formFieldKeys.has("prior_eff_date_1")) mapped.prior_eff_date_1 = parseDate(p.effective_date);
+          if (p.expiration_date && formFieldKeys.has("prior_exp_date_1")) mapped.prior_exp_date_1 = parseDate(p.expiration_date);
+        }
+      } else if (lob.includes("AUTO")) {
+        if (!mapped.prior_auto_carrier_1 && formFieldKeys.has("prior_auto_carrier_1")) {
+          mapped.prior_auto_carrier_1 = p.carrier_name || "";
+          if (p.policy_number && formFieldKeys.has("prior_auto_policy_1")) mapped.prior_auto_policy_1 = p.policy_number;
+          if (p.premium && formFieldKeys.has("prior_auto_premium_1")) mapped.prior_auto_premium_1 = normalizeValue("prior_auto_premium_1", p.premium);
+          if (p.effective_date && formFieldKeys.has("prior_auto_eff_1")) mapped.prior_auto_eff_1 = parseDate(p.effective_date);
+          if (p.expiration_date && formFieldKeys.has("prior_auto_exp_1")) mapped.prior_auto_exp_1 = parseDate(p.expiration_date);
+        }
+      } else if (lob.includes("PROPERTY") || lob.includes("FIRE")) {
+        if (!mapped.prior_prop_carrier_1 && formFieldKeys.has("prior_prop_carrier_1")) {
+          mapped.prior_prop_carrier_1 = p.carrier_name || "";
+          if (p.policy_number && formFieldKeys.has("prior_prop_policy_1")) mapped.prior_prop_policy_1 = p.policy_number;
+          if (p.premium && formFieldKeys.has("prior_prop_premium_1")) mapped.prior_prop_premium_1 = normalizeValue("prior_prop_premium_1", p.premium);
+          if (p.effective_date && formFieldKeys.has("prior_prop_eff_1")) mapped.prior_prop_eff_1 = parseDate(p.effective_date);
+          if (p.expiration_date && formFieldKeys.has("prior_prop_exp_1")) mapped.prior_prop_exp_1 = parseDate(p.expiration_date);
+        }
+      } else if (lob.includes("UMBRELLA") || lob.includes("EXCESS") || lob.includes("WORKERS") || lob.includes("WC")) {
+        // Umbrella/WC goes in "Other Line" column
+        if (!mapped.prior_other_carrier_1 && formFieldKeys.has("prior_other_carrier_1")) {
+          mapped.prior_other_lob_1 = lob.includes("UMBRELLA") || lob.includes("EXCESS")
+            ? "COMMERCIAL UMBRELLA" : "WORKERS COMPENSATION";
+          mapped.prior_other_carrier_1 = p.carrier_name || "";
+          if (p.policy_number && formFieldKeys.has("prior_other_policy_1")) mapped.prior_other_policy_1 = p.policy_number;
+          if (p.premium && formFieldKeys.has("prior_other_premium_1")) mapped.prior_other_premium_1 = normalizeValue("prior_other_premium_1", p.premium);
+          if (p.effective_date && formFieldKeys.has("prior_other_eff_1")) mapped.prior_other_eff_1 = parseDate(p.effective_date);
+          if (p.expiration_date && formFieldKeys.has("prior_other_exp_1")) mapped.prior_other_exp_1 = parseDate(p.expiration_date);
+        }
+      }
+    }
+  }
+
+  // 16. Nature of business — copy from description_of_operations if not set separately
+  if (formFieldKeys.has("nature_of_business") && !mapped.nature_of_business && mapped.description_of_operations) {
+    mapped.nature_of_business = mapped.description_of_operations;
+  }
+
+  // 17. Premises loc number defaults to "1" when premises address is set
+  if (formFieldKeys.has("premises_loc_number") && !mapped.premises_loc_number && mapped.premises_address) {
+    mapped.premises_loc_number = "1";
   }
 
   return mapped;
