@@ -796,7 +796,31 @@ function postProcess(fd: Record<string, any>, sourceText: string, hasPdfs: boole
   });
   if (drivers.length > 0 && !fd.number_of_drivers) fd.number_of_drivers = String(drivers.length);
 
-  if (vehicles.length > 0 && fd.lob_auto !== "true") fd.lob_auto = "true";
+  // Regex fallback: recover driver names and NAIC from OCR text when model misses them
+  if (!fd.naic_code) {
+    const naicMatch = sourceText.match(/\bNAIC\s*(?:CODE|#|NO\.?|NUMBER)?\s*[:\-]?\s*(\d{4,6})\b/i);
+    if (naicMatch) fd.naic_code = naicMatch[1];
+  }
+  if (drivers.length === 0) {
+    const seen = new Set<string>();
+    const stateFallback = String(fd.state || "").trim().toUpperCase();
+    const nameMatches = sourceText.match(/\b([A-Z][A-Z'\-]{1,30}),\s*([A-Z][A-Z'\-]{1,30})\b/g) || [];
+    let n = 1;
+    for (const raw of nameMatches) {
+      const [last, first] = raw.split(",").map((s) => s.trim());
+      if (!last || !first) continue;
+      const key = `${last}, ${first}`;
+      if (seen.has(key) || /\b(LLC|INC|ST|AVE|RD|BLVD|CT|MAIN|MONROE)\b/i.test(key)) continue;
+      seen.add(key);
+      fd[`driver_${n}_name`] = key;
+      if (!fd[`driver_${n}_first_name`]) fd[`driver_${n}_first_name`] = first;
+      if (!fd[`driver_${n}_last_name`]) fd[`driver_${n}_last_name`] = last;
+      if (!fd[`driver_${n}_license_state`] && stateFallback) fd[`driver_${n}_license_state`] = stateFallback;
+      n += 1;
+      if (n > 12) break;
+    }
+    if (n > 1 && !fd.number_of_drivers) fd.number_of_drivers = String(n - 1);
+  }
 
   // Normalize business_type
   const BT_MAP: Record<string, string> = {
@@ -896,6 +920,7 @@ serve(async (req) => {
     const t0 = Date.now();
     let extracted: any;
     let pipelineUsed = "unknown";
+    let ocrSourceText = "";
 
     // ────────────────────────────────────────────────
     //  3-STAGE PIPELINE (when Google Cloud Vision key exists)
@@ -953,7 +978,7 @@ serve(async (req) => {
       }
 
       console.log(`[stage1] Total OCR: ${totalPagesProcessed} pages, ${allOcrText.length} chars`);
-
+      ocrSourceText = allOcrText;
       if (allOcrText.trim().length < 20) {
         // OCR produced no useful text — PDF likely has embedded digital text.
         // Use Gemini native PDF vision (sends raw PDF bytes to the model).
@@ -1074,7 +1099,8 @@ serve(async (req) => {
 
     // ── Post-processing ──
     const fd: Record<string, any> = extracted.form_data || {};
-    postProcess(fd, (description || "") + (file_contents || ""), hasPdfs);
+    const postProcessSource = `${additionalContext}\n${ocrSourceText}`;
+    postProcess(fd, postProcessSource, hasPdfs);
     extracted.form_data = fd;
 
     // Debug log

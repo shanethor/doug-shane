@@ -743,8 +743,43 @@ export function buildAutofilledData(
     }
   });
 
-  // 5c. Expand drivers[] array → driver_N_name/first/last/dob/license fields
-  const drivers: any[] = Array.isArray(aiData.drivers) ? aiData.drivers : [];
+  // 5c. Expand driver schedules → driver_N_name/first/last/dob/license fields
+  const parseDriverLine = (raw: string) => {
+    const s = String(raw || "").trim();
+    if (!s) return null;
+    const comma = s.match(/^([A-Z][A-Z'\-\s]{1,40}),\s*([A-Z][A-Z'\-\s]{1,40})$/i);
+    if (comma) {
+      return {
+        name: `${comma[1].trim()}, ${comma[2].trim()}`,
+        first_name: comma[2].trim(),
+        last_name: comma[1].trim(),
+      };
+    }
+    const parts = s.split(/\s+/).filter(Boolean);
+    if (parts.length >= 2) {
+      return {
+        name: s,
+        first_name: parts[0],
+        last_name: parts.slice(1).join(" "),
+      };
+    }
+    return { name: s, first_name: "", last_name: s };
+  };
+
+  const fromArrays: any[] = [
+    ...(Array.isArray(aiData.drivers) ? aiData.drivers : []),
+    ...(Array.isArray(aiData.current_drivers) ? aiData.current_drivers : []),
+    ...(Array.isArray(aiData.driver_schedule) ? aiData.driver_schedule : []),
+  ];
+
+  const fromText: any[] = fromArrays.length > 0
+    ? []
+    : String(aiData.driver_listing || aiData.driver_list || "")
+        .split(/\r?\n|;|\|/)
+        .map(parseDriverLine)
+        .filter(Boolean) as any[];
+
+  const drivers: any[] = [...fromArrays, ...fromText];
   const insuredState = aiData.state || mapped.state || "";
   drivers.forEach((d: any, idx: number) => {
     const n = idx + 1;

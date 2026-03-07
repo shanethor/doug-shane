@@ -181,11 +181,11 @@ export default function FormFillingView({ submissionId, initialMessages, initial
    */
   const buildPrefillByIndex = useCallback(async (fId: string, data: Record<string, any>): Promise<Record<number, string>> => {
     // Merge BOTH runtime discovery AND static verified index maps for full coverage.
-    // Static ACORD_INDEX_MAPS have verified field indices that may not be in SEMANTIC_ALIASES.
+    // Runtime map must win because it reflects the exact currently loaded PDF bytes.
     const runtimeMap = await getMergedIndexMap(fId).catch(() => null) || {};
     const staticMap = ACORD_INDEX_MAPS[fId] || {};
-    // Static map takes priority (manually verified), runtime fills gaps
-    const indexMap: Record<string, number> = { ...runtimeMap, ...staticMap };
+    // Static map fills gaps only when runtime/alias lookup does not resolve a key.
+    const indexMap: Record<string, number> = { ...staticMap, ...runtimeMap };
     if (Object.keys(indexMap).length === 0) return {};
     const result: Record<number, string> = {};
     const debugEntries: string[] = [];
@@ -333,8 +333,11 @@ export default function FormFillingView({ submissionId, initialMessages, initial
     setSavedPdfBytesMap(prev => ({ ...prev, [formId]: bytes }));
 
     // Extract field values from the saved PDF
-    const indexMap = ACORD_INDEX_MAPS[formId];
-    if (!indexMap) return;
+    // Use runtime+static merged map so PDF→panel sync follows the active PDF version.
+    const runtimeMap = await getMergedIndexMap(formId).catch(() => null) || {};
+    const staticMap = ACORD_INDEX_MAPS[formId] || {};
+    const indexMap: Record<string, number> = { ...staticMap, ...runtimeMap };
+    if (Object.keys(indexMap).length === 0) return;
 
     try {
       const { PDFDocument } = await import("pdf-lib");
