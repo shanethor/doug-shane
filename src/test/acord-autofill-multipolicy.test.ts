@@ -2,8 +2,8 @@ import { describe, it, expect } from "vitest";
 import { buildAutofilledData } from "@/lib/acord-autofill";
 import { ACORD_FORMS } from "@/lib/acord-forms";
 
-const acord125 = ACORD_FORMS.find(f => f.id === "acord-125")!;
-const acord127 = ACORD_FORMS.find(f => f.id === "acord-127")!;
+const acord125 = ACORD_FORMS["acord-125"];
+const acord127 = ACORD_FORMS["acord-127"];
 
 describe("buildAutofilledData — LOB checkboxes from AI flags", () => {
   it("checks lob_business_auto when lob_auto='true'", () => {

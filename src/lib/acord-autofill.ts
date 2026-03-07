@@ -648,15 +648,36 @@ export function buildAutofilledData(
     }
   });
 
-  // 5c. Expand drivers[] array → driver_N_name/dob/license fields
+  // 5c. Expand drivers[] array → driver_N_name/first/last/dob/license fields
   const drivers: any[] = Array.isArray(aiData.drivers) ? aiData.drivers : [];
+  const insuredState = aiData.state || mapped.state || "";
   drivers.forEach((d: any, idx: number) => {
     const n = idx + 1;
+    const fullName = d.name || d.driver_name || d.full_name || "";
+    // Split "LAST, FIRST" or "LAST, FIRST MIDDLE" format
+    let firstName = d.first_name || "";
+    let lastName = d.last_name || "";
+    if (!firstName && !lastName && fullName.includes(",")) {
+      const parts = fullName.split(",").map((s: string) => s.trim());
+      lastName = parts[0] || "";
+      firstName = parts[1] || "";
+    } else if (!firstName && !lastName && fullName) {
+      // "FIRST LAST" format
+      const parts = fullName.trim().split(/\s+/);
+      if (parts.length >= 2) {
+        firstName = parts[0];
+        lastName = parts.slice(1).join(" ");
+      } else {
+        lastName = fullName;
+      }
+    }
     const dFields: Record<string, string> = {
-      [`driver_${n}_name`]: d.name || d.driver_name || d.full_name || "",
+      [`driver_${n}_name`]: fullName,
+      [`driver_${n}_first_name`]: firstName,
+      [`driver_${n}_last_name`]: lastName,
       [`driver_${n}_dob`]: d.dob || d.date_of_birth || d.birth_date || "",
       [`driver_${n}_license`]: d.license || d.license_number || d.dl_number || "",
-      [`driver_${n}_license_state`]: d.license_state || d.state || "",
+      [`driver_${n}_license_state`]: d.license_state || d.state || insuredState,
     };
     for (const [k, val] of Object.entries(dFields)) {
       if (val && formFieldKeys.has(k) && !mapped[k]) mapped[k] = normalizeValue(k, val);
