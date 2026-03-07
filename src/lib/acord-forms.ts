@@ -858,6 +858,54 @@ const acord140Fields: AcordFormField[] = [
   { key: "extra_expense_amount", label: "Extra Expense Amount", type: "currency", section: "Subject of Insurance" },
   { key: "rental_value_amount", label: "Rental Value Amount", type: "currency", section: "Subject of Insurance" },
   { key: "inflation_guard_pct", label: "Inflation Guard %", type: "text", section: "Subject of Insurance" },
+  { key: "accounts_receivable_limit", label: "Accounts Receivable Limit", type: "currency", section: "Subject of Insurance" },
+  { key: "valuable_papers_limit", label: "Valuable Papers Limit", type: "currency", section: "Subject of Insurance" },
+  { key: "edp_media_limit", label: "EDP Media Limit", type: "currency", section: "Subject of Insurance" },
+  { key: "fine_arts_limit", label: "Fine Arts Limit", type: "currency", section: "Subject of Insurance" },
+  { key: "fungus_limit", label: "Fungus/Wet/Dry Rot Limit", type: "currency", section: "Subject of Insurance" },
+  { key: "coverage_extensions_limit", label: "Coverage Extensions Limit", type: "currency", section: "Subject of Insurance" },
+
+  // Business Income / Extra Expense
+  { key: "bi_ee_type", label: "BI/EE Measurement", type: "select", options: ["Actual Loss Sustained", "Monthly Limit of Indemnity", "Maximum Period of Indemnity"], section: "Business Income" },
+  { key: "bi_ee_months", label: "BI/EE - # Months", type: "text", section: "Business Income" },
+  { key: "bi_rental_value_included", label: "Rental Value Included", type: "checkbox", section: "Business Income" },
+  { key: "bi_ordinary_payroll_included", label: "Ordinary Payroll Included", type: "checkbox", section: "Business Income" },
+  { key: "bi_extended_days", label: "Extended BI Days", type: "text", section: "Business Income" },
+  { key: "bi_dependent_properties_limit", label: "Dependent Properties Limit", type: "currency", section: "Business Income" },
+  { key: "bi_dependent_outside_territory", label: "Dependent Properties Outside Territory", type: "select", options: ["Covered", "Not Covered"], section: "Business Income" },
+
+  // Equipment Breakdown
+  { key: "equipment_breakdown_coverage", label: "Equipment Breakdown Coverage", type: "checkbox", section: "Equipment Breakdown" },
+  { key: "equipment_breakdown_limit", label: "Equipment Breakdown Limit", type: "currency", section: "Equipment Breakdown" },
+  { key: "spoilage_limit", label: "Spoilage Limit", type: "currency", section: "Equipment Breakdown" },
+  { key: "expediting_expense_limit", label: "Expediting Expense Limit", type: "currency", section: "Equipment Breakdown" },
+  { key: "ammonia_contamination_limit", label: "Ammonia Contamination Limit", type: "currency", section: "Equipment Breakdown" },
+  { key: "hazardous_substance_limit", label: "Hazardous Substance Limit", type: "currency", section: "Equipment Breakdown" },
+
+  // Crime / Additional Property Coverages
+  { key: "crime_employee_theft", label: "Crime - Employee Theft", type: "checkbox", section: "Crime / Additional Coverages" },
+  { key: "crime_forgery", label: "Crime - Forgery", type: "checkbox", section: "Crime / Additional Coverages" },
+  { key: "computer_fraud_limit", label: "Computer Fraud/FTF Limit", type: "currency", section: "Crime / Additional Coverages" },
+  { key: "ordinance_or_law_limit", label: "Ordinance or Law B/C Limit", type: "currency", section: "Crime / Additional Coverages" },
+  { key: "power_pac_blanket_limit", label: "Power Pac / Blanket Extensions Limit", type: "currency", section: "Crime / Additional Coverages" },
+
+  // Premises 2
+  { key: "premises_2_number", label: "Premises 2 #", type: "text", section: "Premises 2" },
+  { key: "premises_2_address", label: "Premises 2 Address", type: "text", section: "Premises 2" },
+  { key: "premises_2_city", label: "Premises 2 City", type: "text", section: "Premises 2" },
+  { key: "premises_2_state", label: "Premises 2 State", type: "text", section: "Premises 2" },
+  { key: "premises_2_zip", label: "Premises 2 ZIP", type: "text", section: "Premises 2" },
+  { key: "premises_2_building_1", label: "P2 Building 1 Description", type: "text", section: "Premises 2" },
+  { key: "premises_2_building_2", label: "P2 Building 2 Description", type: "text", section: "Premises 2" },
+
+  // Mortgagee / Loss Payee
+  { key: "mortgagee_1_name", label: "Mortgagee / Loss Payee 1", type: "text", section: "Mortgagee / Loss Payee" },
+  { key: "mortgagee_1_address", label: "Mortgagee 1 Address", type: "text", section: "Mortgagee / Loss Payee" },
+  { key: "mortgagee_1_clause", label: "Mortgagee 1 Clause (ISAOA ATIMA)", type: "text", section: "Mortgagee / Loss Payee" },
+  { key: "mortgagee_2_name", label: "Mortgagee / Loss Payee 2", type: "text", section: "Mortgagee / Loss Payee" },
+  { key: "mortgagee_2_address", label: "Mortgagee 2 Address", type: "text", section: "Mortgagee / Loss Payee" },
+  { key: "mortgagee_3_name", label: "Mortgagee / Loss Payee 3", type: "text", section: "Mortgagee / Loss Payee" },
+  { key: "mortgagee_3_address", label: "Mortgagee 3 Address", type: "text", section: "Mortgagee / Loss Payee" },
 
   // Construction Type
   { key: "construction_type", label: "Construction Type", type: "select", options: ["Frame", "Joisted Masonry", "Non-Combustible", "Masonry Non-Combustible", "Modified Fire Resistive", "Fire Resistive"], section: "Construction" },
@@ -868,6 +916,7 @@ const acord140Fields: AcordFormField[] = [
   { key: "distance_to_hydrant", label: "Distance to Hydrant (ft)", type: "text", section: "Construction" },
   { key: "fire_district", label: "Fire District (mi)", type: "text", section: "Construction" },
   { key: "protection_class", label: "Protection Class", type: "text", section: "Construction" },
+  { key: "occupancy_description", label: "Occupancy Description", type: "text", section: "Construction" },
 
   // Building Improvements
   { key: "roof_type", label: "Roof Type", type: "text", section: "Building Improvements" },
@@ -897,10 +946,13 @@ const acord140Fields: AcordFormField[] = [
   { key: "mine_subsidence_coverage", label: "Mine Subsidence Coverage", type: "select", options: ["Accept", "Reject"], section: "Special Coverages" },
   { key: "mine_subsidence_limit", label: "Mine Subsidence Limit", type: "currency", section: "Special Coverages" },
 
-  // Spoilage
-  { key: "spoilage_description", label: "Spoilage - Description of Property", type: "text", section: "Spoilage" },
-  { key: "spoilage_limit", label: "Spoilage Limit", type: "currency", section: "Spoilage" },
-  { key: "spoilage_refrig_maint", label: "Refrigeration Maintenance Agreement", type: "select", options: ["Yes", "No"], section: "Spoilage" },
+  // Enhancement Flags
+  { key: "auto_coverage_plus", label: "Auto Coverage Plus", type: "checkbox", section: "Enhancement Endorsements" },
+  { key: "rental_reimbursement", label: "Rental Reimbursement", type: "checkbox", section: "Enhancement Endorsements" },
+  { key: "roadside_assistance", label: "Roadside Assistance", type: "checkbox", section: "Enhancement Endorsements" },
+  { key: "glass_deductible_waiver", label: "Glass Deductible Waiver", type: "checkbox", section: "Enhancement Endorsements" },
+  { key: "hired_auto_pd", label: "Hired Auto Physical Damage", type: "checkbox", section: "Enhancement Endorsements" },
+  { key: "gap_coverage", label: "GAP Coverage", type: "checkbox", section: "Enhancement Endorsements" },
 
   // Remarks
   { key: "property_remarks", label: "Remarks", type: "textarea", section: "Remarks" },
