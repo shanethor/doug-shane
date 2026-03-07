@@ -371,7 +371,7 @@ const acord127Fields: AcordFormField[] = [
   { key: "garage_storage_description", label: "Description of Garage / Storage Locations", type: "textarea", section: "Garage / Storage" },
   { key: "max_dollar_value_at_risk", label: "Maximum Dollar Value Subject to Loss", type: "currency", section: "Garage / Storage" },
 
-  // Vehicle Description
+  // Vehicle Description — Vehicle 1
   { key: "vehicle_1_year", label: "Vehicle 1 Year", type: "text", section: "Vehicle Description" },
   { key: "vehicle_1_make", label: "Vehicle 1 Make", type: "text", section: "Vehicle Description" },
   { key: "vehicle_1_model", label: "Vehicle 1 Model", type: "text", section: "Vehicle Description" },
@@ -379,6 +379,55 @@ const acord127Fields: AcordFormField[] = [
   { key: "vehicle_1_vin", label: "Vehicle 1 V.I.N.", type: "text", section: "Vehicle Description" },
   { key: "vehicle_1_cost_new", label: "Vehicle 1 Cost New", type: "currency", section: "Vehicle Description" },
   { key: "vehicle_1_type", label: "Vehicle 1 Type", type: "select", options: ["PP", "Spec", "Coml"], section: "Vehicle Description" },
+  // Vehicle 2
+  { key: "vehicle_2_year", label: "Vehicle 2 Year", type: "text", section: "Vehicle Description" },
+  { key: "vehicle_2_make", label: "Vehicle 2 Make", type: "text", section: "Vehicle Description" },
+  { key: "vehicle_2_model", label: "Vehicle 2 Model", type: "text", section: "Vehicle Description" },
+  { key: "vehicle_2_body_type", label: "Vehicle 2 Body Type", type: "text", section: "Vehicle Description" },
+  { key: "vehicle_2_vin", label: "Vehicle 2 V.I.N.", type: "text", section: "Vehicle Description" },
+  { key: "vehicle_2_cost_new", label: "Vehicle 2 Cost New", type: "currency", section: "Vehicle Description" },
+  // Vehicle 3
+  { key: "vehicle_3_year", label: "Vehicle 3 Year", type: "text", section: "Vehicle Description" },
+  { key: "vehicle_3_make", label: "Vehicle 3 Make", type: "text", section: "Vehicle Description" },
+  { key: "vehicle_3_model", label: "Vehicle 3 Model", type: "text", section: "Vehicle Description" },
+  { key: "vehicle_3_body_type", label: "Vehicle 3 Body Type", type: "text", section: "Vehicle Description" },
+  { key: "vehicle_3_vin", label: "Vehicle 3 V.I.N.", type: "text", section: "Vehicle Description" },
+  { key: "vehicle_3_cost_new", label: "Vehicle 3 Cost New", type: "currency", section: "Vehicle Description" },
+  // Vehicle 4
+  { key: "vehicle_4_year", label: "Vehicle 4 Year", type: "text", section: "Vehicle Description" },
+  { key: "vehicle_4_make", label: "Vehicle 4 Make", type: "text", section: "Vehicle Description" },
+  { key: "vehicle_4_model", label: "Vehicle 4 Model", type: "text", section: "Vehicle Description" },
+  { key: "vehicle_4_body_type", label: "Vehicle 4 Body Type", type: "text", section: "Vehicle Description" },
+  { key: "vehicle_4_vin", label: "Vehicle 4 V.I.N.", type: "text", section: "Vehicle Description" },
+  { key: "vehicle_4_cost_new", label: "Vehicle 4 Cost New", type: "currency", section: "Vehicle Description" },
+  // Vehicle 5
+  { key: "vehicle_5_year", label: "Vehicle 5 Year", type: "text", section: "Vehicle Description" },
+  { key: "vehicle_5_make", label: "Vehicle 5 Make", type: "text", section: "Vehicle Description" },
+  { key: "vehicle_5_model", label: "Vehicle 5 Model", type: "text", section: "Vehicle Description" },
+  { key: "vehicle_5_body_type", label: "Vehicle 5 Body Type", type: "text", section: "Vehicle Description" },
+  { key: "vehicle_5_vin", label: "Vehicle 5 V.I.N.", type: "text", section: "Vehicle Description" },
+  { key: "vehicle_5_cost_new", label: "Vehicle 5 Cost New", type: "currency", section: "Vehicle Description" },
+  // Vehicle 6
+  { key: "vehicle_6_year", label: "Vehicle 6 Year", type: "text", section: "Vehicle Description" },
+  { key: "vehicle_6_make", label: "Vehicle 6 Make", type: "text", section: "Vehicle Description" },
+  { key: "vehicle_6_model", label: "Vehicle 6 Model", type: "text", section: "Vehicle Description" },
+  { key: "vehicle_6_body_type", label: "Vehicle 6 Body Type", type: "text", section: "Vehicle Description" },
+  { key: "vehicle_6_vin", label: "Vehicle 6 V.I.N.", type: "text", section: "Vehicle Description" },
+  { key: "vehicle_6_cost_new", label: "Vehicle 6 Cost New", type: "currency", section: "Vehicle Description" },
+  // Vehicle 7
+  { key: "vehicle_7_year", label: "Vehicle 7 Year", type: "text", section: "Vehicle Description" },
+  { key: "vehicle_7_make", label: "Vehicle 7 Make", type: "text", section: "Vehicle Description" },
+  { key: "vehicle_7_model", label: "Vehicle 7 Model", type: "text", section: "Vehicle Description" },
+  { key: "vehicle_7_body_type", label: "Vehicle 7 Body Type", type: "text", section: "Vehicle Description" },
+  { key: "vehicle_7_vin", label: "Vehicle 7 V.I.N.", type: "text", section: "Vehicle Description" },
+  { key: "vehicle_7_cost_new", label: "Vehicle 7 Cost New", type: "currency", section: "Vehicle Description" },
+  // Vehicle 8
+  { key: "vehicle_8_year", label: "Vehicle 8 Year", type: "text", section: "Vehicle Description" },
+  { key: "vehicle_8_make", label: "Vehicle 8 Make", type: "text", section: "Vehicle Description" },
+  { key: "vehicle_8_model", label: "Vehicle 8 Model", type: "text", section: "Vehicle Description" },
+  { key: "vehicle_8_body_type", label: "Vehicle 8 Body Type", type: "text", section: "Vehicle Description" },
+  { key: "vehicle_8_vin", label: "Vehicle 8 V.I.N.", type: "text", section: "Vehicle Description" },
+  { key: "vehicle_8_cost_new", label: "Vehicle 8 Cost New", type: "currency", section: "Vehicle Description" },
 
   // Garaging Address
   { key: "garaging_street", label: "Garaging Street", type: "text", section: "Garaging Address" },
@@ -388,10 +437,35 @@ const acord127Fields: AcordFormField[] = [
   { key: "garaging_zip", label: "Garaging ZIP", type: "text", section: "Garaging Address" },
 
   // Vehicle Use / Class
-  { key: "vehicle_1_radius", label: "Radius (miles)", type: "text", section: "Vehicle Use" },
-  { key: "vehicle_1_class", label: "Class", type: "text", section: "Vehicle Use" },
-  { key: "vehicle_1_sic", label: "SIC", type: "text", section: "Vehicle Use" },
-  { key: "vehicle_1_gvw", label: "GVW / GCW", type: "text", section: "Vehicle Use" },
+  { key: "vehicle_1_radius", label: "Vehicle 1 Radius (miles)", type: "text", section: "Vehicle Use" },
+  { key: "vehicle_1_class", label: "Vehicle 1 Class", type: "text", section: "Vehicle Use" },
+  { key: "vehicle_1_sic", label: "Vehicle 1 SIC", type: "text", section: "Vehicle Use" },
+  { key: "vehicle_1_gvw", label: "Vehicle 1 GVW / GCW", type: "text", section: "Vehicle Use" },
+
+  // Additional driver fields (3-6)
+  { key: "driver_3_name", label: "Driver 3 Name", type: "text", section: "Driver Information" },
+  { key: "driver_3_dob", label: "Driver 3 Date of Birth", type: "date", section: "Driver Information" },
+  { key: "driver_3_license", label: "Driver 3 License #", type: "text", section: "Driver Information" },
+  { key: "driver_3_license_state", label: "Driver 3 License State", type: "text", section: "Driver Information" },
+  { key: "driver_4_name", label: "Driver 4 Name", type: "text", section: "Driver Information" },
+  { key: "driver_4_dob", label: "Driver 4 Date of Birth", type: "date", section: "Driver Information" },
+  { key: "driver_4_license", label: "Driver 4 License #", type: "text", section: "Driver Information" },
+  { key: "driver_4_license_state", label: "Driver 4 License State", type: "text", section: "Driver Information" },
+  { key: "driver_5_name", label: "Driver 5 Name", type: "text", section: "Driver Information" },
+  { key: "driver_5_dob", label: "Driver 5 Date of Birth", type: "date", section: "Driver Information" },
+  { key: "driver_5_license", label: "Driver 5 License #", type: "text", section: "Driver Information" },
+  { key: "driver_5_license_state", label: "Driver 5 License State", type: "text", section: "Driver Information" },
+  { key: "driver_6_name", label: "Driver 6 Name", type: "text", section: "Driver Information" },
+  { key: "driver_6_dob", label: "Driver 6 Date of Birth", type: "date", section: "Driver Information" },
+  { key: "driver_6_license", label: "Driver 6 License #", type: "text", section: "Driver Information" },
+  { key: "driver_6_license_state", label: "Driver 6 License State", type: "text", section: "Driver Information" },
+
+  // Auto coverages
+  { key: "auto_liability_limit", label: "Auto Liability Limit", type: "currency", section: "Coverages" },
+  { key: "um_uim_limit", label: "UM/UIM Limit", type: "currency", section: "Coverages" },
+  { key: "number_of_vehicles", label: "Number of Vehicles", type: "text", section: "Coverages" },
+  { key: "number_of_drivers", label: "Number of Drivers", type: "text", section: "Coverages" },
+  { key: "radius_of_operations", label: "Radius of Operations", type: "text", section: "Coverages" },
 
   // Remarks
   { key: "auto_remarks", label: "Remarks", type: "textarea", section: "Remarks" },
