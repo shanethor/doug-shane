@@ -66,15 +66,17 @@ export default function ProducerDashboard({ embedded }: { embedded?: boolean } =
 
     const dateRange = getDateRange(period);
 
+    // RLS handles visibility — managers see team data, producers see own
+    const policiesQuery = supabase.from("policies").select("*");
+    const leadsQuery = supabase.from("leads").select("id, stage");
+    if (!isManager && !isAdmin) {
+      policiesQuery.eq("producer_user_id", user.id);
+      leadsQuery.eq("owner_user_id", user.id);
+    }
+
     const [policiesRes, leadsRes] = await Promise.all([
-      supabase
-        .from("policies")
-        .select("*")
-        .eq("producer_user_id", user.id),
-      supabase
-        .from("leads")
-        .select("id, stage")
-        .eq("owner_user_id", user.id),
+      policiesQuery,
+      leadsQuery,
     ]);
 
     if (!mountedRef.current) return;

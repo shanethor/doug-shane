@@ -202,11 +202,19 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
 
   const loadLeads = useCallback(async () => {
     if (!user) return;
+    // RLS now handles visibility via get_accessible_lead_ids — managers see team leads, producers see own
+    const leadsQuery = supabase.from("leads").select("*").order("updated_at", { ascending: false });
+    // Producers still filter client-side for performance; managers/admins see all accessible
+    if (!isManager && !isAdmin) {
+      leadsQuery.eq("owner_user_id", user.id);
+    }
+
     const [leadsRes, approvedRes, lossRunRes, allPoliciesRes, auditRes] = await Promise.all([
-      supabase.from("leads").select("*").eq("owner_user_id", user.id).order("updated_at", { ascending: false }),
+      leadsQuery,
       supabase.from("policies").select("lead_id").eq("status", "approved"),
       supabase.from("loss_run_requests").select("lead_id, status"),
-      supabase.from("policies").select("lead_id, annual_premium, revenue, status, created_at").eq("producer_user_id", user.id),
+      // For managers: RLS on policies now allows seeing team policies via lead_id
+      supabase.from("policies").select("lead_id, annual_premium, revenue, status, created_at"),
       supabase.from("audit_log").select("object_id, action, metadata, created_at").eq("object_type", "lead").order("created_at", { ascending: true }).limit(1000),
     ]);
 
