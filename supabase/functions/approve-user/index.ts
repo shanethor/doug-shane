@@ -12,8 +12,9 @@ Deno.serve(async (req) => {
     const authHeader = req.headers.get("authorization");
     if (!authHeader?.startsWith("Bearer ")) throw new Error("Missing authorization");
 
-    const { target_user_id, action, role } = await req.json();
-    if (!target_user_id || !action) throw new Error("Missing target_user_id or action");
+    const body = await req.json();
+    const { target_user_id, action, role, email, password, full_name } = body;
+    if (!action) throw new Error("Missing action");
 
     const anonClient = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -55,12 +56,32 @@ Deno.serve(async (req) => {
     );
 
     if (action === "create_user") {
-      const { email, password, full_name } = await req.json().catch(() => ({}));
-      const createEmail = email || (await req.json()).email;
-      // We already parsed the body above, so use destructured values from line 15
-      const body = { target_user_id, action, role, email: undefined as any, password: undefined as any, full_name: undefined as any };
-      // Actually let me restructure - the body was already parsed at line 15
+      if (!email || !password) throw new Error("Missing email or password");
+      const { data: newUser, error: createError } = await adminClient.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+        user_metadata: { full_name: full_name || "" },
+      });
+      if (createError) throw createError;
+      const newUserId = newUser.user.id;
+
+      await adminClient.from("profiles").insert({
+        user_id: newUserId,
+        full_name: full_name || null,
+        approval_status: "approved",
+      });
+
+      if (role) {
+        await adminClient.from("user_roles").insert({ user_id: newUserId, role });
+      }
+
+      return new Response(JSON.stringify({ success: true, user_id: newUserId }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
+
+    if (!target_user_id) throw new Error("Missing target_user_id");
 
     if (action === "approve") {
       if (!role) throw new Error("Missing role for approval");
