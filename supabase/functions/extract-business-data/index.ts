@@ -390,7 +390,7 @@ ${file_contents ? `\nAdditional text content:\n${file_contents}` : ""}`;
         console.error("Claude API error:", response.status, errText);
         // Fall back to Lovable AI gateway with faster model
         console.log("[extract] Falling back to Gemini 2.5 Flash");
-        rawContent = await callLovableGateway(LOVABLE_API_KEY!, systemPrompt, userPromptText, pdf_files, hasPdfs, corsHeaders);
+        rawContent = await callLovableGateway(LOVABLE_API_KEY!, systemPrompt, userPromptText, truncatedPdfFiles, hasPdfs, corsHeaders);
       } else {
         const result = await response.json();
         const contentBlocks = Array.isArray(result?.content) ? result.content.length : 0;
