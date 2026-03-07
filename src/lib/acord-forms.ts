@@ -63,6 +63,9 @@ const acord125Fields: AcordFormField[] = [
   { key: "garage_premium", label: "Garage Premium", type: "currency", section: "Lines of Business" },
   { key: "lob_liquor_liability", label: "Liquor Liability", type: "checkbox", section: "Lines of Business" },
   { key: "liquor_premium", label: "Liquor Liability Premium", type: "currency", section: "Lines of Business" },
+  { key: "lob_other", label: "Other Line of Business", type: "checkbox", section: "Lines of Business" },
+  { key: "other_lob_description", label: "Other LOB Description", type: "text", section: "Lines of Business" },
+  { key: "other_lob_premium", label: "Other LOB Premium", type: "currency", section: "Lines of Business" },
 
   // Policy Information
   { key: "proposed_eff_date", label: "Proposed Effective Date", type: "date", section: "Policy Information", required: true },
