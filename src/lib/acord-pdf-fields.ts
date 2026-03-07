@@ -443,6 +443,15 @@ export const SEMANTIC_ALIASES: Record<string, Record<string, string>> = {
     driver_6_license_state: "Driver_LicensedStateOrProvinceCode_F",
     driver_6_sex:           "Driver_GenderCode_F",
     driver_6_marital:       "Driver_MaritalStatusCode_F",
+
+    driver_7_name:          "Driver_GivenName_G",
+    driver_7_first_name:    "Driver_GivenName_G",
+    driver_7_last_name:     "Driver_Surname_G",
+    driver_7_dob:           "Driver_BirthDate_G",
+    driver_7_license:       "Driver_LicenseNumberIdentifier_G",
+    driver_7_license_state: "Driver_LicensedStateOrProvinceCode_G",
+    driver_7_sex:           "Driver_GenderCode_G",
+    driver_7_marital:       "Driver_MaritalStatusCode_G",
     // ── ACORD 127 Y/N Questions — General Information ──
     vehicles_not_solely_owned:    "CommercialVehicleLineOfBusiness_Question_AAJCode_A",
     over_50pct_employees_use_autos:"CommercialVehicleLineOfBusiness_Question_ABACode_A",
