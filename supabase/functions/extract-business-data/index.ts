@@ -1075,7 +1075,8 @@ serve(async (req) => {
 
     // ── Post-processing ──
     const fd: Record<string, any> = extracted.form_data || {};
-    postProcess(fd, (description || "") + (file_contents || ""), hasPdfs);
+    const postProcessSource = `${additionalContext}\n${ocrSourceText}`;
+    postProcess(fd, postProcessSource, hasPdfs);
     extracted.form_data = fd;
 
     // Debug log
