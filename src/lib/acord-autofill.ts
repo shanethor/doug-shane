@@ -528,7 +528,7 @@ export const CURRENCY_FIELDS = new Set([
   "building_amount", "bpp_amount", "business_income_amount", "extra_expense_amount",
   "rental_value_amount", "building_deductible", "bpp_deductible",
   "prior_gl_premium_1", "prior_auto_premium_1", "prior_property_premium_1",
-  "prior_prop_premium_1", "prior_other_premium_1",
+  "prior_prop_premium_1", "prior_other_premium_1", "prior_other_premium_2",
   "prior_wc_premium_1", "prior_wc_paid_1", "prior_wc_reserve_1",
   "retained_limit_occurrence", "retained_limit_aggregate",
   "underlying_auto_bi_ea_acc", "underlying_auto_bi_ea_per", "underlying_auto_pd",
