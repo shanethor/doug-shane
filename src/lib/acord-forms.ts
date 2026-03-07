@@ -323,6 +323,28 @@ const acord126Fields: AcordFormField[] = [
   { key: "remarks_126", label: "Remarks", type: "textarea", section: "Remarks" },
 ];
 
+/** Generate all driver fields for a given driver number (1-based) */
+function generateDriverFields(n: number): AcordFormField[] {
+  const sec = "Driver Information";
+  return [
+    { key: `driver_${n}_name`, label: `Driver ${n} Name`, type: "text" as const, section: sec },
+    { key: `driver_${n}_first_name`, label: `Driver ${n} First Name`, type: "text" as const, section: sec },
+    { key: `driver_${n}_middle`, label: `Driver ${n} Middle`, type: "text" as const, section: sec },
+    { key: `driver_${n}_last_name`, label: `Driver ${n} Last Name`, type: "text" as const, section: sec },
+    { key: `driver_${n}_city`, label: `Driver ${n} City`, type: "text" as const, section: sec },
+    { key: `driver_${n}_state`, label: `Driver ${n} State`, type: "text" as const, section: sec },
+    { key: `driver_${n}_zip`, label: `Driver ${n} ZIP`, type: "text" as const, section: sec },
+    { key: `driver_${n}_sex`, label: `Driver ${n} Sex`, type: "select" as const, options: ["M", "F"], section: sec },
+    { key: `driver_${n}_marital`, label: `Driver ${n} Marital Status`, type: "select" as const, options: ["S", "M", "W", "D"], section: sec },
+    { key: `driver_${n}_dob`, label: `Driver ${n} Date of Birth`, type: "date" as const, section: sec },
+    { key: `driver_${n}_experience`, label: `Driver ${n} Yrs Licensed`, type: "text" as const, section: sec },
+    { key: `driver_${n}_license`, label: `Driver ${n} License #`, type: "text" as const, section: sec },
+    { key: `driver_${n}_license_state`, label: `Driver ${n} License State`, type: "text" as const, section: sec },
+    { key: `driver_${n}_ssn`, label: `Driver ${n} SSN`, type: "text" as const, section: sec },
+    { key: `driver_${n}_hired_date`, label: `Driver ${n} Date Hired`, type: "date" as const, section: sec },
+  ];
+}
+
 // ============================================================
 // ACORD 127 (2010/05) — Business Auto Section
 // ============================================================
@@ -336,17 +358,13 @@ const acord127Fields: AcordFormField[] = [
   { key: "effective_date", label: "Effective Date", type: "date", section: "Header", required: true },
   { key: "insured_name", label: "Named Insured(s)", type: "text", section: "Header", required: true },
 
-  // Driver Information
-  { key: "driver_1_name", label: "Driver 1 Name", type: "text", section: "Driver Information" },
-  { key: "driver_1_sex", label: "Driver 1 Sex", type: "select", options: ["M", "F"], section: "Driver Information" },
-  { key: "driver_1_marital", label: "Driver 1 Marital Status", type: "select", options: ["S", "M", "W", "D"], section: "Driver Information" },
-  { key: "driver_1_dob", label: "Driver 1 Date of Birth", type: "date", section: "Driver Information" },
-  { key: "driver_1_license", label: "Driver 1 License # / State", type: "text", section: "Driver Information" },
-  { key: "driver_2_name", label: "Driver 2 Name", type: "text", section: "Driver Information" },
-  { key: "driver_2_sex", label: "Driver 2 Sex", type: "select", options: ["M", "F"], section: "Driver Information" },
-  { key: "driver_2_marital", label: "Driver 2 Marital Status", type: "select", options: ["S", "M", "W", "D"], section: "Driver Information" },
-  { key: "driver_2_dob", label: "Driver 2 Date of Birth", type: "date", section: "Driver Information" },
-  { key: "driver_2_license", label: "Driver 2 License # / State", type: "text", section: "Driver Information" },
+  // Driver Information — Drivers 1–6 (matches ACORD 127 PDF rows A–F)
+  ...generateDriverFields(1),
+  ...generateDriverFields(2),
+  ...generateDriverFields(3),
+  ...generateDriverFields(4),
+  ...generateDriverFields(5),
+  ...generateDriverFields(6),
 
   // General Information
   { key: "vehicles_not_solely_owned", label: "1. Any vehicles not solely owned by applicant?", type: "select", options: ["Yes", "No"], section: "General Information", default: "No" },

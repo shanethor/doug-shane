@@ -243,12 +243,80 @@ const AI_TO_FORM_ALIASES: Record<string, string[]> = {
   has_workers_comp: ["wc_other_insurance_same"],
   contractor_license: ["producer_license_no"],
 
-  // ── Auto ──
-  driver_1_name: ["driver_1_name"],
+  // ── Auto — drivers 1-6 ──
+  driver_1_name: ["driver_1_name", "driver_1_first_name"],
+  driver_1_first_name: ["driver_1_first_name", "driver_1_name"],
+  driver_1_last_name: ["driver_1_last_name"],
   driver_1_license: ["driver_1_license"],
   driver_1_dob: ["driver_1_dob"],
   driver_1_license_number: ["driver_1_license"],
   driver_1_license_state: ["driver_1_license_state"],
+  driver_1_sex: ["driver_1_sex"],
+  driver_1_marital: ["driver_1_marital"],
+  driver_1_city: ["driver_1_city"],
+  driver_1_state: ["driver_1_state"],
+  driver_1_zip: ["driver_1_zip"],
+  driver_1_experience: ["driver_1_experience"],
+  driver_2_name: ["driver_2_name", "driver_2_first_name"],
+  driver_2_first_name: ["driver_2_first_name", "driver_2_name"],
+  driver_2_last_name: ["driver_2_last_name"],
+  driver_2_license: ["driver_2_license"],
+  driver_2_dob: ["driver_2_dob"],
+  driver_2_license_state: ["driver_2_license_state"],
+  driver_2_sex: ["driver_2_sex"],
+  driver_2_marital: ["driver_2_marital"],
+  driver_2_city: ["driver_2_city"],
+  driver_2_state: ["driver_2_state"],
+  driver_2_zip: ["driver_2_zip"],
+  driver_2_experience: ["driver_2_experience"],
+  driver_3_name: ["driver_3_name", "driver_3_first_name"],
+  driver_3_first_name: ["driver_3_first_name", "driver_3_name"],
+  driver_3_last_name: ["driver_3_last_name"],
+  driver_3_license: ["driver_3_license"],
+  driver_3_dob: ["driver_3_dob"],
+  driver_3_license_state: ["driver_3_license_state"],
+  driver_3_sex: ["driver_3_sex"],
+  driver_3_marital: ["driver_3_marital"],
+  driver_3_city: ["driver_3_city"],
+  driver_3_state: ["driver_3_state"],
+  driver_3_zip: ["driver_3_zip"],
+  driver_3_experience: ["driver_3_experience"],
+  driver_4_name: ["driver_4_name", "driver_4_first_name"],
+  driver_4_first_name: ["driver_4_first_name", "driver_4_name"],
+  driver_4_last_name: ["driver_4_last_name"],
+  driver_4_license: ["driver_4_license"],
+  driver_4_dob: ["driver_4_dob"],
+  driver_4_license_state: ["driver_4_license_state"],
+  driver_4_sex: ["driver_4_sex"],
+  driver_4_marital: ["driver_4_marital"],
+  driver_4_city: ["driver_4_city"],
+  driver_4_state: ["driver_4_state"],
+  driver_4_zip: ["driver_4_zip"],
+  driver_4_experience: ["driver_4_experience"],
+  driver_5_name: ["driver_5_name", "driver_5_first_name"],
+  driver_5_first_name: ["driver_5_first_name", "driver_5_name"],
+  driver_5_last_name: ["driver_5_last_name"],
+  driver_5_license: ["driver_5_license"],
+  driver_5_dob: ["driver_5_dob"],
+  driver_5_license_state: ["driver_5_license_state"],
+  driver_5_sex: ["driver_5_sex"],
+  driver_5_marital: ["driver_5_marital"],
+  driver_5_city: ["driver_5_city"],
+  driver_5_state: ["driver_5_state"],
+  driver_5_zip: ["driver_5_zip"],
+  driver_5_experience: ["driver_5_experience"],
+  driver_6_name: ["driver_6_name", "driver_6_first_name"],
+  driver_6_first_name: ["driver_6_first_name", "driver_6_name"],
+  driver_6_last_name: ["driver_6_last_name"],
+  driver_6_license: ["driver_6_license"],
+  driver_6_dob: ["driver_6_dob"],
+  driver_6_license_state: ["driver_6_license_state"],
+  driver_6_sex: ["driver_6_sex"],
+  driver_6_marital: ["driver_6_marital"],
+  driver_6_city: ["driver_6_city"],
+  driver_6_state: ["driver_6_state"],
+  driver_6_zip: ["driver_6_zip"],
+  driver_6_experience: ["driver_6_experience"],
   vehicle_1_year: ["vehicle_1_year"],
   vehicle_1_make: ["vehicle_1_make"],
   vehicle_1_model: ["vehicle_1_model"],
@@ -565,22 +633,40 @@ export function buildAutofilledData(
     }
   });
 
-  // 5c. Expand drivers[] array → driver_N_name/dob/license fields
+  // 5c. Expand drivers[] array → driver_N_* fields (all columns)
   const drivers: any[] = Array.isArray(aiData.drivers) ? aiData.drivers : [];
   drivers.forEach((d: any, idx: number) => {
     const n = idx + 1;
     const dFields: Record<string, string> = {
       [`driver_${n}_name`]: d.name || d.driver_name || d.full_name || "",
+      [`driver_${n}_first_name`]: d.first_name || d.given_name || d.name || d.driver_name || "",
+      [`driver_${n}_middle`]: d.middle || d.middle_name || "",
+      [`driver_${n}_last_name`]: d.last_name || d.surname || "",
+      [`driver_${n}_city`]: d.city || "",
+      [`driver_${n}_state`]: d.state || "",
+      [`driver_${n}_zip`]: d.zip || d.zipcode || "",
+      [`driver_${n}_sex`]: d.sex || d.gender || "",
+      [`driver_${n}_marital`]: d.marital || d.marital_status || "",
       [`driver_${n}_dob`]: d.dob || d.date_of_birth || d.birth_date || "",
-      [`driver_${n}_license`]: d.license || d.license_number || d.dl_number || "",
-      [`driver_${n}_license_state`]: d.license_state || d.state || "",
+      [`driver_${n}_experience`]: d.experience || d.years_licensed || d.yrs_licensed || "",
+      [`driver_${n}_license`]: d.license || d.license_number || d.dl_number || d.drivers_license_number || "",
+      [`driver_${n}_license_state`]: d.license_state || d.dl_state || "",
+      [`driver_${n}_ssn`]: d.ssn || "",
+      [`driver_${n}_hired_date`]: d.hired_date || d.date_hired || "",
+      [`driver_${n}_vehicle_id`]: d.vehicle_id || "",
+      [`driver_${n}_vehicle_pct`]: d.vehicle_pct || "",
     };
     for (const [k, val] of Object.entries(dFields)) {
       if (val && formFieldKeys.has(k) && !mapped[k]) mapped[k] = normalizeValue(k, val);
     }
   });
 
-  // 5d. Also expand flat driver_N_name / vehicle_N_vin keys if AI returned them directly
+  // 5d. Also expand flat driver_N_* keys if AI returned them directly
+  const DRIVER_FLAT_KEYS = [
+    "name", "first_name", "middle", "last_name", "city", "state", "zip",
+    "sex", "marital", "dob", "experience", "license", "license_state",
+    "ssn", "hired_date", "vehicle_id", "vehicle_pct",
+  ];
   for (let n = 2; n <= 30; n++) {
     const vKeys: Record<string, string> = {
       [`vehicle_${n}_year`]: aiData[`vehicle_${n}_year`] || "",
@@ -592,11 +678,9 @@ export function buildAutofilledData(
     for (const [k, val] of Object.entries(vKeys)) {
       if (val && formFieldKeys.has(k) && !mapped[k]) mapped[k] = val;
     }
-    const dKeys: Record<string, string> = {
-      [`driver_${n}_name`]: aiData[`driver_${n}_name`] || "",
-      [`driver_${n}_dob`]: aiData[`driver_${n}_dob`] || "",
-    };
-    for (const [k, val] of Object.entries(dKeys)) {
+    for (const col of DRIVER_FLAT_KEYS) {
+      const k = `driver_${n}_${col}`;
+      const val = aiData[k] || "";
       if (val && formFieldKeys.has(k) && !mapped[k]) mapped[k] = normalizeValue(k, val);
     }
   }
