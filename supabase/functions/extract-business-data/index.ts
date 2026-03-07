@@ -896,6 +896,7 @@ serve(async (req) => {
     const t0 = Date.now();
     let extracted: any;
     let pipelineUsed = "unknown";
+    let ocrSourceText = "";
 
     // ────────────────────────────────────────────────
     //  3-STAGE PIPELINE (when Google Cloud Vision key exists)
