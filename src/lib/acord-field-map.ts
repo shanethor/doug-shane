@@ -2349,6 +2349,19 @@ export const ACORD_75_INDEX_MAP: AcordIndexMap = {
 export const ACORD_125_INDEX_MAP: AcordIndexMap = {
   // ── Page 1 (P1) — Agency / Carrier / LOB / Policy / Applicant ──
 
+  // ── Aliases for common extraction key variants ──
+  insured_name:           125,   // Same as applicant_name
+  lob_gl:                  37,   // Alias for chk_lob_cgl
+  lob_auto:                33,   // Alias for chk_lob_auto
+  lob_property:            41,   // Alias for chk_lob_property
+  lob_umbrella:            57,   // Alias for chk_lob_umbrella
+  lob_bop:                 35,   // Alias for chk_lob_bop
+  effective_date:         115,   // Alias for proposed_eff_date
+  expiration_date:        116,   // Alias for proposed_exp_date
+  nature_of_business:     328,   // Alias for description_of_operations (Nature of Business)
+  current_carrier:        451,   // Alias for prior_carrier_1
+  current_premium:        453,   // Alias for prior_gl_premium_1
+
   // Agency block
   transaction_date:       0,   // Form_CompletionDate_A
   agency_name:            1,   // Producer_FullName_A

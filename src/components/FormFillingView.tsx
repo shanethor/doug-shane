@@ -205,11 +205,25 @@ export default function FormFillingView({ submissionId, initialMessages, initial
       debugEntries.push(`  [${idx}] ${internalKey} = "${display.slice(0, 40)}"`);
     }
     // Log unmapped keys: fields in formData that have values but no PDF index
+    // Filter out keys that belong to other forms (cross-form data is expected)
+    const CROSS_FORM_PREFIXES: Record<string, string[]> = {
+      "acord-125": ["driver_", "vehicle_", "garaging_", "wc_", "class_code_", "class_description_", "annual_remuneration_", "est_premium_", "underlying_", "hazard_", "chk_commercial_general_liability", "chk_claims_made", "chk_occurrence", "chk_owners_contractors", "chk_limit_", "chk_deductible_", "chk_per_", "primary_location", "primary_description", "foreign_operations_131", "business_category", "building_street", "draws_plans", "blasting_", "excavation_", "subs_", "leases_equipment", "installs_", "foreign_products", "rd_new_", "guarantees_", "aircraft_space", "products_recalled", "products_others", "products_under", "vendors_", "named_insured_sells", "medical_facilities", "radioactive_", "hazardous_material", "ops_sold", "rent_equipment", "watercraft_docks", "parking_", "recreation_", "swimming_", "social_events", "structural_", "demolition_", "joint_ventures", "lease_employees", "labor_interchange", "day_care_", "crimes_on_", "safety_security", "safety_claims", "vehicles_not_solely", "over_50pct", "vehicle_maintenance", "vehicles_leased", "modified_vehicles", "icc_puc", "transporting_", "hold_harmless", "vehicles_used", "mvr_", "driver_recruiting", "drivers_no_wc", "vehicles_not_scheduled", "drivers_with_violations", "agent_inspected", "all_vehicles", "explosives_hauled", "passengers_for", "hired_non", "contractor_bridge", "contractor_uses", "employer_self", "pollution_hazardous", "hired_auto", "roadside_", "rental_reimburse", "glass_deductible", "auto_coverage", "equipment_breakdown", "non_cumulation", "waiver_", "contracting_class", "workplace_safety", "bi_rental", "bi_ordinary"],
+      "acord-126": ["driver_", "vehicle_", "garaging_", "wc_", "class_code_", "class_description_", "annual_remuneration_", "est_premium_", "underlying_", "officer_", "prior_wc_", "building_street", "primary_location", "primary_description"],
+      "acord-127": ["wc_", "class_code_", "class_description_", "annual_remuneration_", "est_premium_", "underlying_", "officer_", "prior_wc_", "hazard_", "chk_commercial", "chk_claims", "chk_occurrence", "chk_limit_", "chk_deductible_", "chk_per_", "building_street", "primary_location", "primary_description"],
+      "acord-130": ["driver_", "vehicle_", "garaging_", "underlying_", "hazard_", "chk_commercial", "chk_claims", "chk_occurrence", "chk_limit_", "chk_deductible_", "chk_per_", "building_street", "primary_location", "primary_description"],
+      "acord-131": ["driver_", "vehicle_", "garaging_", "wc_", "class_code_", "class_description_", "annual_remuneration_", "est_premium_", "hazard_", "chk_commercial", "chk_claims", "chk_occurrence", "chk_limit_", "chk_deductible_", "chk_per_", "building_street"],
+      "acord-140": ["driver_", "vehicle_", "garaging_", "wc_", "class_code_", "class_description_", "annual_remuneration_", "est_premium_", "underlying_", "hazard_", "chk_commercial", "chk_claims", "chk_occurrence", "chk_limit_", "chk_deductible_", "chk_per_", "primary_location", "primary_description", "officer_"],
+    };
+    const GLOBAL_SKIP = ["from_email", "number_of_drivers", "total_premium", "modified_premium", "standard_premium", "expense_constant", "second_injury_fund", "terrorism_premium", "tria_premium", "cat_premium", "audit_period", "gap_coverage", "endorsements", "crime_forgery", "crime_employee_theft", "seasonal_employees", "subcontractors_used", "dba_name", "rating_state"];
+    const crossPrefixes = CROSS_FORM_PREFIXES[fId] || [];
     const unmappedKeys: string[] = [];
     for (const [key, val] of Object.entries(data)) {
       if (val === undefined || val === null || val === "" || String(val).trim() === "") continue;
-      if (key.startsWith("_") || key === "policies" || key === "drivers" || key === "vehicles" || key === "underlying_insurance" || key === "wc_classifications" || key === "locations" || key === "mortgagees") continue;
-      if (!(key in indexMap)) unmappedKeys.push(key);
+      if (key.startsWith("_") || ["policies", "drivers", "vehicles", "underlying_insurance", "wc_classifications", "locations", "mortgagees"].includes(key)) continue;
+      if (key in indexMap) continue;
+      if (GLOBAL_SKIP.includes(key)) continue;
+      if (crossPrefixes.some(p => key.startsWith(p))) continue;
+      unmappedKeys.push(key);
     }
     console.warn(`[prefill] ${fId}: ${debugEntries.length} fields mapped:\n${debugEntries.join("\n")}`);
     if (unmappedKeys.length > 0) {
