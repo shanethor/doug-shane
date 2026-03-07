@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { DollarSign, FileText, TrendingUp, CheckCircle, CalendarDays } from "lucide-react";
 import { format } from "date-fns";
+import { useUserRole } from "@/hooks/useUserRole";
 
 type TimePeriod = "month" | "quarter" | "year" | "all";
 
