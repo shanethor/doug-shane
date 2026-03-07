@@ -288,34 +288,77 @@ async function runGoogleOcrSingleChunk(
   }
 
   const result = await resp.json();
-  
-  // Debug: log the response structure to diagnose empty OCR
-  const topKeys = Object.keys(result || {});
-  const firstResp = result.responses?.[0];
-  const firstRespKeys = firstResp ? Object.keys(firstResp) : [];
-  console.log(`[ocr-debug] Response keys: ${topKeys.join(",")}, firstResp keys: ${firstRespKeys.join(",")}, responses count: ${result.responses?.length || 0}`);
-  
-  // files:annotate wraps in responses[0].responses[]
-  const responses = firstResp?.responses || [];
-  console.log(`[ocr-debug] Inner responses count: ${responses.length}, first inner keys: ${responses[0] ? Object.keys(responses[0]).join(",") : "N/A"}`);
-  
-  // If no inner responses, try treating as flat (images:annotate style)
-  if (responses.length === 0 && firstResp?.fullTextAnnotation) {
-    console.log(`[ocr-debug] Found flat fullTextAnnotation, using images:annotate style`);
-    return [{
-      pageNumber: 1,
-      text: firstResp.fullTextAnnotation.text || "",
-      confidence: firstResp.fullTextAnnotation.pages?.[0]?.confidence || 0.9,
-    }];
+
+  const getByPath = (obj: any, path: string): any => {
+    return path.split(".").reduce((acc: any, key) => {
+      if (acc == null) return undefined;
+      const m = key.match(/(\w+)\[(\d+)\]/);
+      if (m) return acc[m[1]]?.[Number(m[2])];
+      return acc[key];
+    }, obj);
+  };
+
+  const candidatePaths = [
+    "responses[0].responses", // files:annotate common wrapper
+    "responses", // images:annotate shape
+    "result.responses[0].responses", // operation/result wrapper
+    "result.responses", // operation/result wrapper (flat)
+    "operation.response.responses[0].responses", // async operation wrapper
+    "operation.response.responses", // async operation wrapper (flat)
+    "operation.result.responses[0].responses", // alternate operation wrapper
+    "operation.result.responses", // alternate operation wrapper (flat)
+    "response.responses[0].responses", // some SDK wrappers
+    "response.responses", // some SDK wrappers (flat)
+  ];
+
+  let responses: any[] = [];
+  let selectedPath = "";
+
+  for (const path of candidatePaths) {
+    const value = getByPath(result, path);
+    if (Array.isArray(value) && value.length > 0) {
+      responses = value;
+      selectedPath = path;
+      break;
+    }
   }
-  
+
+  const topKeys = Object.keys(result || {});
+  const firstResponse = responses[0];
+  const firstResponseKeys = firstResponse ? Object.keys(firstResponse) : [];
+  console.log(`[ocr-debug] Response keys: ${topKeys.join(",")}`);
+  console.log(`[ocr-debug] Selected payload key path: ${selectedPath || "none"}; page responses: ${responses.length}; first response keys: ${firstResponseKeys.join(",") || "N/A"}`);
+
+  // Flat fallback: single fullTextAnnotation at known wrapper levels
+  if (responses.length === 0) {
+    const flatCandidates = [
+      "responses[0].fullTextAnnotation",
+      "result.responses[0].fullTextAnnotation",
+      "operation.response.responses[0].fullTextAnnotation",
+      "operation.result.responses[0].fullTextAnnotation",
+      "response.responses[0].fullTextAnnotation",
+    ];
+
+    for (const path of flatCandidates) {
+      const annotation = getByPath(result, path);
+      if (annotation?.text) {
+        console.log(`[ocr-debug] Selected payload key path: ${path}`);
+        return [{
+          pageNumber: 1,
+          text: annotation.text || "",
+          confidence: annotation.pages?.[0]?.confidence || 0.9,
+        }];
+      }
+    }
+  }
+
   const pages: OcrPage[] = [];
 
   for (let i = 0; i < responses.length; i++) {
     const annotation = responses[i]?.fullTextAnnotation;
     const textLen = annotation?.text?.length || 0;
     if (i === 0) {
-      console.log(`[ocr-debug] Page ${i+1}: hasAnnotation=${!!annotation}, textLen=${textLen}, respKeys=${Object.keys(responses[i] || {}).join(",")}`);
+      console.log(`[ocr-debug] Page ${i + 1}: hasAnnotation=${!!annotation}, textLen=${textLen}, respKeys=${Object.keys(responses[i] || {}).join(",")}`);
     }
     pages.push({
       pageNumber: i + 1,
@@ -325,8 +368,13 @@ async function runGoogleOcrSingleChunk(
   }
 
   if (pages.length === 0) {
-    // Fallback: try reading from top-level fullTextAnnotation
-    const topAnnotation = result.responses?.[0]?.fullTextAnnotation;
+    // Last fallback: top-level annotation
+    const topAnnotation = getByPath(result, "responses[0].fullTextAnnotation") ||
+      getByPath(result, "result.responses[0].fullTextAnnotation") ||
+      getByPath(result, "operation.response.responses[0].fullTextAnnotation") ||
+      getByPath(result, "operation.result.responses[0].fullTextAnnotation") ||
+      getByPath(result, "response.responses[0].fullTextAnnotation");
+
     if (topAnnotation) {
       const pageTexts = topAnnotation.text?.split("\f") || [topAnnotation.text || ""];
       for (let i = 0; i < pageTexts.length; i++) {
