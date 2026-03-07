@@ -1194,7 +1194,8 @@ export default function PdfDiagnostic() {
             </div>
             {Object.entries(currentIndexMap).map(([key, idx]) => {
               const fieldType = fields[idx]?.type ?? "?";
-              const isCorrect = fieldType === "TXT";
+              const expectedType = key.startsWith("chk_") ? "CHK" : "TXT";
+              const isCorrect = fieldType === expectedType;
               return (
                 <div key={key} style={{ fontSize: 10, display: "flex", gap: 6, lineHeight: "15px" }}>
                   <span style={{ color: "#64748b", minWidth: 26 }}>[{idx}]</span>
@@ -1231,7 +1232,11 @@ export default function PdfDiagnostic() {
         <div style={{ overflow: "auto", flex: 1 }}>
           {filtered.map(f => {
             const isMapped = currentIndexMap && Object.values(currentIndexMap).includes(f.index);
-            const isWrongType = isMapped && f.type !== "TXT";
+            const mappedKeyForType = currentIndexMap
+              ? Object.entries(currentIndexMap).find(([, v]) => v === f.index)?.[0]
+              : undefined;
+            const expectedType = mappedKeyForType?.startsWith("chk_") ? "CHK" : "TXT";
+            const isWrongType = isMapped && f.type !== expectedType;
             return (
               <div key={f.index} style={{
                 padding: "1px 4px", fontSize: 10, borderBottom: "1px solid #1e293b",
@@ -1260,7 +1265,11 @@ export default function PdfDiagnostic() {
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(110px, 1fr))", gap: 4, marginBottom: 24 }}>
               {fields.map(f => {
                 const isMapped = currentIndexMap && Object.values(currentIndexMap).includes(f.index);
-                const isWrongType = isMapped && f.type !== "TXT";
+                const mappedKeyForGrid = currentIndexMap
+                  ? Object.entries(currentIndexMap).find(([, v]) => v === f.index)?.[0]
+                  : undefined;
+                const expectedTypeGrid = mappedKeyForGrid?.startsWith("chk_") ? "CHK" : "TXT";
+                const isWrongType = isMapped && f.type !== expectedTypeGrid;
                 const mappedKey = currentIndexMap
                   ? Object.entries(currentIndexMap).find(([, v]) => v === f.index)?.[0]
                   : undefined;
