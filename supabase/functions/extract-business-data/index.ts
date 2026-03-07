@@ -314,6 +314,8 @@ ${file_contents ? `\nAdditional text content:\n${file_contents}` : ""}`;
     let rawContent: string;
     const t0 = Date.now();
 
+    let aiPdfFiles = pdf_files;
+
     if (ANTHROPIC_API_KEY && hasPdfs) {
       // Truncate PDFs to first N pages to reduce payload and speed up extraction
       const truncatedPdfFiles = [];
@@ -337,13 +339,14 @@ ${file_contents ? `\nAdditional text content:\n${file_contents}` : ""}`;
           truncatedPdfFiles.push(pf);
         }
       }
-      
-      const totalB64KB = Math.round(truncatedPdfFiles.reduce((s: number, f: any) => s + (f.base64?.length || 0), 0) / 1024);
-      console.log(`[extract] Starting Claude Sonnet 4 extraction (${truncatedPdfFiles.length} file(s), ${totalB64KB}KB total base64)`);
+
+      aiPdfFiles = truncatedPdfFiles;
+      const totalB64KB = Math.round(aiPdfFiles.reduce((s: number, f: any) => s + (f.base64?.length || 0), 0) / 1024);
+      console.log(`[extract] Starting Claude Sonnet 4 extraction (${aiPdfFiles.length} file(s), ${totalB64KB}KB total base64)`);
 
       // Build Claude messages with document content blocks
       const claudeContent: any[] = [];
-      for (const pf of truncatedPdfFiles) {
+      for (const pf of aiPdfFiles) {
         if (pf.base64) {
           const mediaType = pf.mimeType === "application/pdf" ? "application/pdf"
             : pf.mimeType?.startsWith("image/") ? pf.mimeType : "application/pdf";
@@ -390,7 +393,7 @@ ${file_contents ? `\nAdditional text content:\n${file_contents}` : ""}`;
         console.error("Claude API error:", response.status, errText);
         // Fall back to Lovable AI gateway with faster model
         console.log("[extract] Falling back to Gemini 2.5 Flash");
-        rawContent = await callLovableGateway(LOVABLE_API_KEY!, systemPrompt, userPromptText, pdf_files, hasPdfs, corsHeaders);
+        rawContent = await callLovableGateway(LOVABLE_API_KEY!, systemPrompt, userPromptText, aiPdfFiles, hasPdfs, corsHeaders);
       } else {
         const result = await response.json();
         const contentBlocks = Array.isArray(result?.content) ? result.content.length : 0;
@@ -399,12 +402,12 @@ ${file_contents ? `\nAdditional text content:\n${file_contents}` : ""}`;
 
         if (!rawContent) {
           console.warn("[extract] Claude returned HTTP 200 but no usable text content (0 text blocks out of " + contentBlocks + ") — falling back to Gemini");
-          rawContent = await callLovableGateway(LOVABLE_API_KEY!, systemPrompt, userPromptText, pdf_files, hasPdfs, corsHeaders);
+          rawContent = await callLovableGateway(LOVABLE_API_KEY!, systemPrompt, userPromptText, aiPdfFiles, hasPdfs, corsHeaders);
         }
       }
     } else {
       console.log(`[extract] Using Lovable AI gateway (hasPdfs: ${hasPdfs})`);
-      rawContent = await callLovableGateway(LOVABLE_API_KEY!, systemPrompt, userPromptText, pdf_files, hasPdfs, corsHeaders);
+      rawContent = await callLovableGateway(LOVABLE_API_KEY!, systemPrompt, userPromptText, aiPdfFiles, hasPdfs, corsHeaders);
     }
 
     console.log(`[extract] Total AI call completed in ${Date.now() - t0}ms`);
