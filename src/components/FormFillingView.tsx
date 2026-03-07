@@ -179,7 +179,7 @@ export default function FormFillingView({ submissionId, initialMessages, initial
    * Build prefillByIndex for the active form: maps field INDEX → formatted string value.
    * Uses runtime-merged index map (PDF field names + semantic aliases) for full coverage.
    */
-  const buildPrefillByIndex = useCallback(async (fId: string, data: Record<string, any>): Promise<Record<number, string>> => {
+   const buildPrefillByIndex = useCallback(async (fId: string, data: Record<string, any>): Promise<Record<number, string>> => {
     // Merge BOTH runtime discovery AND static verified index maps for full coverage.
     // Runtime map must win because it reflects the exact currently loaded PDF bytes.
     const runtimeMap = await getMergedIndexMap(fId).catch(() => null) || {};
@@ -187,6 +187,20 @@ export default function FormFillingView({ submissionId, initialMessages, initial
     // Static map fills gaps only when runtime/alias lookup does not resolve a key.
     const indexMap: Record<string, number> = { ...staticMap, ...runtimeMap };
     if (Object.keys(indexMap).length === 0) return {};
+
+    // Build a set of checkbox keys from this form's field definitions
+    const formDef = ACORD_FORMS[fId as keyof typeof ACORD_FORMS];
+    const checkboxKeys = new Set<string>();
+    if (formDef?.fields) {
+      for (const f of formDef.fields as AcordFormField[]) {
+        if (f.type === "checkbox") checkboxKeys.add(f.key);
+      }
+    }
+    // Also treat any key starting with "chk_" or "lob_" as a checkbox
+    for (const key of Object.keys(indexMap)) {
+      if (key.startsWith("chk_") || key.startsWith("lob_")) checkboxKeys.add(key);
+    }
+
     const result: Record<number, string> = {};
     const debugEntries: string[] = [];
     for (const [internalKey, rawIdx] of Object.entries(indexMap)) {
@@ -196,17 +210,29 @@ export default function FormFillingView({ submissionId, initialMessages, initial
       const s = String(val).trim();
       // Skip N/A and other non-data placeholders — they should not go into the PDF
       if (s === "" || s === "N/A" || s === "n/a" || s === "[]") continue;
-      // Skip boolean "false" for non-checkbox keys — prevents "false" text in PDF fields
-      if (s === "false" && !internalKey.startsWith("chk_")) continue;
-      let display = s;
-      const isoMatch = display.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-      if (isoMatch) display = `${isoMatch[2]}/${isoMatch[3]}/${isoMatch[1]}`;
+
+      let display: string;
+
+      if (checkboxKeys.has(internalKey)) {
+        // Normalize checkbox values: FillablePdfViewer expects "true"/"Yes"/"1"/"X" to check
+        const lower = s.toLowerCase();
+        const isChecked = lower === "yes" || lower === "y" || lower === "true" || lower === "on"
+          || lower === "x" || lower === "1" || s === internalKey; // some maps use field key as truthy value
+        display = isChecked ? "true" : "";
+        if (!isChecked) continue; // Skip unchecked boxes — no need to write empty
+      } else {
+        // Skip boolean "false" for non-checkbox keys — prevents "false" text in PDF fields
+        if (s === "false") continue;
+        display = s;
+        const isoMatch = display.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        if (isoMatch) display = `${isoMatch[2]}/${isoMatch[3]}/${isoMatch[1]}`;
+      }
+
       result[idx] = display;
-      debugEntries.push(`  [${idx}] ${internalKey} = "${display.slice(0, 40)}"`);
+      debugEntries.push(`  [${idx}] ${internalKey} = "${display.slice(0, 40)}"${checkboxKeys.has(internalKey) ? " ☑" : ""}`);
     }
     // Log unmapped keys: only warn about keys defined in THIS form's field list
     // that have values but no PDF index — ignore all cross-form data automatically
-    const formDef = ACORD_FORMS[fId as keyof typeof ACORD_FORMS];
     const formFieldKeys = new Set(formDef?.fields?.map((f: any) => f.key) || []);
     const unmappedKeys: string[] = [];
     for (const [key, val] of Object.entries(data)) {
