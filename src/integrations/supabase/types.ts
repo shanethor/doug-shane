@@ -14,6 +14,103 @@ export type Database = {
   }
   public: {
     Tables: {
+      acord_extraction_runs: {
+        Row: {
+          created_at: string
+          file_id: string | null
+          final_output: Json | null
+          form_type: string
+          form_version: string | null
+          id: string
+          model_output: Json | null
+          page_count: number | null
+          raw_ocr_text: string | null
+          submission_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          file_id?: string | null
+          final_output?: Json | null
+          form_type: string
+          form_version?: string | null
+          id?: string
+          model_output?: Json | null
+          page_count?: number | null
+          raw_ocr_text?: string | null
+          submission_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          file_id?: string | null
+          final_output?: Json | null
+          form_type?: string
+          form_version?: string | null
+          id?: string
+          model_output?: Json | null
+          page_count?: number | null
+          raw_ocr_text?: string | null
+          submission_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "acord_extraction_runs_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "business_submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      acord_field_corrections: {
+        Row: {
+          corrected_at: string
+          corrected_by_user_id: string
+          corrected_value: string
+          extraction_run_id: string
+          field_label: string | null
+          field_path: string
+          form_type: string
+          id: string
+          original_value: string | null
+        }
+        Insert: {
+          corrected_at?: string
+          corrected_by_user_id: string
+          corrected_value: string
+          extraction_run_id: string
+          field_label?: string | null
+          field_path: string
+          form_type: string
+          id?: string
+          original_value?: string | null
+        }
+        Update: {
+          corrected_at?: string
+          corrected_by_user_id?: string
+          corrected_value?: string
+          extraction_run_id?: string
+          field_label?: string | null
+          field_path?: string
+          form_type?: string
+          id?: string
+          original_value?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "acord_field_corrections_extraction_run_id_fkey"
+            columns: ["extraction_run_id"]
+            isOneToOne: false
+            referencedRelation: "acord_extraction_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agencies: {
         Row: {
           code: string
