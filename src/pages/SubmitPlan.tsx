@@ -70,19 +70,12 @@ export default function SubmitPlan() {
 
       if (subError) throw subError;
 
-      // Call AI extraction
-      const { data: result, error: fnError } = await supabase.functions.invoke(
-        "extract-business-data",
-        {
-          body: {
-            description: `${companyName ? `Company: ${companyName}\n` : ""}${description}`,
-            file_contents: fileContents || undefined,
-            submission_id: submission.id,
-          },
-        }
-      );
-
-      if (fnError) throw fnError;
+      // Call AI extraction via router
+      const result = await ingestDocument({
+        docType: "business_plan",
+        additionalContext: `${companyName ? `Company: ${companyName}\n` : ""}${description}${fileContents ? `\n${fileContents}` : ""}`,
+        submissionId: submission.id,
+      });
 
       // Auto-create pipeline lead in Quoting stage
       await ensurePipelineLead({
