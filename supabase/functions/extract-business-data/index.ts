@@ -570,8 +570,24 @@ function postProcess(fd: Record<string, any>, sourceText: string, hasPdfs: boole
       fd[`vehicle_${n}_stated_amount`] = String(v.stated_amount || v.cost_new);
     if ((v.garaging_zip || v.zip) && !fd[`vehicle_${n}_garaging_zip`])
       fd[`vehicle_${n}_garaging_zip`] = String(v.garaging_zip || v.zip);
+    if ((v.gvw || v.gcw || v.gross_vehicle_weight) && !fd[`vehicle_${n}_gvw`])
+      fd[`vehicle_${n}_gvw`] = String(v.gvw || v.gcw || v.gross_vehicle_weight);
+    if ((v.comp_deductible || v.comprehensive_deductible) && !fd[`vehicle_${n}_comp_deductible`])
+      fd[`vehicle_${n}_comp_deductible`] = String(v.comp_deductible || v.comprehensive_deductible);
+    if ((v.coll_deductible || v.collision_deductible) && !fd[`vehicle_${n}_coll_deductible`])
+      fd[`vehicle_${n}_coll_deductible`] = String(v.coll_deductible || v.collision_deductible);
   });
   if (vehicles.length > 0 && !fd.number_of_vehicles) fd.number_of_vehicles = String(vehicles.length);
+
+  // Auto-classify vehicle body types from make/model
+  for (let n = 1; n <= 15; n++) {
+    const make = fd[`vehicle_${n}_make`] || "";
+    const model = fd[`vehicle_${n}_model`] || "";
+    if (!make && !model) break;
+    if (!fd[`vehicle_${n}_body_type`]) {
+      fd[`vehicle_${n}_body_type`] = classifyVehicleBodyType(make, model);
+    }
+  }
 
   // Flatten drivers[] → driver_N_*
   const drivers: any[] = Array.isArray(fd.drivers) ? fd.drivers : [];
