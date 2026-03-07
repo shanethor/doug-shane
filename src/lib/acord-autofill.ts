@@ -48,6 +48,36 @@ export const splitEmployees = (raw: string): { full_time: string; part_time: str
 };
 
 /**
+ * Auto-classify vehicle body type from make/model strings.
+ * Maps common commercial vehicle patterns to ACORD body type codes.
+ */
+export const classifyVehicleBodyType = (make: string, model: string): string => {
+  const combined = `${make} ${model}`.toLowerCase().trim();
+  
+  // Trailer patterns
+  if (/trailer|flatbed|lowboy|reefer|tanker|van\s*trailer|semi[\s-]?trailer|dry\s*van/i.test(combined)) return "Trailer";
+  
+  // Truck patterns (heavy/medium duty)
+  if (/f[- ]?[5-9]50|f[- ]?[6-9]\d{2}|peterbilt|kenworth|freightliner|mack|international|hino|isuzu\s*(n|f|e)/i.test(combined)) return "Truck";
+  if (/dump\s*truck|box\s*truck|stake\s*body|cab\s*(and\s*)?chassis|tractor|straight\s*truck/i.test(combined)) return "Truck";
+  if (/[2-9]\d{3,}|gvw/i.test(combined)) return "Truck";
+  
+  // Pickup patterns
+  if (/f[- ]?[1-4]50|silverado|sierra|ram\s*\d|tundra|titan|ranger|colorado|canyon|tacoma|frontier|gladiator|ridgeline/i.test(combined)) return "Pickup";
+  
+  // Van patterns
+  if (/van|sprinter|transit|promaster|express|savana|metris|e[- ]?\d{3}/i.test(combined)) return "Van";
+  
+  // SUV patterns
+  if (/suv|suburban|tahoe|yukon|expedition|explorer|4runner|highlander|pilot|pathfinder|durango|traverse|blazer|bronco|wrangler|defender/i.test(combined)) return "SUV";
+  
+  // Sedan/car patterns
+  if (/sedan|camry|accord|civic|corolla|altima|malibu|fusion|impala|charger|model\s*[3sy]/i.test(combined)) return "Sedan";
+  
+  return "";
+};
+
+/**
  * Comprehensive AI-to-ACORD field alias map.
  * Each key is an AI extraction field; the values are all ACORD form field keys it should populate.
  */
@@ -582,7 +612,7 @@ export function buildAutofilledData(
       [`vehicle_${n}_make`]: v.make || v.vehicle_make || "",
       [`vehicle_${n}_model`]: v.model || v.vehicle_model || "",
       [`vehicle_${n}_vin`]: v.vin || v.vehicle_vin || v.VIN || "",
-      [`vehicle_${n}_body_type`]: v.body_type || v.bodyType || v.type || "",
+      [`vehicle_${n}_body_type`]: v.body_type || v.bodyType || v.type || classifyVehicleBodyType(v.make || v.vehicle_make || "", v.model || v.vehicle_model || ""),
       [`vehicle_${n}_cost_new`]: v.stated_amount || v.cost_new || v.statedAmount || "",
       [`vehicle_${n}_garaging_zip`]: v.garaging_zip || v.zip || "",
     };
@@ -613,7 +643,7 @@ export function buildAutofilledData(
       [`vehicle_${n}_make`]: aiData[`vehicle_${n}_make`] || "",
       [`vehicle_${n}_model`]: aiData[`vehicle_${n}_model`] || "",
       [`vehicle_${n}_vin`]: aiData[`vehicle_${n}_vin`] || "",
-      [`vehicle_${n}_body_type`]: aiData[`vehicle_${n}_body_type`] || "",
+      [`vehicle_${n}_body_type`]: aiData[`vehicle_${n}_body_type`] || classifyVehicleBodyType(aiData[`vehicle_${n}_make`] || "", aiData[`vehicle_${n}_model`] || ""),
       [`vehicle_${n}_cost_new`]: aiData[`vehicle_${n}_cost_new`] || aiData[`vehicle_${n}_stated_amount`] || "",
       [`vehicle_${n}_garaging_zip`]: aiData[`vehicle_${n}_garaging_zip`] || "",
       [`vehicle_${n}_gvw`]: aiData[`vehicle_${n}_gvw`] || "",
