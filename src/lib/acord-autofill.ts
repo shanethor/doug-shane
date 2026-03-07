@@ -633,22 +633,40 @@ export function buildAutofilledData(
     }
   });
 
-  // 5c. Expand drivers[] array → driver_N_name/dob/license fields
+  // 5c. Expand drivers[] array → driver_N_* fields (all columns)
   const drivers: any[] = Array.isArray(aiData.drivers) ? aiData.drivers : [];
   drivers.forEach((d: any, idx: number) => {
     const n = idx + 1;
     const dFields: Record<string, string> = {
       [`driver_${n}_name`]: d.name || d.driver_name || d.full_name || "",
+      [`driver_${n}_first_name`]: d.first_name || d.given_name || d.name || d.driver_name || "",
+      [`driver_${n}_middle`]: d.middle || d.middle_name || "",
+      [`driver_${n}_last_name`]: d.last_name || d.surname || "",
+      [`driver_${n}_city`]: d.city || "",
+      [`driver_${n}_state`]: d.state || "",
+      [`driver_${n}_zip`]: d.zip || d.zipcode || "",
+      [`driver_${n}_sex`]: d.sex || d.gender || "",
+      [`driver_${n}_marital`]: d.marital || d.marital_status || "",
       [`driver_${n}_dob`]: d.dob || d.date_of_birth || d.birth_date || "",
-      [`driver_${n}_license`]: d.license || d.license_number || d.dl_number || "",
-      [`driver_${n}_license_state`]: d.license_state || d.state || "",
+      [`driver_${n}_experience`]: d.experience || d.years_licensed || d.yrs_licensed || "",
+      [`driver_${n}_license`]: d.license || d.license_number || d.dl_number || d.drivers_license_number || "",
+      [`driver_${n}_license_state`]: d.license_state || d.dl_state || "",
+      [`driver_${n}_ssn`]: d.ssn || "",
+      [`driver_${n}_hired_date`]: d.hired_date || d.date_hired || "",
+      [`driver_${n}_vehicle_id`]: d.vehicle_id || "",
+      [`driver_${n}_vehicle_pct`]: d.vehicle_pct || "",
     };
     for (const [k, val] of Object.entries(dFields)) {
       if (val && formFieldKeys.has(k) && !mapped[k]) mapped[k] = normalizeValue(k, val);
     }
   });
 
-  // 5d. Also expand flat driver_N_name / vehicle_N_vin keys if AI returned them directly
+  // 5d. Also expand flat driver_N_* keys if AI returned them directly
+  const DRIVER_FLAT_KEYS = [
+    "name", "first_name", "middle", "last_name", "city", "state", "zip",
+    "sex", "marital", "dob", "experience", "license", "license_state",
+    "ssn", "hired_date", "vehicle_id", "vehicle_pct",
+  ];
   for (let n = 2; n <= 30; n++) {
     const vKeys: Record<string, string> = {
       [`vehicle_${n}_year`]: aiData[`vehicle_${n}_year`] || "",
@@ -660,11 +678,9 @@ export function buildAutofilledData(
     for (const [k, val] of Object.entries(vKeys)) {
       if (val && formFieldKeys.has(k) && !mapped[k]) mapped[k] = val;
     }
-    const dKeys: Record<string, string> = {
-      [`driver_${n}_name`]: aiData[`driver_${n}_name`] || "",
-      [`driver_${n}_dob`]: aiData[`driver_${n}_dob`] || "",
-    };
-    for (const [k, val] of Object.entries(dKeys)) {
+    for (const col of DRIVER_FLAT_KEYS) {
+      const k = `driver_${n}_${col}`;
+      const val = aiData[k] || "";
       if (val && formFieldKeys.has(k) && !mapped[k]) mapped[k] = normalizeValue(k, val);
     }
   }
