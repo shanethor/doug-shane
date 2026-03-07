@@ -141,10 +141,10 @@ const AI_TO_FORM_ALIASES: Record<string, string[]> = {
   food_sales: ["annual_revenues"],
 
   // ── Operations ──
-  nature_of_business: ["nature_of_business", "business_category"],
+  nature_of_business: ["nature_of_business", "business_category", "description_of_operations"],
   business_category: ["business_category", "nature_of_business"],
-  business_description: ["description_of_operations", "premises_description", "primary_description"],
-  description_of_operations: ["description_of_operations", "premises_description", "primary_description"],
+  business_description: ["description_of_operations", "premises_description", "primary_description", "nature_of_business"],
+  description_of_operations: ["description_of_operations", "premises_description", "primary_description", "nature_of_business"],
   insured_business: ["description_of_operations", "premises_description"],
   type_of_business: ["description_of_operations", "business_type"],
 

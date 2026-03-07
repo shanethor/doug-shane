@@ -146,10 +146,23 @@ export const SEMANTIC_ALIASES: Record<string, Record<string, string>> = {
     lob_inland_marine:      "Policy_LineOfBusiness_CommercialInlandMarineIndicator_A",
     lob_boiler_machinery:   "Policy_LineOfBusiness_BoilerAndMachineryIndicator_A",
     lob_bop:                "Policy_LineOfBusiness_BusinessOwnersIndicator_A",
+    // LOB "Other" (used for WC on ACORD 125)
+    lob_other:              "Policy_LineOfBusiness_OtherIndicator_A",
+    other_lob_description:  "Policy_LineOfBusiness_OtherLineOfBusinessDescription_A",
+    other_lob_premium:      "Policy_SectionAttached_OtherPremiumAmount_A",
+    // LOB premiums
     cgl_premium:            "GeneralLiabilityLineOfBusiness_TotalPremiumAmount_A",
     property_premium:       "CommercialPropertyLineOfBusiness_PremiumAmount_A",
     auto_premium:           "CommercialVehicleLineOfBusiness_PremiumAmount_A",
     umbrella_premium:       "CommercialUmbrellaLineOfBusiness_PremiumAmount_A",
+    // Nature of Business (distinct from description_of_operations)
+    nature_of_business:     "NatureOfBusiness_NatureOfBusinessDescription_A",
+    // Premises city limits & interest
+    chk_inside_city:        "PremisesInformation_CityLimitsIndicator_InsideIndicator_A",
+    chk_outside_city:       "PremisesInformation_CityLimitsIndicator_OutsideIndicator_A",
+    chk_owner:              "PremisesInformation_InterestCode_OwnerIndicator_A",
+    chk_tenant:             "PremisesInformation_InterestCode_TenantIndicator_A",
+    premises_loc_number:    "PremisesInformation_LocationNumber_A",
     // Premises
     full_time_employees:    "BusinessInformation_FullTimeEmployeeCount_A",
     part_time_employees:    "BusinessInformation_PartTimeEmployeeCount_A",
