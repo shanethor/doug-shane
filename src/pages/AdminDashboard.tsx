@@ -667,7 +667,16 @@ export default function AdminDashboard() {
                 >
                   {creatingAgency ? "Creating…" : "Create"}
                 </Button>
-              </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-destructive hover:text-destructive"
+                          onClick={() => handleDeleteAgency(a.id, a.name)}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
             </CardContent>
           </Card>
 
