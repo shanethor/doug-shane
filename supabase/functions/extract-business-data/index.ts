@@ -954,7 +954,7 @@ serve(async (req) => {
       }
 
       console.log(`[stage1] Total OCR: ${totalPagesProcessed} pages, ${allOcrText.length} chars`);
-
+      ocrSourceText = allOcrText;
       if (allOcrText.trim().length < 20) {
         // OCR produced no useful text — PDF likely has embedded digital text.
         // Use Gemini native PDF vision (sends raw PDF bytes to the model).
