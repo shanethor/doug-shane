@@ -80,7 +80,7 @@ export default function SubmitPlan() {
       // Auto-create pipeline lead in Quoting stage
       await ensurePipelineLead({
         userId: user.id,
-        accountName: companyName || result?.form_data?.applicant_name || "New Client",
+        accountName: companyName || result?.data?.applicant_name || "New Client",
         submissionId: submission.id,
       });
 
