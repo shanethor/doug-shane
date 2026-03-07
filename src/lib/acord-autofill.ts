@@ -483,6 +483,8 @@ const DATE_FIELDS = new Set([
   "date_business_started", "prior_eff_date", "prior_exp_date", "retroactive_date",
   "pending_litigation_date", "signature_date", "mod_effective_date",
   "prior_eff_date_1", "prior_exp_date_1",
+  "prior_auto_eff_1", "prior_auto_exp_1", "prior_prop_eff_1", "prior_prop_exp_1",
+  "prior_other_eff_1", "prior_other_exp_1",
   "driver_1_dob", "driver_2_dob", "driver_3_dob", "driver_4_dob", "driver_5_dob", "driver_6_dob",
   "officer_1_dob", "ebl_retroactive_date", "entry_date_claims_made",
   "anniversary_rating_date", "transaction_date",
@@ -522,6 +524,7 @@ export const CURRENCY_FIELDS = new Set([
   "building_amount", "bpp_amount", "business_income_amount", "extra_expense_amount",
   "rental_value_amount", "building_deductible", "bpp_deductible",
   "prior_gl_premium_1", "prior_auto_premium_1", "prior_property_premium_1",
+  "prior_prop_premium_1", "prior_other_premium_1",
   "prior_wc_premium_1", "prior_wc_paid_1", "prior_wc_reserve_1",
   "retained_limit_occurrence", "retained_limit_aggregate",
   "underlying_auto_bi_ea_acc", "underlying_auto_bi_ea_per", "underlying_auto_pd",
@@ -789,6 +792,7 @@ export function buildAutofilledData(
     policyKeys.map(k => aiData[k] || mapped[k]).filter(Boolean)
   );
   if (distinctPolicies.size >= 2 || (aiData.policies && Array.isArray(aiData.policies) && aiData.policies.length > 1)) {
+    if (formFieldKeys.has("other_insurance_same_company")) mapped.other_insurance_same_company = "Yes";
     if (formFieldKeys.has("q4_code")) mapped.q4_code = "Y";
     // Fill Q4 detail rows from the policies
     const policies = aiData.policies || [];

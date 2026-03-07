@@ -192,6 +192,42 @@ export const SEMANTIC_ALIASES: Record<string, Record<string, string>> = {
     general_info_remarks:       "CommercialPolicy_RemarkText_A",
     // Parent / Subsidiary detail fields
     parent_company_name:        "BusinessInformation_ParentOrganizationName_A",
+    // ── Q4 "Other insurance with this company" detail rows ──
+    q4_lob_a:                   "OtherPolicy_LineOfBusinessCode_A",
+    q4_policy_a:                "OtherPolicy_PolicyNumberIdentifier_A",
+    q4_lob_b:                   "OtherPolicy_LineOfBusinessCode_B",
+    q4_policy_b:                "OtherPolicy_PolicyNumberIdentifier_B",
+    q4_lob_c:                   "OtherPolicy_LineOfBusinessCode_C",
+    q4_policy_c:                "OtherPolicy_PolicyNumberIdentifier_C",
+    q4_lob_d:                   "OtherPolicy_LineOfBusinessCode_D",
+    q4_policy_d:                "OtherPolicy_PolicyNumberIdentifier_D",
+    // ── Prior Carrier Grid — Row 1 (Year A) ──
+    prior_year_1:               "PriorCoverage_PolicyYear_A",
+    // GL column
+    prior_carrier_1:            "PriorCoverage_GeneralLiability_InsurerFullName_A",
+    prior_policy_number_1:      "PriorCoverage_GeneralLiability_PolicyNumberIdentifier_A",
+    prior_gl_premium_1:         "PriorCoverage_GeneralLiability_TotalPremiumAmount_A",
+    prior_eff_date_1:           "PriorCoverage_GeneralLiability_EffectiveDate_A",
+    prior_exp_date_1:           "PriorCoverage_GeneralLiability_ExpirationDate_A",
+    // Auto column
+    prior_auto_carrier_1:       "PriorCoverage_Automobile_InsurerFullName_A",
+    prior_auto_policy_1:        "PriorCoverage_Automobile_PolicyNumberIdentifier_A",
+    prior_auto_premium_1:       "PriorCoverage_Automobile_TotalPremiumAmount_A",
+    prior_auto_eff_1:           "PriorCoverage_Automobile_EffectiveDate_A",
+    prior_auto_exp_1:           "PriorCoverage_Automobile_ExpirationDate_A",
+    // Property column
+    prior_prop_carrier_1:       "PriorCoverage_Property_InsurerFullName_A",
+    prior_prop_policy_1:        "PriorCoverage_Property_PolicyNumberIdentifier_A",
+    prior_prop_premium_1:       "PriorCoverage_Property_TotalPremiumAmount_A",
+    prior_prop_eff_1:           "PriorCoverage_Property_EffectiveDate_A",
+    prior_prop_exp_1:           "PriorCoverage_Property_ExpirationDate_A",
+    // Other LOB column (Umbrella/WC)
+    prior_other_lob_1:          "PriorCoverage_OtherLine_LineOfBusinessCode_A",
+    prior_other_carrier_1:      "PriorCoverage_OtherLine_InsurerFullName_A",
+    prior_other_policy_1:       "PriorCoverage_OtherLine_PolicyNumberIdentifier_A",
+    prior_other_premium_1:      "PriorCoverage_OtherLine_TotalPremiumAmount_A",
+    prior_other_eff_1:          "PriorCoverage_OtherLine_EffectiveDate_A",
+    prior_other_exp_1:          "PriorCoverage_OtherLine_ExpirationDate_A",
   },
   "acord-126": {
     form_edition:           "Form_EditionIdentifier_A",

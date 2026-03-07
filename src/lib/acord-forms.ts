@@ -63,6 +63,9 @@ const acord125Fields: AcordFormField[] = [
   { key: "garage_premium", label: "Garage Premium", type: "currency", section: "Lines of Business" },
   { key: "lob_liquor_liability", label: "Liquor Liability", type: "checkbox", section: "Lines of Business" },
   { key: "liquor_premium", label: "Liquor Liability Premium", type: "currency", section: "Lines of Business" },
+  { key: "lob_other", label: "Other Line of Business", type: "checkbox", section: "Lines of Business" },
+  { key: "other_lob_description", label: "Other LOB Description", type: "text", section: "Lines of Business" },
+  { key: "other_lob_premium", label: "Other LOB Premium", type: "currency", section: "Lines of Business" },
 
   // Policy Information
   { key: "proposed_eff_date", label: "Proposed Effective Date", type: "date", section: "Policy Information", required: true },
@@ -116,6 +119,7 @@ const acord125Fields: AcordFormField[] = [
   { key: "premises_description", label: "Description of Operations", type: "textarea", section: "Premises Information" },
 
   // Nature of Business
+  { key: "nature_of_business", label: "Nature of Business", type: "text", section: "Nature of Business" },
   { key: "annual_revenues", label: "Annual Revenues", type: "currency", section: "Nature of Business", required: true },
   { key: "occupied_sq_ft", label: "Occupied Area (Sq Ft)", type: "number", section: "Nature of Business" },
   { key: "open_to_public_area", label: "Open to Public Area (Sq Ft)", type: "number", section: "Nature of Business" },
@@ -136,6 +140,14 @@ const acord125Fields: AcordFormField[] = [
   { key: "osha_compliance", label: "OSHA", type: "checkbox", section: "General Information" },
   { key: "exposure_flammables", label: "3. Exposure to flammables, explosives, chemicals?", type: "select", options: ["Yes", "No"], section: "General Information", default: "No" },
   { key: "other_insurance_same_company", label: "4. Any other insurance with this company?", type: "select", options: ["Yes", "No"], section: "General Information", default: "No" },
+  { key: "q4_lob_a", label: "Q4 LOB A", type: "text", section: "General Information" },
+  { key: "q4_policy_a", label: "Q4 Policy # A", type: "text", section: "General Information" },
+  { key: "q4_lob_b", label: "Q4 LOB B", type: "text", section: "General Information" },
+  { key: "q4_policy_b", label: "Q4 Policy # B", type: "text", section: "General Information" },
+  { key: "q4_lob_c", label: "Q4 LOB C", type: "text", section: "General Information" },
+  { key: "q4_policy_c", label: "Q4 Policy # C", type: "text", section: "General Information" },
+  { key: "q4_lob_d", label: "Q4 LOB D", type: "text", section: "General Information" },
+  { key: "q4_policy_d", label: "Q4 Policy # D", type: "text", section: "General Information" },
   { key: "policy_declined_cancelled", label: "5. Policy declined, cancelled or non-renewed in prior 3 years?", type: "select", options: ["Yes", "No"], section: "General Information", default: "No" },
   { key: "past_sexual_abuse_claims", label: "6. Past losses re: sexual abuse, discrimination, negligent hiring?", type: "select", options: ["Yes", "No"], section: "General Information", default: "No" },
   { key: "fraud_conviction", label: "7. Applicant convicted of fraud, bribery, arson in last 5 years?", type: "select", options: ["Yes", "No"], section: "General Information", default: "No" },
@@ -153,15 +165,32 @@ const acord125Fields: AcordFormField[] = [
   // Remarks
   { key: "remarks", label: "Remarks / Processing Instructions", type: "textarea", section: "Remarks" },
 
-  // Prior Carrier Information
+  // Prior Carrier Information — GL column
   { key: "prior_year_1", label: "Prior Year 1", type: "text", section: "Prior Carrier Information" },
-  { key: "prior_carrier_1", label: "Prior Carrier 1", type: "text", section: "Prior Carrier Information" },
-  { key: "prior_policy_number_1", label: "Prior Policy Number 1", type: "text", section: "Prior Carrier Information" },
-  { key: "prior_gl_premium_1", label: "Prior GL Premium 1", type: "currency", section: "Prior Carrier Information" },
-  { key: "prior_auto_premium_1", label: "Prior Auto Premium 1", type: "currency", section: "Prior Carrier Information" },
-  { key: "prior_property_premium_1", label: "Prior Property Premium 1", type: "currency", section: "Prior Carrier Information" },
-  { key: "prior_eff_date_1", label: "Prior Eff Date 1", type: "date", section: "Prior Carrier Information" },
-  { key: "prior_exp_date_1", label: "Prior Exp Date 1", type: "date", section: "Prior Carrier Information" },
+  { key: "prior_carrier_1", label: "Prior GL Carrier", type: "text", section: "Prior Carrier Information" },
+  { key: "prior_policy_number_1", label: "Prior GL Policy #", type: "text", section: "Prior Carrier Information" },
+  { key: "prior_gl_premium_1", label: "Prior GL Premium", type: "currency", section: "Prior Carrier Information" },
+  { key: "prior_eff_date_1", label: "Prior GL Eff Date", type: "date", section: "Prior Carrier Information" },
+  { key: "prior_exp_date_1", label: "Prior GL Exp Date", type: "date", section: "Prior Carrier Information" },
+  // Prior Carrier Information — Auto column
+  { key: "prior_auto_carrier_1", label: "Prior Auto Carrier", type: "text", section: "Prior Carrier Information" },
+  { key: "prior_auto_policy_1", label: "Prior Auto Policy #", type: "text", section: "Prior Carrier Information" },
+  { key: "prior_auto_premium_1", label: "Prior Auto Premium", type: "currency", section: "Prior Carrier Information" },
+  { key: "prior_auto_eff_1", label: "Prior Auto Eff Date", type: "date", section: "Prior Carrier Information" },
+  { key: "prior_auto_exp_1", label: "Prior Auto Exp Date", type: "date", section: "Prior Carrier Information" },
+  // Prior Carrier Information — Property column
+  { key: "prior_prop_carrier_1", label: "Prior Property Carrier", type: "text", section: "Prior Carrier Information" },
+  { key: "prior_prop_policy_1", label: "Prior Property Policy #", type: "text", section: "Prior Carrier Information" },
+  { key: "prior_prop_premium_1", label: "Prior Property Premium", type: "currency", section: "Prior Carrier Information" },
+  { key: "prior_prop_eff_1", label: "Prior Property Eff Date", type: "date", section: "Prior Carrier Information" },
+  { key: "prior_prop_exp_1", label: "Prior Property Exp Date", type: "date", section: "Prior Carrier Information" },
+  // Prior Carrier Information — Other LOB column (Umbrella/WC)
+  { key: "prior_other_lob_1", label: "Prior Other LOB", type: "text", section: "Prior Carrier Information" },
+  { key: "prior_other_carrier_1", label: "Prior Other Carrier", type: "text", section: "Prior Carrier Information" },
+  { key: "prior_other_policy_1", label: "Prior Other Policy #", type: "text", section: "Prior Carrier Information" },
+  { key: "prior_other_premium_1", label: "Prior Other Premium", type: "currency", section: "Prior Carrier Information" },
+  { key: "prior_other_eff_1", label: "Prior Other Eff Date", type: "date", section: "Prior Carrier Information" },
+  { key: "prior_other_exp_1", label: "Prior Other Exp Date", type: "date", section: "Prior Carrier Information" },
 
   // Loss History
   { key: "no_losses", label: "No losses to report", type: "checkbox", section: "Loss History" },
