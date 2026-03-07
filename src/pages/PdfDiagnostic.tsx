@@ -1231,7 +1231,11 @@ export default function PdfDiagnostic() {
         <div style={{ overflow: "auto", flex: 1 }}>
           {filtered.map(f => {
             const isMapped = currentIndexMap && Object.values(currentIndexMap).includes(f.index);
-            const isWrongType = isMapped && f.type !== "TXT";
+            const mappedKeyForType = currentIndexMap
+              ? Object.entries(currentIndexMap).find(([, v]) => v === f.index)?.[0]
+              : undefined;
+            const expectedType = mappedKeyForType?.startsWith("chk_") ? "CHK" : "TXT";
+            const isWrongType = isMapped && f.type !== expectedType;
             return (
               <div key={f.index} style={{
                 padding: "1px 4px", fontSize: 10, borderBottom: "1px solid #1e293b",
