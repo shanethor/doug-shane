@@ -599,10 +599,17 @@ const acord130Fields: AcordFormField[] = [
   { key: "deductible_amount", label: "Deductible Amount / %", type: "text", section: "WC Coverages" },
   { key: "additional_endorsements", label: "Specify Additional Coverages / Endorsements", type: "textarea", section: "WC Coverages" },
 
-  // Premiums
+  // Premiums & Rating Data
   { key: "total_estimated_premium", label: "Total Estimated Annual Premium - All States", type: "currency", section: "Premiums" },
   { key: "total_minimum_premium", label: "Total Minimum Premium - All States", type: "currency", section: "Premiums" },
   { key: "total_deposit_premium", label: "Total Deposit Premium - All States", type: "currency", section: "Premiums" },
+  { key: "standard_premium", label: "Standard Premium", type: "currency", section: "Premiums" },
+  { key: "modified_premium", label: "Modified Premium", type: "currency", section: "Premiums" },
+  { key: "expense_constant", label: "Expense Constant", type: "currency", section: "Premiums" },
+  { key: "terrorism_premium", label: "Terrorism Premium", type: "currency", section: "Premiums" },
+  { key: "cat_premium", label: "Catastrophe Premium (Other Than Certified)", type: "currency", section: "Premiums" },
+  { key: "second_injury_fund", label: "Second Injury Fund Assessment", type: "currency", section: "Premiums" },
+  { key: "wc_fund_assessment", label: "WC Fund Assessment", type: "currency", section: "Premiums" },
 
   // Individuals Included / Excluded
   { key: "officer_1_name", label: "Officer/Partner 1 Name", type: "text", section: "Individuals Included / Excluded" },
@@ -629,9 +636,25 @@ const acord130Fields: AcordFormField[] = [
   { key: "num_employees_2", label: "# Employees (Class 2)", type: "number", section: "State Rating Information" },
   { key: "annual_remuneration_2", label: "Est. Annual Remuneration/Payroll (Class 2)", type: "currency", section: "State Rating Information" },
   { key: "est_premium_2", label: "Estimated Premium (Class 2)", type: "currency", section: "State Rating Information" },
+  { key: "class_code_3", label: "Class Code 3", type: "text", section: "State Rating Information" },
+  { key: "class_description_3", label: "Classification Description 3", type: "text", section: "State Rating Information" },
+  { key: "num_employees_3", label: "# Employees (Class 3)", type: "number", section: "State Rating Information" },
+  { key: "annual_remuneration_3", label: "Est. Annual Remuneration/Payroll (Class 3)", type: "currency", section: "State Rating Information" },
+  { key: "est_premium_3", label: "Estimated Premium (Class 3)", type: "currency", section: "State Rating Information" },
   { key: "experience_mod", label: "Experience or Merit Modification", type: "text", section: "State Rating Information" },
   { key: "mod_effective_date", label: "Modification Effective Date", type: "date", section: "State Rating Information" },
   { key: "schedule_rating", label: "Schedule Rating", type: "text", section: "State Rating Information" },
+
+  // Other States / Jurisdictions
+  { key: "wc_other_states_3a", label: "3.A - Other States Coverage (list)", type: "textarea", section: "Other States" },
+  { key: "wc_excluded_states", label: "States Excluded / Monopolistic States", type: "text", section: "Other States" },
+
+  // Waiver of Subrogation
+  { key: "waiver_of_subrogation", label: "Waiver of Subrogation", type: "select", options: ["Yes - Blanket", "Yes - Specific", "No"], section: "Endorsements", default: "No" },
+  { key: "waiver_endorsement_number", label: "Waiver Endorsement #", type: "text", section: "Endorsements" },
+
+  // Contracting Classification Credit
+  { key: "contracting_class_credit", label: "Contracting Classification Credit Applied", type: "select", options: ["Yes", "No"], section: "Endorsements", default: "No" },
 
   // Prior Carrier / Loss History
   { key: "prior_wc_carrier_1", label: "Prior WC Carrier 1", type: "text", section: "Prior Carrier / Loss History" },
