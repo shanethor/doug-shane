@@ -31,8 +31,8 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const MAX_PDF_PAGES = 15;
-const MAX_TOTAL_PAGES = 30;
+const MAX_PDF_PAGES = 50;
+const MAX_TOTAL_PAGES = 250;
 const CONFIDENCE_THRESHOLD = 5; // minimum meaningful fields before triggering specialist
 
 // ── Shared schema prompt (used by Stage 2 and Stage 3) ──
