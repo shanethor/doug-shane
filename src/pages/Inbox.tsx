@@ -399,24 +399,19 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
     }
   };
 
-  // AI draft handler
+  // AI draft handler via router
   const handleAiDraft = async () => {
     if (!aiPrompt.trim()) return;
     setAiLoading(true);
     try {
-      const headers = await getAuthHeaders();
-      const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/compose-email`, {
-        method: "POST", headers,
-        body: JSON.stringify({ prompt: aiPrompt, tone: composeTone }),
+      const result = await advisorAssist({
+        taskType: "EMAIL_DRAFT",
+        userPrompt: aiPrompt,
+        tone: composeTone,
       });
-      if (!resp.ok) {
-        const err = await resp.json().catch(() => ({ error: "Failed" }));
-        throw new Error(err.error || "AI draft failed");
-      }
-      const data = await resp.json();
-      if (data.subject) setComposeSubject(data.subject);
-      if (data.body) setComposeBody(data.body);
-      toast.success(`Draft generated via ${data.provider === "openai" ? "your OpenAI GPT" : "AURA AI"}`);
+      if (result.subject) setComposeSubject(result.subject);
+      if (result.body) setComposeBody(result.body);
+      toast.success(`Draft generated via ${result.metadata.engine === "openai" ? "your OpenAI GPT" : "AURA AI"}`);
     } catch (err: any) {
       toast.error(err.message || "Failed to generate draft");
     } finally {
