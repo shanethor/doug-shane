@@ -599,10 +599,17 @@ const acord130Fields: AcordFormField[] = [
   { key: "deductible_amount", label: "Deductible Amount / %", type: "text", section: "WC Coverages" },
   { key: "additional_endorsements", label: "Specify Additional Coverages / Endorsements", type: "textarea", section: "WC Coverages" },
 
-  // Premiums
+  // Premiums & Rating Data
   { key: "total_estimated_premium", label: "Total Estimated Annual Premium - All States", type: "currency", section: "Premiums" },
   { key: "total_minimum_premium", label: "Total Minimum Premium - All States", type: "currency", section: "Premiums" },
   { key: "total_deposit_premium", label: "Total Deposit Premium - All States", type: "currency", section: "Premiums" },
+  { key: "standard_premium", label: "Standard Premium", type: "currency", section: "Premiums" },
+  { key: "modified_premium", label: "Modified Premium", type: "currency", section: "Premiums" },
+  { key: "expense_constant", label: "Expense Constant", type: "currency", section: "Premiums" },
+  { key: "terrorism_premium", label: "Terrorism Premium", type: "currency", section: "Premiums" },
+  { key: "cat_premium", label: "Catastrophe Premium (Other Than Certified)", type: "currency", section: "Premiums" },
+  { key: "second_injury_fund", label: "Second Injury Fund Assessment", type: "currency", section: "Premiums" },
+  { key: "wc_fund_assessment", label: "WC Fund Assessment", type: "currency", section: "Premiums" },
 
   // Individuals Included / Excluded
   { key: "officer_1_name", label: "Officer/Partner 1 Name", type: "text", section: "Individuals Included / Excluded" },
@@ -629,9 +636,25 @@ const acord130Fields: AcordFormField[] = [
   { key: "num_employees_2", label: "# Employees (Class 2)", type: "number", section: "State Rating Information" },
   { key: "annual_remuneration_2", label: "Est. Annual Remuneration/Payroll (Class 2)", type: "currency", section: "State Rating Information" },
   { key: "est_premium_2", label: "Estimated Premium (Class 2)", type: "currency", section: "State Rating Information" },
+  { key: "class_code_3", label: "Class Code 3", type: "text", section: "State Rating Information" },
+  { key: "class_description_3", label: "Classification Description 3", type: "text", section: "State Rating Information" },
+  { key: "num_employees_3", label: "# Employees (Class 3)", type: "number", section: "State Rating Information" },
+  { key: "annual_remuneration_3", label: "Est. Annual Remuneration/Payroll (Class 3)", type: "currency", section: "State Rating Information" },
+  { key: "est_premium_3", label: "Estimated Premium (Class 3)", type: "currency", section: "State Rating Information" },
   { key: "experience_mod", label: "Experience or Merit Modification", type: "text", section: "State Rating Information" },
   { key: "mod_effective_date", label: "Modification Effective Date", type: "date", section: "State Rating Information" },
   { key: "schedule_rating", label: "Schedule Rating", type: "text", section: "State Rating Information" },
+
+  // Other States / Jurisdictions
+  { key: "wc_other_states_3a", label: "3.A - Other States Coverage (list)", type: "textarea", section: "Other States" },
+  { key: "wc_excluded_states", label: "States Excluded / Monopolistic States", type: "text", section: "Other States" },
+
+  // Waiver of Subrogation
+  { key: "waiver_of_subrogation", label: "Waiver of Subrogation", type: "select", options: ["Yes - Blanket", "Yes - Specific", "No"], section: "Endorsements", default: "No" },
+  { key: "waiver_endorsement_number", label: "Waiver Endorsement #", type: "text", section: "Endorsements" },
+
+  // Contracting Classification Credit
+  { key: "contracting_class_credit", label: "Contracting Classification Credit Applied", type: "select", options: ["Yes", "No"], section: "Endorsements", default: "No" },
 
   // Prior Carrier / Loss History
   { key: "prior_wc_carrier_1", label: "Prior WC Carrier 1", type: "text", section: "Prior Carrier / Loss History" },
@@ -697,11 +720,21 @@ const acord131Fields: AcordFormField[] = [
   { key: "coverage_basis", label: "Coverage Basis", type: "select", options: ["Occurrence", "Claims Made"], section: "Policy Information" },
   { key: "each_occurrence_limit", label: "Limit of Liability - Each Occurrence", type: "currency", section: "Policy Information", required: true },
   { key: "aggregate_limit", label: "Limit of Liability - Aggregate", type: "currency", section: "Policy Information" },
+  { key: "products_completed_ops_aggregate", label: "Products-Completed Ops Aggregate", type: "currency", section: "Policy Information" },
   { key: "retained_limit_occurrence", label: "Retained Limit - Occurrence", type: "currency", section: "Policy Information" },
   { key: "retained_limit_aggregate", label: "Retained Limit - Aggregate", type: "currency", section: "Policy Information" },
+  { key: "self_insured_retention", label: "Self-Insured Retention", type: "currency", section: "Policy Information" },
   { key: "first_dollar_defense", label: "First Dollar Defense", type: "select", options: ["Yes", "No"], section: "Policy Information" },
+  { key: "defense_within_limits", label: "Defense Costs", type: "select", options: ["Within Limits", "Outside Limits"], section: "Policy Information" },
   { key: "retroactive_date", label: "Retroactive Date", type: "date", section: "Policy Information" },
   { key: "expiring_policy_number", label: "Expiring Policy #", type: "text", section: "Policy Information" },
+  { key: "crisis_mgmt_limit", label: "Crisis Management Expenses Limit", type: "currency", section: "Policy Information" },
+  { key: "non_cumulation_occurrence", label: "Non-Cumulation of Occurrence Limit", type: "checkbox", section: "Policy Information" },
+  { key: "non_cumulation_endorsement", label: "Non-Cumulation Endorsement #", type: "text", section: "Policy Information" },
+
+  // Named Insureds
+  { key: "additional_named_insured_1", label: "Additional Named Insured 1", type: "text", section: "Named Insureds" },
+  { key: "additional_named_insured_2", label: "Additional Named Insured 2", type: "text", section: "Named Insureds" },
 
   // Employee Benefits Liability
   { key: "ebl_each_employee", label: "EBL Limit (Each Employee)", type: "currency", section: "Employee Benefits Liability" },
@@ -719,19 +752,23 @@ const acord131Fields: AcordFormField[] = [
   { key: "total_employees", label: "# Employees", type: "number", section: "Primary Location & Subsidiaries" },
 
   // Underlying Insurance
-  { key: "underlying_auto_carrier", label: "Auto Liability - Carrier / Policy #", type: "text", section: "Underlying Insurance" },
+  { key: "underlying_auto_carrier", label: "Auto Liability - Carrier", type: "text", section: "Underlying Insurance" },
+  { key: "underlying_auto_policy", label: "Auto Liability - Policy #", type: "text", section: "Underlying Insurance" },
+  { key: "underlying_auto_csl", label: "Auto CSL Limit", type: "currency", section: "Underlying Insurance" },
   { key: "underlying_auto_bi_ea_acc", label: "Auto BI Each Accident Limit", type: "currency", section: "Underlying Insurance" },
   { key: "underlying_auto_bi_ea_per", label: "Auto BI Each Person Limit", type: "currency", section: "Underlying Insurance" },
   { key: "underlying_auto_pd", label: "Auto PD Each Accident Limit", type: "currency", section: "Underlying Insurance" },
   { key: "underlying_auto_premium", label: "Auto Annual Premium", type: "currency", section: "Underlying Insurance" },
-  { key: "underlying_gl_carrier", label: "GL - Carrier / Policy #", type: "text", section: "Underlying Insurance" },
+  { key: "underlying_gl_carrier", label: "GL - Carrier", type: "text", section: "Underlying Insurance" },
+  { key: "underlying_gl_policy", label: "GL - Policy #", type: "text", section: "Underlying Insurance" },
   { key: "underlying_gl_occurrence", label: "GL Each Occurrence Limit", type: "currency", section: "Underlying Insurance" },
   { key: "underlying_gl_aggregate", label: "GL General Aggregate Limit", type: "currency", section: "Underlying Insurance" },
   { key: "underlying_gl_products", label: "GL Products & Comp Ops Limit", type: "currency", section: "Underlying Insurance" },
   { key: "underlying_gl_personal", label: "GL Personal & Adv Injury Limit", type: "currency", section: "Underlying Insurance" },
   { key: "underlying_gl_premium", label: "GL Annual Premium", type: "currency", section: "Underlying Insurance" },
   { key: "underlying_gl_type", label: "GL Policy Type", type: "select", options: ["Occurrence", "Claims Made"], section: "Underlying Insurance" },
-  { key: "underlying_el_carrier", label: "Employers Liability - Carrier / Policy #", type: "text", section: "Underlying Insurance" },
+  { key: "underlying_el_carrier", label: "Employers Liability - Carrier", type: "text", section: "Underlying Insurance" },
+  { key: "underlying_el_policy", label: "Employers Liability - Policy #", type: "text", section: "Underlying Insurance" },
   { key: "underlying_el_each_accident", label: "EL Each Accident", type: "currency", section: "Underlying Insurance" },
   { key: "underlying_el_disease_employee", label: "EL Disease Each Employee", type: "currency", section: "Underlying Insurance" },
   { key: "underlying_el_disease_policy", label: "EL Disease Policy Limit", type: "currency", section: "Underlying Insurance" },
@@ -821,6 +858,54 @@ const acord140Fields: AcordFormField[] = [
   { key: "extra_expense_amount", label: "Extra Expense Amount", type: "currency", section: "Subject of Insurance" },
   { key: "rental_value_amount", label: "Rental Value Amount", type: "currency", section: "Subject of Insurance" },
   { key: "inflation_guard_pct", label: "Inflation Guard %", type: "text", section: "Subject of Insurance" },
+  { key: "accounts_receivable_limit", label: "Accounts Receivable Limit", type: "currency", section: "Subject of Insurance" },
+  { key: "valuable_papers_limit", label: "Valuable Papers Limit", type: "currency", section: "Subject of Insurance" },
+  { key: "edp_media_limit", label: "EDP Media Limit", type: "currency", section: "Subject of Insurance" },
+  { key: "fine_arts_limit", label: "Fine Arts Limit", type: "currency", section: "Subject of Insurance" },
+  { key: "fungus_limit", label: "Fungus/Wet/Dry Rot Limit", type: "currency", section: "Subject of Insurance" },
+  { key: "coverage_extensions_limit", label: "Coverage Extensions Limit", type: "currency", section: "Subject of Insurance" },
+
+  // Business Income / Extra Expense
+  { key: "bi_ee_type", label: "BI/EE Measurement", type: "select", options: ["Actual Loss Sustained", "Monthly Limit of Indemnity", "Maximum Period of Indemnity"], section: "Business Income" },
+  { key: "bi_ee_months", label: "BI/EE - # Months", type: "text", section: "Business Income" },
+  { key: "bi_rental_value_included", label: "Rental Value Included", type: "checkbox", section: "Business Income" },
+  { key: "bi_ordinary_payroll_included", label: "Ordinary Payroll Included", type: "checkbox", section: "Business Income" },
+  { key: "bi_extended_days", label: "Extended BI Days", type: "text", section: "Business Income" },
+  { key: "bi_dependent_properties_limit", label: "Dependent Properties Limit", type: "currency", section: "Business Income" },
+  { key: "bi_dependent_outside_territory", label: "Dependent Properties Outside Territory", type: "select", options: ["Covered", "Not Covered"], section: "Business Income" },
+
+  // Equipment Breakdown
+  { key: "equipment_breakdown_coverage", label: "Equipment Breakdown Coverage", type: "checkbox", section: "Equipment Breakdown" },
+  { key: "equipment_breakdown_limit", label: "Equipment Breakdown Limit", type: "currency", section: "Equipment Breakdown" },
+  { key: "spoilage_limit", label: "Spoilage Limit", type: "currency", section: "Equipment Breakdown" },
+  { key: "expediting_expense_limit", label: "Expediting Expense Limit", type: "currency", section: "Equipment Breakdown" },
+  { key: "ammonia_contamination_limit", label: "Ammonia Contamination Limit", type: "currency", section: "Equipment Breakdown" },
+  { key: "hazardous_substance_limit", label: "Hazardous Substance Limit", type: "currency", section: "Equipment Breakdown" },
+
+  // Crime / Additional Property Coverages
+  { key: "crime_employee_theft", label: "Crime - Employee Theft", type: "checkbox", section: "Crime / Additional Coverages" },
+  { key: "crime_forgery", label: "Crime - Forgery", type: "checkbox", section: "Crime / Additional Coverages" },
+  { key: "computer_fraud_limit", label: "Computer Fraud/FTF Limit", type: "currency", section: "Crime / Additional Coverages" },
+  { key: "ordinance_or_law_limit", label: "Ordinance or Law B/C Limit", type: "currency", section: "Crime / Additional Coverages" },
+  { key: "power_pac_blanket_limit", label: "Power Pac / Blanket Extensions Limit", type: "currency", section: "Crime / Additional Coverages" },
+
+  // Premises 2
+  { key: "premises_2_number", label: "Premises 2 #", type: "text", section: "Premises 2" },
+  { key: "premises_2_address", label: "Premises 2 Address", type: "text", section: "Premises 2" },
+  { key: "premises_2_city", label: "Premises 2 City", type: "text", section: "Premises 2" },
+  { key: "premises_2_state", label: "Premises 2 State", type: "text", section: "Premises 2" },
+  { key: "premises_2_zip", label: "Premises 2 ZIP", type: "text", section: "Premises 2" },
+  { key: "premises_2_building_1", label: "P2 Building 1 Description", type: "text", section: "Premises 2" },
+  { key: "premises_2_building_2", label: "P2 Building 2 Description", type: "text", section: "Premises 2" },
+
+  // Mortgagee / Loss Payee
+  { key: "mortgagee_1_name", label: "Mortgagee / Loss Payee 1", type: "text", section: "Mortgagee / Loss Payee" },
+  { key: "mortgagee_1_address", label: "Mortgagee 1 Address", type: "text", section: "Mortgagee / Loss Payee" },
+  { key: "mortgagee_1_clause", label: "Mortgagee 1 Clause (ISAOA ATIMA)", type: "text", section: "Mortgagee / Loss Payee" },
+  { key: "mortgagee_2_name", label: "Mortgagee / Loss Payee 2", type: "text", section: "Mortgagee / Loss Payee" },
+  { key: "mortgagee_2_address", label: "Mortgagee 2 Address", type: "text", section: "Mortgagee / Loss Payee" },
+  { key: "mortgagee_3_name", label: "Mortgagee / Loss Payee 3", type: "text", section: "Mortgagee / Loss Payee" },
+  { key: "mortgagee_3_address", label: "Mortgagee 3 Address", type: "text", section: "Mortgagee / Loss Payee" },
 
   // Construction Type
   { key: "construction_type", label: "Construction Type", type: "select", options: ["Frame", "Joisted Masonry", "Non-Combustible", "Masonry Non-Combustible", "Modified Fire Resistive", "Fire Resistive"], section: "Construction" },
@@ -831,6 +916,7 @@ const acord140Fields: AcordFormField[] = [
   { key: "distance_to_hydrant", label: "Distance to Hydrant (ft)", type: "text", section: "Construction" },
   { key: "fire_district", label: "Fire District (mi)", type: "text", section: "Construction" },
   { key: "protection_class", label: "Protection Class", type: "text", section: "Construction" },
+  { key: "occupancy_description", label: "Occupancy Description", type: "text", section: "Construction" },
 
   // Building Improvements
   { key: "roof_type", label: "Roof Type", type: "text", section: "Building Improvements" },
@@ -860,10 +946,13 @@ const acord140Fields: AcordFormField[] = [
   { key: "mine_subsidence_coverage", label: "Mine Subsidence Coverage", type: "select", options: ["Accept", "Reject"], section: "Special Coverages" },
   { key: "mine_subsidence_limit", label: "Mine Subsidence Limit", type: "currency", section: "Special Coverages" },
 
-  // Spoilage
-  { key: "spoilage_description", label: "Spoilage - Description of Property", type: "text", section: "Spoilage" },
-  { key: "spoilage_limit", label: "Spoilage Limit", type: "currency", section: "Spoilage" },
-  { key: "spoilage_refrig_maint", label: "Refrigeration Maintenance Agreement", type: "select", options: ["Yes", "No"], section: "Spoilage" },
+  // Enhancement Flags
+  { key: "auto_coverage_plus", label: "Auto Coverage Plus", type: "checkbox", section: "Enhancement Endorsements" },
+  { key: "rental_reimbursement", label: "Rental Reimbursement", type: "checkbox", section: "Enhancement Endorsements" },
+  { key: "roadside_assistance", label: "Roadside Assistance", type: "checkbox", section: "Enhancement Endorsements" },
+  { key: "glass_deductible_waiver", label: "Glass Deductible Waiver", type: "checkbox", section: "Enhancement Endorsements" },
+  { key: "hired_auto_pd", label: "Hired Auto Physical Damage", type: "checkbox", section: "Enhancement Endorsements" },
+  { key: "gap_coverage", label: "GAP Coverage", type: "checkbox", section: "Enhancement Endorsements" },
 
   // Remarks
   { key: "property_remarks", label: "Remarks", type: "textarea", section: "Remarks" },
@@ -931,9 +1020,10 @@ export const ACORD_FORMS: Record<string, AcordFormDefinition> = {
   "acord-75": {
     id: "acord-75",
     name: "ACORD 75",
-    fullName: "Cyber and Privacy Liability Section (2010/07)",
-    description: "Cyber and privacy liability coverages, limits, revenue, employees, and operations description.",
+    fullName: "Schedule of Underlying Insurance (Auto) (2010/07)",
+    description: "Vehicle schedule, hired/non-owned auto, driver cross-reference, UM/UIM, carrier NAIC, and enhancement endorsements.",
     fields: [
+      // Header
       { key: "agency_name", label: "Agency", type: "text", section: "Header", required: true },
       { key: "agency_customer_id", label: "Agency Customer ID", type: "text", section: "Header" },
       { key: "carrier", label: "Carrier", type: "text", section: "Header" },
@@ -941,11 +1031,53 @@ export const ACORD_FORMS: Record<string, AcordFormDefinition> = {
       { key: "policy_number", label: "Policy Number", type: "text", section: "Header" },
       { key: "effective_date", label: "Effective Date", type: "date", section: "Header", required: true },
       { key: "insured_name", label: "Named Insured", type: "text", section: "Header", required: true },
-      { key: "annual_revenues", label: "Annual Revenues", type: "currency", section: "Coverage Information", required: true },
-      { key: "total_employees", label: "Total # of Employees", type: "number", section: "Coverage Information" },
-      { key: "description_of_operations", label: "Description of Operations", type: "textarea", section: "Coverage Information", required: true },
-      { key: "each_occurrence_limit", label: "Each Occurrence Limit", type: "currency", section: "Limits", required: true },
-      { key: "aggregate_limit", label: "Aggregate Limit", type: "currency", section: "Limits" },
+
+      // Vehicle Schedule (up to 8)
+      ...Array.from({ length: 8 }, (_, i) => {
+        const n = i + 1;
+        return [
+          { key: `vehicle_${n}_year`, label: `Vehicle ${n} Year`, type: "text" as const, section: "Vehicle Schedule" },
+          { key: `vehicle_${n}_make`, label: `Vehicle ${n} Make`, type: "text" as const, section: "Vehicle Schedule" },
+          { key: `vehicle_${n}_model`, label: `Vehicle ${n} Model`, type: "text" as const, section: "Vehicle Schedule" },
+          { key: `vehicle_${n}_vin`, label: `Vehicle ${n} VIN`, type: "text" as const, section: "Vehicle Schedule" },
+          { key: `vehicle_${n}_body_type`, label: `Vehicle ${n} Body Type`, type: "text" as const, section: "Vehicle Schedule" },
+          { key: `vehicle_${n}_cost_new`, label: `Vehicle ${n} Cost New`, type: "currency" as const, section: "Vehicle Schedule" },
+          { key: `vehicle_${n}_garaging_zip`, label: `Vehicle ${n} Garaging ZIP`, type: "text" as const, section: "Vehicle Schedule" },
+          { key: `vehicle_${n}_gvw`, label: `Vehicle ${n} GVW/GCW`, type: "text" as const, section: "Vehicle Schedule" },
+          { key: `vehicle_${n}_comp_deductible`, label: `Vehicle ${n} Comp Deductible`, type: "currency" as const, section: "Vehicle Schedule" },
+          { key: `vehicle_${n}_coll_deductible`, label: `Vehicle ${n} Collision Deductible`, type: "currency" as const, section: "Vehicle Schedule" },
+          { key: `vehicle_${n}_territory`, label: `Vehicle ${n} Territory`, type: "text" as const, section: "Vehicle Schedule" },
+          { key: `vehicle_${n}_use_class`, label: `Vehicle ${n} Use Class`, type: "text" as const, section: "Vehicle Schedule" },
+        ];
+      }).flat(),
+
+      // Liability & UM/UIM
+      { key: "auto_liability_limit", label: "Liability Limit (CSL)", type: "currency", section: "Coverages", required: true },
+      { key: "um_uim_limit", label: "UM/UIM Limit (Each Accident)", type: "currency", section: "Coverages" },
+      { key: "number_of_vehicles", label: "Number of Owned Vehicles", type: "text", section: "Coverages" },
+      { key: "number_of_drivers", label: "Number of Drivers", type: "text", section: "Coverages" },
+
+      // Hired Auto
+      { key: "hired_auto_liability", label: "Hired Auto Liability", type: "select", options: ["Yes", "No"], section: "Hired / Non-Owned" },
+      { key: "hired_auto_state", label: "Hired Auto State", type: "text", section: "Hired / Non-Owned" },
+      { key: "hired_auto_cost_of_hire", label: "Estimated Annual Cost of Hire", type: "currency", section: "Hired / Non-Owned" },
+      { key: "hired_auto_premium", label: "Hired Auto Premium", type: "currency", section: "Hired / Non-Owned" },
+
+      // Non-Owned
+      { key: "non_owned_liability", label: "Non-Owned Liability", type: "select", options: ["Yes", "No"], section: "Hired / Non-Owned" },
+      { key: "non_owned_class", label: "Non-Owned Class", type: "text", section: "Hired / Non-Owned" },
+      { key: "non_owned_num_employees", label: "Non-Owned # Employees", type: "number", section: "Hired / Non-Owned" },
+      { key: "non_owned_premium", label: "Non-Owned Premium", type: "currency", section: "Hired / Non-Owned" },
+
+      // Enhancement Endorsements
+      { key: "auto_coverage_plus", label: "Auto Coverage Plus", type: "checkbox", section: "Enhancement Endorsements" },
+      { key: "rental_reimbursement", label: "Rental Reimbursement", type: "checkbox", section: "Enhancement Endorsements" },
+      { key: "roadside_assistance", label: "Roadside Assistance", type: "checkbox", section: "Enhancement Endorsements" },
+      { key: "glass_deductible_waiver", label: "Glass Deductible Waiver", type: "checkbox", section: "Enhancement Endorsements" },
+      { key: "hired_auto_pd", label: "Hired Auto Physical Damage", type: "checkbox", section: "Enhancement Endorsements" },
+      { key: "gap_coverage", label: "GAP Coverage", type: "checkbox", section: "Enhancement Endorsements" },
+
+      // Remarks & Signature
       { key: "remarks", label: "Remarks", type: "textarea", section: "Remarks" },
       { key: "producer_name", label: "Producer's Name", type: "text", section: "Signature" },
       { key: "signature_date", label: "Date", type: "date", section: "Signature" },

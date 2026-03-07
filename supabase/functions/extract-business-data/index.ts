@@ -110,7 +110,43 @@ Return this exact structure:
     "underwriter": "", "underwriter_office": "",
     "vehicles": [],
     "drivers": [],
-    "policies": []
+    "policies": [],
+    "underlying_insurance": [],
+    "wc_classifications": [],
+    "locations": [],
+    "mortgagees": [],
+    "endorsements": [],
+    "wc_other_states_3a": "", "wc_excluded_states": "",
+    "waiver_of_subrogation": "", "waiver_endorsement_number": "",
+    "contracting_class_credit": "",
+    "standard_premium": "", "modified_premium": "", "expense_constant": "",
+    "terrorism_premium": "", "cat_premium": "",
+    "second_injury_fund": "", "wc_fund_assessment": "",
+    "products_completed_ops_aggregate": "",
+    "defense_within_limits": "", "crisis_mgmt_limit": "",
+    "non_cumulation_occurrence": "false", "non_cumulation_endorsement": "",
+    "additional_named_insured_1": "", "additional_named_insured_2": "",
+    "hired_auto_liability": "", "hired_auto_cost_of_hire": "", "hired_auto_premium": "",
+    "non_owned_liability": "", "non_owned_num_employees": "", "non_owned_premium": "",
+    "auto_coverage_plus": "false", "rental_reimbursement": "false",
+    "roadside_assistance": "false", "glass_deductible_waiver": "false",
+    "hired_auto_pd": "false", "gap_coverage": "false",
+    "accounts_receivable_limit": "", "valuable_papers_limit": "",
+    "edp_media_limit": "", "fine_arts_limit": "", "fungus_limit": "",
+    "coverage_extensions_limit": "",
+    "bi_ee_type": "", "bi_ee_months": "",
+    "bi_rental_value_included": "false", "bi_ordinary_payroll_included": "false",
+    "bi_extended_days": "", "bi_dependent_properties_limit": "",
+    "equipment_breakdown_coverage": "false", "equipment_breakdown_limit": "",
+    "spoilage_limit": "", "expediting_expense_limit": "",
+    "ammonia_contamination_limit": "", "hazardous_substance_limit": "",
+    "crime_employee_theft": "false", "crime_forgery": "false",
+    "computer_fraud_limit": "", "ordinance_or_law_limit": "",
+    "power_pac_blanket_limit": "",
+    "occupancy_description": "",
+    "mortgagee_1_name": "", "mortgagee_1_address": "", "mortgagee_1_clause": "",
+    "mortgagee_2_name": "", "mortgagee_2_address": "",
+    "mortgagee_3_name": "", "mortgagee_3_address": ""
   },
   "gaps": []
 }
@@ -122,10 +158,22 @@ EXTRACTION RULES:
 - lob_* flags: set "true" ONLY if that coverage type is explicitly mentioned
 - CHECKBOX FIELDS (chk_*): set "true" if the document indicates that option applies
 - SCHEDULE OF HAZARDS: Extract ALL class code rows (hazard_*_1, hazard_*_2, hazard_*_3)
-- vehicles[]: include ALL vehicles — each: { year, make, model, vin, body_type, stated_amount, garaging_zip }
+- vehicles[]: include ALL vehicles — each: { year, make, model, vin, body_type, stated_amount, garaging_zip, gvw, comp_deductible, coll_deductible, territory, use_class }
 - drivers[]: include ALL drivers listed in driver schedules, driver listings, or "CURRENT DRIVERS" sections — each: { name, first_name, last_name, dob, license, license_state }. The "name" field should be the full name as shown (e.g., "ORR, LISA"). Also split into "first_name" and "last_name" separately. If DOB or license number are not provided, leave them as empty strings. For license_state, default to the insured's state if not explicitly listed per driver. Look for driver listings in auto policy declarations, endorsements, and supplemental schedules.
 - policies[]: When MULTIPLE policy declarations are present (BOP, Auto, Umbrella, WC, etc.), extract EACH as a separate object: { line_of_business, carrier_name, policy_number, premium, effective_date, expiration_date, naic_code }. This is critical for multi-policy packets.
+- underlying_insurance[]: Extract ALL underlying policies from umbrella/excess declarations. Each: { line_of_business, carrier, policy_number, limits: { each_occurrence, general_aggregate, products_completed_ops, personal_adv_injury, csl, each_accident, disease_each_employee, disease_policy }, premium }. Map Auto CSL, GL limits, and Employers Liability limits from the schedule of underlying.
+- wc_classifications[]: Extract ALL WC class codes from workers comp declarations/schedules. Each: { class_code, description, naics, sic, num_employees, annual_remuneration, rate, estimated_premium }. Look in "CLASSIFICATION SCHEDULE", "PREMIUM COMPUTATION", or "SCHEDULE OF CLASSIFICATIONS".
+- locations[]: Extract all premises/building info for property. Each: { premises_number, building_number, address, city, state, zip, description, occupancy }
+- mortgagees[]: Extract ALL mortgagees/loss payees. Each: { name, address, clause, premises_number, building_number }. Include ISAOA ATIMA wording.
+- endorsements[]: Extract endorsement numbers and names from endorsement schedules. Each: { number, name, description }. Use to set waiver_of_subrogation, non_cumulation_occurrence, and enhancement flags.
 - Per-LOB carrier/premium fields: Also populate the flat fields (bop_carrier, bop_policy_number, auto_carrier, auto_policy_number, umbrella_carrier, umbrella_policy_number, wc_carrier, wc_policy_number, auto_premium, umbrella_premium, wc_premium, cgl_premium, property_premium, inland_marine_premium, bop_premium) from the corresponding policy declarations.
+- WC PREMIUM DATA: Extract standard_premium, modified_premium, expense_constant, terrorism_premium, cat_premium, second_injury_fund, wc_fund_assessment from WC premium computation sections.
+- WC OTHER STATES: Extract wc_other_states_3a (list of covered states from Item 3.A), wc_excluded_states (monopolistic/excluded states).
+- WAIVER OF SUBROGATION: If a blanket waiver of subrogation endorsement is listed (e.g., WC 00 03 13), set waiver_of_subrogation to "Yes - Blanket" and waiver_endorsement_number to the form number.
+- PROPERTY BI/EE: Extract bi_ee_type (Actual Loss Sustained, Monthly Limit, Max Period), bi_ee_months, bi_rental_value_included, bi_ordinary_payroll_included, bi_extended_days from Business Income coverage sections.
+- PROPERTY ADDITIONAL COVERAGES: Extract equipment breakdown limits, crime coverages, computer fraud, ordinance or law from property endorsement schedules and Power Pac sections.
+- MORTGAGEES: Extract from mortgage/loss payee schedules per building/premises.
+- ENHANCEMENT FLAGS: Set auto_coverage_plus, rental_reimbursement, roadside_assistance, glass_deductible_waiver, hired_auto_pd, gap_coverage to "true" if explicitly endorsed on auto declarations.
 - naic_code: Look for "NAIC" followed by a number on insurance ID cards, declarations pages, or certificate headers. Extract ONLY the numeric code (e.g., "24775" from "NAIC 24775 ST. PAUL GUARDIAN").
 - underwriter / underwriter_office: Extract if present on declarations page.
 - gaps[]: list missing important fields — { field, question, priority: required|recommended|optional }

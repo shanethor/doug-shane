@@ -316,6 +316,83 @@ const AI_TO_FORM_ALIASES: Record<string, string[]> = {
   retained_limit_occurrence: ["retained_limit_occurrence"],
   retained_limit_aggregate: ["retained_limit_aggregate"],
   self_insured_retention: ["self_insured_retention"],
+  products_completed_ops_aggregate: ["products_completed_ops_aggregate"],
+  defense_within_limits: ["defense_within_limits"],
+  crisis_mgmt_limit: ["crisis_mgmt_limit"],
+  non_cumulation_occurrence: ["non_cumulation_occurrence"],
+  non_cumulation_endorsement: ["non_cumulation_endorsement"],
+  additional_named_insured_1: ["additional_named_insured_1"],
+  additional_named_insured_2: ["additional_named_insured_2"],
+
+  // ── Underlying Insurance (ACORD 131) ──
+  underlying_auto_policy: ["underlying_auto_policy"],
+  underlying_auto_csl: ["underlying_auto_csl"],
+  underlying_gl_policy: ["underlying_gl_policy"],
+  underlying_el_policy: ["underlying_el_policy"],
+  underlying_el_carrier: ["underlying_el_carrier"],
+
+  // ── WC Premium/Rating Data (ACORD 130) ──
+  standard_premium: ["standard_premium"],
+  modified_premium: ["modified_premium"],
+  expense_constant: ["expense_constant"],
+  terrorism_premium_wc: ["terrorism_premium"],
+  cat_premium: ["cat_premium"],
+  second_injury_fund: ["second_injury_fund"],
+  wc_fund_assessment: ["wc_fund_assessment"],
+  wc_other_states_3a: ["wc_other_states_3a"],
+  wc_excluded_states: ["wc_excluded_states"],
+  waiver_of_subrogation: ["waiver_of_subrogation"],
+  waiver_endorsement_number: ["waiver_endorsement_number"],
+  contracting_class_credit: ["contracting_class_credit"],
+  class_code_3: ["class_code_3"],
+  class_description_3: ["class_description_3"],
+  annual_remuneration_3: ["annual_remuneration_3"],
+
+  // ── Property (ACORD 140) ──
+  accounts_receivable_limit: ["accounts_receivable_limit"],
+  valuable_papers_limit: ["valuable_papers_limit"],
+  edp_media_limit: ["edp_media_limit"],
+  fine_arts_limit: ["fine_arts_limit"],
+  fungus_limit: ["fungus_limit"],
+  coverage_extensions_limit: ["coverage_extensions_limit"],
+  bi_ee_type: ["bi_ee_type"],
+  bi_ee_months: ["bi_ee_months"],
+  bi_rental_value_included: ["bi_rental_value_included"],
+  bi_ordinary_payroll_included: ["bi_ordinary_payroll_included"],
+  bi_extended_days: ["bi_extended_days"],
+  bi_dependent_properties_limit: ["bi_dependent_properties_limit"],
+  equipment_breakdown_limit: ["equipment_breakdown_limit"],
+  spoilage_limit_eb: ["spoilage_limit"],
+  expediting_expense_limit: ["expediting_expense_limit"],
+  ammonia_contamination_limit: ["ammonia_contamination_limit"],
+  hazardous_substance_limit: ["hazardous_substance_limit"],
+  computer_fraud_limit: ["computer_fraud_limit"],
+  ordinance_or_law_limit: ["ordinance_or_law_limit"],
+  power_pac_blanket_limit: ["power_pac_blanket_limit"],
+  occupancy_description: ["occupancy_description"],
+  mortgagee_1_name: ["mortgagee_1_name"],
+  mortgagee_1_address: ["mortgagee_1_address"],
+  mortgagee_1_clause: ["mortgagee_1_clause"],
+  mortgagee_2_name: ["mortgagee_2_name"],
+  mortgagee_2_address: ["mortgagee_2_address"],
+  mortgagee_3_name: ["mortgagee_3_name"],
+  mortgagee_3_address: ["mortgagee_3_address"],
+
+  // ── ACORD 75 Hired/Non-Owned ──
+  hired_auto_liability: ["hired_auto_liability"],
+  hired_auto_cost_of_hire: ["hired_auto_cost_of_hire"],
+  hired_auto_premium: ["hired_auto_premium"],
+  non_owned_liability: ["non_owned_liability"],
+  non_owned_num_employees: ["non_owned_num_employees"],
+  non_owned_premium: ["non_owned_premium"],
+
+  // ── Enhancement Flags ──
+  auto_coverage_plus: ["auto_coverage_plus"],
+  rental_reimbursement: ["rental_reimbursement"],
+  roadside_assistance: ["roadside_assistance"],
+  glass_deductible_waiver: ["glass_deductible_waiver"],
+  hired_auto_pd: ["hired_auto_pd"],
+  gap_coverage: ["gap_coverage"],
 
   // ── CGL Limits — including common dec page extraction keys ──
   general_aggregate: ["general_aggregate"],
@@ -522,7 +599,8 @@ export const CURRENCY_FIELDS = new Set([
   "each_occurrence", "personal_adv_injury", "fire_damage", "medical_payments",
   "deductible_amount", "prior_gl_premium", "prior_auto_premium", "prior_property_premium",
   "total_losses", "ebl_each_employee", "ebl_aggregate", "ebl_deductible",
-  "annual_remuneration_1", "annual_remuneration_2", "est_premium_1", "est_premium_2",
+  "annual_remuneration_1", "annual_remuneration_2", "annual_remuneration_3",
+  "est_premium_1", "est_premium_2", "est_premium_3",
   "hazard_premium_1", "hazard_premium_2", "each_occurrence_limit", "aggregate_limit",
   "self_insured_retention", "annual_premium", "total_estimated_premium", "total_wc_incurred",
   "building_amount", "bpp_amount", "business_income_amount", "extra_expense_amount",
@@ -531,6 +609,7 @@ export const CURRENCY_FIELDS = new Set([
   "prior_prop_premium_1", "prior_other_premium_1", "prior_other_premium_2",
   "prior_wc_premium_1", "prior_wc_paid_1", "prior_wc_reserve_1",
   "retained_limit_occurrence", "retained_limit_aggregate",
+  "underlying_auto_csl",
   "underlying_auto_bi_ea_acc", "underlying_auto_bi_ea_per", "underlying_auto_pd",
   "underlying_auto_premium", "underlying_gl_occurrence", "underlying_gl_aggregate",
   "underlying_gl_products", "underlying_gl_personal", "underlying_gl_premium",
@@ -546,6 +625,22 @@ export const CURRENCY_FIELDS = new Set([
   "spoilage_limit", "blanket_1_amount",
   "total_minimum_premium", "total_deposit_premium",
   "inland_marine_premium", "boiler_premium", "bop_premium", "garage_premium", "liquor_premium",
+  "standard_premium", "modified_premium", "expense_constant", "terrorism_premium", "cat_premium",
+  "second_injury_fund", "wc_fund_assessment", "products_completed_ops_aggregate",
+  "crisis_mgmt_limit", "hired_auto_cost_of_hire", "hired_auto_premium", "non_owned_premium",
+  "accounts_receivable_limit", "valuable_papers_limit", "edp_media_limit", "fine_arts_limit",
+  "fungus_limit", "coverage_extensions_limit", "bi_dependent_properties_limit",
+  "equipment_breakdown_limit", "expediting_expense_limit", "ammonia_contamination_limit",
+  "hazardous_substance_limit", "computer_fraud_limit", "ordinance_or_law_limit",
+  "power_pac_blanket_limit",
+  "vehicle_1_comp_deductible", "vehicle_1_coll_deductible",
+  "vehicle_2_comp_deductible", "vehicle_2_coll_deductible",
+  "vehicle_3_comp_deductible", "vehicle_3_coll_deductible",
+  "vehicle_4_comp_deductible", "vehicle_4_coll_deductible",
+  "vehicle_5_comp_deductible", "vehicle_5_coll_deductible",
+  "vehicle_6_comp_deductible", "vehicle_6_coll_deductible",
+  "vehicle_7_comp_deductible", "vehicle_7_coll_deductible",
+  "vehicle_8_comp_deductible", "vehicle_8_coll_deductible",
 ]);
 
 /** Fields with "code" in the name must only contain numeric values */
@@ -709,6 +804,82 @@ export function buildAutofilledData(
       if (val && formFieldKeys.has(k) && !mapped[k]) mapped[k] = normalizeValue(k, val);
     }
   }
+
+  // 5e. Expand underlying_insurance[] → ACORD 131 underlying fields
+  const underlying: any[] = Array.isArray(aiData.underlying_insurance) ? aiData.underlying_insurance : [];
+  for (const u of underlying) {
+    const lob = (u.line_of_business || "").toUpperCase();
+    if (lob.includes("AUTO")) {
+      if (!mapped.underlying_auto_carrier && formFieldKeys.has("underlying_auto_carrier")) mapped.underlying_auto_carrier = u.carrier || "";
+      if (u.policy_number && formFieldKeys.has("underlying_auto_policy") && !mapped.underlying_auto_policy) mapped.underlying_auto_policy = u.policy_number;
+      if (u.limits?.csl && formFieldKeys.has("underlying_auto_csl") && !mapped.underlying_auto_csl) mapped.underlying_auto_csl = normalizeValue("underlying_auto_csl", u.limits.csl);
+      if (u.premium && formFieldKeys.has("underlying_auto_premium") && !mapped.underlying_auto_premium) mapped.underlying_auto_premium = normalizeValue("underlying_auto_premium", u.premium);
+    } else if (lob.includes("GL") || lob.includes("GENERAL") || lob.includes("CGL") || lob.includes("BOP")) {
+      if (!mapped.underlying_gl_carrier && formFieldKeys.has("underlying_gl_carrier")) mapped.underlying_gl_carrier = u.carrier || "";
+      if (u.policy_number && formFieldKeys.has("underlying_gl_policy") && !mapped.underlying_gl_policy) mapped.underlying_gl_policy = u.policy_number;
+      const lim = u.limits || {};
+      if (lim.each_occurrence && formFieldKeys.has("underlying_gl_occurrence") && !mapped.underlying_gl_occurrence) mapped.underlying_gl_occurrence = normalizeValue("underlying_gl_occurrence", lim.each_occurrence);
+      if (lim.general_aggregate && formFieldKeys.has("underlying_gl_aggregate") && !mapped.underlying_gl_aggregate) mapped.underlying_gl_aggregate = normalizeValue("underlying_gl_aggregate", lim.general_aggregate);
+      if (lim.products_completed_ops && formFieldKeys.has("underlying_gl_products") && !mapped.underlying_gl_products) mapped.underlying_gl_products = normalizeValue("underlying_gl_products", lim.products_completed_ops);
+      if (lim.personal_adv_injury && formFieldKeys.has("underlying_gl_personal") && !mapped.underlying_gl_personal) mapped.underlying_gl_personal = normalizeValue("underlying_gl_personal", lim.personal_adv_injury);
+      if (u.premium && formFieldKeys.has("underlying_gl_premium") && !mapped.underlying_gl_premium) mapped.underlying_gl_premium = normalizeValue("underlying_gl_premium", u.premium);
+    } else if (lob.includes("EMPLOYER") || lob.includes("EL") || lob.includes("WORKERS") || lob.includes("WC")) {
+      if (!mapped.underlying_el_carrier && formFieldKeys.has("underlying_el_carrier")) mapped.underlying_el_carrier = u.carrier || "";
+      if (u.policy_number && formFieldKeys.has("underlying_el_policy") && !mapped.underlying_el_policy) mapped.underlying_el_policy = u.policy_number;
+      const lim = u.limits || {};
+      if (lim.each_accident && formFieldKeys.has("underlying_el_each_accident") && !mapped.underlying_el_each_accident) mapped.underlying_el_each_accident = normalizeValue("underlying_el_each_accident", lim.each_accident);
+      if (lim.disease_each_employee && formFieldKeys.has("underlying_el_disease_employee") && !mapped.underlying_el_disease_employee) mapped.underlying_el_disease_employee = normalizeValue("underlying_el_disease_employee", lim.disease_each_employee);
+      if (lim.disease_policy && formFieldKeys.has("underlying_el_disease_policy") && !mapped.underlying_el_disease_policy) mapped.underlying_el_disease_policy = normalizeValue("underlying_el_disease_policy", lim.disease_policy);
+      if (u.premium && formFieldKeys.has("underlying_el_premium") && !mapped.underlying_el_premium) mapped.underlying_el_premium = normalizeValue("underlying_el_premium", u.premium);
+    }
+  }
+
+  // 5f. Expand wc_classifications[] → class_code_N fields
+  const wcClasses: any[] = Array.isArray(aiData.wc_classifications) ? aiData.wc_classifications : [];
+  wcClasses.forEach((c: any, idx: number) => {
+    const n = idx + 1;
+    if (n > 3) return;
+    const fields: Record<string, string> = {
+      [`class_code_${n}`]: c.class_code || "",
+      [`class_description_${n}`]: c.description || "",
+      [`annual_remuneration_${n}`]: c.annual_remuneration || "",
+      [`est_premium_${n}`]: c.estimated_premium || "",
+      [`num_employees_${n}`]: c.num_employees || "",
+    };
+    for (const [k, val] of Object.entries(fields)) {
+      if (val && formFieldKeys.has(k) && !mapped[k]) mapped[k] = normalizeValue(k, val);
+    }
+  });
+
+  // 5g. Expand mortgagees[] → mortgagee_N fields
+  const mortgagees: any[] = Array.isArray(aiData.mortgagees) ? aiData.mortgagees : [];
+  mortgagees.forEach((m: any, idx: number) => {
+    const n = idx + 1;
+    if (n > 3) return;
+    const fields: Record<string, string> = {
+      [`mortgagee_${n}_name`]: m.name || "",
+      [`mortgagee_${n}_address`]: m.address || "",
+      [`mortgagee_${n}_clause`]: m.clause || "",
+    };
+    for (const [k, val] of Object.entries(fields)) {
+      if (val && formFieldKeys.has(k) && !mapped[k]) mapped[k] = val;
+    }
+  });
+
+  // 5h. Expand vehicles with comp/coll deductible and territory fields
+  vehicles.forEach((v: any, idx: number) => {
+    const n = idx + 1;
+    const extraFields: Record<string, string> = {
+      [`vehicle_${n}_comp_deductible`]: v.comp_deductible || "",
+      [`vehicle_${n}_coll_deductible`]: v.coll_deductible || "",
+      [`vehicle_${n}_territory`]: v.territory || "",
+      [`vehicle_${n}_use_class`]: v.use_class || "",
+      [`vehicle_${n}_gvw`]: v.gvw || "",
+    };
+    for (const [k, val] of Object.entries(extraFields)) {
+      if (val && formFieldKeys.has(k) && !mapped[k]) mapped[k] = normalizeValue(k, val);
+    }
+  });
 
   // 6. Auto-calc expiration
   const effKey = formFieldKeys.has("proposed_exp_date") ? "proposed_eff_date" : "effective_date";
