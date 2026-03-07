@@ -39,6 +39,7 @@ function getDateRange(period: TimePeriod): { start: string; end: string } {
 export default function ProducerDashboard({ embedded }: { embedded?: boolean } = {}) {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { isManager, isAdmin } = useUserRole();
   const [policies, setPolicies] = useState<any[]>([]);
   const [leadNames, setLeadNames] = useState<Record<string, string>>({});
   const [period, setPeriod] = useState<TimePeriod>("year");
