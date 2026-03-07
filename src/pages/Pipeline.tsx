@@ -132,7 +132,8 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
   const [leadPolicyPremiums, setLeadPolicyPremiums] = useState<Record<string, number[]>>({});
 
   const [lossRunStatuses, setLossRunStatuses] = useState<Record<string, string>>({});
-  
+  // Map owner_user_id -> producer name (for manager/admin view)
+  const [ownerNames, setOwnerNames] = useState<Record<string, string>>({});
 
   // Drag-and-drop state
   const [draggedLeadId, setDraggedLeadId] = useState<string | null>(null);
