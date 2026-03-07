@@ -842,9 +842,22 @@ export function buildAutofilledData(
     }
     const dKeys: Record<string, string> = {
       [`driver_${n}_name`]: aiData[`driver_${n}_name`] || "",
+      [`driver_${n}_first_name`]: aiData[`driver_${n}_first_name`] || "",
+      [`driver_${n}_last_name`]: aiData[`driver_${n}_last_name`] || "",
       [`driver_${n}_dob`]: aiData[`driver_${n}_dob`] || "",
       [`driver_${n}_license`]: aiData[`driver_${n}_license`] || "",
       [`driver_${n}_license_state`]: aiData[`driver_${n}_license_state`] || "",
+      [`driver_${n}_sex`]: aiData[`driver_${n}_sex`] || "",
+      [`driver_${n}_marital`]: aiData[`driver_${n}_marital`] || "",
+      [`driver_${n}_experience`]: aiData[`driver_${n}_experience`] || "",
+      [`driver_${n}_hired_date`]: aiData[`driver_${n}_hired_date`] || "",
+      [`driver_${n}_ssn`]: aiData[`driver_${n}_ssn`] || "",
+      [`driver_${n}_city`]: aiData[`driver_${n}_city`] || "",
+      [`driver_${n}_state`]: aiData[`driver_${n}_state`] || "",
+      [`driver_${n}_zip`]: aiData[`driver_${n}_zip`] || "",
+      [`driver_${n}_middle`]: aiData[`driver_${n}_middle`] || "",
+      [`driver_${n}_vehicle_id`]: aiData[`driver_${n}_vehicle_id`] || "",
+      [`driver_${n}_vehicle_pct`]: aiData[`driver_${n}_vehicle_pct`] || "",
     };
     for (const [k, val] of Object.entries(dKeys)) {
       if (val && formFieldKeys.has(k) && !mapped[k]) mapped[k] = normalizeValue(k, val);
