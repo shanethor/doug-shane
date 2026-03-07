@@ -231,35 +231,15 @@ const FillablePdfViewer = forwardRef<FillablePdfViewerHandle, FillablePdfViewerP
                     } catch (chkErr) {
                       console.warn(`[pdf-lib] check() failed for field ${idx}, trying manual approach:`, chkErr);
                     }
-                    // Ensure the checkbox has a valid "On" appearance with an X mark
+                    // Ensure the checkbox has its appearance state set to "on"
                     try {
                       const widgets = f.acroField?.getWidgets?.() || [];
                       for (const widget of widgets) {
                         const ap = widget.dict.get(PDFName.of("AP"));
-                        if (!ap) {
-                          // No appearance dict at all — create one with an X drawn
-                          const rect = widget.getRectangle();
-                          const w = rect.width || 10;
-                          const h = rect.height || 10;
-                          // Draw an X mark
-                          const xStream = `q\n0.2 0.2 0.2 rg\nBT\n/ZaDb 0 Tf\n${w * 0.15} ${h * 0.2} Td\n(4) Tj\nET\nQ`;
-                          // Fallback: just draw crossing lines
-                          const stream = `q\n0.1 0.1 0.1 RG\n1.5 w\n${w * 0.15} ${h * 0.15} m ${w * 0.85} ${h * 0.85} l S\n${w * 0.85} ${h * 0.15} m ${w * 0.15} ${h * 0.85} l S\nQ`;
-                          const appearance = doc.context.formXObject(stream, {
-                            BBox: [0, 0, w, h],
-                          });
-                          const normalAp = doc.context.obj({});
-                          (normalAp as any).set(PDFName.of("Yes"), appearance);
-                          const apDict = doc.context.obj({});
-                          (apDict as any).set(PDFName.of("N"), normalAp);
-                          widget.dict.set(PDFName.of("AP"), apDict);
-                          widget.dict.set(PDFName.of("AS"), PDFName.of("Yes"));
-                          widget.dict.set(PDFName.of("V"), PDFName.of("Yes"));
-                        } else {
-                          // Has AP dict — just make sure AS is set to the on state
+                        if (ap) {
+                          // Has AP dict — find the "on" state name and set AS to it
                           const normalDict = (ap as any).get?.(PDFName.of("N"));
                           if (normalDict && typeof normalDict.entries === "function") {
-                            // Find the "on" state name (usually "Yes", "1", "On", etc.)
                             for (const [key] of normalDict.entries()) {
                               const keyName = key instanceof PDFName ? key.decodeText() : String(key);
                               if (keyName !== "Off") {
@@ -270,11 +250,16 @@ const FillablePdfViewer = forwardRef<FillablePdfViewerHandle, FillablePdfViewerP
                             }
                           } else {
                             widget.dict.set(PDFName.of("AS"), PDFName.of("Yes"));
+                            widget.dict.set(PDFName.of("V"), PDFName.of("Yes"));
                           }
+                        } else {
+                          // No AP dict — set AS/V and hope Adobe renders it
+                          widget.dict.set(PDFName.of("AS"), PDFName.of("Yes"));
+                          widget.dict.set(PDFName.of("V"), PDFName.of("Yes"));
                         }
                       }
                     } catch (apErr) {
-                      console.warn(`[pdf-lib] Manual checkbox appearance failed for ${idx}:`, apErr);
+                      console.warn(`[pdf-lib] Checkbox appearance fix failed for ${idx}:`, apErr);
                     }
                     filled++;
                   }
