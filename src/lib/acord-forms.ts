@@ -119,6 +119,7 @@ const acord125Fields: AcordFormField[] = [
   { key: "premises_description", label: "Description of Operations", type: "textarea", section: "Premises Information" },
 
   // Nature of Business
+  { key: "nature_of_business", label: "Nature of Business", type: "text", section: "Nature of Business" },
   { key: "annual_revenues", label: "Annual Revenues", type: "currency", section: "Nature of Business", required: true },
   { key: "occupied_sq_ft", label: "Occupied Area (Sq Ft)", type: "number", section: "Nature of Business" },
   { key: "open_to_public_area", label: "Open to Public Area (Sq Ft)", type: "number", section: "Nature of Business" },
