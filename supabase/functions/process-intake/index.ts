@@ -473,6 +473,45 @@ Deno.serve(async (req) => {
         if (leadId) {
           await supabase.from("leads").update({ submission_id: newSub.id }).eq("id", leadId);
         }
+
+        // Auto-create insurance_application for prefill
+        const formDataPayload: Record<string, any> = {
+          applicant_name: businessName,
+          applicant_contact: submission.customer_name,
+          applicant_email: submission.customer_email,
+          applicant_phone: phone,
+          applicant_fein: ein,
+          business_entity_type: businessType,
+          mailing_address: address,
+          mailing_city: city,
+          mailing_state: state,
+          mailing_zip: zip,
+          years_in_business: yearsInBusiness,
+          employee_count: employeeCount,
+          annual_revenue: annualRevenue,
+        };
+
+        // Parse ACORD underwriting data from notes if present
+        const acordSection = notes.match(/--- ACORD Underwriting Data ---\n([\s\S]*?)(?:\n(?:Current Carrier|BOR|Documents|Notes|Additional Notes):|$)/);
+        if (acordSection) {
+          const acordLines = acordSection[1].trim().split("\n");
+          for (const line of acordLines) {
+            const colonIdx = line.indexOf(":");
+            if (colonIdx > 0) {
+              const key = line.slice(0, colonIdx).trim();
+              const val = line.slice(colonIdx + 1).trim();
+              if (key && val) formDataPayload[key] = val;
+            }
+          }
+        }
+
+        await supabase.from("insurance_applications").insert({
+          user_id: agentId,
+          submission_id: newSub.id,
+          form_data: formDataPayload,
+          status: "draft",
+          gaps: null,
+        });
       }
     } else {
       await supabase.from("business_submissions").update({ narrative: fullNarrative }).eq("id", submissionId);
