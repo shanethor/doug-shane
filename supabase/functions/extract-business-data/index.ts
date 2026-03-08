@@ -820,7 +820,7 @@ function postProcess(fd: Record<string, any>, sourceText: string, hasPdfs: boole
       if (!fd[`driver_${n}_last_name`]) fd[`driver_${n}_last_name`] = last;
       if (!fd[`driver_${n}_license_state`] && stateFallback) fd[`driver_${n}_license_state`] = stateFallback;
       n += 1;
-      if (n > 12) break;
+      if (n > 13) break;
     }
     if (n > 1 && !fd.number_of_drivers) fd.number_of_drivers = String(n - 1);
   }
