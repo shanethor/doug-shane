@@ -1080,7 +1080,34 @@ export function buildAutofilledData(
     if (aiData[srcKey]) setIfEmpty(dstKey, String(aiData[srcKey]));
   }
 
-  // 5e-4. Map coverage/exposure checkboxes from extracted data
+  // 5e-4. Auto-infer coverage checkboxes from underlying insurance data
+  // If we filled an underlying auto policy → check "Any Auto"
+  if (mapped.underlying_auto_carrier || aiData.underlying_auto_carrier) {
+    setIfEmpty("has_any_auto", "true");
+  }
+  // If we filled GL and it's occurrence-based → check CGL Occurrence
+  if (mapped.underlying_gl_carrier || aiData.underlying_gl_carrier) {
+    const glType = mapped.underlying_gl_type || aiData.underlying_gl_type || "Occurrence";
+    if (glType.toLowerCase().includes("occurrence")) {
+      setIfEmpty("has_cgl_occurrence", "true");
+    } else if (glType.toLowerCase().includes("claims")) {
+      setIfEmpty("has_cgl_claims_made", "true");
+    }
+  }
+  // If EBL data is present → check EBL coverage
+  if (mapped.ebl_each_employee || aiData.ebl_each_employee) {
+    setIfEmpty("has_ebl_coverage", "true");
+  }
+  // If foreign operations explicitly mentioned → check foreign liability
+  if (aiData.foreign_operations === "Yes" || aiData.foreign_operations_131 === "Yes") {
+    setIfEmpty("has_foreign_liability", "true");
+  }
+  // If CCC data present → check CCC coverage
+  if (mapped.ccc_property_value || aiData.ccc_property_value) {
+    setIfEmpty("has_ccc_coverage", "true");
+  }
+
+  // Now also map any explicitly extracted checkbox values
   const checkboxMap: Record<string, string> = {
     has_any_auto: "has_any_auto",
     has_cgl_occurrence: "has_cgl_occurrence",
@@ -1090,6 +1117,11 @@ export function buildAutofilledData(
     has_pollution_liability: "has_pollution_liability",
     has_watercraft_liability: "has_watercraft_liability",
     has_liquor_liability: "has_liquor_liability",
+    has_ebl_coverage: "has_ebl_coverage",
+    has_foreign_liability: "has_foreign_liability",
+    has_ccc_coverage: "has_ccc_coverage",
+    has_garagekeepers: "has_garagekeepers",
+    has_vendors_coverage: "has_vendors_coverage",
     hired_non_owned_coverage: "hired_non_owned_coverage",
     explosives_hauled: "explosives_hauled",
     passengers_for_fee: "passengers_for_fee",
@@ -1105,7 +1137,7 @@ export function buildAutofilledData(
     }
   }
 
-  // 5e-5. Map additional question Y/N codes
+  // 5e-5. Map additional question Y/N codes + explanations (full set)
   const questionCodeMap: Record<string, string> = {
     q_aircraft_code: "q_aircraft_code",
     q_explosives_code: "q_explosives_code",
@@ -1118,6 +1150,16 @@ export function buildAutofilledData(
     q_hazardous_materials_code: "q_hazardous_materials_code",
     q_product_loss_code: "q_product_loss_code",
     q_watercraft_code: "q_watercraft_code",
+    q_missiles_engines_code: "q_missiles_engines_code",
+    q_hospital_code: "q_hospital_code",
+    q_doctors_nurses_code: "q_doctors_nurses_code",
+    q_excluded_uninsured_code: "q_excluded_uninsured_code",
+    q_tail_coverage_code: "q_tail_coverage_code",
+    q_units_not_insured_code: "q_units_not_insured_code",
+    q_vehicles_leased_code: "q_vehicles_leased_code",
+    q_services_ad_agency_code: "q_services_ad_agency_code",
+    q_coverage_agency_policy_code: "q_coverage_agency_policy_code",
+    q_kaq_code: "q_kaq_code",
   };
   for (const [srcKey, dstKey] of Object.entries(questionCodeMap)) {
     if (aiData[srcKey]) setIfEmpty(dstKey, aiData[srcKey]);
@@ -1126,11 +1168,73 @@ export function buildAutofilledData(
     if (aiData[explKey]) setIfEmpty(dstKey.replace("_code", "_explanation"), aiData[explKey]);
   }
 
-  // 5e-6. Map CCC (Care, Custody, Control) fields
+  // 5e-5b. Map text fields for contractors, malpractice, product, advertisers, pollution
+  const directTextFields = [
+    "contractors_work_description", "contractors_agreement",
+    "el_other_description",
+    "malpractice_doctor_count", "malpractice_nurse_count", "malpractice_bed_count",
+    "epa_identifier",
+    "product_gross_sales_a", "product_gross_sales_b", "product_gross_sales_c",
+    "protective_liability_description",
+    "advertisers_media_code", "advertisers_annual_cost",
+    "gl_form_edition_date", "gl_claims_retroactive_date", "gl_claims_entry_date",
+    "tail_coverage_eff_date",
+    "underlying_info_description",
+    "uninsured_motorists_limit", "underinsured_motorists_limit", "medical_payments_limit",
+  ];
+  for (const key of directTextFields) {
+    if (aiData[key]) setIfEmpty(key, normalizeValue(key, aiData[key]));
+  }
+
+  // 5e-6. Map CCC (Care, Custody, Control) fields — expanded with property type and lease flags
   setIfEmpty("ccc_location_id", aiData.ccc_location_id || "");
   setIfEmpty("ccc_property_value", aiData.ccc_property_value || "");
   setIfEmpty("ccc_occupied_area", aiData.ccc_occupied_area || "");
   setIfEmpty("ccc_property_description", aiData.ccc_property_description || "");
+  setIfEmpty("ccc_insured_liability_other", aiData.ccc_insured_liability_other || "");
+  // Expand CCC array if provided
+  const cccEntries: any[] = Array.isArray(aiData.ccc_entries) ? aiData.ccc_entries : [];
+  if (cccEntries.length > 0) {
+    const c = cccEntries[0]; // ACORD 131 has room for 1 CCC row on the form
+    setIfEmpty("ccc_location_id", c.location_id || c.location || "");
+    setIfEmpty("ccc_property_value", c.property_value || c.value || "");
+    setIfEmpty("ccc_occupied_area", c.occupied_area || c.area || "");
+    setIfEmpty("ccc_property_description", c.description || c.occupancy || "");
+    setIfEmpty("ccc_insured_liability_other", c.liability_other || "");
+  }
+
+  // 5e-6b. Expand loss_history[] → loss_date_a, loss_lob_a, etc. (ACORD 131 loss rows)
+  const lossHistory: any[] = Array.isArray(aiData.loss_history_131) ? aiData.loss_history_131
+    : Array.isArray(aiData.umbrella_loss_history) ? aiData.umbrella_loss_history
+    : Array.isArray(aiData.loss_history) ? aiData.loss_history : [];
+  const lossSlots = ["a", "b", "c", "d", "e", "f"];
+  lossHistory.forEach((loss: any, idx: number) => {
+    if (idx >= lossSlots.length) return;
+    const s = lossSlots[idx];
+    setIfEmpty(`loss_date_${s}`, loss.date || loss.loss_date || "");
+    setIfEmpty(`loss_lob_${s}`, loss.line_of_business || loss.lob || loss.coverage || "");
+    setIfEmpty(`loss_description_${s}`, loss.description || loss.loss_description || "");
+    setIfEmpty(`loss_paid_${s}`, loss.amount_paid || loss.paid || "");
+    setIfEmpty(`loss_reserved_${s}`, loss.amount_reserved || loss.reserved || loss.outstanding || "");
+  });
+  // If no losses, mark "no previous claims"
+  if (lossHistory.length === 0 && aiData.no_previous_claims !== false && aiData.no_previous_claims !== "No") {
+    setIfEmpty("no_previous_claims", "true");
+  }
+
+  // 5e-6c. Auto-generate coverage remarks from checkbox state
+  const coverageRemarkParts: string[] = [];
+  if (mapped.has_cgl_occurrence === "true") coverageRemarkParts.push("CGL – occurrence basis");
+  if (mapped.has_any_auto === "true") coverageRemarkParts.push("Any Auto (Symbol 1)");
+  if (mapped.has_ebl_coverage === "true") coverageRemarkParts.push("EBL included");
+  // Negative statements for common exclusions
+  if (!mapped.has_aircraft_liability && !aiData.has_aircraft_liability) coverageRemarkParts.push("No aircraft exposure");
+  if (!mapped.has_watercraft_liability && !aiData.has_watercraft_liability) coverageRemarkParts.push("No watercraft exposure");
+  if (!mapped.has_liquor_liability && !aiData.has_liquor_liability) coverageRemarkParts.push("No liquor liability");
+  if (!mapped.has_pollution_liability && !aiData.has_pollution_liability) coverageRemarkParts.push("No pollution exposure");
+  if (coverageRemarkParts.length > 0) {
+    setIfEmpty("coverage_remarks", coverageRemarkParts.join("; ") + ".");
+  }
 
   // 5e-7. Map umbrella premium fields
   setIfEmpty("umbrella_est_annual_premium", aiData.umbrella_est_annual_premium || aiData.umbrella_premium || "");
@@ -1141,6 +1245,41 @@ export function buildAutofilledData(
   setIfEmpty("applicant_printed_name", aiData.applicant_printed_name || aiData.contact_name || "");
   setIfEmpty("applicant_title", aiData.applicant_title || "");
   setIfEmpty("applicant_signature_date", aiData.applicant_signature_date || aiData.signature_date || "");
+
+  // 5e-9. Auto-populate fleet from vehicles[] array (count by body type)
+  const vehicles: any[] = Array.isArray(aiData.vehicles) ? aiData.vehicles : [];
+  if (vehicles.length > 0) {
+    const counts: Record<string, { owned: number; leased: number; nonowned: number }> = {
+      pp: { owned: 0, leased: 0, nonowned: 0 },
+      lt: { owned: 0, leased: 0, nonowned: 0 },
+      mt: { owned: 0, leased: 0, nonowned: 0 },
+      ht: { owned: 0, leased: 0, nonowned: 0 },
+      bus: { owned: 0, leased: 0, nonowned: 0 },
+    };
+    for (const v of vehicles) {
+      const bt = classifyVehicleBodyType(v.make || "", v.model || "").toLowerCase();
+      const ownership = (v.ownership || "owned").toLowerCase();
+      let cat = "pp"; // default
+      if (bt === "pickup" || bt === "van") cat = "lt";
+      else if (bt === "truck") {
+        const gvw = parseInt(String(v.gvw || "0").replace(/\D/g, ""), 10);
+        cat = gvw > 26000 ? "ht" : gvw > 14000 ? "mt" : "lt";
+      } else if (bt === "suv" || bt === "sedan") cat = "pp";
+      
+      if (ownership.includes("lease") || ownership.includes("hired")) {
+        counts[cat].leased++;
+      } else if (ownership.includes("non")) {
+        counts[cat].nonowned++;
+      } else {
+        counts[cat].owned++;
+      }
+    }
+    for (const [cat, c] of Object.entries(counts)) {
+      if (c.owned > 0) setIfEmpty(`fleet_${cat}_owned`, String(c.owned));
+      if (c.leased > 0) setIfEmpty(`fleet_${cat}_leased`, String(c.leased));
+      if (c.nonowned > 0) setIfEmpty(`fleet_${cat}_nonowned`, String(c.nonowned));
+    }
+  }
 
   // 5f. Expand wc_classifications[] → class_code_N fields
   const wcClasses: any[] = Array.isArray(aiData.wc_classifications) ? aiData.wc_classifications : [];
