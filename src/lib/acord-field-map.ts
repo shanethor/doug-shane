@@ -593,16 +593,25 @@ export const ACORD_140_FIELD_MAP: AcordFieldMap = {
   fire_alarm_type_2:        "FIRE ALARM 2",
   central_station_monitoring_2: "CENTRAL STATION MONITORING 2",
 
-  // Additional Interests
+  // Additional Interests — P1
   interest_name:            "ADDITIONAL INTEREST NAME",
   interest_address_1:       "ADDITIONAL INTEREST ADDRESS",
   interest_rank:            "ADDITIONAL INTEREST RANK",
   interest_item:            "ADDITIONAL INTEREST ITEM",
+  interest_role:            "ADDITIONAL INTEREST ROLE",
+
+  // Additional Interests — P2
+  interest_name_2:          "ADDITIONAL INTEREST NAME 2",
+  interest_address_1_2:     "ADDITIONAL INTEREST ADDRESS 2",
+  interest_rank_2:          "ADDITIONAL INTEREST RANK 2",
+  interest_item_2:          "ADDITIONAL INTEREST ITEM 2",
+  interest_role_2:          "ADDITIONAL INTEREST ROLE 2",
 
   // Equipment Breakdown
   equipment_breakdown_limit:     "EQUIPMENT BREAKDOWN LIMIT",
   equipment_breakdown_deductible:"EQUIPMENT BREAKDOWN DEDUCTIBLE",
   equipment_breakdown_premium:   "EQUIPMENT BREAKDOWN PREMIUM",
+  equipment_breakdown_excluded:  "EQUIPMENT BREAKDOWN EXCLUDED",
 
   // Ordinance or Law
   ordinance_a_limit:        "ORDINANCE A LIMIT",
@@ -615,16 +624,39 @@ export const ACORD_140_FIELD_MAP: AcordFieldMap = {
   earthquake_locations:     "EARTHQUAKE LOCATIONS",
   earthquake_deductible:    "EARTHQUAKE DEDUCTIBLE",
   earthquake_premium:       "EARTHQUAKE PREMIUM",
+  earthquake_excluded:      "EARTHQUAKE EXCLUDED",
 
-  // Loss History
+  // Hazard Flags (boolean toggles)
+  hazardous_operations:     "HAZARDOUS OPERATIONS",
+  cooking_operations:       "COOKING OPERATIONS",
+  spray_painting_operations:"SPRAY PAINTING OPERATIONS",
+  smoke_detectors:          "SMOKE DETECTORS",
+  boiler_insurance_elsewhere:"BOILER INSURANCE ELSEWHERE",
+
+  // Loss History (tabular — 3 rows × 6 cols)
   prop_loss_date_1:         "LOSS DATE 1",
+  prop_loss_location_1:     "LOSS LOCATION 1",
   prop_loss_type_1:         "LOSS TYPE 1",
   prop_loss_gross_1:        "LOSS GROSS 1",
+  prop_loss_deductible_1:   "LOSS DEDUCTIBLE 1",
   prop_loss_net_paid_1:     "LOSS NET PAID 1",
+  prop_loss_date_2:         "LOSS DATE 2",
+  prop_loss_location_2:     "LOSS LOCATION 2",
+  prop_loss_type_2:         "LOSS TYPE 2",
+  prop_loss_gross_2:        "LOSS GROSS 2",
+  prop_loss_deductible_2:   "LOSS DEDUCTIBLE 2",
+  prop_loss_net_paid_2:     "LOSS NET PAID 2",
+  prop_loss_date_3:         "LOSS DATE 3",
+  prop_loss_location_3:     "LOSS LOCATION 3",
+  prop_loss_type_3:         "LOSS TYPE 3",
+  prop_loss_gross_3:        "LOSS GROSS 3",
+  prop_loss_deductible_3:   "LOSS DEDUCTIBLE 3",
+  prop_loss_net_paid_3:     "LOSS NET PAID 3",
 
   // Premium
   premium_premises_1:       "PREMIUM PREMISES 1",
   premium_premises_2:       "PREMIUM PREMISES 2",
+  premium_premises_3:       "PREMIUM PREMISES 3",
   total_estimated_annual_premium: "TOTAL ESTIMATED ANNUAL PREMIUM",
   deposit_premium:          "DEPOSIT PREMIUM",
   minimum_earned_premium:   "MINIMUM EARNED PREMIUM",
@@ -638,6 +670,8 @@ export const ACORD_140_FIELD_MAP: AcordFieldMap = {
   producer_license_no:      "STATE LICENSE NO",
   national_producer_number: "NATIONAL PRODUCER NUMBER",
   signature_date:           "SIGNATURE DATE",
+  signed_by_name:           "SIGNED BY NAME",
+  signed_by_title:          "SIGNED BY TITLE",
 };
 
 // ─────────────────────────────────────────────────────────────────
