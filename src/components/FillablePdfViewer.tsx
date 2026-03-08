@@ -263,15 +263,13 @@ const FillablePdfViewer = forwardRef<FillablePdfViewerHandle, FillablePdfViewerP
                     filled++;
                   }
                 } else if (typeof f.setText === "function") {
-                  // Text field — but if value is a checkbox signal AND maxLen=1, write "X"
                   let textVal = String(value);
                   const maxLen = f.getMaxLength?.();
-                  if (isCheckboxValue && maxLen === 1) {
-                    // ACORD PDFs sometimes use text fields with maxLen=1 as pseudo-checkboxes
-                    textVal = "X";
-                  } else if (isCheckboxValue && !maxLen) {
-                    // If it's a checkbox value going into a text field without maxLen, skip it
-                    // (likely a mapping issue — don't write "On" as text)
+                  if (isCheckboxValue) {
+                    // Checkbox value landing in a text field — skip it entirely.
+                    // The correct checkbox field should be targeted by its own index.
+                    // Writing "X" here causes visual inconsistency with native checkboxes.
+                    console.warn(`[pdf-lib] Checkbox value "${value}" for index ${idx} landed in a text field — skipping (check index map)`);
                     continue;
                   } else if (maxLen && textVal.length > maxLen) {
                     if (maxLen === 1) {
