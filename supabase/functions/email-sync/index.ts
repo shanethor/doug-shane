@@ -189,18 +189,22 @@ serve(async (req) => {
         const mailData = await mailResp.json();
         if (!mailResp.ok) throw new Error(`Outlook error: ${JSON.stringify(mailData)}`);
 
-        emails = (mailData.value || []).map((m: any) => ({
-          user_id: userId,
-          connection_id: conn.id,
-          external_id: m.id,
-          from_address: m.from?.emailAddress?.address || "",
-          from_name: m.from?.emailAddress?.name || null,
-          to_addresses: (m.toRecipients || []).map((r: any) => r.emailAddress?.address),
-          subject: m.subject || "",
-          body_preview: m.bodyPreview || "",
-          is_read: m.isRead ?? false,
-          received_at: m.receivedDateTime,
-        }));
+        emails = (mailData.value || []).map((m: any) => {
+          const tags = classifyEmail(m.subject || "", m.bodyPreview || "");
+          return {
+            user_id: userId,
+            connection_id: conn.id,
+            external_id: m.id,
+            from_address: m.from?.emailAddress?.address || "",
+            from_name: m.from?.emailAddress?.name || null,
+            to_addresses: (m.toRecipients || []).map((r: any) => r.emailAddress?.address),
+            subject: m.subject || "",
+            body_preview: m.bodyPreview || "",
+            is_read: m.isRead ?? false,
+            received_at: m.receivedDateTime,
+            ...(tags.length > 0 ? { tags } : {}),
+          };
+        });
       }
 
       // Upsert emails — preserve local is_read state for existing emails
