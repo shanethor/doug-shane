@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { ProductionScoreboard } from "@/components/ProductionScoreboard";
+import { ProducerHudRail } from "@/components/ProducerHudRail";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -142,7 +142,7 @@ export default function ProducerDashboard({ embedded }: { embedded?: boolean } =
       </div>
 
       {user && (
-        <ProductionScoreboard
+        <ProducerHudRail
           userId={user.id}
           premiumSold={stats.totalPremium}
           revenueSold={stats.totalRevenue}
