@@ -452,7 +452,7 @@ export const ACORD_FORM_TYPE_LABELS: Record<AcordFormType, string> = {
   ACORD_130: "ACORD 130 — Workers Compensation",
   ACORD_131: "ACORD 131 — Umbrella / Excess",
   ACORD_140: "ACORD 140 — Property",
-  ACORD_75:  "ACORD 75 — Workers Comp Application",
+  ACORD_75:  "ACORD 75 — Insurance Binder",
 };
 
 /** Map form_type string to our internal formId used elsewhere */
