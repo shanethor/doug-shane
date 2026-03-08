@@ -537,12 +537,12 @@ serve(async (req) => {
       });
     }
 
-    const { messages, trainingMode } = await req.json();
+    const { messages, trainingMode, userRole } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("Service temporarily unavailable");
 
     const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
-    const systemPrompt = buildSystemPrompt(trainingMode !== false);
+    const systemPrompt = buildSystemPrompt(trainingMode !== false, userRole || "producer");
 
     if (ANTHROPIC_API_KEY) {
       // Use Claude Sonnet 4 for chat — faster and more accurate
