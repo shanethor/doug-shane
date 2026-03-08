@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { ingestDocument } from "@/services/aiRouter";
+import { getQuestionsForCoverage, groupQuestionsBySection, SECTION_LABELS, type AcordQuestion, type AcordSection } from "@/lib/acord-question-defs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
