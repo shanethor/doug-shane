@@ -327,6 +327,14 @@ export interface Acord75AdditionalParty {
   };
 }
 
+export interface Acord75PropertySubject {
+  subject?: string;
+  forms?: string;
+  deductible?: string;
+  coinsurance?: string;
+  limit?: string;
+}
+
 export interface Acord75Data {
   header: AcordHeader;
 
@@ -363,6 +371,7 @@ export interface Acord75Data {
   gl_damage_to_premises_rented?: string;
   gl_medical_expense?: string;
   gl_retro_date?: string;
+  gl_premium?: string;
 
   // Auto
   auto_any_auto?: boolean;
@@ -377,6 +386,7 @@ export interface Acord75Data {
   auto_um_uim_limit?: string;
   auto_pip_limit?: string;
   auto_med_pay_limit?: string;
+  auto_premium?: string;
 
   // Vehicle Physical Damage
   vpd_valuation?: string;
@@ -384,17 +394,26 @@ export interface Acord75Data {
   vpd_other_than_collision_deductible?: string;
   vpd_applies_to?: string;
 
-  // Property
+  // Property — Coverage Type & Subjects A-D
   property_causes_of_loss?: string; // "BASIC" | "BROAD" | "SPECIAL"
+  property_subjects: Acord75PropertySubject[];
   property_limit?: string;
   property_deductible?: string;
   property_coinsurance_pct?: string;
+  property_premium?: string;
+
+  // Garage Liability
+  garage_any_auto?: boolean;
+  garage_auto_only_limit?: string;
+  garage_other_limit?: string;
+  garage_aggregate?: string;
 
   // Workers Comp
   wc_per_statute?: boolean;
   wc_each_accident?: string;
   wc_disease_each_employee?: string;
   wc_disease_policy_limit?: string;
+  wc_premium?: string;
 
   // Excess / Umbrella
   excess_form?: string; // "UMBRELLA" | "EXCESS"
@@ -403,6 +422,7 @@ export interface Acord75Data {
   excess_aggregate?: string;
   excess_sir?: string;
   excess_retro_date?: string;
+  excess_premium?: string;
 
   // Financials
   fees?: string;
