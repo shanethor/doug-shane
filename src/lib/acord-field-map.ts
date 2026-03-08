@@ -3263,73 +3263,68 @@ export const ACORD_75_INDEX_MAP: AcordIndexMap = {
   per_expiring_policy_number: 29,
   naic_code:               6,   // reuse agency_state slot (no dedicated NAIC field)
 
-  // Coverage checkbox aliases (schema keys → PDF indices)
-  gl_trigger:             60,   // chk_gl_occurrence (write occurrence by default; extraction picks correct one)
+  // ── Schema key aliases (map UI/schema keys to PDF indices) ──
+  policy_number:          29,   // expiring_policy_number
+  per_expiring_policy_number: 29,
+  naic_code:               6,   // reuse agency_state slot
+
+  // Coverage checkbox aliases
+  gl_trigger:             60,   // chk_gl_occurrence
   auto_any_auto:          75,   // chk_auto_any
   auto_owned_only:        76,   // chk_auto_all_owned
-  auto_scheduled_only:    77,   // chk_auto_scheduled
-  auto_hired_only:        78,   // chk_auto_hired
-  auto_non_owned_only:    79,   // chk_auto_non_owned
-  auto_combined_single_limit: 85, // auto_csl
-  auto_bi_per_person:     86,
-  auto_bi_per_accident:   87,
+  auto_scheduled_only:    77,
+  auto_hired_only:        78,
+  auto_non_owned_only:    79,
+  auto_combined_single_limit: 85,
   auto_property_damage:   88,
-  auto_med_pay_limit:     89,   // auto_med_pay
-  auto_pip_limit:         90,   // auto_pip
-  auto_um_uim_limit:      91,   // auto_um
+  auto_med_pay_limit:     89,
+  auto_pip_limit:         90,
+  auto_um_uim_limit:      91,
   vpd_collision_deductible: 95,
   vpd_other_than_collision_deductible: 97,
 
   // Property aliases
-  property_limit:         42,   // prop_a_limit (primary)
-  property_deductible:    40,   // prop_a_deductible (primary)
-  property_coinsurance_pct: 41, // prop_a_coinsurance
+  property_limit:         42,   // prop_a_limit
+  property_deductible:    40,   // prop_a_deductible
+  property_coinsurance_pct: 41,
 
   // GL limit aliases
-  gl_each_occurrence:     69,
   gl_damage_to_premises_rented: 70,
   gl_medical_expense:     71,
   gl_personal_adv_injury: 72,
-  gl_general_aggregate:   73,
-  gl_products_comp_ops_agg: 74,
-  gl_retro_date:          68,   // gl_retroactive_date
+  gl_retro_date:          68,
 
   // Garage aliases
-  garage_any_auto:       106,   // chk_garage_any
-  garage_auto_only_limit: 112,  // garage_auto_only
-  garage_other_limit:    113,   // garage_other_desc
-  garage_aggregate:      115,   // garage_other_aggregate
+  garage_any_auto:       106,
+  garage_auto_only_limit: 112,
+  garage_other_limit:    113,
+  garage_aggregate:      115,
 
   // WC aliases
-  wc_per_statute:        124,   // chk_wc_statutory
-  wc_each_accident:      126,
-  wc_disease_each_employee: 127,
-  wc_disease_policy_limit: 128,
+  wc_per_statute:        124,
 
   // Excess aliases
-  excess_each_occurrence: 120,
-  excess_aggregate:      121,
-  excess_sir:            122,   // excess_deductible
-  excess_retro_date:     119,   // excess_retroactive_date
+  excess_sir:            122,
+  excess_retro_date:     119,
 
   // Financial aliases
-  fees:                  130,   // fee_amount
-  taxes:                 131,   // tax_amount
-  estimated_total_premium: 132, // estimated_total
+  fees:                  130,
+  taxes:                 131,
+  estimated_total_premium: 132,
 
   // Party 1 aliases
-  party_1_name:          133,   // interest_name
-  party_1_address:       134,   // interest_address_1
-  party_1_city:          136,   // interest_city
-  party_1_state:         137,   // interest_state
-  party_1_zip:           138,   // interest_zip
-  party_1_additional_insured: 139, // chk_addl_insured
-  party_1_loss_payee:    141,   // chk_loss_payee
-  party_1_mortgagee:     142,   // chk_mortgagee
+  party_1_name:          133,
+  party_1_address:       134,
+  party_1_city:          136,
+  party_1_state:         137,
+  party_1_zip:           138,
+  party_1_additional_insured: 139,
+  party_1_loss_payee:    141,
+  party_1_mortgagee:     142,
 
   // Remarks / Signature
-  remarks:               129,   // reuse special_conditions slot
-  producer_name:         146,   // producer_signature
+  remarks:               129,
+  producer_name:         146,
 };
 
 // ── ACORD 125 (2016/03) — Commercial Insurance Application — 550+ fields ──
