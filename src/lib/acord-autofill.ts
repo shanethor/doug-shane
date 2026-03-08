@@ -732,6 +732,12 @@ export function buildAutofilledData(
     }
   }
 
+  // 5a. Back-fill shared header fields from 125/overall data for supplemental forms (126, 127, 130, 131, 140)
+  // These forms share the same policy so naic_code, policy_number, carrier should mirror the 125 header.
+  if (!mapped.naic_code && aiData.naic_code) mapped.naic_code = aiData.naic_code;
+  if (!mapped.policy_number && aiData.policy_number) mapped.policy_number = aiData.policy_number;
+  if (!mapped.carrier && aiData.carrier) mapped.carrier = aiData.carrier;
+
   // 5b. Expand vehicles[] array → vehicle_N_year/make/model/vin/body_type fields
   const vehicles: any[] = Array.isArray(aiData.vehicles) ? aiData.vehicles : [];
   vehicles.forEach((v: any, idx: number) => {
