@@ -1447,11 +1447,13 @@ export default function Chat() {
         }
       }
       
-      const contentWithContext = `${dateContext}${leadsContext}\n${content}`;
+      const roleContext = role ? `\n[CONTEXT: User role is "${role}"]` : "";
+      const contentWithContext = `${dateContext}${leadsContext}${roleContext}\n${content}`;
       
       await streamChat({
         messages: [...messages, { role: userMsg.role, content: contentWithContext }].map((m) => ({ role: m.role, content: m.content })),
         trainingMode,
+        userRole: role,
         onDelta: upsert,
         onDone: () => {
           clearTimeout(safetyTimeout);
