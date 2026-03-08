@@ -1262,6 +1262,7 @@ const acord140Fields: AcordFormField[] = [
   { key: "equipment_breakdown_limit", label: "Equipment Breakdown Limit", type: "currency", section: "Equipment Breakdown" },
   { key: "equipment_breakdown_deductible", label: "Equipment Breakdown Deductible", type: "currency", section: "Equipment Breakdown" },
   { key: "equipment_breakdown_premium", label: "Equipment Breakdown Premium", type: "currency", section: "Equipment Breakdown" },
+  { key: "equipment_breakdown_excluded", label: "Equipment Breakdown: Not Included", type: "checkbox", section: "Equipment Breakdown" },
   { key: "spoilage_limit_eb", label: "Spoilage Limit (EB)", type: "currency", section: "Equipment Breakdown" },
   { key: "expediting_expense_limit", label: "Expediting Expense Limit", type: "currency", section: "Equipment Breakdown" },
 
