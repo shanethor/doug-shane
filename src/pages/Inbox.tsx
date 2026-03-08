@@ -132,7 +132,7 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
 
     const { data } = await supabase
       .from("synced_emails")
-      .select("id, from_address, from_name, to_addresses, subject, body_preview, body_html, is_read, received_at, synced_at")
+      .select("id, from_address, from_name, to_addresses, subject, body_preview, body_html, is_read, received_at, synced_at, tags, client_id, client_link_source")
       .eq("user_id", user.id)
       .order("received_at", { ascending: false })
       .limit(100);
