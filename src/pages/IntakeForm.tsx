@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { ingestDocument } from "@/services/aiRouter";
+import { getQuestionsForCoverage, groupQuestionsBySection, SECTION_LABELS, type AcordQuestion, type AcordSection } from "@/lib/acord-question-defs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -117,7 +118,7 @@ const emptyRecVehicle = (): RecreationalVehicle => ({ rec_type: "", year: "", ma
 const emptyArticle = (): PersonalArticle => ({ description: "", category: "", estimated_value: "" });
 
 /* ─── Commercial Lines Types ─── */
-type CommercialStepKey = "industry" | "insurance_check" | "owner_experience" | "upload_dec" | "loss_run_auth" | "bor_auth" | "business_info" | "commercial_docs";
+type CommercialStepKey = "industry" | "insurance_check" | "owner_experience" | "upload_dec" | "loss_run_auth" | "bor_auth" | "coverage_select_comm" | "coverage_questions" | "business_info" | "commercial_docs";
 
 const COMMERCIAL_LINES = [
   "General Liability", "Workers Compensation", "Commercial Auto",
@@ -173,6 +174,9 @@ interface CommercialFormData {
   // No-insurance experience flow
   owner_resume_text: string;
   owner_resume_files: string[];
+  // Coverage selection + ACORD-driven fields
+  selected_coverage_lines: string[];
+  acord_data: Record<string, any>;
 }
 
 const emptyLossRunPolicy = (): LossRunPolicyInfo => ({
@@ -197,6 +201,8 @@ const emptyCommercial = (): CommercialFormData => ({
   has_other_broker: "", wants_bor: "", bor_lines: [], bor_authorized: false,
   carrier_email: "",
   owner_resume_text: "", owner_resume_files: [],
+  selected_coverage_lines: [],
+  acord_data: {},
 });
 
 /* ─── Personal step keys (dynamic flow) ─── */
@@ -761,6 +767,16 @@ export default function IntakeForm() {
           if (f.employee_count) lines.push(`Number of Employees: ${f.employee_count}`);
           if (f.annual_revenue) lines.push(`Annual Revenue: ${f.annual_revenue}`);
           if (f.years_in_business) lines.push(`Years in Business: ${f.years_in_business}`);
+          if (f.selected_coverage_lines.length > 0) lines.push(`Requested Coverage Lines: ${f.selected_coverage_lines.join(", ")}`);
+          // Include ACORD question answers
+          if (Object.keys(f.acord_data).length > 0) {
+            lines.push(`--- ACORD Underwriting Data ---`);
+            for (const [key, val] of Object.entries(f.acord_data)) {
+              if (val !== "" && val !== undefined && val !== null) {
+                lines.push(`${key}: ${val}`);
+              }
+            }
+          }
           if (f.has_current_insurance === "yes") {
             lines.push(`Current Carrier: ${f.current_carrier_name}`);
             if (f.policy_number) lines.push(`Policy #: ${f.policy_number}`);
@@ -2333,6 +2349,8 @@ export default function IntakeForm() {
                 }
                 steps.push("bor_auth");
                 steps.push("business_info");
+                steps.push("coverage_select_comm");
+                steps.push("coverage_questions");
                 steps.push("commercial_docs");
                 return steps;
               };
@@ -2345,6 +2363,8 @@ export default function IntakeForm() {
                 loss_run_auth: "Loss Run Authorization",
                 bor_auth: "Broker Authorization",
                 business_info: "Your Information",
+                coverage_select_comm: "Coverage Lines",
+                coverage_questions: "Coverage Details",
                 commercial_docs: "Documents & Submit",
               };
               const commIdx = commSteps.indexOf(commercialStep);
@@ -2383,6 +2403,9 @@ export default function IntakeForm() {
                 }
                 if (commercialStep === "business_info") {
                   return !!(commercialForm.business_name.trim() && commercialForm.customer_name.trim() && commercialForm.customer_email.trim() && /^[\w.-]+@[\w.-]+\.\w+$/.test(commercialForm.customer_email.trim()) && commercialForm.customer_phone.trim());
+                }
+                if (commercialStep === "coverage_select_comm") {
+                  return commercialForm.selected_coverage_lines.length > 0;
                 }
                 return true;
               };
@@ -2743,6 +2766,111 @@ export default function IntakeForm() {
                       <p className="text-[10px] text-center font-medium tracking-wide text-muted-foreground">Insurance runs on <span className="text-primary font-bold">AURA</span></p>
                     </div>
                   )}
+
+                  {commercialStep === "coverage_select_comm" && (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-base">What coverage lines do you need?</CardTitle>
+                        <p className="text-sm text-muted-foreground">Select all that apply. This helps us ask the right underwriting questions and prepare the correct ACORD forms.</p>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid grid-cols-2 gap-3">
+                          {["General Liability", "Workers Compensation", "Commercial Auto", "Commercial Property", "Umbrella / Excess", "Professional Liability", "Cyber Liability", "Other"].map(line => {
+                            const sel = commercialForm.selected_coverage_lines.includes(line);
+                            return (
+                              <button key={line} onClick={() => {
+                                const newLines = sel
+                                  ? commercialForm.selected_coverage_lines.filter(l => l !== line)
+                                  : [...commercialForm.selected_coverage_lines, line];
+                                updateCommercial("selected_coverage_lines", newLines);
+                              }}
+                              className={`p-3 rounded-xl border-2 text-left text-sm font-medium transition-all ${sel ? "bg-primary/10 border-primary" : "border-border hover:border-primary/40"}`}>
+                                {line}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {commercialStep === "coverage_questions" && (() => {
+                    const questions = getQuestionsForCoverage(commercialForm.selected_coverage_lines);
+                    // Filter out questions already answered in business_info step
+                    const alreadyCovered = new Set(["business_name", "dba", "years_in_business", "mailing_address", "business_entity_type"]);
+                    const activeQuestions = questions.filter(q =>
+                      !alreadyCovered.has(q.key) &&
+                      (!q.dependsOn || q.dependsOn(commercialForm.acord_data))
+                    );
+                    const grouped = groupQuestionsBySection(activeQuestions);
+                    const sections = Object.keys(grouped) as AcordSection[];
+
+                    const updateAcordField = (key: string, value: any) => {
+                      updateCommercial("acord_data", { ...commercialForm.acord_data, [key]: value });
+                    };
+
+                    const renderQuestion = (q: AcordQuestion) => {
+                      const val = commercialForm.acord_data[q.key] ?? "";
+                      switch (q.type) {
+                        case "text":
+                          return <Input value={val} onChange={e => updateAcordField(q.key, e.target.value)} placeholder={q.placeholder} />;
+                        case "number":
+                          return <Input type="number" value={val} onChange={e => updateAcordField(q.key, e.target.value)} placeholder={q.placeholder} />;
+                        case "currency":
+                          return <Input value={val} onChange={e => updateAcordField(q.key, e.target.value)} placeholder={q.placeholder || "$0"} />;
+                        case "date":
+                          return <Input type="date" value={val} onChange={e => updateAcordField(q.key, e.target.value)} />;
+                        case "boolean":
+                          return (
+                            <Select value={val === true ? "yes" : val === false ? "no" : val || ""} onValueChange={v => updateAcordField(q.key, v)}>
+                              <SelectTrigger className="h-10 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+                              <SelectContent><SelectItem value="yes">Yes</SelectItem><SelectItem value="no">No</SelectItem></SelectContent>
+                            </Select>
+                          );
+                        case "select":
+                          return (
+                            <Select value={val} onValueChange={v => updateAcordField(q.key, v)}>
+                              <SelectTrigger className="h-10 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+                              <SelectContent>{(q.options || []).map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent>
+                            </Select>
+                          );
+                        default:
+                          return <Input value={val} onChange={e => updateAcordField(q.key, e.target.value)} />;
+                      }
+                    };
+
+                    return (
+                      <div className="space-y-6">
+                        <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
+                          <p className="text-sm">These questions help us prefill your ACORD application forms so your agent can start working immediately.</p>
+                        </div>
+                        {sections.map(section => (
+                          <Card key={section}>
+                            <CardHeader>
+                              <CardTitle className="text-base">{SECTION_LABELS[section] || section}</CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                              {grouped[section].map(q => (
+                                <div key={q.key} className="space-y-1.5">
+                                  <Label className="text-xs font-medium">
+                                    {q.label} {q.required && <span className="text-destructive">*</span>}
+                                  </Label>
+                                  {renderQuestion(q)}
+                                </div>
+                              ))}
+                            </CardContent>
+                          </Card>
+                        ))}
+                        {sections.length === 0 && (
+                          <Card>
+                            <CardContent className="py-8 text-center">
+                              <p className="text-sm text-muted-foreground">No additional questions needed for your selected coverage lines. Continue to the next step.</p>
+                            </CardContent>
+                          </Card>
+                        )}
+                      </div>
+                    );
+                  })()}
 
                   {commercialStep === "commercial_docs" && (
                     <div className="space-y-6">
