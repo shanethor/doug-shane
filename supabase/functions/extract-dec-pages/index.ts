@@ -21,9 +21,10 @@ Extract the following fields where available. Return empty strings for missing d
   "applicant_state": "2-letter state code",
   "applicant_zip": "",
   "current_carrier": "Insurance company name",
+  "naic_code": "Insurance company NAIC code (digits only)",
+  "naic_number": "Insurance company NAIC code (digits only)",
   "policy_number": "",
   "policy_effective_date": "YYYY-MM-DD",
-  "policy_expiration_date": "YYYY-MM-DD",
   "drivers": [
     { "name": "", "dob": "YYYY-MM-DD", "license_number": "", "license_state": "", "gender": "male|female|other", "marital_status": "single|married|divorced|widowed" }
   ],
