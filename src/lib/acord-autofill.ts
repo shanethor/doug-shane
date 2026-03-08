@@ -1256,7 +1256,7 @@ export function buildAutofilledData(
       ht: { owned: 0, leased: 0, nonowned: 0 },
       bus: { owned: 0, leased: 0, nonowned: 0 },
     };
-    for (const v of vehicles) {
+    for (const v of fleetVehicles) {
       const bt = classifyVehicleBodyType(v.make || "", v.model || "").toLowerCase();
       const ownership = (v.ownership || "owned").toLowerCase();
       let cat = "pp"; // default
