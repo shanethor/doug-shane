@@ -1238,9 +1238,10 @@ export async function buildAutofilledDataWithAI(
   aiData: Record<string, any>,
   profile?: { full_name?: string | null; agency_name?: string | null; phone?: string | null } | null,
   formDefaults?: Record<string, string> | null,
+  baseData?: Record<string, any> | null,
 ): Promise<{ data: Record<string, any>; aiInferredCount: number }> {
-  // Step 1: Static mapping
-  const staticMapped = buildAutofilledData(form, aiData, profile, formDefaults);
+  // Step 1: Static mapping (with trusted header back-fill from baseData)
+  const staticMapped = buildAutofilledData(form, aiData, profile, formDefaults, baseData);
 
   // Step 2: AI inference for remaining gaps
   const aiMappings = await aiInferFieldMappings(form, aiData, staticMapped);

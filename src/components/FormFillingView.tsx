@@ -825,7 +825,7 @@ export default function FormFillingView({ submissionId, initialMessages, initial
       const merged: Record<string, any> = { ...formData };
 
       for (const form of enabledFormList) {
-        const { data: inferred, aiInferredCount } = await buildAutofilledDataWithAI(form, aiData);
+        const { data: inferred, aiInferredCount } = await buildAutofilledDataWithAI(form, aiData, undefined, undefined, aiData);
         for (const [k, v] of Object.entries(inferred)) {
           if (!merged[k] && v !== "" && v !== null && v !== undefined) {
             merged[k] = v;
