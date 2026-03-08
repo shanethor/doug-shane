@@ -57,7 +57,7 @@ Deno.serve(async (req) => {
         </p>
         <p style="color: #444; line-height: 1.6;">
           Please click the button below to fill out the intake form. It covers Auto, Home, Boat, and Umbrella coverage.
-          The link expires in 7 days.
+          The link expires in 30 days.
         </p>
         <div style="text-align: center; margin: 32px 0;">
           <a href="${intakeUrl}" style="display: inline-block; padding: 14px 32px; background-color: #1a1a2e; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px;">

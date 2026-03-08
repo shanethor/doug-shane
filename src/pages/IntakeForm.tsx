@@ -854,7 +854,7 @@ export default function IntakeForm() {
                   body: {
                     to: commercialForm.customer_email,
                     subject: `Broker of Record Authorization – ${commercialForm.business_name}`,
-                    body: `<p>Dear ${commercialForm.customer_name},</p><p>Please sign your Broker of Record authorization letter by clicking the link below:</p><p><a href="${signingUrl}" style="display:inline-block;padding:12px 24px;background:#142D5A;color:#fff;text-decoration:none;border-radius:6px;font-weight:bold;">Sign BOR Letter</a></p><p>This link expires in 7 days.</p><p>Best regards,<br/>AURA Risk Group</p>`,
+                    body: `<p>Dear ${commercialForm.customer_name},</p><p>Please sign your Broker of Record authorization letter by clicking the link below:</p><p><a href="${signingUrl}" style="display:inline-block;padding:12px 24px;background:#142D5A;color:#fff;text-decoration:none;border-radius:6px;font-weight:bold;">Sign BOR Letter</a></p><p>This link expires in 30 days.</p><p>Best regards,<br/>AURA Risk Group</p>`,
                   },
                 });
               } catch { /* email failure non-blocking */ }

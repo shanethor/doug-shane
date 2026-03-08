@@ -1042,7 +1042,7 @@ export default function Chat() {
         ...prev,
         {
           role: "assistant",
-          content: `✅ **Personal lines intake link generated!**${emailNote}\n\n\`${result.url}\`\n\nWhen submitted, a summary will be delivered to: **${recipients}**.\n\nThe form covers **Auto, Home, Boat, and Umbrella** coverage plus document uploads. The link expires in 7 days.`,
+          content: `✅ **Personal lines intake link generated!**${emailNote}\n\n\`${result.url}\`\n\nWhen submitted, a summary will be delivered to: **${recipients}**.\n\nThe form covers **Auto, Home, Boat, and Umbrella** coverage plus document uploads. The link expires in 30 days.`,
         },
       ]);
       toast({ title: "Link generated!", description: config.clientEmail ? `Intake link sent to ${config.clientEmail}` : "Copy the link to share with your client." });
