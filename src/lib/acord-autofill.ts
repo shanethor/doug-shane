@@ -634,6 +634,9 @@ export const CURRENCY_FIELDS = new Set([
   "inland_marine_premium", "boiler_premium", "bop_premium", "garage_premium", "liquor_premium",
   "standard_premium", "modified_premium", "expense_constant", "terrorism_premium", "cat_premium",
   "second_injury_fund", "wc_fund_assessment", "products_completed_ops_aggregate",
+  "schedule_rating_prem", "ccpap_prem", "standard_premium_prem", "premium_discount_prem",
+  "taxes_fees", "assigned_risk_prem", "assigned_risk_addl_prem",
+  "state_total_est_premium", "state_minimum_premium", "state_deposit_premium",
   "crisis_mgmt_limit", "hired_auto_cost_of_hire", "hired_auto_premium", "non_owned_premium",
   "accounts_receivable_limit", "valuable_papers_limit", "edp_media_limit", "fine_arts_limit",
   "fungus_limit", "coverage_extensions_limit", "bi_dependent_properties_limit",
@@ -661,6 +664,18 @@ const enforceNumericCode = (value: string): string => {
   return digits || "";
 };
 
+/** Normalize officer INC/EXC raw values ("I"→"Included", "E"→"Excluded") */
+const normalizeIncExc = (val: string): string => {
+  const v = val.trim().toUpperCase();
+  if (v === "I" || v === "INC" || v === "INCLUDE" || v === "INCLUDED") return "Included";
+  if (v === "E" || v === "EXC" || v === "EXCLUDE" || v === "EXCLUDED") return "Excluded";
+  return val;
+};
+
+const INC_EXC_FIELDS = new Set([
+  "officer_1_inc_exc", "officer_2_inc_exc", "officer_3_inc_exc", "officer_4_inc_exc",
+]);
+
 const normalizeValue = (fieldKey: string, value: any): any => {
   // Filter out boolean false values — they leak from checkbox/flag fields
   if (value === false) return "";
@@ -672,6 +687,8 @@ const normalizeValue = (fieldKey: string, value: any): any => {
   if (CURRENCY_FIELDS.has(fieldKey)) return cleanCurrency(s);
   // CODE fields must be numeric only
   if (isCodeField(fieldKey)) return enforceNumericCode(s);
+  // Officer Inc/Exc normalization: "I" → "Included", "E" → "Excluded"
+  if (INC_EXC_FIELDS.has(fieldKey)) return normalizeIncExc(s);
   return Array.isArray(value) ? value.join(", ") : s;
 };
 
