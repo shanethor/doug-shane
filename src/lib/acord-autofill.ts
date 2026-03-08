@@ -1638,6 +1638,145 @@ export function buildAutofilledData(
     mapped.premises_loc_number = "1";
   }
 
+  // 18. ACORD 140 — Expand buildings[] / locations[] into multi-premises fields
+  const buildings: any[] = Array.isArray(aiData.buildings) ? aiData.buildings
+    : Array.isArray(aiData.locations) ? aiData.locations : [];
+
+  if (buildings.length > 0) {
+    // Subject row letters per location: Loc 1 = a-e, Loc 2 = g-k
+    const locRowLetters: string[][] = [
+      ["a", "b", "c", "d", "e"],
+      ["g", "h", "i", "j", "k"],
+    ];
+    const locSuffixes = ["", "_2"];
+
+    buildings.forEach((bldg: any, locIdx: number) => {
+      if (locIdx > 1) return; // Only 2 locations on the PDF
+      const suffix = locSuffixes[locIdx];
+      const locNum = locIdx + 1;
+
+      // Location / Building header
+      const setField = (key: string, val: any) => {
+        if (val && formFieldKeys.has(key) && !mapped[key]) mapped[key] = normalizeValue(key, val);
+      };
+      setField(`loc_${locNum}_number`, bldg.location_number || String(locNum));
+      setField(`loc_${locNum}_address`, bldg.address || bldg.street_address || "");
+      setField(`bldg_${locNum}_number`, bldg.building_number || "1");
+      setField(`bldg_${locNum}_description`, bldg.building_description || bldg.description || "");
+
+      // Construction details
+      setField(`construction_code${suffix}`, bldg.construction_type || bldg.construction_code || "");
+      setField(`year_built${suffix}`, bldg.year_built || "");
+      setField(`num_stories${suffix}`, bldg.num_stories || bldg.stories || "");
+      setField(`num_basements${suffix}`, bldg.num_basements || bldg.basements || "");
+      setField(`total_area_sq_ft${suffix}`, bldg.total_area || bldg.total_area_sq_ft || "");
+      setField(`distance_to_hydrant${suffix}`, bldg.distance_to_hydrant || "");
+      setField(`distance_to_fire_station${suffix}`, bldg.distance_to_fire_station || "");
+      setField(`protection_class${suffix}`, bldg.protection_class || "");
+      setField(`fire_district_name${suffix}`, bldg.fire_district_name || bldg.fire_district || "");
+      setField(`fire_district_code${suffix}`, bldg.fire_district_code || "");
+      setField(`roof_type${suffix}`, bldg.roof_type || "");
+
+      // Improvements
+      setField(`wiring_year${suffix}`, bldg.wiring_year || "");
+      setField(`plumbing_year${suffix}`, bldg.plumbing_year || "");
+      setField(`roofing_year${suffix}`, bldg.roofing_year || "");
+      setField(`heating_year${suffix}`, bldg.heating_year || "");
+
+      // Protective devices
+      setField(`sprinkler_pct${suffix}`, bldg.sprinkler_pct || "");
+      setField(`fire_alarm_manufacturer${suffix === "" ? "" : suffix}`, bldg.fire_alarm_manufacturer || "");
+
+      // Subjects of insurance
+      const subjects: any[] = Array.isArray(bldg.subjects) ? bldg.subjects : [];
+      const rowLetters = locRowLetters[locIdx] || [];
+      subjects.forEach((subj: any, subjIdx: number) => {
+        if (subjIdx >= rowLetters.length) return;
+        const letter = rowLetters[subjIdx];
+        setField(`subject_${letter}_code`, subj.coverage || subj.code || "");
+        setField(`subject_${letter}_limit`, subj.amount || subj.limit || "");
+        setField(`subject_${letter}_coinsurance`, subj.coinsurance || "");
+        setField(`subject_${letter}_valuation`, subj.valuation || "");
+        setField(`subject_${letter}_cause_of_loss`, subj.cause_of_loss || subj.causes_of_loss || "");
+        setField(`subject_${letter}_inflation`, subj.inflation_guard || subj.inflation || "");
+        setField(`subject_${letter}_deductible`, subj.deductible || "");
+        setField(`subject_${letter}_ded_type`, subj.deductible_type || subj.ded_type || "");
+        setField(`subject_${letter}_blanket`, subj.blanket_number || subj.blanket || "");
+        setField(`subject_${letter}_forms`, subj.forms || "");
+      });
+
+      // Additional interest / mortgagee
+      const interest = bldg.additional_interest || bldg.mortgagee || bldg.loss_payee;
+      if (interest && typeof interest === "object") {
+        const intSuffix = locIdx === 0 ? "" : "_2";
+        setField(`interest_name${intSuffix}`, interest.name || "");
+        setField(`interest_address_1${intSuffix}`, interest.address || "");
+        setField(`interest_city${intSuffix}`, interest.city || "");
+        setField(`interest_state${intSuffix}`, interest.state || "");
+        setField(`interest_zip${intSuffix}`, interest.zip || "");
+        if (interest.type === "mortgagee" || bldg.mortgagee) {
+          setField(`chk_interest_mortgagee${intSuffix}`, true);
+        }
+        if (interest.type === "loss_payee" || bldg.loss_payee) {
+          setField(`chk_interest_loss_payee${intSuffix}`, true);
+        }
+        setField(`interest_loc${intSuffix}`, String(locNum));
+        setField(`interest_bldg${intSuffix}`, bldg.building_number || "1");
+      }
+    });
+  }
+
+  // 19. ACORD 140 — Expand mortgagees[] into additional interest fields
+  const mortgagees: any[] = Array.isArray(aiData.mortgagees) ? aiData.mortgagees : [];
+  const mortgageeSlots = [
+    { name: "interest_name", addr: "interest_address_1", city: "interest_city", state: "interest_state", zip: "interest_zip", chk: "chk_interest_mortgagee", loc: "interest_loc" },
+    { name: "interest_name_2", addr: "interest_address_1_2", city: "interest_city_2", state: "interest_state_2", zip: "interest_zip_2", chk: "chk_interest_mortgagee_2", loc: "interest_loc_2" },
+  ];
+  mortgagees.forEach((m: any, idx: number) => {
+    if (idx >= mortgageeSlots.length) return;
+    const slot = mortgageeSlots[idx];
+    const setM = (key: string, val: any) => {
+      if (val && formFieldKeys.has(key) && !mapped[key]) mapped[key] = normalizeValue(key, val);
+    };
+    setM(slot.name, m.name || "");
+    setM(slot.addr, m.address || "");
+    setM(slot.city, m.city || "");
+    setM(slot.state, m.state || "");
+    setM(slot.zip, m.zip || "");
+    setM(slot.chk, true);
+    setM(slot.loc, m.location || m.premises || "");
+  });
+
+  // 20. ACORD 140 — Blanket coverage from flat fields
+  if (formFieldKeys.has("blanket_1_number") && !mapped.blanket_1_number && aiData.blanket_number) {
+    mapped.blanket_1_number = aiData.blanket_number;
+  }
+  if (formFieldKeys.has("blanket_1_limit") && !mapped.blanket_1_limit && aiData.blanket_limit) {
+    mapped.blanket_1_limit = normalizeValue("blanket_1_limit", aiData.blanket_limit);
+  }
+  if (formFieldKeys.has("blanket_1_type") && !mapped.blanket_1_type && aiData.blanket_type) {
+    mapped.blanket_1_type = aiData.blanket_type;
+  }
+
+  // 21. ACORD 140 — Map flat building/bpp amounts to subject row A/B if not already set
+  if (formFieldKeys.has("subject_a_code") && !mapped.subject_a_code && aiData.building_amount) {
+    mapped.subject_a_code = "BLDG";
+    if (!mapped.subject_a_limit) mapped.subject_a_limit = normalizeValue("subject_a_limit", aiData.building_amount);
+  }
+  if (formFieldKeys.has("subject_b_code") && !mapped.subject_b_code && aiData.bpp_amount) {
+    mapped.subject_b_code = "BPP";
+    if (!mapped.subject_b_limit) mapped.subject_b_limit = normalizeValue("subject_b_limit", aiData.bpp_amount);
+  }
+  if (formFieldKeys.has("subject_c_code") && !mapped.subject_c_code && aiData.business_income_amount) {
+    mapped.subject_c_code = "BUSINE";
+    if (!mapped.subject_c_limit) mapped.subject_c_limit = normalizeValue("subject_c_limit", aiData.business_income_amount);
+  }
+
+  // Loc 1 number defaults
+  if (formFieldKeys.has("loc_1_number") && !mapped.loc_1_number && (mapped.loc_1_address || mapped.building_street_address)) {
+    mapped.loc_1_number = "1";
+  }
+
   return mapped;
 }
 
