@@ -188,15 +188,37 @@ export default function FormFillingView({ submissionId, initialMessages, initial
     const indexMap: Record<string, number> = { ...staticMap, ...runtimeMap };
     if (Object.keys(indexMap).length === 0) return {};
 
-    // Build a set of checkbox keys from this form's field definitions
+    // Build a comprehensive set of checkbox keys from multiple sources:
+    // 1. Explicit ACORD checkbox keys (LOB boxes, yes/no questions, attachment flags)
+    const checkboxKeys = new Set<string>([
+      // ACORD 125 LOB checkboxes
+      "lob_commercial_general_liability",
+      "lob_commercial_property",
+      "lob_business_auto",
+      "lob_umbrella",
+      "lob_crime",
+      "lob_cyber",
+      "lob_inland_marine",
+      "lob_boiler_machinery",
+      "lob_bop",
+      // ACORD 125 attachment flags
+      "attach_addl_interest",
+      "attach_schedule_auto",
+      // ACORD 126 yes/no questions
+      "draws_plans_for_others",
+      "blasting_explosives",
+      "excavation_underground",
+      "subs_less_coverage",
+      "subs_without_coi",
+    ]);
+    // 2. Form field definitions with type "checkbox"
     const formDef = ACORD_FORMS[fId as keyof typeof ACORD_FORMS];
-    const checkboxKeys = new Set<string>();
     if (formDef?.fields) {
       for (const f of formDef.fields as AcordFormField[]) {
         if (f.type === "checkbox") checkboxKeys.add(f.key);
       }
     }
-    // Also treat any key starting with "chk_" or "lob_" as a checkbox
+    // 3. Any key starting with "chk_" or "lob_" in the index map
     for (const key of Object.keys(indexMap)) {
       if (key.startsWith("chk_") || key.startsWith("lob_")) checkboxKeys.add(key);
     }
@@ -214,12 +236,12 @@ export default function FormFillingView({ submissionId, initialMessages, initial
       let display: string;
 
       if (checkboxKeys.has(internalKey)) {
-        // Normalize checkbox values: FillablePdfViewer expects "true"/"Yes"/"1"/"X" to check
+        // Normalize checkbox values to "On" (the standard ACORD PDF export value)
         const lower = s.toLowerCase();
         const isChecked = lower === "yes" || lower === "y" || lower === "true" || lower === "on"
-          || lower === "x" || lower === "1" || s === internalKey; // some maps use field key as truthy value
-        display = isChecked ? "true" : "";
-        if (!isChecked) continue; // Skip unchecked boxes — no need to write empty
+          || lower === "x" || lower === "1" || s === internalKey;
+        display = isChecked ? "On" : "Off";
+        if (!isChecked) continue; // Skip unchecked boxes
       } else {
         // Skip boolean "false" for non-checkbox keys — prevents "false" text in PDF fields
         if (s === "false") continue;
