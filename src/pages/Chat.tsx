@@ -2053,12 +2053,19 @@ export default function Chat() {
           </div>
         )}
 
+        {/* ESPN-style ticker bar — producers/managers only */}
+        {user && !isClientServices && (
+          <ProducerHudRail
+            userId={user.id}
+            premiumSold={soldStats.premium}
+            revenueSold={soldStats.revenue}
+          />
+        )}
+
         {/* Messages area */}
         <div ref={scrollRef} className="flex-1 overflow-y-auto">
           {isEmpty ? (
             <div className="flex flex-col items-center min-h-full gap-6 px-4 pt-4 md:pt-[12vh] animate-fade-in">
-              {/* Production Scoreboard — hidden for Client Services */}
-
               <div className="text-center space-y-2">
                 <h1 className="text-4xl tracking-tight aura-gradient-text">
                   What are we working on?
