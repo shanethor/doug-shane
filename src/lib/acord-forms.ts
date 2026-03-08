@@ -1326,6 +1326,8 @@ const acord140Fields: AcordFormField[] = [
   { key: "producer_license_no", label: "State Producer License No.", type: "text", section: "Signature" },
   { key: "national_producer_number", label: "National Producer Number", type: "text", section: "Signature" },
   { key: "signature_date", label: "Date", type: "date", section: "Signature" },
+  { key: "signed_by_name", label: "Applicant Signed By Name", type: "text", section: "Signature" },
+  { key: "signed_by_title", label: "Applicant Signed By Title", type: "text", section: "Signature" },
 ];
 
 // ============================================================
