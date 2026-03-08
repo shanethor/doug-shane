@@ -1221,12 +1221,28 @@ const acord140Fields: AcordFormField[] = [
   { key: "subject_h_code", label: "P2 Subject H Code", type: "text", section: "Subject of Insurance – P2" },
   { key: "subject_h_limit", label: "P2 Subject H Amount", type: "currency", section: "Subject of Insurance – P2" },
   { key: "subject_h_coinsurance", label: "P2 Subject H Coins %", type: "text", section: "Subject of Insurance – P2" },
+  { key: "subject_h_valuation", label: "P2 Subject H Valuation", type: "select", options: ["Replacement Cost", "Actual Cash Value"], section: "Subject of Insurance – P2" },
+  { key: "subject_h_cause_of_loss", label: "P2 Subject H Causes of Loss", type: "select", options: ["Basic", "Broad", "Special"], section: "Subject of Insurance – P2" },
   { key: "subject_h_deductible", label: "P2 Subject H Deductible", type: "currency", section: "Subject of Insurance – P2" },
   { key: "subject_h_blanket", label: "P2 Subject H Blanket #", type: "text", section: "Subject of Insurance – P2" },
 
   { key: "subject_i_code", label: "P2 Subject I Code", type: "text", section: "Subject of Insurance – P2" },
   { key: "subject_i_limit", label: "P2 Subject I Amount", type: "currency", section: "Subject of Insurance – P2" },
+  { key: "subject_i_coinsurance", label: "P2 Subject I Coins %", type: "text", section: "Subject of Insurance – P2" },
+  { key: "subject_i_valuation", label: "P2 Subject I Valuation", type: "select", options: ["Replacement Cost", "Actual Cash Value"], section: "Subject of Insurance – P2" },
+  { key: "subject_i_cause_of_loss", label: "P2 Subject I Causes of Loss", type: "select", options: ["Basic", "Broad", "Special"], section: "Subject of Insurance – P2" },
   { key: "subject_i_deductible", label: "P2 Subject I Deductible", type: "currency", section: "Subject of Insurance – P2" },
+  { key: "subject_i_blanket", label: "P2 Subject I Blanket #", type: "text", section: "Subject of Insurance – P2" },
+
+  { key: "subject_j_code", label: "P2 Subject J Code", type: "text", section: "Subject of Insurance – P2" },
+  { key: "subject_j_limit", label: "P2 Subject J Amount", type: "currency", section: "Subject of Insurance – P2" },
+  { key: "subject_j_deductible", label: "P2 Subject J Deductible", type: "currency", section: "Subject of Insurance – P2" },
+  { key: "subject_j_blanket", label: "P2 Subject J Blanket #", type: "text", section: "Subject of Insurance – P2" },
+
+  { key: "subject_k_code", label: "P2 Subject K Code", type: "text", section: "Subject of Insurance – P2" },
+  { key: "subject_k_limit", label: "P2 Subject K Amount", type: "currency", section: "Subject of Insurance – P2" },
+  { key: "subject_k_deductible", label: "P2 Subject K Deductible", type: "currency", section: "Subject of Insurance – P2" },
+  { key: "subject_k_blanket", label: "P2 Subject K Blanket #", type: "text", section: "Subject of Insurance – P2" },
 
   // Construction – Premises 2
   { key: "construction_type_2", label: "P2 Construction Type", type: "select", options: ["Frame", "Joisted Masonry", "Non-Combustible", "Masonry Non-Combustible", "Modified Fire Resistive", "Fire Resistive"], section: "Construction – P2" },
