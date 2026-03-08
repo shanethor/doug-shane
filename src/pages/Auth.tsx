@@ -532,6 +532,13 @@ export default function Auth() {
               <Label htmlFor="password" className="text-xs uppercase tracking-wider text-muted-foreground">Password</Label>
               <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required minLength={6} className="h-11" />
             </div>
+            {!isSignUp && (
+              <div className="text-right">
+                <button type="button" onClick={() => setIsForgotPassword(true)} className="text-xs text-muted-foreground underline underline-offset-4 hover:text-foreground/80">
+                  Forgot password?
+                </button>
+              </div>
+            )}
             <Button type="submit" className="w-full h-11 aura-gradient-bg border-0 text-white hover:opacity-90 transition-opacity" disabled={submitting}>
               {submitting ? <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Please wait…</> : isSignUp ? "Create account" : "Sign in"}
             </Button>
@@ -539,7 +546,7 @@ export default function Auth() {
 
           <p className="mt-6 text-center text-sm text-muted-foreground">
             {isSignUp ? "Already have an account?" : "Don't have an account?"}{" "}
-            <button onClick={() => setIsSignUp(!isSignUp)} className="text-foreground underline underline-offset-4 hover:text-foreground/80">
+            <button onClick={() => { setIsSignUp(!isSignUp); setIsForgotPassword(false); }} className="text-foreground underline underline-offset-4 hover:text-foreground/80">
               {isSignUp ? "Sign in" : "Sign up"}
             </button>
           </p>
