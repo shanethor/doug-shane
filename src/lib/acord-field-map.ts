@@ -698,27 +698,40 @@ export const ACORD_75_FIELD_MAP: AcordFieldMap = {
   gl_personal_adv_injury:   "GL PERSONAL & ADV INJURY",
   gl_damage_to_premises_rented:"GL DAMAGE TO RENTED PREMISES",
   gl_medical_expense:       "GL MED EXP",
+  gl_premium:               "GL PREMIUM",
 
   // Auto
   auto_combined_single_limit:"AUTO COMBINED SINGLE LIMIT",
+  auto_bi_per_person:       "AUTO BI PER PERSON",
+  auto_bi_per_accident:     "AUTO BI PER ACCIDENT",
+  auto_property_damage:     "AUTO PROPERTY DAMAGE",
   auto_um_uim_limit:        "AUTO UM/UIM",
   auto_pip_limit:           "AUTO PIP",
   auto_med_pay_limit:       "AUTO MED PAY",
+  auto_premium:             "AUTO PREMIUM",
 
   // Property
   property_limit:           "PROPERTY LIMIT",
   property_deductible:      "PROPERTY DEDUCTIBLE",
   property_coinsurance_pct: "PROPERTY COINSURANCE",
+  property_premium:         "PROPERTY PREMIUM",
+
+  // Garage
+  garage_auto_only_limit:   "GARAGE AUTO ONLY",
+  garage_other_limit:       "GARAGE OTHER THAN AUTO",
+  garage_aggregate:         "GARAGE AGGREGATE",
 
   // WC
   wc_each_accident:         "WC EACH ACCIDENT",
   wc_disease_policy_limit:  "WC DISEASE POLICY LIMIT",
   wc_disease_each_employee: "WC DISEASE EACH EMPLOYEE",
+  wc_premium:               "WC PREMIUM",
 
   // Excess
   excess_each_occurrence:   "EXCESS EACH OCCURRENCE",
   excess_aggregate:         "EXCESS AGGREGATE",
   excess_sir:               "EXCESS SIR",
+  excess_premium:           "EXCESS PREMIUM",
 
   // Financials
   fees:                     "FEES",

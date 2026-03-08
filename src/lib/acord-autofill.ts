@@ -540,7 +540,23 @@ const AI_TO_FORM_ALIASES: Record<string, string[]> = {
   property_limit: ["property_limit"],
   property_deductible_75: ["property_deductible"],
   property_coinsurance_pct: ["property_coinsurance_pct"],
+  property_premium: ["property_premium"],
+  // Property subjects A-D
+  prop_a_subject: ["prop_a_subject"], prop_a_forms: ["prop_a_forms"], prop_a_deductible: ["prop_a_deductible"], prop_a_coinsurance: ["prop_a_coinsurance"], prop_a_limit: ["prop_a_limit"],
+  prop_b_subject: ["prop_b_subject"], prop_b_forms: ["prop_b_forms"], prop_b_deductible: ["prop_b_deductible"], prop_b_coinsurance: ["prop_b_coinsurance"], prop_b_limit: ["prop_b_limit"],
+  prop_c_subject: ["prop_c_subject"], prop_c_forms: ["prop_c_forms"], prop_c_deductible: ["prop_c_deductible"], prop_c_coinsurance: ["prop_c_coinsurance"], prop_c_limit: ["prop_c_limit"],
+  prop_d_subject: ["prop_d_subject"], prop_d_forms: ["prop_d_forms"], prop_d_deductible: ["prop_d_deductible"], prop_d_coinsurance: ["prop_d_coinsurance"], prop_d_limit: ["prop_d_limit"],
+  // Garage
+  garage_any_auto: ["garage_any_auto"],
+  garage_auto_only_limit: ["garage_auto_only_limit"],
+  garage_other_limit: ["garage_other_limit"],
+  garage_aggregate: ["garage_aggregate"],
   wc_per_statute: ["wc_per_statute"],
+  // Per-coverage premiums
+  gl_premium: ["gl_premium"],
+  auto_premium: ["auto_premium"],
+  wc_premium: ["wc_premium"],
+  excess_premium: ["excess_premium"],
   excess_form: ["excess_form"],
   excess_trigger: ["excess_trigger"],
   excess_each_occurrence: ["excess_each_occurrence"],
