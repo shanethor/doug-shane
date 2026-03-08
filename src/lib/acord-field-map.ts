@@ -1937,44 +1937,62 @@ export const ACORD_130_INDEX_MAP: AcordIndexMap = {
   q_subcontractors_expl:    439,
   pct_subcontracted:        439, // % of work subcontracted → Q6 explanation field
   q_sublet_no_certs_code:   440,
+  wc_work_sublet_no_coi:   440, // UI alias → Q7 Y/N
   q_sublet_no_certs_expl:   441,
   q_safety_program_code:    442,
+  workplace_safety_program: 442, // UI alias → Q8 Y/N
   q_safety_program_expl:    443,
   q_group_transport_code:   444,
+  wc_group_transportation:  444, // UI alias → Q9 Y/N
   q_group_transport_expl:   445,
   q_under16_over60_code:    446,
+  wc_under_16_over_60:      446, // UI alias → Q10 Y/N
   q_under16_over60_expl:    447,
   q_seasonal_employees_code: 448,
+  seasonal_employees:       448, // UI alias → Q11 Y/N
   q_seasonal_employees_expl: 449,
   q_volunteer_labor_code:   450,
+  wc_volunteer_labor:       450, // UI alias → Q12 Y/N
   q_volunteer_labor_expl:   451,
   q_handicap_code:          452,
+  wc_physical_handicaps:    452, // UI alias → Q13 Y/N
   q_handicap_expl:          453,
   q_travel_out_state_code:  454,
+  wc_travel_out_of_state:   454, // UI alias → Q14 Y/N
   q_travel_out_state_expl:  455,
   q_athletic_teams_code:    456,
+  wc_athletic_teams:        456, // UI alias → Q15 Y/N
   q_athletic_teams_expl:    457,
 
   // ── Page 4 — More Questions [458-477] ──
   page4_customer_id:      458,   // Producer_CustomerIdentifier (page 4)
   q_physicals_code:        459,
+  wc_physicals_required:   459, // UI alias → Q16 Y/N
   q_physicals_expl:        460,
   q_other_insurance_code:  461,
+  wc_other_insurance_same: 461, // UI alias → Q17 Y/N
   q_other_insurance_expl:  462,
   q_declined_cancelled_code: 463,
+  wc_prior_declined:       463, // UI alias → Q18 Y/N
   q_declined_cancelled_expl: 464,
   q_health_plans_code:     465,
+  wc_health_plans:         465, // UI alias → Q19 Y/N
   q_health_plans_expl:     466,
   q_work_other_biz_code:   467,
+  wc_employees_other_business: 467, // UI alias → Q20 Y/N
   q_work_other_biz_expl:   468,
   q_lease_employees_code:  469,
+  wc_lease_employees:      469, // UI alias → Q21 Y/N
   q_lease_employees_expl:  470,
   q_at_home_code:          471,
+  wc_work_at_home:         471, // UI alias → Q22 Y/N
   q_at_home_count:         472,
   q_at_home_expl:          473,
   q_tax_liens_code:        474,
+  wc_tax_liens_bankruptcy: 474, // UI alias → Q23 Y/N
   q_tax_liens_expl:        475,
   q_unpaid_premium_code:   476,
+  wc_unpaid_premium:       476, // UI alias → Q24 Y/N
   q_unpaid_premium_expl:   477,
 
   // [478] CHK
