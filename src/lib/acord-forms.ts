@@ -1171,6 +1171,16 @@ const acord140Fields: AcordFormField[] = [
   { key: "primary_heat_type", label: "P1 Primary Heat", type: "select", options: ["Boiler", "Solid Fuel", "Other"], section: "Heating – P1" },
   { key: "secondary_heat_type", label: "P1 Secondary Heat", type: "select", options: ["Boiler", "Solid Fuel", "None"], section: "Heating – P1" },
 
+  // Hazard Flags – Premises 1 (ACORD-style boolean toggles)
+  { key: "hazardous_operations", label: "P1 Any Hazardous Operations?", type: "select", options: ["Yes", "No"], section: "Hazard Flags – P1" },
+  { key: "cooking_operations", label: "P1 Any Cooking Operations?", type: "select", options: ["Yes", "No"], section: "Hazard Flags – P1" },
+  { key: "spray_painting_operations", label: "P1 Any Spray Painting Operations?", type: "select", options: ["Yes", "No"], section: "Hazard Flags – P1" },
+  { key: "smoke_detectors", label: "P1 Smoke Detectors Installed?", type: "select", options: ["Yes", "No"], section: "Hazard Flags – P1" },
+  { key: "boiler_insurance_elsewhere", label: "P1 Boiler Insurance Placed Elsewhere?", type: "select", options: ["Yes", "No"], section: "Hazard Flags – P1" },
+  { key: "hazardous_operations_2", label: "P2 Any Hazardous Operations?", type: "select", options: ["Yes", "No"], section: "Hazard Flags – P2" },
+  { key: "cooking_operations_2", label: "P2 Any Cooking Operations?", type: "select", options: ["Yes", "No"], section: "Hazard Flags – P2" },
+  { key: "smoke_detectors_2", label: "P2 Smoke Detectors Installed?", type: "select", options: ["Yes", "No"], section: "Hazard Flags – P2" },
+
   // Additional Interest – Premises 1
   { key: "interest_name", label: "P1 Addl Interest Name", type: "text", section: "Additional Interest – P1" },
   { key: "interest_address_1", label: "P1 Addl Interest Address", type: "text", section: "Additional Interest – P1" },
