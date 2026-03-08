@@ -3829,5 +3829,4 @@ export const ACORD_INDEX_MAPS: Record<string, AcordIndexMap> = {
   "acord-140": ACORD_140_INDEX_MAP,
   "acord-75":  ACORD_75_INDEX_MAP,
 };
-};
 
