@@ -497,6 +497,7 @@ export const ACORD_140_FIELD_MAP: AcordFieldMap = {
   blanket_1_number:         "BLANKET 1 NUMBER",
   blanket_1_limit:          "BLANKET 1 LIMIT",
   blanket_1_type:           "BLANKET 1 TYPE",
+  blanket_1_locations:      "BLANKET 1 LOCATIONS",
 
   // Premises 1
   loc_1_number:             "PREMISES 1 NUMBER",
@@ -504,26 +505,70 @@ export const ACORD_140_FIELD_MAP: AcordFieldMap = {
   bldg_1_number:            "BUILDING 1 NUMBER",
   bldg_1_description:       "BUILDING DESCRIPTION",
 
-  // Subject of Insurance
+  // Subject of Insurance — P1
   subject_a_code:           "SUBJECT A CODE",
   subject_a_limit:          "BUILDING AMOUNT",
+  subject_a_coinsurance:    "SUBJECT A COINSURANCE",
+  subject_a_valuation:      "SUBJECT A VALUATION",
+  subject_a_cause_of_loss:  "SUBJECT A CAUSE OF LOSS",
+  subject_a_inflation:      "SUBJECT A INFLATION",
+  subject_a_deductible:     "SUBJECT A DEDUCTIBLE",
+  subject_a_ded_type:       "SUBJECT A DED TYPE",
+  subject_a_blanket:        "SUBJECT A BLANKET",
+  subject_a_forms:          "SUBJECT A FORMS",
   subject_b_code:           "SUBJECT B CODE",
   subject_b_limit:          "BPP AMOUNT",
+  subject_b_coinsurance:    "SUBJECT B COINSURANCE",
+  subject_b_cause_of_loss:  "SUBJECT B CAUSE OF LOSS",
+  subject_b_inflation:      "SUBJECT B INFLATION",
+  subject_b_deductible:     "SUBJECT B DEDUCTIBLE",
+  subject_b_blanket:        "SUBJECT B BLANKET",
   subject_c_code:           "SUBJECT C CODE",
   subject_c_limit:          "BUSINESS INCOME",
+  subject_c_deductible:     "SUBJECT C DEDUCTIBLE",
+  subject_c_forms:          "SUBJECT C FORMS",
+  subject_d_code:           "SUBJECT D CODE",
+  subject_d_limit:          "SUBJECT D AMOUNT",
+  subject_e_code:           "SUBJECT E CODE",
+  subject_e_limit:          "SUBJECT E AMOUNT",
 
-  // Construction
+  // Subject of Insurance — P2
+  subject_g_code:           "SUBJECT G CODE",
+  subject_g_limit:          "SUBJECT G AMOUNT",
+  subject_g_coinsurance:    "SUBJECT G COINSURANCE",
+  subject_g_cause_of_loss:  "SUBJECT G CAUSE OF LOSS",
+  subject_g_deductible:     "SUBJECT G DEDUCTIBLE",
+  subject_g_blanket:        "SUBJECT G BLANKET",
+  subject_h_code:           "SUBJECT H CODE",
+  subject_h_limit:          "SUBJECT H AMOUNT",
+  subject_h_blanket:        "SUBJECT H BLANKET",
+  subject_i_code:           "SUBJECT I CODE",
+  subject_i_limit:          "SUBJECT I AMOUNT",
+
+  // Construction — P1
   construction_type:        "CONSTRUCTION TYPE",
   construction_code:        "CONSTRUCTION CODE",
   num_stories:              "NUM STORIES",
   num_basements:            "NUM BASEMENTS",
   year_built:               "YEAR BUILT",
   total_area_sq_ft:         "TOTAL AREA",
+  area_occupied:            "AREA OCCUPIED",
   distance_to_hydrant:      "DISTANCE TO HYDRANT",
   distance_to_fire_station: "DISTANCE TO FIRE STATION",
   fire_district_name:       "FIRE DISTRICT NAME",
   fire_district_code:       "FIRE DISTRICT CODE",
   protection_class:         "PROTECTION CLASS",
+  occupancy_description:    "OCCUPANCY DESCRIPTION",
+
+  // Construction — P2
+  construction_type_2:      "CONSTRUCTION TYPE 2",
+  construction_code_2:      "CONSTRUCTION CODE 2",
+  num_stories_2:            "NUM STORIES 2",
+  num_basements_2:          "NUM BASEMENTS 2",
+  year_built_2:             "YEAR BUILT 2",
+  total_area_sq_ft_2:       "TOTAL AREA 2",
+  area_occupied_2:          "AREA OCCUPIED 2",
+  protection_class_2:       "PROTECTION CLASS 2",
 
   // Building Improvements
   roof_type:                "ROOF TYPE",
@@ -532,16 +577,57 @@ export const ACORD_140_FIELD_MAP: AcordFieldMap = {
   roofing_year:             "ROOFING YEAR",
   heating_year:             "HEATING YEAR",
 
-  // Protective Devices
+  // Protective Devices — P1
   burglar_alarm_type:       "BURGLAR ALARM",
+  burglar_alarm_cert:       "BURGLAR ALARM CERT",
+  burglar_alarm_installer:  "BURGLAR ALARM INSTALLER",
   num_guards_watchmen:      "NUM GUARDS",
   sprinkler_pct:            "SPRINKLERED",
   fire_alarm_type:          "FIRE ALARM",
   fire_alarm_manufacturer:  "FIRE ALARM MANUFACTURER",
+  central_station_monitoring: "CENTRAL STATION MONITORING",
+
+  // Protective Devices — P2
+  burglar_alarm_type_2:     "BURGLAR ALARM 2",
+  fire_alarm_manufacturer_2: "FIRE ALARM MANUFACTURER 2",
+  fire_alarm_type_2:        "FIRE ALARM 2",
+  central_station_monitoring_2: "CENTRAL STATION MONITORING 2",
 
   // Additional Interests
   interest_name:            "ADDITIONAL INTEREST NAME",
   interest_address_1:       "ADDITIONAL INTEREST ADDRESS",
+  interest_rank:            "ADDITIONAL INTEREST RANK",
+  interest_item:            "ADDITIONAL INTEREST ITEM",
+
+  // Equipment Breakdown
+  equipment_breakdown_limit:     "EQUIPMENT BREAKDOWN LIMIT",
+  equipment_breakdown_deductible:"EQUIPMENT BREAKDOWN DEDUCTIBLE",
+  equipment_breakdown_premium:   "EQUIPMENT BREAKDOWN PREMIUM",
+
+  // Ordinance or Law
+  ordinance_a_limit:        "ORDINANCE A LIMIT",
+  ordinance_b_limit:        "ORDINANCE B LIMIT",
+  ordinance_c_limit:        "ORDINANCE C LIMIT",
+  ordinance_or_law_limit:   "ORDINANCE OR LAW LIMIT",
+  ordinance_or_law_premium: "ORDINANCE OR LAW PREMIUM",
+
+  // Earthquake
+  earthquake_locations:     "EARTHQUAKE LOCATIONS",
+  earthquake_deductible:    "EARTHQUAKE DEDUCTIBLE",
+  earthquake_premium:       "EARTHQUAKE PREMIUM",
+
+  // Loss History
+  prop_loss_date_1:         "LOSS DATE 1",
+  prop_loss_type_1:         "LOSS TYPE 1",
+  prop_loss_gross_1:        "LOSS GROSS 1",
+  prop_loss_net_paid_1:     "LOSS NET PAID 1",
+
+  // Premium
+  premium_premises_1:       "PREMIUM PREMISES 1",
+  premium_premises_2:       "PREMIUM PREMISES 2",
+  total_estimated_annual_premium: "TOTAL ESTIMATED ANNUAL PREMIUM",
+  deposit_premium:          "DEPOSIT PREMIUM",
+  minimum_earned_premium:   "MINIMUM EARNED PREMIUM",
 
   // Remarks
   property_remarks:         "REMARKS",
