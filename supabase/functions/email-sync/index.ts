@@ -9,6 +9,24 @@ const corsHeaders = {
 const GMAIL_TOKEN_URL = "https://oauth2.googleapis.com/token";
 const OUTLOOK_TOKEN_URL = "https://login.microsoftonline.com/common/oauth2/v2.0/token";
 
+// Insurance auto-tagging based on subject + body keywords
+const TAG_RULES: { tag: string; keywords: RegExp }[] = [
+  { tag: "coi_request", keywords: /\b(certificate of insurance|coi|cert\s*of\s*ins|proof of (insurance|coverage)|additional insured|certificate holder)\b/i },
+  { tag: "claim", keywords: /\b(claim\s*(number|#|no|report|filed|notice)?|loss\s*report|incident\s*report|first notice of loss|fnol|damage\s*report)\b/i },
+  { tag: "cancellation_notice", keywords: /\b(cancel(l?ation)?(\s*notice)?|non[\s-]?renew(al)?|intent to cancel|notice of cancel|policy\s*cancel)\b/i },
+  { tag: "audit", keywords: /\b(premium\s*audit|audit\s*(request|notice|report|results|questionnaire)|payroll\s*audit|annual\s*audit)\b/i },
+  { tag: "renewal", keywords: /\b(renewal|renew(ing)?|renewal\s*(notice|quote|proposal|offer|premium)|upcoming\s*expir(ation|y))\b/i },
+  { tag: "billing", keywords: /\b(invoice|billing|payment\s*(due|reminder|notice)|past\s*due|premium\s*(payment|due|notice)|balance\s*due|statement|installment)\b/i },
+  { tag: "endorsement", keywords: /\b(endorsement|policy\s*change|mid[\s-]?term\s*(change|modification)|add(ition(al)?)?[\s-]?(vehicle|driver|location|insured)|coverage\s*change)\b/i },
+  { tag: "service_request", keywords: /\b(service\s*request|policy\s*copy|dec(laration)?\s*page|id\s*card|auto\s*id|proof\s*of|letter\s*of\s*experience)\b/i },
+];
+
+function classifyEmail(subject: string, bodyPreview: string): string[] {
+  const text = `${subject} ${bodyPreview}`;
+  const matched = TAG_RULES.filter(r => r.keywords.test(text)).map(r => r.tag);
+  return matched;
+}
+
 async function refreshToken(connection: any, adminClient: any): Promise<string> {
   let tokenResp: Response;
   let tokenData: any;
@@ -145,6 +163,8 @@ serve(async (req) => {
           const fromRaw = getHeader("From");
           const fromMatch = fromRaw.match(/^(.+?)\s*<(.+?)>$/);
 
+          const tags = classifyEmail(getHeader("Subject"), msg.snippet || "");
+
           emails.push({
             user_id: userId,
             connection_id: conn.id,
@@ -156,6 +176,7 @@ serve(async (req) => {
             body_preview: msg.snippet || "",
             is_read: !msg.labelIds?.includes("UNREAD"),
             received_at: new Date(parseInt(msg.internalDate)).toISOString(),
+            ...(tags.length > 0 ? { tags } : {}),
           });
         }
 
@@ -168,18 +189,22 @@ serve(async (req) => {
         const mailData = await mailResp.json();
         if (!mailResp.ok) throw new Error(`Outlook error: ${JSON.stringify(mailData)}`);
 
-        emails = (mailData.value || []).map((m: any) => ({
-          user_id: userId,
-          connection_id: conn.id,
-          external_id: m.id,
-          from_address: m.from?.emailAddress?.address || "",
-          from_name: m.from?.emailAddress?.name || null,
-          to_addresses: (m.toRecipients || []).map((r: any) => r.emailAddress?.address),
-          subject: m.subject || "",
-          body_preview: m.bodyPreview || "",
-          is_read: m.isRead ?? false,
-          received_at: m.receivedDateTime,
-        }));
+        emails = (mailData.value || []).map((m: any) => {
+          const tags = classifyEmail(m.subject || "", m.bodyPreview || "");
+          return {
+            user_id: userId,
+            connection_id: conn.id,
+            external_id: m.id,
+            from_address: m.from?.emailAddress?.address || "",
+            from_name: m.from?.emailAddress?.name || null,
+            to_addresses: (m.toRecipients || []).map((r: any) => r.emailAddress?.address),
+            subject: m.subject || "",
+            body_preview: m.bodyPreview || "",
+            is_read: m.isRead ?? false,
+            received_at: m.receivedDateTime,
+            ...(tags.length > 0 ? { tags } : {}),
+          };
+        });
       }
 
       // Upsert emails — preserve local is_read state for existing emails
