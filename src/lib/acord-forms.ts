@@ -488,6 +488,8 @@ const acord127Fields: AcordFormField[] = [
   { key: "driver_3_name", label: "Driver 3 Name", type: "text", section: "Driver Information" },
   { key: "driver_3_first_name", label: "Driver 3 First Name", type: "text", section: "Driver Information" },
   { key: "driver_3_last_name", label: "Driver 3 Last Name", type: "text", section: "Driver Information" },
+  { key: "driver_3_sex", label: "Driver 3 Sex", type: "select", options: ["M", "F"], section: "Driver Information" },
+  { key: "driver_3_marital", label: "Driver 3 Marital Status", type: "select", options: ["S", "M", "W", "D"], section: "Driver Information" },
   { key: "driver_3_dob", label: "Driver 3 Date of Birth", type: "date", section: "Driver Information" },
   { key: "driver_3_license", label: "Driver 3 License #", type: "text", section: "Driver Information" },
   { key: "driver_3_license_state", label: "Driver 3 License State", type: "text", section: "Driver Information" },
