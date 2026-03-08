@@ -173,6 +173,9 @@ interface CommercialFormData {
   // No-insurance experience flow
   owner_resume_text: string;
   owner_resume_files: string[];
+  // Coverage selection + ACORD-driven fields
+  selected_coverage_lines: string[];
+  acord_data: Record<string, any>;
 }
 
 const emptyLossRunPolicy = (): LossRunPolicyInfo => ({
