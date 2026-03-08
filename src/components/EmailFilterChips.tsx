@@ -130,11 +130,13 @@ export function EmailFilterChips({
             />
           </div>
           <ScrollArea className="max-h-48">
-            {clientResults.length === 0 && clientSearch.trim() ? (
+            {filteredClients.length === 0 && clientSearch.trim() ? (
               <p className="text-xs text-muted-foreground text-center py-3">No matches</p>
+            ) : filteredClients.length === 0 && !clientSearch.trim() ? (
+              <p className="text-xs text-muted-foreground text-center py-3">No clients found</p>
             ) : (
               <div className="space-y-0.5">
-                {clientResults.map((lead) => (
+                {filteredClients.map((lead) => (
                   <button
                     key={lead.id}
                     className="w-full text-left px-2 py-1.5 rounded text-xs hover:bg-muted transition-colors"
