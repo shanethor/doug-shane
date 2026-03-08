@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { ProducerHudRail } from "@/components/ProducerHudRail";
+import { ProductionScoreboard } from "@/components/ProductionScoreboard";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";

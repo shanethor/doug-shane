@@ -2058,15 +2058,6 @@ export default function Chat() {
           {isEmpty ? (
             <div className="flex flex-col items-center min-h-full gap-6 px-4 pt-4 md:pt-[12vh] animate-fade-in">
               {/* Production Scoreboard — hidden for Client Services */}
-               {user && !isClientServices && (
-                <div className="w-full max-w-2xl">
-                  <ProducerHudRail
-                    userId={user.id}
-                    premiumSold={soldStats.premium}
-                    revenueSold={soldStats.revenue}
-                  />
-                </div>
-              )}
 
               <div className="text-center space-y-2">
                 <h1 className="text-4xl tracking-tight aura-gradient-text">
