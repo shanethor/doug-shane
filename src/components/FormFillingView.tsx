@@ -580,7 +580,7 @@ export default function FormFillingView({ submissionId, initialMessages, initial
       try {
         const { buildAutofilledData } = await import("@/lib/acord-autofill");
         for (const form of ACORD_FORM_LIST) {
-          const expanded = buildAutofilledData(form, loaded);
+          const expanded = buildAutofilledData(form, loaded, null, null, loaded);
           for (const [k, v] of Object.entries(expanded)) {
             if (v !== undefined && v !== null && v !== "" && (!loaded[k] || (typeof loaded[k] === "string" && !loaded[k].trim()))) {
               loaded[k] = v;
@@ -825,7 +825,7 @@ export default function FormFillingView({ submissionId, initialMessages, initial
       const merged: Record<string, any> = { ...formData };
 
       for (const form of enabledFormList) {
-        const { data: inferred, aiInferredCount } = await buildAutofilledDataWithAI(form, aiData);
+        const { data: inferred, aiInferredCount } = await buildAutofilledDataWithAI(form, aiData, undefined, undefined, aiData);
         for (const [k, v] of Object.entries(inferred)) {
           if (!merged[k] && v !== "" && v !== null && v !== undefined) {
             merged[k] = v;
