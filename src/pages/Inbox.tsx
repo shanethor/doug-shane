@@ -692,6 +692,13 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
                 <p><span className="font-medium text-foreground">Date:</span> {format(new Date(selectedEmail.received_at), "MMM d, yyyy 'at' h:mm a")}</p>
               </div>
 
+              {/* Client snapshot panel */}
+              {selectedEmail.client_id && (
+                <div className="py-2">
+                  <EmailClientSnapshot clientId={selectedEmail.client_id} />
+                </div>
+              )}
+
               <ScrollArea className="flex-1 min-h-0">
                 {selectedEmail.body_html ? (
                   <div
