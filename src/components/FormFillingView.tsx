@@ -904,7 +904,14 @@ export default function FormFillingView({ submissionId, initialMessages, initial
       let count = 0;
 
       for (const form of formsToProcess) {
-        const hasData = form.fields.some(f => formData[f.key] && String(formData[f.key]).trim());
+        // Check declared fields OR prefill index map for data presence
+        let hasData = form.fields.some(f => formData[f.key] && String(formData[f.key]).trim());
+        if (!hasData) {
+          try {
+            const prefillCheck = await buildPrefillByIndex(form.id, formData);
+            hasData = Object.values(prefillCheck).some(v => v && String(v).trim());
+          } catch (_) {}
+        }
         if (!hasData) continue;
 
         try {
