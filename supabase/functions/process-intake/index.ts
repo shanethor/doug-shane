@@ -286,13 +286,49 @@ Deno.serve(async (req) => {
         await supabase.from("leads").update({ submission_id: newSub.id }).eq("id", leadId);
       }
 
+      // ─── Auto-prefill for personal lines ───
+      if (newSub) {
+        const formDataPayload: Record<string, any> = {
+          applicant_name: applicantName,
+          applicant_email: applicantEmail,
+          applicant_phone: applicantPhone,
+          mailing_address: applicant.address || "",
+          mailing_city: applicant.city || "",
+          mailing_state: applicantState,
+          mailing_zip: applicant.zip || "",
+        };
+        // Flatten driver/vehicle data for potential ACORD 75 auto prefill
+        if (sections.auto?.drivers?.length > 0) {
+          formDataPayload.drivers = sections.auto.drivers;
+        }
+        if (sections.auto?.vehicles?.length > 0) {
+          formDataPayload.vehicles = sections.auto.vehicles;
+        }
+        if (sections.auto?.coverage) {
+          Object.entries(sections.auto.coverage).forEach(([k, v]) => {
+            if (v) formDataPayload[k] = v;
+          });
+        }
+        if (sections.home?.properties?.length > 0) {
+          formDataPayload.properties = sections.home.properties;
+        }
+        if (sections.umbrella) {
+          formDataPayload.umbrella_limit = sections.umbrella.requested_limit;
+        }
+
+        await supabase.from("insurance_applications").insert({
+          user_id: agentId,
+          submission_id: newSub.id,
+          form_data: formDataPayload,
+          status: "draft",
+          gaps: null,
+        });
+      }
+
       return new Response(
         JSON.stringify({ success: true, lead_id: leadId, submission_id: newSub?.id || null }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
-    }
-
-    // ─── Path A: intake_links (original flow) ───
     if (!intake_link_id) {
       return new Response(JSON.stringify({ error: "intake_link_id required" }), {
         status: 400,
