@@ -767,6 +767,16 @@ export default function IntakeForm() {
           if (f.employee_count) lines.push(`Number of Employees: ${f.employee_count}`);
           if (f.annual_revenue) lines.push(`Annual Revenue: ${f.annual_revenue}`);
           if (f.years_in_business) lines.push(`Years in Business: ${f.years_in_business}`);
+          if (f.selected_coverage_lines.length > 0) lines.push(`Requested Coverage Lines: ${f.selected_coverage_lines.join(", ")}`);
+          // Include ACORD question answers
+          if (Object.keys(f.acord_data).length > 0) {
+            lines.push(`--- ACORD Underwriting Data ---`);
+            for (const [key, val] of Object.entries(f.acord_data)) {
+              if (val !== "" && val !== undefined && val !== null) {
+                lines.push(`${key}: ${val}`);
+              }
+            }
+          }
           if (f.has_current_insurance === "yes") {
             lines.push(`Current Carrier: ${f.current_carrier_name}`);
             if (f.policy_number) lines.push(`Policy #: ${f.policy_number}`);
