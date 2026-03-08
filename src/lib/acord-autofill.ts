@@ -93,10 +93,10 @@ const AI_TO_FORM_ALIASES: Record<string, string[]> = {
   first_named_insured: ["applicant_name", "insured_name", "named_insured", "primary_location_name", "contact_name_1"],
 
   // ── Address (one-to-many) — including supplement extraction keys ──
-  mailing_address: ["mailing_address", "premises_address", "building_street_address", "garaging_street", "location_1_address", "primary_location_address"],
-  address: ["mailing_address", "premises_address", "building_street_address", "garaging_street", "location_1_address", "primary_location_address"],
-  location_street: ["mailing_address", "premises_address", "building_street_address", "garaging_street", "location_1_address", "primary_location_address"],
-  location_address: ["premises_address", "building_street_address", "location_1_address", "primary_location_address"],
+  mailing_address: ["mailing_address", "premises_address", "building_street_address", "garaging_street", "location_1_address", "primary_location_address", "loc_1_address"],
+  address: ["mailing_address", "premises_address", "building_street_address", "garaging_street", "location_1_address", "primary_location_address", "loc_1_address"],
+  location_street: ["mailing_address", "premises_address", "building_street_address", "garaging_street", "location_1_address", "primary_location_address", "loc_1_address"],
+  location_address: ["premises_address", "building_street_address", "location_1_address", "primary_location_address", "loc_1_address"],
   insured_address: ["mailing_address", "premises_address"],
   city: ["city", "premises_city", "garaging_city", "building_city"],
   state: ["state", "premises_state", "garaging_state", "building_state", "rating_state", "wc_part1_states"],
