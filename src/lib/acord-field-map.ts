@@ -493,36 +493,39 @@ export const ACORD_140_FIELD_MAP: AcordFieldMap = {
   insured_name:             "APPLICANT",
   applicant_name:           "APPLICANT",
 
-  // Premises Information
-  premises_address:         "LOCATION ADDRESS",
-  premises_city:            "CITY",
-  premises_state:           "STATE",
-  premises_zip:             "ZIP",
-  building_street_address:  "STREET ADDRESS",
-  building_description:     "BUILDING DESCRIPTION",
+  // Blankets
+  blanket_1_number:         "BLANKET 1 NUMBER",
+  blanket_1_limit:          "BLANKET 1 LIMIT",
+  blanket_1_type:           "BLANKET 1 TYPE",
 
-  // Subject of Insurance amounts
-  building_amount:          "BUILDING AMOUNT",
-  building_valuation:       "BUILDING VALUATION",
-  building_causes_of_loss:  "BUILDING CAUSES OF LOSS",
-  building_deductible:      "BUILDING DEDUCTIBLE",
-  bpp_amount:               "BPP AMOUNT",
-  bpp_valuation:            "BPP VALUATION",
-  bpp_causes_of_loss:       "BPP CAUSES OF LOSS",
-  bpp_deductible:           "BPP DEDUCTIBLE",
-  business_income_amount:   "BUSINESS INCOME",
-  extra_expense_amount:     "EXTRA EXPENSE",
-  rental_value_amount:      "RENTAL VALUE",
+  // Premises 1
+  loc_1_number:             "PREMISES 1 NUMBER",
+  loc_1_address:            "LOCATION ADDRESS",
+  bldg_1_number:            "BUILDING 1 NUMBER",
+  bldg_1_description:       "BUILDING DESCRIPTION",
+
+  // Subject of Insurance
+  subject_a_code:           "SUBJECT A CODE",
+  subject_a_limit:          "BUILDING AMOUNT",
+  subject_b_code:           "SUBJECT B CODE",
+  subject_b_limit:          "BPP AMOUNT",
+  subject_c_code:           "SUBJECT C CODE",
+  subject_c_limit:          "BUSINESS INCOME",
 
   // Construction
   construction_type:        "CONSTRUCTION TYPE",
+  construction_code:        "CONSTRUCTION CODE",
   num_stories:              "NUM STORIES",
+  num_basements:            "NUM BASEMENTS",
   year_built:               "YEAR BUILT",
   total_area_sq_ft:         "TOTAL AREA",
   distance_to_hydrant:      "DISTANCE TO HYDRANT",
+  distance_to_fire_station: "DISTANCE TO FIRE STATION",
+  fire_district_name:       "FIRE DISTRICT NAME",
+  fire_district_code:       "FIRE DISTRICT CODE",
   protection_class:         "PROTECTION CLASS",
 
-  // Building Improvements / Updates
+  // Building Improvements
   roof_type:                "ROOF TYPE",
   wiring_year:              "WIRING YEAR",
   plumbing_year:            "PLUMBING YEAR",
@@ -534,9 +537,15 @@ export const ACORD_140_FIELD_MAP: AcordFieldMap = {
   num_guards_watchmen:      "NUM GUARDS",
   sprinkler_pct:            "SPRINKLERED",
   fire_alarm_type:          "FIRE ALARM",
+  fire_alarm_manufacturer:  "FIRE ALARM MANUFACTURER",
+
+  // Additional Interests
+  interest_name:            "ADDITIONAL INTEREST NAME",
+  interest_address_1:       "ADDITIONAL INTEREST ADDRESS",
 
   // Remarks
   property_remarks:         "REMARKS",
+  property_general_remarks: "GENERAL REMARKS",
 
   // Signature
   producer_name:            "PRODUCERS NAME",
