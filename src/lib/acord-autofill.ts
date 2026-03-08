@@ -617,7 +617,7 @@ const AI_TO_FORM_ALIASES: Record<string, string[]> = {
   lob_commercial_general_liability: ["lob_commercial_general_liability", "chk_commercial_general_liability"],
 
   // ── Multi-policy carrier / premium aliases ──
-  wc_premium: ["other_lob_premium"],
+  wc_premium: ["wc_premium", "other_lob_premium"],
   wc_carrier: ["prior_other_carrier_1"],
   wc_policy_number: ["prior_other_policy_1"],
   umbrella_carrier: ["prior_other_carrier_1"],
