@@ -50,12 +50,14 @@ const SUGGESTIONS = [
 async function streamChat({
   messages,
   trainingMode,
+  userRole,
   onDelta,
   onDone,
   onError,
 }: {
   messages: { role: string; content: string }[];
   trainingMode: boolean;
+  userRole?: string;
   onDelta: (text: string) => void;
   onDone: () => void;
   onError: (err: string) => void;
@@ -64,7 +66,7 @@ async function streamChat({
   const resp = await fetch(CHAT_URL, {
     method: "POST",
     headers,
-    body: JSON.stringify({ messages, trainingMode }),
+    body: JSON.stringify({ messages, trainingMode, userRole }),
   });
 
   if (!resp.ok) {
