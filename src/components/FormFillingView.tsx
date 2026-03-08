@@ -580,7 +580,7 @@ export default function FormFillingView({ submissionId, initialMessages, initial
       try {
         const { buildAutofilledData } = await import("@/lib/acord-autofill");
         for (const form of ACORD_FORM_LIST) {
-          const expanded = buildAutofilledData(form, loaded);
+          const expanded = buildAutofilledData(form, loaded, null, null, loaded);
           for (const [k, v] of Object.entries(expanded)) {
             if (v !== undefined && v !== null && v !== "" && (!loaded[k] || (typeof loaded[k] === "string" && !loaded[k].trim()))) {
               loaded[k] = v;
