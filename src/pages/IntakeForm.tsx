@@ -2757,6 +2757,111 @@ export default function IntakeForm() {
                     </div>
                   )}
 
+                  {commercialStep === "coverage_select_comm" && (
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-base">What coverage lines do you need?</CardTitle>
+                        <p className="text-sm text-muted-foreground">Select all that apply. This helps us ask the right underwriting questions and prepare the correct ACORD forms.</p>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid grid-cols-2 gap-3">
+                          {["General Liability", "Workers Compensation", "Commercial Auto", "Commercial Property", "Umbrella / Excess", "Professional Liability", "Cyber Liability", "Other"].map(line => {
+                            const sel = commercialForm.selected_coverage_lines.includes(line);
+                            return (
+                              <button key={line} onClick={() => {
+                                const newLines = sel
+                                  ? commercialForm.selected_coverage_lines.filter(l => l !== line)
+                                  : [...commercialForm.selected_coverage_lines, line];
+                                updateCommercial("selected_coverage_lines", newLines);
+                              }}
+                              className={`p-3 rounded-xl border-2 text-left text-sm font-medium transition-all ${sel ? "bg-primary/10 border-primary" : "border-border hover:border-primary/40"}`}>
+                                {line}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {commercialStep === "coverage_questions" && (() => {
+                    const questions = getQuestionsForCoverage(commercialForm.selected_coverage_lines);
+                    // Filter out questions already answered in business_info step
+                    const alreadyCovered = new Set(["business_name", "dba", "years_in_business", "mailing_address", "business_entity_type"]);
+                    const activeQuestions = questions.filter(q =>
+                      !alreadyCovered.has(q.key) &&
+                      (!q.dependsOn || q.dependsOn(commercialForm.acord_data))
+                    );
+                    const grouped = groupQuestionsBySection(activeQuestions);
+                    const sections = Object.keys(grouped) as AcordSection[];
+
+                    const updateAcordField = (key: string, value: any) => {
+                      updateCommercial("acord_data", { ...commercialForm.acord_data, [key]: value });
+                    };
+
+                    const renderQuestion = (q: AcordQuestion) => {
+                      const val = commercialForm.acord_data[q.key] ?? "";
+                      switch (q.type) {
+                        case "text":
+                          return <Input value={val} onChange={e => updateAcordField(q.key, e.target.value)} placeholder={q.placeholder} />;
+                        case "number":
+                          return <Input type="number" value={val} onChange={e => updateAcordField(q.key, e.target.value)} placeholder={q.placeholder} />;
+                        case "currency":
+                          return <Input value={val} onChange={e => updateAcordField(q.key, e.target.value)} placeholder={q.placeholder || "$0"} />;
+                        case "date":
+                          return <Input type="date" value={val} onChange={e => updateAcordField(q.key, e.target.value)} />;
+                        case "boolean":
+                          return (
+                            <Select value={val === true ? "yes" : val === false ? "no" : val || ""} onValueChange={v => updateAcordField(q.key, v)}>
+                              <SelectTrigger className="h-10 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+                              <SelectContent><SelectItem value="yes">Yes</SelectItem><SelectItem value="no">No</SelectItem></SelectContent>
+                            </Select>
+                          );
+                        case "select":
+                          return (
+                            <Select value={val} onValueChange={v => updateAcordField(q.key, v)}>
+                              <SelectTrigger className="h-10 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+                              <SelectContent>{(q.options || []).map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent>
+                            </Select>
+                          );
+                        default:
+                          return <Input value={val} onChange={e => updateAcordField(q.key, e.target.value)} />;
+                      }
+                    };
+
+                    return (
+                      <div className="space-y-6">
+                        <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
+                          <p className="text-sm">These questions help us prefill your ACORD application forms so your agent can start working immediately.</p>
+                        </div>
+                        {sections.map(section => (
+                          <Card key={section}>
+                            <CardHeader>
+                              <CardTitle className="text-base">{SECTION_LABELS[section] || section}</CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                              {grouped[section].map(q => (
+                                <div key={q.key} className="space-y-1.5">
+                                  <Label className="text-xs font-medium">
+                                    {q.label} {q.required && <span className="text-destructive">*</span>}
+                                  </Label>
+                                  {renderQuestion(q)}
+                                </div>
+                              ))}
+                            </CardContent>
+                          </Card>
+                        ))}
+                        {sections.length === 0 && (
+                          <Card>
+                            <CardContent className="py-8 text-center">
+                              <p className="text-sm text-muted-foreground">No additional questions needed for your selected coverage lines. Continue to the next step.</p>
+                            </CardContent>
+                          </Card>
+                        )}
+                      </div>
+                    );
+                  })()}
+
                   {commercialStep === "commercial_docs" && (
                     <div className="space-y-6">
                       <Card>
