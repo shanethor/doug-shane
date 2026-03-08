@@ -113,6 +113,8 @@ Return this exact structure:
     "policies": [],
     "underlying_insurance": [],
     "wc_classifications": [],
+    "cgl_hazards": [],
+    "cgl_limits": {},
     "locations": [],
     "mortgagees": [],
     "endorsements": [],
@@ -157,7 +159,8 @@ EXTRACTION RULES:
 - Dates → MM/DD/YYYY format, currencies → plain number without $ or commas
 - lob_* flags: set "true" ONLY if that coverage type is explicitly mentioned
 - CHECKBOX FIELDS (chk_*): set "true" if the document indicates that option applies
-- SCHEDULE OF HAZARDS: Extract ALL class code rows (hazard_*_1, hazard_*_2, hazard_*_3)
+- SCHEDULE OF HAZARDS: Extract ALL class code rows (hazard_*_1, hazard_*_2, hazard_*_3) AND also populate cgl_hazards[] with structured objects: { location, building, class_code, classification, premium_basis, exposure, territory, rate_premops, rate_products, premium_premops, premium_products }. Both the flat fields and the array should be populated.
+- CGL LIMITS: Also populate cgl_limits: { general_aggregate, products_aggregate, each_occurrence, personal_adv_injury, fire_damage, medical_payments, coverage_type, aggregate_applies_per, deductible_amount, retention_amount }. Extract these from the General Liability section of declarations pages or the ACORD 126 coverages section.
 - vehicles[]: include ALL vehicles — each: { year, make, model, vin, body_type, stated_amount, garaging_zip, gvw, comp_deductible, coll_deductible, territory, use_class }
 - drivers[]: include ALL drivers listed in driver schedules, driver listings, or "CURRENT DRIVERS" sections — each: { name, first_name, last_name, dob, license, license_state }. The "name" field should be the full name as shown (e.g., "ORR, LISA"). Also split into "first_name" and "last_name" separately. If DOB or license number are not provided, leave them as empty strings. For license_state, default to the insured's state if not explicitly listed per driver. Look for driver listings in auto policy declarations, endorsements, and supplemental schedules.
 - policies[]: When MULTIPLE policy declarations are present (BOP, Auto, Umbrella, WC, etc.), extract EACH as a separate object: { line_of_business, carrier_name, policy_number, premium, effective_date, expiration_date, naic_code }. This is critical for multi-policy packets.

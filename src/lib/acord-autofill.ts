@@ -936,7 +936,53 @@ export function buildAutofilledData(
     }
   });
 
-  // 5g. Expand mortgagees[] → mortgagee_N fields
+  // 5g. Expand cgl_hazards[] → hazard_loc_N, hazard_code_N, etc. (ACORD 126 Schedule of Hazards)
+  const cglHazards: any[] = Array.isArray(aiData.cgl_hazards) ? aiData.cgl_hazards : [];
+  cglHazards.forEach((h: any, idx: number) => {
+    const n = idx + 1;
+    if (n > 5) return;
+    const fields: Record<string, string> = {
+      [`hazard_loc_${n}`]: h.location || h.loc || "",
+      [`hazard_bldg_${n}`]: h.building || h.bldg || "",
+      [`hazard_classification_${n}`]: h.classification || h.description || h.class_description || "",
+      [`hazard_code_${n}`]: h.class_code || h.code || h.hazard_code || "",
+      [`hazard_premium_basis_${n}`]: h.premium_basis || h.basis || "",
+      [`hazard_exposure_${n}`]: h.exposure || "",
+      [`hazard_terr_${n}`]: h.territory || h.terr || "",
+      [`hazard_rate_premops_${n}`]: h.rate_premops || h.rate_prem_ops || "",
+      [`hazard_rate_products_${n}`]: h.rate_products || "",
+      [`hazard_premium_premops_${n}`]: h.premium_premops || h.prem_premops || "",
+      [`hazard_premium_products_${n}`]: h.premium_products || h.prem_products || "",
+    };
+    for (const [k, val] of Object.entries(fields)) {
+      if (val && formFieldKeys.has(k) && !mapped[k]) mapped[k] = normalizeValue(k, val);
+    }
+  });
+
+  // 5h-cgl. Expand cgl_limits{} → general_aggregate, each_occurrence, etc. (ACORD 126 Coverages)
+  const cglLimits: any = aiData.cgl_limits || {};
+  if (typeof cglLimits === "object" && !Array.isArray(cglLimits)) {
+    const limitFields: Record<string, string> = {
+      general_aggregate: cglLimits.general_aggregate || "",
+      products_aggregate: cglLimits.products_aggregate || "",
+      each_occurrence: cglLimits.each_occurrence || "",
+      personal_adv_injury: cglLimits.personal_adv_injury || cglLimits.personal_advertising_injury || "",
+      fire_damage: cglLimits.fire_damage || cglLimits.damage_to_rented_premises || "",
+      medical_payments: cglLimits.medical_payments || cglLimits.medical_expense || "",
+      coverage_type: cglLimits.coverage_type || "",
+      aggregate_applies_per: cglLimits.aggregate_applies_per || "",
+      deductible_amount: cglLimits.deductible_amount || "",
+      retention_amount: cglLimits.retention_amount || "",
+      ebl_limit: cglLimits.ebl_limit || "",
+      ebl_deductible_per_claim: cglLimits.ebl_deductible_per_claim || "",
+      ebl_aggregate: cglLimits.ebl_aggregate || "",
+    };
+    for (const [k, val] of Object.entries(limitFields)) {
+      if (val && formFieldKeys.has(k) && !mapped[k]) mapped[k] = normalizeValue(k, val);
+    }
+  }
+
+  // 5h-orig. Expand mortgagees[] → mortgagee_N fields
   const mortgagees: any[] = Array.isArray(aiData.mortgagees) ? aiData.mortgagees : [];
   mortgagees.forEach((m: any, idx: number) => {
     const n = idx + 1;
