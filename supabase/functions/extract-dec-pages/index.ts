@@ -124,6 +124,10 @@ serve(async (req) => {
       });
     }
 
+    // Normalize NAIC aliases so downstream storage/autofill can use a single key
+    if (!extracted.naic_code && extracted.naic_number) extracted.naic_code = String(extracted.naic_number);
+    if (!extracted.naic_number && extracted.naic_code) extracted.naic_number = String(extracted.naic_code);
+
     return new Response(JSON.stringify({ success: true, data: extracted }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
