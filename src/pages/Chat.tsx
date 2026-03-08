@@ -368,7 +368,7 @@ export default function Chat() {
   const { toast } = useToast();
   const { user } = useAuth();
   const { trainingMode } = useTrainingMode();
-  const { role, isClientServices } = useUserRole();
+  const { role, isClientServices, isManager } = useUserRole();
   const navigate = useNavigate();
   const location = useLocation();
   const [reviewSubmissionId, setReviewSubmissionId] = useState<string | null>(null);
