@@ -142,7 +142,7 @@ export default function ProducerDashboard({ embedded }: { embedded?: boolean } =
       </div>
 
       {user && (
-        <ProducerHudRail
+        <ProductionScoreboard
           userId={user.id}
           premiumSold={stats.totalPremium}
           revenueSold={stats.totalRevenue}
