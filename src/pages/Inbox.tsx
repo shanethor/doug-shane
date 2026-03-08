@@ -23,6 +23,8 @@ import { formatDistanceToNow, format } from "date-fns";
 import { getAuthHeaders } from "@/lib/auth-fetch";
 import { advisorAssist } from "@/services/aiRouter";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
+import { EmailFilterChips } from "@/components/EmailFilterChips";
+import { EmailClientSnapshot } from "@/components/EmailClientSnapshot";
 
 type Notification = {
   id: string;
