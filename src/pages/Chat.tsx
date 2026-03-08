@@ -36,7 +36,7 @@ type FieldBubble = { label: string; placeholder: string; key: string };
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/agent-chat`;
 
-const SUGGESTIONS = [
+const PRODUCER_SUGGESTIONS = [
   { icon: FileUp, label: "Submit a new client", message: "I want to submit a new client for coverage." },
   { icon: Globe, label: "Scrape a company website", message: "I have a client's website URL — can you pull their business info from it?" },
   { icon: ClipboardList, label: "Fill an ACORD form", message: "Help me fill out an ACORD form for a client." },
@@ -45,6 +45,26 @@ const SUGGESTIONS = [
   { icon: Mail, label: "Compose an email", message: "Help me draft a professional email to a client." },
   { icon: FileSearch, label: "Request loss runs", message: "I need to request loss runs for a client." },
   { icon: BarChart3, label: "Check my production", message: "Show me my production numbers and pending approvals." },
+];
+
+const MANAGER_SUGGESTIONS = [
+  { icon: BarChart3, label: "Team production", message: "Show my team's production this month." },
+  { icon: Users, label: "Pipeline health", message: "Where are most of our deals getting stuck? Show me pipeline bottlenecks." },
+  { icon: FileUp, label: "Submit a new client", message: "I want to submit a new client for coverage." },
+  { icon: ClipboardList, label: "Compare producers", message: "Compare my producers' performance for this quarter." },
+  { icon: Search, label: "Assign accounts", message: "I need to reassign some client accounts to different producers." },
+  { icon: Mail, label: "Compose an email", message: "Help me draft a professional email." },
+  { icon: FileSearch, label: "Request loss runs", message: "I need to request loss runs for a client." },
+  { icon: Globe, label: "Scrape a company website", message: "I have a client's website URL — can you pull their business info from it?" },
+];
+
+const CLIENT_SERVICES_SUGGESTIONS = [
+  { icon: FileSearch, label: "Look up a client", message: "Look up a client's policy details and coverage information." },
+  { icon: Mail, label: "Send a COI", message: "I need to send a certificate of insurance for a client." },
+  { icon: ClipboardList, label: "Send intake form", message: "Send an updated intake form to a client." },
+  { icon: Search, label: "Check renewal dates", message: "When do my assigned clients' policies renew?" },
+  { icon: Users, label: "Client status", message: "What's the status on my assigned clients?" },
+  { icon: Globe, label: "Policy questions", message: "What are the coverage limits for one of my clients?" },
 ];
 
 async function streamChat({
