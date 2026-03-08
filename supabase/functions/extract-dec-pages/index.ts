@@ -21,9 +21,10 @@ Extract the following fields where available. Return empty strings for missing d
   "applicant_state": "2-letter state code",
   "applicant_zip": "",
   "current_carrier": "Insurance company name",
+  "naic_code": "Insurance company NAIC code (digits only)",
+  "naic_number": "Insurance company NAIC code (digits only)",
   "policy_number": "",
   "policy_effective_date": "YYYY-MM-DD",
-  "policy_expiration_date": "YYYY-MM-DD",
   "drivers": [
     { "name": "", "dob": "YYYY-MM-DD", "license_number": "", "license_state": "", "gender": "male|female|other", "marital_status": "single|married|divorced|widowed" }
   ],
@@ -122,6 +123,10 @@ serve(async (req) => {
         status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    // Normalize NAIC aliases so downstream storage/autofill can use a single key
+    if (!extracted.naic_code && extracted.naic_number) extracted.naic_code = String(extracted.naic_number);
+    if (!extracted.naic_number && extracted.naic_code) extracted.naic_number = String(extracted.naic_code);
 
     return new Response(JSON.stringify({ success: true, data: extracted }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

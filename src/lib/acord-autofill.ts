@@ -983,7 +983,17 @@ export function buildAutofilledData(
     mapped.transaction_date = new Date().toISOString().slice(0, 10);
   }
 
-  // 9. Normalize business_type at the autofill level too
+  // 9. Catch LLC entity when applicant/legal entity text explicitly indicates LLC
+  if (!mapped.business_type) {
+    const businessTypeSource = String(aiData.business_type || aiData.form_of_business || aiData.legal_entity || "").toLowerCase();
+    const applicantSource = String(
+      mapped.applicant_name || mapped.insured_name || aiData.applicant_name || aiData.insured_name || ""
+    ).toLowerCase();
+    const hasLLC = /\bl\.?l\.?c\.?\b/.test(businessTypeSource) || /\bl\.?l\.?c\.?\b/.test(applicantSource) || applicantSource.includes("limited liability");
+    if (hasLLC) mapped.business_type = "LLC";
+  }
+
+  // 10. Normalize business_type at the autofill level too
   if (mapped.business_type) {
     const ENTITY_NORMALIZE: Record<string, string> = {
       "limited liability company": "LLC", "limit liability comp": "LLC", "llc": "LLC",
