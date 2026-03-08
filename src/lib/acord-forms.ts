@@ -1089,11 +1089,19 @@ const acord140Fields: AcordFormField[] = [
 
   { key: "subject_d_code", label: "P1 Subject D Code (AR/VP)", type: "text", section: "Subject of Insurance – P1" },
   { key: "subject_d_limit", label: "P1 AR/VP Amount", type: "currency", section: "Subject of Insurance – P1" },
+  { key: "subject_d_coinsurance", label: "P1 AR/VP Coins %", type: "text", section: "Subject of Insurance – P1" },
+  { key: "subject_d_valuation", label: "P1 AR/VP Valuation", type: "select", options: ["Replacement Cost", "Actual Cash Value"], section: "Subject of Insurance – P1" },
+  { key: "subject_d_cause_of_loss", label: "P1 AR/VP Causes of Loss", type: "select", options: ["Basic", "Broad", "Special"], section: "Subject of Insurance – P1" },
   { key: "subject_d_deductible", label: "P1 AR/VP Deductible", type: "currency", section: "Subject of Insurance – P1" },
+  { key: "subject_d_blanket", label: "P1 AR/VP Blanket #", type: "text", section: "Subject of Insurance – P1" },
 
   { key: "subject_e_code", label: "P1 Subject E Code (EDP/Other)", type: "text", section: "Subject of Insurance – P1" },
   { key: "subject_e_limit", label: "P1 EDP/Other Amount", type: "currency", section: "Subject of Insurance – P1" },
+  { key: "subject_e_coinsurance", label: "P1 EDP/Other Coins %", type: "text", section: "Subject of Insurance – P1" },
+  { key: "subject_e_valuation", label: "P1 EDP/Other Valuation", type: "select", options: ["Replacement Cost", "Actual Cash Value"], section: "Subject of Insurance – P1" },
+  { key: "subject_e_cause_of_loss", label: "P1 EDP/Other Causes of Loss", type: "select", options: ["Basic", "Broad", "Special"], section: "Subject of Insurance – P1" },
   { key: "subject_e_deductible", label: "P1 EDP/Other Deductible", type: "currency", section: "Subject of Insurance – P1" },
+  { key: "subject_e_blanket", label: "P1 EDP/Other Blanket #", type: "text", section: "Subject of Insurance – P1" },
 
   // BI/EE Attachments
   { key: "chk_bi_ee", label: "BI/EE Attached", type: "checkbox", section: "Business Income – P1" },
