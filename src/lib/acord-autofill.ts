@@ -163,7 +163,7 @@ const AI_TO_FORM_ALIASES: Record<string, string[]> = {
   writing_company: ["carrier"],
   current_premium: ["current_premium", "total_premium", "cgl_premium"],
   cgl_premium: ["cgl_premium"],
-  gl_premium: ["cgl_premium"],
+  // gl_premium alias moved to ACORD 75 section below
   coverage_part_premium: ["cgl_premium"],
   advance_premium: ["cgl_premium"],
   prior_carrier_name: ["prior_carrier_1", "prior_wc_carrier_1", "current_carrier"],
