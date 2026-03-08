@@ -163,6 +163,8 @@ serve(async (req) => {
           const fromRaw = getHeader("From");
           const fromMatch = fromRaw.match(/^(.+?)\s*<(.+?)>$/);
 
+          const tags = classifyEmail(getHeader("Subject"), msg.snippet || "");
+
           emails.push({
             user_id: userId,
             connection_id: conn.id,
@@ -174,6 +176,7 @@ serve(async (req) => {
             body_preview: msg.snippet || "",
             is_read: !msg.labelIds?.includes("UNREAD"),
             received_at: new Date(parseInt(msg.internalDate)).toISOString(),
+            ...(tags.length > 0 ? { tags } : {}),
           });
         }
 
