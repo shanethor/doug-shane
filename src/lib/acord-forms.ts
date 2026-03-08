@@ -1410,64 +1410,97 @@ export const ACORD_FORMS: Record<string, AcordFormDefinition> = {
   "acord-75": {
     id: "acord-75",
     name: "ACORD 75",
-    fullName: "Schedule of Underlying Insurance (Auto) (2010/07)",
-    description: "Vehicle schedule, hired/non-owned auto, driver cross-reference, UM/UIM, carrier NAIC, and enhancement endorsements.",
+    fullName: "Insurance Binder (2016/03)",
+    description: "Binder form covering GL, Auto, Property, WC, Excess/Umbrella coverages with mortgagee/loss payee schedules and premium financials.",
     fields: [
       // Header
       { key: "agency_name", label: "Agency", type: "text", section: "Header", required: true },
       { key: "agency_customer_id", label: "Agency Customer ID", type: "text", section: "Header" },
-      { key: "carrier", label: "Carrier", type: "text", section: "Header" },
-      { key: "naic_code", label: "NAIC Code", type: "text", section: "Header" },
-      { key: "policy_number", label: "Policy Number", type: "text", section: "Header" },
+      { key: "agency_phone", label: "Agency Phone", type: "text", section: "Header" },
+      { key: "agency_fax", label: "Agency Fax", type: "text", section: "Header" },
+      { key: "carrier", label: "Company / Carrier", type: "text", section: "Header" },
       { key: "effective_date", label: "Effective Date", type: "date", section: "Header", required: true },
+      { key: "expiration_date", label: "Expiration Date", type: "date", section: "Header" },
       { key: "insured_name", label: "Named Insured", type: "text", section: "Header", required: true },
+      { key: "description_of_operations", label: "Description of Operations", type: "textarea", section: "Header" },
 
-      // Vehicle Schedule (up to 8)
-      ...Array.from({ length: 8 }, (_, i) => {
+      // Binder Meta
+      { key: "binder_number", label: "Binder Number", type: "text", section: "Binder Info" },
+      { key: "per_expiring_policy_number", label: "Per Expiring Policy #", type: "text", section: "Binder Info" },
+      { key: "loan_number", label: "Loan Number", type: "text", section: "Binder Info" },
+
+      // GL Coverages
+      { key: "gl_trigger", label: "GL Trigger", type: "select", options: ["OCCURRENCE", "CLAIMS_MADE"], section: "General Liability" },
+      { key: "gl_each_occurrence", label: "Each Occurrence", type: "currency", section: "General Liability" },
+      { key: "gl_general_aggregate", label: "General Aggregate", type: "currency", section: "General Liability" },
+      { key: "gl_products_comp_ops_agg", label: "Products/Comp Ops Aggregate", type: "currency", section: "General Liability" },
+      { key: "gl_personal_adv_injury", label: "Personal & Advertising Injury", type: "currency", section: "General Liability" },
+      { key: "gl_damage_to_premises_rented", label: "Damage to Rented Premises", type: "currency", section: "General Liability" },
+      { key: "gl_medical_expense", label: "Medical Expense", type: "currency", section: "General Liability" },
+      { key: "gl_retro_date", label: "GL Retro Date", type: "date", section: "General Liability" },
+
+      // Auto Coverages
+      { key: "auto_any_auto", label: "Any Auto", type: "checkbox", section: "Auto Liability" },
+      { key: "auto_owned_only", label: "Owned Autos Only", type: "checkbox", section: "Auto Liability" },
+      { key: "auto_scheduled_only", label: "Scheduled Autos Only", type: "checkbox", section: "Auto Liability" },
+      { key: "auto_hired_only", label: "Hired Autos Only", type: "checkbox", section: "Auto Liability" },
+      { key: "auto_non_owned_only", label: "Non-Owned Autos Only", type: "checkbox", section: "Auto Liability" },
+      { key: "auto_combined_single_limit", label: "Combined Single Limit", type: "currency", section: "Auto Liability" },
+      { key: "auto_bi_per_person", label: "BI Per Person", type: "currency", section: "Auto Liability" },
+      { key: "auto_bi_per_accident", label: "BI Per Accident", type: "currency", section: "Auto Liability" },
+      { key: "auto_property_damage", label: "Property Damage", type: "currency", section: "Auto Liability" },
+      { key: "auto_um_uim_limit", label: "UM/UIM Limit", type: "currency", section: "Auto Liability" },
+      { key: "auto_pip_limit", label: "PIP Limit", type: "currency", section: "Auto Liability" },
+      { key: "auto_med_pay_limit", label: "Auto Med Pay", type: "currency", section: "Auto Liability" },
+
+      // Vehicle Physical Damage
+      { key: "vpd_valuation", label: "Valuation", type: "select", options: ["ACTUAL_CASH_VALUE", "REPLACEMENT_COST", "STATED_AMOUNT"], section: "Vehicle Physical Damage" },
+      { key: "vpd_collision_deductible", label: "Collision Deductible", type: "currency", section: "Vehicle Physical Damage" },
+      { key: "vpd_other_than_collision_deductible", label: "Other Than Collision Deductible", type: "currency", section: "Vehicle Physical Damage" },
+      { key: "vpd_applies_to", label: "Applies To", type: "select", options: ["ALL_VEHICLES", "SCHEDULED_VEHICLES"], section: "Vehicle Physical Damage" },
+
+      // Property
+      { key: "property_causes_of_loss", label: "Causes of Loss", type: "select", options: ["BASIC", "BROAD", "SPECIAL"], section: "Property" },
+      { key: "property_limit", label: "Property Limit", type: "currency", section: "Property" },
+      { key: "property_deductible", label: "Property Deductible", type: "currency", section: "Property" },
+      { key: "property_coinsurance_pct", label: "Coinsurance %", type: "text", section: "Property" },
+
+      // Workers Comp
+      { key: "wc_per_statute", label: "Per Statute", type: "checkbox", section: "Workers Compensation" },
+      { key: "wc_each_accident", label: "Each Accident", type: "currency", section: "Workers Compensation" },
+      { key: "wc_disease_each_employee", label: "Disease - Each Employee", type: "currency", section: "Workers Compensation" },
+      { key: "wc_disease_policy_limit", label: "Disease - Policy Limit", type: "currency", section: "Workers Compensation" },
+
+      // Excess / Umbrella
+      { key: "excess_form", label: "Form", type: "select", options: ["UMBRELLA", "EXCESS"], section: "Excess / Umbrella" },
+      { key: "excess_trigger", label: "Trigger", type: "select", options: ["OCCURRENCE", "CLAIMS_MADE"], section: "Excess / Umbrella" },
+      { key: "excess_each_occurrence", label: "Each Occurrence", type: "currency", section: "Excess / Umbrella" },
+      { key: "excess_aggregate", label: "Aggregate", type: "currency", section: "Excess / Umbrella" },
+      { key: "excess_sir", label: "Self-Insured Retention", type: "currency", section: "Excess / Umbrella" },
+      { key: "excess_retro_date", label: "Retro Date", type: "date", section: "Excess / Umbrella" },
+
+      // Additional Parties (up to 3)
+      ...Array.from({ length: 3 }, (_, i) => {
         const n = i + 1;
         return [
-          { key: `vehicle_${n}_year`, label: `Vehicle ${n} Year`, type: "text" as const, section: "Vehicle Schedule" },
-          { key: `vehicle_${n}_make`, label: `Vehicle ${n} Make`, type: "text" as const, section: "Vehicle Schedule" },
-          { key: `vehicle_${n}_model`, label: `Vehicle ${n} Model`, type: "text" as const, section: "Vehicle Schedule" },
-          { key: `vehicle_${n}_vin`, label: `Vehicle ${n} VIN`, type: "text" as const, section: "Vehicle Schedule" },
-          { key: `vehicle_${n}_body_type`, label: `Vehicle ${n} Body Type`, type: "text" as const, section: "Vehicle Schedule" },
-          { key: `vehicle_${n}_cost_new`, label: `Vehicle ${n} Cost New`, type: "currency" as const, section: "Vehicle Schedule" },
-          { key: `vehicle_${n}_garaging_zip`, label: `Vehicle ${n} Garaging ZIP`, type: "text" as const, section: "Vehicle Schedule" },
-          { key: `vehicle_${n}_gvw`, label: `Vehicle ${n} GVW/GCW`, type: "text" as const, section: "Vehicle Schedule" },
-          { key: `vehicle_${n}_comp_deductible`, label: `Vehicle ${n} Comp Deductible`, type: "currency" as const, section: "Vehicle Schedule" },
-          { key: `vehicle_${n}_coll_deductible`, label: `Vehicle ${n} Collision Deductible`, type: "currency" as const, section: "Vehicle Schedule" },
-          { key: `vehicle_${n}_territory`, label: `Vehicle ${n} Territory`, type: "text" as const, section: "Vehicle Schedule" },
-          { key: `vehicle_${n}_use_class`, label: `Vehicle ${n} Use Class`, type: "text" as const, section: "Vehicle Schedule" },
+          { key: `party_${n}_name`, label: `Party ${n} Name`, type: "text" as const, section: "Mortgagee / Loss Payee / Additional Insured" },
+          { key: `party_${n}_address`, label: `Party ${n} Address`, type: "text" as const, section: "Mortgagee / Loss Payee / Additional Insured" },
+          { key: `party_${n}_city`, label: `Party ${n} City`, type: "text" as const, section: "Mortgagee / Loss Payee / Additional Insured" },
+          { key: `party_${n}_state`, label: `Party ${n} State`, type: "text" as const, section: "Mortgagee / Loss Payee / Additional Insured" },
+          { key: `party_${n}_zip`, label: `Party ${n} ZIP`, type: "text" as const, section: "Mortgagee / Loss Payee / Additional Insured" },
+          { key: `party_${n}_mortgagee`, label: `Party ${n} Mortgagee`, type: "checkbox" as const, section: "Mortgagee / Loss Payee / Additional Insured" },
+          { key: `party_${n}_loss_payee`, label: `Party ${n} Loss Payee`, type: "checkbox" as const, section: "Mortgagee / Loss Payee / Additional Insured" },
+          { key: `party_${n}_additional_insured`, label: `Party ${n} Additional Insured`, type: "checkbox" as const, section: "Mortgagee / Loss Payee / Additional Insured" },
         ];
       }).flat(),
 
-      // Liability & UM/UIM
-      { key: "auto_liability_limit", label: "Liability Limit (CSL)", type: "currency", section: "Coverages", required: true },
-      { key: "um_uim_limit", label: "UM/UIM Limit (Each Accident)", type: "currency", section: "Coverages" },
-      { key: "number_of_vehicles", label: "Number of Owned Vehicles", type: "text", section: "Coverages" },
-      { key: "number_of_drivers", label: "Number of Drivers", type: "text", section: "Coverages" },
+      // Financials
+      { key: "fees", label: "Fees", type: "currency", section: "Financials" },
+      { key: "taxes", label: "Taxes", type: "currency", section: "Financials" },
+      { key: "estimated_total_premium", label: "Estimated Total Premium", type: "currency", section: "Financials" },
 
-      // Hired Auto
-      { key: "hired_auto_liability", label: "Hired Auto Liability", type: "select", options: ["Yes", "No"], section: "Hired / Non-Owned" },
-      { key: "hired_auto_state", label: "Hired Auto State", type: "text", section: "Hired / Non-Owned" },
-      { key: "hired_auto_cost_of_hire", label: "Estimated Annual Cost of Hire", type: "currency", section: "Hired / Non-Owned" },
-      { key: "hired_auto_premium", label: "Hired Auto Premium", type: "currency", section: "Hired / Non-Owned" },
-
-      // Non-Owned
-      { key: "non_owned_liability", label: "Non-Owned Liability", type: "select", options: ["Yes", "No"], section: "Hired / Non-Owned" },
-      { key: "non_owned_class", label: "Non-Owned Class", type: "text", section: "Hired / Non-Owned" },
-      { key: "non_owned_num_employees", label: "Non-Owned # Employees", type: "number", section: "Hired / Non-Owned" },
-      { key: "non_owned_premium", label: "Non-Owned Premium", type: "currency", section: "Hired / Non-Owned" },
-
-      // Enhancement Endorsements
-      { key: "auto_coverage_plus", label: "Auto Coverage Plus", type: "checkbox", section: "Enhancement Endorsements" },
-      { key: "rental_reimbursement", label: "Rental Reimbursement", type: "checkbox", section: "Enhancement Endorsements" },
-      { key: "roadside_assistance", label: "Roadside Assistance", type: "checkbox", section: "Enhancement Endorsements" },
-      { key: "glass_deductible_waiver", label: "Glass Deductible Waiver", type: "checkbox", section: "Enhancement Endorsements" },
-      { key: "hired_auto_pd", label: "Hired Auto Physical Damage", type: "checkbox", section: "Enhancement Endorsements" },
-      { key: "gap_coverage", label: "GAP Coverage", type: "checkbox", section: "Enhancement Endorsements" },
-
-      // Remarks & Signature
+      // Special Conditions & Remarks
+      { key: "special_conditions", label: "Special Conditions", type: "textarea", section: "Conditions" },
       { key: "remarks", label: "Remarks", type: "textarea", section: "Remarks" },
       { key: "producer_name", label: "Producer's Name", type: "text", section: "Signature" },
       { key: "signature_date", label: "Date", type: "date", section: "Signature" },

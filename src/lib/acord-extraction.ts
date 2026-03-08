@@ -17,7 +17,7 @@ import type {
   Acord130Data, Acord130ClassCode,
   Acord131Data, Acord131UnderlyingPolicy,
   Acord140Data, Acord140Building,
-  Acord75Data,
+  Acord75Data, Acord75AdditionalParty,
   AcordHeader, AcordAddress, AcordOfficer, AcordLossRecord,
 } from "./acord-schemas";
 
@@ -433,36 +433,99 @@ export function mapAcord140(data: Record<string, any>): Acord140Data {
   };
 }
 
-// ─── ACORD 75 — Workers Comp Application Mapper ─────────────
+// ─── ACORD 75 — Insurance Binder Mapper ─────────────────────
 
 export function mapAcord75(data: Record<string, any>): Acord75Data {
-  const officers = extractNumberedItems<AcordOfficer>(data, "officer_", 4, (d, i) => {
-    const name = d[`officer_${i}_name`];
-    if (!name) return null;
-    return {
+  // Extract additional parties (up to 3)
+  const additional_parties: Acord75AdditionalParty[] = [];
+  for (let i = 1; i <= 3; i++) {
+    const name = data[`party_${i}_name`];
+    if (!name) continue;
+    additional_parties.push({
       name,
-      title: d[`officer_${i}_title`],
-      ownership_pct: d[`officer_${i}_ownership`],
-      duties: d[`officer_${i}_duties`],
-      remuneration: d[`officer_${i}_remuneration`],
-    };
-  });
+      address_line1: data[`party_${i}_address`],
+      city: data[`party_${i}_city`],
+      state: data[`party_${i}_state`],
+      postal_code: data[`party_${i}_zip`],
+      roles: {
+        mortgagee: data[`party_${i}_mortgagee`] === true || data[`party_${i}_mortgagee`] === "true",
+        loss_payee: data[`party_${i}_loss_payee`] === true || data[`party_${i}_loss_payee`] === "true",
+        additional_insured: data[`party_${i}_additional_insured`] === true || data[`party_${i}_additional_insured`] === "true",
+      },
+    });
+  }
 
   return {
     header: extractHeader(data),
-    applicant_name: data.applicant_name || data.insured_name || "",
-    applicant_address: extractAddress(data, "mailing_") || extractAddress(data, ""),
-    fein: data.fein,
-    business_type: data.business_type,
-    nature_of_business: data.description_of_operations,
-    locations: [],
-    wc_states: data.wc_part1_states,
-    employers_liability_each_accident: data.wc_each_accident,
-    employers_liability_disease_policy: data.wc_disease_policy_limit,
-    employers_liability_disease_each: data.wc_disease_each_employee,
-    officers,
-    experience_mod: data.experience_mod,
-    general_info_questions: {},
+    binder_number: data.binder_number,
+    per_expiring_policy_number: data.per_expiring_policy_number,
+    loan_number: data.loan_number,
+    agency_name: data.agency_name,
+    agency_customer_id: data.agency_customer_id,
+    agency_phone: data.agency_phone,
+    agency_fax: data.agency_fax,
+    insured_name: data.insured_name || data.applicant_name || "",
+    description_of_operations: data.description_of_operations,
+    carrier_name: data.carrier || data.carrier_name,
+    additional_parties,
+
+    // GL
+    gl_trigger: data.gl_trigger,
+    gl_each_occurrence: data.gl_each_occurrence || data.each_occurrence,
+    gl_general_aggregate: data.gl_general_aggregate || data.general_aggregate,
+    gl_products_comp_ops_agg: data.gl_products_comp_ops_agg || data.products_aggregate,
+    gl_personal_adv_injury: data.gl_personal_adv_injury || data.personal_adv_injury,
+    gl_damage_to_premises_rented: data.gl_damage_to_premises_rented || data.fire_damage,
+    gl_medical_expense: data.gl_medical_expense || data.medical_payments,
+    gl_retro_date: data.gl_retro_date,
+
+    // Auto
+    auto_any_auto: data.auto_any_auto,
+    auto_owned_only: data.auto_owned_only,
+    auto_scheduled_only: data.auto_scheduled_only,
+    auto_hired_only: data.auto_hired_only,
+    auto_non_owned_only: data.auto_non_owned_only,
+    auto_combined_single_limit: data.auto_combined_single_limit,
+    auto_bi_per_person: data.auto_bi_per_person,
+    auto_bi_per_accident: data.auto_bi_per_accident,
+    auto_property_damage: data.auto_property_damage,
+    auto_um_uim_limit: data.auto_um_uim_limit || data.um_uim_limit,
+    auto_pip_limit: data.auto_pip_limit,
+    auto_med_pay_limit: data.auto_med_pay_limit,
+
+    // Vehicle Physical Damage
+    vpd_valuation: data.vpd_valuation,
+    vpd_collision_deductible: data.vpd_collision_deductible,
+    vpd_other_than_collision_deductible: data.vpd_other_than_collision_deductible,
+    vpd_applies_to: data.vpd_applies_to,
+
+    // Property
+    property_causes_of_loss: data.property_causes_of_loss,
+    property_limit: data.property_limit,
+    property_deductible: data.property_deductible,
+    property_coinsurance_pct: data.property_coinsurance_pct,
+
+    // WC
+    wc_per_statute: data.wc_per_statute,
+    wc_each_accident: data.wc_each_accident,
+    wc_disease_each_employee: data.wc_disease_each_employee,
+    wc_disease_policy_limit: data.wc_disease_policy_limit,
+
+    // Excess
+    excess_form: data.excess_form,
+    excess_trigger: data.excess_trigger,
+    excess_each_occurrence: data.excess_each_occurrence,
+    excess_aggregate: data.excess_aggregate,
+    excess_sir: data.excess_sir,
+    excess_retro_date: data.excess_retro_date,
+
+    // Financials
+    fees: data.fees,
+    taxes: data.taxes,
+    estimated_total_premium: data.estimated_total_premium,
+
+    // Conditions
+    special_conditions: data.special_conditions,
     remarks: data.remarks,
   };
 }

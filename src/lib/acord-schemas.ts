@@ -312,48 +312,105 @@ export interface Acord140Data {
   remarks?: string;
 }
 
-// ─── ACORD 75 — Workers Comp Application ────────────────────
+// ─── ACORD 75 — Insurance Binder ─────────────────────────────
 
-export interface Acord75ClassCode {
+export interface Acord75AdditionalParty {
+  name: string;
+  address_line1?: string;
+  city?: string;
   state?: string;
-  class_code: string;
-  description?: string;
-  estimated_annual_payroll: string;
-  num_employees?: string;
-  rate?: string;
-  estimated_premium?: string;
-}
-
-export interface Acord75Location {
-  number?: string;
-  address: AcordAddress;
-  class_codes: Acord75ClassCode[];
+  postal_code?: string;
+  roles: {
+    mortgagee?: boolean;
+    loss_payee?: boolean;
+    additional_insured?: boolean;
+  };
 }
 
 export interface Acord75Data {
   header: AcordHeader;
-  applicant_name: string;
-  applicant_address: AcordAddress;
-  fein?: string;
-  business_type?: string;
-  nature_of_business?: string;
-  
-  // Locations with class codes
-  locations: Acord75Location[];
-  
-  // Coverages
-  wc_states?: string;
-  employers_liability_each_accident?: string;
-  employers_liability_disease_policy?: string;
-  employers_liability_disease_each?: string;
-  
-  // Officers
-  officers: AcordOfficer[];
-  
-  // Experience mod
-  experience_mod?: string;
-  
-  general_info_questions: Record<string, string>;
+
+  // Binder meta
+  binder_number?: string;
+  binder_title?: string;
+  per_expiring_policy_number?: string;
+  loan_number?: string;
+
+  // Agency
+  agency_name?: string;
+  agency_customer_id?: string;
+  agency_phone?: string;
+  agency_fax?: string;
+
+  // Insured
+  insured_name: string;
+  description_of_operations?: string;
+
+  // Company / Carrier
+  carrier_name?: string;
+
+  // Additional parties (mortgagees, loss payees, additional insureds)
+  additional_parties: Acord75AdditionalParty[];
+
+  // ── Coverages ──
+
+  // GL
+  gl_trigger?: string; // "OCCURRENCE" | "CLAIMS_MADE"
+  gl_each_occurrence?: string;
+  gl_general_aggregate?: string;
+  gl_products_comp_ops_agg?: string;
+  gl_personal_adv_injury?: string;
+  gl_damage_to_premises_rented?: string;
+  gl_medical_expense?: string;
+  gl_retro_date?: string;
+
+  // Auto
+  auto_any_auto?: boolean;
+  auto_owned_only?: boolean;
+  auto_scheduled_only?: boolean;
+  auto_hired_only?: boolean;
+  auto_non_owned_only?: boolean;
+  auto_combined_single_limit?: string;
+  auto_bi_per_person?: string;
+  auto_bi_per_accident?: string;
+  auto_property_damage?: string;
+  auto_um_uim_limit?: string;
+  auto_pip_limit?: string;
+  auto_med_pay_limit?: string;
+
+  // Vehicle Physical Damage
+  vpd_valuation?: string;
+  vpd_collision_deductible?: string;
+  vpd_other_than_collision_deductible?: string;
+  vpd_applies_to?: string;
+
+  // Property
+  property_causes_of_loss?: string; // "BASIC" | "BROAD" | "SPECIAL"
+  property_limit?: string;
+  property_deductible?: string;
+  property_coinsurance_pct?: string;
+
+  // Workers Comp
+  wc_per_statute?: boolean;
+  wc_each_accident?: string;
+  wc_disease_each_employee?: string;
+  wc_disease_policy_limit?: string;
+
+  // Excess / Umbrella
+  excess_form?: string; // "UMBRELLA" | "EXCESS"
+  excess_trigger?: string; // "OCCURRENCE" | "CLAIMS_MADE"
+  excess_each_occurrence?: string;
+  excess_aggregate?: string;
+  excess_sir?: string;
+  excess_retro_date?: string;
+
+  // Financials
+  fees?: string;
+  taxes?: string;
+  estimated_total_premium?: string;
+
+  // Special conditions / remarks
+  special_conditions?: string;
   remarks?: string;
 }
 
