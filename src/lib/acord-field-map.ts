@@ -3330,6 +3330,7 @@ export const ACORD_75_INDEX_MAP: AcordIndexMap = {
   // Remarks / Signature
   remarks:               129,   // reuse special_conditions slot
   producer_name:         146,   // producer_signature
+};
 
 // ── ACORD 125 (2016/03) — Commercial Insurance Application — 550+ fields ──
 // Verified via /pdf-diagnostic "Fill All TXT" export — field names are semantic XFA names.
