@@ -591,6 +591,16 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
           </TabsList>
         </div>
 
+        {/* Insurance filter chips */}
+        <div className="mb-3 overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0 scrollbar-hide">
+          <EmailFilterChips
+            activeTags={activeTags}
+            onTagsChange={setActiveTags}
+            selectedClient={selectedClient}
+            onClientChange={setSelectedClient}
+          />
+        </div>
+
         <TabsContent value={tab}>
           <ScrollArea className="h-[calc(100vh-280px)]">
             {filtered.length === 0 ? (
