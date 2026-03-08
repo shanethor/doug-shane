@@ -1918,17 +1918,24 @@ export const ACORD_130_INDEX_MAP: AcordIndexMap = {
   description_of_operations: 427, // CommercialPolicy_OperationsDescription
   // Questions are Y/N code + explanation pairs
   q_aircraft_watercraft_code: 428,
+  wc_aircraft_watercraft:     428, // UI alias → Q1 Y/N
   q_aircraft_watercraft_expl: 429,
   q_hazardous_material_code: 430,
+  wc_hazardous_material:     430, // UI alias → Q2 Y/N
   q_hazardous_material_expl: 431,
   q_underground_above15_code: 432,
+  wc_underground_above_15ft: 432, // UI alias → Q3 Y/N
   q_underground_above15_expl: 433,
   q_vessels_docks_bridges_code: 434,
+  wc_barges_vessels_docks:   434, // UI alias → Q4 Y/N
   q_vessels_docks_bridges_expl: 435,
   q_other_business_code:    436,
+  wc_other_business:        436, // UI alias → Q5 Y/N
   q_other_business_expl:    437,
   q_subcontractors_code:    438,
+  subcontractors_used:      438, // UI alias → Q6 Y/N
   q_subcontractors_expl:    439,
+  pct_subcontracted:        439, // % of work subcontracted → Q6 explanation field
   q_sublet_no_certs_code:   440,
   q_sublet_no_certs_expl:   441,
   q_safety_program_code:    442,
