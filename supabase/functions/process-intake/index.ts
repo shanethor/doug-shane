@@ -128,9 +128,9 @@ Deno.serve(async (req) => {
           .insert({
             user_id: agentId,
             company_name: businessName,
-            description: `Customer intake: ${requestedCoverage || "General coverage"}. ${freeNotes || ""}`.trim(),
+            description: `Customer intake: ${requestedCoverage || c.selected_coverage_lines?.join(", ") || "General coverage"}. ${freeNotes || ""}`.trim(),
             status: "pending",
-            coverage_lines: requestedCoverage ? [requestedCoverage] : [],
+            coverage_lines: c.selected_coverage_lines?.length > 0 ? c.selected_coverage_lines : (requestedCoverage ? [requestedCoverage] : []),
             narrative: fullNarrative,
             lead_id: leadId,
           })
@@ -139,6 +139,39 @@ Deno.serve(async (req) => {
 
         if (newSub && leadId) {
           await supabase.from("leads").update({ submission_id: newSub.id }).eq("id", leadId);
+        }
+
+        // ─── Auto-prefill ACORD forms from intake data ───
+        if (newSub) {
+          const acordData = c.acord_data || {};
+          const formDataPayload: Record<string, any> = {
+            // Map intake fields → ACORD field keys
+            applicant_name: businessName,
+            applicant_contact: contactName,
+            applicant_email: contactEmail,
+            applicant_phone: phone,
+            applicant_fein: ein,
+            applicant_dba: c.dba || "",
+            business_entity_type: businessType,
+            mailing_address: address,
+            mailing_city: city,
+            mailing_state: state,
+            mailing_zip: zip,
+            years_in_business: yearsInBusiness,
+            employee_count: employeeCount,
+            annual_revenue: annualRevenue,
+            // Spread ACORD question answers directly (keys match field-map)
+            ...acordData,
+          };
+
+          // Create insurance_application so workspace prefills automatically
+          await supabase.from("insurance_applications").insert({
+            user_id: agentId,
+            submission_id: newSub.id,
+            form_data: formDataPayload,
+            status: "draft",
+            gaps: null,
+          });
         }
 
         return new Response(
