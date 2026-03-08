@@ -555,7 +555,6 @@ const AI_TO_FORM_ALIASES: Record<string, string[]> = {
   // Per-coverage premiums (ACORD 75 binder)
   gl_premium: ["gl_premium", "cgl_premium"],
   auto_premium: ["auto_premium"],
-  property_premium: ["property_premium"],
   excess_premium: ["excess_premium"],
   excess_form: ["excess_form"],
   excess_trigger: ["excess_trigger"],
