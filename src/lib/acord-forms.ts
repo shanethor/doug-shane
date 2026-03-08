@@ -1279,6 +1279,7 @@ const acord140Fields: AcordFormField[] = [
   { key: "earthquake_locations", label: "Earthquake – Applicable Locations", type: "text", section: "Policy-Wide Options" },
   { key: "earthquake_deductible", label: "Earthquake Deductible", type: "text", section: "Policy-Wide Options" },
   { key: "earthquake_premium", label: "Earthquake Premium", type: "currency", section: "Policy-Wide Options" },
+  { key: "earthquake_excluded", label: "Earthquake Coverage: Not Provided", type: "checkbox", section: "Policy-Wide Options" },
 
   // Utility Services / Seasonal Increase
   { key: "utility_services_coverage", label: "Utility Services Coverage", type: "checkbox", section: "Policy-Wide Options" },
