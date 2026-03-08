@@ -1096,14 +1096,19 @@ const acord140Fields: AcordFormField[] = [
   { key: "subject_e_deductible", label: "P1 EDP/Other Deductible", type: "currency", section: "Subject of Insurance – P1" },
 
   // BI/EE Attachments
-  { key: "chk_bi_ee", label: "BI/EE Attached", type: "checkbox", section: "Business Income" },
-  { key: "chk_value_reporting", label: "Value Reporting Attached", type: "checkbox", section: "Business Income" },
-  { key: "bi_ee_type", label: "BI/EE Measurement", type: "select", options: ["Actual Loss Sustained", "Monthly Limit of Indemnity", "Maximum Period of Indemnity"], section: "Business Income" },
-  { key: "bi_ee_months", label: "BI/EE – # Months", type: "text", section: "Business Income" },
-  { key: "bi_rental_value_included", label: "Rental Value Included", type: "checkbox", section: "Business Income" },
-  { key: "bi_ordinary_payroll_included", label: "Ordinary Payroll Included", type: "checkbox", section: "Business Income" },
-  { key: "bi_extended_days", label: "Extended BI Days", type: "text", section: "Business Income" },
-  { key: "bi_extended_period_months", label: "Extended Period of Indemnity (months)", type: "text", section: "Business Income" },
+  { key: "chk_bi_ee", label: "BI/EE Attached", type: "checkbox", section: "Business Income – P1" },
+  { key: "chk_value_reporting", label: "Value Reporting Attached", type: "checkbox", section: "Business Income – P1" },
+  { key: "bi_ee_type", label: "P1 BI/EE Measurement", type: "select", options: ["Actual Loss Sustained", "Monthly Limit of Indemnity", "Maximum Period of Indemnity"], section: "Business Income – P1" },
+  { key: "bi_ee_months", label: "P1 BI/EE – # Months", type: "text", section: "Business Income – P1" },
+  { key: "bi_rental_value_included", label: "P1 Rental Value Included", type: "checkbox", section: "Business Income – P1" },
+  { key: "bi_ordinary_payroll_included", label: "P1 Ordinary Payroll Included", type: "checkbox", section: "Business Income – P1" },
+  { key: "bi_extended_days", label: "P1 Extended BI Days", type: "text", section: "Business Income – P1" },
+  { key: "bi_extended_period_months", label: "P1 Extended Period of Indemnity (months)", type: "text", section: "Business Income – P1" },
+
+  // BI/EE – Premises 2 (supports different valuation pattern)
+  { key: "chk_bi_ee_2", label: "P2 BI/EE Attached", type: "checkbox", section: "Business Income – P2" },
+  { key: "bi_ee_type_2", label: "P2 BI/EE Measurement", type: "select", options: ["Actual Loss Sustained", "Monthly Limit of Indemnity", "Maximum Period of Indemnity"], section: "Business Income – P2" },
+  { key: "bi_ee_months_2", label: "P2 BI/EE – # Months", type: "text", section: "Business Income – P2" },
 
   // Spoilage – Premises 1
   { key: "spoilage_yn", label: "P1 Spoilage Y/N", type: "select", options: ["Yes", "No"], section: "Spoilage – P1" },
