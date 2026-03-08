@@ -117,7 +117,7 @@ const emptyRecVehicle = (): RecreationalVehicle => ({ rec_type: "", year: "", ma
 const emptyArticle = (): PersonalArticle => ({ description: "", category: "", estimated_value: "" });
 
 /* ─── Commercial Lines Types ─── */
-type CommercialStepKey = "industry" | "insurance_check" | "owner_experience" | "upload_dec" | "loss_run_auth" | "bor_auth" | "business_info" | "commercial_docs";
+type CommercialStepKey = "industry" | "insurance_check" | "owner_experience" | "upload_dec" | "loss_run_auth" | "bor_auth" | "coverage_select_comm" | "coverage_questions" | "business_info" | "commercial_docs";
 
 const COMMERCIAL_LINES = [
   "General Liability", "Workers Compensation", "Commercial Auto",
