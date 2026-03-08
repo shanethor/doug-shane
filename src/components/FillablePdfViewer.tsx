@@ -216,29 +216,16 @@ const FillablePdfViewer = forwardRef<FillablePdfViewerHandle, FillablePdfViewerP
               if (!field || !value) continue;
               try {
                 const f = field as any;
+                // Detect if this value is a checkbox signal ("On", "true", "Yes", etc.)
+                const isCheckboxValue = (() => {
+                  const lower = String(value).toLowerCase();
+                  return lower === "on" || lower === "true" || lower === "yes" || lower === "y" || lower === "x" || lower === "1";
+                })();
                 // Use method-existence checks instead of constructor.name
                 // (ACORD PDFs often have non-standard constructor names like PDFTextField2)
-                if (typeof f.setText === "function") {
-                  let textVal = String(value);
-                  // Handle maxLength fields (e.g., Y/N question fields with maxLength=1)
-                  const maxLen = f.getMaxLength?.();
-                  if (maxLen && textVal.length > maxLen) {
-                    // For Y/N fields: "Yes"→"Y", "No"→"N", "true"→"Y", "false"→"N"
-                    if (maxLen === 1) {
-                      const lower = textVal.toLowerCase();
-                      if (lower === "yes" || lower === "true" || lower === "y") textVal = "Y";
-                      else if (lower === "no" || lower === "false" || lower === "n") textVal = "N";
-                      else textVal = textVal.substring(0, 1);
-                    } else {
-                      textVal = textVal.substring(0, maxLen);
-                    }
-                  }
-                  f.setText(textVal);
-                  try { f.defaultUpdateAppearances(helvetica); } catch (_) {}
-                  filled++;
-                } else if (typeof f.check === "function") {
-                  if (value === "true" || value === "Yes" || value === "1" || value === "X" || value === "On") {
-                    // For checkboxes: check the field AND manually create appearance if needed
+                if (typeof f.check === "function") {
+                  // Native checkbox field — check it if value is truthy
+                  if (isCheckboxValue) {
                     try {
                       f.check();
                       checkboxIndices.push(idx);
@@ -251,7 +238,6 @@ const FillablePdfViewer = forwardRef<FillablePdfViewerHandle, FillablePdfViewerP
                       for (const widget of widgets) {
                         const ap = widget.dict.get(PDFName.of("AP"));
                         if (ap) {
-                          // Has AP dict — find the "on" state name and set AS to it
                           const normalDict = (ap as any).get?.(PDFName.of("N"));
                           if (normalDict && typeof normalDict.entries === "function") {
                             for (const [key] of normalDict.entries()) {
@@ -267,7 +253,6 @@ const FillablePdfViewer = forwardRef<FillablePdfViewerHandle, FillablePdfViewerP
                             widget.dict.set(PDFName.of("V"), PDFName.of("Yes"));
                           }
                         } else {
-                          // No AP dict — set AS/V and hope Adobe renders it
                           widget.dict.set(PDFName.of("AS"), PDFName.of("Yes"));
                           widget.dict.set(PDFName.of("V"), PDFName.of("Yes"));
                         }
@@ -277,6 +262,30 @@ const FillablePdfViewer = forwardRef<FillablePdfViewerHandle, FillablePdfViewerP
                     }
                     filled++;
                   }
+                } else if (typeof f.setText === "function") {
+                  // Text field — but if value is a checkbox signal AND maxLen=1, write "X"
+                  let textVal = String(value);
+                  const maxLen = f.getMaxLength?.();
+                  if (isCheckboxValue && maxLen === 1) {
+                    // ACORD PDFs sometimes use text fields with maxLen=1 as pseudo-checkboxes
+                    textVal = "X";
+                  } else if (isCheckboxValue && !maxLen) {
+                    // If it's a checkbox value going into a text field without maxLen, skip it
+                    // (likely a mapping issue — don't write "On" as text)
+                    continue;
+                  } else if (maxLen && textVal.length > maxLen) {
+                    if (maxLen === 1) {
+                      const lower = textVal.toLowerCase();
+                      if (lower === "yes" || lower === "true" || lower === "y") textVal = "Y";
+                      else if (lower === "no" || lower === "false" || lower === "n") textVal = "N";
+                      else textVal = textVal.substring(0, 1);
+                    } else {
+                      textVal = textVal.substring(0, maxLen);
+                    }
+                  }
+                  f.setText(textVal);
+                  try { f.defaultUpdateAppearances(helvetica); } catch (_) {}
+                  filled++;
                 } else if (typeof f.select === "function") {
                   try { f.select(String(value)); filled++; } catch (_) {}
                 }
