@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
-import { Target } from "lucide-react";
+import { Target, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,40 +13,57 @@ import {
 const fmt = (n: number) =>
   "$" + Math.round(n).toLocaleString();
 
-/* ── Status pill ── */
+/* ── Status pill (larger) ── */
 function StatusPill({ pct }: { pct: number }) {
   let text: string, cls: string;
   if (pct >= 120) {
-    text = "🔥 Ahead"; cls = "text-emerald-600 bg-emerald-500/10";
+    text = "🔥 AHEAD"; cls = "text-emerald-600 bg-emerald-500/15 ring-1 ring-emerald-500/20";
   } else if (pct >= 80) {
-    text = "On Pace"; cls = "text-primary bg-primary/10";
+    text = "ON PACE"; cls = "text-primary bg-primary/15 ring-1 ring-primary/20";
   } else {
-    text = "Behind"; cls = "text-amber-600 bg-amber-500/10";
+    text = "BEHIND"; cls = "text-amber-600 bg-amber-500/15 ring-1 ring-amber-500/20";
   }
   return (
-    <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider whitespace-nowrap ${cls}`}>
+    <span className={`rounded-md px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider whitespace-nowrap ${cls}`}>
       {text}
     </span>
   );
 }
 
-/* ── Single ticker item ── */
-function TickerItem({ children }: { children: React.ReactNode }) {
+/* ── Stat block inside a slide ── */
+function StatBlock({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
-    <span className="inline-flex items-center gap-1.5 px-3 whitespace-nowrap text-[11px]">
-      {children}
-    </span>
+    <div className="flex flex-col items-center px-4 sm:px-6">
+      <span className="text-[9px] uppercase tracking-[0.14em] font-semibold text-muted-foreground mb-0.5">{label}</span>
+      <span className="text-base sm:text-lg font-black tabular-nums text-foreground leading-tight">{value}</span>
+      {sub && <span className="text-[10px] text-muted-foreground tabular-nums mt-0.5">{sub}</span>}
+    </div>
   );
 }
 
-function Divider() {
-  return <span className="inline-block w-px h-3 bg-border mx-1 shrink-0" />;
+/* ── Dot indicator ── */
+function DotIndicator({ count, active }: { count: number; active: number }) {
+  return (
+    <div className="absolute bottom-1 left-1/2 -translate-x-1/2 flex gap-1.5">
+      {Array.from({ length: count }).map((_, i) => (
+        <span
+          key={i}
+          className={`block rounded-full transition-all duration-300 ${
+            i === active ? "w-3 h-1 bg-primary" : "w-1 h-1 bg-muted-foreground/30"
+          }`}
+        />
+      ))}
+    </div>
+  );
 }
+
+const AUTO_ADVANCE_MS = 7000;
+const PAUSE_AFTER_MANUAL_MS = 12000;
 
 /* ── Main Component ── */
 export function ProducerHudRail() {
   const { user } = useAuth();
-  const { role, isClientServices } = useUserRole();
+  const { isClientServices } = useUserRole();
   const [goals, setGoals] = useState<{ annual_premium_goal: number; annual_revenue_goal: number } | null>(null);
   const [pipeline, setPipeline] = useState({ prospects: 0, quoting: 0, presenting: 0, sold: 0, lost: 0 });
   const [premiumSold, setPremiumSold] = useState(0);
@@ -56,9 +73,12 @@ export function ProducerHudRail() {
   const [goalPremium, setGoalPremium] = useState("");
   const [goalRevenue, setGoalRevenue] = useState("");
   const [saving, setSaving] = useState(false);
-  const [paused, setPaused] = useState(false);
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const animRef = useRef<number>(0);
+
+  // Carousel state
+  const [activeSlide, setActiveSlide] = useState(0);
+  const [hovered, setHovered] = useState(false);
+  const pauseUntilRef = useRef(0);
+  const SLIDE_COUNT = 3;
 
   const now = new Date();
   const year = now.getFullYear();
@@ -68,6 +88,7 @@ export function ProducerHudRail() {
   const startOfMonth = new Date(year, now.getMonth(), 1);
   const daysInMonth = Math.floor((endOfMonth.getTime() - startOfMonth.getTime()) / 86400000);
   const daysLeftInMonth = Math.max(1, daysInMonth - now.getDate());
+  const dayOfMonth = now.getDate();
 
   const startOfYear = new Date(year, 0, 1);
   const endOfYear = new Date(year + 1, 0, 1);
@@ -75,7 +96,6 @@ export function ProducerHudRail() {
   const dayOfYear = Math.floor((now.getTime() - startOfYear.getTime()) / 86400000) + 1;
   const daysLeftInYear = Math.max(1, daysInYear - dayOfYear);
 
-  // Don't render for client_services
   const shouldShow = userId && !isClientServices;
 
   useEffect(() => {
@@ -113,25 +133,23 @@ export function ProducerHudRail() {
     load();
   }, [userId, year]);
 
-  // Auto-scroll marquee
-  const scrollSpeed = 0.4; // px per frame
-  const tick = useCallback(() => {
-    const el = scrollRef.current;
-    if (el && !paused) {
-      el.scrollLeft += scrollSpeed;
-      // When we've scrolled half (the duplicated content), reset to start
-      if (el.scrollLeft >= el.scrollWidth / 2) {
-        el.scrollLeft = 0;
-      }
-    }
-    animRef.current = requestAnimationFrame(tick);
-  }, [paused]);
-
+  // Auto-advance carousel
   useEffect(() => {
-    if (!shouldShow || loading) return;
-    animRef.current = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(animRef.current);
-  }, [tick, shouldShow, loading]);
+    if (!shouldShow || loading || hovered) return;
+    const interval = setInterval(() => {
+      if (Date.now() < pauseUntilRef.current) return;
+      setActiveSlide((prev) => (prev + 1) % SLIDE_COUNT);
+    }, AUTO_ADVANCE_MS);
+    return () => clearInterval(interval);
+  }, [shouldShow, loading, hovered]);
+
+  const goToSlide = (dir: "prev" | "next") => {
+    pauseUntilRef.current = Date.now() + PAUSE_AFTER_MANUAL_MS;
+    setActiveSlide((prev) => {
+      if (dir === "next") return (prev + 1) % SLIDE_COUNT;
+      return (prev - 1 + SLIDE_COUNT) % SLIDE_COUNT;
+    });
+  };
 
   const annualGoal = goals?.annual_premium_goal || 0;
   const annualRevGoal = goals?.annual_revenue_goal || 0;
@@ -148,6 +166,10 @@ export function ProducerHudRail() {
 
   const mPremRemaining = Math.max(0, monthlyGoal - premiumSold);
   const yPremRemaining = Math.max(0, annualGoal - premiumSold);
+  const dailyPaceNeeded = daysLeftInMonth > 0 ? mPremRemaining / daysLeftInMonth : 0;
+  const dailyTarget = monthlyGoal / daysInMonth;
+  // Estimate "today's NB" as a fraction of MTD (placeholder — real would need today's date filter)
+  const todayEstimate = dayOfMonth > 0 ? premiumSold / dayOfMonth : 0;
 
   const handleSaveGoals = async () => {
     const premGoal = parseFloat(goalPremium) || 0;
@@ -172,31 +194,29 @@ export function ProducerHudRail() {
 
   if (!shouldShow) return null;
 
-  // Loading skeleton
   if (loading) {
     return (
       <div className="w-full border-b border-border bg-card/90 backdrop-blur-sm animate-pulse">
-        <div className="flex items-center h-[28px] px-3 gap-4">
-          <div className="h-2 w-16 rounded bg-muted/50" />
-          <div className="h-2 w-24 rounded bg-muted/40" />
-          <div className="h-2 w-20 rounded bg-muted/40" />
-          <div className="h-2 w-16 rounded bg-muted/40" />
+        <div className="flex items-center justify-center h-[56px] px-3 gap-6">
+          <div className="h-3 w-20 rounded bg-muted/50" />
+          <div className="h-5 w-28 rounded bg-muted/40" />
+          <div className="h-5 w-24 rounded bg-muted/40" />
+          <div className="h-5 w-20 rounded bg-muted/40" />
         </div>
       </div>
     );
   }
 
-  // No goals set
   if (!goals || annualGoal === 0) {
     return (
       <>
         <button
           onClick={() => { setGoalPremium(""); setGoalRevenue(""); setGoalDialogOpen(true); }}
-          className="w-full border-b border-border bg-card/90 backdrop-blur-sm px-4 py-1.5 flex items-center gap-2 hover:bg-muted/30 transition-colors group"
+          className="w-full border-b border-border bg-card/90 backdrop-blur-sm px-4 py-3 flex items-center justify-center gap-2 hover:bg-muted/30 transition-colors group"
         >
-          <Target className="h-3 w-3 text-primary" />
-          <span className="text-[10px] font-medium text-muted-foreground group-hover:text-foreground transition-colors">
-            Set your {year} production goals to activate the ticker
+          <Target className="h-4 w-4 text-primary" />
+          <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors">
+            Set your {year} production goals to activate the scoreboard
           </span>
         </button>
         <GoalDialog
@@ -209,124 +229,125 @@ export function ProducerHudRail() {
     );
   }
 
-  /* Build the ticker content — duplicated for seamless loop */
-  const tickerContent = (
-    <>
-      <TickerItem>
-        <StatusPill pct={percentToGoal} />
-        <button
-          onClick={(e) => { e.stopPropagation(); setGoalPremium(annualGoal.toString()); setGoalRevenue(annualRevGoal.toString()); setGoalDialogOpen(true); }}
-          className="text-muted-foreground/30 hover:text-foreground transition-colors"
-        >
-          <Target className="h-2.5 w-2.5" />
-        </button>
-      </TickerItem>
+  /* ── Slide A: Performance ── */
+  const slideA = (
+    <div className="w-full shrink-0 flex items-center justify-center gap-2 sm:gap-4 px-2 py-1">
+      <StatusPill pct={percentToGoal} />
+      <button
+        onClick={(e) => { e.stopPropagation(); setGoalPremium(annualGoal.toString()); setGoalRevenue(annualRevGoal.toString()); setGoalDialogOpen(true); }}
+        className="text-muted-foreground/30 hover:text-foreground transition-colors"
+      >
+        <Target className="h-3 w-3" />
+      </button>
 
-      <Divider />
+      <div className="h-6 w-px bg-border" />
 
-      <TickerItem>
-        <span className="text-[8px] font-bold uppercase tracking-[0.12em] text-primary">NB MTD</span>
-        <span className="text-muted-foreground">Prem</span>
-        <span className="font-bold tabular-nums text-foreground">{fmt(premiumSold)}</span>
-        <span className="text-muted-foreground/50">/</span>
-        <span className="text-muted-foreground tabular-nums">{fmt(monthlyGoal)}</span>
-      </TickerItem>
+      <StatBlock label="NB MTD Prem" value={fmt(premiumSold)} sub={`Goal ${fmt(monthlyGoal)}`} />
+      <StatBlock label="NB MTD Rev" value={fmt(revenueSold)} sub={`Goal ${fmt(monthlyRevGoal)}`} />
 
-      <Divider />
+      <div className="h-6 w-px bg-border hidden sm:block" />
 
-      <TickerItem>
-        <span className="text-[8px] font-bold uppercase tracking-[0.12em] text-primary">NB MTD</span>
-        <span className="text-muted-foreground">Rev</span>
-        <span className="font-bold tabular-nums text-foreground">{fmt(revenueSold)}</span>
-        <span className="text-muted-foreground/50">/</span>
-        <span className="text-muted-foreground tabular-nums">{fmt(monthlyRevGoal)}</span>
-      </TickerItem>
+      <StatBlock label="NB YTD Prem" value={fmt(premiumSold)} sub={`Goal ${fmt(annualGoal)}`} />
+      <StatBlock label="NB YTD Rev" value={fmt(revenueSold)} sub={`Goal ${fmt(annualRevGoal)}`} />
 
-      <Divider />
+      <div className="h-6 w-px bg-border hidden sm:block" />
 
-      <TickerItem>
-        <span className="text-[8px] font-bold uppercase tracking-[0.12em] text-primary">MTD Gap</span>
-        <span className="font-bold tabular-nums text-foreground">{fmt(mPremRemaining)}</span>
-        <span className="text-muted-foreground">·</span>
-        <span className="text-muted-foreground tabular-nums">{fmt(daysLeftInMonth > 0 ? mPremRemaining / daysLeftInMonth : 0)}/day</span>
-        <span className="text-muted-foreground">·</span>
-        <span className="text-muted-foreground">{daysLeftInMonth}d left</span>
-      </TickerItem>
-
-      <Divider />
-
-      <TickerItem>
-        <span className="text-[8px] font-bold uppercase tracking-[0.12em] text-primary">NB YTD</span>
-        <span className="text-muted-foreground">Prem</span>
-        <span className="font-bold tabular-nums text-foreground">{fmt(premiumSold)}</span>
-        <span className="text-muted-foreground/50">/</span>
-        <span className="text-muted-foreground tabular-nums">{fmt(annualGoal)}</span>
-      </TickerItem>
-
-      <Divider />
-
-      <TickerItem>
-        <span className="text-[8px] font-bold uppercase tracking-[0.12em] text-primary">NB YTD</span>
-        <span className="text-muted-foreground">Rev</span>
-        <span className="font-bold tabular-nums text-foreground">{fmt(revenueSold)}</span>
-        <span className="text-muted-foreground/50">/</span>
-        <span className="text-muted-foreground tabular-nums">{fmt(annualRevGoal)}</span>
-      </TickerItem>
-
-      <Divider />
-
-      <TickerItem>
-        <span className="text-[8px] font-bold uppercase tracking-[0.12em] text-primary">YTD Gap</span>
-        <span className="font-bold tabular-nums text-foreground">{fmt(yPremRemaining)}</span>
-        <span className="text-muted-foreground">·</span>
-        <span className="text-muted-foreground tabular-nums">{fmt(daysLeftInYear > 0 ? yPremRemaining / daysLeftInYear : 0)}/day</span>
-        <span className="text-muted-foreground">·</span>
-        <span className="text-muted-foreground">{daysLeftInYear}d left</span>
-      </TickerItem>
-
-      <Divider />
-
-      <TickerItem>
-        <span className="text-[8px] font-bold uppercase tracking-[0.12em] text-primary">Goal</span>
-        <span className="font-black tabular-nums text-foreground">{percentToGoal.toFixed(0)}%</span>
-      </TickerItem>
-
-      <Divider />
-
-      <TickerItem>
-        <span className="text-[8px] font-bold uppercase tracking-[0.12em] text-primary">Pipeline</span>
-        <span className="text-muted-foreground">P</span>
-        <span className="font-bold tabular-nums">{pipeline.prospects}</span>
-        <span className="text-muted-foreground">Q</span>
-        <span className="font-bold tabular-nums">{pipeline.quoting}</span>
-        <span className="text-muted-foreground">Pr</span>
-        <span className="font-bold tabular-nums">{pipeline.presenting}</span>
-        <span className="text-muted-foreground">S</span>
-        <span className="font-bold tabular-nums text-emerald-600">{pipeline.sold}</span>
-        <span className="text-muted-foreground">L</span>
-        <span className="font-bold tabular-nums text-destructive">{pipeline.lost}</span>
-      </TickerItem>
-
-      <Divider />
-    </>
+      <div className="flex flex-col items-center px-3">
+        <span className="text-[9px] uppercase tracking-[0.14em] font-semibold text-muted-foreground mb-0.5">Goal %</span>
+        <span className="text-xl font-black tabular-nums text-foreground leading-tight">{percentToGoal.toFixed(0)}%</span>
+      </div>
+    </div>
   );
+
+  /* ── Slide B: Pipeline ── */
+  const PipeChip = ({ label, count, color }: { label: string; count: number; color?: string }) => (
+    <div className="flex flex-col items-center px-3 sm:px-5">
+      <span className="text-[9px] uppercase tracking-[0.14em] font-semibold text-muted-foreground mb-0.5">{label}</span>
+      <span className={`text-lg sm:text-xl font-black tabular-nums leading-tight ${color || "text-foreground"}`}>{count}</span>
+    </div>
+  );
+
+  const slideB = (
+    <div className="w-full shrink-0 flex items-center justify-center gap-1 sm:gap-3 px-2 py-1">
+      <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-primary mr-2">Pipeline</span>
+      <PipeChip label="Prospects" count={pipeline.prospects} />
+      <div className="h-6 w-px bg-border" />
+      <PipeChip label="Quoting" count={pipeline.quoting} />
+      <div className="h-6 w-px bg-border" />
+      <PipeChip label="Presenting" count={pipeline.presenting} />
+      <div className="h-6 w-px bg-border" />
+      <PipeChip label="Sold" count={pipeline.sold} color="text-emerald-600" />
+      <div className="h-6 w-px bg-border" />
+      <PipeChip label="Lost" count={pipeline.lost} color="text-destructive" />
+    </div>
+  );
+
+  /* ── Slide C: Day Pace ── */
+  const slideC = (
+    <div className="w-full shrink-0 flex items-center justify-center gap-2 sm:gap-4 px-2 py-1">
+      <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-primary mr-2">Daily Pace</span>
+
+      <StatBlock label="Avg NB / Day" value={fmt(todayEstimate)} sub={`Day ${dayOfMonth} of ${daysInMonth}`} />
+
+      <div className="h-6 w-px bg-border" />
+
+      <StatBlock label="Pace Needed" value={`${fmt(dailyPaceNeeded)}/day`} sub={`${daysLeftInMonth}d left this month`} />
+
+      <div className="h-6 w-px bg-border" />
+
+      <StatBlock label="Daily Target" value={fmt(dailyTarget)} sub="Monthly ÷ days" />
+
+      <div className="h-6 w-px bg-border" />
+
+      <StatBlock label="MTD Gap" value={fmt(mPremRemaining)} sub={mPremRemaining <= 0 ? "✓ On track" : "Remaining"} />
+
+      <div className="h-6 w-px bg-border hidden sm:block" />
+
+      <StatBlock label="YTD Gap" value={fmt(yPremRemaining)} sub={`${fmt(yPremRemaining / Math.max(1, daysLeftInYear))}/day needed`} />
+    </div>
+  );
+
+  const slides = [slideA, slideB, slideC];
 
   return (
     <>
       <div
-        className="w-full bg-card/95 backdrop-blur-sm border-b border-border overflow-hidden"
-        onMouseEnter={() => setPaused(true)}
-        onMouseLeave={() => setPaused(false)}
+        className="relative w-full bg-card/95 backdrop-blur-sm border-b border-border overflow-hidden"
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
       >
-        <div
-          ref={scrollRef}
-          className="flex items-center h-[28px] overflow-x-hidden whitespace-nowrap"
-          style={{ scrollbarWidth: "none" }}
+        {/* Chevron left */}
+        <button
+          onClick={() => goToSlide("prev")}
+          className="absolute left-0 top-0 bottom-0 z-10 w-7 flex items-center justify-center bg-gradient-to-r from-card via-card/80 to-transparent opacity-0 hover:opacity-100 transition-opacity"
         >
-          {/* Duplicate content for seamless loop */}
-          {tickerContent}
-          {tickerContent}
+          <ChevronLeft className="h-4 w-4 text-muted-foreground" />
+        </button>
+
+        {/* Carousel track */}
+        <div className="overflow-hidden h-[56px]">
+          <div
+            className="flex h-full transition-transform duration-500 ease-in-out"
+            style={{ transform: `translateX(-${activeSlide * 100}%)`, width: `${SLIDE_COUNT * 100}%` }}
+          >
+            {slides.map((slide, i) => (
+              <div key={i} className="flex items-center justify-center" style={{ width: `${100 / SLIDE_COUNT}%` }}>
+                {slide}
+              </div>
+            ))}
+          </div>
         </div>
+
+        {/* Dot indicator */}
+        <DotIndicator count={SLIDE_COUNT} active={activeSlide} />
+
+        {/* Chevron right */}
+        <button
+          onClick={() => goToSlide("next")}
+          className="absolute right-0 top-0 bottom-0 z-10 w-7 flex items-center justify-center bg-gradient-to-l from-card via-card/80 to-transparent opacity-0 hover:opacity-100 transition-opacity"
+        >
+          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+        </button>
       </div>
 
       <GoalDialog
