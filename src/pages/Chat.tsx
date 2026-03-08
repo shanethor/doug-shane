@@ -36,7 +36,7 @@ type FieldBubble = { label: string; placeholder: string; key: string };
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/agent-chat`;
 
-const SUGGESTIONS = [
+const PRODUCER_SUGGESTIONS = [
   { icon: FileUp, label: "Submit a new client", message: "I want to submit a new client for coverage." },
   { icon: Globe, label: "Scrape a company website", message: "I have a client's website URL — can you pull their business info from it?" },
   { icon: ClipboardList, label: "Fill an ACORD form", message: "Help me fill out an ACORD form for a client." },
@@ -47,15 +47,37 @@ const SUGGESTIONS = [
   { icon: BarChart3, label: "Check my production", message: "Show me my production numbers and pending approvals." },
 ];
 
+const MANAGER_SUGGESTIONS = [
+  { icon: BarChart3, label: "Team production", message: "Show my team's production this month." },
+  { icon: Users, label: "Pipeline health", message: "Where are most of our deals getting stuck? Show me pipeline bottlenecks." },
+  { icon: FileUp, label: "Submit a new client", message: "I want to submit a new client for coverage." },
+  { icon: ClipboardList, label: "Compare producers", message: "Compare my producers' performance for this quarter." },
+  { icon: Search, label: "Assign accounts", message: "I need to reassign some client accounts to different producers." },
+  { icon: Mail, label: "Compose an email", message: "Help me draft a professional email." },
+  { icon: FileSearch, label: "Request loss runs", message: "I need to request loss runs for a client." },
+  { icon: Globe, label: "Scrape a company website", message: "I have a client's website URL — can you pull their business info from it?" },
+];
+
+const CLIENT_SERVICES_SUGGESTIONS = [
+  { icon: FileSearch, label: "Look up a client", message: "Look up a client's policy details and coverage information." },
+  { icon: Mail, label: "Send a COI", message: "I need to send a certificate of insurance for a client." },
+  { icon: ClipboardList, label: "Send intake form", message: "Send an updated intake form to a client." },
+  { icon: Search, label: "Check renewal dates", message: "When do my assigned clients' policies renew?" },
+  { icon: Users, label: "Client status", message: "What's the status on my assigned clients?" },
+  { icon: Globe, label: "Policy questions", message: "What are the coverage limits for one of my clients?" },
+];
+
 async function streamChat({
   messages,
   trainingMode,
+  userRole,
   onDelta,
   onDone,
   onError,
 }: {
   messages: { role: string; content: string }[];
   trainingMode: boolean;
+  userRole?: string;
   onDelta: (text: string) => void;
   onDone: () => void;
   onError: (err: string) => void;
@@ -64,7 +86,7 @@ async function streamChat({
   const resp = await fetch(CHAT_URL, {
     method: "POST",
     headers,
-    body: JSON.stringify({ messages, trainingMode }),
+    body: JSON.stringify({ messages, trainingMode, userRole }),
   });
 
   if (!resp.ok) {
@@ -346,7 +368,7 @@ export default function Chat() {
   const { toast } = useToast();
   const { user } = useAuth();
   const { trainingMode } = useTrainingMode();
-  const { role, isClientServices } = useUserRole();
+  const { role, isClientServices, isManager } = useUserRole();
   const navigate = useNavigate();
   const location = useLocation();
   const [reviewSubmissionId, setReviewSubmissionId] = useState<string | null>(null);
@@ -1445,11 +1467,13 @@ export default function Chat() {
         }
       }
       
-      const contentWithContext = `${dateContext}${leadsContext}\n${content}`;
+      const roleContext = role ? `\n[CONTEXT: User role is "${role}"]` : "";
+      const contentWithContext = `${dateContext}${leadsContext}${roleContext}\n${content}`;
       
       await streamChat({
         messages: [...messages, { role: userMsg.role, content: contentWithContext }].map((m) => ({ role: m.role, content: m.content })),
         trainingMode,
+        userRole: role,
         onDelta: upsert,
         onDone: () => {
           clearTimeout(safetyTimeout);
@@ -2141,7 +2165,7 @@ export default function Chat() {
               {/* Suggestions & feature boxes — only in training/help mode */}
               {trainingMode && (<>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 w-full max-w-2xl">
-                {SUGGESTIONS.map((s) => (
+                {(isClientServices ? CLIENT_SERVICES_SUGGESTIONS : isManager ? MANAGER_SUGGESTIONS : PRODUCER_SUGGESTIONS).map((s) => (
                   <button
                     key={s.label}
                     onClick={() => {
