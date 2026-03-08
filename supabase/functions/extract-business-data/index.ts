@@ -113,6 +113,8 @@ Return this exact structure:
     "policies": [],
     "underlying_insurance": [],
     "wc_classifications": [],
+    "cgl_hazards": [],
+    "cgl_limits": {},
     "locations": [],
     "mortgagees": [],
     "endorsements": [],
