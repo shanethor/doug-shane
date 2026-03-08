@@ -200,6 +200,8 @@ const emptyCommercial = (): CommercialFormData => ({
   has_other_broker: "", wants_bor: "", bor_lines: [], bor_authorized: false,
   carrier_email: "",
   owner_resume_text: "", owner_resume_files: [],
+  selected_coverage_lines: [],
+  acord_data: {},
 });
 
 /* ─── Personal step keys (dynamic flow) ─── */
