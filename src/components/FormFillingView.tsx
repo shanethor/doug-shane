@@ -832,7 +832,12 @@ export default function FormFillingView({ submissionId, initialMessages, initial
       for (const form of enabledFormList) {
         const { data: inferred, aiInferredCount } = await buildAutofilledDataWithAI(form, aiData, undefined, undefined, aiData);
         for (const [k, v] of Object.entries(inferred)) {
-          if (!merged[k] && v !== "" && v !== null && v !== undefined) {
+          const current = merged[k];
+          const currentStr = typeof current === "string" ? current.trim().toLowerCase() : "";
+          const isFalseLike = current === false || currentStr === "false" || currentStr === "off" || currentStr === "no" || currentStr === "n" || currentStr === "0";
+          const isEmptyLike = current === undefined || current === null || current === "" || (typeof current === "string" && !current.trim());
+          const shouldFill = isEmptyLike || (v === true && isFalseLike);
+          if (v !== "" && v !== null && v !== undefined && shouldFill) {
             merged[k] = v;
             totalNewFields++;
           }
