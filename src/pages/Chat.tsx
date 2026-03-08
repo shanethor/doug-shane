@@ -2165,7 +2165,7 @@ export default function Chat() {
               {/* Suggestions & feature boxes — only in training/help mode */}
               {trainingMode && (<>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 w-full max-w-2xl">
-                {SUGGESTIONS.map((s) => (
+                {(isClientServices ? CLIENT_SERVICES_SUGGESTIONS : isManager ? MANAGER_SUGGESTIONS : PRODUCER_SUGGESTIONS).map((s) => (
                   <button
                     key={s.label}
                     onClick={() => {
