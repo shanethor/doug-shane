@@ -926,7 +926,7 @@ export default function FormFillingView({ submissionId, initialMessages, initial
             try {
               const prefill = await buildPrefillByIndex(form.id, formData);
               if (Object.keys(prefill).length > 0) {
-                const pdfPath = `/acord-fillable/${form.id}.pdf`;
+                const pdfPath = FILLABLE_PDF_PATHS[form.id] || `/acord-fillable/${form.id}.pdf`;
                 const resp = await fetch(pdfPath);
                 if (resp.ok) {
                   const { PDFDocument, StandardFonts, PDFName } = await import("pdf-lib");
