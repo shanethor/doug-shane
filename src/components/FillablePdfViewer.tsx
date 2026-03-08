@@ -237,7 +237,7 @@ const FillablePdfViewer = forwardRef<FillablePdfViewerHandle, FillablePdfViewerP
                   try { f.defaultUpdateAppearances(helvetica); } catch (_) {}
                   filled++;
                 } else if (typeof f.check === "function") {
-                  if (value === "true" || value === "Yes" || value === "1" || value === "X") {
+                  if (value === "true" || value === "Yes" || value === "1" || value === "X" || value === "On") {
                     // For checkboxes: check the field AND manually create appearance if needed
                     try {
                       f.check();
