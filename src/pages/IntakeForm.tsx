@@ -2393,6 +2393,9 @@ export default function IntakeForm() {
                 if (commercialStep === "business_info") {
                   return !!(commercialForm.business_name.trim() && commercialForm.customer_name.trim() && commercialForm.customer_email.trim() && /^[\w.-]+@[\w.-]+\.\w+$/.test(commercialForm.customer_email.trim()) && commercialForm.customer_phone.trim());
                 }
+                if (commercialStep === "coverage_select_comm") {
+                  return commercialForm.selected_coverage_lines.length > 0;
+                }
                 return true;
               };
 
