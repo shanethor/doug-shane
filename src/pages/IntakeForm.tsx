@@ -2338,6 +2338,8 @@ export default function IntakeForm() {
                 }
                 steps.push("bor_auth");
                 steps.push("business_info");
+                steps.push("coverage_select_comm");
+                steps.push("coverage_questions");
                 steps.push("commercial_docs");
                 return steps;
               };
@@ -2350,6 +2352,8 @@ export default function IntakeForm() {
                 loss_run_auth: "Loss Run Authorization",
                 bor_auth: "Broker Authorization",
                 business_info: "Your Information",
+                coverage_select_comm: "Coverage Lines",
+                coverage_questions: "Coverage Details",
                 commercial_docs: "Documents & Submit",
               };
               const commIdx = commSteps.indexOf(commercialStep);
