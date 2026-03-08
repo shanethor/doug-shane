@@ -552,11 +552,9 @@ const AI_TO_FORM_ALIASES: Record<string, string[]> = {
   garage_other_limit: ["garage_other_limit"],
   garage_aggregate: ["garage_aggregate"],
   wc_per_statute: ["wc_per_statute"],
-  // Per-coverage premiums
-  gl_premium: ["gl_premium"],
+  // Per-coverage premiums (ACORD 75 binder)
+  gl_premium: ["gl_premium", "cgl_premium"],
   auto_premium: ["auto_premium"],
-  wc_premium: ["wc_premium"],
-  excess_premium: ["excess_premium"],
   excess_form: ["excess_form"],
   excess_trigger: ["excess_trigger"],
   excess_each_occurrence: ["excess_each_occurrence"],
