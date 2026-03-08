@@ -675,21 +675,58 @@ export const ACORD_140_FIELD_MAP: AcordFieldMap = {
 };
 
 // ─────────────────────────────────────────────────────────────────
-// ACORD 75 (2010/07) — Cyber / Privacy Liability
+// ACORD 75 (2016/03) — Insurance Binder
 // ─────────────────────────────────────────────────────────────────
 export const ACORD_75_FIELD_MAP: AcordFieldMap = {
   agency_name:              "AGENCY",
   agency_customer_id:       "AGENCY CUSTOMER ID",
+  agency_phone:             "PHONE",
+  agency_fax:               "FAX",
   carrier:                  "COMPANY",
-  naic_code:                "NAIC CODE",
-  policy_number:            "POLICY NUMBER",
   effective_date:           "EFFECTIVE DATE",
-  insured_name:             "APPLICANT",
-  annual_revenues:          "ANNUAL REVENUES",
-  total_employees:          "NUM EMPLOYEES",
+  expiration_date:          "EXPIRATION DATE",
+  insured_name:             "NAMED INSURED",
   description_of_operations:"DESCRIPTION OF OPERATIONS",
-  each_occurrence_limit:    "EACH OCCURRENCE",
-  aggregate_limit:          "AGGREGATE LIMIT",
+  binder_number:            "BINDER NUMBER",
+  per_expiring_policy_number:"PER EXPIRING POLICY",
+  loan_number:              "LOAN NUMBER",
+
+  // GL
+  gl_each_occurrence:       "GL EACH OCCURRENCE",
+  gl_general_aggregate:     "GL GENERAL AGGREGATE",
+  gl_products_comp_ops_agg: "GL PRODUCTS COMP/OP AGG",
+  gl_personal_adv_injury:   "GL PERSONAL & ADV INJURY",
+  gl_damage_to_premises_rented:"GL DAMAGE TO RENTED PREMISES",
+  gl_medical_expense:       "GL MED EXP",
+
+  // Auto
+  auto_combined_single_limit:"AUTO COMBINED SINGLE LIMIT",
+  auto_um_uim_limit:        "AUTO UM/UIM",
+  auto_pip_limit:           "AUTO PIP",
+  auto_med_pay_limit:       "AUTO MED PAY",
+
+  // Property
+  property_limit:           "PROPERTY LIMIT",
+  property_deductible:      "PROPERTY DEDUCTIBLE",
+  property_coinsurance_pct: "PROPERTY COINSURANCE",
+
+  // WC
+  wc_each_accident:         "WC EACH ACCIDENT",
+  wc_disease_policy_limit:  "WC DISEASE POLICY LIMIT",
+  wc_disease_each_employee: "WC DISEASE EACH EMPLOYEE",
+
+  // Excess
+  excess_each_occurrence:   "EXCESS EACH OCCURRENCE",
+  excess_aggregate:         "EXCESS AGGREGATE",
+  excess_sir:               "EXCESS SIR",
+
+  // Financials
+  fees:                     "FEES",
+  taxes:                    "TAXES",
+  estimated_total_premium:  "ESTIMATED TOTAL PREMIUM",
+
+  // Conditions
+  special_conditions:       "SPECIAL CONDITIONS",
   remarks:                  "REMARKS",
   producer_name:            "PRODUCERS NAME",
   signature_date:           "SIGNATURE DATE",
