@@ -909,32 +909,183 @@ export function buildAutofilledData(
 
   // 5e. Expand underlying_insurance[] → ACORD 131 underlying fields
   const underlying: any[] = Array.isArray(aiData.underlying_insurance) ? aiData.underlying_insurance : [];
+  let otherSlot = "a"; // track which "Other" slot to use next (a, then b)
+  const setIfEmpty = (key: string, val: string) => {
+    if (val && formFieldKeys.has(key) && !mapped[key]) mapped[key] = normalizeValue(key, val);
+  };
   for (const u of underlying) {
     const lob = (u.line_of_business || "").toUpperCase();
     if (lob.includes("AUTO")) {
-      if (!mapped.underlying_auto_carrier && formFieldKeys.has("underlying_auto_carrier")) mapped.underlying_auto_carrier = u.carrier || "";
-      if (u.policy_number && formFieldKeys.has("underlying_auto_policy") && !mapped.underlying_auto_policy) mapped.underlying_auto_policy = u.policy_number;
-      if (u.limits?.csl && formFieldKeys.has("underlying_auto_csl") && !mapped.underlying_auto_csl) mapped.underlying_auto_csl = normalizeValue("underlying_auto_csl", u.limits.csl);
-      if (u.premium && formFieldKeys.has("underlying_auto_premium") && !mapped.underlying_auto_premium) mapped.underlying_auto_premium = normalizeValue("underlying_auto_premium", u.premium);
+      setIfEmpty("underlying_auto_carrier", u.carrier || "");
+      setIfEmpty("underlying_auto_policy", u.policy_number || "");
+      setIfEmpty("underlying_auto_policy_number", u.policy_number || "");
+      setIfEmpty("underlying_auto_eff_date", u.effective_date || "");
+      setIfEmpty("underlying_auto_exp_date", u.expiration_date || "");
+      const lim = u.limits || {};
+      setIfEmpty("underlying_auto_csl", lim.csl || "");
+      setIfEmpty("underlying_auto_bi_ea_acc", lim.bi_each_accident || lim.bi_ea_acc || "");
+      setIfEmpty("underlying_auto_bi_ea_per", lim.bi_each_person || lim.bi_ea_per || "");
+      setIfEmpty("underlying_auto_pd", lim.pd || "");
+      setIfEmpty("underlying_auto_csl_premium", u.premium || "");
+      setIfEmpty("underlying_auto_premium", u.premium || "");
+      setIfEmpty("underlying_auto_mod_factor", u.mod_factor || "");
     } else if (lob.includes("GL") || lob.includes("GENERAL") || lob.includes("CGL") || lob.includes("BOP")) {
-      if (!mapped.underlying_gl_carrier && formFieldKeys.has("underlying_gl_carrier")) mapped.underlying_gl_carrier = u.carrier || "";
-      if (u.policy_number && formFieldKeys.has("underlying_gl_policy") && !mapped.underlying_gl_policy) mapped.underlying_gl_policy = u.policy_number;
+      setIfEmpty("underlying_gl_carrier", u.carrier || "");
+      setIfEmpty("underlying_gl_policy", u.policy_number || "");
+      setIfEmpty("underlying_gl_policy_number", u.policy_number || "");
+      setIfEmpty("underlying_gl_eff_date", u.effective_date || "");
+      setIfEmpty("underlying_gl_exp_date", u.expiration_date || "");
       const lim = u.limits || {};
-      if (lim.each_occurrence && formFieldKeys.has("underlying_gl_occurrence") && !mapped.underlying_gl_occurrence) mapped.underlying_gl_occurrence = normalizeValue("underlying_gl_occurrence", lim.each_occurrence);
-      if (lim.general_aggregate && formFieldKeys.has("underlying_gl_aggregate") && !mapped.underlying_gl_aggregate) mapped.underlying_gl_aggregate = normalizeValue("underlying_gl_aggregate", lim.general_aggregate);
-      if (lim.products_completed_ops && formFieldKeys.has("underlying_gl_products") && !mapped.underlying_gl_products) mapped.underlying_gl_products = normalizeValue("underlying_gl_products", lim.products_completed_ops);
-      if (lim.personal_adv_injury && formFieldKeys.has("underlying_gl_personal") && !mapped.underlying_gl_personal) mapped.underlying_gl_personal = normalizeValue("underlying_gl_personal", lim.personal_adv_injury);
-      if (u.premium && formFieldKeys.has("underlying_gl_premium") && !mapped.underlying_gl_premium) mapped.underlying_gl_premium = normalizeValue("underlying_gl_premium", u.premium);
+      setIfEmpty("underlying_gl_occurrence", lim.each_occurrence || lim.occurrence || "");
+      setIfEmpty("underlying_gl_aggregate", lim.general_aggregate || lim.aggregate || "");
+      setIfEmpty("underlying_gl_products", lim.products_completed_ops || lim.products || "");
+      setIfEmpty("underlying_gl_personal", lim.personal_adv_injury || lim.personal_injury || "");
+      setIfEmpty("underlying_gl_fire_damage", lim.fire_damage || "");
+      setIfEmpty("underlying_gl_med_expense", lim.medical_expense || lim.med_exp || "");
+      setIfEmpty("underlying_gl_prem_ops_premium", u.premium || "");
+      setIfEmpty("underlying_gl_premium", u.premium || "");
+      setIfEmpty("underlying_gl_mod_factor", u.mod_factor || "");
     } else if (lob.includes("EMPLOYER") || lob.includes("EL") || lob.includes("WORKERS") || lob.includes("WC")) {
-      if (!mapped.underlying_el_carrier && formFieldKeys.has("underlying_el_carrier")) mapped.underlying_el_carrier = u.carrier || "";
-      if (u.policy_number && formFieldKeys.has("underlying_el_policy") && !mapped.underlying_el_policy) mapped.underlying_el_policy = u.policy_number;
+      setIfEmpty("underlying_el_carrier", u.carrier || "");
+      setIfEmpty("underlying_el_policy", u.policy_number || "");
+      setIfEmpty("underlying_el_policy_number", u.policy_number || "");
+      setIfEmpty("underlying_el_eff_date", u.effective_date || "");
+      setIfEmpty("underlying_el_exp_date", u.expiration_date || "");
       const lim = u.limits || {};
-      if (lim.each_accident && formFieldKeys.has("underlying_el_each_accident") && !mapped.underlying_el_each_accident) mapped.underlying_el_each_accident = normalizeValue("underlying_el_each_accident", lim.each_accident);
-      if (lim.disease_each_employee && formFieldKeys.has("underlying_el_disease_employee") && !mapped.underlying_el_disease_employee) mapped.underlying_el_disease_employee = normalizeValue("underlying_el_disease_employee", lim.disease_each_employee);
-      if (lim.disease_policy && formFieldKeys.has("underlying_el_disease_policy") && !mapped.underlying_el_disease_policy) mapped.underlying_el_disease_policy = normalizeValue("underlying_el_disease_policy", lim.disease_policy);
-      if (u.premium && formFieldKeys.has("underlying_el_premium") && !mapped.underlying_el_premium) mapped.underlying_el_premium = normalizeValue("underlying_el_premium", u.premium);
+      setIfEmpty("underlying_el_each_accident", lim.each_accident || "");
+      setIfEmpty("underlying_el_disease_employee", lim.disease_each_employee || lim.disease_employee || "");
+      setIfEmpty("underlying_el_disease_policy", lim.disease_policy || "");
+      setIfEmpty("underlying_el_premium", u.premium || "");
+      setIfEmpty("underlying_el_mod_factor", u.mod_factor || "");
+    } else {
+      // Property, EPLI, Cyber, D&O, or any other underlying line → Other A/B slots
+      const slot = otherSlot;
+      if (slot !== "a" && slot !== "b") continue; // only 2 "Other" slots on ACORD 131
+      setIfEmpty(`underlying_other_${slot}_type`, u.line_of_business || "");
+      setIfEmpty(`underlying_other_${slot}_carrier`, u.carrier || "");
+      setIfEmpty(`underlying_other_${slot}_policy_number`, u.policy_number || "");
+      setIfEmpty(`underlying_other_${slot}_eff_date`, u.effective_date || "");
+      setIfEmpty(`underlying_other_${slot}_exp_date`, u.expiration_date || "");
+      const lim = u.limits || {};
+      const coverage = lim.each_occurrence || lim.aggregate || lim.limit || Object.values(lim).find(v => v) || "";
+      setIfEmpty(`underlying_other_${slot}_coverage`, String(coverage));
+      setIfEmpty(`underlying_other_${slot}_csl`, lim.csl || lim.each_occurrence || "");
+      setIfEmpty(`underlying_other_${slot}_premium`, u.premium || "");
+      setIfEmpty(`underlying_other_${slot}_mod_factor`, u.mod_factor || "");
+      otherSlot = slot === "a" ? "b" : "c"; // advance to next slot
     }
   }
+
+  // 5e-2. Expand 131 locations from extracted data → location_*_a/b/c fields
+  const locations: any[] = Array.isArray(aiData.umbrella_locations) ? aiData.umbrella_locations : [];
+  const locSlots = ["a", "b", "c", "d", "e", "f"];
+  // If no explicit locations array, populate Location A from primary data
+  if (locations.length === 0 && (aiData.applicant_name || aiData.insured_name)) {
+    setIfEmpty("location_name_a", aiData.applicant_name || aiData.insured_name || "");
+    setIfEmpty("location_address_a", aiData.mailing_address || aiData.premises_address || "");
+    setIfEmpty("location_city_a", aiData.city || aiData.premises_city || "");
+    setIfEmpty("location_state_a", aiData.state || aiData.premises_state || "");
+    setIfEmpty("location_zip_a", aiData.zip || aiData.premises_zip || "");
+    setIfEmpty("operations_description_a", aiData.description_of_operations || aiData.primary_description || "");
+    setIfEmpty("total_payroll_a", aiData.annual_payroll || "");
+    setIfEmpty("annual_gross_receipts_a", aiData.annual_gross_sales || aiData.annual_revenues || "");
+    setIfEmpty("employee_count_a", aiData.total_employees || aiData.full_time_employees || "");
+  }
+  locations.forEach((loc: any, idx: number) => {
+    if (idx >= locSlots.length) return;
+    const s = locSlots[idx];
+    setIfEmpty(`location_name_${s}`, loc.name || "");
+    setIfEmpty(`location_address_${s}`, loc.address || "");
+    setIfEmpty(`location_city_${s}`, loc.city || "");
+    setIfEmpty(`location_state_${s}`, loc.state || "");
+    setIfEmpty(`location_zip_${s}`, loc.zip || "");
+    setIfEmpty(`operations_description_${s}`, loc.description || loc.operations_description || "");
+    setIfEmpty(`total_payroll_${s}`, loc.payroll || loc.total_payroll || "");
+    setIfEmpty(`annual_gross_receipts_${s}`, loc.gross_receipts || loc.gross_sales || "");
+    setIfEmpty(`employee_count_${s}`, loc.employees || loc.employee_count || "");
+  });
+
+  // 5e-3. Expand vehicle fleet data → fleet_* fields (ACORD 131 vehicle schedule)
+  const fleet = aiData.vehicle_fleet || aiData.fleet || {};
+  if (typeof fleet === "object" && !Array.isArray(fleet)) {
+    for (const [k, v] of Object.entries(fleet)) {
+      const key = k.startsWith("fleet_") ? k : `fleet_${k}`;
+      setIfEmpty(key, String(v));
+    }
+  }
+  // Also populate fleet from flat keys like private_passenger_owned, light_trucks_owned
+  const fleetFlatMap: Record<string, string> = {
+    private_passenger_owned: "fleet_pp_owned",
+    light_trucks_owned: "fleet_lt_owned",
+    medium_trucks_owned: "fleet_mt_owned",
+    heavy_trucks_owned: "fleet_ht_owned",
+    buses_owned: "fleet_bus_owned",
+  };
+  for (const [srcKey, dstKey] of Object.entries(fleetFlatMap)) {
+    if (aiData[srcKey]) setIfEmpty(dstKey, String(aiData[srcKey]));
+  }
+
+  // 5e-4. Map coverage/exposure checkboxes from extracted data
+  const checkboxMap: Record<string, string> = {
+    has_any_auto: "has_any_auto",
+    has_cgl_occurrence: "has_cgl_occurrence",
+    has_cgl_claims_made: "has_cgl_claims_made",
+    has_aircraft_liability: "has_aircraft_liability",
+    has_professional_liability: "has_professional_liability",
+    has_pollution_liability: "has_pollution_liability",
+    has_watercraft_liability: "has_watercraft_liability",
+    has_liquor_liability: "has_liquor_liability",
+    hired_non_owned_coverage: "hired_non_owned_coverage",
+    explosives_hauled: "explosives_hauled",
+    passengers_for_fee: "passengers_for_fee",
+    contractor_bridge_dam: "contractor_bridge_dam",
+    contractor_uses_cranes: "contractor_uses_cranes",
+    employer_self_insured: "employer_self_insured",
+    pollution_hazardous_disposal: "pollution_hazardous_disposal",
+    foreign_operations_131: "foreign_operations_131",
+  };
+  for (const [srcKey, dstKey] of Object.entries(checkboxMap)) {
+    if (aiData[srcKey] !== undefined && aiData[srcKey] !== null && aiData[srcKey] !== "") {
+      setIfEmpty(dstKey, String(aiData[srcKey]));
+    }
+  }
+
+  // 5e-5. Map additional question Y/N codes
+  const questionCodeMap: Record<string, string> = {
+    q_aircraft_code: "q_aircraft_code",
+    q_explosives_code: "q_explosives_code",
+    q_passengers_fee_code: "q_passengers_fee_code",
+    q_hired_nonowned_code: "q_hired_nonowned_code",
+    q_bridge_dam_marine_code: "q_bridge_dam_marine_code",
+    q_cranes_code: "q_cranes_code",
+    q_subcontractors_code: "q_subcontractors_code",
+    q_self_insured_code: "q_self_insured_code",
+    q_hazardous_materials_code: "q_hazardous_materials_code",
+    q_product_loss_code: "q_product_loss_code",
+    q_watercraft_code: "q_watercraft_code",
+  };
+  for (const [srcKey, dstKey] of Object.entries(questionCodeMap)) {
+    if (aiData[srcKey]) setIfEmpty(dstKey, aiData[srcKey]);
+    // Also map corresponding explanation fields
+    const explKey = srcKey.replace("_code", "_explanation");
+    if (aiData[explKey]) setIfEmpty(dstKey.replace("_code", "_explanation"), aiData[explKey]);
+  }
+
+  // 5e-6. Map CCC (Care, Custody, Control) fields
+  setIfEmpty("ccc_location_id", aiData.ccc_location_id || "");
+  setIfEmpty("ccc_property_value", aiData.ccc_property_value || "");
+  setIfEmpty("ccc_occupied_area", aiData.ccc_occupied_area || "");
+  setIfEmpty("ccc_property_description", aiData.ccc_property_description || "");
+
+  // 5e-7. Map umbrella premium fields
+  setIfEmpty("umbrella_est_annual_premium", aiData.umbrella_est_annual_premium || aiData.umbrella_premium || "");
+  setIfEmpty("umbrella_deposit_premium", aiData.umbrella_deposit_premium || "");
+  setIfEmpty("umbrella_minimum_earned", aiData.umbrella_minimum_earned || "");
+
+  // 5e-8. Map applicant signature fields
+  setIfEmpty("applicant_printed_name", aiData.applicant_printed_name || aiData.contact_name || "");
+  setIfEmpty("applicant_title", aiData.applicant_title || "");
+  setIfEmpty("applicant_signature_date", aiData.applicant_signature_date || aiData.signature_date || "");
 
   // 5f. Expand wc_classifications[] → class_code_N fields
   const wcClasses: any[] = Array.isArray(aiData.wc_classifications) ? aiData.wc_classifications : [];
