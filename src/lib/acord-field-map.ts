@@ -2715,23 +2715,185 @@ export const ACORD_140_INDEX_MAP: AcordIndexMap = {
   building_street_address: 21,   // loc_1_address
 };
 
-// ── ACORD 75 (2010/07) — Cyber / Privacy Liability — 147 fields ──
+// ── ACORD 75 (2010/07) — Binder — 147 fields (106 TXT, 41 CHK) ──
+// Indices verified 2026-03-08 against 75.pdf field audit dump.
 export const ACORD_75_INDEX_MAP: AcordIndexMap = {
-  agency_name:          0,
-  agency_customer_id:   1,
-  carrier:              2,
-  naic_code:            3,
-  policy_number:        4,
-  effective_date:       5,
-  insured_name:         6,
-  annual_revenues:      7,
-  total_employees:      8,
-  description_of_operations: 9,
-  each_occurrence_limit: 10,
-  aggregate_limit:      11,
-  remarks:              12,
-  producer_name:        13,
-  signature_date:       14,
+  // ── Header / Producer [0-12] ──
+  form_edition:             0,
+  transaction_date:         1,   // Form_CompletionDate_A
+  agency_name:              2,   // Producer_FullName_A
+  agency_address_1:         3,
+  agency_address_2:         4,
+  agency_city:              5,
+  agency_state:             6,
+  agency_zip:               7,
+  agency_phone:             8,
+  agency_fax:               9,
+  producer_id:             10,   // Insurer_ProducerIdentifier
+  sub_producer_id:         11,
+  agency_customer_id:      12,
+
+  // ── Named Insured [13-18] ──
+  insured_name:            13,
+  insured_address_1:       14,
+  insured_address_2:       15,
+  insured_city:            16,
+  insured_state:           17,
+  insured_zip:             18,
+
+  // ── Insurer / Binder [19-30] ──
+  carrier:                 19,   // Insurer_FullName_A
+  binder_number:           20,
+  effective_date:          21,
+  effective_time:          22,
+  chk_effective_am:        23,
+  chk_effective_pm:        24,
+  expiration_date:         25,
+  chk_expire_midnight:     26,
+  chk_expire_noon:         27,
+  chk_extension:           28,
+  expiring_policy_number:  29,
+  description_of_operations: 30,
+
+  // ── Property Coverage Type [31-37] ──
+  chk_prop_basic:          31,
+  chk_prop_broad:          32,
+  chk_prop_special:        33,
+  chk_prop_other:          34,
+  prop_other_desc:         35,
+  chk_prop_other_2:        36,
+  prop_other_desc_2:       37,
+
+  // ── Property Subject of Insurance A-D [38-57] ──
+  prop_a_subject:          38,
+  prop_a_forms:            39,
+  prop_a_deductible:       40,
+  prop_a_coinsurance:      41,
+  prop_a_limit:            42,
+  prop_b_subject:          43,
+  prop_b_forms:            44,
+  prop_b_deductible:       45,
+  prop_b_coinsurance:      46,
+  prop_b_limit:            47,
+  prop_c_subject:          48,
+  prop_c_forms:            49,
+  prop_c_deductible:       50,
+  prop_c_coinsurance:      51,
+  prop_c_limit:            52,
+  prop_d_subject:          53,
+  prop_d_forms:            54,
+  prop_d_deductible:       55,
+  prop_d_coinsurance:      56,
+  prop_d_limit:            57,
+
+  // ── General Liability [58-74] ──
+  chk_gl:                  58,
+  chk_gl_claims_made:      59,
+  chk_gl_occurrence:       60,
+  chk_gl_other:            61,
+  gl_other_desc:           62,
+  chk_gl_other_2:          63,
+  gl_other_desc_2:         64,
+  chk_gl_other_3:          65,
+  gl_other_desc_3:         66,
+  gl_forms:                67,
+  gl_retroactive_date:     68,
+  gl_each_occurrence:      69,
+  gl_fire_damage:          70,
+  gl_med_expense:          71,
+  gl_personal_adv:         72,
+  gl_general_aggregate:    73,
+  gl_products_aggregate:   74,
+
+  // ── Auto Liability [75-105] ──
+  chk_auto_any:            75,
+  chk_auto_all_owned:      76,
+  chk_auto_scheduled:      77,
+  chk_auto_hired:          78,
+  chk_auto_non_owned:      79,
+  chk_auto_other_symbol:   80,
+  auto_other_symbol_code:  81,
+  chk_auto_other_symbol_2: 82,
+  auto_other_symbol_code_2: 83,
+  auto_forms:              84,
+  auto_csl:                85,
+  auto_bi_per_person:      86,
+  auto_bi_per_accident:    87,
+  auto_pd_per_accident:    88,
+  auto_med_pay:            89,
+  auto_pip:                90,
+  auto_um:                 91,
+  auto_other_coverage:     92,
+  auto_other_limit:        93,
+  chk_auto_collision:      94,
+  auto_collision_ded:      95,
+  chk_auto_comprehensive:  96,
+  auto_comprehensive_ded:  97,
+  chk_collision_all:       98,
+  chk_collision_scheduled: 99,
+  auto_phys_damage_forms: 100,
+  chk_valuation_acv:      101,
+  chk_valuation_stated:   102,
+  chk_valuation_other:    103,
+  valuation_other_desc:   104,
+  auto_stated_limit:      105,
+
+  // ── Garage Liability [106-115] ──
+  chk_garage_any:         106,
+  chk_garage_other:       107,
+  garage_other_code:      108,
+  chk_garage_other_2:     109,
+  garage_other_code_2:    110,
+  garage_forms:           111,
+  garage_auto_only:       112,
+  garage_other_desc:      113,
+  garage_other_per_acc:   114,
+  garage_other_aggregate: 115,
+
+  // ── Excess / Umbrella [116-122] ──
+  chk_umbrella:           116,
+  chk_excess_other:       117,
+  excess_forms:           118,
+  excess_retroactive_date: 119,
+  excess_each_occurrence: 120,
+  excess_aggregate:       121,
+  excess_deductible:      122,
+
+  // ── Workers Comp [123-128] ──
+  wc_forms:               123,
+  chk_wc_statutory:       124,
+  wc_other_desc:          125,
+  wc_each_accident:       126,
+  wc_disease_employee:    127,
+  wc_disease_policy:      128,
+
+  // ── Special Conditions / Payment [129-132] ──
+  special_conditions:     129,
+  fee_amount:             130,
+  tax_amount:             131,
+  estimated_total:        132,
+
+  // ── Additional Interest [133-145] ──
+  interest_name:          133,
+  interest_address_1:     134,
+  interest_address_2:     135,
+  interest_city:          136,
+  interest_state:         137,
+  interest_zip:           138,
+  chk_addl_insured:       139,
+  chk_lenders_loss:       140,
+  chk_loss_payee:         141,
+  chk_mortgagee:          142,
+  chk_interest_other:     143,
+  interest_other_desc:    144,
+  interest_account:       145,
+
+  // ── Signature [146] ──
+  producer_signature:     146,
+
+  // ── Aliases ──
+  policy_number:          29,   // expiring_policy_number
+  naic_code:               6,   // reuse agency_state slot (no dedicated NAIC field)
 };
 
 // ── ACORD 125 (2016/03) — Commercial Insurance Application — 550+ fields ──
