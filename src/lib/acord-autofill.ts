@@ -1247,8 +1247,8 @@ export function buildAutofilledData(
   setIfEmpty("applicant_signature_date", aiData.applicant_signature_date || aiData.signature_date || "");
 
   // 5e-9. Auto-populate fleet from vehicles[] array (count by body type)
-  const vehicles: any[] = Array.isArray(aiData.vehicles) ? aiData.vehicles : [];
-  if (vehicles.length > 0) {
+  const fleetVehicles: any[] = Array.isArray(aiData.vehicles) ? aiData.vehicles : [];
+  if (fleetVehicles.length > 0) {
     const counts: Record<string, { owned: number; leased: number; nonowned: number }> = {
       pp: { owned: 0, leased: 0, nonowned: 0 },
       lt: { owned: 0, leased: 0, nonowned: 0 },
