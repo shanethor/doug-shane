@@ -897,58 +897,130 @@ const acord131Fields: AcordFormField[] = [
   { key: "has_garagekeepers", label: "Garagekeepers", type: "checkbox", section: "Coverage / Exposure Checklist" },
   { key: "has_vendors_coverage", label: "Vendors Coverage", type: "checkbox", section: "Coverage / Exposure Checklist" },
 
-  // Previous Experience
+  // Previous Experience / Loss History
   { key: "no_previous_claims", label: "No Such Claims", type: "checkbox", section: "Previous Experience" },
   { key: "previous_experience_details", label: "Claims exceeding $10,000 in past 5 years", type: "textarea", section: "Previous Experience" },
+  { key: "loss_date_a", label: "Loss 1 - Date", type: "date", section: "Loss History" },
+  { key: "loss_lob_a", label: "Loss 1 - Line of Business", type: "text", section: "Loss History" },
+  { key: "loss_description_a", label: "Loss 1 - Description", type: "text", section: "Loss History" },
+  { key: "loss_paid_a", label: "Loss 1 - Amount Paid", type: "currency", section: "Loss History" },
+  { key: "loss_reserved_a", label: "Loss 1 - Amount Reserved", type: "currency", section: "Loss History" },
+  { key: "loss_date_b", label: "Loss 2 - Date", type: "date", section: "Loss History" },
+  { key: "loss_lob_b", label: "Loss 2 - Line of Business", type: "text", section: "Loss History" },
+  { key: "loss_description_b", label: "Loss 2 - Description", type: "text", section: "Loss History" },
+  { key: "loss_paid_b", label: "Loss 2 - Amount Paid", type: "currency", section: "Loss History" },
+  { key: "loss_reserved_b", label: "Loss 2 - Amount Reserved", type: "currency", section: "Loss History" },
+  { key: "loss_date_c", label: "Loss 3 - Date", type: "date", section: "Loss History" },
+  { key: "loss_lob_c", label: "Loss 3 - Line of Business", type: "text", section: "Loss History" },
+  { key: "loss_description_c", label: "Loss 3 - Description", type: "text", section: "Loss History" },
+  { key: "loss_paid_c", label: "Loss 3 - Amount Paid", type: "currency", section: "Loss History" },
+  { key: "loss_reserved_c", label: "Loss 3 - Amount Reserved", type: "currency", section: "Loss History" },
 
   // Vehicle Fleet Schedule
   { key: "fleet_pp_owned", label: "Private Passenger - # Owned", type: "number", section: "Vehicle Fleet" },
   { key: "fleet_pp_nonowned", label: "Private Passenger - # Non-Owned", type: "number", section: "Vehicle Fleet" },
   { key: "fleet_pp_leased", label: "Private Passenger - # Leased", type: "number", section: "Vehicle Fleet" },
+  { key: "fleet_pp_hauled", label: "Private Passenger - Material Hauled", type: "text", section: "Vehicle Fleet" },
   { key: "fleet_pp_local", label: "Private Passenger - Local", type: "number", section: "Vehicle Fleet" },
   { key: "fleet_pp_intermediate", label: "Private Passenger - Intermediate", type: "number", section: "Vehicle Fleet" },
   { key: "fleet_pp_long", label: "Private Passenger - Long Distance", type: "number", section: "Vehicle Fleet" },
   { key: "fleet_lt_owned", label: "Light Trucks - # Owned", type: "number", section: "Vehicle Fleet" },
   { key: "fleet_lt_nonowned", label: "Light Trucks - # Non-Owned", type: "number", section: "Vehicle Fleet" },
   { key: "fleet_lt_leased", label: "Light Trucks - # Leased", type: "number", section: "Vehicle Fleet" },
+  { key: "fleet_lt_hauled", label: "Light Trucks - Material Hauled", type: "text", section: "Vehicle Fleet" },
   { key: "fleet_lt_local", label: "Light Trucks - Local", type: "number", section: "Vehicle Fleet" },
   { key: "fleet_lt_intermediate", label: "Light Trucks - Intermediate", type: "number", section: "Vehicle Fleet" },
   { key: "fleet_lt_long", label: "Light Trucks - Long Distance", type: "number", section: "Vehicle Fleet" },
   { key: "fleet_mt_owned", label: "Medium Trucks - # Owned", type: "number", section: "Vehicle Fleet" },
+  { key: "fleet_mt_nonowned", label: "Medium Trucks - # Non-Owned", type: "number", section: "Vehicle Fleet" },
+  { key: "fleet_mt_leased", label: "Medium Trucks - # Leased", type: "number", section: "Vehicle Fleet" },
   { key: "fleet_ht_owned", label: "Heavy Trucks - # Owned", type: "number", section: "Vehicle Fleet" },
+  { key: "fleet_ht_nonowned", label: "Heavy Trucks - # Non-Owned", type: "number", section: "Vehicle Fleet" },
+  { key: "fleet_ht_leased", label: "Heavy Trucks - # Leased", type: "number", section: "Vehicle Fleet" },
   { key: "fleet_bus_owned", label: "Buses - # Owned", type: "number", section: "Vehicle Fleet" },
 
   // Additional Exposures — Auto
   { key: "explosives_hauled", label: "Explosives/flammables/dangerous cargo hauled?", type: "select", options: ["Yes", "No"], section: "Additional Exposures - Auto", default: "No" },
   { key: "passengers_for_fee", label: "Passengers carried for a fee?", type: "select", options: ["Yes", "No"], section: "Additional Exposures - Auto", default: "No" },
   { key: "hired_non_owned_coverage", label: "Hired and non-owned coverages provided?", type: "select", options: ["Yes", "No"], section: "Additional Exposures - Auto", default: "No" },
+  { key: "q_units_not_insured_code", label: "Units not insured elsewhere?", type: "select", options: ["Yes", "No"], section: "Additional Exposures - Auto", default: "No" },
+  { key: "q_vehicles_leased_code", label: "Vehicles leased to others?", type: "select", options: ["Yes", "No"], section: "Additional Exposures - Auto", default: "No" },
 
   // Additional Exposures — Contractors
   { key: "contractor_bridge_dam", label: "Bridge, dam, or marine work performed?", type: "select", options: ["Yes", "No"], section: "Additional Exposures - Contractors", default: "No" },
   { key: "contractor_uses_cranes", label: "Own, rent, or use cranes?", type: "select", options: ["Yes", "No"], section: "Additional Exposures - Contractors", default: "No" },
+  { key: "q_subcontractors_code", label: "Subcontractors carry lower limits?", type: "select", options: ["Yes", "No"], section: "Additional Exposures - Contractors", default: "No" },
+  { key: "q_subcontractors_explanation", label: "Subcontractor details / % subcontracted", type: "textarea", section: "Additional Exposures - Contractors" },
   { key: "contractors_work_description", label: "Describe typical jobs", type: "textarea", section: "Additional Exposures - Contractors" },
   { key: "contractors_agreement", label: "Independent contractor agreement/description", type: "textarea", section: "Additional Exposures - Contractors" },
 
   // Additional Exposures — Employers
   { key: "employer_self_insured", label: "Applicant self-insured in any state?", type: "select", options: ["Yes", "No"], section: "Additional Exposures - Employers", default: "No" },
+  { key: "el_other_description", label: "Other EL exposure description", type: "textarea", section: "Additional Exposures - Employers" },
+
+  // Additional Exposures — Incidental Malpractice
+  { key: "q_hospital_code", label: "Hospital or first-aid facility on premises?", type: "select", options: ["Yes", "No"], section: "Additional Exposures - Malpractice", default: "No" },
+  { key: "q_hospital_explanation", label: "Hospital details", type: "textarea", section: "Additional Exposures - Malpractice" },
+  { key: "q_doctors_nurses_code", label: "Coverage for doctors/nurses?", type: "select", options: ["Yes", "No"], section: "Additional Exposures - Malpractice", default: "No" },
+  { key: "q_doctors_nurses_explanation", label: "Doctors/nurses details", type: "textarea", section: "Additional Exposures - Malpractice" },
+  { key: "malpractice_doctor_count", label: "# Doctors", type: "number", section: "Additional Exposures - Malpractice" },
+  { key: "malpractice_nurse_count", label: "# Nurses", type: "number", section: "Additional Exposures - Malpractice" },
+  { key: "malpractice_bed_count", label: "# Beds", type: "number", section: "Additional Exposures - Malpractice" },
 
   // Additional Exposures — Pollution
   { key: "pollution_hazardous_disposal", label: "Products require special hazardous disposal?", type: "select", options: ["Yes", "No"], section: "Additional Exposures - Pollution", default: "No" },
-  { key: "foreign_operations_131", label: "Foreign operations or foreign products?", type: "select", options: ["Yes", "No"], section: "Additional Exposures - Pollution", default: "No" },
+  { key: "q_hazardous_materials_code", label: "Store/dispose/transport hazardous materials?", type: "select", options: ["Yes", "No"], section: "Additional Exposures - Pollution", default: "No" },
+  { key: "q_hazardous_materials_explanation", label: "Hazardous materials details", type: "textarea", section: "Additional Exposures - Pollution" },
+  { key: "epa_identifier", label: "EPA Identifier", type: "text", section: "Additional Exposures - Pollution" },
+  { key: "foreign_operations_131", label: "Foreign operations or foreign products?", type: "select", options: ["Yes", "No"], section: "Additional Exposures - Foreign", default: "No" },
+
+  // Additional Exposures — Products
+  { key: "q_missiles_engines_code", label: "Products related to missiles/aircraft engines?", type: "select", options: ["Yes", "No"], section: "Additional Exposures - Products", default: "No" },
+  { key: "q_missiles_engines_explanation", label: "Missiles/engines details", type: "textarea", section: "Additional Exposures - Products" },
+  { key: "q_product_loss_code", label: "Product losses in past 5 years?", type: "select", options: ["Yes", "No"], section: "Additional Exposures - Products", default: "No" },
+  { key: "q_product_loss_explanation", label: "Product loss details", type: "textarea", section: "Additional Exposures - Products" },
+  { key: "product_gross_sales_a", label: "Product Gross Sales - Year 1", type: "currency", section: "Additional Exposures - Products" },
+  { key: "product_gross_sales_b", label: "Product Gross Sales - Year 2", type: "currency", section: "Additional Exposures - Products" },
+  { key: "product_gross_sales_c", label: "Product Gross Sales - Year 3", type: "currency", section: "Additional Exposures - Products" },
+
+  // Additional Exposures — Watercraft
+  { key: "q_watercraft_code", label: "Watercraft exposure?", type: "select", options: ["Yes", "No"], section: "Additional Exposures - Watercraft", default: "No" },
+  { key: "protective_liability_description", label: "Protective liability description", type: "textarea", section: "Additional Exposures - Watercraft" },
+
+  // Additional Exposures — Advertisers
+  { key: "advertisers_media_code", label: "Advertising media exposure?", type: "text", section: "Additional Exposures - Advertisers" },
+  { key: "advertisers_annual_cost", label: "Annual advertising cost", type: "currency", section: "Additional Exposures - Advertisers" },
 
   // Care, Custody & Control
   { key: "ccc_location_id", label: "CCC Location ID", type: "text", section: "Care, Custody & Control" },
   { key: "ccc_property_value", label: "CCC Property Value", type: "currency", section: "Care, Custody & Control" },
   { key: "ccc_occupied_area", label: "CCC Occupied Area (Sq Ft)", type: "number", section: "Care, Custody & Control" },
   { key: "ccc_property_description", label: "CCC Property Description / Occupancy", type: "textarea", section: "Care, Custody & Control" },
+  { key: "ccc_insured_liability_other", label: "CCC Insured Liability - Other Description", type: "text", section: "Care, Custody & Control" },
+
+  // Underlying GL Detail
+  { key: "gl_form_edition_date", label: "GL Form Edition Date", type: "text", section: "Underlying GL Detail" },
+  { key: "gl_claims_retroactive_date", label: "GL Claims-Made Retroactive Date", type: "date", section: "Underlying GL Detail" },
+  { key: "gl_claims_entry_date", label: "GL Claims-Made Entry Date", type: "date", section: "Underlying GL Detail" },
+  { key: "q_excluded_uninsured_code", label: "Excluded/uninsured products or work?", type: "select", options: ["Yes", "No"], section: "Underlying GL Detail" },
+  { key: "q_excluded_uninsured_explanation", label: "Excluded/uninsured details", type: "textarea", section: "Underlying GL Detail" },
+  { key: "q_tail_coverage_code", label: "Tail coverage purchased?", type: "select", options: ["Yes", "No"], section: "Underlying GL Detail" },
+  { key: "q_tail_coverage_explanation", label: "Tail coverage details", type: "textarea", section: "Underlying GL Detail" },
+  { key: "underlying_info_description", label: "Underlying coverage additional description", type: "textarea", section: "Underlying GL Detail" },
 
   // Premium
   { key: "umbrella_est_annual_premium", label: "Estimated Annual Premium", type: "currency", section: "Premium" },
   { key: "umbrella_deposit_premium", label: "Deposit Premium", type: "currency", section: "Premium" },
   { key: "umbrella_minimum_earned", label: "Minimum Earned Premium", type: "currency", section: "Premium" },
 
+  // UM/UIM Limits
+  { key: "uninsured_motorists_limit", label: "Uninsured Motorists Limit", type: "currency", section: "UM/UIM" },
+  { key: "underinsured_motorists_limit", label: "Underinsured Motorists Limit", type: "currency", section: "UM/UIM" },
+  { key: "medical_payments_limit", label: "Medical Payments Limit", type: "currency", section: "UM/UIM" },
+
   // Remarks
   { key: "umbrella_remarks", label: "Remarks", type: "textarea", section: "Remarks" },
+  { key: "coverage_remarks", label: "Coverage/Exposure Remarks", type: "textarea", section: "Remarks" },
 
   // Signature
   { key: "applicant_printed_name", label: "Applicant Printed Name", type: "text", section: "Signature" },
