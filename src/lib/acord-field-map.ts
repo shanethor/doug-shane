@@ -1210,6 +1210,8 @@ export const ACORD_127_INDEX_MAP: AcordIndexMap = {
   driver_13_ssn:         262,
   driver_13_license_state: 263,
   driver_13_hired_date:  264,
+  driver_13_no_fault:    265,
+  driver_13_other_car:   266,
   driver_13_vehicle_id:  267,
   driver_13_vehicle_pct: 268,
 
