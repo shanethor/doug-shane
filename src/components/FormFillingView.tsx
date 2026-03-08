@@ -908,13 +908,87 @@ export default function FormFillingView({ submissionId, initialMessages, initial
         if (!hasData) continue;
 
         try {
-          const adobeBytes = savedPdfBytesMap[form.id];
-          if (adobeBytes) {
+          let pdfBytes: Uint8Array | null = savedPdfBytesMap[form.id] || null;
+
+          // Fallback: if Adobe SAVE_API didn't capture bytes, rebuild from formData via pdf-lib
+          if (!pdfBytes) {
+            try {
+              const prefill = await buildPrefillByIndex(form.id, formData);
+              if (Object.keys(prefill).length > 0) {
+                const pdfPath = `/acord-fillable/${form.id}.pdf`;
+                const resp = await fetch(pdfPath);
+                if (resp.ok) {
+                  const { PDFDocument, StandardFonts, PDFName } = await import("pdf-lib");
+                  const rawBuf = await resp.arrayBuffer();
+                  const doc = await PDFDocument.load(new Uint8Array(rawBuf), { ignoreEncryption: true });
+                  const helvetica = await doc.embedFont(StandardFonts.Helvetica);
+                  const pdfForm = doc.getForm();
+                  const allFields = pdfForm.getFields();
+                  for (const [idxStr, value] of Object.entries(prefill)) {
+                    const idx = Number(idxStr);
+                    const field = allFields[idx];
+                    if (!field || !value) continue;
+                    try {
+                      const f = field as any;
+                      const lower = String(value).toLowerCase();
+                      const isChk = lower === "on" || lower === "true" || lower === "yes" || lower === "y" || lower === "x" || lower === "1";
+                      if (typeof f.check === "function") {
+                        if (isChk) {
+                          f.check();
+                          try {
+                            const widgets = f.acroField?.getWidgets?.() || [];
+                            for (const widget of widgets) {
+                              const ap = widget.dict.get(PDFName.of("AP"));
+                              if (ap) {
+                                const normalDict = (ap as any).get?.(PDFName.of("N"));
+                                if (normalDict && typeof normalDict.entries === "function") {
+                                  for (const [key] of normalDict.entries()) {
+                                    const keyName = key instanceof PDFName ? key.decodeText() : String(key);
+                                    if (keyName !== "Off") {
+                                      widget.dict.set(PDFName.of("AS"), PDFName.of(keyName));
+                                      widget.dict.set(PDFName.of("V"), PDFName.of(keyName));
+                                      break;
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          } catch (_) {}
+                        }
+                      } else if (typeof f.setText === "function") {
+                        if (isChk) continue;
+                        let textVal = String(value);
+                        const maxLen = f.getMaxLength?.();
+                        if (maxLen && textVal.length > maxLen) {
+                          if (maxLen === 1) {
+                            const l = textVal.toLowerCase();
+                            textVal = l === "yes" || l === "true" || l === "y" ? "Y" : l === "no" || l === "false" || l === "n" ? "N" : textVal.substring(0, 1);
+                          } else {
+                            textVal = textVal.substring(0, maxLen);
+                          }
+                        }
+                        f.setText(textVal);
+                        try { f.defaultUpdateAppearances(helvetica); } catch (_) {}
+                      } else if (typeof f.select === "function") {
+                        try { f.select(String(value)); } catch (_) {}
+                      }
+                    } catch (_) {}
+                  }
+                  pdfBytes = await doc.save();
+                  console.warn(`[download] Built ${form.id} PDF via pdf-lib fallback (${pdfBytes.length} bytes)`);
+                }
+              }
+            } catch (fbErr) {
+              console.error(`[download] pdf-lib fallback failed for ${form.id}:`, fbErr);
+            }
+          }
+
+          if (pdfBytes) {
             const fileName = `${form.name.replace(/\s/g, "_")}_${date}.pdf`;
             if (zip) {
-              zip.file(fileName, adobeBytes);
+              zip.file(fileName, pdfBytes);
             } else {
-              const blob = new Blob([adobeBytes.buffer as ArrayBuffer], { type: "application/pdf" });
+              const blob = new Blob([pdfBytes.buffer as ArrayBuffer], { type: "application/pdf" });
               const url = URL.createObjectURL(blob);
               const a = document.createElement("a");
               a.href = url;
@@ -924,8 +998,7 @@ export default function FormFillingView({ submissionId, initialMessages, initial
             }
             count++;
           } else {
-            toast.info(`Use the Download button in the PDF toolbar for ${form.name}, or edit a field first to enable our download.`);
-            count++;
+            toast.error(`Could not generate PDF for ${form.name}.`);
           }
           if (!zip && count < formsToProcess.length) await new Promise(r => setTimeout(r, 400));
         } catch (err) {
