@@ -84,6 +84,9 @@ export function AppLayout({ children, onLogoClick }: { children: React.ReactNode
         </div>
       </header>
 
+      {/* Production ticker — attached directly below nav, producers/managers only */}
+      <ProducerHudRail />
+
       <main className="mx-auto max-w-6xl px-4 py-6 md:py-8 pb-24 md:pb-8">
         {children}
       </main>
