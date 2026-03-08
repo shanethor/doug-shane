@@ -677,12 +677,16 @@ const normalizeValue = (fieldKey: string, value: any): any => {
 
 /**
  * Build auto-filled form data for a given ACORD form using AI-extracted data, agent profile, and form defaults.
+ * @param baseData  Optional full submission form_data (e.g. from 125/overall). Used for trusted
+ *                  header back-fill of naic_code, policy_number, carrier into supplemental forms.
+ *                  This bypasses the MANUAL_CODE_FIELDS guard because the values already came from documents.
  */
 export function buildAutofilledData(
   form: AcordFormDefinition,
   aiData: Record<string, any>,
   profile?: { full_name?: string | null; agency_name?: string | null; phone?: string | null } | null,
   formDefaults?: Record<string, string> | null,
+  baseData?: Record<string, any> | null,
 ): Record<string, any> {
   const formFieldKeys = new Set(form.fields.map((f) => f.key));
   const mapped: Record<string, any> = {};
