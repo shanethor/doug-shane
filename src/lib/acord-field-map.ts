@@ -3258,11 +3258,6 @@ export const ACORD_75_INDEX_MAP: AcordIndexMap = {
   // ── Signature [146] ──
   producer_signature:     146,
 
-  // ── Aliases ──
-  policy_number:          29,   // expiring_policy_number
-  per_expiring_policy_number: 29,
-  naic_code:               6,   // reuse agency_state slot (no dedicated NAIC field)
-
   // ── Schema key aliases (map UI/schema keys to PDF indices) ──
   policy_number:          29,   // expiring_policy_number
   per_expiring_policy_number: 29,
