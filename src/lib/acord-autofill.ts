@@ -1727,7 +1727,7 @@ export function buildAutofilledData(
   }
 
   // 19. ACORD 140 — Expand mortgagees[] into additional interest fields
-  const mortgagees: any[] = Array.isArray(aiData.mortgagees) ? aiData.mortgagees : [];
+  const mortgagees140: any[] = Array.isArray(aiData.mortgagees) ? aiData.mortgagees : [];
   const mortgageeSlots = [
     { name: "interest_name", addr: "interest_address_1", city: "interest_city", state: "interest_state", zip: "interest_zip", chk: "chk_interest_mortgagee", loc: "interest_loc" },
     { name: "interest_name_2", addr: "interest_address_1_2", city: "interest_city_2", state: "interest_state_2", zip: "interest_zip_2", chk: "chk_interest_mortgagee_2", loc: "interest_loc_2" },
