@@ -17,7 +17,7 @@ import type {
   Acord130Data, Acord130ClassCode,
   Acord131Data, Acord131UnderlyingPolicy,
   Acord140Data, Acord140Building,
-  Acord75Data,
+  Acord75Data, Acord75AdditionalParty,
   AcordHeader, AcordAddress, AcordOfficer, AcordLossRecord,
 } from "./acord-schemas";
 

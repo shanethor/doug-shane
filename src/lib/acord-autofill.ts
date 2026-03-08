@@ -538,7 +538,7 @@ const AI_TO_FORM_ALIASES: Record<string, string[]> = {
   vpd_applies_to: ["vpd_applies_to"],
   property_causes_of_loss: ["property_causes_of_loss"],
   property_limit: ["property_limit"],
-  property_deductible: ["property_deductible"],
+  property_deductible_75: ["property_deductible"],
   property_coinsurance_pct: ["property_coinsurance_pct"],
   wc_per_statute: ["wc_per_statute"],
   excess_form: ["excess_form"],
