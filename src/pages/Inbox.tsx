@@ -382,7 +382,28 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
 
   const unified = buildUnified();
   const baseUnified = emailOnly ? unified.filter((u) => u.kind === "email") : unified;
-  const filtered = tab === "all"
+
+  // Apply insurance tag + client filters
+  const applyInsuranceFilters = (items: UnifiedItem[]) => {
+    let result = items;
+    if (activeTags.length > 0) {
+      result = result.filter((u) => {
+        if (u.kind !== "email") return false;
+        const email = u.raw as SyncedEmail;
+        const emailTags = email.tags || [];
+        return activeTags.every((t) => emailTags.includes(t));
+      });
+    }
+    if (selectedClient) {
+      result = result.filter((u) => {
+        if (u.kind !== "email") return false;
+        return (u.raw as SyncedEmail).client_id === selectedClient.id;
+      });
+    }
+    return result;
+  };
+
+  const tabFiltered = tab === "all"
     ? baseUnified
     : tab === "unread"
       ? baseUnified.filter((u) => !u.is_read)
@@ -397,6 +418,8 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
               : tab === "emails"
                 ? baseUnified.filter((u) => u.kind === "email")
                 : baseUnified;
+
+  const filtered = applyInsuranceFilters(tabFiltered);
 
   const unreadCount = unified.filter((u) => !u.is_read).length;
 
