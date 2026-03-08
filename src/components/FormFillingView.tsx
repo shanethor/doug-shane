@@ -881,9 +881,13 @@ export default function FormFillingView({ submissionId, initialMessages, initial
     try {
       // 1. Trigger Adobe save to capture the latest in-viewer edits into savedPdfBytesMap
       if (pdfViewerRef.current) {
-        await pdfViewerRef.current.triggerSave();
-        // Give React state a tick to update savedPdfBytesMap after SAVE_API fires
-        await new Promise(r => setTimeout(r, 300));
+        try {
+          await pdfViewerRef.current.triggerSave();
+          // Give React state a tick to update savedPdfBytesMap after SAVE_API fires
+          await new Promise(r => setTimeout(r, 300));
+        } catch (saveErr) {
+          console.warn("[download] triggerSave failed, will use pdf-lib fallback:", saveErr);
+        }
       }
 
       // 2. Auto-save current formData to DB so edits persist
