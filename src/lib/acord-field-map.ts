@@ -2269,74 +2269,450 @@ export const ACORD_131_INDEX_MAP: AcordIndexMap = {
 //   [86-87] heating, [89-90] electrical, [92] misc, [105] burglar alarm,
 //   [107] sprinkler, [109] fire alarm, [111] smoke, [113] watchmen,
 //   [120-122] misc, [124] misc, [127] misc, [129-130] misc
-// Tab order: header → location info → subject of insurance amounts →
-//   construction → updates → protective devices → remarks
+// ── ACORD 140 (2014/12) — Property Section — 355 fields (279 TXT, 76 CHK) ──
+// Indices verified 2026-03-08 against 140.pdf field audit dump.
+// Tab order: header → blankets → location/building → subjects of insurance →
+//   BI/EE → spoilage → sinkhole/mine → construction → improvements →
+//   wind class → heating → exposures → alarms → additional interests → remarks/signature
 export const ACORD_140_INDEX_MAP: AcordIndexMap = {
-  // Header [0-6] TXT
-  agency_name:            0,
-  agency_customer_id:     1,
-  carrier:                2,
-  naic_code:              3,
-  policy_number:          4,
-  effective_date:         5,
-  insured_name:           6,
-  // Location [7-12] TXT
-  building_street_address: 7,
-  building_description:    8,
-  premises_city:           9,
-  premises_state:         10,
-  premises_zip:           11,
-  // Subject of insurance — Building [12-16] TXT
-  building_amount:        12,
-  building_valuation:     13,
-  building_causes_of_loss: 14,
-  building_deductible:    15,
-  // BPP [16-20] TXT
-  bpp_amount:             16,
-  bpp_valuation:          17,
-  bpp_causes_of_loss:     18,
-  bpp_deductible:         19,
-  // Income/expense [20-23] TXT
-  business_income_amount: 20,
-  extra_expense_amount:   21,
-  rental_value_amount:    22,
-  // Additional coverage blocks [23-50] TXT
-  annual_revenues:        30,
-  description_of_operations: 31,
-  // Construction section — mostly TXT until CHKs at [74-75]
-  // [70-73] = pre-construction TXT fields
-  // [74-75] CHK = construction type checkboxes
-  // After CHK block: construction detail TXT fields
-  num_stories:            76,
-  year_built:             77,
-  total_area_sq_ft:       78,
-  distance_to_hydrant:    79,
-  protection_class:       80,
-  // [81-84] CHK = construction material details
-  // [85] TXT
-  roof_type:              85,
-  // [86-87] CHK = heating type
-  wiring_year:            88,
-  // [89-90] CHK
-  plumbing_year:          91,
-  // [92] CHK
-  roofing_year:           93,
-  heating_year:           94,
-  // Protective devices — text after CHK fields
-  // [105] CHK = burglar alarm type
-  num_guards_watchmen:   106,
-  // [107] CHK = sprinkler type
-  sprinkler_pct:         108,
-  // [109] CHK = fire alarm type
-  fire_alarm_type:       110,
-  // [111] CHK = smoke detector
-  // [113] CHK = watchmen
-  // Remarks / signature [125+] TXT
-  property_remarks:      125,
-  producer_name:         133,
-  producer_license_no:   134,
-  national_producer_number: 135,
-  signature_date:        136,
+  // ── Page 1 (P1) — Header [0-7] ──
+  agency_customer_id:       0,   // Producer_CustomerIdentifier_A
+  transaction_date:         1,   // Form_CompletionDate_A
+  agency_name:              2,   // Producer_FullName_A
+  policy_number:            3,   // Policy_PolicyNumberIdentifier_A
+  effective_date:           4,   // Policy_EffectiveDate_A
+  carrier:                  5,   // Insurer_FullName_A
+  naic_code:                6,   // Insurer_NAICCode_A
+  insured_name:             7,   // NamedInsured_FullName_A
+
+  // ── Blankets [8-19] ──
+  blanket_1_number:         8,
+  blanket_1_limit:          9,
+  blanket_1_type:          10,
+  blanket_2_number:        11,
+  blanket_2_limit:         12,
+  blanket_2_type:          13,
+  blanket_3_number:        14,
+  blanket_3_limit:         15,
+  blanket_3_type:          16,
+  blanket_4_number:        17,
+  blanket_4_limit:         18,
+  blanket_4_type:          19,
+
+  // ── Location / Building [20-23] ──
+  loc_1_number:            20,   // Location ProducerIdentifier A
+  loc_1_address:           21,   // PhysicalAddress_LineOne_A
+  bldg_1_number:           22,   // Building ProducerIdentifier A
+  bldg_1_description:      23,   // Building_SublocationDescription_A
+
+  // ── Subject of Insurance rows A-E [24-73] (10 fields each) ──
+  // Row A: Building
+  subject_a_code:          24,
+  subject_a_limit:         25,
+  subject_a_coinsurance:   26,
+  subject_a_valuation:     27,
+  subject_a_cause_of_loss: 28,
+  subject_a_inflation:     29,
+  subject_a_deductible:    30,
+  subject_a_ded_type:      31,
+  subject_a_blanket:       32,
+  subject_a_forms:         33,
+  // Row B: BPP
+  subject_b_code:          34,
+  subject_b_limit:         35,
+  subject_b_coinsurance:   36,
+  subject_b_valuation:     37,
+  subject_b_cause_of_loss: 38,
+  subject_b_inflation:     39,
+  subject_b_deductible:    40,
+  subject_b_ded_type:      41,
+  subject_b_blanket:       42,
+  subject_b_forms:         43,
+  // Row C
+  subject_c_code:          44,
+  subject_c_limit:         45,
+  subject_c_coinsurance:   46,
+  subject_c_valuation:     47,
+  subject_c_cause_of_loss: 48,
+  subject_c_inflation:     49,
+  subject_c_deductible:    50,
+  subject_c_ded_type:      51,
+  subject_c_blanket:       52,
+  subject_c_forms:         53,
+  // Row D
+  subject_d_code:          54,
+  subject_d_limit:         55,
+  subject_d_coinsurance:   56,
+  subject_d_valuation:     57,
+  subject_d_cause_of_loss: 58,
+  subject_d_inflation:     59,
+  subject_d_deductible:    60,
+  subject_d_ded_type:      61,
+  subject_d_blanket:       62,
+  subject_d_forms:         63,
+  // Row E
+  subject_e_code:          64,
+  subject_e_limit:         65,
+  subject_e_coinsurance:   66,
+  subject_e_valuation:     67,
+  subject_e_cause_of_loss: 68,
+  subject_e_inflation:     69,
+  subject_e_deductible:    70,
+  subject_e_ded_type:      71,
+  subject_e_blanket:       72,
+  subject_e_forms:         73,
+
+  // ── Attachments [74-75] CHK ──
+  chk_bi_ee:               74,   // BusinessIncomeExtraExpense
+  chk_value_reporting:     75,   // ValueReporting
+
+  // ── Spoilage [76-85] ──
+  spoilage_yn:             76,
+  spoilage_description:    77,
+  spoilage_limit:          78,
+  spoilage_deductible:     79,
+  spoilage_maintenance:    80,
+  chk_spoilage_breakdown:  81,
+  chk_spoilage_power:      82,
+  chk_spoilage_selling:    83,
+  chk_spoilage_other:      84,
+  spoilage_other_desc:     85,
+
+  // ── Sinkhole / Mine [86-91] ──
+  chk_sinkhole_yes:        86,
+  chk_sinkhole_no:         87,
+  sinkhole_limit:          88,
+  chk_mine_yes:            89,
+  chk_mine_no:             90,
+  mine_limit:              91,
+
+  // ── Construction [92-104] ──
+  chk_historical:          92,
+  open_sides_count:        93,
+  property_remarks:        94,   // RemarkText_A
+  construction_code:       95,
+  distance_to_hydrant:     96,
+  distance_to_fire_station: 97,
+  fire_district_name:      98,
+  fire_district_code:      99,
+  protection_class:       100,
+  num_stories:            101,
+  num_basements:          102,
+  year_built:             103,
+  total_area_sq_ft:       104,
+
+  // ── Building Improvements [105-115] ──
+  chk_wiring:             105,
+  wiring_year:            106,
+  chk_roofing:            107,
+  roofing_year:           108,
+  chk_plumbing:           109,
+  plumbing_year:          110,
+  chk_heating:            111,
+  heating_year:           112,
+  chk_other_improvement:  113,
+  other_improvement_desc: 114,
+  other_improvement_year: 115,
+
+  // ── Misc construction [116-119] ──
+  bceg_code:              116,
+  tax_code:               117,
+  roof_type:              118,
+  other_occupancies:      119,
+
+  // ── Wind Class [120-123] ──
+  chk_wind_resistive:     120,
+  chk_wind_semi:          121,
+  chk_wind_other:         122,
+  wind_other_desc:        123,
+
+  // ── Solid Fuel Heater [124-126] ──
+  chk_solid_fuel:         124,
+  solid_fuel_date:        125,
+  solid_fuel_manufacturer: 126,
+
+  // ── Primary Heat [127-131] ──
+  chk_primary_boiler:     127,
+  primary_boiler_insured: 128,
+  chk_primary_solid:      129,
+  chk_primary_other:      130,
+  primary_other_desc:     131,
+
+  // ── Secondary Heat [132-136] ──
+  chk_secondary_boiler:   132,
+  secondary_boiler_insured: 133,
+  chk_secondary_solid:    134,
+  chk_secondary_other:    135,
+  secondary_other_desc:   136,
+
+  // ── Exposures [137-144] ──
+  exposure_right_desc:    137,
+  exposure_right_dist:    138,
+  exposure_left_desc:     139,
+  exposure_left_dist:     140,
+  exposure_front_desc:    141,
+  exposure_front_dist:    142,
+  exposure_rear_desc:     143,
+  exposure_rear_dist:     144,
+
+  // ── Burglar Alarm [145-153] ──
+  burglar_alarm_desc:     145,
+  burglar_cert_id:        146,
+  burglar_cert_exp:       147,
+  chk_burglar_central:    148,
+  chk_burglar_keys:       149,
+  chk_burglar_local:      150,
+  burglar_service_by:     151,
+  burglar_extent:         152,
+  burglar_grade:          153,
+
+  // ── Guards / Watchmen [154-157] ──
+  num_guards_watchmen:    154,
+  chk_guard_clock:        155,
+  chk_guard_other:        156,
+  guard_other_desc:       157,
+
+  // ── Fire Protection [158-162] ──
+  fire_alarm_desc:        158,
+  sprinkler_pct:          159,
+  fire_alarm_manufacturer: 160,
+  chk_fire_central:       161,
+  chk_fire_local:         162,
+
+  // ── Additional Interest (Loc 1) [163-182] ──
+  chk_addl_interest:      163,
+  chk_interest_loss_payee: 164,
+  chk_interest_mortgagee: 165,
+  chk_interest_other:     166,
+  interest_other_desc:    167,
+  interest_rank:          168,
+  chk_interest_cert_req:  169,
+  interest_name:          170,
+  interest_address_1:     171,
+  interest_address_2:     172,
+  interest_city:          173,
+  interest_state:         174,
+  interest_zip:           175,
+  interest_country:       176,
+  interest_account:       177,
+  interest_loc:           178,
+  interest_bldg:          179,
+  interest_other_item:    180,
+  interest_sched_item:    181,
+  interest_item_desc:     182,
+
+  // ── Page 2 — Location 2 [183-346] (mirrors page 1 structure) ──
+  loc_2_customer_id:      183,
+  loc_2_number:           184,
+  loc_2_address:          185,
+  bldg_2_number:          186,
+  bldg_2_description:     187,
+
+  // Subject of Insurance rows G-K for Loc 2 [188-237]
+  subject_g_code:         188,
+  subject_g_limit:        189,
+  subject_g_coinsurance:  190,
+  subject_g_valuation:    191,
+  subject_g_cause_of_loss: 192,
+  subject_g_inflation:    193,
+  subject_g_deductible:   194,
+  subject_g_ded_type:     195,
+  subject_g_blanket:      196,
+  subject_g_forms:        197,
+
+  subject_h_code:         198,
+  subject_h_limit:        199,
+  subject_h_coinsurance:  200,
+  subject_h_valuation:    201,
+  subject_h_cause_of_loss: 202,
+  subject_h_inflation:    203,
+  subject_h_deductible:   204,
+  subject_h_ded_type:     205,
+  subject_h_blanket:      206,
+  subject_h_forms:        207,
+
+  subject_i_code:         208,
+  subject_i_limit:        209,
+  subject_i_coinsurance:  210,
+  subject_i_valuation:    211,
+  subject_i_cause_of_loss: 212,
+  subject_i_inflation:    213,
+  subject_i_deductible:   214,
+  subject_i_ded_type:     215,
+  subject_i_blanket:      216,
+  subject_i_forms:        217,
+
+  subject_j_code:         218,
+  subject_j_limit:        219,
+  subject_j_coinsurance:  220,
+  subject_j_valuation:    221,
+  subject_j_cause_of_loss: 222,
+  subject_j_inflation:    223,
+  subject_j_deductible:   224,
+  subject_j_ded_type:     225,
+  subject_j_blanket:      226,
+  subject_j_forms:        227,
+
+  subject_k_code:         228,
+  subject_k_limit:        229,
+  subject_k_coinsurance:  230,
+  subject_k_valuation:    231,
+  subject_k_cause_of_loss: 232,
+  subject_k_inflation:    233,
+  subject_k_deductible:   234,
+  subject_k_ded_type:     235,
+  subject_k_blanket:      236,
+  subject_k_forms:        237,
+
+  // Loc 2 attachments / spoilage / sinkhole [238-257]
+  chk_bi_ee_2:            238,
+  chk_value_reporting_2:  239,
+  spoilage_yn_2:          240,
+  spoilage_description_2: 241,
+  spoilage_limit_2:       242,
+  spoilage_deductible_2:  243,
+  spoilage_maintenance_2: 244,
+  chk_spoilage_breakdown_2: 245,
+  chk_spoilage_power_2:   246,
+  chk_spoilage_selling_2: 247,
+  chk_spoilage_other_2:   248,
+  spoilage_other_desc_2:  249,
+  chk_sinkhole_yes_2:     250,
+  chk_sinkhole_no_2:      251,
+  sinkhole_limit_2:       252,
+  chk_mine_yes_2:         253,
+  chk_mine_no_2:          254,
+  mine_limit_2:           255,
+
+  // Loc 2 construction [256-268]
+  chk_historical_2:       256,
+  open_sides_count_2:     257,
+  property_remarks_2:     258,
+  construction_code_2:    259,
+  distance_to_hydrant_2:  260,
+  distance_to_fire_station_2: 261,
+  fire_district_name_2:   262,
+  fire_district_code_2:   263,
+  protection_class_2:     264,
+  num_stories_2:          265,
+  num_basements_2:        266,
+  year_built_2:           267,
+  total_area_sq_ft_2:     268,
+
+  // Loc 2 improvements [269-279]
+  chk_wiring_2:           269,
+  wiring_year_2:          270,
+  chk_roofing_2:          271,
+  roofing_year_2:         272,
+  chk_plumbing_2:         273,
+  plumbing_year_2:        274,
+  chk_heating_2:          275,
+  heating_year_2:         276,
+  chk_other_improvement_2: 277,
+  other_improvement_desc_2: 278,
+  other_improvement_year_2: 279,
+
+  // Loc 2 misc [280-283]
+  bceg_code_2:            280,
+  tax_code_2:             281,
+  roof_type_2:            282,
+  other_occupancies_2:    283,
+
+  // Loc 2 wind [284-287]
+  chk_wind_resistive_2:   284,
+  chk_wind_semi_2:        285,
+  chk_wind_other_2:       286,
+  wind_other_desc_2:      287,
+
+  // Loc 2 solid fuel [288-290]
+  chk_solid_fuel_2:       288,
+  solid_fuel_date_2:      289,
+  solid_fuel_manufacturer_2: 290,
+
+  // Loc 2 primary heat [291-295]
+  chk_primary_boiler_2:   291,
+  primary_boiler_insured_2: 292,
+  chk_primary_solid_2:    293,
+  chk_primary_other_2:    294,
+  primary_other_desc_2:   295,
+
+  // Loc 2 secondary heat [296-300]
+  chk_secondary_boiler_2: 296,
+  secondary_boiler_insured_2: 297,
+  chk_secondary_solid_2:  298,
+  chk_secondary_other_2:  299,
+  secondary_other_desc_2: 300,
+
+  // Loc 2 exposures [301-308]
+  exposure_right_desc_2:  301,
+  exposure_right_dist_2:  302,
+  exposure_left_desc_2:   303,
+  exposure_left_dist_2:   304,
+  exposure_front_desc_2:  305,
+  exposure_front_dist_2:  306,
+  exposure_rear_desc_2:   307,
+  exposure_rear_dist_2:   308,
+
+  // Loc 2 burglar [309-317]
+  burglar_alarm_desc_2:   309,
+  burglar_cert_id_2:      310,
+  burglar_cert_exp_2:     311,
+  chk_burglar_central_2:  312,
+  chk_burglar_keys_2:     313,
+  chk_burglar_local_2:    314,
+  burglar_service_by_2:   315,
+  burglar_extent_2:       316,
+  burglar_grade_2:        317,
+
+  // Loc 2 guards [318-321]
+  num_guards_watchmen_2:  318,
+  chk_guard_clock_2:      319,
+  chk_guard_other_2:      320,
+  guard_other_desc_2:     321,
+
+  // Loc 2 fire [322-326]
+  fire_alarm_desc_2:      322,
+  sprinkler_pct_2:        323,
+  fire_alarm_manufacturer_2: 324,
+  chk_fire_central_2:     325,
+  chk_fire_local_2:       326,
+
+  // Loc 2 additional interest [327-346]
+  chk_addl_interest_2:    327,
+  chk_interest_loss_payee_2: 328,
+  chk_interest_mortgagee_2: 329,
+  chk_interest_other_2:   330,
+  interest_other_desc_2:  331,
+  interest_rank_2:        332,
+  chk_interest_cert_req_2: 333,
+  interest_name_2:        334,
+  interest_address_1_2:   335,
+  interest_address_2_2:   336,
+  interest_city_2:        337,
+  interest_state_2:       338,
+  interest_zip_2:         339,
+  interest_country_2:     340,
+  interest_account_2:     341,
+  interest_loc_2:         342,
+  interest_bldg_2:        343,
+  interest_other_item_2:  344,
+  interest_sched_item_2:  345,
+  interest_item_desc_2:   346,
+
+  // ── Page 3 — Remarks & Signature [347-354] ──
+  property_general_remarks: 347,  // CommercialPropertyLineOfBusiness_RemarkText_A
+  p3_customer_id:         348,
+  p3_signature:           349,
+  producer_name:          350,
+  producer_license_no:    351,
+  insured_signature:      352,
+  signature_date:         353,
+  national_producer_number: 354,
+
+  // ── Aliases ──
+  building_amount:         25,   // subject_a_limit
+  bpp_amount:              35,   // subject_b_limit
+  building_street_address: 21,   // loc_1_address
 };
 
 // ── ACORD 75 (2010/07) — Cyber / Privacy Liability — 147 fields ──
