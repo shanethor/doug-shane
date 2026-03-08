@@ -635,8 +635,30 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
                           <div className="flex items-center gap-2">
                             <p className={`text-sm truncate ${!item.is_read ? "font-medium" : ""}`}>{item.title}</p>
                             <Badge variant="outline" className="text-[10px] shrink-0">{item.label}</Badge>
+                            {/* Client pill on email rows */}
+                            {item.kind === "email" && (() => {
+                              const email = item.raw as SyncedEmail;
+                              return email.client_id ? (
+                                <Badge variant="secondary" className="text-[10px] shrink-0 gap-0.5">
+                                  <User className="h-2.5 w-2.5" />
+                                  Client
+                                </Badge>
+                              ) : (
+                                <Badge variant="outline" className="text-[10px] shrink-0 text-muted-foreground">
+                                  Unassigned
+                                </Badge>
+                              );
+                            })()}
                           </div>
                           {item.body && <p className="text-xs text-muted-foreground truncate mt-0.5">{item.body}</p>}
+                          {/* Tag pills */}
+                          {item.kind === "email" && ((item.raw as SyncedEmail).tags || []).length > 0 && (
+                            <div className="flex gap-1 mt-1">
+                              {((item.raw as SyncedEmail).tags || []).map((tag) => (
+                                <Badge key={tag} variant="outline" className="text-[9px] px-1.5 py-0">{tag.replace(/_/g, " ")}</Badge>
+                              ))}
+                            </div>
+                          )}
                           <span className="text-[10px] text-muted-foreground mt-1 block">
                             {formatDistanceToNow(new Date(item.timestamp), { addSuffix: true })}
                           </span>
