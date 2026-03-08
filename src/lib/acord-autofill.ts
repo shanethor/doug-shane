@@ -460,16 +460,46 @@ const AI_TO_FORM_ALIASES: Record<string, string[]> = {
   bi_rental_value_included: ["bi_rental_value_included"],
   bi_ordinary_payroll_included: ["bi_ordinary_payroll_included"],
   bi_extended_days: ["bi_extended_days"],
+  bi_extended_period_months: ["bi_extended_period_months"],
   bi_dependent_properties_limit: ["bi_dependent_properties_limit"],
   equipment_breakdown_limit: ["equipment_breakdown_limit"],
+  equipment_breakdown_deductible: ["equipment_breakdown_deductible"],
+  equipment_breakdown_premium: ["equipment_breakdown_premium"],
   spoilage_limit_eb: ["spoilage_limit"],
   expediting_expense_limit: ["expediting_expense_limit"],
   ammonia_contamination_limit: ["ammonia_contamination_limit"],
   hazardous_substance_limit: ["hazardous_substance_limit"],
   computer_fraud_limit: ["computer_fraud_limit"],
   ordinance_or_law_limit: ["ordinance_or_law_limit"],
+  ordinance_a_limit: ["ordinance_a_limit"],
+  ordinance_b_limit: ["ordinance_b_limit"],
+  ordinance_c_limit: ["ordinance_c_limit"],
+  ordinance_or_law_premium: ["ordinance_or_law_premium"],
+  earthquake_coverage: ["earthquake_coverage"],
+  earthquake_locations: ["earthquake_locations"],
+  earthquake_deductible: ["earthquake_deductible"],
+  earthquake_premium: ["earthquake_premium"],
   power_pac_blanket_limit: ["power_pac_blanket_limit"],
   occupancy_description: ["occupancy_description"],
+  area_occupied: ["area_occupied", "occupied_sq_ft"],
+  blanket_locations: ["blanket_1_locations"],
+  blanket_1_locations: ["blanket_1_locations"],
+  spoilage_yn: ["spoilage_yn"],
+  spoilage_description: ["spoilage_description"],
+  spoilage_coverage: ["spoilage_yn"],
+  sinkhole_coverage: ["sinkhole_coverage"],
+  sinkhole_limit: ["sinkhole_limit"],
+  sinkhole_deductible: ["sinkhole_deductible"],
+  burglar_alarm_installer: ["burglar_alarm_installer"],
+  central_station_monitoring: ["central_station_monitoring"],
+  construction_type_2: ["construction_type_2"],
+  area_occupied_2: ["area_occupied_2"],
+  premium_premises_1: ["premium_premises_1"],
+  premium_premises_2: ["premium_premises_2"],
+  premium_premises_3: ["premium_premises_3"],
+  total_estimated_annual_premium: ["total_estimated_annual_premium"],
+  deposit_premium: ["deposit_premium"],
+  minimum_earned_premium: ["minimum_earned_premium"],
   mortgagee_1_name: ["mortgagee_1_name"],
   mortgagee_1_address: ["mortgagee_1_address"],
   mortgagee_1_clause: ["mortgagee_1_clause"],
@@ -1659,23 +1689,27 @@ export function buildAutofilledData(
       const setField = (key: string, val: any) => {
         if (val && formFieldKeys.has(key) && !mapped[key]) mapped[key] = normalizeValue(key, val);
       };
-      setField(`loc_${locNum}_number`, bldg.location_number || String(locNum));
+      setField(`loc_${locNum}_number`, bldg.location_number || bldg.premises_number || String(locNum));
       setField(`loc_${locNum}_address`, bldg.address || bldg.street_address || "");
       setField(`bldg_${locNum}_number`, bldg.building_number || "1");
       setField(`bldg_${locNum}_description`, bldg.building_description || bldg.description || "");
 
       // Construction details
-      setField(`construction_code${suffix}`, bldg.construction_type || bldg.construction_code || "");
+      setField(`construction_type${suffix}`, bldg.construction_type || "");
+      setField(`construction_code${suffix}`, bldg.construction_code || "");
       setField(`year_built${suffix}`, bldg.year_built || "");
       setField(`num_stories${suffix}`, bldg.num_stories || bldg.stories || "");
       setField(`num_basements${suffix}`, bldg.num_basements || bldg.basements || "");
       setField(`total_area_sq_ft${suffix}`, bldg.total_area || bldg.total_area_sq_ft || "");
+      setField(`area_occupied${suffix}`, bldg.area_occupied || bldg.occupied_area || "");
       setField(`distance_to_hydrant${suffix}`, bldg.distance_to_hydrant || "");
       setField(`distance_to_fire_station${suffix}`, bldg.distance_to_fire_station || "");
       setField(`protection_class${suffix}`, bldg.protection_class || "");
       setField(`fire_district_name${suffix}`, bldg.fire_district_name || bldg.fire_district || "");
       setField(`fire_district_code${suffix}`, bldg.fire_district_code || "");
+      setField(`occupancy_description${suffix}`, bldg.occupancy_description || bldg.occupancy || "");
       setField(`roof_type${suffix}`, bldg.roof_type || "");
+      setField(`wind_class${suffix === "" ? "" : suffix}`, bldg.wind_class || "");
 
       // Improvements
       setField(`wiring_year${suffix}`, bldg.wiring_year || "");
@@ -1684,8 +1718,24 @@ export function buildAutofilledData(
       setField(`heating_year${suffix}`, bldg.heating_year || "");
 
       // Protective devices
-      setField(`sprinkler_pct${suffix}`, bldg.sprinkler_pct || "");
+      setField(`sprinkler_pct${suffix}`, bldg.sprinkler_pct || bldg.sprinkler_coverage || "");
       setField(`fire_alarm_manufacturer${suffix === "" ? "" : suffix}`, bldg.fire_alarm_manufacturer || "");
+      setField(`fire_alarm_type${suffix === "" ? "" : suffix}`, bldg.fire_alarm_type || "");
+      setField(`central_station_monitoring${suffix === "" ? "" : suffix}`, bldg.central_station_monitoring || "");
+      setField(`burglar_alarm_type${suffix === "" ? "" : suffix}`, bldg.burglar_alarm_type || bldg.burglar_alarm || "");
+      setField(`burglar_alarm_cert${suffix === "" ? "" : suffix}`, bldg.burglar_alarm_cert || bldg.burglar_alarm_certificate || "");
+      setField(`burglar_alarm_installer${suffix === "" ? "" : suffix}`, bldg.burglar_alarm_installer || bldg.burglar_alarm_installed_by || "");
+
+      // Spoilage per premises
+      setField(`spoilage_yn${suffix}`, bldg.spoilage_yn || bldg.spoilage_coverage || "");
+      setField(`spoilage_description${suffix === "" ? "" : suffix}`, bldg.spoilage_description || bldg.spoilage_reason || "");
+      setField(`spoilage_limit${suffix === "" ? "" : suffix}`, bldg.spoilage_limit || "");
+      setField(`spoilage_deductible${suffix === "" ? "" : suffix}`, bldg.spoilage_deductible || "");
+
+      // Sinkhole per premises
+      setField(`sinkhole_coverage${suffix === "" ? "" : suffix}`, bldg.sinkhole_coverage || bldg.sinkhole || "");
+      setField(`sinkhole_limit${suffix === "" ? "" : suffix}`, bldg.sinkhole_limit || "");
+      setField(`sinkhole_deductible${suffix === "" ? "" : suffix}`, bldg.sinkhole_deductible || "");
 
       // Subjects of insurance
       const subjects: any[] = Array.isArray(bldg.subjects) ? bldg.subjects : [];
@@ -1714,6 +1764,8 @@ export function buildAutofilledData(
         setField(`interest_city${intSuffix}`, interest.city || "");
         setField(`interest_state${intSuffix}`, interest.state || "");
         setField(`interest_zip${intSuffix}`, interest.zip || "");
+        setField(`interest_rank${intSuffix}`, interest.rank || "");
+        setField(`interest_item${intSuffix}`, interest.item || interest.item_description || "");
         if (interest.type === "mortgagee" || bldg.mortgagee) {
           setField(`chk_interest_mortgagee${intSuffix}`, true);
         }
@@ -1729,8 +1781,8 @@ export function buildAutofilledData(
   // 19. ACORD 140 — Expand mortgagees[] into additional interest fields
   const mortgagees140: any[] = Array.isArray(aiData.mortgagees) ? aiData.mortgagees : [];
   const mortgageeSlots = [
-    { name: "interest_name", addr: "interest_address_1", city: "interest_city", state: "interest_state", zip: "interest_zip", chk: "chk_interest_mortgagee", loc: "interest_loc" },
-    { name: "interest_name_2", addr: "interest_address_1_2", city: "interest_city_2", state: "interest_state_2", zip: "interest_zip_2", chk: "chk_interest_mortgagee_2", loc: "interest_loc_2" },
+    { name: "interest_name", addr: "interest_address_1", city: "interest_city", state: "interest_state", zip: "interest_zip", chk: "chk_interest_mortgagee", loc: "interest_loc", rank: "interest_rank", item: "interest_item" },
+    { name: "interest_name_2", addr: "interest_address_1_2", city: "interest_city_2", state: "interest_state_2", zip: "interest_zip_2", chk: "chk_interest_mortgagee_2", loc: "interest_loc_2", rank: "interest_rank_2", item: "interest_item_2" },
   ];
   mortgagees140.forEach((m: any, idx: number) => {
     if (idx >= mortgageeSlots.length) return;
@@ -1743,8 +1795,17 @@ export function buildAutofilledData(
     setM(slot.city, m.city || "");
     setM(slot.state, m.state || "");
     setM(slot.zip, m.zip || "");
-    setM(slot.chk, true);
+    const isMortgagee = (m.type || "").toLowerCase().includes("mortgagee");
+    const isLossPayee = (m.type || "").toLowerCase().includes("loss payee");
+    if (isMortgagee) setM(slot.chk, true);
+    if (isLossPayee) {
+      const lpKey = slot.chk.replace("mortgagee", "loss_payee");
+      setM(lpKey, true);
+    }
+    if (!isMortgagee && !isLossPayee) setM(slot.chk, true); // default to mortgagee
     setM(slot.loc, m.location || m.premises || "");
+    setM(slot.rank, m.rank || "");
+    setM(slot.item, m.item || m.item_description || "");
   });
 
   // 20. ACORD 140 — Blanket coverage from flat fields
@@ -1757,19 +1818,130 @@ export function buildAutofilledData(
   if (formFieldKeys.has("blanket_1_type") && !mapped.blanket_1_type && aiData.blanket_type) {
     mapped.blanket_1_type = aiData.blanket_type;
   }
+  if (formFieldKeys.has("blanket_1_locations") && !mapped.blanket_1_locations && aiData.blanket_locations) {
+    mapped.blanket_1_locations = aiData.blanket_locations;
+  }
 
   // 21. ACORD 140 — Map flat building/bpp amounts to subject row A/B if not already set
   if (formFieldKeys.has("subject_a_code") && !mapped.subject_a_code && aiData.building_amount) {
     mapped.subject_a_code = "BLDG";
     if (!mapped.subject_a_limit) mapped.subject_a_limit = normalizeValue("subject_a_limit", aiData.building_amount);
+    if (!mapped.subject_a_coinsurance && aiData.building_coinsurance) mapped.subject_a_coinsurance = aiData.building_coinsurance;
+    if (!mapped.subject_a_cause_of_loss && aiData.building_causes_of_loss) mapped.subject_a_cause_of_loss = aiData.building_causes_of_loss;
+    if (!mapped.subject_a_deductible && aiData.building_deductible) mapped.subject_a_deductible = normalizeValue("subject_a_deductible", aiData.building_deductible);
+    if (!mapped.subject_a_inflation && aiData.building_inflation_guard) mapped.subject_a_inflation = aiData.building_inflation_guard;
+    if (!mapped.subject_a_valuation && aiData.building_valuation) mapped.subject_a_valuation = aiData.building_valuation;
+    if (!mapped.subject_a_forms && aiData.building_forms) mapped.subject_a_forms = aiData.building_forms;
   }
   if (formFieldKeys.has("subject_b_code") && !mapped.subject_b_code && aiData.bpp_amount) {
     mapped.subject_b_code = "BPP";
     if (!mapped.subject_b_limit) mapped.subject_b_limit = normalizeValue("subject_b_limit", aiData.bpp_amount);
+    if (!mapped.subject_b_coinsurance && aiData.bpp_coinsurance) mapped.subject_b_coinsurance = aiData.bpp_coinsurance;
+    if (!mapped.subject_b_cause_of_loss && aiData.bpp_causes_of_loss) mapped.subject_b_cause_of_loss = aiData.bpp_causes_of_loss;
+    if (!mapped.subject_b_deductible && aiData.bpp_deductible) mapped.subject_b_deductible = normalizeValue("subject_b_deductible", aiData.bpp_deductible);
+    if (!mapped.subject_b_inflation && aiData.bpp_inflation_guard) mapped.subject_b_inflation = aiData.bpp_inflation_guard;
+    if (!mapped.subject_b_blanket && aiData.bpp_blanket_number) mapped.subject_b_blanket = aiData.bpp_blanket_number;
   }
   if (formFieldKeys.has("subject_c_code") && !mapped.subject_c_code && aiData.business_income_amount) {
     mapped.subject_c_code = "BUSINE";
     if (!mapped.subject_c_limit) mapped.subject_c_limit = normalizeValue("subject_c_limit", aiData.business_income_amount);
+    if (!mapped.subject_c_deductible && aiData.business_income_deductible) mapped.subject_c_deductible = aiData.business_income_deductible;
+    if (!mapped.subject_c_forms && aiData.business_income_forms) mapped.subject_c_forms = aiData.business_income_forms;
+  }
+
+  // 22. ACORD 140 — Equipment Breakdown from flat fields
+  if (formFieldKeys.has("equipment_breakdown_limit") && !mapped.equipment_breakdown_limit && aiData.equipment_breakdown_limit) {
+    mapped.equipment_breakdown_limit = normalizeValue("equipment_breakdown_limit", aiData.equipment_breakdown_limit);
+    if (!mapped.equipment_breakdown_coverage) mapped.equipment_breakdown_coverage = true;
+  }
+  if (formFieldKeys.has("equipment_breakdown_deductible") && !mapped.equipment_breakdown_deductible && aiData.equipment_breakdown_deductible) {
+    mapped.equipment_breakdown_deductible = normalizeValue("equipment_breakdown_deductible", aiData.equipment_breakdown_deductible);
+  }
+  if (formFieldKeys.has("equipment_breakdown_premium") && !mapped.equipment_breakdown_premium && aiData.equipment_breakdown_premium) {
+    mapped.equipment_breakdown_premium = normalizeValue("equipment_breakdown_premium", aiData.equipment_breakdown_premium);
+  }
+
+  // 23. ACORD 140 — Ordinance or Law from flat fields
+  if (formFieldKeys.has("ordinance_or_law_limit") && !mapped.ordinance_or_law_limit && aiData.ordinance_or_law_limit) {
+    mapped.ordinance_or_law_limit = normalizeValue("ordinance_or_law_limit", aiData.ordinance_or_law_limit);
+    if (!mapped.ordinance_or_law_coverage) mapped.ordinance_or_law_coverage = true;
+  }
+  if (formFieldKeys.has("ordinance_a_limit") && !mapped.ordinance_a_limit && aiData.ordinance_a_limit) {
+    mapped.ordinance_a_limit = normalizeValue("ordinance_a_limit", aiData.ordinance_a_limit);
+  }
+  if (formFieldKeys.has("ordinance_b_limit") && !mapped.ordinance_b_limit && aiData.ordinance_b_limit) {
+    mapped.ordinance_b_limit = normalizeValue("ordinance_b_limit", aiData.ordinance_b_limit);
+  }
+  if (formFieldKeys.has("ordinance_c_limit") && !mapped.ordinance_c_limit && aiData.ordinance_c_limit) {
+    mapped.ordinance_c_limit = normalizeValue("ordinance_c_limit", aiData.ordinance_c_limit);
+  }
+  if (formFieldKeys.has("ordinance_or_law_premium") && !mapped.ordinance_or_law_premium && aiData.ordinance_or_law_premium) {
+    mapped.ordinance_or_law_premium = normalizeValue("ordinance_or_law_premium", aiData.ordinance_or_law_premium);
+  }
+
+  // 24. ACORD 140 — Earthquake from flat fields
+  if (formFieldKeys.has("earthquake_coverage") && !mapped.earthquake_coverage && (aiData.earthquake_coverage || aiData.earthquake_premium)) {
+    mapped.earthquake_coverage = true;
+  }
+  if (formFieldKeys.has("earthquake_locations") && !mapped.earthquake_locations && aiData.earthquake_locations) {
+    mapped.earthquake_locations = aiData.earthquake_locations;
+  }
+  if (formFieldKeys.has("earthquake_deductible") && !mapped.earthquake_deductible && aiData.earthquake_deductible) {
+    mapped.earthquake_deductible = aiData.earthquake_deductible;
+  }
+  if (formFieldKeys.has("earthquake_premium") && !mapped.earthquake_premium && aiData.earthquake_premium) {
+    mapped.earthquake_premium = normalizeValue("earthquake_premium", aiData.earthquake_premium);
+  }
+
+  // 25. ACORD 140 — Spoilage/Sinkhole from flat fields (when not in buildings[])
+  if (formFieldKeys.has("spoilage_yn") && !mapped.spoilage_yn && aiData.spoilage_coverage) {
+    mapped.spoilage_yn = aiData.spoilage_coverage;
+  }
+  if (formFieldKeys.has("spoilage_description") && !mapped.spoilage_description && aiData.spoilage_description) {
+    mapped.spoilage_description = aiData.spoilage_description;
+  }
+  if (formFieldKeys.has("sinkhole_coverage") && !mapped.sinkhole_coverage && aiData.sinkhole_coverage) {
+    mapped.sinkhole_coverage = aiData.sinkhole_coverage;
+  }
+  if (formFieldKeys.has("sinkhole_limit") && !mapped.sinkhole_limit && aiData.sinkhole_limit) {
+    mapped.sinkhole_limit = normalizeValue("sinkhole_limit", aiData.sinkhole_limit);
+  }
+
+  // 26. ACORD 140 — Loss history from property_loss_history[] or loss_history[]
+  const propLosses: any[] = Array.isArray(aiData.property_loss_history) ? aiData.property_loss_history
+    : Array.isArray(aiData.prop_losses) ? aiData.prop_losses : [];
+  propLosses.forEach((loss: any, idx: number) => {
+    if (idx >= 3) return;
+    const n = idx + 1;
+    const setL = (key: string, val: any) => {
+      if (val && formFieldKeys.has(key) && !mapped[key]) mapped[key] = normalizeValue(key, val);
+    };
+    setL(`prop_loss_date_${n}`, loss.date || loss.date_of_loss || "");
+    setL(`prop_loss_location_${n}`, loss.location || loss.premises || "");
+    setL(`prop_loss_type_${n}`, loss.type || loss.loss_type || loss.cause || "");
+    setL(`prop_loss_gross_${n}`, loss.gross_loss || loss.gross || loss.amount || "");
+    setL(`prop_loss_deductible_${n}`, loss.deductible || "");
+    setL(`prop_loss_net_paid_${n}`, loss.net_paid || loss.net || loss.paid || "");
+  });
+
+  // 27. ACORD 140 — Premium summary from flat fields
+  if (formFieldKeys.has("premium_premises_1") && !mapped.premium_premises_1 && aiData.premium_premises_1) {
+    mapped.premium_premises_1 = normalizeValue("premium_premises_1", aiData.premium_premises_1);
+  }
+  if (formFieldKeys.has("premium_premises_2") && !mapped.premium_premises_2 && aiData.premium_premises_2) {
+    mapped.premium_premises_2 = normalizeValue("premium_premises_2", aiData.premium_premises_2);
+  }
+  if (formFieldKeys.has("premium_premises_3") && !mapped.premium_premises_3 && aiData.premium_premises_3) {
+    mapped.premium_premises_3 = normalizeValue("premium_premises_3", aiData.premium_premises_3);
+  }
+  if (formFieldKeys.has("total_estimated_annual_premium") && !mapped.total_estimated_annual_premium && aiData.total_estimated_annual_premium) {
+    mapped.total_estimated_annual_premium = normalizeValue("total_estimated_annual_premium", aiData.total_estimated_annual_premium);
+  }
+  if (formFieldKeys.has("deposit_premium") && !mapped.deposit_premium && aiData.deposit_premium) {
+    mapped.deposit_premium = normalizeValue("deposit_premium", aiData.deposit_premium);
+  }
+  if (formFieldKeys.has("minimum_earned_premium") && !mapped.minimum_earned_premium && aiData.minimum_earned_premium) {
+    mapped.minimum_earned_premium = normalizeValue("minimum_earned_premium", aiData.minimum_earned_premium);
   }
 
   // Loc 1 number defaults
