@@ -392,6 +392,44 @@ const AI_TO_FORM_ALIASES: Record<string, string[]> = {
   applicant_printed_name: ["applicant_printed_name"],
   applicant_title: ["applicant_title"],
   applicant_signature_date: ["applicant_signature_date"],
+  // Loss history
+  loss_date_a: ["loss_date_a"],
+  loss_lob_a: ["loss_lob_a"],
+  loss_description_a: ["loss_description_a"],
+  loss_paid_a: ["loss_paid_a"],
+  loss_reserved_a: ["loss_reserved_a"],
+  loss_date_b: ["loss_date_b"],
+  loss_lob_b: ["loss_lob_b"],
+  loss_description_b: ["loss_description_b"],
+  loss_paid_b: ["loss_paid_b"],
+  loss_reserved_b: ["loss_reserved_b"],
+  // Question fields
+  q_hospital_code: ["q_hospital_code"],
+  q_doctors_nurses_code: ["q_doctors_nurses_code"],
+  q_missiles_engines_code: ["q_missiles_engines_code"],
+  q_excluded_uninsured_code: ["q_excluded_uninsured_code"],
+  q_tail_coverage_code: ["q_tail_coverage_code"],
+  q_units_not_insured_code: ["q_units_not_insured_code"],
+  q_vehicles_leased_code: ["q_vehicles_leased_code"],
+  // Product/pollution/malpractice
+  product_gross_sales_a: ["product_gross_sales_a"],
+  product_gross_sales_b: ["product_gross_sales_b"],
+  product_gross_sales_c: ["product_gross_sales_c"],
+  malpractice_doctor_count: ["malpractice_doctor_count"],
+  malpractice_nurse_count: ["malpractice_nurse_count"],
+  malpractice_bed_count: ["malpractice_bed_count"],
+  epa_identifier: ["epa_identifier"],
+  // UM/UIM
+  uninsured_motorists_limit: ["uninsured_motorists_limit"],
+  underinsured_motorists_limit: ["underinsured_motorists_limit"],
+  medical_payments_limit: ["medical_payments_limit"],
+  // Coverage remarks
+  coverage_remarks: ["coverage_remarks"],
+  // GL detail
+  gl_form_edition_date: ["gl_form_edition_date"],
+  gl_claims_retroactive_date: ["gl_claims_retroactive_date"],
+  gl_claims_entry_date: ["gl_claims_entry_date"],
+  underlying_info_description: ["underlying_info_description"],
 
   // ── WC Premium/Rating Data (ACORD 130) ──
   standard_premium: ["standard_premium"],
