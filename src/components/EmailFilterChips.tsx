@@ -36,8 +36,9 @@ export function EmailFilterChips({
 }: EmailFilterChipsProps) {
   const { user } = useAuth();
   const [clientSearch, setClientSearch] = useState("");
-  const [clientResults, setClientResults] = useState<Lead[]>([]);
+  const [allClients, setAllClients] = useState<Lead[]>([]);
   const [clientOpen, setClientOpen] = useState(false);
+  const [clientsLoaded, setClientsLoaded] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
 
   const toggleTag = (tag: string) => {
@@ -48,23 +49,26 @@ export function EmailFilterChips({
     );
   };
 
-  // Typeahead search for clients (leads)
+  // Load all clients once when popover opens
   useEffect(() => {
-    if (!clientSearch.trim() || !user) {
-      setClientResults([]);
-      return;
-    }
-    const timeout = setTimeout(async () => {
-      const q = clientSearch.trim().toLowerCase();
+    if (!clientOpen || clientsLoaded || !user) return;
+    (async () => {
       const { data } = await supabase
         .from("leads")
         .select("id, account_name, email")
-        .or(`account_name.ilike.%${q}%,email.ilike.%${q}%`)
-        .limit(8);
-      setClientResults((data as Lead[]) || []);
-    }, 250);
-    return () => clearTimeout(timeout);
-  }, [clientSearch, user]);
+        .order("account_name", { ascending: true })
+        .limit(200);
+      setAllClients((data as Lead[]) || []);
+      setClientsLoaded(true);
+    })();
+  }, [clientOpen, clientsLoaded, user]);
+
+  const filteredClients = clientSearch.trim()
+    ? allClients.filter((l) => {
+        const q = clientSearch.trim().toLowerCase();
+        return l.account_name.toLowerCase().includes(q) || (l.email && l.email.toLowerCase().includes(q));
+      })
+    : allClients;
 
   return (
     <div className="flex items-center gap-1.5 flex-wrap">
@@ -126,11 +130,13 @@ export function EmailFilterChips({
             />
           </div>
           <ScrollArea className="max-h-48">
-            {clientResults.length === 0 && clientSearch.trim() ? (
+            {filteredClients.length === 0 && clientSearch.trim() ? (
               <p className="text-xs text-muted-foreground text-center py-3">No matches</p>
+            ) : filteredClients.length === 0 && !clientSearch.trim() ? (
+              <p className="text-xs text-muted-foreground text-center py-3">No clients found</p>
             ) : (
               <div className="space-y-0.5">
-                {clientResults.map((lead) => (
+                {filteredClients.map((lead) => (
                   <button
                     key={lead.id}
                     className="w-full text-left px-2 py-1.5 rounded text-xs hover:bg-muted transition-colors"
