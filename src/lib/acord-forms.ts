@@ -1089,21 +1089,34 @@ const acord140Fields: AcordFormField[] = [
 
   { key: "subject_d_code", label: "P1 Subject D Code (AR/VP)", type: "text", section: "Subject of Insurance – P1" },
   { key: "subject_d_limit", label: "P1 AR/VP Amount", type: "currency", section: "Subject of Insurance – P1" },
+  { key: "subject_d_coinsurance", label: "P1 AR/VP Coins %", type: "text", section: "Subject of Insurance – P1" },
+  { key: "subject_d_valuation", label: "P1 AR/VP Valuation", type: "select", options: ["Replacement Cost", "Actual Cash Value"], section: "Subject of Insurance – P1" },
+  { key: "subject_d_cause_of_loss", label: "P1 AR/VP Causes of Loss", type: "select", options: ["Basic", "Broad", "Special"], section: "Subject of Insurance – P1" },
   { key: "subject_d_deductible", label: "P1 AR/VP Deductible", type: "currency", section: "Subject of Insurance – P1" },
+  { key: "subject_d_blanket", label: "P1 AR/VP Blanket #", type: "text", section: "Subject of Insurance – P1" },
 
   { key: "subject_e_code", label: "P1 Subject E Code (EDP/Other)", type: "text", section: "Subject of Insurance – P1" },
   { key: "subject_e_limit", label: "P1 EDP/Other Amount", type: "currency", section: "Subject of Insurance – P1" },
+  { key: "subject_e_coinsurance", label: "P1 EDP/Other Coins %", type: "text", section: "Subject of Insurance – P1" },
+  { key: "subject_e_valuation", label: "P1 EDP/Other Valuation", type: "select", options: ["Replacement Cost", "Actual Cash Value"], section: "Subject of Insurance – P1" },
+  { key: "subject_e_cause_of_loss", label: "P1 EDP/Other Causes of Loss", type: "select", options: ["Basic", "Broad", "Special"], section: "Subject of Insurance – P1" },
   { key: "subject_e_deductible", label: "P1 EDP/Other Deductible", type: "currency", section: "Subject of Insurance – P1" },
+  { key: "subject_e_blanket", label: "P1 EDP/Other Blanket #", type: "text", section: "Subject of Insurance – P1" },
 
   // BI/EE Attachments
-  { key: "chk_bi_ee", label: "BI/EE Attached", type: "checkbox", section: "Business Income" },
-  { key: "chk_value_reporting", label: "Value Reporting Attached", type: "checkbox", section: "Business Income" },
-  { key: "bi_ee_type", label: "BI/EE Measurement", type: "select", options: ["Actual Loss Sustained", "Monthly Limit of Indemnity", "Maximum Period of Indemnity"], section: "Business Income" },
-  { key: "bi_ee_months", label: "BI/EE – # Months", type: "text", section: "Business Income" },
-  { key: "bi_rental_value_included", label: "Rental Value Included", type: "checkbox", section: "Business Income" },
-  { key: "bi_ordinary_payroll_included", label: "Ordinary Payroll Included", type: "checkbox", section: "Business Income" },
-  { key: "bi_extended_days", label: "Extended BI Days", type: "text", section: "Business Income" },
-  { key: "bi_extended_period_months", label: "Extended Period of Indemnity (months)", type: "text", section: "Business Income" },
+  { key: "chk_bi_ee", label: "BI/EE Attached", type: "checkbox", section: "Business Income – P1" },
+  { key: "chk_value_reporting", label: "Value Reporting Attached", type: "checkbox", section: "Business Income – P1" },
+  { key: "bi_ee_type", label: "P1 BI/EE Measurement", type: "select", options: ["Actual Loss Sustained", "Monthly Limit of Indemnity", "Maximum Period of Indemnity"], section: "Business Income – P1" },
+  { key: "bi_ee_months", label: "P1 BI/EE – # Months", type: "text", section: "Business Income – P1" },
+  { key: "bi_rental_value_included", label: "P1 Rental Value Included", type: "checkbox", section: "Business Income – P1" },
+  { key: "bi_ordinary_payroll_included", label: "P1 Ordinary Payroll Included", type: "checkbox", section: "Business Income – P1" },
+  { key: "bi_extended_days", label: "P1 Extended BI Days", type: "text", section: "Business Income – P1" },
+  { key: "bi_extended_period_months", label: "P1 Extended Period of Indemnity (months)", type: "text", section: "Business Income – P1" },
+
+  // BI/EE – Premises 2 (supports different valuation pattern)
+  { key: "chk_bi_ee_2", label: "P2 BI/EE Attached", type: "checkbox", section: "Business Income – P2" },
+  { key: "bi_ee_type_2", label: "P2 BI/EE Measurement", type: "select", options: ["Actual Loss Sustained", "Monthly Limit of Indemnity", "Maximum Period of Indemnity"], section: "Business Income – P2" },
+  { key: "bi_ee_months_2", label: "P2 BI/EE – # Months", type: "text", section: "Business Income – P2" },
 
   // Spoilage – Premises 1
   { key: "spoilage_yn", label: "P1 Spoilage Y/N", type: "select", options: ["Yes", "No"], section: "Spoilage – P1" },
@@ -1166,6 +1179,16 @@ const acord140Fields: AcordFormField[] = [
   { key: "primary_heat_type", label: "P1 Primary Heat", type: "select", options: ["Boiler", "Solid Fuel", "Other"], section: "Heating – P1" },
   { key: "secondary_heat_type", label: "P1 Secondary Heat", type: "select", options: ["Boiler", "Solid Fuel", "None"], section: "Heating – P1" },
 
+  // Hazard Flags – Premises 1 (ACORD-style boolean toggles)
+  { key: "hazardous_operations", label: "P1 Any Hazardous Operations?", type: "select", options: ["Yes", "No"], section: "Hazard Flags – P1" },
+  { key: "cooking_operations", label: "P1 Any Cooking Operations?", type: "select", options: ["Yes", "No"], section: "Hazard Flags – P1" },
+  { key: "spray_painting_operations", label: "P1 Any Spray Painting Operations?", type: "select", options: ["Yes", "No"], section: "Hazard Flags – P1" },
+  { key: "smoke_detectors", label: "P1 Smoke Detectors Installed?", type: "select", options: ["Yes", "No"], section: "Hazard Flags – P1" },
+  { key: "boiler_insurance_elsewhere", label: "P1 Boiler Insurance Placed Elsewhere?", type: "select", options: ["Yes", "No"], section: "Hazard Flags – P1" },
+  { key: "hazardous_operations_2", label: "P2 Any Hazardous Operations?", type: "select", options: ["Yes", "No"], section: "Hazard Flags – P2" },
+  { key: "cooking_operations_2", label: "P2 Any Cooking Operations?", type: "select", options: ["Yes", "No"], section: "Hazard Flags – P2" },
+  { key: "smoke_detectors_2", label: "P2 Smoke Detectors Installed?", type: "select", options: ["Yes", "No"], section: "Hazard Flags – P2" },
+
   // Additional Interest – Premises 1
   { key: "interest_name", label: "P1 Addl Interest Name", type: "text", section: "Additional Interest – P1" },
   { key: "interest_address_1", label: "P1 Addl Interest Address", type: "text", section: "Additional Interest – P1" },
@@ -1198,12 +1221,28 @@ const acord140Fields: AcordFormField[] = [
   { key: "subject_h_code", label: "P2 Subject H Code", type: "text", section: "Subject of Insurance – P2" },
   { key: "subject_h_limit", label: "P2 Subject H Amount", type: "currency", section: "Subject of Insurance – P2" },
   { key: "subject_h_coinsurance", label: "P2 Subject H Coins %", type: "text", section: "Subject of Insurance – P2" },
+  { key: "subject_h_valuation", label: "P2 Subject H Valuation", type: "select", options: ["Replacement Cost", "Actual Cash Value"], section: "Subject of Insurance – P2" },
+  { key: "subject_h_cause_of_loss", label: "P2 Subject H Causes of Loss", type: "select", options: ["Basic", "Broad", "Special"], section: "Subject of Insurance – P2" },
   { key: "subject_h_deductible", label: "P2 Subject H Deductible", type: "currency", section: "Subject of Insurance – P2" },
   { key: "subject_h_blanket", label: "P2 Subject H Blanket #", type: "text", section: "Subject of Insurance – P2" },
 
   { key: "subject_i_code", label: "P2 Subject I Code", type: "text", section: "Subject of Insurance – P2" },
   { key: "subject_i_limit", label: "P2 Subject I Amount", type: "currency", section: "Subject of Insurance – P2" },
+  { key: "subject_i_coinsurance", label: "P2 Subject I Coins %", type: "text", section: "Subject of Insurance – P2" },
+  { key: "subject_i_valuation", label: "P2 Subject I Valuation", type: "select", options: ["Replacement Cost", "Actual Cash Value"], section: "Subject of Insurance – P2" },
+  { key: "subject_i_cause_of_loss", label: "P2 Subject I Causes of Loss", type: "select", options: ["Basic", "Broad", "Special"], section: "Subject of Insurance – P2" },
   { key: "subject_i_deductible", label: "P2 Subject I Deductible", type: "currency", section: "Subject of Insurance – P2" },
+  { key: "subject_i_blanket", label: "P2 Subject I Blanket #", type: "text", section: "Subject of Insurance – P2" },
+
+  { key: "subject_j_code", label: "P2 Subject J Code", type: "text", section: "Subject of Insurance – P2" },
+  { key: "subject_j_limit", label: "P2 Subject J Amount", type: "currency", section: "Subject of Insurance – P2" },
+  { key: "subject_j_deductible", label: "P2 Subject J Deductible", type: "currency", section: "Subject of Insurance – P2" },
+  { key: "subject_j_blanket", label: "P2 Subject J Blanket #", type: "text", section: "Subject of Insurance – P2" },
+
+  { key: "subject_k_code", label: "P2 Subject K Code", type: "text", section: "Subject of Insurance – P2" },
+  { key: "subject_k_limit", label: "P2 Subject K Amount", type: "currency", section: "Subject of Insurance – P2" },
+  { key: "subject_k_deductible", label: "P2 Subject K Deductible", type: "currency", section: "Subject of Insurance – P2" },
+  { key: "subject_k_blanket", label: "P2 Subject K Blanket #", type: "text", section: "Subject of Insurance – P2" },
 
   // Construction – Premises 2
   { key: "construction_type_2", label: "P2 Construction Type", type: "select", options: ["Frame", "Joisted Masonry", "Non-Combustible", "Masonry Non-Combustible", "Modified Fire Resistive", "Fire Resistive"], section: "Construction – P2" },
@@ -1247,6 +1286,7 @@ const acord140Fields: AcordFormField[] = [
   { key: "equipment_breakdown_limit", label: "Equipment Breakdown Limit", type: "currency", section: "Equipment Breakdown" },
   { key: "equipment_breakdown_deductible", label: "Equipment Breakdown Deductible", type: "currency", section: "Equipment Breakdown" },
   { key: "equipment_breakdown_premium", label: "Equipment Breakdown Premium", type: "currency", section: "Equipment Breakdown" },
+  { key: "equipment_breakdown_excluded", label: "Equipment Breakdown: Not Included", type: "checkbox", section: "Equipment Breakdown" },
   { key: "spoilage_limit_eb", label: "Spoilage Limit (EB)", type: "currency", section: "Equipment Breakdown" },
   { key: "expediting_expense_limit", label: "Expediting Expense Limit", type: "currency", section: "Equipment Breakdown" },
 
@@ -1263,6 +1303,7 @@ const acord140Fields: AcordFormField[] = [
   { key: "earthquake_locations", label: "Earthquake – Applicable Locations", type: "text", section: "Policy-Wide Options" },
   { key: "earthquake_deductible", label: "Earthquake Deductible", type: "text", section: "Policy-Wide Options" },
   { key: "earthquake_premium", label: "Earthquake Premium", type: "currency", section: "Policy-Wide Options" },
+  { key: "earthquake_excluded", label: "Earthquake Coverage: Not Provided", type: "checkbox", section: "Policy-Wide Options" },
 
   // Utility Services / Seasonal Increase
   { key: "utility_services_coverage", label: "Utility Services Coverage", type: "checkbox", section: "Policy-Wide Options" },
@@ -1309,6 +1350,8 @@ const acord140Fields: AcordFormField[] = [
   { key: "producer_license_no", label: "State Producer License No.", type: "text", section: "Signature" },
   { key: "national_producer_number", label: "National Producer Number", type: "text", section: "Signature" },
   { key: "signature_date", label: "Date", type: "date", section: "Signature" },
+  { key: "signed_by_name", label: "Applicant Signed By Name", type: "text", section: "Signature" },
+  { key: "signed_by_title", label: "Applicant Signed By Title", type: "text", section: "Signature" },
 ];
 
 // ============================================================
