@@ -2053,14 +2053,7 @@ export default function Chat() {
           </div>
         )}
 
-        {/* ESPN-style ticker bar — producers/managers only */}
-        {user && !isClientServices && (
-          <ProducerHudRail
-            userId={user.id}
-            premiumSold={soldStats.premium}
-            revenueSold={soldStats.revenue}
-          />
-        )}
+        {/* Ticker moved to AppLayout */}
 
         {/* Messages area */}
         <div ref={scrollRef} className="flex-1 overflow-y-auto">
