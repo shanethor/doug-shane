@@ -661,6 +661,18 @@ const enforceNumericCode = (value: string): string => {
   return digits || "";
 };
 
+/** Normalize officer INC/EXC raw values ("I"→"Included", "E"→"Excluded") */
+const normalizeIncExc = (val: string): string => {
+  const v = val.trim().toUpperCase();
+  if (v === "I" || v === "INC" || v === "INCLUDE" || v === "INCLUDED") return "Included";
+  if (v === "E" || v === "EXC" || v === "EXCLUDE" || v === "EXCLUDED") return "Excluded";
+  return val;
+};
+
+const INC_EXC_FIELDS = new Set([
+  "officer_1_inc_exc", "officer_2_inc_exc", "officer_3_inc_exc", "officer_4_inc_exc",
+]);
+
 const normalizeValue = (fieldKey: string, value: any): any => {
   // Filter out boolean false values — they leak from checkbox/flag fields
   if (value === false) return "";
@@ -672,6 +684,8 @@ const normalizeValue = (fieldKey: string, value: any): any => {
   if (CURRENCY_FIELDS.has(fieldKey)) return cleanCurrency(s);
   // CODE fields must be numeric only
   if (isCodeField(fieldKey)) return enforceNumericCode(s);
+  // Officer Inc/Exc normalization: "I" → "Included", "E" → "Excluded"
+  if (INC_EXC_FIELDS.has(fieldKey)) return normalizeIncExc(s);
   return Array.isArray(value) ? value.join(", ") : s;
 };
 
