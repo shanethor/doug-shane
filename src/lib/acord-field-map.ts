@@ -425,7 +425,9 @@ export const ACORD_131_FIELD_MAP: AcordFieldMap = {
   // Underlying Insurance — Auto
   underlying_auto_carrier:       "AUTO CARRIER POLICY",
   underlying_auto_bi_ea_acc:     "AUTO BI EACH ACCIDENT",
+  underlying_auto_bi_ea_per:     "AUTO BI EACH PERSON",
   underlying_auto_pd:            "AUTO PD",
+  underlying_auto_csl:           "AUTO CSL",
   underlying_auto_premium:       "AUTO PREMIUM",
 
   // Underlying Insurance — GL
@@ -433,6 +435,9 @@ export const ACORD_131_FIELD_MAP: AcordFieldMap = {
   underlying_gl_occurrence:      "GL EACH OCCURRENCE",
   underlying_gl_aggregate:       "GL GENERAL AGGREGATE",
   underlying_gl_products:        "GL PRODUCTS",
+  underlying_gl_personal:        "GL PERSONAL INJURY",
+  underlying_gl_fire_damage:     "GL FIRE DAMAGE",
+  underlying_gl_med_expense:     "GL MED EXPENSE",
   underlying_gl_premium:         "GL PREMIUM",
 
   // Underlying Insurance — Employers Liability
@@ -442,10 +447,32 @@ export const ACORD_131_FIELD_MAP: AcordFieldMap = {
   underlying_el_disease_policy:  "EL DISEASE POLICY",
   underlying_el_premium:         "EL PREMIUM",
 
+  // Underlying Insurance — Other A
+  underlying_other_a_type:       "OTHER A TYPE",
+  underlying_other_a_carrier:    "OTHER A CARRIER",
+  underlying_other_a_coverage:   "OTHER A COVERAGE",
+  underlying_other_a_csl:        "OTHER A LIMIT",
+  underlying_other_a_premium:    "OTHER A PREMIUM",
+
+  // Underlying Insurance — Other B
+  underlying_other_b_type:       "OTHER B TYPE",
+  underlying_other_b_carrier:    "OTHER B CARRIER",
+  underlying_other_b_coverage:   "OTHER B COVERAGE",
+  underlying_other_b_csl:        "OTHER B LIMIT",
+  underlying_other_b_premium:    "OTHER B PREMIUM",
+
+  // Premium
+  umbrella_est_annual_premium:   "ESTIMATED ANNUAL PREMIUM",
+  umbrella_deposit_premium:      "DEPOSIT PREMIUM",
+  umbrella_minimum_earned:       "MINIMUM EARNED",
+
   // Remarks
   umbrella_remarks:         "REMARKS",
 
   // Signature
+  applicant_printed_name:   "APPLICANT NAME",
+  applicant_title:          "APPLICANT TITLE",
+  applicant_signature_date: "APPLICANT SIGNATURE DATE",
   producer_name:            "PRODUCERS NAME",
   producer_license_no:      "STATE LICENSE NO",
   national_producer_number: "NATIONAL PRODUCER NUMBER",

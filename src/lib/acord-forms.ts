@@ -831,6 +831,8 @@ const acord131Fields: AcordFormField[] = [
   // Underlying Insurance
   { key: "underlying_auto_carrier", label: "Auto Liability - Carrier", type: "text", section: "Underlying Insurance" },
   { key: "underlying_auto_policy", label: "Auto Liability - Policy #", type: "text", section: "Underlying Insurance" },
+  { key: "underlying_auto_eff_date", label: "Auto Eff Date", type: "date", section: "Underlying Insurance" },
+  { key: "underlying_auto_exp_date", label: "Auto Exp Date", type: "date", section: "Underlying Insurance" },
   { key: "underlying_auto_csl", label: "Auto CSL Limit", type: "currency", section: "Underlying Insurance" },
   { key: "underlying_auto_bi_ea_acc", label: "Auto BI Each Accident Limit", type: "currency", section: "Underlying Insurance" },
   { key: "underlying_auto_bi_ea_per", label: "Auto BI Each Person Limit", type: "currency", section: "Underlying Insurance" },
@@ -838,18 +840,42 @@ const acord131Fields: AcordFormField[] = [
   { key: "underlying_auto_premium", label: "Auto Annual Premium", type: "currency", section: "Underlying Insurance" },
   { key: "underlying_gl_carrier", label: "GL - Carrier", type: "text", section: "Underlying Insurance" },
   { key: "underlying_gl_policy", label: "GL - Policy #", type: "text", section: "Underlying Insurance" },
+  { key: "underlying_gl_eff_date", label: "GL Eff Date", type: "date", section: "Underlying Insurance" },
+  { key: "underlying_gl_exp_date", label: "GL Exp Date", type: "date", section: "Underlying Insurance" },
   { key: "underlying_gl_occurrence", label: "GL Each Occurrence Limit", type: "currency", section: "Underlying Insurance" },
   { key: "underlying_gl_aggregate", label: "GL General Aggregate Limit", type: "currency", section: "Underlying Insurance" },
   { key: "underlying_gl_products", label: "GL Products & Comp Ops Limit", type: "currency", section: "Underlying Insurance" },
   { key: "underlying_gl_personal", label: "GL Personal & Adv Injury Limit", type: "currency", section: "Underlying Insurance" },
+  { key: "underlying_gl_fire_damage", label: "GL Fire Damage Limit", type: "currency", section: "Underlying Insurance" },
+  { key: "underlying_gl_med_expense", label: "GL Med Expense Limit", type: "currency", section: "Underlying Insurance" },
   { key: "underlying_gl_premium", label: "GL Annual Premium", type: "currency", section: "Underlying Insurance" },
   { key: "underlying_gl_type", label: "GL Policy Type", type: "select", options: ["Occurrence", "Claims Made"], section: "Underlying Insurance" },
   { key: "underlying_el_carrier", label: "Employers Liability - Carrier", type: "text", section: "Underlying Insurance" },
   { key: "underlying_el_policy", label: "Employers Liability - Policy #", type: "text", section: "Underlying Insurance" },
+  { key: "underlying_el_eff_date", label: "EL Eff Date", type: "date", section: "Underlying Insurance" },
+  { key: "underlying_el_exp_date", label: "EL Exp Date", type: "date", section: "Underlying Insurance" },
   { key: "underlying_el_each_accident", label: "EL Each Accident", type: "currency", section: "Underlying Insurance" },
   { key: "underlying_el_disease_employee", label: "EL Disease Each Employee", type: "currency", section: "Underlying Insurance" },
   { key: "underlying_el_disease_policy", label: "EL Disease Policy Limit", type: "currency", section: "Underlying Insurance" },
   { key: "underlying_el_premium", label: "EL Annual Premium", type: "currency", section: "Underlying Insurance" },
+
+  // Underlying Insurance — Other Lines (Property, EPLI, Cyber, etc.)
+  { key: "underlying_other_a_type", label: "Other A - Line of Business", type: "text", section: "Underlying Insurance - Other" },
+  { key: "underlying_other_a_carrier", label: "Other A - Carrier", type: "text", section: "Underlying Insurance - Other" },
+  { key: "underlying_other_a_policy_number", label: "Other A - Policy #", type: "text", section: "Underlying Insurance - Other" },
+  { key: "underlying_other_a_eff_date", label: "Other A - Eff Date", type: "date", section: "Underlying Insurance - Other" },
+  { key: "underlying_other_a_exp_date", label: "Other A - Exp Date", type: "date", section: "Underlying Insurance - Other" },
+  { key: "underlying_other_a_coverage", label: "Other A - Coverage Description", type: "text", section: "Underlying Insurance - Other" },
+  { key: "underlying_other_a_csl", label: "Other A - Limit", type: "currency", section: "Underlying Insurance - Other" },
+  { key: "underlying_other_a_premium", label: "Other A - Premium", type: "currency", section: "Underlying Insurance - Other" },
+  { key: "underlying_other_b_type", label: "Other B - Line of Business", type: "text", section: "Underlying Insurance - Other" },
+  { key: "underlying_other_b_carrier", label: "Other B - Carrier", type: "text", section: "Underlying Insurance - Other" },
+  { key: "underlying_other_b_policy_number", label: "Other B - Policy #", type: "text", section: "Underlying Insurance - Other" },
+  { key: "underlying_other_b_eff_date", label: "Other B - Eff Date", type: "date", section: "Underlying Insurance - Other" },
+  { key: "underlying_other_b_exp_date", label: "Other B - Exp Date", type: "date", section: "Underlying Insurance - Other" },
+  { key: "underlying_other_b_coverage", label: "Other B - Coverage Description", type: "text", section: "Underlying Insurance - Other" },
+  { key: "underlying_other_b_csl", label: "Other B - Limit", type: "currency", section: "Underlying Insurance - Other" },
+  { key: "underlying_other_b_premium", label: "Other B - Premium", type: "currency", section: "Underlying Insurance - Other" },
 
   // Underlying GL Information
   { key: "defense_costs_treatment", label: "Defense Costs", type: "select", options: ["Within Aggregate Limits", "Separate Limit", "Unlimited"], section: "Underlying GL Information" },
@@ -865,32 +891,69 @@ const acord131Fields: AcordFormField[] = [
   { key: "has_pollution_liability", label: "Pollution Liability", type: "checkbox", section: "Coverage / Exposure Checklist" },
   { key: "has_watercraft_liability", label: "Watercraft Liability", type: "checkbox", section: "Coverage / Exposure Checklist" },
   { key: "has_liquor_liability", label: "Liquor Liability", type: "checkbox", section: "Coverage / Exposure Checklist" },
+  { key: "has_ebl_coverage", label: "Employee Benefits Liability", type: "checkbox", section: "Coverage / Exposure Checklist" },
+  { key: "has_foreign_liability", label: "Foreign Liability / Travel", type: "checkbox", section: "Coverage / Exposure Checklist" },
+  { key: "has_ccc_coverage", label: "Care, Custody & Control", type: "checkbox", section: "Coverage / Exposure Checklist" },
+  { key: "has_garagekeepers", label: "Garagekeepers", type: "checkbox", section: "Coverage / Exposure Checklist" },
+  { key: "has_vendors_coverage", label: "Vendors Coverage", type: "checkbox", section: "Coverage / Exposure Checklist" },
 
   // Previous Experience
   { key: "no_previous_claims", label: "No Such Claims", type: "checkbox", section: "Previous Experience" },
   { key: "previous_experience_details", label: "Claims exceeding $10,000 in past 5 years", type: "textarea", section: "Previous Experience" },
 
-  // Vehicles
-  { key: "private_passenger_owned", label: "Private Passenger - # Owned", type: "number", section: "Vehicles" },
-  { key: "light_trucks_owned", label: "Light Trucks - # Owned", type: "number", section: "Vehicles" },
-  { key: "medium_trucks_owned", label: "Medium Trucks - # Owned", type: "number", section: "Vehicles" },
-  { key: "heavy_trucks_owned", label: "Heavy Trucks - # Owned", type: "number", section: "Vehicles" },
-  { key: "buses_owned", label: "Buses - # Owned", type: "number", section: "Vehicles" },
+  // Vehicle Fleet Schedule
+  { key: "fleet_pp_owned", label: "Private Passenger - # Owned", type: "number", section: "Vehicle Fleet" },
+  { key: "fleet_pp_nonowned", label: "Private Passenger - # Non-Owned", type: "number", section: "Vehicle Fleet" },
+  { key: "fleet_pp_leased", label: "Private Passenger - # Leased", type: "number", section: "Vehicle Fleet" },
+  { key: "fleet_pp_local", label: "Private Passenger - Local", type: "number", section: "Vehicle Fleet" },
+  { key: "fleet_pp_intermediate", label: "Private Passenger - Intermediate", type: "number", section: "Vehicle Fleet" },
+  { key: "fleet_pp_long", label: "Private Passenger - Long Distance", type: "number", section: "Vehicle Fleet" },
+  { key: "fleet_lt_owned", label: "Light Trucks - # Owned", type: "number", section: "Vehicle Fleet" },
+  { key: "fleet_lt_nonowned", label: "Light Trucks - # Non-Owned", type: "number", section: "Vehicle Fleet" },
+  { key: "fleet_lt_leased", label: "Light Trucks - # Leased", type: "number", section: "Vehicle Fleet" },
+  { key: "fleet_lt_local", label: "Light Trucks - Local", type: "number", section: "Vehicle Fleet" },
+  { key: "fleet_lt_intermediate", label: "Light Trucks - Intermediate", type: "number", section: "Vehicle Fleet" },
+  { key: "fleet_lt_long", label: "Light Trucks - Long Distance", type: "number", section: "Vehicle Fleet" },
+  { key: "fleet_mt_owned", label: "Medium Trucks - # Owned", type: "number", section: "Vehicle Fleet" },
+  { key: "fleet_ht_owned", label: "Heavy Trucks - # Owned", type: "number", section: "Vehicle Fleet" },
+  { key: "fleet_bus_owned", label: "Buses - # Owned", type: "number", section: "Vehicle Fleet" },
 
-  // Additional Exposures
+  // Additional Exposures — Auto
   { key: "explosives_hauled", label: "Explosives/flammables/dangerous cargo hauled?", type: "select", options: ["Yes", "No"], section: "Additional Exposures - Auto", default: "No" },
   { key: "passengers_for_fee", label: "Passengers carried for a fee?", type: "select", options: ["Yes", "No"], section: "Additional Exposures - Auto", default: "No" },
   { key: "hired_non_owned_coverage", label: "Hired and non-owned coverages provided?", type: "select", options: ["Yes", "No"], section: "Additional Exposures - Auto", default: "No" },
+
+  // Additional Exposures — Contractors
   { key: "contractor_bridge_dam", label: "Bridge, dam, or marine work performed?", type: "select", options: ["Yes", "No"], section: "Additional Exposures - Contractors", default: "No" },
   { key: "contractor_uses_cranes", label: "Own, rent, or use cranes?", type: "select", options: ["Yes", "No"], section: "Additional Exposures - Contractors", default: "No" },
+  { key: "contractors_work_description", label: "Describe typical jobs", type: "textarea", section: "Additional Exposures - Contractors" },
+  { key: "contractors_agreement", label: "Independent contractor agreement/description", type: "textarea", section: "Additional Exposures - Contractors" },
+
+  // Additional Exposures — Employers
   { key: "employer_self_insured", label: "Applicant self-insured in any state?", type: "select", options: ["Yes", "No"], section: "Additional Exposures - Employers", default: "No" },
+
+  // Additional Exposures — Pollution
   { key: "pollution_hazardous_disposal", label: "Products require special hazardous disposal?", type: "select", options: ["Yes", "No"], section: "Additional Exposures - Pollution", default: "No" },
   { key: "foreign_operations_131", label: "Foreign operations or foreign products?", type: "select", options: ["Yes", "No"], section: "Additional Exposures - Pollution", default: "No" },
+
+  // Care, Custody & Control
+  { key: "ccc_location_id", label: "CCC Location ID", type: "text", section: "Care, Custody & Control" },
+  { key: "ccc_property_value", label: "CCC Property Value", type: "currency", section: "Care, Custody & Control" },
+  { key: "ccc_occupied_area", label: "CCC Occupied Area (Sq Ft)", type: "number", section: "Care, Custody & Control" },
+  { key: "ccc_property_description", label: "CCC Property Description / Occupancy", type: "textarea", section: "Care, Custody & Control" },
+
+  // Premium
+  { key: "umbrella_est_annual_premium", label: "Estimated Annual Premium", type: "currency", section: "Premium" },
+  { key: "umbrella_deposit_premium", label: "Deposit Premium", type: "currency", section: "Premium" },
+  { key: "umbrella_minimum_earned", label: "Minimum Earned Premium", type: "currency", section: "Premium" },
 
   // Remarks
   { key: "umbrella_remarks", label: "Remarks", type: "textarea", section: "Remarks" },
 
   // Signature
+  { key: "applicant_printed_name", label: "Applicant Printed Name", type: "text", section: "Signature" },
+  { key: "applicant_title", label: "Applicant Title", type: "text", section: "Signature" },
+  { key: "applicant_signature_date", label: "Applicant Signature Date", type: "date", section: "Signature" },
   { key: "producer_name", label: "Producer's Name", type: "text", section: "Signature" },
   { key: "producer_license_no", label: "State Producer License No.", type: "text", section: "Signature" },
   { key: "national_producer_number", label: "National Producer Number", type: "text", section: "Signature" },
