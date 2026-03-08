@@ -1047,127 +1047,176 @@ const acord140Fields: AcordFormField[] = [
 
   // Blanket Summary
   { key: "blanket_1_number", label: "Blanket # 1", type: "text", section: "Blanket Summary" },
-  { key: "blanket_1_amount", label: "Blanket 1 Amount", type: "currency", section: "Blanket Summary" },
-  { key: "blanket_1_type", label: "Blanket 1 Type", type: "text", section: "Blanket Summary" },
+  { key: "blanket_1_limit", label: "Blanket 1 Limit", type: "currency", section: "Blanket Summary" },
+  { key: "blanket_1_type", label: "Blanket 1 Type/Description", type: "text", section: "Blanket Summary" },
+  { key: "blanket_2_number", label: "Blanket # 2", type: "text", section: "Blanket Summary" },
+  { key: "blanket_2_limit", label: "Blanket 2 Limit", type: "currency", section: "Blanket Summary" },
+  { key: "blanket_2_type", label: "Blanket 2 Type/Description", type: "text", section: "Blanket Summary" },
 
-  // Premises Information
-  { key: "premises_number", label: "Premises #", type: "text", section: "Premises Information" },
-  { key: "building_street_address", label: "Street Address", type: "text", section: "Premises Information" },
-  { key: "building_number", label: "Building #", type: "text", section: "Premises Information" },
-  { key: "building_description", label: "Building Description", type: "text", section: "Premises Information" },
+  // ── Premises 1 ──
+  { key: "loc_1_number", label: "Premises # 1", type: "text", section: "Premises 1" },
+  { key: "loc_1_address", label: "P1 Street Address", type: "text", section: "Premises 1" },
+  { key: "bldg_1_number", label: "P1 Building #", type: "text", section: "Premises 1" },
+  { key: "bldg_1_description", label: "P1 Building Description", type: "text", section: "Premises 1" },
 
-  // Subject of Insurance
-  { key: "building_amount", label: "Building Amount", type: "currency", section: "Subject of Insurance" },
-  { key: "building_coins_pct", label: "Building Coins %", type: "text", section: "Subject of Insurance" },
-  { key: "building_valuation", label: "Building Valuation", type: "select", options: ["Replacement Cost", "Actual Cash Value", "Functional Replacement Cost", "Agreed Value"], section: "Subject of Insurance" },
-  { key: "building_causes_of_loss", label: "Building Causes of Loss", type: "select", options: ["Basic", "Broad", "Special"], section: "Subject of Insurance" },
-  { key: "building_deductible", label: "Building Deductible", type: "currency", section: "Subject of Insurance" },
-  { key: "bpp_amount", label: "Business Personal Property Amount", type: "currency", section: "Subject of Insurance" },
-  { key: "bpp_valuation", label: "BPP Valuation", type: "select", options: ["Replacement Cost", "Actual Cash Value"], section: "Subject of Insurance" },
-  { key: "bpp_causes_of_loss", label: "BPP Causes of Loss", type: "select", options: ["Basic", "Broad", "Special"], section: "Subject of Insurance" },
-  { key: "bpp_deductible", label: "BPP Deductible", type: "currency", section: "Subject of Insurance" },
-  { key: "business_income_amount", label: "Business Income Amount", type: "currency", section: "Subject of Insurance" },
-  { key: "extra_expense_amount", label: "Extra Expense Amount", type: "currency", section: "Subject of Insurance" },
-  { key: "rental_value_amount", label: "Rental Value Amount", type: "currency", section: "Subject of Insurance" },
-  { key: "inflation_guard_pct", label: "Inflation Guard %", type: "text", section: "Subject of Insurance" },
-  { key: "accounts_receivable_limit", label: "Accounts Receivable Limit", type: "currency", section: "Subject of Insurance" },
-  { key: "valuable_papers_limit", label: "Valuable Papers Limit", type: "currency", section: "Subject of Insurance" },
-  { key: "edp_media_limit", label: "EDP Media Limit", type: "currency", section: "Subject of Insurance" },
-  { key: "fine_arts_limit", label: "Fine Arts Limit", type: "currency", section: "Subject of Insurance" },
-  { key: "fungus_limit", label: "Fungus/Wet/Dry Rot Limit", type: "currency", section: "Subject of Insurance" },
-  { key: "coverage_extensions_limit", label: "Coverage Extensions Limit", type: "currency", section: "Subject of Insurance" },
+  // Subject of Insurance – Premises 1
+  { key: "subject_a_code", label: "P1 Subject A Code (BLDG)", type: "text", section: "Subject of Insurance – P1" },
+  { key: "subject_a_limit", label: "P1 BLDG Amount", type: "currency", section: "Subject of Insurance – P1" },
+  { key: "subject_a_coinsurance", label: "P1 BLDG Coins %", type: "text", section: "Subject of Insurance – P1" },
+  { key: "subject_a_valuation", label: "P1 BLDG Valuation", type: "select", options: ["Replacement Cost", "Actual Cash Value", "Functional Replacement Cost", "Agreed Value"], section: "Subject of Insurance – P1" },
+  { key: "subject_a_cause_of_loss", label: "P1 BLDG Causes of Loss", type: "select", options: ["Basic", "Broad", "Special"], section: "Subject of Insurance – P1" },
+  { key: "subject_a_inflation", label: "P1 BLDG Inflation Guard %", type: "text", section: "Subject of Insurance – P1" },
+  { key: "subject_a_deductible", label: "P1 BLDG Deductible", type: "currency", section: "Subject of Insurance – P1" },
+  { key: "subject_a_ded_type", label: "P1 BLDG Ded Type", type: "text", section: "Subject of Insurance – P1" },
+  { key: "subject_a_blanket", label: "P1 BLDG Blanket #", type: "text", section: "Subject of Insurance – P1" },
+  { key: "subject_a_forms", label: "P1 BLDG Forms", type: "text", section: "Subject of Insurance – P1" },
 
-  // Business Income / Extra Expense
+  { key: "subject_b_code", label: "P1 Subject B Code (BPP)", type: "text", section: "Subject of Insurance – P1" },
+  { key: "subject_b_limit", label: "P1 BPP Amount", type: "currency", section: "Subject of Insurance – P1" },
+  { key: "subject_b_coinsurance", label: "P1 BPP Coins %", type: "text", section: "Subject of Insurance – P1" },
+  { key: "subject_b_valuation", label: "P1 BPP Valuation", type: "select", options: ["Replacement Cost", "Actual Cash Value"], section: "Subject of Insurance – P1" },
+  { key: "subject_b_cause_of_loss", label: "P1 BPP Causes of Loss", type: "select", options: ["Basic", "Broad", "Special"], section: "Subject of Insurance – P1" },
+  { key: "subject_b_inflation", label: "P1 BPP Inflation Guard %", type: "text", section: "Subject of Insurance – P1" },
+  { key: "subject_b_deductible", label: "P1 BPP Deductible", type: "currency", section: "Subject of Insurance – P1" },
+
+  { key: "subject_c_code", label: "P1 Subject C Code (BI)", type: "text", section: "Subject of Insurance – P1" },
+  { key: "subject_c_limit", label: "P1 BI Amount", type: "currency", section: "Subject of Insurance – P1" },
+  { key: "subject_c_coinsurance", label: "P1 BI Coins %", type: "text", section: "Subject of Insurance – P1" },
+  { key: "subject_c_deductible", label: "P1 BI Deductible", type: "currency", section: "Subject of Insurance – P1" },
+
+  { key: "subject_d_code", label: "P1 Subject D Code (AR/VP)", type: "text", section: "Subject of Insurance – P1" },
+  { key: "subject_d_limit", label: "P1 AR/VP Amount", type: "currency", section: "Subject of Insurance – P1" },
+
+  { key: "subject_e_code", label: "P1 Subject E Code (EDP/Other)", type: "text", section: "Subject of Insurance – P1" },
+  { key: "subject_e_limit", label: "P1 EDP/Other Amount", type: "currency", section: "Subject of Insurance – P1" },
+
+  // BI/EE Attachments
+  { key: "chk_bi_ee", label: "BI/EE Attached", type: "checkbox", section: "Business Income" },
+  { key: "chk_value_reporting", label: "Value Reporting Attached", type: "checkbox", section: "Business Income" },
   { key: "bi_ee_type", label: "BI/EE Measurement", type: "select", options: ["Actual Loss Sustained", "Monthly Limit of Indemnity", "Maximum Period of Indemnity"], section: "Business Income" },
-  { key: "bi_ee_months", label: "BI/EE - # Months", type: "text", section: "Business Income" },
+  { key: "bi_ee_months", label: "BI/EE – # Months", type: "text", section: "Business Income" },
   { key: "bi_rental_value_included", label: "Rental Value Included", type: "checkbox", section: "Business Income" },
   { key: "bi_ordinary_payroll_included", label: "Ordinary Payroll Included", type: "checkbox", section: "Business Income" },
   { key: "bi_extended_days", label: "Extended BI Days", type: "text", section: "Business Income" },
-  { key: "bi_dependent_properties_limit", label: "Dependent Properties Limit", type: "currency", section: "Business Income" },
-  { key: "bi_dependent_outside_territory", label: "Dependent Properties Outside Territory", type: "select", options: ["Covered", "Not Covered"], section: "Business Income" },
+
+  // Spoilage – Premises 1
+  { key: "spoilage_yn", label: "P1 Spoilage Y/N", type: "select", options: ["Yes", "No"], section: "Spoilage – P1" },
+  { key: "spoilage_description", label: "P1 Spoilage Description", type: "text", section: "Spoilage – P1" },
+  { key: "spoilage_limit", label: "P1 Spoilage Limit", type: "currency", section: "Spoilage – P1" },
+  { key: "spoilage_deductible", label: "P1 Spoilage Deductible", type: "currency", section: "Spoilage – P1" },
+
+  // Sinkhole – Premises 1
+  { key: "sinkhole_coverage", label: "P1 Sinkhole", type: "select", options: ["Accept", "Reject"], section: "Special Coverages – P1" },
+  { key: "sinkhole_limit", label: "P1 Sinkhole Limit", type: "currency", section: "Special Coverages – P1" },
+  { key: "mine_subsidence_coverage", label: "P1 Mine Subsidence", type: "select", options: ["Accept", "Reject"], section: "Special Coverages – P1" },
+  { key: "mine_subsidence_limit", label: "P1 Mine Subsidence Limit", type: "currency", section: "Special Coverages – P1" },
+
+  // Construction – Premises 1
+  { key: "construction_type", label: "P1 Construction Type", type: "select", options: ["Frame", "Joisted Masonry", "Non-Combustible", "Masonry Non-Combustible", "Modified Fire Resistive", "Fire Resistive"], section: "Construction – P1" },
+  { key: "construction_code", label: "P1 Construction Code", type: "text", section: "Construction – P1" },
+  { key: "num_stories", label: "P1 # Stories", type: "number", section: "Construction – P1" },
+  { key: "num_basements", label: "P1 # Basements", type: "number", section: "Construction – P1" },
+  { key: "year_built", label: "P1 Year Built", type: "text", section: "Construction – P1" },
+  { key: "total_area_sq_ft", label: "P1 Total Area (Sq Ft)", type: "number", section: "Construction – P1" },
+  { key: "distance_to_hydrant", label: "P1 Distance to Hydrant (ft)", type: "text", section: "Construction – P1" },
+  { key: "distance_to_fire_station", label: "P1 Distance to Fire Station (mi)", type: "text", section: "Construction – P1" },
+  { key: "fire_district_name", label: "P1 Fire District Name", type: "text", section: "Construction – P1" },
+  { key: "fire_district_code", label: "P1 Fire District Code", type: "text", section: "Construction – P1" },
+  { key: "protection_class", label: "P1 Protection Class", type: "text", section: "Construction – P1" },
+  { key: "occupancy_description", label: "P1 Occupancy Description", type: "text", section: "Construction – P1" },
+
+  // Building Improvements – Premises 1
+  { key: "roof_type", label: "P1 Roof Type", type: "text", section: "Building Improvements – P1" },
+  { key: "wiring_year", label: "P1 Wiring Year", type: "text", section: "Building Improvements – P1" },
+  { key: "plumbing_year", label: "P1 Plumbing Year", type: "text", section: "Building Improvements – P1" },
+  { key: "roofing_year", label: "P1 Roofing Year", type: "text", section: "Building Improvements – P1" },
+  { key: "heating_year", label: "P1 Heating Year", type: "text", section: "Building Improvements – P1" },
+  { key: "wind_class", label: "P1 Wind Class", type: "select", options: ["Resistive", "Semi-Resistive", "Other"], section: "Building Improvements – P1" },
+
+  // Protective Devices – Premises 1
+  { key: "burglar_alarm_type", label: "P1 Burglar Alarm", type: "select", options: ["Central", "Local", "With Keys", "None"], section: "Protective Devices – P1" },
+  { key: "burglar_alarm_cert", label: "P1 Burglar Alarm Certificate #", type: "text", section: "Protective Devices – P1" },
+  { key: "sprinkler_pct", label: "P1 % Sprinklered", type: "text", section: "Protective Devices – P1" },
+  { key: "fire_alarm_manufacturer", label: "P1 Fire Alarm Manufacturer", type: "text", section: "Protective Devices – P1" },
+  { key: "fire_alarm_type", label: "P1 Fire Alarm Type", type: "select", options: ["Central Station", "Local Gong", "None"], section: "Protective Devices – P1" },
+  { key: "num_guards_watchmen", label: "P1 # Guards/Watchmen", type: "number", section: "Protective Devices – P1" },
+
+  // Heating – Premises 1
+  { key: "primary_heat_type", label: "P1 Primary Heat", type: "select", options: ["Boiler", "Solid Fuel", "Other"], section: "Heating – P1" },
+  { key: "secondary_heat_type", label: "P1 Secondary Heat", type: "select", options: ["Boiler", "Solid Fuel", "None"], section: "Heating – P1" },
+
+  // Additional Interest – Premises 1
+  { key: "interest_name", label: "P1 Addl Interest Name", type: "text", section: "Additional Interest – P1" },
+  { key: "interest_address_1", label: "P1 Addl Interest Address", type: "text", section: "Additional Interest – P1" },
+  { key: "interest_city", label: "P1 Addl Interest City", type: "text", section: "Additional Interest – P1" },
+  { key: "interest_state", label: "P1 Addl Interest State", type: "text", section: "Additional Interest – P1" },
+  { key: "interest_zip", label: "P1 Addl Interest ZIP", type: "text", section: "Additional Interest – P1" },
+  { key: "chk_interest_mortgagee", label: "P1 Mortgagee", type: "checkbox", section: "Additional Interest – P1" },
+  { key: "chk_interest_loss_payee", label: "P1 Loss Payee", type: "checkbox", section: "Additional Interest – P1" },
+  { key: "interest_loc", label: "P1 Interest Loc #", type: "text", section: "Additional Interest – P1" },
+  { key: "interest_bldg", label: "P1 Interest Bldg #", type: "text", section: "Additional Interest – P1" },
+
+  // ── Premises 2 ──
+  { key: "loc_2_number", label: "Premises # 2", type: "text", section: "Premises 2" },
+  { key: "loc_2_address", label: "P2 Street Address", type: "text", section: "Premises 2" },
+  { key: "bldg_2_number", label: "P2 Building #", type: "text", section: "Premises 2" },
+  { key: "bldg_2_description", label: "P2 Building Description", type: "text", section: "Premises 2" },
+
+  // Subject of Insurance – Premises 2
+  { key: "subject_g_code", label: "P2 Subject G Code", type: "text", section: "Subject of Insurance – P2" },
+  { key: "subject_g_limit", label: "P2 Subject G Amount", type: "currency", section: "Subject of Insurance – P2" },
+  { key: "subject_g_coinsurance", label: "P2 Subject G Coins %", type: "text", section: "Subject of Insurance – P2" },
+  { key: "subject_g_cause_of_loss", label: "P2 Subject G Causes of Loss", type: "text", section: "Subject of Insurance – P2" },
+  { key: "subject_g_deductible", label: "P2 Subject G Deductible", type: "currency", section: "Subject of Insurance – P2" },
+
+  { key: "subject_h_code", label: "P2 Subject H Code", type: "text", section: "Subject of Insurance – P2" },
+  { key: "subject_h_limit", label: "P2 Subject H Amount", type: "currency", section: "Subject of Insurance – P2" },
+  { key: "subject_h_coinsurance", label: "P2 Subject H Coins %", type: "text", section: "Subject of Insurance – P2" },
+  { key: "subject_h_deductible", label: "P2 Subject H Deductible", type: "currency", section: "Subject of Insurance – P2" },
+
+  { key: "subject_i_code", label: "P2 Subject I Code", type: "text", section: "Subject of Insurance – P2" },
+  { key: "subject_i_limit", label: "P2 Subject I Amount", type: "currency", section: "Subject of Insurance – P2" },
+
+  // Construction – Premises 2
+  { key: "construction_code_2", label: "P2 Construction Code", type: "text", section: "Construction – P2" },
+  { key: "num_stories_2", label: "P2 # Stories", type: "number", section: "Construction – P2" },
+  { key: "num_basements_2", label: "P2 # Basements", type: "number", section: "Construction – P2" },
+  { key: "year_built_2", label: "P2 Year Built", type: "text", section: "Construction – P2" },
+  { key: "total_area_sq_ft_2", label: "P2 Total Area (Sq Ft)", type: "number", section: "Construction – P2" },
+  { key: "distance_to_hydrant_2", label: "P2 Distance to Hydrant (ft)", type: "text", section: "Construction – P2" },
+  { key: "distance_to_fire_station_2", label: "P2 Distance to Fire Station (mi)", type: "text", section: "Construction – P2" },
+  { key: "protection_class_2", label: "P2 Protection Class", type: "text", section: "Construction – P2" },
+  { key: "roof_type_2", label: "P2 Roof Type", type: "text", section: "Construction – P2" },
+  { key: "wiring_year_2", label: "P2 Wiring Year", type: "text", section: "Construction – P2" },
+  { key: "plumbing_year_2", label: "P2 Plumbing Year", type: "text", section: "Construction – P2" },
+  { key: "roofing_year_2", label: "P2 Roofing Year", type: "text", section: "Construction – P2" },
+  { key: "heating_year_2", label: "P2 Heating Year", type: "text", section: "Construction – P2" },
+  { key: "sprinkler_pct_2", label: "P2 % Sprinklered", type: "text", section: "Construction – P2" },
+
+  // Additional Interest – Premises 2
+  { key: "interest_name_2", label: "P2 Addl Interest Name", type: "text", section: "Additional Interest – P2" },
+  { key: "interest_address_1_2", label: "P2 Addl Interest Address", type: "text", section: "Additional Interest – P2" },
+  { key: "interest_city_2", label: "P2 Addl Interest City", type: "text", section: "Additional Interest – P2" },
+  { key: "interest_state_2", label: "P2 Addl Interest State", type: "text", section: "Additional Interest – P2" },
+  { key: "interest_zip_2", label: "P2 Addl Interest ZIP", type: "text", section: "Additional Interest – P2" },
+  { key: "chk_interest_mortgagee_2", label: "P2 Mortgagee", type: "checkbox", section: "Additional Interest – P2" },
+  { key: "chk_interest_loss_payee_2", label: "P2 Loss Payee", type: "checkbox", section: "Additional Interest – P2" },
 
   // Equipment Breakdown
   { key: "equipment_breakdown_coverage", label: "Equipment Breakdown Coverage", type: "checkbox", section: "Equipment Breakdown" },
   { key: "equipment_breakdown_limit", label: "Equipment Breakdown Limit", type: "currency", section: "Equipment Breakdown" },
+  { key: "equipment_breakdown_deductible", label: "Equipment Breakdown Deductible", type: "currency", section: "Equipment Breakdown" },
   { key: "spoilage_limit", label: "Spoilage Limit", type: "currency", section: "Equipment Breakdown" },
   { key: "expediting_expense_limit", label: "Expediting Expense Limit", type: "currency", section: "Equipment Breakdown" },
-  { key: "ammonia_contamination_limit", label: "Ammonia Contamination Limit", type: "currency", section: "Equipment Breakdown" },
-  { key: "hazardous_substance_limit", label: "Hazardous Substance Limit", type: "currency", section: "Equipment Breakdown" },
 
-  // Crime / Additional Property Coverages
-  { key: "crime_employee_theft", label: "Crime - Employee Theft", type: "checkbox", section: "Crime / Additional Coverages" },
-  { key: "crime_forgery", label: "Crime - Forgery", type: "checkbox", section: "Crime / Additional Coverages" },
-  { key: "computer_fraud_limit", label: "Computer Fraud/FTF Limit", type: "currency", section: "Crime / Additional Coverages" },
-  { key: "ordinance_or_law_limit", label: "Ordinance or Law B/C Limit", type: "currency", section: "Crime / Additional Coverages" },
-  { key: "power_pac_blanket_limit", label: "Power Pac / Blanket Extensions Limit", type: "currency", section: "Crime / Additional Coverages" },
+  // Ordinance or Law / Policy-Wide Options
+  { key: "ordinance_or_law_limit", label: "Ordinance or Law A/B/C Limit", type: "currency", section: "Policy-Wide Options" },
+  { key: "ordinance_or_law_premium", label: "Ordinance or Law Premium", type: "currency", section: "Policy-Wide Options" },
 
-  // Premises 2
-  { key: "premises_2_number", label: "Premises 2 #", type: "text", section: "Premises 2" },
-  { key: "premises_2_address", label: "Premises 2 Address", type: "text", section: "Premises 2" },
-  { key: "premises_2_city", label: "Premises 2 City", type: "text", section: "Premises 2" },
-  { key: "premises_2_state", label: "Premises 2 State", type: "text", section: "Premises 2" },
-  { key: "premises_2_zip", label: "Premises 2 ZIP", type: "text", section: "Premises 2" },
-  { key: "premises_2_building_1", label: "P2 Building 1 Description", type: "text", section: "Premises 2" },
-  { key: "premises_2_building_2", label: "P2 Building 2 Description", type: "text", section: "Premises 2" },
-
-  // Mortgagee / Loss Payee
-  { key: "mortgagee_1_name", label: "Mortgagee / Loss Payee 1", type: "text", section: "Mortgagee / Loss Payee" },
-  { key: "mortgagee_1_address", label: "Mortgagee 1 Address", type: "text", section: "Mortgagee / Loss Payee" },
-  { key: "mortgagee_1_clause", label: "Mortgagee 1 Clause (ISAOA ATIMA)", type: "text", section: "Mortgagee / Loss Payee" },
-  { key: "mortgagee_2_name", label: "Mortgagee / Loss Payee 2", type: "text", section: "Mortgagee / Loss Payee" },
-  { key: "mortgagee_2_address", label: "Mortgagee 2 Address", type: "text", section: "Mortgagee / Loss Payee" },
-  { key: "mortgagee_3_name", label: "Mortgagee / Loss Payee 3", type: "text", section: "Mortgagee / Loss Payee" },
-  { key: "mortgagee_3_address", label: "Mortgagee 3 Address", type: "text", section: "Mortgagee / Loss Payee" },
-
-  // Construction Type
-  { key: "construction_type", label: "Construction Type", type: "select", options: ["Frame", "Joisted Masonry", "Non-Combustible", "Masonry Non-Combustible", "Modified Fire Resistive", "Fire Resistive"], section: "Construction" },
-  { key: "num_stories", label: "# Stories", type: "number", section: "Construction" },
-  { key: "num_basements", label: "# Basements", type: "number", section: "Construction" },
-  { key: "year_built", label: "Year Built", type: "text", section: "Construction" },
-  { key: "total_area_sq_ft", label: "Total Area (Sq Ft)", type: "number", section: "Construction" },
-  { key: "distance_to_hydrant", label: "Distance to Hydrant (ft)", type: "text", section: "Construction" },
-  { key: "fire_district", label: "Fire District (mi)", type: "text", section: "Construction" },
-  { key: "protection_class", label: "Protection Class", type: "text", section: "Construction" },
-  { key: "occupancy_description", label: "Occupancy Description", type: "text", section: "Construction" },
-
-  // Building Improvements
-  { key: "roof_type", label: "Roof Type", type: "text", section: "Building Improvements" },
-  { key: "wiring_year", label: "Wiring Year", type: "text", section: "Building Improvements" },
-  { key: "plumbing_year", label: "Plumbing Year", type: "text", section: "Building Improvements" },
-  { key: "roofing_year", label: "Roofing Year", type: "text", section: "Building Improvements" },
-  { key: "heating_year", label: "Heating Year", type: "text", section: "Building Improvements" },
-  { key: "wind_class", label: "Wind Class", type: "select", options: ["Resistive", "Semi-Resistive"], section: "Building Improvements" },
-
-  // Heating Source
-  { key: "primary_heat_type", label: "Primary Heat Type", type: "select", options: ["Boiler", "Solid Fuel", "Other"], section: "Heating Source" },
-  { key: "secondary_heat_type", label: "Secondary Heat Type", type: "select", options: ["Boiler", "Solid Fuel", "None"], section: "Heating Source" },
-  { key: "woodburning_stove", label: "Woodburning Stove or Fireplace Insert", type: "checkbox", section: "Heating Source" },
-  { key: "woodburning_date_installed", label: "Date Installed", type: "text", section: "Heating Source" },
-
-  // Protective Devices
-  { key: "burglar_alarm_type", label: "Burglar Alarm Type", type: "select", options: ["Central", "Local", "Station Gong", "With Keys", "None"], section: "Protective Devices" },
-  { key: "burglar_alarm_cert", label: "Burglar Alarm Certificate #", type: "text", section: "Protective Devices" },
-  { key: "num_guards_watchmen", label: "# Guards / Watchmen", type: "number", section: "Protective Devices" },
-  { key: "sprinkler_pct", label: "% Sprinklered", type: "text", section: "Protective Devices" },
-  { key: "fire_alarm_manufacturer", label: "Fire Alarm Manufacturer", type: "text", section: "Protective Devices" },
-  { key: "fire_alarm_type", label: "Fire Alarm Type", type: "select", options: ["Central Station", "Local Gong", "None"], section: "Protective Devices" },
-
-  // Sinkhole / Mine Subsidence
-  { key: "sinkhole_coverage", label: "Sinkhole Coverage", type: "select", options: ["Accept", "Reject"], section: "Special Coverages" },
-  { key: "sinkhole_limit", label: "Sinkhole Limit", type: "currency", section: "Special Coverages" },
-  { key: "mine_subsidence_coverage", label: "Mine Subsidence Coverage", type: "select", options: ["Accept", "Reject"], section: "Special Coverages" },
-  { key: "mine_subsidence_limit", label: "Mine Subsidence Limit", type: "currency", section: "Special Coverages" },
-
-  // Enhancement Flags
-  { key: "auto_coverage_plus", label: "Auto Coverage Plus", type: "checkbox", section: "Enhancement Endorsements" },
-  { key: "rental_reimbursement", label: "Rental Reimbursement", type: "checkbox", section: "Enhancement Endorsements" },
-  { key: "roadside_assistance", label: "Roadside Assistance", type: "checkbox", section: "Enhancement Endorsements" },
-  { key: "glass_deductible_waiver", label: "Glass Deductible Waiver", type: "checkbox", section: "Enhancement Endorsements" },
-  { key: "hired_auto_pd", label: "Hired Auto Physical Damage", type: "checkbox", section: "Enhancement Endorsements" },
-  { key: "gap_coverage", label: "GAP Coverage", type: "checkbox", section: "Enhancement Endorsements" },
-
-  // Remarks
-  { key: "property_remarks", label: "Remarks", type: "textarea", section: "Remarks" },
+  // Remarks (loss history, premium summary, additional coverages)
+  { key: "property_remarks", label: "Remarks – P1", type: "textarea", section: "Remarks" },
+  { key: "property_remarks_2", label: "Remarks – P2", type: "textarea", section: "Remarks" },
+  { key: "property_general_remarks", label: "General Remarks (Page 3)", type: "textarea", section: "Remarks" },
 
   // Signature
   { key: "producer_name", label: "Producer's Name", type: "text", section: "Signature" },
