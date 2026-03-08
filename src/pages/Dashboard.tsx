@@ -228,7 +228,7 @@ export default function Dashboard() {
                           />
                         </div>
                         <p className="text-xs text-muted-foreground font-sans">
-                          Generate a secure link for your customer to submit their information directly. Link expires in 7 days.
+                          Generate a secure link for your customer to submit their information directly. Link expires in 30 days.
                         </p>
                         <Button onClick={createCustomerLink} disabled={creating} className="w-full">
                           {creating ? "Generating…" : "Generate Link"}
