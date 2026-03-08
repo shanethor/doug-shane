@@ -329,6 +329,9 @@ Deno.serve(async (req) => {
         JSON.stringify({ success: true, lead_id: leadId, submission_id: newSub?.id || null }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
+    }
+
+    // ─── Path A: intake_links (original flow) ───
     if (!intake_link_id) {
       return new Response(JSON.stringify({ error: "intake_link_id required" }), {
         status: 400,
