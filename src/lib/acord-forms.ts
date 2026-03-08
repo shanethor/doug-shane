@@ -1438,6 +1438,7 @@ export const ACORD_FORMS: Record<string, AcordFormDefinition> = {
       { key: "gl_damage_to_premises_rented", label: "Damage to Rented Premises", type: "currency", section: "General Liability" },
       { key: "gl_medical_expense", label: "Medical Expense", type: "currency", section: "General Liability" },
       { key: "gl_retro_date", label: "GL Retro Date", type: "date", section: "General Liability" },
+      { key: "gl_premium", label: "GL Premium", type: "currency", section: "General Liability" },
 
       // Auto Coverages
       { key: "auto_any_auto", label: "Any Auto", type: "checkbox", section: "Auto Liability" },
@@ -1452,6 +1453,7 @@ export const ACORD_FORMS: Record<string, AcordFormDefinition> = {
       { key: "auto_um_uim_limit", label: "UM/UIM Limit", type: "currency", section: "Auto Liability" },
       { key: "auto_pip_limit", label: "PIP Limit", type: "currency", section: "Auto Liability" },
       { key: "auto_med_pay_limit", label: "Auto Med Pay", type: "currency", section: "Auto Liability" },
+      { key: "auto_premium", label: "Auto Premium", type: "currency", section: "Auto Liability" },
 
       // Vehicle Physical Damage
       { key: "vpd_valuation", label: "Valuation", type: "select", options: ["ACTUAL_CASH_VALUE", "REPLACEMENT_COST", "STATED_AMOUNT"], section: "Vehicle Physical Damage" },
@@ -1459,17 +1461,36 @@ export const ACORD_FORMS: Record<string, AcordFormDefinition> = {
       { key: "vpd_other_than_collision_deductible", label: "Other Than Collision Deductible", type: "currency", section: "Vehicle Physical Damage" },
       { key: "vpd_applies_to", label: "Applies To", type: "select", options: ["ALL_VEHICLES", "SCHEDULED_VEHICLES"], section: "Vehicle Physical Damage" },
 
-      // Property
+      // Property — Coverage Type
       { key: "property_causes_of_loss", label: "Causes of Loss", type: "select", options: ["BASIC", "BROAD", "SPECIAL"], section: "Property" },
-      { key: "property_limit", label: "Property Limit", type: "currency", section: "Property" },
+      // Property Subjects A-D
+      ...["A","B","C","D"].map((letter, i) => {
+        const prefix = `prop_${letter.toLowerCase()}`;
+        return [
+          { key: `${prefix}_subject`, label: `Subject ${letter}`, type: "text" as const, section: "Property" },
+          { key: `${prefix}_forms`, label: `Forms ${letter}`, type: "text" as const, section: "Property" },
+          { key: `${prefix}_deductible`, label: `Deductible ${letter}`, type: "currency" as const, section: "Property" },
+          { key: `${prefix}_coinsurance`, label: `Coinsurance % ${letter}`, type: "text" as const, section: "Property" },
+          { key: `${prefix}_limit`, label: `Limit ${letter}`, type: "currency" as const, section: "Property" },
+        ];
+      }).flat(),
+      { key: "property_limit", label: "Total Property Limit", type: "currency", section: "Property" },
       { key: "property_deductible", label: "Property Deductible", type: "currency", section: "Property" },
       { key: "property_coinsurance_pct", label: "Coinsurance %", type: "text", section: "Property" },
+      { key: "property_premium", label: "Property Premium", type: "currency", section: "Property" },
+
+      // Garage Liability
+      { key: "garage_any_auto", label: "Garage Any Auto", type: "checkbox", section: "Garage Liability" },
+      { key: "garage_auto_only_limit", label: "Auto Only - Per Accident", type: "currency", section: "Garage Liability" },
+      { key: "garage_other_limit", label: "Other Than Auto Only", type: "currency", section: "Garage Liability" },
+      { key: "garage_aggregate", label: "Aggregate", type: "currency", section: "Garage Liability" },
 
       // Workers Comp
       { key: "wc_per_statute", label: "Per Statute", type: "checkbox", section: "Workers Compensation" },
       { key: "wc_each_accident", label: "Each Accident", type: "currency", section: "Workers Compensation" },
       { key: "wc_disease_each_employee", label: "Disease - Each Employee", type: "currency", section: "Workers Compensation" },
       { key: "wc_disease_policy_limit", label: "Disease - Policy Limit", type: "currency", section: "Workers Compensation" },
+      { key: "wc_premium", label: "WC Premium", type: "currency", section: "Workers Compensation" },
 
       // Excess / Umbrella
       { key: "excess_form", label: "Form", type: "select", options: ["UMBRELLA", "EXCESS"], section: "Excess / Umbrella" },
@@ -1478,6 +1499,7 @@ export const ACORD_FORMS: Record<string, AcordFormDefinition> = {
       { key: "excess_aggregate", label: "Aggregate", type: "currency", section: "Excess / Umbrella" },
       { key: "excess_sir", label: "Self-Insured Retention", type: "currency", section: "Excess / Umbrella" },
       { key: "excess_retro_date", label: "Retro Date", type: "date", section: "Excess / Umbrella" },
+      { key: "excess_premium", label: "Excess/Umbrella Premium", type: "currency", section: "Excess / Umbrella" },
 
       // Additional Parties (up to 3)
       ...Array.from({ length: 3 }, (_, i) => {

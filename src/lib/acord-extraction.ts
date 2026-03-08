@@ -17,7 +17,7 @@ import type {
   Acord130Data, Acord130ClassCode,
   Acord131Data, Acord131UnderlyingPolicy,
   Acord140Data, Acord140Building,
-  Acord75Data, Acord75AdditionalParty,
+  Acord75Data, Acord75AdditionalParty, Acord75PropertySubject,
   AcordHeader, AcordAddress, AcordOfficer, AcordLossRecord,
 } from "./acord-schemas";
 
@@ -455,6 +455,20 @@ export function mapAcord75(data: Record<string, any>): Acord75Data {
     });
   }
 
+  // Extract property subjects A-D
+  const property_subjects: Acord75PropertySubject[] = [];
+  for (const letter of ["a", "b", "c", "d"]) {
+    const subject = data[`prop_${letter}_subject`];
+    if (!subject) continue;
+    property_subjects.push({
+      subject,
+      forms: data[`prop_${letter}_forms`],
+      deductible: data[`prop_${letter}_deductible`],
+      coinsurance: data[`prop_${letter}_coinsurance`],
+      limit: data[`prop_${letter}_limit`],
+    });
+  }
+
   return {
     header: extractHeader(data),
     binder_number: data.binder_number,
@@ -478,6 +492,7 @@ export function mapAcord75(data: Record<string, any>): Acord75Data {
     gl_damage_to_premises_rented: data.gl_damage_to_premises_rented || data.fire_damage,
     gl_medical_expense: data.gl_medical_expense || data.medical_payments,
     gl_retro_date: data.gl_retro_date,
+    gl_premium: data.gl_premium,
 
     // Auto
     auto_any_auto: data.auto_any_auto,
@@ -492,6 +507,7 @@ export function mapAcord75(data: Record<string, any>): Acord75Data {
     auto_um_uim_limit: data.auto_um_uim_limit || data.um_uim_limit,
     auto_pip_limit: data.auto_pip_limit,
     auto_med_pay_limit: data.auto_med_pay_limit,
+    auto_premium: data.auto_premium,
 
     // Vehicle Physical Damage
     vpd_valuation: data.vpd_valuation,
@@ -501,15 +517,24 @@ export function mapAcord75(data: Record<string, any>): Acord75Data {
 
     // Property
     property_causes_of_loss: data.property_causes_of_loss,
+    property_subjects,
     property_limit: data.property_limit,
     property_deductible: data.property_deductible,
     property_coinsurance_pct: data.property_coinsurance_pct,
+    property_premium: data.property_premium,
+
+    // Garage
+    garage_any_auto: data.garage_any_auto,
+    garage_auto_only_limit: data.garage_auto_only_limit,
+    garage_other_limit: data.garage_other_limit,
+    garage_aggregate: data.garage_aggregate,
 
     // WC
     wc_per_statute: data.wc_per_statute,
     wc_each_accident: data.wc_each_accident,
     wc_disease_each_employee: data.wc_disease_each_employee,
     wc_disease_policy_limit: data.wc_disease_policy_limit,
+    wc_premium: data.wc_premium,
 
     // Excess
     excess_form: data.excess_form,
@@ -518,6 +543,7 @@ export function mapAcord75(data: Record<string, any>): Acord75Data {
     excess_aggregate: data.excess_aggregate,
     excess_sir: data.excess_sir,
     excess_retro_date: data.excess_retro_date,
+    excess_premium: data.excess_premium,
 
     // Financials
     fees: data.fees,

@@ -163,7 +163,7 @@ const AI_TO_FORM_ALIASES: Record<string, string[]> = {
   writing_company: ["carrier"],
   current_premium: ["current_premium", "total_premium", "cgl_premium"],
   cgl_premium: ["cgl_premium"],
-  gl_premium: ["cgl_premium"],
+  // gl_premium alias moved to ACORD 75 section below
   coverage_part_premium: ["cgl_premium"],
   advance_premium: ["cgl_premium"],
   prior_carrier_name: ["prior_carrier_1", "prior_wc_carrier_1", "current_carrier"],
@@ -540,7 +540,22 @@ const AI_TO_FORM_ALIASES: Record<string, string[]> = {
   property_limit: ["property_limit"],
   property_deductible_75: ["property_deductible"],
   property_coinsurance_pct: ["property_coinsurance_pct"],
+  property_premium: ["property_premium"],
+  // Property subjects A-D
+  prop_a_subject: ["prop_a_subject"], prop_a_forms: ["prop_a_forms"], prop_a_deductible: ["prop_a_deductible"], prop_a_coinsurance: ["prop_a_coinsurance"], prop_a_limit: ["prop_a_limit"],
+  prop_b_subject: ["prop_b_subject"], prop_b_forms: ["prop_b_forms"], prop_b_deductible: ["prop_b_deductible"], prop_b_coinsurance: ["prop_b_coinsurance"], prop_b_limit: ["prop_b_limit"],
+  prop_c_subject: ["prop_c_subject"], prop_c_forms: ["prop_c_forms"], prop_c_deductible: ["prop_c_deductible"], prop_c_coinsurance: ["prop_c_coinsurance"], prop_c_limit: ["prop_c_limit"],
+  prop_d_subject: ["prop_d_subject"], prop_d_forms: ["prop_d_forms"], prop_d_deductible: ["prop_d_deductible"], prop_d_coinsurance: ["prop_d_coinsurance"], prop_d_limit: ["prop_d_limit"],
+  // Garage
+  garage_any_auto: ["garage_any_auto"],
+  garage_auto_only_limit: ["garage_auto_only_limit"],
+  garage_other_limit: ["garage_other_limit"],
+  garage_aggregate: ["garage_aggregate"],
   wc_per_statute: ["wc_per_statute"],
+  // Per-coverage premiums (ACORD 75 binder)
+  gl_premium: ["gl_premium", "cgl_premium"],
+  auto_premium: ["auto_premium"],
+  excess_premium: ["excess_premium"],
   excess_form: ["excess_form"],
   excess_trigger: ["excess_trigger"],
   excess_each_occurrence: ["excess_each_occurrence"],
@@ -603,7 +618,7 @@ const AI_TO_FORM_ALIASES: Record<string, string[]> = {
   lob_commercial_general_liability: ["lob_commercial_general_liability", "chk_commercial_general_liability"],
 
   // ── Multi-policy carrier / premium aliases ──
-  wc_premium: ["other_lob_premium"],
+  wc_premium: ["wc_premium", "other_lob_premium"],
   wc_carrier: ["prior_other_carrier_1"],
   wc_policy_number: ["prior_other_policy_1"],
   umbrella_carrier: ["prior_other_carrier_1"],
