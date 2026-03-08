@@ -7,7 +7,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-function buildSystemPrompt(trainingMode: boolean): string {
+function buildSystemPrompt(trainingMode: boolean, userRole: string = "producer"): string {
   const tipsSection = trainingMode
     ? `
 After presenting the intake fields, ALWAYS add a helpful note like:
