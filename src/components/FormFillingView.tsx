@@ -1064,13 +1064,27 @@ export default function FormFillingView({ submissionId, initialMessages, initial
               ))}</SelectContent>
           </Select>
         );
-      case "checkbox":
+      case "checkbox": {
+        // Normalize: treat "true", "Yes", "On", true, "1" as checked
+        const isChecked = (() => {
+          if (typeof value === "boolean") return value;
+          if (!value) return false;
+          const lower = String(value).toLowerCase();
+          return lower === "true" || lower === "yes" || lower === "y" || lower === "on" || lower === "1" || lower === "x";
+        })();
         return (
           <div className="flex items-center gap-2">
-            <Checkbox checked={!!value} onCheckedChange={(checked) => handleFieldChange(field.key, checked)} />
+            <Checkbox
+              checked={isChecked}
+              onCheckedChange={(checked) => {
+                // Store as string "true"/"false" so buildPrefillByIndex normalizes consistently
+                handleFieldChange(field.key, checked ? "true" : "false");
+              }}
+            />
             <span className="text-xs">{field.label}</span>
           </div>
         );
+      }
       default:
         if (field.type === "currency") {
           return (
