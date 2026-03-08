@@ -1056,6 +1056,8 @@ export const ACORD_127_INDEX_MAP: AcordIndexMap = {
   driver_6_ssn:          122,
   driver_6_license_state: 123,
   driver_6_hired_date:   124,
+  driver_6_no_fault:     125,
+  driver_6_other_car:    126,
   driver_6_vehicle_id:   127,
   driver_6_vehicle_pct:  128,
 
@@ -1076,6 +1078,8 @@ export const ACORD_127_INDEX_MAP: AcordIndexMap = {
   driver_7_ssn:          142,
   driver_7_license_state: 143,
   driver_7_hired_date:   144,
+  driver_7_no_fault:     145,
+  driver_7_other_car:    146,
   driver_7_vehicle_id:   147,
   driver_7_vehicle_pct:  148,
 
@@ -1096,6 +1100,8 @@ export const ACORD_127_INDEX_MAP: AcordIndexMap = {
   driver_8_ssn:          162,
   driver_8_license_state: 163,
   driver_8_hired_date:   164,
+  driver_8_no_fault:     165,
+  driver_8_other_car:    166,
   driver_8_vehicle_id:   167,
   driver_8_vehicle_pct:  168,
 
@@ -1116,6 +1122,8 @@ export const ACORD_127_INDEX_MAP: AcordIndexMap = {
   driver_9_ssn:          182,
   driver_9_license_state: 183,
   driver_9_hired_date:   184,
+  driver_9_no_fault:     185,
+  driver_9_other_car:    186,
   driver_9_vehicle_id:   187,
   driver_9_vehicle_pct:  188,
 
@@ -1136,6 +1144,8 @@ export const ACORD_127_INDEX_MAP: AcordIndexMap = {
   driver_10_ssn:         202,
   driver_10_license_state: 203,
   driver_10_hired_date:  204,
+  driver_10_no_fault:    205,
+  driver_10_other_car:   206,
   driver_10_vehicle_id:  207,
   driver_10_vehicle_pct: 208,
 
@@ -1156,6 +1166,8 @@ export const ACORD_127_INDEX_MAP: AcordIndexMap = {
   driver_11_ssn:         222,
   driver_11_license_state: 223,
   driver_11_hired_date:  224,
+  driver_11_no_fault:    225,
+  driver_11_other_car:   226,
   driver_11_vehicle_id:  227,
   driver_11_vehicle_pct: 228,
 
@@ -1176,6 +1188,8 @@ export const ACORD_127_INDEX_MAP: AcordIndexMap = {
   driver_12_ssn:         242,
   driver_12_license_state: 243,
   driver_12_hired_date:  244,
+  driver_12_no_fault:    245,
+  driver_12_other_car:   246,
   driver_12_vehicle_id:  247,
   driver_12_vehicle_pct: 248,
 
@@ -1196,6 +1210,8 @@ export const ACORD_127_INDEX_MAP: AcordIndexMap = {
   driver_13_ssn:         262,
   driver_13_license_state: 263,
   driver_13_hired_date:  264,
+  driver_13_no_fault:    265,
+  driver_13_other_car:   266,
   driver_13_vehicle_id:  267,
   driver_13_vehicle_pct: 268,
 
