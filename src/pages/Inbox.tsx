@@ -46,6 +46,9 @@ type SyncedEmail = {
   is_read: boolean;
   received_at: string;
   synced_at?: string;
+  tags?: string[];
+  client_id?: string | null;
+  client_link_source?: string | null;
 };
 
 type EmailConnection = {
