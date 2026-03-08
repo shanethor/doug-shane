@@ -1631,6 +1631,8 @@ export type Database = {
         Row: {
           body_html: string | null
           body_preview: string | null
+          client_id: string | null
+          client_link_source: string | null
           connection_id: string
           external_id: string
           from_address: string
@@ -1640,12 +1642,15 @@ export type Database = {
           received_at: string
           subject: string
           synced_at: string
+          tags: string[] | null
           to_addresses: string[]
           user_id: string
         }
         Insert: {
           body_html?: string | null
           body_preview?: string | null
+          client_id?: string | null
+          client_link_source?: string | null
           connection_id: string
           external_id: string
           from_address: string
@@ -1655,12 +1660,15 @@ export type Database = {
           received_at: string
           subject?: string
           synced_at?: string
+          tags?: string[] | null
           to_addresses?: string[]
           user_id: string
         }
         Update: {
           body_html?: string | null
           body_preview?: string | null
+          client_id?: string | null
+          client_link_source?: string | null
           connection_id?: string
           external_id?: string
           from_address?: string
@@ -1670,6 +1678,7 @@ export type Database = {
           received_at?: string
           subject?: string
           synced_at?: string
+          tags?: string[] | null
           to_addresses?: string[]
           user_id?: string
         }

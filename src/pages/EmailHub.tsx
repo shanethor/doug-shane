@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { AppLayout } from "@/components/AppLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
-import { Mail, CalendarDays, Clock, Sparkles, UserSearch, Send, FileSearch } from "lucide-react";
+import { Mail, CalendarDays, Clock } from "lucide-react";
 import Inbox from "./Inbox";
 import Calendar from "./Calendar";
 import { supabase } from "@/integrations/supabase/client";
@@ -60,41 +60,6 @@ export default function EmailHub() {
         </TabsList>
 
         <TabsContent value="email">
-          {/* Coming Soon Feature Banner */}
-          <Card className="mb-4 border-primary/20 bg-primary/5">
-            <CardContent className="p-4">
-              <div className="flex items-start gap-3">
-                <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <Sparkles className="h-5 w-5 text-primary" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <h3 className="text-sm font-semibold">Smart Client Detection</h3>
-                    <span className="text-[10px] font-medium bg-primary/10 text-primary px-2 py-0.5 rounded-full">Coming Soon</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    Any mention of a client&apos;s name in an email will automatically surface a summary of their current files, 
-                    missing information, and policy status right below the email. You&apos;ll be able to instantly send follow-ups 
-                    to request more info based on this intelligence.
-                  </p>
-                  <div className="flex items-center gap-4 mt-2.5">
-                    <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-                      <UserSearch className="h-3 w-3" />
-                      Auto-detect client names
-                    </div>
-                    <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-                      <FileSearch className="h-3 w-3" />
-                      Show file summaries
-                    </div>
-                    <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-                      <Send className="h-3 w-3" />
-                      One-click follow-ups
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
 
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-4 overflow-hidden">
             <div className="min-w-0 overflow-hidden">

@@ -23,6 +23,8 @@ import { formatDistanceToNow, format } from "date-fns";
 import { getAuthHeaders } from "@/lib/auth-fetch";
 import { advisorAssist } from "@/services/aiRouter";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
+import { EmailFilterChips } from "@/components/EmailFilterChips";
+import { EmailClientSnapshot } from "@/components/EmailClientSnapshot";
 
 type Notification = {
   id: string;
@@ -46,6 +48,9 @@ type SyncedEmail = {
   is_read: boolean;
   received_at: string;
   synced_at?: string;
+  tags?: string[];
+  client_id?: string | null;
+  client_link_source?: string | null;
 };
 
 type EmailConnection = {
@@ -87,6 +92,10 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
   const [syncing, setSyncing] = useState(false);
   const [tab, setTab] = useState("all");
 
+  // Insurance filter state
+  const [activeTags, setActiveTags] = useState<string[]>([]);
+  const [selectedClient, setSelectedClient] = useState<{ id: string; account_name: string; email: string | null } | null>(null);
+
   // Email detail dialog
   const [selectedEmail, setSelectedEmail] = useState<SyncedEmail | null>(null);
 
@@ -123,7 +132,7 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
 
     const { data } = await supabase
       .from("synced_emails")
-      .select("id, from_address, from_name, to_addresses, subject, body_preview, body_html, is_read, received_at, synced_at")
+      .select("id, from_address, from_name, to_addresses, subject, body_preview, body_html, is_read, received_at, synced_at, tags, client_id, client_link_source")
       .eq("user_id", user.id)
       .order("received_at", { ascending: false })
       .limit(100);
@@ -232,7 +241,7 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
         .limit(100),
       supabase
         .from("synced_emails")
-        .select("id, from_address, from_name, to_addresses, subject, body_preview, body_html, is_read, received_at, synced_at")
+        .select("id, from_address, from_name, to_addresses, subject, body_preview, body_html, is_read, received_at, synced_at, tags, client_id, client_link_source")
         .eq("user_id", user.id)
         .order("received_at", { ascending: false })
         .limit(100),
@@ -373,7 +382,28 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
 
   const unified = buildUnified();
   const baseUnified = emailOnly ? unified.filter((u) => u.kind === "email") : unified;
-  const filtered = tab === "all"
+
+  // Apply insurance tag + client filters
+  const applyInsuranceFilters = (items: UnifiedItem[]) => {
+    let result = items;
+    if (activeTags.length > 0) {
+      result = result.filter((u) => {
+        if (u.kind !== "email") return false;
+        const email = u.raw as SyncedEmail;
+        const emailTags = email.tags || [];
+        return activeTags.every((t) => emailTags.includes(t));
+      });
+    }
+    if (selectedClient) {
+      result = result.filter((u) => {
+        if (u.kind !== "email") return false;
+        return (u.raw as SyncedEmail).client_id === selectedClient.id;
+      });
+    }
+    return result;
+  };
+
+  const tabFiltered = tab === "all"
     ? baseUnified
     : tab === "unread"
       ? baseUnified.filter((u) => !u.is_read)
@@ -388,6 +418,8 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
               : tab === "emails"
                 ? baseUnified.filter((u) => u.kind === "email")
                 : baseUnified;
+
+  const filtered = applyInsuranceFilters(tabFiltered);
 
   const unreadCount = unified.filter((u) => !u.is_read).length;
 
@@ -559,6 +591,16 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
           </TabsList>
         </div>
 
+        {/* Insurance filter chips */}
+        <div className="mb-3 overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0 scrollbar-hide">
+          <EmailFilterChips
+            activeTags={activeTags}
+            onTagsChange={setActiveTags}
+            selectedClient={selectedClient}
+            onClientChange={setSelectedClient}
+          />
+        </div>
+
         <TabsContent value={tab}>
           <ScrollArea className="h-[calc(100vh-280px)]">
             {filtered.length === 0 ? (
@@ -593,8 +635,30 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
                           <div className="flex items-center gap-2">
                             <p className={`text-sm truncate ${!item.is_read ? "font-medium" : ""}`}>{item.title}</p>
                             <Badge variant="outline" className="text-[10px] shrink-0">{item.label}</Badge>
+                            {/* Client pill on email rows */}
+                            {item.kind === "email" && (() => {
+                              const email = item.raw as SyncedEmail;
+                              return email.client_id ? (
+                                <Badge variant="secondary" className="text-[10px] shrink-0 gap-0.5">
+                                  <User className="h-2.5 w-2.5" />
+                                  Client
+                                </Badge>
+                              ) : (
+                                <Badge variant="outline" className="text-[10px] shrink-0 text-muted-foreground">
+                                  Unassigned
+                                </Badge>
+                              );
+                            })()}
                           </div>
                           {item.body && <p className="text-xs text-muted-foreground truncate mt-0.5">{item.body}</p>}
+                          {/* Tag pills */}
+                          {item.kind === "email" && ((item.raw as SyncedEmail).tags || []).length > 0 && (
+                            <div className="flex gap-1 mt-1">
+                              {((item.raw as SyncedEmail).tags || []).map((tag) => (
+                                <Badge key={tag} variant="outline" className="text-[9px] px-1.5 py-0">{tag.replace(/_/g, " ")}</Badge>
+                              ))}
+                            </div>
+                          )}
                           <span className="text-[10px] text-muted-foreground mt-1 block">
                             {formatDistanceToNow(new Date(item.timestamp), { addSuffix: true })}
                           </span>
@@ -627,6 +691,13 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
                 <p><span className="font-medium text-foreground">To:</span> {selectedEmail.to_addresses?.join(", ")}</p>
                 <p><span className="font-medium text-foreground">Date:</span> {format(new Date(selectedEmail.received_at), "MMM d, yyyy 'at' h:mm a")}</p>
               </div>
+
+              {/* Client snapshot panel */}
+              {selectedEmail.client_id && (
+                <div className="py-2">
+                  <EmailClientSnapshot clientId={selectedEmail.client_id} />
+                </div>
+              )}
 
               <ScrollArea className="flex-1 min-h-0">
                 {selectedEmail.body_html ? (
