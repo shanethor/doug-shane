@@ -788,14 +788,27 @@ function postProcess(fd: Record<string, any>, sourceText: string, hasPdfs: boole
   const drivers: any[] = Array.isArray(fd.drivers) ? fd.drivers : [];
   drivers.forEach((d: any, idx: number) => {
     const n = idx + 1;
+    if (n > 13) return;
     if ((d.name || d.full_name) && !fd[`driver_${n}_name`])
       fd[`driver_${n}_name`] = String(d.name || d.full_name);
+    if ((d.first_name) && !fd[`driver_${n}_first_name`])
+      fd[`driver_${n}_first_name`] = String(d.first_name);
+    if ((d.last_name) && !fd[`driver_${n}_last_name`])
+      fd[`driver_${n}_last_name`] = String(d.last_name);
     if ((d.dob || d.date_of_birth) && !fd[`driver_${n}_dob`])
       fd[`driver_${n}_dob`] = String(d.dob || d.date_of_birth);
     if ((d.license || d.license_number || d.dl_number) && !fd[`driver_${n}_license`])
       fd[`driver_${n}_license`] = String(d.license || d.license_number || d.dl_number);
     if ((d.license_state || d.state) && !fd[`driver_${n}_license_state`])
       fd[`driver_${n}_license_state`] = String(d.license_state || d.state);
+    if ((d.sex || d.gender) && !fd[`driver_${n}_sex`])
+      fd[`driver_${n}_sex`] = String(d.sex || d.gender);
+    if ((d.marital_status || d.marital) && !fd[`driver_${n}_marital`])
+      fd[`driver_${n}_marital`] = String(d.marital_status || d.marital);
+    if ((d.city) && !fd[`driver_${n}_city`])
+      fd[`driver_${n}_city`] = String(d.city);
+    if ((d.zip) && !fd[`driver_${n}_zip`])
+      fd[`driver_${n}_zip`] = String(d.zip);
   });
   if (drivers.length > 0 && !fd.number_of_drivers) fd.number_of_drivers = String(drivers.length);
 
@@ -820,7 +833,7 @@ function postProcess(fd: Record<string, any>, sourceText: string, hasPdfs: boole
       if (!fd[`driver_${n}_last_name`]) fd[`driver_${n}_last_name`] = last;
       if (!fd[`driver_${n}_license_state`] && stateFallback) fd[`driver_${n}_license_state`] = stateFallback;
       n += 1;
-      if (n > 12) break;
+      if (n > 13) break;
     }
     if (n > 1 && !fd.number_of_drivers) fd.number_of_drivers = String(n - 1);
   }
