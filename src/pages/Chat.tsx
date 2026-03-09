@@ -384,7 +384,6 @@ export default function Chat() {
   const [coverageInfo, setCoverageInfo] = useState<{ filled: number; total: number; percent: number } | null>(null);
   const [showFeatureSuggestion, setShowFeatureSuggestion] = useState(false);
   const pendingPipelineActionRef = useRef<{ action: PipelineAction; leads: { id: string; account_name: string; stage: string }[] } | null>(null);
-  const [soldStats, setSoldStats] = useState({ premium: 0, revenue: 0 });
   const [showPersonalIntakeDialog, setShowPersonalIntakeDialog] = useState(false);
   const [personalIntakeLoading, setPersonalIntakeLoading] = useState(false);
   const [personalIntakeLink, setPersonalIntakeLink] = useState<string | null>(null);
