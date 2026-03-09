@@ -63,7 +63,7 @@ export default function BookingPage() {
       const endDt = new Date(startDt.getTime() + (eventType?.duration || 60) * 60000);
 
       const { error } = await supabase.from("calendar_events").insert({
-        user_id: producerId,
+        user_id: advisorId,
         title: `${eventType?.label || selectedType} — ${clientName}`,
         event_type: selectedType as any,
         start_time: startDt.toISOString(),
