@@ -95,24 +95,16 @@ export function NavScoreboard() {
       setLoading(true);
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
 
-      // Fetch all producers & admins (include admin as fake producer)
-      const listUsersPromise = role === "admin"
-        ? supabase.functions.invoke("list-users", { body: {} })
-        : Promise.resolve({ data: null, error: null } as any);
-
-      const [rolesRes, profilesRes, allPoliciesRes, mtdPoliciesRes, allLeadsRes, goalsRes, agenciesRes, listUsersRes] = await Promise.all([
-        supabase.from("user_roles").select("user_id, role"),
-        supabase.from("profiles").select("user_id, full_name, agency_name, agency_id"),
+      // Use scoreboard-directory edge function (accessible to all producers/managers/admins)
+      const [listUsersRes, allPoliciesRes, mtdPoliciesRes, allLeadsRes, goalsRes, agenciesRes] = await Promise.all([
+        supabase.functions.invoke("scoreboard-directory", { body: {} }),
         supabase.from("policies").select("producer_user_id, annual_premium, revenue").eq("status", "approved"),
         supabase.from("policies").select("producer_user_id, annual_premium, revenue").eq("status", "approved").gte("approved_at", monthStart),
         supabase.from("leads").select("id, stage, owner_user_id"),
         supabase.from("producer_goals" as any).select("user_id, annual_premium_goal, annual_revenue_goal, year").eq("year", year),
         supabase.from("agencies").select("id, name"),
-        listUsersPromise,
       ]);
 
-      const roles = rolesRes.data ?? [];
-      const profiles = profilesRes.data ?? [];
       const allPolicies = allPoliciesRes.data ?? [];
       const mtdPolicies = mtdPoliciesRes.data ?? [];
       const allLeads = allLeadsRes.data ?? [];
@@ -126,7 +118,7 @@ export function NavScoreboard() {
       // Build a lookup from list-users (admin directory) for names/agency
       const listUserMap = new Map(listUsers.map((u: any) => [u.id, u]));
 
-      // Find producer user IDs (prefer admin directory when available)
+      // Find producer user IDs from the directory
       const producerIds = new Set<string>();
 
       if (listUsers.length > 0) {
@@ -135,18 +127,12 @@ export function NavScoreboard() {
             producerIds.add(u.id);
           }
         });
-      } else {
-        roles.forEach((r: any) => {
-          if (r.role === "producer") producerIds.add(r.user_id);
-        });
       }
 
-      // Only admins see the fake admin-as-producer entry
-      if (role === "admin") {
-        producerIds.add(JANE_SMITH_ID);
-      }
+      // Always add Jane Smith (admin) as fake producer for all users
+      producerIds.add(JANE_SMITH_ID);
 
-      const profileMap = new Map(profiles.map((p: any) => [p.user_id, p]));
+      const profileMap = new Map(listUsers.map((u: any) => [u.id, u]));
       const goalsMap = new Map((allGoals as any[]).map((g: any) => [g.user_id, g]));
       const listGoalsMap = new Map(
         listUsers
