@@ -219,12 +219,11 @@ export default function AdminDashboard() {
 
   const handleChangeAgency = async (userId: string, agencyId: string) => {
     const agency = agencies.find((a: any) => a.id === agencyId);
-    const { error } = await supabase
-      .from("profiles")
-      .update({ agency_id: agencyId })
-      .eq("user_id", userId);
-    if (error) {
-      toast.error("Failed to update agency");
+    const { data, error } = await supabase.functions.invoke("approve-user", {
+      body: { target_user_id: userId, action: "set_agency", agency_id: agencyId },
+    });
+    if (error || data?.error) {
+      toast.error(data?.error || "Failed to update agency");
       return;
     }
     toast.success(`Agency updated to ${agency?.name || "Unknown"}`);

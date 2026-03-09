@@ -95,7 +95,6 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
 
   // Insurance filter state
   const [activeTags, setActiveTags] = useState<string[]>([]);
-  const [selectedClients, setSelectedClients] = useState<{ id: string; account_name: string; email: string | null }[]>([]);
 
   // General search
   const [searchQuery, setSearchQuery] = useState("");
@@ -398,13 +397,6 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
         return activeTags.every((t) => emailTags.includes(t));
       });
     }
-    if (selectedClients.length > 0) {
-      const clientIds = new Set(selectedClients.map((c) => c.id));
-      result = result.filter((u) => {
-        if (u.kind !== "email") return false;
-        return clientIds.has((u.raw as SyncedEmail).client_id || "");
-      });
-    }
     return result;
   };
 
@@ -637,8 +629,6 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
           <EmailFilterChips
             activeTags={activeTags}
             onTagsChange={setActiveTags}
-            selectedClients={selectedClients}
-            onClientsChange={setSelectedClients}
           />
         </div>
 
