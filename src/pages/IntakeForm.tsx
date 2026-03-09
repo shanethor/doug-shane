@@ -13,6 +13,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Car, Home, Sailboat, Umbrella, Plus, Trash2, CheckCircle, AlertTriangle,
   Loader2, Upload, FileText, X, Shield, Building2, User, Check, AlertCircle as AlertCircleIcon,
   ChevronLeft, ChevronRight, Droplets, Gem, Download,
