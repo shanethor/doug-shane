@@ -660,6 +660,29 @@ export default function IntakeForm() {
         setUmbrella(prev => ({ ...prev, wants_umbrella: "yes", requested_limit: d.umbrella.limit || prev.requested_limit }));
       }
 
+      // Pre-fill commercial form fields if in commercial intake mode
+      if (intakeType === "commercial") {
+        setCommercialForm(prev => ({
+          ...prev,
+          business_name: d.named_insured || d.company_name || d.business_name || d.applicant_name || prev.business_name,
+          dba: d.dba || prev.dba,
+          customer_name: d.contact_name || d.applicant_name || prev.customer_name,
+          customer_email: d.contact_email || d.applicant_email || prev.customer_email,
+          customer_phone: d.contact_phone || d.applicant_phone || prev.customer_phone,
+          ein: d.fein || d.ein || prev.ein,
+          street_address: d.mailing_address || d.address || d.applicant_address || prev.street_address,
+          city: d.city || d.applicant_city || prev.city,
+          state: d.state || d.applicant_state || prev.state,
+          zip: d.zip || d.applicant_zip || prev.zip,
+          employee_count: d.employee_count || d.number_of_employees || prev.employee_count,
+          annual_revenue: d.annual_revenue || d.gross_sales || prev.annual_revenue,
+          years_in_business: d.years_in_business || prev.years_in_business,
+          business_type: d.entity_type || d.business_entity_type || prev.business_type,
+          current_carrier_name: d.carrier || d.current_carrier || prev.current_carrier_name,
+          policy_number: d.policy_number || prev.policy_number,
+        }));
+      }
+
       setDecExtracted(true);
       toast.success("We extracted your policy info! Review and edit as needed.");
     } catch (err: any) {
