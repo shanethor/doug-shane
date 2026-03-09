@@ -435,7 +435,7 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
 
   const filtered = applySearchFilter(applyInsuranceFilters(tabFiltered));
 
-  const unreadCount = unified.filter((u) => !u.is_read).length;
+  const unreadCount = baseUnified.filter((u) => !u.is_read).length;
 
   const handleUnifiedClick = (item: UnifiedItem) => {
     if (item.kind === "notification") {
