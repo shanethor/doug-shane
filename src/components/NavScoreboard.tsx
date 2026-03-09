@@ -371,7 +371,7 @@ export function NavScoreboard() {
 
   return (
     <>
-      <div className="w-full bg-card/60 backdrop-blur-md overflow-hidden">
+      <div className="w-full bg-card/60 backdrop-blur-md ticker-viewport">
         <div className="flex h-[34px] items-center ticker-track">
           {tickerContent}
           {tickerContent}
