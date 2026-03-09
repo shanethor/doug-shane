@@ -2626,7 +2626,7 @@ export default function IntakeForm() {
                 if (next) { setCommercialStep(next); window.scrollTo({ top: 0, behavior: "smooth" }); }
               };
               const commGoNext = () => {
-                if (decExtracting) {
+                if (decExtracting || resumeExtracting) {
                   setShowExtractionWarning(true);
                   return;
                 }
