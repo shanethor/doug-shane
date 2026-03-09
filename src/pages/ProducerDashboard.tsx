@@ -320,20 +320,20 @@ export default function ProducerDashboard({ embedded }: { embedded?: boolean } =
       {!loading && (
         <div className="flex flex-wrap gap-2 mb-4">
           {renewalsDue30 > 0 && (
-            <Badge variant="outline" className="bg-warning/10 text-warning border-warning/30 text-xs py-1 px-3">
-              <CalendarDays className="h-3 w-3 mr-1.5" />
+            <Badge className="bg-warning text-warning-foreground border-warning text-sm font-semibold py-1.5 px-4 shadow-sm">
+              <CalendarDays className="h-3.5 w-3.5 mr-1.5" />
               {renewalsDue30} renewal{renewalsDue30 !== 1 ? "s" : ""} due in 30 days
             </Badge>
           )}
           {stats.pendingPolicies > 0 && (
-            <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30 text-xs py-1 px-3">
-              <Clock className="h-3 w-3 mr-1.5" />
+            <Badge className="bg-primary text-primary-foreground border-primary text-sm font-semibold py-1.5 px-4 shadow-sm">
+              <Clock className="h-3.5 w-3.5 mr-1.5" />
               {stats.pendingPolicies} policies awaiting approval
             </Badge>
           )}
           {openLeads.filter((l) => l.stage === "presenting").length > 0 && (
-            <Badge variant="outline" className="bg-accent/10 text-accent-foreground border-accent/30 text-xs py-1 px-3">
-              <Target className="h-3 w-3 mr-1.5" />
+            <Badge className="bg-primary text-primary-foreground border-primary text-sm font-semibold py-1.5 px-4 shadow-sm">
+              <Target className="h-3.5 w-3.5 mr-1.5" />
               {openLeads.filter((l) => l.stage === "presenting").length} deals in presenting
             </Badge>
           )}
