@@ -465,6 +465,8 @@ export default function Chat() {
   const [personalIntakeLoading, setPersonalIntakeLoading] = useState(false);
   const [personalIntakeLink, setPersonalIntakeLink] = useState<string | null>(null);
   const [pendingEmail, setPendingEmail] = useState<EmailAction | null>(null);
+  const [sendFrom, setSendFrom] = useState<"aura" | string>("aura");
+  const [connectedEmails, setConnectedEmails] = useState<{ id: string; email_address: string; provider: string }[]>([]);
   const mountedRef = useRef(true);
   useEffect(() => {
     return () => {
@@ -1863,26 +1865,44 @@ export default function Chat() {
   };
 
   /** Execute email actions — show confirmation for sends */
-  const executeEmailActions = (actions: EmailAction[]) => {
+  const executeEmailActions = async (actions: EmailAction[]) => {
     if (actions.length === 0) return;
-    // Show preview for the first email action — user must confirm
+    // Fetch connected email accounts for "Send From" picker
+    if (user) {
+      const { data } = await supabase
+        .from("email_connections")
+        .select("id, email_address, provider")
+        .eq("user_id", user.id)
+        .eq("is_active", true);
+      setConnectedEmails(data || []);
+    }
+    setSendFrom("aura");
     setPendingEmail(actions[0]);
   };
 
   /** Send the pending email via the send-email edge function */
   const confirmSendEmail = async () => {
     if (!pendingEmail || !user) return;
+    const isConnectedAccount = sendFrom !== "aura";
+    const senderLabel = isConnectedAccount
+      ? connectedEmails.find(e => e.id === sendFrom)?.email_address || sendFrom
+      : "AURA (noreply@buildingaura.site)";
     try {
       const headers = await getAuthHeaders();
+      const payload: Record<string, unknown> = {
+        to: pendingEmail.recipientEmail,
+        subject: pendingEmail.subject,
+        html: pendingEmail.bodyHtml,
+        cc_owner: pendingEmail.ccOwner,
+      };
+      // If sending from a connected account, include connection_id so the edge function routes through it
+      if (isConnectedAccount) {
+        payload.connection_id = sendFrom;
+      }
       const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-email`, {
         method: "POST",
         headers,
-        body: JSON.stringify({
-          to: pendingEmail.recipientEmail,
-          subject: pendingEmail.subject,
-          html: pendingEmail.bodyHtml,
-          cc_owner: pendingEmail.ccOwner,
-        }),
+        body: JSON.stringify(payload),
       });
       if (!resp.ok) {
         const errBody = await resp.json().catch(() => ({}));
@@ -1891,7 +1911,7 @@ export default function Chat() {
       toast({ title: "✉️ Email sent", description: `Email to ${pendingEmail.recipientName} sent successfully.` });
       setMessages(prev => [...prev, {
         role: "assistant",
-        content: `✅ **Email sent** to **${pendingEmail.recipientName}** (${pendingEmail.recipientEmail}).\n\n**Subject:** ${pendingEmail.subject}${pendingEmail.ccOwner ? "\n\n*You were CC'd on this email.*" : ""}`,
+        content: `✅ **Email sent** to **${pendingEmail.recipientName}** (${pendingEmail.recipientEmail}).\n\n**Subject:** ${pendingEmail.subject}\n**Sent from:** ${senderLabel}${pendingEmail.ccOwner ? "\n\n*You were CC'd on this email.*" : ""}`,
       }]);
     } catch (err: any) {
       console.error("Email send error:", err);
@@ -3042,6 +3062,21 @@ export default function Chat() {
             {pendingEmail && (
               <>
                 <div className="space-y-2 text-sm">
+                  <div className="flex gap-2 items-center">
+                    <span className="text-muted-foreground font-medium w-16 shrink-0">From:</span>
+                    <select
+                      className="flex-1 rounded-md border border-input bg-background px-3 py-1.5 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
+                      value={sendFrom}
+                      onChange={(e) => setSendFrom(e.target.value)}
+                    >
+                      <option value="aura">AURA — noreply@buildingaura.site</option>
+                      {connectedEmails.map((conn) => (
+                        <option key={conn.id} value={conn.id}>
+                          {conn.provider === "microsoft" ? "Outlook" : "Gmail"} — {conn.email_address}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                   <div className="flex gap-2">
                     <span className="text-muted-foreground font-medium w-16 shrink-0">To:</span>
                     <span>{pendingEmail.recipientName} &lt;{pendingEmail.recipientEmail}&gt;</span>
