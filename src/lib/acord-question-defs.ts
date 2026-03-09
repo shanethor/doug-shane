@@ -282,6 +282,9 @@ export const SECTION_LABELS: Record<AcordSection, string> = {
   wc: "Workers Compensation",
   property: "Commercial Property",
   umbrella: "Umbrella / Excess",
+  professional: "Professional Liability",
+  cyber: "Cyber Liability",
+  other: "Other Coverage",
   binder: "Binder",
 };
 
@@ -293,5 +296,8 @@ export const SECTION_ICONS: Record<AcordSection, string> = {
   wc: "HardHat",
   property: "Home",
   umbrella: "Umbrella",
+  professional: "Briefcase",
+  cyber: "Shield",
+  other: "FileText",
   binder: "FileText",
 };
