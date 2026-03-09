@@ -159,7 +159,7 @@ function ComingSoonPanel({ tool }: { tool: ToolTab }) {
 
 export default function ProducerHub() {
   const { isClientServices } = useUserRole();
-  const [activeTab, setActiveTab] = useState("pipeline");
+  const [activeTab, setActiveTab] = useState("production");
 
   // Client Services users cannot access Producer Hub
   if (isClientServices) {
