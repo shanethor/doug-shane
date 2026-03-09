@@ -1865,9 +1865,18 @@ export default function Chat() {
   };
 
   /** Execute email actions — show confirmation for sends */
-  const executeEmailActions = (actions: EmailAction[]) => {
+  const executeEmailActions = async (actions: EmailAction[]) => {
     if (actions.length === 0) return;
-    // Show preview for the first email action — user must confirm
+    // Fetch connected email accounts for "Send From" picker
+    if (user) {
+      const { data } = await supabase
+        .from("email_connections")
+        .select("id, email_address, provider")
+        .eq("user_id", user.id)
+        .eq("is_active", true);
+      setConnectedEmails(data || []);
+    }
+    setSendFrom("aura");
     setPendingEmail(actions[0]);
   };
 
