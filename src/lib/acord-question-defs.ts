@@ -127,7 +127,7 @@ const ACORD_130: AcordQuestion[] = [
   { acord: "130", key: "wc_class_codes", label: "Primary Workers Comp class codes and descriptions", type: "text", required: false, section: "wc",
     placeholder: "e.g. 5190 – Electrical Wiring",
     dependsOn: (f) => f.has_employees === true || f.has_employees === "yes" },
-  { acord: "130", key: "wc_states_of_operation", label: "State(s) of operation for Workers Comp", type: "text", required: false, section: "wc",
+  { acord: "130", key: "wc_states_of_operation", label: "State(s) of operation for Workers Comp", type: "text", required: true, section: "wc",
     placeholder: "e.g. TX, CA, FL",
     dependsOn: (f) => f.has_employees === true || f.has_employees === "yes" },
   { acord: "130", key: "wc_include_owners", label: "Include owners/officers in Workers Comp coverage?", type: "boolean", required: false, section: "wc",
