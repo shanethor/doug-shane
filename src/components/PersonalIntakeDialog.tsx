@@ -16,10 +16,10 @@ interface PersonalIntakeDialogProps {
   generatedLink?: string | null;
 }
 
-export function PersonalIntakeDialog({ open, onClose, onGenerate, isLoading, producerEmail, generatedLink }: PersonalIntakeDialogProps) {
+export function PersonalIntakeDialog({ open, onClose, onGenerate, isLoading, advisorEmail, generatedLink }: PersonalIntakeDialogProps) {
   const [clientEmail, setClientEmail] = useState("");
   const [teamMemberEmail, setTeamMemberEmail] = useState("");
-  const [ccProducer, setCcProducer] = useState(true);
+  const [ccAdvisor, setCcAdvisor] = useState(true);
   const [copied, setCopied] = useState(false);
   const { toast } = useToast();
 
