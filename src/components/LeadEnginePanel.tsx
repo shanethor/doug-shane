@@ -553,6 +553,12 @@ export default function LeadEnginePanel() {
 
   return (
     <div className="space-y-6">
+      {/* Build In Progress Banner */}
+      <div className="rounded-xl border-2 border-dashed border-primary/40 bg-primary/5 p-6 text-center">
+        <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-primary mb-1">Build In Progress</h1>
+        <p className="text-sm text-muted-foreground">This section is actively being developed. Functionality below is live but expanding.</p>
+      </div>
+
       {/* Header with actions */}
       <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 flex items-center gap-3">
         <div className="rounded-full bg-primary/10 p-2">
