@@ -2169,7 +2169,9 @@ export default function Chat() {
   const handleDragIn = (e: React.DragEvent) => {
     e.preventDefault(); e.stopPropagation();
     dragCounterRef.current += 1;
-    if (e.dataTransfer.items && e.dataTransfer.items.length > 0) setDragActive(true);
+    // Only activate file-drop overlay for external file drags, not internal pipeline card drags
+    const hasFiles = Array.from(e.dataTransfer.types).includes("Files");
+    if (hasFiles && e.dataTransfer.items && e.dataTransfer.items.length > 0) setDragActive(true);
   };
   const handleDragOut = (e: React.DragEvent) => {
     e.preventDefault(); e.stopPropagation();
