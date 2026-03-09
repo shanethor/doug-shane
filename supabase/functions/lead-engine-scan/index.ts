@@ -165,7 +165,7 @@ Deno.serve(async (req) => {
     if (allResults.length === 0) {
       await adminClient.from("lead_source_configs")
         .update({ last_sync_at: new Date().toISOString() })
-        .eq("user_id", user.id)
+        .eq("user_id", userId)
         .eq("source", source);
 
       return new Response(JSON.stringify({ success: true, leads_found: 0, message: "No results found" }), {
