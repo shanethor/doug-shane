@@ -123,6 +123,9 @@ export function NavScoreboard() {
       // Build agency lookup by id
       const agencyMap = new Map(agencies.map((a: any) => [a.id, a.name]));
 
+      // Build a lookup from list-users (admin directory) for names/agency
+      const listUserMap = new Map(listUsers.map((u: any) => [u.id, u]));
+
       // Find producer user IDs (prefer admin directory when available)
       const producerIds = new Set<string>();
 
@@ -148,10 +151,17 @@ export function NavScoreboard() {
 
       producerIds.forEach(uid => {
         const prof = profileMap.get(uid) as any;
-        const name = prof?.full_name || "Unknown";
+        const dirUser = listUserMap.get(uid) as any;
+        // Prefer list-users directory data (bypasses RLS), fall back to profile
+        const name = dirUser?.full_name || prof?.full_name || "Unknown";
         const initials = name.split(" ").map((w: string) => w[0]).join("").toUpperCase().slice(0, 2);
         const isFake = uid === JANE_SMITH_ID;
-        const agencyName = (prof?.agency_id ? agencyMap.get(prof.agency_id) : null) || prof?.agency_name || null;
+        // Resolve agency: directory agency_name > agencies table via agency_id > profile agency_name
+        const agencyName = dirUser?.agency_name
+          || (prof?.agency_id ? agencyMap.get(prof.agency_id) : null)
+          || (dirUser?.agency_id ? agencyMap.get(dirUser.agency_id) : null)
+          || prof?.agency_name
+          || null;
 
         // YTD stats
         const userPolicies = allPolicies.filter((p: any) => p.producer_user_id === uid);
