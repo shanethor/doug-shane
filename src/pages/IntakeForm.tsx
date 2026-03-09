@@ -2538,7 +2538,8 @@ export default function IntakeForm() {
                                   if (files.length > 0) { 
                                     setUploadedFiles(prev => [...prev, ...files.map(f => ({ file: f, category: "dec_pages" }))]); 
                                     updateCommercial("has_uploaded_dec_pages", true);
-                                    setShowLossRunModal(true);
+                                    setDecFiles(prev => [...prev, ...files]);
+                                    setDecExtracted(false);
                                   } 
                                 }}
                                 onClick={() => fileInputRef.current?.click()}
