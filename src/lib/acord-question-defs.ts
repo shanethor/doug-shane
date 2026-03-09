@@ -63,6 +63,15 @@ const ACORD_126: AcordQuestion[] = [
     placeholder: "$2,000,000" },
   { acord: "126", key: "gl_personal_adv_injury", label: "Personal & advertising injury limit", type: "currency", required: false, section: "business",
     placeholder: "$1,000,000" },
+  { acord: "126", key: "gl_damage_to_premises_rented", label: "Damage to premises rented to you limit", type: "currency", required: false, section: "business",
+    placeholder: "$100,000" },
+  { acord: "126", key: "gl_medical_payments", label: "Medical payments limit (per person)", type: "currency", required: false, section: "business",
+    placeholder: "$5,000" },
+  { acord: "126", key: "gl_products_completed_ops_desired", label: "Is Products/Completed Operations coverage desired?", type: "boolean", required: false, section: "business" },
+  { acord: "126", key: "gl_additional_insureds_needed", label: "Are any Additional Insureds required?", type: "boolean", required: false, section: "business" },
+  { acord: "126", key: "gl_additional_insureds_text", label: "List additional insured names/entities", type: "text", required: false, section: "business",
+    placeholder: "e.g. ABC Property Management, LLC",
+    dependsOn: (f) => f.gl_additional_insureds_needed === true || f.gl_additional_insureds_needed === "yes" },
 ];
 
 /* ═══════════════════════════════════════════════════════════════
@@ -83,6 +92,10 @@ const ACORD_127: AcordQuestion[] = [
     placeholder: "$500" },
   { acord: "127", key: "auto_collision_deductible", label: "Collision deductible", type: "currency", required: false, section: "vehicles",
     placeholder: "$1,000" },
+  { acord: "127", key: "auto_physical_damage_desired", label: "Is physical damage coverage desired on owned vehicles?", type: "boolean", required: false, section: "vehicles",
+    dependsOn: (f) => f.owns_or_leases_vehicles === true || f.owns_or_leases_vehicles === "yes" },
+  { acord: "127", key: "auto_garagekeeping_pd", label: "Any garage-keeping or hired-car physical damage needed?", type: "boolean", required: false, section: "vehicles",
+    dependsOn: (f) => f.any_hired_non_owned_auto === true || f.any_hired_non_owned_auto === "yes" },
 ];
 
 /* ═══════════════════════════════════════════════════════════════
@@ -98,6 +111,11 @@ const ACORD_130: AcordQuestion[] = [
     dependsOn: (f) => f.has_employees === true || f.has_employees === "yes" },
   { acord: "130", key: "wc_class_codes", label: "Primary Workers Comp class codes and descriptions", type: "text", required: false, section: "wc",
     placeholder: "e.g. 5190 – Electrical Wiring",
+    dependsOn: (f) => f.has_employees === true || f.has_employees === "yes" },
+  { acord: "130", key: "wc_states_of_operation", label: "State(s) of operation for Workers Comp", type: "text", required: false, section: "wc",
+    placeholder: "e.g. TX, CA, FL",
+    dependsOn: (f) => f.has_employees === true || f.has_employees === "yes" },
+  { acord: "130", key: "wc_include_owners", label: "Include owners/officers in Workers Comp coverage?", type: "boolean", required: false, section: "wc",
     dependsOn: (f) => f.has_employees === true || f.has_employees === "yes" },
   { acord: "130", key: "any_subcontractors", label: "Do you use subcontractors?", type: "boolean", required: false, section: "wc" },
   { acord: "130", key: "subcontractor_costs", label: "Estimated annual cost of subcontracted work", type: "currency", required: false, section: "wc",
