@@ -265,6 +265,7 @@ export default function IntakeForm() {
   const [decFiles, setDecFiles] = useState<File[]>([]);
   const [decDragOver, setDecDragOver] = useState(false);
   const [showExtractionWarning, setShowExtractionWarning] = useState(false);
+  const [resumeExtracting, setResumeExtracting] = useState(false);
   const decInputRef = useRef<HTMLInputElement>(null);
   const updateCov = (field: keyof AutoCoverage, value: any) => setAutoCoverage(prev => ({ ...prev, [field]: value }));
   const updateFlood = (field: keyof FloodInfo, value: string) => setFlood(prev => ({ ...prev, [field]: value }));
