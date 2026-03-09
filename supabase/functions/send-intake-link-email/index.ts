@@ -24,15 +24,20 @@ Deno.serve(async (req) => {
 
     // Get agent profile for branding
     let agentName = "Your insurance agent";
-    let agencyName = "AURA Risk Group";
+    let agencyName = "";
     if (agentId) {
       const { data: profile } = await supabase
         .from("profiles")
-        .select("full_name, agency_name")
+        .select("full_name, agency_name, agency_id")
         .eq("user_id", agentId)
         .maybeSingle();
       if (profile?.full_name) agentName = profile.full_name;
-      if (profile?.agency_name) agencyName = profile.agency_name;
+      // Resolve from agencies table first, then profile fallback
+      if (profile?.agency_id) {
+        const { data: ag } = await supabase.from("agencies").select("name").eq("id", profile.agency_id).maybeSingle();
+        if (ag?.name) agencyName = ag.name;
+      }
+      if (!agencyName && profile?.agency_name) agencyName = profile.agency_name;
     }
 
     // Build the intake URL using the project's public URL
