@@ -251,31 +251,27 @@ export function NavScoreboard() {
           </div>
 
           {/* MTD Numbers + % to goal */}
-          <div className="flex flex-col justify-center shrink-0 pr-4 border-r border-border mr-4 min-w-[160px]">
-            <div className="flex items-center gap-2 whitespace-nowrap leading-tight">
+          <div className="flex flex-col justify-center shrink-0 pr-4 border-r border-border mr-4 min-w-[140px]">
+            <div className="flex items-center gap-1.5 whitespace-nowrap leading-none text-[11px]">
               <span className="text-muted-foreground font-medium">MTD NB:</span>
               <span className="font-semibold tabular-nums text-foreground">{fmt(mtdStats.premium)}</span>
               <span className="text-muted-foreground">Rev:</span>
               <span className="font-semibold tabular-nums text-foreground">{fmt(mtdStats.revenue)}</span>
             </div>
-            <div className="flex items-center gap-2 mt-0.5">
-              <span className="text-[10px] text-muted-foreground tabular-nums">{Math.round(mtdPremPct)}% of monthly goal</span>
-              <MiniProgress pct={mtdPremPct} />
-            </div>
+            <MiniProgress pct={mtdPremPct} />
+            <span className="text-[9px] text-muted-foreground tabular-nums leading-none mt-0.5">{Math.round(mtdPremPct)}% of monthly goal</span>
           </div>
 
           {/* YTD Numbers + % to goal */}
-          <div className="flex flex-col justify-center shrink-0 pr-4 border-r border-border mr-4 min-w-[160px]">
-            <div className="flex items-center gap-2 whitespace-nowrap leading-tight">
+          <div className="flex flex-col justify-center shrink-0 pr-4 border-r border-border mr-4 min-w-[140px]">
+            <div className="flex items-center gap-1.5 whitespace-nowrap leading-none text-[11px]">
               <span className="text-muted-foreground font-medium">YTD NB:</span>
               <span className="font-semibold tabular-nums text-foreground">{fmt(soldStats.premium)}</span>
               <span className="text-muted-foreground">Rev:</span>
               <span className="font-semibold tabular-nums text-foreground">{fmt(soldStats.revenue)}</span>
             </div>
-            <div className="flex items-center gap-2 mt-0.5">
-              <span className="text-[10px] text-muted-foreground tabular-nums">{Math.round(ytdPremPct)}% of annual goal</span>
-              <MiniProgress pct={ytdPremPct} />
-            </div>
+            <MiniProgress pct={ytdPremPct} />
+            <span className="text-[9px] text-muted-foreground tabular-nums leading-none mt-0.5">{Math.round(ytdPremPct)}% of annual goal</span>
           </div>
 
           {/* Pipeline Tags */}
