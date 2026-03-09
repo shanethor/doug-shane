@@ -30,8 +30,8 @@ export function AppLayout({ children, onLogoClick }: { children: React.ReactNode
         <div className="mx-auto flex h-14 md:h-14 max-w-6xl items-center justify-between px-4">
           {onLogoClick ? (
             <button onClick={onLogoClick} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-              <span className="text-lg font-bold tracking-tight">AURA</span>
-              <span className="text-[11px] text-muted-foreground tracking-widest uppercase">Risk Group</span>
+              <span className="text-base md:text-lg font-bold tracking-tight">AURA</span>
+              <span className="text-[9px] md:text-[11px] text-muted-foreground tracking-widest uppercase">Risk Group</span>
             </button>
           ) : (
             <Link to="/" className="flex items-center gap-2">
