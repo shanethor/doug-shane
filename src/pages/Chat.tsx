@@ -395,22 +395,8 @@ export default function Chat() {
     };
   }, []);
 
-  // Load sold premium/revenue stats
-  useEffect(() => {
-    if (!user) return;
-    (async () => {
-      const { data } = await supabase
-        .from("policies")
-        .select("annual_premium, revenue")
-        .eq("producer_user_id", user.id)
-        .eq("status", "approved");
-      if (!mountedRef.current) return;
-      const policies = data ?? [];
-      const premium = policies.reduce((s: number, p: any) => s + Number(p.annual_premium || 0), 0);
-      const revenue = policies.reduce((s: number, p: any) => s + Number(p.revenue || Number(p.annual_premium) * 0.12 || 0), 0);
-      setSoldStats({ premium, revenue });
-    })();
-  }, [user]);
+
+
 
   // Calculate coverage from form_data for a given submission
   const calculateCoverage = useCallback(async (submissionId: string) => {
