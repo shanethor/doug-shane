@@ -13,6 +13,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Car, Home, Sailboat, Umbrella, Plus, Trash2, CheckCircle, AlertTriangle,
   Loader2, Upload, FileText, X, Shield, Building2, User, Check, AlertCircle as AlertCircleIcon,
   ChevronLeft, ChevronRight, Droplets, Gem, Download,
@@ -260,6 +264,7 @@ export default function IntakeForm() {
   const [decExtracted, setDecExtracted] = useState(false);
   const [decFiles, setDecFiles] = useState<File[]>([]);
   const [decDragOver, setDecDragOver] = useState(false);
+  const [showExtractionWarning, setShowExtractionWarning] = useState(false);
   const decInputRef = useRef<HTMLInputElement>(null);
   const updateCov = (field: keyof AutoCoverage, value: any) => setAutoCoverage(prev => ({ ...prev, [field]: value }));
   const updateFlood = (field: keyof FloodInfo, value: string) => setFlood(prev => ({ ...prev, [field]: value }));
@@ -2428,10 +2433,17 @@ export default function IntakeForm() {
                 return true;
               };
 
-              const commGoNext = () => {
+              const commGoNextForce = () => {
                 if (!validateCommStep()) return;
                 const next = commSteps[safeIdx + 1];
                 if (next) { setCommercialStep(next); window.scrollTo({ top: 0, behavior: "smooth" }); }
+              };
+              const commGoNext = () => {
+                if (decExtracting) {
+                  setShowExtractionWarning(true);
+                  return;
+                }
+                commGoNextForce();
               };
               const commGoBack = () => {
                 const prev = commSteps[safeIdx - 1];
@@ -3012,6 +3024,23 @@ export default function IntakeForm() {
                       </Button>
                     )}
                   </div>
+
+                  <AlertDialog open={showExtractionWarning} onOpenChange={setShowExtractionWarning}>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Extraction in Progress</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          We're still extracting data from your uploaded documents. If you continue now, the extracted information won't be pre-filled into your form. Are you sure you want to continue?
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Wait for Extraction</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => { setShowExtractionWarning(false); commGoNextForce(); }}>
+                          Continue Anyway
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </>
               );
             })()}
