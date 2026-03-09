@@ -2433,10 +2433,17 @@ export default function IntakeForm() {
                 return true;
               };
 
-              const commGoNext = () => {
+              const commGoNextForce = () => {
                 if (!validateCommStep()) return;
                 const next = commSteps[safeIdx + 1];
                 if (next) { setCommercialStep(next); window.scrollTo({ top: 0, behavior: "smooth" }); }
+              };
+              const commGoNext = () => {
+                if (decExtracting) {
+                  setShowExtractionWarning(true);
+                  return;
+                }
+                commGoNextForce();
               };
               const commGoBack = () => {
                 const prev = commSteps[safeIdx - 1];
