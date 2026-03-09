@@ -254,7 +254,9 @@ export function getQuestionsForCoverage(selectedLines: string[]): AcordQuestion[
     if (normalized.includes("workers") || normalized.includes("wc")) acordSet.add("130");
     if (normalized.includes("property")) acordSet.add("140");
     if (normalized.includes("umbrella") || normalized.includes("excess")) acordSet.add("131");
-    if (normalized.includes("cyber")) acordSet.add("75");
+    if (normalized.includes("professional") || normalized.includes("e&o")) acordSet.add("PL");
+    if (normalized.includes("cyber")) acordSet.add("CYBER");
+    if (normalized === "other") acordSet.add("OTHER");
   }
 
   return ACORD_QUESTION_DEFS.filter(q => acordSet.has(q.acord));
