@@ -40,13 +40,18 @@ export interface AcordQuestion {
 const ACORD_125: AcordQuestion[] = [
   { acord: "125", key: "business_name", label: "Legal business name", type: "text", required: true, section: "business" },
   { acord: "125", key: "dba", label: "Doing Business As (DBA), if different", type: "text", required: false, section: "business" },
-  { acord: "125", key: "business_entity_type", label: "Business entity type", type: "select", required: true, section: "business",
-    options: ["Individual", "Partnership", "Corporation", "LLC", "LLP", "Non-profit", "Trust", "Other"] },
-  { acord: "125", key: "mailing_address", label: "Mailing address", type: "text", required: true, section: "business" },
-  { acord: "125", key: "years_in_business", label: "Years in business under this name", type: "number", required: true, section: "business" },
+  { acord: "125", key: "mailing_address", label: "Mailing address (street, city, state, ZIP)", type: "text", required: true, section: "business" },
+  { acord: "125", key: "primary_contact_name", label: "Primary contact name", type: "text", required: true, section: "business" },
+  { acord: "125", key: "business_entity_type", label: "Business entity type", type: "select", required: false, section: "business",
+    options: ["Individual", "Partnership", "Corporation", "S-Corp", "LLC", "LLP", "Non-profit", "Trust", "Other"] },
+  { acord: "125", key: "fein", label: "Federal Employer ID Number (FEIN / EIN)", type: "text", required: false, section: "business",
+    placeholder: "e.g. 12-3456789" },
+  { acord: "125", key: "years_in_business", label: "Years in business under this name", type: "number", required: false, section: "business" },
+  { acord: "125", key: "annual_revenue", label: "Estimated annual revenue", type: "currency", required: false, section: "business" },
+  { acord: "125", key: "num_employees_total", label: "Total number of employees", type: "number", required: false, section: "business" },
   { acord: "125", key: "primary_naics", label: "Primary NAICS / business classification", type: "text", required: false, section: "business",
     placeholder: "e.g. 238210 – Electrical Contractors" },
-  { acord: "125", key: "has_prior_coverage", label: "Has had prior insurance coverage", type: "boolean", required: true, section: "business" },
+  { acord: "125", key: "has_prior_coverage", label: "Has had prior insurance coverage", type: "boolean", required: false, section: "business" },
   { acord: "125", key: "loss_history_years", label: "How many years of loss history can you provide?", type: "number", required: false, section: "business" },
 ];
 
