@@ -465,6 +465,8 @@ export default function Chat() {
   const [personalIntakeLoading, setPersonalIntakeLoading] = useState(false);
   const [personalIntakeLink, setPersonalIntakeLink] = useState<string | null>(null);
   const [pendingEmail, setPendingEmail] = useState<EmailAction | null>(null);
+  const [sendFrom, setSendFrom] = useState<"aura" | string>("aura");
+  const [connectedEmails, setConnectedEmails] = useState<{ id: string; email_address: string; provider: string }[]>([]);
   const mountedRef = useRef(true);
   useEffect(() => {
     return () => {
