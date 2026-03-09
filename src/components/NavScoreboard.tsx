@@ -188,7 +188,7 @@ export function NavScoreboard() {
           else if (l.stage === "lost") pipeline.lost++;
         });
 
-        producerList.push({
+        advisorList.push({
           userId: uid, name, initials, agencyName, isFake,
           ytdPremium, ytdRevenue, mtdPremium, mtdRevenue,
           annualPremGoal, annualRevGoal, pipeline,
