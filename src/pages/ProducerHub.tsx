@@ -169,7 +169,7 @@ export default function ProducerHub() {
     <AppLayout>
       <div className="flex items-center gap-3 mb-4 sm:mb-6">
         <GitBranch className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
-        <h1 className="text-xl sm:text-3xl font-semibold tracking-tight">Producer Hub</h1>
+        <h1 className="text-xl sm:text-3xl font-semibold tracking-tight">Command Center</h1>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>

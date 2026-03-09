@@ -2068,11 +2068,8 @@ export default function Chat() {
             <div className="flex flex-col items-center min-h-full gap-6 px-4 pt-4 md:pt-[12vh] animate-fade-in">
               <div className="text-center space-y-2">
                 <h1 className="text-4xl tracking-tight aura-gradient-text">
-                  What are we working on?
+                   What are we closing today?
                 </h1>
-                <p className="text-muted-foreground text-sm">
-                  I'm <span className="font-bold text-foreground">AURA</span> — your insurance trained AI co-pilot
-                </p>
               </div>
 
               {/* Chat input inline */}
@@ -2113,7 +2110,7 @@ export default function Chat() {
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    placeholder="Ask me anything about your clients..."
+                    placeholder="I'm AURA - tell me what goals I can help you achieve today!"
                     rows={3}
                     className="flex-1 resize-none bg-transparent border-0 outline-none text-sm placeholder:text-muted-foreground min-h-[72px] max-h-40 py-2"
                   />
@@ -2765,7 +2762,7 @@ export default function Chat() {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder="Ask me anything about your clients..."
+                  placeholder="I'm AURA - tell me what goals I can help you achieve today!"
                      rows={3}
                    className="flex-1 resize-none bg-transparent border-0 outline-none text-sm placeholder:text-muted-foreground min-h-[72px] max-h-48 py-2"
                 />

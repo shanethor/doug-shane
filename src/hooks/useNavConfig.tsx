@@ -10,7 +10,7 @@ export const ALL_NAV_TABS: NavTab[] = [
   { id: "aura", label: "AURA", to: "/" },
   { id: "email", label: "Email", to: "/email" },
   { id: "pulse", label: "Pulse", to: "/pulse" },
-  { id: "hub", label: "Producer Hub", to: "/hub" },
+  { id: "hub", label: "Command Center", to: "/hub" },
 ];
 
 const DEFAULT_TAB_IDS = ["aura", "email", "pulse", "hub"];
