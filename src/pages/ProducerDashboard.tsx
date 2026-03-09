@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { ProductionScoreboard } from "@/components/ProductionScoreboard";
+import { ProductionAnalytics } from "@/components/ProductionAnalytics";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -42,6 +43,7 @@ export default function ProducerDashboard({ embedded }: { embedded?: boolean } =
   const { isManager, isAdmin } = useUserRole();
   const [policies, setPolicies] = useState<any[]>([]);
   const [leadNames, setLeadNames] = useState<Record<string, string>>({});
+  const [leadInfos, setLeadInfos] = useState<{ id: string; account_name: string; business_type: string | null }[]>([]);
   const [period, setPeriod] = useState<TimePeriod>("year");
   const [stats, setStats] = useState({
     totalPolicies: 0,
@@ -98,11 +100,12 @@ export default function ProducerDashboard({ embedded }: { embedded?: boolean } =
     if (leadIds.length > 0) {
       const { data: leads } = await supabase
         .from("leads")
-        .select("id, account_name")
+        .select("id, account_name, business_type")
         .in("id", leadIds);
       const names: Record<string, string> = {};
       (leads ?? []).forEach((l: any) => { names[l.id] = l.account_name; });
       setLeadNames(names);
+      setLeadInfos((leads ?? []).map((l: any) => ({ id: l.id, account_name: l.account_name, business_type: l.business_type })));
     }
 
     setStats({
@@ -287,6 +290,9 @@ export default function ProducerDashboard({ embedded }: { embedded?: boolean } =
           </CardContent>
         </Card>
       </div>
+
+      {/* Production Analytics */}
+      <ProductionAnalytics policies={policies} leadNames={leadNames} leads={leadInfos} />
     </>
   );
   return embedded ? content : <AppLayout>{content}</AppLayout>;

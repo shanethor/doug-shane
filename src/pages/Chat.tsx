@@ -2046,7 +2046,7 @@ export default function Chat() {
             <div className="flex flex-col items-center min-h-full gap-6 px-4 pt-4 md:pt-[12vh] animate-fade-in">
               <div className="text-center space-y-2">
                 <h1 className="text-4xl tracking-tight aura-gradient-text">
-                   What are we closing today?
+                   What are we closing?
                 </h1>
               </div>
 
