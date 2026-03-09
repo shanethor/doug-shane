@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -50,28 +50,28 @@ function getStatusLabel(pct: number): { text: string; color: string } {
   return { text: "Ramping", color: "text-muted-foreground" };
 }
 
-// ─── Mini progress bar with goal coloring ───────────────────────────────────
-function MiniProgress({ pct }: { pct: number }) {
-  const clamped = Math.min(pct, 100);
-  const hit = pct >= 100;
-  return (
-    <div className="w-full h-[3px] rounded-full bg-muted mt-0.5 overflow-hidden">
-      <div
-        className={`h-full rounded-full transition-all duration-700 ease-out ${hit ? "bg-emerald-500" : "bg-primary"}`}
-        style={{ width: `${clamped}%` }}
-      />
-    </div>
-  );
+interface ProducerData {
+  userId: string;
+  name: string;
+  initials: string;
+  agencyName: string | null;
+  isFake: boolean;
+  ytdPremium: number;
+  ytdRevenue: number;
+  mtdPremium: number;
+  mtdRevenue: number;
+  annualPremGoal: number;
+  annualRevGoal: number;
+  pipeline: { prospects: number; quoting: number; presenting: number; sold: number; lost: number };
 }
+
+// The admin user id for Jane Smith (fake producer entry)
+const JANE_SMITH_ID = "77f8c5de-6462-4721-b654-3909c398667b";
 
 export function NavScoreboard() {
   const { user } = useAuth();
   const { isClientServices, role } = useUserRole();
-  const [goals, setGoals] = useState<{ annual_premium_goal: number; annual_revenue_goal: number } | null>(null);
-  const [soldStats, setSoldStats] = useState({ premium: 0, revenue: 0 });
-  const [mtdStats, setMtdStats] = useState({ premium: 0, revenue: 0 });
-  const [pipeline, setPipeline] = useState({ prospects: 0, quoting: 0, presenting: 0, sold: 0, lost: 0 });
-  const [profile, setProfile] = useState<{ full_name: string | null; agency_name: string | null }>({ full_name: null, agency_name: null });
+  const [producers, setProducers] = useState<ProducerData[]>([]);
   const [loading, setLoading] = useState(true);
   const [goalDialogOpen, setGoalDialogOpen] = useState(false);
   const [goalPremium, setGoalPremium] = useState("");
@@ -82,68 +82,104 @@ export function NavScoreboard() {
 
   const now = new Date();
   const year = now.getFullYear();
+
+  // Find current user's goals for the dialog
+  const myProducer = producers.find(p => p.userId === user?.id);
+  const goals = myProducer ? { annual_premium_goal: myProducer.annualPremGoal, annual_revenue_goal: myProducer.annualRevGoal } : null;
   const annualPrem = goals?.annual_premium_goal || 0;
-  const annualRev = goals?.annual_revenue_goal || 0;
   const monthlyPremGoal = annualPrem / 12;
-  const monthlyRevGoal = annualRev / 12;
 
   useEffect(() => {
     if (!user) return;
     (async () => {
       setLoading(true);
-
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
 
-      const [goalsRes, policiesRes, mtdPoliciesRes, leadsRes, profileRes] = await Promise.all([
-        supabase.from("producer_goals" as any).select("annual_premium_goal, annual_revenue_goal").eq("user_id", user.id).eq("year", year).maybeSingle(),
-        supabase.from("policies").select("annual_premium, revenue").eq("producer_user_id", user.id).eq("status", "approved"),
-        supabase.from("policies").select("annual_premium, revenue").eq("producer_user_id", user.id).eq("status", "approved").gte("approved_at", monthStart),
-        supabase.from("leads").select("id, stage").eq("owner_user_id", user.id),
-        supabase.from("profiles").select("full_name, agency_name").eq("user_id", user.id).maybeSingle(),
+      // Fetch all producers & admins (include admin as fake producer)
+      const [rolesRes, profilesRes, allPoliciesRes, mtdPoliciesRes, allLeadsRes, goalsRes] = await Promise.all([
+        supabase.from("user_roles").select("user_id, role"),
+        supabase.from("profiles").select("user_id, full_name, agency_name"),
+        supabase.from("policies").select("producer_user_id, annual_premium, revenue").eq("status", "approved"),
+        supabase.from("policies").select("producer_user_id, annual_premium, revenue").eq("status", "approved").gte("approved_at", monthStart),
+        supabase.from("leads").select("id, stage, owner_user_id"),
+        supabase.from("producer_goals" as any).select("user_id, annual_premium_goal, annual_revenue_goal, year").eq("year", year),
       ]);
 
-      if (goalsRes.data) {
-        setGoals({
-          annual_premium_goal: Number((goalsRes.data as any).annual_premium_goal) || 0,
-          annual_revenue_goal: Number((goalsRes.data as any).annual_revenue_goal) || 0,
-        });
-      }
-
-      const allPolicies = policiesRes.data ?? [];
-      setSoldStats({
-        premium: allPolicies.reduce((s: number, p: any) => s + Number(p.annual_premium || 0), 0),
-        revenue: allPolicies.reduce((s: number, p: any) => s + Number(p.revenue || Number(p.annual_premium) * 0.12 || 0), 0),
-      });
-
+      const roles = rolesRes.data ?? [];
+      const profiles = profilesRes.data ?? [];
+      const allPolicies = allPoliciesRes.data ?? [];
       const mtdPolicies = mtdPoliciesRes.data ?? [];
-      const mtdPrem = mtdPolicies.reduce((s: number, p: any) => s + Number(p.annual_premium || 0), 0);
-      const mtdRev = mtdPolicies.reduce((s: number, p: any) => s + Number(p.revenue || Number(p.annual_premium) * 0.12 || 0), 0);
-      setMtdStats({ premium: mtdPrem, revenue: mtdRev });
+      const allLeads = allLeadsRes.data ?? [];
+      const allGoals = goalsRes.data ?? [];
 
-      // Check if monthly goal just surpassed
-      const mGoal = (Number((goalsRes.data as any)?.annual_premium_goal) || 0) / 12;
-      if (mGoal > 0 && mtdPrem >= mGoal && !congratsShownRef.current) {
-        congratsShownRef.current = true;
-        // Small delay so the UI renders first
-        setTimeout(() => setShowCongrats(true), 800);
-      }
-
-      const leads = leadsRes.data ?? [];
-      const stageCounts = { prospects: 0, quoting: 0, presenting: 0, sold: 0, lost: 0 };
-      leads.forEach((l: any) => {
-        if (l.stage === "prospect") stageCounts.prospects++;
-        else if (l.stage === "quoting") stageCounts.quoting++;
-        else if (l.stage === "presenting") stageCounts.presenting++;
-        else if (l.stage === "lost") stageCounts.lost++;
+      // Find producer user IDs (role = producer) + admin as fake
+      const producerIds = new Set<string>();
+      roles.forEach((r: any) => {
+        if (r.role === "producer") producerIds.add(r.user_id);
       });
-      stageCounts.sold = allPolicies.length;
-      setPipeline(stageCounts);
+      // Always add Jane Smith (admin) as fake producer
+      producerIds.add(JANE_SMITH_ID);
 
-      if (profileRes.data) {
-        setProfile({
-          full_name: (profileRes.data as any).full_name || null,
-          agency_name: (profileRes.data as any).agency_name || null,
+      const profileMap = new Map(profiles.map((p: any) => [p.user_id, p]));
+      const goalsMap = new Map((allGoals as any[]).map((g: any) => [g.user_id, g]));
+
+      const producerList: ProducerData[] = [];
+
+      producerIds.forEach(uid => {
+        const prof = profileMap.get(uid) as any;
+        const name = prof?.full_name || "Unknown";
+        const initials = name.split(" ").map((w: string) => w[0]).join("").toUpperCase().slice(0, 2);
+        const isFake = uid === JANE_SMITH_ID;
+        const agencyName = prof?.agency_name || null;
+
+        // YTD stats
+        const userPolicies = allPolicies.filter((p: any) => p.producer_user_id === uid);
+        const ytdPremium = userPolicies.reduce((s: number, p: any) => s + Number(p.annual_premium || 0), 0);
+        const ytdRevenue = userPolicies.reduce((s: number, p: any) => s + Number(p.revenue || Number(p.annual_premium) * 0.12 || 0), 0);
+
+        // MTD stats
+        const userMtd = mtdPolicies.filter((p: any) => p.producer_user_id === uid);
+        const mtdPremium = userMtd.reduce((s: number, p: any) => s + Number(p.annual_premium || 0), 0);
+        const mtdRevenue = userMtd.reduce((s: number, p: any) => s + Number(p.revenue || Number(p.annual_premium) * 0.12 || 0), 0);
+
+        // Goals
+        const goal = goalsMap.get(uid) as any;
+        const annualPremGoal = Number(goal?.annual_premium_goal) || 0;
+        const annualRevGoal = Number(goal?.annual_revenue_goal) || 0;
+
+        // Pipeline
+        const userLeads = allLeads.filter((l: any) => l.owner_user_id === uid);
+        const pipeline = { prospects: 0, quoting: 0, presenting: 0, sold: userPolicies.length, lost: 0 };
+        userLeads.forEach((l: any) => {
+          if (l.stage === "prospect") pipeline.prospects++;
+          else if (l.stage === "quoting") pipeline.quoting++;
+          else if (l.stage === "presenting") pipeline.presenting++;
+          else if (l.stage === "lost") pipeline.lost++;
         });
+
+        producerList.push({
+          userId: uid, name, initials, agencyName, isFake,
+          ytdPremium, ytdRevenue, mtdPremium, mtdRevenue,
+          annualPremGoal, annualRevGoal, pipeline,
+        });
+      });
+
+      // Sort: real producers first, then fake
+      producerList.sort((a, b) => {
+        if (a.isFake !== b.isFake) return a.isFake ? 1 : -1;
+        return a.name.localeCompare(b.name);
+      });
+
+      setProducers(producerList);
+
+      // Check congrats for current user
+      const me = producerList.find(p => p.userId === user.id);
+      if (me) {
+        const mGoal = me.annualPremGoal / 12;
+        if (mGoal > 0 && me.mtdPremium >= mGoal && !congratsShownRef.current) {
+          congratsShownRef.current = true;
+          setTimeout(() => setShowCongrats(true), 800);
+        }
       }
 
       setLoading(false);
@@ -160,7 +196,8 @@ export function NavScoreboard() {
       .from("producer_goals" as any)
       .upsert({ user_id: user.id, year, annual_premium_goal: premGoal, annual_revenue_goal: revGoal } as any, { onConflict: "user_id,year" });
     if (!error) {
-      setGoals({ annual_premium_goal: premGoal, annual_revenue_goal: revGoal });
+      // Update local state
+      setProducers(prev => prev.map(p => p.userId === user.id ? { ...p, annualPremGoal: premGoal, annualRevGoal: revGoal } : p));
       setGoalDialogOpen(false);
     }
     setSaving(false);
@@ -187,7 +224,8 @@ export function NavScoreboard() {
     );
   }
 
-  if (!goals || annualPrem === 0) {
+  // If current user has no goals, show the set-goals prompt
+  if (!myProducer || myProducer.annualPremGoal === 0) {
     return (
       <>
         <button
@@ -209,70 +247,76 @@ export function NavScoreboard() {
     );
   }
 
-  const ytdPremPct = annualPrem > 0 ? (soldStats.premium / annualPrem) * 100 : 0;
-  const ytdRevPct = annualRev > 0 ? (soldStats.revenue / annualRev) * 100 : 0;
-  const mtdPremPct = monthlyPremGoal > 0 ? (mtdStats.premium / monthlyPremGoal) * 100 : 0;
-  const mtdRevPct = monthlyRevGoal > 0 ? (mtdStats.revenue / monthlyRevGoal) * 100 : 0;
-
-  const status = getStatusLabel(ytdPremPct);
-  const initials = profile.full_name
-    ? profile.full_name.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2)
-    : "??";
-  const roleLabel = role === "producer" ? "Producer" : role === "manager" ? "Manager" : role || "Producer";
-
-  // Congrats data
+  // Congrats data for current user
   const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
   const dayOfMonth = now.getDate();
   const paceMultiplier = dayOfMonth > 0 ? daysInMonth / dayOfMonth : 1;
-  const projectedMonthly = mtdStats.premium * paceMultiplier;
+  const projectedMonthly = (myProducer?.mtdPremium || 0) * paceMultiplier;
 
   const tickerContent = (
-    <div className="flex items-center gap-8 shrink-0 text-[11px] whitespace-nowrap px-4">
-      {/* Identity + Status */}
-      <span className="flex items-center gap-2">
-        <Avatar className="h-6 w-6">
-          <AvatarFallback className="text-[9px] font-bold bg-primary/10 text-primary">{initials}</AvatarFallback>
-        </Avatar>
-        <span className="font-semibold text-foreground">{profile.full_name || "Producer"}</span>
-        <span className={`font-semibold px-1.5 py-0.5 rounded text-[10px] ${status.color}`}>{status.text}</span>
-      </span>
+    <div className="flex items-center gap-6 shrink-0 text-[11px] whitespace-nowrap px-4">
+      {producers.map((p, idx) => {
+        const ytdPremPct = p.annualPremGoal > 0 ? (p.ytdPremium / p.annualPremGoal) * 100 : 0;
+        const mtdPremPct = p.annualPremGoal > 0 ? (p.mtdPremium / (p.annualPremGoal / 12)) * 100 : 0;
+        const status = getStatusLabel(ytdPremPct);
+        const displayName = p.isFake ? `${p.name} (FAKE)` : p.name;
 
-      <span className="text-muted-foreground/30">•</span>
+        return (
+          <div key={p.userId} className="flex items-center gap-6 shrink-0">
+            {idx > 0 && <span className="text-muted-foreground/20 text-lg mr-2">|</span>}
+            {/* Identity */}
+            <span className="flex items-center gap-2">
+              <Avatar className="h-6 w-6">
+                <AvatarFallback className={`text-[9px] font-bold ${p.isFake ? "bg-amber-500/10 text-amber-500" : "bg-primary/10 text-primary"}`}>{p.initials}</AvatarFallback>
+              </Avatar>
+              <span className="font-semibold text-foreground">{displayName}</span>
+              {p.agencyName && <span className="text-[9px] text-muted-foreground/60">{p.agencyName}</span>}
+              <span className={`font-semibold px-1.5 py-0.5 rounded text-[10px] ${status.color}`}>{status.text}</span>
+            </span>
 
-      {/* MTD */}
-      <span className="flex items-center gap-1.5">
-        <span className="text-muted-foreground font-medium">MTD NB:</span>
-        <span className="font-semibold tabular-nums text-foreground">${fmt(mtdStats.premium)}</span>
-        <span className="text-muted-foreground">Rev:</span>
-        <span className="font-semibold tabular-nums text-foreground">${fmt(mtdStats.revenue)}</span>
-        <span className="text-[9px] text-muted-foreground tabular-nums ml-1">({Math.round(mtdPremPct)}% of mo. goal)</span>
-      </span>
+            <span className="text-muted-foreground/30">•</span>
 
-      <span className="text-muted-foreground/30">•</span>
+            {/* MTD */}
+            <span className="flex items-center gap-1.5">
+              <span className="text-muted-foreground font-medium">MTD NB:</span>
+              <span className="font-semibold tabular-nums text-foreground">${fmt(p.mtdPremium)}</span>
+              <span className="text-muted-foreground">Rev:</span>
+              <span className="font-semibold tabular-nums text-foreground">${fmt(p.mtdRevenue)}</span>
+              {p.annualPremGoal > 0 && (
+                <span className="text-[9px] text-muted-foreground tabular-nums ml-1">({Math.round(mtdPremPct)}% of mo.)</span>
+              )}
+            </span>
 
-      {/* YTD */}
-      <span className="flex items-center gap-1.5">
-        <span className="text-muted-foreground font-medium">YTD NB:</span>
-        <span className="font-semibold tabular-nums text-foreground">${fmt(soldStats.premium)}</span>
-        <span className="text-muted-foreground">Rev:</span>
-        <span className="font-semibold tabular-nums text-foreground">${fmt(soldStats.revenue)}</span>
-        <span className="text-[9px] text-muted-foreground tabular-nums ml-1">({Math.round(ytdPremPct)}% of annual goal)</span>
-      </span>
+            <span className="text-muted-foreground/30">•</span>
 
-      <span className="text-muted-foreground/30">•</span>
+            {/* YTD */}
+            <span className="flex items-center gap-1.5">
+              <span className="text-muted-foreground font-medium">YTD NB:</span>
+              <span className="font-semibold tabular-nums text-foreground">${fmt(p.ytdPremium)}</span>
+              <span className="text-muted-foreground">Rev:</span>
+              <span className="font-semibold tabular-nums text-foreground">${fmt(p.ytdRevenue)}</span>
+              {p.annualPremGoal > 0 && (
+                <span className="text-[9px] text-muted-foreground tabular-nums ml-1">({Math.round(ytdPremPct)}% of annual)</span>
+              )}
+            </span>
 
-      {/* Pipeline */}
-      <span className="flex items-center gap-1.5">
-        <PipelineChip label="Prospects" count={pipeline.prospects} />
-        <PipelineChip label="Quoting" count={pipeline.quoting} />
-        <PipelineChip label="Submissions" count={pipeline.presenting} />
-        <PipelineChip label="Sold" count={pipeline.sold} />
-        <PipelineChip label="Dead" count={pipeline.lost} />
-      </span>
+            <span className="text-muted-foreground/30">•</span>
 
-      <span className="text-muted-foreground/30">•</span>
+            {/* Pipeline */}
+            <span className="flex items-center gap-1.5">
+              <PipelineChip label="Prospects" count={p.pipeline.prospects} />
+              <PipelineChip label="Quoting" count={p.pipeline.quoting} />
+              <PipelineChip label="Submissions" count={p.pipeline.presenting} />
+              <PipelineChip label="Sold" count={p.pipeline.sold} />
+              <PipelineChip label="Dead" count={p.pipeline.lost} />
+            </span>
+          </div>
+        );
+      })}
 
-      {/* Goal edit */}
+      <span className="text-muted-foreground/30 ml-2">•</span>
+
+      {/* Goal edit for current user */}
       <button
         onClick={(e) => { e.stopPropagation(); setGoalPremium(annualPrem.toString()); setGoalRevenue((goals?.annual_revenue_goal || 0).toString()); setGoalDialogOpen(true); }}
         className="text-muted-foreground/40 hover:text-foreground transition-colors"
@@ -313,7 +357,7 @@ export function NavScoreboard() {
               <DialogTitle className="text-xl">🎉 Monthly Goal Crushed!</DialogTitle>
               <DialogDescription className="text-sm text-muted-foreground mt-2 space-y-1">
                 <p>
-                  You've hit <span className="font-semibold text-foreground">${fmt(mtdStats.premium)}</span> in new business this month,
+                  You've hit <span className="font-semibold text-foreground">${fmt(myProducer?.mtdPremium || 0)}</span> in new business this month,
                   surpassing your <span className="font-semibold text-foreground">${fmt(monthlyPremGoal)}</span> goal!
                 </p>
                 <p>
