@@ -96,13 +96,14 @@ export function NavScoreboard() {
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
 
       // Fetch all producers & admins (include admin as fake producer)
-      const [rolesRes, profilesRes, allPoliciesRes, mtdPoliciesRes, allLeadsRes, goalsRes] = await Promise.all([
+      const [rolesRes, profilesRes, allPoliciesRes, mtdPoliciesRes, allLeadsRes, goalsRes, agenciesRes] = await Promise.all([
         supabase.from("user_roles").select("user_id, role"),
-        supabase.from("profiles").select("user_id, full_name, agency_name"),
+        supabase.from("profiles").select("user_id, full_name, agency_name, agency_id"),
         supabase.from("policies").select("producer_user_id, annual_premium, revenue").eq("status", "approved"),
         supabase.from("policies").select("producer_user_id, annual_premium, revenue").eq("status", "approved").gte("approved_at", monthStart),
         supabase.from("leads").select("id, stage, owner_user_id"),
         supabase.from("producer_goals" as any).select("user_id, annual_premium_goal, annual_revenue_goal, year").eq("year", year),
+        supabase.from("agencies").select("id, name"),
       ]);
 
       const roles = rolesRes.data ?? [];
@@ -111,6 +112,10 @@ export function NavScoreboard() {
       const mtdPolicies = mtdPoliciesRes.data ?? [];
       const allLeads = allLeadsRes.data ?? [];
       const allGoals = goalsRes.data ?? [];
+      const agencies = (agenciesRes as any).data ?? [];
+
+      // Build agency lookup by id
+      const agencyMap = new Map(agencies.map((a: any) => [a.id, a.name]));
 
       // Find producer user IDs (role = producer) + admin as fake
       const producerIds = new Set<string>();
@@ -130,7 +135,7 @@ export function NavScoreboard() {
         const name = prof?.full_name || "Unknown";
         const initials = name.split(" ").map((w: string) => w[0]).join("").toUpperCase().slice(0, 2);
         const isFake = uid === JANE_SMITH_ID;
-        const agencyName = prof?.agency_name || null;
+        const agencyName = (prof?.agency_id ? agencyMap.get(prof.agency_id) : null) || prof?.agency_name || null;
 
         // YTD stats
         const userPolicies = allPolicies.filter((p: any) => p.producer_user_id === uid);
