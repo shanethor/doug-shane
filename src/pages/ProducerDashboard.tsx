@@ -100,11 +100,12 @@ export default function ProducerDashboard({ embedded }: { embedded?: boolean } =
     if (leadIds.length > 0) {
       const { data: leads } = await supabase
         .from("leads")
-        .select("id, account_name")
+        .select("id, account_name, business_type")
         .in("id", leadIds);
       const names: Record<string, string> = {};
       (leads ?? []).forEach((l: any) => { names[l.id] = l.account_name; });
       setLeadNames(names);
+      setLeadInfos((leads ?? []).map((l: any) => ({ id: l.id, account_name: l.account_name, business_type: l.business_type })));
     }
 
     setStats({
