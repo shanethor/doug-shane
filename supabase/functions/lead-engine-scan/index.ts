@@ -294,7 +294,7 @@ Deno.serve(async (req) => {
     };
 
     const leadsToInsert = extractedLeads.slice(0, 10).map((l: any) => ({
-      owner_user_id: user.id,
+      owner_user_id: userId,
       company: l.company || "Unknown Business",
       contact_name: l.contact_name || null,
       industry: l.industry || null,
