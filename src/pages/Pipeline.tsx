@@ -1424,7 +1424,7 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
       </TooltipProvider>
 
       {/* Pipeline Analytics Accordion */}
-      {user && <PipelineAnalytics leads={leads} policies={allPoliciesData} auditLog={auditLogData} />}
+      {!embedded && user && <PipelineAnalytics leads={leads} policies={allPoliciesData} auditLog={auditLogData} />}
 
       {/* Lost Reason Modal */}
       <Dialog open={lostModalOpen} onOpenChange={(open) => { if (!open) { setLostModalOpen(false); setLostLeadId(null); } }}>
