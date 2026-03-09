@@ -155,6 +155,10 @@ Deno.serve(async (req) => {
           }),
         });
         const data = await resp.json();
+        console.log(`[lead-engine-scan] Firecrawl response for "${query}": success=${data.success}, results=${data.data?.length ?? 0}, status=${resp.status}`);
+        if (!data.success) {
+          console.log(`[lead-engine-scan] Firecrawl error detail:`, JSON.stringify(data).slice(0, 300));
+        }
         if (data.success && data.data) {
           allResults.push(...data.data);
         }
