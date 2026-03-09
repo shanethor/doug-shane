@@ -86,15 +86,24 @@ export default function SubmissionReviewPanel({ submissionId }: SubmissionReview
     if (!user) return;
     const { data } = await supabase
       .from("profiles")
-      .select("form_defaults, full_name, agency_name, phone")
+      .select("form_defaults, full_name, agency_name, agency_id, phone")
       .eq("user_id", user.id)
       .single();
     const fd = data?.form_defaults as Record<string, string> | null;
+
+    // Resolve agency name from agencies table
+    let resolvedAgencyName = (data as any)?.agency_name || "";
+    if ((data as any)?.agency_id) {
+      const { data: agencyData } = await supabase.from("agencies").select("name").eq("id", (data as any).agency_id).maybeSingle();
+      if (agencyData) resolvedAgencyName = agencyData.name;
+    }
+
     if (fd && Object.keys(fd).length > 0) {
-      setAgentDefaults(fd);
+      // Ensure agency_name in form_defaults is synced from agencies table
+      setAgentDefaults({ ...fd, agency_name: resolvedAgencyName || fd.agency_name || "" });
     } else if (data) {
       const defaults: Record<string, string> = {};
-      if (data.agency_name) defaults.agency_name = data.agency_name;
+      if (resolvedAgencyName) defaults.agency_name = resolvedAgencyName;
       if (data.phone) defaults.agency_phone = data.phone;
       if (data.full_name) defaults.producer_name = data.full_name;
       setAgentDefaults(defaults);

@@ -16,7 +16,6 @@ const STEPS = [
     subtitle: "Let's set up your agency basics",
     icon: Building2,
     fields: [
-      { key: "agency_name", label: "Agency Name", placeholder: "ABC Insurance Agency", icon: Building2 },
       { key: "agency_phone", label: "Phone", placeholder: "(555) 123-4567", icon: Phone, type: "tel" },
       { key: "agency_fax", label: "Fax (optional)", placeholder: "(555) 123-4568", icon: Phone, type: "tel" },
       { key: "agency_email", label: "Agency Email", placeholder: "info@agency.com", icon: Mail, type: "email" },
@@ -57,7 +56,6 @@ export default function Onboarding() {
       const { error } = await supabase
         .from("profiles")
         .update({
-          agency_name: nonEmpty.agency_name || null,
           phone: nonEmpty.agency_phone || null,
           full_name: nonEmpty.producer_name || user.user_metadata?.full_name || null,
           from_email: nonEmpty.from_email || null,

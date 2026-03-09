@@ -18,7 +18,6 @@ import { useNavConfig, ALL_NAV_TABS } from "@/hooks/useNavConfig";
 import { Checkbox } from "@/components/ui/checkbox";
 
 const AGENCY_FIELDS = [
-  { key: "agency_name", label: "Agency Name", placeholder: "ABC Insurance Agency" },
   { key: "agency_phone", label: "Agency Phone", placeholder: "(555) 123-4567" },
   { key: "agency_fax", label: "Agency Fax", placeholder: "(555) 123-4568" },
   { key: "agency_email", label: "Agency Email", placeholder: "info@agency.com" },
@@ -45,6 +44,7 @@ export default function Settings() {
   const [aiProvider, setAiProvider] = useState("lovable");
   const [openaiKey, setOpenaiKey] = useState("");
   const [showKey, setShowKey] = useState(false);
+  const [agencyDisplayName, setAgencyDisplayName] = useState<string | null>(null);
   const [navTabCount, setNavTabCount] = useState(navConfig.tabCount);
   const [navSelectedIds, setNavSelectedIds] = useState<string[]>(navConfig.selectedTabIds);
   const [timezone, setTimezone] = useState(Intl.DateTimeFormat().resolvedOptions().timeZone);
@@ -74,16 +74,15 @@ export default function Settings() {
     if (!user) return;
     supabase
       .from("profiles")
-      .select("form_defaults, full_name, agency_name, phone, from_email, ai_provider, openai_api_key_encrypted")
+      .select("form_defaults, full_name, agency_name, agency_id, phone, from_email, ai_provider, openai_api_key_encrypted")
       .eq("user_id", user.id)
-      .then(({ data }) => {
+      .then(async ({ data }) => {
         if (data?.[0]) {
           const defaults = (data[0].form_defaults as Record<string, any>) || {};
           const merged: Record<string, string> = {};
           AGENCY_FIELDS.forEach((f) => {
             merged[f.key] = defaults[f.key] || "";
           });
-          if (!merged.agency_name && data[0].agency_name) merged.agency_name = data[0].agency_name;
           if (!merged.producer_name && data[0].full_name) merged.producer_name = data[0].full_name;
           if (!merged.from_email && data[0].from_email) merged.from_email = data[0].from_email;
           if (!merged.agency_phone && data[0].phone) merged.agency_phone = data[0].phone;
@@ -91,6 +90,20 @@ export default function Settings() {
           setAiProvider((data[0] as any).ai_provider || "lovable");
           setOpenaiKey((data[0] as any).openai_api_key_encrypted || "");
           if ((data[0] as any).timezone) setTimezone((data[0] as any).timezone);
+
+          // Resolve agency name from agencies table
+          const agencyId = (data[0] as any).agency_id;
+          if (agencyId) {
+            const { data: agencyData } = await supabase.from("agencies").select("name").eq("id", agencyId).maybeSingle();
+            if (agencyData) {
+              setAgencyDisplayName(agencyData.name);
+              // Also set in values so forms auto-fill correctly
+              merged.agency_name = agencyData.name;
+              setValues({ ...merged });
+            }
+          } else {
+            setAgencyDisplayName(data[0].agency_name || null);
+          }
         }
         setLoaded(true);
       });
@@ -166,11 +179,10 @@ export default function Settings() {
       const { error } = await supabase
         .from("profiles")
         .update({
-          agency_name: nonEmpty.agency_name || null,
           phone: nonEmpty.agency_phone || null,
           full_name: nonEmpty.producer_name || user.user_metadata?.full_name || null,
           from_email: nonEmpty.from_email || null,
-          form_defaults: nonEmpty,
+          form_defaults: { ...nonEmpty, agency_name: agencyDisplayName || nonEmpty.agency_name || "" },
           ai_provider: aiProvider,
           openai_api_key_encrypted: openaiKey || null,
           timezone: timezone || null,
@@ -296,6 +308,14 @@ export default function Settings() {
           </p>
         </CardHeader>
         <CardContent className="p-4 sm:p-6 pt-2 sm:pt-2 space-y-4">
+          {/* Agency name - read-only, managed by admin */}
+          <div className="space-y-1">
+            <Label className="text-xs uppercase tracking-wider text-muted-foreground">Agency Name</Label>
+            <div className="h-11 sm:h-10 flex items-center px-3 rounded-md border border-border bg-muted/30 text-sm text-foreground">
+              {agencyDisplayName || <span className="text-muted-foreground italic">Not assigned — contact your admin</span>}
+            </div>
+            <p className="text-[10px] text-muted-foreground">Managed by your administrator</p>
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {AGENCY_FIELDS.map((f) => (
               <div key={f.key} className="space-y-1">
