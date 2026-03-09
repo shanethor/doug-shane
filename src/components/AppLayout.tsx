@@ -19,7 +19,7 @@ export function AppLayout({ children, onLogoClick }: { children: React.ReactNode
     { to: "/", label: "AURA", icon: MessageCircle },
     { to: "/email", label: "Email", icon: Mail },
     { to: "/pulse", label: "Pulse", icon: HeartPulse },
-    ...(canSeeProducerHub ? [{ to: "/hub", label: "Producer Hub", icon: GitBranch }] : []),
+    ...(canSeeProducerHub ? [{ to: "/hub", label: "Command Center", icon: GitBranch }] : []),
     ...(canSeeAdmin ? [{ to: "/admin", label: "Admin", icon: ShieldCheck }] : []),
     { to: "/settings", label: "Settings", icon: Settings },
   ];
