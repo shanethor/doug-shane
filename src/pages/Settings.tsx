@@ -308,6 +308,14 @@ export default function Settings() {
           </p>
         </CardHeader>
         <CardContent className="p-4 sm:p-6 pt-2 sm:pt-2 space-y-4">
+          {/* Agency name - read-only, managed by admin */}
+          <div className="space-y-1">
+            <Label className="text-xs uppercase tracking-wider text-muted-foreground">Agency Name</Label>
+            <div className="h-11 sm:h-10 flex items-center px-3 rounded-md border border-border bg-muted/30 text-sm text-foreground">
+              {agencyDisplayName || <span className="text-muted-foreground italic">Not assigned — contact your admin</span>}
+            </div>
+            <p className="text-[10px] text-muted-foreground">Managed by your administrator</p>
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {AGENCY_FIELDS.map((f) => (
               <div key={f.key} className="space-y-1">
