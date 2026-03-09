@@ -2240,7 +2240,7 @@ export default function Chat() {
   return (
     <AppLayout>
       <div
-        className="flex flex-col h-[calc(100vh-7.5rem)]"
+        className="flex flex-col min-h-[calc(100vh-7.5rem)]"
         onDragEnter={handleDragIn}
         onDragLeave={handleDragOut}
         onDragOver={handleDrag}
@@ -2265,9 +2265,9 @@ export default function Chat() {
 
 
         {/* Messages area */}
-        <div ref={scrollRef} className="flex-1 overflow-y-auto">
+        <div ref={scrollRef} className="flex-1">
           {isEmpty ? (
-            <div className="flex flex-col items-center justify-center md:justify-start min-h-full gap-4 px-4 pt-[25vh] md:pt-[6vh] animate-fade-in">
+            <div className="flex flex-col items-center justify-center md:justify-start min-h-full gap-4 px-4 pt-[8vh] md:pt-[6vh] animate-fade-in">
               <div className="text-center space-y-2">
                 <h1 className="text-4xl tracking-tight aura-gradient-text">
                    What are we closing today?
