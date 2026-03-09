@@ -2904,8 +2904,8 @@ export default function IntakeForm() {
 
                   {commercialStep === "coverage_questions" && (() => {
                     const questions = getQuestionsForCoverage(commercialForm.selected_coverage_lines);
-                    // Filter out questions already answered in business_info step
-                    const alreadyCovered = new Set(["business_name", "dba", "years_in_business", "mailing_address", "business_entity_type"]);
+                    // Filter out questions already answered in earlier steps (business_info, etc.)
+                    const alreadyCovered = new Set(["business_name", "dba", "years_in_business", "mailing_address", "business_entity_type", "primary_contact_name"]);
                     const activeQuestions = questions.filter(q =>
                       !alreadyCovered.has(q.key) &&
                       (!q.dependsOn || q.dependsOn(commercialForm.acord_data))
