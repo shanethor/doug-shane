@@ -32,14 +32,14 @@ Deno.serve(async (req) => {
     }
     if (!userId) throw new Error("Not authenticated");
 
-    // Check caller has a qualifying role (admin, producer, manager)
+    // Check caller has a qualifying role (admin, advisor, manager)
     const { data: callerRoles } = await anonClient
       .from("user_roles")
       .select("role")
       .eq("user_id", userId);
 
     const roles = (callerRoles ?? []).map((r: any) => r.role);
-    const allowed = roles.some((r: string) => ["admin", "producer", "manager"].includes(r));
+    const allowed = roles.some((r: string) => ["admin", "advisor", "producer", "manager"].includes(r));
     if (!allowed) throw new Error("Not authorized");
 
     // Use service role to get full directory
@@ -70,11 +70,11 @@ Deno.serve(async (req) => {
       roleMap.set(r.user_id, arr);
     });
 
-    // Return only producers + admins (people who appear on the scoreboard)
+    // Return only advisors + admins (people who appear on the scoreboard)
     const result = usersRes.data.users
       .filter((u: any) => {
         const r = roleMap.get(u.id) || [];
-        return r.includes("producer") || r.includes("admin");
+        return r.includes("advisor") || r.includes("producer") || r.includes("admin");
       })
       .map((u: any) => {
         const profile = profileMap.get(u.id) as any;

@@ -440,7 +440,7 @@ Keep it professional, factual, and specific. Do NOT include placeholders or brac
           <TabsList className="grid grid-cols-3 w-full">
             <TabsTrigger value="review" className="text-xs gap-1.5">
               <FileCheck className="h-3.5 w-3.5" />
-              Producer
+              Advisor
             </TabsTrigger>
             <TabsTrigger value="client" className="text-xs gap-1.5">
               <Upload className="h-3.5 w-3.5" />
@@ -452,7 +452,7 @@ Keep it professional, factual, and specific. Do NOT include placeholders or brac
             </TabsTrigger>
           </TabsList>
 
-          {/* ── Tab 1: Producer Forms ── */}
+          {/* ── Tab 1: Advisor Forms ── */}
           <TabsContent value="review" className="flex-1 overflow-hidden mt-3">
             <ScrollArea className="h-[550px]">
               <div className="space-y-1 pr-4">

@@ -141,7 +141,7 @@ export default function Approvals() {
     <AppLayout>
       <h1 className="text-4xl mb-2">Approvals Queue</h1>
       <p className="text-muted-foreground font-sans text-sm mb-6">
-        Review and approve bound policies submitted by producers.
+        Review and approve bound policies submitted by advisors.
       </p>
 
       <div className="flex gap-2 mb-6">

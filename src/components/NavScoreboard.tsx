@@ -50,7 +50,7 @@ function getStatusLabel(pct: number): { text: string; color: string } {
   return { text: "Ramping", color: "text-muted-foreground" };
 }
 
-interface ProducerData {
+interface AdvisorData {
   userId: string;
   name: string;
   initials: string;
@@ -65,13 +65,13 @@ interface ProducerData {
   pipeline: { prospects: number; quoting: number; presenting: number; sold: number; lost: number };
 }
 
-// The admin user id for Jane Smith (fake producer entry)
+// The admin user id for Jane Smith (fake advisor entry)
 const JANE_SMITH_ID = "77f8c5de-6462-4721-b654-3909c398667b";
 
 export function NavScoreboard() {
   const { user } = useAuth();
   const { isClientServices, role } = useUserRole();
-  const [producers, setProducers] = useState<ProducerData[]>([]);
+  const [producers, setProducers] = useState<AdvisorData[]>([]);
   const [loading, setLoading] = useState(true);
   const [goalDialogOpen, setGoalDialogOpen] = useState(false);
   const [goalPremium, setGoalPremium] = useState("");
@@ -118,19 +118,19 @@ export function NavScoreboard() {
       // Build a lookup from list-users (admin directory) for names/agency
       const listUserMap = new Map(listUsers.map((u: any) => [u.id, u]));
 
-      // Find producer user IDs from the directory
-      const producerIds = new Set<string>();
+      // Find advisor user IDs from the directory
+      const advisorIds = new Set<string>();
 
       if (listUsers.length > 0) {
         listUsers.forEach((u: any) => {
-          if (Array.isArray(u.roles) && u.roles.includes("producer")) {
-            producerIds.add(u.id);
+          if (Array.isArray(u.roles) && (u.roles.includes("advisor") || u.roles.includes("producer"))) {
+            advisorIds.add(u.id);
           }
         });
       }
 
-      // Always add Jane Smith (admin) as fake producer for all users
-      producerIds.add(JANE_SMITH_ID);
+      // Always add Jane Smith (admin) as fake advisor for all users
+      advisorIds.add(JANE_SMITH_ID);
 
       const profileMap = new Map(listUsers.map((u: any) => [u.id, u]));
       const goalsMap = new Map((allGoals as any[]).map((g: any) => [g.user_id, g]));
@@ -147,9 +147,9 @@ export function NavScoreboard() {
           ])
       );
 
-      const producerList: ProducerData[] = [];
+      const advisorList: AdvisorData[] = [];
 
-      producerIds.forEach(uid => {
+      advisorIds.forEach(uid => {
         const prof = profileMap.get(uid) as any;
         const dirUser = listUserMap.get(uid) as any;
         // Prefer list-users directory data (bypasses RLS), fall back to profile
@@ -188,23 +188,23 @@ export function NavScoreboard() {
           else if (l.stage === "lost") pipeline.lost++;
         });
 
-        producerList.push({
+        advisorList.push({
           userId: uid, name, initials, agencyName, isFake,
           ytdPremium, ytdRevenue, mtdPremium, mtdRevenue,
           annualPremGoal, annualRevGoal, pipeline,
         });
       });
 
-      // Sort: real producers first, then fake
-      producerList.sort((a, b) => {
+      // Sort: real advisors first, then fake
+      advisorList.sort((a, b) => {
         if (a.isFake !== b.isFake) return a.isFake ? 1 : -1;
         return a.name.localeCompare(b.name);
       });
 
-      setProducers(producerList);
+      setProducers(advisorList);
 
       // Check congrats for current user
-      const me = producerList.find(p => p.userId === user.id);
+      const me = advisorList.find(p => p.userId === user.id);
       if (me) {
         const mGoal = me.annualPremGoal / 12;
         if (mGoal > 0 && me.mtdPremium >= mGoal && !congratsShownRef.current) {

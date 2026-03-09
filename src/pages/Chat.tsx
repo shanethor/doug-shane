@@ -36,7 +36,7 @@ type FieldBubble = { label: string; placeholder: string; key: string };
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/agent-chat`;
 
-const PRODUCER_SUGGESTIONS = [
+const ADVISOR_SUGGESTIONS = [
   { icon: FileUp, label: "Submit a new client", message: "I want to submit a new client for coverage." },
   { icon: Mail, label: "Email a client", message: "Email my most recent client a summary of what we discussed today and copy me." },
   { icon: Globe, label: "Scrape a company website", message: "I have a client's website URL — can you pull their business info from it?" },
@@ -52,8 +52,8 @@ const MANAGER_SUGGESTIONS = [
   { icon: BarChart3, label: "Team production", message: "Show my team's production this month." },
   { icon: Users, label: "Pipeline health", message: "Where are most of our deals getting stuck? Show me pipeline bottlenecks." },
   { icon: FileUp, label: "Submit a new client", message: "I want to submit a new client for coverage." },
-  { icon: ClipboardList, label: "Compare producers", message: "Compare my producers' performance for this quarter." },
-  { icon: Search, label: "Assign accounts", message: "I need to reassign some client accounts to different producers." },
+  { icon: ClipboardList, label: "Compare advisors", message: "Compare my advisors' performance for this quarter." },
+  { icon: Search, label: "Assign accounts", message: "I need to reassign some client accounts to different advisors." },
   { icon: Mail, label: "Compose an email", message: "Help me draft a professional email." },
   { icon: FileSearch, label: "Request loss runs", message: "I need to request loss runs for a client." },
   { icon: Globe, label: "Scrape a company website", message: "I have a client's website URL — can you pull their business info from it?" },
@@ -1049,7 +1049,7 @@ export default function Chat() {
     if (/\b(go\s*to|open|show|view|check|take\s*me\s*to|navigate)\s+(my\s*)?pipeline\b/.test(t)) return { route: "/pipeline", label: "Pipeline" };
     if (/\b(go\s*to|open|show|view|check|take\s*me\s*to|navigate)\s+(my\s*)?approvals?\b/.test(t)) return { route: "/approvals", label: "Approvals" };
     if (/\b(go\s*to|open|show|view|check|take\s*me\s*to|navigate)\s+(my\s*)?settings?\b/.test(t)) return { route: "/settings", label: "Settings" };
-    if (/\b(go\s*to|open|show|view|check|take\s*me\s*to|navigate)\s+(my\s*)?(producer\s*)?hub\b/.test(t)) return { route: "/producer-hub", label: "Producer Hub" };
+    if (/\b(go\s*to|open|show|view|check|take\s*me\s*to|navigate)\s+(my\s*)?(advisor\s*|producer\s*)?hub\b/.test(t)) return { route: "/hub", label: "Command Center" };
     if (/\b(go\s*to|open|show|view|check|take\s*me\s*to|navigate)\s+(my\s*)?dashboard\b/.test(t)) return { route: "/dashboard", label: "Dashboard" };
     if (/\b(go\s*to|open|show|view|check|take\s*me\s*to|navigate)\s+(my\s*)?admin\b/.test(t)) return { route: "/admin", label: "Admin" };
     if (/\b(go\s*to|open|show|view|check|take\s*me\s*to|navigate)\s+(my\s*)?generated\s*forms?\b/.test(t)) return { route: "/generated-forms", label: "Generated Forms" };
@@ -2364,7 +2364,7 @@ export default function Chat() {
               {/* Suggestions & feature boxes — only in training/help mode */}
               {trainingMode && (<>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 w-full max-w-2xl">
-                {(isClientServices ? CLIENT_SERVICES_SUGGESTIONS : isManager ? MANAGER_SUGGESTIONS : PRODUCER_SUGGESTIONS).map((s) => (
+                {(isClientServices ? CLIENT_SERVICES_SUGGESTIONS : isManager ? MANAGER_SUGGESTIONS : ADVISOR_SUGGESTIONS).map((s) => (
                   <button
                     key={s.label}
                     onClick={() => {
