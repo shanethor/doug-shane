@@ -30,7 +30,7 @@ export function PersonalIntakeDialog({ open, onClose, onGenerate, isLoading, adv
 
   const handleGenerate = () => {
     if (!canSubmit) return;
-    onGenerate({ clientEmail: clientEmail.trim(), teamMemberEmail: teamMemberEmail.trim(), ccProducer });
+    onGenerate({ clientEmail: clientEmail.trim(), teamMemberEmail: teamMemberEmail.trim(), ccAdvisor });
   };
 
   const handleCopyLink = async () => {
