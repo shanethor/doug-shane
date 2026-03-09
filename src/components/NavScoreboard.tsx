@@ -177,13 +177,13 @@ export function NavScoreboard() {
   if (loading) {
     return (
       <div className="w-full border-b border-border bg-card/90 backdrop-blur-sm animate-pulse">
-        <div className="flex items-center h-[72px] px-3 gap-4 max-w-6xl mx-auto">
-          <div className="h-7 w-7 rounded-full bg-muted/50" />
-          <div className="h-3 w-32 rounded bg-muted/50" />
-          <div className="h-3 w-24 rounded bg-muted/40" />
-          <div className="h-3 w-24 rounded bg-muted/40" />
+      <div className="flex items-center h-[47px] px-3 gap-4 max-w-6xl mx-auto">
+          <div className="h-6 w-6 rounded-full bg-muted/50" />
+          <div className="h-2.5 w-32 rounded bg-muted/50" />
+          <div className="h-2.5 w-24 rounded bg-muted/40" />
+          <div className="h-2.5 w-24 rounded bg-muted/40" />
           <div className="flex gap-1.5 ml-auto">
-            {[1,2,3,4,5].map(i => <div key={i} className="h-5 w-16 rounded bg-muted/30" />)}
+            {[1,2,3,4,5].map(i => <div key={i} className="h-4 w-14 rounded bg-muted/30" />)}
           </div>
         </div>
       </div>
