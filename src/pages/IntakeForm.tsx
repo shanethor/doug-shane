@@ -435,6 +435,14 @@ export default function IntakeForm() {
   const updateCommercial = (field: keyof CommercialFormData, value: any) =>
     setCommercialForm(prev => ({ ...prev, [field]: value }));
 
+  // Auto-trigger extraction when commercial dec files are added
+  useEffect(() => {
+    if (intakeType === "commercial" && decFiles.length > 0 && !decExtracting && !decExtracted) {
+      handleDecExtraction();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [decFiles.length, intakeType]);
+
   /* ─── Step validation ─── */
   const validateCurrentStep = (): boolean => {
     if (currentStep === "coverage_select") {
