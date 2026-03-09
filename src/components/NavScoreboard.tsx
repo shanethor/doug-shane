@@ -121,6 +121,11 @@ export function NavScoreboard() {
       // Find advisor user IDs from the directory
       const advisorIds = new Set<string>();
 
+      // Always include the current user so their goals/stats are never missed
+      if (role === "advisor" || role === "admin" || role === "manager") {
+        advisorIds.add(user.id);
+      }
+
       if (listUsers.length > 0) {
         listUsers.forEach((u: any) => {
           if (Array.isArray(u.roles) && (u.roles.includes("advisor") || u.roles.includes("producer"))) {
@@ -133,6 +138,12 @@ export function NavScoreboard() {
       advisorIds.add(JANE_SMITH_ID);
 
       const profileMap = new Map(listUsers.map((u: any) => [u.id, u]));
+
+      // Ensure current user has a profile entry even if edge function didn't return them
+      if (!profileMap.has(user.id)) {
+        const { data: myProfile } = await supabase.from("profiles").select("user_id, full_name, agency_name, agency_id").eq("user_id", user.id).maybeSingle();
+        if (myProfile) profileMap.set(user.id, myProfile);
+      }
       const goalsMap = new Map((allGoals as any[]).map((g: any) => [g.user_id, g]));
       const listGoalsMap = new Map(
         listUsers
