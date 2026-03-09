@@ -205,6 +205,10 @@ export default function ProducerHub() {
           <ProducerDashboard embedded />
         </TabsContent>
 
+        <TabsContent value="lead-engine">
+          <LeadEnginePanel />
+        </TabsContent>
+
         {TOOL_TABS.map((tool) => (
           <TabsContent key={tool.id} value={tool.id}>
             <ComingSoonPanel tool={tool} />
