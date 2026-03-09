@@ -61,13 +61,18 @@ Deno.serve(async (req) => {
     const { data: { users }, error } = await adminClient.auth.admin.listUsers({ perPage: 200 });
     if (error) throw error;
 
-    // Get profiles and agencies
-    const { data: profiles } = await adminClient.from("profiles").select("*");
-    const { data: roles } = await adminClient.from("user_roles").select("*");
-    const { data: agencies } = await adminClient.from("agencies").select("*");
-    const { data: submissions } = await adminClient
-      .from("business_submissions")
-      .select("user_id");
+    // Get profiles, roles, agencies, submissions, and current-year goals
+    const currentYear = new Date().getFullYear();
+    const [{ data: profiles }, { data: roles }, { data: agencies }, { data: submissions }, { data: producerGoals }] = await Promise.all([
+      adminClient.from("profiles").select("*"),
+      adminClient.from("user_roles").select("*"),
+      adminClient.from("agencies").select("*"),
+      adminClient.from("business_submissions").select("user_id"),
+      adminClient
+        .from("producer_goals")
+        .select("user_id, annual_premium_goal, annual_revenue_goal, year")
+        .eq("year", currentYear),
+    ]);
 
     // Build submission counts
     const subCounts: Record<string, number> = {};
@@ -77,6 +82,7 @@ Deno.serve(async (req) => {
 
     const profileMap = new Map((profiles ?? []).map((p: any) => [p.user_id, p]));
     const agencyMap = new Map((agencies ?? []).map((a: any) => [a.id, a]));
+    const goalMap = new Map((producerGoals ?? []).map((g: any) => [g.user_id, g]));
     const roleMap = new Map<string, string[]>();
     (roles ?? []).forEach((r: any) => {
       const arr = roleMap.get(r.user_id) || [];
@@ -89,6 +95,8 @@ Deno.serve(async (req) => {
       const userRoles = roleMap.get(u.id) || [];
       const primaryRole = userRoles.find(r => r !== 'user') || (userRoles.includes('user') ? 'producer' : 'producer');
       const agency = profile?.agency_id ? agencyMap.get(profile.agency_id) : null;
+      const goal = goalMap.get(u.id) as any;
+
       return {
         id: u.id,
         email: u.email,
@@ -103,6 +111,9 @@ Deno.serve(async (req) => {
         last_sign_in_at: u.last_sign_in_at,
         email_confirmed: !!u.email_confirmed_at,
         submission_count: subCounts[u.id] || 0,
+        annual_premium_goal: Number(goal?.annual_premium_goal) || 0,
+        annual_revenue_goal: Number(goal?.annual_revenue_goal) || 0,
+        goal_year: currentYear,
       };
     });
 

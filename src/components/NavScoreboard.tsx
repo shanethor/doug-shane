@@ -146,6 +146,18 @@ export function NavScoreboard() {
 
       const profileMap = new Map(profiles.map((p: any) => [p.user_id, p]));
       const goalsMap = new Map((allGoals as any[]).map((g: any) => [g.user_id, g]));
+      const listGoalsMap = new Map(
+        listUsers
+          .filter((u: any) => Number(u?.annual_premium_goal) > 0 || Number(u?.annual_revenue_goal) > 0)
+          .map((u: any) => [
+            u.id,
+            {
+              annual_premium_goal: Number(u.annual_premium_goal) || 0,
+              annual_revenue_goal: Number(u.annual_revenue_goal) || 0,
+              year,
+            },
+          ])
+      );
 
       const producerList: ProducerData[] = [];
 
@@ -173,8 +185,8 @@ export function NavScoreboard() {
         const mtdPremium = userMtd.reduce((s: number, p: any) => s + Number(p.annual_premium || 0), 0);
         const mtdRevenue = userMtd.reduce((s: number, p: any) => s + Number(p.revenue || Number(p.annual_premium) * 0.12 || 0), 0);
 
-        // Goals
-        const goal = goalsMap.get(uid) as any;
+        // Goals (fallback to admin directory data when RLS hides producer_goals rows)
+        const goal = (goalsMap.get(uid) as any) || (listGoalsMap.get(uid) as any);
         const annualPremGoal = Number(goal?.annual_premium_goal) || 0;
         const annualRevGoal = Number(goal?.annual_revenue_goal) || 0;
 
