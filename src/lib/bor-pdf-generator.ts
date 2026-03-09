@@ -75,7 +75,7 @@ export async function generateBorPdf(data: BorData): Promise<Uint8Array> {
   y -= 30;
 
   // Agency block
-  const agency = data.agencyName || "AURA Risk Group";
+  const agency = data.agencyName || "";
   drawText(agency, margin, y, 12, true);
   y -= 16;
   if (data.producerName) { drawText(data.producerName, margin, y, 11); y -= 14; }
