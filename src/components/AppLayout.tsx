@@ -14,7 +14,7 @@ export function AppLayout({ children, onLogoClick }: { children: React.ReactNode
   const { canSeeProducerHub, canSeeAdmin } = useUserRole();
   const location = useLocation();
   const { trainingMode, setTrainingMode } = useTrainingMode();
-  const unreadCount = useUnreadCount();
+  const { emailCount, pulseCount } = useUnreadCount();
 
   const navItems = [
     { to: "/", label: "AURA", icon: MessageCircle },
