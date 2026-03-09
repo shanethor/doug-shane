@@ -294,13 +294,13 @@
 
 @keyframes ticker-scroll {
   0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
+  100% { transform: translateX(-49.9%); }
 }
 .ticker-track {
   display: inline-flex;
   align-items: center;
   gap: 1.5rem;
-  animation: ticker-scroll 30s linear infinite;
+  animation: ticker-scroll 55s linear infinite;
   will-change: transform;
 }
 .ticker-track:hover {
