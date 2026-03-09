@@ -2043,10 +2043,10 @@ export default function Chat() {
         {/* Messages area */}
         <div ref={scrollRef} className="flex-1 overflow-y-auto">
           {isEmpty ? (
-            <div className="flex flex-col items-center min-h-full gap-6 px-4 pt-4 md:pt-[12vh] animate-fade-in">
+            <div className="flex flex-col items-center min-h-full gap-4 px-4 pt-2 md:pt-[6vh] animate-fade-in">
               <div className="text-center space-y-2">
                 <h1 className="text-4xl tracking-tight aura-gradient-text">
-                   What are we closing?
+                   What are we closing today?
                 </h1>
               </div>
 
@@ -2088,9 +2088,9 @@ export default function Chat() {
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    placeholder="I'm AURA - tell me what goals I can help you achieve today!"
-                    rows={3}
-                    className="flex-1 resize-none bg-transparent border-0 outline-none text-sm placeholder:text-muted-foreground min-h-[72px] max-h-40 py-2"
+                    placeholder="I'm AURA – tell me what goals I can help you achieve!"
+                    rows={4}
+                    className="flex-1 resize-none bg-transparent border-0 outline-none text-sm placeholder:text-muted-foreground min-h-[96px] max-h-48 py-2"
                   />
                   <Button
                     variant={voice.isListening ? "destructive" : "ghost"}
