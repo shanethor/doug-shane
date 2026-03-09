@@ -204,7 +204,7 @@ export function NavScoreboard() {
       setProducers(advisorList);
 
       // Check congrats for current user
-      const me = producerList.find(p => p.userId === user.id);
+      const me = advisorList.find(p => p.userId === user.id);
       if (me) {
         const mGoal = me.annualPremGoal / 12;
         if (mGoal > 0 && me.mtdPremium >= mGoal && !congratsShownRef.current) {
