@@ -37,11 +37,12 @@ const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/agent-chat`;
 
 const PRODUCER_SUGGESTIONS = [
   { icon: FileUp, label: "Submit a new client", message: "I want to submit a new client for coverage." },
+  { icon: Mail, label: "Email a client", message: "Email my most recent client a summary of what we discussed today and copy me." },
   { icon: Globe, label: "Scrape a company website", message: "I have a client's website URL — can you pull their business info from it?" },
   { icon: ClipboardList, label: "Fill an ACORD form", message: "Help me fill out an ACORD form for a client." },
   { icon: Users, label: "Manage my pipeline", message: "Help me manage my sales pipeline — I need to move some leads and update statuses." },
   { icon: Search, label: "Review a submission", message: "I need to review an existing client submission." },
-  { icon: Mail, label: "Compose an email", message: "Help me draft a professional email to a client." },
+  { icon: Sparkles, label: "Create a task", message: "Create a task to follow up with my most recent client next week." },
   { icon: FileSearch, label: "Request loss runs", message: "I need to request loss runs for a client." },
   { icon: BarChart3, label: "Check my production", message: "Show me my production numbers and pending approvals." },
 ];
@@ -155,7 +156,83 @@ function stripMarkers(text: string): string {
     .replace(/\[SUBMISSION_ID:[^\]]+\]/g, "")
     .replace(/\[PIPELINE_ACTION:[^\]]+\]/g, "")
     .replace(/\[CALENDAR_ACTION:[^\]]+\]/g, "")
+    .replace(/\[EMAIL_ACTION:[^\]]+\]/g, "")
+    .replace(/\[TASK_ACTION:[^\]]+\]/g, "")
+    .replace(/\[LEAD_ACTION:[^\]]+\]/g, "")
     .trim();
+}
+
+type EmailAction = {
+  mode: "draft" | "send";
+  recipientName: string;
+  recipientEmail: string;
+  subject: string;
+  bodyHtml: string;
+  ccOwner?: boolean;
+};
+
+type TaskAction = {
+  title: string;
+  dueDate: string;
+  leadName: string;
+};
+
+type LeadIntelAction = {
+  companyName: string;
+  state: string;
+  industry: string;
+  tier: number;
+  source: string;
+};
+
+/** Parse email action markers like [EMAIL_ACTION:draft:Name:email:Subject:body] */
+function parseEmailActions(text: string): EmailAction[] {
+  const regex = /\[EMAIL_ACTION:([^:]+):([^:]+):([^:]+):([^:]+):([^\]]+)\]/g;
+  const actions: EmailAction[] = [];
+  let m: RegExpExecArray | null;
+  while ((m = regex.exec(text)) !== null) {
+    actions.push({
+      mode: m[1] as "draft" | "send",
+      recipientName: m[2].trim(),
+      recipientEmail: m[3].trim(),
+      subject: m[4].trim(),
+      bodyHtml: m[5].trim().replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&"),
+      ccOwner: text.includes("cc_owner:true"),
+    });
+  }
+  return actions;
+}
+
+/** Parse task action markers like [TASK_ACTION:create:Title:2026-03-15:LeadName] */
+function parseTaskActions(text: string): TaskAction[] {
+  const regex = /\[TASK_ACTION:create:([^:]+):([^:]+):([^\]]*)\]/g;
+  const actions: TaskAction[] = [];
+  let m: RegExpExecArray | null;
+  while ((m = regex.exec(text)) !== null) {
+    actions.push({
+      title: m[1].trim(),
+      dueDate: m[2].trim(),
+      leadName: m[3]?.trim() || "",
+    });
+  }
+  return actions;
+}
+
+/** Parse lead intelligence action markers like [LEAD_ACTION:create:Company:ST:Industry:1:manual] */
+function parseLeadActions(text: string): LeadIntelAction[] {
+  const regex = /\[LEAD_ACTION:create:([^:]+):([^:]+):([^:]+):([^:]+):([^\]]+)\]/g;
+  const actions: LeadIntelAction[] = [];
+  let m: RegExpExecArray | null;
+  while ((m = regex.exec(text)) !== null) {
+    actions.push({
+      companyName: m[1].trim(),
+      state: m[2].trim(),
+      industry: m[3].trim(),
+      tier: parseInt(m[4]) || 3,
+      source: m[5].trim(),
+    });
+  }
+  return actions;
 }
 
 type PipelineAction = {
@@ -387,6 +464,7 @@ export default function Chat() {
   const [showPersonalIntakeDialog, setShowPersonalIntakeDialog] = useState(false);
   const [personalIntakeLoading, setPersonalIntakeLoading] = useState(false);
   const [personalIntakeLink, setPersonalIntakeLink] = useState<string | null>(null);
+  const [pendingEmail, setPendingEmail] = useState<EmailAction | null>(null);
   const mountedRef = useRef(true);
   useEffect(() => {
     return () => {
@@ -1124,18 +1202,8 @@ export default function Chat() {
       return;
     }
 
-    // Intercept email compose intent — navigate to Email Hub
-    if (!displayText && isEmailComposeIntent(text)) {
-      const userMsg: Msg = { role: "user", content: text.trim() };
-      setMessages((prev) => [...prev, userMsg]);
-      setInput("");
-      setMessages((prev) => [...prev, {
-        role: "assistant",
-        content: "✉️ Opening the **Email Hub** so you can compose your email. One moment..."
-      }]);
-      setTimeout(() => navigate("/email", { state: { compose: true } }), 800);
-      return;
-    }
+    // Email compose intent: pass through to AI (it now handles email drafting via EMAIL_ACTION markers)
+    // No longer intercept and navigate away — let the orchestrator handle it inline
 
     // Intercept coming-soon feature requests
     if (!displayText) {
@@ -1384,6 +1452,24 @@ export default function Chat() {
       const calendarActions = parseCalendarActions(finalText);
       if (calendarActions.length > 0) {
         executeCalendarActions(calendarActions);
+      }
+
+      // Execute email actions if present (shows confirmation UI)
+      const emailActions = parseEmailActions(finalText);
+      if (emailActions.length > 0) {
+        executeEmailActions(emailActions);
+      }
+
+      // Execute task actions if present
+      const taskActions = parseTaskActions(finalText);
+      if (taskActions.length > 0) {
+        executeTaskActions(taskActions);
+      }
+
+      // Execute lead intelligence actions if present
+      const leadActions = parseLeadActions(finalText);
+      if (leadActions.length > 0) {
+        executeLeadActions(leadActions);
       }
 
       setMessages((prev) => {
@@ -1772,6 +1858,123 @@ export default function Chat() {
       } catch (err) {
         console.error("Calendar action failed:", err);
         toast({ variant: "destructive", title: "Calendar error", description: "Failed to create event." });
+      }
+    }
+  };
+
+  /** Execute email actions — show confirmation for sends */
+  const executeEmailActions = (actions: EmailAction[]) => {
+    if (actions.length === 0) return;
+    // Show preview for the first email action — user must confirm
+    setPendingEmail(actions[0]);
+  };
+
+  /** Send the pending email via the send-email edge function */
+  const confirmSendEmail = async () => {
+    if (!pendingEmail || !user) return;
+    try {
+      const headers = await getAuthHeaders();
+      const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-email`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          to: pendingEmail.recipientEmail,
+          subject: pendingEmail.subject,
+          html: pendingEmail.bodyHtml,
+          cc_owner: pendingEmail.ccOwner,
+        }),
+      });
+      if (!resp.ok) {
+        const errBody = await resp.json().catch(() => ({}));
+        throw new Error(errBody.error || `Send failed (${resp.status})`);
+      }
+      toast({ title: "✉️ Email sent", description: `Email to ${pendingEmail.recipientName} sent successfully.` });
+      setMessages(prev => [...prev, {
+        role: "assistant",
+        content: `✅ **Email sent** to **${pendingEmail.recipientName}** (${pendingEmail.recipientEmail}).\n\n**Subject:** ${pendingEmail.subject}${pendingEmail.ccOwner ? "\n\n*You were CC'd on this email.*" : ""}`,
+      }]);
+    } catch (err: any) {
+      console.error("Email send error:", err);
+      toast({ variant: "destructive", title: "Send failed", description: err.message || "Could not send email." });
+      setMessages(prev => [...prev, {
+        role: "assistant",
+        content: `❌ Failed to send email to ${pendingEmail.recipientName}. Error: ${err.message || "Unknown error"}. You can try again or open the Email Hub to send manually.`,
+        buttons: [{ label: "Open Email Hub", action: "/email" }],
+      }]);
+    }
+    setPendingEmail(null);
+  };
+
+  /** Execute task creation actions */
+  const executeTaskActions = async (actions: TaskAction[]) => {
+    if (!user) return;
+    for (const action of actions) {
+      try {
+        // Find associated lead
+        let leadId: string | null = null;
+        if (action.leadName) {
+          const leads = await findLeadsFuzzy(action.leadName);
+          if (leads.length >= 1) leadId = leads[0].id;
+        }
+
+        // Create a calendar event as a follow-up task
+        const dueDate = new Date(action.dueDate + "T09:00:00");
+        if (isNaN(dueDate.getTime())) {
+          toast({ variant: "destructive", title: "Invalid date", description: `Could not parse task date: ${action.dueDate}` });
+          continue;
+        }
+
+        const endDate = new Date(dueDate);
+        endDate.setHours(endDate.getHours() + 1);
+
+        await supabase.from("calendar_events").insert({
+          user_id: user.id,
+          title: `📋 ${action.title}`,
+          event_type: "follow_up" as any,
+          start_time: dueDate.toISOString(),
+          end_time: endDate.toISOString(),
+          lead_id: leadId,
+          provider: "aura",
+          status: "scheduled" as any,
+        } as any);
+
+        // Also create a lead note if associated with a lead
+        if (leadId) {
+          await supabase.from("lead_notes").insert({
+            lead_id: leadId,
+            user_id: user.id,
+            note_text: `Task created from chat: ${action.title} (due ${action.dueDate})`,
+          });
+        }
+
+        toast({ title: "📋 Task created", description: `"${action.title}" due ${action.dueDate}` });
+      } catch (err) {
+        console.error("Task action failed:", err);
+        toast({ variant: "destructive", title: "Task error", description: "Failed to create task." });
+      }
+    }
+  };
+
+  /** Execute lead intelligence actions — create leads in pipeline */
+  const executeLeadActions = async (actions: LeadIntelAction[]) => {
+    if (!user) return;
+    for (const action of actions) {
+      try {
+        const stage = action.tier <= 1 ? "prospect" : action.tier <= 2 ? "prospect" : "prospect";
+        const { error } = await supabase.from("leads").insert({
+          owner_user_id: user.id,
+          account_name: action.companyName,
+          state: action.state || null,
+          business_type: action.industry || null,
+          line_type: "commercial",
+          stage: stage as any,
+          lead_source: action.source || "manual",
+        });
+        if (error) throw error;
+        toast({ title: "🎯 Lead created", description: `"${action.companyName}" added to pipeline as Tier ${action.tier}.` });
+      } catch (err) {
+        console.error("Lead action failed:", err);
+        toast({ variant: "destructive", title: "Lead error", description: `Failed to create lead: ${action.companyName}` });
       }
     }
   };
@@ -2780,11 +2983,29 @@ export default function Chat() {
                   🎙️ Listening… speak now
                 </p>
               ) : (
-                <p className="text-[10px] text-muted-foreground text-center mt-2">
-                  Drop files anywhere or click <Paperclip className="inline h-3 w-3" /> to attach
-                  <span className="mx-1">·</span>
-                  <button onClick={() => setShowFeatureSuggestion(true)} className="hover:text-primary transition-colors underline-offset-2 hover:underline">Suggest a feature</button>
-                </p>
+                <div className="mt-2 space-y-1">
+                  <div className="flex flex-wrap items-center justify-center gap-1.5">
+                    {[
+                      { label: "Email a client summary", msg: "Email my most recent client a summary of what we discussed today." },
+                      { label: "Create a follow-up task", msg: "Create a task to follow up with my most recent client next week." },
+                      { label: "Generate ACORD package", msg: "Generate full ACORDs from the latest intake for my most recent client." },
+                      { label: "Create a new lead", msg: "Create a new prospect lead for a business I just spoke with." },
+                    ].map((hint) => (
+                      <button
+                        key={hint.label}
+                        onClick={() => send(hint.msg)}
+                        className="text-[10px] px-2 py-1 rounded-full border border-border text-muted-foreground hover:text-primary hover:border-primary/40 transition-colors"
+                      >
+                        {hint.label}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-[10px] text-muted-foreground text-center">
+                    Drop files anywhere or click <Paperclip className="inline h-3 w-3" /> to attach
+                    <span className="mx-1">·</span>
+                    <button onClick={() => setShowFeatureSuggestion(true)} className="hover:text-primary transition-colors underline-offset-2 hover:underline">Suggest a feature</button>
+                  </p>
+                </div>
               )}
             </div>
           </div>
@@ -2810,6 +3031,64 @@ export default function Chat() {
         producerEmail={user?.email || undefined}
         generatedLink={personalIntakeLink}
       />
+      {/* Email Confirmation Dialog */}
+      <Dialog open={!!pendingEmail} onOpenChange={(open) => { if (!open) setPendingEmail(null); }}>
+        <DialogContent className="max-w-lg">
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <Mail className="h-5 w-5 text-primary" />
+              <h3 className="font-semibold">Confirm Email</h3>
+            </div>
+            {pendingEmail && (
+              <>
+                <div className="space-y-2 text-sm">
+                  <div className="flex gap-2">
+                    <span className="text-muted-foreground font-medium w-16 shrink-0">To:</span>
+                    <span>{pendingEmail.recipientName} &lt;{pendingEmail.recipientEmail}&gt;</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <span className="text-muted-foreground font-medium w-16 shrink-0">Subject:</span>
+                    <span>{pendingEmail.subject}</span>
+                  </div>
+                  {pendingEmail.ccOwner && (
+                    <div className="flex gap-2">
+                      <span className="text-muted-foreground font-medium w-16 shrink-0">CC:</span>
+                      <span>{user?.email} (you)</span>
+                    </div>
+                  )}
+                </div>
+                <div className="border rounded-lg p-4 bg-muted/30 max-h-60 overflow-y-auto">
+                  <div className="prose prose-sm" dangerouslySetInnerHTML={{ __html: pendingEmail.bodyHtml }} />
+                </div>
+                <div className="flex gap-2 justify-end">
+                  <Button variant="outline" onClick={() => {
+                    setPendingEmail(null);
+                    setMessages(prev => [...prev, {
+                      role: "assistant",
+                      content: "Email cancelled. Let me know if you'd like to edit or re-draft it.",
+                    }]);
+                  }}>
+                    Cancel
+                  </Button>
+                  <Button variant="outline" onClick={() => {
+                    const email = pendingEmail;
+                    setPendingEmail(null);
+                    bypassIntentRef.current = true;
+                    send(`Edit this email draft — change the following:\n\nTo: ${email.recipientName} <${email.recipientEmail}>\nSubject: ${email.subject}\nBody: ${email.bodyHtml}\n\nPlease let me revise it. What would you like to change?`, "✏️ Editing email draft…");
+                  }}>
+                    <PenLine className="h-4 w-4 mr-1.5" />
+                    Edit
+                  </Button>
+                  <Button onClick={confirmSendEmail}>
+                    <Send className="h-4 w-4 mr-1.5" />
+                    Send
+                  </Button>
+                </div>
+              </>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 }
