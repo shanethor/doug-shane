@@ -92,6 +92,10 @@ const ACORD_127: AcordQuestion[] = [
     placeholder: "$500" },
   { acord: "127", key: "auto_collision_deductible", label: "Collision deductible", type: "currency", required: false, section: "vehicles",
     placeholder: "$1,000" },
+  { acord: "127", key: "auto_physical_damage_desired", label: "Is physical damage coverage desired on owned vehicles?", type: "boolean", required: false, section: "vehicles",
+    dependsOn: (f) => f.owns_or_leases_vehicles === true || f.owns_or_leases_vehicles === "yes" },
+  { acord: "127", key: "auto_garagekeeping_pd", label: "Any garage-keeping or hired-car physical damage needed?", type: "boolean", required: false, section: "vehicles",
+    dependsOn: (f) => f.any_hired_non_owned_auto === true || f.any_hired_non_owned_auto === "yes" },
 ];
 
 /* ═══════════════════════════════════════════════════════════════
