@@ -534,13 +534,19 @@ export default function FormFillingView({ submissionId, initialMessages, initial
         try {
           const { data: profile } = await supabase
             .from("profiles")
-            .select("full_name, agency_name, phone, form_defaults")
+            .select("full_name, agency_name, agency_id, phone, form_defaults")
             .eq("user_id", user.id)
             .single();
 
           if (profile) {
             const defaults: Record<string, string> = {};
-            if (profile.agency_name) defaults.agency_name = profile.agency_name;
+            // Resolve agency name from agencies table
+            if ((profile as any).agency_id) {
+              const { data: agencyData } = await supabase.from("agencies").select("name").eq("id", (profile as any).agency_id).maybeSingle();
+              if (agencyData) defaults.agency_name = agencyData.name;
+            } else if (profile.agency_name) {
+              defaults.agency_name = profile.agency_name;
+            }
             if (profile.full_name) defaults.producer_name = profile.full_name;
             if (profile.phone) defaults.agency_phone = profile.phone;
 
