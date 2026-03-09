@@ -25,6 +25,7 @@ import { advisorAssist } from "@/services/aiRouter";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { EmailFilterChips } from "@/components/EmailFilterChips";
 import { EmailClientSnapshot } from "@/components/EmailClientSnapshot";
+import { fuzzyMatch } from "@/lib/fuzzy-match";
 
 type Notification = {
   id: string;
