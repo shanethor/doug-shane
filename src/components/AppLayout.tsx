@@ -84,6 +84,8 @@ export function AppLayout({ children, onLogoClick }: { children: React.ReactNode
         </div>
       </header>
 
+      <NavScoreboard />
+
       <main className="mx-auto max-w-6xl px-4 py-6 md:py-8 pb-24 md:pb-8">
         {children}
       </main>
