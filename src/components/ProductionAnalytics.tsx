@@ -175,24 +175,26 @@ export function ProductionAnalytics({ policies, leadNames, leads = [] }: Product
 
       {/* KPI Row */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-        <Card>
+        <Card className="border-dashed">
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-2">
-              <DollarSign className="h-4 w-4 text-primary" />
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
               <span className="text-xs text-muted-foreground font-sans uppercase tracking-wide">Book Premium</span>
+              <Badge variant="secondary" className="text-[9px] ml-auto">Coming Soon</Badge>
             </div>
-            <p className="text-2xl sm:text-3xl font-bold">{fmt(analytics.totalPremium)}</p>
-            <p className="text-xs text-muted-foreground font-sans mt-1">{analytics.policyCount} active policies</p>
+            <p className="text-2xl sm:text-3xl font-bold text-muted-foreground/40">—</p>
+            <p className="text-xs text-muted-foreground font-sans mt-1">Full book tracking coming soon</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="border-dashed">
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-2">
-              <TrendingUp className="h-4 w-4 text-success" />
+              <TrendingUp className="h-4 w-4 text-muted-foreground" />
               <span className="text-xs text-muted-foreground font-sans uppercase tracking-wide">Book Revenue</span>
+              <Badge variant="secondary" className="text-[9px] ml-auto">Coming Soon</Badge>
             </div>
-            <p className="text-2xl sm:text-3xl font-bold">{fmt(analytics.totalRevenue)}</p>
-            <p className="text-xs text-muted-foreground font-sans mt-1">Avg {fmt(analytics.avgRevenue)} / policy</p>
+            <p className="text-2xl sm:text-3xl font-bold text-muted-foreground/40">—</p>
+            <p className="text-xs text-muted-foreground font-sans mt-1">Revenue analytics coming soon</p>
           </CardContent>
         </Card>
         <Card>
