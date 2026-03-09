@@ -526,50 +526,46 @@ export default function FormFillingView({ submissionId, initialMessages, initial
         loaded = data.form_data as Record<string, any>;
       }
 
-      // Count how many non-empty fields exist
-      const filledCount = Object.values(loaded).filter(v => v && String(v).trim()).length;
+      // Always inject agency profile defaults for missing agency fields
+      // (not just on blank forms — intake-sourced forms need agent data too)
+      try {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("full_name, agency_name, agency_id, phone, form_defaults")
+          .eq("user_id", user.id)
+          .single();
 
-      // If form is blank or near-blank, inject agency profile defaults
-      if (filledCount < 3) {
-        try {
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("full_name, agency_name, agency_id, phone, form_defaults")
-            .eq("user_id", user.id)
-            .single();
-
-          if (profile) {
-            const defaults: Record<string, string> = {};
-            // Resolve agency name from agencies table
-            if ((profile as any).agency_id) {
-              const { data: agencyData } = await supabase.from("agencies").select("name").eq("id", (profile as any).agency_id).maybeSingle();
-              if (agencyData) defaults.agency_name = agencyData.name;
-            } else if (profile.agency_name) {
-              defaults.agency_name = profile.agency_name;
-            }
-            if (profile.full_name) defaults.producer_name = profile.full_name;
-            if (profile.phone) defaults.agency_phone = profile.phone;
-
-            // Merge form_defaults (agency_email, agency_fax, producer_license_no, etc.)
-            const formDefaults = (profile.form_defaults || {}) as Record<string, string>;
-            for (const [k, v] of Object.entries(formDefaults)) {
-              if (v && typeof v === "string" && v.trim()) {
-                defaults[k] = v;
-              }
-            }
-
-            // Only set defaults where no existing value
-            for (const [k, v] of Object.entries(defaults)) {
-              if (!loaded[k] || (typeof loaded[k] === "string" && !loaded[k].trim())) {
-                loaded[k] = v;
-              }
-            }
-
-            console.info("[FormFilling] Injected", Object.keys(defaults).length, "agency defaults into blank form");
+        if (profile) {
+          const defaults: Record<string, string> = {};
+          // Resolve agency name from agencies table (always up-to-date)
+          if ((profile as any).agency_id) {
+            const { data: agencyData } = await supabase.from("agencies").select("name").eq("id", (profile as any).agency_id).maybeSingle();
+            if (agencyData) defaults.agency_name = agencyData.name;
+          } else if (profile.agency_name) {
+            defaults.agency_name = profile.agency_name;
           }
-        } catch (e) {
-          console.warn("[FormFilling] Could not load agency defaults:", e);
+          if (profile.full_name) defaults.producer_name = profile.full_name;
+          if (profile.phone) defaults.agency_phone = profile.phone;
+
+          // Merge form_defaults (agency_email, agency_fax, producer_license_no, etc.)
+          const formDefaults = (profile.form_defaults || {}) as Record<string, string>;
+          for (const [k, v] of Object.entries(formDefaults)) {
+            if (v && typeof v === "string" && v.trim()) {
+              defaults[k] = v;
+            }
+          }
+
+          // Only set defaults where no existing value
+          for (const [k, v] of Object.entries(defaults)) {
+            if (!loaded[k] || (typeof loaded[k] === "string" && !loaded[k].trim())) {
+              loaded[k] = v;
+            }
+          }
+
+          console.info("[FormFilling] Injected", Object.keys(defaults).length, "agency defaults");
         }
+      } catch (e) {
+        console.warn("[FormFilling] Could not load agency defaults:", e);
       }
 
       // Apply form-definition defaults (e.g. Y/N → "No") for fields with no extracted/DB value
