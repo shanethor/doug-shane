@@ -113,14 +113,15 @@ Deno.serve(async (req) => {
       userId = user.id;
     }
 
-    const { source, settings }: ScanRequest = await req.json();
+    const source: ScanSource = body.source;
+    const settings: Record<string, string> = body.settings || {};
     if (!source) {
       return new Response(JSON.stringify({ error: "source is required" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    console.log(`[lead-engine-scan] Starting ${source} scan for user ${user.id}`);
+    console.log(`[lead-engine-scan] Starting ${source} scan for user ${userId}`);
 
     const searchQueries = buildSearchQueries(source, settings || {});
 
