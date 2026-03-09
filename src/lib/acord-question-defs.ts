@@ -63,6 +63,15 @@ const ACORD_126: AcordQuestion[] = [
     placeholder: "$2,000,000" },
   { acord: "126", key: "gl_personal_adv_injury", label: "Personal & advertising injury limit", type: "currency", required: false, section: "business",
     placeholder: "$1,000,000" },
+  { acord: "126", key: "gl_damage_to_premises_rented", label: "Damage to premises rented to you limit", type: "currency", required: false, section: "business",
+    placeholder: "$100,000" },
+  { acord: "126", key: "gl_medical_payments", label: "Medical payments limit (per person)", type: "currency", required: false, section: "business",
+    placeholder: "$5,000" },
+  { acord: "126", key: "gl_products_completed_ops_desired", label: "Is Products/Completed Operations coverage desired?", type: "boolean", required: false, section: "business" },
+  { acord: "126", key: "gl_additional_insureds_needed", label: "Are any Additional Insureds required?", type: "boolean", required: false, section: "business" },
+  { acord: "126", key: "gl_additional_insureds_text", label: "List additional insured names/entities", type: "text", required: false, section: "business",
+    placeholder: "e.g. ABC Property Management, LLC",
+    dependsOn: (f) => f.gl_additional_insureds_needed === true || f.gl_additional_insureds_needed === "yes" },
 ];
 
 /* ═══════════════════════════════════════════════════════════════
