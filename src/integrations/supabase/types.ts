@@ -650,6 +650,124 @@ export type Database = {
           },
         ]
       }
+      engine_activity: {
+        Row: {
+          activity_type: string
+          created_at: string
+          description: string
+          engine_lead_id: string | null
+          id: string
+          metadata: Json | null
+          source: string | null
+          user_id: string
+        }
+        Insert: {
+          activity_type: string
+          created_at?: string
+          description: string
+          engine_lead_id?: string | null
+          id?: string
+          metadata?: Json | null
+          source?: string | null
+          user_id: string
+        }
+        Update: {
+          activity_type?: string
+          created_at?: string
+          description?: string
+          engine_lead_id?: string | null
+          id?: string
+          metadata?: Json | null
+          source?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "engine_activity_engine_lead_id_fkey"
+            columns: ["engine_lead_id"]
+            isOneToOne: false
+            referencedRelation: "engine_leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      engine_leads: {
+        Row: {
+          action: string | null
+          assigned_to: string | null
+          company: string
+          contact_name: string | null
+          created_at: string
+          detected_at: string
+          email: string | null
+          est_premium: number | null
+          id: string
+          industry: string | null
+          lead_id: string | null
+          owner_user_id: string
+          phone: string | null
+          score: number
+          signal: string | null
+          source: string
+          state: string | null
+          status: string
+          tier: number
+          updated_at: string
+        }
+        Insert: {
+          action?: string | null
+          assigned_to?: string | null
+          company: string
+          contact_name?: string | null
+          created_at?: string
+          detected_at?: string
+          email?: string | null
+          est_premium?: number | null
+          id?: string
+          industry?: string | null
+          lead_id?: string | null
+          owner_user_id: string
+          phone?: string | null
+          score?: number
+          signal?: string | null
+          source?: string
+          state?: string | null
+          status?: string
+          tier?: number
+          updated_at?: string
+        }
+        Update: {
+          action?: string | null
+          assigned_to?: string | null
+          company?: string
+          contact_name?: string | null
+          created_at?: string
+          detected_at?: string
+          email?: string | null
+          est_premium?: number | null
+          id?: string
+          industry?: string | null
+          lead_id?: string | null
+          owner_user_id?: string
+          phone?: string | null
+          score?: number
+          signal?: string | null
+          source?: string
+          state?: string | null
+          status?: string
+          tier?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "engine_leads_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       external_calendars: {
         Row: {
           access_token: string
@@ -1004,6 +1122,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      lead_source_configs: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          last_sync_at: string | null
+          settings: Json | null
+          source: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_sync_at?: string | null
+          settings?: Json | null
+          source: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_sync_at?: string | null
+          settings?: Json | null
+          source?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       leads: {
         Row: {
