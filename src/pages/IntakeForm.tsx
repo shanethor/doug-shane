@@ -118,7 +118,7 @@ const emptyRecVehicle = (): RecreationalVehicle => ({ rec_type: "", year: "", ma
 const emptyArticle = (): PersonalArticle => ({ description: "", category: "", estimated_value: "" });
 
 /* ─── Commercial Lines Types ─── */
-type CommercialStepKey = "industry" | "insurance_check" | "owner_experience" | "upload_dec" | "loss_run_auth" | "bor_auth" | "coverage_select_comm" | "coverage_questions" | "business_info" | "commercial_docs";
+type CommercialStepKey = "industry" | "insurance_check" | "owner_experience" | "upload_dec" | "bor_auth" | "full_intake" | "coverage_questions" | "commercial_docs";
 
 const COMMERCIAL_LINES = [
   "General Liability", "Workers Compensation", "Commercial Auto",
@@ -277,6 +277,10 @@ export default function IntakeForm() {
   const [commercialStep, setCommercialStep] = useState<CommercialStepKey>("industry");
   const [borGenerated, setBorGenerated] = useState(false);
   const [borSignToken, setBorSignToken] = useState<string | null>(null);
+  const [showLossRunModal, setShowLossRunModal] = useState(false);
+  const [showDataUsageOverlay, setShowDataUsageOverlay] = useState(false);
+  const [lossRunRequested, setLossRunRequested] = useState(false);
+  const [borAccepted, setBorAccepted] = useState<boolean | null>(null);
 
   // ─── Shared State ───
   const [notes, setNotes] = useState("");
@@ -2291,15 +2295,19 @@ export default function IntakeForm() {
       </header>
 
       <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
-        {/* Title */}
-        <div className="text-center space-y-1">
+        {/* Title + AURA Promise */}
+        <div className="text-center space-y-2">
           <h1 className="text-3xl font-bold tracking-tight">AURA Intake</h1>
+          <p className="text-sm text-muted-foreground">"Answer a few basics and let AURA pull the rest for you."</p>
         </div>
 
         {/* ─── Type Selector ─── */}
         {!intakeType && (
           <Card>
-            <CardHeader><CardTitle className="text-base">Select coverage type</CardTitle></CardHeader>
+            <CardHeader>
+              <CardTitle className="text-base">Select coverage type</CardTitle>
+              <p className="text-sm text-muted-foreground">AURA securely pulls data, loss history, and policy details, then pre-fills your intake so you spend minutes, not hours.</p>
+            </CardHeader>
             <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <button
                 onClick={() => { setIntakeType("personal"); setCurrentStep("coverage_select"); }}
@@ -2342,14 +2350,11 @@ export default function IntakeForm() {
               // Dynamic steps based on user choices
               const buildCommSteps = (): CommercialStepKey[] => {
                 const steps: CommercialStepKey[] = ["industry", "insurance_check"];
-                if (commercialForm.has_current_insurance === "yes") {
-                  steps.push("loss_run_auth");
-                } else if (commercialForm.has_current_insurance === "no") {
+                if (commercialForm.has_current_insurance === "no") {
                   steps.push("owner_experience");
                 }
                 steps.push("bor_auth");
-                steps.push("business_info");
-                steps.push("coverage_select_comm");
+                steps.push("full_intake");
                 steps.push("coverage_questions");
                 steps.push("commercial_docs");
                 return steps;
@@ -2360,10 +2365,8 @@ export default function IntakeForm() {
                 insurance_check: "Current Insurance",
                 owner_experience: "Experience",
                 upload_dec: "Upload Dec Pages",
-                loss_run_auth: "Loss Run Authorization",
-                bor_auth: "Broker Authorization",
-                business_info: "Your Information",
-                coverage_select_comm: "Coverage Lines",
+                bor_auth: "Broker of Record",
+                full_intake: "Full Intake",
                 coverage_questions: "Coverage Details",
                 commercial_docs: "Documents & Submit",
               };
@@ -2378,11 +2381,12 @@ export default function IntakeForm() {
                 if (commercialStep === "insurance_check") {
                   if (!commercialForm.has_current_insurance) { toast.error("Please indicate if you currently have insurance"); return false; }
                 }
-                if (commercialStep === "business_info") {
+                if (commercialStep === "full_intake") {
                   if (!commercialForm.business_name.trim()) { toast.error("Business name is required"); return false; }
                   if (!commercialForm.customer_name.trim()) { toast.error("Primary contact name is required"); return false; }
                   if (!commercialForm.customer_email.trim() || !/^[\w.-]+@[\w.-]+\.\w+$/.test(commercialForm.customer_email.trim())) { toast.error("A valid email is required"); return false; }
                   if (!commercialForm.customer_phone.trim()) { toast.error("Phone number is required"); return false; }
+                  if (commercialForm.selected_coverage_lines.length === 0) { toast.error("Please select at least one coverage line"); return false; }
                 }
                 return true;
               };
@@ -2391,21 +2395,12 @@ export default function IntakeForm() {
               const isCommStepValid = (): boolean => {
                 if (commercialStep === "industry") return !!commercialForm.industry;
                 if (commercialStep === "insurance_check") return !!commercialForm.has_current_insurance;
-                if (commercialStep === "loss_run_auth") {
-                  return true; // Loss run authorization is optional
-                }
                 if (commercialStep === "bor_auth") {
-                  if (!commercialForm.has_other_broker) return false;
-                  if (commercialForm.has_other_broker === "yes") {
-                    return commercialForm.bor_lines.length > 0 && commercialForm.bor_authorized;
-                  }
+                  // BOR is optional — always valid to continue
                   return true;
                 }
-                if (commercialStep === "business_info") {
-                  return !!(commercialForm.business_name.trim() && commercialForm.customer_name.trim() && commercialForm.customer_email.trim() && /^[\w.-]+@[\w.-]+\.\w+$/.test(commercialForm.customer_email.trim()) && commercialForm.customer_phone.trim());
-                }
-                if (commercialStep === "coverage_select_comm") {
-                  return commercialForm.selected_coverage_lines.length > 0;
+                if (commercialStep === "full_intake") {
+                  return !!(commercialForm.business_name.trim() && commercialForm.customer_name.trim() && commercialForm.customer_email.trim() && /^[\w.-]+@[\w.-]+\.\w+$/.test(commercialForm.customer_email.trim()) && commercialForm.customer_phone.trim() && commercialForm.selected_coverage_lines.length > 0);
                 }
                 return true;
               };
@@ -2437,49 +2432,6 @@ export default function IntakeForm() {
                       <Progress value={commProgress} className="h-1.5" />
                     </div>
                   </div>
-
-                  {commercialStep === "business_info" && (
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="text-base">Your Information</CardTitle>
-                        <p className="text-sm text-muted-foreground">Please confirm your contact and business details below. Some fields may be pre-filled from information you've already provided.</p>
-                      </CardHeader>
-                      <CardContent className="space-y-3">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          <div><Label className="text-xs">Business Name *</Label><Input value={commercialForm.business_name} onChange={e => updateCommercial("business_name", e.target.value)} /></div>
-                          <div><Label className="text-xs">DBA (if applicable)</Label><Input value={commercialForm.dba} onChange={e => updateCommercial("dba", e.target.value)} /></div>
-                          <div><Label className="text-xs">Primary Contact Name *</Label><Input value={commercialForm.customer_name} onChange={e => updateCommercial("customer_name", e.target.value)} /></div>
-                          <div><Label className="text-xs">Email *</Label><Input type="email" value={commercialForm.customer_email} onChange={e => updateCommercial("customer_email", e.target.value)} /></div>
-                          <div><Label className="text-xs">Phone *</Label><Input value={commercialForm.customer_phone} onChange={e => updateCommercial("customer_phone", e.target.value)} /></div>
-                          <div><Label className="text-xs">FEIN / EIN</Label><Input value={commercialForm.ein} onChange={e => updateCommercial("ein", e.target.value)} /></div>
-                          <div>
-                            <Label className="text-xs">Business Entity Type</Label>
-                            <Select value={commercialForm.business_type === commercialForm.business_type ? commercialForm.business_type : ""} onValueChange={v => updateCommercial("business_type", v)}>
-                              <SelectTrigger className="h-10 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="sole_proprietor">Sole Proprietor</SelectItem><SelectItem value="partnership">Partnership</SelectItem>
-                                <SelectItem value="corporation">Corporation</SelectItem><SelectItem value="llc">LLC</SelectItem>
-                                <SelectItem value="nonprofit">Non-Profit</SelectItem><SelectItem value="other">Other</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div><Label className="text-xs">Street Address</Label><Input value={commercialForm.street_address} onChange={e => updateCommercial("street_address", e.target.value)} /></div>
-                          <div><Label className="text-xs">City</Label><Input value={commercialForm.city} onChange={e => updateCommercial("city", e.target.value)} /></div>
-                          <div>
-                            <Label className="text-xs">State</Label>
-                            <Select value={commercialForm.state} onValueChange={v => updateCommercial("state", v)}>
-                              <SelectTrigger className="h-10 text-sm"><SelectValue placeholder="State" /></SelectTrigger>
-                              <SelectContent>{US_STATES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
-                            </Select>
-                          </div>
-                          <div><Label className="text-xs">ZIP</Label><Input value={commercialForm.zip} onChange={e => updateCommercial("zip", e.target.value)} /></div>
-                          <div><Label className="text-xs">Number of Employees</Label><Input value={commercialForm.employee_count} onChange={e => updateCommercial("employee_count", e.target.value)} /></div>
-                          <div><Label className="text-xs">Annual Revenue</Label><Input value={commercialForm.annual_revenue} onChange={e => updateCommercial("annual_revenue", e.target.value)} /></div>
-                          <div><Label className="text-xs">Years in Business</Label><Input value={commercialForm.years_in_business} onChange={e => updateCommercial("years_in_business", e.target.value)} /></div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )}
 
                   {commercialStep === "industry" && (
                     <Card>
@@ -2515,65 +2467,116 @@ export default function IntakeForm() {
 
                   {commercialStep === "insurance_check" && (
                     <Card>
-                      <CardHeader><CardTitle className="text-base">Current Insurance</CardTitle></CardHeader>
-                      <CardContent className="space-y-4">
-                        <div>
-                          <Label className="text-xs font-medium">Do you currently have business insurance?</Label>
-                          <Select value={commercialForm.has_current_insurance} onValueChange={v => updateCommercial("has_current_insurance", v)}>
-                            <SelectTrigger className="h-10 text-sm mt-1"><SelectValue placeholder="Select" /></SelectTrigger>
-                            <SelectContent><SelectItem value="yes">Yes</SelectItem><SelectItem value="no">No</SelectItem></SelectContent>
-                          </Select>
+                      <CardHeader>
+                        <CardTitle className="text-base">Current Insurance</CardTitle>
+                        <p className="text-sm text-muted-foreground">Do you currently have business insurance?</p>
+                      </CardHeader>
+                      <CardContent className="space-y-6">
+                        {/* Yes/No selection */}
+                        <div className="grid grid-cols-2 gap-3">
+                          {[{ val: "yes", label: "Yes" }, { val: "no", label: "No" }].map(opt => {
+                            const sel = commercialForm.has_current_insurance === opt.val;
+                            return (
+                              <button key={opt.val} onClick={() => updateCommercial("has_current_insurance", opt.val)}
+                                className={`p-4 rounded-xl border-2 text-center font-medium transition-all ${sel ? "bg-primary/10 border-primary" : "border-border hover:border-primary/40"}`}>
+                                {opt.label}
+                              </button>
+                            );
+                          })}
                         </div>
-                        {commercialForm.has_current_insurance === "yes" && (
-                          <div className="space-y-4">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pl-3 border-l-2 border-primary/20">
-                              <div><Label className="text-xs">Carrier Name</Label><Input value={commercialForm.current_carrier_name} onChange={e => updateCommercial("current_carrier_name", e.target.value)} /></div>
-                              <div><Label className="text-xs">Policy Number</Label><Input value={commercialForm.policy_number} onChange={e => updateCommercial("policy_number", e.target.value)} /></div>
-                              <div><Label className="text-xs">Effective Date</Label><Input type="date" value={commercialForm.policy_effective_date} onChange={e => updateCommercial("policy_effective_date", e.target.value)} /></div>
-                              <div><Label className="text-xs">Expiration Date</Label><Input type="date" value={commercialForm.policy_expiration_date} onChange={e => updateCommercial("policy_expiration_date", e.target.value)} /></div>
-                              <div className="sm:col-span-2">
-                                <Label className="text-xs">Current Policies</Label>
-                                <div className="flex flex-wrap gap-2 mt-1">
-                                  {COMMERCIAL_LINES.map(line => {
-                                    const sel = commercialForm.lines_in_force.includes(line);
-                                    return (
-                                      <button key={line} onClick={() => updateCommercial("lines_in_force", sel ? commercialForm.lines_in_force.filter(l => l !== line) : [...commercialForm.lines_in_force, line])}
-                                        className={`px-3 py-1.5 rounded-md border text-xs font-medium transition-colors ${sel ? "bg-primary text-primary-foreground border-primary" : "border-border hover:border-primary/50"}`}>
-                                        {line}
-                                      </button>
-                                    );
-                                  })}
-                                </div>
-                              </div>
-                            </div>
 
-                            {/* Dec Pages Upload - inline */}
-                            <div className="pt-2 border-t border-border/50">
-                              <Label className="text-xs font-medium flex items-center gap-1.5"><Upload className="h-3.5 w-3.5" /> Upload Declaration Pages (optional)</Label>
-                              <p className="text-[11px] text-muted-foreground mt-1 mb-2">Upload your current dec pages so we can review your coverage structure.</p>
+                        {commercialForm.has_current_insurance === "yes" && (
+                          <div className="space-y-6">
+                            {/* Section A - Fast Track */}
+                            <div className="space-y-3">
+                              <div>
+                                <h3 className="text-sm font-semibold">Fast track: drop in your current policy</h3>
+                                <p className="text-xs text-muted-foreground mt-1">Upload your declarations pages or policy docs. AURA will read them, pull the important stuff, and fill this in for you.</p>
+                              </div>
                               <div
                                 onDragOver={e => { e.preventDefault(); setDragActive(true); }}
                                 onDragLeave={() => setDragActive(false)}
-                                onDrop={(e) => { e.preventDefault(); setDragActive(false); const files = Array.from(e.dataTransfer.files).filter(f => /\.(pdf|jpg|jpeg|png)$/i.test(f.name)); if (files.length > 0) { setUploadedFiles(prev => [...prev, ...files.map(f => ({ file: f, category: "dec_pages" }))]); updateCommercial("has_uploaded_dec_pages", true); } }}
+                                onDrop={(e) => { 
+                                  e.preventDefault(); 
+                                  setDragActive(false); 
+                                  const files = Array.from(e.dataTransfer.files).filter(f => /\.(pdf|jpg|jpeg|png)$/i.test(f.name)); 
+                                  if (files.length > 0) { 
+                                    setUploadedFiles(prev => [...prev, ...files.map(f => ({ file: f, category: "dec_pages" }))]); 
+                                    updateCommercial("has_uploaded_dec_pages", true);
+                                    setShowLossRunModal(true);
+                                  } 
+                                }}
                                 onClick={() => fileInputRef.current?.click()}
-                                className={`border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-all ${dragActive ? "border-primary bg-primary/5 scale-[1.02] shadow-lg" : "border-border hover:border-primary/50"}`}
+                                className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-all ${dragActive ? "border-primary bg-primary/5 scale-[1.02] shadow-lg" : "border-border hover:border-primary/50"}`}
                               >
-                                <Upload className={`h-6 w-6 mx-auto mb-1.5 text-muted-foreground transition-transform ${dragActive ? "animate-bounce" : ""}`} />
-                                <p className="text-xs font-medium">Click or drag & drop dec pages</p>
-                                <p className="text-[10px] text-muted-foreground mt-0.5">PDF, JPG, PNG accepted</p>
-                                <input ref={fileInputRef} type="file" multiple accept=".pdf,.jpg,.jpeg,.png" className="hidden" onChange={(e) => { const files = Array.from(e.target.files || []).filter(f => /\.(pdf|jpg|jpeg|png)$/i.test(f.name)); if (files.length > 0) { setUploadedFiles(prev => [...prev, ...files.map(f => ({ file: f, category: "dec_pages" }))]); updateCommercial("has_uploaded_dec_pages", true); } e.target.value = ""; }} />
+                                <Upload className={`h-8 w-8 mx-auto mb-2 text-muted-foreground transition-transform ${dragActive ? "animate-bounce" : ""}`} />
+                                <p className="text-sm font-medium">Click or drag & drop policy docs</p>
+                                <p className="text-xs text-muted-foreground mt-1">PDF, JPG, PNG accepted</p>
+                                <input ref={fileInputRef} type="file" multiple accept=".pdf,.jpg,.jpeg,.png" className="hidden" onChange={(e) => { 
+                                  const files = Array.from(e.target.files || []).filter(f => /\.(pdf|jpg|jpeg|png)$/i.test(f.name)); 
+                                  if (files.length > 0) { 
+                                    setUploadedFiles(prev => [...prev, ...files.map(f => ({ file: f, category: "dec_pages" }))]); 
+                                    updateCommercial("has_uploaded_dec_pages", true);
+                                    setShowLossRunModal(true);
+                                  } 
+                                  e.target.value = ""; 
+                                }} />
                               </div>
+                              
+                              {/* Extraction status */}
                               {uploadedFiles.filter(f => f.category === "dec_pages").length > 0 && (
-                                <div className="space-y-1.5 mt-2">
-                                  <p className="text-xs font-medium flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-primary" /> {uploadedFiles.filter(f => f.category === "dec_pages").length} file(s) uploaded</p>
+                                <div className="space-y-2 p-3 rounded-lg border bg-primary/5 border-primary/20">
+                                  <p className="text-sm font-medium flex items-center gap-2">
+                                    <Check className="h-4 w-4 text-primary" /> {uploadedFiles.filter(f => f.category === "dec_pages").length} file(s) uploaded
+                                  </p>
                                   {uploadedFiles.filter(f => f.category === "dec_pages").map((uf, idx) => (
-                                    <div key={idx} className="flex items-center gap-2 p-2 rounded-md border bg-muted/20">
-                                      <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                                      <span className="text-xs truncate flex-1 min-w-0">{uf.file.name}</span>
+                                    <div key={idx} className="flex items-center gap-2 text-xs text-muted-foreground">
+                                      <FileText className="h-3.5 w-3.5 shrink-0" />
+                                      <span className="truncate">{uf.file.name}</span>
                                     </div>
                                   ))}
+                                  <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1.5">
+                                    <Loader2 className="h-3 w-3 animate-spin" /> Reading your declarations pages...
+                                  </p>
+                                  {lossRunRequested && (
+                                    <p className="text-xs text-primary mt-1 flex items-center gap-1.5">
+                                      <Check className="h-3 w-3" /> We're requesting your loss runs in the background. Keep going—we'll plug them in when they land.
+                                    </p>
+                                  )}
                                 </div>
                               )}
+                            </div>
+
+                            {/* Divider */}
+                            <div className="flex items-center gap-3">
+                              <div className="flex-1 h-px bg-border" />
+                              <span className="text-xs text-muted-foreground font-medium">OR</span>
+                              <div className="flex-1 h-px bg-border" />
+                            </div>
+
+                            {/* Section B - Manual Entry */}
+                            <div className="space-y-3">
+                              <h3 className="text-sm font-semibold">Enter your policy details manually</h3>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pl-3 border-l-2 border-primary/20">
+                                <div><Label className="text-xs">Carrier Name</Label><Input value={commercialForm.current_carrier_name} onChange={e => updateCommercial("current_carrier_name", e.target.value)} /></div>
+                                <div><Label className="text-xs">Policy Number</Label><Input value={commercialForm.policy_number} onChange={e => updateCommercial("policy_number", e.target.value)} /></div>
+                                <div><Label className="text-xs">Effective Date</Label><Input type="date" value={commercialForm.policy_effective_date} onChange={e => updateCommercial("policy_effective_date", e.target.value)} /></div>
+                                <div><Label className="text-xs">Expiration Date</Label><Input type="date" value={commercialForm.policy_expiration_date} onChange={e => updateCommercial("policy_expiration_date", e.target.value)} /></div>
+                                <div className="sm:col-span-2">
+                                  <Label className="text-xs">Current Policies</Label>
+                                  <div className="flex flex-wrap gap-2 mt-1">
+                                    {COMMERCIAL_LINES.map(line => {
+                                      const sel = commercialForm.lines_in_force.includes(line);
+                                      return (
+                                        <button key={line} onClick={() => updateCommercial("lines_in_force", sel ? commercialForm.lines_in_force.filter(l => l !== line) : [...commercialForm.lines_in_force, line])}
+                                          className={`px-3 py-1.5 rounded-md border text-xs font-medium transition-colors ${sel ? "bg-primary text-primary-foreground border-primary" : "border-border hover:border-primary/50"}`}>
+                                          {line}
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              </div>
                             </div>
                           </div>
                         )}
@@ -2581,157 +2584,48 @@ export default function IntakeForm() {
                     </Card>
                   )}
 
-
-
-
-                  {commercialStep === "loss_run_auth" && (
-                    <div className="space-y-4">
-                      <Card>
-                        <CardHeader>
-                          <CardTitle className="text-base flex items-center gap-2"><Shield className="h-4 w-4" /> Loss Run Authorization</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-5">
-                          <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-2">
-                            <p className="text-sm leading-relaxed">
-                              Please provide the information below so we can request loss runs from your insurance carriers on your behalf.
-                            </p>
-                            <p className="text-sm leading-relaxed text-muted-foreground">
-                              Loss runs are the official claims history associated with your insurance policies. Insurance carriers review this history when evaluating and quoting coverage.
-                            </p>
-                            <p className="text-sm leading-relaxed text-muted-foreground">
-                              AURA will use this information to request your loss runs directly from your carriers.
-                            </p>
-                          </div>
-
-                          {/* Authorized Signer */}
-                          <div className="space-y-3">
-                            <div>
-                              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Authorized Signer</p>
-                              <p className="text-[11px] text-muted-foreground mt-0.5">The person completing this section must be authorized to request information related to the company's insurance policies.</p>
-                            </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                              <div><Label className="text-xs">First Name *</Label><Input value={commercialForm.loss_run_authorized_first_name} onChange={e => updateCommercial("loss_run_authorized_first_name", e.target.value)} /></div>
-                              <div><Label className="text-xs">Last Name *</Label><Input value={commercialForm.loss_run_authorized_last_name} onChange={e => updateCommercial("loss_run_authorized_last_name", e.target.value)} /></div>
-                              <div><Label className="text-xs">Email *</Label><Input type="email" value={commercialForm.loss_run_authorized_email} onChange={e => updateCommercial("loss_run_authorized_email", e.target.value)} /></div>
-                              <div><Label className="text-xs">Title</Label><Input value={commercialForm.loss_run_authorized_title} onChange={e => updateCommercial("loss_run_authorized_title", e.target.value)} placeholder="Owner, President, CFO" /></div>
-                            </div>
-                          </div>
-
-                          {/* Policy Information */}
-                          <div className="space-y-3">
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Policy Information</p>
-                                <p className="text-[11px] text-muted-foreground mt-0.5">Please provide the policies associated with your business so we can request the appropriate loss run reports from your carriers.</p>
-                              </div>
-                              <Button variant="outline" size="sm" className="h-7 text-xs gap-1 shrink-0" onClick={() => updateCommercial("loss_run_policies", [...commercialForm.loss_run_policies, emptyLossRunPolicy()])}>
-                                <Plus className="h-3 w-3" /> Add Policy
-                              </Button>
-                            </div>
-                            {commercialForm.loss_run_policies.map((pol, idx) => (
-                              <div key={idx} className="space-y-3 p-3 rounded-lg border bg-muted/10">
-                                <div className="flex items-center justify-between">
-                                  <span className="text-xs font-medium">Policy {idx + 1}</span>
-                                  {commercialForm.loss_run_policies.length > 1 && (
-                                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => updateCommercial("loss_run_policies", commercialForm.loss_run_policies.filter((_, i) => i !== idx))}>
-                                      <Trash2 className="h-3 w-3" />
-                                    </Button>
-                                  )}
-                                </div>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                  <div><Label className="text-xs">Carrier *</Label><Input value={pol.carrier} onChange={e => updateLossRunPolicy(idx, "carrier", e.target.value)} /></div>
-                                  <div><Label className="text-xs">Coverage Type</Label><Input value={pol.coverage} onChange={e => updateLossRunPolicy(idx, "coverage", e.target.value)} placeholder="General Liability, Workers Compensation, Commercial Auto" /></div>
-                                  <div><Label className="text-xs">Policy Number *</Label><Input value={pol.policy_number} onChange={e => updateLossRunPolicy(idx, "policy_number", e.target.value)} /></div>
-                                  <div><Label className="text-xs">Effective Date</Label><Input type="date" value={pol.effective_date} onChange={e => updateLossRunPolicy(idx, "effective_date", e.target.value)} /></div>
-                                  <div><Label className="text-xs">Expiration Date</Label><Input type="date" value={pol.expiration_date} onChange={e => updateLossRunPolicy(idx, "expiration_date", e.target.value)} /></div>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-
-                          {/* Authorization Consent */}
-                          <div className="space-y-3">
-                            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Authorization Consent</p>
-                            <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-2">
-                              <p className="text-sm leading-relaxed">
-                                By providing your consent below, you authorize <strong>AURA Risk Group</strong> to request loss run reports from your current and prior insurance carriers on your behalf.
-                              </p>
-                              <p className="text-sm leading-relaxed text-muted-foreground">
-                                This authorization does not modify, cancel, or change any of your existing insurance policies.
-                              </p>
-                            </div>
-                            <label className="flex items-start gap-3 p-4 rounded-lg border border-border bg-card cursor-pointer hover:bg-muted/30 transition-colors">
-                              <Checkbox
-                                checked={commercialForm.loss_run_consent}
-                                onCheckedChange={v => updateCommercial("loss_run_consent", !!v)}
-                                className="mt-0.5"
-                              />
-                              <div className="space-y-1">
-                                <span className="text-sm font-medium">I authorize AURA Risk Group to request loss run reports from my current and prior insurance carriers for {commercialForm.business_name || "(business name)"}.</span>
-                              </div>
-                            </label>
-                          </div>
-
-                          <p className="text-[10px] text-muted-foreground text-center italic">After submitting this form, a formal loss run authorization letter will be generated and sent to you for electronic signature.</p>
-                        </CardContent>
-                      </Card>
-                    </div>
-                  )}
-
                   {commercialStep === "bor_auth" && (
                     <div className="space-y-6">
+                      {/* Explainer Card */}
                       <Card>
                         <CardHeader>
-                          <CardTitle className="text-base">Broker Authorization</CardTitle>
+                          <CardTitle className="text-base">Broker of Record (optional)</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-5">
-                          {/* Question */}
-                          <div>
-                            <Label className="text-xs font-medium">Are you currently working with another insurance broker or agent for this policy?</Label>
-                            <Select value={commercialForm.has_other_broker} onValueChange={v => updateCommercial("has_other_broker", v)}>
-                              <SelectTrigger className="h-10 text-sm mt-1"><SelectValue placeholder="Select" /></SelectTrigger>
-                              <SelectContent><SelectItem value="yes">Yes</SelectItem><SelectItem value="no">No</SelectItem></SelectContent>
-                            </Select>
+                          <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-3">
+                            <p className="text-sm leading-relaxed">
+                              A Broker of Record letter does not cancel your policy or change your coverage on its own. It just authorizes <strong>AURA Risk Group</strong> to represent you with the carrier and run the negotiation on your behalf.
+                            </p>
                           </div>
 
-                          {commercialForm.has_other_broker === "yes" && (
-                            <div className="space-y-5">
-                              {/* Explanation */}
-                              <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-3">
-                                <p className="text-sm leading-relaxed">
-                                  If you are currently working with another broker, AURA can generate a Broker of Record letter for your review and signature.
-                                </p>
-                                <p className="text-sm leading-relaxed text-muted-foreground">
-                                  A Broker of Record letter authorizes AURA Risk Group to represent you with the insurance carrier. This allows us to access policy information, request loss runs, and communicate directly with the carrier on your behalf.
-                                </p>
-                                <p className="text-sm leading-relaxed text-muted-foreground">
-                                  This is an important step in the insurance negotiation process. Insurance carriers want to know which broker represents the account before they invest time negotiating pricing and terms. When a single broker represents the account, carriers know they have a legitimate opportunity to win the business and are far more willing to compete aggressively.
-                                </p>
-                                <p className="text-sm leading-relaxed text-muted-foreground">
-                                  By authorizing AURA to represent the account, we are able to properly review how your program is structured, access your claims history, and leverage our relationships in the marketplace to negotiate terms and position your risk with the right carriers.
-                                </p>
-                              </div>
+                          {/* How this helps you */}
+                          <div className="space-y-2">
+                            <p className="text-sm font-semibold">How this helps you</p>
+                            <p className="text-sm text-muted-foreground">
+                              Carriers ask one question first: "Who controls this account?" When you sign a BOR, the answer is clear. We do. That's what gets your file to the top of the stack and makes them bring real numbers instead of placeholders.
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              You get one coordinated strategy instead of three brokers taking random shots in the dark.
+                            </p>
+                          </div>
 
-                              {/* Important Clarification */}
-                              <div className="rounded-lg border border-amber-200 bg-amber-50/50 dark:border-amber-900/50 dark:bg-amber-950/20 p-4 space-y-2">
-                                <p className="text-sm font-semibold flex items-center gap-2"><AlertCircleIcon className="h-4 w-4 text-amber-600" /> Important Clarification</p>
-                                <p className="text-sm text-muted-foreground">A Broker of Record letter <strong>does not cancel</strong> your current policy and <strong>does not change your coverage</strong> on its own.</p>
-                                <p className="text-sm text-muted-foreground">It simply allows AURA Risk Group to represent your account with the insurance carrier.</p>
-                              </div>
+                          {/* What happens if you sign */}
+                          <div className="space-y-2">
+                            <p className="text-sm font-semibold">What happens if you sign</p>
+                            <ul className="space-y-1.5 text-sm text-muted-foreground">
+                              <li className="flex items-start gap-2"><Check className="h-4 w-4 text-primary shrink-0 mt-0.5" /> We generate the BOR letter and send it to you to sign electronically.</li>
+                              <li className="flex items-start gap-2"><Check className="h-4 w-4 text-primary shrink-0 mt-0.5" /> Once you sign, it lands in your advisor's inbox so we can send it straight to the carrier.</li>
+                              <li className="flex items-start gap-2"><Check className="h-4 w-4 text-primary shrink-0 mt-0.5" /> Your current broker will be notified. Most carriers allow a short window to change your mind. That's normal—it's just them confirming this is what you want.</li>
+                              <li className="flex items-start gap-2"><Check className="h-4 w-4 text-primary shrink-0 mt-0.5" /> Once the carrier confirms, AURA is on record as your broker. Your coverage stays in place. We just take over the heavy lifting with the carrier.</li>
+                            </ul>
+                          </div>
 
-                              {/* What Happens Next */}
-                              <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-3">
-                                <p className="text-sm font-semibold">What Happens Next</p>
-                                <p className="text-sm text-muted-foreground">Once submitted, AURA will generate the Broker of Record letter and send it to you for electronic signature.</p>
-                                <p className="text-sm text-muted-foreground">After the letter is delivered to the insurance carrier, your current broker will be notified that a Broker of Record request has been submitted.</p>
-                                <p className="text-sm text-muted-foreground">Most carriers allow a short countermand or rescission period. During this time, your current broker may contact you to confirm whether you intend to move representation. This is a normal part of the process and simply ensures the request was made intentionally.</p>
-                                <p className="text-sm text-muted-foreground">Once the carrier confirms the authorization, AURA Risk Group will be recognized as the broker of record and can begin working directly with the carrier on your behalf.</p>
-                                <p className="text-sm text-muted-foreground">Your advisor will keep you informed as the carrier processes the request.</p>
-                              </div>
-
+                          {/* BOR Accepted State */}
+                          {borAccepted === true && (
+                            <div className="space-y-4">
                               {/* Select Lines for BOR */}
                               <div>
-                                <Label className="text-xs font-medium">Select Lines for BOR</Label>
+                                <Label className="text-xs font-medium">Select lines for your BOR</Label>
                                 <div className="flex flex-wrap gap-2 mt-2">
                                   {(commercialForm.lines_in_force.length > 0 ? commercialForm.lines_in_force : COMMERCIAL_LINES.map(String)).map(line => {
                                     const sel = commercialForm.bor_lines.includes(line);
@@ -2745,53 +2639,118 @@ export default function IntakeForm() {
                                 </div>
                               </div>
 
-                              {/* Authorization Checkbox */}
-                              <label className="flex items-start gap-3 text-sm cursor-pointer p-3 rounded-lg border border-border bg-muted/20">
-                                <Checkbox checked={commercialForm.bor_authorized} onCheckedChange={v => updateCommercial("bor_authorized", !!v)} className="mt-0.5" />
-                                <span>I authorize AURA Risk Group to act as Broker of Record for the selected lines of coverage. <span className="text-destructive">*</span></span>
-                              </label>
+                              {/* BOR Preview */}
+                              <div className="rounded-lg border bg-card p-4 space-y-3">
+                                <p className="text-sm font-medium">Here's the letter we'll send to your carrier.</p>
+                                <div className="text-xs text-muted-foreground space-y-1 pl-3 border-l-2 border-primary/20">
+                                  <p><strong>Insured:</strong> {commercialForm.business_name || "(your business name)"}</p>
+                                  <p><strong>Carrier:</strong> {commercialForm.current_carrier_name || "(carrier)"}</p>
+                                  <p><strong>Policy:</strong> {commercialForm.policy_number || "(policy number)"}</p>
+                                  <p><strong>Lines:</strong> {commercialForm.bor_lines.join(", ") || "(select above)"}</p>
+                                </div>
+                                <Button className="w-full" disabled={commercialForm.bor_lines.length === 0} onClick={() => updateCommercial("bor_authorized", true)}>
+                                  Review and sign electronically
+                                </Button>
+                                <p className="text-[10px] text-muted-foreground text-center">
+                                  Once you sign, your advisor gets this in their inbox and sends it to the carrier. Your coverage stays the same. We just become your point of contact.
+                                </p>
+                              </div>
                             </div>
                           )}
 
-                          {commercialForm.has_other_broker === "no" && (
-                            <p className="text-sm text-muted-foreground pl-3 border-l-2 border-muted">
-                              Great — no Broker of Record letter is needed. We'll proceed with reviewing your coverage directly.
-                            </p>
+                          {/* BOR Skipped Message */}
+                          {borAccepted === false && (
+                            <div className="rounded-lg border border-border bg-muted/30 p-4">
+                              <p className="text-sm">No problem. You can finish your intake and decide on the BOR later.</p>
+                            </div>
+                          )}
+
+                          {/* CTA Buttons - only show if not yet decided */}
+                          {borAccepted === null && (
+                            <div className="space-y-3">
+                              <Button className="w-full h-11" onClick={() => setBorAccepted(true)}>
+                                Yes – make AURA my Broker of Record
+                              </Button>
+                              <Button variant="outline" className="w-full h-11" onClick={() => setBorAccepted(false)}>
+                                Not right now – continue without BOR
+                              </Button>
+                            </div>
                           )}
                         </CardContent>
                       </Card>
-
-                      {/* Footer */}
-                      <p className="text-[10px] text-muted-foreground text-center">Your information is transmitted securely.</p>
-                      <p className="text-[10px] text-center font-medium tracking-wide text-muted-foreground">Insurance runs on <span className="text-primary font-bold">AURA</span></p>
                     </div>
                   )}
 
-                  {commercialStep === "coverage_select_comm" && (
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="text-base">What coverage lines do you need?</CardTitle>
-                        <p className="text-sm text-muted-foreground">Select all that apply. This helps us ask the right underwriting questions and prepare the correct ACORD forms.</p>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="grid grid-cols-2 gap-3">
-                          {["General Liability", "Workers Compensation", "Commercial Auto", "Commercial Property", "Umbrella / Excess", "Professional Liability", "Cyber Liability", "Other"].map(line => {
-                            const sel = commercialForm.selected_coverage_lines.includes(line);
-                            return (
-                              <button key={line} onClick={() => {
-                                const newLines = sel
-                                  ? commercialForm.selected_coverage_lines.filter(l => l !== line)
-                                  : [...commercialForm.selected_coverage_lines, line];
-                                updateCommercial("selected_coverage_lines", newLines);
-                              }}
-                              className={`p-3 rounded-xl border-2 text-left text-sm font-medium transition-all ${sel ? "bg-primary/10 border-primary" : "border-border hover:border-primary/40"}`}>
-                                {line}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </CardContent>
-                    </Card>
+                  {commercialStep === "full_intake" && (
+                    <div className="space-y-6">
+                      {/* Business Info */}
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="text-base">Full Intake</CardTitle>
+                          <p className="text-sm text-muted-foreground">Let's walk through your operations, people, property, and risk.</p>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div><Label className="text-xs">Business Name *</Label><Input value={commercialForm.business_name} onChange={e => updateCommercial("business_name", e.target.value)} /></div>
+                            <div><Label className="text-xs">DBA (if applicable)</Label><Input value={commercialForm.dba} onChange={e => updateCommercial("dba", e.target.value)} /></div>
+                            <div><Label className="text-xs">Primary Contact Name *</Label><Input value={commercialForm.customer_name} onChange={e => updateCommercial("customer_name", e.target.value)} /></div>
+                            <div><Label className="text-xs">Email *</Label><Input type="email" value={commercialForm.customer_email} onChange={e => updateCommercial("customer_email", e.target.value)} /></div>
+                            <div><Label className="text-xs">Phone *</Label><Input value={commercialForm.customer_phone} onChange={e => updateCommercial("customer_phone", e.target.value)} /></div>
+                            <div><Label className="text-xs">FEIN / EIN</Label><Input value={commercialForm.ein} onChange={e => updateCommercial("ein", e.target.value)} /></div>
+                            <div>
+                              <Label className="text-xs">Business Entity Type</Label>
+                              <Select value={commercialForm.business_type || ""} onValueChange={v => updateCommercial("business_type", v)}>
+                                <SelectTrigger className="h-10 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="sole_proprietor">Sole Proprietor</SelectItem><SelectItem value="partnership">Partnership</SelectItem>
+                                  <SelectItem value="corporation">Corporation</SelectItem><SelectItem value="llc">LLC</SelectItem>
+                                  <SelectItem value="nonprofit">Non-Profit</SelectItem><SelectItem value="other">Other</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div><Label className="text-xs">Street Address</Label><Input value={commercialForm.street_address} onChange={e => updateCommercial("street_address", e.target.value)} /></div>
+                            <div><Label className="text-xs">City</Label><Input value={commercialForm.city} onChange={e => updateCommercial("city", e.target.value)} /></div>
+                            <div>
+                              <Label className="text-xs">State</Label>
+                              <Select value={commercialForm.state} onValueChange={v => updateCommercial("state", v)}>
+                                <SelectTrigger className="h-10 text-sm"><SelectValue placeholder="State" /></SelectTrigger>
+                                <SelectContent>{US_STATES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+                              </Select>
+                            </div>
+                            <div><Label className="text-xs">ZIP</Label><Input value={commercialForm.zip} onChange={e => updateCommercial("zip", e.target.value)} /></div>
+                            <div><Label className="text-xs">Number of Employees</Label><Input value={commercialForm.employee_count} onChange={e => updateCommercial("employee_count", e.target.value)} /></div>
+                            <div><Label className="text-xs">Annual Revenue</Label><Input value={commercialForm.annual_revenue} onChange={e => updateCommercial("annual_revenue", e.target.value)} /></div>
+                            <div><Label className="text-xs">Years in Business</Label><Input value={commercialForm.years_in_business} onChange={e => updateCommercial("years_in_business", e.target.value)} /></div>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      {/* Coverage Selection */}
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="text-base">What coverage lines do you need?</CardTitle>
+                          <p className="text-sm text-muted-foreground">Select all that apply. This helps us ask the right underwriting questions.</p>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="grid grid-cols-2 gap-3">
+                            {["General Liability", "Workers Compensation", "Commercial Auto", "Commercial Property", "Umbrella / Excess", "Professional Liability", "Cyber Liability", "Other"].map(line => {
+                              const sel = commercialForm.selected_coverage_lines.includes(line);
+                              return (
+                                <button key={line} onClick={() => {
+                                  const newLines = sel
+                                    ? commercialForm.selected_coverage_lines.filter(l => l !== line)
+                                    : [...commercialForm.selected_coverage_lines, line];
+                                  updateCommercial("selected_coverage_lines", newLines);
+                                }}
+                                className={`p-3 rounded-xl border-2 text-left text-sm font-medium transition-all ${sel ? "bg-primary/10 border-primary" : "border-border hover:border-primary/40"}`}>
+                                  {line}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
                   )}
 
                   {commercialStep === "coverage_questions" && (() => {
@@ -2874,6 +2833,38 @@ export default function IntakeForm() {
 
                   {commercialStep === "commercial_docs" && (
                     <div className="space-y-6">
+                      {/* Tighten Your File — only show if no docs uploaded earlier */}
+                      {!commercialForm.has_uploaded_dec_pages && !lossRunRequested && (
+                        <Card>
+                          <CardHeader>
+                            <CardTitle className="text-base">Tighten Your File</CardTitle>
+                          </CardHeader>
+                          <CardContent className="space-y-4">
+                            <p className="text-sm text-muted-foreground">
+                              Want us to request your loss runs and review any docs you have? It helps underwriters give you better pricing and coverage.
+                            </p>
+                            <div className="space-y-2">
+                              <Button className="w-full h-10 text-sm" onClick={() => {
+                                fileInputRef.current?.click();
+                                setLossRunRequested(true);
+                                toast.success("We're requesting your loss runs in the background.");
+                              }}>
+                                Upload docs and request loss runs
+                              </Button>
+                              <Button variant="outline" className="w-full h-10 text-sm" onClick={() => {
+                                setLossRunRequested(true);
+                                toast.success("We're requesting your loss runs in the background. Keep going!");
+                              }}>
+                                Request loss runs only
+                              </Button>
+                              <Button variant="ghost" className="w-full h-10 text-sm text-muted-foreground" onClick={() => { /* skip */ }}>
+                                Skip for now
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )}
+
                       <Card>
                         <CardHeader><CardTitle className="text-base flex items-center gap-2"><Upload className="h-4 w-4" /> Additional Documents</CardTitle></CardHeader>
                         <CardContent className="space-y-4">
@@ -3027,6 +3018,67 @@ export default function IntakeForm() {
           <p className="text-[10px] text-muted-foreground/50 tracking-widest uppercase">Insurance runs on <span className="font-semibold">AURA</span></p>
         </div>
       </div>
+
+      {/* ─── Loss Run Authorization Modal ─── */}
+      {showLossRunModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
+          <Card className="max-w-lg w-full shadow-xl">
+            <CardHeader>
+              <CardTitle className="text-base">Let us grab your loss runs for you</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Carriers price you off your past claims. That's what loss runs are. Instead of you emailing and calling around, we can pull them for you through our partner, Loss Run Pro.
+              </p>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li className="flex items-start gap-2"><Check className="h-4 w-4 text-primary shrink-0 mt-0.5" /> We send the requests straight to your current and past carriers.</li>
+                <li className="flex items-start gap-2"><Check className="h-4 w-4 text-primary shrink-0 mt-0.5" /> You don't have to lift a finger after this.</li>
+                <li className="flex items-start gap-2"><Check className="h-4 w-4 text-primary shrink-0 mt-0.5" /> We use the reports to sharpen pricing and coverage. That's it.</li>
+              </ul>
+              <label className="flex items-start gap-3 text-sm cursor-pointer p-3 rounded-lg border border-border bg-muted/20">
+                <Checkbox checked={commercialForm.loss_run_consent} onCheckedChange={v => updateCommercial("loss_run_consent", !!v)} className="mt-0.5" />
+                <span>I'm good with AURA requesting my loss runs from my current and past carriers.</span>
+              </label>
+              <div className="flex gap-3">
+                <Button className="flex-1 h-11" disabled={!commercialForm.loss_run_consent} onClick={() => {
+                  setLossRunRequested(true);
+                  setShowLossRunModal(false);
+                  toast.success("We're requesting your loss runs in the background. Keep going—we'll plug them in when they land.");
+                }}>
+                  Yep, do it
+                </Button>
+                <Button variant="outline" className="flex-1 h-11" onClick={() => setShowLossRunModal(false)}>
+                  Not right now
+                </Button>
+              </div>
+              <button className="text-xs text-primary hover:underline w-full text-center" onClick={() => { setShowLossRunModal(false); setShowDataUsageOverlay(true); }}>
+                How we use your data
+              </button>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* ─── How We Use Your Data Overlay ─── */}
+      {showDataUsageOverlay && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
+          <Card className="max-w-md w-full shadow-xl">
+            <CardHeader>
+              <CardTitle className="text-base">How we use your data</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li className="flex items-start gap-2"><Check className="h-4 w-4 text-primary shrink-0 mt-0.5" /> We only pull what you say we can.</li>
+                <li className="flex items-start gap-2"><Check className="h-4 w-4 text-primary shrink-0 mt-0.5" /> We use it to fill in forms, understand your risk, and go to market for you.</li>
+                <li className="flex items-start gap-2"><Check className="h-4 w-4 text-primary shrink-0 mt-0.5" /> A human on our team can walk you through anything, line by line.</li>
+              </ul>
+              <Button className="w-full h-11" onClick={() => { setShowDataUsageOverlay(false); setShowLossRunModal(true); }}>
+                Got it
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }
