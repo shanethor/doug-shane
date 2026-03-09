@@ -184,6 +184,10 @@ export default function ProducerHub() {
               <BarChart3 className="h-3.5 w-3.5 hidden sm:block" />
               Production
             </TabsTrigger>
+            <TabsTrigger value="lead-engine" className="gap-1.5 text-xs px-2.5 sm:px-3">
+              <Radar className="h-3.5 w-3.5 hidden sm:block" />
+              Lead Engine
+            </TabsTrigger>
             {TOOL_TABS.map((tool) => (
               <TabsTrigger key={tool.id} value={tool.id} className="gap-1.5 text-xs px-2.5 sm:px-3">
                 <tool.icon className="h-3.5 w-3.5 hidden sm:block" />
