@@ -801,7 +801,91 @@ export default function IntakeForm() {
     }
   };
 
-  /* ─── Submit ─── */
+  /* ─── Resume Extraction (Owner Experience step) ─── */
+  const handleResumeExtraction = async (files: File[]) => {
+    if (files.length === 0) return;
+    setResumeExtracting(true);
+    try {
+      const filesPayload: { base64: string; mimeType: string }[] = [];
+      for (const file of files) {
+        const buffer = await file.arrayBuffer();
+        const bytes = new Uint8Array(buffer);
+        let binary = "";
+        for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+        const b64 = btoa(binary);
+        const mimeType = file.type || (file.name.toLowerCase().endsWith(".pdf") ? "application/pdf" : "text/plain");
+        filesPayload.push({ base64: b64, mimeType });
+      }
+
+      const result = await ingestDocument({
+        docType: "resume",
+        pdfFiles: filesPayload.map(f => ({ base64: f.base64, mimeType: f.mimeType })),
+      });
+
+      if (!result.data || Object.keys(result.data).length === 0) {
+        toast.error("Could not extract resume content. You can still write your experience summary manually.");
+        setResumeExtracting(false);
+        return;
+      }
+
+      const d = result.data;
+
+      // Build experience summary from extracted resume data
+      const summaryParts: string[] = [];
+      if (d.name || d.full_name) summaryParts.push(`Name: ${d.name || d.full_name}`);
+      if (d.title || d.job_title || d.current_role) summaryParts.push(`Title: ${d.title || d.job_title || d.current_role}`);
+      if (d.years_experience || d.experience_years) summaryParts.push(`Years of Experience: ${d.years_experience || d.experience_years}`);
+      if (d.summary || d.professional_summary || d.experience_summary) {
+        summaryParts.push(d.summary || d.professional_summary || d.experience_summary);
+      }
+      if (d.certifications) {
+        const certs = Array.isArray(d.certifications) ? d.certifications.join(", ") : d.certifications;
+        summaryParts.push(`Certifications: ${certs}`);
+      }
+      if (d.education) {
+        const edu = Array.isArray(d.education) ? d.education.join(", ") : d.education;
+        summaryParts.push(`Education: ${edu}`);
+      }
+      if (d.skills) {
+        const skills = Array.isArray(d.skills) ? d.skills.join(", ") : d.skills;
+        summaryParts.push(`Key Skills: ${skills}`);
+      }
+      if (d.work_history || d.experience) {
+        const history = Array.isArray(d.work_history || d.experience)
+          ? (d.work_history || d.experience).map((h: any) => typeof h === "string" ? h : `${h.title || ""} at ${h.company || ""} (${h.dates || ""})`).join("; ")
+          : (d.work_history || d.experience);
+        summaryParts.push(`Work History: ${history}`);
+      }
+      // If AI returned a raw text or narrative, use that directly
+      if (summaryParts.length === 0 && d.raw_text) {
+        summaryParts.push(d.raw_text);
+      }
+
+      const extractedSummary = summaryParts.join("\n\n");
+
+      if (extractedSummary.trim()) {
+        updateCommercial("owner_resume_text", extractedSummary);
+        toast.success("Resume extracted! Review and edit the experience summary below.");
+      } else {
+        toast.info("Resume uploaded but we couldn't extract structured content. Please write your experience summary manually.");
+      }
+
+      // Also pre-fill contact name if found
+      if (d.name || d.full_name) {
+        const contactName = d.name || d.full_name;
+        if (!commercialForm.customer_name) {
+          updateCommercial("customer_name", contactName);
+        }
+      }
+    } catch (err: any) {
+      console.error("Resume extraction error:", err);
+      toast.error("Resume extraction failed. You can still write your experience summary manually.");
+    } finally {
+      setResumeExtracting(false);
+    }
+  };
+
+
   const handleSubmit = async () => {
     if (!record || !intakeType) return;
 
