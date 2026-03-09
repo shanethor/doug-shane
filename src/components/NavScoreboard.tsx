@@ -177,13 +177,13 @@ export function NavScoreboard() {
   if (loading) {
     return (
       <div className="w-full border-b border-border bg-card/90 backdrop-blur-sm animate-pulse">
-        <div className="flex items-center h-[72px] px-3 gap-4 max-w-6xl mx-auto">
-          <div className="h-7 w-7 rounded-full bg-muted/50" />
-          <div className="h-3 w-32 rounded bg-muted/50" />
-          <div className="h-3 w-24 rounded bg-muted/40" />
-          <div className="h-3 w-24 rounded bg-muted/40" />
+      <div className="flex items-center h-[47px] px-3 gap-4 max-w-6xl mx-auto">
+          <div className="h-6 w-6 rounded-full bg-muted/50" />
+          <div className="h-2.5 w-32 rounded bg-muted/50" />
+          <div className="h-2.5 w-24 rounded bg-muted/40" />
+          <div className="h-2.5 w-24 rounded bg-muted/40" />
           <div className="flex gap-1.5 ml-auto">
-            {[1,2,3,4,5].map(i => <div key={i} className="h-5 w-16 rounded bg-muted/30" />)}
+            {[1,2,3,4,5].map(i => <div key={i} className="h-4 w-14 rounded bg-muted/30" />)}
           </div>
         </div>
       </div>
@@ -232,7 +232,7 @@ export function NavScoreboard() {
   return (
     <>
       <div className="w-full border-b border-border bg-card/95 backdrop-blur-sm">
-        <div className="flex items-center h-[72px] overflow-x-auto scrollbar-hide max-w-6xl mx-auto px-3 gap-0 text-[13px]">
+        <div className="flex items-center h-[47px] overflow-x-auto scrollbar-hide max-w-6xl mx-auto px-3 gap-0 text-[12px]">
 
           {/* Identity + Status */}
           <div className="flex items-center gap-2 shrink-0 pr-4 border-r border-border mr-4">
@@ -251,31 +251,27 @@ export function NavScoreboard() {
           </div>
 
           {/* MTD Numbers + % to goal */}
-          <div className="flex flex-col justify-center shrink-0 pr-4 border-r border-border mr-4 min-w-[160px]">
-            <div className="flex items-center gap-2 whitespace-nowrap leading-tight">
+          <div className="flex flex-col justify-center shrink-0 pr-4 border-r border-border mr-4 min-w-[140px]">
+            <div className="flex items-center gap-1.5 whitespace-nowrap leading-none text-[11px]">
               <span className="text-muted-foreground font-medium">MTD NB:</span>
               <span className="font-semibold tabular-nums text-foreground">{fmt(mtdStats.premium)}</span>
               <span className="text-muted-foreground">Rev:</span>
               <span className="font-semibold tabular-nums text-foreground">{fmt(mtdStats.revenue)}</span>
             </div>
-            <div className="flex items-center gap-2 mt-0.5">
-              <span className="text-[10px] text-muted-foreground tabular-nums">{Math.round(mtdPremPct)}% of monthly goal</span>
-              <MiniProgress pct={mtdPremPct} />
-            </div>
+            <MiniProgress pct={mtdPremPct} />
+            <span className="text-[9px] text-muted-foreground tabular-nums leading-none mt-0.5">{Math.round(mtdPremPct)}% of monthly goal</span>
           </div>
 
           {/* YTD Numbers + % to goal */}
-          <div className="flex flex-col justify-center shrink-0 pr-4 border-r border-border mr-4 min-w-[160px]">
-            <div className="flex items-center gap-2 whitespace-nowrap leading-tight">
+          <div className="flex flex-col justify-center shrink-0 pr-4 border-r border-border mr-4 min-w-[140px]">
+            <div className="flex items-center gap-1.5 whitespace-nowrap leading-none text-[11px]">
               <span className="text-muted-foreground font-medium">YTD NB:</span>
               <span className="font-semibold tabular-nums text-foreground">{fmt(soldStats.premium)}</span>
               <span className="text-muted-foreground">Rev:</span>
               <span className="font-semibold tabular-nums text-foreground">{fmt(soldStats.revenue)}</span>
             </div>
-            <div className="flex items-center gap-2 mt-0.5">
-              <span className="text-[10px] text-muted-foreground tabular-nums">{Math.round(ytdPremPct)}% of annual goal</span>
-              <MiniProgress pct={ytdPremPct} />
-            </div>
+            <MiniProgress pct={ytdPremPct} />
+            <span className="text-[9px] text-muted-foreground tabular-nums leading-none mt-0.5">{Math.round(ytdPremPct)}% of annual goal</span>
           </div>
 
           {/* Pipeline Tags */}
