@@ -3024,6 +3024,23 @@ export default function IntakeForm() {
                       </Button>
                     )}
                   </div>
+
+                  <AlertDialog open={showExtractionWarning} onOpenChange={setShowExtractionWarning}>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Extraction in Progress</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          We're still extracting data from your uploaded documents. If you continue now, the extracted information won't be pre-filled into your form. Are you sure you want to continue?
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Wait for Extraction</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => { setShowExtractionWarning(false); commGoNextForce(); }}>
+                          Continue Anyway
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </>
               );
             })()}
