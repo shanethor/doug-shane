@@ -232,7 +232,7 @@ export function NavScoreboard() {
   return (
     <>
       <div className="w-full border-b border-border bg-card/95 backdrop-blur-sm">
-        <div className="flex items-center h-[72px] overflow-x-auto scrollbar-hide max-w-6xl mx-auto px-3 gap-0 text-[13px]">
+        <div className="flex items-center h-[47px] overflow-x-auto scrollbar-hide max-w-6xl mx-auto px-3 gap-0 text-[12px]">
 
           {/* Identity + Status */}
           <div className="flex items-center gap-2 shrink-0 pr-4 border-r border-border mr-4">
