@@ -179,11 +179,10 @@ export default function Settings() {
       const { error } = await supabase
         .from("profiles")
         .update({
-          agency_name: nonEmpty.agency_name || null,
           phone: nonEmpty.agency_phone || null,
           full_name: nonEmpty.producer_name || user.user_metadata?.full_name || null,
           from_email: nonEmpty.from_email || null,
-          form_defaults: nonEmpty,
+          form_defaults: { ...nonEmpty, agency_name: agencyDisplayName || nonEmpty.agency_name || "" },
           ai_provider: aiProvider,
           openai_api_key_encrypted: openaiKey || null,
           timezone: timezone || null,
