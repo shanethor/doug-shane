@@ -119,6 +119,7 @@ const AI_TO_FORM_ALIASES: Record<string, string[]> = {
   business_phone: ["business_phone", "applicant_phone", "contact_phone_1"],
   email: ["contact_email_1", "applicant_email"],
   contact_name: ["contact_name", "contact_name_1"],
+  applicant_contact: ["contact_name", "contact_name_1"],
   website: ["website"],
 
   // ── Business identifiers ──
