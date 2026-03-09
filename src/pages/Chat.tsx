@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo, lazy, Suspense } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import { AppLayout } from "@/components/AppLayout";
@@ -28,6 +28,7 @@ import { ensurePipelineLead, findExistingLeads } from "@/lib/pipeline-sync";
 import { generateIntakeLink, generatePersonalIntakeLink } from "@/lib/intake-links";
 import { PersonalIntakeDialog } from "@/components/PersonalIntakeDialog";
 import { fuzzyMatch } from "@/lib/fuzzy-match";
+import Pipeline from "@/pages/Pipeline";
 
 type ButtonMarker = { label: string; action: string };
 type Msg = { role: "user" | "assistant"; content: string; fields?: FieldBubble[]; buttons?: ButtonMarker[] };
@@ -2563,6 +2564,11 @@ export default function Chat() {
                   )}
                 </div>
               )}
+
+              {/* Embedded Pipeline — synced with Command Center */}
+              <div className="w-full max-w-6xl mt-6">
+                <Pipeline embedded />
+              </div>
             </div>
           ) : (
             <div className="max-w-3xl mx-auto py-6 px-4 space-y-6">
