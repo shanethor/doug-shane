@@ -18,7 +18,6 @@ import { useNavConfig, ALL_NAV_TABS } from "@/hooks/useNavConfig";
 import { Checkbox } from "@/components/ui/checkbox";
 
 const AGENCY_FIELDS = [
-  { key: "agency_name", label: "Agency Name", placeholder: "ABC Insurance Agency" },
   { key: "agency_phone", label: "Agency Phone", placeholder: "(555) 123-4567" },
   { key: "agency_fax", label: "Agency Fax", placeholder: "(555) 123-4568" },
   { key: "agency_email", label: "Agency Email", placeholder: "info@agency.com" },
