@@ -2110,7 +2110,7 @@ export default function Chat() {
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    placeholder="Ask me anything about your clients..."
+                    placeholder="I'm AURA - tell me what goals I can help you achieve today!"
                     rows={3}
                     className="flex-1 resize-none bg-transparent border-0 outline-none text-sm placeholder:text-muted-foreground min-h-[72px] max-h-40 py-2"
                   />
