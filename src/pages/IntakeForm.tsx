@@ -3090,10 +3090,26 @@ export default function IntakeForm() {
                               };
                               inp.click();
                             }}
+                            onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); e.currentTarget.classList.add("border-primary", "bg-primary/5"); }}
+                            onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); e.currentTarget.classList.remove("border-primary", "bg-primary/5"); }}
+                            onDrop={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              e.currentTarget.classList.remove("border-primary", "bg-primary/5");
+                              const files = Array.from(e.dataTransfer.files).filter(f =>
+                                /\.(pdf|doc|docx|txt)$/i.test(f.name)
+                              );
+                              if (files.length > 0) {
+                                setUploadedFiles(prev => [...prev, ...files.map(f => ({ file: f, category: "resume" }))]);
+                                updateCommercial("owner_resume_files", [...commercialForm.owner_resume_files, ...files.map(f => f.name)]);
+                              } else {
+                                toast.error("Only PDF, DOC, DOCX, and TXT files are accepted");
+                              }
+                            }}
                             className="border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-colors border-border hover:border-primary/50"
                           >
                             <Upload className="h-6 w-6 mx-auto mb-1 text-muted-foreground" />
-                            <p className="text-sm font-medium">Click to upload resume</p>
+                            <p className="text-sm font-medium">Click or drag & drop to upload resume</p>
                             <p className="text-xs text-muted-foreground mt-0.5">PDF, DOC, TXT accepted</p>
                           </div>
                           {uploadedFiles.filter(f => f.category === "resume").length > 0 && (
