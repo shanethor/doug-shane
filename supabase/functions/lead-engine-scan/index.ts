@@ -5,11 +5,65 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-type ScanSource = "Reddit" | "Business Filings";
+type ScanSource = "Reddit" | "Business Filings" | "Permit Database" | "LinkedIn";
 
 interface ScanRequest {
   source: ScanSource;
   settings: Record<string, string>;
+}
+
+function buildSearchQueries(source: ScanSource, settings: Record<string, string>): string[] {
+  const year = new Date().getFullYear();
+  const queries: string[] = [];
+
+  switch (source) {
+    case "Reddit": {
+      const subreddits = (settings.subreddits || "r/smallbusiness, r/entrepreneur").split(",").map(s => s.trim());
+      const keywords = (settings.keywords || "need insurance, looking for coverage, new business insurance").split(",").map(k => k.trim());
+      for (const sub of subreddits.slice(0, 2)) {
+        for (const kw of keywords.slice(0, 2)) {
+          queries.push(`site:reddit.com ${sub} ${kw}`);
+        }
+      }
+      break;
+    }
+    case "Business Filings": {
+      const states = (settings.states || "CT, NY").split(",").map(s => s.trim());
+      const entityTypes = (settings.entity_types || "LLC").split(",").map(e => e.trim());
+      const permitTypes = (settings.permit_types || "").split(",").map(p => p.trim()).filter(Boolean);
+      for (const state of states.slice(0, 2)) {
+        queries.push(`new ${entityTypes[0] || "LLC"} business filing ${state} ${year}`);
+        if (permitTypes.length > 0) {
+          queries.push(`${permitTypes[0]} permit application ${state} ${year}`);
+        }
+      }
+      break;
+    }
+    case "Permit Database": {
+      const states = (settings.states || "CT, NY").split(",").map(s => s.trim());
+      const permitTypes = (settings.permit_types || "Construction, Liquor").split(",").map(p => p.trim());
+      for (const state of states.slice(0, 2)) {
+        for (const pt of permitTypes.slice(0, 2)) {
+          queries.push(`${pt} permit issued ${state} ${year}`);
+        }
+      }
+      break;
+    }
+    case "LinkedIn": {
+      const keywords = (settings.keywords || "new business, insurance quote, looking for coverage").split(",").map(k => k.trim());
+      const industries = (settings.industries || "Construction, Restaurants").split(",").map(i => i.trim());
+      const states = (settings.states || "").split(",").map(s => s.trim()).filter(Boolean);
+      for (const kw of keywords.slice(0, 2)) {
+        const stateStr = states.length > 0 ? ` ${states[0]}` : "";
+        queries.push(`site:linkedin.com/posts ${kw} ${industries[0] || ""}${stateStr}`);
+      }
+      for (const ind of industries.slice(0, 2)) {
+        queries.push(`site:linkedin.com "new business" OR "just launched" ${ind}`);
+      }
+      break;
+    }
+  }
+  return queries;
 }
 
 Deno.serve(async (req) => {
@@ -17,13 +71,25 @@ Deno.serve(async (req) => {
 
   try {
     const authHeader = req.headers.get("authorization");
-    if (!authHeader?.startsWith("Bearer ")) throw new Error("Missing authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Missing authorization header" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY");
-    if (!FIRECRAWL_API_KEY) throw new Error("FIRECRAWL_API_KEY not configured");
+    if (!FIRECRAWL_API_KEY) {
+      return new Response(JSON.stringify({ error: "FIRECRAWL_API_KEY not configured. Connect Firecrawl in Settings." }), {
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
+    if (!LOVABLE_API_KEY) {
+      return new Response(JSON.stringify({ error: "LOVABLE_API_KEY not configured" }), {
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     // Resolve caller
     const supabase = createClient(
@@ -32,38 +98,22 @@ Deno.serve(async (req) => {
       { global: { headers: { authorization: authHeader } } }
     );
     const { data: { user }, error: authErr } = await supabase.auth.getUser();
-    if (authErr || !user) throw new Error("Not authenticated");
+    if (authErr || !user) {
+      return new Response(JSON.stringify({ error: "Not authenticated. Please log in again." }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     const { source, settings }: ScanRequest = await req.json();
-    if (!source) throw new Error("source is required");
+    if (!source) {
+      return new Response(JSON.stringify({ error: "source is required" }), {
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     console.log(`[lead-engine-scan] Starting ${source} scan for user ${user.id}`);
 
-    // Build search queries based on source
-    let searchQueries: string[] = [];
-
-    if (source === "Reddit") {
-      const subreddits = (settings.subreddits || "r/smallbusiness, r/entrepreneur").split(",").map(s => s.trim());
-      const keywords = (settings.keywords || "need insurance, looking for coverage, new business insurance").split(",").map(k => k.trim());
-      
-      // Create targeted search queries
-      for (const sub of subreddits.slice(0, 2)) {
-        for (const kw of keywords.slice(0, 2)) {
-          searchQueries.push(`site:reddit.com ${sub} ${kw}`);
-        }
-      }
-    } else if (source === "Business Filings") {
-      const states = (settings.states || "CT, NY").split(",").map(s => s.trim());
-      const entityTypes = (settings.entity_types || "LLC").split(",").map(e => e.trim());
-      const permitTypes = (settings.permit_types || "").split(",").map(p => p.trim()).filter(Boolean);
-
-      for (const state of states.slice(0, 2)) {
-        searchQueries.push(`new ${entityTypes[0] || "LLC"} business filing ${state} ${new Date().getFullYear()}`);
-        if (permitTypes.length > 0) {
-          searchQueries.push(`${permitTypes[0]} permit application ${state} ${new Date().getFullYear()}`);
-        }
-      }
-    }
+    const searchQueries = buildSearchQueries(source, settings || {});
 
     if (searchQueries.length === 0) {
       return new Response(JSON.stringify({ success: true, leads_found: 0, message: "No search queries generated from settings" }), {
@@ -85,7 +135,7 @@ Deno.serve(async (req) => {
           body: JSON.stringify({
             query,
             limit: 5,
-            tbs: "qdr:w", // last week
+            tbs: source === "Business Filings" || source === "Permit Database" ? "qdr:m" : "qdr:w",
           }),
         });
         const data = await resp.json();
@@ -97,12 +147,12 @@ Deno.serve(async (req) => {
       }
     }
 
+    const adminClient = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+
     if (allResults.length === 0) {
-      // Update last_sync_at
-      const adminClient = createClient(
-        Deno.env.get("SUPABASE_URL")!,
-        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-      );
       await adminClient.from("lead_source_configs")
         .update({ last_sync_at: new Date().toISOString() })
         .eq("user_id", user.id)
@@ -113,10 +163,17 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Use AI to extract structured lead data from search results
-    const resultsText = allResults.slice(0, 10).map((r, i) => 
+    // Use AI to extract structured lead data
+    const resultsText = allResults.slice(0, 10).map((r, i) =>
       `Result ${i + 1}:\nTitle: ${r.title || ""}\nURL: ${r.url || ""}\nDescription: ${r.description || ""}`
     ).join("\n\n");
+
+    const sourceContext: Record<string, string> = {
+      Reddit: "social media posts from Reddit where people are looking for or discussing insurance needs",
+      "Business Filings": "new business entity filings (LLCs, Corps) that represent new businesses needing insurance",
+      "Permit Database": "newly issued permits (construction, liquor, etc.) indicating businesses that need coverage",
+      LinkedIn: "LinkedIn posts/profiles indicating new businesses or insurance needs",
+    };
 
     const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -125,11 +182,11 @@ Deno.serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: "google/gemini-2.5-flash",
         messages: [
           {
             role: "system",
-            content: `You are an insurance lead extraction assistant. Extract potential business leads from search results. For each lead, extract company name, contact name (if available), industry, state, estimated premium (guess based on business type, default 5000), and a signal description (why this is a lead). Only extract genuine business opportunities, not ads or irrelevant results. Return ONLY leads that represent a real business that might need insurance.`
+            content: `You are an insurance lead extraction assistant. Extract potential business leads from ${sourceContext[source] || "search results"}. For each lead, extract company name, contact name (if available), industry, state, estimated premium (guess based on business type, default 5000), and a signal description (why this is a lead). Only extract genuine business opportunities, not ads or irrelevant results.`
           },
           {
             role: "user",
@@ -179,11 +236,13 @@ Deno.serve(async (req) => {
         });
       }
       if (aiResp.status === 402) {
-        return new Response(JSON.stringify({ error: "AI credits exhausted. Please add credits in Settings → Workspace → Usage." }), {
+        return new Response(JSON.stringify({ error: "AI credits exhausted." }), {
           status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      throw new Error("AI extraction failed");
+      return new Response(JSON.stringify({ error: "AI extraction failed" }), {
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const aiData = await aiResp.json();
@@ -199,16 +258,30 @@ Deno.serve(async (req) => {
     }
 
     if (extractedLeads.length === 0) {
+      await adminClient.from("lead_source_configs")
+        .update({ last_sync_at: new Date().toISOString() })
+        .eq("user_id", user.id)
+        .eq("source", source);
+
       return new Response(JSON.stringify({ success: true, leads_found: 0, message: "AI found no viable leads in results" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Insert leads into engine_leads using service role
-    const adminClient = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
+    // Determine tier based on source
+    const tierMap: Record<string, number> = {
+      LinkedIn: 2,
+      Reddit: 2,
+      "Business Filings": 2,
+      "Permit Database": 3,
+    };
+
+    const activityTypeMap: Record<string, string> = {
+      LinkedIn: "linkedin",
+      Reddit: "reddit",
+      "Business Filings": "filing",
+      "Permit Database": "filing",
+    };
 
     const leadsToInsert = extractedLeads.slice(0, 10).map((l: any) => ({
       owner_user_id: user.id,
@@ -219,8 +292,8 @@ Deno.serve(async (req) => {
       est_premium: l.est_premium || 5000,
       signal: l.signal || `Found via ${source}`,
       source,
-      score: Math.floor(40 + Math.random() * 40), // 40-80 score range
-      tier: 2, // Default to Warm for auto-discovered
+      score: Math.floor(40 + Math.random() * 40),
+      tier: tierMap[source] || 2,
       status: "new",
     }));
 
@@ -230,13 +303,15 @@ Deno.serve(async (req) => {
       .select("id");
     if (insertErr) {
       console.error("[lead-engine-scan] Insert error:", insertErr);
-      throw insertErr;
+      return new Response(JSON.stringify({ error: "Failed to save leads" }), {
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     // Log activity
     await adminClient.from("engine_activity").insert({
       user_id: user.id,
-      activity_type: source === "Reddit" ? "reddit" : "filing",
+      activity_type: activityTypeMap[source] || "default",
       description: `${source} scan found ${inserted?.length || 0} new leads`,
       source,
       metadata: { query_count: searchQueries.length, results_count: allResults.length },
@@ -259,8 +334,8 @@ Deno.serve(async (req) => {
     });
   } catch (err: any) {
     console.error("[lead-engine-scan] Error:", err);
-    return new Response(JSON.stringify({ error: err.message }), {
-      status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+    return new Response(JSON.stringify({ error: err.message || "Internal error" }), {
+      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });

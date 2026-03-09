@@ -53,3 +53,9 @@ verify_jwt = false
 
 [functions.ai-router]
 verify_jwt = false
+
+[functions.lead-engine-scan]
+verify_jwt = false
+
+[functions.lead-engine-scheduler]
+verify_jwt = false
