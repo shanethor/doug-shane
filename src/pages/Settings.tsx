@@ -587,6 +587,97 @@ export default function Settings() {
         </CardContent>
       </Card>
 
+      {/* Lead Intelligence Engine Connections */}
+      <Card className="mb-4 sm:mb-6" id="lead-engine-section">
+        <CardHeader className="p-4 sm:p-6 pb-2 sm:pb-2">
+          <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+            <Radar className="h-4 w-4 text-primary" />
+            Lead Intelligence Engine
+          </CardTitle>
+          <p className="text-xs text-muted-foreground mt-1">
+            Connect data sources to power automated lead discovery, scoring, and routing.
+          </p>
+        </CardHeader>
+        <CardContent className="p-4 sm:p-6 pt-2 sm:pt-2 space-y-3">
+          {/* LinkedIn Sales Navigator */}
+          <div className="flex items-center justify-between rounded-lg border p-3 sm:p-4 min-h-[56px]">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="h-9 w-9 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">
+                <Linkedin className="h-4 w-4 text-blue-600" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-medium">LinkedIn Sales Navigator</p>
+                <p className="text-xs text-muted-foreground">Signal detection, contact enrichment, outreach</p>
+              </div>
+            </div>
+            <Badge variant="outline" className="text-[10px] shrink-0 opacity-50">Coming Soon</Badge>
+          </div>
+
+          {/* ZoomInfo */}
+          <div className="flex items-center justify-between rounded-lg border p-3 sm:p-4 min-h-[56px]">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                <Search className="h-4 w-4 text-primary" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-medium">ZoomInfo / Apollo.io</p>
+                <p className="text-xs text-muted-foreground">Contact enrichment — phone, email, revenue data</p>
+              </div>
+            </div>
+            <Badge variant="outline" className="text-[10px] shrink-0 opacity-50">Coming Soon</Badge>
+          </div>
+
+          {/* Reddit / Forums */}
+          <div className="flex items-center justify-between rounded-lg border p-3 sm:p-4 min-h-[56px]">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="h-9 w-9 rounded-lg bg-orange-500/10 flex items-center justify-center shrink-0">
+                <MessageSquare className="h-4 w-4 text-orange-500" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-medium">Reddit & Forums</p>
+                <p className="text-xs text-muted-foreground">Monitor r/smallbusiness, r/entrepreneur, industry forums</p>
+              </div>
+            </div>
+            <Badge variant="outline" className="text-[10px] shrink-0 opacity-50">Coming Soon</Badge>
+          </div>
+
+          {/* Business Filings */}
+          <div className="flex items-center justify-between rounded-lg border p-3 sm:p-4 min-h-[56px]">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="h-9 w-9 rounded-lg bg-emerald-500/10 flex items-center justify-center shrink-0">
+                <FileTextIcon className="h-4 w-4 text-emerald-500" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-medium">Business Filings & Permits</p>
+                <p className="text-xs text-muted-foreground">New LLCs, construction permits, liquor licenses, SBA loans</p>
+              </div>
+            </div>
+            <Badge variant="outline" className="text-[10px] shrink-0 opacity-50">Coming Soon</Badge>
+          </div>
+
+          {/* CRM Sync */}
+          <div className="flex items-center justify-between rounded-lg border p-3 sm:p-4 min-h-[56px]">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="h-9 w-9 rounded-lg bg-accent/10 flex items-center justify-center shrink-0">
+                <Building2 className="h-4 w-4 text-accent" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-medium">CRM Integration</p>
+                <p className="text-xs text-muted-foreground">Bi-directional sync with Applied Epic, Salesforce, HubSpot</p>
+              </div>
+            </div>
+            <Badge variant="outline" className="text-[10px] shrink-0 opacity-50">Coming Soon</Badge>
+          </div>
+
+          <div className="rounded-md bg-muted/50 p-3">
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
+              <strong>How it works:</strong> Once connected, the Lead Engine continuously monitors these sources for insurance-related signals,
+              scores leads by urgency and quality (Tier 1-3), and automatically routes them to the right producer with recommended action playbooks.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* AI & Email Settings */}
       <Card>
         <CardHeader className="p-4 sm:p-6 pb-2 sm:pb-2">
