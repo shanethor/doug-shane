@@ -74,16 +74,15 @@ export default function Settings() {
     if (!user) return;
     supabase
       .from("profiles")
-      .select("form_defaults, full_name, agency_name, phone, from_email, ai_provider, openai_api_key_encrypted")
+      .select("form_defaults, full_name, agency_name, agency_id, phone, from_email, ai_provider, openai_api_key_encrypted")
       .eq("user_id", user.id)
-      .then(({ data }) => {
+      .then(async ({ data }) => {
         if (data?.[0]) {
           const defaults = (data[0].form_defaults as Record<string, any>) || {};
           const merged: Record<string, string> = {};
           AGENCY_FIELDS.forEach((f) => {
             merged[f.key] = defaults[f.key] || "";
           });
-          if (!merged.agency_name && data[0].agency_name) merged.agency_name = data[0].agency_name;
           if (!merged.producer_name && data[0].full_name) merged.producer_name = data[0].full_name;
           if (!merged.from_email && data[0].from_email) merged.from_email = data[0].from_email;
           if (!merged.agency_phone && data[0].phone) merged.agency_phone = data[0].phone;
@@ -91,6 +90,20 @@ export default function Settings() {
           setAiProvider((data[0] as any).ai_provider || "lovable");
           setOpenaiKey((data[0] as any).openai_api_key_encrypted || "");
           if ((data[0] as any).timezone) setTimezone((data[0] as any).timezone);
+
+          // Resolve agency name from agencies table
+          const agencyId = (data[0] as any).agency_id;
+          if (agencyId) {
+            const { data: agencyData } = await supabase.from("agencies").select("name").eq("id", agencyId).maybeSingle();
+            if (agencyData) {
+              setAgencyDisplayName(agencyData.name);
+              // Also set in values so forms auto-fill correctly
+              merged.agency_name = agencyData.name;
+              setValues({ ...merged });
+            }
+          } else {
+            setAgencyDisplayName(data[0].agency_name || null);
+          }
         }
         setLoaded(true);
       });
