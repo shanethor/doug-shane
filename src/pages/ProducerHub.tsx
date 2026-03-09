@@ -6,10 +6,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   GitBranch, BarChart3, FolderOpen, Upload, FileSearch, FileSignature,
-  CreditCard, FileStack, FileText, Shield, Sparkles, Clock
+  CreditCard, FileStack, FileText, Shield, Sparkles, Clock, Radar
 } from "lucide-react";
 import Pipeline from "./Pipeline";
 import ProducerDashboard from "./ProducerDashboard";
+import LeadEnginePanel from "@/components/LeadEnginePanel";
 
 type ToolTab = {
   id: string;
