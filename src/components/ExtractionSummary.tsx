@@ -338,12 +338,12 @@ export default function ExtractionSummary({ submissionId, requestedFormIds = [],
         <Button
           size="lg"
           variant="outline"
-          onClick={handleFillGaps}
-          disabled={filling}
-          className="gap-2"
+          disabled
+          className="gap-2 opacity-60 cursor-not-allowed"
         >
-          {filling ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-          {filling ? "Filling gaps…" : "Fill Remaining Gaps"}
+          <Send className="h-4 w-4" />
+          Send Client Request for Data Gaps
+          <span className="ml-1 text-[10px] font-semibold uppercase tracking-wider bg-muted text-muted-foreground px-1.5 py-0.5 rounded">Coming Soon</span>
         </Button>
         <Button size="lg" onClick={() => onContinue()} className="gap-2">
           Continue to Forms <ArrowRight className="h-4 w-4" />
