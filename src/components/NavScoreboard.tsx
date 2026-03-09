@@ -205,7 +205,7 @@ export function NavScoreboard() {
 
       setLoading(false);
     })();
-  }, [user, year]);
+  }, [user, year, role]);
 
   const handleSaveGoals = async () => {
     if (!user) return;
