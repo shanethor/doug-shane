@@ -203,7 +203,7 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
 
   const loadLeads = useCallback(async () => {
     if (!user) return;
-    // RLS now handles visibility via get_accessible_lead_ids — managers see team leads, producers see own
+    // RLS now handles visibility via get_accessible_lead_ids — managers see team leads, advisors see own
     const leadsQuery = supabase.from("leads").select("*").order("updated_at", { ascending: false });
     // Producers still filter client-side for performance; managers/admins see all accessible
     if (!isManager && !isAdmin) {
