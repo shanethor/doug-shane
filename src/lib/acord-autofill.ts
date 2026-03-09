@@ -125,6 +125,8 @@ const AI_TO_FORM_ALIASES: Record<string, string[]> = {
   fein: ["fein"],
   tax_id: ["fein"],
   federal_employer_id: ["fein"],
+  applicant_fein: ["fein"],
+  ein: ["fein"],
   sic_code: ["sic_code", "vehicle_1_sic"],
   naics_code: ["naics_code"],
   naic_number: ["naic_code"],
@@ -133,7 +135,10 @@ const AI_TO_FORM_ALIASES: Record<string, string[]> = {
   form_of_business: ["business_type"],
   organization_type: ["business_type"],
   legal_entity: ["business_type"],
+  business_entity_type: ["business_type"],
   gl_code: ["gl_code"],
+  dba_name: ["dba_name", "other_named_insured"],
+  applicant_dba: ["dba_name", "other_named_insured"],
 
   // ── Business history — including supplement keys ──
   year_established: ["date_business_started", "years_in_business"],
