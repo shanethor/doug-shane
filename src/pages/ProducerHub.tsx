@@ -6,10 +6,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   GitBranch, BarChart3, FolderOpen, Upload, FileSearch, FileSignature,
-  CreditCard, FileStack, FileText, Shield, Sparkles, Clock
+  CreditCard, FileStack, FileText, Shield, Sparkles, Clock, Radar
 } from "lucide-react";
 import Pipeline from "./Pipeline";
 import ProducerDashboard from "./ProducerDashboard";
+import LeadEnginePanel from "@/components/LeadEnginePanel";
 
 type ToolTab = {
   id: string;
@@ -183,6 +184,10 @@ export default function ProducerHub() {
               <BarChart3 className="h-3.5 w-3.5 hidden sm:block" />
               Production
             </TabsTrigger>
+            <TabsTrigger value="lead-engine" className="gap-1.5 text-xs px-2.5 sm:px-3">
+              <Radar className="h-3.5 w-3.5 hidden sm:block" />
+              Lead Engine
+            </TabsTrigger>
             {TOOL_TABS.map((tool) => (
               <TabsTrigger key={tool.id} value={tool.id} className="gap-1.5 text-xs px-2.5 sm:px-3">
                 <tool.icon className="h-3.5 w-3.5 hidden sm:block" />
@@ -198,6 +203,10 @@ export default function ProducerHub() {
 
         <TabsContent value="production">
           <ProducerDashboard embedded />
+        </TabsContent>
+
+        <TabsContent value="lead-engine">
+          <LeadEnginePanel />
         </TabsContent>
 
         {TOOL_TABS.map((tool) => (
