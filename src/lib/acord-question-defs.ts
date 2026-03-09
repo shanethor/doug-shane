@@ -196,6 +196,35 @@ const ACORD_75: AcordQuestion[] = [
 ];
 
 /* ═══════════════════════════════════════════════════════════════
+   Professional Liability (E&O)
+   ═══════════════════════════════════════════════════════════════ */
+const ACORD_PL: AcordQuestion[] = [
+  { acord: "PL", key: "pl_provides_professional_services", label: "Do you provide any fee-based professional advice, design, or consulting services?", type: "boolean", required: true, section: "professional" },
+  { acord: "PL", key: "pl_services_description", label: "Briefly describe the professional services you provide", type: "text", required: false, section: "professional",
+    placeholder: "e.g. Architectural design, IT consulting, financial advisory",
+    dependsOn: (f) => f.pl_provides_professional_services === true || f.pl_provides_professional_services === "yes" },
+  { acord: "PL", key: "pl_prior_claims", label: "Have any clients alleged errors, omissions, or professional mistakes in the past 5 years?", type: "boolean", required: false, section: "professional" },
+];
+
+/* ═══════════════════════════════════════════════════════════════
+   Cyber Liability
+   ═══════════════════════════════════════════════════════════════ */
+const ACORD_CYBER: AcordQuestion[] = [
+  { acord: "CYBER", key: "cyber_stores_personal_data", label: "Do you store customer or employee personal data (SSNs, credit cards, health info) electronically?", type: "boolean", required: true, section: "cyber" },
+  { acord: "CYBER", key: "cyber_record_count", label: "Approximate number of personal records you store or process annually", type: "select", required: false, section: "cyber",
+    options: ["Less than 1,000", "1,000–10,000", "10,000–100,000", "100,000+"],
+    dependsOn: (f) => f.cyber_stores_personal_data === true || f.cyber_stores_personal_data === "yes" },
+];
+
+/* ═══════════════════════════════════════════════════════════════
+   Other Coverage
+   ═══════════════════════════════════════════════════════════════ */
+const ACORD_OTHER: AcordQuestion[] = [
+  { acord: "OTHER", key: "other_coverage_description", label: "Briefly describe any other coverage you need that isn't listed above", type: "text", required: false, section: "other",
+    placeholder: "e.g. Liquor liability, pollution liability, inland marine" },
+];
+
+/* ═══════════════════════════════════════════════════════════════
    Combined catalog
    ═══════════════════════════════════════════════════════════════ */
 export const ACORD_QUESTION_DEFS: AcordQuestion[] = [
@@ -205,6 +234,9 @@ export const ACORD_QUESTION_DEFS: AcordQuestion[] = [
   ...ACORD_130,
   ...ACORD_131,
   ...ACORD_140,
+  ...ACORD_PL,
+  ...ACORD_CYBER,
+  ...ACORD_OTHER,
   ...ACORD_75,
 ];
 
