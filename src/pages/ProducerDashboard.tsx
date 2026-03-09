@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { AppLayout } from "@/components/AppLayout";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableHeader, TableHead, TableBody, TableRow, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -15,8 +15,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { DollarSign, FileText, TrendingUp, CheckCircle, CalendarDays, Users } from "lucide-react";
-import { format } from "date-fns";
+import { DollarSign, FileText, TrendingUp, CheckCircle, CalendarDays, Users, Target, BarChart3, Clock, RefreshCw, Layers, Lock } from "lucide-react";
+import { format, addDays, differenceInDays } from "date-fns";
 import { useUserRole } from "@/hooks/useUserRole";
 
 type TimePeriod = "month" | "quarter" | "year" | "all";
@@ -39,6 +39,36 @@ function getDateRange(period: TimePeriod): { start: string; end: string } {
 
 type ProducerOption = { id: string; name: string };
 
+type PipelineStage = { stage: string; count: number; premium: number };
+type TopOpportunity = { id: string; account_name: string; line_type: string; target_premium: number; stage: string };
+
+function ComingSoonCard({ title, icon: Icon, description }: { title: string; icon: React.ElementType; description: string }) {
+  return (
+    <Card className="relative overflow-hidden">
+      <div className="absolute inset-0 bg-muted/30 backdrop-blur-[1px] z-10 flex items-center justify-center">
+        <div className="flex items-center gap-2 bg-background/90 border rounded-full px-4 py-1.5 shadow-sm">
+          <Lock className="h-3.5 w-3.5 text-muted-foreground" />
+          <span className="text-xs font-medium text-muted-foreground">Coming Soon</span>
+        </div>
+      </div>
+      <CardHeader className="pb-2 pt-4 px-4">
+        <CardTitle className="text-sm font-medium flex items-center gap-2">
+          <Icon className="h-4 w-4 text-muted-foreground" />
+          {title}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="px-4 pb-4">
+        <p className="text-xs text-muted-foreground">{description}</p>
+        <div className="mt-3 space-y-2">
+          <div className="h-4 bg-muted/50 rounded w-3/4" />
+          <div className="h-4 bg-muted/50 rounded w-1/2" />
+          <div className="h-4 bg-muted/50 rounded w-2/3" />
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function ProducerDashboard({ embedded }: { embedded?: boolean } = {}) {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -48,6 +78,7 @@ export default function ProducerDashboard({ embedded }: { embedded?: boolean } =
   const [policies, setPolicies] = useState<any[]>([]);
   const [leadNames, setLeadNames] = useState<Record<string, string>>({});
   const [leadInfos, setLeadInfos] = useState<{ id: string; account_name: string; business_type: string | null }[]>([]);
+  const [allLeads, setAllLeads] = useState<any[]>([]);
   const [period, setPeriod] = useState<TimePeriod>("year");
   const [selectedProducer, setSelectedProducer] = useState<string>("all");
   const [producerOptions, setProducerOptions] = useState<ProducerOption[]>([]);
@@ -67,7 +98,6 @@ export default function ProducerDashboard({ embedded }: { embedded?: boolean } =
   useEffect(() => {
     if (!canFilterProducers) return;
     const loadProducers = async () => {
-      // Get all users who have producer, manager, or admin roles
       const { data: roles } = await supabase
         .from("user_roles")
         .select("user_id, role")
@@ -100,16 +130,14 @@ export default function ProducerDashboard({ embedded }: { embedded?: boolean } =
     const dateRange = getDateRange(period);
 
     const policiesQuery = supabase.from("policies").select("*");
-    const leadsQuery = supabase.from("leads").select("id, stage");
+    const leadsQuery = supabase.from("leads").select("id, stage, account_name, line_type, target_premium, estimated_renewal_date, created_at");
 
     if (canFilterProducers) {
-      // Admin/manager: filter by selected producer or show all
       if (selectedProducer !== "all") {
         policiesQuery.eq("producer_user_id", selectedProducer);
         leadsQuery.eq("owner_user_id", selectedProducer);
       }
     } else {
-      // Regular producer: always filter to own data
       policiesQuery.eq("producer_user_id", user.id);
       leadsQuery.eq("owner_user_id", user.id);
     }
@@ -122,6 +150,9 @@ export default function ProducerDashboard({ embedded }: { embedded?: boolean } =
     if (!mountedRef.current) return;
 
     const allPolicies = policiesRes.data ?? [];
+    const fetchedLeads = leadsRes.data ?? [];
+    setAllLeads(fetchedLeads);
+
     const approvedInRange = allPolicies.filter(
       (p: any) =>
         p.status === "approved" &&
@@ -133,7 +164,6 @@ export default function ProducerDashboard({ embedded }: { embedded?: boolean } =
     const activeSold = allPolicies.filter((p: any) => p.status === "approved");
     setPolicies(activeSold);
 
-    // Fetch lead names for the policies
     const leadIds = [...new Set(activeSold.map((p: any) => p.lead_id))];
     if (leadIds.length > 0) {
       const { data: leads } = await supabase
@@ -155,7 +185,7 @@ export default function ProducerDashboard({ embedded }: { embedded?: boolean } =
       totalPremium: approvedInRange.reduce((s: number, p: any) => s + Number(p.annual_premium), 0),
       totalRevenue: approvedInRange.reduce((s: number, p: any) => s + Number(p.revenue), 0),
       pendingPolicies: allPolicies.filter((p: any) => p.status === "pending").length,
-      totalLeads: (leadsRes.data ?? []).filter((l: any) => {
+      totalLeads: fetchedLeads.filter((l: any) => {
         const isSold = allPolicies.some((p: any) => p.lead_id === l.id && p.status === "approved");
         return !isSold && l.stage !== "lost";
       }).length,
@@ -163,7 +193,75 @@ export default function ProducerDashboard({ embedded }: { embedded?: boolean } =
     setLoading(false);
   };
 
-  // Determine which user ID to show scoreboard for
+  // Derived stats
+  const soldLeadIds = new Set(policies.map((p) => p.lead_id));
+  const openLeads = allLeads.filter((l) => !soldLeadIds.has(l.id) && l.stage !== "lost");
+
+  // Pipeline by stage
+  const pipelineByStage: PipelineStage[] = ["prospect", "quoting", "presenting"].map((stage) => {
+    const stageLeads = openLeads.filter((l) => l.stage === stage);
+    return {
+      stage,
+      count: stageLeads.length,
+      premium: stageLeads.reduce((s, l) => s + (Number(l.target_premium) || 0), 0),
+    };
+  });
+
+  // Hit ratio
+  const totalQuotedOrBeyond = allLeads.filter((l) =>
+    l.stage === "quoting" || l.stage === "presenting" || soldLeadIds.has(l.id)
+  ).length;
+  const totalBound = policies.length;
+  const hitRatioCount = totalQuotedOrBeyond > 0 ? ((totalBound / totalQuotedOrBeyond) * 100).toFixed(0) : "—";
+  const hitRatioPremium = (() => {
+    const quotedPremium = allLeads
+      .filter((l) => l.stage === "quoting" || l.stage === "presenting" || soldLeadIds.has(l.id))
+      .reduce((s, l) => s + (Number(l.target_premium) || 0), 0);
+    const boundPremium = stats.totalPremium;
+    return quotedPremium > 0 ? ((boundPremium / quotedPremium) * 100).toFixed(0) : "—";
+  })();
+
+  // Top opportunities
+  const topOpportunities: TopOpportunity[] = openLeads
+    .filter((l) => (Number(l.target_premium) || 0) > 0)
+    .sort((a, b) => (Number(b.target_premium) || 0) - (Number(a.target_premium) || 0))
+    .slice(0, 5)
+    .map((l) => ({
+      id: l.id,
+      account_name: l.account_name,
+      line_type: l.line_type || "—",
+      target_premium: Number(l.target_premium) || 0,
+      stage: l.stage,
+    }));
+
+  // Action strip items
+  const now = new Date();
+  const thirtyDaysOut = addDays(now, 30);
+  const renewalsDue30 = allLeads.filter((l) => {
+    if (!l.estimated_renewal_date) return false;
+    const rd = new Date(l.estimated_renewal_date);
+    return rd >= now && rd <= thirtyDaysOut && !soldLeadIds.has(l.id);
+  }).length;
+
+  // Policies per client
+  const policiesPerClient = (() => {
+    const clientCounts: Record<string, number> = {};
+    policies.forEach((p) => {
+      clientCounts[p.lead_id] = (clientCounts[p.lead_id] || 0) + 1;
+    });
+    const counts = Object.values(clientCounts);
+    if (counts.length === 0) return { avg: 0, distribution: { one: 0, two: 0, threePlus: 0 } };
+    const avg = counts.reduce((s, c) => s + c, 0) / counts.length;
+    return {
+      avg: Math.round(avg * 10) / 10,
+      distribution: {
+        one: counts.filter((c) => c === 1).length,
+        two: counts.filter((c) => c === 2).length,
+        threePlus: counts.filter((c) => c >= 3).length,
+      },
+    };
+  })();
+
   const scoreboardUserId = canFilterProducers && selectedProducer !== "all"
     ? selectedProducer
     : user?.id;
@@ -173,6 +271,12 @@ export default function ProducerDashboard({ embedded }: { embedded?: boolean } =
       ? "All Producers"
       : producerOptions.find((p) => p.id === selectedProducer)?.name || "Producer Dashboard"
     : "My Dashboard";
+
+  const stageLabels: Record<string, string> = {
+    prospect: "Prospect",
+    quoting: "Quoting",
+    presenting: "Presenting",
+  };
 
   const content = (
     <>
@@ -212,6 +316,30 @@ export default function ProducerDashboard({ embedded }: { embedded?: boolean } =
         </div>
       </div>
 
+      {/* Action Strip */}
+      {!loading && (
+        <div className="flex flex-wrap gap-2 mb-4">
+          {renewalsDue30 > 0 && (
+            <Badge variant="outline" className="bg-warning/10 text-warning border-warning/30 text-xs py-1 px-3">
+              <CalendarDays className="h-3 w-3 mr-1.5" />
+              {renewalsDue30} renewal{renewalsDue30 !== 1 ? "s" : ""} due in 30 days
+            </Badge>
+          )}
+          {stats.pendingPolicies > 0 && (
+            <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30 text-xs py-1 px-3">
+              <Clock className="h-3 w-3 mr-1.5" />
+              {stats.pendingPolicies} policies awaiting approval
+            </Badge>
+          )}
+          {openLeads.filter((l) => l.stage === "presenting").length > 0 && (
+            <Badge variant="outline" className="bg-accent/10 text-accent-foreground border-accent/30 text-xs py-1 px-3">
+              <Target className="h-3 w-3 mr-1.5" />
+              {openLeads.filter((l) => l.stage === "presenting").length} deals in presenting
+            </Badge>
+          )}
+        </div>
+      )}
+
       {user && scoreboardUserId && (
         <ProductionScoreboard
           userId={scoreboardUserId}
@@ -225,60 +353,201 @@ export default function ProducerDashboard({ embedded }: { embedded?: boolean } =
           <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
         </div>
       ) : (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-          <Card>
-            <CardContent className="p-4 sm:pt-6">
-              <div className="flex items-center gap-2 sm:gap-3">
-                <div className="rounded-full bg-primary/10 p-2 sm:p-2.5">
-                  <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+        <>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            <Card>
+              <CardContent className="p-4 sm:pt-6">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="rounded-full bg-primary/10 p-2 sm:p-2.5">
+                    <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-xl sm:text-2xl font-semibold font-sans">{stats.totalLeads}</p>
+                    <p className="text-[10px] sm:text-xs text-muted-foreground font-sans">Total Leads</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-xl sm:text-2xl font-semibold font-sans">{stats.totalLeads}</p>
-                  <p className="text-[10px] sm:text-xs text-muted-foreground font-sans">Total Leads</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4 sm:pt-6">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="rounded-full bg-success/10 p-2 sm:p-2.5">
+                    <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-success" />
+                  </div>
+                  <div>
+                    <p className="text-xl sm:text-2xl font-semibold font-sans">{stats.approvedPolicies}</p>
+                    <p className="text-[10px] sm:text-xs text-muted-foreground font-sans">Policies Sold</p>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 sm:pt-6">
-              <div className="flex items-center gap-2 sm:gap-3">
-                <div className="rounded-full bg-success/10 p-2 sm:p-2.5">
-                  <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-success" />
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4 sm:pt-6">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="rounded-full bg-accent/10 p-2 sm:p-2.5">
+                    <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 text-accent" />
+                  </div>
+                  <div>
+                    <p className="text-xl sm:text-2xl font-semibold font-sans">${stats.totalPremium.toLocaleString()}</p>
+                    <p className="text-[10px] sm:text-xs text-muted-foreground font-sans">Total Premium</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-xl sm:text-2xl font-semibold font-sans">{stats.approvedPolicies}</p>
-                  <p className="text-[10px] sm:text-xs text-muted-foreground font-sans">Policies Sold</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4 sm:pt-6">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="rounded-full bg-warning/10 p-2 sm:p-2.5">
+                    <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-warning" />
+                  </div>
+                  <div>
+                    <p className="text-xl sm:text-2xl font-semibold font-sans">${stats.totalRevenue.toLocaleString()}</p>
+                    <p className="text-[10px] sm:text-xs text-muted-foreground font-sans">Agency Revenue (Commissions/Fees)</p>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 sm:pt-6">
-              <div className="flex items-center gap-2 sm:gap-3">
-                <div className="rounded-full bg-accent/10 p-2 sm:p-2.5">
-                  <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 text-accent" />
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Hit Ratio + Pipeline Premium + Policies per Client */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4 mt-4">
+            <Card>
+              <CardHeader className="pb-2 pt-4 px-4">
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                  <Target className="h-4 w-4 text-primary" />
+                  Hit Ratio (Close Rate)
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-4 pb-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-2xl font-bold">{hitRatioCount}{hitRatioCount !== "—" ? "%" : ""}</p>
+                    <p className="text-[10px] text-muted-foreground">By Count</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">{totalBound} bound / {totalQuotedOrBeyond} quoted</p>
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">{hitRatioPremium}{hitRatioPremium !== "—" ? "%" : ""}</p>
+                    <p className="text-[10px] text-muted-foreground">By Premium</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-xl sm:text-2xl font-semibold font-sans">${stats.totalPremium.toLocaleString()}</p>
-                  <p className="text-[10px] sm:text-xs text-muted-foreground font-sans">Total Premium</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2 pt-4 px-4">
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                  <BarChart3 className="h-4 w-4 text-primary" />
+                  Pipeline by Stage
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-4 pb-4 space-y-2">
+                {pipelineByStage.map((s) => (
+                  <div key={s.stage} className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="text-[10px] min-w-[70px] justify-center">
+                        {stageLabels[s.stage] || s.stage}
+                      </Badge>
+                      <span className="text-xs text-muted-foreground">{s.count} leads</span>
+                    </div>
+                    <span className="text-xs font-semibold">${s.premium.toLocaleString()}</span>
+                  </div>
+                ))}
+                <div className="border-t pt-2 flex items-center justify-between">
+                  <span className="text-xs font-medium">Total Pipeline</span>
+                  <span className="text-sm font-bold">
+                    ${pipelineByStage.reduce((s, p) => s + p.premium, 0).toLocaleString()}
+                  </span>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 sm:pt-6">
-              <div className="flex items-center gap-2 sm:gap-3">
-                <div className="rounded-full bg-warning/10 p-2 sm:p-2.5">
-                  <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-warning" />
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2 pt-4 px-4">
+                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                  <Layers className="h-4 w-4 text-primary" />
+                  Policies per Client
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-4 pb-4">
+                <p className="text-2xl font-bold">{policiesPerClient.avg}</p>
+                <p className="text-[10px] text-muted-foreground mb-3">Avg policies per account</p>
+                <div className="space-y-1">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-muted-foreground">1 policy</span>
+                    <span className="font-medium">{policiesPerClient.distribution.one} clients</span>
+                  </div>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-muted-foreground">2 policies</span>
+                    <span className="font-medium">{policiesPerClient.distribution.two} clients</span>
+                  </div>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-muted-foreground">3+ policies</span>
+                    <span className="font-medium">{policiesPerClient.distribution.threePlus} clients</span>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-xl sm:text-2xl font-semibold font-sans">${stats.totalRevenue.toLocaleString()}</p>
-                  <p className="text-[10px] sm:text-xs text-muted-foreground font-sans">Total Revenue (12%)</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Top Opportunities */}
+          {topOpportunities.length > 0 && (
+            <div className="mt-4">
+              <Card>
+                <CardHeader className="pb-2 pt-4 px-4">
+                  <CardTitle className="text-sm font-medium flex items-center gap-2">
+                    <TrendingUp className="h-4 w-4 text-primary" />
+                    Top Opportunities
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="px-0 pb-0">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Client</TableHead>
+                        <TableHead>Line</TableHead>
+                        <TableHead>Stage</TableHead>
+                        <TableHead className="text-right">Est. Premium</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {topOpportunities.map((opp) => (
+                        <TableRow
+                          key={opp.id}
+                          className="cursor-pointer hover:bg-muted/50"
+                          onClick={() => navigate(`/pipeline/${opp.id}`)}
+                        >
+                          <TableCell className="font-medium text-sm">{opp.account_name}</TableCell>
+                          <TableCell><Badge variant="secondary" className="text-[10px] font-normal">{opp.line_type}</Badge></TableCell>
+                          <TableCell><Badge variant="outline" className="text-[10px]">{stageLabels[opp.stage] || opp.stage}</Badge></TableCell>
+                          <TableCell className="text-right font-semibold">${opp.target_premium.toLocaleString()}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Coming Soon Metrics */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4 mt-4">
+            <ComingSoonCard
+              title="New vs. Renewal Breakdown"
+              icon={RefreshCw}
+              description="Premium and policy counts split into New Business vs. Renewals for the period."
+            />
+            <ComingSoonCard
+              title="Sales Cycle Timing"
+              icon={Clock}
+              description="Average days from lead → quote, quote → bound. Requires stage transition tracking."
+            />
+            <ComingSoonCard
+              title="Retention Metrics"
+              icon={BarChart3}
+              description="Policy retention % and revenue retention % for expiring accounts."
+            />
+          </div>
+        </>
       )}
 
       <div className="mt-4 sm:mt-6">
@@ -291,7 +560,7 @@ export default function ProducerDashboard({ embedded }: { embedded?: boolean } =
         </Card>
       </div>
 
-      {/* Active Sold Policies — Table on desktop, Cards on mobile */}
+      {/* Active Sold Policies */}
       <div className="mt-4 sm:mt-6">
         <h2 className="text-lg sm:text-xl font-semibold mb-3">Active Policies</h2>
         <Card>
@@ -300,7 +569,6 @@ export default function ProducerDashboard({ embedded }: { embedded?: boolean } =
               <p className="text-sm text-muted-foreground p-6 text-center">No sold policies yet.</p>
             ) : (
               <>
-                {/* Mobile: card list */}
                 <div className="block md:hidden divide-y">
                   {policies.map((p) => (
                     <div
@@ -322,7 +590,6 @@ export default function ProducerDashboard({ embedded }: { embedded?: boolean } =
                     </div>
                   ))}
                 </div>
-                {/* Desktop: table */}
                 <div className="hidden md:block">
                   <Table>
                     <TableHeader>
@@ -359,7 +626,6 @@ export default function ProducerDashboard({ embedded }: { embedded?: boolean } =
         </Card>
       </div>
 
-      {/* Production Analytics */}
       <ProductionAnalytics policies={policies} leadNames={leadNames} leads={leadInfos} />
     </>
   );
