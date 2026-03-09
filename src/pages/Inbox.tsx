@@ -424,7 +424,24 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
                 ? baseUnified.filter((u) => u.kind === "email")
                 : baseUnified;
 
-  const filtered = applyInsuranceFilters(tabFiltered);
+  // Apply search query with fuzzy matching
+  const applySearchFilter = (items: UnifiedItem[]) => {
+    const q = searchQuery.trim();
+    if (!q) return items;
+    // Use fuzzy matching on title + body
+    const results = fuzzyMatch(q, items, (item) => {
+      const parts = [item.title];
+      if (item.body) parts.push(item.body);
+      if (item.kind === "email") {
+        const email = item.raw as SyncedEmail;
+        parts.push(email.from_address, email.from_name || "");
+      }
+      return parts.join(" ");
+    }, 0.25);
+    return results.map((r) => r.item);
+  };
+
+  const filtered = applySearchFilter(applyInsuranceFilters(tabFiltered));
 
   const unreadCount = unified.filter((u) => !u.is_read).length;
 
