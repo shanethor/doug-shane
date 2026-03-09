@@ -285,13 +285,23 @@
 }
 
 /* Stock-ticker scroll */
+.ticker-viewport {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  white-space: nowrap;
+}
+
 @keyframes ticker-scroll {
   0% { transform: translateX(0); }
   100% { transform: translateX(-50%); }
 }
 .ticker-track {
+  display: inline-flex;
+  align-items: center;
+  gap: 1.5rem;
   animation: ticker-scroll 30s linear infinite;
-  width: max-content;
+  will-change: transform;
 }
 .ticker-track:hover {
   animation-play-state: paused;
