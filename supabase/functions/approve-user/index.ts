@@ -200,6 +200,28 @@ Deno.serve(async (req) => {
       });
     }
 
+    if (action === "set_agency") {
+      const { agency_id } = body;
+      const updateData: Record<string, any> = { agency_id: agency_id || null };
+      const { error: upErr } = await adminClient
+        .from("profiles")
+        .update(updateData)
+        .eq("user_id", target_user_id);
+      if (upErr) throw upErr;
+
+      await adminClient.from("audit_log").insert({
+        user_id: callerId,
+        action: "set_agency",
+        object_type: "user",
+        object_id: target_user_id,
+        metadata: { agency_id },
+      });
+
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     if (action === "delete_agency") {
       // target_user_id is actually agency_id here
       const agencyId = target_user_id;
