@@ -51,11 +51,19 @@ export default function ExtractionSummary({ submissionId, requestedFormIds = [],
     const idToUse = appIdParam || applicationId;
     const { data: profile } = await supabase
       .from("profiles")
-      .select("full_name, agency_name, phone, form_defaults")
+      .select("full_name, agency_name, agency_id, phone, form_defaults")
       .eq("user_id", user!.id)
       .single();
 
+    // Resolve agency name from agencies table for accuracy
+    let resolvedAgencyName = profile?.agency_name || "";
+    if ((profile as any)?.agency_id) {
+      const { data: agencyData } = await supabase.from("agencies").select("name").eq("id", (profile as any).agency_id).maybeSingle();
+      if (agencyData) resolvedAgencyName = agencyData.name;
+    }
+
     const defaults = (profile?.form_defaults || {}) as Record<string, string>;
+    if (resolvedAgencyName) defaults.agency_name = resolvedAgencyName;
 
     // Helper: check if a value is meaningful (not empty, not "N/A", not just "false"/"0")
     const isMeaningful = (v: any): boolean => {
