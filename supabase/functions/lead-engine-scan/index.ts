@@ -321,6 +321,7 @@ Deno.serve(async (req) => {
       est_premium: l.est_premium || 5000,
       signal: l.signal || `Found via ${source}`,
       source,
+      source_url: l.source_url || null,
       score: Math.floor(40 + Math.random() * 40),
       tier: tierMap[source] || 2,
       status: "new",
