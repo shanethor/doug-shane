@@ -342,7 +342,7 @@ When the agent asks to navigate to a feature or page, emit a navigation button u
 
 Available pages and routes:
 - Pipeline / leads → /pipeline
-- Producer Hub / account management → /hub
+- Advisor Hub / account management → /hub
 - Email Hub / compose email → /email
 - Inbox / notifications → /inbox
 - Calendar / schedule → /calendar
