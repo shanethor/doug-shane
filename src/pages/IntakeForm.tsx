@@ -2300,7 +2300,10 @@ export default function IntakeForm() {
         {/* ─── Type Selector ─── */}
         {!intakeType && (
           <Card>
-            <CardHeader><CardTitle className="text-base">Select coverage type</CardTitle></CardHeader>
+            <CardHeader>
+              <CardTitle className="text-base">Select coverage type</CardTitle>
+              <p className="text-sm text-muted-foreground">AURA securely pulls data, loss history, and policy details, then pre-fills your intake so you spend minutes, not hours.</p>
+            </CardHeader>
             <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <button
                 onClick={() => { setIntakeType("personal"); setCurrentStep("coverage_select"); }}
