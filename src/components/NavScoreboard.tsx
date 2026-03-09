@@ -147,9 +147,9 @@ export function NavScoreboard() {
           ])
       );
 
-      const producerList: ProducerData[] = [];
+      const advisorList: AdvisorData[] = [];
 
-      producerIds.forEach(uid => {
+      advisorIds.forEach(uid => {
         const prof = profileMap.get(uid) as any;
         const dirUser = listUserMap.get(uid) as any;
         // Prefer list-users directory data (bypasses RLS), fall back to profile
