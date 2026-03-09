@@ -10,9 +10,9 @@ import { useToast } from "@/hooks/use-toast";
 interface PersonalIntakeDialogProps {
   open: boolean;
   onClose: () => void;
-  onGenerate: (config: { clientEmail: string; teamMemberEmail: string; ccProducer: boolean }) => void;
+  onGenerate: (config: { clientEmail: string; teamMemberEmail: string; ccAdvisor: boolean }) => void;
   isLoading?: boolean;
-  producerEmail?: string;
+  advisorEmail?: string;
   generatedLink?: string | null;
 }
 
