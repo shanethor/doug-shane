@@ -600,7 +600,7 @@ export default function AdminDashboard() {
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="admin">Admin</SelectItem>
-                            <SelectItem value="producer">Producer</SelectItem>
+                            <SelectItem value="advisor">Advisor</SelectItem>
                             <SelectItem value="manager">Manager</SelectItem>
                             <SelectItem value="client_services">Client Services</SelectItem>
                           </SelectContent>

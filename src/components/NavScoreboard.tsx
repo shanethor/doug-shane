@@ -195,13 +195,13 @@ export function NavScoreboard() {
         });
       });
 
-      // Sort: real producers first, then fake
-      producerList.sort((a, b) => {
+      // Sort: real advisors first, then fake
+      advisorList.sort((a, b) => {
         if (a.isFake !== b.isFake) return a.isFake ? 1 : -1;
         return a.name.localeCompare(b.name);
       });
 
-      setProducers(producerList);
+      setProducers(advisorList);
 
       // Check congrats for current user
       const me = producerList.find(p => p.userId === user.id);
