@@ -26,7 +26,38 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    // ─── Path B: personal_intake_submissions ───
+    // Helper: fetch agent profile defaults (agency name, phone, fax, email, etc.)
+    const getAgentDefaults = async (agentUserId: string): Promise<Record<string, string>> => {
+      const defaults: Record<string, string> = {};
+      try {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("full_name, agency_name, agency_id, phone, form_defaults")
+          .eq("user_id", agentUserId)
+          .maybeSingle();
+        if (!profile) return defaults;
+
+        // Resolve agency name from agencies table
+        if (profile.agency_id) {
+          const { data: agencyData } = await supabase.from("agencies").select("name").eq("id", profile.agency_id).maybeSingle();
+          if (agencyData) defaults.agency_name = agencyData.name;
+        } else if (profile.agency_name) {
+          defaults.agency_name = profile.agency_name;
+        }
+        if (profile.full_name) defaults.producer_name = profile.full_name;
+        if (profile.phone) defaults.agency_phone = profile.phone;
+
+        const fd = (profile.form_defaults || {}) as Record<string, any>;
+        for (const [k, v] of Object.entries(fd)) {
+          if (v && typeof v === "string" && v.trim() && !k.startsWith("_")) {
+            defaults[k] = v;
+          }
+        }
+      } catch (e) {
+        console.error("getAgentDefaults error:", e);
+      }
+      return defaults;
+    };
     if (personal_intake_id) {
       const { data: piRecord, error: piErr } = await supabase
         .from("personal_intake_submissions")
@@ -163,6 +194,12 @@ Deno.serve(async (req) => {
             // Spread ACORD question answers directly (keys match field-map)
             ...acordData,
           };
+
+          // Inject agent profile defaults (agency name, phone, fax, email, license)
+          const agentDefaults = await getAgentDefaults(agentId);
+          for (const [k, v] of Object.entries(agentDefaults)) {
+            if (!formDataPayload[k]) formDataPayload[k] = v;
+          }
 
           // Create insurance_application so workspace prefills automatically
           await supabase.from("insurance_applications").insert({
@@ -314,6 +351,12 @@ Deno.serve(async (req) => {
         }
         if (sections.umbrella) {
           formDataPayload.umbrella_limit = sections.umbrella.requested_limit;
+        }
+
+        // Inject agent profile defaults
+        const agentDefaults = await getAgentDefaults(agentId);
+        for (const [k, v] of Object.entries(agentDefaults)) {
+          if (!formDataPayload[k]) formDataPayload[k] = v;
         }
 
         await supabase.from("insurance_applications").insert({
@@ -503,6 +546,12 @@ Deno.serve(async (req) => {
               if (key && val) formDataPayload[key] = val;
             }
           }
+        }
+
+        // Inject agent profile defaults
+        const agentDefaults = await getAgentDefaults(agentId);
+        for (const [k, v] of Object.entries(agentDefaults)) {
+          if (!formDataPayload[k]) formDataPayload[k] = v;
         }
 
         await supabase.from("insurance_applications").insert({
