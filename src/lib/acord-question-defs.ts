@@ -101,6 +101,11 @@ const ACORD_127: AcordQuestion[] = [
     dependsOn: (f) => f.owns_or_leases_vehicles === true || f.owns_or_leases_vehicles === "yes" },
   { acord: "127", key: "auto_garagekeeping_pd", label: "Any garage-keeping or hired-car physical damage needed?", type: "boolean", required: false, section: "vehicles",
     dependsOn: (f) => f.any_hired_non_owned_auto === true || f.any_hired_non_owned_auto === "yes" },
+  { acord: "127", key: "auto_travel_radius", label: "How far do your vehicles routinely travel from your main location?", type: "select", required: false, section: "vehicles",
+    options: ["0–50 miles", "51–200 miles", "200+ miles"],
+    dependsOn: (f) => f.owns_or_leases_vehicles === true || f.owns_or_leases_vehicles === "yes" },
+  { acord: "127", key: "auto_interstate_or_contract_haul", label: "Do any vehicles cross state lines or haul for others under contract?", type: "boolean", required: false, section: "vehicles",
+    dependsOn: (f) => f.owns_or_leases_vehicles === true || f.owns_or_leases_vehicles === "yes" },
 ];
 
 /* ═══════════════════════════════════════════════════════════════
