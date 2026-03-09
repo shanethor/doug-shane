@@ -36,7 +36,7 @@ export function MobileBottomNav() {
   const { canSeeProducerHub, canSeeAdmin } = useUserRole();
   const { signOut } = useAuth();
   const { trainingMode, setTrainingMode } = useTrainingMode();
-  const unreadCount = useUnreadCount();
+  const { emailCount, pulseCount } = useUnreadCount();
   const { config } = useNavConfig();
   const [moreOpen, setMoreOpen] = useState(false);
 
