@@ -118,19 +118,19 @@ export function NavScoreboard() {
       // Build a lookup from list-users (admin directory) for names/agency
       const listUserMap = new Map(listUsers.map((u: any) => [u.id, u]));
 
-      // Find producer user IDs from the directory
-      const producerIds = new Set<string>();
+      // Find advisor user IDs from the directory
+      const advisorIds = new Set<string>();
 
       if (listUsers.length > 0) {
         listUsers.forEach((u: any) => {
-          if (Array.isArray(u.roles) && u.roles.includes("producer")) {
-            producerIds.add(u.id);
+          if (Array.isArray(u.roles) && (u.roles.includes("advisor") || u.roles.includes("producer"))) {
+            advisorIds.add(u.id);
           }
         });
       }
 
-      // Always add Jane Smith (admin) as fake producer for all users
-      producerIds.add(JANE_SMITH_ID);
+      // Always add Jane Smith (admin) as fake advisor for all users
+      advisorIds.add(JANE_SMITH_ID);
 
       const profileMap = new Map(listUsers.map((u: any) => [u.id, u]));
       const goalsMap = new Map((allGoals as any[]).map((g: any) => [g.user_id, g]));
