@@ -95,9 +95,9 @@ export function NavScoreboard() {
       setLoading(true);
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
 
-      // Always call list-users via edge function so every user gets the full directory
+      // Use scoreboard-directory edge function (accessible to all producers/managers/admins)
       const [listUsersRes, allPoliciesRes, mtdPoliciesRes, allLeadsRes, goalsRes, agenciesRes] = await Promise.all([
-        supabase.functions.invoke("list-users", { body: {} }),
+        supabase.functions.invoke("scoreboard-directory", { body: {} }),
         supabase.from("policies").select("producer_user_id, annual_premium, revenue").eq("status", "approved"),
         supabase.from("policies").select("producer_user_id, annual_premium, revenue").eq("status", "approved").gte("approved_at", monthStart),
         supabase.from("leads").select("id, stage, owner_user_id"),
