@@ -96,7 +96,11 @@ export function NavScoreboard() {
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
 
       // Fetch all producers & admins (include admin as fake producer)
-      const [rolesRes, profilesRes, allPoliciesRes, mtdPoliciesRes, allLeadsRes, goalsRes, agenciesRes] = await Promise.all([
+      const listUsersPromise = role === "admin"
+        ? supabase.functions.invoke("list-users", { body: {} })
+        : Promise.resolve({ data: null, error: null } as any);
+
+      const [rolesRes, profilesRes, allPoliciesRes, mtdPoliciesRes, allLeadsRes, goalsRes, agenciesRes, listUsersRes] = await Promise.all([
         supabase.from("user_roles").select("user_id, role"),
         supabase.from("profiles").select("user_id, full_name, agency_name, agency_id"),
         supabase.from("policies").select("producer_user_id, annual_premium, revenue").eq("status", "approved"),
@@ -104,6 +108,7 @@ export function NavScoreboard() {
         supabase.from("leads").select("id, stage, owner_user_id"),
         supabase.from("producer_goals" as any).select("user_id, annual_premium_goal, annual_revenue_goal, year").eq("year", year),
         supabase.from("agencies").select("id, name"),
+        listUsersPromise,
       ]);
 
       const roles = rolesRes.data ?? [];
@@ -113,15 +118,26 @@ export function NavScoreboard() {
       const allLeads = allLeadsRes.data ?? [];
       const allGoals = goalsRes.data ?? [];
       const agencies = (agenciesRes as any).data ?? [];
+      const listUsers = Array.isArray((listUsersRes as any)?.data) ? (listUsersRes as any).data : [];
 
       // Build agency lookup by id
       const agencyMap = new Map(agencies.map((a: any) => [a.id, a.name]));
 
-      // Find producer user IDs (role = producer) + admin as fake
+      // Find producer user IDs (prefer admin directory when available)
       const producerIds = new Set<string>();
-      roles.forEach((r: any) => {
-        if (r.role === "producer") producerIds.add(r.user_id);
-      });
+
+      if (listUsers.length > 0) {
+        listUsers.forEach((u: any) => {
+          if (Array.isArray(u.roles) && u.roles.includes("producer")) {
+            producerIds.add(u.id);
+          }
+        });
+      } else {
+        roles.forEach((r: any) => {
+          if (r.role === "producer") producerIds.add(r.user_id);
+        });
+      }
+
       // Always add Jane Smith (admin) as fake producer
       producerIds.add(JANE_SMITH_ID);
 
@@ -189,7 +205,7 @@ export function NavScoreboard() {
 
       setLoading(false);
     })();
-  }, [user, year]);
+  }, [user, year, role]);
 
   const handleSaveGoals = async () => {
     if (!user) return;
