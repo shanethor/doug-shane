@@ -96,7 +96,7 @@ export function NavScoreboard() {
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
 
       // Fetch all producers & admins (include admin as fake producer)
-      const [rolesRes, profilesRes, allPoliciesRes, mtdPoliciesRes, allLeadsRes, goalsRes] = await Promise.all([
+      const [rolesRes, profilesRes, allPoliciesRes, mtdPoliciesRes, allLeadsRes, goalsRes, agenciesRes] = await Promise.all([
         supabase.from("user_roles").select("user_id, role"),
         supabase.from("profiles").select("user_id, full_name, agency_name, agency_id"),
         supabase.from("policies").select("producer_user_id, annual_premium, revenue").eq("status", "approved"),
