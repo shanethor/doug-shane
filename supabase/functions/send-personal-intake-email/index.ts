@@ -47,12 +47,18 @@ Deno.serve(async (req) => {
     // Get agent name
     const { data: profile } = await supabase
       .from("profiles")
-      .select("full_name, agency_name")
+      .select("full_name, agency_name, agency_id")
       .eq("user_id", record.agent_id)
       .maybeSingle();
 
     const agentName = profile?.full_name || "Your agent";
-    const agencyName = profile?.agency_name || "AURA Risk Group";
+    // Resolve agency name from agencies table (canonical source)
+    let agencyName = "";
+    if (profile?.agency_id) {
+      const { data: ag } = await supabase.from("agencies").select("name").eq("id", profile.agency_id).maybeSingle();
+      if (ag?.name) agencyName = ag.name;
+    }
+    if (!agencyName) agencyName = profile?.agency_name || "";
 
     const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
     if (!RESEND_API_KEY) {
