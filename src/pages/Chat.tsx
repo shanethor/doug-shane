@@ -2265,7 +2265,7 @@ export default function Chat() {
 
 
         {/* Messages area */}
-        <div ref={scrollRef} className="flex-1 overflow-y-auto">
+        <div ref={scrollRef} className="flex-1">
           {isEmpty ? (
             <div className="flex flex-col items-center justify-center md:justify-start min-h-full gap-4 px-4 pt-[8vh] md:pt-[6vh] animate-fade-in">
               <div className="text-center space-y-2">
