@@ -75,6 +75,8 @@ const ACORD_126: AcordQuestion[] = [
   { acord: "126", key: "gl_additional_insureds_text", label: "List additional insured names/entities", type: "text", required: false, section: "business",
     placeholder: "e.g. ABC Property Management, LLC",
     dependsOn: (f) => f.gl_additional_insureds_needed === true || f.gl_additional_insureds_needed === "yes" },
+  { acord: "126", key: "gl_work_at_third_party_premises", label: "Do you work at customer/third-party premises more than 50% of the time?", type: "boolean", required: false, section: "business" },
+  { acord: "126", key: "gl_high_risk_work", label: "Any work involving heights over 3 stories, cranes, or structural changes?", type: "boolean", required: false, section: "business" },
 ];
 
 /* ═══════════════════════════════════════════════════════════════
