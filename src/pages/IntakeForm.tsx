@@ -675,24 +675,93 @@ export default function IntakeForm() {
 
       // Pre-fill commercial form fields if in commercial intake mode
       if (intakeType === "commercial") {
+        // Build acord_data from extraction for step 5 (Coverage Details)
+        const acordPrefill: Record<string, any> = {};
+
+        // ACORD 125 – Business Details
+        const bizName = d.named_insured || d.company_name || d.business_name || d.applicant_name || "";
+        if (bizName) acordPrefill.business_name = bizName;
+        if (d.dba) acordPrefill.dba = d.dba;
+        const entityType = d.entity_type || d.business_entity_type || "";
+        if (entityType) acordPrefill.business_entity_type = entityType;
+        const mailingAddr = d.mailing_address || d.address || d.applicant_address || "";
+        if (mailingAddr) acordPrefill.mailing_address = mailingAddr;
+        if (d.years_in_business) acordPrefill.years_in_business = d.years_in_business;
+        if (d.naics_code || d.primary_naics) acordPrefill.primary_naics = d.naics_code || d.primary_naics;
+        if (d.current_carrier || d.carrier) acordPrefill.has_prior_coverage = "yes";
+        if (d.loss_history_years) acordPrefill.loss_history_years = d.loss_history_years;
+
+        // ACORD 126 – General Liability
+        if (d.gl_class_description || d.operations_description || d.description_of_operations) {
+          acordPrefill.gl_class_description = d.gl_class_description || d.operations_description || d.description_of_operations;
+        }
+        if (d.annual_payroll || d.annual_payroll_total || d.total_payroll) {
+          acordPrefill.annual_payroll_total = d.annual_payroll || d.annual_payroll_total || d.total_payroll;
+        }
+        if (d.annual_gross_sales || d.gross_sales || d.annual_revenue) {
+          acordPrefill.annual_gross_sales = d.annual_gross_sales || d.gross_sales || d.annual_revenue;
+        }
+        if (d.gl_each_occurrence_limit) acordPrefill.gl_each_occurrence_limit = d.gl_each_occurrence_limit;
+        if (d.gl_general_aggregate_limit) acordPrefill.gl_general_aggregate_limit = d.gl_general_aggregate_limit;
+        if (d.gl_products_completed_ops) acordPrefill.gl_products_completed_ops = d.gl_products_completed_ops;
+        if (d.gl_personal_adv_injury) acordPrefill.gl_personal_adv_injury = d.gl_personal_adv_injury;
+
+        // ACORD 127 – Business Auto
+        if (d.vehicles?.length > 0) acordPrefill.owns_or_leases_vehicles = "yes";
+        if (d.auto_coverage?.csl_limit) acordPrefill.auto_csl_limit = d.auto_coverage.csl_limit;
+        if (d.auto_coverage?.um_uim_limit) acordPrefill.auto_um_uim_limit = d.auto_coverage.um_uim_limit;
+        if (d.auto_coverage?.med_pay_limit) acordPrefill.auto_med_pay_limit = d.auto_coverage.med_pay_limit;
+        if (d.auto_coverage?.comp_deductible) acordPrefill.auto_comp_deductible = d.auto_coverage.comp_deductible;
+        if (d.auto_coverage?.collision_deductible) acordPrefill.auto_collision_deductible = d.auto_coverage.collision_deductible;
+        if (d.num_power_units) acordPrefill.num_power_units = d.num_power_units;
+        if (d.num_private_passenger) acordPrefill.num_private_passenger = d.num_private_passenger;
+
+        // ACORD 130 – Workers Compensation
+        const empCount = d.employee_count || d.number_of_employees || "";
+        if (empCount) {
+          acordPrefill.has_employees = "yes";
+          acordPrefill.num_full_time_employees = empCount;
+        }
+        if (d.wc_payroll || d.annual_wc_payroll) acordPrefill.annual_wc_payroll = d.wc_payroll || d.annual_wc_payroll;
+        if (d.wc_class_codes) acordPrefill.wc_class_codes = d.wc_class_codes;
+        if (d.experience_mod || d.wc_experience_mod) acordPrefill.wc_experience_mod = d.experience_mod || d.wc_experience_mod;
+
+        // ACORD 140 – Commercial Property
+        if (d.building_limit || d.property_building_limit) {
+          acordPrefill.owns_or_leases_buildings = "yes";
+          acordPrefill.building_limit = d.building_limit || d.property_building_limit;
+        }
+        if (d.bpp_limit) acordPrefill.bpp_limit = d.bpp_limit;
+        if (d.bi_ee_limit) acordPrefill.bi_ee_limit = d.bi_ee_limit;
+        if (d.construction_type || d.primary_construction_type) acordPrefill.primary_construction_type = d.construction_type || d.primary_construction_type;
+        if (d.year_built || d.property_year_built) acordPrefill.property_year_built = d.year_built || d.property_year_built;
+        if (d.square_footage || d.property_square_footage) acordPrefill.property_square_footage = d.square_footage || d.property_square_footage;
+        if (d.num_stories || d.property_stories) acordPrefill.property_stories = d.num_stories || d.property_stories;
+        if (d.primary_location_address) acordPrefill.primary_location_address = d.primary_location_address;
+
+        // ACORD 131 – Umbrella
+        if (d.umbrella?.limit) acordPrefill.umbrella_limit = d.umbrella.limit;
+        if (d.umbrella?.retention) acordPrefill.umbrella_retention = d.umbrella.retention;
+
         setCommercialForm(prev => ({
           ...prev,
-          business_name: d.named_insured || d.company_name || d.business_name || d.applicant_name || prev.business_name,
+          business_name: bizName || prev.business_name,
           dba: d.dba || prev.dba,
           customer_name: d.contact_name || d.applicant_name || prev.customer_name,
           customer_email: d.contact_email || d.applicant_email || prev.customer_email,
           customer_phone: d.contact_phone || d.applicant_phone || prev.customer_phone,
           ein: d.fein || d.ein || prev.ein,
-          street_address: d.mailing_address || d.address || d.applicant_address || prev.street_address,
+          street_address: mailingAddr || prev.street_address,
           city: d.city || d.applicant_city || prev.city,
           state: d.state || d.applicant_state || prev.state,
           zip: d.zip || d.applicant_zip || prev.zip,
-          employee_count: d.employee_count || d.number_of_employees || prev.employee_count,
+          employee_count: empCount || prev.employee_count,
           annual_revenue: d.annual_revenue || d.gross_sales || prev.annual_revenue,
           years_in_business: d.years_in_business || prev.years_in_business,
-          business_type: d.entity_type || d.business_entity_type || prev.business_type,
+          business_type: entityType || prev.business_type,
           current_carrier_name: d.carrier || d.current_carrier || prev.current_carrier_name,
           policy_number: d.policy_number || prev.policy_number,
+          acord_data: { ...prev.acord_data, ...acordPrefill },
         }));
       }
 
