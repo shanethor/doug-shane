@@ -1049,7 +1049,7 @@ export default function Chat() {
     if (/\b(go\s*to|open|show|view|check|take\s*me\s*to|navigate)\s+(my\s*)?pipeline\b/.test(t)) return { route: "/pipeline", label: "Pipeline" };
     if (/\b(go\s*to|open|show|view|check|take\s*me\s*to|navigate)\s+(my\s*)?approvals?\b/.test(t)) return { route: "/approvals", label: "Approvals" };
     if (/\b(go\s*to|open|show|view|check|take\s*me\s*to|navigate)\s+(my\s*)?settings?\b/.test(t)) return { route: "/settings", label: "Settings" };
-    if (/\b(go\s*to|open|show|view|check|take\s*me\s*to|navigate)\s+(my\s*)?(producer\s*)?hub\b/.test(t)) return { route: "/producer-hub", label: "Producer Hub" };
+    if (/\b(go\s*to|open|show|view|check|take\s*me\s*to|navigate)\s+(my\s*)?(advisor\s*|producer\s*)?hub\b/.test(t)) return { route: "/hub", label: "Command Center" };
     if (/\b(go\s*to|open|show|view|check|take\s*me\s*to|navigate)\s+(my\s*)?dashboard\b/.test(t)) return { route: "/dashboard", label: "Dashboard" };
     if (/\b(go\s*to|open|show|view|check|take\s*me\s*to|navigate)\s+(my\s*)?admin\b/.test(t)) return { route: "/admin", label: "Admin" };
     if (/\b(go\s*to|open|show|view|check|take\s*me\s*to|navigate)\s+(my\s*)?generated\s*forms?\b/.test(t)) return { route: "/generated-forms", label: "Generated Forms" };
