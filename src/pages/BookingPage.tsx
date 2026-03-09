@@ -75,12 +75,12 @@ export default function BookingPage() {
         status: "scheduled" as any,
       } as any);
 
-      // Best-effort push to producer's connected calendars
+      // Best-effort push to advisor's connected calendars
       try {
         const { data: calendars } = await supabase
           .from("external_calendars")
           .select("provider")
-          .eq("user_id", producerId)
+          .eq("user_id", advisorId)
           .eq("is_active", true);
 
         if (calendars?.length) {
