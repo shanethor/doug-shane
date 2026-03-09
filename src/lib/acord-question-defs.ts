@@ -94,7 +94,7 @@ const ACORD_127: AcordQuestion[] = [
   { acord: "127", key: "num_private_passenger", label: "How many private passenger vehicles?", type: "number", required: false, section: "vehicles",
     dependsOn: (f) => f.owns_or_leases_vehicles === true || f.owns_or_leases_vehicles === "yes" },
   { acord: "127", key: "any_hired_non_owned_auto", label: "Do you hire or use non-owned vehicles for business?", type: "boolean", required: true, section: "vehicles" },
-  { acord: "127", key: "auto_csl_limit", label: "Requested auto liability combined single limit", type: "currency", required: false, section: "vehicles",
+  { acord: "127", key: "auto_csl_limit", label: "Requested auto liability combined single limit", type: "currency", required: true, section: "vehicles",
     placeholder: "$1,000,000" },
   { acord: "127", key: "auto_um_uim_limit", label: "Uninsured/underinsured motorist limit", type: "currency", required: false, section: "vehicles" },
   { acord: "127", key: "auto_med_pay_limit", label: "Medical payments limit", type: "currency", required: false, section: "vehicles" },
