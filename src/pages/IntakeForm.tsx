@@ -3163,6 +3163,7 @@ export default function IntakeForm() {
                           <Label className="text-xs font-medium">Upload Resume (optional)</Label>
                           <div
                             onClick={() => {
+                              if (resumeExtracting) return;
                               const inp = document.createElement("input");
                               inp.type = "file";
                               inp.accept = ".pdf,.doc,.docx,.txt";
@@ -3171,6 +3172,7 @@ export default function IntakeForm() {
                                 if (files.length > 0) {
                                   setUploadedFiles(prev => [...prev, ...files.map(f => ({ file: f, category: "resume" }))]);
                                   updateCommercial("owner_resume_files", [...commercialForm.owner_resume_files, ...files.map(f => f.name)]);
+                                  handleResumeExtraction(files);
                                 }
                               };
                               inp.click();
@@ -3181,21 +3183,33 @@ export default function IntakeForm() {
                               e.preventDefault();
                               e.stopPropagation();
                               e.currentTarget.classList.remove("border-primary", "bg-primary/5");
+                              if (resumeExtracting) return;
                               const files = Array.from(e.dataTransfer.files).filter(f =>
                                 /\.(pdf|doc|docx|txt)$/i.test(f.name)
                               );
                               if (files.length > 0) {
                                 setUploadedFiles(prev => [...prev, ...files.map(f => ({ file: f, category: "resume" }))]);
                                 updateCommercial("owner_resume_files", [...commercialForm.owner_resume_files, ...files.map(f => f.name)]);
+                                handleResumeExtraction(files);
                               } else {
                                 toast.error("Only PDF, DOC, DOCX, and TXT files are accepted");
                               }
                             }}
-                            className="border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-colors border-border hover:border-primary/50"
+                            className={`border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-colors ${resumeExtracting ? "border-primary/40 bg-primary/5 pointer-events-none" : "border-border hover:border-primary/50"}`}
                           >
-                            <Upload className="h-6 w-6 mx-auto mb-1 text-muted-foreground" />
-                            <p className="text-sm font-medium">Click or drag & drop to upload resume</p>
-                            <p className="text-xs text-muted-foreground mt-0.5">PDF, DOC, TXT accepted</p>
+                            {resumeExtracting ? (
+                              <>
+                                <Loader2 className="h-6 w-6 mx-auto mb-1 text-primary animate-spin" />
+                                <p className="text-sm font-medium">Extracting resume content...</p>
+                                <p className="text-xs text-muted-foreground mt-0.5">AURA is reading your resume</p>
+                              </>
+                            ) : (
+                              <>
+                                <Upload className="h-6 w-6 mx-auto mb-1 text-muted-foreground" />
+                                <p className="text-sm font-medium">Click or drag & drop to upload resume</p>
+                                <p className="text-xs text-muted-foreground mt-0.5">PDF, DOC, TXT accepted</p>
+                              </>
+                            )}
                           </div>
                           {uploadedFiles.filter(f => f.category === "resume").length > 0 && (
                             <div className="space-y-1">
@@ -3203,6 +3217,9 @@ export default function IntakeForm() {
                                 <div key={idx} className="flex items-center gap-2 p-2 rounded-md border bg-muted/20">
                                   <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
                                   <span className="text-xs truncate flex-1">{uf.file.name}</span>
+                                  {resumeExtracting && idx === uploadedFiles.filter(f => f.category === "resume").length - 1 && (
+                                    <Loader2 className="h-3 w-3 animate-spin text-primary shrink-0" />
+                                  )}
                                 </div>
                               ))}
                             </div>
