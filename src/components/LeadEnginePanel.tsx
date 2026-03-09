@@ -232,8 +232,8 @@ function ActivityFeed() {
 }
 
 /* ── Monitoring Panel ── */
-const LIVE_SOURCES = ["Reddit", "Business Filings"];
-const COMING_SOON_SOURCES = ["LinkedIn", "Permit Database", "ZoomInfo"];
+const LIVE_SOURCES = ["Reddit", "Business Filings", "Permit Database", "LinkedIn"];
+const COMING_SOON_SOURCES = ["ZoomInfo"];
 
 function MonitoringPanel({ onConfigure }: { onConfigure: (source: string) => void }) {
   const { data: configs, isLoading } = useLeadSourceConfigs();
