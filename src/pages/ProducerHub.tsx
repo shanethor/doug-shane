@@ -176,13 +176,13 @@ export default function ProducerHub() {
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0 scrollbar-hide mb-4">
           <TabsList className="inline-flex w-auto min-w-max h-auto flex-wrap sm:flex-nowrap gap-0">
+            <TabsTrigger value="production" className="gap-1.5 text-xs px-2.5 sm:px-3">
+              <BarChart3 className="h-3.5 w-3.5 hidden sm:block" />
+              Dashboard
+            </TabsTrigger>
             <TabsTrigger value="pipeline" className="gap-1.5 text-xs px-2.5 sm:px-3">
               <GitBranch className="h-3.5 w-3.5 hidden sm:block" />
               Pipeline
-            </TabsTrigger>
-            <TabsTrigger value="production" className="gap-1.5 text-xs px-2.5 sm:px-3">
-              <BarChart3 className="h-3.5 w-3.5 hidden sm:block" />
-              Production
             </TabsTrigger>
             <TabsTrigger value="lead-engine" className="gap-1.5 text-xs px-2.5 sm:px-3">
               <Radar className="h-3.5 w-3.5 hidden sm:block" />
@@ -197,12 +197,12 @@ export default function ProducerHub() {
           </TabsList>
         </div>
 
-        <TabsContent value="pipeline">
-          <Pipeline embedded />
-        </TabsContent>
-
         <TabsContent value="production">
           <ProducerDashboard embedded />
+        </TabsContent>
+
+        <TabsContent value="pipeline">
+          <Pipeline embedded />
         </TabsContent>
 
         <TabsContent value="lead-engine">
