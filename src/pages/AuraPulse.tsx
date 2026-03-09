@@ -255,7 +255,8 @@ export default function AuraPulse() {
                       className={`cursor-pointer hover-lift transition-smooth ${!n.is_read ? "border-l-2 border-l-primary bg-primary/[0.02]" : "opacity-75"}`}
                       onClick={() => {
                         if (!n.is_read) markRead(n.id);
-                        if (n.link) navigate(n.link);
+                        const target = n.link || (n.type === 'pipeline' ? '/pipeline' : null);
+                        if (target) navigate(target);
                       }}
                     >
                       <CardContent className="flex items-start gap-3 py-3 px-4">
