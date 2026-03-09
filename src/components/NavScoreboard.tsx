@@ -65,7 +65,7 @@ interface AdvisorData {
   pipeline: { prospects: number; quoting: number; presenting: number; sold: number; lost: number };
 }
 
-// The admin user id for Jane Smith (fake producer entry)
+// The admin user id for Jane Smith (fake advisor entry)
 const JANE_SMITH_ID = "77f8c5de-6462-4721-b654-3909c398667b";
 
 export function NavScoreboard() {
