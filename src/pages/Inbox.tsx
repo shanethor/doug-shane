@@ -94,7 +94,10 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
 
   // Insurance filter state
   const [activeTags, setActiveTags] = useState<string[]>([]);
-  const [selectedClient, setSelectedClient] = useState<{ id: string; account_name: string; email: string | null } | null>(null);
+  const [selectedClients, setSelectedClients] = useState<{ id: string; account_name: string; email: string | null }[]>([]);
+
+  // General search
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Email detail dialog
   const [selectedEmail, setSelectedEmail] = useState<SyncedEmail | null>(null);
