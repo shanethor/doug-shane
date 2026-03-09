@@ -1463,6 +1463,24 @@ export default function Chat() {
         executeCalendarActions(calendarActions);
       }
 
+      // Execute email actions if present (shows confirmation UI)
+      const emailActions = parseEmailActions(finalText);
+      if (emailActions.length > 0) {
+        executeEmailActions(emailActions);
+      }
+
+      // Execute task actions if present
+      const taskActions = parseTaskActions(finalText);
+      if (taskActions.length > 0) {
+        executeTaskActions(taskActions);
+      }
+
+      // Execute lead intelligence actions if present
+      const leadActions = parseLeadActions(finalText);
+      if (leadActions.length > 0) {
+        executeLeadActions(leadActions);
+      }
+
       setMessages((prev) => {
         const last = prev[prev.length - 1];
         if (last?.role === "assistant") {
