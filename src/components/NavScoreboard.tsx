@@ -95,20 +95,14 @@ export function NavScoreboard() {
       setLoading(true);
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
 
-      // Fetch all producers & admins (include admin as fake producer)
-      const listUsersPromise = role === "admin"
-        ? supabase.functions.invoke("list-users", { body: {} })
-        : Promise.resolve({ data: null, error: null } as any);
-
-      const [rolesRes, profilesRes, allPoliciesRes, mtdPoliciesRes, allLeadsRes, goalsRes, agenciesRes, listUsersRes] = await Promise.all([
-        supabase.from("user_roles").select("user_id, role"),
-        supabase.from("profiles").select("user_id, full_name, agency_name, agency_id"),
+      // Always call list-users via edge function so every user gets the full directory
+      const [listUsersRes, allPoliciesRes, mtdPoliciesRes, allLeadsRes, goalsRes, agenciesRes] = await Promise.all([
+        supabase.functions.invoke("list-users", { body: {} }),
         supabase.from("policies").select("producer_user_id, annual_premium, revenue").eq("status", "approved"),
         supabase.from("policies").select("producer_user_id, annual_premium, revenue").eq("status", "approved").gte("approved_at", monthStart),
         supabase.from("leads").select("id, stage, owner_user_id"),
         supabase.from("producer_goals" as any).select("user_id, annual_premium_goal, annual_revenue_goal, year").eq("year", year),
         supabase.from("agencies").select("id, name"),
-        listUsersPromise,
       ]);
 
       const roles = rolesRes.data ?? [];
