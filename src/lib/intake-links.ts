@@ -73,7 +73,7 @@ export async function generatePersonalIntakeLink({
   agentId,
   deliveryEmails,
   clientEmail,
-  ccProducer,
+  ccProducer: ccAdvisor,
 }: {
   agentId: string;
   deliveryEmails: string[];
@@ -84,7 +84,7 @@ export async function generatePersonalIntakeLink({
     agent_id: agentId,
     delivery_emails: deliveryEmails,
     client_email: clientEmail || null,
-    cc_producer: ccProducer ?? false,
+    cc_producer: ccAdvisor ?? false,
   };
   console.log("Inserting personal intake link:", insertPayload);
 

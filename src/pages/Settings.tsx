@@ -21,8 +21,8 @@ const AGENCY_FIELDS = [
   { key: "agency_phone", label: "Agency Phone", placeholder: "(555) 123-4567" },
   { key: "agency_fax", label: "Agency Fax", placeholder: "(555) 123-4568" },
   { key: "agency_email", label: "Agency Email", placeholder: "info@agency.com" },
-  { key: "producer_name", label: "Producer Name", placeholder: "Jane Smith" },
-  { key: "producer_license_no", label: "Producer License No.", placeholder: "LIC-123456" },
+  { key: "producer_name", label: "Advisor Name", placeholder: "Jane Smith" },
+  { key: "producer_license_no", label: "Advisor License No.", placeholder: "LIC-123456" },
   { key: "from_email", label: "Send-From Email", placeholder: "submissions@agency.com" },
 ];
 
@@ -672,7 +672,7 @@ export default function Settings() {
           <div className="rounded-md bg-muted/50 p-3">
             <p className="text-[11px] text-muted-foreground leading-relaxed">
               <strong>How it works:</strong> Once connected, the Lead Engine continuously monitors these sources for insurance-related signals,
-              scores leads by urgency and quality (Tier 1-3), and automatically routes them to the right producer with recommended action playbooks.
+              scores leads by urgency and quality (Tier 1-3), and automatically routes them to the right advisor with recommended action playbooks.
             </p>
           </div>
         </CardContent>

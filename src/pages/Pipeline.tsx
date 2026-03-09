@@ -132,7 +132,7 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
   const [leadPolicyPremiums, setLeadPolicyPremiums] = useState<Record<string, number[]>>({});
 
   const [lossRunStatuses, setLossRunStatuses] = useState<Record<string, string>>({});
-  // Map owner_user_id -> producer name (for manager/admin view)
+  // Map owner_user_id -> advisor name (for manager/admin view)
   const [ownerNames, setOwnerNames] = useState<Record<string, string>>({});
 
   // Drag-and-drop state
@@ -203,7 +203,7 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
 
   const loadLeads = useCallback(async () => {
     if (!user) return;
-    // RLS now handles visibility via get_accessible_lead_ids — managers see team leads, producers see own
+    // RLS now handles visibility via get_accessible_lead_ids — managers see team leads, advisors see own
     const leadsQuery = supabase.from("leads").select("*").order("updated_at", { ascending: false });
     // Producers still filter client-side for performance; managers/admins see all accessible
     if (!isManager && !isAdmin) {
@@ -245,7 +245,7 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
     }));
     setLeads(mappedLeads);
 
-    // For managers/admins, fetch producer names for all unique owner_user_ids
+    // For managers/admins, fetch advisor names for all unique owner_user_ids
     if (isManager || isAdmin) {
       const ownerIds = [...new Set(leadsData.map((l: any) => l.owner_user_id))];
       if (ownerIds.length > 0) {

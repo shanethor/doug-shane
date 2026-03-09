@@ -1091,18 +1091,18 @@ export default function Chat() {
     return /\bpersonal\s*(lines?)?\s*(intake|form|link)\b/.test(t) || /\bpersonal\s*(auto|home|boat|umbrella)\s*(intake|form)\b/.test(t);
   };
 
-  const handlePersonalIntakeGenerate = async (config: { clientEmail: string; teamMemberEmail: string; ccProducer: boolean }) => {
+  const handlePersonalIntakeGenerate = async (config: { clientEmail: string; teamMemberEmail: string; ccAdvisor: boolean }) => {
     if (!user) return;
     setPersonalIntakeLoading(true);
     try {
       const deliveryEmails = [config.teamMemberEmail];
-      if (config.ccProducer && user.email) deliveryEmails.push(user.email);
+      if (config.ccAdvisor && user.email) deliveryEmails.push(user.email);
 
       const result = await generatePersonalIntakeLink({
         agentId: user.id,
         deliveryEmails,
         clientEmail: config.clientEmail || undefined,
-        ccProducer: config.ccProducer,
+        ccProducer: config.ccAdvisor,
       });
       if (!result) throw new Error("Link generation returned null");
 
@@ -3056,7 +3056,7 @@ export default function Chat() {
         onClose={() => { setShowPersonalIntakeDialog(false); setPersonalIntakeLink(null); }}
         onGenerate={handlePersonalIntakeGenerate}
         isLoading={personalIntakeLoading}
-        producerEmail={user?.email || undefined}
+        advisorEmail={user?.email || undefined}
         generatedLink={personalIntakeLink}
       />
       {/* Email Confirmation Dialog */}

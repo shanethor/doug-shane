@@ -972,7 +972,7 @@ export default function LeadDetail() {
                                   policyEffectiveDate: bor.policy_effective_date || "",
                                   policyExpirationDate: bor.policy_expiration_date || "",
                                   selectedLines: bor.selected_lines || [],
-                                  producerName: "", producerEmail: "", producerPhone: "",
+                                  advisorName: "", advisorEmail: "", advisorPhone: "",
                                 });
                                 if (bor.status === "signed" && bor.signature_data) {
                                   const signedBytes = await applySignatureToBorPdf(borPdfBytes, bor.signature_data, bor.insured_name);

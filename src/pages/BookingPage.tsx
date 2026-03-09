@@ -20,12 +20,12 @@ const EVENT_TYPES = [
 ];
 
 export default function BookingPage() {
-  const { producerId } = useParams<{ producerId: string }>();
+  const { producerId: advisorId } = useParams<{ producerId: string }>();
   const [searchParams] = useSearchParams();
   const preselectedType = searchParams.get("type") || "";
   const preselectedLeadId = searchParams.get("lead") || "";
 
-  const [producer, setProducer] = useState<{ full_name: string; agency_name: string | null } | null>(null);
+  const [advisor, setAdvisor] = useState<{ full_name: string; agency_name: string | null } | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -38,17 +38,17 @@ export default function BookingPage() {
   const [clientNotes, setClientNotes] = useState("");
 
   useEffect(() => {
-    if (!producerId) return;
+    if (!advisorId) return;
     (async () => {
       const { data } = await supabase
         .from("profiles")
         .select("full_name, agency_name")
-        .eq("user_id", producerId)
+        .eq("user_id", advisorId)
         .maybeSingle();
-      setProducer(data || { full_name: "Insurance Agent", agency_name: null });
+      setAdvisor(data || { full_name: "Insurance Advisor", agency_name: null });
       setLoading(false);
     })();
-  }, [producerId]);
+  }, [advisorId]);
 
   const handleSubmit = async () => {
     if (!selectedType || !selectedDate || !selectedTime || !clientName.trim() || !clientEmail.trim()) {
@@ -63,7 +63,7 @@ export default function BookingPage() {
       const endDt = new Date(startDt.getTime() + (eventType?.duration || 60) * 60000);
 
       const { error } = await supabase.from("calendar_events").insert({
-        user_id: producerId,
+        user_id: advisorId,
         title: `${eventType?.label || selectedType} — ${clientName}`,
         event_type: selectedType as any,
         start_time: startDt.toISOString(),
@@ -75,12 +75,12 @@ export default function BookingPage() {
         status: "scheduled" as any,
       } as any);
 
-      // Best-effort push to producer's connected calendars
+      // Best-effort push to advisor's connected calendars
       try {
         const { data: calendars } = await supabase
           .from("external_calendars")
           .select("provider")
-          .eq("user_id", producerId)
+          .eq("user_id", advisorId)
           .eq("is_active", true);
 
         if (calendars?.length) {
@@ -142,7 +142,7 @@ export default function BookingPage() {
             </div>
             <h2 className="text-2xl font-semibold">Meeting Booked!</h2>
             <p className="text-muted-foreground font-sans">
-              Your {EVENT_TYPES.find((t) => t.value === selectedType)?.label || "meeting"} with {producer?.full_name} has been scheduled for{" "}
+              Your {EVENT_TYPES.find((t) => t.value === selectedType)?.label || "meeting"} with {advisor?.full_name} has been scheduled for{" "}
               <strong>{format(new Date(`${selectedDate}T${selectedTime}:00`), "EEEE, MMMM d 'at' h:mm a")}</strong>.
             </p>
             <p className="text-sm text-muted-foreground font-sans">
@@ -176,8 +176,8 @@ export default function BookingPage() {
           </div>
           <CardTitle className="text-xl">Book a Meeting</CardTitle>
           <p className="text-sm text-muted-foreground font-sans">
-            with {producer?.full_name}
-            {producer?.agency_name && ` — ${producer.agency_name}`}
+            with {advisor?.full_name}
+            {advisor?.agency_name && ` — ${advisor.agency_name}`}
           </p>
         </CardHeader>
         <CardContent className="space-y-4">

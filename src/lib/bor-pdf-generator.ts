@@ -8,9 +8,9 @@ export interface BorData {
   policyEffectiveDate: string;
   policyExpirationDate: string;
   selectedLines: string[];
-  producerName: string;
-  producerEmail: string;
-  producerPhone: string;
+  advisorName: string;
+  advisorEmail: string;
+  advisorPhone: string;
   agencyName?: string;
 }
 
@@ -78,9 +78,9 @@ export async function generateBorPdf(data: BorData): Promise<Uint8Array> {
   const agency = data.agencyName || "";
   drawText(agency, margin, y, 12, true);
   y -= 16;
-  if (data.producerName) { drawText(data.producerName, margin, y, 11); y -= 14; }
-  if (data.producerEmail) { drawText(data.producerEmail, margin, y, 11); y -= 14; }
-  if (data.producerPhone) { drawText(data.producerPhone, margin, y, 11); y -= 14; }
+  if (data.advisorName) { drawText(data.advisorName, margin, y, 11); y -= 14; }
+  if (data.advisorEmail) { drawText(data.advisorEmail, margin, y, 11); y -= 14; }
+  if (data.advisorPhone) { drawText(data.advisorPhone, margin, y, 11); y -= 14; }
   y -= 20;
 
   // RE line
