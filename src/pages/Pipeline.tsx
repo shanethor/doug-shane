@@ -1210,7 +1210,7 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
       {/* Kanban Board with drag-and-drop */}
       <TooltipProvider delayDuration={200}>
       <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0 scrollbar-hide">
-      <div className="flex md:grid md:grid-cols-4 gap-3 min-h-[60vh] min-w-max md:min-w-0">
+      <div className={`flex md:grid md:grid-cols-4 gap-3 ${embedded ? "min-h-[300px]" : "min-h-[60vh]"} min-w-max md:min-w-0`}>
         {columns.map((stage) => (
           <div key={stage} className="flex flex-col w-[280px] md:w-auto shrink-0 md:shrink">
             <div className="flex items-center gap-2 mb-3">
