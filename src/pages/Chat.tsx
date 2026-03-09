@@ -3056,7 +3056,7 @@ export default function Chat() {
         onClose={() => { setShowPersonalIntakeDialog(false); setPersonalIntakeLink(null); }}
         onGenerate={handlePersonalIntakeGenerate}
         isLoading={personalIntakeLoading}
-        producerEmail={user?.email || undefined}
+        advisorEmail={user?.email || undefined}
         generatedLink={personalIntakeLink}
       />
       {/* Email Confirmation Dialog */}
