@@ -99,20 +99,24 @@ Deno.serve(async (req) => {
       // Called by scheduler with service role key — trust the user_id
       userId = body._scheduler_user_id;
     } else {
-      const supabase = createClient(
-        Deno.env.get("SUPABASE_URL")!,
-        Deno.env.get("SUPABASE_ANON_KEY")!,
-        { global: { headers: { authorization: authHeader } } }
-      );
+      // Decode JWT manually to extract user ID
       const token = authHeader.replace("Bearer ", "");
-      const { data, error: authErr } = await supabase.auth.getClaims(token);
-      if (authErr || !data?.claims?.sub) {
-        console.error("[lead-engine-scan] Auth error:", authErr);
+      try {
+        const payloadBase64 = token.split(".")[1];
+        const payloadJson = atob(payloadBase64.replace(/-/g, "+").replace(/_/g, "/"));
+        const payload = JSON.parse(payloadJson);
+        if (!payload.sub) throw new Error("No sub in token");
+        // Check expiration
+        if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) {
+          throw new Error("Token expired");
+        }
+        userId = payload.sub;
+      } catch (e) {
+        console.error("[lead-engine-scan] JWT decode error:", e);
         return new Response(JSON.stringify({ error: "Not authenticated. Please log in again." }), {
           status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      userId = data.claims.sub as string;
     }
 
     const source: ScanSource = body.source;
