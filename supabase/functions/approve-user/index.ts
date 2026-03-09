@@ -108,7 +108,7 @@ Deno.serve(async (req) => {
         const resendKey = Deno.env.get("RESEND_API_KEY");
         if (resendKey) {
           const roleLabel = role === "admin" ? "Administrator" :
-            role === "producer" ? "Producer" :
+            role === "advisor" ? "Advisor" :
             role === "manager" ? "Manager" :
             role === "client_services" ? "Client Services" : role;
 

@@ -70,11 +70,11 @@ Deno.serve(async (req) => {
       roleMap.set(r.user_id, arr);
     });
 
-    // Return only producers + admins (people who appear on the scoreboard)
+    // Return only advisors + admins (people who appear on the scoreboard)
     const result = usersRes.data.users
       .filter((u: any) => {
         const r = roleMap.get(u.id) || [];
-        return r.includes("producer") || r.includes("admin");
+        return r.includes("advisor") || r.includes("producer") || r.includes("admin");
       })
       .map((u: any) => {
         const profile = profileMap.get(u.id) as any;

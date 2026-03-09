@@ -93,7 +93,7 @@ Deno.serve(async (req) => {
     const result = users.map((u: any) => {
       const profile = profileMap.get(u.id) as any;
       const userRoles = roleMap.get(u.id) || [];
-      const primaryRole = userRoles.find(r => r !== 'user') || (userRoles.includes('user') ? 'producer' : 'producer');
+      const primaryRole = userRoles.find(r => r !== 'user') || (userRoles.includes('user') ? 'advisor' : 'advisor');
       const agency = profile?.agency_id ? agencyMap.get(profile.agency_id) : null;
       const goal = goalMap.get(u.id) as any;
 
