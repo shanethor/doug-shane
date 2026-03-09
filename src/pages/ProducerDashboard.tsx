@@ -290,6 +290,9 @@ export default function ProducerDashboard({ embedded }: { embedded?: boolean } =
           </CardContent>
         </Card>
       </div>
+
+      {/* Production Analytics */}
+      <ProductionAnalytics policies={policies} leadNames={leadNames} leads={leadInfos} />
     </>
   );
   return embedded ? content : <AppLayout>{content}</AppLayout>;
