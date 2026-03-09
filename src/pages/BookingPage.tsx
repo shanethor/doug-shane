@@ -38,17 +38,17 @@ export default function BookingPage() {
   const [clientNotes, setClientNotes] = useState("");
 
   useEffect(() => {
-    if (!producerId) return;
+    if (!advisorId) return;
     (async () => {
       const { data } = await supabase
         .from("profiles")
         .select("full_name, agency_name")
-        .eq("user_id", producerId)
+        .eq("user_id", advisorId)
         .maybeSingle();
-      setProducer(data || { full_name: "Insurance Agent", agency_name: null });
+      setAdvisor(data || { full_name: "Insurance Advisor", agency_name: null });
       setLoading(false);
     })();
-  }, [producerId]);
+  }, [advisorId]);
 
   const handleSubmit = async () => {
     if (!selectedType || !selectedDate || !selectedTime || !clientName.trim() || !clientEmail.trim()) {
