@@ -229,67 +229,68 @@ export function NavScoreboard() {
   const paceMultiplier = dayOfMonth > 0 ? daysInMonth / dayOfMonth : 1;
   const projectedMonthly = mtdStats.premium * paceMultiplier;
 
+  const tickerContent = (
+    <div className="flex items-center gap-8 shrink-0 text-[11px] whitespace-nowrap px-4">
+      {/* Identity + Status */}
+      <span className="flex items-center gap-2">
+        <Avatar className="h-6 w-6">
+          <AvatarFallback className="text-[9px] font-bold bg-primary/10 text-primary">{initials}</AvatarFallback>
+        </Avatar>
+        <span className="font-semibold text-foreground">{profile.full_name || "Producer"}</span>
+        <span className={`font-semibold px-1.5 py-0.5 rounded text-[10px] ${status.color}`}>{status.text}</span>
+      </span>
+
+      <span className="text-muted-foreground/30">•</span>
+
+      {/* MTD */}
+      <span className="flex items-center gap-1.5">
+        <span className="text-muted-foreground font-medium">MTD NB:</span>
+        <span className="font-semibold tabular-nums text-foreground">{fmt(mtdStats.premium)}</span>
+        <span className="text-muted-foreground">Rev:</span>
+        <span className="font-semibold tabular-nums text-foreground">{fmt(mtdStats.revenue)}</span>
+        <span className="text-[9px] text-muted-foreground tabular-nums ml-1">({Math.round(mtdPremPct)}% of mo. goal)</span>
+      </span>
+
+      <span className="text-muted-foreground/30">•</span>
+
+      {/* YTD */}
+      <span className="flex items-center gap-1.5">
+        <span className="text-muted-foreground font-medium">YTD NB:</span>
+        <span className="font-semibold tabular-nums text-foreground">{fmt(soldStats.premium)}</span>
+        <span className="text-muted-foreground">Rev:</span>
+        <span className="font-semibold tabular-nums text-foreground">{fmt(soldStats.revenue)}</span>
+        <span className="text-[9px] text-muted-foreground tabular-nums ml-1">({Math.round(ytdPremPct)}% of annual goal)</span>
+      </span>
+
+      <span className="text-muted-foreground/30">•</span>
+
+      {/* Pipeline */}
+      <span className="flex items-center gap-1.5">
+        <PipelineChip label="Prospects" count={pipeline.prospects} />
+        <PipelineChip label="Quoting" count={pipeline.quoting} />
+        <PipelineChip label="Submissions" count={pipeline.presenting} />
+        <PipelineChip label="Sold" count={pipeline.sold} />
+        <PipelineChip label="Dead" count={pipeline.lost} />
+      </span>
+
+      <span className="text-muted-foreground/30">•</span>
+
+      {/* Goal edit */}
+      <button
+        onClick={(e) => { e.stopPropagation(); setGoalPremium(annualPrem.toString()); setGoalRevenue((goals?.annual_revenue_goal || 0).toString()); setGoalDialogOpen(true); }}
+        className="text-muted-foreground/40 hover:text-foreground transition-colors"
+      >
+        <Target className="h-3 w-3" />
+      </button>
+    </div>
+  );
+
   return (
     <>
-      <div className="w-full border-b border-border bg-card/95 backdrop-blur-sm">
-        <div className="flex items-center h-[47px] overflow-x-auto scrollbar-hide max-w-6xl mx-auto px-3 gap-0 text-[12px]">
-
-          {/* Identity + Status */}
-          <div className="flex items-center gap-2 shrink-0 pr-4 border-r border-border mr-4">
-            <Avatar className="h-7 w-7">
-              <AvatarFallback className="text-[10px] font-bold bg-primary/10 text-primary">{initials}</AvatarFallback>
-            </Avatar>
-            <div className="flex flex-col">
-              <span className="font-semibold text-foreground whitespace-nowrap leading-tight">{profile.full_name || "Producer"}</span>
-              <span className="text-[11px] text-muted-foreground whitespace-nowrap leading-tight">
-                {roleLabel}{profile.agency_name ? ` – ${profile.agency_name}` : ""}
-              </span>
-            </div>
-            <span className={`font-semibold whitespace-nowrap px-2 py-0.5 rounded text-[11px] ${status.color} bg-current/5`}>
-              {status.text}
-            </span>
-          </div>
-
-          {/* MTD Numbers + % to goal */}
-          <div className="flex flex-col justify-center shrink-0 pr-4 border-r border-border mr-4 min-w-[140px]">
-            <div className="flex items-center gap-1.5 whitespace-nowrap leading-none text-[11px]">
-              <span className="text-muted-foreground font-medium">MTD NB:</span>
-              <span className="font-semibold tabular-nums text-foreground">{fmt(mtdStats.premium)}</span>
-              <span className="text-muted-foreground">Rev:</span>
-              <span className="font-semibold tabular-nums text-foreground">{fmt(mtdStats.revenue)}</span>
-            </div>
-            <MiniProgress pct={mtdPremPct} />
-            <span className="text-[9px] text-muted-foreground tabular-nums leading-none mt-0.5">{Math.round(mtdPremPct)}% of monthly goal</span>
-          </div>
-
-          {/* YTD Numbers + % to goal */}
-          <div className="flex flex-col justify-center shrink-0 pr-4 border-r border-border mr-4 min-w-[140px]">
-            <div className="flex items-center gap-1.5 whitespace-nowrap leading-none text-[11px]">
-              <span className="text-muted-foreground font-medium">YTD NB:</span>
-              <span className="font-semibold tabular-nums text-foreground">{fmt(soldStats.premium)}</span>
-              <span className="text-muted-foreground">Rev:</span>
-              <span className="font-semibold tabular-nums text-foreground">{fmt(soldStats.revenue)}</span>
-            </div>
-            <MiniProgress pct={ytdPremPct} />
-            <span className="text-[9px] text-muted-foreground tabular-nums leading-none mt-0.5">{Math.round(ytdPremPct)}% of annual goal</span>
-          </div>
-
-          {/* Pipeline Tags */}
-          <div className="flex items-center gap-1.5 shrink-0">
-            <PipelineChip label="Prospects" count={pipeline.prospects} />
-            <PipelineChip label="Quoting" count={pipeline.quoting} />
-            <PipelineChip label="Submissions" count={pipeline.presenting} />
-            <PipelineChip label="Sold" count={pipeline.sold} />
-            <PipelineChip label="Dead" count={pipeline.lost} />
-          </div>
-
-          {/* Goal edit */}
-          <button
-            onClick={() => { setGoalPremium(annualPrem.toString()); setGoalRevenue((goals?.annual_revenue_goal || 0).toString()); setGoalDialogOpen(true); }}
-            className="ml-2 text-muted-foreground/30 hover:text-foreground transition-colors shrink-0"
-          >
-            <Target className="h-3.5 w-3.5" />
-          </button>
+      <div className="w-full bg-card/60 backdrop-blur-md overflow-hidden">
+        <div className="flex h-[34px] items-center ticker-track">
+          {tickerContent}
+          {tickerContent}
         </div>
       </div>
 
