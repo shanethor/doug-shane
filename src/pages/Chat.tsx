@@ -37,11 +37,12 @@ const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/agent-chat`;
 
 const PRODUCER_SUGGESTIONS = [
   { icon: FileUp, label: "Submit a new client", message: "I want to submit a new client for coverage." },
+  { icon: Mail, label: "Email a client", message: "Email my most recent client a summary of what we discussed today and copy me." },
   { icon: Globe, label: "Scrape a company website", message: "I have a client's website URL — can you pull their business info from it?" },
   { icon: ClipboardList, label: "Fill an ACORD form", message: "Help me fill out an ACORD form for a client." },
   { icon: Users, label: "Manage my pipeline", message: "Help me manage my sales pipeline — I need to move some leads and update statuses." },
   { icon: Search, label: "Review a submission", message: "I need to review an existing client submission." },
-  { icon: Mail, label: "Compose an email", message: "Help me draft a professional email to a client." },
+  { icon: Sparkles, label: "Create a task", message: "Create a task to follow up with my most recent client next week." },
   { icon: FileSearch, label: "Request loss runs", message: "I need to request loss runs for a client." },
   { icon: BarChart3, label: "Check my production", message: "Show me my production numbers and pending approvals." },
 ];
