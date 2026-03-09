@@ -141,8 +141,10 @@ export function NavScoreboard() {
         });
       }
 
-      // Always add Jane Smith (admin) as fake producer
-      producerIds.add(JANE_SMITH_ID);
+      // Only admins see the fake admin-as-producer entry
+      if (role === "admin") {
+        producerIds.add(JANE_SMITH_ID);
+      }
 
       const profileMap = new Map(profiles.map((p: any) => [p.user_id, p]));
       const goalsMap = new Map((allGoals as any[]).map((g: any) => [g.user_id, g]));
