@@ -88,7 +88,7 @@ export function LeadCard({ lead, onAction, onDelete, onEdit, compact }: LeadCard
             {lead.status !== "converted" && (
               <Button variant="outline" size="sm" className="text-xs gap-1" onClick={() => onAction(lead, "convert")}>
                 <ArrowUpRight className="h-3 w-3" />
-                Convert
+                {lead.source_url ? "View Post" : "Search"}
               </Button>
             )}
             <DropdownMenu>
