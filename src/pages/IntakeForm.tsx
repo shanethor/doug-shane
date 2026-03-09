@@ -277,6 +277,10 @@ export default function IntakeForm() {
   const [commercialStep, setCommercialStep] = useState<CommercialStepKey>("industry");
   const [borGenerated, setBorGenerated] = useState(false);
   const [borSignToken, setBorSignToken] = useState<string | null>(null);
+  const [showLossRunModal, setShowLossRunModal] = useState(false);
+  const [showDataUsageOverlay, setShowDataUsageOverlay] = useState(false);
+  const [lossRunRequested, setLossRunRequested] = useState(false);
+  const [borAccepted, setBorAccepted] = useState<boolean | null>(null);
 
   // ─── Shared State ───
   const [notes, setNotes] = useState("");
