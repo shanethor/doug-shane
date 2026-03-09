@@ -2346,14 +2346,11 @@ export default function IntakeForm() {
               // Dynamic steps based on user choices
               const buildCommSteps = (): CommercialStepKey[] => {
                 const steps: CommercialStepKey[] = ["industry", "insurance_check"];
-                if (commercialForm.has_current_insurance === "yes") {
-                  steps.push("loss_run_auth");
-                } else if (commercialForm.has_current_insurance === "no") {
+                if (commercialForm.has_current_insurance === "no") {
                   steps.push("owner_experience");
                 }
                 steps.push("bor_auth");
-                steps.push("business_info");
-                steps.push("coverage_select_comm");
+                steps.push("full_intake");
                 steps.push("coverage_questions");
                 steps.push("commercial_docs");
                 return steps;
@@ -2364,10 +2361,8 @@ export default function IntakeForm() {
                 insurance_check: "Current Insurance",
                 owner_experience: "Experience",
                 upload_dec: "Upload Dec Pages",
-                loss_run_auth: "Loss Run Authorization",
-                bor_auth: "Broker Authorization",
-                business_info: "Your Information",
-                coverage_select_comm: "Coverage Lines",
+                bor_auth: "Broker of Record",
+                full_intake: "Full Intake",
                 coverage_questions: "Coverage Details",
                 commercial_docs: "Documents & Submit",
               };
@@ -2382,11 +2377,12 @@ export default function IntakeForm() {
                 if (commercialStep === "insurance_check") {
                   if (!commercialForm.has_current_insurance) { toast.error("Please indicate if you currently have insurance"); return false; }
                 }
-                if (commercialStep === "business_info") {
+                if (commercialStep === "full_intake") {
                   if (!commercialForm.business_name.trim()) { toast.error("Business name is required"); return false; }
                   if (!commercialForm.customer_name.trim()) { toast.error("Primary contact name is required"); return false; }
                   if (!commercialForm.customer_email.trim() || !/^[\w.-]+@[\w.-]+\.\w+$/.test(commercialForm.customer_email.trim())) { toast.error("A valid email is required"); return false; }
                   if (!commercialForm.customer_phone.trim()) { toast.error("Phone number is required"); return false; }
+                  if (commercialForm.selected_coverage_lines.length === 0) { toast.error("Please select at least one coverage line"); return false; }
                 }
                 return true;
               };
@@ -2395,21 +2391,12 @@ export default function IntakeForm() {
               const isCommStepValid = (): boolean => {
                 if (commercialStep === "industry") return !!commercialForm.industry;
                 if (commercialStep === "insurance_check") return !!commercialForm.has_current_insurance;
-                if (commercialStep === "loss_run_auth") {
-                  return true; // Loss run authorization is optional
-                }
                 if (commercialStep === "bor_auth") {
-                  if (!commercialForm.has_other_broker) return false;
-                  if (commercialForm.has_other_broker === "yes") {
-                    return commercialForm.bor_lines.length > 0 && commercialForm.bor_authorized;
-                  }
+                  // BOR is optional — always valid to continue
                   return true;
                 }
-                if (commercialStep === "business_info") {
-                  return !!(commercialForm.business_name.trim() && commercialForm.customer_name.trim() && commercialForm.customer_email.trim() && /^[\w.-]+@[\w.-]+\.\w+$/.test(commercialForm.customer_email.trim()) && commercialForm.customer_phone.trim());
-                }
-                if (commercialStep === "coverage_select_comm") {
-                  return commercialForm.selected_coverage_lines.length > 0;
+                if (commercialStep === "full_intake") {
+                  return !!(commercialForm.business_name.trim() && commercialForm.customer_name.trim() && commercialForm.customer_email.trim() && /^[\w.-]+@[\w.-]+\.\w+$/.test(commercialForm.customer_email.trim()) && commercialForm.customer_phone.trim() && commercialForm.selected_coverage_lines.length > 0);
                 }
                 return true;
               };
