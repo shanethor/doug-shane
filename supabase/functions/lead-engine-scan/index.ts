@@ -320,7 +320,7 @@ Deno.serve(async (req) => {
 
     // Log activity
     await adminClient.from("engine_activity").insert({
-      user_id: user.id,
+      user_id: userId,
       activity_type: activityTypeMap[source] || "default",
       description: `${source} scan found ${inserted?.length || 0} new leads`,
       source,
