@@ -3062,6 +3062,21 @@ export default function Chat() {
             {pendingEmail && (
               <>
                 <div className="space-y-2 text-sm">
+                  <div className="flex gap-2 items-center">
+                    <span className="text-muted-foreground font-medium w-16 shrink-0">From:</span>
+                    <select
+                      className="flex-1 rounded-md border border-input bg-background px-3 py-1.5 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
+                      value={sendFrom}
+                      onChange={(e) => setSendFrom(e.target.value)}
+                    >
+                      <option value="aura">AURA — noreply@buildingaura.site</option>
+                      {connectedEmails.map((conn) => (
+                        <option key={conn.id} value={conn.id}>
+                          {conn.provider === "microsoft" ? "Outlook" : "Gmail"} — {conn.email_address}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                   <div className="flex gap-2">
                     <span className="text-muted-foreground font-medium w-16 shrink-0">To:</span>
                     <span>{pendingEmail.recipientName} &lt;{pendingEmail.recipientEmail}&gt;</span>
