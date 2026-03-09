@@ -2240,7 +2240,7 @@ export default function Chat() {
   return (
     <AppLayout>
       <div
-        className="flex flex-col h-[calc(100vh-7.5rem)]"
+        className="flex flex-col min-h-[calc(100vh-7.5rem)]"
         onDragEnter={handleDragIn}
         onDragLeave={handleDragOut}
         onDragOver={handleDrag}
