@@ -155,7 +155,83 @@ function stripMarkers(text: string): string {
     .replace(/\[SUBMISSION_ID:[^\]]+\]/g, "")
     .replace(/\[PIPELINE_ACTION:[^\]]+\]/g, "")
     .replace(/\[CALENDAR_ACTION:[^\]]+\]/g, "")
+    .replace(/\[EMAIL_ACTION:[^\]]+\]/g, "")
+    .replace(/\[TASK_ACTION:[^\]]+\]/g, "")
+    .replace(/\[LEAD_ACTION:[^\]]+\]/g, "")
     .trim();
+}
+
+type EmailAction = {
+  mode: "draft" | "send";
+  recipientName: string;
+  recipientEmail: string;
+  subject: string;
+  bodyHtml: string;
+  ccOwner?: boolean;
+};
+
+type TaskAction = {
+  title: string;
+  dueDate: string;
+  leadName: string;
+};
+
+type LeadIntelAction = {
+  companyName: string;
+  state: string;
+  industry: string;
+  tier: number;
+  source: string;
+};
+
+/** Parse email action markers like [EMAIL_ACTION:draft:Name:email:Subject:body] */
+function parseEmailActions(text: string): EmailAction[] {
+  const regex = /\[EMAIL_ACTION:([^:]+):([^:]+):([^:]+):([^:]+):([^\]]+)\]/g;
+  const actions: EmailAction[] = [];
+  let m: RegExpExecArray | null;
+  while ((m = regex.exec(text)) !== null) {
+    actions.push({
+      mode: m[1] as "draft" | "send",
+      recipientName: m[2].trim(),
+      recipientEmail: m[3].trim(),
+      subject: m[4].trim(),
+      bodyHtml: m[5].trim().replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&"),
+      ccOwner: text.includes("cc_owner:true"),
+    });
+  }
+  return actions;
+}
+
+/** Parse task action markers like [TASK_ACTION:create:Title:2026-03-15:LeadName] */
+function parseTaskActions(text: string): TaskAction[] {
+  const regex = /\[TASK_ACTION:create:([^:]+):([^:]+):([^\]]*)\]/g;
+  const actions: TaskAction[] = [];
+  let m: RegExpExecArray | null;
+  while ((m = regex.exec(text)) !== null) {
+    actions.push({
+      title: m[1].trim(),
+      dueDate: m[2].trim(),
+      leadName: m[3]?.trim() || "",
+    });
+  }
+  return actions;
+}
+
+/** Parse lead intelligence action markers like [LEAD_ACTION:create:Company:ST:Industry:1:manual] */
+function parseLeadActions(text: string): LeadIntelAction[] {
+  const regex = /\[LEAD_ACTION:create:([^:]+):([^:]+):([^:]+):([^:]+):([^\]]+)\]/g;
+  const actions: LeadIntelAction[] = [];
+  let m: RegExpExecArray | null;
+  while ((m = regex.exec(text)) !== null) {
+    actions.push({
+      companyName: m[1].trim(),
+      state: m[2].trim(),
+      industry: m[3].trim(),
+      tier: parseInt(m[4]) || 3,
+      source: m[5].trim(),
+    });
+  }
+  return actions;
 }
 
 type PipelineAction = {
