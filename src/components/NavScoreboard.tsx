@@ -50,7 +50,7 @@ function getStatusLabel(pct: number): { text: string; color: string } {
   return { text: "Ramping", color: "text-muted-foreground" };
 }
 
-interface ProducerData {
+interface AdvisorData {
   userId: string;
   name: string;
   initials: string;
