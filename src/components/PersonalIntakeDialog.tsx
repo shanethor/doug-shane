@@ -101,13 +101,13 @@ export function PersonalIntakeDialog({ open, onClose, onGenerate, isLoading, adv
             {/* CC Producer Toggle */}
             <label className="flex items-center gap-3 p-3 rounded-lg border border-border bg-muted/30 cursor-pointer hover:bg-muted/50 transition-colors">
               <Checkbox
-                checked={ccProducer}
-                onCheckedChange={(v) => setCcProducer(!!v)}
+                checked={ccAdvisor}
+                onCheckedChange={(v) => setCcAdvisor(!!v)}
               />
               <div className="space-y-0.5">
                 <span className="text-sm font-medium">Also send to me</span>
                 <p className="text-[11px] text-muted-foreground">
-                  CC {producerEmail || "your email"} when client submits
+                  CC {advisorEmail || "your email"} when client submits
                 </p>
               </div>
             </label>

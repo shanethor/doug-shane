@@ -245,7 +245,7 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
     }));
     setLeads(mappedLeads);
 
-    // For managers/admins, fetch producer names for all unique owner_user_ids
+    // For managers/admins, fetch advisor names for all unique owner_user_ids
     if (isManager || isAdmin) {
       const ownerIds = [...new Set(leadsData.map((l: any) => l.owner_user_id))];
       if (ownerIds.length > 0) {

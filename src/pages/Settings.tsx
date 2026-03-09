@@ -672,7 +672,7 @@ export default function Settings() {
           <div className="rounded-md bg-muted/50 p-3">
             <p className="text-[11px] text-muted-foreground leading-relaxed">
               <strong>How it works:</strong> Once connected, the Lead Engine continuously monitors these sources for insurance-related signals,
-              scores leads by urgency and quality (Tier 1-3), and automatically routes them to the right producer with recommended action playbooks.
+              scores leads by urgency and quality (Tier 1-3), and automatically routes them to the right advisor with recommended action playbooks.
             </p>
           </div>
         </CardContent>

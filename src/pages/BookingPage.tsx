@@ -176,8 +176,8 @@ export default function BookingPage() {
           </div>
           <CardTitle className="text-xl">Book a Meeting</CardTitle>
           <p className="text-sm text-muted-foreground font-sans">
-            with {producer?.full_name}
-            {producer?.agency_name && ` — ${producer.agency_name}`}
+            with {advisor?.full_name}
+            {advisor?.agency_name && ` — ${advisor.agency_name}`}
           </p>
         </CardHeader>
         <CardContent className="space-y-4">
