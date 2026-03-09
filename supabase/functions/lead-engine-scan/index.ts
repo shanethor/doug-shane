@@ -137,9 +137,9 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Run Firecrawl searches
+    // Run Firecrawl searches in parallel for speed
     const allResults: any[] = [];
-    for (const query of searchQueries.slice(0, 4)) {
+    const searchPromises = searchQueries.slice(0, 4).map(async (query) => {
       try {
         console.log(`[lead-engine-scan] Searching: ${query}`);
         const resp = await fetch("https://api.firecrawl.dev/v1/search", {
@@ -150,7 +150,7 @@ Deno.serve(async (req) => {
           },
           body: JSON.stringify({
             query,
-            limit: 5,
+            limit: 3,
             tbs: source === "Business Filings" || source === "Permit Database" ? "qdr:m" : "qdr:w",
           }),
         });
@@ -160,11 +160,18 @@ Deno.serve(async (req) => {
           console.log(`[lead-engine-scan] Firecrawl error detail:`, JSON.stringify(data).slice(0, 300));
         }
         if (data.success && data.data) {
-          allResults.push(...data.data);
+          return data.data;
         }
+        return [];
       } catch (e) {
         console.error(`[lead-engine-scan] Search failed for: ${query}`, e);
+        return [];
       }
+    });
+
+    const searchResults = await Promise.all(searchPromises);
+    for (const results of searchResults) {
+      allResults.push(...results);
     }
 
     const adminClient = createClient(
@@ -184,9 +191,10 @@ Deno.serve(async (req) => {
     }
 
     // Use AI to extract structured lead data
-    const resultsText = allResults.slice(0, 10).map((r, i) =>
+    const resultsText = allResults.slice(0, 6).map((r, i) =>
       `Result ${i + 1}:\nTitle: ${r.title || ""}\nURL: ${r.url || ""}\nDescription: ${r.description || ""}`
     ).join("\n\n");
+    console.log(`[lead-engine-scan] Sending ${Math.min(allResults.length, 6)} results to AI for extraction`);
 
     const sourceContext: Record<string, string> = {
       Reddit: "social media posts from Reddit where people are looking for or discussing insurance needs",
