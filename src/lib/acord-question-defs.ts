@@ -6,7 +6,7 @@
  * and the CommercialFormData state so data flows directly from intake → ACORD prefill.
  */
 
-export type AcordCode = "125" | "126" | "127" | "130" | "131" | "140" | "75";
+export type AcordCode = "125" | "126" | "127" | "130" | "131" | "140" | "75" | "PL" | "CYBER" | "OTHER";
 
 export type AcordSection =
   | "business"
@@ -15,6 +15,9 @@ export type AcordSection =
   | "wc"
   | "property"
   | "umbrella"
+  | "professional"
+  | "cyber"
+  | "other"
   | "binder";
 
 export type QuestionType = "text" | "number" | "select" | "boolean" | "currency" | "date";
