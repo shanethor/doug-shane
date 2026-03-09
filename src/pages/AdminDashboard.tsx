@@ -578,7 +578,7 @@ export default function AdminDashboard() {
                           </SelectContent>
                         </Select>
                         <Select
-                          value={u.primary_role || "producer"}
+                          value={u.primary_role || "advisor"}
                           onValueChange={async (newRole) => {
                             const { data, error } = await supabase.functions.invoke("update-user-role", {
                               body: { target_user_id: u.id, new_role: newRole },
