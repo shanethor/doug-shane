@@ -21,8 +21,8 @@ const AGENCY_FIELDS = [
   { key: "agency_phone", label: "Agency Phone", placeholder: "(555) 123-4567" },
   { key: "agency_fax", label: "Agency Fax", placeholder: "(555) 123-4568" },
   { key: "agency_email", label: "Agency Email", placeholder: "info@agency.com" },
-  { key: "producer_name", label: "Producer Name", placeholder: "Jane Smith" },
-  { key: "producer_license_no", label: "Producer License No.", placeholder: "LIC-123456" },
+  { key: "producer_name", label: "Advisor Name", placeholder: "Jane Smith" },
+  { key: "producer_license_no", label: "Advisor License No.", placeholder: "LIC-123456" },
   { key: "from_email", label: "Send-From Email", placeholder: "submissions@agency.com" },
 ];
 
