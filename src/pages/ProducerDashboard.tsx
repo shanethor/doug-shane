@@ -37,7 +37,7 @@ function getDateRange(period: TimePeriod): { start: string; end: string } {
   return { start: "2000-01-01", end };
 }
 
-type ProducerOption = { id: string; name: string };
+type AdvisorOption = { id: string; name: string };
 
 type PipelineStage = { stage: string; count: number; premium: number };
 type TopOpportunity = { id: string; account_name: string; line_type: string; target_premium: number; stage: string };
@@ -73,15 +73,15 @@ export default function ProducerDashboard({ embedded }: { embedded?: boolean } =
   const { user } = useAuth();
   const navigate = useNavigate();
   const { isManager, isAdmin } = useUserRole();
-  const canFilterProducers = isManager || isAdmin;
+  const canFilterAdvisors = isManager || isAdmin;
 
   const [policies, setPolicies] = useState<any[]>([]);
   const [leadNames, setLeadNames] = useState<Record<string, string>>({});
   const [leadInfos, setLeadInfos] = useState<{ id: string; account_name: string; business_type: string | null }[]>([]);
   const [allLeads, setAllLeads] = useState<any[]>([]);
   const [period, setPeriod] = useState<TimePeriod>("year");
-  const [selectedProducer, setSelectedProducer] = useState<string>("all");
-  const [producerOptions, setProducerOptions] = useState<ProducerOption[]>([]);
+  const [selectedAdvisor, setSelectedAdvisor] = useState<string>("all");
+  const [advisorOptions, setAdvisorOptions] = useState<AdvisorOption[]>([]);
   const [stats, setStats] = useState({
     totalPolicies: 0,
     approvedPolicies: 0,
@@ -94,14 +94,14 @@ export default function ProducerDashboard({ embedded }: { embedded?: boolean } =
   const mountedRef = useRef(true);
   useEffect(() => { return () => { mountedRef.current = false; }; }, []);
 
-  // Load producer list for admin/manager
+  // Load advisor list for admin/manager
   useEffect(() => {
-    if (!canFilterProducers) return;
-    const loadProducers = async () => {
+    if (!canFilterAdvisors) return;
+    const loadAdvisors = async () => {
       const { data: roles } = await supabase
         .from("user_roles")
         .select("user_id, role")
-        .in("role", ["producer", "manager", "admin"]);
+        .in("role", ["advisor", "manager", "admin"]);
       if (!roles?.length) return;
 
       const userIds = [...new Set(roles.map((r) => r.user_id))];
@@ -110,18 +110,18 @@ export default function ProducerDashboard({ embedded }: { embedded?: boolean } =
         .select("user_id, full_name")
         .in("user_id", userIds);
 
-      const options: ProducerOption[] = (profiles || [])
+      const options: AdvisorOption[] = (profiles || [])
         .map((p) => ({ id: p.user_id, name: p.full_name || p.user_id }))
         .sort((a, b) => a.name.localeCompare(b.name));
-      setProducerOptions(options);
+      setAdvisorOptions(options);
     };
-    loadProducers();
-  }, [canFilterProducers]);
+    loadAdvisors();
+  }, [canFilterAdvisors]);
 
   useEffect(() => {
     if (!user) return;
     loadStats();
-  }, [user, period, isManager, isAdmin, selectedProducer]);
+  }, [user, period, isManager, isAdmin, selectedAdvisor]);
 
   const loadStats = async () => {
     if (!user) return;
@@ -132,10 +132,10 @@ export default function ProducerDashboard({ embedded }: { embedded?: boolean } =
     const policiesQuery = supabase.from("policies").select("*");
     const leadsQuery = supabase.from("leads").select("id, stage, account_name, line_type, target_premium, estimated_renewal_date, created_at");
 
-    if (canFilterProducers) {
-      if (selectedProducer !== "all") {
-        policiesQuery.eq("producer_user_id", selectedProducer);
-        leadsQuery.eq("owner_user_id", selectedProducer);
+    if (canFilterAdvisors) {
+      if (selectedAdvisor !== "all") {
+        policiesQuery.eq("producer_user_id", selectedAdvisor);
+        leadsQuery.eq("owner_user_id", selectedAdvisor);
       }
     } else {
       policiesQuery.eq("producer_user_id", user.id);
@@ -262,14 +262,14 @@ export default function ProducerDashboard({ embedded }: { embedded?: boolean } =
     };
   })();
 
-  const scoreboardUserId = canFilterProducers && selectedProducer !== "all"
-    ? selectedProducer
+  const scoreboardUserId = canFilterAdvisors && selectedAdvisor !== "all"
+    ? selectedAdvisor
     : user?.id;
 
-  const dashboardTitle = canFilterProducers
-    ? selectedProducer === "all"
-      ? "All Producers"
-      : producerOptions.find((p) => p.id === selectedProducer)?.name || "Producer Dashboard"
+  const dashboardTitle = canFilterAdvisors
+    ? selectedAdvisor === "all"
+      ? "All Advisors"
+      : advisorOptions.find((p) => p.id === selectedAdvisor)?.name || "Advisor Dashboard"
     : "My Dashboard";
 
   const stageLabels: Record<string, string> = {
@@ -285,16 +285,16 @@ export default function ProducerDashboard({ embedded }: { embedded?: boolean } =
           <h1 className="text-2xl sm:text-4xl mb-1">{dashboardTitle}</h1>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          {canFilterProducers && (
+          {canFilterAdvisors && (
             <>
               <Users className="h-4 w-4 text-muted-foreground" />
-              <Select value={selectedProducer} onValueChange={setSelectedProducer}>
+              <Select value={selectedAdvisor} onValueChange={setSelectedAdvisor}>
                 <SelectTrigger className="w-[180px] h-8 text-xs">
-                  <SelectValue placeholder="All Producers" />
+                  <SelectValue placeholder="All Advisors" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Producers</SelectItem>
-                  {producerOptions.map((p) => (
+                  <SelectItem value="all">All Advisors</SelectItem>
+                  {advisorOptions.map((p) => (
                     <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
                   ))}
                 </SelectContent>
