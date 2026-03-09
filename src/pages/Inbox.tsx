@@ -600,8 +600,8 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
           <EmailFilterChips
             activeTags={activeTags}
             onTagsChange={setActiveTags}
-            selectedClient={selectedClient}
-            onClientChange={setSelectedClient}
+            selectedClients={selectedClients}
+            onClientsChange={setSelectedClients}
           />
         </div>
 
