@@ -15,6 +15,7 @@ export type EngineLead = {
   est_premium: number;
   signal: string | null;
   source: string;
+  source_url: string | null;
   score: number;
   tier: number;
   status: string;
