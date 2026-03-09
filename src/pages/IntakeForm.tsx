@@ -735,6 +735,13 @@ export default function IntakeForm() {
         }
         if (d.wc_payroll || d.annual_wc_payroll) acordPrefill.annual_wc_payroll = d.wc_payroll || d.annual_wc_payroll;
         if (d.wc_class_codes) acordPrefill.wc_class_codes = d.wc_class_codes;
+        if (d.wc_states || d.wc_states_of_operation || d.state) {
+          acordPrefill.wc_states_of_operation = d.wc_states || d.wc_states_of_operation || d.state;
+        }
+        if (d.wc_include_owners != null || d.owners_included != null) {
+          const raw = d.wc_include_owners ?? d.owners_included;
+          acordPrefill.wc_include_owners = (raw === true || raw === "yes" || raw === "Included" || raw === "I" || raw === "INC") ? "yes" : "no";
+        }
         if (d.experience_mod || d.wc_experience_mod) acordPrefill.wc_experience_mod = d.experience_mod || d.wc_experience_mod;
 
         // ACORD 140 – Commercial Property
