@@ -43,6 +43,7 @@ export default function ProducerDashboard({ embedded }: { embedded?: boolean } =
   const { isManager, isAdmin } = useUserRole();
   const [policies, setPolicies] = useState<any[]>([]);
   const [leadNames, setLeadNames] = useState<Record<string, string>>({});
+  const [leadInfos, setLeadInfos] = useState<{ id: string; account_name: string; business_type: string | null }[]>([]);
   const [period, setPeriod] = useState<TimePeriod>("year");
   const [stats, setStats] = useState({
     totalPolicies: 0,
