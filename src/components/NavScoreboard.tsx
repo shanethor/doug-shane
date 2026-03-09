@@ -71,7 +71,7 @@ const JANE_SMITH_ID = "77f8c5de-6462-4721-b654-3909c398667b";
 export function NavScoreboard() {
   const { user } = useAuth();
   const { isClientServices, role } = useUserRole();
-  const [producers, setProducers] = useState<ProducerData[]>([]);
+  const [producers, setProducers] = useState<AdvisorData[]>([]);
   const [loading, setLoading] = useState(true);
   const [goalDialogOpen, setGoalDialogOpen] = useState(false);
   const [goalPremium, setGoalPremium] = useState("");
