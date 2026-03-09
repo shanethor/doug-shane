@@ -709,6 +709,7 @@ export type Database = {
           score: number
           signal: string | null
           source: string
+          source_url: string | null
           state: string | null
           status: string
           tier: number
@@ -731,6 +732,7 @@ export type Database = {
           score?: number
           signal?: string | null
           source?: string
+          source_url?: string | null
           state?: string | null
           status?: string
           tier?: number
@@ -753,6 +755,7 @@ export type Database = {
           score?: number
           signal?: string | null
           source?: string
+          source_url?: string | null
           state?: string | null
           status?: string
           tier?: number

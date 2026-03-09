@@ -1,0 +1,1 @@
+ALTER TABLE public.engine_leads ADD COLUMN IF NOT EXISTS source_url text;
