@@ -3018,6 +3018,67 @@ export default function IntakeForm() {
           <p className="text-[10px] text-muted-foreground/50 tracking-widest uppercase">Insurance runs on <span className="font-semibold">AURA</span></p>
         </div>
       </div>
+
+      {/* ─── Loss Run Authorization Modal ─── */}
+      {showLossRunModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
+          <Card className="max-w-lg w-full shadow-xl">
+            <CardHeader>
+              <CardTitle className="text-base">Let us grab your loss runs for you</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Carriers price you off your past claims. That's what loss runs are. Instead of you emailing and calling around, we can pull them for you through our partner, Loss Run Pro.
+              </p>
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li className="flex items-start gap-2"><Check className="h-4 w-4 text-primary shrink-0 mt-0.5" /> We send the requests straight to your current and past carriers.</li>
+                <li className="flex items-start gap-2"><Check className="h-4 w-4 text-primary shrink-0 mt-0.5" /> You don't have to lift a finger after this.</li>
+                <li className="flex items-start gap-2"><Check className="h-4 w-4 text-primary shrink-0 mt-0.5" /> We use the reports to sharpen pricing and coverage. That's it.</li>
+              </ul>
+              <label className="flex items-start gap-3 text-sm cursor-pointer p-3 rounded-lg border border-border bg-muted/20">
+                <Checkbox checked={commercialForm.loss_run_consent} onCheckedChange={v => updateCommercial("loss_run_consent", !!v)} className="mt-0.5" />
+                <span>I'm good with AURA requesting my loss runs from my current and past carriers.</span>
+              </label>
+              <div className="flex gap-3">
+                <Button className="flex-1 h-11" disabled={!commercialForm.loss_run_consent} onClick={() => {
+                  setLossRunRequested(true);
+                  setShowLossRunModal(false);
+                  toast.success("We're requesting your loss runs in the background. Keep going—we'll plug them in when they land.");
+                }}>
+                  Yep, do it
+                </Button>
+                <Button variant="outline" className="flex-1 h-11" onClick={() => setShowLossRunModal(false)}>
+                  Not right now
+                </Button>
+              </div>
+              <button className="text-xs text-primary hover:underline w-full text-center" onClick={() => { setShowLossRunModal(false); setShowDataUsageOverlay(true); }}>
+                How we use your data
+              </button>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* ─── How We Use Your Data Overlay ─── */}
+      {showDataUsageOverlay && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
+          <Card className="max-w-md w-full shadow-xl">
+            <CardHeader>
+              <CardTitle className="text-base">How we use your data</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <ul className="space-y-2 text-sm text-muted-foreground">
+                <li className="flex items-start gap-2"><Check className="h-4 w-4 text-primary shrink-0 mt-0.5" /> We only pull what you say we can.</li>
+                <li className="flex items-start gap-2"><Check className="h-4 w-4 text-primary shrink-0 mt-0.5" /> We use it to fill in forms, understand your risk, and go to market for you.</li>
+                <li className="flex items-start gap-2"><Check className="h-4 w-4 text-primary shrink-0 mt-0.5" /> A human on our team can walk you through anything, line by line.</li>
+              </ul>
+              <Button className="w-full h-11" onClick={() => { setShowDataUsageOverlay(false); setShowLossRunModal(true); }}>
+                Got it
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }
