@@ -10,7 +10,6 @@ import SubmissionReviewPanel from "@/components/SubmissionReviewPanel";
 import FormFillingView from "@/components/FormFillingView";
 import ExtractionSummary from "@/components/ExtractionSummary";
 import { Send, FileUp, ClipboardList, Search, Loader2, Paperclip, X, Download, Mic, MicOff, Globe, Lightbulb, ChevronDown, ChevronUp, FileText, BrainCircuit, PenLine, Users, BarChart3, Mail, FileSearch, Camera, Plus, ArrowRight, Sparkles, LinkIcon } from "lucide-react";
-import { ProducerHudRail } from "@/components/ProducerHudRail";
 import { FeatureSuggestionDialog } from "@/components/FeatureSuggestionDialog";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
@@ -385,7 +384,6 @@ export default function Chat() {
   const [coverageInfo, setCoverageInfo] = useState<{ filled: number; total: number; percent: number } | null>(null);
   const [showFeatureSuggestion, setShowFeatureSuggestion] = useState(false);
   const pendingPipelineActionRef = useRef<{ action: PipelineAction; leads: { id: string; account_name: string; stage: string }[] } | null>(null);
-  const [soldStats, setSoldStats] = useState({ premium: 0, revenue: 0 });
   const [showPersonalIntakeDialog, setShowPersonalIntakeDialog] = useState(false);
   const [personalIntakeLoading, setPersonalIntakeLoading] = useState(false);
   const [personalIntakeLink, setPersonalIntakeLink] = useState<string | null>(null);
@@ -397,22 +395,8 @@ export default function Chat() {
     };
   }, []);
 
-  // Load sold premium/revenue stats
-  useEffect(() => {
-    if (!user) return;
-    (async () => {
-      const { data } = await supabase
-        .from("policies")
-        .select("annual_premium, revenue")
-        .eq("producer_user_id", user.id)
-        .eq("status", "approved");
-      if (!mountedRef.current) return;
-      const policies = data ?? [];
-      const premium = policies.reduce((s: number, p: any) => s + Number(p.annual_premium || 0), 0);
-      const revenue = policies.reduce((s: number, p: any) => s + Number(p.revenue || Number(p.annual_premium) * 0.12 || 0), 0);
-      setSoldStats({ premium, revenue });
-    })();
-  }, [user]);
+
+
 
   // Calculate coverage from form_data for a given submission
   const calculateCoverage = useCallback(async (submissionId: string) => {
@@ -2053,14 +2037,8 @@ export default function Chat() {
           </div>
         )}
 
-        {/* ESPN-style ticker bar — producers/managers only */}
-        {user && !isClientServices && (
-          <ProducerHudRail
-            userId={user.id}
-            premiumSold={soldStats.premium}
-            revenueSold={soldStats.revenue}
-          />
-        )}
+
+
 
         {/* Messages area */}
         <div ref={scrollRef} className="flex-1 overflow-y-auto">
