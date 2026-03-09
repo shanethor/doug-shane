@@ -36,7 +36,7 @@ type FieldBubble = { label: string; placeholder: string; key: string };
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/agent-chat`;
 
-const PRODUCER_SUGGESTIONS = [
+const ADVISOR_SUGGESTIONS = [
   { icon: FileUp, label: "Submit a new client", message: "I want to submit a new client for coverage." },
   { icon: Mail, label: "Email a client", message: "Email my most recent client a summary of what we discussed today and copy me." },
   { icon: Globe, label: "Scrape a company website", message: "I have a client's website URL — can you pull their business info from it?" },
