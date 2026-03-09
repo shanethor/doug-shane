@@ -56,7 +56,6 @@ export default function Onboarding() {
       const { error } = await supabase
         .from("profiles")
         .update({
-          agency_name: nonEmpty.agency_name || null,
           phone: nonEmpty.agency_phone || null,
           full_name: nonEmpty.producer_name || user.user_metadata?.full_name || null,
           from_email: nonEmpty.from_email || null,
