@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useLayoutEffect } from "react";
 import { AppLayout } from "@/components/AppLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
@@ -42,6 +42,10 @@ const conciergeFeatures = [
 export default function AuraPulse() {
   const [activeTab, setActiveTab] = useState("overview");
   const { user } = useAuth();
+
+  useLayoutEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
   const navigate = useNavigate();
   const [notifications, setNotifications] = useState<any[]>([]);
   const [notifLoading, setNotifLoading] = useState(false);
