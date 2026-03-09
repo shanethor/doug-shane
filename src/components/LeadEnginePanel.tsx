@@ -27,6 +27,7 @@ import {
   useUpsertSourceConfig,
   useConvertToPipeline,
   useDeleteEngineLead,
+  useScanSource,
   type EngineLead,
 } from "@/hooks/useLeadEngine";
 import { formatDistanceToNow } from "date-fns";
