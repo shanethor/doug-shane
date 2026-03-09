@@ -463,6 +463,7 @@ export default function Chat() {
   const [showPersonalIntakeDialog, setShowPersonalIntakeDialog] = useState(false);
   const [personalIntakeLoading, setPersonalIntakeLoading] = useState(false);
   const [personalIntakeLink, setPersonalIntakeLink] = useState<string | null>(null);
+  const [pendingEmail, setPendingEmail] = useState<EmailAction | null>(null);
   const mountedRef = useRef(true);
   useEffect(() => {
     return () => {
