@@ -240,6 +240,7 @@ Deno.serve(async (req) => {
                       state: { type: "string", description: "US state abbreviation" },
                       est_premium: { type: "number", description: "Estimated annual premium" },
                       signal: { type: "string", description: "Why this is a lead opportunity" },
+                      source_url: { type: "string", description: "The URL of the source result where this lead was found" },
                     },
                     required: ["company", "signal"],
                     additionalProperties: false,
