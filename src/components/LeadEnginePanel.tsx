@@ -232,8 +232,8 @@ function ActivityFeed() {
 }
 
 /* ── Monitoring Panel ── */
-const LIVE_SOURCES = ["Reddit", "Business Filings"];
-const COMING_SOON_SOURCES = ["LinkedIn", "Permit Database", "ZoomInfo"];
+const LIVE_SOURCES = ["Reddit", "Business Filings", "Permit Database", "LinkedIn"];
+const COMING_SOON_SOURCES = ["ZoomInfo"];
 
 function MonitoringPanel({ onConfigure }: { onConfigure: (source: string) => void }) {
   const { data: configs, isLoading } = useLeadSourceConfigs();
@@ -241,10 +241,17 @@ function MonitoringPanel({ onConfigure }: { onConfigure: (source: string) => voi
   const scanSource = useScanSource();
   const [scanningSource, setScanningSource] = useState<string | null>(null);
 
+  const SCAN_INTERVALS: Record<string, number> = {
+    Reddit: 60,
+    LinkedIn: 120,
+    "Business Filings": 1440,
+    "Permit Database": 1440,
+  };
+
   const DEFAULT_SOURCES = [
     { source: "Reddit", detail: "Subreddit monitoring" },
     { source: "Business Filings", detail: "State filings sync" },
-    { source: "LinkedIn", detail: "Signal detection, contact enrichment" },
+    { source: "LinkedIn", detail: "Signal detection via web scraping" },
     { source: "Permit Database", detail: "Construction + Liquor permits" },
     { source: "ZoomInfo", detail: "Contact enrichment" },
   ];
@@ -252,11 +259,25 @@ function MonitoringPanel({ onConfigure }: { onConfigure: (source: string) => voi
   const mergedSources = DEFAULT_SOURCES.map((ds) => {
     const cfg = configs?.find((c) => c.source === ds.source);
     const isLive = LIVE_SOURCES.includes(ds.source);
+    const interval = SCAN_INTERVALS[ds.source] || 1440;
+    const lastSyncAt = cfg?.last_sync_at ? new Date(cfg.last_sync_at) : null;
+    const minutesSinceLast = lastSyncAt ? (Date.now() - lastSyncAt.getTime()) / 60000 : Infinity;
+    const nextScanMin = Math.max(0, Math.round(interval - minutesSinceLast));
+
+    let statusDetail = ds.detail;
+    if (cfg?.is_active && lastSyncAt) {
+      statusDetail = `Last scan: ${formatDistanceToNow(lastSyncAt, { addSuffix: true })}`;
+      if (nextScanMin > 0 && nextScanMin < interval) {
+        const unit = nextScanMin >= 60 ? `${Math.round(nextScanMin / 60)}h` : `${nextScanMin}m`;
+        statusDetail += ` · Next in ${unit}`;
+      }
+    } else if (!cfg?.is_active) {
+      statusDetail = ds.detail;
+    }
+
     return {
       source: ds.source,
-      detail: cfg?.last_sync_at
-        ? `${ds.detail} · Last sync: ${formatDistanceToNow(new Date(cfg.last_sync_at), { addSuffix: true })}`
-        : ds.detail,
+      detail: statusDetail,
       active: cfg?.is_active ?? false,
       configured: !!cfg && Object.keys(cfg.settings || {}).length > 0,
       isLive,
