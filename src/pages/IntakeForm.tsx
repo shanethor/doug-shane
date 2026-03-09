@@ -2586,58 +2586,46 @@ export default function IntakeForm() {
 
                   {commercialStep === "bor_auth" && (
                     <div className="space-y-6">
+                      {/* Explainer Card */}
                       <Card>
                         <CardHeader>
-                          <CardTitle className="text-base">Broker Authorization</CardTitle>
+                          <CardTitle className="text-base">Broker of Record (optional)</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-5">
-                          {/* Question */}
-                          <div>
-                            <Label className="text-xs font-medium">Are you currently working with another insurance broker or agent for this policy?</Label>
-                            <Select value={commercialForm.has_other_broker} onValueChange={v => updateCommercial("has_other_broker", v)}>
-                              <SelectTrigger className="h-10 text-sm mt-1"><SelectValue placeholder="Select" /></SelectTrigger>
-                              <SelectContent><SelectItem value="yes">Yes</SelectItem><SelectItem value="no">No</SelectItem></SelectContent>
-                            </Select>
+                          <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-3">
+                            <p className="text-sm leading-relaxed">
+                              A Broker of Record letter does not cancel your policy or change your coverage on its own. It just authorizes <strong>AURA Risk Group</strong> to represent you with the carrier and run the negotiation on your behalf.
+                            </p>
                           </div>
 
-                          {commercialForm.has_other_broker === "yes" && (
-                            <div className="space-y-5">
-                              {/* Explanation */}
-                              <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-3">
-                                <p className="text-sm leading-relaxed">
-                                  If you are currently working with another broker, AURA can generate a Broker of Record letter for your review and signature.
-                                </p>
-                                <p className="text-sm leading-relaxed text-muted-foreground">
-                                  A Broker of Record letter authorizes AURA Risk Group to represent you with the insurance carrier. This allows us to access policy information, request loss runs, and communicate directly with the carrier on your behalf.
-                                </p>
-                                <p className="text-sm leading-relaxed text-muted-foreground">
-                                  This is an important step in the insurance negotiation process. Insurance carriers want to know which broker represents the account before they invest time negotiating pricing and terms. When a single broker represents the account, carriers know they have a legitimate opportunity to win the business and are far more willing to compete aggressively.
-                                </p>
-                                <p className="text-sm leading-relaxed text-muted-foreground">
-                                  By authorizing AURA to represent the account, we are able to properly review how your program is structured, access your claims history, and leverage our relationships in the marketplace to negotiate terms and position your risk with the right carriers.
-                                </p>
-                              </div>
+                          {/* How this helps you */}
+                          <div className="space-y-2">
+                            <p className="text-sm font-semibold">How this helps you</p>
+                            <p className="text-sm text-muted-foreground">
+                              Carriers ask one question first: "Who controls this account?" When you sign a BOR, the answer is clear. We do. That's what gets your file to the top of the stack and makes them bring real numbers instead of placeholders.
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              You get one coordinated strategy instead of three brokers taking random shots in the dark.
+                            </p>
+                          </div>
 
-                              {/* Important Clarification */}
-                              <div className="rounded-lg border border-amber-200 bg-amber-50/50 dark:border-amber-900/50 dark:bg-amber-950/20 p-4 space-y-2">
-                                <p className="text-sm font-semibold flex items-center gap-2"><AlertCircleIcon className="h-4 w-4 text-amber-600" /> Important Clarification</p>
-                                <p className="text-sm text-muted-foreground">A Broker of Record letter <strong>does not cancel</strong> your current policy and <strong>does not change your coverage</strong> on its own.</p>
-                                <p className="text-sm text-muted-foreground">It simply allows AURA Risk Group to represent your account with the insurance carrier.</p>
-                              </div>
+                          {/* What happens if you sign */}
+                          <div className="space-y-2">
+                            <p className="text-sm font-semibold">What happens if you sign</p>
+                            <ul className="space-y-1.5 text-sm text-muted-foreground">
+                              <li className="flex items-start gap-2"><Check className="h-4 w-4 text-primary shrink-0 mt-0.5" /> We generate the BOR letter and send it to you to sign electronically.</li>
+                              <li className="flex items-start gap-2"><Check className="h-4 w-4 text-primary shrink-0 mt-0.5" /> Once you sign, it lands in your advisor's inbox so we can send it straight to the carrier.</li>
+                              <li className="flex items-start gap-2"><Check className="h-4 w-4 text-primary shrink-0 mt-0.5" /> Your current broker will be notified. Most carriers allow a short window to change your mind. That's normal—it's just them confirming this is what you want.</li>
+                              <li className="flex items-start gap-2"><Check className="h-4 w-4 text-primary shrink-0 mt-0.5" /> Once the carrier confirms, AURA is on record as your broker. Your coverage stays in place. We just take over the heavy lifting with the carrier.</li>
+                            </ul>
+                          </div>
 
-                              {/* What Happens Next */}
-                              <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-3">
-                                <p className="text-sm font-semibold">What Happens Next</p>
-                                <p className="text-sm text-muted-foreground">Once submitted, AURA will generate the Broker of Record letter and send it to you for electronic signature.</p>
-                                <p className="text-sm text-muted-foreground">After the letter is delivered to the insurance carrier, your current broker will be notified that a Broker of Record request has been submitted.</p>
-                                <p className="text-sm text-muted-foreground">Most carriers allow a short countermand or rescission period. During this time, your current broker may contact you to confirm whether you intend to move representation. This is a normal part of the process and simply ensures the request was made intentionally.</p>
-                                <p className="text-sm text-muted-foreground">Once the carrier confirms the authorization, AURA Risk Group will be recognized as the broker of record and can begin working directly with the carrier on your behalf.</p>
-                                <p className="text-sm text-muted-foreground">Your advisor will keep you informed as the carrier processes the request.</p>
-                              </div>
-
+                          {/* BOR Accepted State */}
+                          {borAccepted === true && (
+                            <div className="space-y-4">
                               {/* Select Lines for BOR */}
                               <div>
-                                <Label className="text-xs font-medium">Select Lines for BOR</Label>
+                                <Label className="text-xs font-medium">Select lines for your BOR</Label>
                                 <div className="flex flex-wrap gap-2 mt-2">
                                   {(commercialForm.lines_in_force.length > 0 ? commercialForm.lines_in_force : COMMERCIAL_LINES.map(String)).map(line => {
                                     const sel = commercialForm.bor_lines.includes(line);
@@ -2651,25 +2639,45 @@ export default function IntakeForm() {
                                 </div>
                               </div>
 
-                              {/* Authorization Checkbox */}
-                              <label className="flex items-start gap-3 text-sm cursor-pointer p-3 rounded-lg border border-border bg-muted/20">
-                                <Checkbox checked={commercialForm.bor_authorized} onCheckedChange={v => updateCommercial("bor_authorized", !!v)} className="mt-0.5" />
-                                <span>I authorize AURA Risk Group to act as Broker of Record for the selected lines of coverage. <span className="text-destructive">*</span></span>
-                              </label>
+                              {/* BOR Preview */}
+                              <div className="rounded-lg border bg-card p-4 space-y-3">
+                                <p className="text-sm font-medium">Here's the letter we'll send to your carrier.</p>
+                                <div className="text-xs text-muted-foreground space-y-1 pl-3 border-l-2 border-primary/20">
+                                  <p><strong>Insured:</strong> {commercialForm.business_name || "(your business name)"}</p>
+                                  <p><strong>Carrier:</strong> {commercialForm.current_carrier_name || "(carrier)"}</p>
+                                  <p><strong>Policy:</strong> {commercialForm.policy_number || "(policy number)"}</p>
+                                  <p><strong>Lines:</strong> {commercialForm.bor_lines.join(", ") || "(select above)"}</p>
+                                </div>
+                                <Button className="w-full" disabled={commercialForm.bor_lines.length === 0} onClick={() => updateCommercial("bor_authorized", true)}>
+                                  Review and sign electronically
+                                </Button>
+                                <p className="text-[10px] text-muted-foreground text-center">
+                                  Once you sign, your advisor gets this in their inbox and sends it to the carrier. Your coverage stays the same. We just become your point of contact.
+                                </p>
+                              </div>
                             </div>
                           )}
 
-                          {commercialForm.has_other_broker === "no" && (
-                            <p className="text-sm text-muted-foreground pl-3 border-l-2 border-muted">
-                              Great — no Broker of Record letter is needed. We'll proceed with reviewing your coverage directly.
-                            </p>
+                          {/* BOR Skipped Message */}
+                          {borAccepted === false && (
+                            <div className="rounded-lg border border-border bg-muted/30 p-4">
+                              <p className="text-sm">No problem. You can finish your intake and decide on the BOR later.</p>
+                            </div>
+                          )}
+
+                          {/* CTA Buttons - only show if not yet decided */}
+                          {borAccepted === null && (
+                            <div className="space-y-3">
+                              <Button className="w-full h-11" onClick={() => setBorAccepted(true)}>
+                                Yes – make AURA my Broker of Record
+                              </Button>
+                              <Button variant="outline" className="w-full h-11" onClick={() => setBorAccepted(false)}>
+                                Not right now – continue without BOR
+                              </Button>
+                            </div>
                           )}
                         </CardContent>
                       </Card>
-
-                      {/* Footer */}
-                      <p className="text-[10px] text-muted-foreground text-center">Your information is transmitted securely.</p>
-                      <p className="text-[10px] text-center font-medium tracking-wide text-muted-foreground">Insurance runs on <span className="text-primary font-bold">AURA</span></p>
                     </div>
                   )}
 
