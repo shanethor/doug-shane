@@ -2563,6 +2563,11 @@ export default function Chat() {
                   )}
                 </div>
               )}
+
+              {/* Embedded Pipeline — synced with Command Center */}
+              <div className="w-full max-w-6xl mt-6">
+                <Pipeline embedded />
+              </div>
             </div>
           ) : (
             <div className="max-w-3xl mx-auto py-6 px-4 space-y-6">
