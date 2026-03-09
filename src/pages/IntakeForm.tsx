@@ -690,6 +690,13 @@ export default function IntakeForm() {
         if (d.naics_code || d.primary_naics) acordPrefill.primary_naics = d.naics_code || d.primary_naics;
         if (d.current_carrier || d.carrier) acordPrefill.has_prior_coverage = "yes";
         if (d.loss_history_years) acordPrefill.loss_history_years = d.loss_history_years;
+        // New 125 fields
+        const contactName = d.contact_name || d.applicant_name || d.primary_contact_name || "";
+        if (contactName) acordPrefill.primary_contact_name = contactName;
+        if (d.fein || d.ein) acordPrefill.fein = d.fein || d.ein;
+        if (d.annual_revenue || d.gross_sales) acordPrefill.annual_revenue = d.annual_revenue || d.gross_sales;
+        const totalEmp = d.employee_count || d.number_of_employees || d.num_employees_total || "";
+        if (totalEmp) acordPrefill.num_employees_total = totalEmp;
 
         // ACORD 126 – General Liability
         if (d.gl_class_description || d.operations_description || d.description_of_operations) {
@@ -2904,8 +2911,8 @@ export default function IntakeForm() {
 
                   {commercialStep === "coverage_questions" && (() => {
                     const questions = getQuestionsForCoverage(commercialForm.selected_coverage_lines);
-                    // Filter out questions already answered in business_info step
-                    const alreadyCovered = new Set(["business_name", "dba", "years_in_business", "mailing_address", "business_entity_type"]);
+                    // Filter out questions already answered in earlier steps (business_info, etc.)
+                    const alreadyCovered = new Set(["business_name", "dba", "years_in_business", "mailing_address", "business_entity_type", "primary_contact_name"]);
                     const activeQuestions = questions.filter(q =>
                       !alreadyCovered.has(q.key) &&
                       (!q.dependsOn || q.dependsOn(commercialForm.acord_data))
