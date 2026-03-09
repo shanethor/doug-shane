@@ -1,8 +1,8 @@
-import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
-import { Target } from "lucide-react";
+import { Target, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,8 +10,47 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
 
+type Props = {
+  userId: string;
+  premiumSold: number;
+  revenueSold: number;
+};
+
 const fmt = (n: number) =>
   "$" + Math.round(n).toLocaleString();
+
+/* ── Ticker cell — a single "score" block like ESPN ── */
+function TickerCell({
+  label,
+  topLeft,
+  topRight,
+  bottomLeft,
+  bottomRight,
+  highlight,
+}: {
+  label?: string;
+  topLeft: string;
+  topRight: string;
+  bottomLeft: string;
+  bottomRight: string;
+  highlight?: boolean;
+}) {
+  return (
+    <div className={`flex flex-col justify-center px-3 sm:px-4 py-1.5 min-w-[140px] sm:min-w-[160px] border-r border-border last:border-r-0 shrink-0 ${highlight ? "bg-primary/5" : ""}`}>
+      {label && (
+        <p className="text-[8px] uppercase tracking-[0.15em] font-bold text-primary mb-0.5">{label}</p>
+      )}
+      <div className="flex items-center justify-between gap-3">
+        <span className="text-[10px] text-muted-foreground truncate">{topLeft}</span>
+        <span className="text-xs font-bold tabular-nums text-foreground">{topRight}</span>
+      </div>
+      <div className="flex items-center justify-between gap-3">
+        <span className="text-[10px] text-muted-foreground truncate">{bottomLeft}</span>
+        <span className="text-xs font-bold tabular-nums text-foreground">{bottomRight}</span>
+      </div>
+    </div>
+  );
+}
 
 /* ── Status pill ── */
 function StatusPill({ pct }: { pct: number }) {
@@ -24,45 +63,28 @@ function StatusPill({ pct }: { pct: number }) {
     text = "Behind"; cls = "text-amber-600 bg-amber-500/10";
   }
   return (
-    <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider whitespace-nowrap ${cls}`}>
+    <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wider ${cls}`}>
       {text}
     </span>
   );
 }
 
-/* ── Single ticker item ── */
-function TickerItem({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="inline-flex items-center gap-1.5 px-3 whitespace-nowrap text-[11px]">
-      {children}
-    </span>
-  );
-}
-
-function Divider() {
-  return <span className="inline-block w-px h-3 bg-border mx-1 shrink-0" />;
-}
-
 /* ── Main Component ── */
-export function ProducerHudRail() {
+export function ProducerHudRail({ userId, premiumSold, revenueSold }: Props) {
   const { user } = useAuth();
-  const { role, isClientServices } = useUserRole();
+  const { role } = useUserRole();
   const [goals, setGoals] = useState<{ annual_premium_goal: number; annual_revenue_goal: number } | null>(null);
+  const [profile, setProfile] = useState<{ full_name: string | null } | null>(null);
   const [pipeline, setPipeline] = useState({ prospects: 0, quoting: 0, presenting: 0, sold: 0, lost: 0 });
-  const [premiumSold, setPremiumSold] = useState(0);
-  const [revenueSold, setRevenueSold] = useState(0);
   const [loading, setLoading] = useState(true);
   const [goalDialogOpen, setGoalDialogOpen] = useState(false);
   const [goalPremium, setGoalPremium] = useState("");
   const [goalRevenue, setGoalRevenue] = useState("");
   const [saving, setSaving] = useState(false);
-  const [paused, setPaused] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const animRef = useRef<number>(0);
 
   const now = new Date();
   const year = now.getFullYear();
-  const userId = user?.id;
 
   const endOfMonth = useMemo(() => new Date(year, now.getMonth() + 1, 1), [year, now.getMonth()]);
   const startOfMonth = new Date(year, now.getMonth(), 1);
@@ -75,17 +97,15 @@ export function ProducerHudRail() {
   const dayOfYear = Math.floor((now.getTime() - startOfYear.getTime()) / 86400000) + 1;
   const daysLeftInYear = Math.max(1, daysInYear - dayOfYear);
 
-  // Don't render for client_services
-  const shouldShow = userId && !isClientServices;
-
   useEffect(() => {
     if (!userId) return;
     const load = async () => {
       setLoading(true);
-      const [goalsRes, pipelineRes, policiesRes] = await Promise.all([
+      const [goalsRes, profileRes, pipelineRes, soldRes] = await Promise.all([
         supabase.from("producer_goals" as any).select("annual_premium_goal, annual_revenue_goal").eq("user_id", userId).eq("year", year).maybeSingle(),
+        supabase.from("profiles").select("full_name").eq("user_id", userId).maybeSingle(),
         supabase.from("leads").select("stage").eq("owner_user_id", userId),
-        supabase.from("policies").select("annual_premium, revenue").eq("producer_user_id", userId).eq("status", "approved"),
+        supabase.from("policies").select("id").eq("producer_user_id", userId).eq("status", "approved"),
       ]);
 
       if (goalsRes.data) {
@@ -94,18 +114,14 @@ export function ProducerHudRail() {
           annual_revenue_goal: Number((goalsRes.data as any).annual_revenue_goal) || 0,
         });
       }
-
-      const policies = policiesRes.data ?? [];
-      setPremiumSold(policies.reduce((s: number, p: any) => s + Number(p.annual_premium || 0), 0));
-      setRevenueSold(policies.reduce((s: number, p: any) => s + Number(p.revenue || Number(p.annual_premium) * 0.12 || 0), 0));
+      if (profileRes.data) setProfile(profileRes.data);
 
       const leads = pipelineRes.data ?? [];
-      const soldCount = (await supabase.from("policies").select("id").eq("producer_user_id", userId).eq("status", "approved")).data?.length ?? 0;
       setPipeline({
         prospects: leads.filter((l: any) => l.stage === "prospect").length,
         quoting: leads.filter((l: any) => l.stage === "quoting").length,
         presenting: leads.filter((l: any) => l.stage === "presenting").length,
-        sold: soldCount,
+        sold: soldRes.data?.length ?? 0,
         lost: leads.filter((l: any) => l.stage === "lost").length,
       });
       setLoading(false);
@@ -113,41 +129,19 @@ export function ProducerHudRail() {
     load();
   }, [userId, year]);
 
-  // Auto-scroll marquee
-  const scrollSpeed = 0.4; // px per frame
-  const tick = useCallback(() => {
-    const el = scrollRef.current;
-    if (el && !paused) {
-      el.scrollLeft += scrollSpeed;
-      // When we've scrolled half (the duplicated content), reset to start
-      if (el.scrollLeft >= el.scrollWidth / 2) {
-        el.scrollLeft = 0;
-      }
-    }
-    animRef.current = requestAnimationFrame(tick);
-  }, [paused]);
-
-  useEffect(() => {
-    if (!shouldShow || loading) return;
-    animRef.current = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(animRef.current);
-  }, [tick, shouldShow, loading]);
-
   const annualGoal = goals?.annual_premium_goal || 0;
   const annualRevGoal = goals?.annual_revenue_goal || 0;
   const monthlyGoal = annualGoal / 12;
   const monthlyRevGoal = annualRevGoal / 12;
 
-  const percentToGoal = useMemo(() => {
-    if (annualGoal <= 0) return 0;
+  const { percentToGoal } = useMemo(() => {
+    if (annualGoal <= 0) return { percentToGoal: 0 };
     const totalDays = (endOfYear.getTime() - startOfYear.getTime()) / 86400000;
     const elapsed = (now.getTime() - startOfYear.getTime()) / 86400000;
     const expectedByToday = (elapsed / totalDays) * annualGoal;
-    return Math.min(expectedByToday > 0 ? (premiumSold / expectedByToday) * 100 : 0, 200);
+    const pct = expectedByToday > 0 ? (premiumSold / expectedByToday) * 100 : 0;
+    return { percentToGoal: Math.min(pct, 200) };
   }, [premiumSold, annualGoal, year]);
-
-  const mPremRemaining = Math.max(0, monthlyGoal - premiumSold);
-  const yPremRemaining = Math.max(0, annualGoal - premiumSold);
 
   const handleSaveGoals = async () => {
     const premGoal = parseFloat(goalPremium) || 0;
@@ -170,17 +164,19 @@ export function ProducerHudRail() {
     if (!isNaN(num) && num > 0) setGoalRevenue(Math.round(num * 0.12).toString());
   };
 
-  if (!shouldShow) return null;
+  const scroll = (dir: "left" | "right") => {
+    scrollRef.current?.scrollBy({ left: dir === "left" ? -200 : 200, behavior: "smooth" });
+  };
 
   // Loading skeleton
   if (loading) {
     return (
       <div className="w-full border-b border-border bg-card/90 backdrop-blur-sm animate-pulse">
-        <div className="flex items-center h-[28px] px-3 gap-4">
-          <div className="h-2 w-16 rounded bg-muted/50" />
-          <div className="h-2 w-24 rounded bg-muted/40" />
-          <div className="h-2 w-20 rounded bg-muted/40" />
-          <div className="h-2 w-16 rounded bg-muted/40" />
+        <div className="flex items-center h-[52px] px-3 gap-4">
+          <div className="h-3 w-20 rounded bg-muted/50" />
+          <div className="h-3 w-16 rounded bg-muted/40" />
+          <div className="h-3 w-24 rounded bg-muted/40" />
+          <div className="h-3 w-20 rounded bg-muted/40" />
         </div>
       </div>
     );
@@ -192,10 +188,10 @@ export function ProducerHudRail() {
       <>
         <button
           onClick={() => { setGoalPremium(""); setGoalRevenue(""); setGoalDialogOpen(true); }}
-          className="w-full border-b border-border bg-card/90 backdrop-blur-sm px-4 py-1.5 flex items-center gap-2 hover:bg-muted/30 transition-colors group"
+          className="w-full border-b border-border bg-card/90 backdrop-blur-sm px-4 py-2.5 flex items-center gap-2 hover:bg-muted/30 transition-colors group"
         >
-          <Target className="h-3 w-3 text-primary" />
-          <span className="text-[10px] font-medium text-muted-foreground group-hover:text-foreground transition-colors">
+          <Target className="h-3.5 w-3.5 text-primary" />
+          <span className="text-xs font-medium text-muted-foreground group-hover:text-foreground transition-colors">
             Set your {year} production goals to activate the ticker
           </span>
         </button>
@@ -209,124 +205,133 @@ export function ProducerHudRail() {
     );
   }
 
-  /* Build the ticker content — duplicated for seamless loop */
-  const tickerContent = (
-    <>
-      <TickerItem>
-        <StatusPill pct={percentToGoal} />
-        <button
-          onClick={(e) => { e.stopPropagation(); setGoalPremium(annualGoal.toString()); setGoalRevenue(annualRevGoal.toString()); setGoalDialogOpen(true); }}
-          className="text-muted-foreground/30 hover:text-foreground transition-colors"
-        >
-          <Target className="h-2.5 w-2.5" />
-        </button>
-      </TickerItem>
-
-      <Divider />
-
-      <TickerItem>
-        <span className="text-[8px] font-bold uppercase tracking-[0.12em] text-primary">NB MTD</span>
-        <span className="text-muted-foreground">Prem</span>
-        <span className="font-bold tabular-nums text-foreground">{fmt(premiumSold)}</span>
-        <span className="text-muted-foreground/50">/</span>
-        <span className="text-muted-foreground tabular-nums">{fmt(monthlyGoal)}</span>
-      </TickerItem>
-
-      <Divider />
-
-      <TickerItem>
-        <span className="text-[8px] font-bold uppercase tracking-[0.12em] text-primary">NB MTD</span>
-        <span className="text-muted-foreground">Rev</span>
-        <span className="font-bold tabular-nums text-foreground">{fmt(revenueSold)}</span>
-        <span className="text-muted-foreground/50">/</span>
-        <span className="text-muted-foreground tabular-nums">{fmt(monthlyRevGoal)}</span>
-      </TickerItem>
-
-      <Divider />
-
-      <TickerItem>
-        <span className="text-[8px] font-bold uppercase tracking-[0.12em] text-primary">MTD Gap</span>
-        <span className="font-bold tabular-nums text-foreground">{fmt(mPremRemaining)}</span>
-        <span className="text-muted-foreground">·</span>
-        <span className="text-muted-foreground tabular-nums">{fmt(daysLeftInMonth > 0 ? mPremRemaining / daysLeftInMonth : 0)}/day</span>
-        <span className="text-muted-foreground">·</span>
-        <span className="text-muted-foreground">{daysLeftInMonth}d left</span>
-      </TickerItem>
-
-      <Divider />
-
-      <TickerItem>
-        <span className="text-[8px] font-bold uppercase tracking-[0.12em] text-primary">NB YTD</span>
-        <span className="text-muted-foreground">Prem</span>
-        <span className="font-bold tabular-nums text-foreground">{fmt(premiumSold)}</span>
-        <span className="text-muted-foreground/50">/</span>
-        <span className="text-muted-foreground tabular-nums">{fmt(annualGoal)}</span>
-      </TickerItem>
-
-      <Divider />
-
-      <TickerItem>
-        <span className="text-[8px] font-bold uppercase tracking-[0.12em] text-primary">NB YTD</span>
-        <span className="text-muted-foreground">Rev</span>
-        <span className="font-bold tabular-nums text-foreground">{fmt(revenueSold)}</span>
-        <span className="text-muted-foreground/50">/</span>
-        <span className="text-muted-foreground tabular-nums">{fmt(annualRevGoal)}</span>
-      </TickerItem>
-
-      <Divider />
-
-      <TickerItem>
-        <span className="text-[8px] font-bold uppercase tracking-[0.12em] text-primary">YTD Gap</span>
-        <span className="font-bold tabular-nums text-foreground">{fmt(yPremRemaining)}</span>
-        <span className="text-muted-foreground">·</span>
-        <span className="text-muted-foreground tabular-nums">{fmt(daysLeftInYear > 0 ? yPremRemaining / daysLeftInYear : 0)}/day</span>
-        <span className="text-muted-foreground">·</span>
-        <span className="text-muted-foreground">{daysLeftInYear}d left</span>
-      </TickerItem>
-
-      <Divider />
-
-      <TickerItem>
-        <span className="text-[8px] font-bold uppercase tracking-[0.12em] text-primary">Goal</span>
-        <span className="font-black tabular-nums text-foreground">{percentToGoal.toFixed(0)}%</span>
-      </TickerItem>
-
-      <Divider />
-
-      <TickerItem>
-        <span className="text-[8px] font-bold uppercase tracking-[0.12em] text-primary">Pipeline</span>
-        <span className="text-muted-foreground">P</span>
-        <span className="font-bold tabular-nums">{pipeline.prospects}</span>
-        <span className="text-muted-foreground">Q</span>
-        <span className="font-bold tabular-nums">{pipeline.quoting}</span>
-        <span className="text-muted-foreground">Pr</span>
-        <span className="font-bold tabular-nums">{pipeline.presenting}</span>
-        <span className="text-muted-foreground">S</span>
-        <span className="font-bold tabular-nums text-emerald-600">{pipeline.sold}</span>
-        <span className="text-muted-foreground">L</span>
-        <span className="font-bold tabular-nums text-destructive">{pipeline.lost}</span>
-      </TickerItem>
-
-      <Divider />
-    </>
-  );
+  const mPremRemaining = Math.max(0, monthlyGoal - premiumSold);
+  const yPremRemaining = Math.max(0, annualGoal - premiumSold);
 
   return (
     <>
-      <div
-        className="w-full bg-card/95 backdrop-blur-sm border-b border-border overflow-hidden"
-        onMouseEnter={() => setPaused(true)}
-        onMouseLeave={() => setPaused(false)}
-      >
+      <div className="relative w-full border-b border-border bg-card/95 backdrop-blur-sm group/ticker">
+        {/* Left scroll arrow */}
+        <button
+          onClick={() => scroll("left")}
+          className="absolute left-0 top-0 bottom-0 z-10 w-6 flex items-center justify-center bg-gradient-to-r from-card via-card/80 to-transparent opacity-0 group-hover/ticker:opacity-100 transition-opacity"
+        >
+          <ChevronLeft className="h-3.5 w-3.5 text-muted-foreground" />
+        </button>
+
+        {/* Scrollable ticker strip */}
         <div
           ref={scrollRef}
-          className="flex items-center h-[28px] overflow-x-hidden whitespace-nowrap"
-          style={{ scrollbarWidth: "none" }}
+          className="flex items-stretch overflow-x-auto scrollbar-hide"
         >
-          {/* Duplicate content for seamless loop */}
-          {tickerContent}
-          {tickerContent}
+          {/* Status cell */}
+          <div className="flex items-center gap-2 px-3 sm:px-4 py-1.5 border-r border-border shrink-0 min-w-[120px]">
+            <StatusPill pct={percentToGoal} />
+            <button
+              onClick={() => { setGoalPremium(annualGoal.toString()); setGoalRevenue(annualRevGoal.toString()); setGoalDialogOpen(true); }}
+              className="text-muted-foreground/30 hover:text-foreground transition-colors"
+            >
+              <Target className="h-3 w-3" />
+            </button>
+          </div>
+
+          {/* Monthly NB */}
+          <TickerCell
+            label={`MTD · ${daysLeftInMonth}d left`}
+            topLeft="NB Premium"
+            topRight={fmt(premiumSold)}
+            bottomLeft="Goal"
+            bottomRight={fmt(monthlyGoal)}
+            highlight
+          />
+
+          {/* Monthly Revenue */}
+          <TickerCell
+            label="MTD Revenue"
+            topLeft="Revenue"
+            topRight={fmt(revenueSold)}
+            bottomLeft="Goal"
+            bottomRight={fmt(monthlyRevGoal)}
+          />
+
+          {/* Monthly Remaining */}
+          <TickerCell
+            label="MTD Gap"
+            topLeft="Prem Remaining"
+            topRight={fmt(mPremRemaining)}
+            bottomLeft="Pace Needed"
+            bottomRight={`${fmt(daysLeftInMonth > 0 ? mPremRemaining / daysLeftInMonth : 0)}/day`}
+          />
+
+          {/* Annual NB */}
+          <TickerCell
+            label={`YTD · ${daysLeftInYear}d left`}
+            topLeft="NB Premium"
+            topRight={fmt(premiumSold)}
+            bottomLeft="Goal"
+            bottomRight={fmt(annualGoal)}
+            highlight
+          />
+
+          {/* Annual Revenue */}
+          <TickerCell
+            label="YTD Revenue"
+            topLeft="Revenue"
+            topRight={fmt(revenueSold)}
+            bottomLeft="Goal"
+            bottomRight={fmt(annualRevGoal)}
+          />
+
+          {/* Annual Gap */}
+          <TickerCell
+            label="YTD Gap"
+            topLeft="Prem Remaining"
+            topRight={fmt(yPremRemaining)}
+            bottomLeft="Pace Needed"
+            bottomRight={`${fmt(daysLeftInYear > 0 ? yPremRemaining / daysLeftInYear : 0)}/day`}
+          />
+
+          {/* % to goal */}
+          <div className="flex items-center px-3 sm:px-4 py-1.5 border-r border-border shrink-0 min-w-[90px]">
+            <div className="text-center">
+              <p className="text-[8px] uppercase tracking-[0.15em] font-bold text-primary mb-0.5">Goal %</p>
+              <p className="text-sm font-black tabular-nums text-foreground">{percentToGoal.toFixed(0)}%</p>
+            </div>
+          </div>
+
+          {/* Pipeline cells */}
+          <TickerCell
+            label="Pipeline"
+            topLeft="Prospects"
+            topRight={String(pipeline.prospects)}
+            bottomLeft="Submitted"
+            bottomRight={String(pipeline.quoting)}
+          />
+
+          <TickerCell
+            topLeft="Presenting"
+            topRight={String(pipeline.presenting)}
+            bottomLeft="Sold"
+            bottomRight={String(pipeline.sold)}
+          />
+
+          <div className="flex items-center px-3 sm:px-4 py-1.5 shrink-0 min-w-[70px]">
+            <div>
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-[10px] text-muted-foreground">Lost</span>
+                <span className="text-xs font-bold tabular-nums text-foreground">{pipeline.lost}</span>
+              </div>
+            </div>
+          </div>
         </div>
+
+        {/* Right scroll arrow */}
+        <button
+          onClick={() => scroll("right")}
+          className="absolute right-0 top-0 bottom-0 z-10 w-6 flex items-center justify-center bg-gradient-to-l from-card via-card/80 to-transparent opacity-0 group-hover/ticker:opacity-100 transition-opacity"
+        >
+          <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+        </button>
       </div>
 
       <GoalDialog
@@ -350,6 +355,8 @@ function GoalDialog({
   goalRevenue: string; setGoalRevenue: (v: string) => void;
   saving: boolean; onSave: () => void;
 }) {
+  const fmt = (n: number) => "$" + Math.round(n).toLocaleString();
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-sm" onClick={(e) => e.stopPropagation()}>

@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { useTrainingMode } from "@/hooks/useTrainingMode";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
-import { ProducerHudRail } from "@/components/ProducerHudRail";
 
 export function AppLayout({ children, onLogoClick }: { children: React.ReactNode; onLogoClick?: () => void }) {
   const { signOut } = useAuth();
@@ -83,9 +82,6 @@ export function AppLayout({ children, onLogoClick }: { children: React.ReactNode
           </nav>
         </div>
       </header>
-
-      {/* Production ticker — attached directly below nav, producers/managers only */}
-      <ProducerHudRail />
 
       <main className="mx-auto max-w-6xl px-4 py-6 md:py-8 pb-24 md:pb-8">
         {children}
