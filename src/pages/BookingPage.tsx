@@ -25,7 +25,7 @@ export default function BookingPage() {
   const preselectedType = searchParams.get("type") || "";
   const preselectedLeadId = searchParams.get("lead") || "";
 
-  const [producer, setProducer] = useState<{ full_name: string; agency_name: string | null } | null>(null);
+  const [advisor, setAdvisor] = useState<{ full_name: string; agency_name: string | null } | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
