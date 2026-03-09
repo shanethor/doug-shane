@@ -2467,138 +2467,122 @@ export default function IntakeForm() {
 
                   {commercialStep === "insurance_check" && (
                     <Card>
-                      <CardHeader><CardTitle className="text-base">Current Insurance</CardTitle></CardHeader>
-                      <CardContent className="space-y-4">
-                        <div>
-                          <Label className="text-xs font-medium">Do you currently have business insurance?</Label>
-                          <Select value={commercialForm.has_current_insurance} onValueChange={v => updateCommercial("has_current_insurance", v)}>
-                            <SelectTrigger className="h-10 text-sm mt-1"><SelectValue placeholder="Select" /></SelectTrigger>
-                            <SelectContent><SelectItem value="yes">Yes</SelectItem><SelectItem value="no">No</SelectItem></SelectContent>
-                          </Select>
+                      <CardHeader>
+                        <CardTitle className="text-base">Current Insurance</CardTitle>
+                        <p className="text-sm text-muted-foreground">Do you currently have business insurance?</p>
+                      </CardHeader>
+                      <CardContent className="space-y-6">
+                        {/* Yes/No selection */}
+                        <div className="grid grid-cols-2 gap-3">
+                          {[{ val: "yes", label: "Yes" }, { val: "no", label: "No" }].map(opt => {
+                            const sel = commercialForm.has_current_insurance === opt.val;
+                            return (
+                              <button key={opt.val} onClick={() => updateCommercial("has_current_insurance", opt.val)}
+                                className={`p-4 rounded-xl border-2 text-center font-medium transition-all ${sel ? "bg-primary/10 border-primary" : "border-border hover:border-primary/40"}`}>
+                                {opt.label}
+                              </button>
+                            );
+                          })}
                         </div>
-                        {commercialForm.has_current_insurance === "yes" && (
-                          <div className="space-y-4">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pl-3 border-l-2 border-primary/20">
-                              <div><Label className="text-xs">Carrier Name</Label><Input value={commercialForm.current_carrier_name} onChange={e => updateCommercial("current_carrier_name", e.target.value)} /></div>
-                              <div><Label className="text-xs">Policy Number</Label><Input value={commercialForm.policy_number} onChange={e => updateCommercial("policy_number", e.target.value)} /></div>
-                              <div><Label className="text-xs">Effective Date</Label><Input type="date" value={commercialForm.policy_effective_date} onChange={e => updateCommercial("policy_effective_date", e.target.value)} /></div>
-                              <div><Label className="text-xs">Expiration Date</Label><Input type="date" value={commercialForm.policy_expiration_date} onChange={e => updateCommercial("policy_expiration_date", e.target.value)} /></div>
-                              <div className="sm:col-span-2">
-                                <Label className="text-xs">Current Policies</Label>
-                                <div className="flex flex-wrap gap-2 mt-1">
-                                  {COMMERCIAL_LINES.map(line => {
-                                    const sel = commercialForm.lines_in_force.includes(line);
-                                    return (
-                                      <button key={line} onClick={() => updateCommercial("lines_in_force", sel ? commercialForm.lines_in_force.filter(l => l !== line) : [...commercialForm.lines_in_force, line])}
-                                        className={`px-3 py-1.5 rounded-md border text-xs font-medium transition-colors ${sel ? "bg-primary text-primary-foreground border-primary" : "border-border hover:border-primary/50"}`}>
-                                        {line}
-                                      </button>
-                                    );
-                                  })}
-                                </div>
-                              </div>
-                            </div>
 
-                            {/* Dec Pages Upload - inline */}
-                            <div className="pt-2 border-t border-border/50">
-                              <Label className="text-xs font-medium flex items-center gap-1.5"><Upload className="h-3.5 w-3.5" /> Upload Declaration Pages (optional)</Label>
-                              <p className="text-[11px] text-muted-foreground mt-1 mb-2">Upload your current dec pages so we can review your coverage structure.</p>
+                        {commercialForm.has_current_insurance === "yes" && (
+                          <div className="space-y-6">
+                            {/* Section A - Fast Track */}
+                            <div className="space-y-3">
+                              <div>
+                                <h3 className="text-sm font-semibold">Fast track: drop in your current policy</h3>
+                                <p className="text-xs text-muted-foreground mt-1">Upload your declarations pages or policy docs. AURA will read them, pull the important stuff, and fill this in for you.</p>
+                              </div>
                               <div
                                 onDragOver={e => { e.preventDefault(); setDragActive(true); }}
                                 onDragLeave={() => setDragActive(false)}
-                                onDrop={(e) => { e.preventDefault(); setDragActive(false); const files = Array.from(e.dataTransfer.files).filter(f => /\.(pdf|jpg|jpeg|png)$/i.test(f.name)); if (files.length > 0) { setUploadedFiles(prev => [...prev, ...files.map(f => ({ file: f, category: "dec_pages" }))]); updateCommercial("has_uploaded_dec_pages", true); } }}
+                                onDrop={(e) => { 
+                                  e.preventDefault(); 
+                                  setDragActive(false); 
+                                  const files = Array.from(e.dataTransfer.files).filter(f => /\.(pdf|jpg|jpeg|png)$/i.test(f.name)); 
+                                  if (files.length > 0) { 
+                                    setUploadedFiles(prev => [...prev, ...files.map(f => ({ file: f, category: "dec_pages" }))]); 
+                                    updateCommercial("has_uploaded_dec_pages", true);
+                                    setShowLossRunModal(true);
+                                  } 
+                                }}
                                 onClick={() => fileInputRef.current?.click()}
-                                className={`border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-all ${dragActive ? "border-primary bg-primary/5 scale-[1.02] shadow-lg" : "border-border hover:border-primary/50"}`}
+                                className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-all ${dragActive ? "border-primary bg-primary/5 scale-[1.02] shadow-lg" : "border-border hover:border-primary/50"}`}
                               >
-                                <Upload className={`h-6 w-6 mx-auto mb-1.5 text-muted-foreground transition-transform ${dragActive ? "animate-bounce" : ""}`} />
-                                <p className="text-xs font-medium">Click or drag & drop dec pages</p>
-                                <p className="text-[10px] text-muted-foreground mt-0.5">PDF, JPG, PNG accepted</p>
-                                <input ref={fileInputRef} type="file" multiple accept=".pdf,.jpg,.jpeg,.png" className="hidden" onChange={(e) => { const files = Array.from(e.target.files || []).filter(f => /\.(pdf|jpg|jpeg|png)$/i.test(f.name)); if (files.length > 0) { setUploadedFiles(prev => [...prev, ...files.map(f => ({ file: f, category: "dec_pages" }))]); updateCommercial("has_uploaded_dec_pages", true); } e.target.value = ""; }} />
+                                <Upload className={`h-8 w-8 mx-auto mb-2 text-muted-foreground transition-transform ${dragActive ? "animate-bounce" : ""}`} />
+                                <p className="text-sm font-medium">Click or drag & drop policy docs</p>
+                                <p className="text-xs text-muted-foreground mt-1">PDF, JPG, PNG accepted</p>
+                                <input ref={fileInputRef} type="file" multiple accept=".pdf,.jpg,.jpeg,.png" className="hidden" onChange={(e) => { 
+                                  const files = Array.from(e.target.files || []).filter(f => /\.(pdf|jpg|jpeg|png)$/i.test(f.name)); 
+                                  if (files.length > 0) { 
+                                    setUploadedFiles(prev => [...prev, ...files.map(f => ({ file: f, category: "dec_pages" }))]); 
+                                    updateCommercial("has_uploaded_dec_pages", true);
+                                    setShowLossRunModal(true);
+                                  } 
+                                  e.target.value = ""; 
+                                }} />
                               </div>
+                              
+                              {/* Extraction status */}
                               {uploadedFiles.filter(f => f.category === "dec_pages").length > 0 && (
-                                <div className="space-y-1.5 mt-2">
-                                  <p className="text-xs font-medium flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-primary" /> {uploadedFiles.filter(f => f.category === "dec_pages").length} file(s) uploaded</p>
+                                <div className="space-y-2 p-3 rounded-lg border bg-primary/5 border-primary/20">
+                                  <p className="text-sm font-medium flex items-center gap-2">
+                                    <Check className="h-4 w-4 text-primary" /> {uploadedFiles.filter(f => f.category === "dec_pages").length} file(s) uploaded
+                                  </p>
                                   {uploadedFiles.filter(f => f.category === "dec_pages").map((uf, idx) => (
-                                    <div key={idx} className="flex items-center gap-2 p-2 rounded-md border bg-muted/20">
-                                      <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                                      <span className="text-xs truncate flex-1 min-w-0">{uf.file.name}</span>
+                                    <div key={idx} className="flex items-center gap-2 text-xs text-muted-foreground">
+                                      <FileText className="h-3.5 w-3.5 shrink-0" />
+                                      <span className="truncate">{uf.file.name}</span>
                                     </div>
                                   ))}
+                                  <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1.5">
+                                    <Loader2 className="h-3 w-3 animate-spin" /> Reading your declarations pages...
+                                  </p>
+                                  {lossRunRequested && (
+                                    <p className="text-xs text-primary mt-1 flex items-center gap-1.5">
+                                      <Check className="h-3 w-3" /> We're requesting your loss runs in the background. Keep going—we'll plug them in when they land.
+                                    </p>
+                                  )}
                                 </div>
                               )}
+                            </div>
+
+                            {/* Divider */}
+                            <div className="flex items-center gap-3">
+                              <div className="flex-1 h-px bg-border" />
+                              <span className="text-xs text-muted-foreground font-medium">OR</span>
+                              <div className="flex-1 h-px bg-border" />
+                            </div>
+
+                            {/* Section B - Manual Entry */}
+                            <div className="space-y-3">
+                              <h3 className="text-sm font-semibold">Enter your policy details manually</h3>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pl-3 border-l-2 border-primary/20">
+                                <div><Label className="text-xs">Carrier Name</Label><Input value={commercialForm.current_carrier_name} onChange={e => updateCommercial("current_carrier_name", e.target.value)} /></div>
+                                <div><Label className="text-xs">Policy Number</Label><Input value={commercialForm.policy_number} onChange={e => updateCommercial("policy_number", e.target.value)} /></div>
+                                <div><Label className="text-xs">Effective Date</Label><Input type="date" value={commercialForm.policy_effective_date} onChange={e => updateCommercial("policy_effective_date", e.target.value)} /></div>
+                                <div><Label className="text-xs">Expiration Date</Label><Input type="date" value={commercialForm.policy_expiration_date} onChange={e => updateCommercial("policy_expiration_date", e.target.value)} /></div>
+                                <div className="sm:col-span-2">
+                                  <Label className="text-xs">Current Policies</Label>
+                                  <div className="flex flex-wrap gap-2 mt-1">
+                                    {COMMERCIAL_LINES.map(line => {
+                                      const sel = commercialForm.lines_in_force.includes(line);
+                                      return (
+                                        <button key={line} onClick={() => updateCommercial("lines_in_force", sel ? commercialForm.lines_in_force.filter(l => l !== line) : [...commercialForm.lines_in_force, line])}
+                                          className={`px-3 py-1.5 rounded-md border text-xs font-medium transition-colors ${sel ? "bg-primary text-primary-foreground border-primary" : "border-border hover:border-primary/50"}`}>
+                                          {line}
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              </div>
                             </div>
                           </div>
                         )}
                       </CardContent>
                     </Card>
                   )}
-
-
-
-
-                  {commercialStep === "loss_run_auth" && (
-                    <div className="space-y-4">
-                      <Card>
-                        <CardHeader>
-                          <CardTitle className="text-base flex items-center gap-2"><Shield className="h-4 w-4" /> Loss Run Authorization</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-5">
-                          <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-2">
-                            <p className="text-sm leading-relaxed">
-                              Please provide the information below so we can request loss runs from your insurance carriers on your behalf.
-                            </p>
-                            <p className="text-sm leading-relaxed text-muted-foreground">
-                              Loss runs are the official claims history associated with your insurance policies. Insurance carriers review this history when evaluating and quoting coverage.
-                            </p>
-                            <p className="text-sm leading-relaxed text-muted-foreground">
-                              AURA will use this information to request your loss runs directly from your carriers.
-                            </p>
-                          </div>
-
-                          {/* Authorized Signer */}
-                          <div className="space-y-3">
-                            <div>
-                              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Authorized Signer</p>
-                              <p className="text-[11px] text-muted-foreground mt-0.5">The person completing this section must be authorized to request information related to the company's insurance policies.</p>
-                            </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                              <div><Label className="text-xs">First Name *</Label><Input value={commercialForm.loss_run_authorized_first_name} onChange={e => updateCommercial("loss_run_authorized_first_name", e.target.value)} /></div>
-                              <div><Label className="text-xs">Last Name *</Label><Input value={commercialForm.loss_run_authorized_last_name} onChange={e => updateCommercial("loss_run_authorized_last_name", e.target.value)} /></div>
-                              <div><Label className="text-xs">Email *</Label><Input type="email" value={commercialForm.loss_run_authorized_email} onChange={e => updateCommercial("loss_run_authorized_email", e.target.value)} /></div>
-                              <div><Label className="text-xs">Title</Label><Input value={commercialForm.loss_run_authorized_title} onChange={e => updateCommercial("loss_run_authorized_title", e.target.value)} placeholder="Owner, President, CFO" /></div>
-                            </div>
-                          </div>
-
-                          {/* Policy Information */}
-                          <div className="space-y-3">
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Policy Information</p>
-                                <p className="text-[11px] text-muted-foreground mt-0.5">Please provide the policies associated with your business so we can request the appropriate loss run reports from your carriers.</p>
-                              </div>
-                              <Button variant="outline" size="sm" className="h-7 text-xs gap-1 shrink-0" onClick={() => updateCommercial("loss_run_policies", [...commercialForm.loss_run_policies, emptyLossRunPolicy()])}>
-                                <Plus className="h-3 w-3" /> Add Policy
-                              </Button>
-                            </div>
-                            {commercialForm.loss_run_policies.map((pol, idx) => (
-                              <div key={idx} className="space-y-3 p-3 rounded-lg border bg-muted/10">
-                                <div className="flex items-center justify-between">
-                                  <span className="text-xs font-medium">Policy {idx + 1}</span>
-                                  {commercialForm.loss_run_policies.length > 1 && (
-                                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => updateCommercial("loss_run_policies", commercialForm.loss_run_policies.filter((_, i) => i !== idx))}>
-                                      <Trash2 className="h-3 w-3" />
-                                    </Button>
-                                  )}
-                                </div>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                  <div><Label className="text-xs">Carrier *</Label><Input value={pol.carrier} onChange={e => updateLossRunPolicy(idx, "carrier", e.target.value)} /></div>
-                                  <div><Label className="text-xs">Coverage Type</Label><Input value={pol.coverage} onChange={e => updateLossRunPolicy(idx, "coverage", e.target.value)} placeholder="General Liability, Workers Compensation, Commercial Auto" /></div>
-                                  <div><Label className="text-xs">Policy Number *</Label><Input value={pol.policy_number} onChange={e => updateLossRunPolicy(idx, "policy_number", e.target.value)} /></div>
-                                  <div><Label className="text-xs">Effective Date</Label><Input type="date" value={pol.effective_date} onChange={e => updateLossRunPolicy(idx, "effective_date", e.target.value)} /></div>
-                                  <div><Label className="text-xs">Expiration Date</Label><Input type="date" value={pol.expiration_date} onChange={e => updateLossRunPolicy(idx, "expiration_date", e.target.value)} /></div>
-                                </div>
-                              </div>
-                            ))}
                           </div>
 
                           {/* Authorization Consent */}
