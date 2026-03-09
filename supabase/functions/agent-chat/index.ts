@@ -418,7 +418,7 @@ IMPORTANT — Smart Context Awareness:
 Leverage everything AURA already knows:
 - Active client context from recent leads
 - Which ACORDs are in the current package
-- The logged-in producer's details
+- The logged-in advisor's details
 - Documents already uploaded for a client
 
 When the agent gives a vague command like "send the package to the underwriter", infer:
