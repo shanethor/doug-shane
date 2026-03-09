@@ -91,17 +91,26 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Resolve caller
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { authorization: authHeader } } }
-    );
-    const { data: { user }, error: authErr } = await supabase.auth.getUser();
-    if (authErr || !user) {
-      return new Response(JSON.stringify({ error: "Not authenticated. Please log in again." }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    // Resolve caller - support both direct user auth and scheduler service-role calls
+    let userId: string;
+    const body = await req.json();
+    
+    if (body._scheduler_user_id) {
+      // Called by scheduler with service role key — trust the user_id
+      userId = body._scheduler_user_id;
+    } else {
+      const supabase = createClient(
+        Deno.env.get("SUPABASE_URL")!,
+        Deno.env.get("SUPABASE_ANON_KEY")!,
+        { global: { headers: { authorization: authHeader } } }
+      );
+      const { data: { user }, error: authErr } = await supabase.auth.getUser();
+      if (authErr || !user) {
+        return new Response(JSON.stringify({ error: "Not authenticated. Please log in again." }), {
+          status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      userId = user.id;
     }
 
     const { source, settings }: ScanRequest = await req.json();
