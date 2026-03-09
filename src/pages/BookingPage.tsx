@@ -20,7 +20,7 @@ const EVENT_TYPES = [
 ];
 
 export default function BookingPage() {
-  const { producerId } = useParams<{ producerId: string }>();
+  const { producerId: advisorId } = useParams<{ producerId: string }>();
   const [searchParams] = useSearchParams();
   const preselectedType = searchParams.get("type") || "";
   const preselectedLeadId = searchParams.get("lead") || "";
