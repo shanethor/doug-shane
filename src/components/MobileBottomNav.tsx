@@ -79,9 +79,14 @@ export function MobileBottomNav() {
                 <span className="text-[10px] font-medium leading-tight">
                   {tab.label}
                 </span>
-                {tab.id === "email" && unreadCount > 0 && (
+                {tab.id === "email" && emailCount > 0 && (
                   <span className="absolute top-1 right-0.5 h-4 min-w-[16px] px-1 rounded-full bg-destructive text-destructive-foreground text-[9px] font-bold flex items-center justify-center">
-                    {unreadCount > 99 ? "99+" : unreadCount}
+                    {emailCount > 99 ? "99+" : emailCount}
+                  </span>
+                )}
+                {tab.id === "pulse" && pulseCount > 0 && (
+                  <span className="absolute top-1 right-0.5 h-4 min-w-[16px] px-1 rounded-full bg-destructive text-destructive-foreground text-[9px] font-bold flex items-center justify-center">
+                    {pulseCount > 99 ? "99+" : pulseCount}
                   </span>
                 )}
               </Link>

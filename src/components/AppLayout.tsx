@@ -52,9 +52,14 @@ export function AppLayout({ children, onLogoClick }: { children: React.ReactNode
                 >
                   <item.icon className="h-3.5 w-3.5" />
                   {item.label}
-                  {item.to === "/email" && unreadCount > 0 && (
+                  {item.to === "/email" && emailCount > 0 && (
                     <span className="absolute -top-1 -right-1 h-4 min-w-[16px] px-1 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center">
-                      {unreadCount > 99 ? "99+" : unreadCount}
+                      {emailCount > 99 ? "99+" : emailCount}
+                    </span>
+                  )}
+                  {item.to === "/pulse" && pulseCount > 0 && (
+                    <span className="absolute -top-1 -right-1 h-4 min-w-[16px] px-1 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center">
+                      {pulseCount > 99 ? "99+" : pulseCount}
                     </span>
                   )}
                 </Button>
