@@ -47,8 +47,9 @@ export default function AuraPulse() {
   const [notifLoading, setNotifLoading] = useState(false);
   const [notifFilter, setNotifFilter] = useState("all");
 
+  // Always fetch notifications for badge count, regardless of active tab
   useEffect(() => {
-    if (!user || activeTab !== "notifications") return;
+    if (!user) return;
     setNotifLoading(true);
     supabase
       .from("notifications")
@@ -65,11 +66,12 @@ export default function AuraPulse() {
       .channel("pulse-notifications")
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` }, (payload) => {
         setNotifications(prev => [payload.new as any, ...prev]);
+        window.dispatchEvent(new Event("unread-count-refresh"));
       })
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [user, activeTab]);
+  }, [user]);
 
   const markRead = async (id: string) => {
     await supabase.from("notifications").update({ is_read: true }).eq("id", id);
