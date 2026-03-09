@@ -1,33 +1,35 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
-// Module-level shared state to avoid duplicate fetches across component instances
-let sharedCount = 0;
+// Shared state for split counts
+let sharedEmailCount = 0;
+let sharedPulseCount = 0;
 let sharedUserId: string | null = null;
-let listeners: Set<(count: number) => void> = new Set();
+let listeners: Set<(email: number, pulse: number) => void> = new Set();
 let channelRef: ReturnType<typeof supabase.channel> | null = null;
 let timerRef: ReturnType<typeof setTimeout> | null = null;
 
-function notifyListeners(count: number) {
-  sharedCount = count;
-  listeners.forEach((fn) => fn(count));
+function notifyListeners(email: number, pulse: number) {
+  sharedEmailCount = email;
+  sharedPulseCount = pulse;
+  listeners.forEach((fn) => fn(email, pulse));
 }
 
 async function fetchCountShared(userId: string) {
-  const [notifRes, emailRes] = await Promise.all([
-    supabase
-      .from("notifications")
-      .select("id", { count: "exact", head: true })
-      .eq("user_id", userId)
-      .eq("is_read", false),
+  const [emailRes, pulseRes] = await Promise.all([
     supabase
       .from("synced_emails")
       .select("id", { count: "exact", head: true })
       .eq("user_id", userId)
       .eq("is_read", false),
+    supabase
+      .from("notifications")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .eq("is_read", false),
   ]);
-  notifyListeners((notifRes.count ?? 0) + (emailRes.count ?? 0));
+  notifyListeners(emailRes.count ?? 0, pulseRes.count ?? 0);
 }
 
 function debouncedFetchShared(userId: string) {
@@ -35,21 +37,28 @@ function debouncedFetchShared(userId: string) {
   timerRef = setTimeout(() => fetchCountShared(userId), 500);
 }
 
+/**
+ * Returns { emailCount, pulseCount, totalCount } for badge display.
+ * emailCount = unread synced_emails (Email page)
+ * pulseCount = unread notifications (Pulse page — pipeline, loss runs, intake, documents, etc.)
+ */
 export function useUnreadCount() {
   const { user } = useAuth();
-  const [count, setCount] = useState(sharedCount);
+  const [emailCount, setEmailCount] = useState(sharedEmailCount);
+  const [pulseCount, setPulseCount] = useState(sharedPulseCount);
 
   useEffect(() => {
     if (!user) return;
 
-    // Register this component as a listener
-    listeners.add(setCount);
+    const listener = (e: number, p: number) => {
+      setEmailCount(e);
+      setPulseCount(p);
+    };
+    listeners.add(listener);
 
-    // If we're the first listener or user changed, set up shared subscription
     if (sharedUserId !== user.id) {
       sharedUserId = user.id;
 
-      // Clean up old channel
       if (channelRef) {
         supabase.removeChannel(channelRef);
         channelRef = null;
@@ -71,21 +80,19 @@ export function useUnreadCount() {
         )
         .subscribe();
     } else {
-      // Already initialized, just sync current value
-      setCount(sharedCount);
+      setEmailCount(sharedEmailCount);
+      setPulseCount(sharedPulseCount);
     }
 
-    // Listen for manual refresh events
     const onRefresh = () => {
       if (sharedUserId) fetchCountShared(sharedUserId);
     };
     window.addEventListener("unread-count-refresh", onRefresh);
 
     return () => {
-      listeners.delete(setCount);
+      listeners.delete(listener);
       window.removeEventListener("unread-count-refresh", onRefresh);
 
-      // If no more listeners, clean up
       if (listeners.size === 0 && channelRef) {
         if (timerRef) clearTimeout(timerRef);
         supabase.removeChannel(channelRef);
@@ -95,5 +102,5 @@ export function useUnreadCount() {
     };
   }, [user]);
 
-  return count;
+  return { emailCount, pulseCount, totalCount: emailCount + pulseCount };
 }
