@@ -2,13 +2,13 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
-import { Target } from "lucide-react";
+import { Target, Trophy, Sparkles, PartyPopper } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
 
 const fmt = (n: number) => Math.round(n).toLocaleString();
@@ -29,7 +29,7 @@ function PipelineChip({ label, count }: { label: string; count: number }) {
 
   return (
     <span
-      className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium tabular-nums transition-all duration-300 ${
+      className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium tabular-nums transition-all duration-300 ${
         flash
           ? "bg-primary/20 text-primary scale-110"
           : "bg-muted/60 text-muted-foreground"
@@ -50,6 +50,20 @@ function getStatusLabel(pct: number): { text: string; color: string } {
   return { text: "Ramping", color: "text-muted-foreground" };
 }
 
+// ─── Mini progress bar with goal coloring ───────────────────────────────────
+function MiniProgress({ pct }: { pct: number }) {
+  const clamped = Math.min(pct, 100);
+  const hit = pct >= 100;
+  return (
+    <div className="w-full h-[3px] rounded-full bg-muted mt-0.5 overflow-hidden">
+      <div
+        className={`h-full rounded-full transition-all duration-700 ease-out ${hit ? "bg-emerald-500" : "bg-primary"}`}
+        style={{ width: `${clamped}%` }}
+      />
+    </div>
+  );
+}
+
 export function NavScoreboard() {
   const { user } = useAuth();
   const { isClientServices, role } = useUserRole();
@@ -63,10 +77,15 @@ export function NavScoreboard() {
   const [goalPremium, setGoalPremium] = useState("");
   const [goalRevenue, setGoalRevenue] = useState("");
   const [saving, setSaving] = useState(false);
+  const [showCongrats, setShowCongrats] = useState(false);
+  const congratsShownRef = useRef(false);
 
   const now = new Date();
   const year = now.getFullYear();
   const annualPrem = goals?.annual_premium_goal || 0;
+  const annualRev = goals?.annual_revenue_goal || 0;
+  const monthlyPremGoal = annualPrem / 12;
+  const monthlyRevGoal = annualRev / 12;
 
   useEffect(() => {
     if (!user) return;
@@ -97,18 +116,19 @@ export function NavScoreboard() {
       });
 
       const mtdPolicies = mtdPoliciesRes.data ?? [];
-      setMtdStats({
-        premium: mtdPolicies.reduce((s: number, p: any) => s + Number(p.annual_premium || 0), 0),
-        revenue: mtdPolicies.reduce((s: number, p: any) => s + Number(p.revenue || Number(p.annual_premium) * 0.12 || 0), 0),
-      });
+      const mtdPrem = mtdPolicies.reduce((s: number, p: any) => s + Number(p.annual_premium || 0), 0);
+      const mtdRev = mtdPolicies.reduce((s: number, p: any) => s + Number(p.revenue || Number(p.annual_premium) * 0.12 || 0), 0);
+      setMtdStats({ premium: mtdPrem, revenue: mtdRev });
 
-      // Pipeline counts
+      // Check if monthly goal just surpassed
+      const mGoal = (Number((goalsRes.data as any)?.annual_premium_goal) || 0) / 12;
+      if (mGoal > 0 && mtdPrem >= mGoal && !congratsShownRef.current) {
+        congratsShownRef.current = true;
+        // Small delay so the UI renders first
+        setTimeout(() => setShowCongrats(true), 800);
+      }
+
       const leads = leadsRes.data ?? [];
-      const approvedLeadIds = new Set(allPolicies.map((_: any, i: number) => {
-        // We need lead_ids from policies — re-fetch
-        return null;
-      }));
-      // Simpler: count by stage
       const stageCounts = { prospects: 0, quoting: 0, presenting: 0, sold: 0, lost: 0 };
       leads.forEach((l: any) => {
         if (l.stage === "prospect") stageCounts.prospects++;
@@ -116,7 +136,6 @@ export function NavScoreboard() {
         else if (l.stage === "presenting") stageCounts.presenting++;
         else if (l.stage === "lost") stageCounts.lost++;
       });
-      // Sold = approved policies count
       stageCounts.sold = allPolicies.length;
       setPipeline(stageCounts);
 
@@ -153,37 +172,33 @@ export function NavScoreboard() {
     if (!isNaN(num) && num > 0) setGoalRevenue(Math.round(num * 0.12).toString());
   };
 
-  // Hide for client services
   if (!user || isClientServices) return null;
 
-  // Loading skeleton
   if (loading) {
     return (
       <div className="w-full border-b border-border bg-card/90 backdrop-blur-sm animate-pulse">
-        <div className="flex items-center h-[36px] px-3 gap-4 max-w-6xl mx-auto">
-          <div className="h-5 w-5 rounded-full bg-muted/50" />
-          <div className="h-2.5 w-32 rounded bg-muted/50" />
-          <div className="h-2.5 w-20 rounded bg-muted/40" />
-          <div className="h-2.5 w-20 rounded bg-muted/40" />
-          <div className="h-2.5 w-16 rounded bg-muted/40" />
-          <div className="flex gap-1 ml-auto">
-            {[1,2,3,4,5].map(i => <div key={i} className="h-4 w-14 rounded bg-muted/30" />)}
+        <div className="flex items-center h-[72px] px-3 gap-4 max-w-6xl mx-auto">
+          <div className="h-7 w-7 rounded-full bg-muted/50" />
+          <div className="h-3 w-32 rounded bg-muted/50" />
+          <div className="h-3 w-24 rounded bg-muted/40" />
+          <div className="h-3 w-24 rounded bg-muted/40" />
+          <div className="flex gap-1.5 ml-auto">
+            {[1,2,3,4,5].map(i => <div key={i} className="h-5 w-16 rounded bg-muted/30" />)}
           </div>
         </div>
       </div>
     );
   }
 
-  // No goals set
   if (!goals || annualPrem === 0) {
     return (
       <>
         <button
           onClick={() => { setGoalPremium(""); setGoalRevenue(""); setGoalDialogOpen(true); }}
-          className="w-full border-b border-border bg-card/90 backdrop-blur-sm px-4 py-1.5 flex items-center gap-2 hover:bg-muted/30 transition-colors group"
+          className="w-full border-b border-border bg-card/90 backdrop-blur-sm px-4 py-3 flex items-center gap-2 hover:bg-muted/30 transition-colors group"
         >
-          <Target className="h-3 w-3 text-primary" />
-          <span className="text-[11px] font-medium text-muted-foreground group-hover:text-foreground transition-colors">
+          <Target className="h-4 w-4 text-primary" />
+          <span className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">
             Set your {year} production goals to activate HUD
           </span>
         </button>
@@ -197,66 +212,74 @@ export function NavScoreboard() {
     );
   }
 
-  const ytdPct = annualPrem > 0 ? Math.min((soldStats.premium / annualPrem) * 100, 100) : 0;
-  const status = getStatusLabel(ytdPct);
+  const ytdPremPct = annualPrem > 0 ? (soldStats.premium / annualPrem) * 100 : 0;
+  const ytdRevPct = annualRev > 0 ? (soldStats.revenue / annualRev) * 100 : 0;
+  const mtdPremPct = monthlyPremGoal > 0 ? (mtdStats.premium / monthlyPremGoal) * 100 : 0;
+  const mtdRevPct = monthlyRevGoal > 0 ? (mtdStats.revenue / monthlyRevGoal) * 100 : 0;
+
+  const status = getStatusLabel(ytdPremPct);
   const initials = profile.full_name
     ? profile.full_name.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2)
     : "??";
-
   const roleLabel = role === "producer" ? "Producer" : role === "manager" ? "Manager" : role || "Producer";
+
+  // Congrats data
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const dayOfMonth = now.getDate();
+  const paceMultiplier = dayOfMonth > 0 ? daysInMonth / dayOfMonth : 1;
+  const projectedMonthly = mtdStats.premium * paceMultiplier;
 
   return (
     <>
       <div className="w-full border-b border-border bg-card/95 backdrop-blur-sm">
-        <div className="flex items-center h-[36px] overflow-x-auto scrollbar-hide max-w-6xl mx-auto px-3 gap-0 text-[11px]">
+        <div className="flex items-center h-[72px] overflow-x-auto scrollbar-hide max-w-6xl mx-auto px-3 gap-0 text-[13px]">
 
           {/* Identity + Status */}
-          <div className="flex items-center gap-2 shrink-0 pr-3 border-r border-border mr-3">
-            <Avatar className="h-5 w-5">
-              <AvatarFallback className="text-[8px] font-bold bg-primary/10 text-primary">{initials}</AvatarFallback>
+          <div className="flex items-center gap-2 shrink-0 pr-4 border-r border-border mr-4">
+            <Avatar className="h-7 w-7">
+              <AvatarFallback className="text-[10px] font-bold bg-primary/10 text-primary">{initials}</AvatarFallback>
             </Avatar>
-            <span className="font-semibold text-foreground whitespace-nowrap">{profile.full_name || "Producer"}</span>
-            <span className="text-muted-foreground whitespace-nowrap">| {roleLabel}</span>
-            {profile.agency_name && (
-              <span className="text-muted-foreground whitespace-nowrap">– {profile.agency_name}</span>
-            )}
-            <span className={`font-medium whitespace-nowrap px-1.5 py-0.5 rounded text-[10px] ${status.color} bg-current/5`}>
+            <div className="flex flex-col">
+              <span className="font-semibold text-foreground whitespace-nowrap leading-tight">{profile.full_name || "Producer"}</span>
+              <span className="text-[11px] text-muted-foreground whitespace-nowrap leading-tight">
+                {roleLabel}{profile.agency_name ? ` – ${profile.agency_name}` : ""}
+              </span>
+            </div>
+            <span className={`font-semibold whitespace-nowrap px-2 py-0.5 rounded text-[11px] ${status.color} bg-current/5`}>
               {status.text}
             </span>
           </div>
 
-          {/* MTD Numbers */}
-          <div className="flex items-center gap-1.5 shrink-0 pr-3 border-r border-border mr-3 whitespace-nowrap">
-            <span className="text-muted-foreground font-medium">MTD NB:</span>
-            <span className="font-semibold tabular-nums text-foreground">{fmt(mtdStats.premium)}</span>
-            <span className="text-muted-foreground">Rev:</span>
-            <span className="font-semibold tabular-nums text-foreground">{fmt(mtdStats.revenue)}</span>
+          {/* MTD Numbers + % to goal */}
+          <div className="flex flex-col justify-center shrink-0 pr-4 border-r border-border mr-4 min-w-[160px]">
+            <div className="flex items-center gap-2 whitespace-nowrap leading-tight">
+              <span className="text-muted-foreground font-medium">MTD NB:</span>
+              <span className="font-semibold tabular-nums text-foreground">{fmt(mtdStats.premium)}</span>
+              <span className="text-muted-foreground">Rev:</span>
+              <span className="font-semibold tabular-nums text-foreground">{fmt(mtdStats.revenue)}</span>
+            </div>
+            <div className="flex items-center gap-2 mt-0.5">
+              <span className="text-[10px] text-muted-foreground tabular-nums">{Math.round(mtdPremPct)}% of monthly goal</span>
+              <MiniProgress pct={mtdPremPct} />
+            </div>
           </div>
 
-          {/* YTD Numbers */}
-          <div className="flex items-center gap-1.5 shrink-0 pr-3 border-r border-border mr-3 whitespace-nowrap">
-            <span className="text-muted-foreground font-medium">YTD NB:</span>
-            <span className="font-semibold tabular-nums text-foreground">{fmt(soldStats.premium)}</span>
-            <span className="text-muted-foreground">Rev:</span>
-            <span className="font-semibold tabular-nums text-foreground">{fmt(soldStats.revenue)}</span>
-          </div>
-
-          {/* % to goal + thin progress */}
-          <div className="flex flex-col justify-center shrink-0 pr-3 border-r border-border mr-3 min-w-[90px]">
-            <span className="whitespace-nowrap">
-              <span className="text-muted-foreground font-medium">% to goal: </span>
-              <span className="font-semibold tabular-nums text-foreground">{Math.round(ytdPct)}%</span>
-            </span>
-            <div className="w-full h-[2px] rounded-full bg-muted mt-0.5 overflow-hidden">
-              <div
-                className={`h-full rounded-full transition-all duration-700 ease-out ${ytdPct >= 100 ? "bg-emerald-500" : "bg-primary"}`}
-                style={{ width: `${ytdPct}%` }}
-              />
+          {/* YTD Numbers + % to goal */}
+          <div className="flex flex-col justify-center shrink-0 pr-4 border-r border-border mr-4 min-w-[160px]">
+            <div className="flex items-center gap-2 whitespace-nowrap leading-tight">
+              <span className="text-muted-foreground font-medium">YTD NB:</span>
+              <span className="font-semibold tabular-nums text-foreground">{fmt(soldStats.premium)}</span>
+              <span className="text-muted-foreground">Rev:</span>
+              <span className="font-semibold tabular-nums text-foreground">{fmt(soldStats.revenue)}</span>
+            </div>
+            <div className="flex items-center gap-2 mt-0.5">
+              <span className="text-[10px] text-muted-foreground tabular-nums">{Math.round(ytdPremPct)}% of annual goal</span>
+              <MiniProgress pct={ytdPremPct} />
             </div>
           </div>
 
           {/* Pipeline Tags */}
-          <div className="flex items-center gap-1 shrink-0">
+          <div className="flex items-center gap-1.5 shrink-0">
             <PipelineChip label="Prospects" count={pipeline.prospects} />
             <PipelineChip label="Quoting" count={pipeline.quoting} />
             <PipelineChip label="Submissions" count={pipeline.presenting} />
@@ -267,9 +290,9 @@ export function NavScoreboard() {
           {/* Goal edit */}
           <button
             onClick={() => { setGoalPremium(annualPrem.toString()); setGoalRevenue((goals?.annual_revenue_goal || 0).toString()); setGoalDialogOpen(true); }}
-            className="ml-2 text-muted-foreground/20 hover:text-foreground transition-colors shrink-0"
+            className="ml-2 text-muted-foreground/30 hover:text-foreground transition-colors shrink-0"
           >
-            <Target className="h-3 w-3" />
+            <Target className="h-3.5 w-3.5" />
           </button>
         </div>
       </div>
@@ -280,6 +303,38 @@ export function NavScoreboard() {
         goalRevenue={goalRevenue} setGoalRevenue={setGoalRevenue}
         saving={saving} onSave={handleSaveGoals}
       />
+
+      {/* Congratulations Dialog */}
+      <Dialog open={showCongrats} onOpenChange={setShowCongrats}>
+        <DialogContent className="max-w-md text-center">
+          <div className="flex flex-col items-center gap-4 py-4">
+            <div className="relative">
+              <div className="h-20 w-20 rounded-full bg-emerald-500/10 flex items-center justify-center animate-scale-in">
+                <Trophy className="h-10 w-10 text-emerald-500" />
+              </div>
+              <Sparkles className="absolute -top-1 -right-1 h-6 w-6 text-amber-400 animate-fade-in" />
+              <PartyPopper className="absolute -bottom-1 -left-1 h-5 w-5 text-primary animate-fade-in" />
+            </div>
+            <DialogHeader className="text-center">
+              <DialogTitle className="text-xl">🎉 Monthly Goal Crushed!</DialogTitle>
+              <DialogDescription className="text-sm text-muted-foreground mt-2 space-y-1">
+                <p>
+                  You've hit <span className="font-semibold text-foreground">${fmt(mtdStats.premium)}</span> in new business this month,
+                  surpassing your <span className="font-semibold text-foreground">${fmt(monthlyPremGoal)}</span> goal!
+                </p>
+                <p>
+                  At this pace, you're projected to close <span className="font-semibold text-emerald-500">${fmt(projectedMonthly)}</span> this month
+                  — that's <span className="font-semibold text-emerald-500">{Math.round((projectedMonthly / monthlyPremGoal) * 100)}%</span> of target.
+                </p>
+                <p className="pt-2 text-foreground font-medium">Keep this momentum going! 🚀</p>
+              </DialogDescription>
+            </DialogHeader>
+            <Button onClick={() => setShowCongrats(false)} className="mt-2 bg-emerald-500 hover:bg-emerald-600 text-white">
+              Let's keep going
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
