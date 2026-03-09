@@ -104,13 +104,15 @@ Deno.serve(async (req) => {
         Deno.env.get("SUPABASE_ANON_KEY")!,
         { global: { headers: { authorization: authHeader } } }
       );
-      const { data: { user }, error: authErr } = await supabase.auth.getUser();
-      if (authErr || !user) {
+      const token = authHeader.replace("Bearer ", "");
+      const { data, error: authErr } = await supabase.auth.getClaims(token);
+      if (authErr || !data?.claims?.sub) {
+        console.error("[lead-engine-scan] Auth error:", authErr);
         return new Response(JSON.stringify({ error: "Not authenticated. Please log in again." }), {
           status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      userId = user.id;
+      userId = data.claims.sub as string;
     }
 
     const source: ScanSource = body.source;
