@@ -2673,31 +2673,76 @@ export default function IntakeForm() {
                     </div>
                   )}
 
-                  {commercialStep === "coverage_select_comm" && (
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="text-base">What coverage lines do you need?</CardTitle>
-                        <p className="text-sm text-muted-foreground">Select all that apply. This helps us ask the right underwriting questions and prepare the correct ACORD forms.</p>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="grid grid-cols-2 gap-3">
-                          {["General Liability", "Workers Compensation", "Commercial Auto", "Commercial Property", "Umbrella / Excess", "Professional Liability", "Cyber Liability", "Other"].map(line => {
-                            const sel = commercialForm.selected_coverage_lines.includes(line);
-                            return (
-                              <button key={line} onClick={() => {
-                                const newLines = sel
-                                  ? commercialForm.selected_coverage_lines.filter(l => l !== line)
-                                  : [...commercialForm.selected_coverage_lines, line];
-                                updateCommercial("selected_coverage_lines", newLines);
-                              }}
-                              className={`p-3 rounded-xl border-2 text-left text-sm font-medium transition-all ${sel ? "bg-primary/10 border-primary" : "border-border hover:border-primary/40"}`}>
-                                {line}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </CardContent>
-                    </Card>
+                  {commercialStep === "full_intake" && (
+                    <div className="space-y-6">
+                      {/* Business Info */}
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="text-base">Full Intake</CardTitle>
+                          <p className="text-sm text-muted-foreground">Let's walk through your operations, people, property, and risk.</p>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div><Label className="text-xs">Business Name *</Label><Input value={commercialForm.business_name} onChange={e => updateCommercial("business_name", e.target.value)} /></div>
+                            <div><Label className="text-xs">DBA (if applicable)</Label><Input value={commercialForm.dba} onChange={e => updateCommercial("dba", e.target.value)} /></div>
+                            <div><Label className="text-xs">Primary Contact Name *</Label><Input value={commercialForm.customer_name} onChange={e => updateCommercial("customer_name", e.target.value)} /></div>
+                            <div><Label className="text-xs">Email *</Label><Input type="email" value={commercialForm.customer_email} onChange={e => updateCommercial("customer_email", e.target.value)} /></div>
+                            <div><Label className="text-xs">Phone *</Label><Input value={commercialForm.customer_phone} onChange={e => updateCommercial("customer_phone", e.target.value)} /></div>
+                            <div><Label className="text-xs">FEIN / EIN</Label><Input value={commercialForm.ein} onChange={e => updateCommercial("ein", e.target.value)} /></div>
+                            <div>
+                              <Label className="text-xs">Business Entity Type</Label>
+                              <Select value={commercialForm.business_type || ""} onValueChange={v => updateCommercial("business_type", v)}>
+                                <SelectTrigger className="h-10 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="sole_proprietor">Sole Proprietor</SelectItem><SelectItem value="partnership">Partnership</SelectItem>
+                                  <SelectItem value="corporation">Corporation</SelectItem><SelectItem value="llc">LLC</SelectItem>
+                                  <SelectItem value="nonprofit">Non-Profit</SelectItem><SelectItem value="other">Other</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div><Label className="text-xs">Street Address</Label><Input value={commercialForm.street_address} onChange={e => updateCommercial("street_address", e.target.value)} /></div>
+                            <div><Label className="text-xs">City</Label><Input value={commercialForm.city} onChange={e => updateCommercial("city", e.target.value)} /></div>
+                            <div>
+                              <Label className="text-xs">State</Label>
+                              <Select value={commercialForm.state} onValueChange={v => updateCommercial("state", v)}>
+                                <SelectTrigger className="h-10 text-sm"><SelectValue placeholder="State" /></SelectTrigger>
+                                <SelectContent>{US_STATES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+                              </Select>
+                            </div>
+                            <div><Label className="text-xs">ZIP</Label><Input value={commercialForm.zip} onChange={e => updateCommercial("zip", e.target.value)} /></div>
+                            <div><Label className="text-xs">Number of Employees</Label><Input value={commercialForm.employee_count} onChange={e => updateCommercial("employee_count", e.target.value)} /></div>
+                            <div><Label className="text-xs">Annual Revenue</Label><Input value={commercialForm.annual_revenue} onChange={e => updateCommercial("annual_revenue", e.target.value)} /></div>
+                            <div><Label className="text-xs">Years in Business</Label><Input value={commercialForm.years_in_business} onChange={e => updateCommercial("years_in_business", e.target.value)} /></div>
+                          </div>
+                        </CardContent>
+                      </Card>
+
+                      {/* Coverage Selection */}
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="text-base">What coverage lines do you need?</CardTitle>
+                          <p className="text-sm text-muted-foreground">Select all that apply. This helps us ask the right underwriting questions.</p>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="grid grid-cols-2 gap-3">
+                            {["General Liability", "Workers Compensation", "Commercial Auto", "Commercial Property", "Umbrella / Excess", "Professional Liability", "Cyber Liability", "Other"].map(line => {
+                              const sel = commercialForm.selected_coverage_lines.includes(line);
+                              return (
+                                <button key={line} onClick={() => {
+                                  const newLines = sel
+                                    ? commercialForm.selected_coverage_lines.filter(l => l !== line)
+                                    : [...commercialForm.selected_coverage_lines, line];
+                                  updateCommercial("selected_coverage_lines", newLines);
+                                }}
+                                className={`p-3 rounded-xl border-2 text-left text-sm font-medium transition-all ${sel ? "bg-primary/10 border-primary" : "border-border hover:border-primary/40"}`}>
+                                  {line}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
                   )}
 
                   {commercialStep === "coverage_questions" && (() => {
