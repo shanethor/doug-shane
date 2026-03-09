@@ -144,7 +144,7 @@ export default function BorSign() {
         policyEffectiveDate: borRecord.policy_effective_date || "",
         policyExpirationDate: borRecord.policy_expiration_date || "",
         selectedLines: borRecord.selected_lines || [],
-        producerName: "", producerEmail: "", producerPhone: "",
+        advisorName: "", advisorEmail: "", advisorPhone: "",
       });
 
       if (borRecord.signature_data) {
