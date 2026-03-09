@@ -177,6 +177,11 @@ const ACORD_140: AcordQuestion[] = [
     dependsOn: (f) => f.owns_or_leases_buildings === true || f.owns_or_leases_buildings === "yes" },
   { acord: "140", key: "has_alarm_system", label: "Does the building have a fire/burglar alarm?", type: "boolean", required: false, section: "property",
     dependsOn: (f) => f.owns_or_leases_buildings === true || f.owns_or_leases_buildings === "yes" },
+  { acord: "140", key: "property_total_replacement_value", label: "Rough total replacement value of all buildings you want to insure", type: "select", required: false, section: "property",
+    options: ["Under $500K", "$500K–$1M", "$1M–$5M", "$5M–$10M", "$10M+"],
+    dependsOn: (f) => f.owns_or_leases_buildings === true || f.owns_or_leases_buildings === "yes" },
+  { acord: "140", key: "property_older_no_updates", label: "Are any buildings older than 40 years without major updates (roof/electrical/plumbing/HVAC)?", type: "boolean", required: false, section: "property",
+    dependsOn: (f) => f.owns_or_leases_buildings === true || f.owns_or_leases_buildings === "yes" },
 ];
 
 /* ═══════════════════════════════════════════════════════════════
