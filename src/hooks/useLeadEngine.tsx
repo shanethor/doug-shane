@@ -312,3 +312,25 @@ export function useDeleteEngineLead() {
     },
   });
 }
+
+/* ── Scan a source (Reddit / Business Filings) ── */
+export function useScanSource() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ source, settings }: { source: string; settings: Record<string, unknown> }) => {
+      const { data, error } = await supabase.functions.invoke("lead-engine-scan", {
+        body: { source, settings },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      return data as { success: boolean; leads_found: number; message: string };
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["engine-leads"] });
+      qc.invalidateQueries({ queryKey: ["engine-tier-summary"] });
+      qc.invalidateQueries({ queryKey: ["engine-kpis"] });
+      qc.invalidateQueries({ queryKey: ["engine-activity"] });
+      qc.invalidateQueries({ queryKey: ["lead-source-configs"] });
+    },
+  });
+}
