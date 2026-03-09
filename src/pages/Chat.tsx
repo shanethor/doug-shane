@@ -1853,6 +1853,123 @@ export default function Chat() {
     }
   };
 
+  /** Execute email actions — show confirmation for sends */
+  const executeEmailActions = (actions: EmailAction[]) => {
+    if (actions.length === 0) return;
+    // Show preview for the first email action — user must confirm
+    setPendingEmail(actions[0]);
+  };
+
+  /** Send the pending email via the send-email edge function */
+  const confirmSendEmail = async () => {
+    if (!pendingEmail || !user) return;
+    try {
+      const headers = await getAuthHeaders();
+      const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-email`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          to: pendingEmail.recipientEmail,
+          subject: pendingEmail.subject,
+          html: pendingEmail.bodyHtml,
+          cc_owner: pendingEmail.ccOwner,
+        }),
+      });
+      if (!resp.ok) {
+        const errBody = await resp.json().catch(() => ({}));
+        throw new Error(errBody.error || `Send failed (${resp.status})`);
+      }
+      toast({ title: "✉️ Email sent", description: `Email to ${pendingEmail.recipientName} sent successfully.` });
+      setMessages(prev => [...prev, {
+        role: "assistant",
+        content: `✅ **Email sent** to **${pendingEmail.recipientName}** (${pendingEmail.recipientEmail}).\n\n**Subject:** ${pendingEmail.subject}${pendingEmail.ccOwner ? "\n\n*You were CC'd on this email.*" : ""}`,
+      }]);
+    } catch (err: any) {
+      console.error("Email send error:", err);
+      toast({ variant: "destructive", title: "Send failed", description: err.message || "Could not send email." });
+      setMessages(prev => [...prev, {
+        role: "assistant",
+        content: `❌ Failed to send email to ${pendingEmail.recipientName}. Error: ${err.message || "Unknown error"}. You can try again or open the Email Hub to send manually.`,
+        buttons: [{ label: "Open Email Hub", action: "/email" }],
+      }]);
+    }
+    setPendingEmail(null);
+  };
+
+  /** Execute task creation actions */
+  const executeTaskActions = async (actions: TaskAction[]) => {
+    if (!user) return;
+    for (const action of actions) {
+      try {
+        // Find associated lead
+        let leadId: string | null = null;
+        if (action.leadName) {
+          const leads = await findLeadsFuzzy(action.leadName);
+          if (leads.length >= 1) leadId = leads[0].id;
+        }
+
+        // Create a calendar event as a follow-up task
+        const dueDate = new Date(action.dueDate + "T09:00:00");
+        if (isNaN(dueDate.getTime())) {
+          toast({ variant: "destructive", title: "Invalid date", description: `Could not parse task date: ${action.dueDate}` });
+          continue;
+        }
+
+        const endDate = new Date(dueDate);
+        endDate.setHours(endDate.getHours() + 1);
+
+        await supabase.from("calendar_events").insert({
+          user_id: user.id,
+          title: `📋 ${action.title}`,
+          event_type: "follow_up" as any,
+          start_time: dueDate.toISOString(),
+          end_time: endDate.toISOString(),
+          lead_id: leadId,
+          provider: "aura",
+          status: "scheduled" as any,
+        } as any);
+
+        // Also create a lead note if associated with a lead
+        if (leadId) {
+          await supabase.from("lead_notes").insert({
+            lead_id: leadId,
+            user_id: user.id,
+            note_text: `Task created from chat: ${action.title} (due ${action.dueDate})`,
+          });
+        }
+
+        toast({ title: "📋 Task created", description: `"${action.title}" due ${action.dueDate}` });
+      } catch (err) {
+        console.error("Task action failed:", err);
+        toast({ variant: "destructive", title: "Task error", description: "Failed to create task." });
+      }
+    }
+  };
+
+  /** Execute lead intelligence actions — create leads in pipeline */
+  const executeLeadActions = async (actions: LeadIntelAction[]) => {
+    if (!user) return;
+    for (const action of actions) {
+      try {
+        const stage = action.tier <= 1 ? "prospect" : action.tier <= 2 ? "prospect" : "prospect";
+        const { error } = await supabase.from("leads").insert({
+          owner_user_id: user.id,
+          account_name: action.companyName,
+          state: action.state || null,
+          business_type: action.industry || null,
+          line_type: "commercial",
+          stage: stage as any,
+          lead_source: action.source || "manual",
+        });
+        if (error) throw error;
+        toast({ title: "🎯 Lead created", description: `"${action.companyName}" added to pipeline as Tier ${action.tier}.` });
+      } catch (err) {
+        console.error("Lead action failed:", err);
+        toast({ variant: "destructive", title: "Lead error", description: `Failed to create lead: ${action.companyName}` });
+      }
+    }
+  };
+
   /** Detect URLs in text and scrape them for business data */
   const scrapeWebsiteUrls = async (text: string): Promise<Record<string, any>> => {
     const urlRegex = /https?:\/\/[^\s,)]+/gi;
