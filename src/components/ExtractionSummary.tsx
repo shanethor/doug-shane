@@ -6,7 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { CheckCircle, FileText, ArrowRight, Loader2, Sparkles, Plus } from "lucide-react";
+import { CheckCircle, FileText, ArrowRight, Loader2, Sparkles, Plus, Send } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
