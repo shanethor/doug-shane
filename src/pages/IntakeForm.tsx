@@ -2433,49 +2433,6 @@ export default function IntakeForm() {
                     </div>
                   </div>
 
-                  {commercialStep === "business_info" && (
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="text-base">Your Information</CardTitle>
-                        <p className="text-sm text-muted-foreground">Please confirm your contact and business details below. Some fields may be pre-filled from information you've already provided.</p>
-                      </CardHeader>
-                      <CardContent className="space-y-3">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          <div><Label className="text-xs">Business Name *</Label><Input value={commercialForm.business_name} onChange={e => updateCommercial("business_name", e.target.value)} /></div>
-                          <div><Label className="text-xs">DBA (if applicable)</Label><Input value={commercialForm.dba} onChange={e => updateCommercial("dba", e.target.value)} /></div>
-                          <div><Label className="text-xs">Primary Contact Name *</Label><Input value={commercialForm.customer_name} onChange={e => updateCommercial("customer_name", e.target.value)} /></div>
-                          <div><Label className="text-xs">Email *</Label><Input type="email" value={commercialForm.customer_email} onChange={e => updateCommercial("customer_email", e.target.value)} /></div>
-                          <div><Label className="text-xs">Phone *</Label><Input value={commercialForm.customer_phone} onChange={e => updateCommercial("customer_phone", e.target.value)} /></div>
-                          <div><Label className="text-xs">FEIN / EIN</Label><Input value={commercialForm.ein} onChange={e => updateCommercial("ein", e.target.value)} /></div>
-                          <div>
-                            <Label className="text-xs">Business Entity Type</Label>
-                            <Select value={commercialForm.business_type === commercialForm.business_type ? commercialForm.business_type : ""} onValueChange={v => updateCommercial("business_type", v)}>
-                              <SelectTrigger className="h-10 text-sm"><SelectValue placeholder="Select" /></SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="sole_proprietor">Sole Proprietor</SelectItem><SelectItem value="partnership">Partnership</SelectItem>
-                                <SelectItem value="corporation">Corporation</SelectItem><SelectItem value="llc">LLC</SelectItem>
-                                <SelectItem value="nonprofit">Non-Profit</SelectItem><SelectItem value="other">Other</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div><Label className="text-xs">Street Address</Label><Input value={commercialForm.street_address} onChange={e => updateCommercial("street_address", e.target.value)} /></div>
-                          <div><Label className="text-xs">City</Label><Input value={commercialForm.city} onChange={e => updateCommercial("city", e.target.value)} /></div>
-                          <div>
-                            <Label className="text-xs">State</Label>
-                            <Select value={commercialForm.state} onValueChange={v => updateCommercial("state", v)}>
-                              <SelectTrigger className="h-10 text-sm"><SelectValue placeholder="State" /></SelectTrigger>
-                              <SelectContent>{US_STATES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
-                            </Select>
-                          </div>
-                          <div><Label className="text-xs">ZIP</Label><Input value={commercialForm.zip} onChange={e => updateCommercial("zip", e.target.value)} /></div>
-                          <div><Label className="text-xs">Number of Employees</Label><Input value={commercialForm.employee_count} onChange={e => updateCommercial("employee_count", e.target.value)} /></div>
-                          <div><Label className="text-xs">Annual Revenue</Label><Input value={commercialForm.annual_revenue} onChange={e => updateCommercial("annual_revenue", e.target.value)} /></div>
-                          <div><Label className="text-xs">Years in Business</Label><Input value={commercialForm.years_in_business} onChange={e => updateCommercial("years_in_business", e.target.value)} /></div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )}
-
                   {commercialStep === "industry" && (
                     <Card>
                       <CardHeader><CardTitle className="text-base">What industry is your business in?</CardTitle></CardHeader>
