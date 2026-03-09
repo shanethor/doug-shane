@@ -42,6 +42,10 @@ const conciergeFeatures = [
 export default function AuraPulse() {
   const [activeTab, setActiveTab] = useState("overview");
   const { user } = useAuth();
+
+  useLayoutEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
   const navigate = useNavigate();
   const [notifications, setNotifications] = useState<any[]>([]);
   const [notifLoading, setNotifLoading] = useState(false);
