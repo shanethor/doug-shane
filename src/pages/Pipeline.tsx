@@ -807,7 +807,7 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
 
   const mainContent = (
     <>
-      <div ref={pullRef} className="overflow-y-auto">
+      <div ref={pullRef} className={embedded ? "" : "overflow-y-auto"}>
       <PullIndicator />
 
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-6">
