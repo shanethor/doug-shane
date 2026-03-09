@@ -6,7 +6,7 @@
  * and the CommercialFormData state so data flows directly from intake → ACORD prefill.
  */
 
-export type AcordCode = "125" | "126" | "127" | "130" | "131" | "140" | "75";
+export type AcordCode = "125" | "126" | "127" | "130" | "131" | "140" | "75" | "PL" | "CYBER" | "OTHER";
 
 export type AcordSection =
   | "business"
@@ -15,6 +15,9 @@ export type AcordSection =
   | "wc"
   | "property"
   | "umbrella"
+  | "professional"
+  | "cyber"
+  | "other"
   | "binder";
 
 export type QuestionType = "text" | "number" | "select" | "boolean" | "currency" | "date";
@@ -72,6 +75,8 @@ const ACORD_126: AcordQuestion[] = [
   { acord: "126", key: "gl_additional_insureds_text", label: "List additional insured names/entities", type: "text", required: false, section: "business",
     placeholder: "e.g. ABC Property Management, LLC",
     dependsOn: (f) => f.gl_additional_insureds_needed === true || f.gl_additional_insureds_needed === "yes" },
+  { acord: "126", key: "gl_work_at_third_party_premises", label: "Do you work at customer/third-party premises more than 50% of the time?", type: "boolean", required: false, section: "business" },
+  { acord: "126", key: "gl_high_risk_work", label: "Any work involving heights over 3 stories, cranes, or structural changes?", type: "boolean", required: false, section: "business" },
 ];
 
 /* ═══════════════════════════════════════════════════════════════
@@ -96,6 +101,11 @@ const ACORD_127: AcordQuestion[] = [
     dependsOn: (f) => f.owns_or_leases_vehicles === true || f.owns_or_leases_vehicles === "yes" },
   { acord: "127", key: "auto_garagekeeping_pd", label: "Any garage-keeping or hired-car physical damage needed?", type: "boolean", required: false, section: "vehicles",
     dependsOn: (f) => f.any_hired_non_owned_auto === true || f.any_hired_non_owned_auto === "yes" },
+  { acord: "127", key: "auto_travel_radius", label: "How far do your vehicles routinely travel from your main location?", type: "select", required: false, section: "vehicles",
+    options: ["0–50 miles", "51–200 miles", "200+ miles"],
+    dependsOn: (f) => f.owns_or_leases_vehicles === true || f.owns_or_leases_vehicles === "yes" },
+  { acord: "127", key: "auto_interstate_or_contract_haul", label: "Do any vehicles cross state lines or haul for others under contract?", type: "boolean", required: false, section: "vehicles",
+    dependsOn: (f) => f.owns_or_leases_vehicles === true || f.owns_or_leases_vehicles === "yes" },
 ];
 
 /* ═══════════════════════════════════════════════════════════════
@@ -133,6 +143,10 @@ const ACORD_131: AcordQuestion[] = [
   { acord: "131", key: "umbrella_underlying_policies", label: "Which policies should Umbrella sit over?", type: "text", required: false, section: "umbrella",
     placeholder: "GL, Auto, Employers Liability, etc." },
   { acord: "131", key: "umbrella_retention", label: "Self-insured retention (if any)", type: "currency", required: false, section: "umbrella" },
+  { acord: "131", key: "umbrella_non_standard_underlying", label: "Any underlying policies NOT written at standard $1M per occurrence limits?", type: "boolean", required: false, section: "umbrella" },
+  { acord: "131", key: "umbrella_non_standard_details", label: "Describe non-standard underlying limits", type: "text", required: false, section: "umbrella",
+    placeholder: "e.g. Auto liability at $500K CSL",
+    dependsOn: (f) => f.umbrella_non_standard_underlying === true || f.umbrella_non_standard_underlying === "yes" },
 ];
 
 /* ═══════════════════════════════════════════════════════════════
@@ -163,6 +177,11 @@ const ACORD_140: AcordQuestion[] = [
     dependsOn: (f) => f.owns_or_leases_buildings === true || f.owns_or_leases_buildings === "yes" },
   { acord: "140", key: "has_alarm_system", label: "Does the building have a fire/burglar alarm?", type: "boolean", required: false, section: "property",
     dependsOn: (f) => f.owns_or_leases_buildings === true || f.owns_or_leases_buildings === "yes" },
+  { acord: "140", key: "property_total_replacement_value", label: "Rough total replacement value of all buildings you want to insure", type: "select", required: false, section: "property",
+    options: ["Under $500K", "$500K–$1M", "$1M–$5M", "$5M–$10M", "$10M+"],
+    dependsOn: (f) => f.owns_or_leases_buildings === true || f.owns_or_leases_buildings === "yes" },
+  { acord: "140", key: "property_older_no_updates", label: "Are any buildings older than 40 years without major updates (roof/electrical/plumbing/HVAC)?", type: "boolean", required: false, section: "property",
+    dependsOn: (f) => f.owns_or_leases_buildings === true || f.owns_or_leases_buildings === "yes" },
 ];
 
 /* ═══════════════════════════════════════════════════════════════
@@ -177,6 +196,35 @@ const ACORD_75: AcordQuestion[] = [
 ];
 
 /* ═══════════════════════════════════════════════════════════════
+   Professional Liability (E&O)
+   ═══════════════════════════════════════════════════════════════ */
+const ACORD_PL: AcordQuestion[] = [
+  { acord: "PL", key: "pl_provides_professional_services", label: "Do you provide any fee-based professional advice, design, or consulting services?", type: "boolean", required: true, section: "professional" },
+  { acord: "PL", key: "pl_services_description", label: "Briefly describe the professional services you provide", type: "text", required: false, section: "professional",
+    placeholder: "e.g. Architectural design, IT consulting, financial advisory",
+    dependsOn: (f) => f.pl_provides_professional_services === true || f.pl_provides_professional_services === "yes" },
+  { acord: "PL", key: "pl_prior_claims", label: "Have any clients alleged errors, omissions, or professional mistakes in the past 5 years?", type: "boolean", required: false, section: "professional" },
+];
+
+/* ═══════════════════════════════════════════════════════════════
+   Cyber Liability
+   ═══════════════════════════════════════════════════════════════ */
+const ACORD_CYBER: AcordQuestion[] = [
+  { acord: "CYBER", key: "cyber_stores_personal_data", label: "Do you store customer or employee personal data (SSNs, credit cards, health info) electronically?", type: "boolean", required: true, section: "cyber" },
+  { acord: "CYBER", key: "cyber_record_count", label: "Approximate number of personal records you store or process annually", type: "select", required: false, section: "cyber",
+    options: ["Less than 1,000", "1,000–10,000", "10,000–100,000", "100,000+"],
+    dependsOn: (f) => f.cyber_stores_personal_data === true || f.cyber_stores_personal_data === "yes" },
+];
+
+/* ═══════════════════════════════════════════════════════════════
+   Other Coverage
+   ═══════════════════════════════════════════════════════════════ */
+const ACORD_OTHER: AcordQuestion[] = [
+  { acord: "OTHER", key: "other_coverage_description", label: "Briefly describe any other coverage you need that isn't listed above", type: "text", required: false, section: "other",
+    placeholder: "e.g. Liquor liability, pollution liability, inland marine" },
+];
+
+/* ═══════════════════════════════════════════════════════════════
    Combined catalog
    ═══════════════════════════════════════════════════════════════ */
 export const ACORD_QUESTION_DEFS: AcordQuestion[] = [
@@ -186,6 +234,9 @@ export const ACORD_QUESTION_DEFS: AcordQuestion[] = [
   ...ACORD_130,
   ...ACORD_131,
   ...ACORD_140,
+  ...ACORD_PL,
+  ...ACORD_CYBER,
+  ...ACORD_OTHER,
   ...ACORD_75,
 ];
 
@@ -203,7 +254,9 @@ export function getQuestionsForCoverage(selectedLines: string[]): AcordQuestion[
     if (normalized.includes("workers") || normalized.includes("wc")) acordSet.add("130");
     if (normalized.includes("property")) acordSet.add("140");
     if (normalized.includes("umbrella") || normalized.includes("excess")) acordSet.add("131");
-    if (normalized.includes("cyber")) acordSet.add("75");
+    if (normalized.includes("professional") || normalized.includes("e&o")) acordSet.add("PL");
+    if (normalized.includes("cyber")) acordSet.add("CYBER");
+    if (normalized === "other") acordSet.add("OTHER");
   }
 
   return ACORD_QUESTION_DEFS.filter(q => acordSet.has(q.acord));
@@ -229,6 +282,9 @@ export const SECTION_LABELS: Record<AcordSection, string> = {
   wc: "Workers Compensation",
   property: "Commercial Property",
   umbrella: "Umbrella / Excess",
+  professional: "Professional Liability",
+  cyber: "Cyber Liability",
+  other: "Other Coverage",
   binder: "Binder",
 };
 
@@ -240,5 +296,8 @@ export const SECTION_ICONS: Record<AcordSection, string> = {
   wc: "HardHat",
   property: "Home",
   umbrella: "Umbrella",
+  professional: "Briefcase",
+  cyber: "Shield",
+  other: "FileText",
   binder: "FileText",
 };
