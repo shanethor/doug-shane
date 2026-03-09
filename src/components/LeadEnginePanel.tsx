@@ -232,20 +232,26 @@ function ActivityFeed() {
 }
 
 /* ── Monitoring Panel ── */
+const LIVE_SOURCES = ["Reddit", "Business Filings"];
+const COMING_SOON_SOURCES = ["LinkedIn", "Permit Database", "ZoomInfo"];
+
 function MonitoringPanel({ onConfigure }: { onConfigure: (source: string) => void }) {
   const { data: configs, isLoading } = useLeadSourceConfigs();
   const upsertConfig = useUpsertSourceConfig();
+  const scanSource = useScanSource();
+  const [scanningSource, setScanningSource] = useState<string | null>(null);
 
   const DEFAULT_SOURCES = [
-    { source: "LinkedIn", detail: "Keyword monitoring" },
     { source: "Reddit", detail: "Subreddit monitoring" },
     { source: "Business Filings", detail: "State filings sync" },
+    { source: "LinkedIn", detail: "Signal detection, contact enrichment" },
     { source: "Permit Database", detail: "Construction + Liquor permits" },
     { source: "ZoomInfo", detail: "Contact enrichment" },
   ];
 
   const mergedSources = DEFAULT_SOURCES.map((ds) => {
     const cfg = configs?.find((c) => c.source === ds.source);
+    const isLive = LIVE_SOURCES.includes(ds.source);
     return {
       source: ds.source,
       detail: cfg?.last_sync_at
@@ -253,6 +259,8 @@ function MonitoringPanel({ onConfigure }: { onConfigure: (source: string) => voi
         : ds.detail,
       active: cfg?.is_active ?? false,
       configured: !!cfg && Object.keys(cfg.settings || {}).length > 0,
+      isLive,
+      settings: (cfg?.settings || {}) as Record<string, string>,
     };
   });
 
@@ -265,6 +273,22 @@ function MonitoringPanel({ onConfigure }: { onConfigure: (source: string) => voi
     }
   };
 
+  const handleScan = async (source: string, settings: Record<string, string>) => {
+    setScanningSource(source);
+    try {
+      const result = await scanSource.mutateAsync({ source, settings });
+      if (result.leads_found > 0) {
+        toast.success(`🎯 Found ${result.leads_found} new leads from ${source}!`);
+      } else {
+        toast.info(result.message || `No new leads found from ${source}`);
+      }
+    } catch (err: any) {
+      toast.error(err.message || `Scan failed for ${source}`);
+    } finally {
+      setScanningSource(null);
+    }
+  };
+
   if (isLoading) {
     return <div className="space-y-3">{[1, 2, 3].map((i) => <Skeleton key={i} className="h-8 w-full" />)}</div>;
   }
@@ -274,10 +298,14 @@ function MonitoringPanel({ onConfigure }: { onConfigure: (source: string) => voi
       {mergedSources.map((m) => (
         <div key={m.source} className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
-            {m.active ? (
-              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+            {m.isLive ? (
+              m.active ? (
+                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+              ) : (
+                <AlertCircle className="h-3.5 w-3.5 text-muted-foreground/50 shrink-0" />
+              )
             ) : (
-              <AlertCircle className="h-3.5 w-3.5 text-muted-foreground/50 shrink-0" />
+              <Clock className="h-3.5 w-3.5 text-muted-foreground/30 shrink-0" />
             )}
             <div className="min-w-0">
               <p className="text-xs font-medium">{m.source}</p>
@@ -285,22 +313,51 @@ function MonitoringPanel({ onConfigure }: { onConfigure: (source: string) => voi
             </div>
           </div>
           <div className="flex items-center gap-1 shrink-0">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-[9px] h-6 px-2"
-              onClick={() => onConfigure(m.source)}
-            >
-              <Settings className="h-3 w-3" />
-            </Button>
-            <Button
-              variant={m.active ? "default" : "outline"}
-              size="sm"
-              className={`text-[9px] h-6 px-2 ${!m.active ? "opacity-50" : ""}`}
-              onClick={() => toggleSource(m.source, m.active)}
-            >
-              {m.active ? "Live" : "Activate"}
-            </Button>
+            {m.isLive ? (
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-[9px] h-6 px-2"
+                  onClick={() => onConfigure(m.source)}
+                >
+                  <Settings className="h-3 w-3" />
+                </Button>
+                {m.active && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-[9px] h-6 px-2 gap-1"
+                    disabled={scanningSource === m.source}
+                    onClick={() => handleScan(m.source, m.settings)}
+                  >
+                    {scanningSource === m.source ? (
+                      <>
+                        <RefreshCw className="h-3 w-3 animate-spin" />
+                        Scanning…
+                      </>
+                    ) : (
+                      <>
+                        <Zap className="h-3 w-3" />
+                        Scan Now
+                      </>
+                    )}
+                  </Button>
+                )}
+                <Button
+                  variant={m.active ? "default" : "outline"}
+                  size="sm"
+                  className={`text-[9px] h-6 px-2 ${!m.active ? "opacity-50" : ""}`}
+                  onClick={() => toggleSource(m.source, m.active)}
+                >
+                  {m.active ? "Live" : "Activate"}
+                </Button>
+              </>
+            ) : (
+              <Badge variant="outline" className="text-[9px] text-muted-foreground/60 border-muted-foreground/20">
+                Coming Soon
+              </Badge>
+            )}
           </div>
         </div>
       ))}
