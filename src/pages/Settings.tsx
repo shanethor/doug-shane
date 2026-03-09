@@ -44,6 +44,7 @@ export default function Settings() {
   const [aiProvider, setAiProvider] = useState("lovable");
   const [openaiKey, setOpenaiKey] = useState("");
   const [showKey, setShowKey] = useState(false);
+  const [agencyDisplayName, setAgencyDisplayName] = useState<string | null>(null);
   const [navTabCount, setNavTabCount] = useState(navConfig.tabCount);
   const [navSelectedIds, setNavSelectedIds] = useState<string[]>(navConfig.selectedTabIds);
   const [timezone, setTimezone] = useState(Intl.DateTimeFormat().resolvedOptions().timeZone);
