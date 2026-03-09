@@ -2982,11 +2982,29 @@ export default function Chat() {
                   🎙️ Listening… speak now
                 </p>
               ) : (
-                <p className="text-[10px] text-muted-foreground text-center mt-2">
-                  Drop files anywhere or click <Paperclip className="inline h-3 w-3" /> to attach
-                  <span className="mx-1">·</span>
-                  <button onClick={() => setShowFeatureSuggestion(true)} className="hover:text-primary transition-colors underline-offset-2 hover:underline">Suggest a feature</button>
-                </p>
+                <div className="mt-2 space-y-1">
+                  <div className="flex flex-wrap items-center justify-center gap-1.5">
+                    {[
+                      { label: "Email a client summary", msg: "Email my most recent client a summary of what we discussed today." },
+                      { label: "Create a follow-up task", msg: "Create a task to follow up with my most recent client next week." },
+                      { label: "Generate ACORD package", msg: "Generate full ACORDs from the latest intake for my most recent client." },
+                      { label: "Create a new lead", msg: "Create a new prospect lead for a business I just spoke with." },
+                    ].map((hint) => (
+                      <button
+                        key={hint.label}
+                        onClick={() => send(hint.msg)}
+                        className="text-[10px] px-2 py-1 rounded-full border border-border text-muted-foreground hover:text-primary hover:border-primary/40 transition-colors"
+                      >
+                        {hint.label}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-[10px] text-muted-foreground text-center">
+                    Drop files anywhere or click <Paperclip className="inline h-3 w-3" /> to attach
+                    <span className="mx-1">·</span>
+                    <button onClick={() => setShowFeatureSuggestion(true)} className="hover:text-primary transition-colors underline-offset-2 hover:underline">Suggest a feature</button>
+                  </p>
+                </div>
               )}
             </div>
           </div>
