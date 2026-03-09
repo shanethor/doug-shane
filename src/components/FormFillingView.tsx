@@ -548,8 +548,10 @@ export default function FormFillingView({ submissionId, initialMessages, initial
           if (profile.phone) defaults.agency_phone = profile.phone;
 
           // Merge form_defaults (agency_email, agency_fax, producer_license_no, etc.)
+          // NOTE: Skip agency_name here — it's already resolved from the canonical agencies table above
           const formDefaults = (profile.form_defaults || {}) as Record<string, string>;
           for (const [k, v] of Object.entries(formDefaults)) {
+            if (k === "agency_name") continue; // agencies table is source of truth
             if (v && typeof v === "string" && v.trim()) {
               defaults[k] = v;
             }
