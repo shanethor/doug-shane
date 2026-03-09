@@ -705,6 +705,12 @@ export default function IntakeForm() {
         if (d.gl_general_aggregate_limit) acordPrefill.gl_general_aggregate_limit = d.gl_general_aggregate_limit;
         if (d.gl_products_completed_ops) acordPrefill.gl_products_completed_ops = d.gl_products_completed_ops;
         if (d.gl_personal_adv_injury) acordPrefill.gl_personal_adv_injury = d.gl_personal_adv_injury;
+        if (d.gl_damage_to_premises_rented || d.damage_to_rented_premises) {
+          acordPrefill.gl_damage_to_premises_rented = d.gl_damage_to_premises_rented || d.damage_to_rented_premises;
+        }
+        if (d.gl_medical_payments || d.medical_expense_limit || d.med_exp) {
+          acordPrefill.gl_medical_payments = d.gl_medical_payments || d.medical_expense_limit || d.med_exp;
+        }
 
         // ACORD 127 – Business Auto
         if (d.vehicles?.length > 0) acordPrefill.owns_or_leases_vehicles = "yes";
@@ -715,6 +721,11 @@ export default function IntakeForm() {
         if (d.auto_coverage?.collision_deductible) acordPrefill.auto_collision_deductible = d.auto_coverage.collision_deductible;
         if (d.num_power_units) acordPrefill.num_power_units = d.num_power_units;
         if (d.num_private_passenger) acordPrefill.num_private_passenger = d.num_private_passenger;
+        if (d.auto_coverage?.physical_damage_desired != null || d.auto_coverage?.comp_deductible || d.auto_coverage?.collision_deductible) {
+          acordPrefill.auto_physical_damage_desired = (d.auto_coverage?.physical_damage_desired != null)
+            ? (d.auto_coverage.physical_damage_desired ? "yes" : "no")
+            : "yes";
+        }
 
         // ACORD 130 – Workers Compensation
         const empCount = d.employee_count || d.number_of_employees || "";
@@ -724,6 +735,13 @@ export default function IntakeForm() {
         }
         if (d.wc_payroll || d.annual_wc_payroll) acordPrefill.annual_wc_payroll = d.wc_payroll || d.annual_wc_payroll;
         if (d.wc_class_codes) acordPrefill.wc_class_codes = d.wc_class_codes;
+        if (d.wc_states || d.wc_states_of_operation || d.state) {
+          acordPrefill.wc_states_of_operation = d.wc_states || d.wc_states_of_operation || d.state;
+        }
+        if (d.wc_include_owners != null || d.owners_included != null) {
+          const raw = d.wc_include_owners ?? d.owners_included;
+          acordPrefill.wc_include_owners = (raw === true || raw === "yes" || raw === "Included" || raw === "I" || raw === "INC") ? "yes" : "no";
+        }
         if (d.experience_mod || d.wc_experience_mod) acordPrefill.wc_experience_mod = d.experience_mod || d.wc_experience_mod;
 
         // ACORD 140 – Commercial Property
