@@ -135,7 +135,7 @@ export function NavScoreboard() {
         const name = prof?.full_name || "Unknown";
         const initials = name.split(" ").map((w: string) => w[0]).join("").toUpperCase().slice(0, 2);
         const isFake = uid === JANE_SMITH_ID;
-        const agencyName = prof?.agency_name || null;
+        const agencyName = (prof?.agency_id ? agencyMap.get(prof.agency_id) : null) || prof?.agency_name || null;
 
         // YTD stats
         const userPolicies = allPolicies.filter((p: any) => p.producer_user_id === uid);
