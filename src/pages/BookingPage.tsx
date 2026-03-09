@@ -142,7 +142,7 @@ export default function BookingPage() {
             </div>
             <h2 className="text-2xl font-semibold">Meeting Booked!</h2>
             <p className="text-muted-foreground font-sans">
-              Your {EVENT_TYPES.find((t) => t.value === selectedType)?.label || "meeting"} with {producer?.full_name} has been scheduled for{" "}
+              Your {EVENT_TYPES.find((t) => t.value === selectedType)?.label || "meeting"} with {advisor?.full_name} has been scheduled for{" "}
               <strong>{format(new Date(`${selectedDate}T${selectedTime}:00`), "EEEE, MMMM d 'at' h:mm a")}</strong>.
             </p>
             <p className="text-sm text-muted-foreground font-sans">
