@@ -2833,6 +2833,38 @@ export default function IntakeForm() {
 
                   {commercialStep === "commercial_docs" && (
                     <div className="space-y-6">
+                      {/* Tighten Your File — only show if no docs uploaded earlier */}
+                      {!commercialForm.has_uploaded_dec_pages && !lossRunRequested && (
+                        <Card>
+                          <CardHeader>
+                            <CardTitle className="text-base">Tighten Your File</CardTitle>
+                          </CardHeader>
+                          <CardContent className="space-y-4">
+                            <p className="text-sm text-muted-foreground">
+                              Want us to request your loss runs and review any docs you have? It helps underwriters give you better pricing and coverage.
+                            </p>
+                            <div className="space-y-2">
+                              <Button className="w-full h-10 text-sm" onClick={() => {
+                                fileInputRef.current?.click();
+                                setLossRunRequested(true);
+                                toast.success("We're requesting your loss runs in the background.");
+                              }}>
+                                Upload docs and request loss runs
+                              </Button>
+                              <Button variant="outline" className="w-full h-10 text-sm" onClick={() => {
+                                setLossRunRequested(true);
+                                toast.success("We're requesting your loss runs in the background. Keep going!");
+                              }}>
+                                Request loss runs only
+                              </Button>
+                              <Button variant="ghost" className="w-full h-10 text-sm text-muted-foreground" onClick={() => { /* skip */ }}>
+                                Skip for now
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )}
+
                       <Card>
                         <CardHeader><CardTitle className="text-base flex items-center gap-2"><Upload className="h-4 w-4" /> Additional Documents</CardTitle></CardHeader>
                         <CardContent className="space-y-4">
