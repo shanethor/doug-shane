@@ -253,3 +253,62 @@ export function useUpsertSourceConfig() {
     },
   });
 }
+
+/* ── Convert to Pipeline Lead ── */
+export function useConvertToPipeline() {
+  const qc = useQueryClient();
+  const { user } = useAuth();
+  return useMutation({
+    mutationFn: async (engineLead: EngineLead) => {
+      // Create a real pipeline lead
+      const { data: newLead, error: leadErr } = await supabase
+        .from("leads")
+        .insert({
+          account_name: engineLead.company,
+          contact_name: engineLead.contact_name,
+          email: engineLead.email,
+          phone: engineLead.phone,
+          state: engineLead.state,
+          business_type: engineLead.industry,
+          target_premium: engineLead.est_premium || null,
+          lead_source: `Lead Engine – ${engineLead.source}`,
+          owner_user_id: user!.id,
+          stage: "prospect" as const,
+          line_type: "commercial",
+        })
+        .select()
+        .single();
+      if (leadErr) throw leadErr;
+
+      // Link the engine lead
+      const { error: updateErr } = await supabase
+        .from("engine_leads")
+        .update({ status: "converted", lead_id: newLead.id } as any)
+        .eq("id", engineLead.id);
+      if (updateErr) throw updateErr;
+
+      return newLead;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["engine-leads"] });
+      qc.invalidateQueries({ queryKey: ["engine-tier-summary"] });
+      qc.invalidateQueries({ queryKey: ["engine-kpis"] });
+    },
+  });
+}
+
+/* ── Delete / Dismiss engine lead ── */
+export function useDeleteEngineLead() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("engine_leads").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["engine-leads"] });
+      qc.invalidateQueries({ queryKey: ["engine-tier-summary"] });
+      qc.invalidateQueries({ queryKey: ["engine-kpis"] });
+    },
+  });
+}
