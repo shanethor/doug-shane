@@ -138,7 +138,6 @@ const AI_TO_FORM_ALIASES: Record<string, string[]> = {
   legal_entity: ["business_type"],
   business_entity_type: ["business_type"],
   gl_code: ["gl_code"],
-  dba_name: ["dba_name", "other_named_insured"],
   applicant_dba: ["dba_name", "other_named_insured"],
 
   // ── Business history — including supplement keys ──
