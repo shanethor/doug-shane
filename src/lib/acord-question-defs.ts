@@ -143,6 +143,10 @@ const ACORD_131: AcordQuestion[] = [
   { acord: "131", key: "umbrella_underlying_policies", label: "Which policies should Umbrella sit over?", type: "text", required: false, section: "umbrella",
     placeholder: "GL, Auto, Employers Liability, etc." },
   { acord: "131", key: "umbrella_retention", label: "Self-insured retention (if any)", type: "currency", required: false, section: "umbrella" },
+  { acord: "131", key: "umbrella_non_standard_underlying", label: "Any underlying policies NOT written at standard $1M per occurrence limits?", type: "boolean", required: false, section: "umbrella" },
+  { acord: "131", key: "umbrella_non_standard_details", label: "Describe non-standard underlying limits", type: "text", required: false, section: "umbrella",
+    placeholder: "e.g. Auto liability at $500K CSL",
+    dependsOn: (f) => f.umbrella_non_standard_underlying === true || f.umbrella_non_standard_underlying === "yes" },
 ];
 
 /* ═══════════════════════════════════════════════════════════════
