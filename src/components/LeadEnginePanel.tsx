@@ -131,18 +131,14 @@ function TieredLeadSection({
     } else if (actionType === "email") {
       navigate(`/chat?prefill=Send an intro email to ${lead.company} at ${lead.email || "their email"}`);
     } else if (actionType === "convert") {
-      try {
-        await convertLead.mutateAsync(lead);
-        await logActivity.mutateAsync({
-          engine_lead_id: lead.id,
-          activity_type: "conversion",
-          description: `Converted ${lead.company} to pipeline lead`,
-          source: lead.source,
-          metadata: {},
-        });
-        toast.success(`${lead.company} converted to pipeline — now in Prospect stage`);
-      } catch {
-        toast.error("Failed to convert lead");
+      if (lead.source_url) {
+        window.open(lead.source_url, "_blank", "noopener,noreferrer");
+        toast.success(`Opening ${lead.source} post for ${lead.company}`);
+      } else {
+        // Fallback: try a web search for the lead
+        const query = encodeURIComponent(`${lead.company} ${lead.state || ""} ${lead.source}`);
+        window.open(`https://www.google.com/search?q=${query}`, "_blank", "noopener,noreferrer");
+        toast.success(`Searching for ${lead.company} — no direct link available`);
       }
     } else if (actionType === "dismiss") {
       try {
