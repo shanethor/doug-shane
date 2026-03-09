@@ -28,6 +28,7 @@ import { ensurePipelineLead, findExistingLeads } from "@/lib/pipeline-sync";
 import { generateIntakeLink, generatePersonalIntakeLink } from "@/lib/intake-links";
 import { PersonalIntakeDialog } from "@/components/PersonalIntakeDialog";
 import { fuzzyMatch } from "@/lib/fuzzy-match";
+import Pipeline from "@/pages/Pipeline";
 
 type ButtonMarker = { label: string; action: string };
 type Msg = { role: "user" | "assistant"; content: string; fields?: FieldBubble[]; buttons?: ButtonMarker[] };
