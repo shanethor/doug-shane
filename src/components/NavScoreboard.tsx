@@ -121,6 +121,11 @@ export function NavScoreboard() {
       // Find advisor user IDs from the directory
       const advisorIds = new Set<string>();
 
+      // Always include the current user so their goals/stats are never missed
+      if (role === "advisor" || role === "admin" || role === "manager") {
+        advisorIds.add(user.id);
+      }
+
       if (listUsers.length > 0) {
         listUsers.forEach((u: any) => {
           if (Array.isArray(u.roles) && (u.roles.includes("advisor") || u.roles.includes("producer"))) {
