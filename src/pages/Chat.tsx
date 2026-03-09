@@ -1201,18 +1201,8 @@ export default function Chat() {
       return;
     }
 
-    // Intercept email compose intent — navigate to Email Hub
-    if (!displayText && isEmailComposeIntent(text)) {
-      const userMsg: Msg = { role: "user", content: text.trim() };
-      setMessages((prev) => [...prev, userMsg]);
-      setInput("");
-      setMessages((prev) => [...prev, {
-        role: "assistant",
-        content: "✉️ Opening the **Email Hub** so you can compose your email. One moment..."
-      }]);
-      setTimeout(() => navigate("/email", { state: { compose: true } }), 800);
-      return;
-    }
+    // Email compose intent: pass through to AI (it now handles email drafting via EMAIL_ACTION markers)
+    // No longer intercept and navigate away — let the orchestrator handle it inline
 
     // Intercept coming-soon feature requests
     if (!displayText) {
