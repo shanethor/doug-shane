@@ -242,9 +242,9 @@ export function NavScoreboard() {
       {/* MTD */}
       <span className="flex items-center gap-1.5">
         <span className="text-muted-foreground font-medium">MTD NB:</span>
-        <span className="font-semibold tabular-nums text-foreground">{fmt(mtdStats.premium)}</span>
+        <span className="font-semibold tabular-nums text-foreground">${fmt(mtdStats.premium)}</span>
         <span className="text-muted-foreground">Rev:</span>
-        <span className="font-semibold tabular-nums text-foreground">{fmt(mtdStats.revenue)}</span>
+        <span className="font-semibold tabular-nums text-foreground">${fmt(mtdStats.revenue)}</span>
         <span className="text-[9px] text-muted-foreground tabular-nums ml-1">({Math.round(mtdPremPct)}% of mo. goal)</span>
       </span>
 
@@ -253,9 +253,9 @@ export function NavScoreboard() {
       {/* YTD */}
       <span className="flex items-center gap-1.5">
         <span className="text-muted-foreground font-medium">YTD NB:</span>
-        <span className="font-semibold tabular-nums text-foreground">{fmt(soldStats.premium)}</span>
+        <span className="font-semibold tabular-nums text-foreground">${fmt(soldStats.premium)}</span>
         <span className="text-muted-foreground">Rev:</span>
-        <span className="font-semibold tabular-nums text-foreground">{fmt(soldStats.revenue)}</span>
+        <span className="font-semibold tabular-nums text-foreground">${fmt(soldStats.revenue)}</span>
         <span className="text-[9px] text-muted-foreground tabular-nums ml-1">({Math.round(ytdPremPct)}% of annual goal)</span>
       </span>
 
