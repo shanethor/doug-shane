@@ -195,6 +195,12 @@ Deno.serve(async (req) => {
             ...acordData,
           };
 
+          // Inject agent profile defaults (agency name, phone, fax, email, license)
+          const agentDefaults = await getAgentDefaults(agentId);
+          for (const [k, v] of Object.entries(agentDefaults)) {
+            if (!formDataPayload[k]) formDataPayload[k] = v;
+          }
+
           // Create insurance_application so workspace prefills automatically
           await supabase.from("insurance_applications").insert({
             user_id: agentId,
