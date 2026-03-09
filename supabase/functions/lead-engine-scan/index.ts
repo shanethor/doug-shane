@@ -191,9 +191,10 @@ Deno.serve(async (req) => {
     }
 
     // Use AI to extract structured lead data
-    const resultsText = allResults.slice(0, 10).map((r, i) =>
+    const resultsText = allResults.slice(0, 6).map((r, i) =>
       `Result ${i + 1}:\nTitle: ${r.title || ""}\nURL: ${r.url || ""}\nDescription: ${r.description || ""}`
     ).join("\n\n");
+    console.log(`[lead-engine-scan] Sending ${Math.min(allResults.length, 6)} results to AI for extraction`);
 
     const sourceContext: Record<string, string> = {
       Reddit: "social media posts from Reddit where people are looking for or discussing insurance needs",
