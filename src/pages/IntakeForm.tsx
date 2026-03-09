@@ -435,6 +435,14 @@ export default function IntakeForm() {
   const updateCommercial = (field: keyof CommercialFormData, value: any) =>
     setCommercialForm(prev => ({ ...prev, [field]: value }));
 
+  // Auto-trigger extraction when commercial dec files are added
+  useEffect(() => {
+    if (intakeType === "commercial" && decFiles.length > 0 && !decExtracting && !decExtracted) {
+      handleDecExtraction();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [decFiles.length, intakeType]);
+
   /* ─── Step validation ─── */
   const validateCurrentStep = (): boolean => {
     if (currentStep === "coverage_select") {
@@ -2538,7 +2546,8 @@ export default function IntakeForm() {
                                   if (files.length > 0) { 
                                     setUploadedFiles(prev => [...prev, ...files.map(f => ({ file: f, category: "dec_pages" }))]); 
                                     updateCommercial("has_uploaded_dec_pages", true);
-                                    setShowLossRunModal(true);
+                                    setDecFiles(prev => [...prev, ...files]);
+                                    setDecExtracted(false);
                                   } 
                                 }}
                                 onClick={() => fileInputRef.current?.click()}
@@ -2552,8 +2561,9 @@ export default function IntakeForm() {
                                   if (files.length > 0) { 
                                     setUploadedFiles(prev => [...prev, ...files.map(f => ({ file: f, category: "dec_pages" }))]); 
                                     updateCommercial("has_uploaded_dec_pages", true);
-                                    setShowLossRunModal(true);
-                                  } 
+                                    setDecFiles(prev => [...prev, ...files]);
+                                    setDecExtracted(false);
+                                  }
                                   e.target.value = ""; 
                                 }} />
                               </div>
@@ -2570,9 +2580,26 @@ export default function IntakeForm() {
                                       <span className="truncate">{uf.file.name}</span>
                                     </div>
                                   ))}
-                                  <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1.5">
-                                    <Loader2 className="h-3 w-3 animate-spin" /> Reading your declarations pages...
-                                  </p>
+                                  {decExtracting && (
+                                    <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1.5">
+                                      <Loader2 className="h-3 w-3 animate-spin" /> Reading your declarations pages...
+                                    </p>
+                                  )}
+                                  {decExtracted && (
+                                    <div className="flex items-center gap-2 text-xs text-primary mt-2">
+                                      <CheckCircle className="h-3.5 w-3.5 shrink-0" />
+                                      <span>Policy info extracted! We'll pre-fill your form on the next steps.</span>
+                                    </div>
+                                  )}
+                                  {!decExtracting && !decExtracted && decFiles.length > 0 && (
+                                    <Button
+                                      className="w-full h-9 mt-2"
+                                      size="sm"
+                                      onClick={handleDecExtraction}
+                                    >
+                                      <FileText className="h-4 w-4 mr-2" /> Extract & Pre-Fill Form
+                                    </Button>
+                                  )}
                                   {lossRunRequested && (
                                     <p className="text-xs text-primary mt-1 flex items-center gap-1.5">
                                       <Check className="h-3 w-3" /> We're requesting your loss runs in the background. Keep going—we'll plug them in when they land.
