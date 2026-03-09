@@ -5,6 +5,40 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+/**
+ * Maps intake coverage line selections to ACORD 125 LOB checkbox keys.
+ * This ensures the correct Lines of Business are checked on the base application.
+ */
+const COVERAGE_TO_LOB_CHECKBOX: Record<string, string> = {
+  "General Liability": "lob_commercial_general_liability",
+  "Workers Compensation": "lob_workers_compensation",
+  "Commercial Auto": "lob_business_auto",
+  "Property": "lob_commercial_property",
+  "Commercial Property": "lob_commercial_property",
+  "Umbrella": "lob_umbrella",
+  "Umbrella / Excess": "lob_umbrella",
+  "Cyber Liability": "lob_cyber",
+  "Professional Liability (E&O)": "lob_professional_liability",
+  "Professional Liability": "lob_professional_liability",
+  "Business Owners Policy (BOP)": "lob_bop",
+  "Other": "lob_other",
+};
+
+/**
+ * Normalizes a business type string from intake into ACORD-standard entity types.
+ */
+const normalizeBusinessType = (raw: string): string => {
+  const l = (raw || "").toLowerCase();
+  if (/llc|limited\s*liability\s*company/i.test(l)) return "LLC";
+  if (/corp|inc\b/i.test(l)) return "Corporation";
+  if (/partner/i.test(l)) return "Partnership";
+  if (/sole\s*prop/i.test(l)) return "Individual";
+  if (/non[\s-]?profit|501/i.test(l)) return "Not-for-Profit";
+  if (/trust/i.test(l)) return "Trust";
+  if (/joint[\s-]?venture/i.test(l)) return "Joint Venture";
+  return raw || "";
+};
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -58,6 +92,102 @@ Deno.serve(async (req) => {
       }
       return defaults;
     };
+
+    /**
+     * Build the comprehensive ACORD form_data payload from commercial intake data.
+     * Uses canonical ACORD field keys that map directly to form field definitions.
+     */
+    const buildCommercialFormData = (c: any): Record<string, any> => {
+      const businessName = (c.business_name || "").trim();
+      const contactName = (c.customer_name || "").trim();
+      const contactEmail = (c.customer_email || "").trim();
+      const phone = c.customer_phone || "";
+      const businessType = normalizeBusinessType(c.business_type || "");
+
+      const acordData = c.acord_data || {};
+
+      const formDataPayload: Record<string, any> = {
+        // ── Core Applicant (ACORD 125 canonical keys) ──
+        applicant_name: businessName,
+        insured_name: businessName,       // Alias used by 126/127/130/131/140
+        named_insured: businessName,      // Another common alias
+        contact_name: contactName,
+        contact_name_1: contactName,
+        applicant_email: contactEmail,
+        contact_email_1: contactEmail,
+        applicant_phone: phone,
+        business_phone: phone,
+        contact_phone_1: phone,
+        fein: c.ein || "",
+        dba_name: c.dba || "",
+
+        // ── Entity Type ──
+        business_type: businessType,
+
+        // ── Address (populate all alias keys) ──
+        mailing_address: c.street_address || "",
+        premises_address: c.street_address || "",
+        city: c.city || "",
+        premises_city: c.city || "",
+        state: c.state || "",
+        premises_state: c.state || "",
+        zip: c.zip || "",
+        premises_zip: c.zip || "",
+
+        // ── Business Info ──
+        years_in_business: c.years_in_business || "",
+        annual_revenue: c.annual_revenue || "",
+        annual_revenues: c.annual_revenue || "",
+
+        // ── Employee count (multiple form keys) ──
+        number_of_employees: c.employee_count || "",
+
+        // ── Prior Carrier / Policy Info ──
+        current_carrier: c.current_carrier_name || "",
+        carrier: c.current_carrier_name || "",
+        prior_carrier_name: c.current_carrier_name || "",
+        prior_carrier_1: c.current_carrier_name || "",
+        policy_number: c.policy_number || "",
+        effective_date: c.policy_effective_date || "",
+        proposed_eff_date: c.policy_effective_date || "",
+        expiration_date: c.policy_expiration_date || "",
+        proposed_exp_date: c.policy_expiration_date || "",
+
+        // ── Owner experience / narrative ──
+        ...(c.owner_resume_text ? { management_experience: c.owner_resume_text } : {}),
+
+        // Spread ACORD question answers (keys match field-map from intake questions)
+        ...acordData,
+      };
+
+      // ── Coverage line → LOB checkbox mapping ──
+      const selectedLines = c.selected_coverage_lines || [];
+      for (const line of selectedLines) {
+        const lobKey = COVERAGE_TO_LOB_CHECKBOX[line];
+        if (lobKey) {
+          formDataPayload[lobKey] = true;
+        }
+      }
+
+      // ── Also set LOB checkboxes from lines_in_force (existing policies) ──
+      const linesInForce = c.lines_in_force || [];
+      for (const line of linesInForce) {
+        const lobKey = COVERAGE_TO_LOB_CHECKBOX[line];
+        if (lobKey && !formDataPayload[lobKey]) {
+          formDataPayload[lobKey] = true;
+        }
+      }
+
+      // Clean out empty string values to avoid overwriting good data downstream
+      for (const [k, v] of Object.entries(formDataPayload)) {
+        if (v === "" || v === null || v === undefined) {
+          delete formDataPayload[k];
+        }
+      }
+
+      return formDataPayload;
+    };
+
     if (personal_intake_id) {
       const { data: piRecord, error: piErr } = await supabase
         .from("personal_intake_submissions")
@@ -174,26 +304,7 @@ Deno.serve(async (req) => {
 
         // ─── Auto-prefill ACORD forms from intake data ───
         if (newSub) {
-          const acordData = c.acord_data || {};
-          const formDataPayload: Record<string, any> = {
-            // Map intake fields → ACORD field keys
-            applicant_name: businessName,
-            applicant_contact: contactName,
-            applicant_email: contactEmail,
-            applicant_phone: phone,
-            applicant_fein: ein,
-            applicant_dba: c.dba || "",
-            business_entity_type: businessType,
-            mailing_address: address,
-            mailing_city: city,
-            mailing_state: state,
-            mailing_zip: zip,
-            years_in_business: yearsInBusiness,
-            employee_count: employeeCount,
-            annual_revenue: annualRevenue,
-            // Spread ACORD question answers directly (keys match field-map)
-            ...acordData,
-          };
+          const formDataPayload = buildCommercialFormData(c);
 
           // Inject agent profile defaults (agency name, phone, fax, email, license)
           const agentDefaults = await getAgentDefaults(agentId);
@@ -327,12 +438,19 @@ Deno.serve(async (req) => {
       if (newSub) {
         const formDataPayload: Record<string, any> = {
           applicant_name: applicantName,
+          insured_name: applicantName,
+          named_insured: applicantName,
           applicant_email: applicantEmail,
           applicant_phone: applicantPhone,
+          business_phone: applicantPhone,
           mailing_address: applicant.address || "",
-          mailing_city: applicant.city || "",
-          mailing_state: applicantState,
-          mailing_zip: applicant.zip || "",
+          city: applicant.city || "",
+          state: applicantState,
+          zip: applicant.zip || "",
+          premises_address: applicant.address || "",
+          premises_city: applicant.city || "",
+          premises_state: applicantState,
+          premises_zip: applicant.zip || "",
         };
         // Flatten driver/vehicle data for potential ACORD 75 auto prefill
         if (sections.auto?.drivers?.length > 0) {
@@ -495,6 +613,10 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Parse coverage lines from notes
+    const requestedLinesRaw = parseField("Requested Coverage Lines");
+    const requestedLines = requestedLinesRaw ? requestedLinesRaw.split(",").map(s => s.trim()).filter(Boolean) : [];
+
     let submissionId = link.submission_id;
     if (!submissionId) {
       const { data: newSub } = await supabase
@@ -504,7 +626,7 @@ Deno.serve(async (req) => {
           company_name: businessName,
           description: `Customer intake: ${submission.requested_coverage || "General coverage"}. ${freeNotes || ""}`.trim(),
           status: "pending",
-          coverage_lines: submission.requested_coverage ? [submission.requested_coverage] : [],
+          coverage_lines: requestedLines.length > 0 ? requestedLines : (submission.requested_coverage ? [submission.requested_coverage] : []),
           narrative: fullNarrative,
         })
         .select("id")
@@ -517,22 +639,43 @@ Deno.serve(async (req) => {
           await supabase.from("leads").update({ submission_id: newSub.id }).eq("id", leadId);
         }
 
-        // Auto-create insurance_application for prefill
+        // Auto-create insurance_application with canonical ACORD keys
         const formDataPayload: Record<string, any> = {
           applicant_name: businessName,
-          applicant_contact: submission.customer_name,
+          insured_name: businessName,
+          named_insured: businessName,
+          contact_name: submission.customer_name,
+          contact_name_1: submission.customer_name,
           applicant_email: submission.customer_email,
+          contact_email_1: submission.customer_email,
           applicant_phone: phone,
-          applicant_fein: ein,
-          business_entity_type: businessType,
+          business_phone: phone,
+          fein: ein,
+          business_type: normalizeBusinessType(businessType),
           mailing_address: address,
-          mailing_city: city,
-          mailing_state: state,
-          mailing_zip: zip,
+          premises_address: address,
+          city: city,
+          premises_city: city,
+          state: state,
+          premises_state: state,
+          zip: zip,
+          premises_zip: zip,
           years_in_business: yearsInBusiness,
-          employee_count: employeeCount,
+          number_of_employees: employeeCount,
           annual_revenue: annualRevenue,
+          annual_revenues: annualRevenue,
         };
+
+        // Set LOB checkboxes from requested lines
+        for (const line of requestedLines) {
+          const lobKey = COVERAGE_TO_LOB_CHECKBOX[line];
+          if (lobKey) formDataPayload[lobKey] = true;
+        }
+
+        // Clean empty values
+        for (const [k, v] of Object.entries(formDataPayload)) {
+          if (v === "" || v === null || v === undefined) delete formDataPayload[k];
+        }
 
         // Parse ACORD underwriting data from notes if present
         const acordSection = notes.match(/--- ACORD Underwriting Data ---\n([\s\S]*?)(?:\n(?:Current Carrier|BOR|Documents|Notes|Additional Notes):|$)/);
