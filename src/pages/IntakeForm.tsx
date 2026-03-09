@@ -2583,36 +2583,6 @@ export default function IntakeForm() {
                       </CardContent>
                     </Card>
                   )}
-                          </div>
-
-                          {/* Authorization Consent */}
-                          <div className="space-y-3">
-                            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Authorization Consent</p>
-                            <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-2">
-                              <p className="text-sm leading-relaxed">
-                                By providing your consent below, you authorize <strong>AURA Risk Group</strong> to request loss run reports from your current and prior insurance carriers on your behalf.
-                              </p>
-                              <p className="text-sm leading-relaxed text-muted-foreground">
-                                This authorization does not modify, cancel, or change any of your existing insurance policies.
-                              </p>
-                            </div>
-                            <label className="flex items-start gap-3 p-4 rounded-lg border border-border bg-card cursor-pointer hover:bg-muted/30 transition-colors">
-                              <Checkbox
-                                checked={commercialForm.loss_run_consent}
-                                onCheckedChange={v => updateCommercial("loss_run_consent", !!v)}
-                                className="mt-0.5"
-                              />
-                              <div className="space-y-1">
-                                <span className="text-sm font-medium">I authorize AURA Risk Group to request loss run reports from my current and prior insurance carriers for {commercialForm.business_name || "(business name)"}.</span>
-                              </div>
-                            </label>
-                          </div>
-
-                          <p className="text-[10px] text-muted-foreground text-center italic">After submitting this form, a formal loss run authorization letter will be generated and sent to you for electronic signature.</p>
-                        </CardContent>
-                      </Card>
-                    </div>
-                  )}
 
                   {commercialStep === "bor_auth" && (
                     <div className="space-y-6">
