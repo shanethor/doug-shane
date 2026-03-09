@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { DollarSign, FileText, TrendingUp, CheckCircle, CalendarDays } from "lucide-react";
+import { DollarSign, FileText, TrendingUp, CheckCircle, CalendarDays, Users } from "lucide-react";
 import { format } from "date-fns";
 import { useUserRole } from "@/hooks/useUserRole";
 
@@ -37,14 +37,20 @@ function getDateRange(period: TimePeriod): { start: string; end: string } {
   return { start: "2000-01-01", end };
 }
 
+type ProducerOption = { id: string; name: string };
+
 export default function ProducerDashboard({ embedded }: { embedded?: boolean } = {}) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { isManager, isAdmin } = useUserRole();
+  const canFilterProducers = isManager || isAdmin;
+
   const [policies, setPolicies] = useState<any[]>([]);
   const [leadNames, setLeadNames] = useState<Record<string, string>>({});
   const [leadInfos, setLeadInfos] = useState<{ id: string; account_name: string; business_type: string | null }[]>([]);
   const [period, setPeriod] = useState<TimePeriod>("year");
+  const [selectedProducer, setSelectedProducer] = useState<string>("all");
+  const [producerOptions, setProducerOptions] = useState<ProducerOption[]>([]);
   const [stats, setStats] = useState({
     totalPolicies: 0,
     approvedPolicies: 0,
@@ -57,10 +63,35 @@ export default function ProducerDashboard({ embedded }: { embedded?: boolean } =
   const mountedRef = useRef(true);
   useEffect(() => { return () => { mountedRef.current = false; }; }, []);
 
+  // Load producer list for admin/manager
+  useEffect(() => {
+    if (!canFilterProducers) return;
+    const loadProducers = async () => {
+      // Get all users who have producer, manager, or admin roles
+      const { data: roles } = await supabase
+        .from("user_roles")
+        .select("user_id, role")
+        .in("role", ["producer", "manager", "admin"]);
+      if (!roles?.length) return;
+
+      const userIds = [...new Set(roles.map((r) => r.user_id))];
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("user_id, full_name")
+        .in("user_id", userIds);
+
+      const options: ProducerOption[] = (profiles || [])
+        .map((p) => ({ id: p.user_id, name: p.full_name || p.user_id }))
+        .sort((a, b) => a.name.localeCompare(b.name));
+      setProducerOptions(options);
+    };
+    loadProducers();
+  }, [canFilterProducers]);
+
   useEffect(() => {
     if (!user) return;
     loadStats();
-  }, [user, period, isManager, isAdmin]);
+  }, [user, period, isManager, isAdmin, selectedProducer]);
 
   const loadStats = async () => {
     if (!user) return;
@@ -68,10 +99,17 @@ export default function ProducerDashboard({ embedded }: { embedded?: boolean } =
 
     const dateRange = getDateRange(period);
 
-    // RLS handles visibility — managers see team data, producers see own
     const policiesQuery = supabase.from("policies").select("*");
     const leadsQuery = supabase.from("leads").select("id, stage");
-    if (!isManager && !isAdmin) {
+
+    if (canFilterProducers) {
+      // Admin/manager: filter by selected producer or show all
+      if (selectedProducer !== "all") {
+        policiesQuery.eq("producer_user_id", selectedProducer);
+        leadsQuery.eq("owner_user_id", selectedProducer);
+      }
+    } else {
+      // Regular producer: always filter to own data
       policiesQuery.eq("producer_user_id", user.id);
       leadsQuery.eq("owner_user_id", user.id);
     }
@@ -106,6 +144,9 @@ export default function ProducerDashboard({ embedded }: { embedded?: boolean } =
       (leads ?? []).forEach((l: any) => { names[l.id] = l.account_name; });
       setLeadNames(names);
       setLeadInfos((leads ?? []).map((l: any) => ({ id: l.id, account_name: l.account_name, business_type: l.business_type })));
+    } else {
+      setLeadNames({});
+      setLeadInfos([]);
     }
 
     setStats({
@@ -122,13 +163,40 @@ export default function ProducerDashboard({ embedded }: { embedded?: boolean } =
     setLoading(false);
   };
 
+  // Determine which user ID to show scoreboard for
+  const scoreboardUserId = canFilterProducers && selectedProducer !== "all"
+    ? selectedProducer
+    : user?.id;
+
+  const dashboardTitle = canFilterProducers
+    ? selectedProducer === "all"
+      ? "All Producers"
+      : producerOptions.find((p) => p.id === selectedProducer)?.name || "Producer Dashboard"
+    : "My Dashboard";
+
   const content = (
     <>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div>
-          <h1 className="text-2xl sm:text-4xl mb-1">My Dashboard</h1>
+          <h1 className="text-2xl sm:text-4xl mb-1">{dashboardTitle}</h1>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          {canFilterProducers && (
+            <>
+              <Users className="h-4 w-4 text-muted-foreground" />
+              <Select value={selectedProducer} onValueChange={setSelectedProducer}>
+                <SelectTrigger className="w-[180px] h-8 text-xs">
+                  <SelectValue placeholder="All Producers" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Producers</SelectItem>
+                  {producerOptions.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </>
+          )}
           <CalendarDays className="h-4 w-4 text-muted-foreground" />
           <Select value={period} onValueChange={(v) => setPeriod(v as TimePeriod)}>
             <SelectTrigger className="w-[140px] h-8 text-xs">
@@ -144,9 +212,9 @@ export default function ProducerDashboard({ embedded }: { embedded?: boolean } =
         </div>
       </div>
 
-      {user && (
+      {user && scoreboardUserId && (
         <ProductionScoreboard
-          userId={user.id}
+          userId={scoreboardUserId}
           premiumSold={stats.totalPremium}
           revenueSold={stats.totalRevenue}
         />
