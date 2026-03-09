@@ -3012,6 +3012,64 @@ export default function Chat() {
         producerEmail={user?.email || undefined}
         generatedLink={personalIntakeLink}
       />
+      {/* Email Confirmation Dialog */}
+      <Dialog open={!!pendingEmail} onOpenChange={(open) => { if (!open) setPendingEmail(null); }}>
+        <DialogContent className="max-w-lg">
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <Mail className="h-5 w-5 text-primary" />
+              <h3 className="font-semibold">Confirm Email</h3>
+            </div>
+            {pendingEmail && (
+              <>
+                <div className="space-y-2 text-sm">
+                  <div className="flex gap-2">
+                    <span className="text-muted-foreground font-medium w-16 shrink-0">To:</span>
+                    <span>{pendingEmail.recipientName} &lt;{pendingEmail.recipientEmail}&gt;</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <span className="text-muted-foreground font-medium w-16 shrink-0">Subject:</span>
+                    <span>{pendingEmail.subject}</span>
+                  </div>
+                  {pendingEmail.ccOwner && (
+                    <div className="flex gap-2">
+                      <span className="text-muted-foreground font-medium w-16 shrink-0">CC:</span>
+                      <span>{user?.email} (you)</span>
+                    </div>
+                  )}
+                </div>
+                <div className="border rounded-lg p-4 bg-muted/30 max-h-60 overflow-y-auto">
+                  <div className="prose prose-sm" dangerouslySetInnerHTML={{ __html: pendingEmail.bodyHtml }} />
+                </div>
+                <div className="flex gap-2 justify-end">
+                  <Button variant="outline" onClick={() => {
+                    setPendingEmail(null);
+                    setMessages(prev => [...prev, {
+                      role: "assistant",
+                      content: "Email cancelled. Let me know if you'd like to edit or re-draft it.",
+                    }]);
+                  }}>
+                    Cancel
+                  </Button>
+                  <Button variant="outline" onClick={() => {
+                    const email = pendingEmail;
+                    setPendingEmail(null);
+                    bypassIntentRef.current = true;
+                    send(`Edit this email draft — change the following:\n\nTo: ${email.recipientName} <${email.recipientEmail}>\nSubject: ${email.subject}\nBody: ${email.bodyHtml}\n\nPlease let me revise it. What would you like to change?`, "✏️ Editing email draft…");
+                  }}>
+                    <PenLine className="h-4 w-4 mr-1.5" />
+                    Edit
+                  </Button>
+                  <Button onClick={confirmSendEmail}>
+                    <Send className="h-4 w-4 mr-1.5" />
+                    Send
+                  </Button>
+                </div>
+              </>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 }
