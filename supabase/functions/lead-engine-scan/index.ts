@@ -330,7 +330,7 @@ Deno.serve(async (req) => {
     // Update last_sync_at
     await adminClient.from("lead_source_configs")
       .update({ last_sync_at: new Date().toISOString() })
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .eq("source", source);
 
     console.log(`[lead-engine-scan] Inserted ${inserted?.length || 0} leads from ${source}`);
