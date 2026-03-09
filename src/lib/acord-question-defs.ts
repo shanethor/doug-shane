@@ -63,7 +63,7 @@ const ACORD_126: AcordQuestion[] = [
     placeholder: "e.g. Electrical contractor performing residential and commercial wiring" },
   { acord: "126", key: "annual_payroll_total", label: "Total annual payroll (all employees)", type: "currency", required: true, section: "business" },
   { acord: "126", key: "annual_gross_sales", label: "Estimated annual gross sales", type: "currency", required: true, section: "business" },
-  { acord: "126", key: "gl_each_occurrence_limit", label: "Requested GL each occurrence limit", type: "currency", required: false, section: "business",
+  { acord: "126", key: "gl_each_occurrence_limit", label: "Requested GL each occurrence limit", type: "currency", required: true, section: "business",
     placeholder: "$1,000,000" },
   { acord: "126", key: "gl_general_aggregate_limit", label: "Requested GL general aggregate limit", type: "currency", required: false, section: "business",
     placeholder: "$2,000,000" },
