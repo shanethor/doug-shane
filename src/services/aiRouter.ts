@@ -24,6 +24,7 @@ export type DocType =
   | "policy"
   | "supplement"
   | "business_plan"
+  | "resume"
   | "other";
 
 export type TaskType =

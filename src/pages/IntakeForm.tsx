@@ -265,6 +265,7 @@ export default function IntakeForm() {
   const [decFiles, setDecFiles] = useState<File[]>([]);
   const [decDragOver, setDecDragOver] = useState(false);
   const [showExtractionWarning, setShowExtractionWarning] = useState(false);
+  const [resumeExtracting, setResumeExtracting] = useState(false);
   const decInputRef = useRef<HTMLInputElement>(null);
   const updateCov = (field: keyof AutoCoverage, value: any) => setAutoCoverage(prev => ({ ...prev, [field]: value }));
   const updateFlood = (field: keyof FloodInfo, value: string) => setFlood(prev => ({ ...prev, [field]: value }));
@@ -800,7 +801,91 @@ export default function IntakeForm() {
     }
   };
 
-  /* ─── Submit ─── */
+  /* ─── Resume Extraction (Owner Experience step) ─── */
+  const handleResumeExtraction = async (files: File[]) => {
+    if (files.length === 0) return;
+    setResumeExtracting(true);
+    try {
+      const filesPayload: { base64: string; mimeType: string }[] = [];
+      for (const file of files) {
+        const buffer = await file.arrayBuffer();
+        const bytes = new Uint8Array(buffer);
+        let binary = "";
+        for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+        const b64 = btoa(binary);
+        const mimeType = file.type || (file.name.toLowerCase().endsWith(".pdf") ? "application/pdf" : "text/plain");
+        filesPayload.push({ base64: b64, mimeType });
+      }
+
+      const result = await ingestDocument({
+        docType: "resume",
+        pdfFiles: filesPayload.map(f => ({ base64: f.base64, mimeType: f.mimeType })),
+      });
+
+      if (!result.data || Object.keys(result.data).length === 0) {
+        toast.error("Could not extract resume content. You can still write your experience summary manually.");
+        setResumeExtracting(false);
+        return;
+      }
+
+      const d = result.data;
+
+      // Build experience summary from extracted resume data
+      const summaryParts: string[] = [];
+      if (d.name || d.full_name) summaryParts.push(`Name: ${d.name || d.full_name}`);
+      if (d.title || d.job_title || d.current_role) summaryParts.push(`Title: ${d.title || d.job_title || d.current_role}`);
+      if (d.years_experience || d.experience_years) summaryParts.push(`Years of Experience: ${d.years_experience || d.experience_years}`);
+      if (d.summary || d.professional_summary || d.experience_summary) {
+        summaryParts.push(d.summary || d.professional_summary || d.experience_summary);
+      }
+      if (d.certifications) {
+        const certs = Array.isArray(d.certifications) ? d.certifications.join(", ") : d.certifications;
+        summaryParts.push(`Certifications: ${certs}`);
+      }
+      if (d.education) {
+        const edu = Array.isArray(d.education) ? d.education.join(", ") : d.education;
+        summaryParts.push(`Education: ${edu}`);
+      }
+      if (d.skills) {
+        const skills = Array.isArray(d.skills) ? d.skills.join(", ") : d.skills;
+        summaryParts.push(`Key Skills: ${skills}`);
+      }
+      if (d.work_history || d.experience) {
+        const history = Array.isArray(d.work_history || d.experience)
+          ? (d.work_history || d.experience).map((h: any) => typeof h === "string" ? h : `${h.title || ""} at ${h.company || ""} (${h.dates || ""})`).join("; ")
+          : (d.work_history || d.experience);
+        summaryParts.push(`Work History: ${history}`);
+      }
+      // If AI returned a raw text or narrative, use that directly
+      if (summaryParts.length === 0 && d.raw_text) {
+        summaryParts.push(d.raw_text);
+      }
+
+      const extractedSummary = summaryParts.join("\n\n");
+
+      if (extractedSummary.trim()) {
+        updateCommercial("owner_resume_text", extractedSummary);
+        toast.success("Resume extracted! Review and edit the experience summary below.");
+      } else {
+        toast.info("Resume uploaded but we couldn't extract structured content. Please write your experience summary manually.");
+      }
+
+      // Also pre-fill contact name if found
+      if (d.name || d.full_name) {
+        const contactName = d.name || d.full_name;
+        if (!commercialForm.customer_name) {
+          updateCommercial("customer_name", contactName);
+        }
+      }
+    } catch (err: any) {
+      console.error("Resume extraction error:", err);
+      toast.error("Resume extraction failed. You can still write your experience summary manually.");
+    } finally {
+      setResumeExtracting(false);
+    }
+  };
+
+
   const handleSubmit = async () => {
     if (!record || !intakeType) return;
 
@@ -2541,7 +2626,7 @@ export default function IntakeForm() {
                 if (next) { setCommercialStep(next); window.scrollTo({ top: 0, behavior: "smooth" }); }
               };
               const commGoNext = () => {
-                if (decExtracting) {
+                if (decExtracting || resumeExtracting) {
                   setShowExtractionWarning(true);
                   return;
                 }
@@ -3078,6 +3163,7 @@ export default function IntakeForm() {
                           <Label className="text-xs font-medium">Upload Resume (optional)</Label>
                           <div
                             onClick={() => {
+                              if (resumeExtracting) return;
                               const inp = document.createElement("input");
                               inp.type = "file";
                               inp.accept = ".pdf,.doc,.docx,.txt";
@@ -3086,6 +3172,7 @@ export default function IntakeForm() {
                                 if (files.length > 0) {
                                   setUploadedFiles(prev => [...prev, ...files.map(f => ({ file: f, category: "resume" }))]);
                                   updateCommercial("owner_resume_files", [...commercialForm.owner_resume_files, ...files.map(f => f.name)]);
+                                  handleResumeExtraction(files);
                                 }
                               };
                               inp.click();
@@ -3096,21 +3183,33 @@ export default function IntakeForm() {
                               e.preventDefault();
                               e.stopPropagation();
                               e.currentTarget.classList.remove("border-primary", "bg-primary/5");
+                              if (resumeExtracting) return;
                               const files = Array.from(e.dataTransfer.files).filter(f =>
                                 /\.(pdf|doc|docx|txt)$/i.test(f.name)
                               );
                               if (files.length > 0) {
                                 setUploadedFiles(prev => [...prev, ...files.map(f => ({ file: f, category: "resume" }))]);
                                 updateCommercial("owner_resume_files", [...commercialForm.owner_resume_files, ...files.map(f => f.name)]);
+                                handleResumeExtraction(files);
                               } else {
                                 toast.error("Only PDF, DOC, DOCX, and TXT files are accepted");
                               }
                             }}
-                            className="border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-colors border-border hover:border-primary/50"
+                            className={`border-2 border-dashed rounded-lg p-4 text-center cursor-pointer transition-colors ${resumeExtracting ? "border-primary/40 bg-primary/5 pointer-events-none" : "border-border hover:border-primary/50"}`}
                           >
-                            <Upload className="h-6 w-6 mx-auto mb-1 text-muted-foreground" />
-                            <p className="text-sm font-medium">Click or drag & drop to upload resume</p>
-                            <p className="text-xs text-muted-foreground mt-0.5">PDF, DOC, TXT accepted</p>
+                            {resumeExtracting ? (
+                              <>
+                                <Loader2 className="h-6 w-6 mx-auto mb-1 text-primary animate-spin" />
+                                <p className="text-sm font-medium">Extracting resume content...</p>
+                                <p className="text-xs text-muted-foreground mt-0.5">AURA is reading your resume</p>
+                              </>
+                            ) : (
+                              <>
+                                <Upload className="h-6 w-6 mx-auto mb-1 text-muted-foreground" />
+                                <p className="text-sm font-medium">Click or drag & drop to upload resume</p>
+                                <p className="text-xs text-muted-foreground mt-0.5">PDF, DOC, TXT accepted</p>
+                              </>
+                            )}
                           </div>
                           {uploadedFiles.filter(f => f.category === "resume").length > 0 && (
                             <div className="space-y-1">
@@ -3118,6 +3217,9 @@ export default function IntakeForm() {
                                 <div key={idx} className="flex items-center gap-2 p-2 rounded-md border bg-muted/20">
                                   <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
                                   <span className="text-xs truncate flex-1">{uf.file.name}</span>
+                                  {resumeExtracting && idx === uploadedFiles.filter(f => f.category === "resume").length - 1 && (
+                                    <Loader2 className="h-3 w-3 animate-spin text-primary shrink-0" />
+                                  )}
                                 </div>
                               ))}
                             </div>
