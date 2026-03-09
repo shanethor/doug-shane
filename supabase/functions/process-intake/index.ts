@@ -353,6 +353,12 @@ Deno.serve(async (req) => {
           formDataPayload.umbrella_limit = sections.umbrella.requested_limit;
         }
 
+        // Inject agent profile defaults
+        const agentDefaults = await getAgentDefaults(agentId);
+        for (const [k, v] of Object.entries(agentDefaults)) {
+          if (!formDataPayload[k]) formDataPayload[k] = v;
+        }
+
         await supabase.from("insurance_applications").insert({
           user_id: agentId,
           submission_id: newSub.id,
