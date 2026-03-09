@@ -2490,7 +2490,7 @@ export default function IntakeForm() {
                             {/* Section A - Fast Track */}
                             <div className="space-y-3">
                               <div>
-                                <h3 className="text-sm font-semibold">Fast track: drop in your current policy</h3>
+                                <h3 className="text-sm font-semibold">Fast track: drop in your current policy and/or your declaration pages</h3>
                                 <p className="text-xs text-muted-foreground mt-1">Upload your declarations pages or policy docs. AURA will read them, pull the important stuff, and fill this in for you.</p>
                               </div>
                               <div
