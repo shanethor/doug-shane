@@ -2321,7 +2321,7 @@ export default function IntakeForm() {
         {/* Title + AURA Promise */}
         <div className="text-center space-y-2">
           <h1 className="text-3xl font-bold tracking-tight">AURA Intake</h1>
-          <p className="text-sm text-muted-foreground">"Answer a few basics and let AURA pull the rest for you."</p>
+          <p className="text-sm text-muted-foreground">Answer a few basics and let AURA pull the rest for you.</p>
         </div>
 
         {/* ─── Type Selector ─── */}
