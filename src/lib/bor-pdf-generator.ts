@@ -8,9 +8,9 @@ export interface BorData {
   policyEffectiveDate: string;
   policyExpirationDate: string;
   selectedLines: string[];
-  producerName: string;
-  producerEmail: string;
-  producerPhone: string;
+  advisorName: string;
+  advisorEmail: string;
+  advisorPhone: string;
   agencyName?: string;
 }
 
