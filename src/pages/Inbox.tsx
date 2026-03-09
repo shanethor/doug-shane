@@ -17,7 +17,7 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import {
   Bell, Mail, GitBranch, FileText, Check, CheckCheck, Sparkles,
-  Send, Loader2, Inbox as InboxIcon, MailOpen, RefreshCw, User, Reply, ArrowLeft, X
+  Send, Loader2, Inbox as InboxIcon, MailOpen, RefreshCw, User, Reply, ArrowLeft, X, Search
 } from "lucide-react";
 import { formatDistanceToNow, format } from "date-fns";
 import { getAuthHeaders } from "@/lib/auth-fetch";
@@ -25,6 +25,7 @@ import { advisorAssist } from "@/services/aiRouter";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { EmailFilterChips } from "@/components/EmailFilterChips";
 import { EmailClientSnapshot } from "@/components/EmailClientSnapshot";
+import { fuzzyMatch } from "@/lib/fuzzy-match";
 
 type Notification = {
   id: string;
@@ -94,7 +95,10 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
 
   // Insurance filter state
   const [activeTags, setActiveTags] = useState<string[]>([]);
-  const [selectedClient, setSelectedClient] = useState<{ id: string; account_name: string; email: string | null } | null>(null);
+  const [selectedClients, setSelectedClients] = useState<{ id: string; account_name: string; email: string | null }[]>([]);
+
+  // General search
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Email detail dialog
   const [selectedEmail, setSelectedEmail] = useState<SyncedEmail | null>(null);
@@ -394,10 +398,11 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
         return activeTags.every((t) => emailTags.includes(t));
       });
     }
-    if (selectedClient) {
+    if (selectedClients.length > 0) {
+      const clientIds = new Set(selectedClients.map((c) => c.id));
       result = result.filter((u) => {
         if (u.kind !== "email") return false;
-        return (u.raw as SyncedEmail).client_id === selectedClient.id;
+        return clientIds.has((u.raw as SyncedEmail).client_id || "");
       });
     }
     return result;
@@ -419,7 +424,24 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
                 ? baseUnified.filter((u) => u.kind === "email")
                 : baseUnified;
 
-  const filtered = applyInsuranceFilters(tabFiltered);
+  // Apply search query with fuzzy matching
+  const applySearchFilter = (items: UnifiedItem[]) => {
+    const q = searchQuery.trim();
+    if (!q) return items;
+    // Use fuzzy matching on title + body
+    const results = fuzzyMatch(q, items, (item) => {
+      const parts = [item.title];
+      if (item.body) parts.push(item.body);
+      if (item.kind === "email") {
+        const email = item.raw as SyncedEmail;
+        parts.push(email.from_address, email.from_name || "");
+      }
+      return parts.join(" ");
+    }, 0.25);
+    return results.map((r) => r.item);
+  };
+
+  const filtered = applySearchFilter(applyInsuranceFilters(tabFiltered));
 
   const unreadCount = unified.filter((u) => !u.is_read).length;
 
@@ -591,13 +613,32 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
           </TabsList>
         </div>
 
+        {/* Search bar */}
+        <div className="relative mb-3">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search emails by subject, sender, or content…"
+            className="pl-9 h-9 text-sm"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
+
         {/* Insurance filter chips */}
         <div className="mb-3 overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0 scrollbar-hide">
           <EmailFilterChips
             activeTags={activeTags}
             onTagsChange={setActiveTags}
-            selectedClient={selectedClient}
-            onClientChange={setSelectedClient}
+            selectedClients={selectedClients}
+            onClientsChange={setSelectedClients}
           />
         </div>
 
