@@ -126,6 +126,7 @@ export default function ProducerDashboard({ embedded }: { embedded?: boolean } =
 
   const loadStats = async () => {
     if (!user) return;
+    const thisLoad = ++loadIdRef.current;
     setLoading(true);
 
     const dateRange = getDateRange(period);
@@ -148,7 +149,7 @@ export default function ProducerDashboard({ embedded }: { embedded?: boolean } =
       leadsQuery,
     ]);
 
-    if (!mountedRef.current) return;
+    if (!mountedRef.current || thisLoad !== loadIdRef.current) return;
 
     const allPolicies = policiesRes.data ?? [];
     const fetchedLeads = leadsRes.data ?? [];
