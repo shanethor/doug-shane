@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { safeDecrypt, encryptToken } from "../_shared/token-crypto.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -28,6 +29,9 @@ function classifyEmail(subject: string, bodyPreview: string): string[] {
 }
 
 async function refreshToken(connection: any, adminClient: any): Promise<string> {
+  // Decrypt the stored refresh token before using it
+  const plainRefreshToken = await safeDecrypt(connection.refresh_token);
+
   let tokenResp: Response;
   let tokenData: any;
 
@@ -36,7 +40,7 @@ async function refreshToken(connection: any, adminClient: any): Promise<string> 
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams({
-        refresh_token: connection.refresh_token,
+        refresh_token: plainRefreshToken,
         client_id: Deno.env.get("GOOGLE_CLIENT_ID")!,
         client_secret: Deno.env.get("GOOGLE_CLIENT_SECRET")!,
         grant_type: "refresh_token",
@@ -48,7 +52,7 @@ async function refreshToken(connection: any, adminClient: any): Promise<string> 
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams({
-        refresh_token: connection.refresh_token,
+        refresh_token: plainRefreshToken,
         client_id: Deno.env.get("MICROSOFT_CLIENT_ID")!,
         client_secret: Deno.env.get("MICROSOFT_CLIENT_SECRET")!,
         grant_type: "refresh_token",
@@ -63,14 +67,21 @@ async function refreshToken(connection: any, adminClient: any): Promise<string> 
   }
 
   const expiresAt = new Date(Date.now() + (tokenData.expires_in || 3600) * 1000).toISOString();
+
+  // Encrypt the new tokens before storing
+  const encAccessToken = await encryptToken(tokenData.access_token);
+  const updatePayload: any = {
+    access_token: encAccessToken,
+    token_expires_at: expiresAt,
+    updated_at: new Date().toISOString(),
+  };
+  if (tokenData.refresh_token) {
+    updatePayload.refresh_token = await encryptToken(tokenData.refresh_token);
+  }
+
   await adminClient
     .from("email_connections")
-    .update({
-      access_token: tokenData.access_token,
-      token_expires_at: expiresAt,
-      ...(tokenData.refresh_token ? { refresh_token: tokenData.refresh_token } : {}),
-      updated_at: new Date().toISOString(),
-    })
+    .update(updatePayload)
     .eq("id", connection.id);
 
   return tokenData.access_token;
@@ -79,7 +90,8 @@ async function refreshToken(connection: any, adminClient: any): Promise<string> 
 async function getValidToken(connection: any, adminClient: any): Promise<string> {
   const expiresAt = new Date(connection.token_expires_at);
   if (expiresAt > new Date(Date.now() + 60000)) {
-    return connection.access_token;
+    // Decrypt stored access token
+    return safeDecrypt(connection.access_token);
   }
   return refreshToken(connection, adminClient);
 }
@@ -209,7 +221,6 @@ serve(async (req) => {
 
       // Upsert emails — preserve local is_read state for existing emails
       if (emails.length > 0) {
-        // Fetch existing external_ids so we don't overwrite is_read on re-sync
         const externalIds = emails.map((e: any) => e.external_id);
         const { data: existingRows } = await adminClient
           .from("synced_emails")
@@ -218,11 +229,9 @@ serve(async (req) => {
           .in("external_id", externalIds);
         const existingSet = new Set((existingRows || []).map((r: any) => r.external_id));
 
-        // Split into new emails (full insert) and existing emails (update without is_read)
         const newEmails = emails.filter((e: any) => !existingSet.has(e.external_id));
         const existingEmails = emails.filter((e: any) => existingSet.has(e.external_id));
 
-        // Insert new emails with is_read included
         if (newEmails.length > 0) {
           const { error: insertErr } = await adminClient
             .from("synced_emails")
@@ -230,7 +239,6 @@ serve(async (req) => {
           if (insertErr) console.error("Email insert error:", insertErr);
         }
 
-        // Update existing emails without is_read to preserve user's read state
         if (existingEmails.length > 0) {
           const updateData = existingEmails.map((e: any) => {
             const { is_read, ...rest } = e;
@@ -276,7 +284,6 @@ serve(async (req) => {
       const recipients = Array.isArray(to) ? to : [to];
 
       if (conn.provider === "gmail") {
-        // Build RFC 2822 message
         const toLine = recipients.join(", ");
         const rawEmail = [
           `To: ${toLine}`,
@@ -287,7 +294,6 @@ serve(async (req) => {
           body_html || "",
         ].join("\r\n");
 
-        // Base64url encode
         const encoder = new TextEncoder();
         const bytes = encoder.encode(rawEmail);
         const base64 = btoa(String.fromCharCode(...bytes))

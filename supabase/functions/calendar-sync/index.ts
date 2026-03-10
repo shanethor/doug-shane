@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { safeDecrypt, encryptToken } from "../_shared/token-crypto.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -14,10 +15,12 @@ const GOOGLE_CAL_BASE = "https://www.googleapis.com/calendar/v3";
 
 /* ─── Token Refresh ─── */
 
-async function refreshOutlookToken(refreshToken: string) {
+async function refreshOutlookToken(encryptedRefreshToken: string) {
   const clientId = Deno.env.get("MICROSOFT_CLIENT_ID");
   const clientSecret = Deno.env.get("MICROSOFT_CLIENT_SECRET");
   if (!clientId || !clientSecret) return null;
+
+  const plainRefreshToken = await safeDecrypt(encryptedRefreshToken);
 
   const resp = await fetch(OUTLOOK_TOKEN_URL, {
     method: "POST",
@@ -26,7 +29,7 @@ async function refreshOutlookToken(refreshToken: string) {
       client_id: clientId,
       client_secret: clientSecret,
       grant_type: "refresh_token",
-      refresh_token: refreshToken,
+      refresh_token: plainRefreshToken,
       scope: "openid email Calendars.ReadWrite offline_access",
     }),
   });
@@ -38,10 +41,12 @@ async function refreshOutlookToken(refreshToken: string) {
   return await resp.json();
 }
 
-async function refreshGoogleToken(refreshToken: string) {
+async function refreshGoogleToken(encryptedRefreshToken: string) {
   const clientId = Deno.env.get("GOOGLE_CLIENT_ID");
   const clientSecret = Deno.env.get("GOOGLE_CLIENT_SECRET");
   if (!clientId || !clientSecret) return null;
+
+  const plainRefreshToken = await safeDecrypt(encryptedRefreshToken);
 
   const resp = await fetch(GOOGLE_TOKEN_URL, {
     method: "POST",
@@ -50,7 +55,7 @@ async function refreshGoogleToken(refreshToken: string) {
       client_id: clientId,
       client_secret: clientSecret,
       grant_type: "refresh_token",
-      refresh_token: refreshToken,
+      refresh_token: plainRefreshToken,
     }),
   });
 
@@ -64,7 +69,8 @@ async function refreshGoogleToken(refreshToken: string) {
 /* ─── Ensure valid access token ─── */
 async function ensureToken(calConn: any, adminClient: any) {
   if (new Date(calConn.token_expires_at) > new Date()) {
-    return calConn.access_token;
+    // Decrypt stored access token
+    return safeDecrypt(calConn.access_token);
   }
 
   const refreshed = calConn.provider === "outlook"
@@ -73,9 +79,15 @@ async function ensureToken(calConn: any, adminClient: any) {
 
   if (!refreshed) return null;
 
+  // Encrypt new tokens before storing
+  const encAccessToken = await encryptToken(refreshed.access_token);
+  const encRefreshToken = refreshed.refresh_token
+    ? await encryptToken(refreshed.refresh_token)
+    : calConn.refresh_token; // keep existing encrypted value
+
   await adminClient.from("external_calendars").update({
-    access_token: refreshed.access_token,
-    refresh_token: refreshed.refresh_token || calConn.refresh_token,
+    access_token: encAccessToken,
+    refresh_token: encRefreshToken,
     token_expires_at: new Date(Date.now() + (refreshed.expires_in || 3600) * 1000).toISOString(),
   }).eq("id", calConn.id);
 
@@ -264,7 +276,7 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // --- SYNC: Pull from all connected calendars ---
+    // --- SYNC ---
     if (action === "sync") {
       const { data: connections } = await adminClient
         .from("external_calendars")
@@ -281,7 +293,6 @@ serve(async (req) => {
       const results: any[] = [];
 
       for (const conn of connections) {
-        // Optionally filter to a single provider
         if (requestedProvider && conn.provider !== requestedProvider) continue;
 
         const accessToken = await ensureToken(conn, adminClient);
@@ -303,9 +314,8 @@ serve(async (req) => {
       });
     }
 
-    // --- CREATE EVENT: Push to connected calendar ---
+    // --- CREATE EVENT ---
     if (action === "create_event") {
-      // Normalize provider: accept "gmail" or "google" for Google Calendar
       let targetProvider = requestedProvider || "outlook";
       if (targetProvider === "gmail") targetProvider = "google";
       
@@ -341,7 +351,6 @@ serve(async (req) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       } else {
-        // Outlook
         const { title, start, end, description, location, attendees } = body;
         const graphBody: any = {
           subject: title,
