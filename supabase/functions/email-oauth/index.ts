@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { encryptToken } from "../_shared/token-crypto.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -113,14 +114,18 @@ serve(async (req) => {
 
         const expiresAt = new Date(Date.now() + (tokenData.expires_in || 3600) * 1000).toISOString();
 
+        // Encrypt tokens before storing
+        const encAccessToken = await encryptToken(tokenData.access_token);
+        const encRefreshToken = await encryptToken(tokenData.refresh_token);
+
         const { error: upsertErr } = await adminClient
           .from("email_connections")
           .upsert({
             user_id: userId,
             provider: "gmail",
             email_address: email,
-            access_token: tokenData.access_token,
-            refresh_token: tokenData.refresh_token,
+            access_token: encAccessToken,
+            refresh_token: encRefreshToken,
             token_expires_at: expiresAt,
             is_active: true,
             updated_at: new Date().toISOString(),
@@ -140,8 +145,8 @@ serve(async (req) => {
             user_id: userId,
             provider: "gmail",
             email_address: email,
-            access_token: tokenData.access_token,
-            refresh_token: tokenData.refresh_token,
+            access_token: encAccessToken,
+            refresh_token: encRefreshToken,
             token_expires_at: expiresAt,
             is_active: true,
             updated_at: new Date().toISOString(),
@@ -179,7 +184,7 @@ serve(async (req) => {
           });
         }
 
-        // Get user email from Microsoft Graph (requires User.Read)
+        // Get user email from Microsoft Graph
         let email: string | null = null;
         const meResp = await fetch("https://graph.microsoft.com/v1.0/me?$select=mail,userPrincipalName", {
           headers: { Authorization: `Bearer ${tokenData.access_token}` },
@@ -193,7 +198,7 @@ serve(async (req) => {
           console.error("Microsoft Graph /me error:", meResp.status, meErr);
         }
 
-        // Fallback to id_token claims if /me doesn't provide an email
+        // Fallback to id_token claims
         if (!email && tokenData.id_token) {
           try {
             const [, payload] = tokenData.id_token.split(".");
@@ -212,14 +217,18 @@ serve(async (req) => {
 
         const expiresAt = new Date(Date.now() + (tokenData.expires_in || 3600) * 1000).toISOString();
 
+        // Encrypt tokens before storing
+        const encAccessToken = await encryptToken(tokenData.access_token);
+        const encRefreshToken = await encryptToken(tokenData.refresh_token);
+
         const { error: upsertErr } = await adminClient
           .from("email_connections")
           .upsert({
             user_id: userId,
             provider: "outlook",
             email_address: email,
-            access_token: tokenData.access_token,
-            refresh_token: tokenData.refresh_token,
+            access_token: encAccessToken,
+            refresh_token: encRefreshToken,
             token_expires_at: expiresAt,
             is_active: true,
             updated_at: new Date().toISOString(),
@@ -232,15 +241,15 @@ serve(async (req) => {
           });
         }
 
-        // Also upsert into external_calendars so calendar sync works
+        // Also upsert into external_calendars
         await adminClient
           .from("external_calendars")
           .upsert({
             user_id: userId,
             provider: "outlook",
             email_address: email,
-            access_token: tokenData.access_token,
-            refresh_token: tokenData.refresh_token,
+            access_token: encAccessToken,
+            refresh_token: encRefreshToken,
             token_expires_at: expiresAt,
             is_active: true,
             updated_at: new Date().toISOString(),
