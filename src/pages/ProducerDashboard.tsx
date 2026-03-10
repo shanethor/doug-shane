@@ -92,6 +92,7 @@ export default function ProducerDashboard({ embedded }: { embedded?: boolean } =
   });
   const [loading, setLoading] = useState(true);
   const mountedRef = useRef(true);
+  const loadIdRef = useRef(0);
   useEffect(() => { return () => { mountedRef.current = false; }; }, []);
 
   // Load advisor list for admin/manager
@@ -125,6 +126,7 @@ export default function ProducerDashboard({ embedded }: { embedded?: boolean } =
 
   const loadStats = async () => {
     if (!user) return;
+    const thisLoad = ++loadIdRef.current;
     setLoading(true);
 
     const dateRange = getDateRange(period);
@@ -147,7 +149,7 @@ export default function ProducerDashboard({ embedded }: { embedded?: boolean } =
       leadsQuery,
     ]);
 
-    if (!mountedRef.current) return;
+    if (!mountedRef.current || thisLoad !== loadIdRef.current) return;
 
     const allPolicies = policiesRes.data ?? [];
     const fetchedLeads = leadsRes.data ?? [];
