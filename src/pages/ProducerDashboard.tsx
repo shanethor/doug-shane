@@ -92,6 +92,7 @@ export default function ProducerDashboard({ embedded }: { embedded?: boolean } =
   });
   const [loading, setLoading] = useState(true);
   const mountedRef = useRef(true);
+  const loadIdRef = useRef(0);
   useEffect(() => { return () => { mountedRef.current = false; }; }, []);
 
   // Load advisor list for admin/manager
