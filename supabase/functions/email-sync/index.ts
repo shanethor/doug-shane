@@ -466,6 +466,58 @@ serve(async (req) => {
 
             if (updates.length > 0) {
               console.log(`[email-sync] Auto-assigned ${updates.length} emails to clients`);
+
+              // Trigger ingestion for emails with attachments
+              for (const upd of updates) {
+                const { data: hasAtts } = await adminClient
+                  .from("email_attachments")
+                  .select("id")
+                  .eq("email_id", upd.id)
+                  .eq("user_id", userId)
+                  .limit(1);
+
+                if (hasAtts && hasAtts.length > 0) {
+                  // Inline ingest: save attachments as client_documents
+                  const { data: atts } = await adminClient
+                    .from("email_attachments")
+                    .select("id, file_name, file_size, content_type")
+                    .eq("email_id", upd.id)
+                    .eq("user_id", userId);
+
+                  const { data: lead } = await adminClient
+                    .from("leads")
+                    .select("id, submission_id")
+                    .eq("id", upd.client_id)
+                    .maybeSingle();
+
+                  const docExts = /\.(pdf|docx?|xlsx?|csv|png|jpe?g|tiff?)$/i;
+                  for (const att of (atts || [])) {
+                    const isDoc = docExts.test(att.file_name) ||
+                      (att.content_type && (att.content_type.includes("pdf") || att.content_type.includes("document") || att.content_type.includes("image/")));
+                    if (!isDoc) continue;
+
+                    const { data: exists } = await adminClient
+                      .from("client_documents")
+                      .select("id")
+                      .eq("user_id", userId)
+                      .eq("lead_id", upd.client_id)
+                      .eq("file_name", att.file_name)
+                      .maybeSingle();
+
+                    if (!exists) {
+                      await adminClient.from("client_documents").insert({
+                        user_id: userId,
+                        lead_id: upd.client_id,
+                        submission_id: lead?.submission_id || null,
+                        file_name: att.file_name,
+                        file_url: `email-attachment://${att.id}`,
+                        file_size: att.file_size || 0,
+                        document_type: "other",
+                      });
+                    }
+                  }
+                }
+              }
             }
           }
         }

@@ -77,6 +77,17 @@ export function EmailClientAssign({ emailId, clientId, onClientChanged }: EmailC
     } else {
       onClientChanged(leadId);
       toast.success(leadId ? "Client assigned" : "Client unassigned");
+
+      // Trigger attachment ingestion when assigning a client
+      if (leadId) {
+        try {
+          await supabase.functions.invoke("email-sync", {
+            body: { action: "ingest-email", email_id: emailId, client_id: leadId },
+          });
+        } catch (e) {
+          console.error("Ingest trigger error:", e);
+        }
+      }
     }
     setSaving(false);
     setOpen(false);
