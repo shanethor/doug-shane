@@ -8,7 +8,7 @@ const corsHeaders = {
 type TimePeriod = "all" | "month" | "quarter" | "year";
 
 type TrackerStats = {
-  totalProspects: number;
+  prospectCount: number;
   quotingCount: number;
   presentingCount: number;
   soldCount: number;
