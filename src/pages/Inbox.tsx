@@ -1268,19 +1268,7 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
                       </button>
                     )}
                   </div>
-                  </div>
-                ) : selectedEmail.body_preview ? (
-                  <div className="flex flex-col gap-2 py-3">
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                      Loading full message…
-                    </div>
-                    <p className="text-sm whitespace-pre-wrap text-muted-foreground">
-                      {decodeHtmlEntities(selectedEmail.body_preview)}
-                    </p>
-                  </div>
-                ) : (
-                  <p className="text-sm py-3 text-muted-foreground">No content available</p>
+                )}
                 )}
               </ScrollArea>
 
