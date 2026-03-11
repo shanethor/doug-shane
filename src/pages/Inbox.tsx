@@ -392,22 +392,37 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
     "amazon", "ebay", "walmart", "target", "bestbuy", "etsy", "shopify",
     "costco", "samsclub", "homedepot", "lowes", "macys", "nordstrom",
     "kohls", "wayfair", "overstock", "chewy", "zappos", "shein",
+    "jared.com", "kay.com", "zales.com", "bluenile", "tiffany",
+    "gap.com", "oldnavy", "bananarepublic", "jcrew", "hm.com", "asos",
+    "nike", "adidas", "underarmour", "lululemon", "rei.com",
+    "bathandbodyworks", "sephora", "ulta", "glossier",
+    // Health / Supplements / Wellness
+    "metagenics", "thorne", "draxe", "iherb", "vitacost", "swanson",
+    "gardenoflife", "NOW Foods", "herbalife", "isagenix", "doterra",
+    "youngliving", "arbonne", "advocare", "beachbody",
+    "mindbodygreen", "wellandgood", "healthline", "webmd",
     // Social media
     "facebook", "facebookmail", "twitter", "x.com", "instagram", "linkedin",
     "tiktok", "pinterest", "reddit", "snapchat", "threads.net",
+    "nextdoor", "tumblr", "mastodon",
     // Streaming / Entertainment
     "youtube", "netflix", "spotify", "hulu", "disney", "hbomax", "peacock",
     "paramountplus", "appletv", "pandora", "audible", "kindle",
-    // News / Sports
+    "sirius", "iheartradio", "deezer",
+    // News / Sports / Media
     "espn", "nfl.com", "nba.com", "mlb.com", "nhl.com",
     "bleacherreport", "theathletic", "foxsports", "cbssports", "si.com",
     "cnn", "bbc", "nytimes", "washingtonpost", "usatoday", "reuters",
     "apnews", "huffpost", "buzzfeed", "vice.com", "vox.com",
+    "foreignpolicy.com", "theatlantic", "newyorker", "economist",
+    "politico", "axios", "theverge", "wired", "arstechnica",
+    "morningbrew", "theskim", "dailywire",
     // Airlines / Travel / Hotels
     "southwest", "delta", "united", "american airlines", "jetblue", "spirit",
     "frontier", "alaska air", "hawaiianair",
     "expedia", "booking.com", "hotels.com", "airbnb", "vrbo", "kayak",
     "priceline", "tripadvisor", "marriott", "hilton", "ihg", "hyatt",
+    "carnival", "royalcaribbean", "norwegian",
     // Food delivery / Rideshare
     "uber", "lyft", "doordash", "grubhub", "postmates", "instacart",
     "seamless", "caviar", "gopuff",
@@ -415,20 +430,36 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
     "github", "stackoverflow", "medium", "substack", "producthunt",
     "slack.com", "zoom.us", "calendly", "figma", "canva", "dropbox",
     "notion.so", "trello", "asana", "monday.com", "jira",
+    "perplexity", "openai", "anthropic", "chatgpt",
     // Payments / Fintech (non-insurance)
     "venmo", "cashapp", "paypal", "zelle", "square", "stripe.com",
     "robinhood", "coinbase", "crypto.com",
+    "sofi.com", "sofi.org", "wealthfront", "betterment", "acorns",
+    "mint.com", "creditkarma", "nerdwallet", "bankrate",
+    "chime", "ally.com", "marcus.com", "discover.com",
     // Fitness / Health apps
     "peloton", "fitbit", "myfitnesspal", "strava", "headspace", "calm.com",
-    "noom",
+    "noom", "orangetheory", "crossfit",
     // Loyalty / Rewards programs
     "starbucks", "chick-fil-a", "chipotle", "panera", "dunkin",
+    "dominos", "pizzahut", "papajohns", "mcdonalds", "wendys",
     // Generic sender patterns
     "noreply", "no-reply", "mailer-daemon", "newsletter", "notifications",
     "promotions", "marketing", "promo", "info@", "updates@", "alerts@",
-    "support@", "hello@", "team@",
+    "support@", "hello@", "team@", "digest@", "news@", "offers@",
     // Telecom
     "verizon", "att.com", "t-mobile", "xfinity", "comcast", "spectrum",
+    // Automotive
+    "carfax", "carvana", "autotrader", "cars.com", "kbb.com",
+    // Real estate (non-insurance)
+    "zillow", "redfin", "realtor.com", "trulia",
+    // Education / Online learning
+    "coursera", "udemy", "skillshare", "masterclass", "khan academy",
+    "duolingo", "brilliant",
+    // Gaming
+    "playstation", "xbox", "nintendo", "steam", "epicgames", "roblox",
+    // Charity / Nonprofits (not insurance-related)
+    "change.org", "gofundme", "kickstarter", "indiegogo",
   ];
 
   // ── Layer 2: Subject / content keyword patterns ──
@@ -437,30 +468,36 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
     "your order", "shipped", "delivery", "tracking", "receipt",
     "your package", "order confirmation", "shipment", "out for delivery",
     "has been delivered", "return label", "refund processed",
+    "add to cart", "your cart", "wish list",
     // Newsletters / Digests
     "unsubscribe", "weekly digest", "daily digest", "morning brief",
     "newsletter", "weekly roundup", "daily recap", "top stories",
     "what you missed", "trending now", "this week in",
+    "morning brew", "daily skimm", "the brief",
     // Account / Auth
     "password reset", "verify your email", "confirm your", "sign in",
     "two-factor", "verification code", "security alert",
+    "new login", "account activity",
     // Sales / Marketing
     "sale", "discount", "coupon", "deal of", "flash sale", "limited time",
     "% off", "special offer", "exclusive offer", "don't miss",
     "last chance", "act now", "clearance", "buy one get",
-    "free shipping", "promo code",
+    "free shipping", "promo code", "just for you",
+    "we miss you", "come back", "it's back", "price drop",
     // Subscriptions
     "your subscription", "free trial", "trial ending", "plan renewal",
-    "upgrade your", "your membership",
+    "upgrade your", "your membership", "billing statement",
     // Social
     "you might", "recommended for you", "trending",
     "invitation to connect", "endorsed you", "new follower",
     "liked your", "commented on", "shared your", "mentioned you",
     "people you may know", "connection request",
+    "who viewed your profile",
     // Sports / Entertainment
     "score", "highlights", "recap", "game day", "final score",
     "touchdown", "halftime", "playoff", "standings",
     "new episode", "now streaming", "watch now", "just added",
+    "season premiere", "box office",
     // Travel
     "flight", "itinerary", "boarding pass", "check-in", "hotel reservation",
     "trip confirmation", "travel alert",
@@ -470,6 +507,14 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
     // Food / Dining
     "your table", "reservation confirmed", "order ready",
     "menu update", "happy hour",
+    // Finance (non-insurance)
+    "your statement", "monthly statement", "interest rate",
+    "credit score", "pre-approved", "refinance", "mortgage rate",
+    "investment update", "portfolio", "dividend",
+    "crypto", "bitcoin", "ethereum",
+    // Health supplements / Wellness marketing
+    "supplement", "vitamin", "probiotic", "collagen", "detox",
+    "wellness", "holistic", "superfood", "nutrition",
   ];
 
   // Insurance-positive keywords that override the filters (safety net)
@@ -484,8 +529,15 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
     "certificate of insurance", "additional insured", "named insured",
     "effective date", "expiration date", "cancellation notice",
     "mod rate", "experience mod", "ncci", "class code",
+    "loss ratio", "actuarial", "reinsurance", "excess liability",
+    "fiduciary", "occurrence", "claims-made", "aggregate",
+    "per occurrence", "blanket", "scheduled",
   ];
 
+  /**
+   * Scoring-based filter: assigns a relevance score per email.
+   * Scores below 0.2 → non-insurance. Scores above → kept.
+   */
   const isNonInsuranceEmail = useCallback((email: SyncedEmail): boolean => {
     const fromLower = (email.from_address || "").toLowerCase();
     const subjectLower = (email.subject || "").toLowerCase();
@@ -493,26 +545,27 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
     const previewLower = (email.body_preview || "").toLowerCase();
     const tags = email.tags || [];
 
-    // Safety: if it has an insurance tag, always keep
+    // Hard keeps: tagged, linked to client
     if (tags.length > 0) return false;
-
-    // Safety: if linked to a client, always keep
     if (email.client_id) return false;
 
-    // Safety: if subject or preview contains insurance keywords, always keep
+    let score = 0.5;
     const combinedText = `${subjectLower} ${previewLower} ${fromName}`;
-    if (INSURANCE_KEYWORDS.some((kw) => combinedText.includes(kw))) return false;
 
-    // Layer 1: domain blacklist
-    if (NON_INSURANCE_DOMAINS.some((d) => fromLower.includes(d))) return true;
+    // Positive signals: insurance keywords → +0.3 each (capped)
+    const posHits = INSURANCE_KEYWORDS.filter((kw) => combinedText.includes(kw)).length;
+    score += posHits * 0.3;
 
-    // Layer 2: subject keyword match (only when no client linked)
-    if (NON_INSURANCE_SUBJECTS.some((s) => subjectLower.includes(s))) return true;
+    // Negative signals: domain blacklist → -0.3
+    if (NON_INSURANCE_DOMAINS.some((d) => fromLower.includes(d))) score -= 0.3;
 
-    // Layer 2b: from-name keyword match
-    if (NON_INSURANCE_SUBJECTS.some((s) => fromName.includes(s))) return true;
+    // Negative signals: subject/name keywords → -0.3
+    if (NON_INSURANCE_SUBJECTS.some((s) => subjectLower.includes(s) || fromName.includes(s))) score -= 0.3;
 
-    return false;
+    // Clamp 0-1
+    score = Math.max(0, Math.min(1, score));
+
+    return score < 0.2;
   }, []);
 
   /** Strip image src attributes from HTML, replacing with placeholder */
