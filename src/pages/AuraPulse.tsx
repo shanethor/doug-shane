@@ -100,9 +100,9 @@ export default function AuraPulse() {
 
   return (
     <AppLayout>
-      <div className="flex items-center gap-3 mb-6">
-        <HeartPulse className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
-        <h1 className="text-xl sm:text-3xl font-semibold tracking-tight">Pulse</h1>
+      <div className="hidden md:flex items-center gap-3 mb-6">
+        <HeartPulse className="h-6 w-6 text-primary" />
+        <h1 className="text-3xl font-semibold tracking-tight">Pulse</h1>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
