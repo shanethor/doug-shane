@@ -402,9 +402,9 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
     "youngliving", "arbonne", "advocare", "beachbody",
     "mindbodygreen", "wellandgood", "healthline", "webmd",
     // Social media
-    "facebook", "facebookmail", "twitter", "x.com", "instagram", "linkedin",
-    "tiktok", "pinterest", "reddit", "snapchat", "threads.net",
-    "nextdoor", "tumblr", "mastodon",
+    "facebook", "facebookmail", "meta.com", "metamail", "instagram",
+    "twitter", "x.com", "linkedin", "tiktok", "pinterest", "reddit",
+    "snapchat", "threads.net", "nextdoor", "tumblr", "mastodon",
     // Streaming / Entertainment
     "youtube", "netflix", "spotify", "hulu", "disney", "hbomax", "peacock",
     "paramountplus", "appletv", "pandora", "audible", "kindle",
@@ -570,16 +570,16 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
     const posHits = INSURANCE_KEYWORDS.filter((kw) => combinedText.includes(kw)).length;
     score += posHits * 0.3;
 
-    // Negative signals: domain blacklist → -0.3
-    if (NON_INSURANCE_DOMAINS.some((d) => fromLower.includes(d))) score -= 0.3;
+    // Negative signals: domain blacklist → -0.35
+    if (NON_INSURANCE_DOMAINS.some((d) => fromLower.includes(d))) score -= 0.35;
 
-    // Negative signals: subject/name keywords → -0.3
-    if (NON_INSURANCE_SUBJECTS.some((s) => subjectLower.includes(s) || fromName.includes(s))) score -= 0.3;
+    // Negative signals: subject/name keywords → -0.35
+    if (NON_INSURANCE_SUBJECTS.some((s) => subjectLower.includes(s) || fromName.includes(s))) score -= 0.35;
 
     // Clamp 0-1
     score = Math.max(0, Math.min(1, score));
 
-    return score < 0.2;
+    return score < 0.25;
   }, []);
 
   /** Strip image src attributes from HTML, replacing with placeholder */
@@ -1254,16 +1254,24 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
                 </div>
               )}
 
-              <ScrollArea className="flex-1 min-h-0" style={{ maxHeight: showFullHtml ? "60vh" : undefined }}>
-                {/* Default: show plain-text preview. "View full email" loads the rich HTML. */}
-                {showFullHtml && selectedEmail.body_html ? (
-                  <div className="py-3 overflow-x-auto">
+              {showFullHtml && selectedEmail.body_html ? (
+                <div className="overflow-y-auto overflow-x-auto" style={{ maxHeight: "65vh" }}>
+                  <div className="py-3">
+                    <button
+                      onClick={() => setShowFullHtml(false)}
+                      className="mb-3 flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground hover:underline"
+                    >
+                      <ArrowLeft className="h-3 w-3" />
+                      Back to preview
+                    </button>
                     <div
                       className="prose prose-sm max-w-none text-sm [&_img]:max-w-full [&_a]:text-primary [&_a]:underline"
                       dangerouslySetInnerHTML={{ __html: selectedEmail.body_html }}
                     />
                   </div>
-                ) : (
+                </div>
+              ) : (
+                <ScrollArea className="flex-1 min-h-0">
                   <div className="py-3">
                     {selectedEmail.body_preview ? (
                       <p className="text-sm whitespace-pre-wrap">{decodeHtmlEntities(selectedEmail.body_preview)}</p>
@@ -1282,8 +1290,8 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
                       </button>
                     )}
                   </div>
-                )}
-              </ScrollArea>
+                </ScrollArea>
+              )}
 
               {/* Attachments section */}
               {(() => {
