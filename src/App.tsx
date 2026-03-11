@@ -70,6 +70,7 @@ function DarkModeSync() {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
+      <DarkModeSync />
       <Toaster />
       <Sonner />
       <BrowserRouter>
