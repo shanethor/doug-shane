@@ -911,6 +911,9 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
                             </Badge>
                           );
                         })()}
+                        {item.kind === "email" && (item.raw as SyncedEmail).has_attachments && (
+                          <Paperclip className="h-3 w-3 text-muted-foreground shrink-0" />
+                        )}
                       </div>
                       {item.body && <p className="text-xs text-muted-foreground truncate mt-0.5">{item.body}</p>}
                       {item.kind === "email" && ((item.raw as SyncedEmail).tags || []).length > 0 && (
