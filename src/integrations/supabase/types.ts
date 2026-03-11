@@ -1670,6 +1670,7 @@ export type Database = {
           from_email: string | null
           full_name: string | null
           id: string
+          intake_email_alias: string | null
           openai_api_key_encrypted: string | null
           phone: string | null
           timezone: string | null
@@ -1686,6 +1687,7 @@ export type Database = {
           from_email?: string | null
           full_name?: string | null
           id?: string
+          intake_email_alias?: string | null
           openai_api_key_encrypted?: string | null
           phone?: string | null
           timezone?: string | null
@@ -1702,6 +1704,7 @@ export type Database = {
           from_email?: string | null
           full_name?: string | null
           id?: string
+          intake_email_alias?: string | null
           openai_api_key_encrypted?: string | null
           phone?: string | null
           timezone?: string | null

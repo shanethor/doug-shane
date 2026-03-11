@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Building2, Mail, Save, User, BrainCircuit, Eye, EyeOff, Info, Loader2, Link2, Unlink, CheckCircle, Smartphone, GripVertical, Globe, Radar, Linkedin, Search, MessageSquare, FileText as FileTextIcon, Moon, Sun } from "lucide-react";
+import { Building2, Mail, Save, User, BrainCircuit, Eye, EyeOff, Info, Loader2, Link2, Unlink, CheckCircle, Smartphone, GripVertical, Globe, Radar, Linkedin, Search, MessageSquare, FileText as FileTextIcon, Moon, Sun, Copy, InboxIcon } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -48,6 +48,7 @@ export default function Settings() {
   const [agencyDisplayName, setAgencyDisplayName] = useState<string | null>(null);
   const [navTabCount, setNavTabCount] = useState(navConfig.tabCount);
   const [navSelectedIds, setNavSelectedIds] = useState<string[]>(navConfig.selectedTabIds);
+  const [intakeAlias, setIntakeAlias] = useState<string | null>(null);
   const [timezone, setTimezone] = useState(Intl.DateTimeFormat().resolvedOptions().timeZone);
   const [darkMode, setDarkMode] = useState(() => document.documentElement.classList.contains("dark"));
 
@@ -76,7 +77,7 @@ export default function Settings() {
     if (!user) return;
     supabase
       .from("profiles")
-      .select("form_defaults, full_name, agency_name, agency_id, phone, from_email, ai_provider, openai_api_key_encrypted")
+      .select("form_defaults, full_name, agency_name, agency_id, phone, from_email, ai_provider, openai_api_key_encrypted, intake_email_alias")
       .eq("user_id", user.id)
       .then(async ({ data }) => {
         if (data?.[0]) {
@@ -93,13 +94,31 @@ export default function Settings() {
           setOpenaiKey((data[0] as any).openai_api_key_encrypted || "");
           if ((data[0] as any).timezone) setTimezone((data[0] as any).timezone);
 
+          // Handle intake email alias
+          const existingAlias = (data[0] as any).intake_email_alias;
+          if (existingAlias) {
+            setIntakeAlias(existingAlias);
+          } else if (data[0].full_name) {
+            // Auto-generate alias from full name
+            const alias = data[0].full_name
+              .toLowerCase()
+              .replace(/[^a-z0-9\s-]/g, "")
+              .trim()
+              .replace(/\s+/g, "-") + "-intake@buildingaura.site";
+            // Save it
+            await supabase
+              .from("profiles")
+              .update({ intake_email_alias: alias } as any)
+              .eq("user_id", user.id);
+            setIntakeAlias(alias);
+          }
+
           // Resolve agency name from agencies table
           const agencyId = (data[0] as any).agency_id;
           if (agencyId) {
             const { data: agencyData } = await supabase.from("agencies").select("name").eq("id", agencyId).maybeSingle();
             if (agencyData) {
               setAgencyDisplayName(agencyData.name);
-              // Also set in values so forms auto-fill correctly
               merged.agency_name = agencyData.name;
               setValues({ ...merged });
             }
@@ -449,6 +468,44 @@ export default function Settings() {
               Your email credentials are stored securely and never shared. You can disconnect at any time.
             </p>
           </div>
+
+          {/* Intake Email Alias */}
+          {intakeAlias && (
+            <>
+              <Separator />
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <InboxIcon className="h-4 w-4 text-primary" />
+                  <Label className="text-sm font-medium">Your Intake Email</Label>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Share this email with clients. When they send documents to it, AURA will automatically create or update their file and begin extraction.
+                </p>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 h-10 flex items-center px-3 rounded-md border bg-muted/30 text-sm font-mono text-foreground truncate">
+                    {intakeAlias}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-10 w-10 shrink-0"
+                    onClick={() => {
+                      navigator.clipboard.writeText(intakeAlias);
+                      toast.success("Intake email copied!");
+                    }}
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
+                <div className="rounded-md bg-accent/5 border border-accent/20 p-3">
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">
+                    <strong>Setup:</strong> Add a forwarding rule in your Gmail or Outlook so emails sent to <span className="font-mono text-foreground">{intakeAlias}</span> are 
+                    forwarded to your connected email account. AURA will detect these during sync and auto-process them.
+                  </p>
+                </div>
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
 
