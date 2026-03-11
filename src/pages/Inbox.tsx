@@ -598,6 +598,7 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
     setSelectedEmail(email);
     setSelectedEmailAttachments([]);
     setShowFullHtml(false);
+    setIntakeResult(null);
     markEmailRead(email);
     if (email.has_attachments) {
       fetchAttachmentsForEmail(email.id);
