@@ -1037,10 +1037,27 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
                 </DialogTitle>
               </DialogHeader>
 
-              <div className="space-y-1 text-xs text-muted-foreground border-b pb-3">
-                <p><span className="font-medium text-foreground">From:</span> {selectedEmail.from_name ? `${selectedEmail.from_name} <${selectedEmail.from_address}>` : selectedEmail.from_address}</p>
-                <p><span className="font-medium text-foreground">To:</span> {selectedEmail.to_addresses?.join(", ")}</p>
-                <p><span className="font-medium text-foreground">Date:</span> {format(new Date(selectedEmail.received_at), "MMM d, yyyy 'at' h:mm a")}</p>
+              <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5 text-xs border-b pb-3">
+                <span className="font-medium text-foreground">From</span>
+                <span className="text-foreground truncate">
+                  {selectedEmail.from_name
+                    ? <>{selectedEmail.from_name} <span className="text-muted-foreground">&lt;{selectedEmail.from_address}&gt;</span></>
+                    : selectedEmail.from_address}
+                </span>
+                <span className="font-medium text-foreground">To</span>
+                <span className="text-muted-foreground truncate">{selectedEmail.to_addresses?.join(", ")}</span>
+                <span className="font-medium text-foreground">Date</span>
+                <span className="text-muted-foreground">{format(new Date(selectedEmail.received_at), "EEE, MMM d, yyyy 'at' h:mm a")}</span>
+                {selectedEmail.tags && selectedEmail.tags.length > 0 && (
+                  <>
+                    <span className="font-medium text-foreground">Tags</span>
+                    <div className="flex gap-1 flex-wrap">
+                      {selectedEmail.tags.map((tag) => (
+                        <Badge key={tag} variant="outline" className="text-[9px] px-1.5 py-0">{tag.replace(/_/g, " ")}</Badge>
+                      ))}
+                    </div>
+                  </>
+                )}
               </div>
 
               <div className="flex items-center gap-2 py-2">
