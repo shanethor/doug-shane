@@ -16,7 +16,8 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import {
   Bell, Mail, GitBranch, FileText, Check, CheckCheck, Sparkles,
-  Send, Loader2, Inbox as InboxIcon, MailOpen, RefreshCw, User, Reply, ArrowLeft, X, Search, SlidersHorizontal, Plus
+  Send, Loader2, Inbox as InboxIcon, MailOpen, RefreshCw, User, Reply, ArrowLeft, X, Search, SlidersHorizontal, Plus,
+  Paperclip, Download
 } from "lucide-react";
 import { formatDistanceToNow, format } from "date-fns";
 import { getAuthHeaders } from "@/lib/auth-fetch";
@@ -38,6 +39,13 @@ type Notification = {
   created_at: string;
 };
 
+type EmailAttachment = {
+  id: string;
+  file_name: string;
+  file_size: number | null;
+  content_type: string | null;
+};
+
 type SyncedEmail = {
   id: string;
   from_address: string;
@@ -52,6 +60,7 @@ type SyncedEmail = {
   tags?: string[];
   client_id?: string | null;
   client_link_source?: string | null;
+  has_attachments?: boolean;
 };
 
 type EmailConnection = {
@@ -101,10 +110,9 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
   // General search
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Email detail dialog
   const [selectedEmail, setSelectedEmail] = useState<SyncedEmail | null>(null);
-
-  // Compose state
+  const [selectedEmailAttachments, setSelectedEmailAttachments] = useState<EmailAttachment[]>([]);
+  const [downloadingAttachment, setDownloadingAttachment] = useState<string | null>(null);
   const [composeOpen, setComposeOpen] = useState(false);
   const [composeTo, setComposeTo] = useState("");
   const [composeSubject, setComposeSubject] = useState("");
@@ -137,7 +145,7 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
 
     const { data } = await supabase
       .from("synced_emails")
-      .select("id, from_address, from_name, to_addresses, subject, body_preview, body_html, is_read, received_at, synced_at, tags, client_id, client_link_source")
+      .select("id, from_address, from_name, to_addresses, subject, body_preview, body_html, is_read, received_at, synced_at, tags, client_id, client_link_source, has_attachments")
       .eq("user_id", user.id)
       .order("received_at", { ascending: false })
       .limit(100);
@@ -148,6 +156,45 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
     return emails;
   }, [user, updateLastSyncedFromEmails]);
 
+  const fetchAttachmentsForEmail = useCallback(async (emailId: string) => {
+    const { data } = await supabase
+      .from("email_attachments")
+      .select("id, file_name, file_size, content_type")
+      .eq("email_id", emailId);
+    setSelectedEmailAttachments((data as EmailAttachment[]) || []);
+  }, []);
+
+  const downloadAttachment = useCallback(async (attachment: EmailAttachment) => {
+    setDownloadingAttachment(attachment.id);
+    try {
+      const headers = await getAuthHeaders();
+      const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/email-sync`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ action: "download-attachment", attachment_id: attachment.id }),
+      });
+      if (!resp.ok) throw new Error("Download failed");
+      const result = await resp.json();
+
+      // Convert base64 to blob and trigger download
+      const binary = atob(result.data);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      const blob = new Blob([bytes], { type: result.content_type || "application/octet-stream" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = result.file_name || attachment.file_name;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      toast.error("Failed to download attachment");
+    } finally {
+      setDownloadingAttachment(null);
+    }
+  }, []);
   useEffect(() => {
     const t = setInterval(() => setTick((n) => n + 1), 30_000);
     return () => clearInterval(t);
@@ -243,7 +290,7 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
         .limit(100),
       supabase
         .from("synced_emails")
-        .select("id, from_address, from_name, to_addresses, subject, body_preview, body_html, is_read, received_at, synced_at, tags, client_id, client_link_source")
+        .select("id, from_address, from_name, to_addresses, subject, body_preview, body_html, is_read, received_at, synced_at, tags, client_id, client_link_source, has_attachments")
         .eq("user_id", user.id)
         .order("received_at", { ascending: false })
         .limit(100),
@@ -331,7 +378,11 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
 
   const openEmailDetail = (email: SyncedEmail) => {
     setSelectedEmail(email);
+    setSelectedEmailAttachments([]);
     markEmailRead(email);
+    if (email.has_attachments) {
+      fetchAttachmentsForEmail(email.id);
+    }
   };
 
   const handleReply = (email: SyncedEmail) => {
@@ -706,6 +757,9 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
                       {preview && (
                         <p className="text-[11px] text-muted-foreground truncate flex-1">{preview}</p>
                       )}
+                      {email?.has_attachments && (
+                        <Paperclip className="h-3 w-3 text-muted-foreground shrink-0" />
+                      )}
                       {tags.length > 0 && (
                         <Badge variant="outline" className="text-[9px] px-1.5 py-0 shrink-0 h-4">
                           {tags[0].replace(/_/g, " ")}
@@ -857,6 +911,9 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
                             </Badge>
                           );
                         })()}
+                        {item.kind === "email" && (item.raw as SyncedEmail).has_attachments && (
+                          <Paperclip className="h-3 w-3 text-muted-foreground shrink-0" />
+                        )}
                       </div>
                       {item.body && <p className="text-xs text-muted-foreground truncate mt-0.5">{item.body}</p>}
                       {item.kind === "email" && ((item.raw as SyncedEmail).tags || []).length > 0 && (
@@ -921,6 +978,34 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
                   </p>
                 )}
               </ScrollArea>
+
+              {/* Attachments section */}
+              {selectedEmailAttachments.length > 0 && (
+                <div className="border-t pt-3">
+                  <p className="text-xs font-medium text-foreground mb-2 flex items-center gap-1.5">
+                    <Paperclip className="h-3.5 w-3.5" />
+                    {selectedEmailAttachments.length} Attachment{selectedEmailAttachments.length > 1 ? "s" : ""}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedEmailAttachments.map((att) => (
+                      <button
+                        key={att.id}
+                        onClick={() => downloadAttachment(att)}
+                        disabled={downloadingAttachment === att.id}
+                        className="flex items-center gap-2 rounded-lg border bg-muted/50 px-3 py-2 text-xs hover:bg-muted transition-colors max-w-[200px]"
+                      >
+                        <FileText className="h-3.5 w-3.5 text-primary shrink-0" />
+                        <span className="truncate">{att.file_name}</span>
+                        {downloadingAttachment === att.id ? (
+                          <Loader2 className="h-3 w-3 animate-spin shrink-0" />
+                        ) : (
+                          <Download className="h-3 w-3 text-muted-foreground shrink-0" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="flex justify-end gap-2 pt-3 border-t">
                 <Button variant="outline" size="sm" onClick={() => setSelectedEmail(null)}>

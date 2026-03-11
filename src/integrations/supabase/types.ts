@@ -564,6 +564,50 @@ export type Database = {
           },
         ]
       }
+      email_attachments: {
+        Row: {
+          content_type: string | null
+          created_at: string
+          email_id: string
+          external_attachment_id: string | null
+          file_name: string
+          file_size: number | null
+          id: string
+          storage_path: string | null
+          user_id: string
+        }
+        Insert: {
+          content_type?: string | null
+          created_at?: string
+          email_id: string
+          external_attachment_id?: string | null
+          file_name: string
+          file_size?: number | null
+          id?: string
+          storage_path?: string | null
+          user_id: string
+        }
+        Update: {
+          content_type?: string | null
+          created_at?: string
+          email_id?: string
+          external_attachment_id?: string | null
+          file_name?: string
+          file_size?: number | null
+          id?: string
+          storage_path?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_attachments_email_id_fkey"
+            columns: ["email_id"]
+            isOneToOne: false
+            referencedRelation: "synced_emails"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_connections: {
         Row: {
           access_token: string
@@ -1791,6 +1835,7 @@ export type Database = {
           external_id: string
           from_address: string
           from_name: string | null
+          has_attachments: boolean | null
           id: string
           is_read: boolean
           received_at: string
@@ -1809,6 +1854,7 @@ export type Database = {
           external_id: string
           from_address: string
           from_name?: string | null
+          has_attachments?: boolean | null
           id?: string
           is_read?: boolean
           received_at: string
@@ -1827,6 +1873,7 @@ export type Database = {
           external_id?: string
           from_address?: string
           from_name?: string | null
+          has_attachments?: boolean | null
           id?: string
           is_read?: boolean
           received_at?: string
