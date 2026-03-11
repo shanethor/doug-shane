@@ -1233,6 +1233,8 @@ Return ONLY valid JSON. No markdown fences, no explanation.`;
         documents_ingested: ingested,
         intake_link_sent: emailSent,
         intake_url: intakeUrl,
+        line_type_detected: detectedLineType,
+        extracted_fields: Object.keys(extractedData).length,
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
