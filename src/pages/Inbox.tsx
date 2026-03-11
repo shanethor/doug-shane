@@ -25,8 +25,16 @@ import { advisorAssist } from "@/services/aiRouter";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { EmailFilterChips } from "@/components/EmailFilterChips";
 import { EmailClientSnapshot } from "@/components/EmailClientSnapshot";
+import { EmailClientAssign } from "@/components/EmailClientAssign";
 import { fuzzyMatch } from "@/lib/fuzzy-match";
 import { useIsMobile } from "@/hooks/use-mobile";
+
+/** Decode HTML entities like &amp;quot; &amp;lt; &amp;gt; &#39; etc. */
+function decodeHtmlEntities(text: string): string {
+  const el = document.createElement("textarea");
+  el.innerHTML = text;
+  return el.value;
+}
 
 type Notification = {
   id: string;
@@ -755,7 +763,7 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
                     {/* Row 3: Preview + optional tag chip */}
                     <div className="flex items-center gap-1.5 mt-0.5">
                       {preview && (
-                        <p className="text-[11px] text-muted-foreground truncate flex-1">{preview}</p>
+                        <p className="text-[11px] text-muted-foreground truncate flex-1">{decodeHtmlEntities(preview)}</p>
                       )}
                       {email?.has_attachments && (
                         <Paperclip className="h-3 w-3 text-muted-foreground shrink-0" />
@@ -915,7 +923,7 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
                           <Paperclip className="h-3 w-3 text-muted-foreground shrink-0" />
                         )}
                       </div>
-                      {item.body && <p className="text-xs text-muted-foreground truncate mt-0.5">{item.body}</p>}
+                      {item.body && <p className="text-xs text-muted-foreground truncate mt-0.5">{decodeHtmlEntities(item.body)}</p>}
                       {item.kind === "email" && ((item.raw as SyncedEmail).tags || []).length > 0 && (
                         <div className="flex gap-1 mt-1">
                           {((item.raw as SyncedEmail).tags || []).map((tag) => (
@@ -960,6 +968,19 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
                 <p><span className="font-medium text-foreground">Date:</span> {format(new Date(selectedEmail.received_at), "MMM d, yyyy 'at' h:mm a")}</p>
               </div>
 
+              <div className="flex items-center gap-2 py-2">
+                <EmailClientAssign
+                  emailId={selectedEmail.id}
+                  clientId={selectedEmail.client_id || null}
+                  onClientChanged={(newClientId) => {
+                    setSelectedEmail({ ...selectedEmail, client_id: newClientId });
+                    setSyncedEmails((prev) =>
+                      prev.map((e) => e.id === selectedEmail.id ? { ...e, client_id: newClientId } : e)
+                    );
+                  }}
+                />
+              </div>
+
               {selectedEmail.client_id && (
                 <div className="py-2">
                   <EmailClientSnapshot clientId={selectedEmail.client_id} />
@@ -970,11 +991,11 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
                 {selectedEmail.body_html ? (
                   <div
                     className="prose prose-sm max-w-none text-sm py-3"
-                    dangerouslySetInnerHTML={{ __html: selectedEmail.body_html }}
+                    dangerouslySetInnerHTML={{ __html: decodeHtmlEntities(selectedEmail.body_html) }}
                   />
                 ) : (
                   <p className="text-sm py-3 whitespace-pre-wrap text-muted-foreground">
-                    {selectedEmail.body_preview || "No content available"}
+                    {selectedEmail.body_preview ? decodeHtmlEntities(selectedEmail.body_preview) : "No content available"}
                   </p>
                 )}
               </ScrollArea>
