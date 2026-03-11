@@ -455,11 +455,25 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
     "zillow", "redfin", "realtor.com", "trulia",
     // Education / Online learning
     "coursera", "udemy", "skillshare", "masterclass", "khan academy",
-    "duolingo", "brilliant",
+    "duolingo", "brilliant", "chegg", "quizlet", "studocu",
     // Gaming
     "playstation", "xbox", "nintendo", "steam", "epicgames", "roblox",
     // Charity / Nonprofits (not insurance-related)
     "change.org", "gofundme", "kickstarter", "indiegogo",
+    // Tax / Accounting marketing
+    "hrblock", "sendtax.hrblock", "turbotax", "intuit", "taxact", "taxslayer",
+    "jacksonhewitt", "libertytax",
+    // Investment / Brokerage marketing
+    "vanguard", "e-vanguard", "fidelity", "schwab", "etrade", "tdameritrade",
+    "merrilledge", "edwardjones",
+    // Jewelry / Fashion
+    "jared.com", "kay.com", "zales", "bluenile", "tiffany",
+    "pandora.net", "swarovski",
+    // Perplexity / AI assistants
+    "perplexity", "openai", "anthropic", "chatgpt",
+    // Miscellaneous marketing
+    "groupon", "retailmenot", "slickdeals", "honey",
+    "foreignpolicy.com", "morningbrew", "theskim",
   ];
 
   // ── Layer 2: Subject / content keyword patterns ──
