@@ -479,6 +479,106 @@ serve(async (req) => {
       });
     }
 
+    // ── Ingest email attachments for a client ──
+    if (action === "ingest-email") {
+      const { email_id, client_id } = body;
+      if (!email_id || !client_id) {
+        return new Response(JSON.stringify({ error: "Missing email_id or client_id" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Get the email
+      const { data: emailRow } = await adminClient
+        .from("synced_emails")
+        .select("id, external_id, connection_id, subject, from_name, from_address")
+        .eq("id", email_id)
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      if (!emailRow) {
+        return new Response(JSON.stringify({ error: "Email not found" }), {
+          status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Get attachments for this email
+      const { data: attachments } = await adminClient
+        .from("email_attachments")
+        .select("id, file_name, file_size, content_type, external_attachment_id")
+        .eq("email_id", email_id)
+        .eq("user_id", userId);
+
+      if (!attachments || attachments.length === 0) {
+        return new Response(JSON.stringify({ ingested: 0, message: "No attachments to ingest" }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Get the lead to find submission_id
+      const { data: lead } = await adminClient
+        .from("leads")
+        .select("id, submission_id")
+        .eq("id", client_id)
+        .maybeSingle();
+
+      // Filter for document-type attachments (PDF, DOCX, images)
+      const docExtensions = /\.(pdf|docx?|xlsx?|csv|png|jpe?g|tiff?)$/i;
+      const relevantAtts = attachments.filter((a: any) =>
+        docExtensions.test(a.file_name) ||
+        (a.content_type && (
+          a.content_type.includes("pdf") ||
+          a.content_type.includes("document") ||
+          a.content_type.includes("spreadsheet") ||
+          a.content_type.includes("image/")
+        ))
+      );
+
+      let ingested = 0;
+      for (const att of relevantAtts) {
+        // Check if already ingested
+        const { data: existing } = await adminClient
+          .from("client_documents")
+          .select("id")
+          .eq("user_id", userId)
+          .eq("lead_id", client_id)
+          .eq("file_name", att.file_name)
+          .maybeSingle();
+
+        if (existing) continue;
+
+        // Save as client document (reference to email attachment - no file download needed yet)
+        const { error: docErr } = await adminClient
+          .from("client_documents")
+          .insert({
+            user_id: userId,
+            lead_id: client_id,
+            submission_id: lead?.submission_id || null,
+            file_name: att.file_name,
+            file_url: `email-attachment://${att.id}`,
+            file_size: att.file_size || 0,
+            document_type: "other",
+          });
+
+        if (!docErr) ingested++;
+      }
+
+      if (ingested > 0) {
+        // Create a notification
+        await adminClient.from("notifications").insert({
+          user_id: userId,
+          type: "document",
+          title: `${ingested} document${ingested > 1 ? "s" : ""} from email`,
+          body: `Auto-ingested from: ${emailRow.from_name || emailRow.from_address} — ${emailRow.subject || "(no subject)"}`,
+          link: lead ? `/pipeline/${client_id}` : null,
+        });
+      }
+
+      return new Response(JSON.stringify({ ingested, total_attachments: attachments.length }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // ── Download attachment action ──
     if (action === "download-attachment") {
       const { attachment_id } = body;
