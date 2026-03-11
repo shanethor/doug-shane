@@ -1050,6 +1050,8 @@ export type Database = {
           id: string
           is_used: boolean
           lead_id: string | null
+          line_type: string | null
+          prefill_data: Json | null
           submission_id: string | null
           token: string
         }
@@ -1062,6 +1064,8 @@ export type Database = {
           id?: string
           is_used?: boolean
           lead_id?: string | null
+          line_type?: string | null
+          prefill_data?: Json | null
           submission_id?: string | null
           token?: string
         }
@@ -1074,6 +1078,8 @@ export type Database = {
           id?: string
           is_used?: boolean
           lead_id?: string | null
+          line_type?: string | null
+          prefill_data?: Json | null
           submission_id?: string | null
           token?: string
         }
