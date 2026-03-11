@@ -14,7 +14,7 @@ export default function EmailHub() {
   const [activeTab, setActiveTab] = useState("email");
   const [todayEvents, setTodayEvents] = useState<any[]>([]);
   const [recentEmails, setRecentEmails] = useState<any[]>([]);
-  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
+  
 
   useEffect(() => {
     if (!user) return;
