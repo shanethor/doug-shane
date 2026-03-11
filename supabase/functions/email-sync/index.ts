@@ -926,15 +926,34 @@ serve(async (req) => {
           .eq("id", leadId);
       }
 
-      // 4) Ingest attachments as client documents
+      // 4) Ingest attachments as client documents + extract data from PDFs/images
       const { data: atts } = await adminClient
         .from("email_attachments")
-        .select("id, file_name, file_size, content_type")
+        .select("id, file_name, file_size, content_type, external_attachment_id")
         .eq("email_id", email_id)
         .eq("user_id", userId);
 
+      // Get the email connection for downloading attachments
+      const { data: emailRowFull } = await adminClient
+        .from("synced_emails")
+        .select("external_id, connection_id")
+        .eq("id", email_id)
+        .maybeSingle();
+
+      let connForDownload: any = null;
+      let accessTokenForDownload: string | null = null;
+      if (emailRowFull) {
+        const { data: c } = await adminClient.from("email_connections").select("*").eq("id", emailRowFull.connection_id).maybeSingle();
+        if (c) {
+          connForDownload = c;
+          accessTokenForDownload = await getValidToken(c, adminClient);
+        }
+      }
+
       const docExts = /\.(pdf|docx?|xlsx?|csv|png|jpe?g|tiff?)$/i;
       let ingested = 0;
+      const extractableFiles: { base64: string; mimeType: string; fileName: string }[] = [];
+
       for (const att of (atts || [])) {
         const isDoc = docExts.test(att.file_name) ||
           (att.content_type && (att.content_type.includes("pdf") || att.content_type.includes("document") || att.content_type.includes("image/")));
@@ -960,9 +979,147 @@ serve(async (req) => {
           });
           ingested++;
         }
+
+        // Download the actual file for extraction (PDFs and images only)
+        const isExtractable = att.content_type && (
+          att.content_type.includes("pdf") || att.content_type.includes("image/")
+        );
+        if (isExtractable && connForDownload && accessTokenForDownload && emailRowFull) {
+          try {
+            let fileBytes: Uint8Array | null = null;
+            if (connForDownload.provider === "gmail") {
+              fileBytes = await fetchGmailAttachmentData(emailRowFull.external_id, att.external_attachment_id, accessTokenForDownload);
+            } else if (connForDownload.provider === "outlook") {
+              fileBytes = await fetchOutlookAttachmentData(emailRowFull.external_id, att.external_attachment_id, accessTokenForDownload);
+            }
+            if (fileBytes && fileBytes.length < 10 * 1024 * 1024) { // max 10MB per file
+              let b64 = "";
+              const chunkSize = 8192;
+              for (let i = 0; i < fileBytes.length; i += chunkSize) {
+                const chunk = fileBytes.subarray(i, i + chunkSize);
+                b64 += String.fromCharCode(...chunk);
+              }
+              b64 = btoa(b64);
+              extractableFiles.push({
+                base64: b64,
+                mimeType: att.content_type || "application/pdf",
+                fileName: att.file_name,
+              });
+            }
+          } catch (dlErr) {
+            console.error(`[email-sync] Failed to download attachment ${att.file_name} for extraction:`, dlErr);
+          }
+        }
       }
 
-      // 5) Generate intake link
+      // 4b) Run AI extraction on downloaded files
+      let extractedData: Record<string, any> = {};
+      let detectedLineType: string | null = null;
+
+      if (extractableFiles.length > 0) {
+        const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+        if (LOVABLE_API_KEY) {
+          try {
+            console.log(`[email-sync] Extracting data from ${extractableFiles.length} file(s)...`);
+
+            type ContentPart = { type: string; text?: string; image_url?: { url: string } };
+            const userContent: ContentPart[] = [{
+              type: "text",
+              text: "Extract all policy information from the attached insurance documents. Determine if this is personal lines (auto, home, renters, flood, boat, umbrella) or commercial lines (general liability, workers comp, commercial auto, commercial property, umbrella, professional liability, cyber). Return a JSON object with: line_type ('personal' or 'commercial'), business_name (if commercial), and all extracted fields."
+            }];
+
+            for (const file of extractableFiles) {
+              userContent.push({
+                type: "image_url",
+                image_url: { url: `data:${file.mimeType};base64,${file.base64}` },
+              });
+            }
+
+            const extractionPrompt = `You are an insurance document data extraction expert. Extract ALL information from these documents and return a JSON object.
+
+IMPORTANT: First determine if this is personal lines or commercial lines insurance.
+- Personal lines: auto, homeowners, renters, flood, boat, umbrella, personal articles
+- Commercial lines: general liability, workers comp, commercial auto, commercial property, BOP, professional liability, cyber, umbrella/excess
+
+Return this JSON structure:
+{
+  "line_type": "personal" or "commercial",
+  "business_name": "Business/Company name if commercial, empty if personal",
+  "applicant_name": "Full name of the insured person",
+  "applicant_email": "",
+  "applicant_phone": "",
+  "applicant_address": "Street address",
+  "applicant_city": "",
+  "applicant_state": "2-letter state code",
+  "applicant_zip": "",
+  "current_carrier": "Insurance company name",
+  "naic_code": "",
+  "policy_number": "",
+  "policy_effective_date": "YYYY-MM-DD",
+  "policy_expiration_date": "YYYY-MM-DD",
+  "coverage_types_detected": ["auto", "homeowners", "general_liability", etc.],
+  "drivers": [{ "name": "", "dob": "", "license_number": "", "license_state": "" }],
+  "vehicles": [{ "year": "", "make": "", "model": "", "vin": "", "usage": "" }],
+  "home": { "address": "", "year_built": "", "square_footage": "", "construction_type": "", "roof_type": "" },
+  "auto_coverage": { "bi_limit": "", "pd_limit": "", "comp_deductible": "", "collision_deductible": "" },
+  "commercial": {
+    "business_type": "", "ein": "", "employee_count": "", "annual_revenue": "",
+    "years_in_business": "", "industry": "", "dba": "",
+    "coverage_lines": []
+  }
+}
+
+Return ONLY valid JSON. No markdown fences, no explanation.`;
+
+            const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${LOVABLE_API_KEY}`,
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                model: "google/gemini-2.5-flash",
+                messages: [
+                  { role: "system", content: extractionPrompt },
+                  { role: "user", content: userContent },
+                ],
+              }),
+            });
+
+            if (aiResp.ok) {
+              const aiResult = await aiResp.json();
+              const rawText = aiResult.choices?.[0]?.message?.content || "{}";
+              const cleaned = rawText.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/i, "").trim();
+              try {
+                extractedData = JSON.parse(cleaned);
+                detectedLineType = extractedData.line_type || null;
+                console.log(`[email-sync] Extracted data — line_type: ${detectedLineType}, business: ${extractedData.business_name || "(none)"}`);
+              } catch (parseErr) {
+                console.error("[email-sync] AI extraction JSON parse error:", parseErr);
+              }
+            } else {
+              console.error("[email-sync] AI extraction failed:", aiResp.status, await aiResp.text());
+            }
+          } catch (extractErr) {
+            console.error("[email-sync] Extraction error:", extractErr);
+          }
+        }
+      }
+
+      // 4c) If commercial and we found a business name, update the lead
+      if (detectedLineType === "commercial" && extractedData.business_name && isNew) {
+        const bizName = extractedData.business_name;
+        await adminClient.from("leads").update({
+          account_name: bizName,
+          line_type: "commercial",
+          business_type: extractedData.commercial?.business_type || null,
+        }).eq("id", leadId);
+        console.log(`[email-sync] Updated lead ${leadId} account_name to "${bizName}"`);
+      } else if (detectedLineType === "personal" && isNew) {
+        await adminClient.from("leads").update({ line_type: "personal" }).eq("id", leadId);
+      }
+
+      // 5) Generate intake link with prefill data and line_type
       const { data: intakeLink, error: intakeErr } = await adminClient
         .from("intake_links")
         .insert({
@@ -971,7 +1128,9 @@ serve(async (req) => {
           submission_id: submissionId,
           customer_name: senderName,
           customer_email: senderAddr,
-        })
+          prefill_data: Object.keys(extractedData).length > 0 ? extractedData : {},
+          line_type: detectedLineType,
+        } as any)
         .select("token")
         .single();
 
