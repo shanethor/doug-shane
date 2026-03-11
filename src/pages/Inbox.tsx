@@ -757,6 +757,9 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
                       {preview && (
                         <p className="text-[11px] text-muted-foreground truncate flex-1">{preview}</p>
                       )}
+                      {email?.has_attachments && (
+                        <Paperclip className="h-3 w-3 text-muted-foreground shrink-0" />
+                      )}
                       {tags.length > 0 && (
                         <Badge variant="outline" className="text-[9px] px-1.5 py-0 shrink-0 h-4">
                           {tags[0].replace(/_/g, " ")}
