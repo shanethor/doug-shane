@@ -2,22 +2,21 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { AppLayout } from "@/components/AppLayout";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import {
   Bell, Mail, GitBranch, FileText, Check, CheckCheck, Sparkles,
-  Send, Loader2, Inbox as InboxIcon, MailOpen, RefreshCw, User, Reply, ArrowLeft, X, Search
+  Send, Loader2, Inbox as InboxIcon, MailOpen, RefreshCw, User, Reply, ArrowLeft, X, Search, SlidersHorizontal, Plus
 } from "lucide-react";
 import { formatDistanceToNow, format } from "date-fns";
 import { getAuthHeaders } from "@/lib/auth-fetch";
@@ -26,6 +25,7 @@ import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { EmailFilterChips } from "@/components/EmailFilterChips";
 import { EmailClientSnapshot } from "@/components/EmailClientSnapshot";
 import { fuzzyMatch } from "@/lib/fuzzy-match";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 type Notification = {
   id: string;
@@ -86,6 +86,7 @@ const TYPE_CONFIG: Record<string, { icon: React.ElementType; color: string; labe
 export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; embedded?: boolean } = {}) {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [syncedEmails, setSyncedEmails] = useState<SyncedEmail[]>([]);
   const [emailConnections, setEmailConnections] = useState<EmailConnection[]>([]);
@@ -95,6 +96,7 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
 
   // Insurance filter state
   const [activeTags, setActiveTags] = useState<string[]>([]);
+  const [filterSheetOpen, setFilterSheetOpen] = useState(false);
 
   // General search
   const [searchQuery, setSearchQuery] = useState("");
@@ -114,7 +116,7 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
   const [aiLoading, setAiLoading] = useState(false);
   const [sending, setSending] = useState(false);
   const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(null);
-  const [, setTick] = useState(0); // force re-render for relative time
+  const [, setTick] = useState(0);
 
   const updateLastSyncedFromEmails = useCallback((emails: SyncedEmail[]) => {
     const syncedTimes = emails
@@ -146,13 +148,11 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
     return emails;
   }, [user, updateLastSyncedFromEmails]);
 
-  // Tick every 30s to keep "Last synced X ago" fresh
   useEffect(() => {
     const t = setInterval(() => setTick((n) => n + 1), 30_000);
     return () => clearInterval(t);
   }, []);
 
-  // Auto-sync emails every 5 minutes — triggers edge function and refreshes list.
   const autoSyncEmails = useCallback(async () => {
     if (!user || emailConnections.length === 0) return;
     try {
@@ -222,7 +222,6 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
     return () => { supabase.removeChannel(channel); };
   }, [user]);
 
-  // 5-minute auto-sync interval (run once immediately, then repeat)
   useEffect(() => {
     if (!user || emailConnections.length === 0) return;
 
@@ -265,7 +264,6 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
 
     const conns = connRes.connections || [];
     setEmailConnections(conns);
-    // Default "Send from" to the user's connected account if available
     if (!sendViaInitialized && conns.length > 0) {
       setSendVia(conns[0].provider);
       setSendViaInitialized(true);
@@ -420,7 +418,6 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
   const applySearchFilter = (items: UnifiedItem[]) => {
     const q = searchQuery.trim();
     if (!q) return items;
-    // Use fuzzy matching on title + body
     const results = fuzzyMatch(q, items, (item) => {
       const parts = [item.title];
       if (item.body) parts.push(item.body);
@@ -539,14 +536,200 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
     return embedded ? loadingContent : <AppLayout>{loadingContent}</AppLayout>;
   }
 
-  const mainContent = (
-    <>
-      <div ref={pullRef} className="overflow-y-auto">
+  // ── Mobile-optimized compact layout ──
+  const mobileContent = (
+    <div ref={pullRef} className="flex flex-col h-full overflow-hidden">
+      <PullIndicator />
+
+      {/* Compact top bar: title + action icons */}
+      <div className="flex items-center justify-between px-1 py-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <h1 className="text-lg font-semibold truncate">{emailOnly ? "Email" : "Inbox"}</h1>
+          {unreadCount > 0 && (
+            <Badge variant="default" className="text-[10px] px-1.5 py-0 h-5">{unreadCount}</Badge>
+          )}
+        </div>
+        <div className="flex items-center gap-1">
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={syncEmails} disabled={syncing}>
+            <RefreshCw className={`h-4 w-4 ${syncing ? "animate-spin" : ""}`} />
+          </Button>
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={markAllRead} disabled={unreadCount === 0}>
+            <CheckCheck className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setComposeOpen(true)}>
+            <Plus className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+
+      {/* Sync status line */}
+      {lastSyncedAt && (
+        <p className="text-[10px] text-muted-foreground px-1 -mt-1 mb-1">
+          Synced {formatDistanceToNow(lastSyncedAt, { addSuffix: true })}
+        </p>
+      )}
+
+      {/* Search + filter row */}
+      <div className="flex items-center gap-2 px-1 mb-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+          <Input
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search emails…"
+            className="pl-8 h-8 text-xs bg-muted/50 border-0"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery("")}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          )}
+        </div>
+        <Sheet open={filterSheetOpen} onOpenChange={setFilterSheetOpen}>
+          <SheetTrigger asChild>
+            <Button variant="outline" size="icon" className="h-8 w-8 shrink-0 relative">
+              <SlidersHorizontal className="h-3.5 w-3.5" />
+              {activeTags.length > 0 && (
+                <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-[9px] text-primary-foreground flex items-center justify-center">
+                  {activeTags.length}
+                </span>
+              )}
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="bottom" className="rounded-t-2xl">
+            <SheetHeader>
+              <SheetTitle>Filters</SheetTitle>
+            </SheetHeader>
+            <div className="py-4 space-y-4">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">Categories</p>
+                <EmailFilterChips activeTags={activeTags} onTagsChange={setActiveTags} />
+              </div>
+              {activeTags.length > 0 && (
+                <Button variant="ghost" size="sm" className="text-xs" onClick={() => { setActiveTags([]); setFilterSheetOpen(false); }}>
+                  Clear all filters
+                </Button>
+              )}
+            </div>
+          </SheetContent>
+        </Sheet>
+      </div>
+
+      {/* Tiny pill toggle: All / Unread */}
+      <div className="flex items-center gap-1 px-1 mb-2">
+        {["all", "unread"].map((t) => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={`px-3 py-1 rounded-full text-[11px] font-medium transition-colors ${
+              tab === t
+                ? "bg-primary text-primary-foreground"
+                : "bg-muted text-muted-foreground"
+            }`}
+          >
+            {t === "all" ? "All" : `Unread${unreadCount > 0 ? ` (${unreadCount})` : ""}`}
+          </button>
+        ))}
+        {!emailOnly && (
+          <button
+            onClick={() => setTab("emails")}
+            className={`px-3 py-1 rounded-full text-[11px] font-medium transition-colors ${
+              tab === "emails"
+                ? "bg-primary text-primary-foreground"
+                : "bg-muted text-muted-foreground"
+            }`}
+          >
+            Emails
+          </button>
+        )}
+      </div>
+
+      {/* Email list — flat cells, maximum space */}
+      <ScrollArea className="flex-1 min-h-0">
+        {filtered.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+            <MailOpen className="h-8 w-8 mb-2 opacity-40" />
+            <p className="text-xs">
+              {tab === "unread" ? "All caught up" : tab === "emails" && emailConnections.length === 0
+                ? "No email connected yet"
+                : "No items yet"}
+            </p>
+            {tab === "emails" && emailConnections.length === 0 && (
+              <Button variant="link" size="sm" onClick={() => navigate("/settings")} className="mt-1 text-xs">
+                Connect Gmail or Outlook
+              </Button>
+            )}
+          </div>
+        ) : (
+          <div className="divide-y divide-border">
+            {filtered.map((item) => {
+              const email = item.kind === "email" ? (item.raw as SyncedEmail) : null;
+              const senderName = email ? (email.from_name || email.from_address.split("@")[0]) : "";
+              const subject = email ? email.subject : item.title;
+              const preview = email ? email.body_preview : item.body;
+              const tags = email?.tags || [];
+
+              return (
+                <div
+                  key={item.id}
+                  className={`flex items-start gap-2.5 px-2 py-2.5 active:bg-muted/70 transition-colors cursor-pointer ${
+                    !item.is_read ? "bg-primary/[0.03]" : ""
+                  }`}
+                  onClick={() => handleUnifiedClick(item)}
+                >
+                  {/* Unread dot */}
+                  <div className="w-2 pt-2 shrink-0">
+                    {!item.is_read && <div className="h-2 w-2 rounded-full bg-primary" />}
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    {/* Row 1: Sender (bold) + time */}
+                    <div className="flex items-center justify-between gap-2">
+                      <span className={`text-sm truncate ${!item.is_read ? "font-semibold text-foreground" : "text-foreground/80"}`}>
+                        {email ? senderName : item.label}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground shrink-0">
+                        {formatDistanceToNow(new Date(item.timestamp), { addSuffix: false })}
+                      </span>
+                    </div>
+
+                    {/* Row 2: Subject */}
+                    <p className={`text-xs truncate mt-0.5 ${!item.is_read ? "text-foreground" : "text-muted-foreground"}`}>
+                      {subject || "(no subject)"}
+                    </p>
+
+                    {/* Row 3: Preview + optional tag chip */}
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      {preview && (
+                        <p className="text-[11px] text-muted-foreground truncate flex-1">{preview}</p>
+                      )}
+                      {tags.length > 0 && (
+                        <Badge variant="outline" className="text-[9px] px-1.5 py-0 shrink-0 h-4">
+                          {tags[0].replace(/_/g, " ")}
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </ScrollArea>
+    </div>
+  );
+
+  // ── Desktop layout (unchanged) ──
+  const desktopContent = (
+    <div ref={pullRef} className="overflow-y-auto">
       <PullIndicator />
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div className="flex items-center gap-3">
-          <InboxIcon className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
-          <h1 className="text-xl sm:text-3xl font-semibold tracking-tight">{emailOnly ? "Email" : "Inbox"}</h1>
+          <InboxIcon className="h-6 w-6 text-primary" />
+          <h1 className="text-3xl font-semibold tracking-tight">{emailOnly ? "Email" : "Inbox"}</h1>
           {unreadCount > 0 && (
             <Badge variant="default" className="text-xs">{unreadCount} new</Badge>
           )}
@@ -559,151 +742,148 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={syncEmails} disabled={syncing} className="gap-1.5">
             <RefreshCw className={`h-3.5 w-3.5 ${syncing ? "animate-spin" : ""}`} />
-            <span className="hidden sm:inline">{syncing ? "Syncing…" : "Sync Mail"}</span>
+            {syncing ? "Syncing…" : "Sync Mail"}
           </Button>
           <Button variant="outline" size="sm" onClick={markAllRead} disabled={unreadCount === 0}>
-            <CheckCheck className="h-3.5 w-3.5 sm:mr-1.5" />
-            <span className="hidden sm:inline">Mark all read</span>
+            <CheckCheck className="h-3.5 w-3.5 mr-1.5" />
+            Mark all read
           </Button>
           <Button size="sm" onClick={() => setComposeOpen(true)} className="gap-1.5">
             <Sparkles className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Compose</span>
+            Compose
           </Button>
         </div>
       </div>
 
-      <Tabs value={tab} onValueChange={setTab}>
-        <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0 scrollbar-hide mb-4">
-          <TabsList className="inline-flex w-auto min-w-max">
-            <TabsTrigger value="all">All</TabsTrigger>
-            <TabsTrigger value="unread">Unread {unreadCount > 0 && `(${unreadCount})`}</TabsTrigger>
-            {!emailOnly && (
-              <>
-                <TabsTrigger value="emails" className="relative">
-                  <Mail className="h-3.5 w-3.5 mr-1" />
-                  Emails
-                  {(() => { const c = syncedEmails.filter(e => !e.is_read).length; return c > 0 ? <span className="absolute -top-1.5 -right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground px-1">{c}</span> : null; })()}
-                </TabsTrigger>
-                <TabsTrigger value="pipeline" className="relative">
-                  Pipeline
-                  {(() => { const c = notifications.filter(n => n.type === "pipeline" && !n.is_read).length; return c > 0 ? <span className="absolute -top-1.5 -right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground px-1">{c}</span> : null; })()}
-                </TabsTrigger>
-                <TabsTrigger value="loss_run" className="relative">
-                  Loss Runs
-                  {(() => { const c = notifications.filter(n => n.type === "loss_run" && !n.is_read).length; return c > 0 ? <span className="absolute -top-1.5 -right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground px-1">{c}</span> : null; })()}
-                </TabsTrigger>
-                <TabsTrigger value="intake" className="relative">
-                  Intake
-                  {(() => { const c = notifications.filter(n => n.type === "intake" && !n.is_read).length; return c > 0 ? <span className="absolute -top-1.5 -right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground px-1">{c}</span> : null; })()}
-                </TabsTrigger>
-                <TabsTrigger value="document" className="relative">
-                  Documents
-                  {(() => { const c = notifications.filter(n => n.type === "document" && !n.is_read).length; return c > 0 ? <span className="absolute -top-1.5 -right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground px-1">{c}</span> : null; })()}
-                </TabsTrigger>
-              </>
-            )}
-          </TabsList>
-        </div>
-
-        {/* Search bar */}
-        <div className="relative mb-3">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search emails by subject, sender, or content…"
-            className="pl-9 h-9 text-sm"
-          />
-          {searchQuery && (
+      {/* Desktop tabs */}
+      <div className="overflow-x-auto scrollbar-hide mb-4">
+        <div className="inline-flex h-9 items-center justify-center rounded-lg bg-muted p-1 text-muted-foreground">
+          {[
+            { value: "all", label: "All" },
+            { value: "unread", label: `Unread${unreadCount > 0 ? ` (${unreadCount})` : ""}` },
+            ...(!emailOnly ? [
+              { value: "emails", label: "Emails" },
+              { value: "pipeline", label: "Pipeline" },
+              { value: "loss_run", label: "Loss Runs" },
+              { value: "intake", label: "Intake" },
+              { value: "document", label: "Documents" },
+            ] : []),
+          ].map((t) => (
             <button
-              onClick={() => setSearchQuery("")}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              key={t.value}
+              onClick={() => setTab(t.value)}
+              className={`inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1 text-sm font-medium transition-all ${
+                tab === t.value
+                  ? "bg-background text-foreground shadow"
+                  : "hover:bg-background/50"
+              }`}
             >
-              <X className="h-3.5 w-3.5" />
+              {t.label}
             </button>
-          )}
+          ))}
         </div>
+      </div>
 
-        {/* Insurance filter chips */}
-        <div className="mb-3 overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0 scrollbar-hide">
-          <EmailFilterChips
-            activeTags={activeTags}
-            onTagsChange={setActiveTags}
-          />
-        </div>
+      {/* Search bar */}
+      <div className="relative mb-3">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search emails by subject, sender, or content…"
+          className="pl-9 h-9 text-sm"
+        />
+        {searchQuery && (
+          <button
+            onClick={() => setSearchQuery("")}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        )}
+      </div>
 
-        <TabsContent value={tab}>
-          <ScrollArea className="h-[calc(100vh-280px)]">
-            {filtered.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
-                <MailOpen className="h-10 w-10 mb-3 opacity-40" />
-                <p className="text-sm">
-                  {tab === "unread" ? "All caught up" : tab === "emails" && emailConnections.length === 0
-                    ? "No email connected yet"
-                    : "No items yet"}
-                </p>
-                {tab === "emails" && emailConnections.length === 0 && (
-                  <Button variant="link" size="sm" onClick={() => navigate("/settings")} className="mt-2">
-                    Connect Gmail or Outlook in Settings
-                  </Button>
-                )}
-              </div>
-            ) : (
-              <div className="space-y-1">
-                {filtered.map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <Card
-                      key={item.id}
-                      className={`cursor-pointer hover-lift transition-smooth ${!item.is_read ? "border-l-2 border-l-primary bg-primary/[0.02]" : "opacity-75"}`}
-                      onClick={() => handleUnifiedClick(item)}
-                    >
-                      <CardContent className="flex items-start gap-3 py-3 px-4">
-                        <div className={`mt-0.5 shrink-0 ${item.iconColor}`}>
-                          <Icon className="h-4 w-4" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <p className={`text-sm truncate ${!item.is_read ? "font-medium" : ""}`}>{item.title}</p>
-                            <Badge variant="outline" className="text-[10px] shrink-0">{item.label}</Badge>
-                            {/* Client pill on email rows */}
-                            {item.kind === "email" && (() => {
-                              const email = item.raw as SyncedEmail;
-                              return email.client_id ? (
-                                <Badge variant="secondary" className="text-[10px] shrink-0 gap-0.5">
-                                  <User className="h-2.5 w-2.5" />
-                                  Client
-                                </Badge>
-                              ) : (
-                                <Badge variant="outline" className="text-[10px] shrink-0 text-muted-foreground">
-                                  Unassigned
-                                </Badge>
-                              );
-                            })()}
-                          </div>
-                          {item.body && <p className="text-xs text-muted-foreground truncate mt-0.5">{item.body}</p>}
-                          {/* Tag pills */}
-                          {item.kind === "email" && ((item.raw as SyncedEmail).tags || []).length > 0 && (
-                            <div className="flex gap-1 mt-1">
-                              {((item.raw as SyncedEmail).tags || []).map((tag) => (
-                                <Badge key={tag} variant="outline" className="text-[9px] px-1.5 py-0">{tag.replace(/_/g, " ")}</Badge>
-                              ))}
-                            </div>
-                          )}
-                          <span className="text-[10px] text-muted-foreground mt-1 block">
-                            {formatDistanceToNow(new Date(item.timestamp), { addSuffix: true })}
-                          </span>
-                        </div>
-                        {!item.is_read && <div className="h-2 w-2 rounded-full bg-primary shrink-0 mt-1.5" />}
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </div>
+      {/* Insurance filter chips (inline on desktop) */}
+      <div className="mb-3">
+        <EmailFilterChips activeTags={activeTags} onTagsChange={setActiveTags} />
+      </div>
+
+      {/* Email list */}
+      <ScrollArea className="h-[calc(100vh-280px)]">
+        {filtered.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
+            <MailOpen className="h-10 w-10 mb-3 opacity-40" />
+            <p className="text-sm">
+              {tab === "unread" ? "All caught up" : tab === "emails" && emailConnections.length === 0
+                ? "No email connected yet"
+                : "No items yet"}
+            </p>
+            {tab === "emails" && emailConnections.length === 0 && (
+              <Button variant="link" size="sm" onClick={() => navigate("/settings")} className="mt-2">
+                Connect Gmail or Outlook in Settings
+              </Button>
             )}
-          </ScrollArea>
-        </TabsContent>
-      </Tabs>
+          </div>
+        ) : (
+          <div className="space-y-1">
+            {filtered.map((item) => {
+              const Icon = item.icon;
+              return (
+                <div
+                  key={item.id}
+                  className={`cursor-pointer rounded-lg border px-4 py-3 transition-colors hover:bg-muted/50 ${
+                    !item.is_read ? "border-l-2 border-l-primary bg-primary/[0.02]" : "opacity-75"
+                  }`}
+                  onClick={() => handleUnifiedClick(item)}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className={`mt-0.5 shrink-0 ${item.iconColor}`}>
+                      <Icon className="h-4 w-4" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className={`text-sm truncate ${!item.is_read ? "font-medium" : ""}`}>{item.title}</p>
+                        <Badge variant="outline" className="text-[10px] shrink-0">{item.label}</Badge>
+                        {item.kind === "email" && (() => {
+                          const email = item.raw as SyncedEmail;
+                          return email.client_id ? (
+                            <Badge variant="secondary" className="text-[10px] shrink-0 gap-0.5">
+                              <User className="h-2.5 w-2.5" />
+                              Client
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-[10px] shrink-0 text-muted-foreground">
+                              Unassigned
+                            </Badge>
+                          );
+                        })()}
+                      </div>
+                      {item.body && <p className="text-xs text-muted-foreground truncate mt-0.5">{item.body}</p>}
+                      {item.kind === "email" && ((item.raw as SyncedEmail).tags || []).length > 0 && (
+                        <div className="flex gap-1 mt-1">
+                          {((item.raw as SyncedEmail).tags || []).map((tag) => (
+                            <Badge key={tag} variant="outline" className="text-[9px] px-1.5 py-0">{tag.replace(/_/g, " ")}</Badge>
+                          ))}
+                        </div>
+                      )}
+                      <span className="text-[10px] text-muted-foreground mt-1 block">
+                        {formatDistanceToNow(new Date(item.timestamp), { addSuffix: true })}
+                      </span>
+                    </div>
+                    {!item.is_read && <div className="h-2 w-2 rounded-full bg-primary shrink-0 mt-1.5" />}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </ScrollArea>
+    </div>
+  );
+
+  const mainContent = (
+    <>
+      {isMobile ? mobileContent : desktopContent}
 
       {/* Email Detail Dialog */}
       <Dialog open={!!selectedEmail} onOpenChange={(open) => { if (!open) setSelectedEmail(null); }}>
@@ -723,7 +903,6 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
                 <p><span className="font-medium text-foreground">Date:</span> {format(new Date(selectedEmail.received_at), "MMM d, yyyy 'at' h:mm a")}</p>
               </div>
 
-              {/* Client snapshot panel */}
               {selectedEmail.client_id && (
                 <div className="py-2">
                   <EmailClientSnapshot clientId={selectedEmail.client_id} />
@@ -847,7 +1026,6 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
           </div>
         </DialogContent>
       </Dialog>
-      </div>
     </>
   );
   return embedded ? mainContent : <AppLayout>{mainContent}</AppLayout>;
