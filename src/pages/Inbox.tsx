@@ -558,7 +558,16 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
     return results.map((r) => r.item);
   };
 
-  const filtered = applySearchFilter(applyInsuranceFilters(tabFiltered));
+  // Apply non-insurance filter
+  const applyNonInsuranceFilter = (items: UnifiedItem[]) => {
+    if (!hideNonInsurance) return items;
+    return items.filter((u) => {
+      if (u.kind !== "email") return true;
+      return !isNonInsuranceEmail(u.raw as SyncedEmail);
+    });
+  };
+
+  const filtered = applySearchFilter(applyNonInsuranceFilter(applyInsuranceFilters(tabFiltered)));
 
   const unreadCount = baseUnified.filter((u) => !u.is_read).length;
 
