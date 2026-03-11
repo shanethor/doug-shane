@@ -48,6 +48,7 @@ export default function Settings() {
   const [agencyDisplayName, setAgencyDisplayName] = useState<string | null>(null);
   const [navTabCount, setNavTabCount] = useState(navConfig.tabCount);
   const [navSelectedIds, setNavSelectedIds] = useState<string[]>(navConfig.selectedTabIds);
+  const [intakeAlias, setIntakeAlias] = useState<string | null>(null);
   const [timezone, setTimezone] = useState(Intl.DateTimeFormat().resolvedOptions().timeZone);
   const [darkMode, setDarkMode] = useState(() => document.documentElement.classList.contains("dark"));
 
