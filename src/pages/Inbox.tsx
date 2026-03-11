@@ -386,9 +386,53 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
     if (n.link) navigate(n.link);
   };
 
+  // Non-insurance domain/keyword heuristics
+  const NON_INSURANCE_DOMAINS = [
+    "amazon", "ebay", "walmart", "target", "bestbuy", "etsy", "shopify",
+    "facebook", "twitter", "instagram", "linkedin", "tiktok", "pinterest", "reddit",
+    "youtube", "netflix", "spotify", "hulu", "disney", "apple.com", "google.com",
+    "uber", "lyft", "doordash", "grubhub", "postmates",
+    "github", "stackoverflow", "medium", "substack",
+    "noreply", "no-reply", "mailer-daemon", "newsletter",
+    "promotions", "marketing", "promo",
+    "facebookmail", "x.com",
+  ];
+  const NON_INSURANCE_SUBJECTS = [
+    "your order", "shipped", "delivery", "tracking", "receipt",
+    "your package", "order confirmation", "shipment",
+    "unsubscribe", "weekly digest", "daily digest",
+    "password reset", "verify your email", "confirm your",
+    "sale", "discount", "coupon", "deal of", "flash sale",
+    "your subscription", "free trial",
+    "you might", "recommended for you", "trending",
+    "invitation to connect", "endorsed you", "new follower",
+  ];
+
+  const isNonInsuranceEmail = useCallback((email: SyncedEmail): boolean => {
+    const fromLower = (email.from_address || "").toLowerCase();
+    const subjectLower = (email.subject || "").toLowerCase();
+    const tags = email.tags || [];
+    // If it has an insurance tag, always keep it
+    if (tags.length > 0) return false;
+    if (NON_INSURANCE_DOMAINS.some((d) => fromLower.includes(d))) return true;
+    if (NON_INSURANCE_SUBJECTS.some((s) => subjectLower.includes(s))) return true;
+    return false;
+  }, []);
+
+  /** Strip image src attributes from HTML, replacing with placeholder */
+  const stripImages = (html: string): string => {
+    return html.replace(/<img\s([^>]*?)src\s*=\s*["']([^"']+)["']/gi, '<img $1src="data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'16\' height=\'16\'%3E%3C/svg%3E" data-original-src="$2"');
+  };
+
+  /** Restore original src from data-original-src */
+  const restoreImages = (html: string): string => {
+    return html.replace(/src="data:image\/svg\+xml[^"]*"\s*data-original-src="([^"]+)"/gi, 'src="$1"');
+  };
+
   const openEmailDetail = async (email: SyncedEmail) => {
     setSelectedEmail(email);
     setSelectedEmailAttachments([]);
+    setImagesLoaded(false);
     markEmailRead(email);
     if (email.has_attachments) {
       fetchAttachmentsForEmail(email.id);
