@@ -39,6 +39,13 @@ type Notification = {
   created_at: string;
 };
 
+type EmailAttachment = {
+  id: string;
+  file_name: string;
+  file_size: number | null;
+  content_type: string | null;
+};
+
 type SyncedEmail = {
   id: string;
   from_address: string;
@@ -53,6 +60,7 @@ type SyncedEmail = {
   tags?: string[];
   client_id?: string | null;
   client_link_source?: string | null;
+  has_attachments?: boolean;
 };
 
 type EmailConnection = {
