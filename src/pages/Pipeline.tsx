@@ -299,7 +299,7 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
       targetRevenue: targetPremium * 0.12,
     });
 
-    setAllPoliciesData(allPolicies.map((p: any) => ({ lead_id: p.lead_id, annual_premium: Number(p.annual_premium || 0), status: p.status, created_at: p.created_at })));
+    setAllPoliciesData(allPolicies.map((p: any) => ({ lead_id: p.lead_id, annual_premium: Number(p.annual_premium || 0), status: p.status, effective_date: p.effective_date })));
     
     // Build per-lead premium map for sold cards
     const premiumMap: Record<string, number[]> = {};

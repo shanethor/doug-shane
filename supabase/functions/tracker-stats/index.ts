@@ -60,9 +60,9 @@ Deno.serve(async (req) => {
 
     let policiesQuery = supabase
       .from("policies")
-      .select("lead_id, annual_premium, revenue, status, created_at")
+      .select("lead_id, annual_premium, revenue, status, effective_date")
       .eq("producer_user_id", uid);
-    if (cutoff) policiesQuery = policiesQuery.gte("created_at", cutoff);
+    if (cutoff) policiesQuery = policiesQuery.gte("effective_date", cutoff);
 
     const [leadsRes, policiesRes, profileRes, authUserRes] = await Promise.all([
       leadsQuery,

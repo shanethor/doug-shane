@@ -126,7 +126,7 @@ export function PipelineAnalytics({
       ? leads.filter((l) => new Date(l.created_at) >= cutoff)
       : leads;
     const filteredPolicies = cutoff
-      ? policies.filter((p) => p.created_at ? new Date(p.created_at) >= cutoff : true)
+      ? policies.filter((p) => p.effective_date ? new Date(p.effective_date) >= cutoff : true)
       : policies;
     const filteredAudit = cutoff
       ? auditLog.filter((e) => new Date(e.created_at) >= cutoff)
