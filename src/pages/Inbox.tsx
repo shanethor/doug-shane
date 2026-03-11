@@ -1240,10 +1240,10 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
                 </div>
               )}
 
-              <ScrollArea className="flex-1 min-h-0">
+              <ScrollArea className="flex-1 min-h-0" style={{ maxHeight: showFullHtml ? "60vh" : undefined }}>
                 {/* Default: show plain-text preview. "View full email" loads the rich HTML. */}
                 {showFullHtml && selectedEmail.body_html ? (
-                  <div className="py-3">
+                  <div className="py-3 overflow-x-auto">
                     <div
                       className="prose prose-sm max-w-none text-sm [&_img]:max-w-full [&_a]:text-primary [&_a]:underline"
                       dangerouslySetInnerHTML={{ __html: selectedEmail.body_html }}
