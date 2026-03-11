@@ -968,6 +968,19 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
                 <p><span className="font-medium text-foreground">Date:</span> {format(new Date(selectedEmail.received_at), "MMM d, yyyy 'at' h:mm a")}</p>
               </div>
 
+              <div className="flex items-center gap-2 py-2">
+                <EmailClientAssign
+                  emailId={selectedEmail.id}
+                  clientId={selectedEmail.client_id || null}
+                  onClientChanged={(newClientId) => {
+                    setSelectedEmail({ ...selectedEmail, client_id: newClientId });
+                    setSyncedEmails((prev) =>
+                      prev.map((e) => e.id === selectedEmail.id ? { ...e, client_id: newClientId } : e)
+                    );
+                  }}
+                />
+              </div>
+
               {selectedEmail.client_id && (
                 <div className="py-2">
                   <EmailClientSnapshot clientId={selectedEmail.client_id} />
