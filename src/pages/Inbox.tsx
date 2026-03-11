@@ -973,6 +973,34 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
                 )}
               </ScrollArea>
 
+              {/* Attachments section */}
+              {selectedEmailAttachments.length > 0 && (
+                <div className="border-t pt-3">
+                  <p className="text-xs font-medium text-foreground mb-2 flex items-center gap-1.5">
+                    <Paperclip className="h-3.5 w-3.5" />
+                    {selectedEmailAttachments.length} Attachment{selectedEmailAttachments.length > 1 ? "s" : ""}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedEmailAttachments.map((att) => (
+                      <button
+                        key={att.id}
+                        onClick={() => downloadAttachment(att)}
+                        disabled={downloadingAttachment === att.id}
+                        className="flex items-center gap-2 rounded-lg border bg-muted/50 px-3 py-2 text-xs hover:bg-muted transition-colors max-w-[200px]"
+                      >
+                        <FileText className="h-3.5 w-3.5 text-primary shrink-0" />
+                        <span className="truncate">{att.file_name}</span>
+                        {downloadingAttachment === att.id ? (
+                          <Loader2 className="h-3 w-3 animate-spin shrink-0" />
+                        ) : (
+                          <Download className="h-3 w-3 text-muted-foreground shrink-0" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div className="flex justify-end gap-2 pt-3 border-t">
                 <Button variant="outline" size="sm" onClick={() => setSelectedEmail(null)}>
                   Close
