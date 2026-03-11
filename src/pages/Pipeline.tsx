@@ -813,7 +813,7 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-6">
         <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
           <div>
-            <h1 className="text-2xl sm:text-4xl">Pipeline</h1>
+            <h1 className="text-2xl sm:text-4xl hidden md:block">Pipeline</h1>
             <p className="text-muted-foreground font-sans text-xs sm:text-sm mt-1">
               {filtered.length} lead{filtered.length !== 1 ? "s" : ""} — {typeof window !== "undefined" && window.innerWidth < 768 ? "tap to manage" : "drag between stages to manage your pipeline"}.
             </p>
