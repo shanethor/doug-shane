@@ -77,7 +77,7 @@ export default function Settings() {
     if (!user) return;
     supabase
       .from("profiles")
-      .select("form_defaults, full_name, agency_name, agency_id, phone, from_email, ai_provider, openai_api_key_encrypted")
+      .select("form_defaults, full_name, agency_name, agency_id, phone, from_email, ai_provider, openai_api_key_encrypted, intake_email_alias")
       .eq("user_id", user.id)
       .then(async ({ data }) => {
         if (data?.[0]) {
@@ -94,13 +94,31 @@ export default function Settings() {
           setOpenaiKey((data[0] as any).openai_api_key_encrypted || "");
           if ((data[0] as any).timezone) setTimezone((data[0] as any).timezone);
 
+          // Handle intake email alias
+          const existingAlias = (data[0] as any).intake_email_alias;
+          if (existingAlias) {
+            setIntakeAlias(existingAlias);
+          } else if (data[0].full_name) {
+            // Auto-generate alias from full name
+            const alias = data[0].full_name
+              .toLowerCase()
+              .replace(/[^a-z0-9\s-]/g, "")
+              .trim()
+              .replace(/\s+/g, "-") + "-intake@buildingaura.site";
+            // Save it
+            await supabase
+              .from("profiles")
+              .update({ intake_email_alias: alias } as any)
+              .eq("user_id", user.id);
+            setIntakeAlias(alias);
+          }
+
           // Resolve agency name from agencies table
           const agencyId = (data[0] as any).agency_id;
           if (agencyId) {
             const { data: agencyData } = await supabase.from("agencies").select("name").eq("id", agencyId).maybeSingle();
             if (agencyData) {
               setAgencyDisplayName(agencyData.name);
-              // Also set in values so forms auto-fill correctly
               merged.agency_name = agencyData.name;
               setValues({ ...merged });
             }
