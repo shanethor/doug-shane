@@ -1081,10 +1081,25 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
 
               <ScrollArea className="flex-1 min-h-0">
                 {selectedEmail.body_html ? (
-                  <div
-                    className="prose prose-sm max-w-none text-sm py-3 [&_img]:max-w-full [&_a]:text-primary [&_a]:underline"
-                    dangerouslySetInnerHTML={{ __html: selectedEmail.body_html }}
-                  />
+                  <div className="py-3">
+                    {!imagesLoaded && selectedEmail.body_html.includes("<img") && (
+                      <button
+                        onClick={() => setImagesLoaded(true)}
+                        className="mb-3 flex items-center gap-1.5 text-xs text-primary hover:underline"
+                      >
+                        <Mail className="h-3 w-3" />
+                        Load images
+                      </button>
+                    )}
+                    <div
+                      className="prose prose-sm max-w-none text-sm [&_img]:max-w-full [&_a]:text-primary [&_a]:underline"
+                      dangerouslySetInnerHTML={{
+                        __html: imagesLoaded
+                          ? selectedEmail.body_html
+                          : stripImages(selectedEmail.body_html),
+                      }}
+                    />
+                  </div>
                 ) : selectedEmail.body_preview ? (
                   <div className="flex flex-col gap-2 py-3">
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
