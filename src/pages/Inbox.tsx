@@ -1269,7 +1269,6 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
                     )}
                   </div>
                 )}
-                )}
               </ScrollArea>
 
               {/* Attachments section */}
