@@ -41,11 +41,36 @@ import BetaTodos from "./pages/BetaTodos";
 import BetaVoice from "./pages/BetaVoice";
 import BetaVideo from "./pages/BetaVideo";
 import { Navigate } from "react-router-dom";
+import { useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+
 const queryClient = new QueryClient();
+
+/** Syncs dark-mode preference from the DB once the user is authenticated */
+function DarkModeSync() {
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (!session?.user) return;
+      const { data } = await supabase
+        .from("profiles")
+        .select("dark_mode")
+        .eq("user_id", session.user.id)
+        .maybeSingle();
+      if (data) {
+        const dark = !!(data as any).dark_mode;
+        document.documentElement.classList.toggle("dark", dark);
+        localStorage.setItem("aura-dark-mode", dark ? "true" : "false");
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+  return null;
+}
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
+      <DarkModeSync />
       <Toaster />
       <Sonner />
       <BrowserRouter>

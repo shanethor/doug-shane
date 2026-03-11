@@ -77,7 +77,7 @@ export default function Settings() {
     if (!user) return;
     supabase
       .from("profiles")
-      .select("form_defaults, full_name, agency_name, agency_id, phone, from_email, ai_provider, openai_api_key_encrypted, intake_email_alias")
+      .select("form_defaults, full_name, agency_name, agency_id, phone, from_email, ai_provider, openai_api_key_encrypted, intake_email_alias, dark_mode")
       .eq("user_id", user.id)
       .then(async ({ data }) => {
         if (data?.[0]) {
@@ -93,6 +93,11 @@ export default function Settings() {
           setAiProvider((data[0] as any).ai_provider || "lovable");
           setOpenaiKey((data[0] as any).openai_api_key_encrypted || "");
           if ((data[0] as any).timezone) setTimezone((data[0] as any).timezone);
+          // Sync dark mode from DB
+          const dbDark = !!(data[0] as any).dark_mode;
+          setDarkMode(dbDark);
+          document.documentElement.classList.toggle("dark", dbDark);
+          localStorage.setItem("aura-dark-mode", dbDark ? "true" : "false");
 
           // Handle intake email alias
           const existingAlias = (data[0] as any).intake_email_alias;
@@ -279,10 +284,13 @@ export default function Settings() {
             </div>
             <Switch
               checked={darkMode}
-              onCheckedChange={(checked) => {
+              onCheckedChange={async (checked) => {
                 setDarkMode(checked);
                 document.documentElement.classList.toggle("dark", checked);
                 localStorage.setItem("aura-dark-mode", checked ? "true" : "false");
+                if (user) {
+                  await supabase.from("profiles").update({ dark_mode: checked } as any).eq("user_id", user.id);
+                }
               }}
             />
           </div>
