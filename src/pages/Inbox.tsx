@@ -1021,7 +1021,8 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
                     ))}
                   </div>
                 </div>
-              )}
+              ) : null;
+              })()}
 
               <div className="flex justify-end gap-2 pt-3 border-t">
                 <Button variant="outline" size="sm" onClick={() => setSelectedEmail(null)}>
