@@ -988,14 +988,22 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
               </ScrollArea>
 
               {/* Attachments section */}
-              {selectedEmailAttachments.length > 0 && (
+              {(() => {
+                // Deduplicate attachments by file_name — keep only the first occurrence
+                const seen = new Set<string>();
+                const uniqueAttachments = selectedEmailAttachments.filter((att) => {
+                  if (seen.has(att.file_name)) return false;
+                  seen.add(att.file_name);
+                  return true;
+                });
+                return uniqueAttachments.length > 0 ? (
                 <div className="border-t pt-3">
                   <p className="text-xs font-medium text-foreground mb-2 flex items-center gap-1.5">
                     <Paperclip className="h-3.5 w-3.5" />
-                    {selectedEmailAttachments.length} Attachment{selectedEmailAttachments.length > 1 ? "s" : ""}
+                    {uniqueAttachments.length} Attachment{uniqueAttachments.length > 1 ? "s" : ""}
                   </p>
                   <div className="flex flex-wrap gap-2">
-                    {selectedEmailAttachments.map((att) => (
+                    {uniqueAttachments.map((att) => (
                       <button
                         key={att.id}
                         onClick={() => downloadAttachment(att)}
@@ -1013,7 +1021,8 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
                     ))}
                   </div>
                 </div>
-              )}
+              ) : null;
+              })()}
 
               <div className="flex justify-end gap-2 pt-3 border-t">
                 <Button variant="outline" size="sm" onClick={() => setSelectedEmail(null)}>

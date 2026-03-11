@@ -2,9 +2,10 @@ import { useState, useEffect } from "react";
 import { AppLayout } from "@/components/AppLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
-import { Mail, CalendarDays, Clock } from "lucide-react";
+import { Mail, CalendarDays, Clock, Users } from "lucide-react";
 import Inbox from "./Inbox";
 import Calendar from "./Calendar";
+import { ClientEmailFolders } from "@/components/ClientEmailFolders";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { format, parseISO, startOfDay } from "date-fns";
@@ -14,7 +15,7 @@ export default function EmailHub() {
   const [activeTab, setActiveTab] = useState("email");
   const [todayEvents, setTodayEvents] = useState<any[]>([]);
   const [recentEmails, setRecentEmails] = useState<any[]>([]);
-  
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -43,12 +44,6 @@ export default function EmailHub() {
 
   return (
     <AppLayout>
-      {/* Compact segmented control on mobile, standard header on desktop */}
-      <div className="flex items-center gap-3 mb-2 md:mb-6">
-        <Mail className="h-5 w-5 md:h-6 md:w-6 text-primary hidden md:block" />
-        <h1 className="text-lg md:text-3xl font-semibold tracking-tight hidden md:block">Email</h1>
-      </div>
-
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="mb-2 md:mb-4 h-8 md:h-9">
           <TabsTrigger value="email" className="gap-1.5 text-xs md:text-sm px-3 md:px-4">
@@ -58,6 +53,10 @@ export default function EmailHub() {
           <TabsTrigger value="calendar" className="gap-1.5 text-xs md:text-sm px-3 md:px-4">
             <CalendarDays className="h-3 w-3 md:h-3.5 md:w-3.5" />
             Calendar
+          </TabsTrigger>
+          <TabsTrigger value="clients" className="gap-1.5 text-xs md:text-sm px-3 md:px-4">
+            <Users className="h-3 w-3 md:h-3.5 md:w-3.5" />
+            Clients
           </TabsTrigger>
         </TabsList>
 
@@ -94,7 +93,6 @@ export default function EmailHub() {
           </div>
         </TabsContent>
 
-
         <TabsContent value="calendar">
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-4 overflow-hidden">
             <div className="min-w-0 overflow-hidden">
@@ -125,6 +123,13 @@ export default function EmailHub() {
               </Card>
             </div>
           </div>
+        </TabsContent>
+
+        <TabsContent value="clients">
+          <ClientEmailFolders
+            onSelectClient={setSelectedClientId}
+            selectedClientId={selectedClientId}
+          />
         </TabsContent>
       </Tabs>
     </AppLayout>
