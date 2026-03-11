@@ -404,6 +404,122 @@ export default function IntakeForm() {
       if (iData.is_used || new Date(iData.expires_at) < new Date()) { setExpired(true); setLoading(false); return; }
       if (iData.customer_name) setCommercialForm(f => ({ ...f, customer_name: iData.customer_name }));
       if (iData.customer_email) setCommercialForm(f => ({ ...f, customer_email: iData.customer_email }));
+
+      // Apply prefill data from AI extraction
+      const prefill = iData.prefill_data as Record<string, any> | null;
+      if (prefill && typeof prefill === "object" && Object.keys(prefill).length > 0) {
+        // Determine line type and auto-set it
+        const lt = iData.line_type || prefill.line_type;
+        if (lt === "personal" || lt === "commercial") {
+          setIntakeType(lt);
+        }
+
+        // Prefill personal fields
+        if (prefill.applicant_name) setApplicantName(prefill.applicant_name);
+        if (prefill.applicant_email) setApplicantEmail(prefill.applicant_email);
+        if (prefill.applicant_phone) setApplicantPhone(prefill.applicant_phone);
+        if (prefill.applicant_address) setApplicantAddress(prefill.applicant_address);
+        if (prefill.applicant_city) setApplicantCity(prefill.applicant_city);
+        if (prefill.applicant_state) setApplicantState(prefill.applicant_state);
+        if (prefill.applicant_zip) setApplicantZip(prefill.applicant_zip);
+
+        // Personal: auto-enable coverage types
+        const coverages = prefill.coverage_types_detected || [];
+        if (coverages.includes("auto")) setEnableAuto(true);
+        if (coverages.includes("homeowners") || coverages.includes("home")) setEnableHome(true);
+        if (coverages.includes("renters")) setEnableRenters(true);
+        if (coverages.includes("flood")) setEnableFlood(true);
+        if (coverages.includes("boat")) setEnableBoat(true);
+        if (coverages.includes("umbrella")) setEnableUmbrella(true);
+
+        // Personal: prefill drivers
+        if (prefill.drivers?.length > 0) {
+          setDrivers(prefill.drivers.map((d: any) => ({
+            ...emptyDriver(),
+            name: d.name || "",
+            dob: d.dob || "",
+            license_number: d.license_number || "",
+            license_state: d.license_state || "",
+          })));
+        }
+
+        // Personal: prefill vehicles
+        if (prefill.vehicles?.length > 0) {
+          setVehicles(prefill.vehicles.map((v: any) => ({
+            ...emptyVehicle(),
+            year: v.year || "",
+            make: v.make || "",
+            model: v.model || "",
+            vin: v.vin || "",
+            usage: v.usage || "",
+            garaging_zip: v.garaging_zip || "",
+          })));
+        }
+
+        // Personal: prefill auto coverage
+        if (prefill.auto_coverage) {
+          const ac = prefill.auto_coverage;
+          setAutoCoverage(prev => ({
+            ...prev,
+            bi_limit: ac.bi_limit || prev.bi_limit,
+            pd_limit: ac.pd_limit || prev.pd_limit,
+            comp_deductible: ac.comp_deductible || prev.comp_deductible,
+            collision_deductible: ac.collision_deductible || prev.collision_deductible,
+            current_carrier: ac.current_carrier || prefill.current_carrier || prev.current_carrier,
+            policy_expiration: ac.policy_expiration || prefill.policy_expiration_date || prev.policy_expiration,
+          }));
+          if (ac.current_carrier || prefill.current_carrier) setIsCurrentlyInsured("yes");
+        }
+
+        // Personal: prefill home
+        if (prefill.home && (prefill.home.address || prefill.home.year_built)) {
+          setHomes([{
+            ...emptyHome(),
+            address: prefill.home.address || "",
+            city: prefill.home.city || "",
+            state: prefill.home.state || "",
+            zip: prefill.home.zip || "",
+            year_built: prefill.home.year_built || "",
+            square_footage: prefill.home.square_footage || "",
+            construction_type: prefill.home.construction_type || "",
+            roof_type: prefill.home.roof_type || "",
+            roof_year: prefill.home.roof_year || "",
+          }]);
+        }
+
+        // Commercial: prefill business info
+        if (lt === "commercial") {
+          const comm = prefill.commercial || {};
+          setCommercialForm(f => ({
+            ...f,
+            customer_name: prefill.applicant_name || iData.customer_name || f.customer_name,
+            customer_email: prefill.applicant_email || iData.customer_email || f.customer_email,
+            customer_phone: prefill.applicant_phone || f.customer_phone,
+            business_name: prefill.business_name || f.business_name,
+            dba: comm.dba || f.dba,
+            ein: comm.ein || f.ein,
+            business_type: comm.business_type || f.business_type,
+            street_address: prefill.applicant_address || f.street_address,
+            city: prefill.applicant_city || f.city,
+            state: prefill.applicant_state || f.state,
+            zip: prefill.applicant_zip || f.zip,
+            employee_count: comm.employee_count || f.employee_count,
+            annual_revenue: comm.annual_revenue || f.annual_revenue,
+            years_in_business: comm.years_in_business || f.years_in_business,
+            industry: comm.industry || f.industry,
+            current_carrier_name: prefill.current_carrier || f.current_carrier_name,
+            policy_number: prefill.policy_number || f.policy_number,
+            policy_effective_date: prefill.policy_effective_date || f.policy_effective_date,
+            policy_expiration_date: prefill.policy_expiration_date || f.policy_expiration_date,
+            has_current_insurance: prefill.current_carrier ? "yes" : f.has_current_insurance,
+            selected_coverage_lines: comm.coverage_lines?.length > 0 ? comm.coverage_lines : f.selected_coverage_lines,
+          }));
+        }
+
+        // Mark as extracted
+        setDecExtracted(true);
+      }
+
       setRecord(iData);
       setTokenSource("intake_links");
       setLoading(false);
