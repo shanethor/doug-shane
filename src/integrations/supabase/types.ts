@@ -1666,6 +1666,7 @@ export type Database = {
           ai_provider: string
           approval_status: string
           created_at: string
+          dark_mode: boolean
           form_defaults: Json | null
           from_email: string | null
           full_name: string | null
@@ -1683,6 +1684,7 @@ export type Database = {
           ai_provider?: string
           approval_status?: string
           created_at?: string
+          dark_mode?: boolean
           form_defaults?: Json | null
           from_email?: string | null
           full_name?: string | null
@@ -1700,6 +1702,7 @@ export type Database = {
           ai_provider?: string
           approval_status?: string
           created_at?: string
+          dark_mode?: boolean
           form_defaults?: Json | null
           from_email?: string | null
           full_name?: string | null
