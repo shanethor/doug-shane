@@ -46,7 +46,7 @@ type Policy = {
   lead_id: string;
   annual_premium: number;
   status: string;
-  created_at?: string;
+  effective_date?: string;
 };
 
 type AuditEntry = {
