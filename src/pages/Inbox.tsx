@@ -923,7 +923,7 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
                           <Paperclip className="h-3 w-3 text-muted-foreground shrink-0" />
                         )}
                       </div>
-                      {item.body && <p className="text-xs text-muted-foreground truncate mt-0.5">{item.body}</p>}
+                      {item.body && <p className="text-xs text-muted-foreground truncate mt-0.5">{decodeHtmlEntities(item.body)}</p>}
                       {item.kind === "email" && ((item.raw as SyncedEmail).tags || []).length > 0 && (
                         <div className="flex gap-1 mt-1">
                           {((item.raw as SyncedEmail).tags || []).map((tag) => (
