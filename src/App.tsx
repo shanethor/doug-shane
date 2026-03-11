@@ -49,20 +49,23 @@ const queryClient = new QueryClient();
 /** Syncs dark-mode preference from the DB once the user is authenticated */
 function DarkModeSync() {
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      if (!session?.user) return;
-      const { data } = await supabase
+    let ran = false;
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (ran || !session?.user) return;
+      ran = true;
+      supabase
         .from("profiles")
         .select("dark_mode")
         .eq("user_id", session.user.id)
-        .maybeSingle();
-      if (data) {
-        const dark = !!(data as any).dark_mode;
-        document.documentElement.classList.toggle("dark", dark);
-        localStorage.setItem("aura-dark-mode", dark ? "true" : "false");
-      }
+        .maybeSingle()
+        .then(({ data }) => {
+          if (data) {
+            const dark = !!(data as any).dark_mode;
+            document.documentElement.classList.toggle("dark", dark);
+            localStorage.setItem("aura-dark-mode", dark ? "true" : "false");
+          }
+        });
     });
-    return () => subscription.unsubscribe();
   }, []);
   return null;
 }

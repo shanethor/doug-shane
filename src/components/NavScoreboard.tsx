@@ -89,8 +89,18 @@ export function NavScoreboard() {
   const annualPrem = goals?.annual_premium_goal || 0;
   const monthlyPremGoal = annualPrem / 12;
 
+  // Cache scoreboard data for 2 minutes to avoid refetching on every page navigation
+  const cacheRef = useRef<{ ts: number; data: AdvisorData[] } | null>(null);
+  const CACHE_TTL = 2 * 60 * 1000; // 2 minutes
+
   useEffect(() => {
     if (!user) return;
+    // Return cached data if fresh
+    if (cacheRef.current && Date.now() - cacheRef.current.ts < CACHE_TTL) {
+      setProducers(cacheRef.current.data);
+      setLoading(false);
+      return;
+    }
     (async () => {
       setLoading(true);
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
@@ -212,6 +222,7 @@ export function NavScoreboard() {
         return a.name.localeCompare(b.name);
       });
 
+      cacheRef.current = { ts: Date.now(), data: advisorList };
       setProducers(advisorList);
 
       // Check congrats for current user
