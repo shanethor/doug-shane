@@ -745,6 +745,18 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
                 <p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">Categories</p>
                 <EmailFilterChips activeTags={activeTags} onTagsChange={setActiveTags} />
               </div>
+              <div>
+                <button
+                  onClick={() => setHideNonInsurance(!hideNonInsurance)}
+                  className={`text-[11px] px-2.5 py-1 rounded-full border transition-colors ${
+                    hideNonInsurance
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "border-border text-muted-foreground hover:bg-muted"
+                  }`}
+                >
+                  {hideNonInsurance ? "✓ " : ""}Hide non-insurance emails
+                </button>
+              </div>
               {activeTags.length > 0 && (
                 <Button variant="ghost" size="sm" className="text-xs" onClick={() => { setActiveTags([]); setFilterSheetOpen(false); }}>
                   Clear all filters
