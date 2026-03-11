@@ -521,6 +521,124 @@ serve(async (req) => {
             }
           }
         }
+
+        // ── Intake email alias detection ──
+        // Check if any synced email was addressed to a *-intake@buildingaura.site alias
+        const { data: profile } = await adminClient
+          .from("profiles")
+          .select("intake_email_alias")
+          .eq("user_id", userId)
+          .maybeSingle();
+
+        const intakeAlias = (profile as any)?.intake_email_alias?.toLowerCase();
+        if (intakeAlias && unassigned && unassigned.length > 0) {
+          const intakeEmails = unassigned.filter((e: any) => {
+            const toAddrs = (e.to_addresses || []).map((a: string) => a.toLowerCase());
+            return toAddrs.includes(intakeAlias);
+          });
+
+          for (const intakeEmail of intakeEmails) {
+            const senderAddr = intakeEmail.from_address?.toLowerCase();
+            if (!senderAddr) continue;
+
+            // Check if we already have a lead for this sender
+            const { data: existingLeads } = await adminClient
+              .from("leads")
+              .select("id")
+              .eq("owner_user_id", userId)
+              .ilike("email", `%${senderAddr}%`)
+              .limit(1);
+
+            let leadId: string;
+
+            if (existingLeads && existingLeads.length > 0) {
+              leadId = existingLeads[0].id;
+            } else {
+              // Auto-create a new lead from the sender
+              const senderName = intakeEmail.from_address.split("@")[0].replace(/[._]/g, " ");
+              const { data: newLead, error: leadErr } = await adminClient
+                .from("leads")
+                .insert({
+                  owner_user_id: userId,
+                  account_name: senderName.split(" ").map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(" "),
+                  contact_name: senderName.split(" ").map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(" "),
+                  email: senderAddr,
+                  stage: "prospect",
+                  line_type: "commercial",
+                  lead_source: "intake_email",
+                })
+                .select("id")
+                .single();
+
+              if (leadErr || !newLead) {
+                console.error("[email-sync] Failed to create lead from intake email:", leadErr);
+                continue;
+              }
+              leadId = newLead.id;
+              console.log(`[email-sync] Created new lead ${leadId} from intake email sender ${senderAddr}`);
+
+              // Notify the producer
+              await adminClient.from("notifications").insert({
+                user_id: userId,
+                type: "intake",
+                title: "New client from intake email",
+                body: `${senderAddr} sent documents to your intake email. A new prospect has been created.`,
+                link: `/pipeline/${leadId}`,
+              });
+            }
+
+            // Assign the email to this lead
+            await adminClient
+              .from("synced_emails")
+              .update({ client_id: leadId, client_link_source: "intake_email" })
+              .eq("id", intakeEmail.id);
+
+            // Ingest attachments
+            const { data: atts } = await adminClient
+              .from("email_attachments")
+              .select("id, file_name, file_size, content_type")
+              .eq("email_id", intakeEmail.id)
+              .eq("user_id", userId);
+
+            const docExts = /\.(pdf|docx?|xlsx?|csv|png|jpe?g|tiff?)$/i;
+            let ingested = 0;
+            for (const att of (atts || [])) {
+              const isDoc = docExts.test(att.file_name) ||
+                (att.content_type && (att.content_type.includes("pdf") || att.content_type.includes("document") || att.content_type.includes("image/")));
+              if (!isDoc) continue;
+
+              const { data: exists } = await adminClient
+                .from("client_documents")
+                .select("id")
+                .eq("user_id", userId)
+                .eq("lead_id", leadId)
+                .eq("file_name", att.file_name)
+                .maybeSingle();
+
+              if (!exists) {
+                await adminClient.from("client_documents").insert({
+                  user_id: userId,
+                  lead_id: leadId,
+                  file_name: att.file_name,
+                  file_url: `email-attachment://${att.id}`,
+                  file_size: att.file_size || 0,
+                  document_type: "other",
+                });
+                ingested++;
+              }
+            }
+
+            if (ingested > 0) {
+              await adminClient.from("notifications").insert({
+                user_id: userId,
+                type: "document",
+                title: `${ingested} document${ingested > 1 ? "s" : ""} from intake email`,
+                body: `Auto-ingested from ${senderAddr}`,
+                link: `/pipeline/${leadId}`,
+              });
+            }
+          }
+        }
       } catch (autoAssignErr) {
         console.error("[email-sync] Auto-assign error:", autoAssignErr);
         // Non-fatal — don't block sync response
