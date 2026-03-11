@@ -570,16 +570,16 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
     const posHits = INSURANCE_KEYWORDS.filter((kw) => combinedText.includes(kw)).length;
     score += posHits * 0.3;
 
-    // Negative signals: domain blacklist → -0.3
-    if (NON_INSURANCE_DOMAINS.some((d) => fromLower.includes(d))) score -= 0.3;
+    // Negative signals: domain blacklist → -0.35
+    if (NON_INSURANCE_DOMAINS.some((d) => fromLower.includes(d))) score -= 0.35;
 
-    // Negative signals: subject/name keywords → -0.3
-    if (NON_INSURANCE_SUBJECTS.some((s) => subjectLower.includes(s) || fromName.includes(s))) score -= 0.3;
+    // Negative signals: subject/name keywords → -0.35
+    if (NON_INSURANCE_SUBJECTS.some((s) => subjectLower.includes(s) || fromName.includes(s))) score -= 0.35;
 
     // Clamp 0-1
     score = Math.max(0, Math.min(1, score));
 
-    return score < 0.2;
+    return score < 0.25;
   }, []);
 
   /** Strip image src attributes from HTML, replacing with placeholder */
