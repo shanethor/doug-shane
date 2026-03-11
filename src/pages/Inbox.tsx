@@ -384,12 +384,35 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
     if (n.link) navigate(n.link);
   };
 
-  const openEmailDetail = (email: SyncedEmail) => {
+  const openEmailDetail = async (email: SyncedEmail) => {
     setSelectedEmail(email);
     setSelectedEmailAttachments([]);
     markEmailRead(email);
     if (email.has_attachments) {
       fetchAttachmentsForEmail(email.id);
+    }
+    // Fetch full HTML body on demand if not already loaded
+    if (!email.body_html) {
+      try {
+        const headers = await getAuthHeaders();
+        const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/email-sync`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ action: "fetch-body", email_id: email.id }),
+        });
+        if (resp.ok) {
+          const { body_html } = await resp.json();
+          if (body_html) {
+            const updated = { ...email, body_html };
+            setSelectedEmail(updated);
+            setSyncedEmails((prev) =>
+              prev.map((e) => e.id === email.id ? { ...e, body_html } : e)
+            );
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch email body:", err);
+      }
     }
   };
 
