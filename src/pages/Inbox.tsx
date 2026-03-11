@@ -144,7 +144,7 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
 
     const { data } = await supabase
       .from("synced_emails")
-      .select("id, from_address, from_name, to_addresses, subject, body_preview, body_html, is_read, received_at, synced_at, tags, client_id, client_link_source")
+      .select("id, from_address, from_name, to_addresses, subject, body_preview, body_html, is_read, received_at, synced_at, tags, client_id, client_link_source, has_attachments")
       .eq("user_id", user.id)
       .order("received_at", { ascending: false })
       .limit(100);
@@ -155,7 +155,45 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
     return emails;
   }, [user, updateLastSyncedFromEmails]);
 
-  useEffect(() => {
+  const fetchAttachmentsForEmail = useCallback(async (emailId: string) => {
+    const { data } = await supabase
+      .from("email_attachments")
+      .select("id, file_name, file_size, content_type")
+      .eq("email_id", emailId);
+    setSelectedEmailAttachments((data as EmailAttachment[]) || []);
+  }, []);
+
+  const downloadAttachment = useCallback(async (attachment: EmailAttachment) => {
+    setDownloadingAttachment(attachment.id);
+    try {
+      const headers = await getAuthHeaders();
+      const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/email-sync`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ action: "download-attachment", attachment_id: attachment.id }),
+      });
+      if (!resp.ok) throw new Error("Download failed");
+      const result = await resp.json();
+
+      // Convert base64 to blob and trigger download
+      const binary = atob(result.data);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      const blob = new Blob([bytes], { type: result.content_type || "application/octet-stream" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = result.file_name || attachment.file_name;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      toast.error("Failed to download attachment");
+    } finally {
+      setDownloadingAttachment(null);
+    }
+  }, []);
     const t = setInterval(() => setTick((n) => n + 1), 30_000);
     return () => clearInterval(t);
   }, []);
