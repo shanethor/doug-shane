@@ -763,7 +763,7 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
                     {/* Row 3: Preview + optional tag chip */}
                     <div className="flex items-center gap-1.5 mt-0.5">
                       {preview && (
-                        <p className="text-[11px] text-muted-foreground truncate flex-1">{preview}</p>
+                        <p className="text-[11px] text-muted-foreground truncate flex-1">{decodeHtmlEntities(preview)}</p>
                       )}
                       {email?.has_attachments && (
                         <Paperclip className="h-3 w-3 text-muted-foreground shrink-0" />
