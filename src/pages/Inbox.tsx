@@ -1282,9 +1282,51 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
                     );
                   }}
                 />
-              </div>
+                </div>
 
-              {selectedEmail.client_id && (
+              {/* Process & Send Intake action */}
+              <div className="flex items-center gap-2 py-2 border-b">
+                {intakeResult ? (
+                  <div className="flex items-center gap-2 text-xs">
+                    <Badge variant="outline" className="gap-1 text-[10px] bg-primary/5 border-primary/20">
+                      <Check className="h-3 w-3" />
+                      {intakeResult.is_new ? "New client created" : "Existing client updated"}
+                    </Badge>
+                    {intakeResult.documents_ingested > 0 && (
+                      <Badge variant="outline" className="text-[10px]">
+                        {intakeResult.documents_ingested} doc{intakeResult.documents_ingested > 1 ? "s" : ""} ingested
+                      </Badge>
+                    )}
+                    {intakeResult.intake_link_sent && (
+                      <Badge variant="outline" className="text-[10px] bg-accent/5 border-accent/20">Intake link sent</Badge>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-xs gap-1 h-7 ml-auto"
+                      onClick={() => navigate(`/pipeline/${intakeResult.lead_id}`)}
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                      View client
+                    </Button>
+                  </div>
+                ) : (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-xs gap-1.5 h-7"
+                    onClick={() => handleProcessIntake(selectedEmail)}
+                    disabled={processingIntake}
+                  >
+                    {processingIntake ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <Zap className="h-3 w-3" />
+                    )}
+                    {processingIntake ? "Processing…" : "Process & Send Intake"}
+                  </Button>
+                )}
+              </div>
                 <div className="py-2">
                   <EmailClientSnapshot clientId={selectedEmail.client_id} />
                 </div>
