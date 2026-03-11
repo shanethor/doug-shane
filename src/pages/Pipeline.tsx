@@ -215,7 +215,7 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
       supabase.from("policies").select("lead_id").eq("status", "approved"),
       supabase.from("loss_run_requests").select("lead_id, status"),
       // For managers: RLS on policies now allows seeing team policies via lead_id
-      supabase.from("policies").select("lead_id, annual_premium, revenue, status, created_at"),
+      supabase.from("policies").select("lead_id, annual_premium, revenue, status, effective_date"),
       supabase.from("audit_log").select("object_id, action, metadata, created_at").eq("object_type", "lead").order("created_at", { ascending: true }).limit(1000),
     ]);
 
