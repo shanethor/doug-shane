@@ -906,19 +906,6 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
                       <div className="flex items-center gap-2">
                         <p className={`text-sm truncate ${!item.is_read ? "font-medium" : ""}`}>{item.title}</p>
                         <Badge variant="outline" className="text-[10px] shrink-0">{item.label}</Badge>
-                        {item.kind === "email" && (() => {
-                          const email = item.raw as SyncedEmail;
-                          return email.client_id ? (
-                            <Badge variant="secondary" className="text-[10px] shrink-0 gap-0.5">
-                              <User className="h-2.5 w-2.5" />
-                              Client
-                            </Badge>
-                          ) : (
-                            <Badge variant="outline" className="text-[10px] shrink-0 text-muted-foreground">
-                              Unassigned
-                            </Badge>
-                          );
-                        })()}
                         {item.kind === "email" && (item.raw as SyncedEmail).has_attachments && (
                           <Paperclip className="h-3 w-3 text-muted-foreground shrink-0" />
                         )}

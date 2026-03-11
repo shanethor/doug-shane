@@ -407,7 +407,226 @@ serve(async (req) => {
         }
       }
 
+      // ── Auto-assign clients (background) ──
+      // Match unassigned emails' from/to addresses against leads' email field
+      try {
+        const { data: unassigned } = await adminClient
+          .from("synced_emails")
+          .select("id, from_address, to_addresses")
+          .eq("user_id", userId)
+          .is("client_id", null)
+          .limit(200);
+
+        if (unassigned && unassigned.length > 0) {
+          // Get all leads with email for this user
+          const { data: leads } = await adminClient
+            .from("leads")
+            .select("id, email, contact_name, account_name")
+            .eq("owner_user_id", userId)
+            .not("email", "is", null);
+
+          if (leads && leads.length > 0) {
+            // Build email-to-lead map (lowercase)
+            const emailToLead: Record<string, string> = {};
+            for (const lead of leads) {
+              if (lead.email) {
+                const emails = lead.email.split(",").map((e: string) => e.trim().toLowerCase());
+                for (const em of emails) {
+                  if (em) emailToLead[em] = lead.id;
+                }
+              }
+            }
+
+            // Match each unassigned email
+            const updates: { id: string; client_id: string }[] = [];
+            for (const email of unassigned) {
+              const addresses = [
+                email.from_address?.toLowerCase(),
+                ...(email.to_addresses || []).map((a: string) => a.toLowerCase()),
+              ].filter(Boolean);
+
+              for (const addr of addresses) {
+                if (emailToLead[addr]) {
+                  updates.push({ id: email.id, client_id: emailToLead[addr] });
+                  break;
+                }
+              }
+            }
+
+            // Batch update matched emails
+            for (const upd of updates) {
+              await adminClient
+                .from("synced_emails")
+                .update({
+                  client_id: upd.client_id,
+                  client_link_source: "auto",
+                })
+                .eq("id", upd.id);
+            }
+
+            if (updates.length > 0) {
+              console.log(`[email-sync] Auto-assigned ${updates.length} emails to clients`);
+
+              // Trigger ingestion for emails with attachments
+              for (const upd of updates) {
+                const { data: hasAtts } = await adminClient
+                  .from("email_attachments")
+                  .select("id")
+                  .eq("email_id", upd.id)
+                  .eq("user_id", userId)
+                  .limit(1);
+
+                if (hasAtts && hasAtts.length > 0) {
+                  // Inline ingest: save attachments as client_documents
+                  const { data: atts } = await adminClient
+                    .from("email_attachments")
+                    .select("id, file_name, file_size, content_type")
+                    .eq("email_id", upd.id)
+                    .eq("user_id", userId);
+
+                  const { data: lead } = await adminClient
+                    .from("leads")
+                    .select("id, submission_id")
+                    .eq("id", upd.client_id)
+                    .maybeSingle();
+
+                  const docExts = /\.(pdf|docx?|xlsx?|csv|png|jpe?g|tiff?)$/i;
+                  for (const att of (atts || [])) {
+                    const isDoc = docExts.test(att.file_name) ||
+                      (att.content_type && (att.content_type.includes("pdf") || att.content_type.includes("document") || att.content_type.includes("image/")));
+                    if (!isDoc) continue;
+
+                    const { data: exists } = await adminClient
+                      .from("client_documents")
+                      .select("id")
+                      .eq("user_id", userId)
+                      .eq("lead_id", upd.client_id)
+                      .eq("file_name", att.file_name)
+                      .maybeSingle();
+
+                    if (!exists) {
+                      await adminClient.from("client_documents").insert({
+                        user_id: userId,
+                        lead_id: upd.client_id,
+                        submission_id: lead?.submission_id || null,
+                        file_name: att.file_name,
+                        file_url: `email-attachment://${att.id}`,
+                        file_size: att.file_size || 0,
+                        document_type: "other",
+                      });
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      } catch (autoAssignErr) {
+        console.error("[email-sync] Auto-assign error:", autoAssignErr);
+        // Non-fatal — don't block sync response
+      }
+
       return new Response(JSON.stringify({ synced: emails.length, provider: conn.provider }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // ── Ingest email attachments for a client ──
+    if (action === "ingest-email") {
+      const { email_id, client_id } = body;
+      if (!email_id || !client_id) {
+        return new Response(JSON.stringify({ error: "Missing email_id or client_id" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Get the email
+      const { data: emailRow } = await adminClient
+        .from("synced_emails")
+        .select("id, external_id, connection_id, subject, from_name, from_address")
+        .eq("id", email_id)
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      if (!emailRow) {
+        return new Response(JSON.stringify({ error: "Email not found" }), {
+          status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Get attachments for this email
+      const { data: attachments } = await adminClient
+        .from("email_attachments")
+        .select("id, file_name, file_size, content_type, external_attachment_id")
+        .eq("email_id", email_id)
+        .eq("user_id", userId);
+
+      if (!attachments || attachments.length === 0) {
+        return new Response(JSON.stringify({ ingested: 0, message: "No attachments to ingest" }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Get the lead to find submission_id
+      const { data: lead } = await adminClient
+        .from("leads")
+        .select("id, submission_id")
+        .eq("id", client_id)
+        .maybeSingle();
+
+      // Filter for document-type attachments (PDF, DOCX, images)
+      const docExtensions = /\.(pdf|docx?|xlsx?|csv|png|jpe?g|tiff?)$/i;
+      const relevantAtts = attachments.filter((a: any) =>
+        docExtensions.test(a.file_name) ||
+        (a.content_type && (
+          a.content_type.includes("pdf") ||
+          a.content_type.includes("document") ||
+          a.content_type.includes("spreadsheet") ||
+          a.content_type.includes("image/")
+        ))
+      );
+
+      let ingested = 0;
+      for (const att of relevantAtts) {
+        // Check if already ingested
+        const { data: existing } = await adminClient
+          .from("client_documents")
+          .select("id")
+          .eq("user_id", userId)
+          .eq("lead_id", client_id)
+          .eq("file_name", att.file_name)
+          .maybeSingle();
+
+        if (existing) continue;
+
+        // Save as client document (reference to email attachment - no file download needed yet)
+        const { error: docErr } = await adminClient
+          .from("client_documents")
+          .insert({
+            user_id: userId,
+            lead_id: client_id,
+            submission_id: lead?.submission_id || null,
+            file_name: att.file_name,
+            file_url: `email-attachment://${att.id}`,
+            file_size: att.file_size || 0,
+            document_type: "other",
+          });
+
+        if (!docErr) ingested++;
+      }
+
+      if (ingested > 0) {
+        // Create a notification
+        await adminClient.from("notifications").insert({
+          user_id: userId,
+          type: "document",
+          title: `${ingested} document${ingested > 1 ? "s" : ""} from email`,
+          body: `Auto-ingested from: ${emailRow.from_name || emailRow.from_address} — ${emailRow.subject || "(no subject)"}`,
+          link: lead ? `/pipeline/${client_id}` : null,
+        });
+      }
+
+      return new Response(JSON.stringify({ ingested, total_attachments: attachments.length }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
