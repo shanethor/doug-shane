@@ -943,9 +943,19 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
         )}
       </div>
 
-      {/* Insurance filter chips (inline on desktop) */}
-      <div className="mb-3">
+      {/* Insurance filter chips + hide non-insurance toggle (inline on desktop) */}
+      <div className="mb-3 flex items-center gap-3 flex-wrap">
         <EmailFilterChips activeTags={activeTags} onTagsChange={setActiveTags} />
+        <button
+          onClick={() => setHideNonInsurance(!hideNonInsurance)}
+          className={`text-[11px] px-2.5 py-1 rounded-full border transition-colors ${
+            hideNonInsurance
+              ? "bg-primary text-primary-foreground border-primary"
+              : "border-border text-muted-foreground hover:bg-muted"
+          }`}
+        >
+          {hideNonInsurance ? "✓ " : ""}Hide non-insurance
+        </button>
       </div>
 
       {/* Email list */}
