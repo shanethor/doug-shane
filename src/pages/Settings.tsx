@@ -77,7 +77,7 @@ export default function Settings() {
     if (!user) return;
     supabase
       .from("profiles")
-      .select("form_defaults, full_name, agency_name, agency_id, phone, from_email, ai_provider, openai_api_key_encrypted, intake_email_alias")
+      .select("form_defaults, full_name, agency_name, agency_id, phone, from_email, ai_provider, openai_api_key_encrypted, intake_email_alias, dark_mode")
       .eq("user_id", user.id)
       .then(async ({ data }) => {
         if (data?.[0]) {
