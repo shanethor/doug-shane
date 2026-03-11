@@ -581,7 +581,7 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
   const openEmailDetail = async (email: SyncedEmail) => {
     setSelectedEmail(email);
     setSelectedEmailAttachments([]);
-    setImagesLoaded(false);
+    setShowFullHtml(false);
     markEmailRead(email);
     if (email.has_attachments) {
       fetchAttachmentsForEmail(email.id);
