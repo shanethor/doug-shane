@@ -121,6 +121,8 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
   const [selectedEmail, setSelectedEmail] = useState<SyncedEmail | null>(null);
   const [selectedEmailAttachments, setSelectedEmailAttachments] = useState<EmailAttachment[]>([]);
   const [downloadingAttachment, setDownloadingAttachment] = useState<string | null>(null);
+  const [imagesLoaded, setImagesLoaded] = useState(false);
+  const [hideNonInsurance, setHideNonInsurance] = useState(false);
   const [composeOpen, setComposeOpen] = useState(false);
   const [composeTo, setComposeTo] = useState("");
   const [composeSubject, setComposeSubject] = useState("");
