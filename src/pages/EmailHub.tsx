@@ -94,31 +94,6 @@ export default function EmailHub() {
           </div>
         </TabsContent>
 
-        <TabsContent value="clients">
-          <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-4 overflow-hidden">
-            {/* Client folders sidebar (always visible on this tab) */}
-            <Card className="lg:max-h-[calc(100vh-200px)]">
-              <CardContent className="p-2 h-full">
-                <ClientEmailFolders
-                  onSelectClient={setSelectedClientId}
-                  selectedClientId={selectedClientId}
-                />
-              </CardContent>
-            </Card>
-
-            {/* Filtered email list for selected client */}
-            <div className="min-w-0 overflow-hidden">
-              {selectedClientId ? (
-                <ClientEmailList clientId={selectedClientId} />
-              ) : (
-                <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-                  <FolderOpen className="h-10 w-10 mb-3 opacity-40" />
-                  <p className="text-sm">Select a client to view their emails</p>
-                </div>
-              )}
-            </div>
-          </div>
-        </TabsContent>
 
         <TabsContent value="calendar">
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-4 overflow-hidden">
