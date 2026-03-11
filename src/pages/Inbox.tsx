@@ -384,12 +384,35 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
     if (n.link) navigate(n.link);
   };
 
-  const openEmailDetail = (email: SyncedEmail) => {
+  const openEmailDetail = async (email: SyncedEmail) => {
     setSelectedEmail(email);
     setSelectedEmailAttachments([]);
     markEmailRead(email);
     if (email.has_attachments) {
       fetchAttachmentsForEmail(email.id);
+    }
+    // Fetch full HTML body on demand if not already loaded
+    if (!email.body_html) {
+      try {
+        const headers = await getAuthHeaders();
+        const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/email-sync`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ action: "fetch-body", email_id: email.id }),
+        });
+        if (resp.ok) {
+          const { body_html } = await resp.json();
+          if (body_html) {
+            const updated = { ...email, body_html };
+            setSelectedEmail(updated);
+            setSyncedEmails((prev) =>
+              prev.map((e) => e.id === email.id ? { ...e, body_html } : e)
+            );
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch email body:", err);
+      }
     }
   };
 
@@ -977,13 +1000,21 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
               <ScrollArea className="flex-1 min-h-0">
                 {selectedEmail.body_html ? (
                   <div
-                    className="prose prose-sm max-w-none text-sm py-3"
-                    dangerouslySetInnerHTML={{ __html: decodeHtmlEntities(selectedEmail.body_html) }}
+                    className="prose prose-sm max-w-none text-sm py-3 [&_img]:max-w-full [&_a]:text-primary [&_a]:underline"
+                    dangerouslySetInnerHTML={{ __html: selectedEmail.body_html }}
                   />
+                ) : selectedEmail.body_preview ? (
+                  <div className="flex flex-col gap-2 py-3">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      Loading full message…
+                    </div>
+                    <p className="text-sm whitespace-pre-wrap text-muted-foreground">
+                      {decodeHtmlEntities(selectedEmail.body_preview)}
+                    </p>
+                  </div>
                 ) : (
-                  <p className="text-sm py-3 whitespace-pre-wrap text-muted-foreground">
-                    {selectedEmail.body_preview ? decodeHtmlEntities(selectedEmail.body_preview) : "No content available"}
-                  </p>
+                  <p className="text-sm py-3 text-muted-foreground">No content available</p>
                 )}
               </ScrollArea>
 
