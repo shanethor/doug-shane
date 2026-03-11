@@ -110,11 +110,9 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
   // General search
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Email detail dialog
   const [selectedEmail, setSelectedEmail] = useState<SyncedEmail | null>(null);
-
-  // Compose state
-  const [composeOpen, setComposeOpen] = useState(false);
+  const [selectedEmailAttachments, setSelectedEmailAttachments] = useState<EmailAttachment[]>([]);
+  const [downloadingAttachment, setDownloadingAttachment] = useState<string | null>(null);
   const [composeTo, setComposeTo] = useState("");
   const [composeSubject, setComposeSubject] = useState("");
   const [composeBody, setComposeBody] = useState("");
