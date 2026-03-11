@@ -635,6 +635,39 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
     setComposeOpen(true);
   };
 
+  const handleProcessIntake = async (email: SyncedEmail) => {
+    setProcessingIntake(true);
+    setIntakeResult(null);
+    try {
+      const headers = await getAuthHeaders();
+      const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/email-sync`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ action: "process-email-intake", email_id: email.id }),
+      });
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({ error: "Failed" }));
+        throw new Error(err.error || "Failed to process");
+      }
+      const result = await resp.json();
+      setIntakeResult(result);
+      // Update the email's client_id in state
+      if (result.lead_id) {
+        const updated = { ...email, client_id: result.lead_id };
+        setSelectedEmail(updated);
+        setSyncedEmails((prev) => prev.map((e) => e.id === email.id ? { ...e, client_id: result.lead_id } : e));
+      }
+      toast.success(result.is_new
+        ? "New client created & intake link sent"
+        : "Existing client updated & intake link sent"
+      );
+    } catch (err: any) {
+      toast.error(err.message || "Failed to process intake");
+    } finally {
+      setProcessingIntake(false);
+    }
+  };
+
   // Build unified items
   const buildUnified = useCallback((): UnifiedItem[] => {
     const items: UnifiedItem[] = [];
