@@ -9,7 +9,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Building2, Mail, Save, User, BrainCircuit, Eye, EyeOff, Info, Loader2, Link2, Unlink, CheckCircle, Smartphone, GripVertical, Globe, Radar, Linkedin, Search, MessageSquare, FileText as FileTextIcon } from "lucide-react";
+import { Building2, Mail, Save, User, BrainCircuit, Eye, EyeOff, Info, Loader2, Link2, Unlink, CheckCircle, Smartphone, GripVertical, Globe, Radar, Linkedin, Search, MessageSquare, FileText as FileTextIcon, Moon, Sun } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { getAuthHeaders } from "@/lib/auth-fetch";
@@ -48,6 +49,7 @@ export default function Settings() {
   const [navTabCount, setNavTabCount] = useState(navConfig.tabCount);
   const [navSelectedIds, setNavSelectedIds] = useState<string[]>(navConfig.selectedTabIds);
   const [timezone, setTimezone] = useState(Intl.DateTimeFormat().resolvedOptions().timeZone);
+  const [darkMode, setDarkMode] = useState(() => document.documentElement.classList.contains("dark"));
 
   // Email connections
   const [emailConnections, setEmailConnections] = useState<EmailConnection[]>([]);
@@ -238,6 +240,32 @@ export default function Settings() {
           <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
             <Label className="text-xs uppercase tracking-wider text-muted-foreground sm:w-32">Member Since</Label>
             <span className="text-sm">{user?.created_at ? new Date(user.created_at).toLocaleDateString() : "—"}</span>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Appearance */}
+      <Card className="mb-4 sm:mb-6">
+        <CardHeader className="p-4 sm:p-6 pb-2 sm:pb-2">
+          <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+            {darkMode ? <Moon className="h-4 w-4 text-primary" /> : <Sun className="h-4 w-4 text-primary" />}
+            Appearance
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-4 sm:p-6 pt-2 sm:pt-2">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium">Dark Mode</p>
+              <p className="text-xs text-muted-foreground">Switch to a darker color scheme</p>
+            </div>
+            <Switch
+              checked={darkMode}
+              onCheckedChange={(checked) => {
+                setDarkMode(checked);
+                document.documentElement.classList.toggle("dark", checked);
+                localStorage.setItem("aura-dark-mode", checked ? "true" : "false");
+              }}
+            />
           </div>
         </CardContent>
       </Card>
