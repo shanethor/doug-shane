@@ -102,6 +102,53 @@ interface AttachmentMeta {
   external_attachment_id: string;
 }
 
+/** Extract HTML body from Gmail MIME payload */
+function extractGmailHtmlBody(payload: any): string | null {
+  if (!payload) return null;
+
+  // Direct HTML body
+  if (payload.mimeType === "text/html" && payload.body?.data) {
+    return decodeBase64Url(payload.body.data);
+  }
+
+  // Walk multipart
+  if (payload.parts) {
+    // Prefer text/html
+    for (const part of payload.parts) {
+      if (part.mimeType === "text/html" && part.body?.data) {
+        return decodeBase64Url(part.body.data);
+      }
+      if (part.parts) {
+        const nested = extractGmailHtmlBody(part);
+        if (nested) return nested;
+      }
+    }
+    // Fallback to text/plain wrapped in <pre>
+    for (const part of payload.parts) {
+      if (part.mimeType === "text/plain" && part.body?.data) {
+        const text = decodeBase64Url(part.body.data);
+        return `<pre style="white-space:pre-wrap;font-family:inherit">${text}</pre>`;
+      }
+    }
+  }
+
+  // Single-part text/plain
+  if (payload.mimeType === "text/plain" && payload.body?.data) {
+    const text = decodeBase64Url(payload.body.data);
+    return `<pre style="white-space:pre-wrap;font-family:inherit">${text}</pre>`;
+  }
+
+  return null;
+}
+
+function decodeBase64Url(data: string): string {
+  const base64 = data.replace(/-/g, "+").replace(/_/g, "/");
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return new TextDecoder().decode(bytes);
+}
+
 async function getGmailAttachments(
   msgId: string,
   payload: any,
