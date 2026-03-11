@@ -121,6 +121,8 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
   const [selectedEmail, setSelectedEmail] = useState<SyncedEmail | null>(null);
   const [selectedEmailAttachments, setSelectedEmailAttachments] = useState<EmailAttachment[]>([]);
   const [downloadingAttachment, setDownloadingAttachment] = useState<string | null>(null);
+  const [imagesLoaded, setImagesLoaded] = useState(false);
+  const [hideNonInsurance, setHideNonInsurance] = useState(false);
   const [composeOpen, setComposeOpen] = useState(false);
   const [composeTo, setComposeTo] = useState("");
   const [composeSubject, setComposeSubject] = useState("");
@@ -384,9 +386,53 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
     if (n.link) navigate(n.link);
   };
 
+  // Non-insurance domain/keyword heuristics
+  const NON_INSURANCE_DOMAINS = [
+    "amazon", "ebay", "walmart", "target", "bestbuy", "etsy", "shopify",
+    "facebook", "twitter", "instagram", "linkedin", "tiktok", "pinterest", "reddit",
+    "youtube", "netflix", "spotify", "hulu", "disney", "apple.com", "google.com",
+    "uber", "lyft", "doordash", "grubhub", "postmates",
+    "github", "stackoverflow", "medium", "substack",
+    "noreply", "no-reply", "mailer-daemon", "newsletter",
+    "promotions", "marketing", "promo",
+    "facebookmail", "x.com",
+  ];
+  const NON_INSURANCE_SUBJECTS = [
+    "your order", "shipped", "delivery", "tracking", "receipt",
+    "your package", "order confirmation", "shipment",
+    "unsubscribe", "weekly digest", "daily digest",
+    "password reset", "verify your email", "confirm your",
+    "sale", "discount", "coupon", "deal of", "flash sale",
+    "your subscription", "free trial",
+    "you might", "recommended for you", "trending",
+    "invitation to connect", "endorsed you", "new follower",
+  ];
+
+  const isNonInsuranceEmail = useCallback((email: SyncedEmail): boolean => {
+    const fromLower = (email.from_address || "").toLowerCase();
+    const subjectLower = (email.subject || "").toLowerCase();
+    const tags = email.tags || [];
+    // If it has an insurance tag, always keep it
+    if (tags.length > 0) return false;
+    if (NON_INSURANCE_DOMAINS.some((d) => fromLower.includes(d))) return true;
+    if (NON_INSURANCE_SUBJECTS.some((s) => subjectLower.includes(s))) return true;
+    return false;
+  }, []);
+
+  /** Strip image src attributes from HTML, replacing with placeholder */
+  const stripImages = (html: string): string => {
+    return html.replace(/<img\s([^>]*?)src\s*=\s*["']([^"']+)["']/gi, '<img $1src="data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'16\' height=\'16\'%3E%3C/svg%3E" data-original-src="$2"');
+  };
+
+  /** Restore original src from data-original-src */
+  const restoreImages = (html: string): string => {
+    return html.replace(/src="data:image\/svg\+xml[^"]*"\s*data-original-src="([^"]+)"/gi, 'src="$1"');
+  };
+
   const openEmailDetail = async (email: SyncedEmail) => {
     setSelectedEmail(email);
     setSelectedEmailAttachments([]);
+    setImagesLoaded(false);
     markEmailRead(email);
     if (email.has_attachments) {
       fetchAttachmentsForEmail(email.id);
@@ -512,7 +558,16 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
     return results.map((r) => r.item);
   };
 
-  const filtered = applySearchFilter(applyInsuranceFilters(tabFiltered));
+  // Apply non-insurance filter
+  const applyNonInsuranceFilter = (items: UnifiedItem[]) => {
+    if (!hideNonInsurance) return items;
+    return items.filter((u) => {
+      if (u.kind !== "email") return true;
+      return !isNonInsuranceEmail(u.raw as SyncedEmail);
+    });
+  };
+
+  const filtered = applySearchFilter(applyNonInsuranceFilter(applyInsuranceFilters(tabFiltered)));
 
   const unreadCount = baseUnified.filter((u) => !u.is_read).length;
 
@@ -689,6 +744,18 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
               <div>
                 <p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">Categories</p>
                 <EmailFilterChips activeTags={activeTags} onTagsChange={setActiveTags} />
+              </div>
+              <div>
+                <button
+                  onClick={() => setHideNonInsurance(!hideNonInsurance)}
+                  className={`text-[11px] px-2.5 py-1 rounded-full border transition-colors ${
+                    hideNonInsurance
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "border-border text-muted-foreground hover:bg-muted"
+                  }`}
+                >
+                  {hideNonInsurance ? "✓ " : ""}Hide non-insurance emails
+                </button>
               </div>
               {activeTags.length > 0 && (
                 <Button variant="ghost" size="sm" className="text-xs" onClick={() => { setActiveTags([]); setFilterSheetOpen(false); }}>
@@ -888,9 +955,19 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
         )}
       </div>
 
-      {/* Insurance filter chips (inline on desktop) */}
-      <div className="mb-3">
+      {/* Insurance filter chips + hide non-insurance toggle (inline on desktop) */}
+      <div className="mb-3 flex items-center gap-3 flex-wrap">
         <EmailFilterChips activeTags={activeTags} onTagsChange={setActiveTags} />
+        <button
+          onClick={() => setHideNonInsurance(!hideNonInsurance)}
+          className={`text-[11px] px-2.5 py-1 rounded-full border transition-colors ${
+            hideNonInsurance
+              ? "bg-primary text-primary-foreground border-primary"
+              : "border-border text-muted-foreground hover:bg-muted"
+          }`}
+        >
+          {hideNonInsurance ? "✓ " : ""}Hide non-insurance
+        </button>
       </div>
 
       {/* Email list */}
@@ -972,10 +1049,27 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
                 </DialogTitle>
               </DialogHeader>
 
-              <div className="space-y-1 text-xs text-muted-foreground border-b pb-3">
-                <p><span className="font-medium text-foreground">From:</span> {selectedEmail.from_name ? `${selectedEmail.from_name} <${selectedEmail.from_address}>` : selectedEmail.from_address}</p>
-                <p><span className="font-medium text-foreground">To:</span> {selectedEmail.to_addresses?.join(", ")}</p>
-                <p><span className="font-medium text-foreground">Date:</span> {format(new Date(selectedEmail.received_at), "MMM d, yyyy 'at' h:mm a")}</p>
+              <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1.5 text-xs border-b pb-3">
+                <span className="font-medium text-foreground">From</span>
+                <span className="text-foreground truncate">
+                  {selectedEmail.from_name
+                    ? <>{selectedEmail.from_name} <span className="text-muted-foreground">&lt;{selectedEmail.from_address}&gt;</span></>
+                    : selectedEmail.from_address}
+                </span>
+                <span className="font-medium text-foreground">To</span>
+                <span className="text-muted-foreground truncate">{selectedEmail.to_addresses?.join(", ")}</span>
+                <span className="font-medium text-foreground">Date</span>
+                <span className="text-muted-foreground">{format(new Date(selectedEmail.received_at), "EEE, MMM d, yyyy 'at' h:mm a")}</span>
+                {selectedEmail.tags && selectedEmail.tags.length > 0 && (
+                  <>
+                    <span className="font-medium text-foreground">Tags</span>
+                    <div className="flex gap-1 flex-wrap">
+                      {selectedEmail.tags.map((tag) => (
+                        <Badge key={tag} variant="outline" className="text-[9px] px-1.5 py-0">{tag.replace(/_/g, " ")}</Badge>
+                      ))}
+                    </div>
+                  </>
+                )}
               </div>
 
               <div className="flex items-center gap-2 py-2">
@@ -999,10 +1093,25 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
 
               <ScrollArea className="flex-1 min-h-0">
                 {selectedEmail.body_html ? (
-                  <div
-                    className="prose prose-sm max-w-none text-sm py-3 [&_img]:max-w-full [&_a]:text-primary [&_a]:underline"
-                    dangerouslySetInnerHTML={{ __html: selectedEmail.body_html }}
-                  />
+                  <div className="py-3">
+                    {!imagesLoaded && selectedEmail.body_html.includes("<img") && (
+                      <button
+                        onClick={() => setImagesLoaded(true)}
+                        className="mb-3 flex items-center gap-1.5 text-xs text-primary hover:underline"
+                      >
+                        <Mail className="h-3 w-3" />
+                        Load images
+                      </button>
+                    )}
+                    <div
+                      className="prose prose-sm max-w-none text-sm [&_img]:max-w-full [&_a]:text-primary [&_a]:underline"
+                      dangerouslySetInnerHTML={{
+                        __html: imagesLoaded
+                          ? selectedEmail.body_html
+                          : stripImages(selectedEmail.body_html),
+                      }}
+                    />
+                  </div>
                 ) : selectedEmail.body_preview ? (
                   <div className="flex flex-col gap-2 py-3">
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
