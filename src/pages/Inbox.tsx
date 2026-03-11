@@ -402,9 +402,9 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
     "youngliving", "arbonne", "advocare", "beachbody",
     "mindbodygreen", "wellandgood", "healthline", "webmd",
     // Social media
-    "facebook", "facebookmail", "twitter", "x.com", "instagram", "linkedin",
-    "tiktok", "pinterest", "reddit", "snapchat", "threads.net",
-    "nextdoor", "tumblr", "mastodon",
+    "facebook", "facebookmail", "meta.com", "metamail", "instagram",
+    "twitter", "x.com", "linkedin", "tiktok", "pinterest", "reddit",
+    "snapchat", "threads.net", "nextdoor", "tumblr", "mastodon",
     // Streaming / Entertainment
     "youtube", "netflix", "spotify", "hulu", "disney", "hbomax", "peacock",
     "paramountplus", "appletv", "pandora", "audible", "kindle",
