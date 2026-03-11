@@ -658,9 +658,11 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
         setSelectedEmail(updated);
         setSyncedEmails((prev) => prev.map((e) => e.id === email.id ? { ...e, client_id: result.lead_id } : e));
       }
+      const ltLabel = result.line_type_detected === "commercial" ? " (Commercial)" : result.line_type_detected === "personal" ? " (Personal)" : "";
+      const extractLabel = result.extracted_fields > 0 ? ` — ${result.extracted_fields} fields pre-filled` : "";
       toast.success(result.is_new
-        ? "New client created & intake link sent"
-        : "Existing client updated & intake link sent"
+        ? `New client created${ltLabel}${extractLabel} & intake link sent`
+        : `Existing client updated${ltLabel}${extractLabel} & intake link sent`
       );
     } catch (err: any) {
       toast.error(err.message || "Failed to process intake");
