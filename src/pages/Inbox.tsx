@@ -978,11 +978,11 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
                 {selectedEmail.body_html ? (
                   <div
                     className="prose prose-sm max-w-none text-sm py-3"
-                    dangerouslySetInnerHTML={{ __html: selectedEmail.body_html }}
+                    dangerouslySetInnerHTML={{ __html: decodeHtmlEntities(selectedEmail.body_html) }}
                   />
                 ) : (
                   <p className="text-sm py-3 whitespace-pre-wrap text-muted-foreground">
-                    {selectedEmail.body_preview || "No content available"}
+                    {selectedEmail.body_preview ? decodeHtmlEntities(selectedEmail.body_preview) : "No content available"}
                   </p>
                 )}
               </ScrollArea>
