@@ -135,6 +135,8 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
   const [sending, setSending] = useState(false);
   const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(null);
   const [, setTick] = useState(0);
+  const [processingIntake, setProcessingIntake] = useState(false);
+  const [intakeResult, setIntakeResult] = useState<{ lead_id: string; is_new: boolean; intake_link_sent: boolean; documents_ingested: number } | null>(null);
 
   const updateLastSyncedFromEmails = useCallback((emails: SyncedEmail[]) => {
     const syncedTimes = emails
