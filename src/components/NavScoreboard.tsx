@@ -222,6 +222,7 @@ export function NavScoreboard() {
         return a.name.localeCompare(b.name);
       });
 
+      cacheRef.current = { ts: Date.now(), data: advisorList };
       setProducers(advisorList);
 
       // Check congrats for current user
