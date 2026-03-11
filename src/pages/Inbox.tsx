@@ -136,7 +136,7 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
   const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(null);
   const [, setTick] = useState(0);
   const [processingIntake, setProcessingIntake] = useState(false);
-  const [intakeResult, setIntakeResult] = useState<{ lead_id: string; is_new: boolean; intake_link_sent: boolean; documents_ingested: number } | null>(null);
+  const [intakeResult, setIntakeResult] = useState<{ lead_id: string; is_new: boolean; intake_link_sent: boolean; documents_ingested: number; line_type_detected?: string | null; extracted_fields?: number } | null>(null);
 
   const updateLastSyncedFromEmails = useCallback((emails: SyncedEmail[]) => {
     const syncedTimes = emails
@@ -658,9 +658,11 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
         setSelectedEmail(updated);
         setSyncedEmails((prev) => prev.map((e) => e.id === email.id ? { ...e, client_id: result.lead_id } : e));
       }
+      const ltLabel = result.line_type_detected === "commercial" ? " (Commercial)" : result.line_type_detected === "personal" ? " (Personal)" : "";
+      const extractLabel = result.extracted_fields > 0 ? ` — ${result.extracted_fields} fields pre-filled` : "";
       toast.success(result.is_new
-        ? "New client created & intake link sent"
-        : "Existing client updated & intake link sent"
+        ? `New client created${ltLabel}${extractLabel} & intake link sent`
+        : `Existing client updated${ltLabel}${extractLabel} & intake link sent`
       );
     } catch (err: any) {
       toast.error(err.message || "Failed to process intake");
@@ -1287,7 +1289,7 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
               {/* Process & Send Intake action */}
               <div className="flex items-center gap-2 py-2 border-b">
                 {intakeResult ? (
-                  <div className="flex items-center gap-2 text-xs">
+                  <div className="flex items-center gap-2 text-xs flex-wrap">
                     <Badge variant="outline" className="gap-1 text-[10px] bg-primary/5 border-primary/20">
                       <Check className="h-3 w-3" />
                       {intakeResult.is_new ? "New client created" : "Existing client updated"}
@@ -1297,8 +1299,18 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
                         {intakeResult.documents_ingested} doc{intakeResult.documents_ingested > 1 ? "s" : ""} ingested
                       </Badge>
                     )}
+                    {intakeResult.line_type_detected && (
+                      <Badge variant="outline" className="text-[10px] bg-secondary/50 border-secondary">
+                        {intakeResult.line_type_detected === "commercial" ? "Commercial" : "Personal"} lines detected
+                      </Badge>
+                    )}
+                    {(intakeResult.extracted_fields || 0) > 0 && (
+                      <Badge variant="outline" className="text-[10px] bg-accent/5 border-accent/20">
+                        {intakeResult.extracted_fields} fields extracted
+                      </Badge>
+                    )}
                     {intakeResult.intake_link_sent && (
-                      <Badge variant="outline" className="text-[10px] bg-accent/5 border-accent/20">Intake link sent</Badge>
+                      <Badge variant="outline" className="text-[10px] bg-accent/5 border-accent/20">Intake link sent (pre-filled)</Badge>
                     )}
                     <Button
                       variant="ghost"
