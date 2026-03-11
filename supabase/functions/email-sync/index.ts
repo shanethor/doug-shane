@@ -828,6 +828,86 @@ serve(async (req) => {
       });
     }
 
+    // ── fetch-body: on-demand full HTML body retrieval ──
+    if (action === "fetch-body") {
+      const { email_id } = body;
+      if (!email_id) {
+        return new Response(JSON.stringify({ error: "Missing email_id" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Look up the synced email row
+      const { data: emailRow } = await adminClient
+        .from("synced_emails")
+        .select("id, external_id, connection_id, body_html")
+        .eq("id", email_id)
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      if (!emailRow) {
+        return new Response(JSON.stringify({ error: "Email not found" }), {
+          status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // If body_html is already populated, return it
+      if (emailRow.body_html) {
+        return new Response(JSON.stringify({ body_html: emailRow.body_html }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Get the connection to fetch from provider
+      const { data: conn } = await adminClient
+        .from("email_connections")
+        .select("*")
+        .eq("id", emailRow.connection_id)
+        .maybeSingle();
+
+      if (!conn) {
+        return new Response(JSON.stringify({ error: "Connection not found" }), {
+          status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const accessToken = await getValidToken(conn, adminClient);
+      let htmlBody: string | null = null;
+
+      if (conn.provider === "gmail") {
+        // Fetch full message
+        const msgResp = await fetch(
+          `https://gmail.googleapis.com/gmail/v1/users/me/messages/${emailRow.external_id}?format=full`,
+          { headers: { Authorization: `Bearer ${accessToken}` } }
+        );
+        if (msgResp.ok) {
+          const msg = await msgResp.json();
+          htmlBody = extractGmailHtmlBody(msg.payload);
+        }
+      } else if (conn.provider === "outlook") {
+        const msgResp = await fetch(
+          `https://graph.microsoft.com/v1.0/me/messages/${emailRow.external_id}?$select=body`,
+          { headers: { Authorization: `Bearer ${accessToken}` } }
+        );
+        if (msgResp.ok) {
+          const msg = await msgResp.json();
+          htmlBody = msg.body?.content || null;
+        }
+      }
+
+      // Persist to DB so we don't fetch again
+      if (htmlBody) {
+        await adminClient
+          .from("synced_emails")
+          .update({ body_html: htmlBody })
+          .eq("id", email_id);
+      }
+
+      return new Response(JSON.stringify({ body_html: htmlBody }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     if (action === "send") {
       const { to, subject, body_html, send_provider } = body;
 
