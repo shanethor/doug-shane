@@ -284,10 +284,13 @@ export default function Settings() {
             </div>
             <Switch
               checked={darkMode}
-              onCheckedChange={(checked) => {
+              onCheckedChange={async (checked) => {
                 setDarkMode(checked);
                 document.documentElement.classList.toggle("dark", checked);
                 localStorage.setItem("aura-dark-mode", checked ? "true" : "false");
+                if (user) {
+                  await supabase.from("profiles").update({ dark_mode: checked } as any).eq("user_id", user.id);
+                }
               }}
             />
           </div>
