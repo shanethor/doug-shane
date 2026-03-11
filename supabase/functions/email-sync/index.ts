@@ -796,6 +796,289 @@ serve(async (req) => {
       });
     }
 
+    // ── Process email intake: resolve client, create submission, ingest, send intake link ──
+    if (action === "process-email-intake") {
+      const { email_id } = body;
+      if (!email_id) {
+        return new Response(JSON.stringify({ error: "Missing email_id" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // 1) Get the email
+      const { data: emailRow } = await adminClient
+        .from("synced_emails")
+        .select("id, external_id, connection_id, subject, from_name, from_address, body_preview, client_id")
+        .eq("id", email_id)
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      if (!emailRow) {
+        return new Response(JSON.stringify({ error: "Email not found" }), {
+          status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const senderAddr = (emailRow.from_address || "").toLowerCase();
+      const senderName = emailRow.from_name || senderAddr.split("@")[0].replace(/[._]/g, " ");
+      let isNew = false;
+      let leadId: string | null = emailRow.client_id || null;
+
+      // 2) Resolve existing vs new client
+      if (!leadId) {
+        // Check leads by email
+        const { data: existingLeads } = await adminClient
+          .from("leads")
+          .select("id, account_name")
+          .eq("owner_user_id", userId)
+          .ilike("email", `%${senderAddr}%`)
+          .limit(1);
+
+        if (existingLeads && existingLeads.length > 0) {
+          leadId = existingLeads[0].id;
+        } else {
+          // Also try domain match: e.g. cfo@patrconstruction.com → Patrick Construction
+          const senderDomain = senderAddr.split("@")[1]?.split(".")[0] || "";
+          if (senderDomain && senderDomain.length > 3) {
+            const { data: domainLeads } = await adminClient
+              .from("leads")
+              .select("id, account_name, email")
+              .eq("owner_user_id", userId)
+              .ilike("account_name", `%${senderDomain}%`)
+              .limit(1);
+            if (domainLeads && domainLeads.length > 0) {
+              leadId = domainLeads[0].id;
+            }
+          }
+        }
+
+        if (!leadId) {
+          // Create new lead
+          isNew = true;
+          const prettyName = senderName.split(" ").map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+          const { data: newLead, error: leadErr } = await adminClient
+            .from("leads")
+            .insert({
+              owner_user_id: userId,
+              account_name: prettyName,
+              contact_name: prettyName,
+              email: senderAddr,
+              stage: "prospect",
+              line_type: "commercial",
+              lead_source: "email_intake",
+            })
+            .select("id")
+            .single();
+
+          if (leadErr || !newLead) {
+            console.error("[email-sync] Failed to create lead:", leadErr);
+            return new Response(JSON.stringify({ error: "Failed to create client" }), {
+              status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
+          }
+          leadId = newLead.id;
+        }
+
+        // Assign email to this lead
+        await adminClient
+          .from("synced_emails")
+          .update({ client_id: leadId, client_link_source: "email_intake" })
+          .eq("id", email_id);
+      }
+
+      // 3) Find or create a submission for this lead
+      const { data: existingSub } = await adminClient
+        .from("business_submissions")
+        .select("id, status")
+        .eq("lead_id", leadId)
+        .in("status", ["new", "draft"])
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      let submissionId: string;
+      if (existingSub) {
+        submissionId = existingSub.id;
+      } else {
+        const { data: newSub, error: subErr } = await adminClient
+          .from("business_submissions")
+          .insert({
+            user_id: userId,
+            lead_id: leadId,
+            company_name: senderName,
+            status: "new",
+          })
+          .select("id")
+          .single();
+
+        if (subErr || !newSub) {
+          console.error("[email-sync] Failed to create submission:", subErr);
+          return new Response(JSON.stringify({ error: "Failed to create submission" }), {
+            status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+        submissionId = newSub.id;
+
+        // Link submission to lead
+        await adminClient
+          .from("leads")
+          .update({ submission_id: submissionId })
+          .eq("id", leadId);
+      }
+
+      // 4) Ingest attachments as client documents
+      const { data: atts } = await adminClient
+        .from("email_attachments")
+        .select("id, file_name, file_size, content_type")
+        .eq("email_id", email_id)
+        .eq("user_id", userId);
+
+      const docExts = /\.(pdf|docx?|xlsx?|csv|png|jpe?g|tiff?)$/i;
+      let ingested = 0;
+      for (const att of (atts || [])) {
+        const isDoc = docExts.test(att.file_name) ||
+          (att.content_type && (att.content_type.includes("pdf") || att.content_type.includes("document") || att.content_type.includes("image/")));
+        if (!isDoc) continue;
+
+        const { data: exists } = await adminClient
+          .from("client_documents")
+          .select("id")
+          .eq("user_id", userId)
+          .eq("lead_id", leadId)
+          .eq("file_name", att.file_name)
+          .maybeSingle();
+
+        if (!exists) {
+          await adminClient.from("client_documents").insert({
+            user_id: userId,
+            lead_id: leadId,
+            submission_id: submissionId,
+            file_name: att.file_name,
+            file_url: `email-attachment://${att.id}`,
+            file_size: att.file_size || 0,
+            document_type: "other",
+          });
+          ingested++;
+        }
+      }
+
+      // 5) Generate intake link
+      const { data: intakeLink, error: intakeErr } = await adminClient
+        .from("intake_links")
+        .insert({
+          agent_id: userId,
+          lead_id: leadId,
+          submission_id: submissionId,
+          customer_name: senderName,
+          customer_email: senderAddr,
+        })
+        .select("token")
+        .single();
+
+      let intakeUrl: string | null = null;
+      if (intakeLink) {
+        const siteUrl = Deno.env.get("SITE_URL") || "https://doug-shane.lovable.app";
+        intakeUrl = `${siteUrl}/intake/${intakeLink.token}`;
+      }
+
+      // 6) Send intake email to the sender
+      const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
+      let emailSent = false;
+      if (RESEND_API_KEY && intakeUrl && senderAddr) {
+        // Get agent profile
+        let agentName = "Your insurance advisor";
+        let agencyName = "AURA Risk Group";
+        const { data: profile } = await adminClient
+          .from("profiles")
+          .select("full_name, agency_name, agency_id")
+          .eq("user_id", userId)
+          .maybeSingle();
+        if (profile?.full_name) agentName = profile.full_name;
+        if (profile?.agency_id) {
+          const { data: ag } = await adminClient.from("agencies").select("name").eq("id", profile.agency_id).maybeSingle();
+          if (ag?.name) agencyName = ag.name;
+        }
+        if (!agencyName && profile?.agency_name) agencyName = profile.agency_name;
+
+        const emailSubject = isNew
+          ? "We received your insurance documents"
+          : "Updated your insurance file – please review";
+
+        const intro = isNew
+          ? `We created a secure profile for you and pre-filled details from your documents.`
+          : `We added your new documents to your existing account and updated your file.`;
+
+        const html = `
+          <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 24px;">
+            <h2 style="color: #1a1a2e; margin-bottom: 8px;">${emailSubject}</h2>
+            <p style="color: #444; line-height: 1.6;">
+              Hi ${senderName},
+            </p>
+            <p style="color: #444; line-height: 1.6;">
+              ${intro}
+            </p>
+            <p style="color: #444; line-height: 1.6;">
+              Please review and fill in any missing details here:
+            </p>
+            <div style="text-align: center; margin: 32px 0;">
+              <a href="${intakeUrl}" style="display: inline-block; padding: 14px 32px; background-color: #1a1a2e; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px;">
+                Open Secure Intake Form
+              </a>
+            </div>
+            <p style="color: #888; font-size: 12px;">
+              If the button doesn't work, copy and paste this link:<br/>
+              <a href="${intakeUrl}" style="color: #1a1a2e;">${intakeUrl}</a>
+            </p>
+            <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;" />
+            <p style="color: #888; font-size: 12px;">– ${agentName} · ${agencyName} · Powered by AURA</p>
+          </div>
+        `;
+
+        try {
+          const resendResp = await fetch("https://api.resend.com/emails", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${RESEND_API_KEY}`,
+            },
+            body: JSON.stringify({
+              from: `${agencyName} <noreply@buildingaura.site>`,
+              to: [senderAddr],
+              subject: emailSubject,
+              html,
+            }),
+          });
+          emailSent = resendResp.ok;
+          if (!emailSent) {
+            console.error("[email-sync] Failed to send intake email:", await resendResp.text());
+          }
+        } catch (sendErr) {
+          console.error("[email-sync] Resend error:", sendErr);
+        }
+      }
+
+      // 7) Notify the producer
+      await adminClient.from("notifications").insert({
+        user_id: userId,
+        type: "intake",
+        title: isNew ? "New client from email intake" : "Updated existing client from email",
+        body: `${senderAddr} — ${ingested} doc${ingested !== 1 ? "s" : ""} ingested${emailSent ? ", intake link sent" : ""}`,
+        link: `/pipeline/${leadId}`,
+      });
+
+      return new Response(JSON.stringify({
+        success: true,
+        is_new: isNew,
+        lead_id: leadId,
+        submission_id: submissionId,
+        documents_ingested: ingested,
+        intake_link_sent: emailSent,
+        intake_url: intakeUrl,
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // ── Download attachment action ──
     if (action === "download-attachment") {
       const { attachment_id } = body;

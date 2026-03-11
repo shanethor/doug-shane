@@ -17,7 +17,7 @@ import { useNavigate } from "react-router-dom";
 import {
   Bell, Mail, GitBranch, FileText, Check, CheckCheck, Sparkles,
   Send, Loader2, Inbox as InboxIcon, MailOpen, RefreshCw, User, Reply, ArrowLeft, X, Search, SlidersHorizontal, Plus,
-  Paperclip, Download
+  Paperclip, Download, Zap, ExternalLink
 } from "lucide-react";
 import { formatDistanceToNow, format } from "date-fns";
 import { getAuthHeaders } from "@/lib/auth-fetch";
@@ -135,6 +135,8 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
   const [sending, setSending] = useState(false);
   const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(null);
   const [, setTick] = useState(0);
+  const [processingIntake, setProcessingIntake] = useState(false);
+  const [intakeResult, setIntakeResult] = useState<{ lead_id: string; is_new: boolean; intake_link_sent: boolean; documents_ingested: number } | null>(null);
 
   const updateLastSyncedFromEmails = useCallback((emails: SyncedEmail[]) => {
     const syncedTimes = emails
@@ -596,6 +598,7 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
     setSelectedEmail(email);
     setSelectedEmailAttachments([]);
     setShowFullHtml(false);
+    setIntakeResult(null);
     markEmailRead(email);
     if (email.has_attachments) {
       fetchAttachmentsForEmail(email.id);
@@ -631,6 +634,39 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
     setComposeSubject(email.subject.startsWith("Re:") ? email.subject : `Re: ${email.subject}`);
     setComposeBody("");
     setComposeOpen(true);
+  };
+
+  const handleProcessIntake = async (email: SyncedEmail) => {
+    setProcessingIntake(true);
+    setIntakeResult(null);
+    try {
+      const headers = await getAuthHeaders();
+      const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/email-sync`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ action: "process-email-intake", email_id: email.id }),
+      });
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({ error: "Failed" }));
+        throw new Error(err.error || "Failed to process");
+      }
+      const result = await resp.json();
+      setIntakeResult(result);
+      // Update the email's client_id in state
+      if (result.lead_id) {
+        const updated = { ...email, client_id: result.lead_id };
+        setSelectedEmail(updated);
+        setSyncedEmails((prev) => prev.map((e) => e.id === email.id ? { ...e, client_id: result.lead_id } : e));
+      }
+      toast.success(result.is_new
+        ? "New client created & intake link sent"
+        : "Existing client updated & intake link sent"
+      );
+    } catch (err: any) {
+      toast.error(err.message || "Failed to process intake");
+    } finally {
+      setProcessingIntake(false);
+    }
   };
 
   // Build unified items
@@ -1246,6 +1282,50 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
                     );
                   }}
                 />
+                </div>
+
+              {/* Process & Send Intake action */}
+              <div className="flex items-center gap-2 py-2 border-b">
+                {intakeResult ? (
+                  <div className="flex items-center gap-2 text-xs">
+                    <Badge variant="outline" className="gap-1 text-[10px] bg-primary/5 border-primary/20">
+                      <Check className="h-3 w-3" />
+                      {intakeResult.is_new ? "New client created" : "Existing client updated"}
+                    </Badge>
+                    {intakeResult.documents_ingested > 0 && (
+                      <Badge variant="outline" className="text-[10px]">
+                        {intakeResult.documents_ingested} doc{intakeResult.documents_ingested > 1 ? "s" : ""} ingested
+                      </Badge>
+                    )}
+                    {intakeResult.intake_link_sent && (
+                      <Badge variant="outline" className="text-[10px] bg-accent/5 border-accent/20">Intake link sent</Badge>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-xs gap-1 h-7 ml-auto"
+                      onClick={() => navigate(`/pipeline/${intakeResult.lead_id}`)}
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                      View client
+                    </Button>
+                  </div>
+                ) : (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-xs gap-1.5 h-7"
+                    onClick={() => handleProcessIntake(selectedEmail)}
+                    disabled={processingIntake}
+                  >
+                    {processingIntake ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <Zap className="h-3 w-3" />
+                    )}
+                    {processingIntake ? "Processing…" : "Process & Send Intake"}
+                  </Button>
+                )}
               </div>
 
               {selectedEmail.client_id && (
