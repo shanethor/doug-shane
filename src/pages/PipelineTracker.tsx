@@ -192,65 +192,6 @@ export default function PipelineTracker() {
           </Card>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-          <Card className="border-primary/20">
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-3">
-                <div className="rounded-full bg-primary/10 p-2.5">
-                  <DollarSign className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <p className="text-2xl font-semibold font-sans">{fmt(stats.targetPremium)}</p>
-                  <p className="text-xs text-muted-foreground font-sans">Target Premium</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-primary/20">
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-3">
-                <div className="rounded-full bg-primary/10 p-2.5">
-                  <TrendingUp className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <p className="text-2xl font-semibold font-sans">{fmt(stats.targetRevenue)}</p>
-                  <p className="text-xs text-muted-foreground font-sans">Target Revenue (12%)</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-3">
-                <div className="rounded-full bg-accent/10 p-2.5">
-                  <DollarSign className="h-5 w-5 text-accent" />
-                </div>
-                <div>
-                  <p className="text-2xl font-semibold font-sans">{fmt(stats.presentingPremium)}</p>
-                  <p className="text-xs text-muted-foreground font-sans">Quoted Premium</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-3">
-                <div className="rounded-full bg-accent/10 p-2.5">
-                  <TrendingUp className="h-5 w-5 text-accent" />
-                </div>
-                <div>
-                  <p className="text-2xl font-semibold font-sans">{fmt(stats.presentingRevenue)}</p>
-                  <p className="text-xs text-muted-foreground font-sans">Quoted Revenue (12%)</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Card className="border-success/30">
