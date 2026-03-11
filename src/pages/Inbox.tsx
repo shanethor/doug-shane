@@ -378,7 +378,11 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
 
   const openEmailDetail = (email: SyncedEmail) => {
     setSelectedEmail(email);
+    setSelectedEmailAttachments([]);
     markEmailRead(email);
+    if (email.has_attachments) {
+      fetchAttachmentsForEmail(email.id);
+    }
   };
 
   const handleReply = (email: SyncedEmail) => {
