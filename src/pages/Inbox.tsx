@@ -1327,6 +1327,8 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
                   </Button>
                 )}
               </div>
+
+              {selectedEmail.client_id && (
                 <div className="py-2">
                   <EmailClientSnapshot clientId={selectedEmail.client_id} />
                 </div>
