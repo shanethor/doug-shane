@@ -42,19 +42,20 @@ export default function EmailHub() {
 
   return (
     <AppLayout>
-      <div className="flex items-center gap-3 mb-6">
-        <Mail className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
-        <h1 className="text-xl sm:text-3xl font-semibold tracking-tight">Email</h1>
+      {/* Compact segmented control on mobile, standard header on desktop */}
+      <div className="flex items-center gap-3 mb-2 md:mb-6">
+        <Mail className="h-5 w-5 md:h-6 md:w-6 text-primary hidden md:block" />
+        <h1 className="text-lg md:text-3xl font-semibold tracking-tight hidden md:block">Email</h1>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="mb-4">
-          <TabsTrigger value="email" className="gap-1.5">
-            <Mail className="h-3.5 w-3.5" />
+        <TabsList className="mb-2 md:mb-4 h-8 md:h-9">
+          <TabsTrigger value="email" className="gap-1.5 text-xs md:text-sm px-3 md:px-4">
+            <Mail className="h-3 w-3 md:h-3.5 md:w-3.5" />
             Email
           </TabsTrigger>
-          <TabsTrigger value="calendar" className="gap-1.5">
-            <CalendarDays className="h-3.5 w-3.5" />
+          <TabsTrigger value="calendar" className="gap-1.5 text-xs md:text-sm px-3 md:px-4">
+            <CalendarDays className="h-3 w-3 md:h-3.5 md:w-3.5" />
             Calendar
           </TabsTrigger>
         </TabsList>
