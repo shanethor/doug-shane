@@ -407,6 +407,73 @@ serve(async (req) => {
         }
       }
 
+      // ── Auto-assign clients (background) ──
+      // Match unassigned emails' from/to addresses against leads' email field
+      try {
+        const { data: unassigned } = await adminClient
+          .from("synced_emails")
+          .select("id, from_address, to_addresses")
+          .eq("user_id", userId)
+          .is("client_id", null)
+          .limit(200);
+
+        if (unassigned && unassigned.length > 0) {
+          // Get all leads with email for this user
+          const { data: leads } = await adminClient
+            .from("leads")
+            .select("id, email, contact_name, account_name")
+            .eq("owner_user_id", userId)
+            .not("email", "is", null);
+
+          if (leads && leads.length > 0) {
+            // Build email-to-lead map (lowercase)
+            const emailToLead: Record<string, string> = {};
+            for (const lead of leads) {
+              if (lead.email) {
+                const emails = lead.email.split(",").map((e: string) => e.trim().toLowerCase());
+                for (const em of emails) {
+                  if (em) emailToLead[em] = lead.id;
+                }
+              }
+            }
+
+            // Match each unassigned email
+            const updates: { id: string; client_id: string }[] = [];
+            for (const email of unassigned) {
+              const addresses = [
+                email.from_address?.toLowerCase(),
+                ...(email.to_addresses || []).map((a: string) => a.toLowerCase()),
+              ].filter(Boolean);
+
+              for (const addr of addresses) {
+                if (emailToLead[addr]) {
+                  updates.push({ id: email.id, client_id: emailToLead[addr] });
+                  break;
+                }
+              }
+            }
+
+            // Batch update matched emails
+            for (const upd of updates) {
+              await adminClient
+                .from("synced_emails")
+                .update({
+                  client_id: upd.client_id,
+                  client_link_source: "auto",
+                })
+                .eq("id", upd.id);
+            }
+
+            if (updates.length > 0) {
+              console.log(`[email-sync] Auto-assigned ${updates.length} emails to clients`);
+            }
+          }
+        }
+      } catch (autoAssignErr) {
+        console.error("[email-sync] Auto-assign error:", autoAssignErr);
+        // Non-fatal — don't block sync response
+      }
+
       return new Response(JSON.stringify({ synced: emails.length, provider: conn.provider }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
