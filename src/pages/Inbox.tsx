@@ -25,8 +25,16 @@ import { advisorAssist } from "@/services/aiRouter";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { EmailFilterChips } from "@/components/EmailFilterChips";
 import { EmailClientSnapshot } from "@/components/EmailClientSnapshot";
+import { EmailClientAssign } from "@/components/EmailClientAssign";
 import { fuzzyMatch } from "@/lib/fuzzy-match";
 import { useIsMobile } from "@/hooks/use-mobile";
+
+/** Decode HTML entities like &amp;quot; &amp;lt; &amp;gt; &#39; etc. */
+function decodeHtmlEntities(text: string): string {
+  const el = document.createElement("textarea");
+  el.innerHTML = text;
+  return el.value;
+}
 
 type Notification = {
   id: string;
