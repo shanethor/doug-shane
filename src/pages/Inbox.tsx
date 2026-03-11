@@ -386,36 +386,132 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
     if (n.link) navigate(n.link);
   };
 
-  // Non-insurance domain/keyword heuristics
+  // ── Layer 1: Domain / sender blacklist ──
   const NON_INSURANCE_DOMAINS = [
+    // Retail / E-commerce
     "amazon", "ebay", "walmart", "target", "bestbuy", "etsy", "shopify",
-    "facebook", "twitter", "instagram", "linkedin", "tiktok", "pinterest", "reddit",
-    "youtube", "netflix", "spotify", "hulu", "disney", "apple.com", "google.com",
-    "uber", "lyft", "doordash", "grubhub", "postmates",
-    "github", "stackoverflow", "medium", "substack",
-    "noreply", "no-reply", "mailer-daemon", "newsletter",
-    "promotions", "marketing", "promo",
-    "facebookmail", "x.com",
+    "costco", "samsclub", "homedepot", "lowes", "macys", "nordstrom",
+    "kohls", "wayfair", "overstock", "chewy", "zappos", "shein",
+    // Social media
+    "facebook", "facebookmail", "twitter", "x.com", "instagram", "linkedin",
+    "tiktok", "pinterest", "reddit", "snapchat", "threads.net",
+    // Streaming / Entertainment
+    "youtube", "netflix", "spotify", "hulu", "disney", "hbomax", "peacock",
+    "paramountplus", "appletv", "pandora", "audible", "kindle",
+    // News / Sports
+    "espn", "nfl.com", "nba.com", "mlb.com", "nhl.com",
+    "bleacherreport", "theathletic", "foxsports", "cbssports", "si.com",
+    "cnn", "bbc", "nytimes", "washingtonpost", "usatoday", "reuters",
+    "apnews", "huffpost", "buzzfeed", "vice.com", "vox.com",
+    // Airlines / Travel / Hotels
+    "southwest", "delta", "united", "american airlines", "jetblue", "spirit",
+    "frontier", "alaska air", "hawaiianair",
+    "expedia", "booking.com", "hotels.com", "airbnb", "vrbo", "kayak",
+    "priceline", "tripadvisor", "marriott", "hilton", "ihg", "hyatt",
+    // Food delivery / Rideshare
+    "uber", "lyft", "doordash", "grubhub", "postmates", "instacart",
+    "seamless", "caviar", "gopuff",
+    // Tech / Dev / SaaS (not insurance)
+    "github", "stackoverflow", "medium", "substack", "producthunt",
+    "slack.com", "zoom.us", "calendly", "figma", "canva", "dropbox",
+    "notion.so", "trello", "asana", "monday.com", "jira",
+    // Payments / Fintech (non-insurance)
+    "venmo", "cashapp", "paypal", "zelle", "square", "stripe.com",
+    "robinhood", "coinbase", "crypto.com",
+    // Fitness / Health apps
+    "peloton", "fitbit", "myfitnesspal", "strava", "headspace", "calm.com",
+    "noom",
+    // Loyalty / Rewards programs
+    "starbucks", "chick-fil-a", "chipotle", "panera", "dunkin",
+    // Generic sender patterns
+    "noreply", "no-reply", "mailer-daemon", "newsletter", "notifications",
+    "promotions", "marketing", "promo", "info@", "updates@", "alerts@",
+    "support@", "hello@", "team@",
+    // Telecom
+    "verizon", "att.com", "t-mobile", "xfinity", "comcast", "spectrum",
   ];
+
+  // ── Layer 2: Subject / content keyword patterns ──
   const NON_INSURANCE_SUBJECTS = [
+    // Shopping / Orders
     "your order", "shipped", "delivery", "tracking", "receipt",
-    "your package", "order confirmation", "shipment",
-    "unsubscribe", "weekly digest", "daily digest",
-    "password reset", "verify your email", "confirm your",
-    "sale", "discount", "coupon", "deal of", "flash sale",
-    "your subscription", "free trial",
+    "your package", "order confirmation", "shipment", "out for delivery",
+    "has been delivered", "return label", "refund processed",
+    // Newsletters / Digests
+    "unsubscribe", "weekly digest", "daily digest", "morning brief",
+    "newsletter", "weekly roundup", "daily recap", "top stories",
+    "what you missed", "trending now", "this week in",
+    // Account / Auth
+    "password reset", "verify your email", "confirm your", "sign in",
+    "two-factor", "verification code", "security alert",
+    // Sales / Marketing
+    "sale", "discount", "coupon", "deal of", "flash sale", "limited time",
+    "% off", "special offer", "exclusive offer", "don't miss",
+    "last chance", "act now", "clearance", "buy one get",
+    "free shipping", "promo code",
+    // Subscriptions
+    "your subscription", "free trial", "trial ending", "plan renewal",
+    "upgrade your", "your membership",
+    // Social
     "you might", "recommended for you", "trending",
     "invitation to connect", "endorsed you", "new follower",
+    "liked your", "commented on", "shared your", "mentioned you",
+    "people you may know", "connection request",
+    // Sports / Entertainment
+    "score", "highlights", "recap", "game day", "final score",
+    "touchdown", "halftime", "playoff", "standings",
+    "new episode", "now streaming", "watch now", "just added",
+    // Travel
+    "flight", "itinerary", "boarding pass", "check-in", "hotel reservation",
+    "trip confirmation", "travel alert",
+    // Rewards / Points
+    "points", "rewards", "miles", "loyalty", "earned", "redeem",
+    "cash back", "your balance",
+    // Food / Dining
+    "your table", "reservation confirmed", "order ready",
+    "menu update", "happy hour",
+  ];
+
+  // Insurance-positive keywords that override the filters (safety net)
+  const INSURANCE_KEYWORDS = [
+    "policy", "premium", "coverage", "claim", "deductible", "liability",
+    "certificate", "endorsement", "underwriting", "insured", "insurer",
+    "binder", "loss run", "acord", "coi", "renewal", "audit",
+    "workers comp", "general liability", "commercial auto", "property",
+    "umbrella", "excess", "surplus", "e&o", "d&o", "epli",
+    "professional liability", "cyber liability", "bond", "surety",
+    "risk", "broker", "carrier", "indemnity", "subrogation",
+    "certificate of insurance", "additional insured", "named insured",
+    "effective date", "expiration date", "cancellation notice",
+    "mod rate", "experience mod", "ncci", "class code",
   ];
 
   const isNonInsuranceEmail = useCallback((email: SyncedEmail): boolean => {
     const fromLower = (email.from_address || "").toLowerCase();
     const subjectLower = (email.subject || "").toLowerCase();
+    const fromName = (email.from_name || "").toLowerCase();
+    const previewLower = (email.body_preview || "").toLowerCase();
     const tags = email.tags || [];
-    // If it has an insurance tag, always keep it
+
+    // Safety: if it has an insurance tag, always keep
     if (tags.length > 0) return false;
+
+    // Safety: if linked to a client, always keep
+    if (email.client_id) return false;
+
+    // Safety: if subject or preview contains insurance keywords, always keep
+    const combinedText = `${subjectLower} ${previewLower} ${fromName}`;
+    if (INSURANCE_KEYWORDS.some((kw) => combinedText.includes(kw))) return false;
+
+    // Layer 1: domain blacklist
     if (NON_INSURANCE_DOMAINS.some((d) => fromLower.includes(d))) return true;
+
+    // Layer 2: subject keyword match (only when no client linked)
     if (NON_INSURANCE_SUBJECTS.some((s) => subjectLower.includes(s))) return true;
+
+    // Layer 2b: from-name keyword match
+    if (NON_INSURANCE_SUBJECTS.some((s) => fromName.includes(s))) return true;
+
     return false;
   }, []);
 
