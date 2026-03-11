@@ -55,10 +55,6 @@ export default function EmailHub() {
             <Mail className="h-3 w-3 md:h-3.5 md:w-3.5" />
             Email
           </TabsTrigger>
-          <TabsTrigger value="clients" className="gap-1.5 text-xs md:text-sm px-3 md:px-4">
-            <FolderOpen className="h-3 w-3 md:h-3.5 md:w-3.5" />
-            Clients
-          </TabsTrigger>
           <TabsTrigger value="calendar" className="gap-1.5 text-xs md:text-sm px-3 md:px-4">
             <CalendarDays className="h-3 w-3 md:h-3.5 md:w-3.5" />
             Calendar
