@@ -468,6 +468,44 @@ export default function Settings() {
               Your email credentials are stored securely and never shared. You can disconnect at any time.
             </p>
           </div>
+
+          {/* Intake Email Alias */}
+          {intakeAlias && (
+            <>
+              <Separator />
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <InboxIcon className="h-4 w-4 text-primary" />
+                  <Label className="text-sm font-medium">Your Intake Email</Label>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Share this email with clients. When they send documents to it, AURA will automatically create or update their file and begin extraction.
+                </p>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 h-10 flex items-center px-3 rounded-md border bg-muted/30 text-sm font-mono text-foreground truncate">
+                    {intakeAlias}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-10 w-10 shrink-0"
+                    onClick={() => {
+                      navigator.clipboard.writeText(intakeAlias);
+                      toast.success("Intake email copied!");
+                    }}
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
+                <div className="rounded-md bg-accent/5 border border-accent/20 p-3">
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">
+                    <strong>Setup:</strong> Add a forwarding rule in your Gmail or Outlook so emails sent to <span className="font-mono text-foreground">{intakeAlias}</span> are 
+                    forwarded to your connected email account. AURA will detect these during sync and auto-process them.
+                  </p>
+                </div>
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
 
