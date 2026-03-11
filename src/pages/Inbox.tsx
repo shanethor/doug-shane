@@ -194,6 +194,7 @@ export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; em
       setDownloadingAttachment(null);
     }
   }, []);
+  useEffect(() => {
     const t = setInterval(() => setTick((n) => n + 1), 30_000);
     return () => clearInterval(t);
   }, []);
