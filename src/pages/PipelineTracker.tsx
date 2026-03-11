@@ -19,7 +19,7 @@ export default function PipelineTracker() {
   const userId = searchParams.get("uid");
   const [period, setPeriod] = useState<TimePeriod>("all");
   const [stats, setStats] = useState({
-    totalProspects: 0,
+    prospectCount: 0,
     quotingCount: 0,
     presentingCount: 0,
     soldCount: 0,
@@ -142,7 +142,7 @@ export default function PipelineTracker() {
                   <Users className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <p className="text-2xl font-semibold font-sans">{stats.totalProspects}</p>
+                  <p className="text-2xl font-semibold font-sans">{stats.prospectCount}</p>
                   <p className="text-xs text-muted-foreground font-sans">Prospects</p>
                 </div>
               </div>
