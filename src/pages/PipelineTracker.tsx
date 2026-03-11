@@ -19,7 +19,7 @@ export default function PipelineTracker() {
   const userId = searchParams.get("uid");
   const [period, setPeriod] = useState<TimePeriod>("all");
   const [stats, setStats] = useState({
-    totalProspects: 0,
+    prospectCount: 0,
     quotingCount: 0,
     presentingCount: 0,
     soldCount: 0,
