@@ -100,7 +100,7 @@ const TYPE_CONFIG: Record<string, { icon: React.ElementType; color: string; labe
   info: { icon: Bell, color: "text-muted-foreground", label: "Info" },
 };
 
-export default function Inbox({ emailOnly, embedded }: { emailOnly?: boolean; embedded?: boolean } = {}) {
+export default function Inbox({ emailOnly, embedded, selectedClientId, onClearSelectedClient }: { emailOnly?: boolean; embedded?: boolean; selectedClientId?: string | null; onClearSelectedClient?: () => void } = {}) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
