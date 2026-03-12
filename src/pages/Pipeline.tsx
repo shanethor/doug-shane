@@ -44,6 +44,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { LossRunBadge } from "@/components/LossRunBadge";
+import { Clock } from "lucide-react";
 
 import { generateIntakeLink } from "@/lib/intake-links";
 import { PipelineAnalytics } from "@/components/PipelineAnalytics";
@@ -132,6 +133,7 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
   const [leadPolicyPremiums, setLeadPolicyPremiums] = useState<Record<string, number[]>>({});
 
   const [lossRunStatuses, setLossRunStatuses] = useState<Record<string, string>>({});
+  const [staleLeadIds, setStaleLeadIds] = useState<Set<string>>(new Set());
   // Map owner_user_id -> advisor name (for manager/admin view)
   const [ownerNames, setOwnerNames] = useState<Record<string, string>>({});
 
@@ -311,6 +313,25 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
 
     setAuditLogData(auditRes.data ?? []);
     setLoading(false);
+
+    // Compute stale leads (no activity in 48 hours, not sold/lost)
+    const cutoff48h = new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString();
+    const activeNonSoldLeadIds = activeLeads.map((l: any) => l.id);
+    if (activeNonSoldLeadIds.length > 0) {
+      const [emailsAct, auditAct, notesAct, docsAct] = await Promise.all([
+        supabase.from("synced_emails").select("client_id").in("client_id", activeNonSoldLeadIds).gte("received_at", cutoff48h),
+        supabase.from("audit_log").select("object_id").eq("object_type", "lead").in("object_id", activeNonSoldLeadIds).gte("created_at", cutoff48h),
+        supabase.from("lead_notes").select("lead_id").in("lead_id", activeNonSoldLeadIds).gte("created_at", cutoff48h),
+        supabase.from("client_documents").select("lead_id").in("lead_id", activeNonSoldLeadIds).gte("created_at", cutoff48h),
+      ]);
+      const recentIds = new Set<string>();
+      (emailsAct.data ?? []).forEach((e: any) => recentIds.add(e.client_id));
+      (auditAct.data ?? []).forEach((a: any) => recentIds.add(a.object_id));
+      (notesAct.data ?? []).forEach((n: any) => recentIds.add(n.lead_id));
+      (docsAct.data ?? []).forEach((d: any) => recentIds.add(d.lead_id));
+      const stale = new Set(activeNonSoldLeadIds.filter((id: string) => !recentIds.has(id)));
+      if (mountedRef.current) setStaleLeadIds(stale);
+    }
   }, [user, isManager, isAdmin]);
 
   const { containerRef: pullRef, PullIndicator } = usePullToRefresh({ onRefresh: loadLeads });
@@ -1267,6 +1288,19 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
                               <p className="font-medium text-sm font-sans truncate">{lead.account_name}</p>
                               {(stage === "prospect" || stage === "quoting") && (
                                 <LossRunBadge status={lossRunStatuses[lead.id] || null} />
+                              )}
+                              {staleLeadIds.has(lead.id) && (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span className="inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[9px] font-semibold bg-amber-500/15 text-amber-600 border border-amber-500/20">
+                                      <Clock className="h-2.5 w-2.5" />
+                                      48h+
+                                    </span>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="top" className="text-xs">
+                                    No activity in 48+ hours — needs follow-up
+                                  </TooltipContent>
+                                </Tooltip>
                               )}
                             </div>
                             {(isManager || isAdmin) && ownerNames[lead.owner_user_id] && lead.owner_user_id !== user?.id && (

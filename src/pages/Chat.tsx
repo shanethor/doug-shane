@@ -26,6 +26,7 @@ import { useVoiceInput } from "@/hooks/useVoiceInput";
 import { useTrainingMode } from "@/hooks/useTrainingMode";
 import { ensurePipelineLead, findExistingLeads } from "@/lib/pipeline-sync";
 import { generateIntakeLink, generatePersonalIntakeLink } from "@/lib/intake-links";
+import { findStaleClients } from "@/lib/stale-clients";
 import { PersonalIntakeDialog } from "@/components/PersonalIntakeDialog";
 import { fuzzyMatch } from "@/lib/fuzzy-match";
 import Pipeline from "@/pages/Pipeline";
@@ -1002,6 +1003,16 @@ export default function Chat() {
       || /how\s+(do|does|can|would|should)\b/.test(t);
   };
 
+  /** Detect follow-up / stale client intent */
+  const isFollowUpIntent = (text: string) => {
+    const t = text.trim().toLowerCase();
+    return /\b(follow\s*up|stale|dormant|inactive|neglect|untouched|no\s*activity|needs?\s*attention)\b/.test(t)
+      || /\b(clients?\s*(that|who|which|need)\s*(follow|attention|update|contact))\b/.test(t)
+      || /\b(any\s*(clients?|leads?)\s*(need|require|that|who))\b.*\b(follow|attention|touch|reach|contact)\b/.test(t)
+      || /\bwho\s*(do\s*i\s*need\s*to|should\s*i)\s*(follow|contact|reach|call|email)\b/.test(t)
+      || /\boverdue|behind\s*on|haven.?t\s*(heard|contacted|reached|emailed|called)\b/.test(t);
+  };
+
   const isPipelineIntent = (text: string) => {
     const t = text.trim().toLowerCase();
     return /\b(move|update|change|set|mark)\b.+\b(lead|pipeline|stage|prospect|quoting|presenting|lost|dead|renewal|production)\b/.test(t)
@@ -1231,6 +1242,39 @@ export default function Chat() {
 
   const send = async (text: string, displayText?: string) => {
     if (!text.trim() || isLoading) return;
+
+    // Intercept follow-up / stale client queries
+    if (!displayText && user && isFollowUpIntent(text)) {
+      const userMsg: Msg = { role: "user", content: text.trim() };
+      setMessages((prev) => [...prev, userMsg]);
+      setInput("");
+      setIsLoading(true);
+      try {
+        const stale = await findStaleClients(user.id, 48);
+        if (stale.length === 0) {
+          setMessages((prev) => [...prev, {
+            role: "assistant",
+            content: "✅ All your active clients have had activity in the last 48 hours — no follow-ups needed right now!",
+          }]);
+        } else {
+          const list = stale.slice(0, 15).map((c, i) =>
+            `${i + 1}. **${c.account_name}** — ${c.stage}${c.contact_name ? ` · ${c.contact_name}` : ""}${c.email ? ` · ${c.email}` : ""}`
+          ).join("\n");
+          setMessages((prev) => [...prev, {
+            role: "assistant",
+            content: `⚠️ **${stale.length} client${stale.length > 1 ? "s" : ""} need${stale.length === 1 ? "s" : ""} follow-up** (no activity in 48+ hours):\n\n${list}\n\nThese clients are still in your active pipeline but haven't had any emails, notes, documents, or stage changes recently. Would you like me to draft follow-up emails for any of them?`,
+          }]);
+        }
+      } catch (err) {
+        console.error("Stale client lookup failed:", err);
+        setMessages((prev) => [...prev, {
+          role: "assistant",
+          content: "Sorry, I had trouble checking for stale clients. Please try again.",
+        }]);
+      }
+      setIsLoading(false);
+      return;
+    }
 
     // Intercept partner intake link requests (e.g. "request Josh mortgage link", "Michael's intake link")
     const partnerIntent = !displayText ? isPartnerIntakeIntent(text) : null;
