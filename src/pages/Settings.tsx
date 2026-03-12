@@ -223,8 +223,8 @@ export default function Settings() {
     }
   };
 
-  const gmailConn = emailConnections.find((c) => c.provider === "gmail");
-  const outlookConn = emailConnections.find((c) => c.provider === "outlook");
+  const gmailConns = emailConnections.filter((c) => c.provider === "gmail");
+  const outlookConns = emailConnections.filter((c) => c.provider === "outlook");
 
   if (!loaded) {
     return (
