@@ -173,27 +173,12 @@ export default function SubmissionReviewPanel({ submissionId }: SubmissionReview
       const fileNames = files.map(f => f.name).join(", ");
       toast.info(`Extracting data from ${fileNames}…`);
 
-      const extractHeaders = await getAuthHeaders();
-      const extractResp = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/extract-business-data`,
-        {
-          method: "POST",
-          headers: extractHeaders,
-          body: JSON.stringify({
-            description: `Supplemental document upload: ${fileNames}`,
-            file_contents: textContents || undefined,
-            pdf_files: pdfFiles.length > 0 ? pdfFiles : undefined,
-            submission_id: submissionId,
-          }),
-        }
-      );
-
-      if (!extractResp.ok) {
-        const errBody = await extractResp.json().catch(() => ({}));
-        throw new Error(errBody.error || `Extraction failed (${extractResp.status})`);
-      }
-
-      const extracted = await extractResp.json();
+      const extracted = await extractWithBatching({
+        description: `Supplemental document upload: ${fileNames}`,
+        file_contents: textContents || undefined,
+        pdf_files: pdfFiles.length > 0 ? pdfFiles : undefined,
+        submission_id: submissionId,
+      });
       const newFields = extracted?.form_data || {};
 
       // Merge: new extracted fields fill gaps but don't overwrite existing values
