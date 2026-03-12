@@ -1616,9 +1616,11 @@ export default function Chat() {
           setIsLoading(false);
         },
       });
-    } catch {
+    } catch (e: any) {
       clearTimeout(safetyTimeout);
+      abortControllerRef.current = null;
       killTypewriter();
+      if (e?.name === "AbortError") return; // User stopped generation
       toast({ variant: "destructive", title: "Connection error", description: "Could not reach the assistant." });
       setIsLoading(false);
     }
