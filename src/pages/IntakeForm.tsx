@@ -405,13 +405,20 @@ export default function IntakeForm() {
       if (iData.customer_name) setCommercialForm(f => ({ ...f, customer_name: iData.customer_name }));
       if (iData.customer_email) setCommercialForm(f => ({ ...f, customer_email: iData.customer_email }));
 
+      // Auto-select line type from intake link metadata
+      const lt = iData.line_type;
+      if (lt === "personal" || lt === "commercial") {
+        setIntakeType(lt);
+        if (lt === "personal") setCurrentStep("coverage_select");
+      }
+
       // Apply prefill data from AI extraction
       const prefill = iData.prefill_data as Record<string, any> | null;
       if (prefill && typeof prefill === "object" && Object.keys(prefill).length > 0) {
-        // Determine line type and auto-set it
-        const lt = iData.line_type || prefill.line_type;
-        if (lt === "personal" || lt === "commercial") {
-          setIntakeType(lt);
+        // Override line type from prefill if not already set
+        const prefillLt = prefill.line_type;
+        if (!lt && (prefillLt === "personal" || prefillLt === "commercial")) {
+          setIntakeType(prefillLt);
         }
 
         // Prefill personal fields

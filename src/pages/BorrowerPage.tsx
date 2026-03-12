@@ -69,7 +69,7 @@ export default function BorrowerPage() {
         body: { slug: config.slug },
       });
       if (error || !data?.token) throw new Error(error?.message ?? "No token returned");
-      window.location.href = `${window.location.origin}/personal-intake/${data.token}`;
+      window.location.href = `${window.location.origin}/intake/${data.token}`;
     } catch (e) {
       console.error("Failed to create intake link:", e);
       setCreatingIntake(false);
