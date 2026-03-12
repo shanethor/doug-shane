@@ -1091,6 +1091,15 @@ export default function Chat() {
     return /\bpersonal\s*(lines?)?\s*(intake|form|link)\b/.test(t) || /\bpersonal\s*(auto|home|boat|umbrella)\s*(intake|form)\b/.test(t);
   };
 
+  /** Detect if user is asking for Josh's mortgage intake link */
+  const isMortgageIntakeIntent = (text: string): { slug: string; name: string } | null => {
+    const t = text.trim().toLowerCase();
+    if (/\bjosh('?s?)?\s*(mortgage|intake|link|form|page)\b/.test(t) || /\bmortgage\s*(link|intake|form|page)\s*(for\s*)?josh\b/.test(t) || /\brequest\s*josh\s*mortgage\b/.test(t) || /\bjosh('?s?)?\s*unique\s*(intake|link|form)\b/.test(t) || /\bjosh\s*chernes\b.*\b(link|intake|form|page)\b/.test(t)) {
+      return { slug: "josh-chernes", name: "Joshua Chernes" };
+    }
+    return null;
+  };
+
   const handlePersonalIntakeGenerate = async (config: { clientEmail: string; teamMemberEmail: string; ccAdvisor: boolean }) => {
     if (!user) return;
     setPersonalIntakeLoading(true);
