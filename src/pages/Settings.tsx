@@ -180,16 +180,16 @@ export default function Settings() {
     }
   };
 
-  const disconnectEmail = async (provider: string) => {
+  const disconnectEmail = async (connectionId: string, providerLabel: string) => {
     try {
       const headers = await getAuthHeaders();
       await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/email-oauth`, {
         method: "POST",
         headers,
-        body: JSON.stringify({ action: "disconnect", provider }),
+        body: JSON.stringify({ action: "disconnect", connection_id: connectionId }),
       });
-      setEmailConnections((prev) => prev.filter((c) => c.provider !== provider));
-      toast.success(`${provider === "gmail" ? "Gmail" : "Outlook"} disconnected`);
+      setEmailConnections((prev) => prev.filter((c) => c.id !== connectionId));
+      toast.success(`${providerLabel} account disconnected`);
     } catch {
       toast.error("Failed to disconnect");
     }
