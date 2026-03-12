@@ -133,6 +133,7 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
   const [leadPolicyPremiums, setLeadPolicyPremiums] = useState<Record<string, number[]>>({});
 
   const [lossRunStatuses, setLossRunStatuses] = useState<Record<string, string>>({});
+  const [staleLeadIds, setStaleLeadIds] = useState<Set<string>>(new Set());
   // Map owner_user_id -> advisor name (for manager/admin view)
   const [ownerNames, setOwnerNames] = useState<Record<string, string>>({});
 
