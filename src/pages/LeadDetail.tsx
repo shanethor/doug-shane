@@ -1072,6 +1072,14 @@ export default function LeadDetail() {
             </div>
           </div>
         </TabsContent>
+
+        <TabsContent value="correspondence">
+          <div className="mt-4">
+            <h2 className="text-xl mb-3">Correspondence History</h2>
+            <p className="text-xs text-muted-foreground font-sans mb-4">Complete transaction history — emails, pipeline moves, documents, intake forms, and notes.</p>
+            {leadId && <ClientCorrespondenceHistory leadId={leadId} />}
+          </div>
+        </TabsContent>
       </Tabs>
 
       {/* Schedule Presentation Dialog */}
