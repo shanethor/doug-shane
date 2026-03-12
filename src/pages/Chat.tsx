@@ -1003,6 +1003,16 @@ export default function Chat() {
       || /how\s+(do|does|can|would|should)\b/.test(t);
   };
 
+  /** Detect follow-up / stale client intent */
+  const isFollowUpIntent = (text: string) => {
+    const t = text.trim().toLowerCase();
+    return /\b(follow\s*up|stale|dormant|inactive|neglect|untouched|no\s*activity|needs?\s*attention)\b/.test(t)
+      || /\b(clients?\s*(that|who|which|need)\s*(follow|attention|update|contact))\b/.test(t)
+      || /\b(any\s*(clients?|leads?)\s*(need|require|that|who))\b.*\b(follow|attention|touch|reach|contact)\b/.test(t)
+      || /\bwho\s*(do\s*i\s*need\s*to|should\s*i)\s*(follow|contact|reach|call|email)\b/.test(t)
+      || /\boverdue|behind\s*on|haven.?t\s*(heard|contacted|reached|emailed|called)\b/.test(t);
+  };
+
   const isPipelineIntent = (text: string) => {
     const t = text.trim().toLowerCase();
     return /\b(move|update|change|set|mark)\b.+\b(lead|pipeline|stage|prospect|quoting|presenting|lost|dead|renewal|production)\b/.test(t)
