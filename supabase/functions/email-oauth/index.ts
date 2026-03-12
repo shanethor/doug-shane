@@ -129,7 +129,7 @@ serve(async (req) => {
             token_expires_at: expiresAt,
             is_active: true,
             updated_at: new Date().toISOString(),
-          }, { onConflict: "user_id,provider" });
+          }, { onConflict: "user_id,provider,email_address" });
 
         if (upsertErr) {
           console.error("Upsert error:", upsertErr);
@@ -150,7 +150,7 @@ serve(async (req) => {
             token_expires_at: expiresAt,
             is_active: true,
             updated_at: new Date().toISOString(),
-          }, { onConflict: "user_id,provider" });
+          }, { onConflict: "user_id,provider,email_address" });
 
         return new Response(JSON.stringify({ success: true, email, provider: "gmail" }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -232,7 +232,7 @@ serve(async (req) => {
             token_expires_at: expiresAt,
             is_active: true,
             updated_at: new Date().toISOString(),
-          }, { onConflict: "user_id,provider" });
+          }, { onConflict: "user_id,provider,email_address" });
 
         if (upsertErr) {
           console.error("Upsert error:", upsertErr);
@@ -253,7 +253,7 @@ serve(async (req) => {
             token_expires_at: expiresAt,
             is_active: true,
             updated_at: new Date().toISOString(),
-          }, { onConflict: "user_id,provider" });
+          }, { onConflict: "user_id,provider,email_address" });
 
         return new Response(JSON.stringify({ success: true, email, provider: "outlook" }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -262,11 +262,39 @@ serve(async (req) => {
     }
 
     if (action === "disconnect") {
-      await adminClient
-        .from("email_connections")
-        .delete()
-        .eq("user_id", userId)
-        .eq("provider", provider);
+      const { connection_id } = body;
+      if (connection_id) {
+        // Disconnect by specific connection ID
+        const { data: conn } = await adminClient
+          .from("email_connections")
+          .select("provider, email_address")
+          .eq("id", connection_id)
+          .eq("user_id", userId)
+          .maybeSingle();
+        
+        await adminClient
+          .from("email_connections")
+          .delete()
+          .eq("id", connection_id)
+          .eq("user_id", userId);
+        
+        // Also remove matching external calendar
+        if (conn) {
+          await adminClient
+            .from("external_calendars")
+            .delete()
+            .eq("user_id", userId)
+            .eq("provider", conn.provider)
+            .eq("email_address", conn.email_address);
+        }
+      } else {
+        // Legacy: disconnect by provider (removes all connections for that provider)
+        await adminClient
+          .from("email_connections")
+          .delete()
+          .eq("user_id", userId)
+          .eq("provider", provider);
+      }
       return new Response(JSON.stringify({ success: true }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
