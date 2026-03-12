@@ -28,6 +28,7 @@ import { ArrowLeft, Plus, FileText, CheckCircle, Clock, XCircle, MessageSquare, 
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LossRunsTab } from "@/components/LossRunsTab";
+import { ClientCorrespondenceHistory } from "@/components/ClientCorrespondenceHistory";
 import { ClientDocuments } from "@/components/ClientDocuments";
 import { generateIntakeLink } from "@/lib/intake-links";
 import { generateBorPdf, applySignatureToBorPdf, downloadPdf } from "@/lib/bor-pdf-generator";
