@@ -1649,7 +1649,7 @@ export default function FormFillingView({ submissionId, initialMessages, initial
           ) : activeForm && FILLABLE_PDF_PATHS[activeFormId] ? (
             <div className="relative h-full">
               {/* Loading overlay while prefill data is being computed */}
-              {prefillCount === 0 && dbLoaded && Object.keys(formData).length > 0 && (
+              {prefillCount === 0 && dbLoaded && !prefillTimedOut && Object.keys(formData).length > 0 && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 z-20 bg-background/90 backdrop-blur-sm">
                   <Loader2 className="h-6 w-6 animate-spin text-primary" />
                   <p className="text-sm font-medium text-muted-foreground">Preparing form data…</p>
