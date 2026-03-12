@@ -1212,6 +1212,23 @@ export default function Chat() {
    * Send a message to AI. If displayText is provided, show that in the chat bubble
    * but send the full `text` to the AI backend (for hiding internal prompts).
    */
+  const stopGeneration = useCallback(() => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    setIsLoading(false);
+    // If there's partial content, finalize it; otherwise add a stopped message
+    setMessages((prev) => {
+      const last = prev[prev.length - 1];
+      if (last?.role === "assistant" && last.content.trim()) return prev;
+      if (last?.role === "assistant") {
+        return prev.map((m, i) => i === prev.length - 1 ? { ...m, content: "*(Stopped)*" } : m);
+      }
+      return [...prev, { role: "assistant", content: "*(Stopped)*" }];
+    });
+  }, []);
+
   const send = async (text: string, displayText?: string) => {
     if (!text.trim() || isLoading) return;
 
