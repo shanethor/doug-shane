@@ -104,14 +104,8 @@ export function AppLayout({ children, onLogoClick }: { children: React.ReactNode
         </div>
       </main>
 
-      {/* Footer with legal links - hidden on mobile, not fixed */}
-      <footer className="border-t py-3 px-4 text-center hidden md:block">
-        <div className="mx-auto max-w-6xl flex items-center justify-center gap-4 text-[11px] text-muted-foreground">
-          <Link to="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link>
-          <span className="text-border">|</span>
-          <Link to="/terms" className="hover:text-foreground transition-colors">Terms of Service</Link>
-        </div>
-      </footer>
+      {/* Mobile bottom tab bar */}
+      <MobileBottomNav />
     </div>
   );
 }
