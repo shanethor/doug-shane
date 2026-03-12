@@ -43,13 +43,16 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Create an intake_links record with line_type=personal so the form auto-selects personal
+    // Slugs that should skip the line-type selection (auto-select personal)
+    const personalOnlySlugs = ["josh-chernes"];
+    const lineType = personalOnlySlugs.includes(slug) ? "personal" : null;
+
+    const insertPayload: Record<string, unknown> = { agent_id: agentId };
+    if (lineType) insertPayload.line_type = lineType;
+
     const { data, error } = await supabase
       .from("intake_links")
-      .insert({
-        agent_id: agentId,
-        line_type: "personal",
-      })
+      .insert(insertPayload)
       .select("token")
       .single();
 
