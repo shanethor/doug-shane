@@ -1211,8 +1211,8 @@ export default function Chat() {
   const send = async (text: string, displayText?: string) => {
     if (!text.trim() || isLoading) return;
 
-    // Intercept mortgage intake link requests (e.g. "request Josh mortgage link")
-    const mortgageIntent = !displayText ? isMortgageIntakeIntent(text) : null;
+    // Intercept partner intake link requests (e.g. "request Josh mortgage link", "Michael's intake link")
+    const partnerIntent = !displayText ? isPartnerIntakeIntent(text) : null;
     if (mortgageIntent) {
       const userMsg: Msg = { role: "user", content: text.trim() };
       setMessages((prev) => [...prev, userMsg]);
