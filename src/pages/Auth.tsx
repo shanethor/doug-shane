@@ -624,6 +624,11 @@ export default function Auth() {
               {isSignUp ? "Sign in" : "Sign up"}
             </button>
           </p>
+          <div className="mt-4 flex items-center justify-center gap-3 text-xs text-muted-foreground">
+            <a href="/privacy" className="hover:text-foreground underline underline-offset-4">Privacy Policy</a>
+            <span>·</span>
+            <a href="/terms" className="hover:text-foreground underline underline-offset-4">Terms of Service</a>
+          </div>
         </div>
       </div>
     </div>
