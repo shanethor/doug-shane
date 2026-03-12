@@ -61,8 +61,8 @@ export default function BorrowerPage() {
   }
 
   const handleStartIntake = () => {
-    // Navigate to a generic personal intake — future: generate a real intake link
-    navigate(`/intake/borrower-${config.slug}`);
+    // Navigate to AURA's personal insurance intake page
+    window.location.href = `${window.location.origin}/personal-intake/new?ref=${config.slug}`;
   };
 
   return (
