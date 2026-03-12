@@ -46,8 +46,9 @@ export function AddLeadDialog({ open, onOpenChange }: { open: boolean; onOpenCha
       toast.success(`${form.company} added to Lead Engine`);
       onOpenChange(false);
       setForm({ company: "", contact_name: "", email: "", phone: "", state: "", industry: "", est_premium: "", signal: "", source: "manual", score: "50", tier: "2", action: "" });
-    } catch {
-      toast.error("Failed to add lead");
+    } catch (err: any) {
+      console.error("Add lead error:", err);
+      toast.error(err?.message || "Failed to add lead");
     }
   };
 
