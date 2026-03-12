@@ -28,6 +28,7 @@ import { ArrowLeft, Plus, FileText, CheckCircle, Clock, XCircle, MessageSquare, 
 import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LossRunsTab } from "@/components/LossRunsTab";
+import { ClientCorrespondenceHistory } from "@/components/ClientCorrespondenceHistory";
 import { ClientDocuments } from "@/components/ClientDocuments";
 import { generateIntakeLink } from "@/lib/intake-links";
 import { generateBorPdf, applySignatureToBorPdf, downloadPdf } from "@/lib/bor-pdf-generator";
@@ -626,6 +627,7 @@ export default function LeadDetail() {
             <TabsTrigger value="documents">Documents</TabsTrigger>
             <TabsTrigger value="loss-runs" data-tab-loss-runs>Loss Runs</TabsTrigger>
             <TabsTrigger value="notes">Notes</TabsTrigger>
+            <TabsTrigger value="correspondence">Correspondence</TabsTrigger>
           </TabsList>
         </div>
 
@@ -1068,6 +1070,14 @@ export default function LeadDetail() {
                 <p className="text-xs text-muted-foreground text-center py-4 font-sans">No notes yet.</p>
               )}
             </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="correspondence">
+          <div className="mt-4">
+            <h2 className="text-xl mb-3">Correspondence History</h2>
+            <p className="text-xs text-muted-foreground font-sans mb-4">Complete transaction history — emails, pipeline moves, documents, intake forms, and notes.</p>
+            {leadId && <ClientCorrespondenceHistory leadId={leadId} />}
           </div>
         </TabsContent>
       </Tabs>
