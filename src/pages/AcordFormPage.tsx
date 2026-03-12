@@ -3,7 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { AppLayout } from "@/components/AppLayout";
 import FormFillingView from "@/components/FormFillingView";
-import ExtractionSummary from "@/components/ExtractionSummary";
+
 import { getFormsForCoverageLines } from "@/lib/coverage-form-map";
 import { Loader2 } from "lucide-react";
 
