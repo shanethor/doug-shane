@@ -76,6 +76,7 @@ async function streamChat({
   onDelta,
   onDone,
   onError,
+  signal,
 }: {
   messages: { role: string; content: string }[];
   trainingMode: boolean;
@@ -83,12 +84,14 @@ async function streamChat({
   onDelta: (text: string) => void;
   onDone: () => void;
   onError: (err: string) => void;
+  signal?: AbortSignal;
 }) {
   const headers = await getAuthHeaders();
   const resp = await fetch(CHAT_URL, {
     method: "POST",
     headers,
     body: JSON.stringify({ messages, trainingMode, userRole }),
+    signal,
   });
 
   if (!resp.ok) {
