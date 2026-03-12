@@ -46,7 +46,7 @@ const ADVISOR_SUGGESTIONS = [
   { icon: Sparkles, label: "Create a task", message: "Create a task to follow up with my most recent client next week." },
   { icon: FileSearch, label: "Request loss runs", message: "I need to request loss runs for a client." },
   { icon: BarChart3, label: "Check my production", message: "Show me my production numbers and pending approvals." },
-  { icon: LinkIcon, label: "Josh's mortgage link", message: "Request Josh mortgage link" },
+  { icon: LinkIcon, label: "Michael's partner link", message: "Request Michael's intake link" },
 ];
 
 const MANAGER_SUGGESTIONS = [
@@ -1092,11 +1092,16 @@ export default function Chat() {
     return /\bpersonal\s*(lines?)?\s*(intake|form|link)\b/.test(t) || /\bpersonal\s*(auto|home|boat|umbrella)\s*(intake|form)\b/.test(t);
   };
 
-  /** Detect if user is asking for Josh's mortgage intake link */
-  const isMortgageIntakeIntent = (text: string): { slug: string; name: string } | null => {
+  /** Detect if user is asking for a partner intake link */
+  const isPartnerIntakeIntent = (text: string): { slug: string; name: string } | null => {
     const t = text.trim().toLowerCase();
+    // Josh Chernes
     if (/\bjosh('?s?)?\s*(mortgage|intake|link|form|page)\b/.test(t) || /\bmortgage\s*(link|intake|form|page)\s*(for\s*)?josh\b/.test(t) || /\brequest\s*josh\s*mortgage\b/.test(t) || /\bjosh('?s?)?\s*unique\s*(intake|link|form)\b/.test(t) || /\bjosh\s*chernes\b.*\b(link|intake|form|page)\b/.test(t)) {
       return { slug: "josh-chernes", name: "Joshua Chernes" };
+    }
+    // Michael Wengzn
+    if (/\bmichael('?s?)?\s*(intake|link|form|page|partner)\b/.test(t) || /\brequest\s*michael('?s?)?\s*(intake|link|page)?\b/.test(t) || /\bmichael\s*wengzn\b/.test(t) || /\bnorthwestern\s*mutual\s*(link|intake|form|page)\b/.test(t) || /\bpartner\s*(link|intake|form|page)\s*(for\s*)?michael\b/.test(t)) {
+      return { slug: "michael-wengzn", name: "Michael Wengzn" };
     }
     return null;
   };
@@ -1206,16 +1211,16 @@ export default function Chat() {
   const send = async (text: string, displayText?: string) => {
     if (!text.trim() || isLoading) return;
 
-    // Intercept mortgage intake link requests (e.g. "request Josh mortgage link")
-    const mortgageIntent = !displayText ? isMortgageIntakeIntent(text) : null;
-    if (mortgageIntent) {
+    // Intercept partner intake link requests (e.g. "request Josh mortgage link", "Michael's intake link")
+    const partnerIntent = !displayText ? isPartnerIntakeIntent(text) : null;
+    if (partnerIntent) {
       const userMsg: Msg = { role: "user", content: text.trim() };
       setMessages((prev) => [...prev, userMsg]);
       setInput("");
-      const borrowerUrl = `${window.location.origin}/b/${mortgageIntent.slug}`;
+      const borrowerUrl = `${window.location.origin}/b/${partnerIntent.slug}`;
       setMessages((prev) => [...prev, {
         role: "assistant",
-        content: `Here's **${mortgageIntent.name}'s** unique borrower intake page:\n\n🔗 **[${borrowerUrl}](${borrowerUrl})**\n\nShare this link with ${mortgageIntent.name}'s mortgage clients. When they visit, they can start a personal lines insurance intake directly — the form auto-selects personal coverage and is pre-associated with ${mortgageIntent.name}'s referral.`,
+        content: `Here's **${partnerIntent.name}'s** unique partner intake page:\n\n🔗 **[${borrowerUrl}](${borrowerUrl})**\n\nShare this link with ${partnerIntent.name}'s clients. When they visit, they can start a personal lines insurance intake directly — the form auto-selects personal coverage and is pre-associated with ${partnerIntent.name}'s referral.`,
       }]);
       return;
     }
