@@ -150,7 +150,7 @@ serve(async (req) => {
             token_expires_at: expiresAt,
             is_active: true,
             updated_at: new Date().toISOString(),
-          }, { onConflict: "user_id,provider" });
+          }, { onConflict: "user_id,provider,email_address" });
 
         return new Response(JSON.stringify({ success: true, email, provider: "gmail" }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
