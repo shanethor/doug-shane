@@ -24,6 +24,7 @@ import LeadDetail from "./pages/LeadDetail";
 import ProducerDashboard from "./pages/ProducerDashboard";
 import Approvals from "./pages/Approvals";
 import IntakeForm from "./pages/IntakeForm";
+import BorrowerPage from "./pages/BorrowerPage";
 import PipelineTracker from "./pages/PipelineTracker";
 import BorSign from "./pages/BorSign";
 import InboxPage from "./pages/Inbox";
