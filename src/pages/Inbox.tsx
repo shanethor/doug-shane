@@ -713,7 +713,13 @@ export default function Inbox({ emailOnly, embedded, selectedClientId, onClearSe
   const unified = buildUnified();
   const baseUnified = emailOnly ? unified.filter((u) => u.kind === "email") : unified;
 
-  // Apply insurance tag + client filters
+  // Apply client folder filter first
+  const applyClientFolderFilter = (items: UnifiedItem[]) => {
+    if (!selectedClientId) return items;
+    return items.filter((u) => u.kind === "email" && (u.raw as SyncedEmail).client_id === selectedClientId);
+  };
+
+  // Apply insurance tag filters
   const applyInsuranceFilters = (items: UnifiedItem[]) => {
     let result = items;
     if (activeTags.length > 0) {
@@ -768,9 +774,10 @@ export default function Inbox({ emailOnly, embedded, selectedClientId, onClearSe
     });
   };
 
-  const filtered = applySearchFilter(applyNonInsuranceFilter(applyInsuranceFilters(tabFiltered)));
+  const clientFiltered = applyClientFolderFilter(tabFiltered);
+  const filtered = applySearchFilter(applyNonInsuranceFilter(applyInsuranceFilters(clientFiltered)));
 
-  const unreadCount = baseUnified.filter((u) => !u.is_read).length;
+  const unreadCount = applyClientFolderFilter(baseUnified).filter((u) => !u.is_read).length;
 
   const handleUnifiedClick = (item: UnifiedItem) => {
     if (item.kind === "notification") {
