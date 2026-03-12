@@ -31,7 +31,7 @@ const BORROWERS: Record<string, BorrowerConfig> = {
     title: "Loan Officer",
     company: "CrossCountry Mortgage",
     headshot: joshHeadshot,
-    applyUrl: "https://www.crosscountrymortgage.com/loan-officer/joshua-chernes/",
+    applyUrl: "https://crosscountrymortgage.com/fairfield-ct-5813/joshua-chernes/",
     phone: "203.814.8230",
     office: "203.401.8280",
     address: "46 Miller St., #1, Fairfield, CT 06824",
@@ -69,7 +69,7 @@ export default function BorrowerPage() {
         body: { slug: config.slug },
       });
       if (error || !data?.token) throw new Error(error?.message ?? "No token returned");
-      window.location.href = `${window.location.origin}/personal-intake/${data.token}`;
+      window.location.href = `${window.location.origin}/intake/${data.token}`;
     } catch (e) {
       console.error("Failed to create intake link:", e);
       setCreatingIntake(false);
