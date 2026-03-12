@@ -627,6 +627,7 @@ export default function LeadDetail() {
             <TabsTrigger value="documents">Documents</TabsTrigger>
             <TabsTrigger value="loss-runs" data-tab-loss-runs>Loss Runs</TabsTrigger>
             <TabsTrigger value="notes">Notes</TabsTrigger>
+            <TabsTrigger value="correspondence">Correspondence</TabsTrigger>
           </TabsList>
         </div>
 
