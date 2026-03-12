@@ -1205,6 +1205,20 @@ export default function Chat() {
   const send = async (text: string, displayText?: string) => {
     if (!text.trim() || isLoading) return;
 
+    // Intercept mortgage intake link requests (e.g. "request Josh mortgage link")
+    const mortgageIntent = !displayText ? isMortgageIntakeIntent(text) : null;
+    if (mortgageIntent) {
+      const userMsg: Msg = { role: "user", content: text.trim() };
+      setMessages((prev) => [...prev, userMsg]);
+      setInput("");
+      const borrowerUrl = `${window.location.origin}/b/${mortgageIntent.slug}`;
+      setMessages((prev) => [...prev, {
+        role: "assistant",
+        content: `Here's **${mortgageIntent.name}'s** unique borrower intake page:\n\n🔗 **[${borrowerUrl}](${borrowerUrl})**\n\nShare this link with ${mortgageIntent.name}'s mortgage clients. When they visit, they can start a personal lines insurance intake directly — the form auto-selects personal coverage and is pre-associated with ${mortgageIntent.name}'s referral.`,
+      }]);
+      return;
+    }
+
     // Intercept any intake link requests — open unified dialog
     if (!displayText && (isPersonalIntakeIntent(text) || isIntakeLinkIntent(text)) && user) {
       const userMsg: Msg = { role: "user", content: text.trim() };
