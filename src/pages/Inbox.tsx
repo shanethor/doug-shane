@@ -530,7 +530,9 @@ export default function Inbox({ emailOnly, embedded, selectedClientId, onClearSe
     "investment update", "portfolio", "dividend",
     "crypto", "bitcoin", "ethereum", "btc",
     // Politics / Religion / Spam
-    "foreign policy", "church", "scam", "phishing",
+    "foreign policy", "church", "scam", "phishing", "trump",
+    // Finance newsletters
+    "on the money",
     // Health supplements / Wellness marketing
     "supplement", "vitamin", "probiotic", "collagen", "detox",
     "wellness", "holistic", "superfood", "nutrition",
