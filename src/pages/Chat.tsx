@@ -1092,11 +1092,16 @@ export default function Chat() {
     return /\bpersonal\s*(lines?)?\s*(intake|form|link)\b/.test(t) || /\bpersonal\s*(auto|home|boat|umbrella)\s*(intake|form)\b/.test(t);
   };
 
-  /** Detect if user is asking for Josh's mortgage intake link */
-  const isMortgageIntakeIntent = (text: string): { slug: string; name: string } | null => {
+  /** Detect if user is asking for a partner intake link */
+  const isPartnerIntakeIntent = (text: string): { slug: string; name: string } | null => {
     const t = text.trim().toLowerCase();
+    // Josh Chernes
     if (/\bjosh('?s?)?\s*(mortgage|intake|link|form|page)\b/.test(t) || /\bmortgage\s*(link|intake|form|page)\s*(for\s*)?josh\b/.test(t) || /\brequest\s*josh\s*mortgage\b/.test(t) || /\bjosh('?s?)?\s*unique\s*(intake|link|form)\b/.test(t) || /\bjosh\s*chernes\b.*\b(link|intake|form|page)\b/.test(t)) {
       return { slug: "josh-chernes", name: "Joshua Chernes" };
+    }
+    // Michael Wengzn
+    if (/\bmichael('?s?)?\s*(intake|link|form|page|partner)\b/.test(t) || /\brequest\s*michael('?s?)?\s*(intake|link|page)?\b/.test(t) || /\bmichael\s*wengzn\b/.test(t) || /\bnorthwestern\s*mutual\s*(link|intake|form|page)\b/.test(t) || /\bpartner\s*(link|intake|form|page)\s*(for\s*)?michael\b/.test(t)) {
+      return { slug: "michael-wengzn", name: "Michael Wengzn" };
     }
     return null;
   };
