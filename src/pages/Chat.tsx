@@ -22,6 +22,7 @@ import { generateSubmissionPackage } from "@/lib/submission-package";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { getAuthHeaders } from "@/lib/auth-fetch";
+import { extractWithBatching } from "@/lib/extract-with-batching";
 import { useVoiceInput } from "@/hooks/useVoiceInput";
 import { useTrainingMode } from "@/hooks/useTrainingMode";
 import { ensurePipelineLead, findExistingLeads } from "@/lib/pipeline-sync";
