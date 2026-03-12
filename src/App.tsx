@@ -102,6 +102,7 @@ const App = () => (
           <Route path="/my-dashboard" element={<ProtectedRoute><ProducerDashboard /></ProtectedRoute>} />
           <Route path="/approvals" element={<Navigate to="/admin" replace />} />
           <Route path="/intake/:token" element={<IntakeForm />} />
+          <Route path="/b/:slug" element={<BorrowerPage />} />
           <Route path="/tracker" element={<PipelineTracker />} />
           <Route path="/personal-intake/:token" element={<IntakeForm />} />
           <Route path="/bor-sign/:token" element={<BorSign />} />
