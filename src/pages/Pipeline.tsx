@@ -1289,6 +1289,19 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
                               {(stage === "prospect" || stage === "quoting") && (
                                 <LossRunBadge status={lossRunStatuses[lead.id] || null} />
                               )}
+                              {staleLeadIds.has(lead.id) && (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span className="inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[9px] font-semibold bg-amber-500/15 text-amber-600 border border-amber-500/20">
+                                      <Clock className="h-2.5 w-2.5" />
+                                      48h+
+                                    </span>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="top" className="text-xs">
+                                    No activity in 48+ hours — needs follow-up
+                                  </TooltipContent>
+                                </Tooltip>
+                              )}
                             </div>
                             {(isManager || isAdmin) && ownerNames[lead.owner_user_id] && lead.owner_user_id !== user?.id && (
                               <p className="text-[10px] text-primary/70 font-sans truncate ml-[18px]">
