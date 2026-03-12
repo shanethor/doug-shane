@@ -450,7 +450,10 @@ export default function FormFillingView({ submissionId, initialMessages, initial
           const currentValue = String(formDataRef.current[internalKey] || "");
           // Don't sync boolean "false" into non-checkbox form data keys
           if (pdfValue === "false" && !internalKey.startsWith("chk_")) pdfValue = "";
-          // Sync any value that differs — most recent edit wins (including clears)
+          // Don't clear panel values with empty PDF values — only sync non-empty PDF edits
+          // This prevents the save poll from wiping DB-loaded data before the PDF is prefilled
+          if (pdfValue === "" && currentValue !== "") continue;
+          // Sync any value that differs — most recent edit wins
           if (pdfValue !== currentValue) {
             updates[internalKey] = pdfValue;
           }
