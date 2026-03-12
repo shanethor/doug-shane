@@ -22,6 +22,7 @@ import { generateSubmissionPackage } from "@/lib/submission-package";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { getAuthHeaders } from "@/lib/auth-fetch";
+import { extractWithBatching } from "@/lib/extract-with-batching";
 import { useVoiceInput } from "@/hooks/useVoiceInput";
 import { useTrainingMode } from "@/hooks/useTrainingMode";
 import { ensurePipelineLead, findExistingLeads } from "@/lib/pipeline-sync";
@@ -732,26 +733,11 @@ export default function Chat() {
         .single();
       if (subErr) throw subErr;
 
-      const extractHeaders = await getAuthHeaders();
-      const extractResp = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/extract-business-data`,
-        {
-          method: "POST",
-          headers: extractHeaders,
-          body: JSON.stringify({
-            description: `HANDWRITTEN NOTES — apply aggressive OCR fuzzy matching. Characters may be ambiguous: 0/O, 1/l/I, 5/S, 8/B, Z/2, etc. Use contextual clues (addresses, names, numbers) to resolve ambiguous characters. If a word is partially illegible, use the most likely insurance/business term that fits.\n\nScanned from: ${fileNames}`,
-            pdf_files: pdfFiles,
-            submission_id: sub.id,
-          }),
-        }
-      );
-
-      if (!extractResp.ok) {
-        const errBody = await extractResp.json().catch(() => ({}));
-        throw new Error(errBody.error || `Extraction failed (${extractResp.status})`);
-      }
-
-      const extracted = await extractResp.json();
+      const extracted = await extractWithBatching({
+        description: `HANDWRITTEN NOTES — apply aggressive OCR fuzzy matching. Characters may be ambiguous: 0/O, 1/l/I, 5/S, 8/B, Z/2, etc. Use contextual clues (addresses, names, numbers) to resolve ambiguous characters. If a word is partially illegible, use the most likely insurance/business term that fits.\n\nScanned from: ${fileNames}`,
+        pdf_files: pdfFiles,
+        submission_id: sub.id,
+      });
       const detectedCompany = extracted?.form_data?.applicant_name || extracted?.form_data?.insured_name || companyName;
       if (detectedCompany !== companyName) {
         await supabase.from("business_submissions").update({ company_name: detectedCompany }).eq("id", sub.id);
@@ -833,28 +819,13 @@ export default function Chat() {
         .single();
       if (subErr) throw subErr;
 
-      // Run extraction — send PDFs as base64 for Gemini multimodal reading
-      const extractHeaders2 = await getAuthHeaders();
-      const extractResp = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/extract-business-data`,
-        {
-          method: "POST",
-          headers: extractHeaders2,
-          body: JSON.stringify({
-            description,
-            file_contents: textContents || undefined,
-            pdf_files: pdfFiles.length > 0 ? pdfFiles : undefined,
-            submission_id: sub.id,
-          }),
-        }
-      );
-
-      if (!extractResp.ok) {
-        const errBody = await extractResp.json().catch(() => ({}));
-        throw new Error(errBody.error || `Extraction failed (${extractResp.status})`);
-      }
-
-      const extracted = await extractResp.json();
+      // Run extraction — uses batching for large PDFs (up to 200 pages)
+      const extracted = await extractWithBatching({
+        description,
+        file_contents: textContents || undefined,
+        pdf_files: pdfFiles.length > 0 ? pdfFiles : undefined,
+        submission_id: sub.id,
+      });
       const detectedCompany = extracted?.form_data?.applicant_name || extracted?.form_data?.insured_name || companyName;
 
       // Update company name if we found one
@@ -937,27 +908,12 @@ export default function Chat() {
         .single();
       if (subErr) throw subErr;
 
-      const extractHeaders = await getAuthHeaders();
-      const extractResp = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/extract-business-data`,
-        {
-          method: "POST",
-          headers: extractHeaders,
-          body: JSON.stringify({
-            description,
-            file_contents: textContents || undefined,
-            pdf_files: pdfFiles.length > 0 ? pdfFiles : undefined,
-            submission_id: sub.id,
-          }),
-        }
-      );
-
-      if (!extractResp.ok) {
-        const errBody = await extractResp.json().catch(() => ({}));
-        throw new Error(errBody.error || `Extraction failed (${extractResp.status})`);
-      }
-
-      const extracted = await extractResp.json();
+      const extracted = await extractWithBatching({
+        description,
+        file_contents: textContents || undefined,
+        pdf_files: pdfFiles.length > 0 ? pdfFiles : undefined,
+        submission_id: sub.id,
+      });
       const fd = extracted?.form_data || {};
       const detectedForms = detectFormsFromLOBFlags(fd);
       setRequestedFormIds(detectedForms);
@@ -1711,21 +1667,12 @@ export default function Chat() {
         if (subErr) throw subErr;
         subId = sub.id;
 
-        const extractHeaders3 = await getAuthHeaders();
-        const extractResp = await fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/extract-business-data`,
-          {
-            method: "POST",
-            headers: extractHeaders3,
-            body: JSON.stringify({ description, file_contents: textContents || undefined, pdf_files: pdfFiles.length > 0 ? pdfFiles : undefined, submission_id: sub.id }),
-          }
-        );
-        if (!extractResp.ok) {
-          const errBody = await extractResp.json().catch(() => ({}));
-          throw new Error(errBody.error || `Extraction failed (${extractResp.status})`);
-        }
-
-        const extracted = await extractResp.json();
+        const extracted = await extractWithBatching({
+          description,
+          file_contents: textContents || undefined,
+          pdf_files: pdfFiles.length > 0 ? pdfFiles : undefined,
+          submission_id: sub.id,
+        });
         const fd = extracted?.form_data || {};
         const detectedCompany = fd.applicant_name || fd.insured_name || "New Client";
         if (detectedCompany !== "New Client") {
@@ -2181,17 +2128,11 @@ export default function Chat() {
 
       if (subErr) throw subErr;
 
-      const extractHeaders4 = await getAuthHeaders();
-      const extractResp = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/extract-business-data`,
-        {
-          method: "POST",
-          headers: extractHeaders4,
-          body: JSON.stringify({ description: fullDescription, submission_id: sub.id }),
-        }
-      );
-
-      if (!extractResp.ok) console.warn("Extract failed:", extractResp.status);
+      try {
+        await extractWithBatching({ description: fullDescription, submission_id: sub.id });
+      } catch (extractErr) {
+        console.warn("Extract failed:", extractErr);
+      }
 
       send(`Here are the details:\n${filled}${websiteUrl ? `\nWebsite: ${websiteUrl}` : ""}\n\n[SUBMISSION_ID:${sub.id}]`);
       // Detect which forms the user is requesting from chat context
