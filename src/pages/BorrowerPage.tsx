@@ -3,12 +3,19 @@ import { useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Upload, Shield, Phone, Mail, MapPin, ExternalLink, CheckCircle, ArrowRight, Sparkles, Search, MessageSquare, Loader2 } from "lucide-react";
+import { Upload, Shield, Phone, Mail, MapPin, ExternalLink, CheckCircle, ArrowRight, Sparkles, Search, MessageSquare, Loader2, Briefcase } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import auraLogo from "@/assets/aura-logo.png";
 import joshHeadshot from "@/assets/josh-chernes-headshot.png";
+import michaelHeadshot from "@/assets/michael-wengzn-headshot.png";
 
 /* ─── Borrower Config ─── */
+interface CoverageCard {
+  label: string;
+  lines: string[];
+  icon: typeof Shield;
+}
+
 interface BorrowerConfig {
   slug: string;
   name: string;
@@ -22,6 +29,21 @@ interface BorrowerConfig {
   email: string;
   bio: string;
   coverageLines: string[];
+  coverageCards?: CoverageCard[];
+  /** CTA label on hero button */
+  heroCta: string;
+  /** Header-right label */
+  headerLabel: string;
+  /** Contact section title */
+  contactSectionTitle: string;
+  /** Contact section CTA label */
+  contactCta: string;
+  /** Intake section headline */
+  intakeHeadline: string;
+  /** Intake section description */
+  intakeDescription: string;
+  /** Intake button label */
+  intakeCta: string;
 }
 
 const BORROWERS: Record<string, BorrowerConfig> = {
@@ -38,6 +60,37 @@ const BORROWERS: Record<string, BorrowerConfig> = {
     email: "Joshua.Chernes@ccm.com",
     bio: "Buying a home already comes with enough paperwork. Through Josh's partnership with AURA Risk Group, you can upload the documents you already have instead of starting from scratch. Whether you only need homeowners insurance or want to bundle other personal coverage, AURA helps keep the process simple.",
     coverageLines: ["Home", "Auto", "Umbrella", "Flood", "Renters", "etc."],
+    heroCta: "Apply for Your Mortgage",
+    headerLabel: "Secure Borrower Intake",
+    contactSectionTitle: "Your Loan Officer",
+    contactCta: "Apply with Josh today",
+    intakeHeadline: "Start Your Insurance Intake",
+    intakeDescription: "Upload any documents you already have and we'll handle the rest. Coverage available for:",
+    intakeCta: "Apply for Insurance",
+  },
+  "michael-wengzn": {
+    slug: "michael-wengzn",
+    name: "Michael Wengzn",
+    title: "Managing Director",
+    company: "Northwestern Mutual",
+    headshot: michaelHeadshot,
+    applyUrl: "https://www.northwesternmutual.com/financial/advisor/michael-wengzn/",
+    phone: "860-803-7664",
+    address: "555 Long Wharf Dr, Fl 1 Ste 1B, New Haven, CT 06511",
+    email: "",
+    bio: "Strong financial planning does not stop at investments and life insurance. Protecting the assets behind the plan matters just as much. Through Michael's partnership with AURA Risk Group, clients can upload the insurance documents they already have so their home, auto, and business coverage can be organized and reviewed without starting from scratch.",
+    coverageCards: [
+      { label: "Personal Protection", lines: ["Home", "Auto", "Umbrella", "Jewelry"], icon: Shield },
+      { label: "Business Protection", lines: ["General Liability", "Property", "Workers' Comp", "Professional"], icon: Briefcase },
+    ],
+    coverageLines: ["Home", "Auto", "Umbrella", "Jewelry", "Business"],
+    heroCta: "Connect With Michael",
+    headerLabel: "Secure Client Intake",
+    contactSectionTitle: "Your Financial Advisor",
+    contactCta: "Schedule Time With Michael",
+    intakeHeadline: "Start Your Insurance Review",
+    intakeDescription: "Upload what you already have and AURA will organize the information so your advisory team can evaluate how your current coverage fits into your financial plan.",
+    intakeCta: "Apply for insurance today",
   },
 };
 
@@ -84,12 +137,12 @@ export default function BorrowerPage() {
           <img src={auraLogo} alt="AURA Risk Group" className="h-7" />
           <div className="flex items-center gap-2">
             <Shield className="h-4 w-4 text-primary" />
-            <span className="text-xs font-medium tracking-wide text-muted-foreground">Secure Borrower Intake</span>
+            <span className="text-xs font-medium tracking-wide text-muted-foreground">{config.headerLabel}</span>
           </div>
         </div>
       </header>
 
-      {/* ── Hero / Josh Section ── */}
+      {/* ── Hero / Partner Section ── */}
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5" />
         <div className="relative mx-auto max-w-5xl px-4 py-12 md:py-16">
@@ -117,7 +170,7 @@ export default function BorrowerPage() {
                 className="mt-6 gap-2 rounded-full px-8 text-sm font-semibold"
                 onClick={() => window.open(config.applyUrl, "_blank")}
               >
-                Apply for Your Mortgage <ExternalLink className="h-4 w-4" />
+                {config.heroCta} <ExternalLink className="h-4 w-4" />
               </Button>
             </div>
           </div>
@@ -152,41 +205,65 @@ export default function BorrowerPage() {
       {/* ── Start Insurance Intake ── */}
       <section className="border-t">
         <div className="mx-auto max-w-5xl px-4 py-14 md:py-18">
-          <div className="mx-auto max-w-md text-center">
+          <div className="mx-auto max-w-lg text-center">
             <Sparkles className="mx-auto mb-3 h-8 w-8 text-primary" />
-            <h2 className="text-xl font-bold md:text-2xl">Start Your Insurance Intake</h2>
+            <h2 className="text-xl font-bold md:text-2xl">{config.intakeHeadline}</h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              Upload any documents you already have and we'll handle the rest. Coverage available for:
+              {config.intakeDescription}
             </p>
-            <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
-              {config.coverageLines.map(line => (
-                <Badge key={line} variant="secondary" className="text-xs">{line}</Badge>
-              ))}
-            </div>
+
+            {/* Coverage cards (Michael-style) or simple badges (Josh-style) */}
+            {config.coverageCards ? (
+              <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                {config.coverageCards.map((card) => (
+                  <Card key={card.label} className="border-border/60 bg-muted/20">
+                    <CardContent className="p-5 text-center">
+                      <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                        <card.icon className="h-5 w-5" />
+                      </div>
+                      <p className="text-sm font-semibold">{card.label}</p>
+                      <div className="mt-3 flex flex-wrap items-center justify-center gap-1.5">
+                        {card.lines.map((line) => (
+                          <Badge key={line} variant="secondary" className="text-xs">{line}</Badge>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
+                {config.coverageLines.map(line => (
+                  <Badge key={line} variant="secondary" className="text-xs">{line}</Badge>
+                ))}
+              </div>
+            )}
+
             <Button
               size="lg"
               className="mt-7 w-full gap-2 rounded-full text-sm font-semibold sm:w-auto sm:px-10"
               onClick={handleStartIntake}
               disabled={creatingIntake}
             >
-              {creatingIntake ? <><Loader2 className="h-4 w-4 animate-spin" /> Loading...</> : <>Apply for Insurance <ArrowRight className="h-4 w-4" /></>}
+              {creatingIntake ? <><Loader2 className="h-4 w-4 animate-spin" /> Loading...</> : <>{config.intakeCta} <ArrowRight className="h-4 w-4" /></>}
             </Button>
           </div>
         </div>
       </section>
 
-      {/* ── Lender Contact ── */}
+      {/* ── Partner Contact ── */}
       <section className="border-t bg-muted/30">
         <div className="mx-auto max-w-5xl px-4 py-12">
           <div className="mx-auto max-w-sm">
-            <p className="mb-4 text-center text-xs font-semibold uppercase tracking-widest text-muted-foreground">Your Loan Officer</p>
+            <p className="mb-4 text-center text-xs font-semibold uppercase tracking-widest text-muted-foreground">{config.contactSectionTitle}</p>
             <Card className="border-border/60">
               <CardContent className="space-y-3 p-5 text-center">
                 <p className="text-base font-bold">{config.name}</p>
+                <p className="text-xs text-muted-foreground">{config.title}</p>
                 <p className="text-sm text-muted-foreground">{config.company}</p>
                 <div className="space-y-1.5 text-xs text-muted-foreground">
                   <div className="flex items-center justify-center gap-2">
-                    <Phone className="h-3.5 w-3.5" /> Mobile {config.phone}
+                    <Phone className="h-3.5 w-3.5" /> {config.phone}
                   </div>
                   {config.office && (
                     <div className="flex items-center justify-center gap-2">
@@ -196,9 +273,11 @@ export default function BorrowerPage() {
                   <div className="flex items-center justify-center gap-2">
                     <MapPin className="h-3.5 w-3.5" /> {config.address}
                   </div>
-                  <div className="flex items-center justify-center gap-2">
-                    <Mail className="h-3.5 w-3.5" /> {config.email}
-                  </div>
+                  {config.email && (
+                    <div className="flex items-center justify-center gap-2">
+                      <Mail className="h-3.5 w-3.5" /> {config.email}
+                    </div>
+                  )}
                 </div>
                 <Button
                   variant="outline"
@@ -206,7 +285,7 @@ export default function BorrowerPage() {
                   className="mt-3 w-full gap-2 rounded-full text-xs"
                   onClick={() => window.open(config.applyUrl, "_blank")}
                 >
-                  Apply with Josh today <ExternalLink className="h-3.5 w-3.5" />
+                  {config.contactCta} <ExternalLink className="h-3.5 w-3.5" />
                 </Button>
               </CardContent>
             </Card>
