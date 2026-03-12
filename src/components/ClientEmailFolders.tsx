@@ -4,9 +4,13 @@ import { useAuth } from "@/hooks/useAuth";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { User, Search, FolderOpen, ArrowLeft } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { User, Search, FolderOpen, ChevronRight, Mail, ExternalLink } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useNavigate } from "react-router-dom";
+import { formatDistanceToNow } from "date-fns";
 
 interface ClientFolder {
   client_id: string;
@@ -16,8 +20,17 @@ interface ClientFolder {
   latest_at: string;
 }
 
+interface FolderEmail {
+  id: string;
+  subject: string;
+  from_name: string | null;
+  from_address: string;
+  received_at: string;
+  is_read: boolean;
+  body_preview: string | null;
+}
+
 interface ClientEmailFoldersProps {
-  /** When a client is selected, filter parent email list */
   onSelectClient: (clientId: string | null) => void;
   selectedClientId: string | null;
 }
@@ -25,9 +38,13 @@ interface ClientEmailFoldersProps {
 export function ClientEmailFolders({ onSelectClient, selectedClientId }: ClientEmailFoldersProps) {
   const { user } = useAuth();
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
   const [folders, setFolders] = useState<ClientFolder[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [folderEmails, setFolderEmails] = useState<Record<string, FolderEmail[]>>({});
+  const [loadingEmails, setLoadingEmails] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -35,7 +52,6 @@ export function ClientEmailFolders({ onSelectClient, selectedClientId }: ClientE
     const fetchFolders = async () => {
       setLoading(true);
 
-      // Get emails that have a client_id assigned
       const { data: emails } = await supabase
         .from("synced_emails")
         .select("client_id, is_read, received_at")
@@ -48,10 +64,8 @@ export function ClientEmailFolders({ onSelectClient, selectedClientId }: ClientE
         return;
       }
 
-      // Get unique client IDs
       const clientIds = [...new Set(emails.map((e) => e.client_id).filter(Boolean))] as string[];
 
-      // Get client names
       const { data: leads } = await supabase
         .from("leads")
         .select("id, account_name")
@@ -59,7 +73,6 @@ export function ClientEmailFolders({ onSelectClient, selectedClientId }: ClientE
 
       const nameMap = new Map((leads || []).map((l) => [l.id, l.account_name]));
 
-      // Aggregate
       const folderMap = new Map<string, ClientFolder>();
       for (const e of emails) {
         if (!e.client_id) continue;
@@ -89,6 +102,30 @@ export function ClientEmailFolders({ onSelectClient, selectedClientId }: ClientE
     fetchFolders();
   }, [user]);
 
+  const loadFolderEmails = async (clientId: string) => {
+    if (folderEmails[clientId]) return;
+    if (!user) return;
+    setLoadingEmails(clientId);
+    const { data } = await supabase
+      .from("synced_emails")
+      .select("id, subject, from_name, from_address, received_at, is_read, body_preview")
+      .eq("user_id", user.id)
+      .eq("client_id", clientId)
+      .order("received_at", { ascending: false })
+      .limit(20);
+    setFolderEmails((prev) => ({ ...prev, [clientId]: (data as FolderEmail[]) || [] }));
+    setLoadingEmails(null);
+  };
+
+  const toggleExpand = (clientId: string) => {
+    if (expandedId === clientId) {
+      setExpandedId(null);
+    } else {
+      setExpandedId(clientId);
+      loadFolderEmails(clientId);
+    }
+  };
+
   const filtered = search.trim()
     ? folders.filter((f) => f.account_name.toLowerCase().includes(search.toLowerCase()))
     : folders;
@@ -107,11 +144,6 @@ export function ClientEmailFolders({ onSelectClient, selectedClientId }: ClientE
     <div className="flex flex-col h-full">
       {/* Header */}
       <div className="flex items-center gap-2 px-2 py-2">
-        {selectedClientId && isMobile && (
-          <button onClick={() => onSelectClient(null)} className="shrink-0">
-            <ArrowLeft className="h-4 w-4" />
-          </button>
-        )}
         <FolderOpen className="h-4 w-4 text-primary shrink-0" />
         <span className="text-sm font-semibold">Client Folders</span>
         <Badge variant="secondary" className="text-[10px] ml-auto">{folders.length}</Badge>
@@ -141,31 +173,89 @@ export function ClientEmailFolders({ onSelectClient, selectedClientId }: ClientE
           </div>
         ) : (
           <div className="space-y-0.5 px-1">
-            {filtered.map((folder) => (
-              <button
-                key={folder.client_id}
-                onClick={() => onSelectClient(
-                  selectedClientId === folder.client_id ? null : folder.client_id
-                )}
-                className={`w-full text-left rounded-lg px-3 py-2.5 transition-colors ${
-                  selectedClientId === folder.client_id
-                    ? "bg-primary/10 border border-primary/20"
-                    : "hover:bg-muted"
-                }`}
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-sm font-medium truncate">{folder.account_name}</span>
-                  {folder.unread_count > 0 && (
-                    <Badge variant="default" className="text-[10px] px-1.5 py-0 h-4 shrink-0">
-                      {folder.unread_count}
-                    </Badge>
-                  )}
-                </div>
-                <p className="text-[11px] text-muted-foreground mt-0.5">
-                  {folder.email_count} email{folder.email_count !== 1 ? "s" : ""}
-                </p>
-              </button>
-            ))}
+            {filtered.map((folder) => {
+              const isExpanded = expandedId === folder.client_id;
+              const emails = folderEmails[folder.client_id];
+              const isLoadingThis = loadingEmails === folder.client_id;
+
+              return (
+                <Collapsible key={folder.client_id} open={isExpanded} onOpenChange={() => toggleExpand(folder.client_id)}>
+                  <CollapsibleTrigger asChild>
+                    <button
+                      className={`w-full text-left rounded-lg px-3 py-2.5 transition-colors ${
+                        isExpanded
+                          ? "bg-primary/10 border border-primary/20"
+                          : "hover:bg-muted"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <ChevronRight className={`h-3.5 w-3.5 shrink-0 transition-transform ${isExpanded ? "rotate-90" : ""}`} />
+                          <span className="text-sm font-medium truncate">{folder.account_name}</span>
+                        </div>
+                        {folder.unread_count > 0 && (
+                          <Badge variant="default" className="text-[10px] px-1.5 py-0 h-4 shrink-0">
+                            {folder.unread_count}
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-muted-foreground mt-0.5 pl-5.5">
+                        {folder.email_count} email{folder.email_count !== 1 ? "s" : ""}
+                      </p>
+                    </button>
+                  </CollapsibleTrigger>
+
+                  <CollapsibleContent>
+                    <div className="ml-4 mr-1 border-l border-border pl-3 py-1 space-y-1">
+                      {isLoadingThis ? (
+                        <div className="space-y-1 py-1">
+                          {Array.from({ length: 3 }).map((_, i) => (
+                            <Skeleton key={i} className="h-10 w-full" />
+                          ))}
+                        </div>
+                      ) : emails && emails.length > 0 ? (
+                        <>
+                          {emails.map((email) => (
+                            <button
+                              key={email.id}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onSelectClient(folder.client_id);
+                              }}
+                              className="w-full text-left rounded-md px-2 py-1.5 hover:bg-muted/60 transition-colors"
+                            >
+                              <div className="flex items-center gap-1.5">
+                                <Mail className={`h-3 w-3 shrink-0 ${email.is_read ? "text-muted-foreground" : "text-primary"}`} />
+                                <span className={`text-xs truncate ${email.is_read ? "" : "font-semibold"}`}>
+                                  {email.subject || "(no subject)"}
+                                </span>
+                              </div>
+                              <p className="text-[10px] text-muted-foreground pl-4.5 truncate">
+                                {email.from_name || email.from_address} · {formatDistanceToNow(new Date(email.received_at), { addSuffix: true })}
+                              </p>
+                            </button>
+                          ))}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="w-full gap-1.5 text-xs h-7 mt-1 text-primary"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/pipeline/${folder.client_id}`);
+                            }}
+                          >
+                            <ExternalLink className="h-3 w-3" />
+                            View Full Client Page
+                          </Button>
+                        </>
+                      ) : (
+                        <p className="text-[10px] text-muted-foreground py-2">No emails found</p>
+                      )}
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
+              );
+            })}
           </div>
         )}
       </ScrollArea>
