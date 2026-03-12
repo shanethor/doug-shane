@@ -44,6 +44,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { LossRunBadge } from "@/components/LossRunBadge";
+import { Clock } from "lucide-react";
 
 import { generateIntakeLink } from "@/lib/intake-links";
 import { PipelineAnalytics } from "@/components/PipelineAnalytics";
