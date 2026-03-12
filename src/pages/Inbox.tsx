@@ -528,7 +528,9 @@ export default function Inbox({ emailOnly, embedded, selectedClientId, onClearSe
     "your statement", "monthly statement", "interest rate",
     "credit score", "pre-approved", "refinance", "mortgage rate",
     "investment update", "portfolio", "dividend",
-    "crypto", "bitcoin", "ethereum",
+    "crypto", "bitcoin", "ethereum", "btc",
+    // Politics / Religion / Spam
+    "foreign policy", "church", "scam", "phishing",
     // Health supplements / Wellness marketing
     "supplement", "vitamin", "probiotic", "collagen", "detox",
     "wellness", "holistic", "superfood", "nutrition",
