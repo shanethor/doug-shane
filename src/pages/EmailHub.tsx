@@ -132,7 +132,10 @@ export default function EmailHub() {
 
         <TabsContent value="clients">
           <ClientEmailFolders
-            onSelectClient={setSelectedClientId}
+            onSelectClient={(clientId) => {
+              setSelectedClientId(clientId);
+              if (clientId) setActiveTab("email");
+            }}
             selectedClientId={selectedClientId}
           />
         </TabsContent>
