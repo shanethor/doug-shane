@@ -76,6 +76,7 @@ async function streamChat({
   onDelta,
   onDone,
   onError,
+  signal,
 }: {
   messages: { role: string; content: string }[];
   trainingMode: boolean;
@@ -83,12 +84,14 @@ async function streamChat({
   onDelta: (text: string) => void;
   onDone: () => void;
   onError: (err: string) => void;
+  signal?: AbortSignal;
 }) {
   const headers = await getAuthHeaders();
   const resp = await fetch(CHAT_URL, {
     method: "POST",
     headers,
     body: JSON.stringify({ messages, trainingMode, userRole }),
+    signal,
   });
 
   if (!resp.ok) {
@@ -470,6 +473,7 @@ export default function Chat() {
   const [sendFrom, setSendFrom] = useState<"aura" | string>("aura");
   const [connectedEmails, setConnectedEmails] = useState<{ id: string; email_address: string; provider: string }[]>([]);
   const mountedRef = useRef(true);
+  const abortControllerRef = useRef<AbortController | null>(null);
   useEffect(() => {
     return () => {
       mountedRef.current = false;
@@ -1208,6 +1212,23 @@ export default function Chat() {
    * Send a message to AI. If displayText is provided, show that in the chat bubble
    * but send the full `text` to the AI backend (for hiding internal prompts).
    */
+  const stopGeneration = useCallback(() => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    setIsLoading(false);
+    // If there's partial content, finalize it; otherwise add a stopped message
+    setMessages((prev) => {
+      const last = prev[prev.length - 1];
+      if (last?.role === "assistant" && last.content.trim()) return prev;
+      if (last?.role === "assistant") {
+        return prev.map((m, i) => i === prev.length - 1 ? { ...m, content: "*(Stopped)*" } : m);
+      }
+      return [...prev, { role: "assistant", content: "*(Stopped)*" }];
+    });
+  }, []);
+
   const send = async (text: string, displayText?: string) => {
     if (!text.trim() || isLoading) return;
 
@@ -1378,6 +1399,8 @@ export default function Chat() {
     setInput("");
     setAttachedFiles([]);
     setIsLoading(true);
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
 
     fullTextRef.current = "";
     setDisplayedText("");
@@ -1576,23 +1599,28 @@ export default function Chat() {
         messages: [...messages, { role: userMsg.role, content: contentWithContext }].map((m) => ({ role: m.role, content: m.content })),
         trainingMode,
         userRole: role,
+        signal: controller.signal,
         onDelta: upsert,
         onDone: () => {
           clearTimeout(safetyTimeout);
+          abortControllerRef.current = null;
           // Signal stream done — typewriter will call finalizeMessage when it catches up
           streamDoneRef.current = true;
           onFinishRef.current = finalizeMessage;
         },
         onError: (err) => {
           clearTimeout(safetyTimeout);
+          abortControllerRef.current = null;
           killTypewriter();
           toast({ variant: "destructive", title: "Error", description: err });
           setIsLoading(false);
         },
       });
-    } catch {
+    } catch (e: any) {
       clearTimeout(safetyTimeout);
+      abortControllerRef.current = null;
       killTypewriter();
+      if (e?.name === "AbortError") return; // User stopped generation
       toast({ variant: "destructive", title: "Connection error", description: "Could not reach the assistant." });
       setIsLoading(false);
     }
@@ -2945,9 +2973,15 @@ export default function Chat() {
               {isLoading && displayedText === "" && (
                 <div className="flex justify-start animate-page-enter">
                   <div className="bg-muted rounded-xl px-4 py-3">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
                       <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                       <span className="text-xs text-muted-foreground" style={{ animation: 'subtlePulse 1.5s ease-in-out infinite' }}>Thinking…</span>
+                      <button
+                        onClick={stopGeneration}
+                        className="ml-1 flex items-center gap-1 rounded-md border border-border bg-background px-2 py-0.5 text-[10px] font-medium text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors"
+                      >
+                        <X className="h-3 w-3" /> Stop
+                      </button>
                     </div>
                   </div>
                 </div>
