@@ -273,13 +273,35 @@ export default function FormFillingView({ submissionId, initialMessages, initial
 
   // Compute prefill data from live formData — used at viewer mount time
   const [prefillByIndex, setPrefillByIndex] = useState<Record<number, string>>({});
+  // Safety: track highest prefill count seen to prevent regression from stale re-renders
+  const maxPrefillCountRef = useRef(0);
+  // Timeout safety valve to dismiss loading overlay if prefill never resolves
+  const [prefillTimedOut, setPrefillTimedOut] = useState(false);
   useEffect(() => {
     if (activeFormId && activeFormId !== "all") {
-      buildPrefillByIndex(activeFormId, formData).then(setPrefillByIndex);
+      buildPrefillByIndex(activeFormId, formData).then((result) => {
+        const count = Object.keys(result).length;
+        // Only update prefill if it has data OR we never had data (prevent clearing by stale sync)
+        if (count >= maxPrefillCountRef.current || maxPrefillCountRef.current === 0) {
+          maxPrefillCountRef.current = count;
+          setPrefillByIndex(result);
+        }
+      });
     } else {
       setPrefillByIndex({});
     }
   }, [activeFormId, formData, buildPrefillByIndex]);
+  // Reset max count when form changes
+  useEffect(() => {
+    maxPrefillCountRef.current = 0;
+    setPrefillTimedOut(false);
+  }, [activeFormId]);
+  // Safety timeout: auto-dismiss overlay after 5s
+  useEffect(() => {
+    if (!dbLoaded) return;
+    const timer = setTimeout(() => setPrefillTimedOut(true), 5000);
+    return () => clearTimeout(timer);
+  }, [dbLoaded, activeFormId]);
 
   // Viewer key: remounts on form switch, initial DB load, debounced revision, OR when prefill data becomes available
   const prefillCount = Object.keys(prefillByIndex).length;
