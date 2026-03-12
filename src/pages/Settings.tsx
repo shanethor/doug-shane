@@ -538,17 +538,17 @@ export default function Settings() {
               </div>
               <div className="min-w-0">
                 <p className="text-sm font-medium">Google Calendar</p>
-                {gmailConn ? (
+                {gmailConns.length > 0 ? (
                   <p className="text-xs text-muted-foreground flex items-center gap-1 truncate">
                     <CheckCircle className="h-3 w-3 text-primary shrink-0" />
-                    Uses {gmailConn.email_address}
+                    {gmailConns.length} account{gmailConns.length > 1 ? "s" : ""} syncing
                   </p>
                 ) : (
                   <p className="text-xs text-muted-foreground">Connect Gmail first in Email Accounts above</p>
                 )}
               </div>
             </div>
-            {gmailConn ? (
+            {gmailConns.length > 0 ? (
               <Badge variant="outline" className="text-[10px] shrink-0">Connected</Badge>
             ) : (
               <Button size="sm" variant="outline" onClick={() => {
@@ -568,17 +568,17 @@ export default function Settings() {
               </div>
               <div className="min-w-0">
                 <p className="text-sm font-medium">Outlook Calendar</p>
-                {outlookConn ? (
+                {outlookConns.length > 0 ? (
                   <p className="text-xs text-muted-foreground flex items-center gap-1 truncate">
                     <CheckCircle className="h-3 w-3 text-primary shrink-0" />
-                    Uses {outlookConn.email_address}
+                    {outlookConns.length} account{outlookConns.length > 1 ? "s" : ""} syncing
                   </p>
                 ) : (
                   <p className="text-xs text-muted-foreground">Connect Outlook first in Email Accounts above</p>
                 )}
               </div>
             </div>
-            {outlookConn ? (
+            {outlookConns.length > 0 ? (
               <Badge variant="outline" className="text-[10px] shrink-0">Connected</Badge>
             ) : (
               <Button size="sm" variant="outline" onClick={() => {
