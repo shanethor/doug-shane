@@ -1233,6 +1233,39 @@ export default function Chat() {
   const send = async (text: string, displayText?: string) => {
     if (!text.trim() || isLoading) return;
 
+    // Intercept follow-up / stale client queries
+    if (!displayText && user && isFollowUpIntent(text)) {
+      const userMsg: Msg = { role: "user", content: text.trim() };
+      setMessages((prev) => [...prev, userMsg]);
+      setInput("");
+      setIsLoading(true);
+      try {
+        const stale = await findStaleClients(user.id, 48);
+        if (stale.length === 0) {
+          setMessages((prev) => [...prev, {
+            role: "assistant",
+            content: "✅ All your active clients have had activity in the last 48 hours — no follow-ups needed right now!",
+          }]);
+        } else {
+          const list = stale.slice(0, 15).map((c, i) =>
+            `${i + 1}. **${c.account_name}** — ${c.stage}${c.contact_name ? ` · ${c.contact_name}` : ""}${c.email ? ` · ${c.email}` : ""}`
+          ).join("\n");
+          setMessages((prev) => [...prev, {
+            role: "assistant",
+            content: `⚠️ **${stale.length} client${stale.length > 1 ? "s" : ""} need${stale.length === 1 ? "s" : ""} follow-up** (no activity in 48+ hours):\n\n${list}\n\nThese clients are still in your active pipeline but haven't had any emails, notes, documents, or stage changes recently. Would you like me to draft follow-up emails for any of them?`,
+          }]);
+        }
+      } catch (err) {
+        console.error("Stale client lookup failed:", err);
+        setMessages((prev) => [...prev, {
+          role: "assistant",
+          content: "Sorry, I had trouble checking for stale clients. Please try again.",
+        }]);
+      }
+      setIsLoading(false);
+      return;
+    }
+
     // Intercept partner intake link requests (e.g. "request Josh mortgage link", "Michael's intake link")
     const partnerIntent = !displayText ? isPartnerIntakeIntent(text) : null;
     if (partnerIntent) {
