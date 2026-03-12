@@ -404,70 +404,72 @@ export default function Settings() {
             Email Accounts
           </CardTitle>
           <p className="text-xs text-muted-foreground mt-1">
-            Connect your Gmail or Outlook account to send emails and sync your inbox.
+            Connect your Gmail or Outlook accounts to send emails and sync your inbox. You can connect multiple accounts.
           </p>
         </CardHeader>
         <CardContent className="p-4 sm:p-6 pt-2 sm:pt-2 space-y-3">
-          {/* Gmail */}
-          <div className="flex items-center justify-between rounded-lg border p-3 sm:p-4 min-h-[56px]">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="h-9 w-9 rounded-lg bg-destructive/10 flex items-center justify-center shrink-0">
-                <Mail className="h-4 w-4 text-destructive" />
-              </div>
-              <div className="min-w-0">
+          {/* Gmail Section */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="h-7 w-7 rounded-md bg-destructive/10 flex items-center justify-center shrink-0">
+                  <Mail className="h-3.5 w-3.5 text-destructive" />
+                </div>
                 <p className="text-sm font-medium">Gmail</p>
-                {gmailConn ? (
-                  <p className="text-xs text-muted-foreground flex items-center gap-1 truncate">
-                    <CheckCircle className="h-3 w-3 text-primary shrink-0" />
-                    {gmailConn.email_address}
-                  </p>
-                ) : (
-                  <p className="text-xs text-muted-foreground">Not connected</p>
-                )}
               </div>
-            </div>
-            {gmailConn ? (
-              <Button variant="outline" size="sm" onClick={() => disconnectEmail("gmail")} className="gap-1.5 shrink-0 h-9">
-                <Unlink className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Disconnect</span>
-              </Button>
-            ) : (
-              <Button size="sm" onClick={() => connectEmail("gmail")} disabled={connectingProvider === "gmail"} className="gap-1.5 shrink-0 h-9">
+              <Button size="sm" onClick={() => connectEmail("gmail")} disabled={connectingProvider === "gmail"} className="gap-1.5 shrink-0 h-8 text-xs">
                 {connectingProvider === "gmail" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Link2 className="h-3.5 w-3.5" />}
-                Connect
+                {gmailConns.length > 0 ? "Add Another" : "Connect"}
               </Button>
+            </div>
+            {gmailConns.length === 0 && (
+              <p className="text-xs text-muted-foreground pl-9">No Gmail accounts connected</p>
             )}
+            {gmailConns.map((conn) => (
+              <div key={conn.id} className="flex items-center justify-between rounded-md border p-2.5 pl-9">
+                <p className="text-xs text-muted-foreground flex items-center gap-1.5 truncate">
+                  <CheckCircle className="h-3 w-3 text-primary shrink-0" />
+                  {conn.email_address}
+                </p>
+                <Button variant="ghost" size="sm" onClick={() => disconnectEmail(conn.id, "Gmail")} className="gap-1 shrink-0 h-7 text-xs text-muted-foreground hover:text-destructive">
+                  <Unlink className="h-3 w-3" />
+                  <span className="hidden sm:inline">Remove</span>
+                </Button>
+              </div>
+            ))}
           </div>
 
-          {/* Outlook */}
-          <div className="flex items-center justify-between rounded-lg border p-3 sm:p-4 min-h-[56px]">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="h-9 w-9 rounded-lg bg-accent/10 flex items-center justify-center shrink-0">
-                <Mail className="h-4 w-4 text-accent" />
-              </div>
-              <div className="min-w-0">
+          <Separator />
+
+          {/* Outlook Section */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="h-7 w-7 rounded-md bg-accent/10 flex items-center justify-center shrink-0">
+                  <Mail className="h-3.5 w-3.5 text-accent" />
+                </div>
                 <p className="text-sm font-medium">Outlook / Microsoft 365</p>
-                {outlookConn ? (
-                  <p className="text-xs text-muted-foreground flex items-center gap-1 truncate">
-                    <CheckCircle className="h-3 w-3 text-primary shrink-0" />
-                    {outlookConn.email_address}
-                  </p>
-                ) : (
-                  <p className="text-xs text-muted-foreground">Not connected</p>
-                )}
               </div>
-            </div>
-            {outlookConn ? (
-              <Button variant="outline" size="sm" onClick={() => disconnectEmail("outlook")} className="gap-1.5 shrink-0 h-9">
-                <Unlink className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Disconnect</span>
-              </Button>
-            ) : (
-              <Button size="sm" onClick={() => connectEmail("outlook")} disabled={connectingProvider === "outlook"} className="gap-1.5 shrink-0 h-9">
+              <Button size="sm" onClick={() => connectEmail("outlook")} disabled={connectingProvider === "outlook"} className="gap-1.5 shrink-0 h-8 text-xs">
                 {connectingProvider === "outlook" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Link2 className="h-3.5 w-3.5" />}
-                Connect
+                {outlookConns.length > 0 ? "Add Another" : "Connect"}
               </Button>
+            </div>
+            {outlookConns.length === 0 && (
+              <p className="text-xs text-muted-foreground pl-9">No Outlook accounts connected</p>
             )}
+            {outlookConns.map((conn) => (
+              <div key={conn.id} className="flex items-center justify-between rounded-md border p-2.5 pl-9">
+                <p className="text-xs text-muted-foreground flex items-center gap-1.5 truncate">
+                  <CheckCircle className="h-3 w-3 text-primary shrink-0" />
+                  {conn.email_address}
+                </p>
+                <Button variant="ghost" size="sm" onClick={() => disconnectEmail(conn.id, "Outlook")} className="gap-1 shrink-0 h-7 text-xs text-muted-foreground hover:text-destructive">
+                  <Unlink className="h-3 w-3" />
+                  <span className="hidden sm:inline">Remove</span>
+                </Button>
+              </div>
+            ))}
           </div>
 
           <div className="rounded-md bg-muted/50 p-3">
