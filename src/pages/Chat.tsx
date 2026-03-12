@@ -46,7 +46,7 @@ const ADVISOR_SUGGESTIONS = [
   { icon: Sparkles, label: "Create a task", message: "Create a task to follow up with my most recent client next week." },
   { icon: FileSearch, label: "Request loss runs", message: "I need to request loss runs for a client." },
   { icon: BarChart3, label: "Check my production", message: "Show me my production numbers and pending approvals." },
-  { icon: LinkIcon, label: "Josh's mortgage link", message: "Request Josh mortgage link" },
+  { icon: LinkIcon, label: "Michael's partner link", message: "Request Michael's intake link" },
 ];
 
 const MANAGER_SUGGESTIONS = [
