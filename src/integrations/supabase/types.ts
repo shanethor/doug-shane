@@ -1051,6 +1051,7 @@ export type Database = {
           is_used: boolean
           lead_id: string | null
           line_type: string | null
+          partner_slug: string | null
           prefill_data: Json | null
           submission_id: string | null
           token: string
@@ -1065,6 +1066,7 @@ export type Database = {
           is_used?: boolean
           lead_id?: string | null
           line_type?: string | null
+          partner_slug?: string | null
           prefill_data?: Json | null
           submission_id?: string | null
           token?: string
@@ -1079,6 +1081,7 @@ export type Database = {
           is_used?: boolean
           lead_id?: string | null
           line_type?: string | null
+          partner_slug?: string | null
           prefill_data?: Json | null
           submission_id?: string | null
           token?: string
@@ -1472,6 +1475,33 @@ export type Database = {
           title?: string
           type?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      partner_tracker_tokens: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          partner_slug: string
+          token: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          partner_slug: string
+          token?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          partner_slug?: string
+          token?: string
         }
         Relationships: []
       }

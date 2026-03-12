@@ -26,6 +26,7 @@ import Approvals from "./pages/Approvals";
 import IntakeForm from "./pages/IntakeForm";
 import BorrowerPage from "./pages/BorrowerPage";
 import PipelineTracker from "./pages/PipelineTracker";
+import PartnerTracker from "./pages/PartnerTracker";
 import BorSign from "./pages/BorSign";
 import InboxPage from "./pages/Inbox";
 import EmailCallback from "./pages/EmailCallback";
@@ -104,6 +105,7 @@ const App = () => (
           <Route path="/intake/:token" element={<IntakeForm />} />
           <Route path="/b/:slug" element={<BorrowerPage />} />
           <Route path="/tracker" element={<PipelineTracker />} />
+          <Route path="/partner/:token" element={<PartnerTracker />} />
           <Route path="/personal-intake/:token" element={<IntakeForm />} />
           <Route path="/bor-sign/:token" element={<BorSign />} />
           <Route path="/inbox" element={<Navigate to="/email" replace />} />

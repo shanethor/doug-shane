@@ -47,7 +47,10 @@ Deno.serve(async (req) => {
     const personalOnlySlugs = ["josh-chernes"];
     const lineType = personalOnlySlugs.includes(slug) ? "personal" : null;
 
-    const insertPayload: Record<string, unknown> = { agent_id: agentId };
+    const insertPayload: Record<string, unknown> = {
+      agent_id: agentId,
+      partner_slug: slug,
+    };
     if (lineType) insertPayload.line_type = lineType;
 
     const { data, error } = await supabase
