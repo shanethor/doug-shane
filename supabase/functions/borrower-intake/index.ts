@@ -2,12 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
-
-// Map borrower slugs → agent user IDs (the AURA agent who owns the intake)
-const BORROWER_AGENT_MAP: Record<string, string> = {
-  // Will be populated with real agent IDs; for now use a fallback
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 // Fallback agent ID — first admin/advisor found
@@ -23,7 +18,7 @@ async function getFallbackAgentId(supabase: any): Promise<string | null> {
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
@@ -40,10 +35,7 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    let agentId = BORROWER_AGENT_MAP[slug];
-    if (!agentId) {
-      agentId = (await getFallbackAgentId(supabase))!;
-    }
+    const agentId = await getFallbackAgentId(supabase);
     if (!agentId) {
       return new Response(JSON.stringify({ error: "no agent configured" }), {
         status: 500,
@@ -51,14 +43,12 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Create a personal intake submission record
+    // Create an intake_links record with line_type=personal so the form auto-selects personal
     const { data, error } = await supabase
-      .from("personal_intake_submissions")
+      .from("intake_links")
       .insert({
         agent_id: agentId,
-        delivery_emails: [],
-        cc_producer: false,
-        client_email: null,
+        line_type: "personal",
       })
       .select("token")
       .single();
