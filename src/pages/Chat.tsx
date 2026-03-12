@@ -814,7 +814,7 @@ export default function Chat() {
         if (file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")) {
           const base64 = await readFileAsBase64(file);
           pdfFiles.push({ name: file.name, base64, mimeType: "application/pdf" });
-        } else if (file.type.startsWith("text/") || /\.(txt|md|csv)$/i.test(file.name)) {
+        } else if (file.type.startsWith("text/") || /\.(txt|md|csv|json|xml)$/i.test(file.name) || file.type === "application/json") {
           const content = await readFileAsText(file);
           textContents += `\n--- ${file.name} ---\n${content}`;
         } else if (file.type.startsWith("image/")) {
