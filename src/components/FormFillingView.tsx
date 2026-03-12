@@ -273,13 +273,35 @@ export default function FormFillingView({ submissionId, initialMessages, initial
 
   // Compute prefill data from live formData — used at viewer mount time
   const [prefillByIndex, setPrefillByIndex] = useState<Record<number, string>>({});
+  // Safety: track highest prefill count seen to prevent regression from stale re-renders
+  const maxPrefillCountRef = useRef(0);
+  // Timeout safety valve to dismiss loading overlay if prefill never resolves
+  const [prefillTimedOut, setPrefillTimedOut] = useState(false);
   useEffect(() => {
     if (activeFormId && activeFormId !== "all") {
-      buildPrefillByIndex(activeFormId, formData).then(setPrefillByIndex);
+      buildPrefillByIndex(activeFormId, formData).then((result) => {
+        const count = Object.keys(result).length;
+        // Only update prefill if it has data OR we never had data (prevent clearing by stale sync)
+        if (count >= maxPrefillCountRef.current || maxPrefillCountRef.current === 0) {
+          maxPrefillCountRef.current = count;
+          setPrefillByIndex(result);
+        }
+      });
     } else {
       setPrefillByIndex({});
     }
   }, [activeFormId, formData, buildPrefillByIndex]);
+  // Reset max count when form changes
+  useEffect(() => {
+    maxPrefillCountRef.current = 0;
+    setPrefillTimedOut(false);
+  }, [activeFormId]);
+  // Safety timeout: auto-dismiss overlay after 5s
+  useEffect(() => {
+    if (!dbLoaded) return;
+    const timer = setTimeout(() => setPrefillTimedOut(true), 5000);
+    return () => clearTimeout(timer);
+  }, [dbLoaded, activeFormId]);
 
   // Viewer key: remounts on form switch, initial DB load, debounced revision, OR when prefill data becomes available
   const prefillCount = Object.keys(prefillByIndex).length;
@@ -428,7 +450,10 @@ export default function FormFillingView({ submissionId, initialMessages, initial
           const currentValue = String(formDataRef.current[internalKey] || "");
           // Don't sync boolean "false" into non-checkbox form data keys
           if (pdfValue === "false" && !internalKey.startsWith("chk_")) pdfValue = "";
-          // Sync any value that differs — most recent edit wins (including clears)
+          // Don't clear panel values with empty PDF values — only sync non-empty PDF edits
+          // This prevents the save poll from wiping DB-loaded data before the PDF is prefilled
+          if (pdfValue === "" && currentValue !== "") continue;
+          // Sync any value that differs — most recent edit wins
           if (pdfValue !== currentValue) {
             updates[internalKey] = pdfValue;
           }
@@ -1627,7 +1652,7 @@ export default function FormFillingView({ submissionId, initialMessages, initial
           ) : activeForm && FILLABLE_PDF_PATHS[activeFormId] ? (
             <div className="relative h-full">
               {/* Loading overlay while prefill data is being computed */}
-              {prefillCount === 0 && dbLoaded && Object.keys(formData).length > 0 && (
+              {prefillCount === 0 && dbLoaded && !prefillTimedOut && Object.keys(formData).length > 0 && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 z-20 bg-background/90 backdrop-blur-sm">
                   <Loader2 className="h-6 w-6 animate-spin text-primary" />
                   <p className="text-sm font-medium text-muted-foreground">Preparing form data…</p>
