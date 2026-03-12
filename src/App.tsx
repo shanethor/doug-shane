@@ -26,6 +26,7 @@ import Approvals from "./pages/Approvals";
 import IntakeForm from "./pages/IntakeForm";
 import BorrowerPage from "./pages/BorrowerPage";
 import PipelineTracker from "./pages/PipelineTracker";
+import PartnerTracker from "./pages/PartnerTracker";
 import BorSign from "./pages/BorSign";
 import InboxPage from "./pages/Inbox";
 import EmailCallback from "./pages/EmailCallback";
