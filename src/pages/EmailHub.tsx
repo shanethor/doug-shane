@@ -63,7 +63,12 @@ export default function EmailHub() {
         <TabsContent value="email">
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-4 overflow-hidden">
             <div className="min-w-0 overflow-hidden">
-              <Inbox emailOnly embedded />
+              <Inbox
+                emailOnly
+                embedded
+                selectedClientId={selectedClientId}
+                onClearSelectedClient={() => setSelectedClientId(null)}
+              />
             </div>
             <div className="hidden lg:block">
               <Card>
