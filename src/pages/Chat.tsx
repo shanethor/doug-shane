@@ -2128,17 +2128,11 @@ export default function Chat() {
 
       if (subErr) throw subErr;
 
-      const extractHeaders4 = await getAuthHeaders();
-      const extractResp = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/extract-business-data`,
-        {
-          method: "POST",
-          headers: extractHeaders4,
-          body: JSON.stringify({ description: fullDescription, submission_id: sub.id }),
-        }
-      );
-
-      if (!extractResp.ok) console.warn("Extract failed:", extractResp.status);
+      try {
+        await extractWithBatching({ description: fullDescription, submission_id: sub.id });
+      } catch (extractErr) {
+        console.warn("Extract failed:", extractErr);
+      }
 
       send(`Here are the details:\n${filled}${websiteUrl ? `\nWebsite: ${websiteUrl}` : ""}\n\n[SUBMISSION_ID:${sub.id}]`);
       // Detect which forms the user is requesting from chat context
