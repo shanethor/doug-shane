@@ -24,6 +24,7 @@ import LeadDetail from "./pages/LeadDetail";
 import ProducerDashboard from "./pages/ProducerDashboard";
 import Approvals from "./pages/Approvals";
 import IntakeForm from "./pages/IntakeForm";
+import BorrowerPage from "./pages/BorrowerPage";
 import PipelineTracker from "./pages/PipelineTracker";
 import BorSign from "./pages/BorSign";
 import InboxPage from "./pages/Inbox";
@@ -101,6 +102,7 @@ const App = () => (
           <Route path="/my-dashboard" element={<ProtectedRoute><ProducerDashboard /></ProtectedRoute>} />
           <Route path="/approvals" element={<Navigate to="/admin" replace />} />
           <Route path="/intake/:token" element={<IntakeForm />} />
+          <Route path="/b/:slug" element={<BorrowerPage />} />
           <Route path="/tracker" element={<PipelineTracker />} />
           <Route path="/personal-intake/:token" element={<IntakeForm />} />
           <Route path="/bor-sign/:token" element={<BorSign />} />

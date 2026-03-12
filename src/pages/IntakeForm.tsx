@@ -487,9 +487,61 @@ export default function IntakeForm() {
           }]);
         }
 
-        // Commercial: prefill business info
+        // Commercial: prefill business info + acord_data for Coverage Details (Step 5)
         if (lt === "commercial") {
           const comm = prefill.commercial || {};
+          const d = prefill; // alias for brevity – same shape as extraction output
+
+          // Build acord_data so Step 5 (coverage_questions) is pre-filled
+          const acordPrefill: Record<string, any> = {};
+          const bizName = d.business_name || d.named_insured || d.company_name || d.applicant_name || "";
+          if (bizName) acordPrefill.business_name = bizName;
+          if (d.dba || comm.dba) acordPrefill.dba = d.dba || comm.dba;
+          if (d.entity_type || d.business_entity_type || comm.business_type) acordPrefill.business_entity_type = d.entity_type || d.business_entity_type || comm.business_type;
+          if (d.applicant_address) acordPrefill.mailing_address = d.applicant_address;
+          if (d.years_in_business || comm.years_in_business) acordPrefill.years_in_business = d.years_in_business || comm.years_in_business;
+          if (d.naics_code || d.primary_naics) acordPrefill.primary_naics = d.naics_code || d.primary_naics;
+          if (d.current_carrier) acordPrefill.has_prior_coverage = "yes";
+          const contactName = d.applicant_name || d.contact_name || d.primary_contact_name || "";
+          if (contactName) acordPrefill.primary_contact_name = contactName;
+          if (d.fein || d.ein || comm.ein) acordPrefill.fein = d.fein || d.ein || comm.ein;
+          if (d.annual_revenue || d.gross_sales || comm.annual_revenue) acordPrefill.annual_revenue = d.annual_revenue || d.gross_sales || comm.annual_revenue;
+          const totalEmp = d.employee_count || d.number_of_employees || comm.employee_count || "";
+          if (totalEmp) acordPrefill.num_employees_total = totalEmp;
+          // GL
+          if (d.gl_class_description || d.operations_description || d.description_of_operations) acordPrefill.gl_class_description = d.gl_class_description || d.operations_description || d.description_of_operations;
+          if (d.annual_payroll || d.annual_payroll_total || d.total_payroll) acordPrefill.annual_payroll_total = d.annual_payroll || d.annual_payroll_total || d.total_payroll;
+          if (d.annual_gross_sales || d.gross_sales || d.annual_revenue) acordPrefill.annual_gross_sales = d.annual_gross_sales || d.gross_sales || d.annual_revenue;
+          if (d.gl_each_occurrence_limit) acordPrefill.gl_each_occurrence_limit = d.gl_each_occurrence_limit;
+          if (d.gl_general_aggregate_limit) acordPrefill.gl_general_aggregate_limit = d.gl_general_aggregate_limit;
+          if (d.gl_products_completed_ops) acordPrefill.gl_products_completed_ops = d.gl_products_completed_ops;
+          if (d.gl_personal_adv_injury) acordPrefill.gl_personal_adv_injury = d.gl_personal_adv_injury;
+          if (d.gl_damage_to_premises_rented || d.damage_to_rented_premises) acordPrefill.gl_damage_to_premises_rented = d.gl_damage_to_premises_rented || d.damage_to_rented_premises;
+          if (d.gl_medical_payments || d.medical_expense_limit || d.med_exp) acordPrefill.gl_medical_payments = d.gl_medical_payments || d.medical_expense_limit || d.med_exp;
+          // Auto
+          if (d.vehicles?.length > 0) acordPrefill.owns_or_leases_vehicles = "yes";
+          if (d.auto_coverage?.csl_limit) acordPrefill.auto_csl_limit = d.auto_coverage.csl_limit;
+          if (d.auto_coverage?.um_uim_limit) acordPrefill.auto_um_uim_limit = d.auto_coverage.um_uim_limit;
+          if (d.auto_coverage?.med_pay_limit) acordPrefill.auto_med_pay_limit = d.auto_coverage.med_pay_limit;
+          if (d.auto_coverage?.comp_deductible) acordPrefill.auto_comp_deductible = d.auto_coverage.comp_deductible;
+          if (d.auto_coverage?.collision_deductible) acordPrefill.auto_collision_deductible = d.auto_coverage.collision_deductible;
+          // WC
+          if (totalEmp) { acordPrefill.has_employees = "yes"; acordPrefill.num_full_time_employees = totalEmp; }
+          if (d.wc_payroll || d.annual_wc_payroll) acordPrefill.annual_wc_payroll = d.wc_payroll || d.annual_wc_payroll;
+          if (d.wc_class_codes) acordPrefill.wc_class_codes = d.wc_class_codes;
+          if (d.wc_states || d.wc_states_of_operation || d.applicant_state) acordPrefill.wc_states_of_operation = d.wc_states || d.wc_states_of_operation || d.applicant_state;
+          if (d.experience_mod || d.wc_experience_mod) acordPrefill.wc_experience_mod = d.experience_mod || d.wc_experience_mod;
+          // Property
+          if (d.building_limit || d.property_building_limit) { acordPrefill.owns_or_leases_buildings = "yes"; acordPrefill.building_limit = d.building_limit || d.property_building_limit; }
+          if (d.bpp_limit) acordPrefill.bpp_limit = d.bpp_limit;
+          if (d.construction_type || d.primary_construction_type) acordPrefill.primary_construction_type = d.construction_type || d.primary_construction_type;
+          if (d.year_built || d.property_year_built) acordPrefill.property_year_built = d.year_built || d.property_year_built;
+          if (d.square_footage || d.property_square_footage) acordPrefill.property_square_footage = d.square_footage || d.property_square_footage;
+          if (d.primary_location_address) acordPrefill.primary_location_address = d.primary_location_address;
+          // Umbrella
+          if (d.umbrella?.limit) acordPrefill.umbrella_limit = d.umbrella.limit;
+          if (d.umbrella?.retention) acordPrefill.umbrella_retention = d.umbrella.retention;
+
           setCommercialForm(f => ({
             ...f,
             customer_name: prefill.applicant_name || iData.customer_name || f.customer_name,
@@ -513,6 +565,7 @@ export default function IntakeForm() {
             policy_expiration_date: prefill.policy_expiration_date || f.policy_expiration_date,
             has_current_insurance: prefill.current_carrier ? "yes" : f.has_current_insurance,
             selected_coverage_lines: comm.coverage_lines?.length > 0 ? comm.coverage_lines : f.selected_coverage_lines,
+            acord_data: { ...f.acord_data, ...acordPrefill },
           }));
         }
 
