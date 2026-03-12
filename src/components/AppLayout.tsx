@@ -95,17 +95,14 @@ export function AppLayout({ children, onLogoClick }: { children: React.ReactNode
         <div className="mx-auto max-w-6xl px-4 py-6 md:py-8 pb-24 md:pb-8">
           {children}
           
-          {/* Mobile legal links - shown at bottom of content, not fixed */}
-          <div className="md:hidden mt-8 pt-6 border-t flex items-center justify-center gap-4 text-[11px] text-muted-foreground">
+          {/* Legal links at bottom of content */}
+          <div className="mt-8 pt-6 border-t flex items-center justify-center gap-4 text-[11px] text-muted-foreground">
             <Link to="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link>
             <span className="text-border">|</span>
             <Link to="/terms" className="hover:text-foreground transition-colors">Terms of Service</Link>
           </div>
         </div>
       </main>
-
-      {/* Mobile bottom tab bar */}
-      <MobileBottomNav />
 
       {/* Footer with legal links - hidden on mobile, not fixed */}
       <footer className="border-t py-3 px-4 text-center hidden md:block">
