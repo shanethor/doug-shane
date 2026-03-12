@@ -908,27 +908,12 @@ export default function Chat() {
         .single();
       if (subErr) throw subErr;
 
-      const extractHeaders = await getAuthHeaders();
-      const extractResp = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/extract-business-data`,
-        {
-          method: "POST",
-          headers: extractHeaders,
-          body: JSON.stringify({
-            description,
-            file_contents: textContents || undefined,
-            pdf_files: pdfFiles.length > 0 ? pdfFiles : undefined,
-            submission_id: sub.id,
-          }),
-        }
-      );
-
-      if (!extractResp.ok) {
-        const errBody = await extractResp.json().catch(() => ({}));
-        throw new Error(errBody.error || `Extraction failed (${extractResp.status})`);
-      }
-
-      const extracted = await extractResp.json();
+      const extracted = await extractWithBatching({
+        description,
+        file_contents: textContents || undefined,
+        pdf_files: pdfFiles.length > 0 ? pdfFiles : undefined,
+        submission_id: sub.id,
+      });
       const fd = extracted?.form_data || {};
       const detectedForms = detectFormsFromLOBFlags(fd);
       setRequestedFormIds(detectedForms);
