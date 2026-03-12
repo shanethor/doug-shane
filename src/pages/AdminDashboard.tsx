@@ -300,6 +300,7 @@ export default function AdminDashboard() {
               {pendingUserCount > 0 && <Badge variant="destructive" className="ml-1 h-4 px-1 text-[9px]">{pendingUserCount}</Badge>}
             </TabsTrigger>
             <TabsTrigger value="agencies" className="gap-1.5 text-xs"><Building2 className="h-3.5 w-3.5" />Agencies</TabsTrigger>
+            <TabsTrigger value="partners" className="gap-1.5 text-xs"><Handshake className="h-3.5 w-3.5" />Partners</TabsTrigger>
             <TabsTrigger value="suggestions" className="gap-1.5 text-xs"><Lightbulb className="h-3.5 w-3.5" />Features</TabsTrigger>
             <TabsTrigger value="bugs" className="gap-1.5 text-xs"><Bug className="h-3.5 w-3.5" />Bug Fixes</TabsTrigger>
           </TabsList>
