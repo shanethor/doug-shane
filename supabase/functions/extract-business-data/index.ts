@@ -29,7 +29,7 @@ const corsHeaders = {
 };
 
 const MAX_PDF_PAGES = 50;
-const MAX_TOTAL_PAGES = 250;
+const MAX_TOTAL_PAGES = 50; // Client handles batching; each request should be ≤50 pages
 const CONFIDENCE_THRESHOLD = 5; // minimum meaningful fields before triggering specialist
 
 // ── Shared schema prompt (used by all stages) ──
