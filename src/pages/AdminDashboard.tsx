@@ -709,6 +709,16 @@ export default function AdminDashboard() {
           </div>
         </TabsContent>
 
+        {/* ── Partner Referrals ── */}
+        <TabsContent value="partners" className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold">Partner Referrals</h2>
+            <Badge variant="outline" className="text-xs">Revenue share tracking</Badge>
+          </div>
+          <p className="text-xs text-muted-foreground">Track referrals from partner landing pages. Generate shareable tracker links for partners to view their own summary.</p>
+          <AdminPartnerReferrals />
+        </TabsContent>
+
         {/* ── Feature Suggestions ── */}
         <TabsContent value="suggestions" className="space-y-4">
           <div className="flex items-center justify-between">
