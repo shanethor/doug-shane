@@ -1213,14 +1213,14 @@ export default function Chat() {
 
     // Intercept partner intake link requests (e.g. "request Josh mortgage link", "Michael's intake link")
     const partnerIntent = !displayText ? isPartnerIntakeIntent(text) : null;
-    if (mortgageIntent) {
+    if (partnerIntent) {
       const userMsg: Msg = { role: "user", content: text.trim() };
       setMessages((prev) => [...prev, userMsg]);
       setInput("");
-      const borrowerUrl = `${window.location.origin}/b/${mortgageIntent.slug}`;
+      const borrowerUrl = `${window.location.origin}/b/${partnerIntent.slug}`;
       setMessages((prev) => [...prev, {
         role: "assistant",
-        content: `Here's **${mortgageIntent.name}'s** unique borrower intake page:\n\n🔗 **[${borrowerUrl}](${borrowerUrl})**\n\nShare this link with ${mortgageIntent.name}'s mortgage clients. When they visit, they can start a personal lines insurance intake directly — the form auto-selects personal coverage and is pre-associated with ${mortgageIntent.name}'s referral.`,
+        content: `Here's **${partnerIntent.name}'s** unique partner intake page:\n\n🔗 **[${borrowerUrl}](${borrowerUrl})**\n\nShare this link with ${partnerIntent.name}'s clients. When they visit, they can start a personal lines insurance intake directly — the form auto-selects personal coverage and is pre-associated with ${partnerIntent.name}'s referral.`,
       }]);
       return;
     }
