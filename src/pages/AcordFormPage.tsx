@@ -11,7 +11,6 @@ export default function AcordFormPage() {
   const { formId, submissionId } = useParams();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [showSummary, setShowSummary] = useState(false);
   const [resolvedFormIds, setResolvedFormIds] = useState<string[]>([]);
   const [activeFormId, setActiveFormId] = useState(formId || "acord-125");
 
@@ -24,15 +23,6 @@ export default function AcordFormPage() {
 
     (async () => {
       try {
-        // Check if there's an insurance_application with form_data
-        const { data: app } = await supabase
-          .from("insurance_applications")
-          .select("form_data")
-          .eq("submission_id", submissionId)
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
         // Get coverage lines from the submission
         const { data: sub } = await supabase
           .from("business_submissions")
@@ -48,14 +38,6 @@ export default function AcordFormPage() {
         setResolvedFormIds(formIds);
         if (formIds.length > 0 && !formIds.includes(activeFormId)) {
           setActiveFormId(formIds[0]);
-        }
-
-        // If we have form_data with meaningful content, show ExtractionSummary first
-        const hasData = app?.form_data && typeof app.form_data === "object" &&
-          Object.keys(app.form_data as object).length > 3;
-
-        if (hasData) {
-          setShowSummary(true);
         }
       } catch (err) {
         console.error("[AcordFormPage] Error loading submission data:", err);
@@ -84,23 +66,6 @@ export default function AcordFormPage() {
         <div className="flex items-center justify-center py-20">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
-      </AppLayout>
-    );
-  }
-
-  // Show ExtractionSummary gate so AI-inferred data gets persisted
-  if (showSummary && submissionId && submissionId !== "draft") {
-    return (
-      <AppLayout onLogoClick={handleBack}>
-        <ExtractionSummary
-          submissionId={submissionId}
-          requestedFormIds={resolvedFormIds}
-          onContinue={(selectedFormId) => {
-            if (selectedFormId) setActiveFormId(selectedFormId);
-            setShowSummary(false);
-          }}
-          onFormsChanged={(ids) => setResolvedFormIds(ids)}
-        />
       </AppLayout>
     );
   }
