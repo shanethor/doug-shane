@@ -473,6 +473,7 @@ export default function Chat() {
   const [sendFrom, setSendFrom] = useState<"aura" | string>("aura");
   const [connectedEmails, setConnectedEmails] = useState<{ id: string; email_address: string; provider: string }[]>([]);
   const mountedRef = useRef(true);
+  const abortControllerRef = useRef<AbortController | null>(null);
   useEffect(() => {
     return () => {
       mountedRef.current = false;
