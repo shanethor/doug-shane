@@ -35,7 +35,7 @@ const BORROWERS: Record<string, BorrowerConfig> = {
     address: "46 Miller St., #1, Fairfield, CT 06824",
     email: "Joshua.Chernes@ccm.com",
     bio: "Buying a home already comes with enough paperwork. Through Josh's partnership with AURA Risk Group, you can upload the documents you already have instead of starting from scratch. Whether you only need homeowners insurance or want to bundle other personal coverage, AURA helps keep the process simple.",
-    coverageLines: ["Home", "Auto", "Umbrella", "Flood", "Renters", "ATV", "Motorcycles"],
+    coverageLines: ["Home", "Auto", "Umbrella", "Flood", "Renters", "etc."],
   },
 };
 
