@@ -438,8 +438,9 @@ export default function Inbox({ emailOnly, embedded, selectedClientId, onClearSe
     "robinhood", "coinbase", "crypto.com",
     "sofi.com", "sofi.org", "wealthfront", "betterment", "acorns",
     "mint.com", "creditkarma", "nerdwallet", "bankrate",
-    "chime", "ally.com", "marcus.com", "discover.com",
-    // Fitness / Health apps
+    "chime", "ally.com", "marcus.com", "discover.com", "cibc.com", "cibc",
+    // Crypto / Bitcoin / Blockchain
+    "btc", "bitcoin", "blockchain", "binance", "kraken", "gemini",
     "peloton", "fitbit", "myfitnesspal", "strava", "headspace", "calm.com",
     "noom", "orangetheory", "crossfit",
     // Loyalty / Rewards programs
@@ -527,7 +528,9 @@ export default function Inbox({ emailOnly, embedded, selectedClientId, onClearSe
     "your statement", "monthly statement", "interest rate",
     "credit score", "pre-approved", "refinance", "mortgage rate",
     "investment update", "portfolio", "dividend",
-    "crypto", "bitcoin", "ethereum",
+    "crypto", "bitcoin", "ethereum", "btc",
+    // Politics / Religion / Spam
+    "foreign policy", "church", "scam", "phishing",
     // Health supplements / Wellness marketing
     "supplement", "vitamin", "probiotic", "collagen", "detox",
     "wellness", "holistic", "superfood", "nutrition",
