@@ -51,7 +51,7 @@ const STEPS = [
 
 export default function BorrowerPage() {
   const { slug } = useParams<{ slug: string }>();
-  const navigate = useNavigate();
+  const [creatingIntake, setCreatingIntake] = useState(false);
   const config = slug ? BORROWERS[slug] : undefined;
 
   if (!config) {
@@ -62,9 +62,18 @@ export default function BorrowerPage() {
     );
   }
 
-  const handleStartIntake = () => {
-    // Navigate to AURA's personal insurance intake page
-    window.location.href = `${window.location.origin}/personal-intake/new?ref=${config.slug}`;
+  const handleStartIntake = async () => {
+    setCreatingIntake(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("borrower-intake", {
+        body: { slug: config.slug },
+      });
+      if (error || !data?.token) throw new Error(error?.message ?? "No token returned");
+      window.location.href = `${window.location.origin}/personal-intake/${data.token}`;
+    } catch (e) {
+      console.error("Failed to create intake link:", e);
+      setCreatingIntake(false);
+    }
   };
 
   return (
