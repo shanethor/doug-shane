@@ -42,6 +42,8 @@ import BetaChat from "./pages/BetaChat";
 import BetaTodos from "./pages/BetaTodos";
 import BetaVoice from "./pages/BetaVoice";
 import BetaVideo from "./pages/BetaVideo";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsOfService from "./pages/TermsOfService";
 import { Navigate } from "react-router-dom";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
