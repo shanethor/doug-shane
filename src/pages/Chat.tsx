@@ -2973,9 +2973,15 @@ export default function Chat() {
               {isLoading && displayedText === "" && (
                 <div className="flex justify-start animate-page-enter">
                   <div className="bg-muted rounded-xl px-4 py-3">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
                       <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                       <span className="text-xs text-muted-foreground" style={{ animation: 'subtlePulse 1.5s ease-in-out infinite' }}>Thinking…</span>
+                      <button
+                        onClick={stopGeneration}
+                        className="ml-1 flex items-center gap-1 rounded-md border border-border bg-background px-2 py-0.5 text-[10px] font-medium text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors"
+                      >
+                        <X className="h-3 w-3" /> Stop
+                      </button>
                     </div>
                   </div>
                 </div>
