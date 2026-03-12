@@ -124,6 +124,8 @@ const App = () => (
               <Route path="video" element={<BetaVideo />} />
             </Route>
           </Route>
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/terms" element={<TermsOfService />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
