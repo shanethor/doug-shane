@@ -26,6 +26,7 @@ import { useVoiceInput } from "@/hooks/useVoiceInput";
 import { useTrainingMode } from "@/hooks/useTrainingMode";
 import { ensurePipelineLead, findExistingLeads } from "@/lib/pipeline-sync";
 import { generateIntakeLink, generatePersonalIntakeLink } from "@/lib/intake-links";
+import { findStaleClients } from "@/lib/stale-clients";
 import { PersonalIntakeDialog } from "@/components/PersonalIntakeDialog";
 import { fuzzyMatch } from "@/lib/fuzzy-match";
 import Pipeline from "@/pages/Pipeline";
