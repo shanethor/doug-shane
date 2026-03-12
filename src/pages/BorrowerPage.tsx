@@ -1,8 +1,10 @@
-import { useParams, useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Upload, FileText, Shield, Phone, Mail, MapPin, ExternalLink, CheckCircle, ArrowRight, Sparkles, Search, MessageSquare, UserCheck } from "lucide-react";
+import { Upload, Shield, Phone, Mail, MapPin, ExternalLink, CheckCircle, ArrowRight, Sparkles, Search, MessageSquare, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import auraLogo from "@/assets/aura-logo.png";
 import joshHeadshot from "@/assets/josh-chernes-headshot.png";
 
@@ -35,7 +37,7 @@ const BORROWERS: Record<string, BorrowerConfig> = {
     address: "46 Miller St., #1, Fairfield, CT 06824",
     email: "Joshua.Chernes@ccm.com",
     bio: "Buying a home already comes with enough paperwork. Through Josh's partnership with AURA Risk Group, you can upload the documents you already have instead of starting from scratch. Whether you only need homeowners insurance or want to bundle other personal coverage, AURA helps keep the process simple.",
-    coverageLines: ["Home", "Auto", "Umbrella", "Flood", "Renters", "ATV", "Motorcycles"],
+    coverageLines: ["Home", "Auto", "Umbrella", "Flood", "Renters", "etc."],
   },
 };
 
@@ -49,7 +51,7 @@ const STEPS = [
 
 export default function BorrowerPage() {
   const { slug } = useParams<{ slug: string }>();
-  const navigate = useNavigate();
+  const [creatingIntake, setCreatingIntake] = useState(false);
   const config = slug ? BORROWERS[slug] : undefined;
 
   if (!config) {
@@ -60,9 +62,18 @@ export default function BorrowerPage() {
     );
   }
 
-  const handleStartIntake = () => {
-    // Navigate to a generic personal intake — future: generate a real intake link
-    navigate(`/intake/borrower-${config.slug}`);
+  const handleStartIntake = async () => {
+    setCreatingIntake(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("borrower-intake", {
+        body: { slug: config.slug },
+      });
+      if (error || !data?.token) throw new Error(error?.message ?? "No token returned");
+      window.location.href = `${window.location.origin}/personal-intake/${data.token}`;
+    } catch (e) {
+      console.error("Failed to create intake link:", e);
+      setCreatingIntake(false);
+    }
   };
 
   return (
@@ -156,8 +167,9 @@ export default function BorrowerPage() {
               size="lg"
               className="mt-7 w-full gap-2 rounded-full text-sm font-semibold sm:w-auto sm:px-10"
               onClick={handleStartIntake}
+              disabled={creatingIntake}
             >
-              Apply for Insurance <ArrowRight className="h-4 w-4" />
+              {creatingIntake ? <><Loader2 className="h-4 w-4 animate-spin" /> Loading...</> : <>Apply for Insurance <ArrowRight className="h-4 w-4" /></>}
             </Button>
           </div>
         </div>
