@@ -167,8 +167,9 @@ export default function BorrowerPage() {
               size="lg"
               className="mt-7 w-full gap-2 rounded-full text-sm font-semibold sm:w-auto sm:px-10"
               onClick={handleStartIntake}
+              disabled={creatingIntake}
             >
-              Apply for Insurance <ArrowRight className="h-4 w-4" />
+              {creatingIntake ? <><Loader2 className="h-4 w-4 animate-spin" /> Loading...</> : <>Apply for Insurance <ArrowRight className="h-4 w-4" /></>}
             </Button>
           </div>
         </div>
