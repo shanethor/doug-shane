@@ -1599,15 +1599,18 @@ export default function Chat() {
         messages: [...messages, { role: userMsg.role, content: contentWithContext }].map((m) => ({ role: m.role, content: m.content })),
         trainingMode,
         userRole: role,
+        signal: controller.signal,
         onDelta: upsert,
         onDone: () => {
           clearTimeout(safetyTimeout);
+          abortControllerRef.current = null;
           // Signal stream done — typewriter will call finalizeMessage when it catches up
           streamDoneRef.current = true;
           onFinishRef.current = finalizeMessage;
         },
         onError: (err) => {
           clearTimeout(safetyTimeout);
+          abortControllerRef.current = null;
           killTypewriter();
           toast({ variant: "destructive", title: "Error", description: err });
           setIsLoading(false);
