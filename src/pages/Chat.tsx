@@ -1399,6 +1399,8 @@ export default function Chat() {
     setInput("");
     setAttachedFiles([]);
     setIsLoading(true);
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
 
     fullTextRef.current = "";
     setDisplayedText("");
