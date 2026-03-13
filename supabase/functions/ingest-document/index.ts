@@ -279,6 +279,12 @@ CRITICAL: Return ONLY the JSON object. No markdown fences, no prose.
   "proposed_exp_date": "MM/DD/YYYY expiration date",
   "policy_premium": "Total annual premium amount (number only)",
   "billing_plan": "Direct, Agency, etc.",
+  "transaction_type": "New, Renewal, or Replacement",
+  "bop_premium": "BOP line premium amount (number only)",
+  "cgl_premium": "General liability line premium (number only)",
+  "property_premium": "Property line premium (number only)",
+  "auto_premium": "Auto line premium (number only)",
+  "umbrella_premium": "Umbrella line premium (number only)",
   
   "contact_name_1": "Primary contact person name",
   "contact_phone_1": "Primary contact phone",
