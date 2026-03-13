@@ -51,44 +51,50 @@ serve(async (req) => {
 
     const pdfSizeMB = (pdfBytes.length / (1024 * 1024)).toFixed(1);
 
-    // ── 3. Determine page count ──
-    // IMPORTANT: We do NOT slice PDFs with pdf-lib anymore because copyPages()
-    // corrupts encrypted/secured PDFs, producing garbled output that Gemini
-    // cannot read (returns "{}"). Instead, we send the ORIGINAL bytes and use
-    // prompt instructions to tell Gemini which pages to focus on.
+    // ── 3. Slice to first 10 pages (DEC data lives on pages 1-5 for BOP/GL/WC) ──
+    // This avoids sending 100+ pages of ISO boilerplate to Gemini.
     const { PDFDocument } = await import("https://esm.sh/pdf-lib@1.17.1");
     let totalPages = 0;
+    let sendBase64: string;
+    let scanEnd: number;
+
     try {
-      const tmpDoc = await PDFDocument.load(pdfBytes, { ignoreEncryption: true });
-      totalPages = tmpDoc.getPageCount();
+      const srcDoc = await PDFDocument.load(pdfBytes, { ignoreEncryption: true });
+      totalPages = srcDoc.getPageCount();
+
+      if (totalPages > 10) {
+        // Try to slice — if encrypted PDF corrupts, fall back to full + prompt focus
+        try {
+          const newDoc = await PDFDocument.create();
+          const pageIndices = Array.from({ length: Math.min(10, totalPages) }, (_, i) => i);
+          const copiedPages = await newDoc.copyPages(srcDoc, pageIndices);
+          copiedPages.forEach((page: unknown) => newDoc.addPage(page as any));
+          const slicedBytes = await newDoc.save();
+          sendBase64 = uint8ToBase64(new Uint8Array(slicedBytes));
+          scanEnd = 10;
+          console.log(`[ingest] Sliced PDF: ${totalPages} pages → 10 pages`);
+        } catch (sliceErr) {
+          // Slicing failed (encrypted PDF) — send original with prompt focus
+          console.warn(`[ingest] Page slicing failed (encrypted?), sending full PDF:`, sliceErr);
+          sendBase64 = pdf_base64 || uint8ToBase64(pdfBytes);
+          scanEnd = totalPages;
+        }
+      } else {
+        sendBase64 = pdf_base64 || uint8ToBase64(pdfBytes);
+        scanEnd = totalPages;
+        console.log(`[ingest] PDF has ${totalPages} pages, sending all`);
+      }
     } catch (e) {
-      console.warn("[ingest] Could not read page count:", e);
+      console.warn("[ingest] Could not read/slice PDF:", e);
+      sendBase64 = pdf_base64 || uint8ToBase64(pdfBytes);
+      scanEnd = 0;
     }
 
     console.log(`[ingest] PDF size: ${pdfSizeMB}MB, ${totalPages} pages, doc=${document_id}`);
 
-    // Always send original bytes — never slice (avoids encryption corruption)
-    const sendBase64 = pdf_base64 || uint8ToBase64(pdfBytes);
-
-    // Determine how many pages we instruct Gemini to focus on
-    let scanEnd: number;
-    if (totalPages <= 0) {
-      scanEnd = 0; // unknown, scan all
-      console.log(`[ingest] Unknown page count, sending full PDF`);
-    } else if (totalPages <= 10) {
-      scanEnd = totalPages;
-      console.log(`[ingest] Small doc (${totalPages}p), scanning all pages`);
-    } else if (totalPages <= 25) {
-      scanEnd = totalPages;
-      console.log(`[ingest] Medium doc (${totalPages}p), scanning all pages`);
-    } else {
-      scanEnd = 25;
-      console.log(`[ingest] Large doc (${totalPages}p), instructing focus on first 25 pages`);
-    }
-
-    // Build page-focus instruction for the prompt
-    const pageFocus = scanEnd > 0 && scanEnd < totalPages
-      ? `\n\nIMPORTANT: This document has ${totalPages} pages. Focus your extraction on pages 1 through ${scanEnd} only. These contain the declarations and coverage summary pages with the key data.`
+    // Build page-focus instruction for large docs where slicing failed
+    const pageFocus = scanEnd === 0 || (totalPages > 10 && scanEnd === totalPages)
+      ? `\n\nIMPORTANT: This document has ${totalPages} pages. Focus your extraction on pages 1 through 10 only. These contain the declarations and coverage summary pages with the key data. Ignore boilerplate policy language on later pages.`
       : "";
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
@@ -273,6 +279,12 @@ CRITICAL: Return ONLY the JSON object. No markdown fences, no prose.
   "proposed_exp_date": "MM/DD/YYYY expiration date",
   "policy_premium": "Total annual premium amount (number only)",
   "billing_plan": "Direct, Agency, etc.",
+  "transaction_type": "New, Renewal, or Replacement",
+  "bop_premium": "BOP line premium amount (number only)",
+  "cgl_premium": "General liability line premium (number only)",
+  "property_premium": "Property line premium (number only)",
+  "auto_premium": "Auto line premium (number only)",
+  "umbrella_premium": "Umbrella line premium (number only)",
   
   "contact_name_1": "Primary contact person name",
   "contact_phone_1": "Primary contact phone",
@@ -325,6 +337,9 @@ CRITICAL: Return ONLY the JSON object. No markdown fences, no prose.
   "lob_property": true,
   "lob_auto": true,
   "lob_umbrella": true,
+  "lob_crime": true,
+  "lob_cyber": true,
+  "lob_inland_marine": true,
   
   "additional_interest_name_a": "Additional interest/mortgagee name",
   "additional_interest_address_a": "Additional interest address",
@@ -380,7 +395,7 @@ async function callGemini(base64: string, prompt: string, apiKey: string): Promi
         },
       ],
     }),
-    signal: AbortSignal.timeout(60_000),
+    signal: AbortSignal.timeout(120_000),
   });
 
   if (!response.ok) {
@@ -494,6 +509,15 @@ function applyAliases(data: Record<string, any>) {
     current_premium: "prior_gl_premium_1",
     each_occurrence_limit: "gl_each_occurrence_limit",
     general_aggregate_limit: "gl_general_aggregate_limit",
+    // LOB aliases for variant Gemini output
+    line_bop: "lob_bop",
+    line_gl: "lob_gl",
+    line_property: "lob_property",
+    line_auto: "lob_auto",
+    line_umbrella: "lob_umbrella",
+    line_cyber: "lob_cyber",
+    line_epli: "lob_epli",
+    line_crime: "lob_crime",
   };
 
   for (const [alias, canonical] of Object.entries(ALIASES)) {
