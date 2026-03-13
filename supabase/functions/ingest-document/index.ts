@@ -53,7 +53,7 @@ serve(async (req) => {
   let documentId: string | undefined;
 
   try {
-    const { document_id, submission_id, storage_path } = await req.json();
+    const { document_id, submission_id, storage_path, pdf_base64, file_name } = await req.json();
     documentId = document_id;
 
     const supabase = createClient(
@@ -61,19 +61,32 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // ── 1. Mark as processing ──────────────────────────────────────────────
-    await supabase
-      .from("client_documents")
-      .update({ extraction_status: "processing" })
-      .eq("id", document_id);
+    // ── 1. Mark as processing (if document_id provided) ────────────────────
+    if (document_id) {
+      await supabase
+        .from("client_documents")
+        .update({ extraction_status: "processing" })
+        .eq("id", document_id);
+    }
 
-    // ── 2. Download PDF ────────────────────────────────────────────────────
-    const { data: pdfData, error: dlError } = await supabase.storage
-      .from("documents")
-      .download(storage_path);
+    // ── 2. Get PDF bytes — from base64 payload or storage ──────────────────
+    let pdfBytes: Uint8Array;
 
-    if (dlError || !pdfData) throw new Error("Failed to download PDF: " + dlError?.message);
-    const pdfBytes = new Uint8Array(await pdfData.arrayBuffer());
+    if (pdf_base64) {
+      // Direct base64 upload (preferred — no storage needed)
+      const binaryStr = atob(pdf_base64);
+      pdfBytes = new Uint8Array(binaryStr.length);
+      for (let i = 0; i < binaryStr.length; i++) pdfBytes[i] = binaryStr.charCodeAt(i);
+    } else if (storage_path) {
+      // Legacy: download from storage
+      const { data: pdfData, error: dlError } = await supabase.storage
+        .from("documents")
+        .download(storage_path);
+      if (dlError || !pdfData) throw new Error("Failed to download PDF: " + dlError?.message);
+      pdfBytes = new Uint8Array(await pdfData.arrayBuffer());
+    } else {
+      throw new Error("Either pdf_base64 or storage_path is required");
+    }
 
     // ── 3. Load + count pages ──────────────────────────────────────────────
     const srcDoc = await PDFDocument.load(pdfBytes, { ignoreEncryption: true });
@@ -90,7 +103,7 @@ serve(async (req) => {
     );
 
     // ── 5. Detect doc type from first-page text + filename ─────────────────
-    const pathHint = (storage_path || "").toUpperCase();
+    const pathHint = (storage_path || file_name || "").toUpperCase();
     let docType: AcordDocType = detectDocType(prescanResult.firstPageText);
 
     if (docType === "UNKNOWN" || prescanResult.firstPageText.length < 50) {
@@ -215,21 +228,23 @@ serve(async (req) => {
     }
 
     // ── 13. Update document record ─────────────────────────────────────────
-    await supabase.from("client_documents").update({
-      extraction_status: confidence > 0.4 ? "complete" : "partial",
-      extraction_confidence: confidence,
-      doc_type: docType,
-      total_pages: totalPages,
-      extraction_metadata: {
-        model: "google/gemini-2.5-flash",
-        pages_sent: scanEnd,
+    if (document_id) {
+      await supabase.from("client_documents").update({
+        extraction_status: confidence > 0.4 ? "complete" : "partial",
+        extraction_confidence: confidence,
+        doc_type: docType,
         total_pages: totalPages,
-        last_dec_page: lastDecPage,
-        extended_scan: isExtended,
-        retry_used: retryUsed,
-        prescan_doc_type_hint: docTypeHint,
-      },
-    }).eq("id", document_id);
+        extraction_metadata: {
+          model: "google/gemini-2.5-flash",
+          pages_sent: scanEnd,
+          total_pages: totalPages,
+          last_dec_page: lastDecPage,
+          extended_scan: isExtended,
+          retry_used: retryUsed,
+          prescan_doc_type_hint: docTypeHint,
+        },
+      }).eq("id", document_id);
+    }
 
     return new Response(
       JSON.stringify({ success: true, docType, confidence, pages: totalPages, scanEnd }),

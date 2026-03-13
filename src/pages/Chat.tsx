@@ -672,7 +672,7 @@ export default function Chat() {
       reader.readAsDataURL(file);
     });
 
-  /** Persist uploaded files to client_documents so they show on the Documents tab */
+  /** Persist uploaded NON-PDF files to client_documents (PDFs are already handled by ingest pipeline) */
   const persistFilesToDocuments = async (
     files: File[],
     userId: string,
@@ -680,7 +680,9 @@ export default function Chat() {
     leadId: string | null,
     docType: string,
   ) => {
-    for (const file of files) {
+    // Skip PDFs — they are already uploaded to storage and tracked by extractWithBatching/ingest-document
+    const nonPdfFiles = files.filter(f => !(f.type === "application/pdf" || f.name.toLowerCase().endsWith(".pdf")));
+    for (const file of nonPdfFiles) {
       try {
         const dataUrl = await new Promise<string>((resolve, reject) => {
           const r = new FileReader();
@@ -819,7 +821,7 @@ export default function Chat() {
         .single();
       if (subErr) throw subErr;
 
-      // Run extraction — uses batching for large PDFs (up to 200 pages)
+      // Run extraction — prescan pipeline (uploads to storage, smart page slicing)
       const extracted = await extractWithBatching({
         description,
         file_contents: textContents || undefined,
