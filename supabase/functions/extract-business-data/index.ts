@@ -28,8 +28,10 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const MAX_PDF_PAGES = 50;
-const MAX_TOTAL_PAGES = 50; // Client handles batching; each request should be ≤50 pages
+const MAX_PDF_PAGES = 80; // increased — prescan trims to ideal pages
+const MAX_TOTAL_PAGES = 80;
+const PRESCAN_TARGET_PAGES = 15; // ideal number of data-rich pages to extract from
+const PRESCAN_THRESHOLD = 20; // only prescan if doc has more pages than this
 const CONFIDENCE_THRESHOLD = 5; // minimum meaningful fields before triggering specialist
 
 // ── Shared schema prompt (used by all stages) ──
@@ -460,6 +462,134 @@ function parseAiJson(raw: string): any {
 }
 
 // ═══════════════════════════════════════════════════════════
+//  PRESCAN — Identify data-rich pages using Flash Lite
+// ═══════════════════════════════════════════════════════════
+
+async function prescanForDataPages(
+  apiKey: string,
+  pdfBase64: string,
+  totalPages: number,
+  maxTargetPages: number = PRESCAN_TARGET_PAGES,
+): Promise<number[]> {
+  const t0 = Date.now();
+  console.log(`[prescan] Starting page prescan on ${totalPages}-page document (target: ${maxTargetPages} pages)...`);
+
+  const prescanPrompt = `You are analyzing a ${totalPages}-page insurance document packet. Your job is to identify which PAGE NUMBERS contain actual insured-specific data worth extracting.
+
+INCLUDE these page types (they have extractable data):
+- Declaration pages (insured name, policy number, limits, premiums, deductibles, effective dates)
+- Coverage summary / schedule of coverages pages
+- Vehicle schedules / auto schedules
+- Driver schedules / driver listings
+- Classification schedules (WC class codes, GL hazard codes)
+- Premium computation / breakdown pages
+- Location schedules / property schedules
+- Mortgagee / additional interest schedules
+- Endorsement schedule pages (listing form numbers)
+- Certificate of insurance pages
+- Loss run summaries with actual claim data
+
+EXCLUDE these page types (no extractable data):
+- Standard policy form language (e.g., "BUSINESSOWNERS COVERAGE FORM BP 00 03", "COMMERCIAL GENERAL LIABILITY COVERAGE FORM CG 00 01")
+- Generic terms, conditions, and definitions boilerplate
+- Privacy notices / data practices notices
+- Terrorism Risk Insurance Act standard notices
+- Blank pages or signature-only pages
+- Table of contents
+- Standard exclusions text
+- "COMMON POLICY CONDITIONS" boilerplate
+- Any page that is standard form text identical across all policyholders
+
+Return ONLY a JSON array of 1-indexed page numbers containing extractable data.
+Prioritize declaration pages and schedule pages.
+Return at most ${maxTargetPages} page numbers.
+Example: [1, 2, 3, 7, 12, 15]
+
+Return ONLY the JSON array, nothing else.`;
+
+  try {
+    type ContentPart = { type: string; text?: string; image_url?: { url: string } };
+    const userContent: ContentPart[] = [
+      { type: "text", text: prescanPrompt },
+      { type: "image_url", image_url: { url: `data:application/pdf;base64,${pdfBase64}` } },
+    ];
+
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash-lite",
+        messages: [{ role: "user", content: userContent }],
+      }),
+    });
+
+    console.log(`[prescan] Flash Lite responded in ${Date.now() - t0}ms (status: ${response.status})`);
+
+    if (!response.ok) {
+      const t = await response.text();
+      console.warn("[prescan] Flash Lite error:", response.status, t);
+      return []; // fallback: process all pages
+    }
+
+    const result = await response.json();
+    const raw = result.choices?.[0]?.message?.content || "[]";
+    const cleaned = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/i, "").trim();
+    const pages: number[] = JSON.parse(cleaned);
+
+    if (Array.isArray(pages)) {
+      const valid = pages
+        .map(Number)
+        .filter(n => !isNaN(n) && n > 0 && n <= totalPages)
+        .slice(0, maxTargetPages);
+      console.log(`[prescan] Identified ${valid.length} data-rich pages: [${valid.join(", ")}]`);
+      return valid;
+    }
+  } catch (err) {
+    console.warn("[prescan] Failed to parse prescan result:", err);
+  }
+  return []; // empty = fallback to all pages
+}
+
+/**
+ * Extract specific 1-indexed page numbers from a PDF
+ */
+async function extractSpecificPages(base64Data: string, pageNumbers: number[]): Promise<string> {
+  try {
+    const pdfBytes = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
+    const srcDoc = await PDFDocument.load(pdfBytes, { ignoreEncryption: true });
+    const totalPages = srcDoc.getPageCount();
+
+    // Convert to 0-indexed and filter valid
+    const indices = pageNumbers
+      .map(p => p - 1)
+      .filter(i => i >= 0 && i < totalPages)
+      .sort((a, b) => a - b);
+
+    if (indices.length === 0 || indices.length >= totalPages) return base64Data;
+
+    console.log(`[prescan] Slicing PDF: ${indices.length} pages from ${totalPages}-page document`);
+
+    const newDoc = await PDFDocument.create();
+    const copiedPages = await newDoc.copyPages(srcDoc, indices);
+    copiedPages.forEach(page => newDoc.addPage(page));
+
+    const newBytes = await newDoc.save();
+    let binary = '';
+    const arr = new Uint8Array(newBytes);
+    for (let i = 0; i < arr.length; i++) {
+      binary += String.fromCharCode(arr[i]);
+    }
+    return btoa(binary);
+  } catch (err) {
+    console.warn("[prescan] Page extraction failed, using original:", err);
+    return base64Data;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
 //  POST-PROCESSING (shared across all paths)
 // ═══════════════════════════════════════════════════════════
 
@@ -747,7 +877,7 @@ serve(async (req) => {
       pipelineUsed = "gemini-native-pdf";
       console.log(`[pipeline] Starting Gemini native PDF extraction (${pdf_files.length} file(s))`);
 
-      // Truncate PDFs to page budget
+      // ── Step 0: Prepare PDFs and run prescan for large documents ──
       const truncatedFiles: any[] = [];
       let totalPages = 0;
 
@@ -762,24 +892,62 @@ serve(async (req) => {
         const remainingBudget = MAX_TOTAL_PAGES - totalPages;
 
         if (mimeType === "application/pdf") {
-          const truncated = await truncatePdf(pf.base64, Math.min(MAX_PDF_PAGES, remainingBudget));
-
-          let pages = Math.min(MAX_PDF_PAGES, remainingBudget);
+          let pages = 0;
           try {
             const tmpBytes = Uint8Array.from(atob(pf.base64), c => c.charCodeAt(0));
             const tmpDoc = await PDFDocument.load(tmpBytes, { ignoreEncryption: true });
-            pages = Math.min(tmpDoc.getPageCount(), Math.min(MAX_PDF_PAGES, remainingBudget));
-          } catch (_) {}
+            pages = tmpDoc.getPageCount();
+          } catch (_) { pages = 1; }
 
-          totalPages += pages;
-          truncatedFiles.push({ base64: truncated, mimeType });
+          const cappedPages = Math.min(pages, remainingBudget);
+
+          // ── PRESCAN: For large PDFs, identify data-rich pages first ──
+          if (pages > PRESCAN_THRESHOLD) {
+            console.log(`[prescan] Document has ${pages} pages (>${PRESCAN_THRESHOLD}), running prescan...`);
+            // First truncate to budget for prescan
+            const prescanBase64 = pages > MAX_TOTAL_PAGES
+              ? await truncatePdf(pf.base64, MAX_TOTAL_PAGES)
+              : pf.base64;
+            const prescanPageCount = Math.min(pages, MAX_TOTAL_PAGES);
+
+            const dataPages = await prescanForDataPages(
+              LOVABLE_API_KEY,
+              prescanBase64,
+              prescanPageCount,
+              PRESCAN_TARGET_PAGES,
+            );
+
+            if (dataPages.length > 0) {
+              // Extract only the identified data-rich pages
+              const slicedBase64 = await extractSpecificPages(
+                pages > MAX_TOTAL_PAGES ? prescanBase64 : pf.base64,
+                dataPages,
+              );
+              truncatedFiles.push({ base64: slicedBase64, mimeType });
+              totalPages += dataPages.length;
+              console.log(`[prescan] Sending ${dataPages.length} data-rich pages (from ${pages} total) to extraction`);
+            } else {
+              // Prescan returned nothing — fallback to truncated
+              console.log(`[prescan] No pages identified, falling back to first ${cappedPages} pages`);
+              const truncated = await truncatePdf(pf.base64, cappedPages);
+              truncatedFiles.push({ base64: truncated, mimeType });
+              totalPages += cappedPages;
+            }
+          } else {
+            // Small PDF — no prescan needed
+            const truncated = cappedPages < pages
+              ? await truncatePdf(pf.base64, cappedPages)
+              : pf.base64;
+            truncatedFiles.push({ base64: truncated, mimeType });
+            totalPages += cappedPages;
+          }
         } else {
           truncatedFiles.push({ base64: pf.base64, mimeType });
           totalPages += 1;
         }
       }
 
-      console.log(`[pipeline] Processing ${truncatedFiles.length} files, ~${totalPages} total pages`);
+      console.log(`[pipeline] Processing ${truncatedFiles.length} files, ~${totalPages} total pages (after prescan)`);
 
       // Stage 1: Gemini Flash
       try {

@@ -61,7 +61,7 @@ export async function extractWithBatching(params: ExtractParams): Promise<Extrac
   // Large file — batched extraction
   const toastId = toast.loading(
     `Processing large document (${totalPages} pages across ${batches.length} batches)…`,
-    { description: "This may take a minute for large insurance packets.", duration: 120000 }
+    { description: "Smart page detection will identify the most data-rich pages.", duration: 180000 }
   );
 
   const results: ExtractResult[] = [];
