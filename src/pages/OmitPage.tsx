@@ -157,7 +157,7 @@ export default function OmitPage() {
 
           <div className="space-y-4">
             {STEPS.map((step) => (
-              <Card key={step.num} className="border-white/10 bg-white/[0.03] hover:bg-white/[0.06] transition-colors rounded-none">
+              <Card key={step.num} className="border-white/10 bg-white/[0.03] hover:bg-white/[0.06] transition-colors rounded-none dark:border-white/10 dark:bg-white/[0.03]">
                 <CardContent className="flex gap-5 p-6">
                   <div className="flex h-12 w-12 shrink-0 items-center justify-center border border-white/20 text-white font-mono font-bold text-sm">
                     {step.num}
