@@ -1236,9 +1236,7 @@ export default function FormFillingView({ submissionId, initialMessages, initial
     const sections: { name: string; fields: AcordFormField[] }[] = [];
     const seen = new Set<string>();
     for (const field of fields) {
-      const sectionLabel = isAllForms
-        ? field.section
-        : field.section;
+      const sectionLabel = field.section;
       if (!seen.has(sectionLabel)) {
         seen.add(sectionLabel);
         let sectionFields = fields.filter((f) => f.section === sectionLabel);
