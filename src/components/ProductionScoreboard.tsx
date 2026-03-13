@@ -11,8 +11,10 @@ import { Target, Trophy, Sparkles } from "lucide-react";
 
 type Props = {
   userId: string;
-  premiumSold: number;
-  revenueSold: number;
+  mtdPremium: number;
+  mtdRevenue: number;
+  ytdPremium: number;
+  ytdRevenue: number;
 };
 
 const fmt = (n: number) =>
