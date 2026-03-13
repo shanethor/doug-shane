@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import joshHeadshot from "@/assets/josh-chernes-headshot.png";
 import michaelHeadshot from "@/assets/michael-wengzn-headshot.png";
 import AssociatedPage from "./AssociatedPage";
+import OmitPage from "./OmitPage";
 
 /* ─── Borrower Config ─── */
 interface CoverageCard {
@@ -106,8 +107,9 @@ export default function BorrowerPage() {
   const { slug } = useParams<{ slug: string }>();
   const [creatingIntake, setCreatingIntake] = useState(false);
 
-  // Associated has its own dedicated layout
+  // Partners with dedicated layouts
   if (slug === "associated") return <AssociatedPage />;
+  if (slug === "omit") return <OmitPage />;
 
   const config = slug ? BORROWERS[slug] : undefined;
 
