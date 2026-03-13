@@ -104,16 +104,19 @@ export default function Auth() {
           if (result.trusted) {
             set2FAVerified(true);
             navigate("/", { replace: true });
-          } else {
+          } else if (result.sent) {
             setPendingUserId(user.id);
             setPendingEmail(user.email!);
             setNeeds2FA(true);
+          } else {
+            // send_code failed – don't show 2FA form without an active code
+            console.error("[2fa-auto] send_code failed:", result.error);
+            toast.error("Could not send verification code. Please try logging in again.");
           }
         })
-        .catch(() => {
-          setPendingUserId(user.id);
-          setPendingEmail(user.email!);
-          setNeeds2FA(true);
+        .catch((err) => {
+          console.error("[2fa-auto] network error:", err);
+          toast.error("Could not reach verification service. Please try again.");
         })
         .finally(() => setAutoChecking(false));
     } else if (!loading && user && is2FAVerified() && !isPendingApproval) {
