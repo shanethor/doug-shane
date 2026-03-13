@@ -877,7 +877,7 @@ serve(async (req) => {
       pipelineUsed = "gemini-native-pdf";
       console.log(`[pipeline] Starting Gemini native PDF extraction (${pdf_files.length} file(s))`);
 
-      // Truncate PDFs to page budget
+      // ── Step 0: Prepare PDFs and run prescan for large documents ──
       const truncatedFiles: any[] = [];
       let totalPages = 0;
 
@@ -892,24 +892,62 @@ serve(async (req) => {
         const remainingBudget = MAX_TOTAL_PAGES - totalPages;
 
         if (mimeType === "application/pdf") {
-          const truncated = await truncatePdf(pf.base64, Math.min(MAX_PDF_PAGES, remainingBudget));
-
-          let pages = Math.min(MAX_PDF_PAGES, remainingBudget);
+          let pages = 0;
           try {
             const tmpBytes = Uint8Array.from(atob(pf.base64), c => c.charCodeAt(0));
             const tmpDoc = await PDFDocument.load(tmpBytes, { ignoreEncryption: true });
-            pages = Math.min(tmpDoc.getPageCount(), Math.min(MAX_PDF_PAGES, remainingBudget));
-          } catch (_) {}
+            pages = tmpDoc.getPageCount();
+          } catch (_) { pages = 1; }
 
-          totalPages += pages;
-          truncatedFiles.push({ base64: truncated, mimeType });
+          const cappedPages = Math.min(pages, remainingBudget);
+
+          // ── PRESCAN: For large PDFs, identify data-rich pages first ──
+          if (pages > PRESCAN_THRESHOLD) {
+            console.log(`[prescan] Document has ${pages} pages (>${PRESCAN_THRESHOLD}), running prescan...`);
+            // First truncate to budget for prescan
+            const prescanBase64 = pages > MAX_TOTAL_PAGES
+              ? await truncatePdf(pf.base64, MAX_TOTAL_PAGES)
+              : pf.base64;
+            const prescanPageCount = Math.min(pages, MAX_TOTAL_PAGES);
+
+            const dataPages = await prescanForDataPages(
+              LOVABLE_API_KEY,
+              prescanBase64,
+              prescanPageCount,
+              PRESCAN_TARGET_PAGES,
+            );
+
+            if (dataPages.length > 0) {
+              // Extract only the identified data-rich pages
+              const slicedBase64 = await extractSpecificPages(
+                pages > MAX_TOTAL_PAGES ? prescanBase64 : pf.base64,
+                dataPages,
+              );
+              truncatedFiles.push({ base64: slicedBase64, mimeType });
+              totalPages += dataPages.length;
+              console.log(`[prescan] Sending ${dataPages.length} data-rich pages (from ${pages} total) to extraction`);
+            } else {
+              // Prescan returned nothing — fallback to truncated
+              console.log(`[prescan] No pages identified, falling back to first ${cappedPages} pages`);
+              const truncated = await truncatePdf(pf.base64, cappedPages);
+              truncatedFiles.push({ base64: truncated, mimeType });
+              totalPages += cappedPages;
+            }
+          } else {
+            // Small PDF — no prescan needed
+            const truncated = cappedPages < pages
+              ? await truncatePdf(pf.base64, cappedPages)
+              : pf.base64;
+            truncatedFiles.push({ base64: truncated, mimeType });
+            totalPages += cappedPages;
+          }
         } else {
           truncatedFiles.push({ base64: pf.base64, mimeType });
           totalPages += 1;
         }
       }
 
-      console.log(`[pipeline] Processing ${truncatedFiles.length} files, ~${totalPages} total pages`);
+      console.log(`[pipeline] Processing ${truncatedFiles.length} files, ~${totalPages} total pages (after prescan)`);
 
       // Stage 1: Gemini Flash
       try {
