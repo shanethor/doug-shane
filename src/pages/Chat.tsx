@@ -821,7 +821,7 @@ export default function Chat() {
         .single();
       if (subErr) throw subErr;
 
-      // Run extraction — uses batching for large PDFs (up to 200 pages)
+      // Run extraction — prescan pipeline (uploads to storage, smart page slicing)
       const extracted = await extractWithBatching({
         description,
         file_contents: textContents || undefined,
