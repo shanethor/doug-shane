@@ -17,33 +17,6 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// ── Prescan config ──────────────────────────────────────────────────────────
-const PRESCAN_DEFAULT_PAGES = 10;
-const PRESCAN_MAX_PAGES     = 25;
-const PRESCAN_MIN_TEXT_LEN  = 60;
-
-const BOILERPLATE_RE = new RegExp(
-  "Copyright.*ISO Properties|ISO Properties.*Inc|" +
-  "Page \\d+ of \\d+.*ISO|" +
-  "PrivacyNotice|Privacy Notice To Our Customers|" +
-  "Various provisions in this policy restrict coverage|" +
-  "BUSINESSOWNERS COVERAGE FORM|" +
-  "COMMERCIAL GENERAL LIABILITY COVERAGE FORM|" +
-  "THIS ENDORSEMENT CHANGES THE POLICY|" +
-  "THIS ENDORSEMENT IS ATTACHED|" +
-  "Terrorism Risk Insurance Act",
-  "i"
-);
-
-const DEC_DATA_RE = new RegExp(
-  "named insured|insured copy|declarations page|policy period|" +
-  "total annual premium|annual premium for policy|" +
-  "each occurrence|per occurrence|" +
-  "replacement cost|deductible.*\\$|" +
-  "mortgagee|loss payable|" +
-  "BILL TO|Access Code|Four Pay|Monthly Pay|Annual Pay",
-  "i"
-);
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
