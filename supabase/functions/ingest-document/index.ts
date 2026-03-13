@@ -94,7 +94,7 @@ serve(async (req) => {
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
-    const rawText = await callGemini(sendBase64, EXTRACTION_PROMPT, LOVABLE_API_KEY);
+    const rawText = await callGemini(sendBase64, EXTRACTION_PROMPT + pageFocus, LOVABLE_API_KEY);
     console.log(`[ingest] Gemini response length: ${rawText.length} chars`);
     console.log(`[ingest] Response preview: ${rawText.substring(0, 800)}`);
 
