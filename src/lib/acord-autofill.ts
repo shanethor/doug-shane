@@ -169,7 +169,6 @@ const AI_TO_FORM_ALIASES: Record<string, string[]> = {
 
   // ── Prior carrier / Policy ──
   current_carrier: ["prior_carrier_name", "current_carrier", "carrier", "prior_wc_carrier_1", "prior_carrier_1"],
-  carrier_name: ["carrier", "prior_carrier_1"],
   insurer_name: ["carrier"],
   insurance_company: ["carrier"],
   writing_company: ["carrier"],
