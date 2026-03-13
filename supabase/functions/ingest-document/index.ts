@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { extractPageRange } from "../_shared/acord-extraction-helpers.ts";
+// extractPageRange removed — slicing corrupts encrypted PDFs
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
