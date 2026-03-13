@@ -172,8 +172,6 @@ export default function FormFillingView({ submissionId, initialMessages, initial
   }, [mobilePanel]);
 
   // Track latest formData in a ref so the debounce closure always sees current values
-  const formDataRef2 = useRef<Record<string, any>>({});
-  useEffect(() => { formDataRef2.current = formData; }, [formData]);
 
   /**
    * Build prefillByIndex for the active form: maps field INDEX → formatted string value.
