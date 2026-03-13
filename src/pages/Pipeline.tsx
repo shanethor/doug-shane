@@ -1638,7 +1638,7 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
 
             {/* Add another policy button */}
             <button
-              onClick={() => setSoldPolicies([...soldPolicies, { carrier: "", line_of_business: "", policy_number: "", effective_date: "", annual_premium: "" }])}
+              onClick={() => setSoldPolicies([...soldPolicies, { carrier: "", line_of_business: "", policy_number: "", effective_date: "", annual_premium: "", policy_term: "1_year" }])}
               className="w-full flex items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border hover:border-primary/50 hover:bg-primary/5 transition-colors py-2.5 text-sm font-sans text-muted-foreground hover:text-primary"
             >
               <Plus className="h-4 w-4" />
