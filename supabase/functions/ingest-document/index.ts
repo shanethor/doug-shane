@@ -271,10 +271,10 @@ serve(async (req) => {
         total_pages: totalPages,
         extraction_metadata: {
           model: "google/gemini-2.5-flash",
-          pages_sent: pagesToSend,
+          chunks_processed: chunkExtractions.length,
           total_pages: totalPages,
+          chunk_size: CHUNK_SIZE,
           large_file: isLarge,
-          retry_used: retryUsed,
         },
       })
       .eq("id", document_id);
