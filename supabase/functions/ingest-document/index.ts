@@ -100,6 +100,7 @@ serve(async (req) => {
             },
           ],
         }),
+        signal: AbortSignal.timeout(45_000),
       });
 
       if (!response.ok) {

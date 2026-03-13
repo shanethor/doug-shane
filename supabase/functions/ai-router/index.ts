@@ -154,6 +154,7 @@ async function handleIngest(body: IngestRequest, t0: number): Promise<Response> 
         { role: "user", content: userContent },
       ],
     }),
+    signal: AbortSignal.timeout(45_000),
   });
 
   if (!response.ok) {
@@ -260,6 +261,7 @@ async function callClaudeAdvisor(
       "content-type": "application/json",
     },
     body: JSON.stringify(claudeBody),
+    signal: AbortSignal.timeout(50_000),
   });
 
   if (!response.ok) {
@@ -365,6 +367,7 @@ async function callLovableAdvisor(
       ],
       stream: stream || false,
     }),
+    signal: AbortSignal.timeout(45_000),
   });
 
   if (!response.ok) {

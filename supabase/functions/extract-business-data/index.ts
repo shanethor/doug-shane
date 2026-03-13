@@ -274,6 +274,7 @@ async function callGeminiWithPdfs(
         { role: "user", content: userContent },
       ],
     }),
+    signal: AbortSignal.timeout(45_000),
   });
 
   console.log(`[gemini-native] ${model} responded in ${Date.now() - t0}ms (status: ${response.status})`);
@@ -320,6 +321,7 @@ ${ocrText}`;
         { role: "user", content: userPrompt },
       ],
     }),
+    signal: AbortSignal.timeout(45_000),
   });
 
   console.log(`[text-mapping] Gemini Flash responded in ${Date.now() - t0}ms (status: ${response.status})`);
@@ -403,6 +405,7 @@ Return ONLY valid JSON with this structure:
       system: specialistPrompt,
       messages: [{ role: "user", content: claudeContent }],
     }),
+    signal: AbortSignal.timeout(50_000),
   });
 
   console.log(`[stage-claude] Claude Opus responded in ${Date.now() - t0}ms (status: ${response.status})`);
@@ -651,6 +654,7 @@ Return ONLY the JSON array, nothing else.`;
         model: "google/gemini-2.5-flash-lite",
         messages: [{ role: "user", content: userContent }],
       }),
+      signal: AbortSignal.timeout(45_000),
     });
 
     console.log(`[prescan] Flash Lite responded in ${Date.now() - t0}ms (status: ${response.status})`);
