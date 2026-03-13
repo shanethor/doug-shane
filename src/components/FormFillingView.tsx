@@ -265,9 +265,8 @@ export default function FormFillingView({ submissionId, initialMessages, initial
     if (import.meta.env.DEV) {
       console.warn(`[prefill] ${fId}: ${debugEntries.length} fields mapped:\n${debugEntries.join("\n")}`);
     }
-    if (unmappedKeys.length > 0) {
-      if (import.meta.env.DEV) {
-        console.warn(`[prefill] ${fId}: ${unmappedKeys.length} UNMAPPED keys (no PDF index):\n  ${unmappedKeys.join("\n  ")}`);
+    if (unmappedKeys.length > 0 && import.meta.env.DEV) {
+      console.warn(`[prefill] ${fId}: ${unmappedKeys.length} UNMAPPED keys (no PDF index):\n  ${unmappedKeys.join("\n  ")}`);
     }
     return result;
   }, []);
