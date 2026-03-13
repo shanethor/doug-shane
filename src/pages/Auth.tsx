@@ -11,7 +11,7 @@ import { Loader2, ShieldCheck, Building2 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import auraLogo from "@/assets/aura-logo.png";
 import { set2FAVerified, is2FAVerified, clear2FAVerified } from "@/lib/2fa-storage";
-import { is2FABypassed } from "@/lib/2fa-bypass";
+
 
 async function getAuthHeaders(): Promise<Record<string, string>> {
   const { data } = await supabase.auth.getSession();
