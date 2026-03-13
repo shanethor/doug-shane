@@ -40,7 +40,7 @@ const LARGE_PDF_CONFIG = {
   PAGE_THRESHOLD: 20,   // PDFs with more pages than this get sliced
   DEC_PAGE_SLICE: 10,   // keep only the first N pages (DEC pages live here)
 };
-const CONFIDENCE_THRESHOLD = 5; // minimum meaningful fields before triggering specialist
+const CONFIDENCE_THRESHOLD = 12; // minimum meaningful fields before triggering specialist
 
 // ── Shared schema prompt (used by all stages) ──
 const SCHEMA_PROMPT = `You are an expert insurance underwriter assistant. Extract data from the provided OCR text and return ONLY valid JSON with no markdown fences, no explanation — just raw JSON.
