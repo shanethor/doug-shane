@@ -985,7 +985,10 @@ serve(async (req) => {
 
       // ── Step 0: Prepare PDFs and run prescan for large documents ──
       const truncatedFiles: any[] = [];
+      const broadFallbackFiles: any[] = [];
       let totalPages = 0;
+      let broadFallbackPages = 0;
+      let prescanApplied = false;
 
       for (const pf of pdf_files) {
         if (!pf.base64) continue;
@@ -1006,50 +1009,42 @@ serve(async (req) => {
           } catch (_) { pages = 1; }
 
           const cappedPages = Math.min(pages, remainingBudget);
+          const cappedBase64 = cappedPages < pages ? await truncatePdf(pf.base64, cappedPages) : pf.base64;
 
-          // ── PRESCAN: For large PDFs, identify data-rich pages first ──
+          // Always keep a broad (non-prescan) fallback candidate
+          broadFallbackFiles.push({ base64: cappedBase64, mimeType });
+          broadFallbackPages += cappedPages;
+
           if (pages > PRESCAN_THRESHOLD) {
+            prescanApplied = true;
             console.log(`[prescan] Document has ${pages} pages (>${PRESCAN_THRESHOLD}), running prescan...`);
-            // First truncate to budget for prescan
-            const prescanBase64 = pages > MAX_TOTAL_PAGES
-              ? await truncatePdf(pf.base64, MAX_TOTAL_PAGES)
-              : pf.base64;
-            const prescanPageCount = Math.min(pages, MAX_TOTAL_PAGES);
 
             const dataPages = await prescanForDataPages(
               LOVABLE_API_KEY,
-              prescanBase64,
-              prescanPageCount,
+              cappedBase64,
+              cappedPages,
               PRESCAN_TARGET_PAGES,
             );
 
             if (dataPages.length > 0) {
-              // Extract only the identified data-rich pages
-              const slicedBase64 = await extractSpecificPages(
-                pages > MAX_TOTAL_PAGES ? prescanBase64 : pf.base64,
-                dataPages,
-              );
+              const slicedBase64 = await extractSpecificPages(cappedBase64, dataPages);
               truncatedFiles.push({ base64: slicedBase64, mimeType });
-              totalPages += dataPages.length;
+              totalPages += Math.min(dataPages.length, cappedPages);
               console.log(`[prescan] Sending ${dataPages.length} data-rich pages (from ${pages} total) to extraction`);
             } else {
-              // Prescan returned nothing — fallback to truncated
               console.log(`[prescan] No pages identified, falling back to first ${cappedPages} pages`);
-              const truncated = await truncatePdf(pf.base64, cappedPages);
-              truncatedFiles.push({ base64: truncated, mimeType });
+              truncatedFiles.push({ base64: cappedBase64, mimeType });
               totalPages += cappedPages;
             }
           } else {
-            // Small PDF — no prescan needed
-            const truncated = cappedPages < pages
-              ? await truncatePdf(pf.base64, cappedPages)
-              : pf.base64;
-            truncatedFiles.push({ base64: truncated, mimeType });
+            truncatedFiles.push({ base64: cappedBase64, mimeType });
             totalPages += cappedPages;
           }
         } else {
           truncatedFiles.push({ base64: pf.base64, mimeType });
+          broadFallbackFiles.push({ base64: pf.base64, mimeType });
           totalPages += 1;
+          broadFallbackPages += 1;
         }
       }
 
@@ -1064,7 +1059,7 @@ serve(async (req) => {
           truncatedFiles,
           "google/gemini-2.5-flash",
         );
-        extracted = parseAiJson(flashRaw);
+        extracted = coerceExtractionPayload(parseAiJson(flashRaw));
         const flashCount = countMeaningfulFields(extracted.form_data || {});
         console.log(`[pipeline] Gemini Flash extracted ${flashCount} meaningful fields`);
 
@@ -1079,7 +1074,7 @@ serve(async (req) => {
               truncatedFiles,
               "google/gemini-2.5-pro",
             );
-            const proExtracted = parseAiJson(proRaw);
+            const proExtracted = coerceExtractionPayload(parseAiJson(proRaw));
             const proCount = countMeaningfulFields(proExtracted.form_data || {});
             console.log(`[pipeline] Gemini Pro extracted ${proCount} fields`);
             if (proCount > flashCount) {
@@ -1092,7 +1087,7 @@ serve(async (req) => {
         }
 
         // Stage 3: Claude Opus specialist if still low
-        const currentCount = countMeaningfulFields(extracted.form_data || {});
+        let currentCount = countMeaningfulFields(extracted.form_data || {});
         if (currentCount < CONFIDENCE_THRESHOLD && ANTHROPIC_API_KEY) {
           console.log(`[pipeline] Still low confidence (${currentCount}), invoking Claude Opus specialist`);
           try {
@@ -1102,20 +1097,43 @@ serve(async (req) => {
               extracted.form_data || {},
               additionalContext,
             );
-            const claudeExtracted = parseAiJson(claudeRaw);
+            const claudeExtracted = coerceExtractionPayload(parseAiJson(claudeRaw));
             const claudeCount = countMeaningfulFields(claudeExtracted.form_data || {});
             console.log(`[pipeline] Claude Opus extracted ${claudeCount} fields`);
             if (claudeCount > currentCount) {
               extracted = claudeExtracted;
               pipelineUsed = "gemini-native+opus";
+              currentCount = claudeCount;
             }
           } catch (claudeErr) {
             console.warn("[pipeline] Claude Opus specialist failed:", claudeErr);
           }
         }
+
+        // Stage 4: prescan recovery fallback (broad pass, no prescan)
+        if (prescanApplied && currentCount < CONFIDENCE_THRESHOLD && broadFallbackFiles.length > 0) {
+          console.log(`[pipeline] Prescan result still low (${currentCount}); retrying broad pass on ~${broadFallbackPages} pages without prescan`);
+          try {
+            const broadRaw = await callGeminiWithPdfs(
+              LOVABLE_API_KEY,
+              SCHEMA_PROMPT,
+              `Retry extraction across the full truncated document set. Return only mappable ACORD fields in the requested JSON schema.${additionalContext ? `\n\nAdditional context:\n${additionalContext}` : ""}`,
+              broadFallbackFiles,
+              "google/gemini-2.5-pro",
+            );
+            const broadExtracted = coerceExtractionPayload(parseAiJson(broadRaw));
+            const broadCount = countMeaningfulFields(broadExtracted.form_data || {});
+            console.log(`[pipeline] Broad fallback extracted ${broadCount} fields`);
+            if (broadCount > currentCount) {
+              extracted = mergeExtractionPayloads(extracted, broadExtracted);
+              pipelineUsed = `${pipelineUsed}+broad-fallback`;
+            }
+          } catch (fallbackErr) {
+            console.warn("[pipeline] Broad fallback failed:", fallbackErr);
+          }
+        }
       } catch (flashErr) {
         console.error("[pipeline] Gemini Flash failed, trying Pro directly:", flashErr);
-        // Fallback: try Pro directly
         try {
           const proRaw = await callGeminiWithPdfs(
             LOVABLE_API_KEY,
@@ -1124,7 +1142,7 @@ serve(async (req) => {
             truncatedFiles,
             "google/gemini-2.5-pro",
           );
-          extracted = parseAiJson(proRaw);
+          extracted = coerceExtractionPayload(parseAiJson(proRaw));
           pipelineUsed = "gemini-native-pdf-pro-fallback";
         } catch (proErr) {
           console.error("[pipeline] Both Gemini Flash and Pro failed:", proErr);
@@ -1139,7 +1157,7 @@ serve(async (req) => {
       pipelineUsed = "text-only";
       console.log(`[pipeline] Using text-only path`);
       const raw = await callGeminiFlash(LOVABLE_API_KEY, additionalContext, "");
-      extracted = parseAiJson(raw);
+      extracted = coerceExtractionPayload(parseAiJson(raw));
     }
 
     const totalTime = Date.now() - t0;
