@@ -1164,12 +1164,14 @@ serve(async (req) => {
     console.log(`[pipeline] ${pipelineUsed} completed in ${totalTime}ms`);
 
     // ── Post-processing ──
-    const fd: Record<string, any> = extracted.form_data || {};
+    const normalizedExtracted = coerceExtractionPayload(extracted);
+    const fd: Record<string, any> = normalizedExtracted.form_data || {};
     postProcess(fd, additionalContext, hasPdfs);
-    extracted.form_data = fd;
+    normalizedExtracted.form_data = fd;
+    extracted = normalizedExtracted;
 
     // Debug log
-    const fdKeys = Object.entries(fd).filter(([_, v]) => v && String(v).trim() && String(v).trim() !== "false" && String(v).trim() !== "No" && String(v).trim() !== "[]");
+    const fdKeys = Object.entries(fd).filter(([_, v]) => isMeaningfulValue(v));
     console.log(`[result] ${fdKeys.length} non-empty fields. pipeline=${pipelineUsed}, time=${totalTime}ms. Key: applicant_name="${fd.applicant_name}", city="${fd.city}", state="${fd.state}"`);
 
     // Save to database
