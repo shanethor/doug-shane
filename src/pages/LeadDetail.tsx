@@ -251,6 +251,15 @@ export default function LeadDetail() {
       toast.error("Please fill in at least one policy with all required fields");
       return;
     }
+    // Validate effective dates: year must be 4 digits starting with 20
+    const badDate = validPolicies.find(p => {
+      const year = p.effective_date.split("-")[0];
+      return !year || year.length !== 4 || !year.startsWith("20");
+    });
+    if (badDate) {
+      toast.error("Effective date year must be 4 digits and start with 20 (e.g. 2026)");
+      return;
+    }
 
     setSubmittingSold(true);
     try {
