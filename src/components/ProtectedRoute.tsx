@@ -1,7 +1,6 @@
 import { useAuth } from "@/hooks/useAuth";
 import { Navigate } from "react-router-dom";
 import { is2FAVerified } from "@/lib/2fa-storage";
-import { is2FABypassed } from "@/lib/2fa-bypass";
 import { AppLayout } from "@/components/AppLayout";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
