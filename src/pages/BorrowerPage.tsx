@@ -257,16 +257,16 @@ export default function BorrowerPage() {
       </section>
 
       {/* ── Partner Contact ── */}
-      <section className="border-t bg-muted/30">
+      <section className="border-t border-gray-200 bg-gray-50/50">
         <div className="mx-auto max-w-5xl px-4 py-12">
           <div className="mx-auto max-w-sm">
-            <p className="mb-4 text-center text-xs font-semibold uppercase tracking-widest text-muted-foreground">{config.contactSectionTitle}</p>
-            <Card className="border-border/60">
+            <p className="mb-4 text-center text-xs font-semibold uppercase tracking-widest text-[#1D2430]/50">{config.contactSectionTitle}</p>
+            <Card className="border-gray-200">
               <CardContent className="space-y-3 p-5 text-center">
-                <p className="text-base font-bold">{config.name}</p>
-                <p className="text-xs text-muted-foreground">{config.title}</p>
-                <p className="text-sm text-muted-foreground">{config.company}</p>
-                <div className="space-y-1.5 text-xs text-muted-foreground">
+                <p className="text-base font-bold text-[#1D2430]">{config.name}</p>
+                <p className="text-xs text-[#1D2430]/60">{config.title}</p>
+                <p className="text-sm text-[#1D2430]/60">{config.company}</p>
+                <div className="space-y-1.5 text-xs text-[#1D2430]/60">
                   <div className="flex items-center justify-center gap-2">
                     <Phone className="h-3.5 w-3.5" /> {config.phone}
                   </div>
