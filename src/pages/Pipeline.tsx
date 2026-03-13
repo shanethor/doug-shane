@@ -1605,7 +1605,7 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
                     />
                   </div>
                 </div>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-4 gap-2">
                   <div>
                     <Label className="text-xs">Policy #</Label>
                     <Input
@@ -1622,6 +1622,17 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
                       value={p.effective_date}
                       onChange={(e) => { const u = [...soldPolicies]; u[i] = { ...u[i], effective_date: e.target.value }; setSoldPolicies(u); }}
                     />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Term</Label>
+                    <select
+                      value={p.policy_term}
+                      onChange={(e) => { const u = [...soldPolicies]; u[i] = { ...u[i], policy_term: e.target.value }; setSoldPolicies(u); }}
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    >
+                      <option value="1_year">1 Year</option>
+                      <option value="6_months">6 Months</option>
+                    </select>
                   </div>
                   <div>
                     <Label className="text-xs">Annual Premium *</Label>
