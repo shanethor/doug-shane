@@ -187,7 +187,7 @@ export default function OmitPage() {
           <Button
             variant="outline"
             size="sm"
-            className="gap-1.5 rounded-none text-xs uppercase tracking-wider border-white/15 text-white/60 hover:bg-white/10 hover:text-white"
+            className="gap-1.5 rounded-none text-xs uppercase tracking-wider border-white/30 text-white bg-white/5 hover:bg-white/15 hover:text-white"
             onClick={() => window.open("https://www.omit.gg/", "_blank")}
           >
             Visit OMiT <ExternalLink className="h-3 w-3" />
