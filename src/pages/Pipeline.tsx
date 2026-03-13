@@ -750,9 +750,25 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
   columns.forEach((s) => (grouped[s] = []));
   grouped["lost"] = [];
 
+  // Determine current month boundaries for sold visual reset
+  const nowDate = new Date();
+  const currentMonthStart = new Date(nowDate.getFullYear(), nowDate.getMonth(), 1).toISOString();
+  const nextMonthStart = new Date(nowDate.getFullYear(), nowDate.getMonth() + 1, 1).toISOString();
+
+  // All sold leads (for "View All" in lost-style drawer if needed)
+  const allSoldLeads: Lead[] = [];
+
   filtered.forEach((l) => {
     if (l.has_approved_policy) {
-      grouped["sold"].push(l);
+      allSoldLeads.push(l);
+      // Only show in Sold column if any approved policy has effective_date in current month
+      const premiums = leadPolicyPremiums[l.id];
+      // Check allPoliciesData for this lead's effective dates
+      const leadPolicies = allPoliciesData.filter((p: any) => p.lead_id === l.id && p.status === "approved");
+      const hasCurrentMonth = leadPolicies.some((p: any) => p.effective_date >= currentMonthStart && p.effective_date < nextMonthStart);
+      if (hasCurrentMonth) {
+        grouped["sold"].push(l);
+      }
     } else {
       grouped[l.stage]?.push(l);
     }
@@ -1239,12 +1255,22 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
                 {STAGE_LABELS[stage]}
               </Badge>
               <span className="text-xs text-muted-foreground font-sans">{grouped[stage]?.length ?? 0}</span>
+              {stage === "sold" && allSoldLeads.length > grouped["sold"].length && (
+                <span className="text-[10px] text-muted-foreground font-sans">
+                  ({allSoldLeads.length} total)
+                </span>
+              )}
+              {stage === "sold" && (
+                <span className="text-[10px] text-muted-foreground/60 font-sans">
+                  {nowDate.toLocaleString("default", { month: "short" })}
+                </span>
+              )}
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Info className="h-3 w-3 text-muted-foreground/40 cursor-help" />
                 </TooltipTrigger>
                 <TooltipContent side="top" className="max-w-[200px] text-xs font-sans">
-                  {STAGE_TOOLTIPS[stage]}
+                  {stage === "sold" ? "Resets visually on the 1st of each month. Your sales data and production numbers are unaffected." : STAGE_TOOLTIPS[stage]}
                 </TooltipContent>
               </Tooltip>
             </div>
@@ -1396,7 +1422,7 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
       </div>
       </div>
 
-      {/* Lost row */}
+      {/* Lost row — drop zone only, no client cards by default */}
       <div
         className={`mt-4 rounded-lg border-2 border-dashed p-3 transition-colors ${
           dragOverStage === lostStage ? "border-destructive bg-destructive/5" : "border-border"
@@ -1405,54 +1431,65 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
         onDragLeave={handleDragLeave}
         onDrop={(e) => handleDrop(e, lostStage)}
       >
-        <div className="flex items-center gap-2 mb-2">
-          <Badge variant="outline" className={`text-[10px] uppercase tracking-wider font-sans ${STAGE_COLORS[lostStage]}`}>
-            {STAGE_LABELS[lostStage]}
-          </Badge>
-          <span className="text-xs text-muted-foreground font-sans">{grouped[lostStage]?.length ?? 0}</span>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Info className="h-3 w-3 text-muted-foreground/40 cursor-help" />
-            </TooltipTrigger>
-            <TooltipContent side="top" className="max-w-[200px] text-xs font-sans">
-              {STAGE_TOOLTIPS[lostStage]}
-            </TooltipContent>
-          </Tooltip>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {(grouped[lostStage] || []).map((lead) => (
-            <Link key={lead.id} to={`/pipeline/${lead.id}`}>
-              <Card
-                draggable
-                onDragStart={(e) => handleDragStart(e, lead.id)}
-                onDragEnd={handleDragEnd}
-                className="hover-lift cursor-grab active:cursor-grabbing"
-              >
-                <CardContent className="p-2 px-3 flex items-center gap-2">
-                  <GripVertical className="h-3 w-3 text-muted-foreground/50 shrink-0" />
-                  <span className="text-sm font-sans">{lead.account_name}</span>
-                  {(isManager || isAdmin) && ownerNames[lead.owner_user_id] && lead.owner_user_id !== user?.id && (
-                    <Badge variant="outline" className="text-[9px] gap-0.5 font-sans text-primary/70">
-                      <Users className="h-2.5 w-2.5" />
-                      {ownerNames[lead.owner_user_id]}
-                    </Badge>
-                  )}
-                  {(lead as any).estimated_renewal_date && (
-                    <Badge variant="outline" className="text-[9px] gap-0.5 font-sans">
-                      <CalendarDays className="h-2.5 w-2.5" />
-                      {(lead as any).estimated_renewal_date}
-                    </Badge>
-                  )}
-                  {(lead as any).loss_reason && (
-                    <span className="text-[10px] text-muted-foreground font-sans">{(lead as any).loss_reason}</span>
-                  )}
-                </CardContent>
-              </Card>
-            </Link>
-          ))}
-          {(grouped[lostStage] || []).length === 0 && (
-            <p className="text-xs text-muted-foreground font-sans py-2">Drop leads here to mark as lost</p>
-          )}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className={`text-[10px] uppercase tracking-wider font-sans ${STAGE_COLORS[lostStage]}`}>
+              {STAGE_LABELS[lostStage]}
+            </Badge>
+            <span className="text-xs text-muted-foreground font-sans">{grouped[lostStage]?.length ?? 0}</span>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Info className="h-3 w-3 text-muted-foreground/40 cursor-help" />
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-[200px] text-xs font-sans">
+                {STAGE_TOOLTIPS[lostStage]}
+              </TooltipContent>
+            </Tooltip>
+          </div>
+          <div className="flex items-center gap-2">
+            <p className="text-xs text-muted-foreground font-sans">Drop leads here to mark as lost</p>
+            {(grouped[lostStage] || []).length > 0 && (
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-1.5 text-xs h-7">
+                    <Users className="h-3 w-3" />
+                    View All Lost Clients
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-lg max-h-[70vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Lost Clients ({(grouped[lostStage] || []).length})</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-2 mt-2">
+                    {(grouped[lostStage] || []).map((lead) => (
+                      <Link key={lead.id} to={`/pipeline/${lead.id}`}>
+                        <Card className="hover-lift cursor-pointer">
+                          <CardContent className="p-2 px-3 flex items-center gap-2">
+                            <span className="text-sm font-sans font-medium">{lead.account_name}</span>
+                            {(isManager || isAdmin) && ownerNames[lead.owner_user_id] && lead.owner_user_id !== user?.id && (
+                              <Badge variant="outline" className="text-[9px] gap-0.5 font-sans text-primary/70">
+                                <Users className="h-2.5 w-2.5" />
+                                {ownerNames[lead.owner_user_id]}
+                              </Badge>
+                            )}
+                            {(lead as any).estimated_renewal_date && (
+                              <Badge variant="outline" className="text-[9px] gap-0.5 font-sans">
+                                <CalendarDays className="h-2.5 w-2.5" />
+                                {(lead as any).estimated_renewal_date}
+                              </Badge>
+                            )}
+                            {(lead as any).loss_reason && (
+                              <span className="text-[10px] text-muted-foreground font-sans ml-auto">{(lead as any).loss_reason}</span>
+                            )}
+                          </CardContent>
+                        </Card>
+                      </Link>
+                    ))}
+                  </div>
+                </DialogContent>
+              </Dialog>
+            )}
+          </div>
         </div>
       </div>
       </TooltipProvider>
