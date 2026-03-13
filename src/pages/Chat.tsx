@@ -1249,7 +1249,23 @@ export default function Chat() {
       return;
     }
 
-    // Intercept partner intake link requests (e.g. "request Josh mortgage link", "Michael's intake link")
+    // Intercept generic "partner links" request — list all
+    if (!displayText && isAllPartnersIntent(text)) {
+      const userMsg: Msg = { role: "user", content: text.trim() };
+      setMessages((prev) => [...prev, userMsg]);
+      setInput("");
+      const lines = ALL_PARTNERS.map(p => {
+        const url = `${window.location.origin}/b/${p.slug}`;
+        return `- **${p.name}**: [${url}](${url})`;
+      }).join("\n");
+      setMessages((prev) => [...prev, {
+        role: "assistant",
+        content: `Here are all partner intake pages:\n\n${lines}\n\nShare these links with the respective partner's clients to start an intake.`,
+      }]);
+      return;
+    }
+
+    // Intercept specific partner intake link requests (e.g. "request Josh mortgage link", "Associated's link")
     const partnerIntent = !displayText ? isPartnerIntakeIntent(text) : null;
     if (partnerIntent) {
       const userMsg: Msg = { role: "user", content: text.trim() };
@@ -1258,7 +1274,7 @@ export default function Chat() {
       const borrowerUrl = `${window.location.origin}/b/${partnerIntent.slug}`;
       setMessages((prev) => [...prev, {
         role: "assistant",
-        content: `Here's **${partnerIntent.name}'s** unique partner intake page:\n\n🔗 **[${borrowerUrl}](${borrowerUrl})**\n\nShare this link with ${partnerIntent.name}'s clients. When they visit, they can start a personal lines insurance intake directly — the form auto-selects personal coverage and is pre-associated with ${partnerIntent.name}'s referral.`,
+        content: `Here's **${partnerIntent.name}'s** unique partner intake page:\n\n🔗 **[${borrowerUrl}](${borrowerUrl})**\n\nShare this link with ${partnerIntent.name}'s clients. When they visit, they can start an insurance intake directly — pre-associated with ${partnerIntent.name}'s referral.`,
       }]);
       return;
     }
