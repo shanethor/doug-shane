@@ -139,10 +139,10 @@ export default function BorrowerPage() {
       {/* ── Header ── */}
       <header className="sticky top-0 z-50 border-b border-gray-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
         <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
-          <img src={auraLogo} alt="AURA Risk Group" className="h-7" />
+          <img src={auraLogo} alt="AURA Risk Group" className="h-7 dark:invert-0" style={{ filter: 'none' }} />
           <div className="flex items-center gap-2">
-            <Shield className="h-4 w-4 text-primary" />
-            <span className="text-xs font-medium tracking-wide text-muted-foreground">{config.headerLabel}</span>
+            <Shield className="h-4 w-4 text-[#2F3E5B]" />
+            <span className="text-xs font-medium tracking-wide text-[#1D2430]/60">{config.headerLabel}</span>
           </div>
         </div>
       </header>
