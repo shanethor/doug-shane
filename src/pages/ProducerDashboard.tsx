@@ -374,8 +374,10 @@ export default function ProducerDashboard({ embedded }: { embedded?: boolean } =
       {user && scoreboardUserId && (
         <ProductionScoreboard
           userId={scoreboardUserId}
-          premiumSold={stats.totalPremium}
-          revenueSold={stats.totalRevenue}
+          mtdPremium={mtdPremium}
+          mtdRevenue={mtdRevenue}
+          ytdPremium={ytdPremium}
+          ytdRevenue={ytdRevenue}
         />
       )}
 

@@ -171,13 +171,13 @@ export function ProductionScoreboard({ userId, mtdPremium, mtdRevenue, ytdPremiu
   const monthlyPrem = annualPrem / 12;
   const monthlyRev = annualRev / 12;
 
-  const mPremRemaining = Math.max(0, monthlyPrem - premiumSold);
-  const mRevRemaining = Math.max(0, monthlyRev - revenueSold);
+  const mPremRemaining = Math.max(0, monthlyPrem - mtdPremium);
+  const mRevRemaining = Math.max(0, monthlyRev - mtdRevenue);
   const mPremPace = daysLeftInMonth > 0 ? mPremRemaining / daysLeftInMonth : 0;
   const mRevPace = daysLeftInMonth > 0 ? mRevRemaining / daysLeftInMonth : 0;
 
-  const yPremRemaining = Math.max(0, annualPrem - premiumSold);
-  const yRevRemaining = Math.max(0, annualRev - revenueSold);
+  const yPremRemaining = Math.max(0, annualPrem - ytdPremium);
+  const yRevRemaining = Math.max(0, annualRev - ytdRevenue);
   const yPremPace = daysLeftInYear > 0 ? yPremRemaining / daysLeftInYear : 0;
   const yRevPace = daysLeftInYear > 0 ? yRevRemaining / daysLeftInYear : 0;
 
