@@ -1063,7 +1063,13 @@ export default function Chat() {
     return /\bpersonal\s*(lines?)?\s*(intake|form|link)\b/.test(t) || /\bpersonal\s*(auto|home|boat|umbrella)\s*(intake|form)\b/.test(t);
   };
 
-  /** Detect if user is asking for a partner intake link */
+  const ALL_PARTNERS = [
+    { slug: "josh-chernes", name: "Joshua Chernes" },
+    { slug: "michael-wengzn", name: "Michael Wengzn" },
+    { slug: "associated", name: "Associated Insurance Services" },
+  ];
+
+  /** Detect if user is asking for a specific partner intake link */
   const isPartnerIntakeIntent = (text: string): { slug: string; name: string } | null => {
     const t = text.trim().toLowerCase();
     // Josh Chernes
@@ -1074,7 +1080,18 @@ export default function Chat() {
     if (/\bmichael('?s?)?\s*(intake|link|form|page|partner)\b/.test(t) || /\brequest\s*michael('?s?)?\s*(intake|link|page)?\b/.test(t) || /\bmichael\s*wengzn\b/.test(t) || /\bnorthwestern\s*mutual\s*(link|intake|form|page)\b/.test(t) || /\bpartner\s*(link|intake|form|page)\s*(for\s*)?michael\b/.test(t)) {
       return { slug: "michael-wengzn", name: "Michael Wengzn" };
     }
+    // Associated Insurance Services
+    if (/\bassociated('?s?)?\s*(intake|link|form|page|partner|insurance)?\b/.test(t) && /\b(link|intake|form|page|partner)\b/.test(t)) {
+      return { slug: "associated", name: "Associated Insurance Services" };
+    }
     return null;
+  };
+
+  /** Detect generic "partner link(s)" / "partner intake" request — return all */
+  const isAllPartnersIntent = (text: string): boolean => {
+    const t = text.trim().toLowerCase();
+    return /\b(all|every|show|list)\b.+\bpartner\s*(link|intake|page|form)s?\b/.test(t)
+      || /\bpartner\s*(link|intake|page|form)s?\b/.test(t) && !/\bjosh|michael|associated|northwestern|mortgage\b/.test(t);
   };
 
   const handlePersonalIntakeGenerate = async (config: { clientEmail: string; teamMemberEmail: string; ccAdvisor: boolean }) => {
