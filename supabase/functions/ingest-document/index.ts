@@ -23,8 +23,11 @@ serve(async (req) => {
     return new Response("ok", { headers: corsHeaders });
   }
 
+  let documentId: string | undefined;
+
   try {
     const { document_id, submission_id, storage_path } = await req.json();
+    documentId = document_id;
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -266,6 +269,23 @@ serve(async (req) => {
 
   } catch (err) {
     console.error("[ingest-document] Fatal error:", err);
+
+    // Mark document as failed so it doesn't stay stuck in "processing"
+    try {
+      const serviceClient = createClient(
+        Deno.env.get("SUPABASE_URL")!,
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+      );
+      if (documentId) {
+        await serviceClient
+          .from("client_documents")
+          .update({ extraction_status: "failed" })
+          .eq("id", documentId);
+      }
+    } catch (updateErr) {
+      console.error("[ingest-document] Could not update failure status:", updateErr);
+    }
+
     return new Response(
       JSON.stringify({ error: String(err) }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
