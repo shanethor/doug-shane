@@ -132,7 +132,7 @@ export default function OmitPage() {
               <Button
                 size="lg"
                 variant="outline"
-                className="gap-2 rounded-none text-sm font-bold uppercase tracking-wider border-white/20 text-white hover:bg-white/10 hover:text-white px-8"
+                className="gap-2 rounded-none text-sm font-bold uppercase tracking-wider border-white/30 text-white hover:bg-white/10 hover:text-white px-8 bg-white/5"
                 onClick={handleStartIntake}
                 disabled={creatingIntake}
               >
