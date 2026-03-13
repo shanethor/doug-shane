@@ -690,6 +690,13 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
           policy_number: pf.policy_number.trim(),
           effective_date: pf.effective_date,
           annual_premium: parseFloat(pf.annual_premium) || 0,
+          policy_term: pf.policy_term || "1_year",
+          expiration_date: (() => {
+            const eff = new Date(pf.effective_date);
+            const months = pf.policy_term === "6_months" ? 6 : 12;
+            eff.setMonth(eff.getMonth() + months);
+            return eff.toISOString().split("T")[0];
+          })(),
           status: "approved" as any,
           approved_at: new Date().toISOString(),
           approved_by_user_id: user.id,
