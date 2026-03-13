@@ -17,7 +17,6 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -34,7 +33,7 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // ── 1. Mark as processing (if document_id provided) ────────────────────
+    // ── 1. Mark as processing ──────────────────────────────────────────────
     if (document_id) {
       await supabase
         .from("client_documents")
@@ -42,16 +41,14 @@ serve(async (req) => {
         .eq("id", document_id);
     }
 
-    // ── 2. Get PDF bytes — from base64 payload or storage ──────────────────
+    // ── 2. Get PDF bytes ───────────────────────────────────────────────────
     let pdfBytes: Uint8Array;
 
     if (pdf_base64) {
-      // Direct base64 upload (preferred — no storage needed)
       const binaryStr = atob(pdf_base64);
       pdfBytes = new Uint8Array(binaryStr.length);
       for (let i = 0; i < binaryStr.length; i++) pdfBytes[i] = binaryStr.charCodeAt(i);
     } else if (storage_path) {
-      // Legacy: download from storage
       const { data: pdfData, error: dlError } = await supabase.storage
         .from("documents")
         .download(storage_path);
@@ -66,15 +63,14 @@ serve(async (req) => {
     const totalPages = srcDoc.getPageCount();
     console.log(`[ingest] totalPages=${totalPages} doc=${document_id}`);
 
-    // ── 4. Determine scan range ──────────────────────────────────────────
-    // For large docs, skip expensive per-page prescan — just send first N pages.
-    // The per-page prescan was iterating all pages with pdf-lib which burns CPU
-    // and times out on 100+ page documents.
+    // ── 4. Determine scan range ────────────────────────────────────────────
+    // Skip expensive per-page prescan. Just send first 10 pages to Gemini
+    // which can natively read the PDF. Retry with 25 if too few fields.
     const FAST_SCAN_PAGES = 10;
     const RETRY_SCAN_PAGES = 25;
     let scanEnd = Math.min(FAST_SCAN_PAGES, totalPages);
 
-    // ── 5. Detect doc type from filename hint ─────────────────────────────
+    // ── 5. Detect doc type from filename ───────────────────────────────────
     const pathHint = (storage_path || file_name || "").toUpperCase();
     let docType: AcordDocType = "UNKNOWN";
 
@@ -83,24 +79,24 @@ serve(async (req) => {
     else if (/AUTO|ACORD.?127|VEHICLE/.test(pathHint)) docType = "ACORD_127";
     else if (/UMBRELLA|EXCESS/.test(pathHint)) docType = "UMBRELLA";
 
-    // If still unknown, try reading first page text (quick single-page extract)
+    // If still unknown, try first page text (single page, fast)
     if (docType === "UNKNOWN") {
       try {
         const firstSlice = await extractPageRange(pdfBytes, 1, 1);
         const firstText = new TextDecoder().decode(firstSlice)
           .replace(/[^\x20-\x7E]/g, " ").substring(0, 3000);
         docType = detectDocType(firstText);
-      } catch { /* ignore, will use default prompt */ }
+      } catch { /* ignore */ }
     }
 
     console.log(`[ingest] docType=${docType} scanEnd=${scanEnd}/${totalPages}`);
 
-    // ── 6. Slice PDF to scan range ────────────────────────────────────────
+    // ── 6. Slice PDF ───────────────────────────────────────────────────────
     const pdfToSend = scanEnd < totalPages
       ? await extractPageRange(pdfBytes, 1, scanEnd)
       : pdfBytes;
 
-    const pdfBase64 = uint8ToBase64(pdfToSend);
+    const pdfBase64Out = uint8ToBase64(pdfToSend);
     console.log(`[ingest] Sending pages 1-${scanEnd}/${totalPages} to Gemini`);
 
     // ── 7. Single Gemini call ──────────────────────────────────────────────
@@ -108,7 +104,7 @@ serve(async (req) => {
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
     const prompt = buildGeminiPrompt(docType);
-    const rawText = await callGemini(pdfBase64, prompt, LOVABLE_API_KEY);
+    const rawText = await callGemini(pdfBase64Out, prompt, LOVABLE_API_KEY);
     console.log(`[ingest] Gemini response length: ${rawText.length} chars`);
 
     // ── 8. Parse response ──────────────────────────────────────────────────
@@ -124,28 +120,10 @@ serve(async (req) => {
       confidence = 0;
     }
 
-    // Count non-empty fields to decide if retry is needed
-    const countFields = (obj: Record<string, any>, prefix = ""): number => {
-      let count = 0;
-      for (const [k, v] of Object.entries(obj)) {
-        if (k === "confidence") continue;
-        if (v !== null && v !== undefined && v !== "" && v !== false) {
-          if (typeof v === "object" && !Array.isArray(v)) {
-            count += countFields(v, `${prefix}${k}.`);
-          } else if (Array.isArray(v) && v.length > 0) {
-            count += v.length;
-          } else {
-            count++;
-          }
-        }
-      }
-      return count;
-    };
-
     const fieldCount = countFields(extracted);
     console.log(`[ingest] First pass: ${fieldCount} fields, confidence=${confidence}`);
 
-    // ── 9. One retry if too few fields — widen to 25 pages ────────────────
+    // ── 9. Retry with wider range if too few fields ────────────────────────
     if (fieldCount < 10 && totalPages > scanEnd) {
       retryUsed = true;
       const retryEnd = Math.min(RETRY_SCAN_PAGES, totalPages);
@@ -170,6 +148,11 @@ serve(async (req) => {
     const formdata: Record<string, any> = docType === "BOP"
       ? mapBopExtractionToFormData(extracted)
       : flattenExtraction(extracted);
+
+    const finalFieldCount = Object.entries(formdata).filter(
+      ([_, v]) => v !== null && v !== undefined && v !== "" && v !== false
+    ).length;
+    console.log(`[ingest] Mapped ${finalFieldCount} form fields`);
 
     // ── 11. Inject agency profile ──────────────────────────────────────────
     const { data: sub } = await supabase
@@ -242,13 +225,13 @@ serve(async (req) => {
           pages_sent: scanEnd,
           total_pages: totalPages,
           retry_used: retryUsed,
-          field_count: countFields(extracted),
+          field_count: finalFieldCount,
         },
       }).eq("id", document_id);
     }
 
     return new Response(
-      JSON.stringify({ success: true, docType, confidence, pages: totalPages, scanEnd }),
+      JSON.stringify({ success: true, docType, confidence, pages: totalPages, scanEnd, fieldCount: finalFieldCount }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
 
@@ -264,101 +247,23 @@ serve(async (req) => {
   }
 });
 
-// ── PRESCAN ────────────────────────────────────────────────────────────────
-
-interface PrescanResult {
-  lastDecPage: number;
-  scanEnd: number;
-  isExtended: boolean;
-  firstPageText: string;
-  docTypeHint: AcordDocType;
-  pageMap: Array<{ page: number; type: "DEC" | "BOILERPLATE" | "BLANK" | "OTHER"; textLen: number }>;
-}
-
-async function prescanPages(
-  pdfBytes: Uint8Array,
-  totalPages: number
-): Promise<PrescanResult> {
-  const pageMap: PrescanResult["pageMap"] = [];
-  let lastDecPage = 0;
-  let firstPageText = "";
-  let docTypeHint: AcordDocType = "UNKNOWN";
-
-  for (let i = 0; i < totalPages; i++) {
-    const pageSlice = await extractPageRange(pdfBytes, i + 1, i + 1);
-    const text = extractTextFromBytes(pageSlice);
-    const L = text.length;
-
-    if (i === 0) firstPageText = text;
-
-    let type: "DEC" | "BOILERPLATE" | "BLANK" | "OTHER";
-
-    if (L < PRESCAN_MIN_TEXT_LEN) {
-      type = "BLANK";
-    } else if (BOILERPLATE_RE.test(text)) {
-      type = L > 2500 ? "BOILERPLATE" : "OTHER";
-    } else if (DEC_DATA_RE.test(text) && L < 3500) {
-      type = "DEC";
-      lastDecPage = i + 1;
-
-      if (docTypeHint === "UNKNOWN") {
-        const tu = text.toUpperCase();
-        if (tu.includes("BUSINESSOWNERS") || tu.includes("BOP") || /\bBO\s+\d{5}/.test(tu)) {
-          docTypeHint = "BOP";
-        } else if (tu.includes("GENERAL LIABILITY") || tu.includes("CGL")) {
-          docTypeHint = "GL";
-        } else if (tu.includes("WORKERS COMP")) {
-          docTypeHint = "ACORD_130";
-        } else if (tu.includes("COMMERCIAL AUTO") || tu.includes("BUSINESS AUTO")) {
-          docTypeHint = "ACORD_127";
-        } else if (tu.includes("UMBRELLA") || tu.includes("EXCESS LIABILITY")) {
-          docTypeHint = "UMBRELLA";
-        } else if (tu.includes("HOMEOWNERS") || tu.includes("DWELLING")) {
-          docTypeHint = "DEC_PAGE";
-        }
-      }
-    } else {
-      type = "OTHER";
-    }
-
-    pageMap.push({ page: i + 1, type, textLen: L });
-
-    // Early exit after 5 consecutive boilerplate/blank pages past last DEC
-    if (lastDecPage > 0 && i >= lastDecPage + 4) {
-      const recentPages = pageMap.slice(-5);
-      const allBoilerplate = recentPages.every(p => p.type === "BOILERPLATE" || p.type === "BLANK");
-      if (allBoilerplate) {
-        console.log(`[prescan] Early exit at page ${i + 1} — 5 consecutive boilerplate after DEC page ${lastDecPage}`);
-        break;
-      }
-    }
-  }
-
-  const isExtended = lastDecPage > PRESCAN_DEFAULT_PAGES;
-  let scanEnd: number;
-
-  if (lastDecPage === 0) {
-    scanEnd = Math.min(PRESCAN_DEFAULT_PAGES, totalPages);
-  } else if (isExtended) {
-    scanEnd = Math.min(lastDecPage + 1, PRESCAN_MAX_PAGES, totalPages);
-  } else {
-    scanEnd = Math.min(PRESCAN_DEFAULT_PAGES, totalPages);
-  }
-
-  return { lastDecPage, scanEnd, isExtended, firstPageText, docTypeHint, pageMap };
-}
-
 // ── Helpers ────────────────────────────────────────────────────────────────
 
-function extractTextFromBytes(pdfBytes: Uint8Array): string {
-  try {
-    const text = new TextDecoder().decode(pdfBytes);
-    const matches = text.match(/BT[\s\S]*?ET/g) ?? [];
-    const extracted = matches.join(" ").replace(/[^\x20-\x7E]/g, " ").replace(/\s+/g, " ").substring(0, 3000);
-    return extracted.length > 50 ? extracted : text.replace(/[^\x20-\x7E]/g, " ").substring(0, 3000);
-  } catch {
-    return "";
+function countFields(obj: Record<string, any>): number {
+  let count = 0;
+  for (const [k, v] of Object.entries(obj)) {
+    if (k === "confidence") continue;
+    if (v !== null && v !== undefined && v !== "" && v !== false) {
+      if (typeof v === "object" && !Array.isArray(v)) {
+        count += countFields(v);
+      } else if (Array.isArray(v) && v.length > 0) {
+        count += v.length;
+      } else {
+        count++;
+      }
+    }
   }
+  return count;
 }
 
 function uint8ToBase64(bytes: Uint8Array): string {
@@ -387,7 +292,7 @@ async function callGemini(base64: string, prompt: string, apiKey: string): Promi
         },
       ],
     }),
-    signal: AbortSignal.timeout(45_000),
+    signal: AbortSignal.timeout(50_000),
   });
 
   if (!response.ok) {
