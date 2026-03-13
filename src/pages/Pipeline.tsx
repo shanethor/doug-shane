@@ -761,12 +761,10 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
   filtered.forEach((l) => {
     if (l.has_approved_policy) {
       allSoldLeads.push(l);
-      // Only show in Sold column if any approved policy has effective_date in current month
-      const premiums = leadPolicyPremiums[l.id];
-      // Check allPoliciesData for this lead's effective dates
+      // Show in Sold column if any approved policy has effective_date in current month OR future months
       const leadPolicies = allPoliciesData.filter((p: any) => p.lead_id === l.id && p.status === "approved");
-      const hasCurrentMonth = leadPolicies.some((p: any) => p.effective_date >= currentMonthStart && p.effective_date < nextMonthStart);
-      if (hasCurrentMonth) {
+      const hasCurrentOrFuture = leadPolicies.some((p: any) => p.effective_date >= currentMonthStart);
+      if (hasCurrentOrFuture) {
         grouped["sold"].push(l);
       }
     } else {
