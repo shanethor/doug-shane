@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Users, TrendingUp, DollarSign, Send, FileCheck, BarChart3, Loader2 } from "lucide-react";
-import auraLogo from "@/assets/aura-logo.png";
+
 
 const PARTNER_NAMES: Record<string, string> = {
   "josh-chernes": "Joshua Chernes",
