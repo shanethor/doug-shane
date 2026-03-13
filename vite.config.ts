@@ -18,4 +18,19 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'acord-forms': [
+            './src/lib/acord-autofill',
+            './src/lib/acord-extraction',
+            './src/lib/acord-pdf-fields',
+            './src/components/FormFillingView',
+          ],
+          'pdf-libs': ['pdf-lib', 'jszip'],
+        },
+      },
+    },
+  },
 }));
