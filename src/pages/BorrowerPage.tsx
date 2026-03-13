@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import joshHeadshot from "@/assets/josh-chernes-headshot.png";
 import michaelHeadshot from "@/assets/michael-wengzn-headshot.png";
 import AssociatedPage from "./AssociatedPage";
+import OmitPage from "./OmitPage";
 
 /* ─── Borrower Config ─── */
 interface CoverageCard {
