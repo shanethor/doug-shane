@@ -158,6 +158,52 @@ serve(async (req) => {
       formdata = flattenExtraction(extracted);
     }
 
+    // ── 10b. Inject user's agency profile (agencies table is source of truth) ──
+    {
+      const { data: sub } = await supabase
+        .from("business_submissions")
+        .select("user_id")
+        .eq("id", submission_id)
+        .maybeSingle();
+
+      if (sub?.user_id) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("full_name, agency_name, agency_id, phone, form_defaults")
+          .eq("user_id", sub.user_id)
+          .maybeSingle();
+
+        if (profile) {
+          // Resolve canonical agency name from agencies table
+          let agencyName = "";
+          if ((profile as any).agency_id) {
+            const { data: agencyData } = await supabase
+              .from("agencies")
+              .select("name")
+              .eq("id", (profile as any).agency_id)
+              .maybeSingle();
+            if (agencyData?.name) agencyName = agencyData.name;
+          }
+          if (!agencyName && profile.agency_name) agencyName = profile.agency_name;
+
+          // Always override agency/producer fields with user's profile
+          if (agencyName) formdata.agency_name = agencyName;
+          if (profile.full_name) formdata.producer_name = profile.full_name;
+          if (profile.phone) formdata.agency_phone = profile.phone;
+
+          // Merge form_defaults (agency_email, agency_fax, license_no, etc.)
+          const fd = (profile.form_defaults || {}) as Record<string, any>;
+          for (const [k, v] of Object.entries(fd)) {
+            if (k === "agency_name" || k === "_training_mode") continue;
+            if (v && typeof v === "string" && v.trim() && !formdata[k]) {
+              formdata[k] = v;
+            }
+          }
+          console.log(`[ingest] Injected agency defaults: agency_name="${agencyName}", producer="${profile.full_name}"`);
+        }
+      }
+    }
+
     // ── 11. Upsert into insurance_applications ─────────────────────────────
     const { data: appRow } = await supabase
       .from("insurance_applications")

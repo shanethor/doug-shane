@@ -582,9 +582,13 @@ export default function FormFillingView({ submissionId, initialMessages, initial
             }
           }
 
-          // Only set defaults where no existing value
+          // Agency name & producer name ALWAYS come from the user's profile/agencies table
+          // (overrides whatever the AI may have extracted from the carrier's document)
+          const FORCE_OVERRIDE_KEYS = ["agency_name", "producer_name"];
           for (const [k, v] of Object.entries(defaults)) {
-            if (!loaded[k] || (typeof loaded[k] === "string" && !loaded[k].trim())) {
+            if (FORCE_OVERRIDE_KEYS.includes(k) && v) {
+              loaded[k] = v;
+            } else if (!loaded[k] || (typeof loaded[k] === "string" && !loaded[k].trim())) {
               loaded[k] = v;
             }
           }
