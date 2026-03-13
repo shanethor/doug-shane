@@ -50,19 +50,55 @@ serve(async (req) => {
     }
 
     const pdfSizeMB = (pdfBytes.length / (1024 * 1024)).toFixed(1);
-    console.log(`[ingest] PDF size: ${pdfSizeMB}MB, doc=${document_id}`);
 
-    // ── 3. Send ORIGINAL PDF to Gemini (no slicing — avoids encrypted PDF corruption) ──
-    // Gemini 2.5 Flash natively handles large PDFs. Slicing encrypted docs
-    // produces unreadable content, which is why extraction was returning 0 fields.
-    const originalBase64 = pdf_base64 || uint8ToBase64(pdfBytes);
+    // ── 3. Determine page count and slice strategy ──
+    // We need to slice to avoid timeout/CPU issues on large docs.
+    // ≤10 pages → scan all (10-page slice)
+    // 11-25 pages → scan all pages
+    // >25 pages → scan first 25 pages only
+    const { PDFDocument } = await import("https://esm.sh/pdf-lib@1.17.1");
+    let totalPages = 0;
+    try {
+      const tmpDoc = await PDFDocument.load(pdfBytes, { ignoreEncryption: true });
+      totalPages = tmpDoc.getPageCount();
+    } catch (e) {
+      console.warn("[ingest] Could not read page count, sending full PDF:", e);
+    }
+
+    console.log(`[ingest] PDF size: ${pdfSizeMB}MB, ${totalPages} pages, doc=${document_id}`);
+
+    let sendBase64: string;
+    let scanEnd: number;
+
+    if (totalPages <= 0) {
+      // Couldn't parse page count — send original
+      sendBase64 = pdf_base64 || uint8ToBase64(pdfBytes);
+      scanEnd = 0;
+      console.log(`[ingest] Unknown page count, sending full PDF`);
+    } else if (totalPages <= 10) {
+      // Small doc — slice to exactly those pages (avoids sending trailing blank/junk)
+      scanEnd = totalPages;
+      const sliced = await extractPageRange(pdfBytes, 1, totalPages);
+      sendBase64 = uint8ToBase64(new Uint8Array(sliced));
+      console.log(`[ingest] Small doc (${totalPages}p), scanning all pages`);
+    } else if (totalPages <= 25) {
+      // Medium doc — scan full document
+      scanEnd = totalPages;
+      const sliced = await extractPageRange(pdfBytes, 1, totalPages);
+      sendBase64 = uint8ToBase64(new Uint8Array(sliced));
+      console.log(`[ingest] Medium doc (${totalPages}p), scanning all pages`);
+    } else {
+      // Large doc — cap at 25 pages
+      scanEnd = 25;
+      const sliced = await extractPageRange(pdfBytes, 1, 25);
+      sendBase64 = uint8ToBase64(new Uint8Array(sliced));
+      console.log(`[ingest] Large doc (${totalPages}p), scanning first 25 pages`);
+    }
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
-    console.log(`[ingest] Sending full PDF (${pdfSizeMB}MB) to Gemini`);
-
-    const rawText = await callGemini(originalBase64, EXTRACTION_PROMPT, LOVABLE_API_KEY);
+    const rawText = await callGemini(sendBase64, EXTRACTION_PROMPT, LOVABLE_API_KEY);
     console.log(`[ingest] Gemini response length: ${rawText.length} chars`);
     console.log(`[ingest] Response preview: ${rawText.substring(0, 800)}`);
 
