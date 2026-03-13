@@ -91,6 +91,10 @@ export default function ProducerDashboard({ embedded }: { embedded?: boolean } =
     totalLeads: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [mtdPremium, setMtdPremium] = useState(0);
+  const [mtdRevenue, setMtdRevenue] = useState(0);
+  const [ytdPremium, setYtdPremium] = useState(0);
+  const [ytdRevenue, setYtdRevenue] = useState(0);
   const mountedRef = useRef(true);
   const loadIdRef = useRef(0);
   useEffect(() => { return () => { mountedRef.current = false; }; }, []);
