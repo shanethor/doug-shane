@@ -138,6 +138,67 @@ export const ACORD_125_FIELD_MAP: AcordFieldMap = {
   producer_license_no:      "STATE LICENSE NO",
   national_producer_number: "NATIONAL PRODUCER NUMBER",
   signature_date:           "SIGNATURE DATE",
+
+  // ── BOP Carrier / Policy extras ──
+  carrier_name:             "COMPANY",
+  carrier_group:            "CARRIER GROUP",
+  carrier_naic:             "NAIC CODE",
+  terrorism_premium:        "TERRORISM PREMIUM",
+  billing_method:           "BILL PLAN",
+  legal_entity:             "BUSINESS TYPE",
+
+  // ── BOP Location 1 building/property ──
+  location_1_number:                "LOCATION 1 NUMBER",
+  location_1_building_number:       "LOCATION 1 BLDG NUMBER",
+  location_1_address:               "STREET ADDRESS",
+  location_1_city:                  "PREMISES CITY",
+  location_1_state:                 "PREMISES STATE",
+  location_1_zip:                   "PREMISES ZIP",
+  location_1_occupancy:             "OCCUPANCY",
+  bop_building_limit_1:             "BUILDING LIMIT 1",
+  bop_bpp_limit_1:                  "BPP LIMIT 1",
+  bop_property_deductible_1:        "PROPERTY DEDUCTIBLE 1",
+  bop_glass_deductible_1:           "GLASS DEDUCTIBLE 1",
+  bop_valuation_1:                  "VALUATION 1",
+  bop_coinsurance_1:                "COINSURANCE 1",
+  bop_auto_increase_percent_1:      "AUTO INCREASE 1",
+
+  // ── EPLI ──
+  epli_each_claim_limit:            "EPLI EACH CLAIM",
+  epli_aggregate_limit:             "EPLI AGGREGATE",
+  epli_deductible:                  "EPLI DEDUCTIBLE",
+  epli_retro_date:                  "EPLI RETRO DATE",
+
+  // ── Cyber (12 sub-limits) ──
+  cyber_retro_date:                          "CYBER RETRO DATE",
+  cyber_aggregate_limit:                     "CYBER AGGREGATE",
+  cyber_multimedia_liability_limit:          "CYBER MULTIMEDIA",
+  cyber_security_privacy_liability_limit:    "CYBER SECURITY PRIVACY",
+  cyber_regulatory_defense_limit:            "CYBER REGULATORY",
+  cyber_pci_dss_limit:                       "CYBER PCI DSS",
+  cyber_breach_response_limit:               "CYBER BREACH RESPONSE",
+  cyber_network_asset_limit:                 "CYBER NETWORK ASSET",
+  cyber_extortion_limit:                     "CYBER EXTORTION",
+  cyber_terrorism_limit:                     "CYBER TERRORISM",
+  cyber_brand_guard_limit:                   "CYBER BRAND GUARD",
+  cyber_boid_theft_limit:                    "CYBER BOID THEFT",
+
+  // ── Mortgagee / loss payee ──
+  mortgagee_1_name:                 "MORTGAGEE 1 NAME",
+  mortgagee_1_address:              "MORTGAGEE 1 ADDRESS",
+  mortgagee_1_city:                 "MORTGAGEE 1 CITY",
+  mortgagee_1_state:                "MORTGAGEE 1 STATE",
+  mortgagee_1_zip:                  "MORTGAGEE 1 ZIP",
+  mortgagee_1_type:                 "MORTGAGEE 1 TYPE",
+  mortgagee_1_provision:            "MORTGAGEE 1 PROVISION",
+
+  // ── Endorsements and line-of-business flags ──
+  endorsements_list:                "ENDORSEMENTS LIST",
+  line_bop:                         "BOP",
+  line_gl:                          "CGL",
+  line_property:                    "PROPERTY",
+  line_cyber:                       "CYBER",
+  line_epli:                        "EPLI",
 };
 
 // ─────────────────────────────────────────────────────────────────
