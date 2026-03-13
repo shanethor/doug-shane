@@ -154,6 +154,7 @@ async function handleIngest(body: IngestRequest, t0: number): Promise<Response> 
         { role: "user", content: userContent },
       ],
     }),
+    signal: AbortSignal.timeout(45_000),
   });
 
   if (!response.ok) {
