@@ -131,6 +131,8 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
   const [auditLogData, setAuditLogData] = useState<any[]>([]);
   // Map lead_id -> array of approved policy premiums for sold card display
   const [leadPolicyPremiums, setLeadPolicyPremiums] = useState<Record<string, number[]>>({});
+  // Map lead_id -> earliest effective_date for month tag display
+  const [leadEffectiveDates, setLeadEffectiveDates] = useState<Record<string, string>>({});
 
   const [lossRunStatuses, setLossRunStatuses] = useState<Record<string, string>>({});
   const [staleLeadIds, setStaleLeadIds] = useState<Set<string>>(new Set());
