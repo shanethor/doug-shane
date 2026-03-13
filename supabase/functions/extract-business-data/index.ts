@@ -32,6 +32,14 @@ const MAX_PDF_PAGES = 80; // increased — prescan trims to ideal pages
 const MAX_TOTAL_PAGES = 80;
 const PRESCAN_TARGET_PAGES = 15; // ideal number of data-rich pages to extract from
 const PRESCAN_THRESHOLD = 20; // only prescan if doc has more pages than this
+
+// ── Large-PDF page-range targeting ──
+// Most insurance packets have all DEC page data on pages 1–10.
+// Pages beyond that are boilerplate policy forms that waste context/CPU.
+const LARGE_PDF_CONFIG = {
+  PAGE_THRESHOLD: 20,   // PDFs with more pages than this get sliced
+  DEC_PAGE_SLICE: 10,   // keep only the first N pages (DEC pages live here)
+};
 const CONFIDENCE_THRESHOLD = 5; // minimum meaningful fields before triggering specialist
 
 // ── Shared schema prompt (used by all stages) ──
@@ -446,6 +454,44 @@ async function truncatePdf(base64Data: string, maxPages: number): Promise<string
   } catch (err) {
     console.warn("[pdf] Truncation failed, using original:", err);
     return base64Data;
+  }
+}
+
+/**
+ * extractPageRange — deterministic page-range targeting for large PDFs.
+ * If a PDF exceeds LARGE_PDF_CONFIG.PAGE_THRESHOLD, slice it to the
+ * first DEC_PAGE_SLICE pages before any AI sees it. This eliminates
+ * 100+ pages of boilerplate that cause context/timeout failures.
+ */
+async function extractPageRange(
+  base64Data: string,
+  pageCount: number,
+): Promise<{ base64: string; pages: number; sliced: boolean }> {
+  if (pageCount <= LARGE_PDF_CONFIG.PAGE_THRESHOLD) {
+    return { base64: base64Data, pages: pageCount, sliced: false };
+  }
+
+  const targetPages = LARGE_PDF_CONFIG.DEC_PAGE_SLICE;
+  console.log(`[page-range] Large PDF detected (${pageCount} pages > ${LARGE_PDF_CONFIG.PAGE_THRESHOLD}). Slicing to first ${targetPages} pages (DEC page zone).`);
+
+  try {
+    const pdfBytes = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
+    const srcDoc = await PDFDocument.load(pdfBytes, { ignoreEncryption: true });
+    const newDoc = await PDFDocument.create();
+    const indices = Array.from({ length: Math.min(targetPages, pageCount) }, (_, i) => i);
+    const copiedPages = await newDoc.copyPages(srcDoc, indices);
+    copiedPages.forEach(page => newDoc.addPage(page));
+
+    const newBytes = await newDoc.save();
+    let binary = '';
+    const arr = new Uint8Array(newBytes);
+    for (let i = 0; i < arr.length; i++) {
+      binary += String.fromCharCode(arr[i]);
+    }
+    return { base64: btoa(binary), pages: targetPages, sliced: true };
+  } catch (err) {
+    console.warn("[page-range] Slicing failed, using original:", err);
+    return { base64: base64Data, pages: pageCount, sliced: false };
   }
 }
 
