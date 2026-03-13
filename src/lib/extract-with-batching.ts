@@ -63,8 +63,8 @@ export async function extractWithBatching(params: ExtractParams): Promise<Extrac
   const userId = params.user_id || session?.user?.id;
   if (!userId) throw new Error("Not authenticated");
 
-  const toastId = toast.loading("Prescanning document…", {
-    description: "Identifying data-rich pages",
+  const toastId = toast.loading("Scanning document…", {
+    description: "Extracting insurance data",
   });
 
   try {
