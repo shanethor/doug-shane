@@ -165,9 +165,9 @@ export default function BorrowerPage() {
             </div>
             {/* Info */}
             <div className="flex-1 text-center md:text-left">
-              <h1 className="text-2xl font-bold tracking-tight md:text-3xl">{config.name}</h1>
-              <p className="mt-1 text-sm text-muted-foreground">{config.title} · {config.company}</p>
-              <p className="mx-auto mt-5 max-w-xl text-sm leading-relaxed text-muted-foreground md:mx-0">
+              <h1 className="text-2xl font-bold tracking-tight md:text-3xl text-[#1D2430]">{config.name}</h1>
+              <p className="mt-1 text-sm text-[#1D2430]/60">{config.title} · {config.company}</p>
+              <p className="mx-auto mt-5 max-w-xl text-sm leading-relaxed text-[#1D2430]/60 md:mx-0">
                 {config.bio}
               </p>
               <Button
