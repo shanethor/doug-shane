@@ -182,8 +182,14 @@ export default function Auth() {
 
         toast.success("Account created! Check your email for a confirmation link. Your account will be reviewed by an administrator before you can access AURA.");
       } else {
+        // Set flag BEFORE signIn to prevent the useEffect from also firing send_code
+        loginHandled2FA.current = true;
+
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
+        if (error) {
+          loginHandled2FA.current = false;
+          throw error;
+        }
 
         // Check approval status
         const { data: profile } = await supabase
@@ -208,8 +214,6 @@ export default function Auth() {
 
         setPendingUserId(userId);
         setPendingEmail(userEmail);
-
-        loginHandled2FA.current = true;
         const deviceHash = getDeviceHash();
         const authHdrs = await getAuthHeaders();
         const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-2fa`, {
