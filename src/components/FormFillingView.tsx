@@ -529,6 +529,7 @@ export default function FormFillingView({ submissionId, initialMessages, initial
         .eq("user_id", user.id);
     } catch (err) {
       console.error("Auto-save failed:", err);
+      toast.error("Auto-save failed — your changes may not be saved. Please save manually.");
     } finally {
       setAutoSaving(false);
     }
