@@ -69,14 +69,17 @@ export async function extractWithBatching(params: ExtractParams): Promise<Extrac
   for (let i = 0; i < batches.length; i++) {
     const batch = batches[i];
     
+    const batchStart = batches.slice(0, i).reduce((sum, b) => sum + b.pageCount, 0) + 1;
+    const batchEnd = Math.min(batchStart + batch.pageCount - 1, totalPages);
+
     toast.loading(
       `Processing batch ${i + 1} of ${batches.length}…`,
-      { id: toastId, description: `Pages ${i * 50 + 1}–${Math.min((i + 1) * 50, totalPages)} of ${totalPages}` }
+      { id: toastId, description: `Pages ${batchStart}–${batchEnd} of ${totalPages}` }
     );
 
     try {
       const result = await singleExtractCall({
-        description: `${description || ""}\n[Batch ${i + 1}/${batches.length}, pages ${i * 50 + 1}–${Math.min((i + 1) * 50, totalPages)}]`,
+        description: `${description || ""}\n[Batch ${i + 1}/${batches.length}, pages ${batchStart}–${batchEnd}]`,
         file_contents: i === 0 ? file_contents : undefined, // only send text content with first batch
         pdf_files: batch.pdfFiles,
         submission_id: i === 0 ? submission_id : undefined, // only save first batch to DB directly

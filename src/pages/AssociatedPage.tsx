@@ -110,7 +110,7 @@ export default function AssociatedPage() {
                     {creatingIntake ? (
                       <><Loader2 className="h-4 w-4 animate-spin" /> Loading...</>
                     ) : (
-                      <>Apply for Insurance <ArrowRight className="h-4 w-4" /></>
+                      <>Get Started <ArrowRight className="h-4 w-4" /></>
                     )}
                   </Button>
                 </div>
