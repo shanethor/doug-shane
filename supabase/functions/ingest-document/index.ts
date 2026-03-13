@@ -228,7 +228,7 @@ serve(async (req) => {
     console.log(`[ingest] Final merged form_data: ${mergedFieldCount} fields`);
 
     return new Response(
-      JSON.stringify({ success: true, fieldCount, mergedFieldCount }),
+      JSON.stringify({ success: true, fieldCount, mergedFieldCount, pages: totalPages, scanEnd }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
 
