@@ -155,7 +155,7 @@ export default function BorrowerPage() {
             {/* Headshot */}
             <div className="shrink-0">
               <div className="relative">
-                <div className="absolute -inset-1 rounded-2xl bg-gradient-to-br from-primary/30 to-accent/20 blur-sm" />
+                <div className="absolute -inset-1 rounded-2xl bg-gradient-to-br from-[#2F3E5B]/30 to-[#5A6B86]/20 blur-sm" />
                 <img
                   src={config.headshot}
                   alt={config.name}
