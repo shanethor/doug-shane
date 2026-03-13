@@ -261,6 +261,7 @@ async function callClaudeAdvisor(
       "content-type": "application/json",
     },
     body: JSON.stringify(claudeBody),
+    signal: AbortSignal.timeout(50_000),
   });
 
   if (!response.ok) {
