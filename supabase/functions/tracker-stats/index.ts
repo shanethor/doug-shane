@@ -31,6 +31,12 @@ function getDateCutoff(period: TimePeriod): string | null {
   return new Date(now.getFullYear(), 0, 1).toISOString();
 }
 
+function getDateCeiling(period: TimePeriod): string | null {
+  if (period !== "month") return null;
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString();
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
