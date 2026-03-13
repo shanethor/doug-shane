@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { extractPageRange } from "../_shared/acord-extraction-helpers.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -49,19 +50,55 @@ serve(async (req) => {
     }
 
     const pdfSizeMB = (pdfBytes.length / (1024 * 1024)).toFixed(1);
-    console.log(`[ingest] PDF size: ${pdfSizeMB}MB, doc=${document_id}`);
 
-    // ── 3. Send ORIGINAL PDF to Gemini (no slicing — avoids encrypted PDF corruption) ──
-    // Gemini 2.5 Flash natively handles large PDFs. Slicing encrypted docs
-    // produces unreadable content, which is why extraction was returning 0 fields.
-    const originalBase64 = pdf_base64 || uint8ToBase64(pdfBytes);
+    // ── 3. Determine page count and slice strategy ──
+    // We need to slice to avoid timeout/CPU issues on large docs.
+    // ≤10 pages → scan all (10-page slice)
+    // 11-25 pages → scan all pages
+    // >25 pages → scan first 25 pages only
+    const { PDFDocument } = await import("https://esm.sh/pdf-lib@1.17.1");
+    let totalPages = 0;
+    try {
+      const tmpDoc = await PDFDocument.load(pdfBytes, { ignoreEncryption: true });
+      totalPages = tmpDoc.getPageCount();
+    } catch (e) {
+      console.warn("[ingest] Could not read page count, sending full PDF:", e);
+    }
+
+    console.log(`[ingest] PDF size: ${pdfSizeMB}MB, ${totalPages} pages, doc=${document_id}`);
+
+    let sendBase64: string;
+    let scanEnd: number;
+
+    if (totalPages <= 0) {
+      // Couldn't parse page count — send original
+      sendBase64 = pdf_base64 || uint8ToBase64(pdfBytes);
+      scanEnd = 0;
+      console.log(`[ingest] Unknown page count, sending full PDF`);
+    } else if (totalPages <= 10) {
+      // Small doc — slice to exactly those pages (avoids sending trailing blank/junk)
+      scanEnd = totalPages;
+      const sliced = await extractPageRange(pdfBytes, 1, totalPages);
+      sendBase64 = uint8ToBase64(new Uint8Array(sliced));
+      console.log(`[ingest] Small doc (${totalPages}p), scanning all pages`);
+    } else if (totalPages <= 25) {
+      // Medium doc — scan full document
+      scanEnd = totalPages;
+      const sliced = await extractPageRange(pdfBytes, 1, totalPages);
+      sendBase64 = uint8ToBase64(new Uint8Array(sliced));
+      console.log(`[ingest] Medium doc (${totalPages}p), scanning all pages`);
+    } else {
+      // Large doc — cap at 25 pages
+      scanEnd = 25;
+      const sliced = await extractPageRange(pdfBytes, 1, 25);
+      sendBase64 = uint8ToBase64(new Uint8Array(sliced));
+      console.log(`[ingest] Large doc (${totalPages}p), scanning first 25 pages`);
+    }
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
-    console.log(`[ingest] Sending full PDF (${pdfSizeMB}MB) to Gemini`);
-
-    const rawText = await callGemini(originalBase64, EXTRACTION_PROMPT, LOVABLE_API_KEY);
+    const rawText = await callGemini(sendBase64, EXTRACTION_PROMPT, LOVABLE_API_KEY);
     console.log(`[ingest] Gemini response length: ${rawText.length} chars`);
     console.log(`[ingest] Response preview: ${rawText.substring(0, 800)}`);
 
@@ -75,11 +112,34 @@ serve(async (req) => {
     }
 
     // Flatten any nested objects
-    const formdata = flattenToFormKeys(extracted);
-    const fieldCount = Object.entries(formdata).filter(
+    let formdata = flattenToFormKeys(extracted);
+    let fieldCount = Object.entries(formdata).filter(
       ([_, v]) => v !== null && v !== undefined && v !== "" && v !== false
     ).length;
-    console.log(`[ingest] Extracted ${fieldCount} form fields`);
+    console.log(`[ingest] First pass: ${fieldCount} fields from ${scanEnd || "all"} pages`);
+
+    // ── 4b. Density-based retry — if <10 fields and we scanned <25 pages, retry wider ──
+    if (fieldCount < 10 && totalPages > scanEnd && scanEnd > 0 && scanEnd < 25) {
+      console.log(`[ingest] Low field count (${fieldCount}), retrying with 25 pages`);
+      const retryEnd = Math.min(25, totalPages);
+      const retrySliced = await extractPageRange(pdfBytes, 1, retryEnd);
+      const retryBase64 = uint8ToBase64(new Uint8Array(retrySliced));
+      const retryRaw = await callGemini(retryBase64, EXTRACTION_PROMPT, LOVABLE_API_KEY);
+      try {
+        const retryParsed = parseJson(retryRaw);
+        const retryFlat = flattenToFormKeys(retryParsed);
+        const retryCount = Object.entries(retryFlat).filter(
+          ([_, v]) => v !== null && v !== undefined && v !== "" && v !== false
+        ).length;
+        console.log(`[ingest] Retry pass: ${retryCount} fields from ${retryEnd} pages`);
+        if (retryCount > fieldCount) {
+          formdata = retryFlat;
+          fieldCount = retryCount;
+        }
+      } catch (e) {
+        console.warn("[ingest] Retry parse failed:", e);
+      }
+    }
 
     // Log a sample of extracted keys for debugging
     const sampleKeys = Object.entries(formdata)
@@ -152,10 +212,12 @@ serve(async (req) => {
       await supabase.from("client_documents").update({
         extraction_status: fieldCount > 5 ? "complete" : "partial",
         extraction_confidence: fieldCount > 20 ? 0.9 : fieldCount > 5 ? 0.7 : 0.3,
-        total_pages: null,
+        total_pages: totalPages || null,
         extraction_metadata: {
           model: "google/gemini-2.5-flash",
           field_count: fieldCount,
+          pages_scanned: scanEnd || totalPages,
+          total_pages: totalPages,
         },
       }).eq("id", document_id);
     }
@@ -166,7 +228,7 @@ serve(async (req) => {
     console.log(`[ingest] Final merged form_data: ${mergedFieldCount} fields`);
 
     return new Response(
-      JSON.stringify({ success: true, fieldCount, mergedFieldCount }),
+      JSON.stringify({ success: true, fieldCount, mergedFieldCount, pages: totalPages, scanEnd }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
 
