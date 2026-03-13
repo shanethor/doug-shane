@@ -155,12 +155,13 @@ export default function ProducerDashboard({ embedded }: { embedded?: boolean } =
     const fetchedLeads = leadsRes.data ?? [];
     setAllLeads(fetchedLeads);
 
+    // Filter approved policies by effective_date for the selected period
     const approvedInRange = allPolicies.filter(
       (p: any) =>
         p.status === "approved" &&
-        p.approved_at &&
-        p.approved_at >= dateRange.start &&
-        p.approved_at <= dateRange.end + "T23:59:59"
+        p.effective_date &&
+        p.effective_date >= dateRange.start &&
+        p.effective_date <= dateRange.end
     );
 
     const activeSold = allPolicies.filter((p: any) => p.status === "approved");
@@ -181,11 +182,35 @@ export default function ProducerDashboard({ embedded }: { embedded?: boolean } =
       setLeadInfos([]);
     }
 
+    // Compute MTD and YTD production by effective_date
+    const nowDate = new Date();
+    const monthStart = new Date(nowDate.getFullYear(), nowDate.getMonth(), 1).toISOString().split("T")[0];
+    const monthEnd = new Date(nowDate.getFullYear(), nowDate.getMonth() + 1, 0).toISOString().split("T")[0];
+    const yearStart = new Date(nowDate.getFullYear(), 0, 1).toISOString().split("T")[0];
+    const yearEnd = new Date(nowDate.getFullYear(), 11, 31).toISOString().split("T")[0];
+
+    const mtdPolicies = activeSold.filter((p: any) =>
+      p.effective_date && p.effective_date >= monthStart && p.effective_date <= monthEnd
+    );
+    const ytdPolicies = activeSold.filter((p: any) =>
+      p.effective_date && p.effective_date >= yearStart && p.effective_date <= yearEnd
+    );
+
+    const newMtdPremium = mtdPolicies.reduce((s: number, p: any) => s + Number(p.annual_premium), 0);
+    const newMtdRevenue = mtdPolicies.reduce((s: number, p: any) => s + Number(p.revenue ?? 0), 0);
+    const newYtdPremium = ytdPolicies.reduce((s: number, p: any) => s + Number(p.annual_premium), 0);
+    const newYtdRevenue = ytdPolicies.reduce((s: number, p: any) => s + Number(p.revenue ?? 0), 0);
+
+    setMtdPremium(newMtdPremium);
+    setMtdRevenue(newMtdRevenue);
+    setYtdPremium(newYtdPremium);
+    setYtdRevenue(newYtdRevenue);
+
     setStats({
       totalPolicies: allPolicies.length,
       approvedPolicies: approvedInRange.length,
       totalPremium: approvedInRange.reduce((s: number, p: any) => s + Number(p.annual_premium), 0),
-      totalRevenue: approvedInRange.reduce((s: number, p: any) => s + Number(p.revenue), 0),
+      totalRevenue: approvedInRange.reduce((s: number, p: any) => s + Number(p.revenue ?? 0), 0),
       pendingPolicies: allPolicies.filter((p: any) => p.status === "pending").length,
       totalLeads: fetchedLeads.filter((l: any) => {
         const isSold = allPolicies.some((p: any) => p.lead_id === l.id && p.status === "approved");
