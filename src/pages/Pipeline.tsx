@@ -530,7 +530,7 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
     if (targetStage === "sold") {
       // Open sold modal to collect policy details
       setSoldLeadId(leadId);
-      setSoldPolicies([{ carrier: "", line_of_business: "", policy_number: "", effective_date: "", annual_premium: "" }]);
+      setSoldPolicies([{ carrier: "", line_of_business: "", policy_number: "", effective_date: "", annual_premium: "", policy_term: "1_year" }]);
       setSoldModalOpen(true);
     } else if (targetStage === "presenting") {
       // Open presenting modal to collect premium lines
