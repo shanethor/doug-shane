@@ -172,8 +172,6 @@ export default function FormFillingView({ submissionId, initialMessages, initial
   }, [mobilePanel]);
 
   // Track latest formData in a ref so the debounce closure always sees current values
-  const formDataRef2 = useRef<Record<string, any>>({});
-  useEffect(() => { formDataRef2.current = formData; }, [formData]);
 
   /**
    * Build prefillByIndex for the active form: maps field INDEX → formatted string value.
@@ -264,8 +262,10 @@ export default function FormFillingView({ submissionId, initialMessages, initial
       if (!formFieldKeys.has(key)) continue;
       unmappedKeys.push(key);
     }
-    console.warn(`[prefill] ${fId}: ${debugEntries.length} fields mapped:\n${debugEntries.join("\n")}`);
-    if (unmappedKeys.length > 0) {
+    if (import.meta.env.DEV) {
+      console.warn(`[prefill] ${fId}: ${debugEntries.length} fields mapped:\n${debugEntries.join("\n")}`);
+    }
+    if (unmappedKeys.length > 0 && import.meta.env.DEV) {
       console.warn(`[prefill] ${fId}: ${unmappedKeys.length} UNMAPPED keys (no PDF index):\n  ${unmappedKeys.join("\n  ")}`);
     }
     return result;
@@ -1236,9 +1236,7 @@ export default function FormFillingView({ submissionId, initialMessages, initial
     const sections: { name: string; fields: AcordFormField[] }[] = [];
     const seen = new Set<string>();
     for (const field of fields) {
-      const sectionLabel = isAllForms
-        ? field.section
-        : field.section;
+      const sectionLabel = field.section;
       if (!seen.has(sectionLabel)) {
         seen.add(sectionLabel);
         let sectionFields = fields.filter((f) => f.section === sectionLabel);
