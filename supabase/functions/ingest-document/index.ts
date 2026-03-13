@@ -363,3 +363,42 @@ function flattenExtraction(
   }
   return result;
 }
+
+function mergeChunkData(
+  existing: Record<string, any>,
+  newChunk: Record<string, any>
+): Record<string, any> {
+  const result = { ...existing };
+
+  for (const [key, value] of Object.entries(newChunk)) {
+    if (key === "confidence") continue;
+    if (value === undefined || value === null) continue;
+
+    const current = result[key];
+    const isEmpty =
+      current === undefined ||
+      current === null ||
+      (typeof current === "string" && !current.trim()) ||
+      String(current).toLowerCase() === "na";
+
+    if (isEmpty) {
+      result[key] = value;
+    } else if (Array.isArray(current) && Array.isArray(value)) {
+      const combined = [...current, ...value];
+      const unique = Array.from(
+        new Map(combined.map(item => [JSON.stringify(item), item])).values()
+      );
+      result[key] = unique;
+    } else if (
+      typeof current === "object" &&
+      typeof value === "object" &&
+      !Array.isArray(current) &&
+      !Array.isArray(value)
+    ) {
+      result[key] = mergeChunkData(current, value);
+    }
+    // Otherwise keep existing value
+  }
+
+  return result;
+}
