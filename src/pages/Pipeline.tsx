@@ -1255,12 +1255,22 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
                 {STAGE_LABELS[stage]}
               </Badge>
               <span className="text-xs text-muted-foreground font-sans">{grouped[stage]?.length ?? 0}</span>
+              {stage === "sold" && allSoldLeads.length > grouped["sold"].length && (
+                <span className="text-[10px] text-muted-foreground font-sans">
+                  ({allSoldLeads.length} total)
+                </span>
+              )}
+              {stage === "sold" && (
+                <span className="text-[10px] text-muted-foreground/60 font-sans">
+                  {nowDate.toLocaleString("default", { month: "short" })}
+                </span>
+              )}
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Info className="h-3 w-3 text-muted-foreground/40 cursor-help" />
                 </TooltipTrigger>
                 <TooltipContent side="top" className="max-w-[200px] text-xs font-sans">
-                  {STAGE_TOOLTIPS[stage]}
+                  {stage === "sold" ? "Resets visually on the 1st of each month. Your sales data and production numbers are unaffected." : STAGE_TOOLTIPS[stage]}
                 </TooltipContent>
               </Tooltip>
             </div>
