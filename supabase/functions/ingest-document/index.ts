@@ -337,6 +337,9 @@ CRITICAL: Return ONLY the JSON object. No markdown fences, no prose.
   "lob_property": true,
   "lob_auto": true,
   "lob_umbrella": true,
+  "lob_crime": true,
+  "lob_cyber": true,
+  "lob_inland_marine": true,
   
   "additional_interest_name_a": "Additional interest/mortgagee name",
   "additional_interest_address_a": "Additional interest address",
