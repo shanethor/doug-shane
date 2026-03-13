@@ -405,6 +405,7 @@ Return ONLY valid JSON with this structure:
       system: specialistPrompt,
       messages: [{ role: "user", content: claudeContent }],
     }),
+    signal: AbortSignal.timeout(50_000),
   });
 
   console.log(`[stage-claude] Claude Opus responded in ${Date.now() - t0}ms (status: ${response.status})`);
