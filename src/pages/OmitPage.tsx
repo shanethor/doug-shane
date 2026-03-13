@@ -71,9 +71,6 @@ export default function OmitPage() {
           backgroundSize: "60px 60px",
         }} />
         <div className="relative mx-auto max-w-3xl px-6 py-16 md:py-24 text-center">
-          <div className="mb-6 flex justify-center">
-            <img src={omitLogo} alt="OMiT" className="h-12 md:h-16 brightness-0 invert" />
-          </div>
           <p className="text-xs font-bold uppercase tracking-[0.3em] text-white/40 mb-8">
             Official Insurance Partner of OMiT
           </p>
