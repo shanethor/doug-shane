@@ -801,7 +801,7 @@ serve(async (req) => {
             const proRaw = await callGeminiWithPdfs(
               LOVABLE_API_KEY,
               SCHEMA_PROMPT,
-              `Extract all insurance data from the attached PDF document(s).${additionalContext ? `\n\nAdditional context:\n${additionalContext}` : ""}`,
+               `Extract all insurance data from the attached PDF document(s). IMPORTANT: Focus on DECLARATIONS PAGES first — these contain insured-specific data (limits, premiums, deductibles, locations, endorsements). SKIP standard policy form language boilerplate. Extract ALL BOP property limits, GL limits, EPLI, cyber coverages, mortgagee/additional interest info, producer/agency details, endorsement form numbers, and location-indexed data.${additionalContext ? `\n\nAdditional context:\n${additionalContext}` : ""}`,
               truncatedFiles,
               "google/gemini-2.5-pro",
             );
