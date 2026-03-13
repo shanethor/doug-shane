@@ -1407,7 +1407,7 @@ export function buildAutofilledData(
   const wcClasses: any[] = Array.isArray(aiData.wc_classifications) ? aiData.wc_classifications : [];
   wcClasses.forEach((c: any, idx: number) => {
     const n = idx + 1;
-    if (n > 3) return;
+    if (n > 5) return;
     const fields: Record<string, string> = {
       [`class_code_${n}`]: c.class_code || "",
       [`class_description_${n}`]: c.description || "",
