@@ -487,7 +487,82 @@ function postProcess(fd: Record<string, any>, sourceText: string, hasPdfs: boole
     }
   }
 
-  // Flatten vehicles[] → vehicle_N_*
+  // ── Flatten locations[] → location_N_* and also populate premises_* from first location ──
+  const locations: any[] = Array.isArray(fd.locations) ? fd.locations : [];
+  locations.forEach((loc: any, idx: number) => {
+    const n = idx + 1;
+    if (n > 3) return;
+    if (loc.premises_number && !fd[`location_${n}_number`]) fd[`location_${n}_number`] = String(loc.premises_number);
+    if (loc.building_number && !fd[`location_${n}_building_number`]) fd[`location_${n}_building_number`] = String(loc.building_number);
+    if (loc.address && !fd[`location_${n}_address`]) fd[`location_${n}_address`] = String(loc.address);
+    if (loc.city && !fd[`location_${n}_city`]) fd[`location_${n}_city`] = String(loc.city);
+    if (loc.state && !fd[`location_${n}_state`]) fd[`location_${n}_state`] = String(loc.state);
+    if (loc.zip && !fd[`location_${n}_zip`]) fd[`location_${n}_zip`] = String(loc.zip);
+    if ((loc.occupancy || loc.description) && !fd[`location_${n}_occupancy`]) fd[`location_${n}_occupancy`] = String(loc.occupancy || loc.description);
+  });
+  // Auto-populate premises_* from location_1 if not set
+  if (!fd.premises_address && fd.location_1_address) fd.premises_address = fd.location_1_address;
+  if (!fd.premises_city && fd.location_1_city) fd.premises_city = fd.location_1_city;
+  if (!fd.premises_state && fd.location_1_state) fd.premises_state = fd.location_1_state;
+  if (!fd.premises_zip && fd.location_1_zip) fd.premises_zip = fd.location_1_zip;
+
+  // ── Flatten mortgagees[] → mortgagee_N_* and addl_interest_N_* ──
+  const mortgagees: any[] = Array.isArray(fd.mortgagees) ? fd.mortgagees : [];
+  mortgagees.forEach((m: any, idx: number) => {
+    const n = idx + 1;
+    if (n > 3) return;
+    if (m.name && !fd[`mortgagee_${n}_name`]) fd[`mortgagee_${n}_name`] = String(m.name);
+    if (m.address && !fd[`mortgagee_${n}_address`]) fd[`mortgagee_${n}_address`] = String(m.address);
+    if (m.clause && !fd[`mortgagee_${n}_clause`]) fd[`mortgagee_${n}_clause`] = String(m.clause);
+    // Also populate addl_interest fields from mortgagees
+    if (m.name && !fd[`addl_interest_${n}_name`]) fd[`addl_interest_${n}_name`] = String(m.name);
+    if (m.address && !fd[`addl_interest_${n}_address`]) fd[`addl_interest_${n}_address`] = String(m.address);
+    if (!fd[`addl_interest_${n}_interest_type`]) fd[`addl_interest_${n}_interest_type`] = "mortgagee";
+    if ((m.premises_number || m.building_number) && !fd[`addl_interest_${n}_location_ref`]) {
+      fd[`addl_interest_${n}_location_ref`] = `Prem ${m.premises_number || "001"} Bldg ${m.building_number || "001"}`;
+    }
+  });
+
+  // ── Cross-populate BOP fields from generic fields and vice versa ──
+  // If BOP is detected, populate generic limits from BOP-specific fields
+  if (fd.lob_bop === "true") {
+    if (fd.bop_building_limit_1 && !fd.building_limit) fd.building_limit = fd.bop_building_limit_1;
+    if (fd.bop_bpp_limit_1 && !fd.bpp_limit) fd.bpp_limit = fd.bop_bpp_limit_1;
+    if (fd.bop_property_deductible_1 && !fd.property_deductible) fd.property_deductible = fd.bop_property_deductible_1;
+    if (!fd.bop_carrier && fd.current_carrier) fd.bop_carrier = fd.current_carrier;
+    if (!fd.bop_policy_number && fd.policy_number) fd.bop_policy_number = fd.policy_number;
+    if (!fd.bop_premium && fd.current_premium) fd.bop_premium = fd.current_premium;
+    if (!fd.bop_premium && fd.policy_total_premium) fd.bop_premium = fd.policy_total_premium;
+  }
+  // Reverse: if generic fields are set but BOP-specific are not, and it's a BOP
+  if (fd.lob_bop === "true") {
+    if (!fd.bop_building_limit_1 && fd.building_limit) fd.bop_building_limit_1 = fd.building_limit;
+    if (!fd.bop_bpp_limit_1 && fd.bpp_limit) fd.bop_bpp_limit_1 = fd.bpp_limit;
+    if (!fd.bop_property_deductible_1 && fd.property_deductible) fd.bop_property_deductible_1 = fd.property_deductible;
+  }
+
+  // ── Populate GL limits from cgl_limits object ──
+  const cglLimits = fd.cgl_limits || {};
+  if (cglLimits.general_aggregate && !fd.general_aggregate) fd.general_aggregate = String(cglLimits.general_aggregate);
+  if (cglLimits.products_aggregate && !fd.products_aggregate) fd.products_aggregate = String(cglLimits.products_aggregate);
+  if (cglLimits.each_occurrence && !fd.each_occurrence) fd.each_occurrence = String(cglLimits.each_occurrence);
+  if (cglLimits.fire_damage && !fd.fire_damage) fd.fire_damage = String(cglLimits.fire_damage);
+  if (cglLimits.medical_payments && !fd.medical_payments) fd.medical_payments = String(cglLimits.medical_payments);
+  if (cglLimits.personal_adv_injury && !fd.personal_adv_injury) fd.personal_adv_injury = String(cglLimits.personal_adv_injury);
+
+  // Also populate products_completed_ops_aggregate
+  if (!fd.products_completed_ops_aggregate && fd.products_aggregate) fd.products_completed_ops_aggregate = fd.products_aggregate;
+
+  // ── Auto-detect BOP from policy type or carrier patterns ──
+  if (fd.lob_bop !== "true") {
+    const policyType = String(fd.coverage_type || fd.nature_of_business || "").toLowerCase();
+    const policyNumber = String(fd.policy_number || "").toUpperCase();
+    if (policyType.includes("businessowners") || policyType.includes("bop") || policyNumber.startsWith("BO ") || policyNumber.startsWith("BO-")) {
+      fd.lob_bop = "true";
+    }
+  }
+
+  // ── Flatten vehicles[] → vehicle_N_* ──
   const vehicles: any[] = Array.isArray(fd.vehicles) ? fd.vehicles : [];
   vehicles.forEach((v: any, idx: number) => {
     const n = idx + 1;
@@ -580,7 +655,7 @@ function postProcess(fd: Record<string, any>, sourceText: string, hasPdfs: boole
   }
 
   // Auto-detect occurrence vs claims-made
-  if (fd.lob_gl === "true" || fd.lob_commercial_general_liability === "true" || fd.chk_commercial_general_liability === "true") {
+  if (fd.lob_gl === "true" || fd.lob_commercial_general_liability === "true" || fd.chk_commercial_general_liability === "true" || fd.lob_bop === "true") {
     if (fd.chk_occurrence !== "true" && fd.chk_claims_made !== "true") {
       if (fd.retroactive_date || fd.entry_date_claims_made) fd.chk_claims_made = "true";
       else fd.chk_occurrence = "true";
@@ -593,7 +668,7 @@ function postProcess(fd: Record<string, any>, sourceText: string, hasPdfs: boole
     else if (fd.chk_limit_project === "true") fd.aggregate_applies_per = "Project";
     else if (fd.chk_limit_location === "true") fd.aggregate_applies_per = "Location";
   }
-  if (fd.lob_gl === "true" && fd.chk_limit_policy !== "true" && fd.chk_limit_project !== "true" && fd.chk_limit_location !== "true") {
+  if ((fd.lob_gl === "true" || fd.lob_bop === "true") && fd.chk_limit_policy !== "true" && fd.chk_limit_project !== "true" && fd.chk_limit_location !== "true") {
     fd.chk_limit_policy = "true";
     if (!fd.aggregate_applies_per) fd.aggregate_applies_per = "Policy";
   }
@@ -607,6 +682,19 @@ function postProcess(fd: Record<string, any>, sourceText: string, hasPdfs: boole
     else if (/\bLLP\b/i.test(name)) fd.business_type = "Partnership";
     else if (/\bLP\b/i.test(name)) fd.business_type = "Partnership";
   }
+
+  // ── Auto-set GL flag if GL limits are present from BOP ──
+  if (fd.each_occurrence && fd.general_aggregate && fd.lob_gl !== "true") {
+    fd.lob_gl = "true";
+    fd.lob_commercial_general_liability = "true";
+    fd.chk_commercial_general_liability = "true";
+  }
+
+  // ── Populate current_carrier / current_premium from BOP if not set ──
+  if (!fd.current_carrier && fd.bop_carrier) fd.current_carrier = fd.bop_carrier;
+  if (!fd.current_premium && fd.bop_premium) fd.current_premium = fd.bop_premium;
+  if (!fd.current_premium && fd.policy_total_premium) fd.current_premium = fd.policy_total_premium;
+  if (!fd.total_premium && fd.policy_total_premium) fd.total_premium = fd.policy_total_premium;
 }
 
 // ═══════════════════════════════════════════════════════════
