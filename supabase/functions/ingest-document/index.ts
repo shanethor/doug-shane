@@ -53,7 +53,7 @@ serve(async (req) => {
   let documentId: string | undefined;
 
   try {
-    const { document_id, submission_id, storage_path } = await req.json();
+    const { document_id, submission_id, storage_path, pdf_base64, file_name } = await req.json();
     documentId = document_id;
 
     const supabase = createClient(
@@ -61,19 +61,32 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // ── 1. Mark as processing ──────────────────────────────────────────────
-    await supabase
-      .from("client_documents")
-      .update({ extraction_status: "processing" })
-      .eq("id", document_id);
+    // ── 1. Mark as processing (if document_id provided) ────────────────────
+    if (document_id) {
+      await supabase
+        .from("client_documents")
+        .update({ extraction_status: "processing" })
+        .eq("id", document_id);
+    }
 
-    // ── 2. Download PDF ────────────────────────────────────────────────────
-    const { data: pdfData, error: dlError } = await supabase.storage
-      .from("documents")
-      .download(storage_path);
+    // ── 2. Get PDF bytes — from base64 payload or storage ──────────────────
+    let pdfBytes: Uint8Array;
 
-    if (dlError || !pdfData) throw new Error("Failed to download PDF: " + dlError?.message);
-    const pdfBytes = new Uint8Array(await pdfData.arrayBuffer());
+    if (pdf_base64) {
+      // Direct base64 upload (preferred — no storage needed)
+      const binaryStr = atob(pdf_base64);
+      pdfBytes = new Uint8Array(binaryStr.length);
+      for (let i = 0; i < binaryStr.length; i++) pdfBytes[i] = binaryStr.charCodeAt(i);
+    } else if (storage_path) {
+      // Legacy: download from storage
+      const { data: pdfData, error: dlError } = await supabase.storage
+        .from("documents")
+        .download(storage_path);
+      if (dlError || !pdfData) throw new Error("Failed to download PDF: " + dlError?.message);
+      pdfBytes = new Uint8Array(await pdfData.arrayBuffer());
+    } else {
+      throw new Error("Either pdf_base64 or storage_path is required");
+    }
 
     // ── 3. Load + count pages ──────────────────────────────────────────────
     const srcDoc = await PDFDocument.load(pdfBytes, { ignoreEncryption: true });
