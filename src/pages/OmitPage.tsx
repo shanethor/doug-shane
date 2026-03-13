@@ -177,7 +177,7 @@ export default function OmitPage() {
       <footer className="border-t border-white/10">
         <div className="mx-auto max-w-5xl px-6 py-10 text-center space-y-4">
           <div className="flex items-center justify-center gap-4">
-            <img src={omitLogo} alt="OMiT" className="h-5" />
+            <img src={omitLogo} alt="OMiT" className="h-5 brightness-0 invert" />
             <span className="text-white/20">×</span>
             <div className="flex items-center gap-1">
               <span className="text-sm font-bold text-white">AURA</span>
