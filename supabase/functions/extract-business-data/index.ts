@@ -274,6 +274,7 @@ async function callGeminiWithPdfs(
         { role: "user", content: userContent },
       ],
     }),
+    signal: AbortSignal.timeout(45_000),
   });
 
   console.log(`[gemini-native] ${model} responded in ${Date.now() - t0}ms (status: ${response.status})`);
