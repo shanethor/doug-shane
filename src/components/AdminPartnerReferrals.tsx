@@ -12,6 +12,7 @@ import { toast } from "sonner";
 const PARTNER_NAMES: Record<string, string> = {
   "josh-chernes": "Joshua Chernes",
   "michael-wengzn": "Michael Wengzn",
+  "associated": "Associated Insurance Services",
 };
 
 const STAGE_COLORS: Record<string, string> = {
