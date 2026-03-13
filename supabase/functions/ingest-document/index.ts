@@ -93,30 +93,36 @@ serve(async (req) => {
     const totalPages = srcDoc.getPageCount();
     console.log(`[ingest] totalPages=${totalPages} doc=${document_id}`);
 
-    // ── 4. PRESCAN — classify pages locally, no API call ──────────────────
-    const prescanResult = await prescanPages(pdfBytes, totalPages);
-    const { lastDecPage, docTypeHint, scanEnd, isExtended } = prescanResult;
+    // ── 4. Determine scan range ──────────────────────────────────────────
+    // For large docs, skip expensive per-page prescan — just send first N pages.
+    // The per-page prescan was iterating all pages with pdf-lib which burns CPU
+    // and times out on 100+ page documents.
+    const FAST_SCAN_PAGES = 10;
+    const RETRY_SCAN_PAGES = 25;
+    let scanEnd = Math.min(FAST_SCAN_PAGES, totalPages);
 
-    console.log(
-      `[ingest] prescan: lastDecPage=${lastDecPage} scanEnd=${scanEnd} ` +
-      `extended=${isExtended} docTypeHint=${docTypeHint}`
-    );
-
-    // ── 5. Detect doc type from first-page text + filename ─────────────────
+    // ── 5. Detect doc type from filename hint ─────────────────────────────
     const pathHint = (storage_path || file_name || "").toUpperCase();
-    let docType: AcordDocType = detectDocType(prescanResult.firstPageText);
+    let docType: AcordDocType = "UNKNOWN";
 
-    if (docType === "UNKNOWN" || prescanResult.firstPageText.length < 50) {
-      if (/\bBO\d{5,}|CPKG|BUSINESSOWNER|BOP\b/.test(pathHint)) docType = "BOP";
-      else if (/\bWC\b|WORKERS.COMP|ACORD.?130/.test(pathHint)) docType = "ACORD_130";
-      else if (/AUTO|ACORD.?127|VEHICLE/.test(pathHint)) docType = "ACORD_127";
-      else if (/UMBRELLA|EXCESS/.test(pathHint)) docType = "UMBRELLA";
-      else if (docTypeHint !== "UNKNOWN") docType = docTypeHint;
+    if (/\bBO\d{5,}|CPKG|BUSINESSOWNER|BOP\b/.test(pathHint)) docType = "BOP";
+    else if (/\bWC\b|WORKERS.COMP|ACORD.?130/.test(pathHint)) docType = "ACORD_130";
+    else if (/AUTO|ACORD.?127|VEHICLE/.test(pathHint)) docType = "ACORD_127";
+    else if (/UMBRELLA|EXCESS/.test(pathHint)) docType = "UMBRELLA";
+
+    // If still unknown, try reading first page text (quick single-page extract)
+    if (docType === "UNKNOWN") {
+      try {
+        const firstSlice = await extractPageRange(pdfBytes, 1, 1);
+        const firstText = new TextDecoder().decode(firstSlice)
+          .replace(/[^\x20-\x7E]/g, " ").substring(0, 3000);
+        docType = detectDocType(firstText);
+      } catch { /* ignore, will use default prompt */ }
     }
 
-    console.log(`[ingest] docType=${docType}`);
+    console.log(`[ingest] docType=${docType} scanEnd=${scanEnd}/${totalPages}`);
 
-    // ── 6. Slice PDF to prescan-determined range ───────────────────────────
+    // ── 6. Slice PDF to scan range ────────────────────────────────────────
     const pdfToSend = scanEnd < totalPages
       ? await extractPageRange(pdfBytes, 1, scanEnd)
       : pdfBytes;
