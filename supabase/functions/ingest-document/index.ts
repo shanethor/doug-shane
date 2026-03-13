@@ -212,10 +212,12 @@ serve(async (req) => {
       await supabase.from("client_documents").update({
         extraction_status: fieldCount > 5 ? "complete" : "partial",
         extraction_confidence: fieldCount > 20 ? 0.9 : fieldCount > 5 ? 0.7 : 0.3,
-        total_pages: null,
+        total_pages: totalPages || null,
         extraction_metadata: {
           model: "google/gemini-2.5-flash",
           field_count: fieldCount,
+          pages_scanned: scanEnd || totalPages,
+          total_pages: totalPages,
         },
       }).eq("id", document_id);
     }
