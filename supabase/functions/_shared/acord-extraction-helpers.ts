@@ -318,7 +318,7 @@ export async function extractPageRange(
   startPage: number,
   endPage: number
 ): Promise<Uint8Array> {
-  const { PDFDocument } = await import("pdf-lib" as any);
+  const { PDFDocument } = await import("https://esm.sh/pdf-lib@1.17.1");
   const srcDoc = await PDFDocument.load(pdfBytes);
   const totalPages = srcDoc.getPageCount();
   const safeEnd = Math.min(endPage, totalPages);

@@ -8,7 +8,6 @@ import {
   extractPageRange,
   mapBopExtractionToFormData,
   GEMINI_SYSTEM_PROMPT,
-  LARGE_PDF_CONFIG,
   AcordDocType,
 } from "../_shared/acord-extraction-helpers.ts";
 
@@ -17,6 +16,34 @@ const corsHeaders = {
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
+
+// ── Prescan config ──────────────────────────────────────────────────────────
+const PRESCAN_DEFAULT_PAGES = 10;
+const PRESCAN_MAX_PAGES     = 25;
+const PRESCAN_MIN_TEXT_LEN  = 60;
+
+const BOILERPLATE_RE = new RegExp(
+  "Copyright.*ISO Properties|ISO Properties.*Inc|" +
+  "Page \\d+ of \\d+.*ISO|" +
+  "PrivacyNotice|Privacy Notice To Our Customers|" +
+  "Various provisions in this policy restrict coverage|" +
+  "BUSINESSOWNERS COVERAGE FORM|" +
+  "COMMERCIAL GENERAL LIABILITY COVERAGE FORM|" +
+  "THIS ENDORSEMENT CHANGES THE POLICY|" +
+  "THIS ENDORSEMENT IS ATTACHED|" +
+  "Terrorism Risk Insurance Act",
+  "i"
+);
+
+const DEC_DATA_RE = new RegExp(
+  "named insured|insured copy|declarations page|policy period|" +
+  "total annual premium|annual premium for policy|" +
+  "each occurrence|per occurrence|" +
+  "replacement cost|deductible.*\\$|" +
+  "mortgagee|loss payable|" +
+  "BILL TO|Access Code|Four Pay|Monthly Pay|Annual Pay",
+  "i"
+);
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -40,191 +67,129 @@ serve(async (req) => {
       .update({ extraction_status: "processing" })
       .eq("id", document_id);
 
-    // ── 2. Download the PDF ────────────────────────────────────────────────
+    // ── 2. Download PDF ────────────────────────────────────────────────────
     const { data: pdfData, error: dlError } = await supabase.storage
       .from("documents")
       .download(storage_path);
 
     if (dlError || !pdfData) throw new Error("Failed to download PDF: " + dlError?.message);
-
     const pdfBytes = new Uint8Array(await pdfData.arrayBuffer());
 
-    // ── 3. Count pages ─────────────────────────────────────────────────────
+    // ── 3. Load + count pages ──────────────────────────────────────────────
     const srcDoc = await PDFDocument.load(pdfBytes, { ignoreEncryption: true });
     const totalPages = srcDoc.getPageCount();
-    console.log(`[ingest] totalPages=${totalPages} document_id=${document_id}`);
+    console.log(`[ingest] totalPages=${totalPages} doc=${document_id}`);
 
-    // ── 4. Extract first-page text for doc type detection ──────────────────
-    const firstPageSlice = await extractPageRange(pdfBytes, 1, 1);
-    const firstPageText = await extractTextFromPdfBytes(firstPageSlice);
-    const docType: AcordDocType = detectDocType(firstPageText);
-    console.log(`[ingest] docType=${docType}`);
+    // ── 4. PRESCAN — classify pages locally, no API call ──────────────────
+    const prescanResult = await prescanPages(pdfBytes, totalPages);
+    const { lastDecPage, docTypeHint, scanEnd, isExtended } = prescanResult;
 
-    // ── 5. Chunked extraction for large files ──────────────────────────────
-    const CHUNK_SIZE = 15; // pages per chunk
-    const MAX_CHUNKS = 10; // safety limit (150 pages max)
-
-    const isLarge = totalPages > 20;
-    const chunksToProcess = Math.min(
-      Math.ceil(totalPages / CHUNK_SIZE),
-      MAX_CHUNKS
+    console.log(
+      `[ingest] prescan: lastDecPage=${lastDecPage} scanEnd=${scanEnd} ` +
+      `extended=${isExtended} docTypeHint=${docTypeHint}`
     );
 
-    console.log(`[ingest] Processing ${chunksToProcess} chunks (${totalPages} pages, chunk_size=${CHUNK_SIZE})`);
+    // ── 5. Detect doc type from first-page text + filename ─────────────────
+    const pathHint = (storage_path || "").toUpperCase();
+    let docType: AcordDocType = detectDocType(prescanResult.firstPageText);
 
+    if (docType === "UNKNOWN" || prescanResult.firstPageText.length < 50) {
+      if (/\bBO\d{5,}|CPKG|BUSINESSOWNER|BOP\b/.test(pathHint)) docType = "BOP";
+      else if (/\bWC\b|WORKERS.COMP|ACORD.?130/.test(pathHint)) docType = "ACORD_130";
+      else if (/AUTO|ACORD.?127|VEHICLE/.test(pathHint)) docType = "ACORD_127";
+      else if (/UMBRELLA|EXCESS/.test(pathHint)) docType = "UMBRELLA";
+      else if (docTypeHint !== "UNKNOWN") docType = docTypeHint;
+    }
+
+    console.log(`[ingest] docType=${docType}`);
+
+    // ── 6. Slice PDF to prescan-determined range ───────────────────────────
+    const pdfToSend = scanEnd < totalPages
+      ? await extractPageRange(pdfBytes, 1, scanEnd)
+      : pdfBytes;
+
+    const pdfBase64 = uint8ToBase64(pdfToSend);
+    console.log(`[ingest] Sending pages 1-${scanEnd}/${totalPages} to Gemini`);
+
+    // ── 7. Single Gemini call ──────────────────────────────────────────────
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
     const prompt = buildGeminiPrompt(docType);
+    const rawText = await callGemini(pdfBase64, prompt, LOVABLE_API_KEY);
 
-    const chunkExtractions: Array<{ data: Record<string, any>; confidence: number; pages: string }> = [];
-
-    // ── 6. Process each chunk ──────────────────────────────────────────────
-    for (let i = 0; i < chunksToProcess; i++) {
-      const startPage = i * CHUNK_SIZE + 1;
-      const endPage = Math.min(startPage + CHUNK_SIZE - 1, totalPages);
-
-      console.log(`[ingest] Chunk ${i + 1}/${chunksToProcess}: pages ${startPage}-${endPage}`);
-
-      try {
-        const chunkBytes = await extractPageRange(pdfBytes, startPage, endPage);
-        const chunkBase64 = btoa(String.fromCharCode(...chunkBytes));
-
-        const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${LOVABLE_API_KEY}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: "google/gemini-2.5-flash",
-            messages: [
-              { role: "system", content: GEMINI_SYSTEM_PROMPT },
-              {
-                role: "user",
-                content: [
-                  { type: "text", text: prompt },
-                  {
-                    type: "image_url",
-                    image_url: { url: `data:application/pdf;base64,${chunkBase64}` },
-                  },
-                ],
-              },
-            ],
-          }),
-          signal: AbortSignal.timeout(45_000),
-        });
-
-        if (!response.ok) {
-          console.warn(`[ingest] Chunk ${i + 1} failed: ${response.status}`);
-          continue; // Skip failed chunks, process what we can
-        }
-
-        const aiResult = await response.json();
-        const rawText = aiResult.choices?.[0]?.message?.content || "{}";
-
-        const cleaned = rawText
-          .replace(/^```json\s*/i, "")
-          .replace(/^```\s*/i, "")
-          .replace(/```$/i, "")
-          .trim();
-
-        const chunkData = JSON.parse(cleaned);
-        const chunkConfidence = typeof chunkData.confidence === "number" ? chunkData.confidence : 0.7;
-
-        chunkExtractions.push({
-          data: chunkData,
-          confidence: chunkConfidence,
-          pages: `${startPage}-${endPage}`,
-        });
-
-        console.log(`[ingest] Chunk ${i + 1} extracted ${Object.keys(chunkData).length} keys, confidence=${chunkConfidence}`);
-
-      } catch (chunkErr) {
-        console.error(`[ingest] Chunk ${i + 1} error:`, chunkErr);
-        // Continue processing other chunks
-      }
-    }
-
-    // ── 7. Merge all chunk extractions ─────────────────────────────────────
+    // ── 8. Parse response ──────────────────────────────────────────────────
     let extracted: Record<string, any> = {};
     let confidence = 0;
+    let retryUsed = false;
 
-    if (chunkExtractions.length === 0) {
-      console.error("[ingest] No chunks successfully extracted");
-      extracted = {};
+    try {
+      extracted = parseJson(rawText);
+      confidence = typeof extracted.confidence === "number" ? extracted.confidence : 0.8;
+    } catch {
       confidence = 0;
-    } else {
-      confidence = chunkExtractions.reduce((sum, c) => sum + c.confidence, 0) / chunkExtractions.length;
+    }
 
-      for (const chunk of chunkExtractions) {
-        extracted = mergeChunkData(extracted, chunk.data);
+    // ── 9. One retry if confidence low — widen to full prescan range ───────
+    if (confidence < 0.5) {
+      retryUsed = true;
+      const retryEnd = Math.min(PRESCAN_MAX_PAGES, totalPages);
+      console.warn(`[ingest] Low confidence (${confidence}), retrying with pages 1-${retryEnd}...`);
+      try {
+        const widerSlice = await extractPageRange(pdfBytes, 1, retryEnd);
+        const widerBase64 = uint8ToBase64(widerSlice);
+        const retryRaw = await callGemini(widerBase64, prompt, LOVABLE_API_KEY);
+        const retryData = parseJson(retryRaw);
+        const retryConf = typeof retryData.confidence === "number" ? retryData.confidence : 0.8;
+        if (retryConf > confidence) {
+          extracted = retryData;
+          confidence = retryConf;
+        }
+      } catch (e) {
+        console.error("[ingest] Retry failed:", e);
       }
-
-      const fieldCount = Object.keys(extracted).filter(k =>
-        extracted[k] !== undefined &&
-        extracted[k] !== null &&
-        extracted[k] !== ""
-      ).length;
-
-      console.log(`[ingest] Merged extraction: ${fieldCount} non-empty fields, avg confidence=${confidence.toFixed(2)}`);
     }
 
-    // ── 10. Map to formdata keys ───────────────────────────────────────────
-    let formdata: Record<string, any> = {};
-    if (docType === "BOP") {
-      formdata = mapBopExtractionToFormData(extracted);
-    } else {
-      formdata = flattenExtraction(extracted);
-    }
+    // ── 10. Map to form fields ─────────────────────────────────────────────
+    const formdata: Record<string, any> = docType === "BOP"
+      ? mapBopExtractionToFormData(extracted)
+      : flattenExtraction(extracted);
 
-    // ── 10b. Inject user's agency profile (agencies table is source of truth) ──
-    {
-      const { data: sub } = await supabase
-        .from("business_submissions")
-        .select("user_id")
-        .eq("id", submission_id)
+    // ── 11. Inject agency profile ──────────────────────────────────────────
+    const { data: sub } = await supabase
+      .from("business_submissions")
+      .select("user_id")
+      .eq("id", submission_id)
+      .maybeSingle();
+
+    if (sub?.user_id) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("full_name, agency_name, agency_id, phone, form_defaults")
+        .eq("user_id", sub.user_id)
         .maybeSingle();
 
-      if (sub?.user_id) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("full_name, agency_name, agency_id, phone, form_defaults")
-          .eq("user_id", sub.user_id)
-          .maybeSingle();
-
-        if (profile) {
-          // Resolve canonical agency name from agencies table
-          let agencyName = "";
-          if ((profile as any).agency_id) {
-            const { data: agencyData } = await supabase
-              .from("agencies")
-              .select("name")
-              .eq("id", (profile as any).agency_id)
-              .maybeSingle();
-            if (agencyData?.name) agencyName = agencyData.name;
-          }
-          if (!agencyName && profile.agency_name) agencyName = profile.agency_name;
-
-          // Always override agency/producer fields with user's profile
-          if (agencyName) formdata.agency_name = agencyName;
-          if (profile.full_name) formdata.producer_name = profile.full_name;
-          if (profile.phone) formdata.agency_phone = profile.phone;
-
-          // Merge form_defaults (agency_email, agency_fax, license_no, etc.)
-          const fd = (profile.form_defaults || {}) as Record<string, any>;
-          for (const [k, v] of Object.entries(fd)) {
-            if (k === "agency_name" || k === "_training_mode") continue;
-            if (v && typeof v === "string" && v.trim() && !formdata[k]) {
-              formdata[k] = v;
-            }
-          }
-          console.log(`[ingest] Injected agency defaults: agency_name="${agencyName}", producer="${profile.full_name}"`);
+      if (profile) {
+        let agencyName = "";
+        if ((profile as any).agency_id) {
+          const { data: ag } = await supabase
+            .from("agencies").select("name")
+            .eq("id", (profile as any).agency_id).maybeSingle();
+          if (ag?.name) agencyName = ag.name;
+        }
+        if (!agencyName && profile.agency_name) agencyName = profile.agency_name;
+        if (agencyName) formdata.agency_name = agencyName;
+        if (profile.full_name) formdata.producer_name = profile.full_name;
+        if (profile.phone) formdata.agency_phone = profile.phone;
+        const fd = (profile.form_defaults || {}) as Record<string, any>;
+        for (const [k, v] of Object.entries(fd)) {
+          if (k === "agency_name" || k === "_training_mode") continue;
+          if (v && typeof v === "string" && v.trim() && !formdata[k]) formdata[k] = v;
         }
       }
     }
 
-    // ── 11. Upsert into insurance_applications ─────────────────────────────
+    // ── 12. Upsert insurance_applications ─────────────────────────────────
     const { data: appRow } = await supabase
       .from("insurance_applications")
       .select("id, form_data")
@@ -233,172 +198,216 @@ serve(async (req) => {
       .limit(1)
       .maybeSingle();
 
-    const existingFormData = (appRow?.form_data as Record<string, any>) ?? {};
-    const mergedFormData = mergeExtractedIntoFormData(existingFormData, formdata);
+    const merged = mergeFormData((appRow?.form_data as Record<string, any>) ?? {}, formdata);
 
     if (appRow) {
-      await supabase
-        .from("insurance_applications")
-        .update({ form_data: mergedFormData })
-        .eq("id", appRow.id);
+      await supabase.from("insurance_applications")
+        .update({ form_data: merged }).eq("id", appRow.id);
     } else {
-      // Need user_id from submission
-      const { data: sub } = await supabase
-        .from("business_submissions")
-        .select("user_id")
-        .eq("id", submission_id)
-        .single();
-
-      if (sub) {
-        await supabase
-          .from("insurance_applications")
-          .insert({
-            submission_id,
-            user_id: sub.user_id,
-            form_data: mergedFormData,
-            status: "draft",
-          });
+      const { data: s } = await supabase
+        .from("business_submissions").select("user_id")
+        .eq("id", submission_id).single();
+      if (s) {
+        await supabase.from("insurance_applications").insert({
+          submission_id, user_id: s.user_id, form_data: merged, status: "draft",
+        });
       }
     }
 
-    // ── 12. Update document record ────────────────────────────────────────
-    await supabase
-      .from("client_documents")
-      .update({
-        extraction_status: confidence > 0.4 ? "complete" : "partial",
-        extraction_confidence: confidence,
-        doc_type: docType,
+    // ── 13. Update document record ─────────────────────────────────────────
+    await supabase.from("client_documents").update({
+      extraction_status: confidence > 0.4 ? "complete" : "partial",
+      extraction_confidence: confidence,
+      doc_type: docType,
+      total_pages: totalPages,
+      extraction_metadata: {
+        model: "google/gemini-2.5-flash",
+        pages_sent: scanEnd,
         total_pages: totalPages,
-        extraction_metadata: {
-          model: "google/gemini-2.5-flash",
-          chunks_processed: chunkExtractions.length,
-          total_pages: totalPages,
-          chunk_size: CHUNK_SIZE,
-          large_file: isLarge,
-        },
-      })
-      .eq("id", document_id);
+        last_dec_page: lastDecPage,
+        extended_scan: isExtended,
+        retry_used: retryUsed,
+        prescan_doc_type_hint: docTypeHint,
+      },
+    }).eq("id", document_id);
 
     return new Response(
-      JSON.stringify({ success: true, docType, confidence, pages: totalPages }),
+      JSON.stringify({ success: true, docType, confidence, pages: totalPages, scanEnd }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
 
   } catch (err) {
-    console.error("[ingest-document] Fatal error:", err);
-
-    // Mark document as failed so it doesn't stay stuck in "processing"
+    console.error("[ingest-document] Fatal:", err);
     try {
-      const serviceClient = createClient(
-        Deno.env.get("SUPABASE_URL")!,
-        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-      );
-      if (documentId) {
-        await serviceClient
-          .from("client_documents")
-          .update({ extraction_status: "failed" })
-          .eq("id", documentId);
-      }
-    } catch (updateErr) {
-      console.error("[ingest-document] Could not update failure status:", updateErr);
-    }
-
-    return new Response(
-      JSON.stringify({ error: String(err) }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+      const sc = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+      if (documentId) await sc.from("client_documents")
+        .update({ extraction_status: "failed" }).eq("id", documentId);
+    } catch (_) { /* ignore */ }
+    return new Response(JSON.stringify({ error: String(err) }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
   }
 });
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
+// ── PRESCAN ────────────────────────────────────────────────────────────────
 
-async function extractTextFromPdfBytes(pdfBytes: Uint8Array): Promise<string> {
-  // Simple text extraction: decode PDF content streams for docType sniffing
-  // This is a lightweight approach that avoids pdf-parse dependency issues in Deno
+interface PrescanResult {
+  lastDecPage: number;
+  scanEnd: number;
+  isExtended: boolean;
+  firstPageText: string;
+  docTypeHint: AcordDocType;
+  pageMap: Array<{ page: number; type: "DEC" | "BOILERPLATE" | "BLANK" | "OTHER"; textLen: number }>;
+}
+
+async function prescanPages(
+  pdfBytes: Uint8Array,
+  totalPages: number
+): Promise<PrescanResult> {
+  const pageMap: PrescanResult["pageMap"] = [];
+  let lastDecPage = 0;
+  let firstPageText = "";
+  let docTypeHint: AcordDocType = "UNKNOWN";
+
+  for (let i = 0; i < totalPages; i++) {
+    const pageSlice = await extractPageRange(pdfBytes, i + 1, i + 1);
+    const text = extractTextFromBytes(pageSlice);
+    const L = text.length;
+
+    if (i === 0) firstPageText = text;
+
+    let type: "DEC" | "BOILERPLATE" | "BLANK" | "OTHER";
+
+    if (L < PRESCAN_MIN_TEXT_LEN) {
+      type = "BLANK";
+    } else if (BOILERPLATE_RE.test(text)) {
+      type = L > 2500 ? "BOILERPLATE" : "OTHER";
+    } else if (DEC_DATA_RE.test(text) && L < 3500) {
+      type = "DEC";
+      lastDecPage = i + 1;
+
+      if (docTypeHint === "UNKNOWN") {
+        const tu = text.toUpperCase();
+        if (tu.includes("BUSINESSOWNERS") || tu.includes("BOP") || /\bBO\s+\d{5}/.test(tu)) {
+          docTypeHint = "BOP";
+        } else if (tu.includes("GENERAL LIABILITY") || tu.includes("CGL")) {
+          docTypeHint = "GL";
+        } else if (tu.includes("WORKERS COMP")) {
+          docTypeHint = "ACORD_130";
+        } else if (tu.includes("COMMERCIAL AUTO") || tu.includes("BUSINESS AUTO")) {
+          docTypeHint = "ACORD_127";
+        } else if (tu.includes("UMBRELLA") || tu.includes("EXCESS LIABILITY")) {
+          docTypeHint = "UMBRELLA";
+        } else if (tu.includes("HOMEOWNERS") || tu.includes("DWELLING")) {
+          docTypeHint = "DEC_PAGE";
+        }
+      }
+    } else {
+      type = "OTHER";
+    }
+
+    pageMap.push({ page: i + 1, type, textLen: L });
+
+    // Early exit after 5 consecutive boilerplate/blank pages past last DEC
+    if (lastDecPage > 0 && i >= lastDecPage + 4) {
+      const recentPages = pageMap.slice(-5);
+      const allBoilerplate = recentPages.every(p => p.type === "BOILERPLATE" || p.type === "BLANK");
+      if (allBoilerplate) {
+        console.log(`[prescan] Early exit at page ${i + 1} — 5 consecutive boilerplate after DEC page ${lastDecPage}`);
+        break;
+      }
+    }
+  }
+
+  const isExtended = lastDecPage > PRESCAN_DEFAULT_PAGES;
+  let scanEnd: number;
+
+  if (lastDecPage === 0) {
+    scanEnd = Math.min(PRESCAN_DEFAULT_PAGES, totalPages);
+  } else if (isExtended) {
+    scanEnd = Math.min(lastDecPage + 1, PRESCAN_MAX_PAGES, totalPages);
+  } else {
+    scanEnd = Math.min(PRESCAN_DEFAULT_PAGES, totalPages);
+  }
+
+  return { lastDecPage, scanEnd, isExtended, firstPageText, docTypeHint, pageMap };
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+
+function extractTextFromBytes(pdfBytes: Uint8Array): string {
   try {
     const text = new TextDecoder().decode(pdfBytes);
-    // Extract readable text between BT/ET blocks (PDF text operators)
     const matches = text.match(/BT[\s\S]*?ET/g) ?? [];
-    const extracted = matches
-      .join(" ")
-      .replace(/[^\x20-\x7E]/g, " ")
-      .replace(/\s+/g, " ")
-      .substring(0, 2000);
-    return extracted.length > 50 ? extracted : text.replace(/[^\x20-\x7E]/g, " ").substring(0, 2000);
+    const extracted = matches.join(" ").replace(/[^\x20-\x7E]/g, " ").replace(/\s+/g, " ").substring(0, 3000);
+    return extracted.length > 50 ? extracted : text.replace(/[^\x20-\x7E]/g, " ").substring(0, 3000);
   } catch {
     return "";
   }
 }
 
-function mergeExtractedIntoFormData(
-  existing: Record<string, any>,
-  extracted: Record<string, any>
-): Record<string, any> {
+function uint8ToBase64(bytes: Uint8Array): string {
+  let binary = "";
+  const CHUNK = 8192;
+  for (let i = 0; i < bytes.length; i += CHUNK) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
+  }
+  return btoa(binary);
+}
+
+async function callGemini(base64: string, prompt: string, apiKey: string): Promise<string> {
+  const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: "google/gemini-2.5-flash",
+      messages: [
+        { role: "system", content: GEMINI_SYSTEM_PROMPT },
+        {
+          role: "user",
+          content: [
+            { type: "text", text: prompt },
+            { type: "image_url", image_url: { url: `data:application/pdf;base64,${base64}` } },
+          ],
+        },
+      ],
+    }),
+    signal: AbortSignal.timeout(45_000),
+  });
+
+  if (!response.ok) {
+    const t = await response.text();
+    if (response.status === 429) throw new Error("Rate limited");
+    if (response.status === 402) throw new Error("AI credits exhausted");
+    throw new Error(`AI extraction failed (${response.status}): ${t.substring(0, 200)}`);
+  }
+
+  const result = await response.json();
+  return result.choices?.[0]?.message?.content || "{}";
+}
+
+function parseJson(text: string): Record<string, any> {
+  const cleaned = text.replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/```$/i, "").trim();
+  return JSON.parse(cleaned);
+}
+
+function mergeFormData(existing: Record<string, any>, incoming: Record<string, any>): Record<string, any> {
   const next = { ...existing };
-  for (const [k, v] of Object.entries(extracted)) {
+  for (const [k, v] of Object.entries(incoming)) {
     if (v === undefined || v === null) continue;
     const curr = next[k];
-    const isEmpty =
-      curr === undefined ||
-      curr === null ||
-      (typeof curr === "string" && !curr.trim()) ||
-      String(curr).toLowerCase() === "na";
-    if (isEmpty) next[k] = v;
+    const empty = curr === undefined || curr === null
+      || (typeof curr === "string" && !curr.trim())
+      || String(curr).toLowerCase() === "na";
+    if (empty) next[k] = v;
   }
   return next;
 }
 
-function flattenExtraction(
-  obj: Record<string, any>,
-  prefix = "",
-  result: Record<string, any> = {}
-): Record<string, any> {
+function flattenExtraction(obj: Record<string, any>, prefix = "", result: Record<string, any> = {}): Record<string, any> {
   for (const [k, v] of Object.entries(obj)) {
     const key = prefix ? `${prefix}_${k}` : k;
-    if (v !== null && typeof v === "object" && !Array.isArray(v)) {
-      flattenExtraction(v, key, result);
-    } else {
-      result[key] = v;
-    }
+    if (v !== null && typeof v === "object" && !Array.isArray(v)) flattenExtraction(v, key, result);
+    else result[key] = v;
   }
-  return result;
-}
-
-function mergeChunkData(
-  existing: Record<string, any>,
-  newChunk: Record<string, any>
-): Record<string, any> {
-  const result = { ...existing };
-
-  for (const [key, value] of Object.entries(newChunk)) {
-    if (key === "confidence") continue;
-    if (value === undefined || value === null) continue;
-
-    const current = result[key];
-    const isEmpty =
-      current === undefined ||
-      current === null ||
-      (typeof current === "string" && !current.trim()) ||
-      String(current).toLowerCase() === "na";
-
-    if (isEmpty) {
-      result[key] = value;
-    } else if (Array.isArray(current) && Array.isArray(value)) {
-      const combined = [...current, ...value];
-      const unique = Array.from(
-        new Map(combined.map(item => [JSON.stringify(item), item])).values()
-      );
-      result[key] = unique;
-    } else if (
-      typeof current === "object" &&
-      typeof value === "object" &&
-      !Array.isArray(current) &&
-      !Array.isArray(value)
-    ) {
-      result[key] = mergeChunkData(current, value);
-    }
-    // Otherwise keep existing value
-  }
-
   return result;
 }
