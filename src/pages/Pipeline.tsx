@@ -305,13 +305,19 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
 
     setAllPoliciesData(allPolicies.map((p: any) => ({ lead_id: p.lead_id, annual_premium: Number(p.annual_premium || 0), status: p.status, effective_date: p.effective_date })));
     
-    // Build per-lead premium map for sold cards
+    // Build per-lead premium map and effective date map for sold cards
     const premiumMap: Record<string, number[]> = {};
+    const dateMap: Record<string, string> = {};
     approved.forEach((p: any) => {
       if (!premiumMap[p.lead_id]) premiumMap[p.lead_id] = [];
       premiumMap[p.lead_id].push(Number(p.annual_premium || 0));
+      // Store earliest effective_date per lead
+      if (!dateMap[p.lead_id] || p.effective_date < dateMap[p.lead_id]) {
+        dateMap[p.lead_id] = p.effective_date;
+      }
     });
     setLeadPolicyPremiums(premiumMap);
+    setLeadEffectiveDates(dateMap);
 
     setAuditLogData(auditRes.data ?? []);
     setLoading(false);
