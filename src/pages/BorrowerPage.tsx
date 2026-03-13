@@ -191,9 +191,9 @@ export default function BorrowerPage() {
           </div>
           <div className="mx-auto mt-10 grid max-w-3xl gap-6 sm:grid-cols-2">
             {STEPS.map((step, i) => (
-              <Card key={i} className="border-border/60 bg-background transition-shadow hover:shadow-md">
+              <Card key={i} className="border-gray-200 bg-white transition-shadow hover:shadow-md">
                 <CardContent className="flex gap-4 p-5">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#2F3E5B]/10 text-[#2F3E5B]">
                     <step.icon className="h-5 w-5" />
                   </div>
                   <div>
