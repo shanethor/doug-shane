@@ -848,16 +848,7 @@ export default function FormFillingView({ submissionId, initialMessages, initial
       { role: "user", content: "Run AI inference and fill in any missing fields you can." },
     ]);
     try {
-      // Load the raw AI-extracted data from the DB to use as source
-      const { data: appData } = await supabase
-        .from("insurance_applications")
-        .select("form_data")
-        .eq("submission_id", submissionId)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      const aiData = (appData?.form_data || formData) as Record<string, any>;
+      const aiData = formData as Record<string, any>;
       const { buildAutofilledDataWithAI } = await import("@/lib/acord-autofill");
 
       let totalNewFields = 0;
