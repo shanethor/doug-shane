@@ -1503,8 +1503,12 @@ export function buildAutofilledData(
     mapped[expKey] = calcExpiration(mapped[effKey]);
   }
 
-  // 7. Signature date
-  if (formFieldKeys.has("signature_date") && !mapped.signature_date) {
+  // 7. Signature date — only set today's date if no date exists in data or DB
+  if (
+    formFieldKeys.has("signature_date") &&
+    !mapped.signature_date &&
+    !aiData.signature_date
+  ) {
     mapped.signature_date = new Date().toISOString().slice(0, 10);
   }
 
