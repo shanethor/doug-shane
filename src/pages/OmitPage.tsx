@@ -53,7 +53,7 @@ export default function OmitPage() {
   return (
     <div className="min-h-screen bg-black text-white dark:bg-black dark:text-white" data-theme="light" style={{ colorScheme: "dark" }}>
       {/* ── Header ── */}
-      <header className="sticky top-0 z-50 border-b border-white/10 bg-black/95 backdrop-blur supports-[backdrop-filter]:bg-black/80">
+      <header className="sticky top-0 z-50 border-b border-white/10 bg-black/95 backdrop-blur supports-[backdrop-filter]:bg-black/80 dark:bg-black/95 dark:supports-[backdrop-filter]:bg-black/80">
         <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4">
           <img src={omitLogo} alt="OMiT" className="h-7 brightness-0 invert" />
           <div className="flex items-center gap-1.5">
