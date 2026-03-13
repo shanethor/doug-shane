@@ -509,6 +509,15 @@ function applyAliases(data: Record<string, any>) {
     current_premium: "prior_gl_premium_1",
     each_occurrence_limit: "gl_each_occurrence_limit",
     general_aggregate_limit: "gl_general_aggregate_limit",
+    // LOB aliases for variant Gemini output
+    line_bop: "lob_bop",
+    line_gl: "lob_gl",
+    line_property: "lob_property",
+    line_auto: "lob_auto",
+    line_umbrella: "lob_umbrella",
+    line_cyber: "lob_cyber",
+    line_epli: "lob_epli",
+    line_crime: "lob_crime",
   };
 
   for (const [alias, canonical] of Object.entries(ALIASES)) {
