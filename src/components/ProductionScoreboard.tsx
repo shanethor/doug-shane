@@ -265,7 +265,7 @@ export function ProductionScoreboard({ userId, mtdPremium, mtdRevenue, ytdPremiu
           <div className="px-2.5 pb-2.5 sm:px-3 sm:pb-3">
             <ScoreboardTile
               title="NB Production"
-              actual={premiumSold} goal={monthlyPrem}
+              actual={mtdPremium} goal={monthlyPrem}
               remaining={mPremRemaining}
               paceNeeded={mPremPace} paceUnit="day"
               daysLeft={daysLeftInMonth} countdownLabel="Month Ends In"
@@ -274,7 +274,7 @@ export function ProductionScoreboard({ userId, mtdPremium, mtdRevenue, ytdPremiu
           <div className="px-2.5 pb-2.5 sm:px-3 sm:pb-3">
             <ScoreboardTile
               title="NB Production"
-              actual={premiumSold} goal={annualPrem}
+              actual={ytdPremium} goal={annualPrem}
               remaining={yPremRemaining}
               paceNeeded={yPremPace} paceUnit="day"
               daysLeft={daysLeftInYear} countdownLabel="Year Ends In"
@@ -289,7 +289,7 @@ export function ProductionScoreboard({ userId, mtdPremium, mtdRevenue, ytdPremiu
           <div className="px-2.5 py-2.5 sm:px-3 sm:py-3">
             <ScoreboardTile
               title="Revenue"
-              actual={revenueSold} goal={monthlyRev}
+              actual={mtdRevenue} goal={monthlyRev}
               remaining={mRevRemaining}
               paceNeeded={mRevPace} paceUnit="day"
               daysLeft={daysLeftInMonth} countdownLabel="Month Ends In"
@@ -299,7 +299,7 @@ export function ProductionScoreboard({ userId, mtdPremium, mtdRevenue, ytdPremiu
           <div className="px-2.5 py-2.5 sm:px-3 sm:py-3">
             <ScoreboardTile
               title="Revenue"
-              actual={revenueSold} goal={annualRev}
+              actual={ytdRevenue} goal={annualRev}
               remaining={yRevRemaining}
               paceNeeded={yRevPace} paceUnit="day"
               daysLeft={daysLeftInYear} countdownLabel="Year Ends In"
