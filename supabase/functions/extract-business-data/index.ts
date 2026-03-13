@@ -457,6 +457,44 @@ async function truncatePdf(base64Data: string, maxPages: number): Promise<string
   }
 }
 
+/**
+ * extractPageRange — deterministic page-range targeting for large PDFs.
+ * If a PDF exceeds LARGE_PDF_CONFIG.PAGE_THRESHOLD, slice it to the
+ * first DEC_PAGE_SLICE pages before any AI sees it. This eliminates
+ * 100+ pages of boilerplate that cause context/timeout failures.
+ */
+async function extractPageRange(
+  base64Data: string,
+  pageCount: number,
+): Promise<{ base64: string; pages: number; sliced: boolean }> {
+  if (pageCount <= LARGE_PDF_CONFIG.PAGE_THRESHOLD) {
+    return { base64: base64Data, pages: pageCount, sliced: false };
+  }
+
+  const targetPages = LARGE_PDF_CONFIG.DEC_PAGE_SLICE;
+  console.log(`[page-range] Large PDF detected (${pageCount} pages > ${LARGE_PDF_CONFIG.PAGE_THRESHOLD}). Slicing to first ${targetPages} pages (DEC page zone).`);
+
+  try {
+    const pdfBytes = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
+    const srcDoc = await PDFDocument.load(pdfBytes, { ignoreEncryption: true });
+    const newDoc = await PDFDocument.create();
+    const indices = Array.from({ length: Math.min(targetPages, pageCount) }, (_, i) => i);
+    const copiedPages = await newDoc.copyPages(srcDoc, indices);
+    copiedPages.forEach(page => newDoc.addPage(page));
+
+    const newBytes = await newDoc.save();
+    let binary = '';
+    const arr = new Uint8Array(newBytes);
+    for (let i = 0; i < arr.length; i++) {
+      binary += String.fromCharCode(arr[i]);
+    }
+    return { base64: btoa(binary), pages: targetPages, sliced: true };
+  } catch (err) {
+    console.warn("[page-range] Slicing failed, using original:", err);
+    return { base64: base64Data, pages: pageCount, sliced: false };
+  }
+}
+
 function isMeaningfulValue(value: any): boolean {
   if (value === null || value === undefined) return false;
   if (typeof value === "boolean") return value;
