@@ -602,6 +602,8 @@ export default function LeadDetail() {
                       <Label>Effective Date *</Label>
                       <Input
                         type="date"
+                        min="2000-01-01"
+                        max="2099-12-31"
                         value={newPolicy.effective_date}
                         onChange={(e) => setNewPolicy({ ...newPolicy, effective_date: e.target.value })}
                       />
