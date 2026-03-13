@@ -299,8 +299,8 @@ export default function BorrowerPage() {
       </section>
 
       {/* ── Footer ── */}
-      <footer className="border-t py-8 text-center">
-        <p className="text-xs font-medium tracking-wide text-muted-foreground">Insurance Runs On <span className="font-bold text-foreground">AURA</span></p>
+      <footer className="border-t border-gray-200 py-8 text-center">
+        <p className="text-xs font-medium tracking-wide text-[#1D2430]/50">Insurance Runs On <span className="font-bold text-[#1D2430]">AURA</span></p>
       </footer>
     </div>
   );
