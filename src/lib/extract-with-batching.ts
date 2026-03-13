@@ -103,7 +103,7 @@ export async function extractWithBatching(params: ExtractParams): Promise<Extrac
 
       const { data: doc, error: docErr } = await supabase
         .from("client_documents")
-        .insert(insertData)
+        .insert(insertData as any)
         .select("id")
         .single();
 
