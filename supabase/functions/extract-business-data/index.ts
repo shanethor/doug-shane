@@ -698,6 +698,31 @@ function postProcess(fd: Record<string, any>, sourceText: string, hasPdfs: boole
     }
   }
 
+  // Canonicalize common variant keys so downstream ACORD mapping always gets mappable fields
+  const CANONICAL_ALIASES: Array<[string, string]> = [
+    ["carrier_name", "current_carrier"],
+    ["carrier", "current_carrier"],
+    ["policy_effective_date", "effective_date"],
+    ["policy_expiration_date", "expiration_date"],
+    ["total_annual_premium", "policy_total_premium"],
+    ["mailing_city", "city"],
+    ["mailing_state", "state"],
+    ["mailing_zip", "zip"],
+    ["legal_entity", "business_type"],
+    ["business_description", "description_of_operations"],
+    ["policy_type", "coverage_type"],
+    ["gl_general_aggregate_limit", "general_aggregate"],
+    ["gl_products_completed_operations_aggregate", "products_aggregate"],
+    ["gl_each_occurrence_limit", "each_occurrence"],
+    ["gl_damage_to_premises_rented_limit", "fire_damage"],
+    ["gl_medical_expense_any_one_person_limit", "medical_payments"],
+  ];
+  for (const [sourceKey, targetKey] of CANONICAL_ALIASES) {
+    if (!isMeaningfulValue(fd[targetKey]) && isMeaningfulValue(fd[sourceKey])) {
+      fd[targetKey] = fd[sourceKey];
+    }
+  }
+
   // ── Flatten locations[] → location_N_* and also populate premises_* from first location ──
   const locations: any[] = Array.isArray(fd.locations) ? fd.locations : [];
   locations.forEach((loc: any, idx: number) => {
