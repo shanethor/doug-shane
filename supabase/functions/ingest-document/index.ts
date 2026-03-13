@@ -103,7 +103,7 @@ serve(async (req) => {
     );
 
     // ── 5. Detect doc type from first-page text + filename ─────────────────
-    const pathHint = (storage_path || "").toUpperCase();
+    const pathHint = (storage_path || file_name || "").toUpperCase();
     let docType: AcordDocType = detectDocType(prescanResult.firstPageText);
 
     if (docType === "UNKNOWN" || prescanResult.firstPageText.length < 50) {
