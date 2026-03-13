@@ -99,6 +99,12 @@ function getDateCutoff(period: TimePeriod): Date | null {
   return new Date(now.getFullYear(), 0, 1);
 }
 
+function getDateCeiling(period: TimePeriod): Date | null {
+  if (period !== "month") return null;
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth() + 1, 1);
+}
+
 const PERIOD_LABELS: Record<TimePeriod, string> = {
   all: "All Time",
   month: "This Month",

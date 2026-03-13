@@ -1268,7 +1268,7 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
                   <Info className="h-3 w-3 text-muted-foreground/40 cursor-help" />
                 </TooltipTrigger>
                 <TooltipContent side="top" className="max-w-[200px] text-xs font-sans">
-                  {stage === "sold" ? "Resets visually on the 1st of each month. Your sales data and production numbers are unaffected." : STAGE_TOOLTIPS[stage]}
+                  {stage === "sold" ? "Shows current & future month policies. Future months count toward yearly stats only, not this month's." : STAGE_TOOLTIPS[stage]}
                 </TooltipContent>
               </Tooltip>
             </div>
