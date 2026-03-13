@@ -83,7 +83,7 @@ export default function Auth() {
     if (loginHandled2FA.current) return;
 
     if (!loading && user && !is2FAVerified() && !needs2FA && !autoChecking && !isPendingApproval) {
-      if (is2FABypassed(user.email)) {
+      if (user.user_metadata?.skip_2fa) {
         set2FAVerified(true);
         navigate("/", { replace: true });
         return;
