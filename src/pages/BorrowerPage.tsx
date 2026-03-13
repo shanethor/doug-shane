@@ -197,8 +197,8 @@ export default function BorrowerPage() {
                     <step.icon className="h-5 w-5" />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold">{step.title}</p>
-                    <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{step.desc}</p>
+                    <p className="text-sm font-semibold text-[#1D2430]">{step.title}</p>
+                    <p className="mt-1 text-xs leading-relaxed text-[#1D2430]/60">{step.desc}</p>
                   </div>
                 </CardContent>
               </Card>
