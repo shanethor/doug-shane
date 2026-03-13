@@ -7,8 +7,8 @@
  */
 import { PDFDocument } from "pdf-lib";
 
-const BATCH_PAGE_LIMIT = 50; // pages per request batch
-const MAX_TOTAL_PAGES = 200;
+const BATCH_PAGE_LIMIT = 80; // pages per request batch (edge function prescans & trims)
+const MAX_TOTAL_PAGES = 250;
 
 interface PdfFile {
   name: string;
