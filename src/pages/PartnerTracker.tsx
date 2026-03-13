@@ -74,12 +74,12 @@ export default function PartnerTracker() {
   const fmt = (n: number) => n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-white text-[#1D2430]" data-theme="light">
       {/* Header */}
-      <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur">
+      <header className="sticky top-0 z-50 border-b border-gray-200 bg-white/95 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-4xl items-center justify-between px-4">
-          <img src={auraLogo} alt="AURA Risk Group" className="h-7" />
-          <span className="text-xs font-medium text-muted-foreground">Partner Referral Tracker</span>
+          <img src={auraLogo} alt="AURA Risk Group" className="h-7" style={{ filter: 'none' }} />
+          <span className="text-xs font-medium text-[#1D2430]/60">Partner Referral Tracker</span>
         </div>
       </header>
 
