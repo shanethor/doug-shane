@@ -44,6 +44,12 @@ CRITICAL ANTI-HALLUCINATION RULES:
 CODES — EXTRACT VERBATIM ONLY, NEVER INFER:
 - sic_code, naics_code, naic_code, gl_code, class_code_1, class_code_2, hazard_code_1, hazard_code_2, program_code, ncci_risk_id, wc_class_code, policy_number, prior_policy_number_1, prior_wc_policy_1: these fields must ONLY be populated if the EXACT code/number appears verbatim in the source text.
 
+DOCUMENT TYPE RECOGNITION:
+- DECLARATIONS PAGES (Dec Pages): These contain the core policy data — carrier, insured name, policy number, dates, limits, deductibles, premiums, locations, endorsement schedules. FOCUS on these pages first. They typically have headers like "DECLARATION PAGE", "DECLARATIONS", "POLICY DECLARATIONS", or carrier letterhead with policy details.
+- BUSINESSOWNERS (BOP) Dec Pages: Look for building limits, BPP limits, property deductibles, glass deductibles, auto increase percentages, liability limits, EPLI, cyber coverages, equipment breakdown, crime coverages. These are the MOST data-rich pages.
+- COVERAGE FORMS / POLICY LANGUAGE (e.g., "BP 00 03", "BUSINESSOWNERS COVERAGE FORM"): These are STANDARD FORM LANGUAGE that contains no insured-specific data. SKIP extracting from these pages — they contain only generic policy terms, conditions, and definitions that are the same for every policyholder.
+- PRIVACY NOTICES, TERRORISM ENDORSEMENT FORMS (blank/unsigned): Contain no extractable data. Skip these.
+
 Return this exact structure:
 {
   "form_data": {
@@ -105,6 +111,34 @@ Return this exact structure:
     "umbrella_carrier": "", "umbrella_policy_number": "",
     "wc_carrier": "", "wc_policy_number": "",
     "underwriter": "", "underwriter_office": "",
+
+    "producer_name": "", "producer_address": "", "producer_city": "", "producer_state": "", "producer_zip": "", "producer_phone": "",
+
+    "location_1_number": "", "location_1_building_number": "", "location_1_address": "", "location_1_city": "", "location_1_state": "", "location_1_zip": "", "location_1_occupancy": "",
+    "location_2_number": "", "location_2_building_number": "", "location_2_address": "", "location_2_city": "", "location_2_state": "", "location_2_zip": "", "location_2_occupancy": "",
+    "location_3_number": "", "location_3_building_number": "", "location_3_address": "", "location_3_city": "", "location_3_state": "", "location_3_zip": "", "location_3_occupancy": "",
+
+    "bop_building_limit_1": "", "bop_bpp_limit_1": "", "bop_property_deductible_1": "", "bop_glass_deductible_1": "", "bop_valuation_1": "", "bop_auto_increase_percent_1": "",
+    "bop_building_limit_2": "", "bop_bpp_limit_2": "", "bop_property_deductible_2": "", "bop_glass_deductible_2": "", "bop_valuation_2": "", "bop_auto_increase_percent_2": "",
+    "bop_building_limit_3": "", "bop_bpp_limit_3": "", "bop_property_deductible_3": "", "bop_glass_deductible_3": "", "bop_valuation_3": "", "bop_auto_increase_percent_3": "",
+
+    "epli_each_claim_limit": "", "epli_aggregate_limit": "", "epli_deductible": "", "epli_retro_date": "",
+
+    "cyber_multimedia_liability_limit": "", "cyber_security_privacy_liability_limit": "",
+    "cyber_regulatory_defense_limit": "", "cyber_pci_dss_limit": "",
+    "cyber_breach_response_limit": "", "cyber_network_asset_limit": "",
+    "cyber_extortion_limit": "", "cyber_terrorism_limit": "",
+    "cyber_brand_guard_limit": "", "cyber_boid_theft_limit": "",
+    "cyber_aggregate_limit": "", "cyber_retro_date": "",
+
+    "addl_interest_1_name": "", "addl_interest_1_address": "", "addl_interest_1_city": "", "addl_interest_1_state": "", "addl_interest_1_zip": "", "addl_interest_1_interest_type": "", "addl_interest_1_location_ref": "", "addl_interest_1_attention": "",
+    "addl_interest_2_name": "", "addl_interest_2_address": "", "addl_interest_2_city": "", "addl_interest_2_state": "", "addl_interest_2_zip": "", "addl_interest_2_interest_type": "", "addl_interest_2_location_ref": "",
+    "addl_interest_3_name": "", "addl_interest_3_address": "", "addl_interest_3_city": "", "addl_interest_3_state": "", "addl_interest_3_zip": "", "addl_interest_3_interest_type": "", "addl_interest_3_location_ref": "",
+
+    "terrorism_premium_certified_acts": "",
+    "policy_total_premium": "",
+    "billing_plan": "",
+
     "vehicles": [],
     "drivers": [],
     "policies": [],
@@ -167,6 +201,18 @@ EXTRACTION RULES:
 - mortgagees[]: Extract ALL mortgagees/loss payees. Each: { name, address, clause, premises_number, building_number }. Include ISAOA ATIMA wording.
 - endorsements[]: Extract endorsement numbers and names from endorsement schedules. Each: { number, name, description }. Use to set waiver_of_subrogation, non_cumulation_occurrence, and enhancement flags.
 - Per-LOB carrier/premium fields: Also populate the flat fields (bop_carrier, bop_policy_number, auto_carrier, auto_policy_number, umbrella_carrier, umbrella_policy_number, wc_carrier, wc_policy_number, auto_premium, umbrella_premium, wc_premium, cgl_premium, property_premium, inland_marine_premium, bop_premium) from the corresponding policy declarations.
+- BOP DECLARATIONS: For Businessowners policies, extract ALL property and liability details:
+  * Set lob_bop to "true" and populate bop_carrier, bop_policy_number, bop_premium
+  * Location-indexed property: bop_building_limit_N, bop_bpp_limit_N, bop_property_deductible_N, bop_glass_deductible_N, bop_valuation_N (e.g. "replacement cost"), bop_auto_increase_percent_N
+  * Location-indexed info: location_N_number, location_N_building_number, location_N_address, location_N_city, location_N_state, location_N_zip, location_N_occupancy
+  * GL limits from BOP: each_occurrence (Per Occurrence), general_aggregate (Other Than Products/Completed Ops Aggregate), products_aggregate (Products/Completed Ops Aggregate), fire_damage (Damage to Premises Rented), medical_payments (Medical Expense Per Person)
+  * EPLI: epli_each_claim_limit, epli_aggregate_limit, epli_deductible, epli_retro_date
+  * Cyber coverages: cyber_multimedia_liability_limit, cyber_security_privacy_liability_limit, cyber_regulatory_defense_limit, cyber_pci_dss_limit, cyber_breach_response_limit, cyber_network_asset_limit, cyber_extortion_limit, cyber_terrorism_limit, cyber_brand_guard_limit, cyber_boid_theft_limit, cyber_aggregate_limit, cyber_retro_date
+  * Additional interests/mortgagees: addl_interest_N_name, addl_interest_N_attention, addl_interest_N_address, addl_interest_N_city, addl_interest_N_state, addl_interest_N_zip, addl_interest_N_interest_type (e.g. "mortgagee"), addl_interest_N_location_ref
+  * Terrorism: terrorism_premium_certified_acts
+  * Total: policy_total_premium
+  * Billing: billing_plan (e.g. "Four Pay", "Annual", "Monthly")
+- PRODUCER/AGENCY: Extract producer_name, producer_address, producer_city, producer_state, producer_zip, producer_phone from the Agent/Agency section of declarations. These map to the agency/producer fields on ACORD 125.
 - WC PREMIUM DATA: Extract standard_premium, modified_premium, expense_constant, terrorism_premium, cat_premium, second_injury_fund, wc_fund_assessment from WC premium computation sections.
 - WC OTHER STATES: Extract wc_other_states_3a (list of covered states from Item 3.A), wc_excluded_states (monopolistic/excluded states).
 - WAIVER OF SUBROGATION: If a blanket waiver of subrogation endorsement is listed (e.g., WC 00 03 13), set waiver_of_subrogation to "Yes - Blanket" and waiver_endorsement_number to the form number.
@@ -176,6 +222,7 @@ EXTRACTION RULES:
 - ENHANCEMENT FLAGS: Set auto_coverage_plus, rental_reimbursement, roadside_assistance, glass_deductible_waiver, hired_auto_pd, gap_coverage to "true" if explicitly endorsed on auto declarations.
 - naic_code: Look for "NAIC" followed by a number on insurance ID cards, declarations pages, or certificate headers. Extract ONLY the numeric code (e.g., "24775" from "NAIC 24775 ST. PAUL GUARDIAN").
 - underwriter / underwriter_office: Extract if present on declarations page.
+- ENDORSEMENT FORM NUMBERS: Extract the list of form numbers from "FORMS AND ENDORSEMENTS" sections (e.g., "BP0003 0106, BP0159 0808, ..."). Populate endorsements[] with each form number.
 - gaps[]: list missing important fields — { field, question, priority: required|recommended|optional }
 - If no meaningful data is provided, return all fields as empty strings`;
 
@@ -440,7 +487,82 @@ function postProcess(fd: Record<string, any>, sourceText: string, hasPdfs: boole
     }
   }
 
-  // Flatten vehicles[] → vehicle_N_*
+  // ── Flatten locations[] → location_N_* and also populate premises_* from first location ──
+  const locations: any[] = Array.isArray(fd.locations) ? fd.locations : [];
+  locations.forEach((loc: any, idx: number) => {
+    const n = idx + 1;
+    if (n > 3) return;
+    if (loc.premises_number && !fd[`location_${n}_number`]) fd[`location_${n}_number`] = String(loc.premises_number);
+    if (loc.building_number && !fd[`location_${n}_building_number`]) fd[`location_${n}_building_number`] = String(loc.building_number);
+    if (loc.address && !fd[`location_${n}_address`]) fd[`location_${n}_address`] = String(loc.address);
+    if (loc.city && !fd[`location_${n}_city`]) fd[`location_${n}_city`] = String(loc.city);
+    if (loc.state && !fd[`location_${n}_state`]) fd[`location_${n}_state`] = String(loc.state);
+    if (loc.zip && !fd[`location_${n}_zip`]) fd[`location_${n}_zip`] = String(loc.zip);
+    if ((loc.occupancy || loc.description) && !fd[`location_${n}_occupancy`]) fd[`location_${n}_occupancy`] = String(loc.occupancy || loc.description);
+  });
+  // Auto-populate premises_* from location_1 if not set
+  if (!fd.premises_address && fd.location_1_address) fd.premises_address = fd.location_1_address;
+  if (!fd.premises_city && fd.location_1_city) fd.premises_city = fd.location_1_city;
+  if (!fd.premises_state && fd.location_1_state) fd.premises_state = fd.location_1_state;
+  if (!fd.premises_zip && fd.location_1_zip) fd.premises_zip = fd.location_1_zip;
+
+  // ── Flatten mortgagees[] → mortgagee_N_* and addl_interest_N_* ──
+  const mortgagees: any[] = Array.isArray(fd.mortgagees) ? fd.mortgagees : [];
+  mortgagees.forEach((m: any, idx: number) => {
+    const n = idx + 1;
+    if (n > 3) return;
+    if (m.name && !fd[`mortgagee_${n}_name`]) fd[`mortgagee_${n}_name`] = String(m.name);
+    if (m.address && !fd[`mortgagee_${n}_address`]) fd[`mortgagee_${n}_address`] = String(m.address);
+    if (m.clause && !fd[`mortgagee_${n}_clause`]) fd[`mortgagee_${n}_clause`] = String(m.clause);
+    // Also populate addl_interest fields from mortgagees
+    if (m.name && !fd[`addl_interest_${n}_name`]) fd[`addl_interest_${n}_name`] = String(m.name);
+    if (m.address && !fd[`addl_interest_${n}_address`]) fd[`addl_interest_${n}_address`] = String(m.address);
+    if (!fd[`addl_interest_${n}_interest_type`]) fd[`addl_interest_${n}_interest_type`] = "mortgagee";
+    if ((m.premises_number || m.building_number) && !fd[`addl_interest_${n}_location_ref`]) {
+      fd[`addl_interest_${n}_location_ref`] = `Prem ${m.premises_number || "001"} Bldg ${m.building_number || "001"}`;
+    }
+  });
+
+  // ── Cross-populate BOP fields from generic fields and vice versa ──
+  // If BOP is detected, populate generic limits from BOP-specific fields
+  if (fd.lob_bop === "true") {
+    if (fd.bop_building_limit_1 && !fd.building_limit) fd.building_limit = fd.bop_building_limit_1;
+    if (fd.bop_bpp_limit_1 && !fd.bpp_limit) fd.bpp_limit = fd.bop_bpp_limit_1;
+    if (fd.bop_property_deductible_1 && !fd.property_deductible) fd.property_deductible = fd.bop_property_deductible_1;
+    if (!fd.bop_carrier && fd.current_carrier) fd.bop_carrier = fd.current_carrier;
+    if (!fd.bop_policy_number && fd.policy_number) fd.bop_policy_number = fd.policy_number;
+    if (!fd.bop_premium && fd.current_premium) fd.bop_premium = fd.current_premium;
+    if (!fd.bop_premium && fd.policy_total_premium) fd.bop_premium = fd.policy_total_premium;
+  }
+  // Reverse: if generic fields are set but BOP-specific are not, and it's a BOP
+  if (fd.lob_bop === "true") {
+    if (!fd.bop_building_limit_1 && fd.building_limit) fd.bop_building_limit_1 = fd.building_limit;
+    if (!fd.bop_bpp_limit_1 && fd.bpp_limit) fd.bop_bpp_limit_1 = fd.bpp_limit;
+    if (!fd.bop_property_deductible_1 && fd.property_deductible) fd.bop_property_deductible_1 = fd.property_deductible;
+  }
+
+  // ── Populate GL limits from cgl_limits object ──
+  const cglLimits = fd.cgl_limits || {};
+  if (cglLimits.general_aggregate && !fd.general_aggregate) fd.general_aggregate = String(cglLimits.general_aggregate);
+  if (cglLimits.products_aggregate && !fd.products_aggregate) fd.products_aggregate = String(cglLimits.products_aggregate);
+  if (cglLimits.each_occurrence && !fd.each_occurrence) fd.each_occurrence = String(cglLimits.each_occurrence);
+  if (cglLimits.fire_damage && !fd.fire_damage) fd.fire_damage = String(cglLimits.fire_damage);
+  if (cglLimits.medical_payments && !fd.medical_payments) fd.medical_payments = String(cglLimits.medical_payments);
+  if (cglLimits.personal_adv_injury && !fd.personal_adv_injury) fd.personal_adv_injury = String(cglLimits.personal_adv_injury);
+
+  // Also populate products_completed_ops_aggregate
+  if (!fd.products_completed_ops_aggregate && fd.products_aggregate) fd.products_completed_ops_aggregate = fd.products_aggregate;
+
+  // ── Auto-detect BOP from policy type or carrier patterns ──
+  if (fd.lob_bop !== "true") {
+    const policyType = String(fd.coverage_type || fd.nature_of_business || "").toLowerCase();
+    const policyNumber = String(fd.policy_number || "").toUpperCase();
+    if (policyType.includes("businessowners") || policyType.includes("bop") || policyNumber.startsWith("BO ") || policyNumber.startsWith("BO-")) {
+      fd.lob_bop = "true";
+    }
+  }
+
+  // ── Flatten vehicles[] → vehicle_N_* ──
   const vehicles: any[] = Array.isArray(fd.vehicles) ? fd.vehicles : [];
   vehicles.forEach((v: any, idx: number) => {
     const n = idx + 1;
@@ -533,7 +655,7 @@ function postProcess(fd: Record<string, any>, sourceText: string, hasPdfs: boole
   }
 
   // Auto-detect occurrence vs claims-made
-  if (fd.lob_gl === "true" || fd.lob_commercial_general_liability === "true" || fd.chk_commercial_general_liability === "true") {
+  if (fd.lob_gl === "true" || fd.lob_commercial_general_liability === "true" || fd.chk_commercial_general_liability === "true" || fd.lob_bop === "true") {
     if (fd.chk_occurrence !== "true" && fd.chk_claims_made !== "true") {
       if (fd.retroactive_date || fd.entry_date_claims_made) fd.chk_claims_made = "true";
       else fd.chk_occurrence = "true";
@@ -546,7 +668,7 @@ function postProcess(fd: Record<string, any>, sourceText: string, hasPdfs: boole
     else if (fd.chk_limit_project === "true") fd.aggregate_applies_per = "Project";
     else if (fd.chk_limit_location === "true") fd.aggregate_applies_per = "Location";
   }
-  if (fd.lob_gl === "true" && fd.chk_limit_policy !== "true" && fd.chk_limit_project !== "true" && fd.chk_limit_location !== "true") {
+  if ((fd.lob_gl === "true" || fd.lob_bop === "true") && fd.chk_limit_policy !== "true" && fd.chk_limit_project !== "true" && fd.chk_limit_location !== "true") {
     fd.chk_limit_policy = "true";
     if (!fd.aggregate_applies_per) fd.aggregate_applies_per = "Policy";
   }
@@ -560,6 +682,19 @@ function postProcess(fd: Record<string, any>, sourceText: string, hasPdfs: boole
     else if (/\bLLP\b/i.test(name)) fd.business_type = "Partnership";
     else if (/\bLP\b/i.test(name)) fd.business_type = "Partnership";
   }
+
+  // ── Auto-set GL flag if GL limits are present from BOP ──
+  if (fd.each_occurrence && fd.general_aggregate && fd.lob_gl !== "true") {
+    fd.lob_gl = "true";
+    fd.lob_commercial_general_liability = "true";
+    fd.chk_commercial_general_liability = "true";
+  }
+
+  // ── Populate current_carrier / current_premium from BOP if not set ──
+  if (!fd.current_carrier && fd.bop_carrier) fd.current_carrier = fd.bop_carrier;
+  if (!fd.current_premium && fd.bop_premium) fd.current_premium = fd.bop_premium;
+  if (!fd.current_premium && fd.policy_total_premium) fd.current_premium = fd.policy_total_premium;
+  if (!fd.total_premium && fd.policy_total_premium) fd.total_premium = fd.policy_total_premium;
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -651,7 +786,7 @@ serve(async (req) => {
         const flashRaw = await callGeminiWithPdfs(
           LOVABLE_API_KEY,
           SCHEMA_PROMPT,
-          `Extract all insurance data from the attached PDF document(s).${additionalContext ? `\n\nAdditional context:\n${additionalContext}` : ""}`,
+          `Extract all insurance data from the attached PDF document(s). IMPORTANT: Focus on DECLARATIONS PAGES first — these contain insured-specific data (limits, premiums, deductibles, locations, endorsements). SKIP standard policy form language (e.g. "BUSINESSOWNERS COVERAGE FORM" boilerplate, privacy notices) as they contain no insured-specific data. Extract ALL BOP property limits, GL limits, EPLI, cyber coverages, mortgagee/additional interest info, producer/agency details, endorsement form numbers, and location-indexed data.${additionalContext ? `\n\nAdditional context:\n${additionalContext}` : ""}`,
           truncatedFiles,
           "google/gemini-2.5-flash",
         );
@@ -666,7 +801,7 @@ serve(async (req) => {
             const proRaw = await callGeminiWithPdfs(
               LOVABLE_API_KEY,
               SCHEMA_PROMPT,
-              `Extract all insurance data from the attached PDF document(s).${additionalContext ? `\n\nAdditional context:\n${additionalContext}` : ""}`,
+               `Extract all insurance data from the attached PDF document(s). IMPORTANT: Focus on DECLARATIONS PAGES first — these contain insured-specific data (limits, premiums, deductibles, locations, endorsements). SKIP standard policy form language boilerplate. Extract ALL BOP property limits, GL limits, EPLI, cyber coverages, mortgagee/additional interest info, producer/agency details, endorsement form numbers, and location-indexed data.${additionalContext ? `\n\nAdditional context:\n${additionalContext}` : ""}`,
               truncatedFiles,
               "google/gemini-2.5-pro",
             );
@@ -711,7 +846,7 @@ serve(async (req) => {
           const proRaw = await callGeminiWithPdfs(
             LOVABLE_API_KEY,
             SCHEMA_PROMPT,
-            `Extract all insurance data from the attached PDF document(s).${additionalContext ? `\n\nAdditional context:\n${additionalContext}` : ""}`,
+            `Extract all insurance data from the attached PDF document(s). Focus on DECLARATIONS PAGES. SKIP policy form boilerplate. Extract ALL BOP property limits, GL limits, EPLI, cyber coverages, mortgagee info, producer details, endorsement form numbers, and location-indexed data.${additionalContext ? `\n\nAdditional context:\n${additionalContext}` : ""}`,
             truncatedFiles,
             "google/gemini-2.5-pro",
           );

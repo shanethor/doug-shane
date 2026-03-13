@@ -185,6 +185,9 @@ export function mergeExtractionResults(results: BatchResult[]): BatchResult {
     "wc_classifications", "cgl_hazards", "locations", "mortgagees", "endorsements",
   ]);
 
+  // Object fields that should be deep-merged
+  const OBJECT_FIELDS = new Set(["cgl_limits"]);
+
   for (const result of results) {
     const fd = result.form_data || {};
     
@@ -194,9 +197,17 @@ export function mergeExtractionResults(results: BatchResult[]): BatchResult {
         const existing = Array.isArray(merged[key]) ? merged[key] : [];
         const incoming = Array.isArray(value) ? value : [];
         merged[key] = [...existing, ...incoming];
-      } else if (typeof value === "object" && value !== null && !Array.isArray(value)) {
-        // Merge objects (like cgl_limits)
-        merged[key] = { ...(merged[key] || {}), ...value };
+      } else if (OBJECT_FIELDS.has(key) || (typeof value === "object" && value !== null && !Array.isArray(value))) {
+        // Merge objects (like cgl_limits) — new non-empty values fill gaps
+        const existing = merged[key] || {};
+        const incoming = value || {};
+        const mergedObj = { ...existing };
+        for (const [ok, ov] of Object.entries(incoming as Record<string, any>)) {
+          const existingVal = mergedObj[ok];
+          const isExistingEmpty = !existingVal || (typeof existingVal === "string" && !existingVal.trim());
+          if (isExistingEmpty && ov) mergedObj[ok] = ov;
+        }
+        merged[key] = mergedObj;
       } else {
         // Scalars: keep first non-empty value, but allow later batches to fill gaps
         const existing = merged[key];
