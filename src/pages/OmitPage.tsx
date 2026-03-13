@@ -51,11 +51,11 @@ export default function OmitPage() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white" data-theme="light">
+    <div className="min-h-screen bg-black text-white dark:bg-black dark:text-white" data-theme="light" style={{ colorScheme: "dark" }}>
       {/* ── Header ── */}
-      <header className="sticky top-0 z-50 border-b border-white/10 bg-black/95 backdrop-blur supports-[backdrop-filter]:bg-black/80">
+      <header className="sticky top-0 z-50 border-b border-white/10 bg-black/95 backdrop-blur supports-[backdrop-filter]:bg-black/80 dark:bg-black/95 dark:supports-[backdrop-filter]:bg-black/80">
         <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4">
-          <img src={omitLogo} alt="OMiT" className="h-7 invert-0" />
+          <img src={omitLogo} alt="OMiT" className="h-7 brightness-0 invert" />
           <div className="flex items-center gap-1.5">
             <span className="text-sm font-bold tracking-tight text-white">AURA</span>
             <span className="text-[10px] text-white/40 tracking-widest uppercase">Risk Group</span>
@@ -72,7 +72,7 @@ export default function OmitPage() {
         }} />
         <div className="relative mx-auto max-w-3xl px-6 py-16 md:py-24 text-center">
           <div className="mb-6 flex justify-center">
-            <img src={omitLogo} alt="OMiT" className="h-12 md:h-16" />
+            <img src={omitLogo} alt="OMiT" className="h-12 md:h-16 brightness-0 invert" />
           </div>
           <p className="text-xs font-bold uppercase tracking-[0.3em] text-white/40 mb-8">
             Official Insurance Partner of OMiT
@@ -132,7 +132,7 @@ export default function OmitPage() {
               <Button
                 size="lg"
                 variant="outline"
-                className="gap-2 rounded-none text-sm font-bold uppercase tracking-wider border-white/20 text-white hover:bg-white/10 hover:text-white px-8"
+                className="gap-2 rounded-none text-sm font-bold uppercase tracking-wider border-white/30 text-white hover:bg-white/10 hover:text-white px-8 bg-white/5"
                 onClick={handleStartIntake}
                 disabled={creatingIntake}
               >
@@ -148,7 +148,7 @@ export default function OmitPage() {
       </section>
 
       {/* ── How It Works ── */}
-      <section ref={howItWorksRef} className="border-t border-white/10 bg-white/[0.02]">
+      <section ref={howItWorksRef} className="border-t border-white/10 bg-white/[0.02] dark:bg-white/[0.02]">
         <div className="mx-auto max-w-3xl px-6 py-14 md:py-20">
           <div className="text-center mb-12">
             <p className="text-xs font-bold uppercase tracking-[0.3em] text-white/30 mb-3">How It Works</p>
@@ -157,7 +157,7 @@ export default function OmitPage() {
 
           <div className="space-y-4">
             {STEPS.map((step) => (
-              <Card key={step.num} className="border-white/10 bg-white/[0.03] hover:bg-white/[0.06] transition-colors rounded-none">
+              <Card key={step.num} className="border-white/10 bg-white/[0.03] hover:bg-white/[0.06] transition-colors rounded-none dark:border-white/10 dark:bg-white/[0.03]">
                 <CardContent className="flex gap-5 p-6">
                   <div className="flex h-12 w-12 shrink-0 items-center justify-center border border-white/20 text-white font-mono font-bold text-sm">
                     {step.num}
@@ -177,7 +177,7 @@ export default function OmitPage() {
       <footer className="border-t border-white/10">
         <div className="mx-auto max-w-5xl px-6 py-10 text-center space-y-4">
           <div className="flex items-center justify-center gap-4">
-            <img src={omitLogo} alt="OMiT" className="h-5" />
+            <img src={omitLogo} alt="OMiT" className="h-5 brightness-0 invert" />
             <span className="text-white/20">×</span>
             <div className="flex items-center gap-1">
               <span className="text-sm font-bold text-white">AURA</span>
