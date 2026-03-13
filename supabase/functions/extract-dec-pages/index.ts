@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { PDFDocument } from "https://esm.sh/pdf-lib@1.17.1";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -7,6 +8,8 @@ const corsHeaders = {
 };
 
 const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+
+const MAX_PAGES = 10;
 
 const EXTRACTION_PROMPT = `You are an insurance document data extraction expert. Extract ALL information from these declaration pages and return a JSON object.
 
@@ -49,6 +52,24 @@ Extract the following fields where available. Return empty strings for missing d
 
 Return ONLY valid JSON. No markdown fences, no explanation. If a section has no data, use empty arrays/objects.`;
 
+/** Slice a PDF to the first N pages using pdf-lib */
+async function truncatePdf(base64: string, maxPages: number): Promise<{ base64: string; originalPages: number; sliced: boolean }> {
+  const raw = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+  const srcDoc = await PDFDocument.load(raw, { ignoreEncryption: true });
+  const originalPages = srcDoc.getPageCount();
+
+  if (originalPages <= maxPages) {
+    return { base64, originalPages, sliced: false };
+  }
+
+  const newDoc = await PDFDocument.create();
+  const pages = await newDoc.copyPages(srcDoc, Array.from({ length: maxPages }, (_, i) => i));
+  pages.forEach((p) => newDoc.addPage(p));
+  const slicedBytes = await newDoc.save();
+  const slicedBase64 = btoa(String.fromCharCode(...slicedBytes));
+  return { base64: slicedBase64, originalPages, sliced: true };
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -75,9 +96,24 @@ serve(async (req) => {
 
     for (const file of files) {
       const mimeType = file.mimeType || "application/pdf";
+      let fileBase64 = file.base64;
+
+      // Slice large PDFs to first N pages to avoid context overflow
+      if (mimeType === "application/pdf") {
+        try {
+          const result = await truncatePdf(file.base64, MAX_PAGES);
+          fileBase64 = result.base64;
+          if (result.sliced) {
+            console.log(`[extract-dec] Sliced PDF from ${result.originalPages} to ${MAX_PAGES} pages`);
+          }
+        } catch (sliceErr) {
+          console.warn("[extract-dec] PDF slice failed, sending original:", sliceErr);
+        }
+      }
+
       userContent.push({
         type: "image_url",
-        image_url: { url: `data:${mimeType};base64,${file.base64}` },
+        image_url: { url: `data:${mimeType};base64,${fileBase64}` },
       });
     }
 
@@ -120,8 +156,8 @@ serve(async (req) => {
       extracted = JSON.parse(cleaned);
     } catch (parseErr) {
       console.error("[extract-dec] JSON parse error:", parseErr, "Raw:", rawText.substring(0, 500));
-      return new Response(JSON.stringify({ error: "Failed to parse extraction results" }), {
-        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      return new Response(JSON.stringify({ success: true, data: {}, error: "parse_failed" }), {
+        status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
