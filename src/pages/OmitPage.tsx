@@ -71,10 +71,6 @@ export default function OmitPage() {
           backgroundSize: "60px 60px",
         }} />
         <div className="relative mx-auto max-w-3xl px-6 py-16 md:py-24 text-center">
-          <p className="text-xs font-bold uppercase tracking-[0.3em] text-white/40 mb-8">
-            Official Insurance Partner of OMiT
-          </p>
-
           <div className="space-y-5 text-lg md:text-xl leading-relaxed text-white/80 max-w-2xl mx-auto">
             <p className="text-white font-semibold text-xl md:text-2xl">
               For decades insurance marketing has looked the same.
