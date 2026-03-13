@@ -32,6 +32,14 @@ const MAX_PDF_PAGES = 80; // increased — prescan trims to ideal pages
 const MAX_TOTAL_PAGES = 80;
 const PRESCAN_TARGET_PAGES = 15; // ideal number of data-rich pages to extract from
 const PRESCAN_THRESHOLD = 20; // only prescan if doc has more pages than this
+
+// ── Large-PDF page-range targeting ──
+// Most insurance packets have all DEC page data on pages 1–10.
+// Pages beyond that are boilerplate policy forms that waste context/CPU.
+const LARGE_PDF_CONFIG = {
+  PAGE_THRESHOLD: 20,   // PDFs with more pages than this get sliced
+  DEC_PAGE_SLICE: 10,   // keep only the first N pages (DEC pages live here)
+};
 const CONFIDENCE_THRESHOLD = 5; // minimum meaningful fields before triggering specialist
 
 // ── Shared schema prompt (used by all stages) ──
