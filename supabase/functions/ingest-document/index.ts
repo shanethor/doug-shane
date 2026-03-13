@@ -136,6 +136,7 @@ serve(async (req) => {
 
     const prompt = buildGeminiPrompt(docType);
     const rawText = await callGemini(pdfBase64, prompt, LOVABLE_API_KEY);
+    console.log(`[ingest] Gemini response length: ${rawText.length} chars`);
 
     // ── 8. Parse response ──────────────────────────────────────────────────
     let extracted: Record<string, any> = {};
@@ -145,24 +146,47 @@ serve(async (req) => {
     try {
       extracted = parseJson(rawText);
       confidence = typeof extracted.confidence === "number" ? extracted.confidence : 0.8;
-    } catch {
+    } catch (parseErr) {
+      console.error("[ingest] JSON parse failed:", parseErr, "Raw (first 500):", rawText.substring(0, 500));
       confidence = 0;
     }
 
-    // ── 9. One retry if confidence low — widen to full prescan range ───────
-    if (confidence < 0.5) {
+    // Count non-empty fields to decide if retry is needed
+    const countFields = (obj: Record<string, any>, prefix = ""): number => {
+      let count = 0;
+      for (const [k, v] of Object.entries(obj)) {
+        if (k === "confidence") continue;
+        if (v !== null && v !== undefined && v !== "" && v !== false) {
+          if (typeof v === "object" && !Array.isArray(v)) {
+            count += countFields(v, `${prefix}${k}.`);
+          } else if (Array.isArray(v) && v.length > 0) {
+            count += v.length;
+          } else {
+            count++;
+          }
+        }
+      }
+      return count;
+    };
+
+    const fieldCount = countFields(extracted);
+    console.log(`[ingest] First pass: ${fieldCount} fields, confidence=${confidence}`);
+
+    // ── 9. One retry if too few fields — widen to 25 pages ────────────────
+    if (fieldCount < 10 && totalPages > scanEnd) {
       retryUsed = true;
-      const retryEnd = Math.min(PRESCAN_MAX_PAGES, totalPages);
-      console.warn(`[ingest] Low confidence (${confidence}), retrying with pages 1-${retryEnd}...`);
+      const retryEnd = Math.min(RETRY_SCAN_PAGES, totalPages);
+      console.log(`[ingest] Low fields (${fieldCount}), retrying with pages 1-${retryEnd}...`);
       try {
         const widerSlice = await extractPageRange(pdfBytes, 1, retryEnd);
         const widerBase64 = uint8ToBase64(widerSlice);
         const retryRaw = await callGemini(widerBase64, prompt, LOVABLE_API_KEY);
         const retryData = parseJson(retryRaw);
-        const retryConf = typeof retryData.confidence === "number" ? retryData.confidence : 0.8;
-        if (retryConf > confidence) {
+        const retryFields = countFields(retryData);
+        console.log(`[ingest] Retry: ${retryFields} fields`);
+        if (retryFields > fieldCount) {
           extracted = retryData;
-          confidence = retryConf;
+          confidence = typeof retryData.confidence === "number" ? retryData.confidence : 0.8;
         }
       } catch (e) {
         console.error("[ingest] Retry failed:", e);
