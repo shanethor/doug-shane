@@ -60,98 +60,114 @@ serve(async (req) => {
     const docType: AcordDocType = detectDocType(firstPageText);
     console.log(`[ingest] docType=${docType}`);
 
-    // ── 5. Determine page slice ────────────────────────────────────────────
-    const isLarge = totalPages > LARGE_PDF_CONFIG.MAX_PAGES_DIRECT;
-    const pagesToSend = isLarge ? LARGE_PDF_CONFIG.DEC_PAGE_SLICE : totalPages;
+    // ── 5. Chunked extraction for large files ──────────────────────────────
+    const CHUNK_SIZE = 15; // pages per chunk
+    const MAX_CHUNKS = 10; // safety limit (150 pages max)
 
-    // ── 6. Slice PDF if needed ─────────────────────────────────────────────
-    const pdfToSend = isLarge
-      ? await extractPageRange(pdfBytes, 1, pagesToSend)
-      : pdfBytes;
+    const isLarge = totalPages > 20;
+    const chunksToProcess = Math.min(
+      Math.ceil(totalPages / CHUNK_SIZE),
+      MAX_CHUNKS
+    );
 
-    const pdfBase64 = btoa(String.fromCharCode(...pdfToSend));
+    console.log(`[ingest] Processing ${chunksToProcess} chunks (${totalPages} pages, chunk_size=${CHUNK_SIZE})`);
 
-    // ── 7. Call AI via Lovable AI Gateway ───────────────────────────────────
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
     const prompt = buildGeminiPrompt(docType);
 
-    const callGemini = async (base64: string): Promise<string> => {
-      const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
-          messages: [
-            { role: "system", content: GEMINI_SYSTEM_PROMPT },
-            {
-              role: "user",
-              content: [
-                { type: "text", text: prompt },
-                {
-                  type: "image_url",
-                  image_url: { url: `data:application/pdf;base64,${base64}` },
-                },
-              ],
-            },
-          ],
-        }),
-        signal: AbortSignal.timeout(45_000),
-      });
+    const chunkExtractions: Array<{ data: Record<string, any>; confidence: number; pages: string }> = [];
 
-      if (!response.ok) {
-        const t = await response.text();
-        console.error("[ingest] AI gateway error:", response.status, t);
-        if (response.status === 429) throw new Error("Rate limited, please try again shortly.");
-        if (response.status === 402) throw new Error("AI credits exhausted.");
-        throw new Error(`AI extraction failed (${response.status})`);
+    // ── 6. Process each chunk ──────────────────────────────────────────────
+    for (let i = 0; i < chunksToProcess; i++) {
+      const startPage = i * CHUNK_SIZE + 1;
+      const endPage = Math.min(startPage + CHUNK_SIZE - 1, totalPages);
+
+      console.log(`[ingest] Chunk ${i + 1}/${chunksToProcess}: pages ${startPage}-${endPage}`);
+
+      try {
+        const chunkBytes = await extractPageRange(pdfBytes, startPage, endPage);
+        const chunkBase64 = btoa(String.fromCharCode(...chunkBytes));
+
+        const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${LOVABLE_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "google/gemini-2.5-flash",
+            messages: [
+              { role: "system", content: GEMINI_SYSTEM_PROMPT },
+              {
+                role: "user",
+                content: [
+                  { type: "text", text: prompt },
+                  {
+                    type: "image_url",
+                    image_url: { url: `data:application/pdf;base64,${chunkBase64}` },
+                  },
+                ],
+              },
+            ],
+          }),
+          signal: AbortSignal.timeout(45_000),
+        });
+
+        if (!response.ok) {
+          console.warn(`[ingest] Chunk ${i + 1} failed: ${response.status}`);
+          continue; // Skip failed chunks, process what we can
+        }
+
+        const aiResult = await response.json();
+        const rawText = aiResult.choices?.[0]?.message?.content || "{}";
+
+        const cleaned = rawText
+          .replace(/^```json\s*/i, "")
+          .replace(/^```\s*/i, "")
+          .replace(/```$/i, "")
+          .trim();
+
+        const chunkData = JSON.parse(cleaned);
+        const chunkConfidence = typeof chunkData.confidence === "number" ? chunkData.confidence : 0.7;
+
+        chunkExtractions.push({
+          data: chunkData,
+          confidence: chunkConfidence,
+          pages: `${startPage}-${endPage}`,
+        });
+
+        console.log(`[ingest] Chunk ${i + 1} extracted ${Object.keys(chunkData).length} keys, confidence=${chunkConfidence}`);
+
+      } catch (chunkErr) {
+        console.error(`[ingest] Chunk ${i + 1} error:`, chunkErr);
+        // Continue processing other chunks
       }
-
-      const aiResult = await response.json();
-      return aiResult.choices?.[0]?.message?.content || "{}";
-    };
-
-    let rawText = await callGemini(pdfBase64);
-
-    // ── 8. Parse JSON safely ───────────────────────────────────────────────
-    const parseJson = (text: string) => {
-      const cleaned = text
-        .replace(/^```json\s*/i, "")
-        .replace(/^```\s*/i, "")
-        .replace(/```$/i, "")
-        .trim();
-      return JSON.parse(cleaned);
-    };
-
-    let extracted: Record<string, any> = {};
-    let confidence = 0;
-    let retryUsed = false;
-
-    try {
-      extracted = parseJson(rawText);
-      confidence = typeof extracted.confidence === "number" ? extracted.confidence : 0.8;
-    } catch (e) {
-      console.error("[ingest] JSON parse error:", e, rawText.substring(0, 300));
-      confidence = 0;
     }
 
-    // ── 9. Retry with broader slice on low confidence ──────────────────────
-    if (isLarge && confidence < LARGE_PDF_CONFIG.LOW_CONFIDENCE_THRESHOLD && !retryUsed) {
-      console.warn(`[ingest] Low confidence (${confidence}), retrying with broader slice...`);
-      retryUsed = true;
-      try {
-        const broadSlice = await extractPageRange(pdfBytes, 1, LARGE_PDF_CONFIG.DEC_PAGE_SLICE * 2);
-        const broadBase64 = btoa(String.fromCharCode(...broadSlice));
-        const retryText = await callGemini(broadBase64);
-        extracted = parseJson(retryText);
-        confidence = typeof extracted.confidence === "number" ? extracted.confidence : 0.8;
-      } catch (e2) {
-        console.error("[ingest] Retry failed:", e2);
+    // ── 7. Merge all chunk extractions ─────────────────────────────────────
+    let extracted: Record<string, any> = {};
+    let confidence = 0;
+
+    if (chunkExtractions.length === 0) {
+      console.error("[ingest] No chunks successfully extracted");
+      extracted = {};
+      confidence = 0;
+    } else {
+      confidence = chunkExtractions.reduce((sum, c) => sum + c.confidence, 0) / chunkExtractions.length;
+
+      for (const chunk of chunkExtractions) {
+        extracted = mergeChunkData(extracted, chunk.data);
       }
+
+      const fieldCount = Object.keys(extracted).filter(k =>
+        extracted[k] !== undefined &&
+        extracted[k] !== null &&
+        extracted[k] !== ""
+      ).length;
+
+      console.log(`[ingest] Merged extraction: ${fieldCount} non-empty fields, avg confidence=${confidence.toFixed(2)}`);
     }
 
     // ── 10. Map to formdata keys ───────────────────────────────────────────
@@ -255,10 +271,10 @@ serve(async (req) => {
         total_pages: totalPages,
         extraction_metadata: {
           model: "google/gemini-2.5-flash",
-          pages_sent: pagesToSend,
+          chunks_processed: chunkExtractions.length,
           total_pages: totalPages,
+          chunk_size: CHUNK_SIZE,
           large_file: isLarge,
-          retry_used: retryUsed,
         },
       })
       .eq("id", document_id);
@@ -345,5 +361,44 @@ function flattenExtraction(
       result[key] = v;
     }
   }
+  return result;
+}
+
+function mergeChunkData(
+  existing: Record<string, any>,
+  newChunk: Record<string, any>
+): Record<string, any> {
+  const result = { ...existing };
+
+  for (const [key, value] of Object.entries(newChunk)) {
+    if (key === "confidence") continue;
+    if (value === undefined || value === null) continue;
+
+    const current = result[key];
+    const isEmpty =
+      current === undefined ||
+      current === null ||
+      (typeof current === "string" && !current.trim()) ||
+      String(current).toLowerCase() === "na";
+
+    if (isEmpty) {
+      result[key] = value;
+    } else if (Array.isArray(current) && Array.isArray(value)) {
+      const combined = [...current, ...value];
+      const unique = Array.from(
+        new Map(combined.map(item => [JSON.stringify(item), item])).values()
+      );
+      result[key] = unique;
+    } else if (
+      typeof current === "object" &&
+      typeof value === "object" &&
+      !Array.isArray(current) &&
+      !Array.isArray(value)
+    ) {
+      result[key] = mergeChunkData(current, value);
+    }
+    // Otherwise keep existing value
+  }
+
   return result;
 }
