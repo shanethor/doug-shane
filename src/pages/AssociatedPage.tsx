@@ -50,8 +50,9 @@ export default function AssociatedPage() {
       <header className="sticky top-0 z-50 border-b border-[#1a2b4a]/10 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
         <div className="mx-auto flex h-16 max-w-4xl items-center justify-between px-4">
           <img src={associatedLogo} alt="Associated Insurance Services" className="h-8" />
-          <div className="flex items-center gap-2">
-            <img src={auraLogo} alt="AURA Risk Group" className="h-6" />
+          <div className="flex items-center gap-1.5">
+            <span className="text-base font-bold tracking-tight text-[#1a2b4a]">AURA</span>
+            <span className="text-[10px] text-[#1D2430]/50 tracking-widest uppercase">Risk Group</span>
           </div>
         </div>
       </header>

@@ -78,7 +78,10 @@ export default function PartnerTracker() {
       {/* Header */}
       <header className="sticky top-0 z-50 border-b border-gray-200 bg-white/95 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-4xl items-center justify-between px-4">
-          <img src={auraLogo} alt="AURA Risk Group" className="h-7" style={{ filter: 'none' }} />
+          <div className="flex items-center gap-1.5">
+            <span className="text-base font-bold tracking-tight text-[#1D2430]">AURA</span>
+            <span className="text-[10px] text-[#1D2430]/50 tracking-widest uppercase">Risk Group</span>
+          </div>
           <span className="text-xs font-medium text-[#1D2430]/60">Partner Referral Tracker</span>
         </div>
       </header>
