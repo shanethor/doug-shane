@@ -449,16 +449,97 @@ async function truncatePdf(base64Data: string, maxPages: number): Promise<string
   }
 }
 
+function isMeaningfulValue(value: any): boolean {
+  if (value === null || value === undefined) return false;
+  if (typeof value === "boolean") return value;
+  if (typeof value === "number") return Number.isFinite(value);
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    return normalized !== "" && normalized !== "false" && normalized !== "no" && normalized !== "[]" && normalized !== "n/a";
+  }
+  if (Array.isArray(value)) return value.some(isMeaningfulValue);
+  if (typeof value === "object") return Object.values(value).some(isMeaningfulValue);
+  return false;
+}
+
 function countMeaningfulFields(fd: Record<string, any>): number {
   const IGNORE = new Set(["vehicles", "drivers", "coverage_types_needed", "gaps"]);
-  return Object.entries(fd).filter(
-    ([k, v]) => !IGNORE.has(k) && v && String(v).trim() && String(v).trim() !== "false" && String(v).trim() !== "No" && String(v).trim() !== "[]"
-  ).length;
+  return Object.entries(fd).filter(([k, v]) => !IGNORE.has(k) && isMeaningfulValue(v)).length;
 }
 
 function parseAiJson(raw: string): any {
   const cleaned = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/i, "").trim();
   return JSON.parse(cleaned);
+}
+
+function coerceExtractionPayload(raw: any): { form_data: Record<string, any>; gaps: any[] } {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+    return { form_data: {}, gaps: [] };
+  }
+
+  let formData: Record<string, any> = {};
+
+  if (raw.form_data && typeof raw.form_data === "object" && !Array.isArray(raw.form_data)) {
+    formData = { ...raw.form_data };
+  } else if (raw.data && typeof raw.data === "object" && !Array.isArray(raw.data)) {
+    formData = { ...raw.data };
+  } else if (raw.fields && typeof raw.fields === "object" && !Array.isArray(raw.fields)) {
+    formData = { ...raw.fields };
+  } else {
+    const topLevel = Object.fromEntries(
+      Object.entries(raw).filter(([k]) => !["gaps", "metadata", "pipeline", "confidence", "warnings", "notes"].includes(k))
+    );
+    if (Object.keys(topLevel).length > 0) formData = topLevel;
+  }
+
+  const gaps = Array.isArray(raw.gaps) ? raw.gaps : [];
+  return { form_data: formData, gaps };
+}
+
+function mergeExtractionPayloads(
+  primary: { form_data?: Record<string, any>; gaps?: any[] },
+  secondary: { form_data?: Record<string, any>; gaps?: any[] },
+): { form_data: Record<string, any>; gaps: any[] } {
+  const merged: Record<string, any> = { ...(primary.form_data || {}) };
+  const incoming = secondary.form_data || {};
+
+  for (const [key, value] of Object.entries(incoming)) {
+    const existing = merged[key];
+
+    if (Array.isArray(value)) {
+      const existingArr = Array.isArray(existing) ? existing : [];
+      const combined = [...existingArr, ...value];
+      merged[key] = combined.filter((item, idx, arr) => {
+        const serialized = JSON.stringify(item);
+        return arr.findIndex((x) => JSON.stringify(x) === serialized) === idx;
+      });
+      continue;
+    }
+
+    if (value && typeof value === "object" && !Array.isArray(value)) {
+      const existingObj = existing && typeof existing === "object" && !Array.isArray(existing) ? existing : {};
+      const nextObj: Record<string, any> = { ...existingObj };
+      for (const [objKey, objVal] of Object.entries(value)) {
+        if (!isMeaningfulValue(nextObj[objKey]) && isMeaningfulValue(objVal)) {
+          nextObj[objKey] = objVal;
+        }
+      }
+      merged[key] = nextObj;
+      continue;
+    }
+
+    if (!isMeaningfulValue(existing) && isMeaningfulValue(value)) {
+      merged[key] = value;
+    }
+  }
+
+  const allGaps = [...(primary.gaps || []), ...(secondary.gaps || [])];
+  const dedupedGaps = allGaps.filter((gap, idx, arr) => {
+    const sig = JSON.stringify(gap);
+    return arr.findIndex((g) => JSON.stringify(g) === sig) === idx;
+  });
+
+  return { form_data: merged, gaps: dedupedGaps };
 }
 
 // ═══════════════════════════════════════════════════════════
