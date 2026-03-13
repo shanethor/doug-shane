@@ -148,7 +148,7 @@ export default function OmitPage() {
       </section>
 
       {/* ── How It Works ── */}
-      <section ref={howItWorksRef} className="border-t border-white/10 bg-white/[0.02]">
+      <section ref={howItWorksRef} className="border-t border-white/10 bg-white/[0.02] dark:bg-white/[0.02]">
         <div className="mx-auto max-w-3xl px-6 py-14 md:py-20">
           <div className="text-center mb-12">
             <p className="text-xs font-bold uppercase tracking-[0.3em] text-white/30 mb-3">How It Works</p>
