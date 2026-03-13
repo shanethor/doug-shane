@@ -149,7 +149,7 @@ export default function BorrowerPage() {
 
       {/* ── Hero / Partner Section ── */}
       <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5" />
+        <div className="absolute inset-0 bg-gradient-to-br from-[#2F3E5B]/5 via-transparent to-[#5A6B86]/5" />
         <div className="relative mx-auto max-w-5xl px-4 py-12 md:py-16">
           <div className="flex flex-col items-center gap-8 md:flex-row md:items-start md:gap-12">
             {/* Headshot */}
