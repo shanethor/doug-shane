@@ -183,7 +183,7 @@ export default function BorrowerPage() {
       </section>
 
       {/* ── How AURA Works ── */}
-      <section className="border-t bg-muted/30">
+      <section className="border-t border-gray-200 bg-gray-50/50">
         <div className="mx-auto max-w-5xl px-4 py-14 md:py-18">
           <div className="text-center">
             <Badge variant="outline" className="mb-3 text-xs">How It Works</Badge>
