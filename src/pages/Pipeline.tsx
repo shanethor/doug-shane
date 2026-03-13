@@ -152,7 +152,8 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
     policy_number: string;
     effective_date: string;
     annual_premium: string;
-  }>>([{ carrier: "", line_of_business: "", policy_number: "", effective_date: "", annual_premium: "" }]);
+    policy_term: string;
+  }>>([{ carrier: "", line_of_business: "", policy_number: "", effective_date: "", annual_premium: "", policy_term: "1_year" }]);
   const [submittingSold, setSubmittingSold] = useState(false);
 
   // Presenting modal state
@@ -529,7 +530,7 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
     if (targetStage === "sold") {
       // Open sold modal to collect policy details
       setSoldLeadId(leadId);
-      setSoldPolicies([{ carrier: "", line_of_business: "", policy_number: "", effective_date: "", annual_premium: "" }]);
+      setSoldPolicies([{ carrier: "", line_of_business: "", policy_number: "", effective_date: "", annual_premium: "", policy_term: "1_year" }]);
       setSoldModalOpen(true);
     } else if (targetStage === "presenting") {
       // Open presenting modal to collect premium lines
@@ -689,6 +690,13 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
           policy_number: pf.policy_number.trim(),
           effective_date: pf.effective_date,
           annual_premium: parseFloat(pf.annual_premium) || 0,
+          policy_term: pf.policy_term || "1_year",
+          expiration_date: (() => {
+            const eff = new Date(pf.effective_date);
+            const months = pf.policy_term === "6_months" ? 6 : 12;
+            eff.setMonth(eff.getMonth() + months);
+            return eff.toISOString().split("T")[0];
+          })(),
           status: "approved" as any,
           approved_at: new Date().toISOString(),
           approved_by_user_id: user.id,
@@ -1597,7 +1605,7 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
                     />
                   </div>
                 </div>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-4 gap-2">
                   <div>
                     <Label className="text-xs">Policy #</Label>
                     <Input
@@ -1616,6 +1624,17 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
                     />
                   </div>
                   <div>
+                    <Label className="text-xs">Term</Label>
+                    <select
+                      value={p.policy_term}
+                      onChange={(e) => { const u = [...soldPolicies]; u[i] = { ...u[i], policy_term: e.target.value }; setSoldPolicies(u); }}
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    >
+                      <option value="1_year">1 Year</option>
+                      <option value="6_months">6 Months</option>
+                    </select>
+                  </div>
+                  <div>
                     <Label className="text-xs">Annual Premium *</Label>
                     <Input
                       type="number"
@@ -1630,7 +1649,7 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
 
             {/* Add another policy button */}
             <button
-              onClick={() => setSoldPolicies([...soldPolicies, { carrier: "", line_of_business: "", policy_number: "", effective_date: "", annual_premium: "" }])}
+              onClick={() => setSoldPolicies([...soldPolicies, { carrier: "", line_of_business: "", policy_number: "", effective_date: "", annual_premium: "", policy_term: "1_year" }])}
               className="w-full flex items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border hover:border-primary/50 hover:bg-primary/5 transition-colors py-2.5 text-sm font-sans text-muted-foreground hover:text-primary"
             >
               <Plus className="h-4 w-4" />
@@ -1803,7 +1822,7 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
         onStageMove={async (leadId, stage) => {
           if (stage === "sold") {
             setSoldLeadId(leadId);
-            setSoldPolicies([{ carrier: "", line_of_business: "", policy_number: "", effective_date: "", annual_premium: "" }]);
+            setSoldPolicies([{ carrier: "", line_of_business: "", policy_number: "", effective_date: "", annual_premium: "", policy_term: "1_year" }]);
             setSoldModalOpen(true);
           } else if (stage === "presenting") {
             setPresentingLeadId(leadId);

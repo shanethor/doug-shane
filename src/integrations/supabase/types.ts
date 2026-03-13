@@ -1573,12 +1573,14 @@ export type Database = {
           carrier: string
           created_at: string
           effective_date: string
+          expiration_date: string | null
           form_data_snapshot: Json | null
           id: string
           lead_id: string
           line_of_business: string
           locked: boolean
           policy_number: string
+          policy_term: string
           producer_user_id: string
           rejected_at: string | null
           rejected_by_user_id: string | null
@@ -1595,12 +1597,14 @@ export type Database = {
           carrier: string
           created_at?: string
           effective_date: string
+          expiration_date?: string | null
           form_data_snapshot?: Json | null
           id?: string
           lead_id: string
           line_of_business: string
           locked?: boolean
           policy_number: string
+          policy_term?: string
           producer_user_id: string
           rejected_at?: string | null
           rejected_by_user_id?: string | null
@@ -1617,12 +1621,14 @@ export type Database = {
           carrier?: string
           created_at?: string
           effective_date?: string
+          expiration_date?: string | null
           form_data_snapshot?: Json | null
           id?: string
           lead_id?: string
           line_of_business?: string
           locked?: boolean
           policy_number?: string
+          policy_term?: string
           producer_user_id?: string
           rejected_at?: string | null
           rejected_by_user_id?: string | null
