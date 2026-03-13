@@ -654,6 +654,7 @@ Return ONLY the JSON array, nothing else.`;
         model: "google/gemini-2.5-flash-lite",
         messages: [{ role: "user", content: userContent }],
       }),
+      signal: AbortSignal.timeout(45_000),
     });
 
     console.log(`[prescan] Flash Lite responded in ${Date.now() - t0}ms (status: ${response.status})`);

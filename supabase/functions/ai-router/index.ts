@@ -367,6 +367,7 @@ async function callLovableAdvisor(
       ],
       stream: stream || false,
     }),
+    signal: AbortSignal.timeout(45_000),
   });
 
   if (!response.ok) {

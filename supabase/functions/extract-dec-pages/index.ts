@@ -97,6 +97,7 @@ serve(async (req) => {
           { role: "user", content: userContent },
         ],
       }),
+      signal: AbortSignal.timeout(45_000),
     });
 
     console.log(`[extract-dec] Response in ${Date.now() - t0}ms (status: ${response.status})`);
