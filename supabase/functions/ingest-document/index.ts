@@ -1,15 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { PDFDocument } from "https://esm.sh/pdf-lib@1.17.1";
-
-import {
-  detectDocType,
-  buildGeminiPrompt,
-  extractPageRange,
-  mapBopExtractionToFormData,
-  GEMINI_SYSTEM_PROMPT,
-  AcordDocType,
-} from "../_shared/acord-extraction-helpers.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -33,7 +23,7 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // ── 1. Mark as processing ──────────────────────────────────────────────
+    // ── 1. Mark as processing ──
     if (document_id) {
       await supabase
         .from("client_documents")
@@ -41,7 +31,7 @@ serve(async (req) => {
         .eq("id", document_id);
     }
 
-    // ── 2. Get PDF bytes ───────────────────────────────────────────────────
+    // ── 2. Get PDF bytes ──
     let pdfBytes: Uint8Array;
 
     if (pdf_base64) {
@@ -58,103 +48,47 @@ serve(async (req) => {
       throw new Error("Either pdf_base64 or storage_path is required");
     }
 
-    // ── 3. Load + count pages ──────────────────────────────────────────────
-    const srcDoc = await PDFDocument.load(pdfBytes, { ignoreEncryption: true });
-    const totalPages = srcDoc.getPageCount();
-    console.log(`[ingest] totalPages=${totalPages} doc=${document_id}`);
+    const pdfSizeMB = (pdfBytes.length / (1024 * 1024)).toFixed(1);
+    console.log(`[ingest] PDF size: ${pdfSizeMB}MB, doc=${document_id}`);
 
-    // ── 4. Determine scan range ────────────────────────────────────────────
-    // Skip expensive per-page prescan. Just send first 10 pages to Gemini
-    // which can natively read the PDF. Retry with 25 if too few fields.
-    const FAST_SCAN_PAGES = 10;
-    const RETRY_SCAN_PAGES = 25;
-    let scanEnd = Math.min(FAST_SCAN_PAGES, totalPages);
+    // ── 3. Send ORIGINAL PDF to Gemini (no slicing — avoids encrypted PDF corruption) ──
+    // Gemini 2.5 Flash natively handles large PDFs. Slicing encrypted docs
+    // produces unreadable content, which is why extraction was returning 0 fields.
+    const originalBase64 = pdf_base64 || uint8ToBase64(pdfBytes);
 
-    // ── 5. Detect doc type from filename ───────────────────────────────────
-    const pathHint = (storage_path || file_name || "").toUpperCase();
-    let docType: AcordDocType = "UNKNOWN";
-
-    if (/\bBO\d{5,}|CPKG|BUSINESSOWNER|BOP\b/.test(pathHint)) docType = "BOP";
-    else if (/\bWC\b|WORKERS.COMP|ACORD.?130/.test(pathHint)) docType = "ACORD_130";
-    else if (/AUTO|ACORD.?127|VEHICLE/.test(pathHint)) docType = "ACORD_127";
-    else if (/UMBRELLA|EXCESS/.test(pathHint)) docType = "UMBRELLA";
-
-    // If still unknown, try first page text (single page, fast)
-    if (docType === "UNKNOWN") {
-      try {
-        const firstSlice = await extractPageRange(pdfBytes, 1, 1);
-        const firstText = new TextDecoder().decode(firstSlice)
-          .replace(/[^\x20-\x7E]/g, " ").substring(0, 3000);
-        docType = detectDocType(firstText);
-      } catch { /* ignore */ }
-    }
-
-    console.log(`[ingest] docType=${docType} scanEnd=${scanEnd}/${totalPages}`);
-
-    // ── 6. Slice PDF ───────────────────────────────────────────────────────
-    const pdfToSend = scanEnd < totalPages
-      ? await extractPageRange(pdfBytes, 1, scanEnd)
-      : pdfBytes;
-
-    const pdfBase64Out = uint8ToBase64(pdfToSend);
-    console.log(`[ingest] Sending pages 1-${scanEnd}/${totalPages} to Gemini`);
-
-    // ── 7. Single Gemini call ──────────────────────────────────────────────
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
 
-    const prompt = buildGeminiPrompt(docType);
-    const rawText = await callGemini(pdfBase64Out, prompt, LOVABLE_API_KEY);
+    console.log(`[ingest] Sending full PDF (${pdfSizeMB}MB) to Gemini`);
+
+    const rawText = await callGemini(originalBase64, EXTRACTION_PROMPT, LOVABLE_API_KEY);
     console.log(`[ingest] Gemini response length: ${rawText.length} chars`);
+    console.log(`[ingest] Response preview: ${rawText.substring(0, 800)}`);
 
-    // ── 8. Parse response ──────────────────────────────────────────────────
+    // ── 4. Parse response ──
     let extracted: Record<string, any> = {};
-    let confidence = 0;
-    let retryUsed = false;
-
     try {
       extracted = parseJson(rawText);
-      confidence = typeof extracted.confidence === "number" ? extracted.confidence : 0.8;
     } catch (parseErr) {
-      console.error("[ingest] JSON parse failed:", parseErr, "Raw (first 500):", rawText.substring(0, 500));
-      confidence = 0;
+      console.error("[ingest] JSON parse failed:", parseErr);
+      console.error("[ingest] Raw response (first 1000):", rawText.substring(0, 1000));
     }
 
-    const fieldCount = countFields(extracted);
-    console.log(`[ingest] First pass: ${fieldCount} fields, confidence=${confidence}`);
-
-    // ── 9. Retry with wider range if too few fields ────────────────────────
-    if (fieldCount < 10 && totalPages > scanEnd) {
-      retryUsed = true;
-      const retryEnd = Math.min(RETRY_SCAN_PAGES, totalPages);
-      console.log(`[ingest] Low fields (${fieldCount}), retrying with pages 1-${retryEnd}...`);
-      try {
-        const widerSlice = await extractPageRange(pdfBytes, 1, retryEnd);
-        const widerBase64 = uint8ToBase64(widerSlice);
-        const retryRaw = await callGemini(widerBase64, prompt, LOVABLE_API_KEY);
-        const retryData = parseJson(retryRaw);
-        const retryFields = countFields(retryData);
-        console.log(`[ingest] Retry: ${retryFields} fields`);
-        if (retryFields > fieldCount) {
-          extracted = retryData;
-          confidence = typeof retryData.confidence === "number" ? retryData.confidence : 0.8;
-        }
-      } catch (e) {
-        console.error("[ingest] Retry failed:", e);
-      }
-    }
-
-    // ── 10. Map to form fields ─────────────────────────────────────────────
-    const formdata: Record<string, any> = docType === "BOP"
-      ? mapBopExtractionToFormData(extracted)
-      : flattenExtraction(extracted);
-
-    const finalFieldCount = Object.entries(formdata).filter(
+    // Flatten any nested objects
+    const formdata = flattenToFormKeys(extracted);
+    const fieldCount = Object.entries(formdata).filter(
       ([_, v]) => v !== null && v !== undefined && v !== "" && v !== false
     ).length;
-    console.log(`[ingest] Mapped ${finalFieldCount} form fields`);
+    console.log(`[ingest] Extracted ${fieldCount} form fields`);
 
-    // ── 11. Inject agency profile ──────────────────────────────────────────
+    // Log a sample of extracted keys for debugging
+    const sampleKeys = Object.entries(formdata)
+      .filter(([_, v]) => v !== null && v !== undefined && v !== "")
+      .slice(0, 20)
+      .map(([k, v]) => `${k}=${String(v).substring(0, 40)}`);
+    console.log(`[ingest] Sample fields: ${sampleKeys.join(", ")}`);
+
+    // ── 5. Inject agency profile ──
     const { data: sub } = await supabase
       .from("business_submissions")
       .select("user_id")
@@ -188,7 +122,7 @@ serve(async (req) => {
       }
     }
 
-    // ── 12. Upsert insurance_applications ─────────────────────────────────
+    // ── 6. Upsert insurance_applications ──
     const { data: appRow } = await supabase
       .from("insurance_applications")
       .select("id, form_data")
@@ -213,25 +147,26 @@ serve(async (req) => {
       }
     }
 
-    // ── 13. Update document record ─────────────────────────────────────────
+    // ── 7. Update document record ──
     if (document_id) {
       await supabase.from("client_documents").update({
-        extraction_status: confidence > 0.4 ? "complete" : "partial",
-        extraction_confidence: confidence,
-        doc_type: docType,
-        total_pages: totalPages,
+        extraction_status: fieldCount > 5 ? "complete" : "partial",
+        extraction_confidence: fieldCount > 20 ? 0.9 : fieldCount > 5 ? 0.7 : 0.3,
+        total_pages: null,
         extraction_metadata: {
           model: "google/gemini-2.5-flash",
-          pages_sent: scanEnd,
-          total_pages: totalPages,
-          retry_used: retryUsed,
-          field_count: finalFieldCount,
+          field_count: fieldCount,
         },
       }).eq("id", document_id);
     }
 
+    const mergedFieldCount = Object.entries(merged).filter(
+      ([_, v]) => v !== null && v !== undefined && v !== "" && v !== false
+    ).length;
+    console.log(`[ingest] Final merged form_data: ${mergedFieldCount} fields`);
+
     return new Response(
-      JSON.stringify({ success: true, docType, confidence, pages: totalPages, scanEnd, fieldCount: finalFieldCount }),
+      JSON.stringify({ success: true, fieldCount, mergedFieldCount }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
 
@@ -247,24 +182,121 @@ serve(async (req) => {
   }
 });
 
-// ── Helpers ────────────────────────────────────────────────────────────────
+// ── EXTRACTION PROMPT ──────────────────────────────────────────────────────
+// Uses FLAT field keys that directly match ACORD 125/126 form field names.
+// This avoids an error-prone nested-to-flat mapping step.
 
-function countFields(obj: Record<string, any>): number {
-  let count = 0;
-  for (const [k, v] of Object.entries(obj)) {
-    if (k === "confidence") continue;
-    if (v !== null && v !== undefined && v !== "" && v !== false) {
-      if (typeof v === "object" && !Array.isArray(v)) {
-        count += countFields(v);
-      } else if (Array.isArray(v) && v.length > 0) {
-        count += v.length;
-      } else {
-        count++;
-      }
-    }
-  }
-  return count;
+const EXTRACTION_PROMPT = `You are an expert insurance document parser. Extract ALL available data from this insurance document (declarations page, policy packet, application, or certificate).
+
+Return a FLAT JSON object using these exact field keys. Only include fields you find in the document. Set missing fields to null.
+
+CRITICAL: Return ONLY the JSON object. No markdown fences, no prose.
+
+{
+  "applicant_name": "Full legal name of the insured/applicant",
+  "mailing_address": "Street address line 1",
+  "city": "City",
+  "state": "State code (2 letter)",
+  "zip": "ZIP code",
+  "business_phone": "Business phone number",
+  "website": "Website URL",
+  "fein": "Federal Employer ID Number",
+  "sic_code": "SIC code",
+  "naics_code": "NAICS code",
+  "legal_entity": "Corporation, LLC, Partnership, Individual, etc.",
+  "business_description": "Nature/description of business operations",
+  "date_business_started": "YYYY-MM-DD",
+  "annual_revenues": "Annual gross revenues/sales",
+  "full_time_employees": "Number of full-time employees",
+  "part_time_employees": "Number of part-time employees",
+  
+  "carrier": "Insurance company/carrier name",
+  "naic_code": "Carrier NAIC code",
+  "policy_number": "Policy number",
+  "proposed_eff_date": "MM/DD/YYYY effective date",
+  "proposed_exp_date": "MM/DD/YYYY expiration date",
+  "policy_premium": "Total annual premium amount (number only)",
+  "billing_plan": "Direct, Agency, etc.",
+  
+  "contact_name_1": "Primary contact person name",
+  "contact_phone_1": "Primary contact phone",
+  "contact_email_1": "Primary contact email",
+  
+  "premises_address": "Location/premises street address",
+  "premises_city": "Location city",
+  "premises_state": "Location state",
+  "premises_zip": "Location ZIP",
+  "occupied_sq_ft": "Occupied square footage",
+  "total_building_sq_ft": "Total building square footage",
+  "premises_description": "Description of operations at premises",
+  "description_of_operations": "Detailed description of business operations",
+  
+  "gl_each_occurrence_limit": "General liability per occurrence limit (number)",
+  "gl_general_aggregate_limit": "General aggregate limit (number)",
+  "gl_products_completed_operations_aggregate": "Products/completed ops aggregate (number)",
+  "gl_medical_expense_any_one_person_limit": "Medical expense limit (number)",
+  "gl_damage_to_premises_rented_limit": "Damage to rented premises limit (number)",
+  "gl_personal_advertising_injury_limit": "Personal & advertising injury limit (number)",
+  
+  "bop_building_limit_1": "Building coverage limit at location 1 (number)",
+  "bop_bpp_limit_1": "Business personal property limit (number)",
+  "bop_property_deductible_1": "Property deductible amount (number)",
+  
+  "auto_combined_single_limit": "Auto combined single limit (number)",
+  "auto_bodily_injury_per_person": "Auto BI per person limit (number)",
+  "auto_bodily_injury_per_accident": "Auto BI per accident limit (number)",
+  "auto_property_damage_limit": "Auto property damage limit (number)",
+  
+  "wc_each_accident_limit": "Workers comp each accident limit (number)",
+  "wc_disease_each_employee_limit": "WC disease per employee limit (number)",
+  "wc_disease_policy_limit": "WC disease policy limit (number)",
+  
+  "umbrella_each_occurrence_limit": "Umbrella per occurrence limit (number)",
+  "umbrella_aggregate_limit": "Umbrella aggregate limit (number)",
+  
+  "cyber_aggregate_limit": "Cyber aggregate limit (number)",
+  "epli_each_claim_limit": "EPLI per claim limit (number)",
+  "epli_aggregate_limit": "EPLI aggregate limit (number)",
+  
+  "prior_carrier_1": "Current/prior carrier name",
+  "prior_policy_number_1": "Current/prior policy number",
+  "prior_eff_date_1": "MM/DD/YYYY prior effective date",
+  "prior_exp_date_1": "MM/DD/YYYY prior expiration date",
+  "prior_gl_premium_1": "Prior premium amount (number)",
+  
+  "lob_bop": true,
+  "lob_gl": true,
+  "lob_property": true,
+  "lob_auto": true,
+  "lob_umbrella": true,
+  
+  "additional_interest_name_a": "Additional interest/mortgagee name",
+  "additional_interest_address_a": "Additional interest address",
+  
+  "loss_1_date": "MM/DD/YYYY date of loss",
+  "loss_1_description": "Description of loss",
+  "loss_1_amount": "Loss amount (number)",
+  "loss_1_status": "Open or Closed"
 }
+
+IMPORTANT RULES:
+- Dates: use MM/DD/YYYY format
+- Dollar amounts: numbers only, no $ or commas (e.g. 1000000 not "$1,000,000")
+- For LOB flags (lob_bop, lob_gl, etc.): set to true ONLY if that line of business is covered in this policy
+- Extract from ALL pages, focusing on declarations, schedules, and coverage summaries
+- If the document has multiple locations, use the first location for the primary fields
+- For limits, use the per-occurrence value (not aggregate) unless the field name specifies aggregate`;
+
+const SYSTEM_PROMPT = `You are an expert insurance document parser for a commercial lines agency management system.
+Extract data into STRICT JSON that exactly matches the provided schema.
+Rules:
+- Return ONLY the JSON object — no prose, no markdown fences.
+- If a field is not present in the document, omit it or set to null.
+- Never invent data. Only extract what is explicitly stated.
+- Dates: MM/DD/YYYY format.
+- Dollar amounts: numbers only (no $ or commas).`;
+
+// ── Helpers ────────────────────────────────────────────────────────────────
 
 function uint8ToBase64(bytes: Uint8Array): string {
   let binary = "";
@@ -282,7 +314,7 @@ async function callGemini(base64: string, prompt: string, apiKey: string): Promi
     body: JSON.stringify({
       model: "google/gemini-2.5-flash",
       messages: [
-        { role: "system", content: GEMINI_SYSTEM_PROMPT },
+        { role: "system", content: SYSTEM_PROMPT },
         {
           role: "user",
           content: [
@@ -292,14 +324,14 @@ async function callGemini(base64: string, prompt: string, apiKey: string): Promi
         },
       ],
     }),
-    signal: AbortSignal.timeout(50_000),
+    signal: AbortSignal.timeout(60_000),
   });
 
   if (!response.ok) {
     const t = await response.text();
     if (response.status === 429) throw new Error("Rate limited");
     if (response.status === 402) throw new Error("AI credits exhausted");
-    throw new Error(`AI extraction failed (${response.status}): ${t.substring(0, 200)}`);
+    throw new Error(`AI extraction failed (${response.status}): ${t.substring(0, 300)}`);
   }
 
   const result = await response.json();
@@ -307,8 +339,113 @@ async function callGemini(base64: string, prompt: string, apiKey: string): Promi
 }
 
 function parseJson(text: string): Record<string, any> {
-  const cleaned = text.replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/```$/i, "").trim();
+  const cleaned = text
+    .replace(/^```json\s*/i, "")
+    .replace(/^```\s*/i, "")
+    .replace(/```$/i, "")
+    .trim();
   return JSON.parse(cleaned);
+}
+
+/**
+ * Flatten nested objects into flat keys that match ACORD field maps.
+ * Handles both flat responses (ideal) and nested ones (legacy prompts).
+ */
+function flattenToFormKeys(obj: Record<string, any>): Record<string, any> {
+  const result: Record<string, any> = {};
+
+  for (const [k, v] of Object.entries(obj)) {
+    if (k === "confidence") continue;
+    if (v === null || v === undefined) continue;
+
+    if (typeof v === "object" && !Array.isArray(v)) {
+      // Nested object — flatten with context-aware key mapping
+      const nested = flattenNested(k, v);
+      for (const [nk, nv] of Object.entries(nested)) {
+        if (nv !== null && nv !== undefined && nv !== "") {
+          result[nk] = nv;
+        }
+      }
+    } else if (Array.isArray(v)) {
+      // Arrays (locations, vehicles, etc.) — take first item
+      if (v.length > 0 && typeof v[0] === "object") {
+        const first = v[0];
+        for (const [ak, av] of Object.entries(first)) {
+          if (av !== null && av !== undefined && av !== "") {
+            result[`${k.replace(/s$/, "")}_1_${ak}`] = av;
+          }
+        }
+      }
+    } else {
+      result[k] = v;
+    }
+  }
+
+  // Apply common aliases
+  applyAliases(result);
+  return result;
+}
+
+function flattenNested(prefix: string, obj: Record<string, any>): Record<string, any> {
+  const result: Record<string, any> = {};
+  for (const [k, v] of Object.entries(obj)) {
+    if (v === null || v === undefined) continue;
+    if (typeof v === "object" && !Array.isArray(v)) {
+      const deeper = flattenNested(`${prefix}_${k}`, v);
+      Object.assign(result, deeper);
+    } else {
+      result[`${prefix}_${k}`] = v;
+    }
+  }
+  return result;
+}
+
+/**
+ * Map common extraction key variants to canonical ACORD field keys
+ */
+function applyAliases(data: Record<string, any>) {
+  const ALIASES: Record<string, string> = {
+    insured_name: "applicant_name",
+    named_insured: "applicant_name",
+    insured_applicant_name: "applicant_name",
+    insured_mailing_address: "mailing_address",
+    insured_mailing_city: "city",
+    insured_mailing_state: "state",
+    insured_mailing_zip: "zip",
+    insured_fein: "fein",
+    insured_business_description: "business_description",
+    insured_legal_entity: "legal_entity",
+    carrier_name: "carrier",
+    carrier_carrier_name: "carrier",
+    carrier_naic_code: "naic_code",
+    policy_policy_number: "policy_number",
+    policy_policy_effective_date: "proposed_eff_date",
+    policy_policy_expiration_date: "proposed_exp_date",
+    policy_effective_date: "proposed_eff_date",
+    policy_expiration_date: "proposed_exp_date",
+    policy_total_annual_premium: "policy_premium",
+    total_annual_premium: "policy_premium",
+    producer_producer_name: "producer_name",
+    producer_producer_phone: "agency_phone",
+    producer_agency_code: "agency_code",
+    nature_of_business: "description_of_operations",
+    liability_each_occurrence_limit: "gl_each_occurrence_limit",
+    liability_general_aggregate_limit: "gl_general_aggregate_limit",
+    liability_products_completed_ops_aggregate: "gl_products_completed_operations_aggregate",
+    liability_medical_expense_limit: "gl_medical_expense_any_one_person_limit",
+    liability_damage_to_premises_rented_limit: "gl_damage_to_premises_rented_limit",
+    current_carrier: "prior_carrier_1",
+    current_premium: "prior_gl_premium_1",
+    each_occurrence_limit: "gl_each_occurrence_limit",
+    general_aggregate_limit: "gl_general_aggregate_limit",
+  };
+
+  for (const [alias, canonical] of Object.entries(ALIASES)) {
+    if (data[alias] && !data[canonical]) {
+      data[canonical] = data[alias];
+      delete data[alias];
+    }
+  }
 }
 
 function mergeFormData(existing: Record<string, any>, incoming: Record<string, any>): Record<string, any> {
@@ -322,13 +459,4 @@ function mergeFormData(existing: Record<string, any>, incoming: Record<string, a
     if (empty) next[k] = v;
   }
   return next;
-}
-
-function flattenExtraction(obj: Record<string, any>, prefix = "", result: Record<string, any> = {}): Record<string, any> {
-  for (const [k, v] of Object.entries(obj)) {
-    const key = prefix ? `${prefix}_${k}` : k;
-    if (v !== null && typeof v === "object" && !Array.isArray(v)) flattenExtraction(v, key, result);
-    else result[key] = v;
-  }
-  return result;
 }
