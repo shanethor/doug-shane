@@ -99,7 +99,7 @@ function ScoreboardTile({
 }
 
 /* ─── Main Component ─── */
-export function ProductionScoreboard({ userId, premiumSold, revenueSold }: Props) {
+export function ProductionScoreboard({ userId, mtdPremium, mtdRevenue, ytdPremium, ytdRevenue }: Props) {
   const [goals, setGoals] = useState<{
     annual_premium_goal: number;
     annual_revenue_goal: number;
