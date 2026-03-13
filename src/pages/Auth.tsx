@@ -11,7 +11,7 @@ import { Loader2, ShieldCheck, Building2 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import auraLogo from "@/assets/aura-logo.png";
 import { set2FAVerified, is2FAVerified, clear2FAVerified } from "@/lib/2fa-storage";
-import { is2FABypassed } from "@/lib/2fa-bypass";
+
 
 async function getAuthHeaders(): Promise<Record<string, string>> {
   const { data } = await supabase.auth.getSession();
@@ -83,7 +83,7 @@ export default function Auth() {
     if (loginHandled2FA.current) return;
 
     if (!loading && user && !is2FAVerified() && !needs2FA && !autoChecking && !isPendingApproval) {
-      if (is2FABypassed(user.email)) {
+      if (user.user_metadata?.skip_2fa) {
         set2FAVerified(true);
         navigate("/", { replace: true });
         return;
@@ -197,7 +197,7 @@ export default function Auth() {
         const userId = data.user.id;
         const userEmail = data.user.email!;
 
-        if (is2FABypassed(userEmail)) {
+        if (data.user.user_metadata?.skip_2fa) {
           set2FAVerified(true);
           navigate("/", { replace: true });
           return;
