@@ -268,10 +268,8 @@ serve(async (req) => {
           model: "google/gemini-2.5-flash",
           pages_sent: scanEnd,
           total_pages: totalPages,
-          last_dec_page: lastDecPage,
-          extended_scan: isExtended,
           retry_used: retryUsed,
-          prescan_doc_type_hint: docTypeHint,
+          field_count: countFields(extracted),
         },
       }).eq("id", document_id);
     }
