@@ -106,6 +106,10 @@ const STEPS = [
 export default function BorrowerPage() {
   const { slug } = useParams<{ slug: string }>();
   const [creatingIntake, setCreatingIntake] = useState(false);
+
+  // Associated has its own dedicated layout
+  if (slug === "associated") return <AssociatedPage />;
+
   const config = slug ? BORROWERS[slug] : undefined;
 
   if (!config) {
