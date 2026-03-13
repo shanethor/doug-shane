@@ -38,7 +38,7 @@ async function getAuthHeaders(): Promise<Record<string, string>> {
 /**
  * Extract data from uploaded files using the prescan-first ingest pipeline.
  * 
- * PDFs → upload to storage → ingest-document (prescan + smart slice + single Gemini call)
+ * PDFs → ingest-document (prescan + smart slice + single Gemini call)
  * Non-PDFs → extract-business-data (direct)
  */
 export async function extractWithBatching(params: ExtractParams): Promise<ExtractResult> {
@@ -53,7 +53,7 @@ export async function extractWithBatching(params: ExtractParams): Promise<Extrac
   const pdfs = pdf_files.filter(f => f.mimeType === "application/pdf");
   const images = pdf_files.filter(f => f.mimeType !== "application/pdf");
 
-  // Images still go through extract-business-data (no storage upload needed)
+  // Images still go through extract-business-data (no prescan needed)
   if (pdfs.length === 0 && images.length > 0) {
     return legacyExtractCall(params);
   }
@@ -63,79 +63,43 @@ export async function extractWithBatching(params: ExtractParams): Promise<Extrac
   const userId = params.user_id || session?.user?.id;
   if (!userId) throw new Error("Not authenticated");
 
-  const toastId = toast.loading("Uploading documents…");
+  const toastId = toast.loading("Prescanning document…", {
+    description: "Identifying data-rich pages",
+  });
 
   try {
-    // ── 1. Upload each PDF to storage and create client_document rows ──
-    const documentIds: string[] = [];
-    const storagePaths: string[] = [];
+    const headers = await getAuthHeaders();
 
-    for (const pdf of pdfs) {
-      const fileName = pdf.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-      const storagePath = `${userId}/${submission_id || "unsorted"}/${Date.now()}_${fileName}`;
+    // ── Process each PDF through ingest-document ──
+    for (let i = 0; i < pdfs.length; i++) {
+      const pdf = pdfs[i];
+      const label = pdf.name || `Document ${i + 1}`;
 
-      // Decode base64 to Uint8Array
-      const binaryStr = atob(pdf.base64);
-      const bytes = new Uint8Array(binaryStr.length);
-      for (let i = 0; i < binaryStr.length; i++) bytes[i] = binaryStr.charCodeAt(i);
-
-      const { error: uploadErr } = await supabase.storage
-        .from("documents")
-        .upload(storagePath, bytes, { contentType: "application/pdf", upsert: false });
-
-      if (uploadErr) {
-        console.warn(`[ingest] Storage upload failed for ${pdf.name}:`, uploadErr.message);
-        // Fall back to legacy for this file
-        continue;
+      if (pdfs.length > 1) {
+        toast.loading(`Processing ${label}…`, {
+          id: toastId,
+          description: `Document ${i + 1} of ${pdfs.length}`,
+        });
       }
 
-      // Create client_document row
+      // Create client_document row for tracking
       const insertData: Record<string, any> = {
         user_id: userId,
         file_name: pdf.name,
-        file_url: storagePath,
+        file_url: `inline://${pdf.name}`,
         document_type: "application",
-        file_size: bytes.length,
         extraction_status: "pending",
       };
       if (submission_id) insertData.submission_id = submission_id;
       if (params.lead_id) insertData.lead_id = params.lead_id;
 
-      const { data: doc, error: docErr } = await supabase
+      const { data: doc } = await supabase
         .from("client_documents")
         .insert(insertData as any)
         .select("id")
         .single();
 
-      if (docErr || !doc) {
-        console.warn(`[ingest] client_documents insert failed:`, docErr?.message);
-        continue;
-      }
-
-      documentIds.push(doc.id);
-      storagePaths.push(storagePath);
-    }
-
-    // If no PDFs were uploaded successfully, fall back to legacy
-    if (documentIds.length === 0) {
-      toast.dismiss(toastId);
-      return legacyExtractCall(params);
-    }
-
-    // ── 2. Call ingest-document for each PDF (prescan pipeline) ──
-    toast.loading("Prescanning pages…", { id: toastId, description: "Identifying data-rich pages" });
-
-    const headers = await getAuthHeaders();
-
-    for (let i = 0; i < documentIds.length; i++) {
-      const label = pdfs[i]?.name || `Document ${i + 1}`;
-      
-      if (documentIds.length > 1) {
-        toast.loading(`Processing ${label}…`, {
-          id: toastId,
-          description: `Document ${i + 1} of ${documentIds.length}`,
-        });
-      }
+      const documentId = doc?.id;
 
       try {
         const resp = await fetch(
@@ -144,9 +108,10 @@ export async function extractWithBatching(params: ExtractParams): Promise<Extrac
             method: "POST",
             headers,
             body: JSON.stringify({
-              document_id: documentIds[i],
+              document_id: documentId,
               submission_id: submission_id || "",
-              storage_path: storagePaths[i],
+              pdf_base64: pdf.base64,
+              file_name: pdf.name,
             }),
             signal: AbortSignal.timeout(90_000),
           }
@@ -155,14 +120,24 @@ export async function extractWithBatching(params: ExtractParams): Promise<Extrac
         if (!resp.ok) {
           const errBody = await resp.json().catch(() => ({}));
           console.warn(`[ingest] ingest-document failed for ${label}:`, errBody);
+          // Fall back to legacy for this file
+          try {
+            await legacyExtractCall({
+              description,
+              pdf_files: [pdf],
+              submission_id,
+            });
+          } catch (e) {
+            console.warn(`[ingest] Legacy fallback also failed for ${label}:`, e);
+          }
         } else {
           const result = await resp.json();
-          const pagesMsg = result.scanEnd
+          const scanMsg = result.scanEnd && result.pages
             ? `Scanned ${result.scanEnd} of ${result.pages} pages`
-            : `${result.pages} pages`;
+            : "";
           toast.loading(`Extracted from ${label}`, {
             id: toastId,
-            description: `${pagesMsg} • ${result.docType || "document"}`,
+            description: `${scanMsg}${result.docType ? ` • ${result.docType}` : ""}`.trim(),
           });
         }
       } catch (err: any) {
@@ -170,7 +145,7 @@ export async function extractWithBatching(params: ExtractParams): Promise<Extrac
       }
     }
 
-    // ── 3. Also process any text content or images via legacy ──
+    // ── Also process any text content or images via legacy ──
     if (file_contents || images.length > 0) {
       try {
         await legacyExtractCall({
@@ -184,7 +159,7 @@ export async function extractWithBatching(params: ExtractParams): Promise<Extrac
       }
     }
 
-    // ── 4. Read merged form_data from insurance_applications ──
+    // ── Read merged form_data from insurance_applications ──
     toast.loading("Finalizing extraction…", { id: toastId });
 
     const { data: appRow } = await supabase
@@ -202,8 +177,8 @@ export async function extractWithBatching(params: ExtractParams): Promise<Extrac
     ).length;
 
     toast.dismiss(toastId);
-    toast.success(`Extraction complete`, {
-      description: `Found ${fieldCount} fields from ${documentIds.length} document${documentIds.length !== 1 ? "s" : ""}`,
+    toast.success("Extraction complete", {
+      description: `Found ${fieldCount} fields from ${pdfs.length} document${pdfs.length !== 1 ? "s" : ""}`,
     });
 
     return { form_data: formData, gaps };
