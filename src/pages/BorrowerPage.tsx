@@ -135,27 +135,27 @@ export default function BorrowerPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-white text-[#1D2430]" data-theme="light">
       {/* ── Header ── */}
-      <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+      <header className="sticky top-0 z-50 border-b border-gray-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
         <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
-          <img src={auraLogo} alt="AURA Risk Group" className="h-7" />
+          <img src={auraLogo} alt="AURA Risk Group" className="h-7 dark:invert-0" style={{ filter: 'none' }} />
           <div className="flex items-center gap-2">
-            <Shield className="h-4 w-4 text-primary" />
-            <span className="text-xs font-medium tracking-wide text-muted-foreground">{config.headerLabel}</span>
+            <Shield className="h-4 w-4 text-[#2F3E5B]" />
+            <span className="text-xs font-medium tracking-wide text-[#1D2430]/60">{config.headerLabel}</span>
           </div>
         </div>
       </header>
 
       {/* ── Hero / Partner Section ── */}
       <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5" />
+        <div className="absolute inset-0 bg-gradient-to-br from-[#2F3E5B]/5 via-transparent to-[#5A6B86]/5" />
         <div className="relative mx-auto max-w-5xl px-4 py-12 md:py-16">
           <div className="flex flex-col items-center gap-8 md:flex-row md:items-start md:gap-12">
             {/* Headshot */}
             <div className="shrink-0">
               <div className="relative">
-                <div className="absolute -inset-1 rounded-2xl bg-gradient-to-br from-primary/30 to-accent/20 blur-sm" />
+                <div className="absolute -inset-1 rounded-2xl bg-gradient-to-br from-[#2F3E5B]/30 to-[#5A6B86]/20 blur-sm" />
                 <img
                   src={config.headshot}
                   alt={config.name}
@@ -165,9 +165,9 @@ export default function BorrowerPage() {
             </div>
             {/* Info */}
             <div className="flex-1 text-center md:text-left">
-              <h1 className="text-2xl font-bold tracking-tight md:text-3xl">{config.name}</h1>
-              <p className="mt-1 text-sm text-muted-foreground">{config.title} · {config.company}</p>
-              <p className="mx-auto mt-5 max-w-xl text-sm leading-relaxed text-muted-foreground md:mx-0">
+              <h1 className="text-2xl font-bold tracking-tight md:text-3xl text-[#1D2430]">{config.name}</h1>
+              <p className="mt-1 text-sm text-[#1D2430]/60">{config.title} · {config.company}</p>
+              <p className="mx-auto mt-5 max-w-xl text-sm leading-relaxed text-[#1D2430]/60 md:mx-0">
                 {config.bio}
               </p>
               <Button
@@ -183,7 +183,7 @@ export default function BorrowerPage() {
       </section>
 
       {/* ── How AURA Works ── */}
-      <section className="border-t bg-muted/30">
+      <section className="border-t border-gray-200 bg-gray-50/50">
         <div className="mx-auto max-w-5xl px-4 py-14 md:py-18">
           <div className="text-center">
             <Badge variant="outline" className="mb-3 text-xs">How It Works</Badge>
@@ -191,14 +191,14 @@ export default function BorrowerPage() {
           </div>
           <div className="mx-auto mt-10 grid max-w-3xl gap-6 sm:grid-cols-2">
             {STEPS.map((step, i) => (
-              <Card key={i} className="border-border/60 bg-background transition-shadow hover:shadow-md">
+              <Card key={i} className="border-gray-200 bg-white transition-shadow hover:shadow-md">
                 <CardContent className="flex gap-4 p-5">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#2F3E5B]/10 text-[#2F3E5B]">
                     <step.icon className="h-5 w-5" />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold">{step.title}</p>
-                    <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{step.desc}</p>
+                    <p className="text-sm font-semibold text-[#1D2430]">{step.title}</p>
+                    <p className="mt-1 text-xs leading-relaxed text-[#1D2430]/60">{step.desc}</p>
                   </div>
                 </CardContent>
               </Card>
@@ -257,16 +257,16 @@ export default function BorrowerPage() {
       </section>
 
       {/* ── Partner Contact ── */}
-      <section className="border-t bg-muted/30">
+      <section className="border-t border-gray-200 bg-gray-50/50">
         <div className="mx-auto max-w-5xl px-4 py-12">
           <div className="mx-auto max-w-sm">
-            <p className="mb-4 text-center text-xs font-semibold uppercase tracking-widest text-muted-foreground">{config.contactSectionTitle}</p>
-            <Card className="border-border/60">
+            <p className="mb-4 text-center text-xs font-semibold uppercase tracking-widest text-[#1D2430]/50">{config.contactSectionTitle}</p>
+            <Card className="border-gray-200">
               <CardContent className="space-y-3 p-5 text-center">
-                <p className="text-base font-bold">{config.name}</p>
-                <p className="text-xs text-muted-foreground">{config.title}</p>
-                <p className="text-sm text-muted-foreground">{config.company}</p>
-                <div className="space-y-1.5 text-xs text-muted-foreground">
+                <p className="text-base font-bold text-[#1D2430]">{config.name}</p>
+                <p className="text-xs text-[#1D2430]/60">{config.title}</p>
+                <p className="text-sm text-[#1D2430]/60">{config.company}</p>
+                <div className="space-y-1.5 text-xs text-[#1D2430]/60">
                   <div className="flex items-center justify-center gap-2">
                     <Phone className="h-3.5 w-3.5" /> {config.phone}
                   </div>
@@ -299,8 +299,8 @@ export default function BorrowerPage() {
       </section>
 
       {/* ── Footer ── */}
-      <footer className="border-t py-8 text-center">
-        <p className="text-xs font-medium tracking-wide text-muted-foreground">Insurance Runs On <span className="font-bold text-foreground">AURA</span></p>
+      <footer className="border-t border-gray-200 py-8 text-center">
+        <p className="text-xs font-medium tracking-wide text-[#1D2430]/50">Insurance Runs On <span className="font-bold text-[#1D2430]">AURA</span></p>
       </footer>
     </div>
   );

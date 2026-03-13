@@ -131,6 +131,8 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
   const [auditLogData, setAuditLogData] = useState<any[]>([]);
   // Map lead_id -> array of approved policy premiums for sold card display
   const [leadPolicyPremiums, setLeadPolicyPremiums] = useState<Record<string, number[]>>({});
+  // Map lead_id -> earliest effective_date for month tag display
+  const [leadEffectiveDates, setLeadEffectiveDates] = useState<Record<string, string>>({});
 
   const [lossRunStatuses, setLossRunStatuses] = useState<Record<string, string>>({});
   const [staleLeadIds, setStaleLeadIds] = useState<Set<string>>(new Set());
@@ -303,13 +305,19 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
 
     setAllPoliciesData(allPolicies.map((p: any) => ({ lead_id: p.lead_id, annual_premium: Number(p.annual_premium || 0), status: p.status, effective_date: p.effective_date })));
     
-    // Build per-lead premium map for sold cards
+    // Build per-lead premium map and effective date map for sold cards
     const premiumMap: Record<string, number[]> = {};
+    const dateMap: Record<string, string> = {};
     approved.forEach((p: any) => {
       if (!premiumMap[p.lead_id]) premiumMap[p.lead_id] = [];
       premiumMap[p.lead_id].push(Number(p.annual_premium || 0));
+      // Store earliest effective_date per lead
+      if (!dateMap[p.lead_id] || p.effective_date < dateMap[p.lead_id]) {
+        dateMap[p.lead_id] = p.effective_date;
+      }
     });
     setLeadPolicyPremiums(premiumMap);
+    setLeadEffectiveDates(dateMap);
 
     setAuditLogData(auditRes.data ?? []);
     setLoading(false);
@@ -1371,12 +1379,17 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
                                 ))}
                               </div>
                             )}
-                            {/* Show sold premium on sold cards */}
+                            {/* Show sold premium + month tag on sold cards */}
                             {stage === "sold" && leadPolicyPremiums[lead.id] && (
-                              <div className="ml-[18px] mt-1">
+                              <div className="ml-[18px] mt-1 flex items-center gap-2">
                                 <span className="text-[10px] text-success font-sans font-medium">
                                   Sold: {fmt(leadPolicyPremiums[lead.id].reduce((a: number, b: number) => a + b, 0))}
                                 </span>
+                                {leadEffectiveDates[lead.id] && (
+                                  <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 font-normal">
+                                    {new Date(leadEffectiveDates[lead.id] + "T00:00:00").toLocaleString("en-US", { month: "short", year: "numeric" })}
+                                  </Badge>
+                                )}
                               </div>
                             )}
                           </div>
