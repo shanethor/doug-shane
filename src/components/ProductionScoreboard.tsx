@@ -11,8 +11,10 @@ import { Target, Trophy, Sparkles } from "lucide-react";
 
 type Props = {
   userId: string;
-  premiumSold: number;
-  revenueSold: number;
+  mtdPremium: number;
+  mtdRevenue: number;
+  ytdPremium: number;
+  ytdRevenue: number;
 };
 
 const fmt = (n: number) =>
@@ -97,7 +99,7 @@ function ScoreboardTile({
 }
 
 /* ─── Main Component ─── */
-export function ProductionScoreboard({ userId, premiumSold, revenueSold }: Props) {
+export function ProductionScoreboard({ userId, mtdPremium, mtdRevenue, ytdPremium, ytdRevenue }: Props) {
   const [goals, setGoals] = useState<{
     annual_premium_goal: number;
     annual_revenue_goal: number;
@@ -169,13 +171,13 @@ export function ProductionScoreboard({ userId, premiumSold, revenueSold }: Props
   const monthlyPrem = annualPrem / 12;
   const monthlyRev = annualRev / 12;
 
-  const mPremRemaining = Math.max(0, monthlyPrem - premiumSold);
-  const mRevRemaining = Math.max(0, monthlyRev - revenueSold);
+  const mPremRemaining = Math.max(0, monthlyPrem - mtdPremium);
+  const mRevRemaining = Math.max(0, monthlyRev - mtdRevenue);
   const mPremPace = daysLeftInMonth > 0 ? mPremRemaining / daysLeftInMonth : 0;
   const mRevPace = daysLeftInMonth > 0 ? mRevRemaining / daysLeftInMonth : 0;
 
-  const yPremRemaining = Math.max(0, annualPrem - premiumSold);
-  const yRevRemaining = Math.max(0, annualRev - revenueSold);
+  const yPremRemaining = Math.max(0, annualPrem - ytdPremium);
+  const yRevRemaining = Math.max(0, annualRev - ytdRevenue);
   const yPremPace = daysLeftInYear > 0 ? yPremRemaining / daysLeftInYear : 0;
   const yRevPace = daysLeftInYear > 0 ? yRevRemaining / daysLeftInYear : 0;
 
@@ -263,7 +265,7 @@ export function ProductionScoreboard({ userId, premiumSold, revenueSold }: Props
           <div className="px-2.5 pb-2.5 sm:px-3 sm:pb-3">
             <ScoreboardTile
               title="NB Production"
-              actual={premiumSold} goal={monthlyPrem}
+              actual={mtdPremium} goal={monthlyPrem}
               remaining={mPremRemaining}
               paceNeeded={mPremPace} paceUnit="day"
               daysLeft={daysLeftInMonth} countdownLabel="Month Ends In"
@@ -272,7 +274,7 @@ export function ProductionScoreboard({ userId, premiumSold, revenueSold }: Props
           <div className="px-2.5 pb-2.5 sm:px-3 sm:pb-3">
             <ScoreboardTile
               title="NB Production"
-              actual={premiumSold} goal={annualPrem}
+              actual={ytdPremium} goal={annualPrem}
               remaining={yPremRemaining}
               paceNeeded={yPremPace} paceUnit="day"
               daysLeft={daysLeftInYear} countdownLabel="Year Ends In"
@@ -287,7 +289,7 @@ export function ProductionScoreboard({ userId, premiumSold, revenueSold }: Props
           <div className="px-2.5 py-2.5 sm:px-3 sm:py-3">
             <ScoreboardTile
               title="Revenue"
-              actual={revenueSold} goal={monthlyRev}
+              actual={mtdRevenue} goal={monthlyRev}
               remaining={mRevRemaining}
               paceNeeded={mRevPace} paceUnit="day"
               daysLeft={daysLeftInMonth} countdownLabel="Month Ends In"
@@ -297,7 +299,7 @@ export function ProductionScoreboard({ userId, premiumSold, revenueSold }: Props
           <div className="px-2.5 py-2.5 sm:px-3 sm:py-3">
             <ScoreboardTile
               title="Revenue"
-              actual={revenueSold} goal={annualRev}
+              actual={ytdRevenue} goal={annualRev}
               remaining={yRevRemaining}
               paceNeeded={yRevPace} paceUnit="day"
               daysLeft={daysLeftInYear} countdownLabel="Year Ends In"
