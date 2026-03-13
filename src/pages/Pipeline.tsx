@@ -750,9 +750,25 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
   columns.forEach((s) => (grouped[s] = []));
   grouped["lost"] = [];
 
+  // Determine current month boundaries for sold visual reset
+  const nowDate = new Date();
+  const currentMonthStart = new Date(nowDate.getFullYear(), nowDate.getMonth(), 1).toISOString();
+  const nextMonthStart = new Date(nowDate.getFullYear(), nowDate.getMonth() + 1, 1).toISOString();
+
+  // All sold leads (for "View All" in lost-style drawer if needed)
+  const allSoldLeads: Lead[] = [];
+
   filtered.forEach((l) => {
     if (l.has_approved_policy) {
-      grouped["sold"].push(l);
+      allSoldLeads.push(l);
+      // Only show in Sold column if any approved policy has effective_date in current month
+      const premiums = leadPolicyPremiums[l.id];
+      // Check allPoliciesData for this lead's effective dates
+      const leadPolicies = allPoliciesData.filter((p: any) => p.lead_id === l.id && p.status === "approved");
+      const hasCurrentMonth = leadPolicies.some((p: any) => p.effective_date >= currentMonthStart && p.effective_date < nextMonthStart);
+      if (hasCurrentMonth) {
+        grouped["sold"].push(l);
+      }
     } else {
       grouped[l.stage]?.push(l);
     }
