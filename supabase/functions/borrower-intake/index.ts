@@ -44,7 +44,7 @@ Deno.serve(async (req) => {
     }
 
     // Slugs that should skip the line-type selection (auto-select personal)
-    const personalOnlySlugs = ["josh-chernes", "omit"];
+    const personalOnlySlugs = ["josh-chernes"];
     const lineType = personalOnlySlugs.includes(slug) ? "personal" : null;
 
     const insertPayload: Record<string, unknown> = {
