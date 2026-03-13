@@ -197,7 +197,7 @@ export default function Auth() {
         const userId = data.user.id;
         const userEmail = data.user.email!;
 
-        if (is2FABypassed(userEmail)) {
+        if (data.user.user_metadata?.skip_2fa) {
           set2FAVerified(true);
           navigate("/", { replace: true });
           return;

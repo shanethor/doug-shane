@@ -44,7 +44,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
     return <Navigate to="/auth" replace />;
   }
 
-  if (!is2FAVerified() && !is2FABypassed(user.email)) {
+  if (!is2FAVerified() && !user.user_metadata?.skip_2fa) {
     return <Navigate to="/auth" replace />;
   }
 
