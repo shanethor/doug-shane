@@ -112,11 +112,34 @@ serve(async (req) => {
     }
 
     // Flatten any nested objects
-    const formdata = flattenToFormKeys(extracted);
-    const fieldCount = Object.entries(formdata).filter(
+    let formdata = flattenToFormKeys(extracted);
+    let fieldCount = Object.entries(formdata).filter(
       ([_, v]) => v !== null && v !== undefined && v !== "" && v !== false
     ).length;
-    console.log(`[ingest] Extracted ${fieldCount} form fields`);
+    console.log(`[ingest] First pass: ${fieldCount} fields from ${scanEnd || "all"} pages`);
+
+    // ── 4b. Density-based retry — if <10 fields and we scanned <25 pages, retry wider ──
+    if (fieldCount < 10 && totalPages > scanEnd && scanEnd > 0 && scanEnd < 25) {
+      console.log(`[ingest] Low field count (${fieldCount}), retrying with 25 pages`);
+      const retryEnd = Math.min(25, totalPages);
+      const retrySliced = await extractPageRange(pdfBytes, 1, retryEnd);
+      const retryBase64 = uint8ToBase64(new Uint8Array(retrySliced));
+      const retryRaw = await callGemini(retryBase64, EXTRACTION_PROMPT, LOVABLE_API_KEY);
+      try {
+        const retryParsed = parseJson(retryRaw);
+        const retryFlat = flattenToFormKeys(retryParsed);
+        const retryCount = Object.entries(retryFlat).filter(
+          ([_, v]) => v !== null && v !== undefined && v !== "" && v !== false
+        ).length;
+        console.log(`[ingest] Retry pass: ${retryCount} fields from ${retryEnd} pages`);
+        if (retryCount > fieldCount) {
+          formdata = retryFlat;
+          fieldCount = retryCount;
+        }
+      } catch (e) {
+        console.warn("[ingest] Retry parse failed:", e);
+      }
+    }
 
     // Log a sample of extracted keys for debugging
     const sampleKeys = Object.entries(formdata)
