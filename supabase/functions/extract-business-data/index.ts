@@ -28,8 +28,10 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const MAX_PDF_PAGES = 50;
-const MAX_TOTAL_PAGES = 50; // Client handles batching; each request should be ≤50 pages
+const MAX_PDF_PAGES = 80; // increased — prescan trims to ideal pages
+const MAX_TOTAL_PAGES = 80;
+const PRESCAN_TARGET_PAGES = 15; // ideal number of data-rich pages to extract from
+const PRESCAN_THRESHOLD = 20; // only prescan if doc has more pages than this
 const CONFIDENCE_THRESHOLD = 5; // minimum meaningful fields before triggering specialist
 
 // ── Shared schema prompt (used by all stages) ──
