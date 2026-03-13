@@ -1609,6 +1609,8 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
                     <Label className="text-xs">Effective Date *</Label>
                     <Input
                       type="date"
+                      min="2000-01-01"
+                      max="2099-12-31"
                       value={p.effective_date}
                       onChange={(e) => { const u = [...soldPolicies]; u[i] = { ...u[i], effective_date: e.target.value }; setSoldPolicies(u); }}
                     />
