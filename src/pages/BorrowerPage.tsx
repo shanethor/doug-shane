@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import auraLogo from "@/assets/aura-logo.png";
 import joshHeadshot from "@/assets/josh-chernes-headshot.png";
 import michaelHeadshot from "@/assets/michael-wengzn-headshot.png";
+import AssociatedPage from "./AssociatedPage";
 
 /* ─── Borrower Config ─── */
 interface CoverageCard {
@@ -105,6 +106,10 @@ const STEPS = [
 export default function BorrowerPage() {
   const { slug } = useParams<{ slug: string }>();
   const [creatingIntake, setCreatingIntake] = useState(false);
+
+  // Associated has its own dedicated layout
+  if (slug === "associated") return <AssociatedPage />;
+
   const config = slug ? BORROWERS[slug] : undefined;
 
   if (!config) {

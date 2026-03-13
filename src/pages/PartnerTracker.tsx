@@ -9,6 +9,7 @@ import auraLogo from "@/assets/aura-logo.png";
 const PARTNER_NAMES: Record<string, string> = {
   "josh-chernes": "Joshua Chernes",
   "michael-wengzn": "Michael Wengzn",
+  "associated": "Associated Insurance Services",
 };
 
 const STAGE_LABELS: Record<string, string> = {
