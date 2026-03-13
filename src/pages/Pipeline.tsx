@@ -1379,12 +1379,17 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
                                 ))}
                               </div>
                             )}
-                            {/* Show sold premium on sold cards */}
+                            {/* Show sold premium + month tag on sold cards */}
                             {stage === "sold" && leadPolicyPremiums[lead.id] && (
-                              <div className="ml-[18px] mt-1">
+                              <div className="ml-[18px] mt-1 flex items-center gap-2">
                                 <span className="text-[10px] text-success font-sans font-medium">
                                   Sold: {fmt(leadPolicyPremiums[lead.id].reduce((a: number, b: number) => a + b, 0))}
                                 </span>
+                                {leadEffectiveDates[lead.id] && (
+                                  <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 font-normal">
+                                    {new Date(leadEffectiveDates[lead.id] + "T00:00:00").toLocaleString("en-US", { month: "short", year: "numeric" })}
+                                  </Badge>
+                                )}
                               </div>
                             )}
                           </div>
