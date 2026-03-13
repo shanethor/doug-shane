@@ -1811,7 +1811,7 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
         onStageMove={async (leadId, stage) => {
           if (stage === "sold") {
             setSoldLeadId(leadId);
-            setSoldPolicies([{ carrier: "", line_of_business: "", policy_number: "", effective_date: "", annual_premium: "" }]);
+            setSoldPolicies([{ carrier: "", line_of_business: "", policy_number: "", effective_date: "", annual_premium: "", policy_term: "1_year" }]);
             setSoldModalOpen(true);
           } else if (stage === "presenting") {
             setPresentingLeadId(leadId);
