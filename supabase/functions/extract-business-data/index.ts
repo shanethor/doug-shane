@@ -321,6 +321,7 @@ ${ocrText}`;
         { role: "user", content: userPrompt },
       ],
     }),
+    signal: AbortSignal.timeout(45_000),
   });
 
   console.log(`[text-mapping] Gemini Flash responded in ${Date.now() - t0}ms (status: ${response.status})`);
