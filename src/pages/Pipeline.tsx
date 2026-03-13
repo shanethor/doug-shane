@@ -152,7 +152,8 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
     policy_number: string;
     effective_date: string;
     annual_premium: string;
-  }>>([{ carrier: "", line_of_business: "", policy_number: "", effective_date: "", annual_premium: "" }]);
+    policy_term: string;
+  }>>([{ carrier: "", line_of_business: "", policy_number: "", effective_date: "", annual_premium: "", policy_term: "1_year" }]);
   const [submittingSold, setSubmittingSold] = useState(false);
 
   // Presenting modal state
