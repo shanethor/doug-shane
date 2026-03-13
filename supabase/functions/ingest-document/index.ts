@@ -228,21 +228,23 @@ serve(async (req) => {
     }
 
     // ── 13. Update document record ─────────────────────────────────────────
-    await supabase.from("client_documents").update({
-      extraction_status: confidence > 0.4 ? "complete" : "partial",
-      extraction_confidence: confidence,
-      doc_type: docType,
-      total_pages: totalPages,
-      extraction_metadata: {
-        model: "google/gemini-2.5-flash",
-        pages_sent: scanEnd,
+    if (document_id) {
+      await supabase.from("client_documents").update({
+        extraction_status: confidence > 0.4 ? "complete" : "partial",
+        extraction_confidence: confidence,
+        doc_type: docType,
         total_pages: totalPages,
-        last_dec_page: lastDecPage,
-        extended_scan: isExtended,
-        retry_used: retryUsed,
-        prescan_doc_type_hint: docTypeHint,
-      },
-    }).eq("id", document_id);
+        extraction_metadata: {
+          model: "google/gemini-2.5-flash",
+          pages_sent: scanEnd,
+          total_pages: totalPages,
+          last_dec_page: lastDecPage,
+          extended_scan: isExtended,
+          retry_used: retryUsed,
+          prescan_doc_type_hint: docTypeHint,
+        },
+      }).eq("id", document_id);
+    }
 
     return new Response(
       JSON.stringify({ success: true, docType, confidence, pages: totalPages, scanEnd }),
