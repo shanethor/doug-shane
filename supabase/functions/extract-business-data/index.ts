@@ -449,16 +449,97 @@ async function truncatePdf(base64Data: string, maxPages: number): Promise<string
   }
 }
 
+function isMeaningfulValue(value: any): boolean {
+  if (value === null || value === undefined) return false;
+  if (typeof value === "boolean") return value;
+  if (typeof value === "number") return Number.isFinite(value);
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    return normalized !== "" && normalized !== "false" && normalized !== "no" && normalized !== "[]" && normalized !== "n/a";
+  }
+  if (Array.isArray(value)) return value.some(isMeaningfulValue);
+  if (typeof value === "object") return Object.values(value).some(isMeaningfulValue);
+  return false;
+}
+
 function countMeaningfulFields(fd: Record<string, any>): number {
   const IGNORE = new Set(["vehicles", "drivers", "coverage_types_needed", "gaps"]);
-  return Object.entries(fd).filter(
-    ([k, v]) => !IGNORE.has(k) && v && String(v).trim() && String(v).trim() !== "false" && String(v).trim() !== "No" && String(v).trim() !== "[]"
-  ).length;
+  return Object.entries(fd).filter(([k, v]) => !IGNORE.has(k) && isMeaningfulValue(v)).length;
 }
 
 function parseAiJson(raw: string): any {
   const cleaned = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```\s*$/i, "").trim();
   return JSON.parse(cleaned);
+}
+
+function coerceExtractionPayload(raw: any): { form_data: Record<string, any>; gaps: any[] } {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+    return { form_data: {}, gaps: [] };
+  }
+
+  let formData: Record<string, any> = {};
+
+  if (raw.form_data && typeof raw.form_data === "object" && !Array.isArray(raw.form_data)) {
+    formData = { ...raw.form_data };
+  } else if (raw.data && typeof raw.data === "object" && !Array.isArray(raw.data)) {
+    formData = { ...raw.data };
+  } else if (raw.fields && typeof raw.fields === "object" && !Array.isArray(raw.fields)) {
+    formData = { ...raw.fields };
+  } else {
+    const topLevel = Object.fromEntries(
+      Object.entries(raw).filter(([k]) => !["gaps", "metadata", "pipeline", "confidence", "warnings", "notes"].includes(k))
+    );
+    if (Object.keys(topLevel).length > 0) formData = topLevel;
+  }
+
+  const gaps = Array.isArray(raw.gaps) ? raw.gaps : [];
+  return { form_data: formData, gaps };
+}
+
+function mergeExtractionPayloads(
+  primary: { form_data?: Record<string, any>; gaps?: any[] },
+  secondary: { form_data?: Record<string, any>; gaps?: any[] },
+): { form_data: Record<string, any>; gaps: any[] } {
+  const merged: Record<string, any> = { ...(primary.form_data || {}) };
+  const incoming = secondary.form_data || {};
+
+  for (const [key, value] of Object.entries(incoming)) {
+    const existing = merged[key];
+
+    if (Array.isArray(value)) {
+      const existingArr = Array.isArray(existing) ? existing : [];
+      const combined = [...existingArr, ...value];
+      merged[key] = combined.filter((item, idx, arr) => {
+        const serialized = JSON.stringify(item);
+        return arr.findIndex((x) => JSON.stringify(x) === serialized) === idx;
+      });
+      continue;
+    }
+
+    if (value && typeof value === "object" && !Array.isArray(value)) {
+      const existingObj = existing && typeof existing === "object" && !Array.isArray(existing) ? existing : {};
+      const nextObj: Record<string, any> = { ...existingObj };
+      for (const [objKey, objVal] of Object.entries(value)) {
+        if (!isMeaningfulValue(nextObj[objKey]) && isMeaningfulValue(objVal)) {
+          nextObj[objKey] = objVal;
+        }
+      }
+      merged[key] = nextObj;
+      continue;
+    }
+
+    if (!isMeaningfulValue(existing) && isMeaningfulValue(value)) {
+      merged[key] = value;
+    }
+  }
+
+  const allGaps = [...(primary.gaps || []), ...(secondary.gaps || [])];
+  const dedupedGaps = allGaps.filter((gap, idx, arr) => {
+    const sig = JSON.stringify(gap);
+    return arr.findIndex((g) => JSON.stringify(g) === sig) === idx;
+  });
+
+  return { form_data: merged, gaps: dedupedGaps };
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -614,6 +695,31 @@ function postProcess(fd: Record<string, any>, sourceText: string, hasPdfs: boole
     if (fd[cf]) {
       const val = String(fd[cf]).trim();
       if (val && !hasPdfs && !sourceText.includes(val)) fd[cf] = "";
+    }
+  }
+
+  // Canonicalize common variant keys so downstream ACORD mapping always gets mappable fields
+  const CANONICAL_ALIASES: Array<[string, string]> = [
+    ["carrier_name", "current_carrier"],
+    ["carrier", "current_carrier"],
+    ["policy_effective_date", "effective_date"],
+    ["policy_expiration_date", "expiration_date"],
+    ["total_annual_premium", "policy_total_premium"],
+    ["mailing_city", "city"],
+    ["mailing_state", "state"],
+    ["mailing_zip", "zip"],
+    ["legal_entity", "business_type"],
+    ["business_description", "description_of_operations"],
+    ["policy_type", "coverage_type"],
+    ["gl_general_aggregate_limit", "general_aggregate"],
+    ["gl_products_completed_operations_aggregate", "products_aggregate"],
+    ["gl_each_occurrence_limit", "each_occurrence"],
+    ["gl_damage_to_premises_rented_limit", "fire_damage"],
+    ["gl_medical_expense_any_one_person_limit", "medical_payments"],
+  ];
+  for (const [sourceKey, targetKey] of CANONICAL_ALIASES) {
+    if (!isMeaningfulValue(fd[targetKey]) && isMeaningfulValue(fd[sourceKey])) {
+      fd[targetKey] = fd[sourceKey];
     }
   }
 
@@ -879,7 +985,10 @@ serve(async (req) => {
 
       // ── Step 0: Prepare PDFs and run prescan for large documents ──
       const truncatedFiles: any[] = [];
+      const broadFallbackFiles: any[] = [];
       let totalPages = 0;
+      let broadFallbackPages = 0;
+      let prescanApplied = false;
 
       for (const pf of pdf_files) {
         if (!pf.base64) continue;
@@ -900,50 +1009,42 @@ serve(async (req) => {
           } catch (_) { pages = 1; }
 
           const cappedPages = Math.min(pages, remainingBudget);
+          const cappedBase64 = cappedPages < pages ? await truncatePdf(pf.base64, cappedPages) : pf.base64;
 
-          // ── PRESCAN: For large PDFs, identify data-rich pages first ──
+          // Always keep a broad (non-prescan) fallback candidate
+          broadFallbackFiles.push({ base64: cappedBase64, mimeType });
+          broadFallbackPages += cappedPages;
+
           if (pages > PRESCAN_THRESHOLD) {
+            prescanApplied = true;
             console.log(`[prescan] Document has ${pages} pages (>${PRESCAN_THRESHOLD}), running prescan...`);
-            // First truncate to budget for prescan
-            const prescanBase64 = pages > MAX_TOTAL_PAGES
-              ? await truncatePdf(pf.base64, MAX_TOTAL_PAGES)
-              : pf.base64;
-            const prescanPageCount = Math.min(pages, MAX_TOTAL_PAGES);
 
             const dataPages = await prescanForDataPages(
               LOVABLE_API_KEY,
-              prescanBase64,
-              prescanPageCount,
+              cappedBase64,
+              cappedPages,
               PRESCAN_TARGET_PAGES,
             );
 
             if (dataPages.length > 0) {
-              // Extract only the identified data-rich pages
-              const slicedBase64 = await extractSpecificPages(
-                pages > MAX_TOTAL_PAGES ? prescanBase64 : pf.base64,
-                dataPages,
-              );
+              const slicedBase64 = await extractSpecificPages(cappedBase64, dataPages);
               truncatedFiles.push({ base64: slicedBase64, mimeType });
-              totalPages += dataPages.length;
+              totalPages += Math.min(dataPages.length, cappedPages);
               console.log(`[prescan] Sending ${dataPages.length} data-rich pages (from ${pages} total) to extraction`);
             } else {
-              // Prescan returned nothing — fallback to truncated
               console.log(`[prescan] No pages identified, falling back to first ${cappedPages} pages`);
-              const truncated = await truncatePdf(pf.base64, cappedPages);
-              truncatedFiles.push({ base64: truncated, mimeType });
+              truncatedFiles.push({ base64: cappedBase64, mimeType });
               totalPages += cappedPages;
             }
           } else {
-            // Small PDF — no prescan needed
-            const truncated = cappedPages < pages
-              ? await truncatePdf(pf.base64, cappedPages)
-              : pf.base64;
-            truncatedFiles.push({ base64: truncated, mimeType });
+            truncatedFiles.push({ base64: cappedBase64, mimeType });
             totalPages += cappedPages;
           }
         } else {
           truncatedFiles.push({ base64: pf.base64, mimeType });
+          broadFallbackFiles.push({ base64: pf.base64, mimeType });
           totalPages += 1;
+          broadFallbackPages += 1;
         }
       }
 
@@ -958,7 +1059,7 @@ serve(async (req) => {
           truncatedFiles,
           "google/gemini-2.5-flash",
         );
-        extracted = parseAiJson(flashRaw);
+        extracted = coerceExtractionPayload(parseAiJson(flashRaw));
         const flashCount = countMeaningfulFields(extracted.form_data || {});
         console.log(`[pipeline] Gemini Flash extracted ${flashCount} meaningful fields`);
 
@@ -973,7 +1074,7 @@ serve(async (req) => {
               truncatedFiles,
               "google/gemini-2.5-pro",
             );
-            const proExtracted = parseAiJson(proRaw);
+            const proExtracted = coerceExtractionPayload(parseAiJson(proRaw));
             const proCount = countMeaningfulFields(proExtracted.form_data || {});
             console.log(`[pipeline] Gemini Pro extracted ${proCount} fields`);
             if (proCount > flashCount) {
@@ -986,7 +1087,7 @@ serve(async (req) => {
         }
 
         // Stage 3: Claude Opus specialist if still low
-        const currentCount = countMeaningfulFields(extracted.form_data || {});
+        let currentCount = countMeaningfulFields(extracted.form_data || {});
         if (currentCount < CONFIDENCE_THRESHOLD && ANTHROPIC_API_KEY) {
           console.log(`[pipeline] Still low confidence (${currentCount}), invoking Claude Opus specialist`);
           try {
@@ -996,20 +1097,43 @@ serve(async (req) => {
               extracted.form_data || {},
               additionalContext,
             );
-            const claudeExtracted = parseAiJson(claudeRaw);
+            const claudeExtracted = coerceExtractionPayload(parseAiJson(claudeRaw));
             const claudeCount = countMeaningfulFields(claudeExtracted.form_data || {});
             console.log(`[pipeline] Claude Opus extracted ${claudeCount} fields`);
             if (claudeCount > currentCount) {
               extracted = claudeExtracted;
               pipelineUsed = "gemini-native+opus";
+              currentCount = claudeCount;
             }
           } catch (claudeErr) {
             console.warn("[pipeline] Claude Opus specialist failed:", claudeErr);
           }
         }
+
+        // Stage 4: prescan recovery fallback (broad pass, no prescan)
+        if (prescanApplied && currentCount < CONFIDENCE_THRESHOLD && broadFallbackFiles.length > 0) {
+          console.log(`[pipeline] Prescan result still low (${currentCount}); retrying broad pass on ~${broadFallbackPages} pages without prescan`);
+          try {
+            const broadRaw = await callGeminiWithPdfs(
+              LOVABLE_API_KEY,
+              SCHEMA_PROMPT,
+              `Retry extraction across the full truncated document set. Return only mappable ACORD fields in the requested JSON schema.${additionalContext ? `\n\nAdditional context:\n${additionalContext}` : ""}`,
+              broadFallbackFiles,
+              "google/gemini-2.5-pro",
+            );
+            const broadExtracted = coerceExtractionPayload(parseAiJson(broadRaw));
+            const broadCount = countMeaningfulFields(broadExtracted.form_data || {});
+            console.log(`[pipeline] Broad fallback extracted ${broadCount} fields`);
+            if (broadCount > currentCount) {
+              extracted = mergeExtractionPayloads(extracted, broadExtracted);
+              pipelineUsed = `${pipelineUsed}+broad-fallback`;
+            }
+          } catch (fallbackErr) {
+            console.warn("[pipeline] Broad fallback failed:", fallbackErr);
+          }
+        }
       } catch (flashErr) {
         console.error("[pipeline] Gemini Flash failed, trying Pro directly:", flashErr);
-        // Fallback: try Pro directly
         try {
           const proRaw = await callGeminiWithPdfs(
             LOVABLE_API_KEY,
@@ -1018,7 +1142,7 @@ serve(async (req) => {
             truncatedFiles,
             "google/gemini-2.5-pro",
           );
-          extracted = parseAiJson(proRaw);
+          extracted = coerceExtractionPayload(parseAiJson(proRaw));
           pipelineUsed = "gemini-native-pdf-pro-fallback";
         } catch (proErr) {
           console.error("[pipeline] Both Gemini Flash and Pro failed:", proErr);
@@ -1033,19 +1157,21 @@ serve(async (req) => {
       pipelineUsed = "text-only";
       console.log(`[pipeline] Using text-only path`);
       const raw = await callGeminiFlash(LOVABLE_API_KEY, additionalContext, "");
-      extracted = parseAiJson(raw);
+      extracted = coerceExtractionPayload(parseAiJson(raw));
     }
 
     const totalTime = Date.now() - t0;
     console.log(`[pipeline] ${pipelineUsed} completed in ${totalTime}ms`);
 
     // ── Post-processing ──
-    const fd: Record<string, any> = extracted.form_data || {};
+    const normalizedExtracted = coerceExtractionPayload(extracted);
+    const fd: Record<string, any> = normalizedExtracted.form_data || {};
     postProcess(fd, additionalContext, hasPdfs);
-    extracted.form_data = fd;
+    normalizedExtracted.form_data = fd;
+    extracted = normalizedExtracted;
 
     // Debug log
-    const fdKeys = Object.entries(fd).filter(([_, v]) => v && String(v).trim() && String(v).trim() !== "false" && String(v).trim() !== "No" && String(v).trim() !== "[]");
+    const fdKeys = Object.entries(fd).filter(([_, v]) => isMeaningfulValue(v));
     console.log(`[result] ${fdKeys.length} non-empty fields. pipeline=${pipelineUsed}, time=${totalTime}ms. Key: applicant_name="${fd.applicant_name}", city="${fd.city}", state="${fd.state}"`);
 
     // Save to database
