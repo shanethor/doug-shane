@@ -99,6 +99,12 @@ function getDateCutoff(period: TimePeriod): Date | null {
   return new Date(now.getFullYear(), 0, 1);
 }
 
+function getDateCeiling(period: TimePeriod): Date | null {
+  if (period !== "month") return null;
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth() + 1, 1);
+}
+
 const PERIOD_LABELS: Record<TimePeriod, string> = {
   all: "All Time",
   month: "This Month",
@@ -120,13 +126,18 @@ export function PipelineAnalytics({
 
   const analytics = useMemo(() => {
     const cutoff = getDateCutoff(period);
+    const ceiling = getDateCeiling(period);
 
     // Filter leads/policies/audit by period
     const filteredLeads = cutoff
       ? leads.filter((l) => new Date(l.created_at) >= cutoff)
       : leads;
     const filteredPolicies = cutoff
-      ? policies.filter((p) => p.effective_date ? new Date(p.effective_date) >= cutoff : true)
+      ? policies.filter((p) => {
+          if (!p.effective_date) return true;
+          const d = new Date(p.effective_date);
+          return d >= cutoff && (ceiling ? d < ceiling : true);
+        })
       : policies;
     const filteredAudit = cutoff
       ? auditLog.filter((e) => new Date(e.created_at) >= cutoff)

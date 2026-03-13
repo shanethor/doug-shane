@@ -761,12 +761,10 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
   filtered.forEach((l) => {
     if (l.has_approved_policy) {
       allSoldLeads.push(l);
-      // Only show in Sold column if any approved policy has effective_date in current month
-      const premiums = leadPolicyPremiums[l.id];
-      // Check allPoliciesData for this lead's effective dates
+      // Show in Sold column if any approved policy has effective_date in current month OR future months
       const leadPolicies = allPoliciesData.filter((p: any) => p.lead_id === l.id && p.status === "approved");
-      const hasCurrentMonth = leadPolicies.some((p: any) => p.effective_date >= currentMonthStart && p.effective_date < nextMonthStart);
-      if (hasCurrentMonth) {
+      const hasCurrentOrFuture = leadPolicies.some((p: any) => p.effective_date >= currentMonthStart);
+      if (hasCurrentOrFuture) {
         grouped["sold"].push(l);
       }
     } else {
@@ -1270,7 +1268,7 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
                   <Info className="h-3 w-3 text-muted-foreground/40 cursor-help" />
                 </TooltipTrigger>
                 <TooltipContent side="top" className="max-w-[200px] text-xs font-sans">
-                  {stage === "sold" ? "Resets visually on the 1st of each month. Your sales data and production numbers are unaffected." : STAGE_TOOLTIPS[stage]}
+                  {stage === "sold" ? "Shows current & future month policies. Future months count toward yearly stats only, not this month's." : STAGE_TOOLTIPS[stage]}
                 </TooltipContent>
               </Tooltip>
             </div>
