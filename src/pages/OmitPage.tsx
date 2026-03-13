@@ -87,6 +87,9 @@ export default function OmitPage() {
             <p className="text-white/70 text-base md:text-lg">
               AURA Risk Group is now our official partner.
             </p>
+            <p className="text-white/70 text-base md:text-lg">
+              Because if you do not have the right coverage, you're <span className="text-white font-semibold italic">chalked</span>.
+            </p>
             <p className="text-white/40 text-sm">Sorry Flo.</p>
           </div>
 
