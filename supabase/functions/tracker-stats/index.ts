@@ -51,6 +51,7 @@ Deno.serve(async (req) => {
 
     const period: TimePeriod = ["month", "quarter", "year", "all"].includes(rawPeriod) ? rawPeriod : "all";
     const cutoff = getDateCutoff(period);
+    const ceiling = getDateCeiling(period);
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -69,6 +70,7 @@ Deno.serve(async (req) => {
       .select("lead_id, annual_premium, revenue, status, effective_date")
       .eq("producer_user_id", uid);
     if (cutoff) policiesQuery = policiesQuery.gte("effective_date", cutoff);
+    if (ceiling) policiesQuery = policiesQuery.lt("effective_date", ceiling);
 
     const [leadsRes, policiesRes, profileRes, authUserRes] = await Promise.all([
       leadsQuery,
