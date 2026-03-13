@@ -1069,6 +1069,7 @@ export default function Chat() {
     { slug: "josh-chernes", name: "Joshua Chernes" },
     { slug: "michael-wengzn", name: "Michael Wengzn" },
     { slug: "associated", name: "Associated Insurance Services" },
+    { slug: "omit", name: "OMiT" },
   ];
 
   /** Detect if user is asking for a specific partner intake link */
@@ -1086,6 +1087,10 @@ export default function Chat() {
     if (/\bassociated('?s?)?\s*(intake|link|form|page|partner|insurance)?\b/.test(t) && /\b(link|intake|form|page|partner)\b/.test(t)) {
       return { slug: "associated", name: "Associated Insurance Services" };
     }
+    // OMiT
+    if (/\bomit('?s?)?\s*(intake|link|form|page|partner)?\b/.test(t) || /\bpartner\s*(link|intake|form|page)\s*(for\s*)?omit\b/.test(t)) {
+      return { slug: "omit", name: "OMiT" };
+    }
     return null;
   };
 
@@ -1093,7 +1098,7 @@ export default function Chat() {
   const isAllPartnersIntent = (text: string): boolean => {
     const t = text.trim().toLowerCase();
     return /\b(all|every|show|list)\b.+\bpartner\s*(link|intake|page|form)s?\b/.test(t)
-      || /\bpartner\s*(link|intake|page|form)s?\b/.test(t) && !/\bjosh|michael|associated|northwestern|mortgage\b/.test(t);
+      || /\bpartner\s*(link|intake|page|form)s?\b/.test(t) && !/\bjosh|michael|associated|northwestern|mortgage|omit\b/.test(t);
   };
 
   const handlePersonalIntakeGenerate = async (config: { clientEmail: string; teamMemberEmail: string; ccAdvisor: boolean }) => {

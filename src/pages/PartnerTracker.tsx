@@ -10,6 +10,7 @@ const PARTNER_NAMES: Record<string, string> = {
   "josh-chernes": "Joshua Chernes",
   "michael-wengzn": "Michael Wengzn",
   "associated": "Associated Insurance Services",
+  "omit": "OMiT",
 };
 
 const STAGE_LABELS: Record<string, string> = {
