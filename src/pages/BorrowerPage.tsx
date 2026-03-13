@@ -107,8 +107,9 @@ export default function BorrowerPage() {
   const { slug } = useParams<{ slug: string }>();
   const [creatingIntake, setCreatingIntake] = useState(false);
 
-  // Associated has its own dedicated layout
+  // Partners with dedicated layouts
   if (slug === "associated") return <AssociatedPage />;
+  if (slug === "omit") return <OmitPage />;
 
   const config = slug ? BORROWERS[slug] : undefined;
 
