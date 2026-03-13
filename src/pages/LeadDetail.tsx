@@ -251,6 +251,15 @@ export default function LeadDetail() {
       toast.error("Please fill in at least one policy with all required fields");
       return;
     }
+    // Validate effective dates: year must be 4 digits starting with 20
+    const badDate = validPolicies.find(p => {
+      const year = p.effective_date.split("-")[0];
+      return !year || year.length !== 4 || !year.startsWith("20");
+    });
+    if (badDate) {
+      toast.error("Effective date year must be 4 digits and start with 20 (e.g. 2026)");
+      return;
+    }
 
     setSubmittingSold(true);
     try {
@@ -593,6 +602,8 @@ export default function LeadDetail() {
                       <Label>Effective Date *</Label>
                       <Input
                         type="date"
+                        min="2000-01-01"
+                        max="2099-12-31"
                         value={newPolicy.effective_date}
                         onChange={(e) => setNewPolicy({ ...newPolicy, effective_date: e.target.value })}
                       />
@@ -1220,7 +1231,7 @@ export default function LeadDetail() {
                   </div>
                   <div>
                     <Label className="text-xs">Effective Date *</Label>
-                    <Input type="date" value={p.effective_date} onChange={(e) => { const u = [...soldPolicies]; u[i].effective_date = e.target.value; setSoldPolicies(u); }} />
+                    <Input type="date" min="2000-01-01" max="2099-12-31" value={p.effective_date} onChange={(e) => { const u = [...soldPolicies]; u[i].effective_date = e.target.value; setSoldPolicies(u); }} />
                   </div>
                   <div className="col-span-2">
                     <Label className="text-xs">Annual Premium *</Label>
