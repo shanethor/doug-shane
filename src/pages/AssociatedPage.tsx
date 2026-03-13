@@ -51,9 +51,8 @@ export default function AssociatedPage() {
       <header className="sticky top-0 z-50 border-b border-[#1a2b4a]/10 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
         <div className="mx-auto flex h-16 max-w-4xl items-center justify-between px-4">
           <img src={associatedLogo} alt="Associated Insurance Services" className="h-8" />
-          <div className="flex items-center gap-1.5 text-muted-foreground">
-            <span className="text-[10px] tracking-wide">Powered by</span>
-            <img src={auraLogo} alt="AURA" className="h-5" />
+          <div className="flex items-center gap-2">
+            <img src={auraLogo} alt="AURA Risk Group" className="h-6" />
           </div>
         </div>
       </header>
@@ -62,10 +61,10 @@ export default function AssociatedPage() {
       <section className="relative overflow-hidden bg-gradient-to-b from-[#1a2b4a]/5 to-transparent">
         <div className="relative mx-auto max-w-2xl px-6 py-12 md:py-16 text-center">
           <h1 className="text-2xl font-bold tracking-tight md:text-3xl lg:text-4xl leading-snug text-[#1a2b4a]">
-            Apply for Insurance
+            Insurance Shouldn't Feel Like Doing Your Taxes
           </h1>
-          <p className="mt-4 text-base text-[#1D2430]/70">
-            Start your application with Associated Insurance Services.
+          <p className="mt-4 text-base text-[#1D2430]/70 max-w-lg mx-auto">
+            At Associated, technology organizes the mess. Real people make the decisions.
           </p>
         </div>
       </section>
