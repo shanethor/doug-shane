@@ -5,7 +5,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Upload, Shield, Phone, Mail, MapPin, ExternalLink, CheckCircle, ArrowRight, Sparkles, Search, MessageSquare, Loader2, Briefcase } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import auraLogo from "@/assets/aura-logo.png";
 import joshHeadshot from "@/assets/josh-chernes-headshot.png";
 import michaelHeadshot from "@/assets/michael-wengzn-headshot.png";
 import AssociatedPage from "./AssociatedPage";
@@ -139,7 +138,10 @@ export default function BorrowerPage() {
       {/* ── Header ── */}
       <header className="sticky top-0 z-50 border-b border-gray-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
         <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
-          <img src={auraLogo} alt="AURA Risk Group" className="h-7 dark:invert-0" style={{ filter: 'none' }} />
+          <div className="flex items-center gap-1.5">
+            <span className="text-base font-bold tracking-tight text-[#1D2430]">AURA</span>
+            <span className="text-[10px] text-[#1D2430]/50 tracking-widest uppercase">Risk Group</span>
+          </div>
           <div className="flex items-center gap-2">
             <Shield className="h-4 w-4 text-[#2F3E5B]" />
             <span className="text-xs font-medium tracking-wide text-[#1D2430]/60">{config.headerLabel}</span>

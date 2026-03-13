@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Upload, ClipboardList, UserCheck, Phone, Mail, ArrowRight, Loader2, ExternalLink } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import auraLogo from "@/assets/aura-logo.png";
 import dougHeadshot from "@/assets/doug-wenz-headshot.png";
 import associatedLogo from "@/assets/associated-logo.png";
 
@@ -51,8 +50,9 @@ export default function AssociatedPage() {
       <header className="sticky top-0 z-50 border-b border-[#1a2b4a]/10 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80">
         <div className="mx-auto flex h-16 max-w-4xl items-center justify-between px-4">
           <img src={associatedLogo} alt="Associated Insurance Services" className="h-8" />
-          <div className="flex items-center gap-2">
-            <img src={auraLogo} alt="AURA Risk Group" className="h-6" />
+          <div className="flex items-center gap-1.5">
+            <span className="text-base font-bold tracking-tight text-[#1a2b4a]">AURA</span>
+            <span className="text-[10px] text-[#1D2430]/50 tracking-widest uppercase">Risk Group</span>
           </div>
         </div>
       </header>
