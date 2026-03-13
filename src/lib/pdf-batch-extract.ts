@@ -185,6 +185,9 @@ export function mergeExtractionResults(results: BatchResult[]): BatchResult {
     "wc_classifications", "cgl_hazards", "locations", "mortgagees", "endorsements",
   ]);
 
+  // Object fields that should be deep-merged
+  const OBJECT_FIELDS = new Set(["cgl_limits"]);
+
   for (const result of results) {
     const fd = result.form_data || {};
     
