@@ -44,6 +44,12 @@ CRITICAL ANTI-HALLUCINATION RULES:
 CODES — EXTRACT VERBATIM ONLY, NEVER INFER:
 - sic_code, naics_code, naic_code, gl_code, class_code_1, class_code_2, hazard_code_1, hazard_code_2, program_code, ncci_risk_id, wc_class_code, policy_number, prior_policy_number_1, prior_wc_policy_1: these fields must ONLY be populated if the EXACT code/number appears verbatim in the source text.
 
+DOCUMENT TYPE RECOGNITION:
+- DECLARATIONS PAGES (Dec Pages): These contain the core policy data — carrier, insured name, policy number, dates, limits, deductibles, premiums, locations, endorsement schedules. FOCUS on these pages first. They typically have headers like "DECLARATION PAGE", "DECLARATIONS", "POLICY DECLARATIONS", or carrier letterhead with policy details.
+- BUSINESSOWNERS (BOP) Dec Pages: Look for building limits, BPP limits, property deductibles, glass deductibles, auto increase percentages, liability limits, EPLI, cyber coverages, equipment breakdown, crime coverages. These are the MOST data-rich pages.
+- COVERAGE FORMS / POLICY LANGUAGE (e.g., "BP 00 03", "BUSINESSOWNERS COVERAGE FORM"): These are STANDARD FORM LANGUAGE that contains no insured-specific data. SKIP extracting from these pages — they contain only generic policy terms, conditions, and definitions that are the same for every policyholder.
+- PRIVACY NOTICES, TERRORISM ENDORSEMENT FORMS (blank/unsigned): Contain no extractable data. Skip these.
+
 Return this exact structure:
 {
   "form_data": {
@@ -105,6 +111,34 @@ Return this exact structure:
     "umbrella_carrier": "", "umbrella_policy_number": "",
     "wc_carrier": "", "wc_policy_number": "",
     "underwriter": "", "underwriter_office": "",
+
+    "producer_name": "", "producer_address": "", "producer_city": "", "producer_state": "", "producer_zip": "", "producer_phone": "",
+
+    "location_1_number": "", "location_1_building_number": "", "location_1_address": "", "location_1_city": "", "location_1_state": "", "location_1_zip": "", "location_1_occupancy": "",
+    "location_2_number": "", "location_2_building_number": "", "location_2_address": "", "location_2_city": "", "location_2_state": "", "location_2_zip": "", "location_2_occupancy": "",
+    "location_3_number": "", "location_3_building_number": "", "location_3_address": "", "location_3_city": "", "location_3_state": "", "location_3_zip": "", "location_3_occupancy": "",
+
+    "bop_building_limit_1": "", "bop_bpp_limit_1": "", "bop_property_deductible_1": "", "bop_glass_deductible_1": "", "bop_valuation_1": "", "bop_auto_increase_percent_1": "",
+    "bop_building_limit_2": "", "bop_bpp_limit_2": "", "bop_property_deductible_2": "", "bop_glass_deductible_2": "", "bop_valuation_2": "", "bop_auto_increase_percent_2": "",
+    "bop_building_limit_3": "", "bop_bpp_limit_3": "", "bop_property_deductible_3": "", "bop_glass_deductible_3": "", "bop_valuation_3": "", "bop_auto_increase_percent_3": "",
+
+    "epli_each_claim_limit": "", "epli_aggregate_limit": "", "epli_deductible": "", "epli_retro_date": "",
+
+    "cyber_multimedia_liability_limit": "", "cyber_security_privacy_liability_limit": "",
+    "cyber_regulatory_defense_limit": "", "cyber_pci_dss_limit": "",
+    "cyber_breach_response_limit": "", "cyber_network_asset_limit": "",
+    "cyber_extortion_limit": "", "cyber_terrorism_limit": "",
+    "cyber_brand_guard_limit": "", "cyber_boid_theft_limit": "",
+    "cyber_aggregate_limit": "", "cyber_retro_date": "",
+
+    "addl_interest_1_name": "", "addl_interest_1_address": "", "addl_interest_1_city": "", "addl_interest_1_state": "", "addl_interest_1_zip": "", "addl_interest_1_interest_type": "", "addl_interest_1_location_ref": "", "addl_interest_1_attention": "",
+    "addl_interest_2_name": "", "addl_interest_2_address": "", "addl_interest_2_city": "", "addl_interest_2_state": "", "addl_interest_2_zip": "", "addl_interest_2_interest_type": "", "addl_interest_2_location_ref": "",
+    "addl_interest_3_name": "", "addl_interest_3_address": "", "addl_interest_3_city": "", "addl_interest_3_state": "", "addl_interest_3_zip": "", "addl_interest_3_interest_type": "", "addl_interest_3_location_ref": "",
+
+    "terrorism_premium_certified_acts": "",
+    "policy_total_premium": "",
+    "billing_plan": "",
+
     "vehicles": [],
     "drivers": [],
     "policies": [],
@@ -167,6 +201,18 @@ EXTRACTION RULES:
 - mortgagees[]: Extract ALL mortgagees/loss payees. Each: { name, address, clause, premises_number, building_number }. Include ISAOA ATIMA wording.
 - endorsements[]: Extract endorsement numbers and names from endorsement schedules. Each: { number, name, description }. Use to set waiver_of_subrogation, non_cumulation_occurrence, and enhancement flags.
 - Per-LOB carrier/premium fields: Also populate the flat fields (bop_carrier, bop_policy_number, auto_carrier, auto_policy_number, umbrella_carrier, umbrella_policy_number, wc_carrier, wc_policy_number, auto_premium, umbrella_premium, wc_premium, cgl_premium, property_premium, inland_marine_premium, bop_premium) from the corresponding policy declarations.
+- BOP DECLARATIONS: For Businessowners policies, extract ALL property and liability details:
+  * Set lob_bop to "true" and populate bop_carrier, bop_policy_number, bop_premium
+  * Location-indexed property: bop_building_limit_N, bop_bpp_limit_N, bop_property_deductible_N, bop_glass_deductible_N, bop_valuation_N (e.g. "replacement cost"), bop_auto_increase_percent_N
+  * Location-indexed info: location_N_number, location_N_building_number, location_N_address, location_N_city, location_N_state, location_N_zip, location_N_occupancy
+  * GL limits from BOP: each_occurrence (Per Occurrence), general_aggregate (Other Than Products/Completed Ops Aggregate), products_aggregate (Products/Completed Ops Aggregate), fire_damage (Damage to Premises Rented), medical_payments (Medical Expense Per Person)
+  * EPLI: epli_each_claim_limit, epli_aggregate_limit, epli_deductible, epli_retro_date
+  * Cyber coverages: cyber_multimedia_liability_limit, cyber_security_privacy_liability_limit, cyber_regulatory_defense_limit, cyber_pci_dss_limit, cyber_breach_response_limit, cyber_network_asset_limit, cyber_extortion_limit, cyber_terrorism_limit, cyber_brand_guard_limit, cyber_boid_theft_limit, cyber_aggregate_limit, cyber_retro_date
+  * Additional interests/mortgagees: addl_interest_N_name, addl_interest_N_attention, addl_interest_N_address, addl_interest_N_city, addl_interest_N_state, addl_interest_N_zip, addl_interest_N_interest_type (e.g. "mortgagee"), addl_interest_N_location_ref
+  * Terrorism: terrorism_premium_certified_acts
+  * Total: policy_total_premium
+  * Billing: billing_plan (e.g. "Four Pay", "Annual", "Monthly")
+- PRODUCER/AGENCY: Extract producer_name, producer_address, producer_city, producer_state, producer_zip, producer_phone from the Agent/Agency section of declarations. These map to the agency/producer fields on ACORD 125.
 - WC PREMIUM DATA: Extract standard_premium, modified_premium, expense_constant, terrorism_premium, cat_premium, second_injury_fund, wc_fund_assessment from WC premium computation sections.
 - WC OTHER STATES: Extract wc_other_states_3a (list of covered states from Item 3.A), wc_excluded_states (monopolistic/excluded states).
 - WAIVER OF SUBROGATION: If a blanket waiver of subrogation endorsement is listed (e.g., WC 00 03 13), set waiver_of_subrogation to "Yes - Blanket" and waiver_endorsement_number to the form number.
@@ -176,6 +222,7 @@ EXTRACTION RULES:
 - ENHANCEMENT FLAGS: Set auto_coverage_plus, rental_reimbursement, roadside_assistance, glass_deductible_waiver, hired_auto_pd, gap_coverage to "true" if explicitly endorsed on auto declarations.
 - naic_code: Look for "NAIC" followed by a number on insurance ID cards, declarations pages, or certificate headers. Extract ONLY the numeric code (e.g., "24775" from "NAIC 24775 ST. PAUL GUARDIAN").
 - underwriter / underwriter_office: Extract if present on declarations page.
+- ENDORSEMENT FORM NUMBERS: Extract the list of form numbers from "FORMS AND ENDORSEMENTS" sections (e.g., "BP0003 0106, BP0159 0808, ..."). Populate endorsements[] with each form number.
 - gaps[]: list missing important fields — { field, question, priority: required|recommended|optional }
 - If no meaningful data is provided, return all fields as empty strings`;
 
