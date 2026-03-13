@@ -1093,7 +1093,7 @@ export default function FormFillingView({ submissionId, initialMessages, initial
       const fromEmail = defaults.from_email || undefined;
 
       // Generate PDFs as base64 attachments
-      const formsToProcess = ACORD_FORM_LIST;
+      const formsToProcess = enabledFormList;
       const results: { form: AcordFormDefinition; data: Record<string, any> }[] = [];
       for (const form of formsToProcess) {
         const data: Record<string, any> = {};
