@@ -82,13 +82,7 @@ export default function OmitPage() {
             </div>
             <p className="text-white/30 font-bold uppercase tracking-widest text-sm">Boring.</p>
             <p className="text-white/70 text-base md:text-lg">
-              So in OMiT fashion, we skipped the mascots and partnered with people who actually get insurance.
-            </p>
-            <p className="text-white/70 text-base md:text-lg">
-              AURA Risk Group is now our official partner.
-            </p>
-            <p className="text-white/70 text-base md:text-lg">
-              Because if you do not have the right coverage, you're <span className="text-white font-semibold italic">chalked</span>.
+              So in OMiT fashion, we skipped the mascots and partnered with people who actually get insurance because without the right coverage you're <span className="text-white font-semibold italic">chalked</span>. That's exactly why AURA Risk Group is now our official partner.
             </p>
             <p className="text-white/40 text-sm">Sorry Flo.</p>
           </div>
