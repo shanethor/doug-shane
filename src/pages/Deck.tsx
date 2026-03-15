@@ -19,6 +19,8 @@ const SLIDES = [
   { id: "model", label: "Revenue Model" },
   { id: "gtm", label: "Go-to-Market" },
   { id: "projections", label: "Projections" },
+  { id: "profit", label: "Profit" },
+  { id: "roi", label: "Investor ROI" },
   { id: "the-ask", label: "The Ask" },
 ];
 
