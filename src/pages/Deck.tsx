@@ -484,7 +484,7 @@ function GrowthEngineSlide() {
       </div>
       <div className="mt-5 rounded-xl border-2 border-primary/20 bg-primary/5 p-4 text-center">
         <p className="text-sm text-muted-foreground">
-          <span className="font-semibold text-foreground">Today:</span> Doug + Shane building proof. <span className="font-semibold text-foreground">Year 2:</span> 20 producers writing business on the platform. <span className="font-semibold text-foreground">Year 5:</span> 500 producers, $15M ARR, data no carrier can ignore.
+          <span className="font-semibold text-foreground">Today:</span> Building proof with live production. <span className="font-semibold text-foreground">Year 2:</span> 25 producers writing business on the platform. <span className="font-semibold text-foreground">Year 5:</span> 1,000 producers, $67M+ ARR, data no carrier can ignore.
         </p>
       </div>
     </div>
