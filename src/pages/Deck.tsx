@@ -19,6 +19,8 @@ const SLIDES = [
   { id: "model", label: "Revenue Model" },
   { id: "gtm", label: "Go-to-Market" },
   { id: "projections", label: "Projections" },
+  { id: "profit", label: "Profit" },
+  { id: "roi", label: "Investor ROI" },
   { id: "the-ask", label: "The Ask" },
 ];
 
@@ -62,6 +64,8 @@ export default function Deck() {
     <ModelSlide />,
     <GTMSlide />,
     <ProjectionsSlide />,
+    <ProfitSlide />,
+    <ROISlide />,
     <TheAskSlide />,
   ];
 
@@ -843,24 +847,19 @@ function GTMSlide() {
 /* ─── Slide 17: Projections (Producer + SaaS Revenue) ─── */
 function ProjectionsSlide() {
   const MAX_PX = 140;
-  // Brokerage: new producers × $60K + renewing × $84K
+  // Brokerage: new producers × $120K + renewing × $148K
   // SaaS: agencies × $4K/mo × 12 = $48K/agency/year
-  // Y1: 5 agencies (20 producers) → Brokerage $0.3M + SaaS $0.24M = $0.5M
-  // Y2: 20 agencies (80 producers) → Brokerage $1.6M + SaaS $0.96M = $2.6M
-  // Y3: 100 agencies (400 producers) → Brokerage $6.6M + SaaS $4.8M = $11.4M
-  // Y4: 300 agencies (1200 producers) → Brokerage $20.4M + SaaS $14.4M = $34.8M
-  // Y5: 600 agencies (2400 producers) → Brokerage $67.2M + SaaS $28.8M = $96.0M
   const years = [
-    { label: "Year 1", agencies: 5,   producers: 20,   brokerage: 0.3,  saas: 0.24, total: "$0.5M",  raw: 0.5 },
-    { label: "Year 2", agencies: 20,  producers: 80,   brokerage: 1.6,  saas: 0.96, total: "$2.6M",  raw: 2.6 },
-    { label: "Year 3", agencies: 100, producers: 400,  brokerage: 6.6,  saas: 4.8,  total: "$11.4M", raw: 11.4 },
-    { label: "Year 4", agencies: 300, producers: 1200, brokerage: 20.4, saas: 14.4, total: "$34.8M", raw: 34.8 },
-    { label: "Year 5", agencies: 600, producers: 2400, brokerage: 67.2, saas: 28.8, total: "$96.0M", raw: 96.0 },
+    { label: "Year 1", agencies: 5,   producers: 20,   newP: 20,  renP: 0,    brokerage: 2.4,   saas: 0.24, total: "$2.6M",   raw: 2.64 },
+    { label: "Year 2", agencies: 20,  producers: 80,   newP: 60,  renP: 20,   brokerage: 10.2,  saas: 0.96, total: "$11.1M",  raw: 11.12 },
+    { label: "Year 3", agencies: 100, producers: 400,  newP: 320, renP: 80,   brokerage: 50.2,  saas: 4.8,  total: "$55.0M",  raw: 55.04 },
+    { label: "Year 4", agencies: 300, producers: 1200, newP: 800, renP: 400,  brokerage: 155.2, saas: 14.4, total: "$169.6M", raw: 169.6 },
+    { label: "Year 5", agencies: 600, producers: 2400, newP: 1200, renP: 1200, brokerage: 321.6, saas: 28.8, total: "$350.4M", raw: 350.4 },
   ];
   const maxRaw = Math.max(...years.map(y => y.raw));
   return (
     <div>
-      <SlideHeader icon={BarChart3} tag="Financial Projections" title="Revenue scales with every agency we add." subtitle="Dual revenue: brokerage commission ($60K–$84K/producer) + SaaS licensing ($4K/month avg per agency)." />
+      <SlideHeader icon={BarChart3} tag="Financial Projections" title="Revenue scales with every agency we add." subtitle="Dual revenue: brokerage commission ($120K–$148K/producer) + SaaS licensing ($4K/month avg per agency)." />
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-2">
         {/* Stacked bar chart */}
         <div className="md:col-span-2 rounded-xl border border-border bg-card p-5">
@@ -888,7 +887,6 @@ function ProjectionsSlide() {
             <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-sm bg-primary/80" /> Brokerage Commission</span>
             <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-sm bg-primary/30" /> SaaS Licensing</span>
           </div>
-          <p className="text-center text-xs text-muted-foreground mt-2 italic">ARR = brokerage commission + SaaS. Renewals compound year over year.</p>
         </div>
         {/* Revenue breakdown */}
         <div className="rounded-xl border border-border bg-card p-5 flex flex-col">
@@ -910,13 +908,175 @@ function ProjectionsSlide() {
               </div>
             ))}
           </div>
+          <div className="mt-3 pt-3 border-t border-border/30">
+            <p className="text-[10px] text-muted-foreground/60 italic">New producer: $120K rev · Renewal: $148K rev</p>
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-/* ─── Slide 19: The Ask (Updated — AI Brokerage) ─── */
+/* ─── Slide 18: Profit Breakdown ─── */
+function ProfitSlide() {
+  const MAX_PX = 140;
+  // Brokerage profit: 45% margin after service costs
+  // SaaS profit: 80% margin
+  const years = [
+    { label: "Year 1", rev: 2.64,  brokRev: 2.4,   saasRev: 0.24, brokProfit: 1.08,  saasProfit: 0.19,  totalProfit: 1.27 },
+    { label: "Year 2", rev: 11.12, brokRev: 10.16, saasRev: 0.96, brokProfit: 4.57,  saasProfit: 0.77,  totalProfit: 5.34 },
+    { label: "Year 3", rev: 55.04, brokRev: 50.24, saasRev: 4.8,  brokProfit: 22.61, saasProfit: 3.84,  totalProfit: 26.45 },
+    { label: "Year 4", rev: 169.6, brokRev: 155.2, saasRev: 14.4, brokProfit: 69.84, saasProfit: 11.52, totalProfit: 81.36 },
+    { label: "Year 5", rev: 350.4, brokRev: 321.6, saasRev: 28.8, brokProfit: 144.72, saasProfit: 23.04, totalProfit: 167.76 },
+  ];
+  const maxProfit = Math.max(...years.map(y => y.totalProfit));
+  return (
+    <div>
+      <SlideHeader icon={TrendingUp} tag="Profit Analysis" title="High-margin revenue from both streams." subtitle="Brokerage: 45% profit margin after service costs. SaaS: 80% profit margin. Blended margins improve as SaaS scales." />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-2">
+        <div className="md:col-span-2 rounded-xl border border-border bg-card p-5">
+          <p className="text-xs font-bold text-primary uppercase tracking-widest mb-3">Net Profit ($M)</p>
+          <div className="flex items-end justify-around gap-3" style={{ height: `${MAX_PX + 32}px` }}>
+            {years.map((y) => {
+              const totalH = Math.max(12, Math.round((y.totalProfit / maxProfit) * MAX_PX));
+              const saasRatio = y.saasProfit / y.totalProfit;
+              const saasH = Math.max(4, Math.round(totalH * saasRatio));
+              const brokerH = totalH - saasH;
+              return (
+                <div key={y.label} className="flex flex-col items-center gap-1 flex-1">
+                  <span className="text-xs font-bold text-foreground tabular-nums">${y.totalProfit.toFixed(1)}M</span>
+                  <div className="w-full flex flex-col">
+                    <div className="w-full rounded-t-md bg-primary/80" style={{ height: `${brokerH}px` }} />
+                    <div className="w-full bg-primary/30" style={{ height: `${saasH}px` }} />
+                  </div>
+                  <span className="text-xs text-muted-foreground font-medium">{y.label}</span>
+                </div>
+              );
+            })}
+          </div>
+          <div className="flex items-center justify-center gap-4 mt-3 text-xs text-muted-foreground">
+            <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-sm bg-primary/80" /> Brokerage (45% margin)</span>
+            <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-sm bg-primary/30" /> SaaS (80% margin)</span>
+          </div>
+        </div>
+        <div className="rounded-xl border border-border bg-card p-5 flex flex-col">
+          <p className="text-xs font-bold text-primary uppercase tracking-widest mb-3">Profit Breakdown</p>
+          <div className="space-y-2 flex-1">
+            {years.map(y => {
+              const blended = ((y.totalProfit / y.rev) * 100).toFixed(0);
+              return (
+                <div key={y.label} className="border-b border-border/20 pb-2 last:border-0">
+                  <div className="flex justify-between text-xs">
+                    <span className="font-medium text-foreground">{y.label}</span>
+                    <span className="font-bold text-foreground">${y.totalProfit.toFixed(1)}M</span>
+                  </div>
+                  <div className="flex gap-3 text-[10px] text-muted-foreground/60 mt-0.5">
+                    <span>Brokerage: ${y.brokProfit.toFixed(1)}M</span>
+                    <span>SaaS: ${y.saasProfit.toFixed(1)}M</span>
+                  </div>
+                  <div className="text-[10px] text-primary/70 mt-0.5">Blended margin: {blended}%</div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Slide 19: Investor ROI ─── */
+function ROISlide() {
+  // 50% reinvested into growth, 50% distributable
+  // Investor owns 10% ($500K for 10%)
+  // Dividend = 10% of distributable profit
+  const years = [
+    { label: "Year 1", totalProfit: 1.27,   distributable: 0.635,   dividend: 0.064,  cumDiv: 0.064 },
+    { label: "Year 2", totalProfit: 5.34,   distributable: 2.67,    dividend: 0.267,  cumDiv: 0.331 },
+    { label: "Year 3", totalProfit: 26.45,  distributable: 13.225,  dividend: 1.323,  cumDiv: 1.654 },
+    { label: "Year 4", totalProfit: 81.36,  distributable: 40.68,   dividend: 4.068,  cumDiv: 5.722 },
+    { label: "Year 5", totalProfit: 167.76, distributable: 83.88,   dividend: 8.388,  cumDiv: 14.11 },
+  ];
+  const totalReturn = 14.11;
+  const roi = ((totalReturn / 0.5) * 100).toFixed(0);
+  return (
+    <div>
+      <SlideHeader icon={DollarSign} tag="Investor Returns" title="$500K investment. $14.1M returned in 5 years." subtitle="10% equity stake with dividend distributions after reinvesting 50% of profit into growth." />
+
+      {/* Key metrics */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2">
+        <div className="rounded-xl border-2 border-primary/30 bg-primary/5 p-4 text-center">
+          <p className="text-2xl font-extrabold text-foreground">$500K</p>
+          <p className="text-xs text-muted-foreground mt-1">Investment</p>
+        </div>
+        <div className="rounded-xl border-2 border-primary/30 bg-primary/5 p-4 text-center">
+          <p className="text-2xl font-extrabold text-foreground">10%</p>
+          <p className="text-xs text-muted-foreground mt-1">Equity Stake</p>
+        </div>
+        <div className="rounded-xl border-2 border-primary/30 bg-primary/5 p-4 text-center">
+          <p className="text-2xl font-extrabold text-foreground">${totalReturn}M</p>
+          <p className="text-xs text-muted-foreground mt-1">Total Dividends (5yr)</p>
+        </div>
+        <div className="rounded-xl border-2 border-primary/30 bg-primary/5 p-4 text-center">
+          <p className="text-2xl font-extrabold text-primary">{roi}%</p>
+          <p className="text-xs text-muted-foreground mt-1">5-Year ROI</p>
+        </div>
+      </div>
+
+      {/* Year-by-year table */}
+      <div className="mt-5 rounded-xl border border-border bg-card p-5">
+        <p className="text-xs font-bold text-primary uppercase tracking-widest mb-3">Dividend Schedule</p>
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-border/30 text-xs text-muted-foreground">
+              <th className="text-left py-2 font-medium">Year</th>
+              <th className="text-right py-2 font-medium">Net Profit</th>
+              <th className="text-right py-2 font-medium">50% Reinvested</th>
+              <th className="text-right py-2 font-medium">50% Distributable</th>
+              <th className="text-right py-2 font-medium">10% Dividend</th>
+              <th className="text-right py-2 font-medium">Cumulative</th>
+            </tr>
+          </thead>
+          <tbody>
+            {years.map(y => (
+              <tr key={y.label} className="border-b border-border/10">
+                <td className="py-2 text-xs font-medium text-foreground">{y.label}</td>
+                <td className="py-2 text-xs text-right text-muted-foreground">${y.totalProfit.toFixed(1)}M</td>
+                <td className="py-2 text-xs text-right text-muted-foreground/60">${(y.totalProfit / 2).toFixed(1)}M</td>
+                <td className="py-2 text-xs text-right text-muted-foreground">${y.distributable.toFixed(1)}M</td>
+                <td className="py-2 text-xs text-right font-semibold text-foreground">${y.dividend < 1 ? `${(y.dividend * 1000).toFixed(0)}K` : `${y.dividend.toFixed(1)}M`}</td>
+                <td className="py-2 text-xs text-right font-bold text-primary">${y.cumDiv < 1 ? `${(y.cumDiv * 1000).toFixed(0)}K` : `${y.cumDiv.toFixed(1)}M`}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Bottom callout */}
+      <div className="mt-5 rounded-xl border-2 border-primary/20 bg-primary/5 p-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <p className="text-xs font-bold text-primary uppercase tracking-widest mb-2">How It Works</p>
+            <ul className="text-xs text-muted-foreground space-y-1.5">
+              <li className="flex items-start gap-2"><span className="text-primary mt-0.5">→</span> 50% of net profit reinvested into growth</li>
+              <li className="flex items-start gap-2"><span className="text-primary mt-0.5">→</span> 50% distributable to equity holders</li>
+              <li className="flex items-start gap-2"><span className="text-primary mt-0.5">→</span> 10% ownership = 10% of distributions</li>
+              <li className="flex items-start gap-2"><span className="text-primary mt-0.5">→</span> Dividends paid after tax obligations</li>
+            </ul>
+          </div>
+          <div>
+            <p className="text-xs font-bold text-primary uppercase tracking-widest mb-2">Plus Equity Upside</p>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Dividends are only the cash return. The 10% equity stake grows in value as the company scales — providing additional upside through future liquidity events, secondary sales, or acquisition.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Slide 20: The Ask (Updated — AI Brokerage) ─── */
 function TheAskSlide() {
   return (
     <div>
