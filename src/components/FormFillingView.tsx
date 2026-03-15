@@ -1501,6 +1501,20 @@ export default function FormFillingView({ submissionId, initialMessages, initial
         <Button
           size="sm"
           variant="outline"
+          className="w-full text-xs h-7 gap-1"
+          onClick={() => {
+            const url = submissionId && submissionId !== "draft"
+              ? `/loss-runs/new?submissionId=${submissionId}`
+              : "/loss-runs/new";
+            window.location.href = url;
+          }}
+        >
+          <FileSearch className="h-3 w-3" />
+          Request Loss Runs
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
           className="w-full text-xs h-7"
           onClick={async () => {
             if (!user) return;
