@@ -840,61 +840,73 @@ function GTMSlide() {
   );
 }
 
-/* ─── Slide 18: Projections (Producer-Based) ─── */
+/* ─── Slide 17: Projections (Producer + SaaS Revenue) ─── */
 function ProjectionsSlide() {
   const MAX_PX = 140;
-  // Y1: 5 new × $60K = $0.3M
-  // Y2: 20 new × $60K + 5 renew × $84K = $1.6M
-  // Y3: 75 new × $60K + 25 renew × $84K = $6.6M
-  // Y4: 200 new × $60K + 100 renew × $84K = $20.4M
-  // Y5: 700 new × $60K + 300 renew × $84K = $67.2M
+  // Brokerage: new producers × $60K + renewing × $84K
+  // SaaS: agencies × $4K/mo × 12 = $48K/agency/year
+  // Y1: 5 agencies (20 producers) → Brokerage $0.3M + SaaS $0.24M = $0.5M
+  // Y2: 20 agencies (80 producers) → Brokerage $1.6M + SaaS $0.96M = $2.6M
+  // Y3: 100 agencies (400 producers) → Brokerage $6.6M + SaaS $4.8M = $11.4M
+  // Y4: 300 agencies (1200 producers) → Brokerage $20.4M + SaaS $14.4M = $34.8M
+  // Y5: 600 agencies (2400 producers) → Brokerage $67.2M + SaaS $28.8M = $96.0M
   const years = [
-    { label: "Year 1", producers: 5,    revenue: "$0.3M",  raw: 0.3 },
-    { label: "Year 2", producers: 25,   revenue: "$1.6M",  raw: 1.6 },
-    { label: "Year 3", producers: 100,  revenue: "$6.6M",  raw: 6.6 },
-    { label: "Year 4", producers: 300,  revenue: "$20.4M", raw: 20.4 },
-    { label: "Year 5", producers: 1000, revenue: "$67.2M", raw: 67.2 },
+    { label: "Year 1", agencies: 5,   producers: 20,   brokerage: 0.3,  saas: 0.24, total: "$0.5M",  raw: 0.5 },
+    { label: "Year 2", agencies: 20,  producers: 80,   brokerage: 1.6,  saas: 0.96, total: "$2.6M",  raw: 2.6 },
+    { label: "Year 3", agencies: 100, producers: 400,  brokerage: 6.6,  saas: 4.8,  total: "$11.4M", raw: 11.4 },
+    { label: "Year 4", agencies: 300, producers: 1200, brokerage: 20.4, saas: 14.4, total: "$34.8M", raw: 34.8 },
+    { label: "Year 5", agencies: 600, producers: 2400, brokerage: 67.2, saas: 28.8, total: "$96.0M", raw: 96.0 },
   ];
   const maxRaw = Math.max(...years.map(y => y.raw));
   return (
     <div>
-      <SlideHeader icon={BarChart3} tag="Financial Projections" title="Revenue scales with every producer we add." subtitle="Avg producer: $1M annual premium, 12% commission. AURA retains 50% year 1 ($60K/producer), 70% on renewals ($84K/producer)." />
+      <SlideHeader icon={BarChart3} tag="Financial Projections" title="Revenue scales with every agency we add." subtitle="Dual revenue: brokerage commission ($60K–$84K/producer) + SaaS licensing ($4K/month avg per agency)." />
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-2">
-        {/* Bar chart */}
+        {/* Stacked bar chart */}
         <div className="md:col-span-2 rounded-xl border border-border bg-card p-5">
-          <p className="text-xs font-bold text-primary uppercase tracking-widest mb-3">ARR ($M)</p>
+          <p className="text-xs font-bold text-primary uppercase tracking-widest mb-3">Combined ARR ($M)</p>
           <div className="flex items-end justify-around gap-3" style={{ height: `${MAX_PX + 32}px` }}>
             {years.map((y) => {
-              const barH = Math.max(8, Math.round((y.raw / maxRaw) * MAX_PX));
+              const totalH = Math.max(12, Math.round((y.raw / maxRaw) * MAX_PX));
+              const saasRatio = y.saas / (y.brokerage + y.saas);
+              const saasH = Math.max(4, Math.round(totalH * saasRatio));
+              const brokerH = totalH - saasH;
               return (
-                <div key={y.label} className="flex flex-col items-center gap-2 flex-1">
-                  <span className="text-xs font-bold text-foreground tabular-nums">{y.revenue}</span>
-                  <div
-                    className="w-full rounded-t-md bg-primary/80"
-                    style={{ height: `${barH}px` }}
-                  />
+                <div key={y.label} className="flex flex-col items-center gap-1 flex-1">
+                  <span className="text-xs font-bold text-foreground tabular-nums">{y.total}</span>
+                  <div className="w-full flex flex-col">
+                    <div className="w-full rounded-t-md bg-primary/80" style={{ height: `${brokerH}px` }} />
+                    <div className="w-full bg-primary/30" style={{ height: `${saasH}px` }} />
+                  </div>
                   <span className="text-xs text-muted-foreground font-medium">{y.label}</span>
-                  <span className="text-[10px] text-muted-foreground/60">({y.producers} producers)</span>
+                  <span className="text-[10px] text-muted-foreground/60 text-center leading-tight">{y.agencies} agencies</span>
                 </div>
               );
             })}
           </div>
           <div className="flex items-center justify-center gap-4 mt-3 text-xs text-muted-foreground">
             <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-sm bg-primary/80" /> Brokerage Commission</span>
-            <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-sm bg-primary/40" /> SaaS Licensing</span>
+            <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-sm bg-primary/30" /> SaaS Licensing</span>
           </div>
           <p className="text-center text-xs text-muted-foreground mt-2 italic">ARR = brokerage commission + SaaS. Renewals compound year over year.</p>
         </div>
-        {/* Growth milestones */}
-        <div className="rounded-xl border border-border bg-card p-5 flex flex-col justify-between">
-          <div>
-            <p className="text-xs font-bold text-primary uppercase tracking-widest mb-3">Growth Milestones</p>
-          </div>
-          <div className="mt-4 pt-4 border-t border-border/30 space-y-1">
+        {/* Revenue breakdown */}
+        <div className="rounded-xl border border-border bg-card p-5 flex flex-col">
+          <p className="text-xs font-bold text-primary uppercase tracking-widest mb-3">Revenue Breakdown</p>
+          <div className="space-y-2 flex-1">
             {years.map(y => (
-              <div key={y.label} className="flex justify-between text-xs">
-                <span className="text-muted-foreground">{y.label} — {y.producers} producers</span>
-                <span className="font-semibold text-foreground">{y.revenue}</span>
+              <div key={y.label} className="border-b border-border/20 pb-2 last:border-0">
+                <div className="flex justify-between text-xs">
+                  <span className="font-medium text-foreground">{y.label}</span>
+                  <span className="font-bold text-foreground">{y.total}</span>
+                </div>
+                <div className="flex justify-between text-[10px] text-muted-foreground/70 mt-0.5">
+                  <span>{y.agencies} agencies · {y.producers} producers</span>
+                </div>
+                <div className="flex gap-3 text-[10px] text-muted-foreground/60 mt-0.5">
+                  <span>Brokerage: ${y.brokerage}M</span>
+                  <span>SaaS: ${y.saas}M</span>
+                </div>
               </div>
             ))}
           </div>
