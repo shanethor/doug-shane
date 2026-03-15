@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { ChevronLeft, ChevronRight, TrendingUp, Brain, DollarSign, Users, Target, Rocket, BarChart3, Shield, Database, Eye, Layers, Zap, Heart, Smartphone, FolderOpen, MessageCircle, Bot, Activity, LayoutDashboard, CreditCard, FileText } from "lucide-react";
+import { ChevronLeft, ChevronRight, TrendingUp, Brain, DollarSign, Users, Target, Rocket, BarChart3, Shield, Database, Eye, Layers, Zap, Heart, Smartphone, FolderOpen, MessageCircle, Bot, Activity, LayoutDashboard, CreditCard, FileText, ArrowRight, Repeat } from "lucide-react";
 
 const SLIDES = [
   { id: "title", label: "Title" },
