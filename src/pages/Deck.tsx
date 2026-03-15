@@ -854,39 +854,45 @@ function GTMSlide() {
   );
 }
 
-/* ─── Slide 16: Projections ─── */
+/* ─── Slide 18: Projections (Updated — Producer-Based) ─── */
 function ProjectionsSlide() {
   const MAX_PX = 140;
   const years = [
-    { label: "Year 1", revenue: "1.2M",  raw: 1.2,   agencies: 10 },
-    { label: "Year 2", revenue: "5.7M",  raw: 5.7,   agencies: 40 },
-    { label: "Year 3", revenue: "21.6M", raw: 21.6,  agencies: 120 },
-    { label: "Year 4", revenue: "64.8M", raw: 64.8,  agencies: 300 },
-    { label: "Year 5", revenue: "144M",  raw: 144,   agencies: 600 },
+    { label: "Year 1", producers: 3,   revenue: "$0.1M", raw: 0.1 },
+    { label: "Year 2", producers: 20,  revenue: "$0.4M", raw: 0.4 },
+    { label: "Year 3", producers: 75,  revenue: "$1.8M", raw: 1.8 },
+    { label: "Year 4", producers: 200, revenue: "$5.5M", raw: 5.5 },
+    { label: "Year 5", producers: 500, revenue: "$15M",  raw: 15 },
   ];
   const maxRaw = Math.max(...years.map(y => y.raw));
   return (
     <div>
-      <SlideHeader icon={BarChart3} tag="Financial Projections" title="Revenue expansion as AURA scales." subtitle="Conservative model: each agency generates $250K–$1M in additional commission per year through AURA-enabled efficiency." />
+      <SlideHeader icon={BarChart3} tag="Financial Projections" title="Revenue scales with every producer we add." subtitle="Conservative model anchored to Doug's live numbers. Avg producer: $500K annual premium, 10% commission, 20% AURA override = $10K/producer/yr at ramp." />
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-2">
         {/* Bar chart */}
         <div className="md:col-span-2 rounded-xl border border-border bg-card p-5">
+          <p className="text-xs font-bold text-primary uppercase tracking-widest mb-3">ARR ($M)</p>
           <div className="flex items-end justify-around gap-3" style={{ height: `${MAX_PX + 32}px` }}>
             {years.map((y) => {
               const barH = Math.max(8, Math.round((y.raw / maxRaw) * MAX_PX));
               return (
                 <div key={y.label} className="flex flex-col items-center gap-2 flex-1">
-                  <span className="text-xs font-bold text-foreground tabular-nums">${y.revenue}</span>
+                  <span className="text-xs font-bold text-foreground tabular-nums">{y.revenue}</span>
                   <div
                     className="w-full rounded-t-md bg-primary/80"
                     style={{ height: `${barH}px` }}
                   />
                   <span className="text-xs text-muted-foreground font-medium">{y.label}</span>
+                  <span className="text-[10px] text-muted-foreground/60">({y.producers})</span>
                 </div>
               );
             })}
           </div>
-          <p className="text-center text-xs text-muted-foreground mt-3 italic">Core platform subscription revenue only. Expansion streams excluded.</p>
+          <div className="flex items-center justify-center gap-4 mt-3 text-xs text-muted-foreground">
+            <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-sm bg-primary/80" /> Brokerage Override</span>
+            <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-sm bg-primary/40" /> SaaS Licensing</span>
+          </div>
+          <p className="text-center text-xs text-muted-foreground mt-2 italic">ARR = override + SaaS. Renewals compound but not separately modeled here.</p>
         </div>
         {/* Growth milestones */}
         <div className="rounded-xl border border-border bg-card p-5 flex flex-col justify-between">
@@ -896,14 +902,11 @@ function ProjectionsSlide() {
           <div className="mt-4 pt-4 border-t border-border/30 space-y-1">
             {years.map(y => (
               <div key={y.label} className="flex justify-between text-xs">
-                <span className="text-muted-foreground">{y.label} — {y.agencies} agencies</span>
-                <span className="font-semibold text-foreground">${y.revenue}</span>
+                <span className="text-muted-foreground">{y.label} — {y.producers} producers</span>
+                <span className="font-semibold text-foreground">{y.revenue}</span>
               </div>
             ))}
           </div>
-          <p className="mt-4 text-xs text-muted-foreground italic">
-            Conservative estimate: each agency generates $250K–$1M in additional client commission per year through AURA-enabled efficiency.
-          </p>
         </div>
       </div>
     </div>
