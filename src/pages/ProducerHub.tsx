@@ -11,6 +11,7 @@ import {
 import Pipeline from "./Pipeline";
 import ProducerDashboard from "./ProducerDashboard";
 import LeadEnginePanel from "@/components/LeadEnginePanel";
+import LossRunPanel from "@/components/LossRunPanel";
 
 type ToolTab = {
   id: string;
@@ -32,18 +33,6 @@ const TOOL_TABS: ToolTab[] = [
       "Upload carrier-specific supplemental forms",
       "Auto-detect field names and map to ACORD data",
       "Reuse templates across clients instantly",
-    ],
-  },
-  {
-    id: "loss-runs",
-    icon: FileSearch,
-    label: "Loss Runs",
-    title: "Loss Run Requests",
-    description: "Integrated with Loss Run Pro — request, track, and receive loss run documents directly from carriers without manual emails.",
-    details: [
-      "One-click loss run requests to carriers",
-      "Automatic status tracking and follow-ups",
-      "Documents auto-attach to lead records",
     ],
   },
   {
@@ -188,6 +177,10 @@ export default function ProducerHub() {
               <Radar className="h-3.5 w-3.5 hidden sm:block" />
               Lead Engine
             </TabsTrigger>
+            <TabsTrigger value="loss-runs" className="gap-1.5 text-xs px-2.5 sm:px-3">
+              <FileSearch className="h-3.5 w-3.5 hidden sm:block" />
+              Loss Runs
+            </TabsTrigger>
             {TOOL_TABS.map((tool) => (
               <TabsTrigger key={tool.id} value={tool.id} className="gap-1.5 text-xs px-2.5 sm:px-3">
                 <tool.icon className="h-3.5 w-3.5 hidden sm:block" />
@@ -207,6 +200,10 @@ export default function ProducerHub() {
 
         <TabsContent value="lead-engine">
           <LeadEnginePanel />
+        </TabsContent>
+
+        <TabsContent value="loss-runs">
+          <LossRunPanel />
         </TabsContent>
 
         {TOOL_TABS.map((tool) => (

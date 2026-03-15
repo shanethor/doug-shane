@@ -45,6 +45,11 @@ import BetaVoice from "./pages/BetaVoice";
 import BetaVideo from "./pages/BetaVideo";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
+import LossRunDashboard from "./pages/LossRunDashboard";
+import LossRunNew from "./pages/LossRunNew";
+import LossRunDetail from "./pages/LossRunDetail";
+import LossRunSign from "./pages/LossRunSign";
+import CarrierDirectory from "./pages/CarrierDirectory";
 import { Navigate } from "react-router-dom";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -118,7 +123,11 @@ const App = () => (
           <Route path="/email-callback" element={<ProtectedRoute><EmailCallback /></ProtectedRoute>} />
           <Route path="/calendar" element={<Navigate to="/email" replace />} />
           <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-          <Route path="/book/:producerId" element={<BookingPage />} />
+          <Route path="/loss-runs" element={<ProtectedRoute><LossRunDashboard /></ProtectedRoute>} />
+          <Route path="/loss-runs/new" element={<ProtectedRoute><LossRunNew /></ProtectedRoute>} />
+          <Route path="/loss-runs/settings" element={<ProtectedRoute><CarrierDirectory /></ProtectedRoute>} />
+          <Route path="/loss-runs/:id" element={<ProtectedRoute><LossRunDetail /></ProtectedRoute>} />
+          <Route path="/loss-runs/:id/sign" element={<LossRunSign />} />
           <Route path="/beta">
             <Route index element={<AuraBeta />} />
             <Route element={<BetaLayout />}>

@@ -528,33 +528,43 @@ export function LossRunsTab({ leadId, accountName }: LossRunsTabProps) {
 
             {/* Step 2: Send method */}
             <div>
+            <div className="flex items-center justify-between mb-3">
               <h4 className="text-xs font-semibold font-sans mb-2 text-muted-foreground uppercase tracking-wider">
                 Send Method
               </h4>
-              <div className="space-y-2">
-                <Card className="border-primary/30 bg-primary/5">
-                  <CardContent className="p-3 flex items-center gap-3">
-                    <div className="h-4 w-4 rounded-full border-2 border-primary flex items-center justify-center">
-                      <div className="h-2 w-2 rounded-full bg-primary" />
-                    </div>
-                    <div>
-                      <p className="text-xs font-medium font-sans">Manual Send</p>
-                      <p className="text-[10px] text-muted-foreground font-sans">
-                        Mark as requested. Producer sends manually.
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-                <Card className="opacity-50">
-                  <CardContent className="p-3 flex items-center gap-3">
-                    <div className="h-4 w-4 rounded-full border-2 border-muted-foreground" />
-                    <div>
-                      <p className="text-xs font-medium font-sans">Loss Run Pro</p>
-                      <p className="text-[10px] text-muted-foreground font-sans">Coming soon — auto-send via integration</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
+            </div>
+            <div className="space-y-2">
+              <Card className="border-primary/30 bg-primary/5">
+                <CardContent className="p-3 flex items-center gap-3">
+                  <div className="h-4 w-4 rounded-full border-2 border-primary flex items-center justify-center">
+                    <div className="h-2 w-2 rounded-full bg-primary" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium font-sans">Manual Send</p>
+                    <p className="text-[10px] text-muted-foreground font-sans">
+                      Mark as requested. Producer sends manually.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card
+                className="cursor-pointer hover:border-primary/30 transition-colors"
+                onClick={() => {
+                  const url = leadId ? `/loss-runs/new?leadId=${leadId}` : "/loss-runs/new";
+                  window.location.href = url;
+                }}
+              >
+                <CardContent className="p-3 flex items-center gap-3">
+                  <div className="h-4 w-4 rounded-full border-2 border-primary" />
+                  <div>
+                    <p className="text-xs font-medium font-sans">AURA Loss Run Request</p>
+                    <p className="text-[10px] text-muted-foreground font-sans">
+                      Generate letter, e-sign, and auto-send to carrier
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
             </div>
 
             <div className="flex gap-2 pt-2">
