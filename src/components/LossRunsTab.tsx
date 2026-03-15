@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -76,10 +77,13 @@ const EMPTY_POLICY: PolicyItem = {
 interface LossRunsTabProps {
   leadId: string;
   accountName: string;
+  submissionId?: string | null;
 }
 
-export function LossRunsTab({ leadId, accountName }: LossRunsTabProps) {
+export function LossRunsTab({ leadId, accountName, submissionId }: LossRunsTabProps) {
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const [allRequests, setAllRequests] = useState<any[]>([]);
   const [request, setRequest] = useState<any>(null);
   const [policyItems, setPolicyItems] = useState<any[]>([]);
   const [attachments, setAttachments] = useState<any[]>([]);
@@ -265,6 +269,24 @@ export function LossRunsTab({ leadId, accountName }: LossRunsTabProps) {
 
   return (
     <div className="space-y-6">
+      {/* Request via Wizard Button */}
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold">Loss Runs</h3>
+        <Button
+          size="sm"
+          className="gap-1.5"
+          onClick={() => {
+            const params = new URLSearchParams();
+            if (submissionId) params.set("submissionId", submissionId);
+            else params.set("leadId", leadId);
+            navigate(`/loss-runs/new?${params.toString()}`);
+          }}
+        >
+          <Plus className="h-3.5 w-3.5" />
+          Request Loss Run
+        </Button>
+      </div>
+
       {/* Status Banner */}
       <Card>
         <CardContent className="p-4">

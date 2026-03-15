@@ -2,7 +2,8 @@ import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useUnreadCount } from "@/hooks/useUnreadCount";
-import { LogOut, ShieldCheck, MessageCircle, HelpCircle, GitBranch, Settings, Mail, HeartPulse } from "lucide-react";
+import { useLossRunReminders } from "@/hooks/useLossRunReminders";
+import { LogOut, ShieldCheck, MessageCircle, HelpCircle, GitBranch, Settings, Mail, HeartPulse, FileSearch } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { useTrainingMode } from "@/hooks/useTrainingMode";
@@ -15,12 +16,14 @@ export function AppLayout({ children, onLogoClick }: { children: React.ReactNode
   const location = useLocation();
   const { trainingMode, setTrainingMode } = useTrainingMode();
   const { emailCount, pulseCount } = useUnreadCount();
+  const { count: lossRunReminderCount } = useLossRunReminders();
 
   const navItems = [
     { to: "/", label: "AURA", icon: MessageCircle },
     { to: "/email", label: "Email", icon: Mail },
     { to: "/pulse", label: "Pulse", icon: HeartPulse },
     ...(canSeeProducerHub ? [{ to: "/hub", label: "Command Center", icon: GitBranch }] : []),
+    { to: "/loss-runs", label: "Loss Runs", icon: FileSearch },
     ...(canSeeAdmin ? [{ to: "/admin", label: "Admin", icon: ShieldCheck }] : []),
     { to: "/settings", label: "Settings", icon: Settings },
   ];
@@ -61,6 +64,9 @@ export function AppLayout({ children, onLogoClick }: { children: React.ReactNode
                     <span className="absolute -top-1 -right-1 h-4 min-w-[16px] px-1 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center">
                       {pulseCount > 99 ? "99+" : pulseCount}
                     </span>
+                  )}
+                  {item.to === "/loss-runs" && lossRunReminderCount > 0 && (
+                    <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-destructive" />
                   )}
                 </Button>
               </Link>
