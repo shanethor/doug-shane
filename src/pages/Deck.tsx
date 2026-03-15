@@ -745,71 +745,45 @@ function WhyWinsSlide() {
   );
 }
 
-/* ─── Slide 14: Revenue Model ─── */
+/* ─── Slide 16: Revenue Model (Updated — Two Streams) ─── */
 function ModelSlide() {
-  const tiers = [
-    {
-      heading: "Core Deployment",
-      price: "$7,500–12,000/mo",
-      tag: "per agency",
-      features: ["Producer workflow intelligence", "Submission ingestion & automation", "Coverage intelligence layer"],
-      highlight: false,
-    },
-    {
-      heading: "Full Agency",
-      price: "$12,000–25,000/mo",
-      tag: "per agency",
-      features: ["All core intelligence", "Agency-wide deployment", "Operational intelligence"],
-      highlight: true,
-    },
-    {
-      heading: "Enterprise",
-      price: "$25,000+/mo",
-      tag: "per organization",
-      features: ["Full platform deployment", "Custom integrations", "Advanced intelligence layer", "Enterprise support & SLA", "Pulse & Command Center"],
-      highlight: false,
-    },
-  ];
   return (
     <div>
-      <SlideHeader icon={DollarSign} tag="Revenue Model" title="AURA becomes the system your agency runs on." />
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
-        {tiers.map((t) => (
-          <div key={t.heading} className={`rounded-xl p-5 hover-lift flex flex-col ${t.highlight ? "border-2 border-primary/50 bg-primary/5" : "border border-border bg-card"}`}>
-            <div className={`text-xs font-semibold uppercase tracking-widest mb-1 ${t.highlight ? "text-primary" : "text-muted-foreground"}`}>{t.heading}</div>
-            <div className="text-xl font-bold text-foreground mt-1">{t.price}</div>
-            <div className="text-xs text-muted-foreground mb-3">{t.tag}</div>
-            <ul className="text-sm text-muted-foreground space-y-1.5 flex-1">
-              {t.features.map(f => (
-                <li key={f} className="flex items-start gap-2">
-                  <span className={`mt-0.5 shrink-0 ${t.highlight ? "text-primary" : "text-muted-foreground/60"}`}>✓</span>
-                  {f}
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
+      <SlideHeader icon={DollarSign} tag="Revenue Model" title="Two revenue streams. Both grow as producers grow." subtitle="Brokerage commission override + SaaS licensing. Every producer write pays AURA. Every renewal compounds." />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-2">
+        <div className="rounded-xl border-2 border-primary/30 bg-primary/5 p-6 hover-lift">
+          <p className="text-xs font-bold text-primary uppercase tracking-widest mb-3">Stream 1 — Brokerage Override</p>
+          <div className="text-3xl font-extrabold text-foreground mb-1">15–20%</div>
+          <p className="text-sm text-muted-foreground mb-4">of gross commission on every policy written by AURA producers</p>
+          <ul className="text-xs text-muted-foreground space-y-1.5">
+            <li>• Applies to new business and all future renewals</li>
+            <li>• Producers keep 80–85% — competitive with any captive or independent setup</li>
+            <li>• Override grows with book size, not just new production</li>
+            <li>• Avg producer: $500K annual premium × 10% comm × 20% AURA = $10K/yr at ramp</li>
+          </ul>
+        </div>
+        <div className="rounded-xl border border-border bg-card p-6 hover-lift">
+          <p className="text-xs font-bold text-primary uppercase tracking-widest mb-3">Stream 2 — SaaS Licensing</p>
+          <div className="text-3xl font-extrabold text-foreground mb-1">$500–1,500</div>
+          <p className="text-sm text-muted-foreground mb-4">per producer per month — for agencies licensing the platform directly</p>
+          <ul className="text-xs text-muted-foreground space-y-1.5">
+            <li>• Agencies pay to bring their existing producers onto the AURA platform</li>
+          </ul>
+        </div>
       </div>
-      {/* Revenue Share */}
-      <div className="mt-4 rounded-xl border border-border bg-card p-4">
-        <div className="flex flex-col md:flex-row md:items-center gap-4">
-          <div className="shrink-0 md:w-56">
-            <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-0.5">Alternative — Revenue Share</p>
-            <p className="text-sm text-muted-foreground mt-1">AURA grows when producers produce more.</p>
-          </div>
-          <div className="flex-1 grid grid-cols-3 gap-3">
-            {[
-              { label: "Year 1", pct: "3–5%", note: "Of new business influenced by AURA" },
-              { label: "Year 2", pct: "5–7%", note: "As intelligence compounds" },
-              { label: "Year 3+", pct: "7–10%", note: "As AURA becomes embedded in production" },
-            ].map(r => (
-              <div key={r.label} className="text-center rounded-lg border border-border/50 bg-muted/30 p-3">
-                <div className="text-xs text-muted-foreground mb-1">{r.label}</div>
-                <div className="text-lg font-bold text-foreground">{r.pct}</div>
-                <div className="text-[10px] text-muted-foreground/70 mt-1">{r.note}</div>
-              </div>
-            ))}
-          </div>
+      <div className="mt-5 rounded-xl border border-border bg-card p-5">
+        <p className="text-xs font-bold text-primary uppercase tracking-widest mb-3">Longer-term expansion</p>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {[
+            { title: "Underwriting Tools", desc: "Structured submission data sold to carriers and MGAs as risk intelligence" },
+            { title: "Direct Marketing", desc: "AURA's producer network becomes a distribution channel for new carrier products" },
+            { title: "Coaching Marketplace", desc: "Top producers earn by training new producers directly on the platform" },
+          ].map((item) => (
+            <div key={item.title} className="text-center">
+              <p className="text-sm font-semibold text-foreground">{item.title}</p>
+              <p className="text-xs text-muted-foreground mt-1">{item.desc}</p>
+            </div>
+          ))}
         </div>
       </div>
     </div>
