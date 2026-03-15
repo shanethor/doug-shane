@@ -337,6 +337,33 @@ export type Database = {
           },
         ]
       }
+      carriers: {
+        Row: {
+          created_at: string
+          id: string
+          loss_run_email: string | null
+          loss_run_fax: string | null
+          name: string
+          notes: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          loss_run_email?: string | null
+          loss_run_fax?: string | null
+          name: string
+          notes?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          loss_run_email?: string | null
+          loss_run_fax?: string | null
+          name?: string
+          notes?: string | null
+        }
+        Relationships: []
+      }
       client_documents: {
         Row: {
           created_at: string
@@ -1338,42 +1365,61 @@ export type Database = {
       }
       loss_run_policy_items: {
         Row: {
+          carrier_id: string | null
           carrier_name: string
           created_at: string
           effective_end: string
           effective_start: string
+          fax_number: string | null
           id: string
           insured_name: string
           line_of_business: string | null
           loss_run_request_id: string
           policy_number: string
+          policy_type: string | null
           request_email: string | null
+          status: string | null
         }
         Insert: {
+          carrier_id?: string | null
           carrier_name: string
           created_at?: string
           effective_end: string
           effective_start: string
+          fax_number?: string | null
           id?: string
           insured_name: string
           line_of_business?: string | null
           loss_run_request_id: string
           policy_number: string
+          policy_type?: string | null
           request_email?: string | null
+          status?: string | null
         }
         Update: {
+          carrier_id?: string | null
           carrier_name?: string
           created_at?: string
           effective_end?: string
           effective_start?: string
+          fax_number?: string | null
           id?: string
           insured_name?: string
           line_of_business?: string | null
           loss_run_request_id?: string
           policy_number?: string
+          policy_type?: string | null
           request_email?: string | null
+          status?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "loss_run_policy_items_carrier_id_fkey"
+            columns: ["carrier_id"]
+            isOneToOne: false
+            referencedRelation: "carriers"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "loss_run_policy_items_loss_run_request_id_fkey"
             columns: ["loss_run_request_id"]
@@ -1385,46 +1431,112 @@ export type Database = {
       }
       loss_run_requests: {
         Row: {
+          aor_needed: boolean | null
           completed_at: string | null
           created_at: string
+          days_before_renewal: number | null
           delivery_email: string | null
+          fulfilled_at: string | null
           id: string
+          insured_address: string | null
+          insured_city: string | null
+          insured_phone: string | null
+          insured_state: string | null
+          insured_zip: string | null
           lead_id: string
+          named_insured: string | null
           notes: string | null
+          producer_email: string | null
+          producer_fax: string | null
+          renewal_scheduled: boolean | null
           request_type: string
           requested_at: string | null
           requested_by: string
+          returned_loss_run_url: string | null
           sent_at: string | null
+          signature_token: string | null
+          signed_at: string | null
+          signed_pdf_url: string | null
+          signer_email: string | null
+          signer_name: string | null
+          signer_title: string | null
           status: Database["public"]["Enums"]["loss_run_status"]
+          submission_id: string | null
           updated_at: string
+          user_id: string | null
+          years_requested: number | null
         }
         Insert: {
+          aor_needed?: boolean | null
           completed_at?: string | null
           created_at?: string
+          days_before_renewal?: number | null
           delivery_email?: string | null
+          fulfilled_at?: string | null
           id?: string
+          insured_address?: string | null
+          insured_city?: string | null
+          insured_phone?: string | null
+          insured_state?: string | null
+          insured_zip?: string | null
           lead_id: string
+          named_insured?: string | null
           notes?: string | null
+          producer_email?: string | null
+          producer_fax?: string | null
+          renewal_scheduled?: boolean | null
           request_type?: string
           requested_at?: string | null
           requested_by: string
+          returned_loss_run_url?: string | null
           sent_at?: string | null
+          signature_token?: string | null
+          signed_at?: string | null
+          signed_pdf_url?: string | null
+          signer_email?: string | null
+          signer_name?: string | null
+          signer_title?: string | null
           status?: Database["public"]["Enums"]["loss_run_status"]
+          submission_id?: string | null
           updated_at?: string
+          user_id?: string | null
+          years_requested?: number | null
         }
         Update: {
+          aor_needed?: boolean | null
           completed_at?: string | null
           created_at?: string
+          days_before_renewal?: number | null
           delivery_email?: string | null
+          fulfilled_at?: string | null
           id?: string
+          insured_address?: string | null
+          insured_city?: string | null
+          insured_phone?: string | null
+          insured_state?: string | null
+          insured_zip?: string | null
           lead_id?: string
+          named_insured?: string | null
           notes?: string | null
+          producer_email?: string | null
+          producer_fax?: string | null
+          renewal_scheduled?: boolean | null
           request_type?: string
           requested_at?: string | null
           requested_by?: string
+          returned_loss_run_url?: string | null
           sent_at?: string | null
+          signature_token?: string | null
+          signed_at?: string | null
+          signed_pdf_url?: string | null
+          signer_email?: string | null
+          signer_name?: string | null
+          signer_title?: string | null
           status?: Database["public"]["Enums"]["loss_run_status"]
+          submission_id?: string | null
           updated_at?: string
+          user_id?: string | null
+          years_requested?: number | null
         }
         Relationships: [
           {
@@ -1432,6 +1544,13 @@ export type Database = {
             columns: ["lead_id"]
             isOneToOne: false
             referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "loss_run_requests_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "business_submissions"
             referencedColumns: ["id"]
           },
         ]
@@ -2066,6 +2185,10 @@ export type Database = {
         | "partial_received"
         | "complete_received"
         | "not_needed"
+        | "draft"
+        | "awaiting_signature"
+        | "fulfilled"
+        | "cancelled"
       policy_status: "pending" | "approved" | "rejected"
     }
     CompositeTypes: {
@@ -2213,6 +2336,10 @@ export const Constants = {
         "partial_received",
         "complete_received",
         "not_needed",
+        "draft",
+        "awaiting_signature",
+        "fulfilled",
+        "cancelled",
       ],
       policy_status: ["pending", "approved", "rejected"],
     },
