@@ -433,7 +433,7 @@ function BusinessModelSlide() {
             {[
               { step: "1", title: "Producer joins AURA", desc: "Credentialed under AURA's carrier appointments and E&O umbrella. No agency setup cost." },
               { step: "2", title: "Platform provided", desc: "Full access: ACORD workspace, Pulse, Command Center, AI Tools. Embedded coaching and sales simulations." },
-              { step: "3", title: "Extraction — day one", desc: "Write business, share override. Producer keeps 80–85% of gross commission. AURA retains 15–20% as the producing agency." },
+              { step: "3", title: "Extraction — day one", desc: "Write business, AURA is the brokerage. AURA retains 50% of commission year 1, 70% on renewals. Producer keeps the rest." },
               { step: "4", title: "Book compounds over time", desc: "Renewal retention builds passive income for the producer and recurring revenue for AURA." },
             ].map((item) => (
               <div key={item.step} className="flex items-start gap-3">
@@ -484,7 +484,7 @@ function GrowthEngineSlide() {
       </div>
       <div className="mt-5 rounded-xl border-2 border-primary/20 bg-primary/5 p-4 text-center">
         <p className="text-sm text-muted-foreground">
-          <span className="font-semibold text-foreground">Today:</span> Doug + Shane building proof. <span className="font-semibold text-foreground">Year 2:</span> 20 producers writing business on the platform. <span className="font-semibold text-foreground">Year 5:</span> 500 producers, $15M ARR, data no carrier can ignore.
+          <span className="font-semibold text-foreground">Today:</span> Building proof with live production. <span className="font-semibold text-foreground">Year 2:</span> 25 producers writing business on the platform. <span className="font-semibold text-foreground">Year 5:</span> 1,000 producers, $67M+ ARR, data no carrier can ignore.
         </p>
       </div>
     </div>
@@ -745,21 +745,22 @@ function WhyWinsSlide() {
   );
 }
 
-/* ─── Slide 16: Revenue Model (Updated — Two Streams) ─── */
+/* ─── Slide 16: Revenue Model (Two Streams) ─── */
 function ModelSlide() {
   return (
     <div>
-      <SlideHeader icon={DollarSign} tag="Revenue Model" title="Two revenue streams. Both grow as producers grow." subtitle="Brokerage commission override + SaaS licensing. Every producer write pays AURA. Every renewal compounds." />
+      <SlideHeader icon={DollarSign} tag="Revenue Model" title="Two revenue streams. Both grow as producers grow." subtitle="Brokerage commission revenue + SaaS licensing. Every producer write pays AURA. Every renewal compounds." />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-2">
         <div className="rounded-xl border-2 border-primary/30 bg-primary/5 p-6 hover-lift">
-          <p className="text-xs font-bold text-primary uppercase tracking-widest mb-3">Stream 1 — Brokerage Override</p>
-          <div className="text-3xl font-extrabold text-foreground mb-1">15–20%</div>
-          <p className="text-sm text-muted-foreground mb-4">of gross commission on every policy written by AURA producers</p>
+          <p className="text-xs font-bold text-primary uppercase tracking-widest mb-3">Stream 1 — Brokerage Commission</p>
+          <div className="text-3xl font-extrabold text-foreground mb-1">50–70%</div>
+          <p className="text-sm text-muted-foreground mb-4">of gross commission retained by AURA as the producing brokerage</p>
           <ul className="text-xs text-muted-foreground space-y-1.5">
+            <li>• Avg producer: $1M annual premium × 12% commission = $120K gross</li>
+            <li>• AURA retains 50% year 1 = <span className="font-semibold text-foreground">$60K/producer</span></li>
+            <li>• Renewals at 70% = <span className="font-semibold text-foreground">$84K/producer</span> in year 2+</li>
             <li>• Applies to new business and all future renewals</li>
-            <li>• Producers keep 80–85% — competitive with any captive or independent setup</li>
-            <li>• Override grows with book size, not just new production</li>
-            <li>• Avg producer: $500K annual premium × 10% comm × 20% AURA = $10K/yr at ramp</li>
+            <li>• Revenue grows with book size — renewals compound every year</li>
           </ul>
         </div>
         <div className="rounded-xl border border-border bg-card p-6 hover-lift">
@@ -796,7 +797,7 @@ function GTMSlide() {
     <div>
       <SlideHeader icon={Users} tag="Go-to-Market" title="The insider advantage." subtitle="AURA is not being introduced to the industry. It is being built inside it." />
       <p className="text-sm text-muted-foreground mb-4">
-        This starts inside Doug's active commercial book of business. Real producers. Real accounts. Real submissions.
+        This starts inside an active commercial book of business. Real producers. Real accounts. Real submissions.
       </p>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
         <div className="rounded-xl border-2 border-primary/30 bg-primary/5 p-6 hover-lift">
@@ -828,20 +829,25 @@ function GTMSlide() {
   );
 }
 
-/* ─── Slide 18: Projections (Updated — Producer-Based) ─── */
+/* ─── Slide 18: Projections (Producer-Based) ─── */
 function ProjectionsSlide() {
   const MAX_PX = 140;
+  // Y1: 5 new × $60K = $0.3M
+  // Y2: 20 new × $60K + 5 renew × $84K = $1.6M
+  // Y3: 75 new × $60K + 25 renew × $84K = $6.6M
+  // Y4: 200 new × $60K + 100 renew × $84K = $20.4M
+  // Y5: 700 new × $60K + 300 renew × $84K = $67.2M
   const years = [
-    { label: "Year 1", producers: 3,   revenue: "$0.1M", raw: 0.1 },
-    { label: "Year 2", producers: 20,  revenue: "$0.4M", raw: 0.4 },
-    { label: "Year 3", producers: 75,  revenue: "$1.8M", raw: 1.8 },
-    { label: "Year 4", producers: 200, revenue: "$5.5M", raw: 5.5 },
-    { label: "Year 5", producers: 500, revenue: "$15M",  raw: 15 },
+    { label: "Year 1", producers: 5,    revenue: "$0.3M",  raw: 0.3 },
+    { label: "Year 2", producers: 25,   revenue: "$1.6M",  raw: 1.6 },
+    { label: "Year 3", producers: 100,  revenue: "$6.6M",  raw: 6.6 },
+    { label: "Year 4", producers: 300,  revenue: "$20.4M", raw: 20.4 },
+    { label: "Year 5", producers: 1000, revenue: "$67.2M", raw: 67.2 },
   ];
   const maxRaw = Math.max(...years.map(y => y.raw));
   return (
     <div>
-      <SlideHeader icon={BarChart3} tag="Financial Projections" title="Revenue scales with every producer we add." subtitle="Conservative model anchored to Doug's live numbers. Avg producer: $500K annual premium, 10% commission, 20% AURA override = $10K/producer/yr at ramp." />
+      <SlideHeader icon={BarChart3} tag="Financial Projections" title="Revenue scales with every producer we add." subtitle="Avg producer: $1M annual premium, 12% commission. AURA retains 50% year 1 ($60K/producer), 70% on renewals ($84K/producer)." />
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-2">
         {/* Bar chart */}
         <div className="md:col-span-2 rounded-xl border border-border bg-card p-5">
@@ -857,16 +863,16 @@ function ProjectionsSlide() {
                     style={{ height: `${barH}px` }}
                   />
                   <span className="text-xs text-muted-foreground font-medium">{y.label}</span>
-                  <span className="text-[10px] text-muted-foreground/60">({y.producers})</span>
+                  <span className="text-[10px] text-muted-foreground/60">({y.producers} producers)</span>
                 </div>
               );
             })}
           </div>
           <div className="flex items-center justify-center gap-4 mt-3 text-xs text-muted-foreground">
-            <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-sm bg-primary/80" /> Brokerage Override</span>
+            <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-sm bg-primary/80" /> Brokerage Commission</span>
             <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-sm bg-primary/40" /> SaaS Licensing</span>
           </div>
-          <p className="text-center text-xs text-muted-foreground mt-2 italic">ARR = override + SaaS. Renewals compound but not separately modeled here.</p>
+          <p className="text-center text-xs text-muted-foreground mt-2 italic">ARR = brokerage commission + SaaS. Renewals compound year over year.</p>
         </div>
         {/* Growth milestones */}
         <div className="rounded-xl border border-border bg-card p-5 flex flex-col justify-between">
@@ -937,7 +943,7 @@ function TheAskSlide() {
         <p className="text-xs font-bold text-primary uppercase tracking-widest mb-3">Why Now</p>
         <ul className="text-sm text-muted-foreground space-y-2">
           <li className="flex items-start gap-2"><span className="text-primary mt-0.5">✓</span> Platform live and processing real submissions</li>
-          <li className="flex items-start gap-2"><span className="text-primary mt-0.5">✓</span> Doug's numbers validate the producer model</li>
+          <li className="flex items-start gap-2"><span className="text-primary mt-0.5">✓</span> Early production numbers validate the producer model</li>
           <li className="flex items-start gap-2"><span className="text-primary mt-0.5">✓</span> Coaching tools and simulations ready to ship</li>
           <li className="flex items-start gap-2"><span className="text-primary mt-0.5">✓</span> Carrier appointments and E&O in place</li>
         </ul>
