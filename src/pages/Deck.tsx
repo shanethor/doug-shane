@@ -12,7 +12,6 @@ const SLIDES = [
   { id: "commission", label: "Commission Flow" },
   { id: "personal-lines", label: "PL & Life" },
   { id: "pulse", label: "Pulse" },
-  { id: "command-center", label: "Command Center" },
   { id: "business-model", label: "Business Model" },
   { id: "growth-engine", label: "Growth Engine" },
   { id: "architecture", label: "Architecture" },
