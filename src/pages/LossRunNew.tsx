@@ -78,12 +78,14 @@ export default function LossRunNew() {
 
   // Auto-populate from profile
   useEffect(() => {
-    if (profile) {
-      setProducerEmail((profile as any).from_email || "");
-      const defaults = (profile as any).form_defaults as any;
+    if (!user) return;
+    supabase.from("profiles").select("from_email, form_defaults").eq("user_id", user.id).maybeSingle().then(({ data }) => {
+      if (!data) return;
+      if (data.from_email) setProducerEmail(data.from_email);
+      const defaults = data.form_defaults as any;
       if (defaults?.agencyfax) setProducerFax(defaults.agencyfax);
-    }
-  }, [profile]);
+    });
+  }, [user]);
 
   // Auto-populate from submission
   useEffect(() => {
