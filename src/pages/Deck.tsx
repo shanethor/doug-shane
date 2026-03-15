@@ -433,7 +433,7 @@ function BusinessModelSlide() {
             {[
               { step: "1", title: "Producer joins AURA", desc: "Credentialed under AURA's carrier appointments and E&O umbrella. No agency setup cost." },
               { step: "2", title: "Platform provided", desc: "Full access: ACORD workspace, Pulse, Command Center, AI Tools. Embedded coaching and sales simulations." },
-              { step: "3", title: "Extraction — day one", desc: "Write business, share override. Producer keeps 80–85% of gross commission. AURA retains 15–20% as the producing agency." },
+              { step: "3", title: "Extraction — day one", desc: "Write business, AURA is the brokerage. AURA retains 50% of commission year 1, 70% on renewals. Producer keeps the rest." },
               { step: "4", title: "Book compounds over time", desc: "Renewal retention builds passive income for the producer and recurring revenue for AURA." },
             ].map((item) => (
               <div key={item.step} className="flex items-start gap-3">
