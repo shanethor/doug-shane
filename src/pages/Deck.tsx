@@ -64,6 +64,8 @@ export default function Deck() {
     <ModelSlide />,
     <GTMSlide />,
     <ProjectionsSlide />,
+    <ProfitSlide />,
+    <ROISlide />,
     <TheAskSlide />,
   ];
 
