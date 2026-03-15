@@ -745,21 +745,22 @@ function WhyWinsSlide() {
   );
 }
 
-/* ─── Slide 16: Revenue Model (Updated — Two Streams) ─── */
+/* ─── Slide 16: Revenue Model (Two Streams) ─── */
 function ModelSlide() {
   return (
     <div>
-      <SlideHeader icon={DollarSign} tag="Revenue Model" title="Two revenue streams. Both grow as producers grow." subtitle="Brokerage commission override + SaaS licensing. Every producer write pays AURA. Every renewal compounds." />
+      <SlideHeader icon={DollarSign} tag="Revenue Model" title="Two revenue streams. Both grow as producers grow." subtitle="Brokerage commission revenue + SaaS licensing. Every producer write pays AURA. Every renewal compounds." />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-2">
         <div className="rounded-xl border-2 border-primary/30 bg-primary/5 p-6 hover-lift">
-          <p className="text-xs font-bold text-primary uppercase tracking-widest mb-3">Stream 1 — Brokerage Override</p>
-          <div className="text-3xl font-extrabold text-foreground mb-1">15–20%</div>
-          <p className="text-sm text-muted-foreground mb-4">of gross commission on every policy written by AURA producers</p>
+          <p className="text-xs font-bold text-primary uppercase tracking-widest mb-3">Stream 1 — Brokerage Commission</p>
+          <div className="text-3xl font-extrabold text-foreground mb-1">50–70%</div>
+          <p className="text-sm text-muted-foreground mb-4">of gross commission retained by AURA as the producing brokerage</p>
           <ul className="text-xs text-muted-foreground space-y-1.5">
+            <li>• Avg producer: $1M annual premium × 12% commission = $120K gross</li>
+            <li>• AURA retains 50% year 1 = <span className="font-semibold text-foreground">$60K/producer</span></li>
+            <li>• Renewals at 70% = <span className="font-semibold text-foreground">$84K/producer</span> in year 2+</li>
             <li>• Applies to new business and all future renewals</li>
-            <li>• Producers keep 80–85% — competitive with any captive or independent setup</li>
-            <li>• Override grows with book size, not just new production</li>
-            <li>• Avg producer: $500K annual premium × 10% comm × 20% AURA = $10K/yr at ramp</li>
+            <li>• Revenue grows with book size — renewals compound every year</li>
           </ul>
         </div>
         <div className="rounded-xl border border-border bg-card p-6 hover-lift">
