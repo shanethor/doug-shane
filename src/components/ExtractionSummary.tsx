@@ -307,31 +307,6 @@ export default function ExtractionSummary({ submissionId, requestedFormIds = [],
 
   const formsWithData = stats.filter((s) => s.filled > 0);
 
-  useEffect(() => {
-    if (!applicationId) return;
-    (async () => {
-      const { data } = await supabase
-        .from("insurance_applications")
-        .select("form_data")
-        .eq("id", applicationId)
-        .single();
-      const fd = (data?.form_data || {}) as Record<string, any>;
-      const requiredMap: Record<string, string> = {
-        applicantname: "Applicant Name",
-        contactemail1: "Contact Email",
-        carrier: "Carrier",
-        policynumber: "Policy Number",
-      };
-      const missing: string[] = [];
-      for (const [key, label] of Object.entries(requiredMap)) {
-        if (!fd[key] || String(fd[key]).trim() === "" || fd[key] === "N/A") {
-          missing.push(label);
-        }
-      }
-      setLossRunReady({ ready: missing.length === 0, missing });
-    })();
-  }, [applicationId, totalFilled]);
-
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6 px-4 py-8 animate-page-enter">
       <div className="text-center space-y-2">
