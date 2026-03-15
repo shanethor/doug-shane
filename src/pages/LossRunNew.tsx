@@ -91,29 +91,40 @@ export default function LossRunNew() {
   useEffect(() => {
     if (!submissionId) return;
     (async () => {
-      const { data } = await supabase
+      // Try insurance_applications first for form_data, fallback to business_submissions
+      const { data: appData } = await supabase
         .from("insurance_applications")
         .select("form_data")
-        .eq("id", submissionId)
+        .eq("submission_id", submissionId)
         .maybeSingle();
-      if (!data) return;
-      const fd = (data as any).form_data || {};
-      setNamedInsured(fd.applicantname || fd.insuredname || "");
-      setAddress(fd.mailingaddress || "");
-      setCity(fd.city || "");
-      setState(fd.state || "");
-      setZip(fd.zip || "");
-      setPhone(fd.businessphone || "");
-      setSignerName(fd.contactname1 || fd.producername || "");
-      setSignerEmail(fd.contactemail1 || "");
-      if (fd.carrier) {
-        setPolicies([{
-          ...emptyPolicy(),
-          carrier_name: fd.carrier,
-          policy_number: fd.policynumber || "",
-          effective_date: fd.proposedeffdate || fd.effectivedate || "",
-          expiration_date: fd.proposedexpdate || fd.expirationdate || "",
-        }]);
+      
+      const fd = (appData as any)?.form_data || {};
+      if (fd.applicantname || fd.insuredname) {
+        setNamedInsured(fd.applicantname || fd.insuredname || "");
+        setAddress(fd.mailingaddress || "");
+        setCity(fd.city || "");
+        setState(fd.state || "");
+        setZip(fd.zip || "");
+        setPhone(fd.businessphone || "");
+        setSignerName(fd.contactname1 || fd.producername || "");
+        setSignerEmail(fd.contactemail1 || "");
+        if (fd.carrier) {
+          setPolicies([{
+            ...emptyPolicy(),
+            carrier_name: fd.carrier,
+            policy_number: fd.policynumber || "",
+            effective_date: fd.proposedeffdate || fd.effectivedate || "",
+            expiration_date: fd.proposedexpdate || fd.expirationdate || "",
+          }]);
+        }
+      } else {
+        // Fallback: use business_submissions company_name
+        const { data: sub } = await supabase
+          .from("business_submissions")
+          .select("company_name")
+          .eq("id", submissionId)
+          .maybeSingle();
+        if (sub?.company_name) setNamedInsured(sub.company_name);
       }
     })();
   }, [submissionId]);
