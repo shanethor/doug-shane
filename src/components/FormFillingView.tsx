@@ -22,7 +22,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
-import { Download, Send, Paperclip, Loader2, FileText, CheckCircle, X, Filter, Eye, Image, Mail, ChevronLeft, ChevronRight, ClipboardList, MessageSquare, Mic, MicOff, Plus, BrainCircuit, ShieldAlert, Package, LinkIcon, StickyNote } from "lucide-react";
+import { Download, Send, Paperclip, Loader2, FileText, CheckCircle, X, Filter, Eye, Image, Mail, ChevronLeft, ChevronRight, ClipboardList, MessageSquare, Mic, MicOff, Plus, BrainCircuit, ShieldAlert, Package, LinkIcon, StickyNote, FileSearch } from "lucide-react";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import { useVoiceInput } from "@/hooks/useVoiceInput";
