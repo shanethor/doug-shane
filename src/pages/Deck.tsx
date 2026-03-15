@@ -421,6 +421,76 @@ function CommandCenterSlide() {
   );
 }
 
+/* ─── Slide 9: Business Model — NEW ─── */
+function BusinessModelSlide() {
+  return (
+    <div>
+      <SlideHeader icon={CreditCard} tag="Business Model" title="AURA is building the AI brokerage." subtitle="Producers join AURA, write business under our paper, and keep more of what they earn — because the platform makes them better." />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-2">
+        <div className="rounded-xl border border-border bg-card p-6 hover-lift">
+          <p className="text-xs font-bold text-primary uppercase tracking-widest mb-4">How Producers Join & Earn</p>
+          <div className="space-y-4">
+            {[
+              { step: "1", title: "Producer joins AURA", desc: "Credentialed under AURA's carrier appointments and E&O umbrella. No agency setup cost." },
+              { step: "2", title: "Platform provided", desc: "Full access: ACORD workspace, Pulse, Command Center, AI Tools. Embedded coaching and sales simulations." },
+              { step: "3", title: "Extraction — day one", desc: "Write business, share override. Producer keeps 80–85% of gross commission. AURA retains 15–20% as the producing agency." },
+              { step: "4", title: "Book compounds over time", desc: "Renewal retention builds passive income for the producer and recurring revenue for AURA." },
+            ].map((item) => (
+              <div key={item.step} className="flex items-start gap-3">
+                <span className="flex-shrink-0 h-6 w-6 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center">{item.step}</span>
+                <div>
+                  <p className="text-sm font-semibold text-foreground">{item.title}</p>
+                  <p className="text-xs text-muted-foreground">{item.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="space-y-4">
+          <div className="rounded-xl border-2 border-primary/30 bg-primary/5 p-6 hover-lift">
+            <p className="text-xs font-bold text-primary uppercase tracking-widest mb-3">Why Producers Stay</p>
+            <p className="text-sm text-muted-foreground mb-4">The moat compounds both ways:</p>
+            <ul className="text-sm text-muted-foreground space-y-2">
+              <li className="flex items-start gap-2"><span className="text-primary mt-0.5">✓</span> <strong className="text-foreground">Data:</strong> Every submission enriches the intelligence layer</li>
+              <li className="flex items-start gap-2"><span className="text-primary mt-0.5">✓</span> <strong className="text-foreground">Retention:</strong> Producers who grow with AURA don't leave</li>
+              <li className="flex items-start gap-2"><span className="text-primary mt-0.5">✓</span> <strong className="text-foreground">Revenue:</strong> Renewals create compounding passive income</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Slide 10: Growth Engine — NEW ─── */
+function GrowthEngineSlide() {
+  return (
+    <div>
+      <SlideHeader icon={Repeat} tag="Growth Engine" title="The producer flywheel." subtitle="Each producer we add makes the next one easier to recruit. Each submission makes the platform stronger." />
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-3 mt-4">
+        {[
+          { step: "01", title: "Recruit", desc: "Producers join for better tools, more carrier access, and higher effective splits." },
+          { step: "02", title: "Equip", desc: "Every producer gets the full platform: AI forms, Pulse, Command Center, sales coaching, and simulations on day one." },
+          { step: "03", title: "Perform", desc: "Producers close more business faster. Submission time drops. Coverage gaps caught. Hit ratio and book size tracked." },
+          { step: "04", title: "Retain", desc: "Switching costs grow as the platform learns their book. Coaches, tools, and splits make leaving economically irrational." },
+          { step: "05", title: "Compound", desc: "Renewals generate passive revenue. Producers recruit peers. Intelligence grows. AURA earns from every deal, every year." },
+        ].map((s) => (
+          <div key={s.step} className="rounded-xl border border-border bg-card p-4 hover-lift">
+            <div className="text-3xl font-bold text-primary/20 mb-2">{s.step}</div>
+            <h3 className="text-sm font-semibold text-foreground mb-2">{s.title}</h3>
+            <p className="text-xs text-muted-foreground leading-relaxed">{s.desc}</p>
+          </div>
+        ))}
+      </div>
+      <div className="mt-5 rounded-xl border-2 border-primary/20 bg-primary/5 p-4 text-center">
+        <p className="text-sm text-muted-foreground">
+          <span className="font-semibold text-foreground">Today:</span> Doug + Shane building proof. <span className="font-semibold text-foreground">Year 2:</span> 20 producers writing business on the platform. <span className="font-semibold text-foreground">Year 5:</span> 500 producers, $15M ARR, data no carrier can ignore.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 /* ─── Slide 9: Intelligence Architecture (merged Three Layers + Human First) ─── */
 function ArchitectureSlide() {
   return (
