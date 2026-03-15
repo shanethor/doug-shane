@@ -177,6 +177,10 @@ export default function ProducerHub() {
               <Radar className="h-3.5 w-3.5 hidden sm:block" />
               Lead Engine
             </TabsTrigger>
+            <TabsTrigger value="loss-runs" className="gap-1.5 text-xs px-2.5 sm:px-3">
+              <FileSearch className="h-3.5 w-3.5 hidden sm:block" />
+              Loss Runs
+            </TabsTrigger>
             {TOOL_TABS.map((tool) => (
               <TabsTrigger key={tool.id} value={tool.id} className="gap-1.5 text-xs px-2.5 sm:px-3">
                 <tool.icon className="h-3.5 w-3.5 hidden sm:block" />
@@ -196,6 +200,10 @@ export default function ProducerHub() {
 
         <TabsContent value="lead-engine">
           <LeadEnginePanel />
+        </TabsContent>
+
+        <TabsContent value="loss-runs">
+          <LossRunPanel />
         </TabsContent>
 
         {TOOL_TABS.map((tool) => (
