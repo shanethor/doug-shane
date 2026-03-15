@@ -943,7 +943,7 @@ function TheAskSlide() {
         <p className="text-xs font-bold text-primary uppercase tracking-widest mb-3">Why Now</p>
         <ul className="text-sm text-muted-foreground space-y-2">
           <li className="flex items-start gap-2"><span className="text-primary mt-0.5">✓</span> Platform live and processing real submissions</li>
-          <li className="flex items-start gap-2"><span className="text-primary mt-0.5">✓</span> Doug's numbers validate the producer model</li>
+          <li className="flex items-start gap-2"><span className="text-primary mt-0.5">✓</span> Early production numbers validate the producer model</li>
           <li className="flex items-start gap-2"><span className="text-primary mt-0.5">✓</span> Coaching tools and simulations ready to ship</li>
           <li className="flex items-start gap-2"><span className="text-primary mt-0.5">✓</span> Carrier appointments and E&O in place</li>
         </ul>
