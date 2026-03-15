@@ -268,6 +268,34 @@ export default function ExtractionSummary({ submissionId, requestedFormIds = [],
 
   const availableToAdd = ACORD_FORM_LIST.filter(f => !requestedFormIds.includes(f.id));
 
+  // Loss Run Readiness check — must be before any early returns
+  const [lossRunReady, setLossRunReady] = useState<{ ready: boolean; missing: string[] }>({ ready: false, missing: [] });
+
+  useEffect(() => {
+    if (!applicationId) return;
+    (async () => {
+      const { data } = await supabase
+        .from("insurance_applications")
+        .select("form_data")
+        .eq("id", applicationId)
+        .single();
+      const fd = (data?.form_data || {}) as Record<string, any>;
+      const requiredMap: Record<string, string> = {
+        applicantname: "Applicant Name",
+        contactemail1: "Contact Email",
+        carrier: "Carrier",
+        policynumber: "Policy Number",
+      };
+      const missing: string[] = [];
+      for (const [key, label] of Object.entries(requiredMap)) {
+        if (!fd[key] || String(fd[key]).trim() === "" || fd[key] === "N/A") {
+          missing.push(label);
+        }
+      }
+      setLossRunReady({ ready: missing.length === 0, missing });
+    })();
+  }, [applicationId, totalFilled]);
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 animate-page-enter">
@@ -278,9 +306,6 @@ export default function ExtractionSummary({ submissionId, requestedFormIds = [],
   }
 
   const formsWithData = stats.filter((s) => s.filled > 0);
-
-  // Loss Run Readiness check
-  const [lossRunReady, setLossRunReady] = useState<{ ready: boolean; missing: string[] }>({ ready: false, missing: [] });
 
   useEffect(() => {
     if (!applicationId) return;
