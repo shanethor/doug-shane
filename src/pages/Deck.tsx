@@ -829,20 +829,25 @@ function GTMSlide() {
   );
 }
 
-/* ─── Slide 18: Projections (Updated — Producer-Based) ─── */
+/* ─── Slide 18: Projections (Producer-Based) ─── */
 function ProjectionsSlide() {
   const MAX_PX = 140;
+  // Y1: 5 new × $60K = $0.3M
+  // Y2: 20 new × $60K + 5 renew × $84K = $1.6M
+  // Y3: 75 new × $60K + 25 renew × $84K = $6.6M
+  // Y4: 200 new × $60K + 100 renew × $84K = $20.4M
+  // Y5: 700 new × $60K + 300 renew × $84K = $67.2M
   const years = [
-    { label: "Year 1", producers: 3,   revenue: "$0.1M", raw: 0.1 },
-    { label: "Year 2", producers: 20,  revenue: "$0.4M", raw: 0.4 },
-    { label: "Year 3", producers: 75,  revenue: "$1.8M", raw: 1.8 },
-    { label: "Year 4", producers: 200, revenue: "$5.5M", raw: 5.5 },
-    { label: "Year 5", producers: 500, revenue: "$15M",  raw: 15 },
+    { label: "Year 1", producers: 5,    revenue: "$0.3M",  raw: 0.3 },
+    { label: "Year 2", producers: 25,   revenue: "$1.6M",  raw: 1.6 },
+    { label: "Year 3", producers: 100,  revenue: "$6.6M",  raw: 6.6 },
+    { label: "Year 4", producers: 300,  revenue: "$20.4M", raw: 20.4 },
+    { label: "Year 5", producers: 1000, revenue: "$67.2M", raw: 67.2 },
   ];
   const maxRaw = Math.max(...years.map(y => y.raw));
   return (
     <div>
-      <SlideHeader icon={BarChart3} tag="Financial Projections" title="Revenue scales with every producer we add." subtitle="Conservative model anchored to Doug's live numbers. Avg producer: $500K annual premium, 10% commission, 20% AURA override = $10K/producer/yr at ramp." />
+      <SlideHeader icon={BarChart3} tag="Financial Projections" title="Revenue scales with every producer we add." subtitle="Avg producer: $1M annual premium, 12% commission. AURA retains 50% year 1 ($60K/producer), 70% on renewals ($84K/producer)." />
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-2">
         {/* Bar chart */}
         <div className="md:col-span-2 rounded-xl border border-border bg-card p-5">
@@ -858,16 +863,16 @@ function ProjectionsSlide() {
                     style={{ height: `${barH}px` }}
                   />
                   <span className="text-xs text-muted-foreground font-medium">{y.label}</span>
-                  <span className="text-[10px] text-muted-foreground/60">({y.producers})</span>
+                  <span className="text-[10px] text-muted-foreground/60">({y.producers} producers)</span>
                 </div>
               );
             })}
           </div>
           <div className="flex items-center justify-center gap-4 mt-3 text-xs text-muted-foreground">
-            <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-sm bg-primary/80" /> Brokerage Override</span>
+            <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-sm bg-primary/80" /> Brokerage Commission</span>
             <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-sm bg-primary/40" /> SaaS Licensing</span>
           </div>
-          <p className="text-center text-xs text-muted-foreground mt-2 italic">ARR = override + SaaS. Renewals compound but not separately modeled here.</p>
+          <p className="text-center text-xs text-muted-foreground mt-2 italic">ARR = brokerage commission + SaaS. Renewals compound year over year.</p>
         </div>
         {/* Growth milestones */}
         <div className="rounded-xl border border-border bg-card p-5 flex flex-col justify-between">
