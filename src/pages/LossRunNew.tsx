@@ -44,7 +44,7 @@ const emptyPolicy = (): PolicyRow => ({
 });
 
 export default function LossRunNew() {
-  const { user, profile } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const submissionId = searchParams.get("submissionId");
