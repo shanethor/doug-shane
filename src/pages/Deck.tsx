@@ -52,7 +52,6 @@ export default function Deck() {
     <SolutionSlide />,
     <HowSlide />,
     <PulseSlide />,
-    <CommandCenterSlide />,
     <BusinessModelSlide />,
     <GrowthEngineSlide />,
     <ArchitectureSlide />,
