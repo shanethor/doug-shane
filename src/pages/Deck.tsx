@@ -797,7 +797,7 @@ function GTMSlide() {
     <div>
       <SlideHeader icon={Users} tag="Go-to-Market" title="The insider advantage." subtitle="AURA is not being introduced to the industry. It is being built inside it." />
       <p className="text-sm text-muted-foreground mb-4">
-        This starts inside Doug's active commercial book of business. Real producers. Real accounts. Real submissions.
+        This starts inside an active commercial book of business. Real producers. Real accounts. Real submissions.
       </p>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
         <div className="rounded-xl border-2 border-primary/30 bg-primary/5 p-6 hover-lift">
