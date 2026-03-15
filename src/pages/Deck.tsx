@@ -461,33 +461,6 @@ function PulseSlide() {
   );
 }
 
-/* ─── 11: Command Center ─── */
-function CommandCenterSlide() {
-  return (
-    <div>
-      <SlideHeader icon={LayoutDashboard} tag="Live Feature" title="Producer Command Center" subtitle="Every number a producer needs to know, always current." />
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-        <div className="rounded-xl border-2 border-primary/30 bg-primary/5 p-6 hover-lift text-center">
-          <p className="text-4xl font-extrabold text-foreground">$63,047</p>
-          <p className="text-sm font-medium text-muted-foreground mt-1">MTD New Business</p>
-        </div>
-        <div className="rounded-xl border border-border bg-card p-6 hover-lift text-center">
-          <p className="text-4xl font-extrabold text-foreground">88.8%</p>
-          <p className="text-sm font-medium text-muted-foreground mt-1">Goal Attainment</p>
-        </div>
-      </div>
-      <div className="rounded-xl border border-border bg-card p-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-          {["MTD/YTD tracking vs targets", "Pipeline stage distribution", "Hit ratio & policies per client", "Hunt / Build / Defense modes", "Multi-producer comparison", "\"Behind Pace\" real-time urgency"].map((item) => (
-            <div key={item} className="flex items-center gap-2 text-sm text-muted-foreground">
-              <span className="h-1.5 w-1.5 rounded-full bg-primary/60 shrink-0" />{item}
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
 
 /* ─── 12: Business Model ─── */
 function BusinessModelSlide() {
