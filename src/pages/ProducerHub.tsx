@@ -36,18 +36,6 @@ const TOOL_TABS: ToolTab[] = [
     ],
   },
   {
-    id: "loss-runs",
-    icon: FileSearch,
-    label: "Loss Runs",
-    title: "Loss Run Requests",
-    description: "Integrated with Loss Run Pro — request, track, and receive loss run documents directly from carriers without manual emails.",
-    details: [
-      "One-click loss run requests to carriers",
-      "Automatic status tracking and follow-ups",
-      "Documents auto-attach to lead records",
-    ],
-  },
-  {
     id: "bor",
     icon: FileSignature,
     label: "BOR",
