@@ -16,12 +16,14 @@ export function AppLayout({ children, onLogoClick }: { children: React.ReactNode
   const location = useLocation();
   const { trainingMode, setTrainingMode } = useTrainingMode();
   const { emailCount, pulseCount } = useUnreadCount();
+  const { count: lossRunReminderCount } = useLossRunReminders();
 
   const navItems = [
     { to: "/", label: "AURA", icon: MessageCircle },
     { to: "/email", label: "Email", icon: Mail },
     { to: "/pulse", label: "Pulse", icon: HeartPulse },
     ...(canSeeProducerHub ? [{ to: "/hub", label: "Command Center", icon: GitBranch }] : []),
+    { to: "/loss-runs", label: "Loss Runs", icon: FileSearch },
     ...(canSeeAdmin ? [{ to: "/admin", label: "Admin", icon: ShieldCheck }] : []),
     { to: "/settings", label: "Settings", icon: Settings },
   ];
