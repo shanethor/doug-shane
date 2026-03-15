@@ -65,6 +65,9 @@ export function AppLayout({ children, onLogoClick }: { children: React.ReactNode
                       {pulseCount > 99 ? "99+" : pulseCount}
                     </span>
                   )}
+                  {item.to === "/loss-runs" && lossRunReminderCount > 0 && (
+                    <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-destructive" />
+                  )}
                 </Button>
               </Link>
             ))}
