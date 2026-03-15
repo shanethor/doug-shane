@@ -21,7 +21,7 @@ const SLIDES = [
   { id: "why-exists", label: "Why AURA Exists" },
 ];
 
-export default function Deck() {
+export default function OldDeck() {
   const [current, setCurrent] = useState(0);
   const [animDir, setAnimDir] = useState<"left" | "right">("right");
 

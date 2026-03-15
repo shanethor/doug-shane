@@ -17,6 +17,7 @@ import GeneratedForms from "./pages/GeneratedForms";
 import Onboarding from "./pages/Onboarding";
 import NotFound from "./pages/NotFound";
 import Deck from "./pages/Deck";
+import OldDeck from "./pages/OldDeck";
 import PdfDiagnostic from "./pages/PdfDiagnostic";
 import FormTest from "./pages/FormTest";
 import Pipeline from "./pages/Pipeline";
