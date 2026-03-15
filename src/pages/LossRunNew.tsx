@@ -87,7 +87,7 @@ export default function LossRunNew() {
     });
   }, [user]);
 
-  // Auto-populate from submission
+  // Auto-populate from submission with full field mapping
   useEffect(() => {
     if (!submissionId) return;
     (async () => {
@@ -105,18 +105,50 @@ export default function LossRunNew() {
         setCity(fd.city || "");
         setState(fd.state || "");
         setZip(fd.zip || "");
-        setPhone(fd.businessphone || "");
+        setPhone(fd.businessphone || fd.applicantphone || "");
         setSignerName(fd.contactname1 || fd.producername || "");
-        setSignerEmail(fd.contactemail1 || "");
-        if (fd.carrier) {
-          setPolicies([{
+        setSignerEmail(fd.contactemail1 || fd.applicantemail || "");
+
+        // Also pull producer info from profile form_defaults
+        const { data: profileData } = await supabase
+          .from("profiles")
+          .select("from_email, form_defaults")
+          .eq("user_id", user!.id)
+          .maybeSingle();
+        const defaults = (profileData?.form_defaults || {}) as any;
+        if (profileData?.from_email && !producerEmail) setProducerEmail(profileData.from_email);
+        if (defaults?.agencyfax && !producerFax) setProducerFax(defaults.agencyfax);
+        if (defaults?.agencyemail && !producerEmail) setProducerEmail(defaults.agencyemail);
+
+        // Build policy rows from form data - support multiple prior carriers
+        const policyRows: PolicyRow[] = [];
+        
+        // Primary carrier
+        const primaryCarrier = fd.carrier || fd.priorcarrier1 || "";
+        if (primaryCarrier) {
+          policyRows.push({
             ...emptyPolicy(),
-            carrier_name: fd.carrier,
+            carrier_name: primaryCarrier,
             policy_number: fd.policynumber || "",
             effective_date: fd.proposedeffdate || fd.effectivedate || "",
             expiration_date: fd.proposedexpdate || fd.expirationdate || "",
-          }]);
+          });
         }
+
+        // Check for additional prior carriers (priorcarrier2, priorcarrier3, etc.)
+        for (let i = 2; i <= 5; i++) {
+          const carrierKey = `priorcarrier${i}`;
+          const policyKey = `priorpolicynumber${i}`;
+          if (fd[carrierKey]) {
+            policyRows.push({
+              ...emptyPolicy(),
+              carrier_name: fd[carrierKey],
+              policy_number: fd[policyKey] || "",
+            });
+          }
+        }
+
+        if (policyRows.length > 0) setPolicies(policyRows);
       } else {
         // Fallback: use business_submissions company_name
         const { data: sub } = await supabase

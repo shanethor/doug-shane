@@ -279,6 +279,34 @@ export default function ExtractionSummary({ submissionId, requestedFormIds = [],
 
   const formsWithData = stats.filter((s) => s.filled > 0);
 
+  // Loss Run Readiness check
+  const [lossRunReady, setLossRunReady] = useState<{ ready: boolean; missing: string[] }>({ ready: false, missing: [] });
+
+  useEffect(() => {
+    if (!applicationId) return;
+    (async () => {
+      const { data } = await supabase
+        .from("insurance_applications")
+        .select("form_data")
+        .eq("id", applicationId)
+        .single();
+      const fd = (data?.form_data || {}) as Record<string, any>;
+      const requiredMap: Record<string, string> = {
+        applicantname: "Applicant Name",
+        contactemail1: "Contact Email",
+        carrier: "Carrier",
+        policynumber: "Policy Number",
+      };
+      const missing: string[] = [];
+      for (const [key, label] of Object.entries(requiredMap)) {
+        if (!fd[key] || String(fd[key]).trim() === "" || fd[key] === "N/A") {
+          missing.push(label);
+        }
+      }
+      setLossRunReady({ ready: missing.length === 0, missing });
+    })();
+  }, [applicationId, totalFilled]);
+
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6 px-4 py-8 animate-page-enter">
       <div className="text-center space-y-2">
@@ -290,6 +318,31 @@ export default function ExtractionSummary({ submissionId, requestedFormIds = [],
           across <span className="font-semibold text-foreground">{scopedForms.length}</span> requested form{scopedForms.length !== 1 ? "s" : ""}.
         </p>
       </div>
+
+      {/* Loss Run Readiness Banner */}
+      {lossRunReady.ready ? (
+        <div className="w-full max-w-lg rounded-lg border border-success/40 bg-success/10 p-3 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <CheckCircle className="h-4 w-4 text-success shrink-0" />
+            <span className="text-sm text-success">Ready to request loss runs — all required fields are on file.</span>
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-1.5 text-xs shrink-0 border-success/40 text-success hover:bg-success/20"
+            onClick={() => window.location.href = `/loss-runs/new?submissionId=${submissionId}`}
+          >
+            Request Loss Runs <ArrowRight className="h-3 w-3" />
+          </Button>
+        </div>
+      ) : lossRunReady.missing.length > 0 ? (
+        <div className="w-full max-w-lg rounded-lg border border-warning/40 bg-warning/10 p-3 flex items-center gap-2">
+          <span className="text-warning text-base shrink-0">⚠</span>
+          <span className="text-sm text-warning">
+            Loss run request needs: <strong>{lossRunReady.missing.join(", ")}</strong> — fill these fields first.
+          </span>
+        </div>
+      ) : null}
 
       <div className="w-full max-w-lg space-y-3">
         {stats.map((s) => {
