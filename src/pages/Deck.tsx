@@ -10,6 +10,8 @@ const SLIDES = [
   { id: "how", label: "How It Works" },
   { id: "pulse", label: "Pulse" },
   { id: "command", label: "Command Center" },
+  { id: "business-model", label: "Business Model" },
+  { id: "growth-engine", label: "Growth Engine" },
   { id: "architecture", label: "Architecture" },
   { id: "moat", label: "The Moat" },
   { id: "wedge", label: "Expansion" },
