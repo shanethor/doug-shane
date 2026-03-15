@@ -76,10 +76,13 @@ const EMPTY_POLICY: PolicyItem = {
 interface LossRunsTabProps {
   leadId: string;
   accountName: string;
+  submissionId?: string | null;
 }
 
-export function LossRunsTab({ leadId, accountName }: LossRunsTabProps) {
+export function LossRunsTab({ leadId, accountName, submissionId }: LossRunsTabProps) {
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const [allRequests, setAllRequests] = useState<any[]>([]);
   const [request, setRequest] = useState<any>(null);
   const [policyItems, setPolicyItems] = useState<any[]>([]);
   const [attachments, setAttachments] = useState<any[]>([]);
