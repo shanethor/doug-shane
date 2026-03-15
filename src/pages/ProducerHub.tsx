@@ -11,6 +11,7 @@ import {
 import Pipeline from "./Pipeline";
 import ProducerDashboard from "./ProducerDashboard";
 import LeadEnginePanel from "@/components/LeadEnginePanel";
+import LossRunPanel from "@/components/LossRunPanel";
 
 type ToolTab = {
   id: string;
