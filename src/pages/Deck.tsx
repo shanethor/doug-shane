@@ -235,6 +235,19 @@ function ProblemSlide() {
           Every hour spent on admin is an hour not spent advising clients, closing deals, or growing the book.
         </p>
       </div>
+      <div className="mt-4 rounded-xl border-2 border-primary/20 bg-primary/5 p-5">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+          <div className="text-center md:text-left">
+            <p className="text-3xl font-extrabold text-foreground">$3T+</p>
+            <p className="text-sm font-medium text-muted-foreground mt-1">Total U.S. premiums</p>
+          </div>
+          <div className="md:col-span-2">
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              A $3+ trillion industry where producers and insureds are still working on systems built decades ago. The infrastructure hasn't kept up — and no one has built the intelligence layer to fix it.
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
