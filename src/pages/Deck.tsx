@@ -913,27 +913,27 @@ function ProjectionsSlide() {
   );
 }
 
-/* ─── Slide 17: The Ask (Updated) ─── */
+/* ─── Slide 19: The Ask (Updated — AI Brokerage) ─── */
 function TheAskSlide() {
   return (
     <div>
-      <SlideHeader icon={DollarSign} tag="The Ask" title="Building the intelligence layer that insurance runs on." />
+      <SlideHeader icon={DollarSign} tag="The Ask" title="Building the AI brokerage that insurance will run on." subtitle="Not raising to find product-market fit. Raising to recruit producers and prove the brokerage model at scale." />
 
       {/* Raise Details */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
         <div className="rounded-xl border-2 border-primary/30 bg-primary/5 p-6 text-center hover-lift">
           <p className="text-4xl font-extrabold text-foreground">$500K</p>
-          <p className="text-sm font-medium text-muted-foreground mt-1">Total raise</p>
+          <p className="text-sm font-medium text-muted-foreground mt-1">Total Raise</p>
           <p className="text-xs text-muted-foreground/70 mt-1">Seed round — focused and lean</p>
         </div>
         <div className="rounded-xl border border-border bg-card p-6 text-center hover-lift">
           <p className="text-4xl font-extrabold text-foreground">10%</p>
-          <p className="text-sm font-medium text-muted-foreground mt-1">Equity offered</p>
+          <p className="text-sm font-medium text-muted-foreground mt-1">Equity Offered</p>
           <p className="text-xs text-muted-foreground/70 mt-1">$5M pre-money valuation</p>
         </div>
         <div className="rounded-xl border border-border bg-card p-6 text-center hover-lift">
           <p className="text-4xl font-extrabold text-foreground">$250K</p>
-          <p className="text-sm font-medium text-muted-foreground mt-1">Min. per investor</p>
+          <p className="text-sm font-medium text-muted-foreground mt-1">Min. Per Investor</p>
           <p className="text-xs text-muted-foreground/70 mt-1">Max 2 investors at this stage</p>
         </div>
       </div>
@@ -943,9 +943,9 @@ function TheAskSlide() {
         <p className="text-xs font-bold text-primary uppercase tracking-widest mb-4">Use of Funds</p>
         <div className="space-y-4">
           {[
-            { pct: "50%", title: "Product & AI Development", desc: "Harden the extraction engine, expand ACORD coverage, build out Pulse and Command Center intelligence." },
-            { pct: "30%", title: "Deployment & Partner Expansion", desc: "Onboard 10 pilot agencies, build real-world production footprint, establish revenue." },
-            { pct: "20%", title: "Core Team & Operations", desc: "Engineering, infrastructure, and execution as adoption scales." },
+            { pct: "40%", title: "Producer Recruitment & Onboarding", desc: "Recruit first 10–20 producers, onboard to platform, establish live production footprint." },
+            { pct: "35%", title: "Product & AI Development", desc: "Build coaching tools, sales simulations, carrier integrations, and harden the extraction engine." },
+            { pct: "25%", title: "Team & Operations", desc: "Engineering, compliance, licensing, and infrastructure to support brokerage and SaaS at scale." },
           ].map((item) => (
             <div key={item.title} className="flex items-start gap-4">
               <span className="text-2xl font-extrabold text-primary/80 w-16 shrink-0 text-right">{item.pct}</span>
@@ -959,17 +959,20 @@ function TheAskSlide() {
       </div>
 
       {/* Why Now */}
-      <div className="mt-6 rounded-xl border-2 border-primary/20 bg-primary/5 p-6 space-y-3">
-        <p className="text-xs font-bold text-primary uppercase tracking-widest">Why Now</p>
-        <p className="text-sm text-muted-foreground leading-relaxed">
-          AURA is already live inside a commercial agency. Submissions are being processed. The intelligence layer is learning.
-        </p>
-        <p className="text-sm font-semibold text-foreground leading-relaxed">
-          We are raising to scale what is already working — not to find product-market fit.
-        </p>
+      <div className="mt-6 rounded-xl border-2 border-primary/20 bg-primary/5 p-6">
+        <p className="text-xs font-bold text-primary uppercase tracking-widest mb-3">Why Now</p>
+        <ul className="text-sm text-muted-foreground space-y-2">
+          <li className="flex items-start gap-2"><span className="text-primary mt-0.5">✓</span> Platform live and processing real submissions</li>
+          <li className="flex items-start gap-2"><span className="text-primary mt-0.5">✓</span> Doug's numbers validate the producer model</li>
+          <li className="flex items-start gap-2"><span className="text-primary mt-0.5">✓</span> Coaching tools and simulations ready to ship</li>
+          <li className="flex items-start gap-2"><span className="text-primary mt-0.5">✓</span> Carrier appointments and E&O in place</li>
+        </ul>
       </div>
 
-      <p className="mt-5 text-center text-lg font-bold text-foreground">Insurance runs on AURA.</p>
+      <p className="mt-5 text-center text-sm text-muted-foreground leading-relaxed">
+        Every producer we add is revenue from day one. The intelligence compounds. The moat widens. The data becomes irreplaceable.
+      </p>
+      <p className="mt-3 text-center text-lg font-bold text-foreground">Insurance runs on AURA.</p>
       <p className="mt-2 text-center text-xs text-muted-foreground/50">Confidential — AURA Risk Group</p>
     </div>
   );
