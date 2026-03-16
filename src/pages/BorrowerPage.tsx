@@ -9,6 +9,7 @@ import joshHeadshot from "@/assets/josh-chernes-headshot.png";
 import michaelHeadshot from "@/assets/michael-wengzn-headshot.png";
 import AssociatedPage from "./AssociatedPage";
 import OmitPage from "./OmitPage";
+import DomisourcePage from "./DomisourcePage";
 
 /* ─── Borrower Config ─── */
 interface CoverageCard {
@@ -110,6 +111,7 @@ export default function BorrowerPage() {
   // Partners with dedicated layouts
   if (slug === "associated") return <AssociatedPage />;
   if (slug === "omit") return <OmitPage />;
+  if (slug === "domisource") return <DomisourcePage />;
 
   const config = slug ? BORROWERS[slug] : undefined;
 
