@@ -9,6 +9,7 @@ import joshHeadshot from "@/assets/josh-chernes-headshot.png";
 import michaelHeadshot from "@/assets/michael-wengzn-headshot.png";
 import AssociatedPage from "./AssociatedPage";
 import OmitPage from "./OmitPage";
+import DomisourcePage from "./DomisourcePage";
 
 /* ─── Borrower Config ─── */
 interface CoverageCard {
