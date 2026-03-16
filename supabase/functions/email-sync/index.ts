@@ -248,14 +248,15 @@ serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims) {
+    const { data: { user: authUser }, error: userError } = await supabase.auth.getUser();
+    if (userError || !authUser) {
+      console.error("Auth error:", userError);
       return new Response(JSON.stringify({ error: "Invalid token" }), {
         status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const userId = claimsData.claims.sub as string;
+    const userId = authUser.id;
     const body = await req.json();
     const { action, provider, connection_id } = body;
 
@@ -265,14 +266,20 @@ serve(async (req) => {
     );
 
     if (action === "sync") {
-      // Get the connection
-      const { data: conn } = await adminClient
+      // Get the connection — prefer connection_id for multi-account support
+      let connQuery = adminClient
         .from("email_connections")
         .select("*")
         .eq("user_id", userId)
-        .eq("provider", provider || "gmail")
-        .eq("is_active", true)
-        .maybeSingle();
+        .eq("is_active", true);
+
+      if (connection_id) {
+        connQuery = connQuery.eq("id", connection_id);
+      } else {
+        connQuery = connQuery.eq("provider", provider || "gmail");
+      }
+
+      const { data: conn } = await connQuery.maybeSingle();
 
       if (!conn) {
         return new Response(JSON.stringify({ error: "No active email connection found" }), {
