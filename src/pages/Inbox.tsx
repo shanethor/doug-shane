@@ -220,7 +220,7 @@ export default function Inbox({ emailOnly, embedded, selectedClientId, onClearSe
         const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/email-sync`, {
           method: "POST",
           headers,
-          body: JSON.stringify({ action: "sync", provider: conn.provider }),
+          body: JSON.stringify({ action: "sync", connection_id: conn.id, provider: conn.provider }),
         });
 
         if (!response.ok) {
