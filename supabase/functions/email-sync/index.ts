@@ -266,14 +266,20 @@ serve(async (req) => {
     );
 
     if (action === "sync") {
-      // Get the connection
-      const { data: conn } = await adminClient
+      // Get the connection — prefer connection_id for multi-account support
+      let connQuery = adminClient
         .from("email_connections")
         .select("*")
         .eq("user_id", userId)
-        .eq("provider", provider || "gmail")
-        .eq("is_active", true)
-        .maybeSingle();
+        .eq("is_active", true);
+
+      if (connection_id) {
+        connQuery = connQuery.eq("id", connection_id);
+      } else {
+        connQuery = connQuery.eq("provider", provider || "gmail");
+      }
+
+      const { data: conn } = await connQuery.maybeSingle();
 
       if (!conn) {
         return new Response(JSON.stringify({ error: "No active email connection found" }), {
