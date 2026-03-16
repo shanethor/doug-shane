@@ -324,7 +324,7 @@ export default function Inbox({ emailOnly, embedded, selectedClientId, onClearSe
     const conns = connRes.connections || [];
     setEmailConnections(conns);
     if (!sendViaInitialized && conns.length > 0) {
-      setSendVia(conns[0].provider);
+      setSendVia(conns[0].id);
       setSendViaInitialized(true);
     }
     setLoading(false);
