@@ -1400,7 +1400,7 @@ Return ONLY valid JSON. No markdown fences, no explanation.`;
     }
 
     if (action === "send") {
-      const { to, subject, body_html, send_provider } = body;
+      const { to, subject, body_html, send_provider, connection_id } = body;
 
       if (!to || !subject) {
         return new Response(JSON.stringify({ error: "Missing to or subject" }), {
@@ -1408,14 +1408,20 @@ Return ONLY valid JSON. No markdown fences, no explanation.`;
         });
       }
 
-      // Get active connection
-      const { data: conn } = await adminClient
+      // Get active connection – prefer explicit connection_id, fall back to provider match
+      let connQuery = adminClient
         .from("email_connections")
         .select("*")
         .eq("user_id", userId)
-        .eq("provider", send_provider || provider || "gmail")
-        .eq("is_active", true)
-        .maybeSingle();
+        .eq("is_active", true);
+
+      if (connection_id) {
+        connQuery = connQuery.eq("id", connection_id);
+      } else {
+        connQuery = connQuery.eq("provider", send_provider || provider || "gmail");
+      }
+
+      const { data: conn } = await connQuery.maybeSingle();
 
       if (!conn) {
         return new Response(JSON.stringify({ error: "No email account connected. Connect Gmail or Outlook in Settings." }), {

@@ -831,12 +831,12 @@ export default function Inbox({ emailOnly, embedded, selectedClientId, onClearSe
         if (!resp.ok) throw new Error("Failed to send via AURA");
         toast.success("Email sent via AURA!");
       } else {
-        const provider = sendVia;
+        const connectionId = sendVia;
         const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/email-sync`, {
           method: "POST", headers,
           body: JSON.stringify({
             action: "send",
-            send_provider: provider,
+            connection_id: connectionId,
             to: recipients,
             subject: composeSubject,
             body_html: htmlBody,
