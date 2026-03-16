@@ -99,7 +99,7 @@ export default function DomisourcePage() {
             {creatingIntake ? (
               <><Loader2 className="h-4 w-4 animate-spin" /> Loading...</>
             ) : (
-              <>Upload Documents <ArrowRight className="h-4 w-4" /></>
+              <>Apply Here <ArrowRight className="h-4 w-4" /></>
             )}
           </Button>
           <p className="mt-3 text-xs text-[#2D2D2D]/50">It takes about two minutes</p>
