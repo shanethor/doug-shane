@@ -1359,21 +1359,23 @@ export default function Inbox({ emailOnly, embedded, selectedClientId, onClearSe
               )}
 
               {showFullHtml && selectedEmail.body_html ? (
-                <div className="overflow-y-auto overflow-x-auto" style={{ maxHeight: "65vh" }}>
-                  <div className="py-3">
+                <div className="flex flex-col" style={{ maxHeight: "65vh" }}>
+                  <div className="py-2">
                     <button
                       onClick={() => setShowFullHtml(false)}
-                      className="mb-3 flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground hover:underline"
+                      className="mb-2 flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground hover:underline"
                     >
                       <ArrowLeft className="h-3 w-3" />
                       Back to preview
                     </button>
-                    <div
-                      className="prose prose-sm max-w-none text-sm [&_img]:max-w-full [&_a]:text-primary [&_a]:underline"
-                      style={{ isolation: "isolate", contain: "style" }}
-                      dangerouslySetInnerHTML={{ __html: selectedEmail.body_html }}
-                    />
                   </div>
+                  <iframe
+                    srcDoc={selectedEmail.body_html}
+                    sandbox="allow-same-origin"
+                    className="flex-1 w-full border-0 rounded bg-white"
+                    style={{ minHeight: "50vh" }}
+                    title="Email content"
+                  />
                 </div>
               ) : (
                 <ScrollArea className="flex-1 min-h-0">
