@@ -111,6 +111,7 @@ export default function BorrowerPage() {
   // Partners with dedicated layouts
   if (slug === "associated") return <AssociatedPage />;
   if (slug === "omit") return <OmitPage />;
+  if (slug === "domisource") return <DomisourcePage />;
 
   const config = slug ? BORROWERS[slug] : undefined;
 
