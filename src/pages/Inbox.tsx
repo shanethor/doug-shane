@@ -1370,6 +1370,7 @@ export default function Inbox({ emailOnly, embedded, selectedClientId, onClearSe
                     </button>
                     <div
                       className="prose prose-sm max-w-none text-sm [&_img]:max-w-full [&_a]:text-primary [&_a]:underline"
+                      style={{ isolation: "isolate", contain: "style" }}
                       dangerouslySetInnerHTML={{ __html: selectedEmail.body_html }}
                     />
                   </div>
