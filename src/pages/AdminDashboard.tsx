@@ -815,6 +815,10 @@ export default function AdminDashboard() {
             )}
           </div>
         </TabsContent>
+        {/* ── Log Access ── */}
+        <TabsContent value="log-access" className="space-y-6">
+          <LogAccessTab profiles={profiles} userId={user?.id} />
+        </TabsContent>
       </Tabs>
 
       {/* Reject policy dialog */}
