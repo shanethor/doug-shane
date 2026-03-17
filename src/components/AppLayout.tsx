@@ -9,6 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { useTrainingMode } from "@/hooks/useTrainingMode";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { NavScoreboard } from "@/components/NavScoreboard";
+import { AILogPanel } from "@/components/AILogPanel";
 
 export function AppLayout({ children, onLogoClick }: { children: React.ReactNode; onLogoClick?: () => void }) {
   const { signOut } = useAuth();
