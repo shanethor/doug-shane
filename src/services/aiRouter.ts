@@ -14,6 +14,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { getAuthHeaders } from "@/lib/auth-fetch";
+import { logAIError } from "@/lib/aiLogger";
 
 // ── Types ──
 
