@@ -135,6 +135,51 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_error_logs: {
+        Row: {
+          created_at: string
+          duration_ms: number | null
+          error_code: string | null
+          error_message: string
+          function_name: string
+          id: string
+          metadata: Json | null
+          operation: string | null
+          resolved: boolean | null
+          session_id: string | null
+          severity: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          duration_ms?: number | null
+          error_code?: string | null
+          error_message: string
+          function_name: string
+          id?: string
+          metadata?: Json | null
+          operation?: string | null
+          resolved?: boolean | null
+          session_id?: string | null
+          severity?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          duration_ms?: number | null
+          error_code?: string | null
+          error_message?: string
+          function_name?: string
+          id?: string
+          metadata?: Json | null
+          operation?: string | null
+          resolved?: boolean | null
+          session_id?: string | null
+          severity?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       audit_log: {
         Row: {
           action: string
@@ -2126,6 +2171,30 @@ export type Database = {
           id?: string
           user_id?: string
           verified?: boolean
+        }
+        Relationships: []
+      }
+      user_log_access: {
+        Row: {
+          granted_at: string
+          granted_by: string | null
+          id: string
+          notes: string | null
+          user_id: string
+        }
+        Insert: {
+          granted_at?: string
+          granted_by?: string | null
+          id?: string
+          notes?: string | null
+          user_id: string
+        }
+        Update: {
+          granted_at?: string
+          granted_by?: string | null
+          id?: string
+          notes?: string | null
+          user_id?: string
         }
         Relationships: []
       }

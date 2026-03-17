@@ -14,6 +14,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { getAuthHeaders } from "@/lib/auth-fetch";
+import { logAIError } from "@/lib/aiLogger";
 
 // ── Types ──
 
@@ -171,6 +172,17 @@ export async function ingestDocument(
     const duration = Date.now() - t0;
     console.log(`[aiRouter] ingestDocument complete: ${duration}ms`);
 
+    if (duration > 30000) {
+      await logAIError({
+        function_name: "aiRouter.ingestDocument",
+        operation: `${docType} Extraction`,
+        error_message: `Extraction took ${(duration / 1000).toFixed(1)}s — longer than expected`,
+        severity: "warning",
+        duration_ms: duration,
+        metadata: { doc_type: docType },
+      });
+    }
+
     return {
       data: data?.form_data || data?.data || data || {},
       metadata: {
@@ -182,6 +194,14 @@ export async function ingestDocument(
     };
   } catch (err: any) {
     console.error("[aiRouter] ingestDocument error:", err);
+    await logAIError({
+      function_name: "aiRouter.ingestDocument",
+      operation: `${docType} Extraction`,
+      error_message: err.message ?? "Document extraction failed",
+      error_code: err.status ? String(err.status) : "EXTRACTION_FAILURE",
+      duration_ms: Date.now() - t0,
+      metadata: { doc_type: docType },
+    });
     throw err;
   }
 }
@@ -248,6 +268,14 @@ export async function advisorAssist(
 
   if (error) {
     console.error("[aiRouter] advisorAssist error:", error);
+    await logAIError({
+      function_name: "aiRouter.advisorAssist",
+      operation: "AI Advisor Assist",
+      error_message: error.message || "Advisor assist failed",
+      error_code: "ADVISOR_ASSIST_FAILURE",
+      duration_ms: Date.now() - t0,
+      metadata: { taskType: params.taskType },
+    });
     throw new Error(error.message || "Advisor assist failed");
   }
 
@@ -342,6 +370,13 @@ export async function advisorAssistStream(params: {
     onDone();
   } catch (err: any) {
     console.error("[aiRouter] advisorAssistStream error:", err);
+    await logAIError({
+      function_name: "aiRouter.advisorAssistStream",
+      operation: "AI Advisor Stream",
+      error_message: err.message ?? "Advisor stream failed",
+      error_code: "STREAM_FAILURE",
+      metadata: { taskType },
+    });
     onError?.(err);
   }
 }

@@ -676,8 +676,26 @@ serve(async (req) => {
     }
 
     return await callLovableGatewayForChat(LOVABLE_API_KEY, systemPrompt, messages, corsHeaders);
-  } catch (e) {
+  } catch (e: any) {
     console.error("agent-chat error:", e);
+
+    // Server-side error logging
+    try {
+      const logClient = createClient(
+        Deno.env.get("SUPABASE_URL")!,
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+      );
+      await logClient.from("ai_error_logs").insert({
+        user_id: null,
+        function_name: "agent-chat",
+        operation: "Chat Agent",
+        error_message: e?.message || "Chat agent error",
+        error_code: "EDGE_FUNCTION_ERROR",
+        severity: "error",
+        metadata: {},
+      }).catch(() => {});
+    } catch {}
+
     return new Response(
       JSON.stringify({ error: "An error occurred processing your request" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
