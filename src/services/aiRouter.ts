@@ -268,6 +268,14 @@ export async function advisorAssist(
 
   if (error) {
     console.error("[aiRouter] advisorAssist error:", error);
+    await logAIError({
+      function_name: "aiRouter.advisorAssist",
+      operation: "AI Advisor Assist",
+      error_message: error.message || "Advisor assist failed",
+      error_code: "ADVISOR_ASSIST_FAILURE",
+      duration_ms: Date.now() - t0,
+      metadata: { taskType: params.taskType },
+    });
     throw new Error(error.message || "Advisor assist failed");
   }
 
