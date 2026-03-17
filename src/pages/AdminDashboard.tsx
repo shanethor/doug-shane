@@ -16,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   Users, FileText, CheckCircle, Clock, Bug, Lightbulb,
   BarChart3, DollarSign, AlertTriangle, Eye, TrendingUp,
-  XCircle, Edit3, ShieldCheck, Building2, Plus, Trash2, Handshake,
+  XCircle, Edit3, ShieldCheck, Building2, Plus, Trash2, Handshake, ScrollText,
 } from "lucide-react";
 import AdminPartnerReferrals from "@/components/AdminPartnerReferrals";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
@@ -303,6 +303,7 @@ export default function AdminDashboard() {
             <TabsTrigger value="partners" className="gap-1.5 text-xs"><Handshake className="h-3.5 w-3.5" />Partners</TabsTrigger>
             <TabsTrigger value="suggestions" className="gap-1.5 text-xs"><Lightbulb className="h-3.5 w-3.5" />Features</TabsTrigger>
             <TabsTrigger value="bugs" className="gap-1.5 text-xs"><Bug className="h-3.5 w-3.5" />Bug Fixes</TabsTrigger>
+            <TabsTrigger value="log-access" className="gap-1.5 text-xs"><ScrollText className="h-3.5 w-3.5" />Log Access</TabsTrigger>
           </TabsList>
         </div>
 
@@ -814,6 +815,10 @@ export default function AdminDashboard() {
             )}
           </div>
         </TabsContent>
+        {/* ── Log Access ── */}
+        <TabsContent value="log-access" className="space-y-6">
+          <LogAccessTab profiles={profiles} userId={user?.id} />
+        </TabsContent>
       </Tabs>
 
       {/* Reject policy dialog */}
@@ -854,5 +859,98 @@ function StatCard({ icon: Icon, label, value, color }: { icon: any; label: strin
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+function LogAccessTab({ profiles, userId }: { profiles: any[]; userId?: string }) {
+  const [grants, setGrants] = useState<any[]>([]);
+  const [selectedUserId, setSelectedUserId] = useState("");
+  const [notes, setNotes] = useState("");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    supabase.from("user_log_access" as any).select("*").order("granted_at", { ascending: false })
+      .then(({ data }: any) => { setGrants(data || []); setLoading(false); });
+  }, []);
+
+  const profileMap = useMemo(() => {
+    const m: Record<string, string> = {};
+    profiles.forEach((p: any) => { if (p.user_id && p.full_name) m[p.user_id] = p.full_name; });
+    return m;
+  }, [profiles]);
+
+  const grantAccess = async () => {
+    if (!selectedUserId || !userId) return;
+    const { error } = await (supabase.from("user_log_access" as any) as any).insert({
+      user_id: selectedUserId,
+      granted_by: userId,
+      notes: notes || null,
+    });
+    if (error) { toast.error(error.message); return; }
+    toast.success("Log access granted");
+    setGrants((prev) => [{ user_id: selectedUserId, granted_by: userId, granted_at: new Date().toISOString(), notes }, ...prev]);
+    setSelectedUserId("");
+    setNotes("");
+  };
+
+  const revokeAccess = async (grantUserId: string) => {
+    await (supabase.from("user_log_access" as any) as any).delete().eq("user_id", grantUserId);
+    setGrants((prev) => prev.filter((g) => g.user_id !== grantUserId));
+    toast.success("Log access revoked");
+  };
+
+  const existingUserIds = new Set(grants.map((g: any) => g.user_id));
+  const eligibleUsers = profiles.filter((p: any) => p.user_id && !existingUserIds.has(p.user_id));
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm flex items-center gap-2"><Eye className="h-4 w-4" />AI Error Log Access</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-xs text-muted-foreground">Admins automatically have log access. The users below have been granted additional access.</p>
+
+          {loading ? (
+            <div className="flex justify-center py-6"><div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" /></div>
+          ) : grants.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-4">No additional users granted access yet.</p>
+          ) : (
+            <div className="space-y-2">
+              {grants.map((g: any) => (
+                <div key={g.user_id} className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
+                  <div>
+                    <p className="text-sm font-medium">{profileMap[g.user_id] || g.user_id}</p>
+                    <p className="text-[11px] text-muted-foreground">
+                      Granted by {profileMap[g.granted_by] || "admin"} · {new Date(g.granted_at).toLocaleDateString()}
+                      {g.notes && ` · ${g.notes}`}
+                    </p>
+                  </div>
+                  <Button variant="ghost" size="sm" onClick={() => revokeAccess(g.user_id)} className="text-destructive h-7 text-xs">
+                    <Trash2 className="h-3 w-3 mr-1" />Revoke
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="border-t pt-4 space-y-3">
+            <p className="text-xs font-medium">Grant Access</p>
+            <div className="flex gap-2">
+              <Select value={selectedUserId} onValueChange={setSelectedUserId}>
+                <SelectTrigger className="flex-1"><SelectValue placeholder="Select a user…" /></SelectTrigger>
+                <SelectContent>
+                  {eligibleUsers.map((p: any) => (
+                    <SelectItem key={p.user_id} value={p.user_id}>{p.full_name || p.user_id}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Input placeholder="Notes (optional)" value={notes} onChange={(e) => setNotes(e.target.value)} className="w-40" />
+              <Button onClick={grantAccess} disabled={!selectedUserId} size="sm"><Plus className="h-3.5 w-3.5 mr-1" />Grant</Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
