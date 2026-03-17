@@ -172,6 +172,17 @@ export async function ingestDocument(
     const duration = Date.now() - t0;
     console.log(`[aiRouter] ingestDocument complete: ${duration}ms`);
 
+    if (duration > 30000) {
+      await logAIError({
+        function_name: "aiRouter.ingestDocument",
+        operation: `${docType} Extraction`,
+        error_message: `Extraction took ${(duration / 1000).toFixed(1)}s — longer than expected`,
+        severity: "warning",
+        duration_ms: duration,
+        metadata: { doc_type: docType },
+      });
+    }
+
     return {
       data: data?.form_data || data?.data || data || {},
       metadata: {
@@ -183,6 +194,14 @@ export async function ingestDocument(
     };
   } catch (err: any) {
     console.error("[aiRouter] ingestDocument error:", err);
+    await logAIError({
+      function_name: "aiRouter.ingestDocument",
+      operation: `${docType} Extraction`,
+      error_message: err.message ?? "Document extraction failed",
+      error_code: err.status ? String(err.status) : "EXTRACTION_FAILURE",
+      duration_ms: Date.now() - t0,
+      metadata: { doc_type: docType },
+    });
     throw err;
   }
 }
