@@ -1279,6 +1279,23 @@ serve(async (req) => {
       statusCode = 402;
     }
 
+    // Server-side error logging
+    try {
+      const logClient = createClient(
+        Deno.env.get("SUPABASE_URL")!,
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+      );
+      await logClient.from("ai_error_logs").insert({
+        user_id: null,
+        function_name: "extract-business-data",
+        operation: "Document Extraction",
+        error_message: errMsg || userError,
+        error_code: String(statusCode),
+        severity: "error",
+        metadata: {},
+      }).catch(() => {});
+    } catch {}
+
     return new Response(
       JSON.stringify({ error: userError }),
       { status: statusCode, headers: { ...corsHeaders, "Content-Type": "application/json" } }

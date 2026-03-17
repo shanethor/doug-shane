@@ -370,6 +370,13 @@ export async function advisorAssistStream(params: {
     onDone();
   } catch (err: any) {
     console.error("[aiRouter] advisorAssistStream error:", err);
+    await logAIError({
+      function_name: "aiRouter.advisorAssistStream",
+      operation: "AI Advisor Stream",
+      error_message: err.message ?? "Advisor stream failed",
+      error_code: "STREAM_FAILURE",
+      metadata: { taskType },
+    });
     onError?.(err);
   }
 }

@@ -113,6 +113,7 @@ export function AppLayout({ children, onLogoClick }: { children: React.ReactNode
 
       {/* Mobile bottom tab bar */}
       <MobileBottomNav />
+      <AILogPanel />
     </div>
   );
 }
