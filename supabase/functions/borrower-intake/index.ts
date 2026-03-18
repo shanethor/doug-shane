@@ -22,7 +22,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { slug } = await req.json();
+    const { slug, quick_apply } = await req.json();
     if (!slug) {
       return new Response(JSON.stringify({ error: "slug required" }), {
         status: 400,
@@ -43,7 +43,67 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Slugs that should skip the line-type selection (auto-select personal)
+    // ── Quick Apply: create lead directly without full intake ──
+    if (quick_apply) {
+      const { name, email, old_address, new_address } = quick_apply;
+      if (!name || !email || !new_address) {
+        return new Response(JSON.stringify({ error: "name, email, and new_address required" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Find linked advisor for this partner slug
+      const { data: partnerLink } = await supabase
+        .from("property_partner_links")
+        .select("linked_advisor_user_id")
+        .eq("partner_slug", slug)
+        .limit(1)
+        .maybeSingle();
+
+      const ownerUserId = partnerLink?.linked_advisor_user_id || agentId;
+
+      const { error: leadError } = await supabase.from("leads").insert({
+        account_name: name,
+        contact_name: name,
+        email: email,
+        line_type: "personal",
+        stage: "prospect",
+        owner_user_id: ownerUserId,
+        lead_source: `partner:${slug}:quick`,
+        business_type: "Residential Property",
+        presenting_details: {
+          old_address: old_address || "",
+          new_address: new_address,
+          quick_apply: true,
+          partner_slug: slug,
+        },
+      });
+
+      if (leadError) {
+        console.error("Quick apply lead creation failed:", leadError);
+        return new Response(JSON.stringify({ error: leadError.message }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Notify the advisor
+      await supabase.from("notifications").insert({
+        user_id: ownerUserId,
+        type: "pipeline",
+        title: `Quick apply: ${name}`,
+        body: `New address: ${new_address} — via ${slug} partner page`,
+        link: "/pipeline",
+        metadata: { partner_slug: slug, is_quick_apply: true },
+      });
+
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // ── Standard intake link creation ──
     const personalOnlySlugs = ["josh-chernes"];
     const lineType = personalOnlySlugs.includes(slug) ? "personal" : null;
 
