@@ -362,6 +362,7 @@ export default function Inbox({ emailOnly, embedded, selectedClientId, onClearSe
       setSendVia(conns[0].id);
       setSendViaInitialized(true);
     }
+    await fetchSentEmails();
     setLoading(false);
   };
 
