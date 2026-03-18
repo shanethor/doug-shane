@@ -142,6 +142,29 @@ export default function BorrowerPage() {
     }
   };
 
+  const handleQuickApply = async () => {
+    if (!quickApply.name.trim() || !quickApply.email.trim() || !quickApply.newAddress.trim()) return;
+    setQuickSubmitting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("borrower-intake", {
+        body: {
+          slug: config!.slug,
+          quick_apply: {
+            name: quickApply.name.trim(),
+            email: quickApply.email.trim(),
+            old_address: quickApply.oldAddress.trim(),
+            new_address: quickApply.newAddress.trim(),
+          },
+        },
+      });
+      if (error) throw error;
+      setQuickSubmitted(true);
+    } catch (e) {
+      console.error("Quick apply failed:", e);
+      setQuickSubmitting(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-white text-[#1D2430]" data-theme="light">
       {/* ── Header ── */}
