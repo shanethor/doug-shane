@@ -337,7 +337,7 @@ export default function Inbox({ emailOnly, embedded, selectedClientId, onClearSe
         .limit(100),
       supabase
         .from("synced_emails")
-        .select("id, from_address, from_name, to_addresses, subject, body_preview, body_html, is_read, received_at, synced_at, tags, client_id, client_link_source, has_attachments")
+        .select("id, from_address, from_name, to_addresses, subject, body_preview, body_html, is_read, received_at, synced_at, tags, client_id, client_link_source, has_attachments, connection_id")
         .eq("user_id", user.id)
         .order("received_at", { ascending: false })
         .limit(100),
