@@ -1090,9 +1090,28 @@ export default function Inbox({ emailOnly, embedded, selectedClientId, onClearSe
         </Sheet>
       </div>
 
-      {/* Tiny pill toggle: All / Unread */}
+      {/* Account filter (multiple inboxes) */}
+      {emailConnections.length > 1 && (
+        <div className="flex items-center gap-1.5 px-1 mb-1.5">
+          {[{ id: "all", label: "All Inboxes" }, ...emailConnections.map((c) => ({ id: c.id, label: c.email_address.split("@")[0] }))].map((acct) => (
+            <button
+              key={acct.id}
+              onClick={() => setSelectedAccountId(acct.id)}
+              className={`px-2.5 py-0.5 rounded-full text-[10px] font-medium transition-colors ${
+                selectedAccountId === acct.id
+                  ? "bg-accent text-accent-foreground"
+                  : "bg-muted/60 text-muted-foreground"
+              }`}
+            >
+              {acct.label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Tiny pill toggle: All / Unread / Sent */}
       <div className="flex items-center gap-1 px-1 mb-2">
-        {["all", "unread"].map((t) => (
+        {["all", "unread", "sent"].map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -1102,7 +1121,7 @@ export default function Inbox({ emailOnly, embedded, selectedClientId, onClearSe
                 : "bg-muted text-muted-foreground"
             }`}
           >
-            {t === "all" ? "All" : `Unread${unreadCount > 0 ? ` (${unreadCount})` : ""}`}
+            {t === "all" ? "All" : t === "unread" ? `Unread${unreadCount > 0 ? ` (${unreadCount})` : ""}` : "Sent"}
           </button>
         ))}
         {!emailOnly && (
