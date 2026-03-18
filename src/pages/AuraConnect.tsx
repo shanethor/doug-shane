@@ -1,5 +1,4 @@
-import { useState } from "react";
-import { useAuth } from "@/hooks/useAuth";
+import { useEffect, useState } from "react";
 import { useUserFeatures } from "@/hooks/useUserFeatures";
 import { useUserRole } from "@/hooks/useUserRole";
 import { AppLayout } from "@/components/AppLayout";
@@ -10,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
-import { Navigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import {
   Search, User, Zap, Users, ArrowRight, Loader2,
   MapPin, Building2, Briefcase, TrendingUp, Network, Star,
@@ -45,18 +44,33 @@ interface ConnectionBrief {
 }
 
 export default function AuraConnect() {
-  const { user } = useAuth();
-  const { hasConnect } = useUserFeatures();
-  const { isAdmin } = useUserRole();
+  const { hasConnect, loading: featuresLoading } = useUserFeatures();
+  const { isAdmin, loading: roleLoading } = useUserRole();
+  const navigate = useNavigate();
 
   const [name, setName] = useState("");
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
   const [brief, setBrief] = useState<ConnectionBrief | null>(null);
 
-  // Gate: must have connect feature or be admin
+  useEffect(() => {
+    if (!featuresLoading && !roleLoading && !hasConnect && !isAdmin) {
+      navigate("/", { replace: true });
+    }
+  }, [featuresLoading, roleLoading, hasConnect, isAdmin, navigate]);
+
+  if (featuresLoading || roleLoading) {
+    return (
+      <AppLayout>
+        <div className="flex items-center justify-center py-20">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+        </div>
+      </AppLayout>
+    );
+  }
+
   if (!hasConnect && !isAdmin) {
-    return <Navigate to="/" replace />;
+    return null;
   }
 
   const handleBuildBrief = async () => {
