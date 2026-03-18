@@ -54,6 +54,8 @@ import AuraConnect from "./pages/AuraConnect";
 import { Navigate } from "react-router-dom";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useUserRole } from "@/hooks/useUserRole";
+import { useUserFeatures } from "@/hooks/useUserFeatures";
 
 const queryClient = new QueryClient();
 
@@ -81,6 +83,25 @@ function DarkModeSync() {
   return null;
 }
 
+function HomeRoute() {
+  const { isProperty, loading: roleLoading } = useUserRole();
+  const { hasConnect, loading: featuresLoading } = useUserFeatures();
+
+  if (roleLoading || featuresLoading) {
+    return (
+      <div className="flex min-h-[50vh] items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+      </div>
+    );
+  }
+
+  if (isProperty) {
+    return <Navigate to={hasConnect ? "/connect" : "/settings"} replace />;
+  }
+
+  return <Chat />;
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -93,7 +114,7 @@ const App = () => (
           <Route path="/login" element={<Navigate to="/auth" replace />} />
           <Route path="/signup" element={<Navigate to="/auth" replace />} />
           <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
+          <Route path="/" element={<ProtectedRoute><HomeRoute /></ProtectedRoute>} />
           <Route path="/email" element={<ProtectedRoute><EmailHub /></ProtectedRoute>} />
           <Route path="/hub" element={<ProtectedRoute><ProducerHub /></ProtectedRoute>} />
           <Route path="/pulse" element={<ProtectedRoute><AuraPulse /></ProtectedRoute>} />
