@@ -329,34 +329,72 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
     }
   };
 
-  // ─── Phone Contacts (Contact Picker API or CSV) ───
-  const handlePhoneContacts = async () => {
-    // Try Contact Picker API first
-    if ("contacts" in navigator && (navigator as any).contacts?.select) {
-      setActionLoading("phone");
-      try {
-        const props = ["name", "email", "tel"];
-        const contacts = await (navigator as any).contacts.select(props, { multiple: true });
-        if (!contacts?.length) { setActionLoading(null); return; }
-        const headers = await getAuthHeaders();
-        const resp = await fetch(SYNC_URL, {
-          method: "POST",
-          headers,
-          body: JSON.stringify({ action: "import_phone_contacts", contacts }),
-        });
-        const data = await resp.json();
-        if (!resp.ok) { toast.error(data.error || "Failed"); return; }
-        toast.success(`Imported ${data.imported} phone contacts`);
-        refresh();
-      } catch (e: any) {
-        if (e.name !== "InvalidStateError") toast.error("Contact picker failed. Try uploading a CSV instead.");
-      } finally {
-        setActionLoading(null);
-      }
-    } else {
-      // Fallback to file upload
-      phoneFileInputRef.current?.click();
+  // ─── Phone Contacts — show dialog with options ───
+  const handlePhoneContacts = () => {
+    setShowPhoneDialog(true);
+  };
+
+  const handlePhoneContactPicker = async () => {
+    setShowPhoneDialog(false);
+    if (!("contacts" in navigator && (navigator as any).contacts?.select)) {
+      toast.error("Contact Picker not supported on this device. Use paste or file upload.");
+      return;
     }
+    setActionLoading("phone");
+    try {
+      const props = ["name", "email", "tel"];
+      const contacts = await (navigator as any).contacts.select(props, { multiple: true });
+      if (!contacts?.length) { setActionLoading(null); return; }
+      await submitPhoneContacts(contacts);
+    } catch (e: any) {
+      if (e.name !== "InvalidStateError") toast.error("Contact picker failed.");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handlePasteSubmit = async () => {
+    if (!pasteContacts.trim()) return;
+    setShowPhoneDialog(false);
+    setActionLoading("phone");
+    try {
+      // Parse pasted text: each line is "Name, email, phone" or just "Name phone"
+      const lines = pasteContacts.split("\n").filter(l => l.trim());
+      const contacts = lines.map(line => {
+        // Try to extract email and phone from the line
+        const emailMatch = line.match(/[\w.+-]+@[\w.-]+\.\w+/);
+        const phoneMatch = line.match(/[\d+() -]{7,}/);
+        const email = emailMatch?.[0] || null;
+        const phone = phoneMatch?.[0]?.trim() || null;
+        // Remove email and phone from line to get name
+        let name = line;
+        if (email) name = name.replace(email, "");
+        if (phone) name = name.replace(phoneMatch![0], "");
+        name = name.replace(/[,;|]+/g, " ").trim();
+        return { name: name || null, email, tel: phone };
+      }).filter(c => c.name || c.email || c.tel);
+
+      if (!contacts.length) { toast.error("No contacts found in text"); setActionLoading(null); return; }
+      await submitPhoneContacts(contacts);
+      setPasteContacts("");
+    } catch {
+      toast.error("Failed to parse contacts");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const submitPhoneContacts = async (contacts: any[]) => {
+    const headers = await getAuthHeaders();
+    const resp = await fetch(SYNC_URL, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ action: "import_phone_contacts", contacts }),
+    });
+    const data = await resp.json();
+    if (!resp.ok) { toast.error(data.error || "Failed"); return; }
+    toast.success(`Imported ${data.imported} phone contacts`);
+    refresh();
   };
 
   const handlePhoneFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
