@@ -667,14 +667,14 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
           <div className="flex items-center gap-2 shrink-0">
             {a.connected && a.canDisconnect && (
               <>
-                {/* Re-sync button for contacts & google */}
-                {(a.id === "contacts") && (
+                {/* Re-sync button for contacts */}
+                {(a.id === "contacts" || a.id === "outlook_contacts") && (
                   <Button
                     variant="ghost"
                     size="sm"
                     className="h-7 text-xs gap-1 text-muted-foreground"
                     disabled={actionLoading === a.id}
-                    onClick={() => handleSyncGoogleContacts()}
+                    onClick={() => a.id === "contacts" ? handleSyncGoogleContacts() : handleSyncOutlookContacts()}
                   >
                     <RefreshCw className={`h-3 w-3 ${actionLoading === a.id ? "animate-spin" : ""}`} />
                     <span className="hidden sm:inline">Resync</span>
