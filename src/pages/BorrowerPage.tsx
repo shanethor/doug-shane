@@ -3,7 +3,9 @@ import { useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Upload, Shield, Phone, Mail, MapPin, ExternalLink, CheckCircle, ArrowRight, Sparkles, Search, MessageSquare, Loader2, Briefcase } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Upload, Shield, Phone, Mail, MapPin, ExternalLink, CheckCircle, ArrowRight, Sparkles, Search, MessageSquare, Loader2, Briefcase, Zap, Send } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import joshHeadshot from "@/assets/josh-chernes-headshot.png";
 import michaelHeadshot from "@/assets/michael-wengzn-headshot.png";
@@ -107,6 +109,9 @@ const STEPS = [
 export default function BorrowerPage() {
   const { slug } = useParams<{ slug: string }>();
   const [creatingIntake, setCreatingIntake] = useState(false);
+  const [quickApply, setQuickApply] = useState({ name: "", email: "", oldAddress: "", newAddress: "" });
+  const [quickSubmitting, setQuickSubmitting] = useState(false);
+  const [quickSubmitted, setQuickSubmitted] = useState(false);
 
   // Partners with dedicated layouts
   if (slug === "associated") return <AssociatedPage />;
@@ -134,6 +139,29 @@ export default function BorrowerPage() {
     } catch (e) {
       console.error("Failed to create intake link:", e);
       setCreatingIntake(false);
+    }
+  };
+
+  const handleQuickApply = async () => {
+    if (!quickApply.name.trim() || !quickApply.email.trim() || !quickApply.newAddress.trim()) return;
+    setQuickSubmitting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("borrower-intake", {
+        body: {
+          slug: config!.slug,
+          quick_apply: {
+            name: quickApply.name.trim(),
+            email: quickApply.email.trim(),
+            old_address: quickApply.oldAddress.trim(),
+            new_address: quickApply.newAddress.trim(),
+          },
+        },
+      });
+      if (error) throw error;
+      setQuickSubmitted(true);
+    } catch (e) {
+      console.error("Quick apply failed:", e);
+      setQuickSubmitting(false);
     }
   };
 
@@ -188,7 +216,91 @@ export default function BorrowerPage() {
         </div>
       </section>
 
-      {/* ── How AURA Works ── */}
+      {/* ── Quick Apply Box (Josh Chernes only) ── */}
+      {config.slug === "josh-chernes" && (
+        <section className="border-t border-gray-200">
+          <div className="mx-auto max-w-xl px-4 py-10">
+            {quickSubmitted ? (
+              <Card className="border-green-200 bg-green-50">
+                <CardContent className="py-8 text-center space-y-3">
+                  <CheckCircle className="h-10 w-10 text-green-600 mx-auto" />
+                  <p className="text-lg font-semibold text-[#1D2430]">You're all set!</p>
+                  <p className="text-sm text-[#1D2430]/60">We've received your info and an AURA advisor will reach out shortly with your quote.</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card className="border-gray-200 shadow-md">
+                <CardContent className="p-6 space-y-4">
+                  <div className="text-center space-y-1">
+                    <div className="flex items-center justify-center gap-2 mb-2">
+                      <Zap className="h-5 w-5 text-[#2F3E5B]" />
+                      <h3 className="text-lg font-bold text-[#1D2430]">Quick Apply</h3>
+                    </div>
+                    <p className="text-xs text-[#1D2430]/60">Get a quick quote — just the basics.</p>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label className="text-[11px] text-[#1D2430]/50 uppercase tracking-wider">Full Name *</Label>
+                      <Input
+                        value={quickApply.name}
+                        onChange={(e) => setQuickApply(p => ({ ...p, name: e.target.value }))}
+                        placeholder="John Doe"
+                        className="h-10 border-gray-300 bg-white text-[#1D2430]"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-[11px] text-[#1D2430]/50 uppercase tracking-wider">Email *</Label>
+                      <Input
+                        value={quickApply.email}
+                        onChange={(e) => setQuickApply(p => ({ ...p, email: e.target.value }))}
+                        placeholder="john@email.com"
+                        className="h-10 border-gray-300 bg-white text-[#1D2430]"
+                        type="email"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-[11px] text-[#1D2430]/50 uppercase tracking-wider">Current / Old Address</Label>
+                    <Input
+                      value={quickApply.oldAddress}
+                      onChange={(e) => setQuickApply(p => ({ ...p, oldAddress: e.target.value }))}
+                      placeholder="123 Main St, Anytown, CT"
+                      className="h-10 border-gray-300 bg-white text-[#1D2430]"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-[11px] text-[#1D2430]/50 uppercase tracking-wider">New Address *</Label>
+                    <Input
+                      value={quickApply.newAddress}
+                      onChange={(e) => setQuickApply(p => ({ ...p, newAddress: e.target.value }))}
+                      placeholder="456 Oak Ave, Fairfield, CT"
+                      className="h-10 border-gray-300 bg-white text-[#1D2430]"
+                    />
+                  </div>
+                  <Button
+                    className="w-full h-11 gap-2 rounded-full text-sm font-semibold"
+                    onClick={handleQuickApply}
+                    disabled={quickSubmitting || !quickApply.name.trim() || !quickApply.email.trim() || !quickApply.newAddress.trim()}
+                  >
+                    {quickSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                    {quickSubmitting ? "Submitting…" : "Get My Quote"}
+                  </Button>
+                  <div className="text-center pt-1">
+                    <button
+                      onClick={handleStartIntake}
+                      disabled={creatingIntake}
+                      className="text-xs text-[#2F3E5B] underline underline-offset-2 hover:text-[#1D2430] transition-colors"
+                    >
+                      {creatingIntake ? "Loading full application…" : "Click here for the full application — you'll receive a quote quicker but it will take 5 minutes of your time!"}
+                    </button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </section>
+      )}
+
       <section className="border-t border-gray-200 bg-gray-50/50">
         <div className="mx-auto max-w-5xl px-4 py-14 md:py-18">
           <div className="text-center">

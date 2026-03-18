@@ -54,6 +54,7 @@ export default function AdminDashboard() {
   const [newAgencyCode, setNewAgencyCode] = useState("");
   const [creatingAgency, setCreatingAgency] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [partnerLinks, setPartnerLinks] = useState<any[]>([]);
 
   useEffect(() => {
     if (!user || !isAdmin) return;
@@ -82,6 +83,11 @@ export default function AdminDashboard() {
     // Fetch agencies
     supabase.from("agencies").select("*").order("name").then(({ data }) => {
       if (data) setAgencies(data);
+    });
+
+    // Fetch partner links
+    supabase.from("property_partner_links" as any).select("*").then(({ data }) => {
+      if (data) setPartnerLinks(data);
     });
   }, [user, isAdmin]);
 
@@ -622,6 +628,76 @@ export default function AdminDashboard() {
                           </Button>
                         </div>
                     </div>
+                    {/* Partner linking for property users */}
+                    {(u.primary_role === "property" || u.roles?.includes("property")) && (() => {
+                      const link = partnerLinks.find((pl: any) => pl.property_user_id === u.id);
+                      const advisorUsers = adminUsers.filter((au: any) => 
+                        au.primary_role === "advisor" || au.primary_role === "admin" || au.roles?.includes("advisor")
+                      );
+                      return (
+                        <div className="mt-3 pt-3 border-t border-border/50 space-y-2">
+                          <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+                            <Handshake className="h-3 w-3" /> Partner Account Linking
+                          </p>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <Select
+                              value={link?.partner_slug || ""}
+                              onValueChange={async (slug) => {
+                                const advisorId = link?.linked_advisor_user_id || advisorUsers[0]?.id;
+                                if (!advisorId) { toast.error("No advisors available"); return; }
+                                if (link) {
+                                  await supabase.from("property_partner_links" as any).update({ partner_slug: slug } as any).eq("id", link.id);
+                                } else {
+                                  await supabase.from("property_partner_links" as any).insert({ property_user_id: u.id, partner_slug: slug, linked_advisor_user_id: advisorId } as any);
+                                }
+                                const { data: updated } = await supabase.from("property_partner_links" as any).select("*");
+                                if (updated) setPartnerLinks(updated);
+                                toast.success(`Partner page linked: ${slug}`);
+                              }}
+                            >
+                              <SelectTrigger className="w-44 h-7 text-[11px]">
+                                <SelectValue placeholder="Link partner page…" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="josh-chernes">Joshua Chernes</SelectItem>
+                                <SelectItem value="michael-wengzn">Michael Wengzn</SelectItem>
+                                <SelectItem value="associated">Associated Insurance</SelectItem>
+                                <SelectItem value="domisource">DomiSource</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <Select
+                              value={link?.linked_advisor_user_id || ""}
+                              onValueChange={async (advisorId) => {
+                                const slug = link?.partner_slug || "josh-chernes";
+                                if (link) {
+                                  await supabase.from("property_partner_links" as any).update({ linked_advisor_user_id: advisorId } as any).eq("id", link.id);
+                                } else {
+                                  await supabase.from("property_partner_links" as any).insert({ property_user_id: u.id, partner_slug: slug, linked_advisor_user_id: advisorId } as any);
+                                }
+                                const { data: updated } = await supabase.from("property_partner_links" as any).select("*");
+                                if (updated) setPartnerLinks(updated);
+                                toast.success("Linked advisor updated");
+                              }}
+                            >
+                              <SelectTrigger className="w-44 h-7 text-[11px]">
+                                <SelectValue placeholder="Link advisor…" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {advisorUsers.map((au: any) => (
+                                  <SelectItem key={au.id} value={au.id}>{au.full_name || au.email}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            {link && (
+                              <Badge variant="secondary" className="text-[9px]">
+                                <Network className="h-3 w-3 mr-1" />
+                                {link.partner_slug} → {adminUsers.find((au: any) => au.id === link.linked_advisor_user_id)?.full_name || "Unknown"}
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </CardContent>
                 </Card>
               ))}

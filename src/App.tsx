@@ -51,6 +51,7 @@ import LossRunDetail from "./pages/LossRunDetail";
 import LossRunSign from "./pages/LossRunSign";
 import CarrierDirectory from "./pages/CarrierDirectory";
 import AuraConnect from "./pages/AuraConnect";
+import ClientSubmission from "./pages/ClientSubmission";
 import { Navigate } from "react-router-dom";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -96,7 +97,7 @@ function HomeRoute() {
   }
 
   if (isProperty) {
-    return <Navigate to={hasConnect ? "/connect" : "/settings"} replace />;
+    return <Navigate to={hasConnect ? "/connect" : "/submit-client"} replace />;
   }
 
   return <Chat />;
@@ -146,6 +147,7 @@ const App = () => (
           <Route path="/calendar" element={<Navigate to="/email" replace />} />
           <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
           <Route path="/connect" element={<ProtectedRoute><AuraConnect /></ProtectedRoute>} />
+          <Route path="/submit-client" element={<ProtectedRoute><ClientSubmission /></ProtectedRoute>} />
           <Route path="/loss-runs" element={<ProtectedRoute><LossRunDashboard /></ProtectedRoute>} />
           <Route path="/loss-runs/new" element={<ProtectedRoute><LossRunNew /></ProtectedRoute>} />
           <Route path="/loss-runs/settings" element={<ProtectedRoute><CarrierDirectory /></ProtectedRoute>} />

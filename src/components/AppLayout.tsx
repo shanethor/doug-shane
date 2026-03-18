@@ -4,7 +4,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { useUserFeatures } from "@/hooks/useUserFeatures";
 import { useUnreadCount } from "@/hooks/useUnreadCount";
 import { useLossRunReminders } from "@/hooks/useLossRunReminders";
-import { LogOut, ShieldCheck, MessageCircle, HelpCircle, GitBranch, Settings, Mail, HeartPulse, FileSearch, Network } from "lucide-react";
+import { LogOut, ShieldCheck, MessageCircle, HelpCircle, GitBranch, Settings, Mail, HeartPulse, FileSearch, Network, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { useTrainingMode } from "@/hooks/useTrainingMode";
@@ -14,7 +14,7 @@ import { AILogPanel } from "@/components/AILogPanel";
 
 export function AppLayout({ children, onLogoClick }: { children: React.ReactNode; onLogoClick?: () => void }) {
   const { signOut } = useAuth();
-  const { canSeeProducerHub, canSeeAdmin, canSeeChat, canSeeEmail, canSeePulse, canSeeLossRuns } = useUserRole();
+  const { canSeeProducerHub, canSeeAdmin, canSeeChat, canSeeEmail, canSeePulse, canSeeLossRuns, canSeeClientSubmission } = useUserRole();
   const { hasConnect } = useUserFeatures();
   const location = useLocation();
   const { trainingMode, setTrainingMode } = useTrainingMode();
@@ -28,6 +28,7 @@ export function AppLayout({ children, onLogoClick }: { children: React.ReactNode
     ...(canSeeProducerHub ? [{ to: "/hub", label: "Command Center", icon: GitBranch }] : []),
     ...(canSeeLossRuns ? [{ to: "/loss-runs", label: "Loss Runs", icon: FileSearch }] : []),
     ...(hasConnect ? [{ to: "/connect", label: "Connect", icon: Network }] : []),
+    ...(canSeeClientSubmission ? [{ to: "/submit-client", label: "Submit Client", icon: UserPlus }] : []),
     ...(canSeeAdmin ? [{ to: "/admin", label: "Admin", icon: ShieldCheck }] : []),
     { to: "/settings", label: "Settings", icon: Settings },
   ];

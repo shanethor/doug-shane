@@ -83,6 +83,7 @@ export function useUserRole() {
   const canSeeEmail = !loading && role !== "property";
   const canSeePulse = !loading && role !== "property";
   const canSeeLossRuns = !loading && role !== "property";
+  const canSeeClientSubmission = !loading && role === "property";
 
   // Backward-compatible aliases
   const isProducer = isAdvisor;
@@ -104,6 +105,7 @@ export function useUserRole() {
     canSeeEmail,
     canSeePulse,
     canSeeLossRuns,
+    canSeeClientSubmission,
   };
 }
 
