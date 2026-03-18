@@ -97,7 +97,7 @@ function HomeRoute() {
   }
 
   if (isProperty) {
-    return <Navigate to={hasConnect ? "/connect" : "/settings"} replace />;
+    return <Navigate to={hasConnect ? "/connect" : "/submit-client"} replace />;
   }
 
   return <Chat />;
