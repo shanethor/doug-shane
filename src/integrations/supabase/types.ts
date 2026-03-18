@@ -1634,6 +1634,96 @@ export type Database = {
         }
         Relationships: []
       }
+      network_connections: {
+        Row: {
+          contact_count: number | null
+          created_at: string
+          id: string
+          last_sync_at: string | null
+          metadata: Json | null
+          source: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          contact_count?: number | null
+          created_at?: string
+          id?: string
+          last_sync_at?: string | null
+          metadata?: Json | null
+          source: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          contact_count?: number | null
+          created_at?: string
+          id?: string
+          last_sync_at?: string | null
+          metadata?: Json | null
+          source?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      network_contacts: {
+        Row: {
+          company: string | null
+          email: string | null
+          external_id: string | null
+          full_name: string | null
+          id: string
+          imported_at: string
+          linkedin_url: string | null
+          location: string | null
+          metadata: Json | null
+          notes: string | null
+          phone: string | null
+          source: string
+          title: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          company?: string | null
+          email?: string | null
+          external_id?: string | null
+          full_name?: string | null
+          id?: string
+          imported_at?: string
+          linkedin_url?: string | null
+          location?: string | null
+          metadata?: Json | null
+          notes?: string | null
+          phone?: string | null
+          source: string
+          title?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          company?: string | null
+          email?: string | null
+          external_id?: string | null
+          full_name?: string | null
+          id?: string
+          imported_at?: string
+          linkedin_url?: string | null
+          location?: string | null
+          metadata?: Json | null
+          notes?: string | null
+          phone?: string | null
+          source?: string
+          title?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           body: string | null

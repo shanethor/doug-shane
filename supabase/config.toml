@@ -62,3 +62,6 @@ verify_jwt = false
 
 [functions.ingest-document]
 verify_jwt = false
+
+[functions.sync-contacts]
+verify_jwt = false
