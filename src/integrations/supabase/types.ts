@@ -2263,7 +2263,13 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "user" | "advisor" | "manager" | "client_services"
+      app_role:
+        | "admin"
+        | "user"
+        | "advisor"
+        | "manager"
+        | "client_services"
+        | "property"
       calendar_event_status: "scheduled" | "completed" | "cancelled" | "no_show"
       calendar_event_type:
         | "presentation"
@@ -2413,7 +2419,14 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "user", "advisor", "manager", "client_services"],
+      app_role: [
+        "admin",
+        "user",
+        "advisor",
+        "manager",
+        "client_services",
+        "property",
+      ],
       calendar_event_status: ["scheduled", "completed", "cancelled", "no_show"],
       calendar_event_type: [
         "presentation",
