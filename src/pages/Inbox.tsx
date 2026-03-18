@@ -1293,6 +1293,7 @@ export default function Inbox({ emailOnly, embedded, selectedClientId, onClearSe
           {[
             { value: "all", label: "All" },
             { value: "unread", label: `Unread${unreadCount > 0 ? ` (${unreadCount})` : ""}` },
+            { value: "sent", label: "Sent" },
             ...(!emailOnly ? [
               { value: "emails", label: "Emails" },
               { value: "pipeline", label: "Pipeline" },
