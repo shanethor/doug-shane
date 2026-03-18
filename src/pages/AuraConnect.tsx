@@ -570,7 +570,7 @@ export default function AuraConnect() {
                               size="sm"
                               variant="ghost"
                               className="gap-1.5 h-8 text-muted-foreground"
-                              onClick={() => handleDismissTouch(t.id)}
+                              onClick={() => handleDismissTouch(t)}
                             >
                               <X className="h-3.5 w-3.5" />
                               Dismiss
