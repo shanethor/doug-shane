@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
-export type AppRole = "admin" | "advisor" | "manager" | "client_services";
+export type AppRole = "admin" | "advisor" | "manager" | "client_services" | "property";
 
 // Module-level cache to avoid re-querying on every component mount
 const roleCache: { userId: string | null; role: AppRole; ts: number } = {
@@ -54,10 +54,15 @@ export function useUserRole() {
   const isAdvisor = role === "advisor";
   const isManager = role === "manager";
   const isClientServices = role === "client_services";
+  const isProperty = role === "property";
 
   // Navigation visibility
-  const canSeeAdvisorHub = role !== "client_services";
+  const canSeeAdvisorHub = role !== "client_services" && role !== "property";
   const canSeeAdmin = role === "admin";
+  const canSeeChat = role !== "property";
+  const canSeeEmail = role !== "property";
+  const canSeePulse = role !== "property";
+  const canSeeLossRuns = role !== "property";
 
   // Backward-compatible aliases
   const isProducer = isAdvisor;
@@ -71,9 +76,14 @@ export function useUserRole() {
     isProducer,
     isManager,
     isClientServices,
+    isProperty,
     canSeeAdvisorHub,
     canSeeProducerHub,
     canSeeAdmin,
+    canSeeChat,
+    canSeeEmail,
+    canSeePulse,
+    canSeeLossRuns,
   };
 }
 
