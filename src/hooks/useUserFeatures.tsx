@@ -12,12 +12,18 @@ const featureCache: { userId: string | null; features: FeatureFlag[]; ts: number
 const CACHE_TTL = 5 * 60 * 1000;
 
 export function useUserFeatures() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [features, setFeatures] = useState<FeatureFlag[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
+
+    // Stay loading until auth finishes hydrating
+    if (authLoading) {
+      setLoading(true);
+      return;
+    }
 
     if (!user) {
       setFeatures([]);
@@ -60,7 +66,7 @@ export function useUserFeatures() {
     return () => {
       cancelled = true;
     };
-  }, [user?.id]);
+  }, [user?.id, authLoading]);
 
   return {
     features,
