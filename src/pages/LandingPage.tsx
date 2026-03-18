@@ -115,8 +115,9 @@ export default function LandingPage() {
       <div ref={addRevealRef} className="landing-reveal max-w-[1200px] mx-auto px-5 md:px-12 pt-12 grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Hero card */}
         <div className="md:col-span-2 rounded-2xl overflow-hidden bg-[hsl(240,8%,7%)] border border-white/[0.06] hover:border-white/[0.12] transition-colors group">
-          <div className="h-[200px] md:h-[240px] overflow-hidden">
-            <img src="/images/hero-insurance.jpg" alt="" className="w-full h-full object-cover brightness-50 saturate-[0.35] transition-transform duration-500 group-hover:scale-[1.03]" />
+          <div className="h-[200px] md:h-[240px] overflow-hidden relative">
+            <img src="/images/hero-acord-forms.webp" alt="" className="w-full h-full object-cover brightness-[0.35] saturate-[0.3] transition-transform duration-500 group-hover:scale-[1.03]" />
+            <div className="absolute inset-0 bg-[hsl(240,10%,4%)]/40" />
           </div>
           <div className="p-6">
             <div className="text-[10px] font-semibold tracking-[0.12em] uppercase text-[hsl(175,97%,24%)] mb-2.5">Core</div>
@@ -144,8 +145,9 @@ export default function LandingPage() {
         </div>
 
         <div className="md:col-span-2 rounded-2xl overflow-hidden bg-[hsl(240,8%,7%)] border border-white/[0.06] hover:border-white/[0.12] transition-colors group">
-          <div className="h-[200px] md:h-[240px] overflow-hidden">
-            <img src="/images/hero.jpg" alt="" className="w-full h-full object-cover object-[center_70%] brightness-50 saturate-[0.35] transition-transform duration-500 group-hover:scale-[1.03]" />
+          <div className="h-[200px] md:h-[240px] overflow-hidden relative">
+            <img src="/images/hero-satellite.jpg" alt="" className="w-full h-full object-cover brightness-[0.35] saturate-[0.3] transition-transform duration-500 group-hover:scale-[1.03]" />
+            <div className="absolute inset-0 bg-[hsl(240,10%,4%)]/40" />
           </div>
           <div className="p-6">
             <div className="text-[10px] font-semibold tracking-[0.12em] uppercase text-[hsl(175,97%,24%)] mb-2.5">Service</div>
