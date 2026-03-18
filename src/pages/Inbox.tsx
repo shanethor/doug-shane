@@ -1138,9 +1138,51 @@ export default function Inbox({ emailOnly, embedded, selectedClientId, onClearSe
         )}
       </div>
 
-      {/* Email list — flat cells, maximum space */}
+      {/* Email list / Sent list */}
       <ScrollArea className="flex-1 min-h-0">
-        {filtered.length === 0 ? (
+        {tab === "sent" ? (
+          /* Sent history */
+          sentEmails.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+              <History className="h-8 w-8 mb-2 opacity-40" />
+              <p className="text-xs">No sent emails yet</p>
+            </div>
+          ) : (
+            <div className="divide-y divide-border">
+              {sentEmails.map((sent) => (
+                <div key={sent.id} className="flex items-start gap-2.5 px-2 py-2.5">
+                  <div className="w-2 pt-2 shrink-0">
+                    {sent.status === "scheduled" ? (
+                      <Clock className="h-3 w-3 text-amber-500" />
+                    ) : (
+                      <Check className="h-3 w-3 text-emerald-500" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-sm truncate text-foreground/80">
+                        To: {sent.to_addresses?.join(", ")}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground shrink-0">
+                        {formatDistanceToNow(new Date(sent.sent_at || sent.created_at), { addSuffix: false })}
+                      </span>
+                    </div>
+                    <p className="text-xs truncate mt-0.5 text-muted-foreground">
+                      {sent.subject || "(no subject)"}
+                    </p>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <Badge variant="outline" className={`text-[9px] px-1.5 py-0 h-4 ${
+                        sent.status === "scheduled" ? "border-amber-400/50 text-amber-600" : "border-emerald-400/50 text-emerald-600"
+                      }`}>
+                        {sent.status === "scheduled" ? `Scheduled ${sent.scheduled_for ? format(new Date(sent.scheduled_for), "MMM d, h:mm a") : ""}` : "Sent"}
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )
+        ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
             <MailOpen className="h-8 w-8 mb-2 opacity-40" />
             <p className="text-xs">
@@ -1171,13 +1213,11 @@ export default function Inbox({ emailOnly, embedded, selectedClientId, onClearSe
                   }`}
                   onClick={() => handleUnifiedClick(item)}
                 >
-                  {/* Unread dot */}
                   <div className="w-2 pt-2 shrink-0">
                     {!item.is_read && <div className="h-2 w-2 rounded-full bg-primary" />}
                   </div>
 
                   <div className="flex-1 min-w-0">
-                    {/* Row 1: Sender (bold) + time */}
                     <div className="flex items-center justify-between gap-2">
                       <span className={`text-sm truncate ${!item.is_read ? "font-semibold text-foreground" : "text-foreground/80"}`}>
                         {email ? senderName : item.label}
@@ -1187,12 +1227,10 @@ export default function Inbox({ emailOnly, embedded, selectedClientId, onClearSe
                       </span>
                     </div>
 
-                    {/* Row 2: Subject */}
                     <p className={`text-xs truncate mt-0.5 ${!item.is_read ? "text-foreground" : "text-muted-foreground"}`}>
                       {subject || "(no subject)"}
                     </p>
 
-                    {/* Row 3: Preview + optional tag chip */}
                     <div className="flex items-center gap-1.5 mt-0.5">
                       {preview && (
                         <p className="text-[11px] text-muted-foreground truncate flex-1">{decodeHtmlEntities(preview)}</p>
