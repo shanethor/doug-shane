@@ -1705,11 +1705,44 @@ export default function Inbox({ emailOnly, embedded, selectedClientId, onClearSe
               />
             </div>
 
+            {/* Schedule send */}
+            <div className="space-y-2">
+              <Label className="text-xs flex items-center gap-1.5">
+                <Clock className="h-3 w-3" />
+                Schedule Send <span className="text-muted-foreground">(optional)</span>
+              </Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="date"
+                  value={scheduleDate}
+                  onChange={(e) => setScheduleDate(e.target.value)}
+                  className="h-8 text-xs flex-1"
+                  min={format(new Date(), "yyyy-MM-dd")}
+                />
+                <Input
+                  type="time"
+                  value={scheduleTime}
+                  onChange={(e) => setScheduleTime(e.target.value)}
+                  className="h-8 text-xs w-28"
+                />
+                {(scheduleDate || scheduleTime) && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 shrink-0"
+                    onClick={() => { setScheduleDate(""); setScheduleTime(""); }}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                )}
+              </div>
+            </div>
+
             <div className="flex justify-end gap-2 pt-2">
               <Button variant="outline" size="sm" onClick={() => setComposeOpen(false)}>Cancel</Button>
               <Button size="sm" onClick={handleSendEmail} disabled={sending} className="gap-1.5">
-                {sending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
-                Send Email
+                {sending ? <Loader2 className="h-3 w-3 animate-spin" /> : scheduleDate && scheduleTime ? <Clock className="h-3 w-3" /> : <Send className="h-3 w-3" />}
+                {scheduleDate && scheduleTime ? "Schedule" : "Send Email"}
               </Button>
             </div>
           </div>
