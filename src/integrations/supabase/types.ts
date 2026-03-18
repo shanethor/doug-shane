@@ -1958,6 +1958,33 @@ export type Database = {
           },
         ]
       }
+      property_partner_links: {
+        Row: {
+          created_at: string
+          id: string
+          linked_advisor_user_id: string
+          partner_slug: string
+          property_user_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          linked_advisor_user_id: string
+          partner_slug: string
+          property_user_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          linked_advisor_user_id?: string
+          partner_slug?: string
+          property_user_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       quote_documents: {
         Row: {
           created_at: string
