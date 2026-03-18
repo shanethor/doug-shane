@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
-export type AppRole = "admin" | "advisor" | "manager" | "client_services";
+export type AppRole = "admin" | "advisor" | "manager" | "client_services" | "property";
 
 // Module-level cache to avoid re-querying on every component mount
 const roleCache: { userId: string | null; role: AppRole; ts: number } = {
