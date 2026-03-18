@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useUserRole } from "@/hooks/useUserRole";
 import { AppLayout } from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Building2, Mail, Save, User, BrainCircuit, Eye, EyeOff, Info, Loader2, Link2, Unlink, CheckCircle, Smartphone, GripVertical, Globe, Radar, Linkedin, Search, MessageSquare, FileText as FileTextIcon, Moon, Sun, Copy, InboxIcon } from "lucide-react";
+import { Building2, Mail, Save, User, BrainCircuit, Eye, EyeOff, Info, Loader2, Link2, Unlink, CheckCircle, Smartphone, GripVertical, Globe, Radar, Linkedin, Search, MessageSquare, FileText as FileTextIcon, Moon, Sun, Copy, InboxIcon, Network } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -17,6 +18,7 @@ import { getAuthHeaders } from "@/lib/auth-fetch";
 import { useSearchParams } from "react-router-dom";
 import { useNavConfig, ALL_NAV_TABS } from "@/hooks/useNavConfig";
 import { Checkbox } from "@/components/ui/checkbox";
+import { ConnectedAccountsStatus } from "@/components/ConnectedAccountsStatus";
 
 const AGENCY_FIELDS = [
   { key: "agency_phone", label: "Agency Phone", placeholder: "(555) 123-4567" },
