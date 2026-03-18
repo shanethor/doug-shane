@@ -669,6 +669,105 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
           Upload the resulting CSV file here.
         </p>
       </div>
+
+      {/* Gmail Reconnect Picker Dialog */}
+      <Dialog open={showReconnectPicker} onOpenChange={setShowReconnectPicker}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Reconnect Gmail for Contacts</DialogTitle>
+            <DialogDescription>
+              Your Gmail connection needs to be refreshed to include contacts access. Select the account to reconnect:
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 mt-2">
+            {gmailAccounts.map((acc) => (
+              <Button
+                key={acc.id}
+                variant="outline"
+                className="w-full justify-start gap-2 h-auto py-3"
+                onClick={() => handleReconnectGmail(acc.id)}
+              >
+                <Mail className="h-4 w-4 text-primary shrink-0" />
+                <span className="text-sm">{acc.email}</span>
+              </Button>
+            ))}
+            {gmailAccounts.length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-4">No Gmail accounts found.</p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Phone Contacts Import Dialog */}
+      <Dialog open={showPhoneDialog} onOpenChange={setShowPhoneDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Import Phone Contacts</DialogTitle>
+            <DialogDescription>Choose how to add your contacts</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 mt-2">
+            {/* Option 1: Contact Picker (mobile) */}
+            {"contacts" in navigator && (
+              <Button
+                variant="outline"
+                className="w-full justify-start gap-3 h-auto py-3"
+                onClick={handlePhoneContactPicker}
+              >
+                <Phone className="h-4 w-4 text-primary shrink-0" />
+                <div className="text-left">
+                  <p className="text-sm font-medium">Select from Phone</p>
+                  <p className="text-[11px] text-muted-foreground">Pick contacts from your device (Chrome/Android)</p>
+                </div>
+              </Button>
+            )}
+
+            {/* Option 2: CSV/vCard upload */}
+            <Button
+              variant="outline"
+              className="w-full justify-start gap-3 h-auto py-3"
+              onClick={() => { setShowPhoneDialog(false); phoneFileInputRef.current?.click(); }}
+            >
+              <Upload className="h-4 w-4 text-primary shrink-0" />
+              <div className="text-left">
+                <p className="text-sm font-medium">Upload CSV or vCard</p>
+                <p className="text-[11px] text-muted-foreground">Export contacts from your phone as .csv or .vcf and upload</p>
+              </div>
+            </Button>
+
+            {/* Option 3: Paste */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <ClipboardPaste className="h-4 w-4 text-primary shrink-0" />
+                <p className="text-sm font-medium">Paste Contacts</p>
+              </div>
+              <Textarea
+                placeholder={"John Smith, john@email.com, (555) 123-4567\nJane Doe, jane@company.com\nBob Jones, 555-987-6543"}
+                value={pasteContacts}
+                onChange={(e) => setPasteContacts(e.target.value)}
+                rows={4}
+                className="text-xs"
+              />
+              <p className="text-[10px] text-muted-foreground">One contact per line: Name, email, phone (any order)</p>
+              <Button
+                size="sm"
+                className="w-full gap-1"
+                disabled={!pasteContacts.trim()}
+                onClick={handlePasteSubmit}
+              >
+                <Plus className="h-3 w-3" />
+                Import Pasted Contacts
+              </Button>
+            </div>
+
+            {/* Tip about Google Contacts */}
+            <div className="rounded-md bg-muted/50 p-2.5">
+              <p className="text-[11px] text-muted-foreground leading-relaxed">
+                <strong>Tip:</strong> If your phone contacts sync to Google, they'll be imported automatically when you connect Google Contacts above.
+              </p>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
