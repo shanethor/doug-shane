@@ -355,6 +355,8 @@ export default function Settings() {
         </CardContent>
       </Card>
 
+      {/* Agency Information - only for insurance roles */}
+      {!isProperty && (
       <Card className="mb-4 sm:mb-6">
         <CardHeader className="p-4 sm:p-6 pb-2 sm:pb-2">
           <CardTitle className="text-base sm:text-lg flex items-center gap-2">
@@ -396,6 +398,28 @@ export default function Settings() {
             <Save className="h-4 w-4" />
             {saving ? "Saving…" : "Save Changes"}
           </Button>
+        </CardContent>
+      </Card>
+      )}
+
+      {/* Network Connections */}
+      <Card className="mb-4 sm:mb-6" id="network-connections-section">
+        <CardHeader className="p-4 sm:p-6 pb-2 sm:pb-2">
+          <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+            <Network className="h-4 w-4 text-primary" />
+            Network Connections
+          </CardTitle>
+          <p className="text-xs text-muted-foreground mt-1">
+            Connect your accounts to power AURA Connect's relationship intelligence. All 3 required accounts = full briefs with warm paths.
+          </p>
+        </CardHeader>
+        <CardContent className="p-4 sm:p-6 pt-2 sm:pt-2 space-y-3">
+          <ConnectedAccountsStatus variant="full" />
+          <div className="rounded-md bg-muted/50 p-3 mt-3">
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
+              <strong>How it works:</strong> Email connects via Gmail/Outlook above. LinkedIn, Contacts, and Social integrations are coming soon — once available, connecting all required accounts will unlock full relationship briefs with warm introductions and confidence scoring.
+            </p>
+          </div>
         </CardContent>
       </Card>
 
