@@ -70,6 +70,18 @@ type SyncedEmail = {
   client_id?: string | null;
   client_link_source?: string | null;
   has_attachments?: boolean;
+  connection_id?: string;
+};
+
+type SentEmail = {
+  id: string;
+  subject: string;
+  to_addresses: string[];
+  body_html: string;
+  sent_at: string | null;
+  status: string;
+  created_at: string;
+  scheduled_for?: string | null;
 };
 
 type EmailConnection = {
