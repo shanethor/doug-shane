@@ -961,3 +961,111 @@ function LogAccessTab({ profiles, userId }: { profiles: any[]; userId?: string }
     </div>
   );
 }
+
+const AVAILABLE_FEATURES = [
+  { id: "connect", label: "AURA Connect", description: "Relationship intelligence & warm intro tool" },
+] as const;
+
+function UserFeaturesTab({ profiles, adminUsers, userId }: { profiles: any[]; adminUsers: any[]; userId?: string }) {
+  const [featureGrants, setFeatureGrants] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    supabase.from("user_features" as any).select("*").order("granted_at", { ascending: false })
+      .then(({ data }: any) => { setFeatureGrants(data || []); setLoading(false); });
+  }, []);
+
+  const profileMap = useMemo(() => {
+    const m: Record<string, string> = {};
+    profiles.forEach((p: any) => { if (p.user_id && p.full_name) m[p.user_id] = p.full_name; });
+    return m;
+  }, [profiles]);
+
+  // Group grants by user
+  const userFeatureMap = useMemo(() => {
+    const m: Record<string, string[]> = {};
+    featureGrants.forEach((g: any) => {
+      if (!m[g.user_id]) m[g.user_id] = [];
+      m[g.user_id].push(g.feature);
+    });
+    return m;
+  }, [featureGrants]);
+
+  const allUserIds = useMemo(() => {
+    const set = new Set<string>();
+    adminUsers.forEach((u: any) => { if (u.id && u.approval_status !== "pending") set.add(u.id); });
+    profiles.forEach((p: any) => { if (p.user_id) set.add(p.user_id); });
+    return Array.from(set);
+  }, [adminUsers, profiles]);
+
+  const toggleFeature = async (targetUserId: string, feature: string, enabled: boolean) => {
+    if (!userId) return;
+    if (enabled) {
+      const { error } = await (supabase.from("user_features" as any) as any).insert({
+        user_id: targetUserId,
+        feature,
+        granted_by: userId,
+      });
+      if (error) {
+        if (error.message?.includes("duplicate")) { toast.info("Feature already assigned"); return; }
+        toast.error(error.message); return;
+      }
+      setFeatureGrants(prev => [...prev, { user_id: targetUserId, feature, granted_by: userId, granted_at: new Date().toISOString() }]);
+      toast.success(`${feature} enabled for ${profileMap[targetUserId] || "user"}`);
+    } else {
+      await (supabase.from("user_features" as any) as any).delete().eq("user_id", targetUserId).eq("feature", feature);
+      setFeatureGrants(prev => prev.filter(g => !(g.user_id === targetUserId && g.feature === feature)));
+      toast.success(`${feature} disabled for ${profileMap[targetUserId] || "user"}`);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm flex items-center gap-2"><Network className="h-4 w-4" />Feature Assignments</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-xs text-muted-foreground">
+            Toggle features per user. Features are layered on top of the user's primary role (admin, advisor, manager, etc.).
+          </p>
+
+          {loading ? (
+            <div className="flex justify-center py-6"><div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" /></div>
+          ) : (
+            <div className="space-y-2">
+              {allUserIds.map(uid => {
+                const userName = profileMap[uid] || uid.slice(0, 8) + "…";
+                const userEmail = adminUsers.find((u: any) => u.id === uid)?.email || "";
+                const userFeatures = userFeatureMap[uid] || [];
+
+                return (
+                  <div key={uid} className="flex items-center justify-between p-3 rounded-lg border bg-muted/30 gap-3">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium truncate">{userName}</p>
+                      {userEmail && <p className="text-[11px] text-muted-foreground truncate">{userEmail}</p>}
+                    </div>
+                    <div className="flex items-center gap-3 shrink-0">
+                      {AVAILABLE_FEATURES.map(f => (
+                        <label key={f.id} className="flex items-center gap-1.5 cursor-pointer">
+                          <Checkbox
+                            checked={userFeatures.includes(f.id)}
+                            onCheckedChange={(checked) => toggleFeature(uid, f.id, !!checked)}
+                          />
+                          <span className="text-xs">{f.label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+              {allUserIds.length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-4">No users available.</p>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
