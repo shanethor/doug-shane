@@ -821,6 +821,11 @@ export default function AdminDashboard() {
         <TabsContent value="log-access" className="space-y-6">
           <LogAccessTab profiles={profiles} userId={user?.id} />
         </TabsContent>
+
+        {/* ── User Features ── */}
+        <TabsContent value="user-features" className="space-y-6">
+          <UserFeaturesTab profiles={profiles} adminUsers={adminUsers} userId={user?.id} />
+        </TabsContent>
       </Tabs>
 
       {/* Reject policy dialog */}
