@@ -28,6 +28,7 @@ export function AppLayout({ children, onLogoClick }: { children: React.ReactNode
     ...(canSeeProducerHub ? [{ to: "/hub", label: "Command Center", icon: GitBranch }] : []),
     ...(canSeeLossRuns ? [{ to: "/loss-runs", label: "Loss Runs", icon: FileSearch }] : []),
     ...(hasConnect ? [{ to: "/connect", label: "Connect", icon: Network }] : []),
+    ...(canSeeClientSubmission ? [{ to: "/submit-client", label: "Submit Client", icon: UserPlus }] : []),
     ...(canSeeAdmin ? [{ to: "/admin", label: "Admin", icon: ShieldCheck }] : []),
     { to: "/settings", label: "Settings", icon: Settings },
   ];
