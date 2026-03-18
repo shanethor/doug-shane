@@ -9,6 +9,8 @@ const corsHeaders = {
 
 const GOOGLE_PEOPLE_API = "https://people.googleapis.com/v1/people/me/connections";
 const GMAIL_TOKEN_URL = "https://oauth2.googleapis.com/token";
+const MS_TOKEN_URL = "https://login.microsoftonline.com/common/oauth2/v2.0/token";
+const MS_CONTACTS_API = "https://graph.microsoft.com/v1.0/me/contacts";
 
 async function refreshGoogleToken(refreshTokenEnc: string): Promise<string> {
   const refreshToken = await decryptToken(refreshTokenEnc);
@@ -24,6 +26,24 @@ async function refreshGoogleToken(refreshTokenEnc: string): Promise<string> {
   });
   const data = await resp.json();
   if (!resp.ok) throw new Error(`Token refresh failed: ${JSON.stringify(data)}`);
+  return data.access_token;
+}
+
+async function refreshMicrosoftToken(refreshTokenEnc: string): Promise<string> {
+  const refreshToken = await decryptToken(refreshTokenEnc);
+  const resp = await fetch(MS_TOKEN_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      client_id: Deno.env.get("MICROSOFT_CLIENT_ID")!,
+      client_secret: Deno.env.get("MICROSOFT_CLIENT_SECRET")!,
+      refresh_token: refreshToken,
+      grant_type: "refresh_token",
+      scope: "openid email profile User.Read Mail.Read Mail.Send Calendars.ReadWrite Contacts.Read offline_access",
+    }),
+  });
+  const data = await resp.json();
+  if (!resp.ok) throw new Error(`MS token refresh failed: ${JSON.stringify(data)}`);
   return data.access_token;
 }
 
@@ -63,7 +83,6 @@ serve(async (req) => {
 
     // ─── Sync Google Contacts ───
     if (action === "sync_google") {
-      // Get the user's Gmail connection
       const { data: conns } = await adminClient
         .from("email_connections")
         .select("*")
@@ -92,11 +111,10 @@ serve(async (req) => {
         });
       }
 
-      // Fetch contacts from Google People API
       let allContacts: any[] = [];
       let nextPageToken = "";
       let page = 0;
-      const maxPages = 10; // safety limit
+      const maxPages = 10;
 
       do {
         const url = new URL(GOOGLE_PEOPLE_API);
@@ -131,7 +149,6 @@ serve(async (req) => {
         page++;
       } while (nextPageToken && page < maxPages);
 
-      // Map to our schema
       const contacts = allContacts.map((person: any) => {
         const name = person.names?.[0];
         const email = person.emailAddresses?.[0];
@@ -151,27 +168,20 @@ serve(async (req) => {
           title: org?.title || null,
           linkedin_url: linkedinUrl || null,
           location: loc?.value || null,
-          metadata: {
-            google_resource: person.resourceName,
-          },
+          metadata: { google_resource: person.resourceName },
         };
-      }).filter((c: any) => c.full_name || c.email); // skip empty contacts
+      }).filter((c: any) => c.full_name || c.email);
 
-      // Upsert contacts
       if (contacts.length > 0) {
-        // Batch in chunks of 500
         for (let i = 0; i < contacts.length; i += 500) {
           const batch = contacts.slice(i, i + 500);
           const { error: upsertErr } = await adminClient
             .from("network_contacts")
             .upsert(batch, { onConflict: "user_id,source,external_id" });
-          if (upsertErr) {
-            console.error("Contacts upsert error:", upsertErr);
-          }
+          if (upsertErr) console.error("Contacts upsert error:", upsertErr);
         }
       }
 
-      // Update network_connections tracker
       await adminClient
         .from("network_connections")
         .upsert({
@@ -183,11 +193,114 @@ serve(async (req) => {
           updated_at: new Date().toISOString(),
         }, { onConflict: "user_id,source" });
 
-      return new Response(JSON.stringify({ 
-        success: true, 
-        imported: contacts.length,
-        source: "google_contacts"
-      }), {
+      return new Response(JSON.stringify({ success: true, imported: contacts.length, source: "google_contacts" }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // ─── Sync Microsoft/Outlook Contacts ───
+    if (action === "sync_outlook") {
+      const { data: conns } = await adminClient
+        .from("email_connections")
+        .select("*")
+        .eq("user_id", userId)
+        .eq("provider", "outlook")
+        .eq("is_active", true)
+        .limit(1);
+
+      if (!conns?.length) {
+        return new Response(JSON.stringify({ error: "No Outlook connection found. Please connect Outlook first." }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const conn = conns[0];
+      let accessToken: string;
+      try {
+        accessToken = await refreshMicrosoftToken(conn.refresh_token);
+      } catch (e) {
+        console.error("MS Token refresh failed:", e);
+        return new Response(JSON.stringify({
+          error: "Outlook needs to be reconnected with contacts permission.",
+          needs_reconnect: true,
+        }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Fetch contacts from Microsoft Graph
+      let allContacts: any[] = [];
+      let nextLink = `${MS_CONTACTS_API}?$top=500&$select=displayName,emailAddresses,phones,companyName,jobTitle,homeAddress,businessAddress`;
+
+      while (nextLink && allContacts.length < 10000) {
+        const resp = await fetch(nextLink, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+
+        if (!resp.ok) {
+          const errText = await resp.text();
+          console.error("MS Contacts API error:", resp.status, errText);
+          if (resp.status === 403 || resp.status === 401) {
+            return new Response(JSON.stringify({
+              error: "Contacts permission not granted. Please reconnect Outlook with contacts access.",
+              needs_reconnect: true,
+            }), {
+              status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
+          }
+          return new Response(JSON.stringify({ error: "Failed to fetch Outlook Contacts" }), {
+            status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        const data = await resp.json();
+        allContacts = allContacts.concat(data.value || []);
+        nextLink = data["@odata.nextLink"] || "";
+      }
+
+      const contacts = allContacts.map((person: any) => {
+        const email = person.emailAddresses?.[0]?.address;
+        const phone = person.phones?.[0]?.number;
+        const addr = person.businessAddress || person.homeAddress;
+        const location = addr ? [addr.city, addr.state].filter(Boolean).join(", ") : null;
+
+        return {
+          user_id: userId,
+          source: "outlook",
+          external_id: person.id || `outlook-${email || person.displayName || Math.random()}`,
+          full_name: person.displayName || null,
+          email: email || null,
+          phone: phone || null,
+          company: person.companyName || null,
+          title: person.jobTitle || null,
+          linkedin_url: null,
+          location,
+          metadata: { outlook_id: person.id },
+        };
+      }).filter((c: any) => c.full_name || c.email);
+
+      if (contacts.length > 0) {
+        for (let i = 0; i < contacts.length; i += 500) {
+          const batch = contacts.slice(i, i + 500);
+          const { error: upsertErr } = await adminClient
+            .from("network_contacts")
+            .upsert(batch, { onConflict: "user_id,source,external_id" });
+          if (upsertErr) console.error("Outlook contacts upsert error:", upsertErr);
+        }
+      }
+
+      await adminClient
+        .from("network_connections")
+        .upsert({
+          user_id: userId,
+          source: "outlook_contacts",
+          status: "connected",
+          last_sync_at: new Date().toISOString(),
+          contact_count: contacts.length,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: "user_id,source" });
+
+      return new Response(JSON.stringify({ success: true, imported: contacts.length, source: "outlook_contacts" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -201,7 +314,6 @@ serve(async (req) => {
         });
       }
 
-      // Map LinkedIn CSV fields to our schema
       const contacts = csvContacts.slice(0, 5000).map((c: any, idx: number) => ({
         user_id: userId,
         source: "linkedin_csv",
@@ -237,11 +349,7 @@ serve(async (req) => {
           updated_at: new Date().toISOString(),
         }, { onConflict: "user_id,source" });
 
-      return new Response(JSON.stringify({ 
-        success: true, 
-        imported: contacts.length,
-        source: "linkedin"
-      }), {
+      return new Response(JSON.stringify({ success: true, imported: contacts.length, source: "linkedin" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -290,11 +398,7 @@ serve(async (req) => {
           updated_at: new Date().toISOString(),
         }, { onConflict: "user_id,source" });
 
-      return new Response(JSON.stringify({ 
-        success: true, 
-        imported: contacts.length,
-        source: "phone"
-      }), {
+      return new Response(JSON.stringify({ success: true, imported: contacts.length, source: "phone" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -311,16 +415,12 @@ serve(async (req) => {
         .select("source")
         .eq("user_id", userId);
 
-      // Count by source
       const counts: Record<string, number> = {};
       (contactCounts || []).forEach((c: any) => {
         counts[c.source] = (counts[c.source] || 0) + 1;
       });
 
-      return new Response(JSON.stringify({ 
-        connections: connections || [],
-        contact_counts: counts
-      }), {
+      return new Response(JSON.stringify({ connections: connections || [], contact_counts: counts }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -334,17 +434,8 @@ serve(async (req) => {
         });
       }
 
-      await adminClient
-        .from("network_contacts")
-        .delete()
-        .eq("user_id", userId)
-        .eq("source", source);
-
-      await adminClient
-        .from("network_connections")
-        .delete()
-        .eq("user_id", userId)
-        .eq("source", source);
+      await adminClient.from("network_contacts").delete().eq("user_id", userId).eq("source", source);
+      await adminClient.from("network_connections").delete().eq("user_id", userId).eq("source", source);
 
       return new Response(JSON.stringify({ success: true }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
