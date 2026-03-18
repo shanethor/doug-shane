@@ -54,6 +54,7 @@ export default function AdminDashboard() {
   const [newAgencyCode, setNewAgencyCode] = useState("");
   const [creatingAgency, setCreatingAgency] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [partnerLinks, setPartnerLinks] = useState<any[]>([]);
 
   useEffect(() => {
     if (!user || !isAdmin) return;
