@@ -19,6 +19,8 @@ import { useSearchParams } from "react-router-dom";
 import { useNavConfig, ALL_NAV_TABS } from "@/hooks/useNavConfig";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ConnectedAccountsStatus } from "@/components/ConnectedAccountsStatus";
+import { ProgressiveUnlocks } from "@/components/ProgressiveUnlocks";
+import { WhatAuraSees } from "@/components/WhatAuraSees";
 
 const AGENCY_FIELDS = [
   { key: "agency_phone", label: "Agency Phone", placeholder: "(555) 123-4567" },
