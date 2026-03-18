@@ -1674,7 +1674,12 @@ export default function Inbox({ emailOnly, embedded, selectedClientId, onClearSe
                 <Button variant="outline" size="sm" onClick={() => setSelectedEmail(null)}>
                   Close
                 </Button>
-                {selectedEmail.to_addresses?.length > 1 && (
+                {(() => {
+                  const userEmails = emailConnections.map((c) => c.email_address.toLowerCase());
+                  const allParticipants = new Set([selectedEmail.from_address, ...(selectedEmail.to_addresses || [])].map(a => a.toLowerCase()));
+                  userEmails.forEach(e => allParticipants.delete(e));
+                  return allParticipants.size > 1;
+                })() && (
                   <Button variant="outline" size="sm" onClick={() => handleReplyAll(selectedEmail)} className="gap-1.5">
                     <ReplyAll className="h-3.5 w-3.5" />
                     Reply All
