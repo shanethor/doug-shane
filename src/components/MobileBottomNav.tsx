@@ -13,6 +13,7 @@ import {
   HelpCircle,
   LogOut,
   HeartPulse,
+  Network,
 } from "lucide-react";
 import { useState } from "react";
 import {
