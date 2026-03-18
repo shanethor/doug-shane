@@ -709,7 +709,8 @@ export default function Settings() {
         </CardContent>
       </Card>
 
-      {/* Lead Intelligence Engine Connections */}
+      {/* Lead Intelligence Engine Connections - hide for property role */}
+      {!isProperty && (
       <Card className="mb-4 sm:mb-6" id="lead-engine-section">
         <CardHeader className="p-4 sm:p-6 pb-2 sm:pb-2">
           <CardTitle className="text-base sm:text-lg flex items-center gap-2">
