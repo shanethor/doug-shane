@@ -180,7 +180,7 @@ export default function Inbox({ emailOnly, embedded, selectedClientId, onClearSe
 
     const { data } = await supabase
       .from("synced_emails")
-      .select("id, from_address, from_name, to_addresses, subject, body_preview, body_html, is_read, received_at, synced_at, tags, client_id, client_link_source, has_attachments")
+      .select("id, from_address, from_name, to_addresses, subject, body_preview, body_html, is_read, received_at, synced_at, tags, client_id, client_link_source, has_attachments, connection_id")
       .eq("user_id", user.id)
       .order("received_at", { ascending: false })
       .limit(100);
@@ -190,6 +190,18 @@ export default function Inbox({ emailOnly, embedded, selectedClientId, onClearSe
     updateLastSyncedFromEmails(emails);
     return emails;
   }, [user, updateLastSyncedFromEmails]);
+
+  const fetchSentEmails = useCallback(async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from("email_drafts")
+      .select("id, subject, to_addresses, body_html, sent_at, status, created_at, scheduled_for")
+      .eq("user_id", user.id)
+      .in("status", ["sent", "scheduled"])
+      .order("created_at", { ascending: false })
+      .limit(50);
+    setSentEmails((data as SentEmail[]) || []);
+  }, [user]);
 
   const fetchAttachmentsForEmail = useCallback(async (emailId: string) => {
     const { data } = await supabase
