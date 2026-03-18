@@ -13,12 +13,18 @@ const roleCache: { userId: string | null; role: AppRole; ts: number } = {
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 export function useUserRole() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [role, setRole] = useState<AppRole>("advisor");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
+
+    // Stay loading until auth finishes hydrating
+    if (authLoading) {
+      setLoading(true);
+      return;
+    }
 
     if (!user) {
       setRole("advisor");
@@ -62,7 +68,7 @@ export function useUserRole() {
     return () => {
       cancelled = true;
     };
-  }, [user?.id]);
+  }, [user?.id, authLoading]);
 
   const isAdmin = !loading && role === "admin";
   const isAdvisor = !loading && role === "advisor";
