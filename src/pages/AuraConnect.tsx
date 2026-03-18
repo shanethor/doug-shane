@@ -19,6 +19,7 @@ import {
   Target, Handshake, Bell, RefreshCw, Settings, Flame,
   Crown, Link2, ChevronRight, Linkedin, Clock,
 } from "lucide-react";
+import { ConnectedAccountsStatus } from "@/components/ConnectedAccountsStatus";
 import { toast } from "sonner";
 import { getAuthHeaders } from "@/lib/auth-fetch";
 
