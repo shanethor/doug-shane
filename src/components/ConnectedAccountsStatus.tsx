@@ -207,6 +207,60 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
     return "text-muted-foreground";
   };
 
+  // ─── Fetch Gmail accounts for reconnect picker ───
+  const fetchGmailAccounts = async () => {
+    try {
+      const headers = await getAuthHeaders();
+      const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/email-oauth`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ action: "list" }),
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        const gmails = (data.connections || []).filter((c: any) => c.provider === "gmail");
+        setGmailAccounts(gmails.map((c: any) => ({ id: c.id, email: c.email_address })));
+      }
+    } catch {}
+  };
+
+  // ─── Reconnect a specific Gmail with contacts scope ───
+  const handleReconnectGmail = async (connectionId: string) => {
+    setShowReconnectPicker(false);
+    setActionLoading("contacts");
+    try {
+      const headers = await getAuthHeaders();
+      // Remove the old connection
+      await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/email-oauth`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ action: "remove", connection_id: connectionId }),
+      });
+      // Start new OAuth flow (which now includes contacts.readonly scope)
+      const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/email-oauth`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          action: "get_auth_url",
+          provider: "gmail",
+          redirect_uri: `${window.location.origin}/email-callback`,
+        }),
+      });
+      const data = await resp.json();
+      if (data.url) {
+        // Store return path so we come back to settings after reconnect
+        sessionStorage.setItem("email_connect_return", "/settings?section=network");
+        window.location.href = data.url;
+      } else {
+        toast.error("Failed to start reconnection");
+      }
+    } catch {
+      toast.error("Failed to reconnect Gmail");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   // ─── Google Contacts Sync ───
   const handleSyncGoogleContacts = async () => {
     setActionLoading("contacts");
@@ -219,10 +273,15 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
       });
       const data = await resp.json();
       if (!resp.ok) {
-        if (data.needs_reconnect) {
-          toast.error("Please reconnect Gmail with contacts permission", {
-            description: "Go to Email Settings → Remove Gmail → Reconnect. The new connection will include contacts access."
-          });
+        if (data.needs_reconnect || data.error?.includes("reconnect") || data.error?.includes("refresh")) {
+          // Show reconnect picker instead of a vague error
+          await fetchGmailAccounts();
+          if (gmailAccounts.length === 1) {
+            // Only one Gmail — reconnect automatically
+            handleReconnectGmail(gmailAccounts[0].id);
+          } else {
+            setShowReconnectPicker(true);
+          }
         } else {
           toast.error(data.error || "Failed to sync contacts");
         }
