@@ -84,7 +84,10 @@ serve(async (req) => {
         accessToken = await refreshGoogleToken(conn.refresh_token);
       } catch (e) {
         console.error("Token refresh failed:", e);
-        return new Response(JSON.stringify({ error: "Failed to refresh Google token. Please reconnect Gmail." }), {
+        return new Response(JSON.stringify({ 
+          error: "Gmail needs to be reconnected with contacts permission.",
+          needs_reconnect: true
+        }), {
           status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
