@@ -19,6 +19,7 @@ import {
   Target, Handshake, Bell, RefreshCw, Settings, Flame,
   Crown, Link2, ChevronRight, Linkedin, Clock,
 } from "lucide-react";
+import { ConnectedAccountsStatus } from "@/components/ConnectedAccountsStatus";
 import { toast } from "sonner";
 import { getAuthHeaders } from "@/lib/auth-fetch";
 
@@ -308,28 +309,8 @@ export default function AuraConnect() {
           </Button>
         </div>
 
-        {/* Connection Prompt Banner */}
-        {emailConnected === false && (
-          <Card className="border-warning/30 bg-warning/5">
-            <CardContent className="py-4 flex items-center gap-4">
-              <div className="rounded-full bg-warning/10 p-2.5 shrink-0">
-                <Link2 className="h-5 w-5 text-warning" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium">Connect your email & calendar</p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  AURA Connect works best with your email and calendar linked. Connect Gmail or Outlook to unlock relationship intelligence based on real interactions.
-                </p>
-              </div>
-              <Button size="sm" variant="default" className="gap-1.5 shrink-0" asChild>
-                <Link to="/settings?section=email">
-                  <Settings className="h-3.5 w-3.5" />
-                  Link Accounts
-                </Link>
-              </Button>
-            </CardContent>
-          </Card>
-        )}
+        {/* Block 2 — Connected Accounts Status (persistent) */}
+        <ConnectedAccountsStatus variant="compact" />
 
         {/* Stats Row */}
         {dashboard?.stats && (

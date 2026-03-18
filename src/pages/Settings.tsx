@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useUserRole } from "@/hooks/useUserRole";
 import { AppLayout } from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Building2, Mail, Save, User, BrainCircuit, Eye, EyeOff, Info, Loader2, Link2, Unlink, CheckCircle, Smartphone, GripVertical, Globe, Radar, Linkedin, Search, MessageSquare, FileText as FileTextIcon, Moon, Sun, Copy, InboxIcon } from "lucide-react";
+import { Building2, Mail, Save, User, BrainCircuit, Eye, EyeOff, Info, Loader2, Link2, Unlink, CheckCircle, Smartphone, GripVertical, Globe, Radar, Linkedin, Search, MessageSquare, FileText as FileTextIcon, Moon, Sun, Copy, InboxIcon, Network } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -17,6 +18,7 @@ import { getAuthHeaders } from "@/lib/auth-fetch";
 import { useSearchParams } from "react-router-dom";
 import { useNavConfig, ALL_NAV_TABS } from "@/hooks/useNavConfig";
 import { Checkbox } from "@/components/ui/checkbox";
+import { ConnectedAccountsStatus } from "@/components/ConnectedAccountsStatus";
 
 const AGENCY_FIELDS = [
   { key: "agency_phone", label: "Agency Phone", placeholder: "(555) 123-4567" },
@@ -37,6 +39,7 @@ type EmailConnection = {
 
 export default function Settings() {
   const { user } = useAuth();
+  const { role, loading: roleLoading, isAdmin, isAdvisor, isManager, isProperty } = useUserRole();
   const [searchParams] = useSearchParams();
   const { config: navConfig, setConfig: setNavConfig } = useNavConfig();
   const [values, setValues] = useState<Record<string, string>>({});
@@ -64,7 +67,7 @@ export default function Settings() {
       sessionStorage.setItem("email_connect_return", returnTo);
     }
     if (section && loaded) {
-      const targetId = section === "email" ? "email-accounts-section" : section === "calendar" ? "calendar-sync-section" : section === "lead-engine" ? "lead-engine-section" : null;
+      const targetId = section === "email" ? "email-accounts-section" : section === "calendar" ? "calendar-sync-section" : section === "lead-engine" ? "lead-engine-section" : section === "network" ? "network-connections-section" : null;
       if (targetId) {
         setTimeout(() => {
           document.getElementById(targetId)?.scrollIntoView({ behavior: "smooth" });
@@ -352,6 +355,8 @@ export default function Settings() {
         </CardContent>
       </Card>
 
+      {/* Agency Information - only for insurance roles */}
+      {!isProperty && (
       <Card className="mb-4 sm:mb-6">
         <CardHeader className="p-4 sm:p-6 pb-2 sm:pb-2">
           <CardTitle className="text-base sm:text-lg flex items-center gap-2">
@@ -393,6 +398,28 @@ export default function Settings() {
             <Save className="h-4 w-4" />
             {saving ? "Saving…" : "Save Changes"}
           </Button>
+        </CardContent>
+      </Card>
+      )}
+
+      {/* Network Connections */}
+      <Card className="mb-4 sm:mb-6" id="network-connections-section">
+        <CardHeader className="p-4 sm:p-6 pb-2 sm:pb-2">
+          <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+            <Network className="h-4 w-4 text-primary" />
+            Network Connections
+          </CardTitle>
+          <p className="text-xs text-muted-foreground mt-1">
+            Connect your accounts to power AURA Connect's relationship intelligence. All 3 required accounts = full briefs with warm paths.
+          </p>
+        </CardHeader>
+        <CardContent className="p-4 sm:p-6 pt-2 sm:pt-2 space-y-3">
+          <ConnectedAccountsStatus variant="full" />
+          <div className="rounded-md bg-muted/50 p-3 mt-3">
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
+              <strong>How it works:</strong> Email connects via Gmail/Outlook above. LinkedIn, Contacts, and Social integrations are coming soon — once available, connecting all required accounts will unlock full relationship briefs with warm introductions and confidence scoring.
+            </p>
+          </div>
         </CardContent>
       </Card>
 
@@ -682,7 +709,8 @@ export default function Settings() {
         </CardContent>
       </Card>
 
-      {/* Lead Intelligence Engine Connections */}
+      {/* Lead Intelligence Engine Connections - hide for property role */}
+      {!isProperty && (
       <Card className="mb-4 sm:mb-6" id="lead-engine-section">
         <CardHeader className="p-4 sm:p-6 pb-2 sm:pb-2">
           <CardTitle className="text-base sm:text-lg flex items-center gap-2">
@@ -772,7 +800,7 @@ export default function Settings() {
           </div>
         </CardContent>
       </Card>
-
+      )}
       {/* AI & Email Settings */}
       <Card>
         <CardHeader className="p-4 sm:p-6 pb-2 sm:pb-2">
