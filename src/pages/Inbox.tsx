@@ -674,6 +674,23 @@ export default function Inbox({ emailOnly, embedded, selectedClientId, onClearSe
     setComposeTo(email.from_address);
     setComposeSubject(email.subject.startsWith("Re:") ? email.subject : `Re: ${email.subject}`);
     setComposeBody("");
+    setScheduleDate("");
+    setScheduleTime("");
+    setComposeOpen(true);
+  };
+
+  const handleReplyAll = (email: SyncedEmail) => {
+    setSelectedEmail(null);
+    // Combine from_address + all to_addresses, excluding the user's own email
+    const userEmails = emailConnections.map((c) => c.email_address.toLowerCase());
+    const allAddresses = [email.from_address, ...(email.to_addresses || [])];
+    const uniqueRecipients = [...new Set(allAddresses.map((a) => a.toLowerCase()))]
+      .filter((a) => !userEmails.includes(a));
+    setComposeTo(uniqueRecipients.join(", "));
+    setComposeSubject(email.subject.startsWith("Re:") ? email.subject : `Re: ${email.subject}`);
+    setComposeBody("");
+    setScheduleDate("");
+    setScheduleTime("");
     setComposeOpen(true);
   };
 
