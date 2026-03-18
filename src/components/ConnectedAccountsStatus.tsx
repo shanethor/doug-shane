@@ -7,8 +7,12 @@ import { Link } from "react-router-dom";
 import {
   Mail, Users, Linkedin, Phone, Instagram,
   CheckCircle, Circle, Settings, Network, Loader2,
-  Upload, RefreshCw, Unlink, AlertTriangle,
+  Upload, RefreshCw, Unlink, AlertTriangle, Plus, ClipboardPaste,
 } from "lucide-react";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import { getAuthHeaders } from "@/lib/auth-fetch";
 import { toast } from "sonner";
 
