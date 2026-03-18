@@ -1,5 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useUserFeatures } from "@/hooks/useUserFeatures";
 import { useUnreadCount } from "@/hooks/useUnreadCount";
 import { useNavConfig, ALL_NAV_TABS } from "@/hooks/useNavConfig";
 import {
