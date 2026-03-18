@@ -7,8 +7,12 @@ import { Link } from "react-router-dom";
 import {
   Mail, Users, Linkedin, Phone, Instagram,
   CheckCircle, Circle, Settings, Network, Loader2,
-  Upload, RefreshCw, Unlink, AlertTriangle,
+  Upload, RefreshCw, Unlink, AlertTriangle, Plus, ClipboardPaste,
 } from "lucide-react";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import { getAuthHeaders } from "@/lib/auth-fetch";
 import { toast } from "sonner";
 
@@ -188,6 +192,10 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const phoneFileInputRef = useRef<HTMLInputElement>(null);
+  const [showReconnectPicker, setShowReconnectPicker] = useState(false);
+  const [gmailAccounts, setGmailAccounts] = useState<{id: string; email: string}[]>([]);
+  const [showPhoneDialog, setShowPhoneDialog] = useState(false);
+  const [pasteContacts, setPasteContacts] = useState("");
 
   const requiredAccounts = accounts.filter(a => a.level === "Required");
   const allRequiredConnected = requiredAccounts.every(a => a.connected);
@@ -197,6 +205,60 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
     if (level === "Required") return "text-destructive";
     if (level === "Recommended") return "text-warning";
     return "text-muted-foreground";
+  };
+
+  // ─── Fetch Gmail accounts for reconnect picker ───
+  const fetchGmailAccounts = async () => {
+    try {
+      const headers = await getAuthHeaders();
+      const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/email-oauth`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ action: "list" }),
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        const gmails = (data.connections || []).filter((c: any) => c.provider === "gmail");
+        setGmailAccounts(gmails.map((c: any) => ({ id: c.id, email: c.email_address })));
+      }
+    } catch {}
+  };
+
+  // ─── Reconnect a specific Gmail with contacts scope ───
+  const handleReconnectGmail = async (connectionId: string) => {
+    setShowReconnectPicker(false);
+    setActionLoading("contacts");
+    try {
+      const headers = await getAuthHeaders();
+      // Remove the old connection
+      await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/email-oauth`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ action: "remove", connection_id: connectionId }),
+      });
+      // Start new OAuth flow (which now includes contacts.readonly scope)
+      const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/email-oauth`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          action: "get_auth_url",
+          provider: "gmail",
+          redirect_uri: `${window.location.origin}/email-callback`,
+        }),
+      });
+      const data = await resp.json();
+      if (data.url) {
+        // Store return path so we come back to settings after reconnect
+        sessionStorage.setItem("email_connect_return", "/settings?section=network");
+        window.location.href = data.url;
+      } else {
+        toast.error("Failed to start reconnection");
+      }
+    } catch {
+      toast.error("Failed to reconnect Gmail");
+    } finally {
+      setActionLoading(null);
+    }
   };
 
   // ─── Google Contacts Sync ───
@@ -211,10 +273,15 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
       });
       const data = await resp.json();
       if (!resp.ok) {
-        if (data.needs_reconnect) {
-          toast.error("Please reconnect Gmail with contacts permission", {
-            description: "Go to Email Settings → Remove Gmail → Reconnect. The new connection will include contacts access."
-          });
+        if (data.needs_reconnect || data.error?.includes("reconnect") || data.error?.includes("refresh")) {
+          // Show reconnect picker instead of a vague error
+          await fetchGmailAccounts();
+          if (gmailAccounts.length === 1) {
+            // Only one Gmail — reconnect automatically
+            handleReconnectGmail(gmailAccounts[0].id);
+          } else {
+            setShowReconnectPicker(true);
+          }
         } else {
           toast.error(data.error || "Failed to sync contacts");
         }
@@ -262,34 +329,72 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
     }
   };
 
-  // ─── Phone Contacts (Contact Picker API or CSV) ───
-  const handlePhoneContacts = async () => {
-    // Try Contact Picker API first
-    if ("contacts" in navigator && (navigator as any).contacts?.select) {
-      setActionLoading("phone");
-      try {
-        const props = ["name", "email", "tel"];
-        const contacts = await (navigator as any).contacts.select(props, { multiple: true });
-        if (!contacts?.length) { setActionLoading(null); return; }
-        const headers = await getAuthHeaders();
-        const resp = await fetch(SYNC_URL, {
-          method: "POST",
-          headers,
-          body: JSON.stringify({ action: "import_phone_contacts", contacts }),
-        });
-        const data = await resp.json();
-        if (!resp.ok) { toast.error(data.error || "Failed"); return; }
-        toast.success(`Imported ${data.imported} phone contacts`);
-        refresh();
-      } catch (e: any) {
-        if (e.name !== "InvalidStateError") toast.error("Contact picker failed. Try uploading a CSV instead.");
-      } finally {
-        setActionLoading(null);
-      }
-    } else {
-      // Fallback to file upload
-      phoneFileInputRef.current?.click();
+  // ─── Phone Contacts — show dialog with options ───
+  const handlePhoneContacts = () => {
+    setShowPhoneDialog(true);
+  };
+
+  const handlePhoneContactPicker = async () => {
+    setShowPhoneDialog(false);
+    if (!("contacts" in navigator && (navigator as any).contacts?.select)) {
+      toast.error("Contact Picker not supported on this device. Use paste or file upload.");
+      return;
     }
+    setActionLoading("phone");
+    try {
+      const props = ["name", "email", "tel"];
+      const contacts = await (navigator as any).contacts.select(props, { multiple: true });
+      if (!contacts?.length) { setActionLoading(null); return; }
+      await submitPhoneContacts(contacts);
+    } catch (e: any) {
+      if (e.name !== "InvalidStateError") toast.error("Contact picker failed.");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handlePasteSubmit = async () => {
+    if (!pasteContacts.trim()) return;
+    setShowPhoneDialog(false);
+    setActionLoading("phone");
+    try {
+      // Parse pasted text: each line is "Name, email, phone" or just "Name phone"
+      const lines = pasteContacts.split("\n").filter(l => l.trim());
+      const contacts = lines.map(line => {
+        // Try to extract email and phone from the line
+        const emailMatch = line.match(/[\w.+-]+@[\w.-]+\.\w+/);
+        const phoneMatch = line.match(/[\d+() -]{7,}/);
+        const email = emailMatch?.[0] || null;
+        const phone = phoneMatch?.[0]?.trim() || null;
+        // Remove email and phone from line to get name
+        let name = line;
+        if (email) name = name.replace(email, "");
+        if (phone) name = name.replace(phoneMatch![0], "");
+        name = name.replace(/[,;|]+/g, " ").trim();
+        return { name: name || null, email, tel: phone };
+      }).filter(c => c.name || c.email || c.tel);
+
+      if (!contacts.length) { toast.error("No contacts found in text"); setActionLoading(null); return; }
+      await submitPhoneContacts(contacts);
+      setPasteContacts("");
+    } catch {
+      toast.error("Failed to parse contacts");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const submitPhoneContacts = async (contacts: any[]) => {
+    const headers = await getAuthHeaders();
+    const resp = await fetch(SYNC_URL, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ action: "import_phone_contacts", contacts }),
+    });
+    const data = await resp.json();
+    if (!resp.ok) { toast.error(data.error || "Failed"); return; }
+    toast.success(`Imported ${data.imported} phone contacts`);
+    refresh();
   };
 
   const handlePhoneFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -564,6 +669,105 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
           Upload the resulting CSV file here.
         </p>
       </div>
+
+      {/* Gmail Reconnect Picker Dialog */}
+      <Dialog open={showReconnectPicker} onOpenChange={setShowReconnectPicker}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Reconnect Gmail for Contacts</DialogTitle>
+            <DialogDescription>
+              Your Gmail connection needs to be refreshed to include contacts access. Select the account to reconnect:
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 mt-2">
+            {gmailAccounts.map((acc) => (
+              <Button
+                key={acc.id}
+                variant="outline"
+                className="w-full justify-start gap-2 h-auto py-3"
+                onClick={() => handleReconnectGmail(acc.id)}
+              >
+                <Mail className="h-4 w-4 text-primary shrink-0" />
+                <span className="text-sm">{acc.email}</span>
+              </Button>
+            ))}
+            {gmailAccounts.length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-4">No Gmail accounts found.</p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Phone Contacts Import Dialog */}
+      <Dialog open={showPhoneDialog} onOpenChange={setShowPhoneDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Import Phone Contacts</DialogTitle>
+            <DialogDescription>Choose how to add your contacts</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 mt-2">
+            {/* Option 1: Contact Picker (mobile) */}
+            {"contacts" in navigator && (
+              <Button
+                variant="outline"
+                className="w-full justify-start gap-3 h-auto py-3"
+                onClick={handlePhoneContactPicker}
+              >
+                <Phone className="h-4 w-4 text-primary shrink-0" />
+                <div className="text-left">
+                  <p className="text-sm font-medium">Select from Phone</p>
+                  <p className="text-[11px] text-muted-foreground">Pick contacts from your device (Chrome/Android)</p>
+                </div>
+              </Button>
+            )}
+
+            {/* Option 2: CSV/vCard upload */}
+            <Button
+              variant="outline"
+              className="w-full justify-start gap-3 h-auto py-3"
+              onClick={() => { setShowPhoneDialog(false); phoneFileInputRef.current?.click(); }}
+            >
+              <Upload className="h-4 w-4 text-primary shrink-0" />
+              <div className="text-left">
+                <p className="text-sm font-medium">Upload CSV or vCard</p>
+                <p className="text-[11px] text-muted-foreground">Export contacts from your phone as .csv or .vcf and upload</p>
+              </div>
+            </Button>
+
+            {/* Option 3: Paste */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <ClipboardPaste className="h-4 w-4 text-primary shrink-0" />
+                <p className="text-sm font-medium">Paste Contacts</p>
+              </div>
+              <Textarea
+                placeholder={"John Smith, john@email.com, (555) 123-4567\nJane Doe, jane@company.com\nBob Jones, 555-987-6543"}
+                value={pasteContacts}
+                onChange={(e) => setPasteContacts(e.target.value)}
+                rows={4}
+                className="text-xs"
+              />
+              <p className="text-[10px] text-muted-foreground">One contact per line: Name, email, phone (any order)</p>
+              <Button
+                size="sm"
+                className="w-full gap-1"
+                disabled={!pasteContacts.trim()}
+                onClick={handlePasteSubmit}
+              >
+                <Plus className="h-3 w-3" />
+                Import Pasted Contacts
+              </Button>
+            </div>
+
+            {/* Tip about Google Contacts */}
+            <div className="rounded-md bg-muted/50 p-2.5">
+              <p className="text-[11px] text-muted-foreground leading-relaxed">
+                <strong>Tip:</strong> If your phone contacts sync to Google, they'll be imported automatically when you connect Google Contacts above.
+              </p>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
