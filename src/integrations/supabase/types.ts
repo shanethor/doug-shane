@@ -2174,6 +2174,33 @@ export type Database = {
         }
         Relationships: []
       }
+      user_features: {
+        Row: {
+          feature: string
+          granted_at: string
+          granted_by: string | null
+          id: string
+          notes: string | null
+          user_id: string
+        }
+        Insert: {
+          feature: string
+          granted_at?: string
+          granted_by?: string | null
+          id?: string
+          notes?: string | null
+          user_id: string
+        }
+        Update: {
+          feature?: string
+          granted_at?: string
+          granted_by?: string | null
+          id?: string
+          notes?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_log_access: {
         Row: {
           granted_at: string
