@@ -124,6 +124,7 @@ const App = () => (
           <Route path="/email-callback" element={<ProtectedRoute><EmailCallback /></ProtectedRoute>} />
           <Route path="/calendar" element={<Navigate to="/email" replace />} />
           <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+          <Route path="/connect" element={<ProtectedRoute><AuraConnect /></ProtectedRoute>} />
           <Route path="/loss-runs" element={<ProtectedRoute><LossRunDashboard /></ProtectedRoute>} />
           <Route path="/loss-runs/new" element={<ProtectedRoute><LossRunNew /></ProtectedRoute>} />
           <Route path="/loss-runs/settings" element={<ProtectedRoute><CarrierDirectory /></ProtectedRoute>} />
