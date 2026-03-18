@@ -646,12 +646,19 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
                   <AlertTriangle className="h-3 w-3 text-warning shrink-0" />
                   Connect Gmail first
                 </p>
+              ) : a.id === "outlook_contacts" && !a.canConnect ? (
+                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                  <AlertTriangle className="h-3 w-3 text-warning shrink-0" />
+                  Connect Outlook email first
+                </p>
               ) : a.id === "social" ? (
                 <p className="text-xs text-muted-foreground">Coming soon</p>
               ) : a.id === "linkedin" ? (
                 <p className="text-xs text-muted-foreground">Upload CSV or scrape profile</p>
               ) : a.id === "phone" ? (
                 <p className="text-xs text-muted-foreground">Use Contact Picker or upload CSV/vCard</p>
+              ) : a.id === "outlook_contacts" ? (
+                <p className="text-xs text-muted-foreground">Sync contacts from Outlook/Office 365</p>
               ) : (
                 <p className="text-xs text-muted-foreground">Not connected</p>
               )}
