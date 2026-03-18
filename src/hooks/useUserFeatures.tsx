@@ -33,11 +33,13 @@ export function useUserFeatures() {
 
     setLoading(true);
 
-    supabase
-      .from("user_features")
-      .select("feature")
-      .eq("user_id", user.id)
-      .then(({ data, error }) => {
+    const loadFeatures = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("user_features")
+          .select("feature")
+          .eq("user_id", user.id);
+
         if (cancelled) return;
 
         const found = error ? [] : (data || []).map((d) => d.feature as FeatureFlag);
@@ -46,12 +48,14 @@ export function useUserFeatures() {
         featureCache.ts = Date.now();
         setFeatures(found);
         setLoading(false);
-      })
-      .catch(() => {
+      } catch {
         if (cancelled) return;
         setFeatures([]);
         setLoading(false);
-      });
+      }
+    };
+
+    loadFeatures();
 
     return () => {
       cancelled = true;

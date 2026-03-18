@@ -34,12 +34,14 @@ export function useUserRole() {
 
     setLoading(true);
 
-    supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", user.id)
-      .limit(1)
-      .then(({ data, error }) => {
+    const loadRole = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", user.id)
+          .limit(1);
+
         if (cancelled) return;
 
         const foundRole = error ? "advisor" : ((data?.[0]?.role as AppRole) || "advisor");
@@ -48,12 +50,14 @@ export function useUserRole() {
         roleCache.ts = Date.now();
         setRole(foundRole);
         setLoading(false);
-      })
-      .catch(() => {
+      } catch {
         if (cancelled) return;
         setRole("advisor");
         setLoading(false);
-      });
+      }
+    };
+
+    loadRole();
 
     return () => {
       cancelled = true;
