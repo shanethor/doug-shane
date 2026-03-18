@@ -11,13 +11,14 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import {
   Bell, Mail, GitBranch, FileText, Check, CheckCheck, Sparkles,
-  Send, Loader2, Inbox as InboxIcon, MailOpen, RefreshCw, User, Reply, ArrowLeft, X, Search, SlidersHorizontal, Plus,
-  Paperclip, Download, Zap, ExternalLink
+  Send, Loader2, Inbox as InboxIcon, MailOpen, RefreshCw, User, Reply, ReplyAll, ArrowLeft, X, Search, SlidersHorizontal, Plus,
+  Paperclip, Download, Zap, ExternalLink, Clock, SendHorizonal, History
 } from "lucide-react";
 import { formatDistanceToNow, format } from "date-fns";
 import { getAuthHeaders } from "@/lib/auth-fetch";
@@ -69,6 +70,18 @@ type SyncedEmail = {
   client_id?: string | null;
   client_link_source?: string | null;
   has_attachments?: boolean;
+  connection_id?: string;
+};
+
+type SentEmail = {
+  id: string;
+  subject: string;
+  to_addresses: string[];
+  body_html: string;
+  sent_at: string | null;
+  status: string;
+  created_at: string;
+  scheduled_for?: string | null;
 };
 
 type EmailConnection = {
@@ -118,6 +131,9 @@ export default function Inbox({ emailOnly, embedded, selectedClientId, onClearSe
   // General search
   const [searchQuery, setSearchQuery] = useState("");
 
+  // Account (inbox) filter
+  const [selectedAccountId, setSelectedAccountId] = useState<string>("all");
+
   const [selectedEmail, setSelectedEmail] = useState<SyncedEmail | null>(null);
   const [selectedEmailAttachments, setSelectedEmailAttachments] = useState<EmailAttachment[]>([]);
   const [downloadingAttachment, setDownloadingAttachment] = useState<string | null>(null);
@@ -138,6 +154,13 @@ export default function Inbox({ emailOnly, embedded, selectedClientId, onClearSe
   const [processingIntake, setProcessingIntake] = useState(false);
   const [intakeResult, setIntakeResult] = useState<{ lead_id: string; is_new: boolean; intake_link_sent: boolean; documents_ingested: number; line_type_detected?: string | null; extracted_fields?: number } | null>(null);
 
+  // Schedule send
+  const [scheduleDate, setScheduleDate] = useState("");
+  const [scheduleTime, setScheduleTime] = useState("");
+
+  // Sent history
+  const [sentEmails, setSentEmails] = useState<SentEmail[]>([]);
+
   const updateLastSyncedFromEmails = useCallback((emails: SyncedEmail[]) => {
     const syncedTimes = emails
       .map((e) => e.synced_at)
@@ -157,7 +180,7 @@ export default function Inbox({ emailOnly, embedded, selectedClientId, onClearSe
 
     const { data } = await supabase
       .from("synced_emails")
-      .select("id, from_address, from_name, to_addresses, subject, body_preview, body_html, is_read, received_at, synced_at, tags, client_id, client_link_source, has_attachments")
+      .select("id, from_address, from_name, to_addresses, subject, body_preview, body_html, is_read, received_at, synced_at, tags, client_id, client_link_source, has_attachments, connection_id")
       .eq("user_id", user.id)
       .order("received_at", { ascending: false })
       .limit(100);
@@ -167,6 +190,18 @@ export default function Inbox({ emailOnly, embedded, selectedClientId, onClearSe
     updateLastSyncedFromEmails(emails);
     return emails;
   }, [user, updateLastSyncedFromEmails]);
+
+  const fetchSentEmails = useCallback(async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from("email_drafts")
+      .select("id, subject, to_addresses, body_html, sent_at, status, created_at, scheduled_for")
+      .eq("user_id", user.id)
+      .in("status", ["sent", "scheduled"])
+      .order("created_at", { ascending: false })
+      .limit(50);
+    setSentEmails((data as SentEmail[]) || []);
+  }, [user]);
 
   const fetchAttachmentsForEmail = useCallback(async (emailId: string) => {
     const { data } = await supabase
@@ -302,7 +337,7 @@ export default function Inbox({ emailOnly, embedded, selectedClientId, onClearSe
         .limit(100),
       supabase
         .from("synced_emails")
-        .select("id, from_address, from_name, to_addresses, subject, body_preview, body_html, is_read, received_at, synced_at, tags, client_id, client_link_source, has_attachments")
+        .select("id, from_address, from_name, to_addresses, subject, body_preview, body_html, is_read, received_at, synced_at, tags, client_id, client_link_source, has_attachments, connection_id")
         .eq("user_id", user.id)
         .order("received_at", { ascending: false })
         .limit(100),
@@ -327,6 +362,7 @@ export default function Inbox({ emailOnly, embedded, selectedClientId, onClearSe
       setSendVia(conns[0].id);
       setSendViaInitialized(true);
     }
+    await fetchSentEmails();
     setLoading(false);
   };
 
@@ -638,6 +674,23 @@ export default function Inbox({ emailOnly, embedded, selectedClientId, onClearSe
     setComposeTo(email.from_address);
     setComposeSubject(email.subject.startsWith("Re:") ? email.subject : `Re: ${email.subject}`);
     setComposeBody("");
+    setScheduleDate("");
+    setScheduleTime("");
+    setComposeOpen(true);
+  };
+
+  const handleReplyAll = (email: SyncedEmail) => {
+    setSelectedEmail(null);
+    // Combine from_address + all to_addresses, excluding the user's own email
+    const userEmails = emailConnections.map((c) => c.email_address.toLowerCase());
+    const allAddresses = [email.from_address, ...(email.to_addresses || [])];
+    const uniqueRecipients = [...new Set(allAddresses.map((a) => a.toLowerCase()))]
+      .filter((a) => !userEmails.includes(a));
+    setComposeTo(uniqueRecipients.join(", "));
+    setComposeSubject(email.subject.startsWith("Re:") ? email.subject : `Re: ${email.subject}`);
+    setComposeBody("");
+    setScheduleDate("");
+    setScheduleTime("");
     setComposeOpen(true);
   };
 
@@ -779,8 +832,17 @@ export default function Inbox({ emailOnly, embedded, selectedClientId, onClearSe
     });
   };
 
+  // Apply account (inbox) filter
+  const applyAccountFilter = (items: UnifiedItem[]) => {
+    if (selectedAccountId === "all") return items;
+    return items.filter((u) => {
+      if (u.kind !== "email") return false;
+      return (u.raw as SyncedEmail).connection_id === selectedAccountId;
+    });
+  };
+
   const clientFiltered = applyClientFolderFilter(tabFiltered);
-  const filtered = applySearchFilter(applyNonInsuranceFilter(applyInsuranceFilters(clientFiltered)));
+  const filtered = applySearchFilter(applyNonInsuranceFilter(applyAccountFilter(applyInsuranceFilters(clientFiltered))));
 
   const unreadCount = applyClientFolderFilter(baseUnified).filter((u) => !u.is_read).length;
 
@@ -817,11 +879,45 @@ export default function Inbox({ emailOnly, embedded, selectedClientId, onClearSe
       toast.error("Please fill in To and Subject");
       return;
     }
+
+    const recipients = composeTo.split(",").map((e) => e.trim());
+    const htmlBody = composeBody.replace(/\n/g, "<br/>");
+
+    // Schedule send: save to email_drafts with status=scheduled
+    if (scheduleDate && scheduleTime) {
+      const scheduledFor = new Date(`${scheduleDate}T${scheduleTime}`).toISOString();
+      setSending(true);
+      try {
+        const { error } = await supabase.from("email_drafts").insert({
+          user_id: user!.id,
+          to_addresses: recipients,
+          subject: composeSubject,
+          body_html: htmlBody,
+          status: "scheduled",
+          scheduled_for: scheduledFor,
+          connection_id: sendVia !== "aura" ? sendVia : null,
+        } as any);
+        if (error) throw error;
+        toast.success(`Email scheduled for ${format(new Date(scheduledFor), "MMM d 'at' h:mm a")}`);
+        await fetchSentEmails();
+        setComposeOpen(false);
+        setComposeTo("");
+        setComposeSubject("");
+        setComposeBody("");
+        setAiPrompt("");
+        setScheduleDate("");
+        setScheduleTime("");
+      } catch (err: any) {
+        toast.error(err.message || "Failed to schedule email");
+      } finally {
+        setSending(false);
+      }
+      return;
+    }
+
     setSending(true);
     try {
       const headers = await getAuthHeaders();
-      const recipients = composeTo.split(",").map((e) => e.trim());
-      const htmlBody = composeBody.replace(/\n/g, "<br/>");
 
       if (sendVia === "aura") {
         const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-email`, {
@@ -850,11 +946,25 @@ export default function Inbox({ emailOnly, embedded, selectedClientId, onClearSe
         toast.success(`Sent from ${data.sent_from}`);
       }
 
+      // Save to sent history
+      await supabase.from("email_drafts").insert({
+        user_id: user!.id,
+        to_addresses: recipients,
+        subject: composeSubject,
+        body_html: htmlBody,
+        status: "sent",
+        sent_at: new Date().toISOString(),
+        connection_id: sendVia !== "aura" ? sendVia : null,
+      } as any);
+      await fetchSentEmails();
+
       setComposeOpen(false);
       setComposeTo("");
       setComposeSubject("");
       setComposeBody("");
       setAiPrompt("");
+      setScheduleDate("");
+      setScheduleTime("");
     } catch (err: any) {
       toast.error(err.message || "Failed to send email");
     } finally {
@@ -980,9 +1090,28 @@ export default function Inbox({ emailOnly, embedded, selectedClientId, onClearSe
         </Sheet>
       </div>
 
-      {/* Tiny pill toggle: All / Unread */}
+      {/* Account filter (multiple inboxes) */}
+      {emailConnections.length > 1 && (
+        <div className="flex items-center gap-1.5 px-1 mb-1.5">
+          {[{ id: "all", label: "All Inboxes" }, ...emailConnections.map((c) => ({ id: c.id, label: c.email_address.split("@")[0] }))].map((acct) => (
+            <button
+              key={acct.id}
+              onClick={() => setSelectedAccountId(acct.id)}
+              className={`px-2.5 py-0.5 rounded-full text-[10px] font-medium transition-colors ${
+                selectedAccountId === acct.id
+                  ? "bg-accent text-accent-foreground"
+                  : "bg-muted/60 text-muted-foreground"
+              }`}
+            >
+              {acct.label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Tiny pill toggle: All / Unread / Sent */}
       <div className="flex items-center gap-1 px-1 mb-2">
-        {["all", "unread"].map((t) => (
+        {["all", "unread", "sent"].map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -992,7 +1121,7 @@ export default function Inbox({ emailOnly, embedded, selectedClientId, onClearSe
                 : "bg-muted text-muted-foreground"
             }`}
           >
-            {t === "all" ? "All" : `Unread${unreadCount > 0 ? ` (${unreadCount})` : ""}`}
+            {t === "all" ? "All" : t === "unread" ? `Unread${unreadCount > 0 ? ` (${unreadCount})` : ""}` : "Sent"}
           </button>
         ))}
         {!emailOnly && (
@@ -1009,9 +1138,51 @@ export default function Inbox({ emailOnly, embedded, selectedClientId, onClearSe
         )}
       </div>
 
-      {/* Email list — flat cells, maximum space */}
+      {/* Email list / Sent list */}
       <ScrollArea className="flex-1 min-h-0">
-        {filtered.length === 0 ? (
+        {tab === "sent" ? (
+          /* Sent history */
+          sentEmails.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+              <History className="h-8 w-8 mb-2 opacity-40" />
+              <p className="text-xs">No sent emails yet</p>
+            </div>
+          ) : (
+            <div className="divide-y divide-border">
+              {sentEmails.map((sent) => (
+                <div key={sent.id} className="flex items-start gap-2.5 px-2 py-2.5">
+                  <div className="w-2 pt-2 shrink-0">
+                    {sent.status === "scheduled" ? (
+                      <Clock className="h-3 w-3 text-amber-500" />
+                    ) : (
+                      <Check className="h-3 w-3 text-emerald-500" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-sm truncate text-foreground/80">
+                        To: {sent.to_addresses?.join(", ")}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground shrink-0">
+                        {formatDistanceToNow(new Date(sent.sent_at || sent.created_at), { addSuffix: false })}
+                      </span>
+                    </div>
+                    <p className="text-xs truncate mt-0.5 text-muted-foreground">
+                      {sent.subject || "(no subject)"}
+                    </p>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <Badge variant="outline" className={`text-[9px] px-1.5 py-0 h-4 ${
+                        sent.status === "scheduled" ? "border-amber-400/50 text-amber-600" : "border-emerald-400/50 text-emerald-600"
+                      }`}>
+                        {sent.status === "scheduled" ? `Scheduled ${sent.scheduled_for ? format(new Date(sent.scheduled_for), "MMM d, h:mm a") : ""}` : "Sent"}
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )
+        ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
             <MailOpen className="h-8 w-8 mb-2 opacity-40" />
             <p className="text-xs">
@@ -1042,13 +1213,11 @@ export default function Inbox({ emailOnly, embedded, selectedClientId, onClearSe
                   }`}
                   onClick={() => handleUnifiedClick(item)}
                 >
-                  {/* Unread dot */}
                   <div className="w-2 pt-2 shrink-0">
                     {!item.is_read && <div className="h-2 w-2 rounded-full bg-primary" />}
                   </div>
 
                   <div className="flex-1 min-w-0">
-                    {/* Row 1: Sender (bold) + time */}
                     <div className="flex items-center justify-between gap-2">
                       <span className={`text-sm truncate ${!item.is_read ? "font-semibold text-foreground" : "text-foreground/80"}`}>
                         {email ? senderName : item.label}
@@ -1058,12 +1227,10 @@ export default function Inbox({ emailOnly, embedded, selectedClientId, onClearSe
                       </span>
                     </div>
 
-                    {/* Row 2: Subject */}
                     <p className={`text-xs truncate mt-0.5 ${!item.is_read ? "text-foreground" : "text-muted-foreground"}`}>
                       {subject || "(no subject)"}
                     </p>
 
-                    {/* Row 3: Preview + optional tag chip */}
                     <div className="flex items-center gap-1.5 mt-0.5">
                       {preview && (
                         <p className="text-[11px] text-muted-foreground truncate flex-1">{decodeHtmlEntities(preview)}</p>
@@ -1126,6 +1293,7 @@ export default function Inbox({ emailOnly, embedded, selectedClientId, onClearSe
           {[
             { value: "all", label: "All" },
             { value: "unread", label: `Unread${unreadCount > 0 ? ` (${unreadCount})` : ""}` },
+            { value: "sent", label: "Sent" },
             ...(!emailOnly ? [
               { value: "emails", label: "Emails" },
               { value: "pipeline", label: "Pipeline" },
@@ -1168,6 +1336,26 @@ export default function Inbox({ emailOnly, embedded, selectedClientId, onClearSe
         )}
       </div>
 
+      {/* Account filter (multiple inboxes) - desktop */}
+      {emailConnections.length > 1 && (
+        <div className="mb-3 flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">Inbox:</span>
+          {[{ id: "all", label: "All Accounts" }, ...emailConnections.map((c) => ({ id: c.id, label: `${c.provider === "gmail" ? "Gmail" : "Outlook"} (${c.email_address})` }))].map((acct) => (
+            <button
+              key={acct.id}
+              onClick={() => setSelectedAccountId(acct.id)}
+              className={`px-3 py-1 rounded-full text-[11px] font-medium transition-colors ${
+                selectedAccountId === acct.id
+                  ? "bg-accent text-accent-foreground"
+                  : "bg-muted text-muted-foreground hover:bg-muted/80"
+              }`}
+            >
+              {acct.label}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Insurance filter chips + hide non-insurance toggle (inline on desktop) */}
       <div className="mb-3 flex items-center gap-3 flex-wrap">
         <EmailFilterChips activeTags={activeTags} onTagsChange={setActiveTags} />
@@ -1183,9 +1371,54 @@ export default function Inbox({ emailOnly, embedded, selectedClientId, onClearSe
         </button>
       </div>
 
-      {/* Email list */}
+      {/* Email list / Sent list */}
       <ScrollArea className="h-[calc(100vh-280px)]">
-        {filtered.length === 0 ? (
+        {tab === "sent" ? (
+          sentEmails.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
+              <History className="h-10 w-10 mb-3 opacity-40" />
+              <p className="text-sm">No sent emails yet</p>
+            </div>
+          ) : (
+            <div className="space-y-1">
+              {sentEmails.map((sent) => (
+                <div
+                  key={sent.id}
+                  className="rounded-lg border px-4 py-3 transition-colors hover:bg-muted/50 opacity-90"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="mt-0.5 shrink-0">
+                      {sent.status === "scheduled" ? (
+                        <Clock className="h-4 w-4 text-amber-500" />
+                      ) : (
+                        <Send className="h-4 w-4 text-emerald-500" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm truncate">To: {sent.to_addresses?.join(", ")}</p>
+                        <Badge variant="outline" className={`text-[10px] shrink-0 ${
+                          sent.status === "scheduled" ? "border-amber-400/50 text-amber-600" : "border-emerald-400/50 text-emerald-600"
+                        }`}>
+                          {sent.status === "scheduled" ? "Scheduled" : "Sent"}
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground truncate mt-0.5">{sent.subject || "(no subject)"}</p>
+                      {sent.scheduled_for && sent.status === "scheduled" && (
+                        <p className="text-[10px] text-amber-600 mt-0.5">
+                          Scheduled for {format(new Date(sent.scheduled_for), "MMM d 'at' h:mm a")}
+                        </p>
+                      )}
+                      <span className="text-[10px] text-muted-foreground mt-1 block">
+                        {formatDistanceToNow(new Date(sent.sent_at || sent.created_at), { addSuffix: true })}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )
+        ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
             <MailOpen className="h-10 w-10 mb-3 opacity-40" />
             <p className="text-sm">
@@ -1441,6 +1674,12 @@ export default function Inbox({ emailOnly, embedded, selectedClientId, onClearSe
                 <Button variant="outline" size="sm" onClick={() => setSelectedEmail(null)}>
                   Close
                 </Button>
+                {selectedEmail.to_addresses?.length > 1 && (
+                  <Button variant="outline" size="sm" onClick={() => handleReplyAll(selectedEmail)} className="gap-1.5">
+                    <ReplyAll className="h-3.5 w-3.5" />
+                    Reply All
+                  </Button>
+                )}
                 <Button size="sm" onClick={() => handleReply(selectedEmail)} className="gap-1.5">
                   <Reply className="h-3.5 w-3.5" />
                   Reply
@@ -1531,11 +1770,44 @@ export default function Inbox({ emailOnly, embedded, selectedClientId, onClearSe
               />
             </div>
 
+            {/* Schedule send */}
+            <div className="space-y-2">
+              <Label className="text-xs flex items-center gap-1.5">
+                <Clock className="h-3 w-3" />
+                Schedule Send <span className="text-muted-foreground">(optional)</span>
+              </Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="date"
+                  value={scheduleDate}
+                  onChange={(e) => setScheduleDate(e.target.value)}
+                  className="h-8 text-xs flex-1"
+                  min={format(new Date(), "yyyy-MM-dd")}
+                />
+                <Input
+                  type="time"
+                  value={scheduleTime}
+                  onChange={(e) => setScheduleTime(e.target.value)}
+                  className="h-8 text-xs w-28"
+                />
+                {(scheduleDate || scheduleTime) && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 shrink-0"
+                    onClick={() => { setScheduleDate(""); setScheduleTime(""); }}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                )}
+              </div>
+            </div>
+
             <div className="flex justify-end gap-2 pt-2">
               <Button variant="outline" size="sm" onClick={() => setComposeOpen(false)}>Cancel</Button>
               <Button size="sm" onClick={handleSendEmail} disabled={sending} className="gap-1.5">
-                {sending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
-                Send Email
+                {sending ? <Loader2 className="h-3 w-3 animate-spin" /> : scheduleDate && scheduleTime ? <Clock className="h-3 w-3" /> : <Send className="h-3 w-3" />}
+                {scheduleDate && scheduleTime ? "Schedule" : "Send Email"}
               </Button>
             </div>
           </div>

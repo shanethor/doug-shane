@@ -1,0 +1,2 @@
+ALTER TABLE public.email_drafts ADD COLUMN IF NOT EXISTS scheduled_for timestamptz DEFAULT NULL;
+ALTER TABLE public.email_drafts ADD COLUMN IF NOT EXISTS connection_id uuid REFERENCES public.email_connections(id) DEFAULT NULL;
