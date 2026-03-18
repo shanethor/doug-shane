@@ -870,11 +870,45 @@ export default function Inbox({ emailOnly, embedded, selectedClientId, onClearSe
       toast.error("Please fill in To and Subject");
       return;
     }
+
+    const recipients = composeTo.split(",").map((e) => e.trim());
+    const htmlBody = composeBody.replace(/\n/g, "<br/>");
+
+    // Schedule send: save to email_drafts with status=scheduled
+    if (scheduleDate && scheduleTime) {
+      const scheduledFor = new Date(`${scheduleDate}T${scheduleTime}`).toISOString();
+      setSending(true);
+      try {
+        const { error } = await supabase.from("email_drafts").insert({
+          user_id: user!.id,
+          to_addresses: recipients,
+          subject: composeSubject,
+          body_html: htmlBody,
+          status: "scheduled",
+          scheduled_for: scheduledFor,
+          connection_id: sendVia !== "aura" ? sendVia : null,
+        } as any);
+        if (error) throw error;
+        toast.success(`Email scheduled for ${format(new Date(scheduledFor), "MMM d 'at' h:mm a")}`);
+        await fetchSentEmails();
+        setComposeOpen(false);
+        setComposeTo("");
+        setComposeSubject("");
+        setComposeBody("");
+        setAiPrompt("");
+        setScheduleDate("");
+        setScheduleTime("");
+      } catch (err: any) {
+        toast.error(err.message || "Failed to schedule email");
+      } finally {
+        setSending(false);
+      }
+      return;
+    }
+
     setSending(true);
     try {
       const headers = await getAuthHeaders();
-      const recipients = composeTo.split(",").map((e) => e.trim());
-      const htmlBody = composeBody.replace(/\n/g, "<br/>");
 
       if (sendVia === "aura") {
         const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-email`, {
@@ -903,11 +937,25 @@ export default function Inbox({ emailOnly, embedded, selectedClientId, onClearSe
         toast.success(`Sent from ${data.sent_from}`);
       }
 
+      // Save to sent history
+      await supabase.from("email_drafts").insert({
+        user_id: user!.id,
+        to_addresses: recipients,
+        subject: composeSubject,
+        body_html: htmlBody,
+        status: "sent",
+        sent_at: new Date().toISOString(),
+        connection_id: sendVia !== "aura" ? sendVia : null,
+      } as any);
+      await fetchSentEmails();
+
       setComposeOpen(false);
       setComposeTo("");
       setComposeSubject("");
       setComposeBody("");
       setAiPrompt("");
+      setScheduleDate("");
+      setScheduleTime("");
     } catch (err: any) {
       toast.error(err.message || "Failed to send email");
     } finally {
