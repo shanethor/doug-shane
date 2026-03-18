@@ -130,6 +130,7 @@ const App = () => (
           <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
           <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
           <Route path="/deck" element={<Deck />} />
+          <Route path="/home" element={<LandingPage />} />
           <Route path="/olddeck" element={<ProtectedRoute><OldDeck /></ProtectedRoute>} />
           <Route path="/pdf-diagnostic" element={<PdfDiagnostic />} />
           <Route path="/form-test" element={<ProtectedRoute><FormTest /></ProtectedRoute>} />
