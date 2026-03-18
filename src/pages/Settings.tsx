@@ -39,6 +39,7 @@ type EmailConnection = {
 
 export default function Settings() {
   const { user } = useAuth();
+  const { role, loading: roleLoading, isAdmin, isAdvisor, isManager, isProperty } = useUserRole();
   const [searchParams] = useSearchParams();
   const { config: navConfig, setConfig: setNavConfig } = useNavConfig();
   const [values, setValues] = useState<Record<string, string>>({});
