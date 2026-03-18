@@ -832,8 +832,17 @@ export default function Inbox({ emailOnly, embedded, selectedClientId, onClearSe
     });
   };
 
+  // Apply account (inbox) filter
+  const applyAccountFilter = (items: UnifiedItem[]) => {
+    if (selectedAccountId === "all") return items;
+    return items.filter((u) => {
+      if (u.kind !== "email") return false;
+      return (u.raw as SyncedEmail).connection_id === selectedAccountId;
+    });
+  };
+
   const clientFiltered = applyClientFolderFilter(tabFiltered);
-  const filtered = applySearchFilter(applyNonInsuranceFilter(applyInsuranceFilters(clientFiltered)));
+  const filtered = applySearchFilter(applyNonInsuranceFilter(applyAccountFilter(applyInsuranceFilters(clientFiltered))));
 
   const unreadCount = applyClientFolderFilter(baseUnified).filter((u) => !u.is_read).length;
 
