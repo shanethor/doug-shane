@@ -67,7 +67,7 @@ export default function Settings() {
       sessionStorage.setItem("email_connect_return", returnTo);
     }
     if (section && loaded) {
-      const targetId = section === "email" ? "email-accounts-section" : section === "calendar" ? "calendar-sync-section" : section === "lead-engine" ? "lead-engine-section" : null;
+      const targetId = section === "email" ? "email-accounts-section" : section === "calendar" ? "calendar-sync-section" : section === "lead-engine" ? "lead-engine-section" : section === "network" ? "network-connections-section" : null;
       if (targetId) {
         setTimeout(() => {
           document.getElementById(targetId)?.scrollIntoView({ behavior: "smooth" });
