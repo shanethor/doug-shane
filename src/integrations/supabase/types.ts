@@ -737,9 +737,11 @@ export type Database = {
       email_drafts: {
         Row: {
           body_html: string
+          connection_id: string | null
           created_at: string
           id: string
           lead_id: string | null
+          scheduled_for: string | null
           sent_at: string | null
           status: string
           subject: string
@@ -749,9 +751,11 @@ export type Database = {
         }
         Insert: {
           body_html?: string
+          connection_id?: string | null
           created_at?: string
           id?: string
           lead_id?: string | null
+          scheduled_for?: string | null
           sent_at?: string | null
           status?: string
           subject?: string
@@ -761,9 +765,11 @@ export type Database = {
         }
         Update: {
           body_html?: string
+          connection_id?: string | null
           created_at?: string
           id?: string
           lead_id?: string | null
+          scheduled_for?: string | null
           sent_at?: string | null
           status?: string
           subject?: string
@@ -772,6 +778,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "email_drafts_connection_id_fkey"
+            columns: ["connection_id"]
+            isOneToOne: false
+            referencedRelation: "email_connections"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "email_drafts_lead_id_fkey"
             columns: ["lead_id"]
