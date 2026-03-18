@@ -1,5 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useUserFeatures } from "@/hooks/useUserFeatures";
 import { useUnreadCount } from "@/hooks/useUnreadCount";
 import { useNavConfig, ALL_NAV_TABS } from "@/hooks/useNavConfig";
 import {
@@ -12,6 +13,7 @@ import {
   HelpCircle,
   LogOut,
   HeartPulse,
+  Network,
 } from "lucide-react";
 import { useState } from "react";
 import {
@@ -34,6 +36,7 @@ const ICON_MAP: Record<string, any> = {
 export function MobileBottomNav() {
   const location = useLocation();
   const { canSeeProducerHub, canSeeAdmin, canSeeChat, canSeeEmail, canSeePulse } = useUserRole();
+  const { hasConnect } = useUserFeatures();
   const { signOut } = useAuth();
   const { trainingMode, setTrainingMode } = useTrainingMode();
   const { emailCount, pulseCount } = useUnreadCount();
@@ -134,7 +137,22 @@ export function MobileBottomNav() {
               );
             })}
 
-            {hiddenTabs.length > 0 && <div className="border-t my-2" />}
+            {hasConnect && (
+              <Link
+                to="/connect"
+                onClick={() => setMoreOpen(false)}
+                className={`flex items-center gap-3 rounded-lg px-3 py-3 text-sm transition-colors ${
+                  isActive("/connect")
+                    ? "bg-primary/10 text-primary font-medium"
+                    : "text-foreground hover:bg-muted"
+                }`}
+              >
+                <Network className="h-5 w-5" />
+                Connect
+              </Link>
+            )}
+
+            {(hiddenTabs.length > 0 || hasConnect) && <div className="border-t my-2" />}
 
             {canSeeAdmin && (
               <Link

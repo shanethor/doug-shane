@@ -34,11 +34,11 @@ export function useUserFeatures() {
     fetchedRef.current = true;
 
     supabase
-      .from("user_features" as any)
+      .from("user_features")
       .select("feature")
       .eq("user_id", user.id)
-      .then(({ data }: any) => {
-        const found = (data || []).map((d: any) => d.feature as FeatureFlag);
+      .then(({ data }) => {
+        const found = (data || []).map((d) => d.feature as FeatureFlag);
         featureCache.userId = user.id;
         featureCache.features = found;
         featureCache.ts = Date.now();
