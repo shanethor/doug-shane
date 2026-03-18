@@ -382,6 +382,57 @@ export type Database = {
           },
         ]
       }
+      canonical_persons: {
+        Row: {
+          company: string | null
+          created_at: string
+          display_name: string | null
+          id: string
+          is_business_owner: boolean | null
+          linkedin_url: string | null
+          location: string | null
+          metadata: Json | null
+          owner_user_id: string
+          primary_email: string | null
+          primary_phone: string | null
+          tier: string | null
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          company?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          is_business_owner?: boolean | null
+          linkedin_url?: string | null
+          location?: string | null
+          metadata?: Json | null
+          owner_user_id: string
+          primary_email?: string | null
+          primary_phone?: string | null
+          tier?: string | null
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          company?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          is_business_owner?: boolean | null
+          linkedin_url?: string | null
+          location?: string | null
+          metadata?: Json | null
+          owner_user_id?: string
+          primary_email?: string | null
+          primary_phone?: string | null
+          tier?: string | null
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       carriers: {
         Row: {
           created_at: string
@@ -535,6 +586,102 @@ export type Database = {
           },
         ]
       }
+      contact_merge_queue: {
+        Row: {
+          confidence: number | null
+          contact_a_id: string
+          contact_b_id: string
+          created_at: string
+          id: string
+          match_reason: string | null
+          owner_user_id: string
+          resolved_at: string | null
+          resolved_canonical_id: string | null
+          status: string | null
+        }
+        Insert: {
+          confidence?: number | null
+          contact_a_id: string
+          contact_b_id: string
+          created_at?: string
+          id?: string
+          match_reason?: string | null
+          owner_user_id: string
+          resolved_at?: string | null
+          resolved_canonical_id?: string | null
+          status?: string | null
+        }
+        Update: {
+          confidence?: number | null
+          contact_a_id?: string
+          contact_b_id?: string
+          created_at?: string
+          id?: string
+          match_reason?: string | null
+          owner_user_id?: string
+          resolved_at?: string | null
+          resolved_canonical_id?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contact_merge_queue_contact_a_id_fkey"
+            columns: ["contact_a_id"]
+            isOneToOne: false
+            referencedRelation: "network_contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contact_merge_queue_contact_b_id_fkey"
+            columns: ["contact_b_id"]
+            isOneToOne: false
+            referencedRelation: "network_contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contact_merge_queue_resolved_canonical_id_fkey"
+            columns: ["resolved_canonical_id"]
+            isOneToOne: false
+            referencedRelation: "canonical_persons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contact_sharing_settings: {
+        Row: {
+          canonical_person_id: string
+          created_at: string
+          id: string
+          owner_user_id: string
+          shared_with_user_id: string | null
+          sharing_level: Database["public"]["Enums"]["sharing_level"] | null
+        }
+        Insert: {
+          canonical_person_id: string
+          created_at?: string
+          id?: string
+          owner_user_id: string
+          shared_with_user_id?: string | null
+          sharing_level?: Database["public"]["Enums"]["sharing_level"] | null
+        }
+        Update: {
+          canonical_person_id?: string
+          created_at?: string
+          id?: string
+          owner_user_id?: string
+          shared_with_user_id?: string | null
+          sharing_level?: Database["public"]["Enums"]["sharing_level"] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contact_sharing_settings_canonical_person_id_fkey"
+            columns: ["canonical_person_id"]
+            isOneToOne: false
+            referencedRelation: "canonical_persons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       custom_form_templates: {
         Row: {
           created_at: string
@@ -650,6 +797,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      data_visibility_settings: {
+        Row: {
+          created_at: string
+          data_type: string
+          id: string
+          is_enabled: boolean | null
+          source: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          data_type: string
+          id?: string
+          is_enabled?: boolean | null
+          source: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          data_type?: string
+          id?: string
+          is_enabled?: boolean | null
+          source?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       email_attachments: {
         Row: {
@@ -1672,6 +1849,7 @@ export type Database = {
       }
       network_contacts: {
         Row: {
+          canonical_person_id: string | null
           company: string | null
           email: string | null
           external_id: string | null
@@ -1689,6 +1867,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          canonical_person_id?: string | null
           company?: string | null
           email?: string | null
           external_id?: string | null
@@ -1706,6 +1885,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          canonical_person_id?: string | null
           company?: string | null
           email?: string | null
           external_id?: string | null
@@ -1722,7 +1902,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "network_contacts_canonical_person_id_fkey"
+            columns: ["canonical_person_id"]
+            isOneToOne: false
+            referencedRelation: "canonical_persons"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       notifications: {
         Row: {
@@ -1756,6 +1944,45 @@ export type Database = {
           metadata?: Json | null
           title?: string
           type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      outreach_feedback: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          metadata: Json | null
+          notes: string | null
+          outreach_type: string | null
+          target_company: string | null
+          target_name: string | null
+          touch_id: string
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          notes?: string | null
+          outreach_type?: string | null
+          target_company?: string | null
+          target_name?: string | null
+          touch_id: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          notes?: string | null
+          outreach_type?: string | null
+          target_company?: string | null
+          target_name?: string | null
+          touch_id?: string
           user_id?: string
         }
         Relationships: []
@@ -2182,6 +2409,75 @@ export type Database = {
         }
         Relationships: []
       }
+      relationship_edges: {
+        Row: {
+          calendar_score: number | null
+          call_score: number | null
+          created_at: string
+          email_score: number | null
+          id: string
+          interaction_count: number | null
+          last_touch: string | null
+          metadata: Json | null
+          overall_strength: number | null
+          owner_user_id: string
+          person_a_id: string
+          person_b_id: string
+          relationship_type: string | null
+          social_score: number | null
+          updated_at: string
+        }
+        Insert: {
+          calendar_score?: number | null
+          call_score?: number | null
+          created_at?: string
+          email_score?: number | null
+          id?: string
+          interaction_count?: number | null
+          last_touch?: string | null
+          metadata?: Json | null
+          overall_strength?: number | null
+          owner_user_id: string
+          person_a_id: string
+          person_b_id: string
+          relationship_type?: string | null
+          social_score?: number | null
+          updated_at?: string
+        }
+        Update: {
+          calendar_score?: number | null
+          call_score?: number | null
+          created_at?: string
+          email_score?: number | null
+          id?: string
+          interaction_count?: number | null
+          last_touch?: string | null
+          metadata?: Json | null
+          overall_strength?: number | null
+          owner_user_id?: string
+          person_a_id?: string
+          person_b_id?: string
+          relationship_type?: string | null
+          social_score?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "relationship_edges_person_a_id_fkey"
+            columns: ["person_a_id"]
+            isOneToOne: false
+            referencedRelation: "canonical_persons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "relationship_edges_person_b_id_fkey"
+            columns: ["person_b_id"]
+            isOneToOne: false
+            referencedRelation: "canonical_persons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       synced_emails: {
         Row: {
           body_html: string | null
@@ -2422,6 +2718,7 @@ export type Database = {
         | "fulfilled"
         | "cancelled"
       policy_status: "pending" | "approved" | "rejected"
+      sharing_level: "private" | "mutual_only" | "shared"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2581,6 +2878,7 @@ export const Constants = {
         "cancelled",
       ],
       policy_status: ["pending", "approved", "rejected"],
+      sharing_level: ["private", "mutual_only", "shared"],
     },
   },
 } as const
