@@ -14,7 +14,7 @@ import { AILogPanel } from "@/components/AILogPanel";
 
 export function AppLayout({ children, onLogoClick }: { children: React.ReactNode; onLogoClick?: () => void }) {
   const { signOut } = useAuth();
-  const { canSeeProducerHub, canSeeAdmin, canSeeChat, canSeeEmail, canSeePulse, canSeeLossRuns } = useUserRole();
+  const { canSeeProducerHub, canSeeAdmin, canSeeChat, canSeeEmail, canSeePulse, canSeeLossRuns, canSeeClientSubmission } = useUserRole();
   const { hasConnect } = useUserFeatures();
   const location = useLocation();
   const { trainingMode, setTrainingMode } = useTrainingMode();
