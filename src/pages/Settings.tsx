@@ -19,6 +19,8 @@ import { useSearchParams } from "react-router-dom";
 import { useNavConfig, ALL_NAV_TABS } from "@/hooks/useNavConfig";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ConnectedAccountsStatus } from "@/components/ConnectedAccountsStatus";
+import { ProgressiveUnlocks } from "@/components/ProgressiveUnlocks";
+import { WhatAuraSees } from "@/components/WhatAuraSees";
 
 const AGENCY_FIELDS = [
   { key: "agency_phone", label: "Agency Phone", placeholder: "(555) 123-4567" },
@@ -415,6 +417,15 @@ export default function Settings() {
         </CardHeader>
         <CardContent className="p-4 sm:p-6 pt-2 sm:pt-2 space-y-3">
           <ConnectedAccountsStatus variant="full" />
+          <Separator className="my-4" />
+          <ProgressiveUnlocks />
+        </CardContent>
+      </Card>
+
+      {/* What Aura Sees — Data Transparency */}
+      <Card className="mb-4 sm:mb-6">
+        <CardContent className="p-4 sm:p-6">
+          <WhatAuraSees />
         </CardContent>
       </Card>
 

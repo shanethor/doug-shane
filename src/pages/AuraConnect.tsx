@@ -213,13 +213,30 @@ export default function AuraConnect() {
 
   // ─── Touch queue actions ───
 
-  const handleApproveTouch = (id: string) => {
-    setApprovedTouches(prev => new Set(prev).add(id));
+  const handleApproveTouch = async (touch: TouchItem) => {
+    setApprovedTouches(prev => new Set(prev).add(touch.id));
     toast.success("Message approved & queued");
+    // Track feedback
+    await supabase.from("outreach_feedback").insert({
+      user_id: user!.id,
+      touch_id: touch.id,
+      target_name: touch.target,
+      target_company: touch.company,
+      outreach_type: touch.type,
+      action: "approved",
+    });
   };
 
-  const handleDismissTouch = (id: string) => {
-    setDismissedTouches(prev => new Set(prev).add(id));
+  const handleDismissTouch = async (touch: TouchItem) => {
+    setDismissedTouches(prev => new Set(prev).add(touch.id));
+    await supabase.from("outreach_feedback").insert({
+      user_id: user!.id,
+      touch_id: touch.id,
+      target_name: touch.target,
+      target_company: touch.company,
+      outreach_type: touch.type,
+      action: "dismissed",
+    });
   };
 
   // ─── Helpers ───
@@ -544,7 +561,7 @@ export default function AuraConnect() {
                             <Button
                               size="sm"
                               className="gap-1.5 h-8"
-                              onClick={() => handleApproveTouch(t.id)}
+                              onClick={() => handleApproveTouch(t)}
                             >
                               <Check className="h-3.5 w-3.5" />
                               Approve & Send
@@ -553,7 +570,7 @@ export default function AuraConnect() {
                               size="sm"
                               variant="ghost"
                               className="gap-1.5 h-8 text-muted-foreground"
-                              onClick={() => handleDismissTouch(t.id)}
+                              onClick={() => handleDismissTouch(t)}
                             >
                               <X className="h-3.5 w-3.5" />
                               Dismiss

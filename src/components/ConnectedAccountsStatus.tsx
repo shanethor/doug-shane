@@ -85,8 +85,24 @@ export function useConnectedAccounts() {
     } catch {}
 
     const googleContacts = networkConns["google_contacts"];
+    const outlookContacts = networkConns["outlook_contacts"];
     const linkedin = networkConns["linkedin"];
     const phone = networkConns["phone"];
+
+    // Check if user has outlook email connected
+    let outlookConnected = false;
+    try {
+      const headers = await getAuthHeaders();
+      const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/email-oauth`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ action: "list" }),
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        outlookConnected = (data.connections || []).some((c: any) => c.provider === "outlook");
+      }
+    } catch {}
 
     setAccounts([
       {
@@ -97,7 +113,7 @@ export function useConnectedAccounts() {
         connected: emailConnected,
         detail: emailDetail || undefined,
         canConnect: true,
-        canDisconnect: false, // managed via email settings
+        canDisconnect: false,
       },
       {
         id: "contacts",
@@ -108,8 +124,20 @@ export function useConnectedAccounts() {
         detail: googleContacts ? `${googleContacts.contact_count} contacts synced` : undefined,
         contactCount: googleContacts?.contact_count,
         lastSync: googleContacts?.last_sync_at,
-        canConnect: emailConnected, // need Gmail connected first
+        canConnect: emailConnected,
         canDisconnect: !!googleContacts,
+      },
+      {
+        id: "outlook_contacts",
+        label: "Outlook Contacts",
+        icon: <Mail className="h-4 w-4" />,
+        level: "Recommended",
+        connected: !!outlookContacts,
+        detail: outlookContacts ? `${outlookContacts.contact_count} contacts synced` : undefined,
+        contactCount: outlookContacts?.contact_count,
+        lastSync: outlookContacts?.last_sync_at,
+        canConnect: outlookConnected,
+        canDisconnect: !!outlookContacts,
       },
       {
         id: "linkedin",
@@ -455,6 +483,7 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
   const handleDisconnect = async (source: string) => {
     const sourceMap: Record<string, string> = {
       contacts: "google_contacts",
+      outlook_contacts: "outlook_contacts",
       linkedin: "linkedin",
       phone: "phone",
     };
@@ -475,6 +504,34 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
     }
   };
 
+  // ─── Sync Outlook Contacts ───
+  const handleSyncOutlookContacts = async () => {
+    setActionLoading("outlook_contacts");
+    try {
+      const headers = await getAuthHeaders();
+      const resp = await fetch(SYNC_URL, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ action: "sync_outlook" }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) {
+        if (data.needs_reconnect) {
+          toast.error("Outlook needs to be reconnected with contacts permission. Go to Email settings to reconnect.");
+        } else {
+          toast.error(data.error || "Failed to sync Outlook contacts");
+        }
+        return;
+      }
+      toast.success(`Synced ${data.imported} Outlook Contacts`);
+      refresh();
+    } catch {
+      toast.error("Failed to sync Outlook Contacts");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   // ─── Connect action by account id ───
   const handleConnect = (id: string) => {
     if (id === "email") {
@@ -482,6 +539,7 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
       return;
     }
     if (id === "contacts") return handleSyncGoogleContacts();
+    if (id === "outlook_contacts") return handleSyncOutlookContacts();
     if (id === "linkedin") { fileInputRef.current?.click(); return; }
     if (id === "phone") return handlePhoneContacts();
   };
@@ -588,12 +646,19 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
                   <AlertTriangle className="h-3 w-3 text-warning shrink-0" />
                   Connect Gmail first
                 </p>
+              ) : a.id === "outlook_contacts" && !a.canConnect ? (
+                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                  <AlertTriangle className="h-3 w-3 text-warning shrink-0" />
+                  Connect Outlook email first
+                </p>
               ) : a.id === "social" ? (
                 <p className="text-xs text-muted-foreground">Coming soon</p>
               ) : a.id === "linkedin" ? (
                 <p className="text-xs text-muted-foreground">Upload CSV or scrape profile</p>
               ) : a.id === "phone" ? (
                 <p className="text-xs text-muted-foreground">Use Contact Picker or upload CSV/vCard</p>
+              ) : a.id === "outlook_contacts" ? (
+                <p className="text-xs text-muted-foreground">Sync contacts from Outlook/Office 365</p>
               ) : (
                 <p className="text-xs text-muted-foreground">Not connected</p>
               )}
@@ -602,14 +667,14 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
           <div className="flex items-center gap-2 shrink-0">
             {a.connected && a.canDisconnect && (
               <>
-                {/* Re-sync button for contacts & google */}
-                {(a.id === "contacts") && (
+                {/* Re-sync button for contacts */}
+                {(a.id === "contacts" || a.id === "outlook_contacts") && (
                   <Button
                     variant="ghost"
                     size="sm"
                     className="h-7 text-xs gap-1 text-muted-foreground"
                     disabled={actionLoading === a.id}
-                    onClick={() => handleSyncGoogleContacts()}
+                    onClick={() => a.id === "contacts" ? handleSyncGoogleContacts() : handleSyncOutlookContacts()}
                   >
                     <RefreshCw className={`h-3 w-3 ${actionLoading === a.id ? "animate-spin" : ""}`} />
                     <span className="hidden sm:inline">Resync</span>
@@ -643,13 +708,17 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
                 )}
                 {a.id === "email" ? "Connect" :
                  a.id === "contacts" ? "Sync Contacts" :
+                 a.id === "outlook_contacts" ? "Sync Contacts" :
                  a.id === "linkedin" ? "Upload CSV" :
                  a.id === "phone" ? "Import" :
                  "Connect"}
               </Button>
             )}
-            {!a.connected && !a.canConnect && a.id !== "social" && (
+            {!a.connected && !a.canConnect && a.id === "contacts" && (
               <Badge variant="outline" className="text-[10px] opacity-50">Requires Gmail</Badge>
+            )}
+            {!a.connected && !a.canConnect && a.id === "outlook_contacts" && (
+              <Badge variant="outline" className="text-[10px] opacity-50">Requires Outlook</Badge>
             )}
             {a.id === "social" && !a.connected && (
               <Badge variant="outline" className="text-[10px] opacity-50">Coming Soon</Badge>
