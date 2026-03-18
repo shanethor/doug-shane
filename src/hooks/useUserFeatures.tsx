@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -15,9 +15,10 @@ export function useUserFeatures() {
   const { user } = useAuth();
   const [features, setFeatures] = useState<FeatureFlag[]>([]);
   const [loading, setLoading] = useState(true);
-  const fetchedRef = useRef(false);
 
   useEffect(() => {
+    let cancelled = false;
+
     if (!user) {
       setFeatures([]);
       setLoading(false);
@@ -30,28 +31,42 @@ export function useUserFeatures() {
       return;
     }
 
-    if (fetchedRef.current) return;
-    fetchedRef.current = true;
+    setLoading(true);
 
-    supabase
-      .from("user_features")
-      .select("feature")
-      .eq("user_id", user.id)
-      .then(({ data }) => {
-        const found = (data || []).map((d) => d.feature as FeatureFlag);
+    const loadFeatures = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("user_features")
+          .select("feature")
+          .eq("user_id", user.id);
+
+        if (cancelled) return;
+
+        const found = error ? [] : (data || []).map((d) => d.feature as FeatureFlag);
         featureCache.userId = user.id;
         featureCache.features = found;
         featureCache.ts = Date.now();
         setFeatures(found);
         setLoading(false);
-      });
-  }, [user]);
+      } catch {
+        if (cancelled) return;
+        setFeatures([]);
+        setLoading(false);
+      }
+    };
+
+    loadFeatures();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
 
   return {
     features,
     loading,
-    hasFeature: (f: FeatureFlag) => features.includes(f),
-    hasConnect: features.includes("connect"),
+    hasFeature: (f: FeatureFlag) => !loading && features.includes(f),
+    hasConnect: !loading && features.includes("connect"),
   };
 }
 

@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -16,53 +16,67 @@ export function useUserRole() {
   const { user } = useAuth();
   const [role, setRole] = useState<AppRole>("advisor");
   const [loading, setLoading] = useState(true);
-  const fetchedRef = useRef(false);
 
   useEffect(() => {
+    let cancelled = false;
+
     if (!user) {
       setRole("advisor");
       setLoading(false);
       return;
     }
 
-    // Use cache if fresh and same user
     if (roleCache.userId === user.id && Date.now() - roleCache.ts < CACHE_TTL) {
       setRole(roleCache.role);
       setLoading(false);
       return;
     }
 
-    if (fetchedRef.current) return;
-    fetchedRef.current = true;
+    setLoading(true);
 
-    supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", user.id)
-      .limit(1)
-      .then(({ data }) => {
-        const foundRole = (data?.[0]?.role as AppRole) || "advisor";
+    const loadRole = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", user.id)
+          .limit(1);
+
+        if (cancelled) return;
+
+        const foundRole = error ? "advisor" : ((data?.[0]?.role as AppRole) || "advisor");
         roleCache.userId = user.id;
         roleCache.role = foundRole;
         roleCache.ts = Date.now();
         setRole(foundRole);
         setLoading(false);
-      });
-  }, [user]);
+      } catch {
+        if (cancelled) return;
+        setRole("advisor");
+        setLoading(false);
+      }
+    };
 
-  const isAdmin = role === "admin";
-  const isAdvisor = role === "advisor";
-  const isManager = role === "manager";
-  const isClientServices = role === "client_services";
-  const isProperty = role === "property";
+    loadRole();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
+
+  const isAdmin = !loading && role === "admin";
+  const isAdvisor = !loading && role === "advisor";
+  const isManager = !loading && role === "manager";
+  const isClientServices = !loading && role === "client_services";
+  const isProperty = !loading && role === "property";
 
   // Navigation visibility
-  const canSeeAdvisorHub = role !== "client_services" && role !== "property";
-  const canSeeAdmin = role === "admin";
-  const canSeeChat = role !== "property";
-  const canSeeEmail = role !== "property";
-  const canSeePulse = role !== "property";
-  const canSeeLossRuns = role !== "property";
+  const canSeeAdvisorHub = !loading && role !== "client_services" && role !== "property";
+  const canSeeAdmin = !loading && role === "admin";
+  const canSeeChat = !loading && role !== "property";
+  const canSeeEmail = !loading && role !== "property";
+  const canSeePulse = !loading && role !== "property";
+  const canSeeLossRuns = !loading && role !== "property";
 
   // Backward-compatible aliases
   const isProducer = isAdvisor;
