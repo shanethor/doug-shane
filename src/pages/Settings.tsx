@@ -800,7 +800,7 @@ export default function Settings() {
           </div>
         </CardContent>
       </Card>
-
+      )}
       {/* AI & Email Settings */}
       <Card>
         <CardHeader className="p-4 sm:p-6 pb-2 sm:pb-2">
