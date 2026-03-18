@@ -36,6 +36,7 @@ const ICON_MAP: Record<string, any> = {
 export function MobileBottomNav() {
   const location = useLocation();
   const { canSeeProducerHub, canSeeAdmin, canSeeChat, canSeeEmail, canSeePulse } = useUserRole();
+  const { hasConnect } = useUserFeatures();
   const { signOut } = useAuth();
   const { trainingMode, setTrainingMode } = useTrainingMode();
   const { emailCount, pulseCount } = useUnreadCount();
