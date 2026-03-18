@@ -415,11 +415,6 @@ export default function Settings() {
         </CardHeader>
         <CardContent className="p-4 sm:p-6 pt-2 sm:pt-2 space-y-3">
           <ConnectedAccountsStatus variant="full" />
-          <div className="rounded-md bg-muted/50 p-3 mt-3">
-            <p className="text-[11px] text-muted-foreground leading-relaxed">
-              <strong>How it works:</strong> Email connects via Gmail/Outlook above. LinkedIn, Contacts, and Social integrations are coming soon — once available, connecting all required accounts will unlock full relationship briefs with warm introductions and confidence scoring.
-            </p>
-          </div>
         </CardContent>
       </Card>
 
