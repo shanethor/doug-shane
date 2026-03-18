@@ -52,6 +52,7 @@ import LossRunSign from "./pages/LossRunSign";
 import CarrierDirectory from "./pages/CarrierDirectory";
 import AuraConnect from "./pages/AuraConnect";
 import ClientSubmission from "./pages/ClientSubmission";
+import LandingPage from "./pages/LandingPage";
 import { Navigate } from "react-router-dom";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
