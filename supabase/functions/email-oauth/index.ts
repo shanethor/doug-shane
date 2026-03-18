@@ -168,7 +168,7 @@ serve(async (req) => {
             client_secret: clientSecret,
             redirect_uri: redirect_uri,
             grant_type: "authorization_code",
-            scope: "openid email profile User.Read Mail.Read Mail.Send Calendars.ReadWrite offline_access",
+            scope: "openid email profile User.Read Mail.Read Mail.Send Calendars.ReadWrite Contacts.Read offline_access",
           }),
         });
         tokenData = await tokenResp.json();
