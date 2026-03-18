@@ -137,7 +137,22 @@ export function MobileBottomNav() {
               );
             })}
 
-            {hiddenTabs.length > 0 && <div className="border-t my-2" />}
+            {hasConnect && (
+              <Link
+                to="/connect"
+                onClick={() => setMoreOpen(false)}
+                className={`flex items-center gap-3 rounded-lg px-3 py-3 text-sm transition-colors ${
+                  isActive("/connect")
+                    ? "bg-primary/10 text-primary font-medium"
+                    : "text-foreground hover:bg-muted"
+                }`}
+              >
+                <Network className="h-5 w-5" />
+                Connect
+              </Link>
+            )}
+
+            {(hiddenTabs.length > 0 || hasConnect) && <div className="border-t my-2" />}
 
             {canSeeAdmin && (
               <Link
