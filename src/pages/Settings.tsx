@@ -417,6 +417,15 @@ export default function Settings() {
         </CardHeader>
         <CardContent className="p-4 sm:p-6 pt-2 sm:pt-2 space-y-3">
           <ConnectedAccountsStatus variant="full" />
+          <Separator className="my-4" />
+          <ProgressiveUnlocks />
+        </CardContent>
+      </Card>
+
+      {/* What Aura Sees — Data Transparency */}
+      <Card className="mb-4 sm:mb-6">
+        <CardContent className="p-4 sm:p-6">
+          <WhatAuraSees />
         </CardContent>
       </Card>
 
