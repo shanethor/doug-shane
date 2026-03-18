@@ -14,7 +14,7 @@ import { AILogPanel } from "@/components/AILogPanel";
 
 export function AppLayout({ children, onLogoClick }: { children: React.ReactNode; onLogoClick?: () => void }) {
   const { signOut } = useAuth();
-  const { canSeeProducerHub, canSeeAdmin } = useUserRole();
+  const { canSeeProducerHub, canSeeAdmin, canSeeChat, canSeeEmail, canSeePulse, canSeeLossRuns } = useUserRole();
   const { hasConnect } = useUserFeatures();
   const location = useLocation();
   const { trainingMode, setTrainingMode } = useTrainingMode();
@@ -22,11 +22,11 @@ export function AppLayout({ children, onLogoClick }: { children: React.ReactNode
   const { count: lossRunReminderCount } = useLossRunReminders();
 
   const navItems = [
-    { to: "/", label: "AURA", icon: MessageCircle },
-    { to: "/email", label: "Email", icon: Mail },
-    { to: "/pulse", label: "Pulse", icon: HeartPulse },
+    ...(canSeeChat ? [{ to: "/", label: "AURA", icon: MessageCircle }] : []),
+    ...(canSeeEmail ? [{ to: "/email", label: "Email", icon: Mail }] : []),
+    ...(canSeePulse ? [{ to: "/pulse", label: "Pulse", icon: HeartPulse }] : []),
     ...(canSeeProducerHub ? [{ to: "/hub", label: "Command Center", icon: GitBranch }] : []),
-    { to: "/loss-runs", label: "Loss Runs", icon: FileSearch },
+    ...(canSeeLossRuns ? [{ to: "/loss-runs", label: "Loss Runs", icon: FileSearch }] : []),
     ...(hasConnect ? [{ to: "/connect", label: "Connect", icon: Network }] : []),
     ...(canSeeAdmin ? [{ to: "/admin", label: "Admin", icon: ShieldCheck }] : []),
     { to: "/settings", label: "Settings", icon: Settings },

@@ -609,6 +609,7 @@ export default function AdminDashboard() {
                             <SelectItem value="advisor">Advisor</SelectItem>
                             <SelectItem value="manager">Manager</SelectItem>
                             <SelectItem value="client_services">Client Services</SelectItem>
+                            <SelectItem value="property">Property</SelectItem>
                           </SelectContent>
                           </Select>
                           <Button

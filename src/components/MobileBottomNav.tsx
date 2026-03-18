@@ -33,7 +33,7 @@ const ICON_MAP: Record<string, any> = {
 
 export function MobileBottomNav() {
   const location = useLocation();
-  const { canSeeProducerHub, canSeeAdmin } = useUserRole();
+  const { canSeeProducerHub, canSeeAdmin, canSeeChat, canSeeEmail, canSeePulse } = useUserRole();
   const { signOut } = useAuth();
   const { trainingMode, setTrainingMode } = useTrainingMode();
   const { emailCount, pulseCount } = useUnreadCount();
@@ -43,6 +43,9 @@ export function MobileBottomNav() {
   // Filter tabs based on role
   const allowedTabs = ALL_NAV_TABS.filter((t) => {
     if (t.id === "hub" && !canSeeProducerHub) return false;
+    if (t.id === "aura" && !canSeeChat) return false;
+    if (t.id === "email" && !canSeeEmail) return false;
+    if (t.id === "pulse" && !canSeePulse) return false;
     return true;
   });
 
