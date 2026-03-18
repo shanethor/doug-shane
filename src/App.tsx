@@ -50,6 +50,7 @@ import LossRunNew from "./pages/LossRunNew";
 import LossRunDetail from "./pages/LossRunDetail";
 import LossRunSign from "./pages/LossRunSign";
 import CarrierDirectory from "./pages/CarrierDirectory";
+import AuraConnect from "./pages/AuraConnect";
 import { Navigate } from "react-router-dom";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
