@@ -1336,6 +1336,26 @@ export default function Inbox({ emailOnly, embedded, selectedClientId, onClearSe
         )}
       </div>
 
+      {/* Account filter (multiple inboxes) - desktop */}
+      {emailConnections.length > 1 && (
+        <div className="mb-3 flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">Inbox:</span>
+          {[{ id: "all", label: "All Accounts" }, ...emailConnections.map((c) => ({ id: c.id, label: `${c.provider === "gmail" ? "Gmail" : "Outlook"} (${c.email_address})` }))].map((acct) => (
+            <button
+              key={acct.id}
+              onClick={() => setSelectedAccountId(acct.id)}
+              className={`px-3 py-1 rounded-full text-[11px] font-medium transition-colors ${
+                selectedAccountId === acct.id
+                  ? "bg-accent text-accent-foreground"
+                  : "bg-muted text-muted-foreground hover:bg-muted/80"
+              }`}
+            >
+              {acct.label}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Insurance filter chips + hide non-insurance toggle (inline on desktop) */}
       <div className="mb-3 flex items-center gap-3 flex-wrap">
         <EmailFilterChips activeTags={activeTags} onTagsChange={setActiveTags} />
@@ -1351,9 +1371,54 @@ export default function Inbox({ emailOnly, embedded, selectedClientId, onClearSe
         </button>
       </div>
 
-      {/* Email list */}
+      {/* Email list / Sent list */}
       <ScrollArea className="h-[calc(100vh-280px)]">
-        {filtered.length === 0 ? (
+        {tab === "sent" ? (
+          sentEmails.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
+              <History className="h-10 w-10 mb-3 opacity-40" />
+              <p className="text-sm">No sent emails yet</p>
+            </div>
+          ) : (
+            <div className="space-y-1">
+              {sentEmails.map((sent) => (
+                <div
+                  key={sent.id}
+                  className="rounded-lg border px-4 py-3 transition-colors hover:bg-muted/50 opacity-90"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="mt-0.5 shrink-0">
+                      {sent.status === "scheduled" ? (
+                        <Clock className="h-4 w-4 text-amber-500" />
+                      ) : (
+                        <Send className="h-4 w-4 text-emerald-500" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm truncate">To: {sent.to_addresses?.join(", ")}</p>
+                        <Badge variant="outline" className={`text-[10px] shrink-0 ${
+                          sent.status === "scheduled" ? "border-amber-400/50 text-amber-600" : "border-emerald-400/50 text-emerald-600"
+                        }`}>
+                          {sent.status === "scheduled" ? "Scheduled" : "Sent"}
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground truncate mt-0.5">{sent.subject || "(no subject)"}</p>
+                      {sent.scheduled_for && sent.status === "scheduled" && (
+                        <p className="text-[10px] text-amber-600 mt-0.5">
+                          Scheduled for {format(new Date(sent.scheduled_for), "MMM d 'at' h:mm a")}
+                        </p>
+                      )}
+                      <span className="text-[10px] text-muted-foreground mt-1 block">
+                        {formatDistanceToNow(new Date(sent.sent_at || sent.created_at), { addSuffix: true })}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )
+        ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
             <MailOpen className="h-10 w-10 mb-3 opacity-40" />
             <p className="text-sm">
