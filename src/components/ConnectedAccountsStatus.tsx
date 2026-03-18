@@ -708,13 +708,17 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
                 )}
                 {a.id === "email" ? "Connect" :
                  a.id === "contacts" ? "Sync Contacts" :
+                 a.id === "outlook_contacts" ? "Sync Contacts" :
                  a.id === "linkedin" ? "Upload CSV" :
                  a.id === "phone" ? "Import" :
                  "Connect"}
               </Button>
             )}
-            {!a.connected && !a.canConnect && a.id !== "social" && (
+            {!a.connected && !a.canConnect && a.id === "contacts" && (
               <Badge variant="outline" className="text-[10px] opacity-50">Requires Gmail</Badge>
+            )}
+            {!a.connected && !a.canConnect && a.id === "outlook_contacts" && (
+              <Badge variant="outline" className="text-[10px] opacity-50">Requires Outlook</Badge>
             )}
             {a.id === "social" && !a.connected && (
               <Badge variant="outline" className="text-[10px] opacity-50">Coming Soon</Badge>
