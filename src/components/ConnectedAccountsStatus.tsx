@@ -192,6 +192,10 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const phoneFileInputRef = useRef<HTMLInputElement>(null);
+  const [showReconnectPicker, setShowReconnectPicker] = useState(false);
+  const [gmailAccounts, setGmailAccounts] = useState<{id: string; email: string}[]>([]);
+  const [showPhoneDialog, setShowPhoneDialog] = useState(false);
+  const [pasteContacts, setPasteContacts] = useState("");
 
   const requiredAccounts = accounts.filter(a => a.level === "Required");
   const allRequiredConnected = requiredAccounts.every(a => a.connected);
