@@ -561,7 +561,7 @@ export default function AuraConnect() {
                             <Button
                               size="sm"
                               className="gap-1.5 h-8"
-                              onClick={() => handleApproveTouch(t.id)}
+                              onClick={() => handleApproveTouch(t)}
                             >
                               <Check className="h-3.5 w-3.5" />
                               Approve & Send
