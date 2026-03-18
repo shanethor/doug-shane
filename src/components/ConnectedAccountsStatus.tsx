@@ -483,6 +483,7 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
   const handleDisconnect = async (source: string) => {
     const sourceMap: Record<string, string> = {
       contacts: "google_contacts",
+      outlook_contacts: "outlook_contacts",
       linkedin: "linkedin",
       phone: "phone",
     };
