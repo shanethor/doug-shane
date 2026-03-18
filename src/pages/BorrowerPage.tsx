@@ -109,6 +109,9 @@ const STEPS = [
 export default function BorrowerPage() {
   const { slug } = useParams<{ slug: string }>();
   const [creatingIntake, setCreatingIntake] = useState(false);
+  const [quickApply, setQuickApply] = useState({ name: "", email: "", oldAddress: "", newAddress: "" });
+  const [quickSubmitting, setQuickSubmitting] = useState(false);
+  const [quickSubmitted, setQuickSubmitted] = useState(false);
 
   // Partners with dedicated layouts
   if (slug === "associated") return <AssociatedPage />;
