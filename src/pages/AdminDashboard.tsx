@@ -19,6 +19,7 @@ import {
   XCircle, Edit3, ShieldCheck, Building2, Plus, Trash2, Handshake, ScrollText, Network,
 } from "lucide-react";
 import AdminPartnerReferrals from "@/components/AdminPartnerReferrals";
+import { Checkbox } from "@/components/ui/checkbox";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
 import { toast } from "sonner";
 
