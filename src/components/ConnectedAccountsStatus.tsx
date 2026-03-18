@@ -504,6 +504,34 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
     }
   };
 
+  // ─── Sync Outlook Contacts ───
+  const handleSyncOutlookContacts = async () => {
+    setActionLoading("outlook_contacts");
+    try {
+      const headers = await getAuthHeaders();
+      const resp = await fetch(SYNC_URL, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ action: "sync_outlook" }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) {
+        if (data.needs_reconnect) {
+          toast.error("Outlook needs to be reconnected with contacts permission. Go to Email settings to reconnect.");
+        } else {
+          toast.error(data.error || "Failed to sync Outlook contacts");
+        }
+        return;
+      }
+      toast.success(`Synced ${data.imported} Outlook Contacts`);
+      refresh();
+    } catch {
+      toast.error("Failed to sync Outlook Contacts");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   // ─── Connect action by account id ───
   const handleConnect = (id: string) => {
     if (id === "email") {
@@ -511,6 +539,7 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
       return;
     }
     if (id === "contacts") return handleSyncGoogleContacts();
+    if (id === "outlook_contacts") return handleSyncOutlookContacts();
     if (id === "linkedin") { fileInputRef.current?.click(); return; }
     if (id === "phone") return handlePhoneContacts();
   };
