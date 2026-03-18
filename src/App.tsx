@@ -52,6 +52,7 @@ import LossRunSign from "./pages/LossRunSign";
 import CarrierDirectory from "./pages/CarrierDirectory";
 import AuraConnect from "./pages/AuraConnect";
 import ClientSubmission from "./pages/ClientSubmission";
+import LandingPage from "./pages/LandingPage";
 import { Navigate } from "react-router-dom";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -129,6 +130,7 @@ const App = () => (
           <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
           <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
           <Route path="/deck" element={<Deck />} />
+          <Route path="/home" element={<LandingPage />} />
           <Route path="/olddeck" element={<ProtectedRoute><OldDeck /></ProtectedRoute>} />
           <Route path="/pdf-diagnostic" element={<PdfDiagnostic />} />
           <Route path="/form-test" element={<ProtectedRoute><FormTest /></ProtectedRoute>} />
