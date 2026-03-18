@@ -85,8 +85,24 @@ export function useConnectedAccounts() {
     } catch {}
 
     const googleContacts = networkConns["google_contacts"];
+    const outlookContacts = networkConns["outlook_contacts"];
     const linkedin = networkConns["linkedin"];
     const phone = networkConns["phone"];
+
+    // Check if user has outlook email connected
+    let outlookConnected = false;
+    try {
+      const headers = await getAuthHeaders();
+      const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/email-oauth`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ action: "list" }),
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        outlookConnected = (data.connections || []).some((c: any) => c.provider === "outlook");
+      }
+    } catch {}
 
     setAccounts([
       {
@@ -97,7 +113,7 @@ export function useConnectedAccounts() {
         connected: emailConnected,
         detail: emailDetail || undefined,
         canConnect: true,
-        canDisconnect: false, // managed via email settings
+        canDisconnect: false,
       },
       {
         id: "contacts",
@@ -108,8 +124,20 @@ export function useConnectedAccounts() {
         detail: googleContacts ? `${googleContacts.contact_count} contacts synced` : undefined,
         contactCount: googleContacts?.contact_count,
         lastSync: googleContacts?.last_sync_at,
-        canConnect: emailConnected, // need Gmail connected first
+        canConnect: emailConnected,
         canDisconnect: !!googleContacts,
+      },
+      {
+        id: "outlook_contacts",
+        label: "Outlook Contacts",
+        icon: <Mail className="h-4 w-4" />,
+        level: "Recommended",
+        connected: !!outlookContacts,
+        detail: outlookContacts ? `${outlookContacts.contact_count} contacts synced` : undefined,
+        contactCount: outlookContacts?.contact_count,
+        lastSync: outlookContacts?.last_sync_at,
+        canConnect: outlookConnected,
+        canDisconnect: !!outlookContacts,
       },
       {
         id: "linkedin",
