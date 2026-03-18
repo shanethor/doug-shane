@@ -131,6 +131,9 @@ export default function Inbox({ emailOnly, embedded, selectedClientId, onClearSe
   // General search
   const [searchQuery, setSearchQuery] = useState("");
 
+  // Account (inbox) filter
+  const [selectedAccountId, setSelectedAccountId] = useState<string>("all");
+
   const [selectedEmail, setSelectedEmail] = useState<SyncedEmail | null>(null);
   const [selectedEmailAttachments, setSelectedEmailAttachments] = useState<EmailAttachment[]>([]);
   const [downloadingAttachment, setDownloadingAttachment] = useState<string | null>(null);
@@ -150,6 +153,13 @@ export default function Inbox({ emailOnly, embedded, selectedClientId, onClearSe
   const [, setTick] = useState(0);
   const [processingIntake, setProcessingIntake] = useState(false);
   const [intakeResult, setIntakeResult] = useState<{ lead_id: string; is_new: boolean; intake_link_sent: boolean; documents_ingested: number; line_type_detected?: string | null; extracted_fields?: number } | null>(null);
+
+  // Schedule send
+  const [scheduleDate, setScheduleDate] = useState("");
+  const [scheduleTime, setScheduleTime] = useState("");
+
+  // Sent history
+  const [sentEmails, setSentEmails] = useState<SentEmail[]>([]);
 
   const updateLastSyncedFromEmails = useCallback((emails: SyncedEmail[]) => {
     const syncedTimes = emails
