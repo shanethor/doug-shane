@@ -84,6 +84,11 @@ export default function AdminDashboard() {
     supabase.from("agencies").select("*").order("name").then(({ data }) => {
       if (data) setAgencies(data);
     });
+
+    // Fetch partner links
+    supabase.from("property_partner_links" as any).select("*").then(({ data }) => {
+      if (data) setPartnerLinks(data);
+    });
   }, [user, isAdmin]);
 
   const updateSuggestionStatus = async (id: string, status: string) => {
