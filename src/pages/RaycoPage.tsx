@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Upload, ClipboardList, UserCheck, Phone, Mail, MapPin, Clock, ArrowRight, Loader2, ExternalLink, Wrench } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import dougHeadshot from "@/assets/doug-wenz-headshot.png";
+import PartnerQuickApply from "@/components/PartnerQuickApply";
 
 const SERVICES = ["Polishing", "Deburring", "Tumbling", "Buffing"];
 const INDUSTRIES = ["Aerospace", "Military", "Automotive", "Marine", "Firearm", "Energy", "Custom Work"];

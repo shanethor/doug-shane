@@ -1,12 +1,10 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Upload, ClipboardList, UserCheck, Phone, ExternalLink, Loader2, ArrowRight, ShieldCheck, Zap, Lock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import dougHeadshot from "@/assets/doug-wenz-headshot.png";
+import PartnerQuickApply from "@/components/PartnerQuickApply";
 import { toast } from "sonner";
 
 const SLUG = "prestige";
@@ -19,13 +17,8 @@ const STEPS = [
 
 export default function PrestigePage() {
   const [loading, setLoading] = useState(false);
-  const [form, setForm] = useState({ firstName: "", lastName: "", email: "", phone: "", coverage: "" });
 
   const handleStart = async () => {
-    if (!form.firstName || !form.email) {
-      toast.error("Please enter at least your first name and email.");
-      return;
-    }
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("borrower-intake", { body: { slug: SLUG } });
@@ -36,9 +29,6 @@ export default function PrestigePage() {
       setLoading(false);
     }
   };
-
-  const update = (key: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-    setForm((f) => ({ ...f, [key]: e.target.value }));
 
   return (
     <div className="min-h-screen bg-[#1a1a2e] text-white" data-theme="dark">
@@ -109,46 +99,29 @@ export default function PrestigePage() {
         ))}
       </section>
 
-      {/* Quick Info + CTA */}
+      {/* Quick Apply + Advisor */}
+      <section className="max-w-md mx-auto px-6 pb-6">
+        <PartnerQuickApply
+          slug={SLUG}
+          variant="dark"
+          accentClass="bg-yellow-400 hover:bg-yellow-500 text-black"
+        />
+      </section>
+
+      {/* Full Application CTA */}
       <section className="max-w-md mx-auto px-6 pb-16">
         <Card className="bg-white/5 border-white/10 text-white">
-          <CardContent className="p-6 space-y-5">
-            <div className="text-center">
-              <img src={dougHeadshot} alt="Doug Wenz" className="w-14 h-14 rounded-full mx-auto object-cover border-2 border-yellow-400/40 mb-2" />
+          <CardContent className="p-6 text-center space-y-4">
+            <img src={dougHeadshot} alt="Doug Wenz" className="w-14 h-14 rounded-full mx-auto object-cover border-2 border-yellow-400/40" />
+            <div>
               <p className="font-semibold text-sm">Doug Wenz</p>
               <p className="text-xs text-white/50">Your Advisor at AURA Risk Group</p>
             </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label className="text-xs text-white/60 mb-1 block">First Name *</Label>
-                <Input value={form.firstName} onChange={update("firstName")} placeholder="John" className="bg-white/10 border-white/15 text-white placeholder:text-white/30 h-9 text-sm" />
-              </div>
-              <div>
-                <Label className="text-xs text-white/60 mb-1 block">Last Name</Label>
-                <Input value={form.lastName} onChange={update("lastName")} placeholder="Doe" className="bg-white/10 border-white/15 text-white placeholder:text-white/30 h-9 text-sm" />
-              </div>
-            </div>
-            <div>
-              <Label className="text-xs text-white/60 mb-1 block">Email *</Label>
-              <Input type="email" value={form.email} onChange={update("email")} placeholder="john@example.com" className="bg-white/10 border-white/15 text-white placeholder:text-white/30 h-9 text-sm" />
-            </div>
-            <div>
-              <Label className="text-xs text-white/60 mb-1 block">Phone</Label>
-              <Input type="tel" value={form.phone} onChange={update("phone")} placeholder="(555) 555-5555" className="bg-white/10 border-white/15 text-white placeholder:text-white/30 h-9 text-sm" />
-            </div>
-            <div>
-              <Label className="text-xs text-white/60 mb-1 block">Coverage Needed</Label>
-              <Textarea value={form.coverage} onChange={update("coverage")} placeholder="GL, Workers Comp, Auto, etc." rows={2} className="bg-white/10 border-white/15 text-white placeholder:text-white/30 text-sm min-h-0" />
-            </div>
-
             <Button onClick={handleStart} disabled={loading} className="w-full bg-yellow-400 hover:bg-yellow-500 text-black font-semibold">
               {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <ArrowRight className="w-4 h-4 mr-2" />}
-              {loading ? "Creating link…" : "Start Your Review"}
+              {loading ? "Creating link…" : "Full Application"}
             </Button>
-            <a href="https://prestigeabatementandconstruction.com" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-xs text-white/40 hover:text-white/70 w-full justify-center">
-              <Phone className="w-3 h-3" /> Contact Prestige directly
-            </a>
+            <p className="text-[10px] text-white/30">Upload documents for a faster, more complete review</p>
           </CardContent>
         </Card>
       </section>

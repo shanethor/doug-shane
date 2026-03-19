@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Upload, Search, CheckCircle, MessageSquare, ArrowRight, Loader2, ExternalLink, FileUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import omitLogo from "@/assets/omit-logo.png";
+import PartnerQuickApply from "@/components/PartnerQuickApply";
 
 const STEPS = [
   {

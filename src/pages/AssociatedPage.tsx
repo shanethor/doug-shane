@@ -5,6 +5,7 @@ import { Upload, ClipboardList, UserCheck, Phone, Mail, ArrowRight, Loader2, Ext
 import { supabase } from "@/integrations/supabase/client";
 import dougHeadshot from "@/assets/doug-wenz-headshot.png";
 import associatedLogo from "@/assets/associated-logo.png";
+import PartnerQuickApply from "@/components/PartnerQuickApply";
 
 const STEPS = [
   {

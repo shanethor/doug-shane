@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Upload, ClipboardList, UserCheck, MessageSquare, ArrowRight, Loader2, ExternalLink, Home, Shield, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import PartnerQuickApply from "@/components/PartnerQuickApply";
 
 const STEPS = [
   {
