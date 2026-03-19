@@ -13,7 +13,7 @@ Deno.serve(async (req) => {
     if (!authHeader?.startsWith("Bearer ")) throw new Error("Missing authorization");
 
     const body = await req.json();
-    const { target_user_id, action, role, email, password, full_name } = body;
+    const { target_user_id, action, role, email, password, full_name, branch } = body;
     if (!action) throw new Error("Missing action");
 
     const anonClient = createClient(

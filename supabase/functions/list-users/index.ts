@@ -104,6 +104,7 @@ Deno.serve(async (req) => {
         agency_name: (agency as any)?.name || profile?.agency_name || null,
         agency_id: profile?.agency_id || null,
         phone: profile?.phone || null,
+        branch: profile?.branch || null,
         roles: userRoles,
         primary_role: primaryRole,
         approval_status: profile?.approval_status || "approved",
