@@ -844,6 +844,7 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
     }
     if (id === "phone") return handlePhoneContacts();
     if (id === "social") {
+      loadMyProfiles();
       setShowSocialDialog(true);
       return;
     }
