@@ -1074,47 +1074,42 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Instagram className="h-5 w-5 text-primary" />
-              Import Social Profiles
+              Import Social Contacts
             </DialogTitle>
             <DialogDescription>
-              Paste a profile URL from Instagram, Facebook, or X to import contact data.
+              Add contacts from Instagram, Facebook, or X to your network graph.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 mt-2">
+            {/* Primary method: paste handles/names */}
             <div className="space-y-2">
-              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Profile URL</label>
-              <input
-                type="url"
-                placeholder="https://instagram.com/username or https://facebook.com/business"
-                value={socialUrl}
-                onChange={(e) => {
-                  setSocialUrl(e.target.value);
-                  setSocialPlatform(detectSocialPlatform(e.target.value));
-                }}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                Paste Names & Handles
+              </label>
+              <Textarea
+                placeholder={"John Smith, @johnsmith_ig, Acme Corp\nJane Doe, https://instagram.com/janedoe\nBob Builder, @bob_x"}
+                value={socialHandles}
+                onChange={(e) => setSocialHandles(e.target.value)}
+                rows={5}
+                className="text-sm font-mono"
               />
-              {socialPlatform && (
-                <p className="text-[11px] text-muted-foreground">
-                  Detected platform: <span className="font-medium capitalize">{socialPlatform}</span>
-                </p>
-              )}
+              <p className="text-[11px] text-muted-foreground">
+                One per line: <span className="font-medium">Name, Handle/URL, Company</span> (comma or tab separated)
+              </p>
             </div>
 
             <div className="grid grid-cols-3 gap-2">
               {[
-                { name: "Instagram", url: "https://instagram.com/", icon: "📸" },
-                { name: "Facebook", url: "https://facebook.com/", icon: "📘" },
-                { name: "X / Twitter", url: "https://x.com/", icon: "𝕏" },
+                { name: "Instagram", platform: "instagram", icon: "📸" },
+                { name: "Facebook", platform: "facebook", icon: "📘" },
+                { name: "X / Twitter", platform: "x", icon: "𝕏" },
               ].map((p) => (
                 <Button
                   key={p.name}
-                  variant="outline"
+                  variant={socialPlatform === p.platform ? "default" : "outline"}
                   size="sm"
                   className="h-auto py-2 text-xs flex-col gap-1"
-                  onClick={() => {
-                    if (!socialUrl) setSocialUrl(p.url);
-                    setSocialPlatform(p.name.toLowerCase().replace(" / twitter", ""));
-                  }}
+                  onClick={() => setSocialPlatform(p.platform)}
                 >
                   <span className="text-lg">{p.icon}</span>
                   {p.name}
@@ -1124,20 +1119,50 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
 
             <Button
               className="w-full gap-2"
-              disabled={!socialUrl.trim() || actionLoading === "social"}
-              onClick={handleSocialScrape}
+              disabled={!socialHandles.trim() || actionLoading === "social"}
+              onClick={handleSocialHandlesImport}
             >
               {actionLoading === "social" ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                <CheckCircle className="h-4 w-4" />
+                <Upload className="h-4 w-4" />
               )}
-              Scrape & Import Profile
+              Import Contacts
             </Button>
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">or scrape a public URL</span>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <input
+                type="url"
+                placeholder="https://company.com/team or public profile URL"
+                value={socialUrl}
+                onChange={(e) => {
+                  setSocialUrl(e.target.value);
+                  setSocialPlatform(detectSocialPlatform(e.target.value));
+                }}
+                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full gap-2"
+                disabled={!socialUrl.trim() || actionLoading === "social"}
+                onClick={handleSocialScrape}
+              >
+                <Network className="h-3.5 w-3.5" />
+                Scrape & Import
+              </Button>
+            </div>
 
             <div className="rounded-md bg-muted/50 p-2.5">
               <p className="text-[11px] text-muted-foreground leading-relaxed">
-                <strong>How it works:</strong> AURA scrapes the public profile page and uses AI to extract name, company, title, bio, and other contact details. Works best with public business profiles.
+                <strong>Note:</strong> Instagram, Facebook, and X block automated scraping. Use the paste method above for these platforms. URL scraping works for public websites, company team pages, and LinkedIn profiles.
               </p>
             </div>
 
