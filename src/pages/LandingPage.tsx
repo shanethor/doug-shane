@@ -54,7 +54,7 @@ export default function LandingPage() {
       {/* ── Hero ── */}
       <section className="relative h-screen min-h-[700px] max-sm:min-h-[600px] overflow-hidden flex flex-col justify-end">
         <div className="absolute inset-0">
-          <img src="/images/hero.jpg" alt="" className="w-full h-full object-cover brightness-[0.35] saturate-[0.4]" />
+          <img src="/images/hero.png" alt="" className="w-full h-full object-cover brightness-[0.35] saturate-[0.3]" />
           <div className="absolute inset-0 bg-gradient-to-b from-[hsl(240,10%,4%)]/20 via-[hsl(240,10%,4%)]/10 via-40% to-[hsl(240,10%,4%)] to-100%" />
         </div>
         <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-12 max-w-[1200px] w-full mx-auto px-5 md:px-12 pb-10 md:pb-[72px] items-end">
