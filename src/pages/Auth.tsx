@@ -107,8 +107,8 @@ export default function Auth() {
         .then((result) => {
           if (result.trusted) {
             set2FAVerified(true);
-            navigate("/", { replace: true });
-          } else if (result.sent) {
+            navigate("/hub", { replace: true });
+           } else if (result.sent) {
             setPendingUserId(user.id);
             setPendingEmail(user.email!);
             setNeeds2FA(true);
