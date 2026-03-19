@@ -1022,6 +1022,88 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Social Profile Import Dialog */}
+      <Dialog open={showSocialDialog} onOpenChange={setShowSocialDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Instagram className="h-5 w-5 text-primary" />
+              Import Social Profiles
+            </DialogTitle>
+            <DialogDescription>
+              Paste a profile URL from Instagram, Facebook, or X to import contact data.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 mt-2">
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Profile URL</label>
+              <input
+                type="url"
+                placeholder="https://instagram.com/username or https://facebook.com/business"
+                value={socialUrl}
+                onChange={(e) => {
+                  setSocialUrl(e.target.value);
+                  setSocialPlatform(detectSocialPlatform(e.target.value));
+                }}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              />
+              {socialPlatform && (
+                <p className="text-[11px] text-muted-foreground">
+                  Detected platform: <span className="font-medium capitalize">{socialPlatform}</span>
+                </p>
+              )}
+            </div>
+
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { name: "Instagram", url: "https://instagram.com/", icon: "📸" },
+                { name: "Facebook", url: "https://facebook.com/", icon: "📘" },
+                { name: "X / Twitter", url: "https://x.com/", icon: "𝕏" },
+              ].map((p) => (
+                <Button
+                  key={p.name}
+                  variant="outline"
+                  size="sm"
+                  className="h-auto py-2 text-xs flex-col gap-1"
+                  onClick={() => {
+                    if (!socialUrl) setSocialUrl(p.url);
+                    setSocialPlatform(p.name.toLowerCase().replace(" / twitter", ""));
+                  }}
+                >
+                  <span className="text-lg">{p.icon}</span>
+                  {p.name}
+                </Button>
+              ))}
+            </div>
+
+            <Button
+              className="w-full gap-2"
+              disabled={!socialUrl.trim() || actionLoading === "social"}
+              onClick={handleSocialScrape}
+            >
+              {actionLoading === "social" ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <CheckCircle className="h-4 w-4" />
+              )}
+              Scrape & Import Profile
+            </Button>
+
+            <div className="rounded-md bg-muted/50 p-2.5">
+              <p className="text-[11px] text-muted-foreground leading-relaxed">
+                <strong>How it works:</strong> AURA scrapes the public profile page and uses AI to extract name, company, title, bio, and other contact details. Works best with public business profiles.
+              </p>
+            </div>
+
+            <div className="rounded-md border border-dashed border-muted-foreground/30 p-2.5">
+              <p className="text-[11px] text-muted-foreground leading-relaxed">
+                <strong>Coming Soon:</strong> Post/engage directly from AURA, social signal monitoring, and automated trigger detection from social activity.
+              </p>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
