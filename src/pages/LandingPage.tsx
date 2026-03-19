@@ -210,11 +210,12 @@ export default function LandingPage() {
         {/* ═══ HERO ═══ */}
         <section className="relative min-h-auto flex items-start justify-center pt-[18vh] pb-[6vh] 2xl:pt-[14vh]">
           {/* BG Image */}
-          <div className="absolute top-0 left-0 right-0 h-[140%] overflow-hidden pointer-events-none">
+           <div className="absolute top-0 left-0 right-0 h-[140%] overflow-hidden pointer-events-none">
             <div
-              className="absolute inset-0 bg-cover bg-no-repeat bg-center portrait:bg-[url('/images/bg-portrait.png')] landscape:bg-[url('/images/bg-wide.png')] 2xl:bg-[length:85%_auto] 2xl:bg-[center_15%]"
+              className="absolute inset-0 bg-cover bg-no-repeat bg-center portrait:bg-[url('/images/bg-portrait.png')] landscape:bg-[url('/images/bg-wide.png')]"
             />
             <div className="absolute inset-0 bg-gradient-to-b from-[#08080A]/30 via-[#08080A]/20 via-[35%] to-[#08080A]" />
+            <div className="absolute inset-0 bg-[linear-gradient(90deg,#08080A_0%,transparent_8%,transparent_92%,#08080A_100%)]" />
           </div>
 
           {/* Orbit rings */}
