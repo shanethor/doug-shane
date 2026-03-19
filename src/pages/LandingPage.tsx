@@ -120,11 +120,11 @@ const branches = [
   },
   {
     key: "wealth",
-    label: "AURA Wealth",
+    label: "AURA Consulting",
     color: "#C9A84C",
     colorBright: "#D4B85C",
-    tag: "Wealth Intelligence",
-    title: "Wealth management,\nunified.",
+    tag: "Consulting Intelligence",
+    title: "Consulting services,\nunified.",
     desc: "Holistic client view across insurance, real estate, and investments. One relationship, complete financial intelligence.",
     feats: ["Financial Planning", "Retirement Accounts", "Investment Advisory"],
     image: "/images/hero-wealth.jpg",
@@ -135,7 +135,7 @@ const branches = [
 /* ═══ Partners Data ═══ */
 const partnerCards = [
   { num: "01", title: "Real-time tracking", desc: "Private dashboard: Sent → Active Leads → Policies Sold → Premium Placed. Always current." },
-  { num: "02", title: "Cross-vertical referrals", desc: "One partnership, three verticals. AURA routes insurance, property, and wealth referrals automatically." },
+  { num: "02", title: "Cross-vertical referrals", desc: "One partnership, three verticals. AURA routes insurance, property, and consulting referrals automatically." },
   { num: "03", title: "Premium-based compensation", desc: "Earn based on premium placed. No caps, no complexity — grow uncapped alongside your referrals." },
   { num: "04", title: "AI-powered intelligence", desc: "AURA Connect enriches every referral with relationship data for the warmest possible path." },
 ];
@@ -250,7 +250,7 @@ export default function LandingPage() {
             <p className="text-[17px] font-medium text-[#E4E4E7] max-w-[520px] mx-auto mt-6 leading-[1.65]">
               One platform powering <span className="text-[#0A8A8F] font-medium">insurance</span>,{" "}
               <span className="text-[#D4884A] font-medium">property</span>, and{" "}
-              <span className="text-[#D4B85C] font-medium">wealth</span> management. AI-native infrastructure for the professionals who protect, build, and grow.
+              <span className="text-[#D4B85C] font-medium">consulting</span>. AI-native infrastructure for the professionals who protect, build, and grow.
             </p>
           </div>
         </section>
@@ -310,7 +310,7 @@ export default function LandingPage() {
                   Three verticals.<br />One AI backbone.
                 </h2>
                 <p className="text-[15px] text-[#71717A] max-w-[500px] mt-3 leading-[1.6]">
-                  Insurance, property, and wealth data interact daily — powering cross-vertical intelligence no single-line platform can match.
+                  Insurance, property, and consulting data interact daily — powering cross-vertical intelligence no single-line platform can match.
                 </p>
               </div>
 
@@ -381,7 +381,7 @@ export default function LandingPage() {
                   Built on relationships,<br />not transactions.
                 </h2>
                 <p className="text-[15px] text-[#71717A] leading-[1.65] max-w-[560px]">
-                  Refer clients across insurance, property, and wealth — track every touchpoint from introduction to premium placed.
+                  Refer clients across insurance, property, and consulting — track every touchpoint from introduction to premium placed.
                 </p>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
@@ -418,7 +418,7 @@ export default function LandingPage() {
                 AURA
               </div>
               <p className="text-[13px] text-[#71717A] leading-[1.6] max-w-[260px]">
-                Automated Universal Risk Advisor. AI-native infrastructure for insurance, property, and wealth management.
+                Automated Universal Risk Advisor. AI-native infrastructure for insurance, property, and consulting.
               </p>
             </div>
             <div>
@@ -426,7 +426,7 @@ export default function LandingPage() {
               <a href="#connect" className="block text-[13px] text-[#71717A] py-1 hover:text-white transition-colors no-underline">AURA Connect</a>
               <a href="#branches" className="block text-[13px] text-[#71717A] py-1 hover:text-white transition-colors no-underline">AURA Risk</a>
               <a href="#branches" className="block text-[13px] text-[#71717A] py-1 hover:text-white transition-colors no-underline">AURA Property</a>
-              <a href="#branches" className="block text-[13px] text-[#71717A] py-1 hover:text-white transition-colors no-underline">AURA Wealth</a>
+              <a href="#branches" className="block text-[13px] text-[#71717A] py-1 hover:text-white transition-colors no-underline">AURA Consulting</a>
             </div>
             <div>
               <div className="text-[13px] font-semibold text-white mb-4">Company</div>

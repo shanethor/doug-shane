@@ -651,7 +651,7 @@ export default function AdminDashboard() {
                               <SelectItem value="none" disabled>No branch</SelectItem>
                               <SelectItem value="risk">🛡️ Risk</SelectItem>
                               <SelectItem value="property">🏠 Property</SelectItem>
-                              <SelectItem value="wealth">💰 Wealth</SelectItem>
+                              <SelectItem value="wealth">💰 Consulting</SelectItem>
                             </SelectContent>
                           </Select>
                           <Button
