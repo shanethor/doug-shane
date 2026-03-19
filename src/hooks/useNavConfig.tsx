@@ -7,7 +7,7 @@ export type NavTab = {
 };
 
 export const ALL_NAV_TABS: NavTab[] = [
-  { id: "aura", label: "AURA", to: "/" },
+  { id: "aura", label: "AURA", to: "/hub" },
   { id: "email", label: "Email", to: "/email" },
   { id: "pulse", label: "Pulse", to: "/pulse" },
   { id: "hub", label: "Command Center", to: "/hub" },
