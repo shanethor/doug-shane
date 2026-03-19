@@ -89,7 +89,7 @@ export default function Auth() {
     if (!loading && user && !is2FAVerified() && !needs2FA && !autoChecking && !isPendingApproval) {
       if (user.user_metadata?.skip_2fa) {
         set2FAVerified(true);
-        navigate("/", { replace: true });
+        navigate("/hub", { replace: true });
         return;
       }
       setAutoChecking(true);
@@ -107,8 +107,8 @@ export default function Auth() {
         .then((result) => {
           if (result.trusted) {
             set2FAVerified(true);
-            navigate("/", { replace: true });
-          } else if (result.sent) {
+            navigate("/hub", { replace: true });
+           } else if (result.sent) {
             setPendingUserId(user.id);
             setPendingEmail(user.email!);
             setNeeds2FA(true);
@@ -124,7 +124,7 @@ export default function Auth() {
         })
         .finally(() => setAutoChecking(false));
     } else if (!loading && user && is2FAVerified() && !isPendingApproval) {
-      navigate("/", { replace: true });
+      navigate("/hub", { replace: true });
     }
   }, [user, loading, isPendingApproval]);
 
@@ -133,7 +133,7 @@ export default function Auth() {
       <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
     </div>
   );
-  if (user && is2FAVerified() && !isPendingApproval) return <Navigate to="/" replace />;
+  if (user && is2FAVerified() && !isPendingApproval) return <Navigate to="/hub" replace />;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -212,7 +212,7 @@ export default function Auth() {
 
         if (data.user.user_metadata?.skip_2fa) {
           set2FAVerified(true);
-          navigate("/", { replace: true });
+          navigate("/hub", { replace: true });
           return;
         }
 
@@ -235,7 +235,7 @@ export default function Auth() {
 
         if (result.trusted) {
           set2FAVerified(true);
-          navigate("/");
+          navigate("/hub");
         } else if (result.sent) {
           setNeeds2FA(true);
           toast.success("Verification code sent to your email");
@@ -288,7 +288,7 @@ export default function Auth() {
 
         set2FAVerified(rememberDevice);
         toast.success("Verified successfully");
-        navigate("/");
+        navigate("/hub");
       } else {
         toast.error(result.error || "Invalid code");
       }
