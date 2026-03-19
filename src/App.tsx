@@ -118,7 +118,7 @@ const App = () => (
           <Route path="/login" element={<Navigate to="/auth" replace />} />
           <Route path="/signup" element={<Navigate to="/auth" replace />} />
           <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/" element={<ProtectedRoute><HomeRoute /></ProtectedRoute>} />
+          <Route path="/" element={<LandingPage />} />
           <Route path="/email" element={<ProtectedRoute><EmailHub /></ProtectedRoute>} />
           <Route path="/hub" element={<ProtectedRoute><ProducerHub /></ProtectedRoute>} />
           <Route path="/pulse" element={<ProtectedRoute><AuraPulse /></ProtectedRoute>} />
