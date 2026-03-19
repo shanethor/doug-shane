@@ -303,7 +303,15 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
       const data = await resp.json();
       if (!resp.ok) {
         const shouldReconnect = data.needs_reconnect || data.error?.includes("reconnect") || data.error?.includes("refresh");
-        if (shouldReconnect) {
+        if (data.needs_enable_api) {
+          sessionStorage.removeItem("pending_contacts_sync");
+          sessionStorage.removeItem("pending_contacts_email");
+          sessionStorage.removeItem("google_contacts_reconnect_attempted");
+          toast.error(data.error || "Google People API must be enabled before contacts can sync.");
+          if (data.activation_url) {
+            window.open(data.activation_url, "_blank", "noopener,noreferrer");
+          }
+        } else if (shouldReconnect) {
           const autoReconnect = options?.autoReconnect ?? true;
           const alreadyAttempted = sessionStorage.getItem("google_contacts_reconnect_attempted") === "true";
 
