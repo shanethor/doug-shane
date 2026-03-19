@@ -13,7 +13,7 @@ Deno.serve(async (req) => {
     if (!authHeader?.startsWith("Bearer ")) throw new Error("Missing authorization");
 
     const body = await req.json();
-    const { target_user_id, action, role, email, password, full_name } = body;
+    const { target_user_id, action, role, email, password, full_name, branch } = body;
     if (!action) throw new Error("Missing action");
 
     const anonClient = createClient(
@@ -86,10 +86,12 @@ Deno.serve(async (req) => {
     if (action === "approve") {
       if (!role) throw new Error("Missing role for approval");
 
-      // Update approval status
+      // Update approval status and branch
+      const profileUpdate: Record<string, any> = { approval_status: "approved" };
+      if (branch) profileUpdate.branch = branch;
       await adminClient
         .from("profiles")
-        .update({ approval_status: "approved" })
+        .update(profileUpdate)
         .eq("user_id", target_user_id);
 
       // Set role
@@ -236,6 +238,28 @@ Deno.serve(async (req) => {
         action: "delete_agency",
         object_type: "agency",
         object_id: agencyId,
+      });
+
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (action === "set_branch") {
+      const validBranches = ["risk", "property", "wealth"];
+      if (!branch || !validBranches.includes(branch)) throw new Error("Invalid branch");
+      
+      await adminClient
+        .from("profiles")
+        .update({ branch })
+        .eq("user_id", target_user_id);
+
+      await adminClient.from("audit_log").insert({
+        user_id: callerId,
+        action: "set_branch",
+        object_type: "user",
+        object_id: target_user_id,
+        metadata: { branch },
       });
 
       return new Response(JSON.stringify({ success: true }), {

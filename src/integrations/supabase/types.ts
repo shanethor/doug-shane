@@ -2249,6 +2249,7 @@ export type Database = {
           agency_name: string | null
           ai_provider: string
           approval_status: string
+          branch: string | null
           created_at: string
           dark_mode: boolean
           form_defaults: Json | null
@@ -2267,6 +2268,7 @@ export type Database = {
           agency_name?: string | null
           ai_provider?: string
           approval_status?: string
+          branch?: string | null
           created_at?: string
           dark_mode?: boolean
           form_defaults?: Json | null
@@ -2285,6 +2287,7 @@ export type Database = {
           agency_name?: string | null
           ai_provider?: string
           approval_status?: string
+          branch?: string | null
           created_at?: string
           dark_mode?: boolean
           form_defaults?: Json | null

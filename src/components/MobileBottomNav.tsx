@@ -1,6 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useUserFeatures } from "@/hooks/useUserFeatures";
+import { useUserBranch } from "@/hooks/useUserBranch";
 import { useUnreadCount } from "@/hooks/useUnreadCount";
 import { useNavConfig, ALL_NAV_TABS } from "@/hooks/useNavConfig";
 import {
@@ -37,14 +38,17 @@ export function MobileBottomNav() {
   const location = useLocation();
   const { canSeeProducerHub, canSeeAdmin, canSeeChat, canSeeEmail, canSeePulse } = useUserRole();
   const { hasConnect } = useUserFeatures();
+  const { branch } = useUserBranch();
   const { signOut } = useAuth();
   const { trainingMode, setTrainingMode } = useTrainingMode();
   const { emailCount, pulseCount } = useUnreadCount();
   const { config } = useNavConfig();
   const [moreOpen, setMoreOpen] = useState(false);
 
-  // Filter tabs based on role
-  const allowedTabs = ALL_NAV_TABS.filter((t) => {
+  const isBranchRestricted = branch === "property" || branch === "wealth";
+
+  // Filter tabs based on role and branch
+  const allowedTabs = isBranchRestricted ? [] : ALL_NAV_TABS.filter((t) => {
     if (t.id === "hub" && !canSeeProducerHub) return false;
     if (t.id === "aura" && !canSeeChat) return false;
     if (t.id === "email" && !canSeeEmail) return false;

@@ -98,6 +98,53 @@
     --sidebar-border: 240 6% 12%;
     --sidebar-ring: 174 80% 28%;
   }
+
+  /* ── Branch theme overrides (dark mode) ── */
+  .dark.theme-risk {
+    --primary: 174 97% 22%;
+    --accent: 174 80% 28%;
+    --ring: 174 97% 22%;
+    --aura-glow: 174 80% 28%;
+    --sidebar-primary: 174 80% 28%;
+    --sidebar-ring: 174 80% 28%;
+  }
+
+  .dark.theme-property {
+    --primary: 27 60% 46%;
+    --accent: 30 55% 50%;
+    --ring: 27 60% 46%;
+    --aura-glow: 30 55% 50%;
+    --sidebar-primary: 27 60% 46%;
+    --sidebar-ring: 27 60% 46%;
+  }
+
+  .dark.theme-wealth {
+    --primary: 43 50% 54%;
+    --accent: 40 45% 58%;
+    --ring: 43 50% 54%;
+    --aura-glow: 40 45% 58%;
+    --sidebar-primary: 43 50% 54%;
+    --sidebar-ring: 43 50% 54%;
+  }
+
+  /* ── Branch theme overrides (light mode) ── */
+  .theme-risk:not(.dark) {
+    --primary: 174 60% 25%;
+    --accent: 174 50% 40%;
+    --ring: 174 60% 25%;
+  }
+
+  .theme-property:not(.dark) {
+    --primary: 27 55% 38%;
+    --accent: 30 50% 45%;
+    --ring: 27 55% 38%;
+  }
+
+  .theme-wealth:not(.dark) {
+    --primary: 43 45% 40%;
+    --accent: 40 40% 48%;
+    --ring: 43 45% 40%;
+  }
 }
 
 @layer base {
