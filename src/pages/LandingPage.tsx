@@ -381,7 +381,7 @@ export default function LandingPage() {
                   Built on relationships,<br />not transactions.
                 </h2>
                 <p className="text-[15px] text-[#71717A] leading-[1.65] max-w-[560px]">
-                  Refer clients across insurance, property, and wealth — track every touchpoint from introduction to premium placed.
+                  Refer clients across insurance, property, and consulting — track every touchpoint from introduction to premium placed.
                 </p>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
