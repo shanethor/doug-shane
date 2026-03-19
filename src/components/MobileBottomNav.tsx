@@ -38,6 +38,7 @@ export function MobileBottomNav() {
   const location = useLocation();
   const { canSeeProducerHub, canSeeAdmin, canSeeChat, canSeeEmail, canSeePulse } = useUserRole();
   const { hasConnect } = useUserFeatures();
+  const { branch } = useUserBranch();
   const { signOut } = useAuth();
   const { trainingMode, setTrainingMode } = useTrainingMode();
   const { emailCount, pulseCount } = useUnreadCount();
