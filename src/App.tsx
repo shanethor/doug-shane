@@ -133,6 +133,8 @@ const App = () => (
           <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
           <Route path="/deck" element={<Deck />} />
           <Route path="/home" element={<LandingPage />} />
+          <Route path="/become-partner" element={<BecomePartner />} />
+          <Route path="/request-access" element={<RequestAccess />} />
           <Route path="/olddeck" element={<ProtectedRoute><OldDeck /></ProtectedRoute>} />
           <Route path="/pdf-diagnostic" element={<PdfDiagnostic />} />
           <Route path="/form-test" element={<ProtectedRoute><FormTest /></ProtectedRoute>} />

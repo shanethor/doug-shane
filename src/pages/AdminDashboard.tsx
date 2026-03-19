@@ -802,6 +802,16 @@ export default function AdminDashboard() {
           <AdminPartnerReferrals />
         </TabsContent>
 
+        {/* ── Partner Requests ── */}
+        <TabsContent value="partner-requests" className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold">Requested Partners</h2>
+            <Badge variant="outline" className="text-xs">From /home</Badge>
+          </div>
+          <p className="text-xs text-muted-foreground">Inbound partner applications from the public landing page.</p>
+          <AdminPartnerRequests />
+        </TabsContent>
+
         {/* ── Feature Suggestions ── */}
         <TabsContent value="suggestions" className="space-y-4">
           <div className="flex items-center justify-between">
