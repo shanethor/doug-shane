@@ -13,6 +13,7 @@ import AssociatedPage from "./AssociatedPage";
 import OmitPage from "./OmitPage";
 import DomisourcePage from "./DomisourcePage";
 import RaycoPage from "./RaycoPage";
+import PrestigePage from "./PrestigePage";
 
 /* ─── Borrower Config ─── */
 interface CoverageCard {
@@ -119,6 +120,7 @@ export default function BorrowerPage() {
   if (slug === "omit") return <OmitPage />;
   if (slug === "domisource") return <DomisourcePage />;
   if (slug === "rayco") return <RaycoPage />;
+  if (slug === "prestige") return <PrestigePage />;
 
   const config = slug ? BORROWERS[slug] : undefined;
 
