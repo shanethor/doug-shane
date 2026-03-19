@@ -418,7 +418,7 @@ export default function LandingPage() {
                 AURA
               </div>
               <p className="text-[13px] text-[#71717A] leading-[1.6] max-w-[260px]">
-                Automated Universal Risk Advisor. AI-native infrastructure for insurance, property, and wealth management.
+                Automated Universal Risk Advisor. AI-native infrastructure for insurance, property, and consulting.
               </p>
             </div>
             <div>
