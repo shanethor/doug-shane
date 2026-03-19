@@ -230,6 +230,7 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
   const [showReconnectPicker, setShowReconnectPicker] = useState(false);
   const [gmailAccounts, setGmailAccounts] = useState<{id: string; email: string}[]>([]);
   const [showPhoneDialog, setShowPhoneDialog] = useState(false);
+  const [pasteContacts, setPasteContacts] = useState("");
   const [showSocialDialog, setShowSocialDialog] = useState(false);
   const [socialUrl, setSocialUrl] = useState("");
   const [socialPlatform, setSocialPlatform] = useState<string>("");
