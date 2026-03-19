@@ -67,7 +67,7 @@ ${notes?.trim() ? `Notes: ${notes.trim()}` : "No additional notes provided."}
 
 Generate a thorough intelligence brief. If notes mention specific details (industry, location, referral source), use them to build richer context.`;
 
-    const aiRes = await fetch("https://lovable.dev/api/chat", {
+    const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

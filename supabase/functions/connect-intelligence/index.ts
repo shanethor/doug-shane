@@ -95,7 +95,7 @@ Generate my relationship intelligence dashboard. Focus on:
       throw new Error("Unknown action: " + action);
     }
 
-    const aiRes = await fetch("https://lovable.dev/api/chat", {
+    const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
