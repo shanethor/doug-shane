@@ -141,7 +141,28 @@ serve(async (req) => {
 
         if (!resp.ok) {
           const errText = await resp.text();
+          let errJson: any = null;
+          try {
+            errJson = JSON.parse(errText);
+          } catch {
+            errJson = null;
+          }
           console.error("People API error:", resp.status, errText);
+          const googleErrorInfo = errJson?.error?.details?.find((detail: any) => detail?.["@type"] === "type.googleapis.com/google.rpc.ErrorInfo");
+          const activationUrl = googleErrorInfo?.metadata?.activationUrl
+            || errJson?.error?.details?.find((detail: any) => detail?.["@type"] === "type.googleapis.com/google.rpc.Help")?.links?.[0]?.url
+            || null;
+
+          if (resp.status === 403 && googleErrorInfo?.reason === "SERVICE_DISABLED") {
+            return new Response(JSON.stringify({
+              error: "Google People API is disabled in your Google Cloud project. Enable the People API, wait a minute, then try again.",
+              needs_enable_api: true,
+              activation_url: activationUrl,
+            }), {
+              status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
+          }
+
           if (resp.status === 403) {
             return new Response(JSON.stringify({
               error: "Contacts permission not granted. Please reconnect Gmail with contacts access.",
