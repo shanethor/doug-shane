@@ -135,7 +135,7 @@ const branches = [
 /* ═══ Partners Data ═══ */
 const partnerCards = [
   { num: "01", title: "Real-time tracking", desc: "Private dashboard: Sent → Active Leads → Policies Sold → Premium Placed. Always current." },
-  { num: "02", title: "Cross-vertical referrals", desc: "One partnership, three verticals. AURA routes insurance, property, and wealth referrals automatically." },
+  { num: "02", title: "Cross-vertical referrals", desc: "One partnership, three verticals. AURA routes insurance, property, and consulting referrals automatically." },
   { num: "03", title: "Premium-based compensation", desc: "Earn based on premium placed. No caps, no complexity — grow uncapped alongside your referrals." },
   { num: "04", title: "AI-powered intelligence", desc: "AURA Connect enriches every referral with relationship data for the warmest possible path." },
 ];
