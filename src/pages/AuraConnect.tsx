@@ -776,6 +776,9 @@ export default function AuraConnect() {
             )}
           </TabsContent>
         </Tabs>
+
+        {/* Progressive Unlocks — below main content */}
+        <ProgressiveUnlocks />
       </div>
     </AppLayout>
   );
