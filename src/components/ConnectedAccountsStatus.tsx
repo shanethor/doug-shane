@@ -680,6 +680,50 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
     }
   };
 
+  // ─── Social Handles Bulk Import ───
+  const handleSocialHandlesImport = async () => {
+    const lines = socialHandles.trim().split("\n").filter(Boolean);
+    if (lines.length === 0) {
+      toast.error("Paste at least one handle or name");
+      return;
+    }
+    setShowSocialDialog(false);
+    setActionLoading("social");
+    try {
+      const handles = lines.map(line => {
+        const parts = line.split(/[,\t]+/).map(p => p.trim());
+        const name = parts[0] || "";
+        const handle = parts[1] || "";
+        const company = parts[2] || "";
+        const platform = handle.includes("instagram") ? "instagram"
+          : handle.includes("facebook") || handle.includes("fb.com") ? "facebook"
+          : handle.includes("x.com") || handle.includes("twitter") ? "x"
+          : socialPlatform || "social";
+        return { name, handle, company, platform, url: handle.startsWith("http") ? handle : undefined };
+      }).filter(h => h.name);
+
+      const headers = await getAuthHeaders();
+      const resp = await fetch(SOCIAL_SYNC_URL, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ action: "import_social_handles", handles }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) {
+        toast.error(data.error || "Import failed");
+        return;
+      }
+      toast.success(`Imported ${data.imported} social contact(s)`);
+      setSocialHandles("");
+      setSocialPlatform("");
+      refresh();
+    } catch {
+      toast.error("Failed to import social contacts");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   // ─── Disconnect ───
   const handleDisconnect = async (source: string) => {
     const sourceMap: Record<string, string> = {
