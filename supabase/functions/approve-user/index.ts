@@ -245,6 +245,28 @@ Deno.serve(async (req) => {
       });
     }
 
+    if (action === "set_branch") {
+      const validBranches = ["risk", "property", "wealth"];
+      if (!branch || !validBranches.includes(branch)) throw new Error("Invalid branch");
+      
+      await adminClient
+        .from("profiles")
+        .update({ branch })
+        .eq("user_id", target_user_id);
+
+      await adminClient.from("audit_log").insert({
+        user_id: callerId,
+        action: "set_branch",
+        object_type: "user",
+        object_id: target_user_id,
+        metadata: { branch },
+      });
+
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     throw new Error("Invalid action: " + action);
   } catch (err: any) {
     return new Response(JSON.stringify({ error: err.message }), {

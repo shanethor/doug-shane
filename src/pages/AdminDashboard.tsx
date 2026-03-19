@@ -620,6 +620,35 @@ export default function AdminDashboard() {
                             <SelectItem value="property">Property</SelectItem>
                           </SelectContent>
                           </Select>
+                          <Select
+                            value={u.branch || "none"}
+                            onValueChange={async (newBranch) => {
+                              if (newBranch === "none") return;
+                              const { data, error } = await supabase.functions.invoke("approve-user", {
+                                body: { target_user_id: u.id, action: "set_branch", branch: newBranch },
+                              });
+                              if (error || data?.error) {
+                                toast.error(data?.error || "Failed to update branch");
+                                return;
+                              }
+                              toast.success(`Branch updated to ${newBranch}`);
+                              setAdminUsers((prev) =>
+                                prev.map((au: any) =>
+                                  au.id === u.id ? { ...au, branch: newBranch } : au
+                                )
+                              );
+                            }}
+                          >
+                            <SelectTrigger className="w-32 h-8 text-xs">
+                              <SelectValue placeholder="Set branch…" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none" disabled>No branch</SelectItem>
+                              <SelectItem value="risk">🛡️ Risk</SelectItem>
+                              <SelectItem value="property">🏠 Property</SelectItem>
+                              <SelectItem value="wealth">💰 Wealth</SelectItem>
+                            </SelectContent>
+                          </Select>
                           <Button
                             variant="ghost"
                             size="icon"
