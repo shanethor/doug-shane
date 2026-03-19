@@ -225,6 +225,23 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
   const [showPhoneDialog, setShowPhoneDialog] = useState(false);
   const [pasteContacts, setPasteContacts] = useState("");
 
+  // ─── Auto-sync contacts after OAuth return ───
+  const pendingSyncHandled = useRef(false);
+  useEffect(() => {
+    if (pendingSyncHandled.current) return;
+    const pending = sessionStorage.getItem("pending_contacts_sync");
+    if (!pending) return;
+    pendingSyncHandled.current = true;
+    sessionStorage.removeItem("pending_contacts_sync");
+    // Small delay to let the component fully mount
+    const timer = setTimeout(() => {
+      if (pending === "google") handleSyncGoogleContacts();
+      else if (pending === "outlook") handleSyncOutlookContacts();
+    }, 1500);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const requiredAccounts = accounts.filter(a => a.level === "Required");
   const allRequiredConnected = requiredAccounts.every(a => a.connected);
   const connectedCount = accounts.filter(a => a.connected).length;
@@ -278,6 +295,8 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
       if (data.url) {
         // Store return path so we come back to settings after reconnect
         sessionStorage.setItem("email_connect_return", "/settings?section=network");
+        // Flag so we auto-trigger contacts sync after OAuth completes
+        sessionStorage.setItem("pending_contacts_sync", "google");
         window.location.href = data.url;
       } else {
         toast.error("Failed to start reconnection");
