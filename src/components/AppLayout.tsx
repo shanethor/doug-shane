@@ -43,7 +43,7 @@ export function AppLayout({ children, onLogoClick }: { children: React.ReactNode
               <span className="text-[9px] md:text-[11px] text-muted-foreground tracking-widest uppercase">Risk Group</span>
             </button>
           ) : (
-            <Link to="/" className="flex items-center gap-2">
+            <Link to="/hub" className="flex items-center gap-2">
               <span className="text-base md:text-lg font-bold tracking-tight">AURA</span>
               <span className="text-[9px] md:text-[11px] text-muted-foreground tracking-widest uppercase">Risk Group</span>
             </Link>
