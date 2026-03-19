@@ -649,38 +649,108 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
     return "social";
   };
 
-  // ─── Social Profile Scrape ───
   const SOCIAL_SYNC_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync-social`;
 
-  const handleSocialScrape = async () => {
-    if (!socialUrl.trim()) {
-      toast.error("Enter a profile URL");
-      return;
-    }
+  // ─── Load saved profile URLs when dialog opens ───
+  const loadMyProfiles = useCallback(async () => {
+    if (profilesLoaded) return;
+    try {
+      const hdrs = await getAuthHeaders();
+      const resp = await fetch(SOCIAL_SYNC_URL, {
+        method: "POST",
+        headers: hdrs,
+        body: JSON.stringify({ action: "get_my_profiles" }),
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        setSavedProfiles(data.profiles || []);
+        const urls = { instagram: "", facebook: "", x: "" };
+        for (const p of (data.profiles || [])) {
+          if (p.platform in urls) urls[p.platform as keyof typeof urls] = p.url;
+        }
+        setMyProfileUrls(urls);
+        setProfilesLoaded(true);
+      }
+    } catch {}
+  }, [profilesLoaded]);
+
+  // ─── Save & scrape profile URLs ───
+  const handleSaveMyProfiles = async () => {
+    const profiles = Object.entries(myProfileUrls)
+      .filter(([, url]) => url.trim())
+      .map(([platform, url]) => ({ platform, url: url.trim() }));
+    if (profiles.length === 0) { toast.error("Enter at least one profile URL"); return; }
     setShowSocialDialog(false);
     setActionLoading("social");
     try {
-      const headers = await getAuthHeaders();
+      const hdrs = await getAuthHeaders();
+      const resp = await fetch(SOCIAL_SYNC_URL, {
+        method: "POST",
+        headers: hdrs,
+        body: JSON.stringify({ action: "save_my_profiles", profiles }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) { toast.error(data.error || "Failed to save profiles"); return; }
+      const scrapeResults = data.scrape_results || [];
+      const totalImported = scrapeResults.reduce((sum: number, r: any) => sum + (r.imported || 0), 0);
+      const errors = scrapeResults.filter((r: any) => r.error);
+      if (totalImported > 0) {
+        toast.success(`Saved ${profiles.length} profile(s), imported ${totalImported} contact(s)`);
+      } else if (errors.length > 0) {
+        toast.info(`Profiles saved. Scraping returned limited data — platforms may block automated access. Will retry on next sync.`);
+      } else {
+        toast.success(`Saved ${profiles.length} profile(s)`);
+      }
+      setProfilesLoaded(false);
+      refresh();
+    } catch { toast.error("Failed to save profiles"); }
+    finally { setActionLoading(null); }
+  };
+
+  // ─── Rescrape all saved profiles ───
+  const handleRescrapeProfiles = async () => {
+    setActionLoading("social");
+    try {
+      const hdrs = await getAuthHeaders();
+      const resp = await fetch(SOCIAL_SYNC_URL, {
+        method: "POST",
+        headers: hdrs,
+        body: JSON.stringify({ action: "rescrape_my_profiles" }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) { toast.error(data.error || "Rescrape failed"); return; }
+      const total = (data.results || []).reduce((sum: number, r: any) => sum + (r.imported || 0), 0);
+      const errors = (data.results || []).filter((r: any) => r.error);
+      if (total > 0) toast.success(`Rescraped ${data.rescraped} profile(s), found ${total} contact(s)`);
+      else if (errors.length > 0) toast.info(`Rescraped ${data.rescraped} profile(s). Platforms returned limited data.`);
+      else toast.success(`Rescraped ${data.rescraped} profile(s)`);
+      setProfilesLoaded(false);
+      refresh();
+    } catch { toast.error("Rescrape failed"); }
+    finally { setActionLoading(null); }
+  };
+
+  // ─── Social Profile Scrape (URL) ───
+  const handleSocialScrape = async () => {
+    if (!socialUrl.trim()) { toast.error("Enter a profile URL"); return; }
+    setShowSocialDialog(false);
+    setActionLoading("social");
+    try {
+      const hdrs = await getAuthHeaders();
       const platform = socialPlatform || detectSocialPlatform(socialUrl);
       const resp = await fetch(SOCIAL_SYNC_URL, {
         method: "POST",
-        headers,
+        headers: hdrs,
         body: JSON.stringify({ action: "scrape_profile", url: socialUrl.trim(), platform }),
       });
       const data = await resp.json();
-      if (!resp.ok) {
-        toast.error(data.error || "Failed to scrape profile");
-        return;
-      }
+      if (!resp.ok) { toast.error(data.error || "Failed to scrape profile"); return; }
       toast.success(`Imported ${data.imported} contact(s) from ${data.platform}`);
       setSocialUrl("");
       setSocialPlatform("");
       refresh();
-    } catch {
-      toast.error("Failed to scrape social profile");
-    } finally {
-      setActionLoading(null);
-    }
+    } catch { toast.error("Failed to scrape social profile"); }
+    finally { setActionLoading(null); }
   };
 
   // ─── Social Handles Bulk Import ───
