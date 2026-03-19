@@ -1,294 +1,454 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight, Lock, Home, Car, Anchor, Building2, Heart, Umbrella, Star } from "lucide-react";
 
-export default function LandingPage() {
-  const revealRefs = useRef<HTMLElement[]>([]);
+/* ═══ Starfield Canvas ═══ */
+function Starfield() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) entry.target.classList.add("landing-visible");
-        });
-      },
-      { threshold: 0.08 }
-    );
-    revealRefs.current.forEach((el) => el && observer.observe(el));
-    return () => observer.disconnect();
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d")!;
+    let stars: { x: number; y: number; r: number; a: number; speed: number; phase: number }[] = [];
+    const COUNT = 200;
+    let frame = 0;
+    let raf: number;
+
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = document.documentElement.scrollHeight;
+      stars = Array.from({ length: COUNT }, () => ({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        r: Math.random() * 1.2 + 0.3,
+        a: Math.random() * 0.5 + 0.1,
+        speed: Math.random() * 0.3 + 0.05,
+        phase: Math.random() * Math.PI * 2,
+      }));
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      frame += 0.01;
+      for (const s of stars) {
+        const flicker = Math.sin(frame * s.speed * 10 + s.phase) * 0.15 + s.a;
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255,255,255,${Math.max(0, flicker)})`;
+        ctx.fill();
+      }
+      raf = requestAnimationFrame(draw);
+    }
+
+    resize();
+    draw();
+    window.addEventListener("resize", resize);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("resize", resize);
+    };
   }, []);
 
-  const addRevealRef = (el: HTMLElement | null) => {
+  return (
+    <div className="fixed inset-0 z-0 pointer-events-none">
+      <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />
+    </div>
+  );
+}
+
+/* ═══ AURA Logo SVG ═══ */
+const AuraLogoSVG = ({ size = 24 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 100 100" fill="none">
+    <rect width="100" height="100" rx="22" fill="white" />
+    <path d="M50 18L74 82H62.5L58 70H42L37.5 82H26L50 18Z" fill="#08080A" />
+    <rect x="39" y="62" width="22" height="5.5" rx="2.75" fill="white" />
+  </svg>
+);
+
+/* ═══ Branch A Monogram ═══ */
+const BranchLogo = ({ color, size = 28 }: { color: string; size?: number }) => (
+  <svg viewBox="0 0 28 28" fill="none" width={size} height={size}>
+    <rect width="28" height="28" rx="7" fill={color} />
+    <path d="M14 6L20 22H17.3L16 19H12L10.7 22H8L14 6Z" fill="white" />
+    <rect x="11.5" y="16" width="5" height="1.3" rx=".65" fill={color} />
+  </svg>
+);
+
+/* ═══ Integration Ticker ═══ */
+const integrations = ["Gmail", "Outlook", "Phone", "LinkedIn", "Facebook", "Instagram", "ZoomInfo", "SMS"];
+
+function IntegrationTicker() {
+  const doubled = [...integrations, ...integrations];
+  return (
+    <div className="overflow-hidden mb-6" style={{ maskImage: "linear-gradient(90deg, transparent, black 10%, black 90%, transparent)" }}>
+      <div className="flex gap-3 animate-[ticker_30s_linear_infinite] hover:[animation-play-state:paused] w-max">
+        {doubled.map((name, i) => (
+          <span key={i} className="flex items-center gap-2 px-4 py-1.5 bg-white/[0.04] border border-white/[0.06] rounded-full text-xs font-medium text-[#A1A1AA] whitespace-nowrap shrink-0">
+            {name}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ═══ Carousel Data ═══ */
+const branches = [
+  {
+    key: "risk",
+    label: "AURA Risk",
+    color: "#01696F",
+    colorBright: "#0A8A8F",
+    tag: "Insurance Intelligence",
+    title: "Risk placement,\nreinvented.",
+    desc: "AI-powered submission building, ACORD auto-fill, and carrier matching. From intake to binding in a fraction of the time.",
+    feats: ["ACORD Auto-Fill", "Carrier Matching", "Pipeline Tracking", "Loss Run Automation"],
+    image: "/images/hero-insurance.jpg",
+    tint: "tint-teal",
+  },
+  {
+    key: "property",
+    label: "AURA Property",
+    color: "#B87333",
+    colorBright: "#D4884A",
+    tag: "Real Estate Intelligence",
+    title: "Property deals,\naccelerated.",
+    desc: "Deal sourcing, underwriting analysis, and investor matching powered by relationship intelligence. Coming soon.",
+    feats: ["Deal Sourcing", "Market Analysis", "Investor Matching", "Portfolio Tracking"],
+    image: "/images/hero-property.jpg",
+    tint: "tint-copper",
+  },
+  {
+    key: "wealth",
+    label: "AURA Wealth",
+    color: "#C9A84C",
+    colorBright: "#D4B85C",
+    tag: "Wealth Intelligence",
+    title: "Wealth management,\nunified.",
+    desc: "Holistic client view across insurance, real estate, and investments. One relationship, complete financial intelligence.",
+    feats: ["Financial Planning", "Retirement Accounts", "Investment Advisory"],
+    image: "/images/hero-wealth.jpg",
+    tint: "tint-gold",
+  },
+];
+
+/* ═══ Partners Data ═══ */
+const partnerCards = [
+  { num: "01", title: "Real-time tracking", desc: "Private dashboard: Sent → Active Leads → Policies Sold → Premium Placed. Always current." },
+  { num: "02", title: "Cross-vertical referrals", desc: "One partnership, three verticals. AURA routes insurance, property, and wealth referrals automatically." },
+  { num: "03", title: "Premium-based compensation", desc: "Earn based on premium placed. No caps, no complexity — grow uncapped alongside your referrals." },
+  { num: "04", title: "AI-powered intelligence", desc: "AURA Connect enriches every referral with relationship data for the warmest possible path." },
+];
+
+/* ═══ Main Component ═══ */
+export default function LandingPage() {
+  const [activeTab, setActiveTab] = useState(0);
+  const intervalRef = useRef<ReturnType<typeof setInterval>>();
+  const revealRefs = useRef<HTMLElement[]>([]);
+
+  const addRevealRef = useCallback((el: HTMLElement | null) => {
     if (el && !revealRefs.current.includes(el)) revealRefs.current.push(el);
+  }, []);
+
+  useEffect(() => {
+    const obs = new IntersectionObserver(
+      (entries) => entries.forEach((e) => { if (e.isIntersecting) e.target.classList.add("lp-visible"); }),
+      { threshold: 0.06 }
+    );
+    revealRefs.current.forEach((el) => obs.observe(el));
+    return () => obs.disconnect();
+  }, []);
+
+  // Auto-rotate carousel
+  useEffect(() => {
+    intervalRef.current = setInterval(() => setActiveTab((p) => (p + 1) % 3), 5000);
+    return () => clearInterval(intervalRef.current);
+  }, []);
+
+  const selectTab = (idx: number) => {
+    setActiveTab(idx);
+    clearInterval(intervalRef.current);
+    intervalRef.current = setInterval(() => setActiveTab((p) => (p + 1) % 3), 5000);
   };
 
-  const lines = [
-    { icon: Home, name: "Home" },
-    { icon: Car, name: "Auto" },
-    { icon: Anchor, name: "Marine" },
-    { icon: Building2, name: "Commercial" },
-    { icon: Heart, name: "Life" },
-    { icon: Umbrella, name: "Umbrella" },
-    { icon: Star, name: "Specialty" },
-  ];
-
   return (
-    <div className="min-h-screen bg-[hsl(240,10%,4%)] text-[hsl(0,0%,98%)] overflow-x-hidden font-sans antialiased">
-      {/* ── Floating Nav ── */}
-      <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-[720px]">
-        <nav className="flex items-center justify-between px-5 py-2.5 bg-[hsl(240,8%,7%)]/85 backdrop-blur-xl border border-white/[0.06] rounded-full">
-          <div className="flex items-center gap-5">
-            <span className="text-sm font-semibold tracking-[0.06em]">AURA</span>
-            <div className="hidden md:flex items-center gap-1.5">
-              <a href="#platform" className="text-[13px] text-[hsl(240,5%,65%)] hover:text-white px-3 py-1.5 rounded-full transition-colors">Platform</a>
-              <a href="#coverage" className="text-[13px] text-[hsl(240,5%,65%)] hover:text-white px-3 py-1.5 rounded-full transition-colors">Coverage</a>
-              <a href="#how" className="text-[13px] text-[hsl(240,5%,65%)] hover:text-white px-3 py-1.5 rounded-full transition-colors">How it works</a>
+    <div className="min-h-screen bg-[#08080A] text-[#FAFAFA] overflow-x-hidden" style={{ fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif" }}>
+      <style>{`
+        .lp-reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.7s ease, transform 0.7s ease; }
+        .lp-visible { opacity: 1; transform: translateY(0); }
+        @keyframes ticker { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+        @keyframes orbitSpin1 { 0% { transform: translate(-50%, -50%) rotate(0deg); } 100% { transform: translate(-50%, -50%) rotate(360deg); } }
+        @keyframes orbitSpin2 { 0% { transform: translate(-50%, -50%) rotate(0deg); } 100% { transform: translate(-50%, -50%) rotate(-360deg); } }
+        @keyframes counterSpin1 { 0% { rotate: 0deg; } 100% { rotate: -360deg; } }
+        @keyframes counterSpin2 { 0% { rotate: 0deg; } 100% { rotate: 360deg; } }
+        @keyframes tabFill { 0% { width: 0; } 100% { width: 100%; } }
+      `}</style>
+
+      <Starfield />
+
+      <div className="relative z-[1]">
+        {/* ═══ NAV ═══ */}
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] w-[calc(100%-2rem)] max-w-[780px]">
+          <nav className="flex items-center justify-between py-2 pl-5 pr-2 bg-[#101012]/80 backdrop-blur-[24px] border border-white/[0.06] rounded-full">
+            <div className="flex items-center gap-6">
+              <Link to="/home" className="flex items-center gap-2.5 no-underline">
+                <AuraLogoSVG size={22} />
+                <span className="text-[15px] font-semibold tracking-[0.08em] text-white">AURA</span>
+              </Link>
+              <div className="hidden md:flex gap-1">
+                <a href="#connect" className="text-[13px] text-[#A1A1AA] no-underline px-3 py-1.5 rounded-full hover:text-white transition-colors">Connect</a>
+                <a href="#branches" className="text-[13px] text-[#A1A1AA] no-underline px-3 py-1.5 rounded-full hover:text-white transition-colors">Platform</a>
+                <a href="#partners" className="text-[13px] text-[#A1A1AA] no-underline px-3 py-1.5 rounded-full hover:text-white transition-colors">Partners</a>
+              </div>
+            </div>
+            <Link to="/auth" className="text-[13px] font-medium text-[#08080A] bg-white px-5 py-2 rounded-full hover:opacity-85 transition-opacity whitespace-nowrap no-underline">
+              Open app
+            </Link>
+          </nav>
+        </div>
+
+        {/* ═══ HERO ═══ */}
+        <section className="relative min-h-auto flex items-start justify-center pt-[18vh] pb-[6vh] 2xl:pt-[14vh]">
+          {/* BG Image */}
+          <div className="absolute top-0 left-0 right-0 h-[140%] overflow-hidden pointer-events-none">
+            <div
+              className="absolute inset-0 bg-cover bg-no-repeat bg-center portrait:bg-[url('/images/bg-portrait.png')] landscape:bg-[url('/images/bg-wide.png')] 2xl:bg-[length:85%_auto] 2xl:bg-[center_15%]"
+            />
+            <div className="absolute inset-0 bg-gradient-to-b from-[#08080A]/30 via-[#08080A]/20 via-[35%] to-[#08080A]" />
+          </div>
+
+          {/* Orbit rings */}
+          <div className="absolute inset-0 z-[1] pointer-events-none flex items-start justify-center pt-[calc(18vh+16vh)] 2xl:pt-[calc(14vh+14vh)]">
+            <div className="relative w-[700px] h-[700px] max-md:w-[450px] max-md:h-[450px] max-sm:w-[360px] max-sm:h-[360px] -translate-y-1/2">
+              <div className="absolute border border-dashed border-white/10 rounded-full w-[500px] h-[500px] max-md:w-[340px] max-md:h-[340px] max-sm:w-[280px] max-sm:h-[280px] top-1/2 left-1/2 animate-[orbitSpin1_35s_linear_infinite]">
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 max-sm:w-[34px] max-sm:h-[34px] rounded-full bg-[#101012]/85 border border-white/10 flex items-center justify-center backdrop-blur-lg animate-[counterSpin1_35s_linear_infinite]" style={{ borderColor: "rgba(10,138,143,0.3)" }}>
+                  <BranchLogo color="#01696F" size={22} />
+                </div>
+                <div className="absolute bottom-[15%] right-0 translate-x-1/2 translate-y-1/2 w-12 h-12 max-sm:w-[34px] max-sm:h-[34px] rounded-full bg-[#101012]/85 border border-white/10 flex items-center justify-center backdrop-blur-lg animate-[counterSpin1_35s_linear_infinite]" style={{ borderColor: "rgba(212,136,74,0.3)" }}>
+                  <BranchLogo color="#B87333" size={22} />
+                </div>
+              </div>
+              <div className="absolute border border-dashed border-white/10 rounded-full w-[680px] h-[680px] max-md:w-[440px] max-md:h-[440px] max-sm:w-[360px] max-sm:h-[360px] top-1/2 left-1/2 animate-[orbitSpin2_50s_linear_infinite]">
+                <div className="absolute top-1/2 right-0 translate-x-1/2 -translate-y-1/2 w-12 h-12 max-sm:w-[34px] max-sm:h-[34px] rounded-full bg-[#101012]/85 border border-white/10 flex items-center justify-center backdrop-blur-lg animate-[counterSpin2_50s_linear_infinite]" style={{ borderColor: "rgba(201,168,76,0.3)" }}>
+                  <BranchLogo color="#C9A84C" size={22} />
+                </div>
+              </div>
             </div>
           </div>
-          <Link to="/auth" className="text-[13px] font-medium bg-white text-[hsl(240,10%,4%)] px-5 py-2 rounded-full hover:opacity-85 transition-opacity whitespace-nowrap">
-            Open app
-          </Link>
-        </nav>
-      </div>
 
-      {/* ── Hero ── */}
-      <section className="relative h-screen min-h-[700px] max-sm:min-h-[600px] overflow-hidden flex flex-col justify-end">
-        <div className="absolute inset-0">
-          <img src="/images/hero.png" alt="" className="w-full h-full object-cover brightness-[0.35] saturate-[0.3]" />
-          <div className="absolute inset-0 bg-gradient-to-b from-[hsl(240,10%,4%)]/20 via-[hsl(240,10%,4%)]/10 via-40% to-[hsl(240,10%,4%)] to-100%" />
-        </div>
-        <div className="relative z-10 grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-12 max-w-[1200px] w-full mx-auto px-5 md:px-12 pb-10 md:pb-[72px] items-end">
-          <h1 className="text-[clamp(40px,6vw,80px)] font-semibold leading-[0.95] tracking-[-0.04em]">
-            Insurance<br />runs on<br />AURA
-          </h1>
-          <div className="max-w-[440px]">
-            <p className="text-base text-[hsl(240,5%,65%)] leading-relaxed mb-7">
-              The AI-native insurance platform for modern producers. Seven lines of business, automated submissions, carrier-ready packages — one intelligent system.
+          {/* Hero content */}
+          <div className="relative z-[2] text-center px-8">
+            <h1 className="text-[clamp(40px,6vw,80px)] max-sm:text-4xl font-bold leading-[1] tracking-[-0.04em] text-white mb-4">
+              Intelligence Runs on
+            </h1>
+            <div className="inline-block bg-white/[0.06] border border-white/10 rounded-[20px] max-sm:rounded-2xl px-10 max-sm:px-6 py-2 pb-3 backdrop-blur-2xl">
+              <span className="inline-block tracking-[0.12em] max-sm:tracking-[0.08em] text-[clamp(52px,8vw,110px)] font-bold bg-gradient-to-br from-[#F0F0F4] via-[#C0C0C8] via-[40%] to-[#C8C8D0] bg-clip-text text-transparent drop-shadow-[0_0_40px_rgba(255,255,255,0.1)]">
+                AURA
+              </span>
+            </div>
+            <p className="text-[17px] font-medium text-[#E4E4E7] max-w-[520px] mx-auto mt-6 leading-[1.65]">
+              One platform powering <span className="text-[#0A8A8F] font-medium">insurance</span>,{" "}
+              <span className="text-[#D4884A] font-medium">property</span>, and{" "}
+              <span className="text-[#D4B85C] font-medium">wealth</span> management. AI-native infrastructure for the professionals who protect, build, and grow.
             </p>
-            <div className="flex items-center gap-2 max-sm:flex-col max-sm:w-full">
-              <Link
-                to="/auth"
-                className="text-sm font-medium border border-white/20 hover:border-white/45 hover:bg-white/[0.04] px-[22px] py-2.5 rounded-lg transition-all max-sm:w-full max-sm:text-center"
-              >
-                Sign in
-              </Link>
-              <Link
-                to="/auth?mode=signup"
-                className="text-sm font-medium bg-white/[0.06] border border-white/[0.08] hover:bg-white/10 hover:border-white/15 px-[22px] py-2.5 rounded-lg transition-all inline-flex items-center gap-2 group max-sm:w-full max-sm:justify-center"
-              >
-                Request access
-                <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
-              </Link>
-            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* ── Closed platform notice ── */}
-      <div className="max-w-[1200px] mx-auto px-5 md:px-12">
-        <div className="flex items-center gap-3 py-5 border-b border-white/[0.06]">
-          <div className="w-8 h-8 rounded-lg bg-[hsl(240,10%,10%)] flex items-center justify-center shrink-0">
-            <Lock className="h-3.5 w-3.5 text-[hsl(240,5%,45%)]" />
-          </div>
-          <p className="text-[13px] text-[hsl(240,5%,45%)] leading-relaxed">
-            <span className="text-[hsl(240,5%,65%)] font-medium">Closed platform.</span>{" "}
-            AURA is available exclusively to partnered brokerages and their licensed producers. Sign-up requests are reviewed and approved based on your brokerage's partnership status.
-          </p>
-        </div>
-      </div>
-
-      {/* ── Platform features ── */}
-      <div ref={addRevealRef} className="landing-reveal max-w-[1200px] mx-auto px-5 md:px-12 pt-20 md:pt-[120px]" id="platform">
-        <div className="border-t border-white/[0.06] pt-12 flex flex-col md:flex-row justify-between items-start md:items-end gap-4 md:gap-12">
-          <div>
-            <div className="text-[11px] font-medium tracking-[0.1em] uppercase text-[hsl(240,5%,45%)] mb-4">Platform</div>
-            <h2 className="text-[clamp(28px,3.5vw,44px)] font-semibold tracking-[-0.035em] leading-[1.1]">
-              Built different<br />from day one
-            </h2>
-          </div>
-          <p className="text-[15px] text-[hsl(240,5%,65%)] leading-relaxed max-w-[380px]">
-            No legacy baggage. Every workflow was designed from scratch around intelligence, speed, and producer autonomy.
-          </p>
-        </div>
-      </div>
-
-      <div ref={addRevealRef} className="landing-reveal max-w-[1200px] mx-auto px-5 md:px-12 pt-12 grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Hero card */}
-        <div className="md:col-span-2 rounded-2xl overflow-hidden bg-[hsl(240,8%,7%)] border border-white/[0.06] hover:border-white/[0.12] transition-colors group">
-          <div className="h-[200px] md:h-[240px] overflow-hidden relative">
-            <img src="/images/hero-acord-forms.webp" alt="" className="w-full h-full object-cover brightness-[0.35] saturate-[0.3] transition-transform duration-500 group-hover:scale-[1.03]" />
-            <div className="absolute inset-0 bg-[hsl(240,10%,4%)]/40" />
-          </div>
-          <div className="p-6">
-            <div className="text-[10px] font-semibold tracking-[0.12em] uppercase text-[hsl(175,97%,24%)] mb-2.5">Core</div>
-            <div className="text-base font-semibold tracking-tight mb-2">AI-powered submissions & ACORD compliance</div>
-            <div className="text-[13px] text-[hsl(240,5%,45%)] leading-relaxed">Upload a policy, get a carrier-ready package in minutes. Every form, every field, every time.</div>
-          </div>
-        </div>
-
-        <div className="rounded-2xl bg-[hsl(240,8%,7%)] border border-white/[0.06] hover:border-white/[0.12] transition-colors p-6 flex flex-col">
-          <div className="text-[10px] font-semibold tracking-[0.12em] uppercase text-[hsl(175,97%,24%)] mb-2.5">Revenue</div>
-          <div className="text-base font-semibold tracking-tight mb-2">85% revenue share</div>
-          <div className="text-[13px] text-[hsl(240,5%,45%)] leading-relaxed">Zero desk fees. Keep what you earn. AURA's model is designed to attract and retain the best producers.</div>
-        </div>
-
-        <div className="rounded-2xl bg-[hsl(240,8%,7%)] border border-white/[0.06] hover:border-white/[0.12] transition-colors p-6 flex flex-col">
-          <div className="text-[10px] font-semibold tracking-[0.12em] uppercase text-[hsl(175,97%,24%)] mb-2.5">Intelligence</div>
-          <div className="text-base font-semibold tracking-tight mb-2">Real-time dashboards</div>
-          <div className="text-[13px] text-[hsl(240,5%,45%)] leading-relaxed">Pipeline visibility, carrier appetite updates, and commission tracking — all in one place.</div>
-        </div>
-
-        <div className="rounded-2xl bg-[hsl(240,8%,7%)] border border-white/[0.06] hover:border-white/[0.12] transition-colors p-6 flex flex-col">
-          <div className="text-[10px] font-semibold tracking-[0.12em] uppercase text-[hsl(175,97%,24%)] mb-2.5">Binding</div>
-          <div className="text-base font-semibold tracking-tight mb-2">Carrier-direct binding</div>
-          <div className="text-[13px] text-[hsl(240,5%,45%)] leading-relaxed">Integrated with top carriers for direct quote-to-bind workflows. No back-and-forth emails.</div>
-        </div>
-
-        <div className="md:col-span-2 rounded-2xl overflow-hidden bg-[hsl(240,8%,7%)] border border-white/[0.06] hover:border-white/[0.12] transition-colors group">
-          <div className="h-[200px] md:h-[240px] overflow-hidden relative">
-            <img src="/images/hero-satellite.jpg" alt="" className="w-full h-full object-cover brightness-[0.35] saturate-[0.3] transition-transform duration-500 group-hover:scale-[1.03]" />
-            <div className="absolute inset-0 bg-[hsl(240,10%,4%)]/40" />
-          </div>
-          <div className="p-6">
-            <div className="text-[10px] font-semibold tracking-[0.12em] uppercase text-[hsl(175,97%,24%)] mb-2.5">Service</div>
-            <div className="text-base font-semibold tracking-tight mb-2">Hybrid service model — AI handles 80% of servicing</div>
-            <div className="text-[13px] text-[hsl(240,5%,45%)] leading-relaxed">Endorsements, certificates, renewals — handled automatically. You stay focused on relationships and complex risks.</div>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Lines of business ── */}
-      <div ref={addRevealRef} className="landing-reveal max-w-[1200px] mx-auto px-5 md:px-12 pt-20 md:pt-[120px]" id="coverage">
-        <div className="border-t border-white/[0.06] pt-12 mb-12">
-          <div className="text-[11px] font-medium tracking-[0.1em] uppercase text-[hsl(240,5%,45%)] mb-4">Coverage</div>
-          <h2 className="text-[clamp(28px,3.5vw,44px)] font-semibold tracking-[-0.035em] leading-[1.1]">Seven lines. One platform.</h2>
-        </div>
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-7 border border-white/[0.06] rounded-xl overflow-hidden">
-          {lines.map((line) => (
-            <div key={line.name} className="bg-[hsl(240,8%,7%)] border-r border-b border-white/[0.06] last:border-r-0 p-6 text-center hover:bg-[hsl(240,10%,10%)] transition-colors group">
-              <div className="w-9 h-9 mx-auto mb-3 flex items-center justify-center">
-                <line.icon className="h-5 w-5 text-[hsl(240,5%,65%)] group-hover:text-white transition-colors" strokeWidth={1.5} />
-              </div>
-              <div className="text-[13px] font-medium text-[hsl(240,5%,65%)] group-hover:text-white transition-colors">{line.name}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* ── How it works ── */}
-      <div ref={addRevealRef} className="landing-reveal max-w-[1200px] mx-auto px-5 md:px-12 pt-20 md:pt-[120px]" id="how">
-        <div className="border-t border-white/[0.06] pt-12 flex flex-col md:flex-row justify-between items-start md:items-end gap-4 md:gap-12 mb-12">
-          <div>
-            <div className="text-[11px] font-medium tracking-[0.1em] uppercase text-[hsl(240,5%,45%)] mb-4">How it works</div>
-            <h2 className="text-[clamp(28px,3.5vw,44px)] font-semibold tracking-[-0.035em] leading-[1.1]">
-              From signup to<br />first submission
-            </h2>
-          </div>
-          <p className="text-[15px] text-[hsl(240,5%,65%)] leading-relaxed max-w-[380px]">
-            Your brokerage partners with AURA, you get access, and you start writing business the same day.
-          </p>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {[
-            { num: "01", title: "Brokerage partners with AURA", desc: "Your firm signs a partnership agreement. No individual desk fees — your brokerage relationship opens the door." },
-            { num: "02", title: "Request producer access", desc: "Licensed producers request access through the portal. Approvals are tied to your brokerage partnership — typically same-day." },
-            { num: "03", title: "Start writing business", desc: "Upload your first submission, let AURA structure the package, and send it directly to carriers. 85% commission, zero manual forms." },
-          ].map((step) => (
-            <div key={step.num} className="p-8 bg-[hsl(240,8%,7%)] border border-white/[0.06] rounded-2xl hover:border-white/[0.12] transition-colors">
-              <div className="text-5xl font-light text-white/[0.08] tracking-[-0.04em] leading-none mb-5">{step.num}</div>
-              <div className="text-[15px] font-semibold mb-2">{step.title}</div>
-              <div className="text-[13px] text-[hsl(240,5%,45%)] leading-relaxed">{step.desc}</div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* ── Coming Soon: AURA Property & AURA Wealth ── */}
-      <div ref={addRevealRef} className="landing-reveal max-w-[1200px] mx-auto px-5 md:px-12 pt-20 md:pt-[120px]">
-        <div className="border-t border-white/[0.06] pt-12 mb-12">
-          <div className="text-[11px] font-medium tracking-[0.1em] uppercase text-[hsl(240,5%,45%)] mb-4">Expanding</div>
-          <h2 className="text-[clamp(28px,3.5vw,44px)] font-semibold tracking-[-0.035em] leading-[1.1]">Beyond insurance</h2>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* AURA Property */}
-          <div className="rounded-2xl overflow-hidden bg-[hsl(240,8%,7%)] border border-white/[0.06] group relative">
-            <div className="h-[220px] overflow-hidden">
-              <img src="/images/hero-property.jpg" alt="AURA Property" className="w-full h-full object-cover brightness-[0.4] saturate-[0.35] transition-transform duration-500 group-hover:scale-[1.03]" />
-              <div className="absolute top-4 right-4 bg-white/10 backdrop-blur-md border border-white/20 text-[11px] font-semibold tracking-[0.1em] uppercase px-4 py-1.5 rounded-full">
-                Coming Soon
-              </div>
-            </div>
-            <div className="p-6">
-              <div className="flex items-center gap-2 mb-3">
-                <span className="text-lg font-semibold tracking-tight">AURA</span>
-                <span className="text-[11px] text-[hsl(240,5%,65%)] tracking-widest uppercase font-medium">Property</span>
-              </div>
-              <div className="text-[13px] text-[hsl(240,5%,45%)] leading-relaxed">
-                AI-powered real estate intelligence. Smart property analysis, market insights, and risk assessment for the modern real estate professional.
+        {/* ═══ AURA CONNECT ═══ */}
+        <section className="lp-reveal pt-10 relative" id="connect" ref={addRevealRef}>
+          <div className="max-w-[1200px] mx-auto px-12 max-md:px-8 max-sm:px-5">
+            <div className="border-t border-white/[0.06] pt-12">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-16">
+                <div>
+                  <div className="text-[11px] font-semibold tracking-[0.12em] uppercase text-[#60A5FA] mb-4">AURA Connect</div>
+                  <h2 className="text-[clamp(32px,4vw,48px)] font-bold tracking-[-0.04em] leading-[1.05] text-white mb-5">
+                    Your network,<br />mapped.
+                  </h2>
+                  <div className="text-sm text-[#A1A1AA] mb-6"><strong>$250</strong>/month per seat</div>
+                  <p className="text-[15px] text-[#71717A] leading-[1.65] mb-8">
+                    Stitch your email, calendar, social, and financial accounts into a unified relationship graph. Find the warmest path to any prospect — no third-party data. Available across all three AURA branches.
+                  </p>
+                  <Link
+                    to="/request-access"
+                    className="inline-flex items-center gap-2 text-sm font-medium text-white bg-[#3B82F6] px-7 py-3 rounded-[10px] hover:bg-[#60A5FA] transition-colors no-underline"
+                  >
+                    Request Access
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                      <path d="M5 12h14" /><path d="M12 5l7 7-7 7" />
+                    </svg>
+                  </Link>
+                </div>
+                <div>
+                  <IntegrationTicker />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {[
+                      { t: "Mutual contacts", d: "Warm intros through shared connections across your team's combined network." },
+                      { t: "Relationship graph", d: "One de-duplicated map across all platforms and accounts." },
+                      { t: "Money-in-motion", d: "Plaid-powered signals for perfectly timed outreach." },
+                      { t: "Privacy-first", d: "First-party data only. Opt-in sharing. No content stored." },
+                    ].map((f) => (
+                      <div key={f.t} className="p-4 bg-[#101012] border border-white/[0.06] rounded-xl">
+                        <div className="text-[13px] font-semibold text-white mb-1">{f.t}</div>
+                        <div className="text-[12px] text-[#71717A] leading-[1.55]">{f.d}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
+        </section>
 
-          {/* AURA Wealth */}
-          <div className="rounded-2xl overflow-hidden bg-[hsl(240,8%,7%)] border border-white/[0.06] group relative">
-            <div className="h-[220px] overflow-hidden">
-              <img src="/images/hero-wealth.jpg" alt="AURA Wealth" className="w-full h-full object-cover brightness-[0.4] saturate-[0.35] transition-transform duration-500 group-hover:scale-[1.03]" />
-              <div className="absolute top-4 right-4 bg-white/10 backdrop-blur-md border border-white/20 text-[11px] font-semibold tracking-[0.1em] uppercase px-4 py-1.5 rounded-full">
-                Coming Soon
+        {/* ═══ BRANCH CAROUSEL ═══ */}
+        <section className="lp-reveal pt-[120px] max-sm:pt-20" id="branches" ref={addRevealRef}>
+          <div className="max-w-[1200px] mx-auto px-12 max-md:px-8 max-sm:px-5">
+            <div className="border-t border-white/[0.06] pt-14">
+              <div className="mb-10">
+                <div className="text-[11px] font-semibold tracking-[0.12em] uppercase text-[#71717A] mb-4">AURA Intelligence</div>
+                <h2 className="text-[clamp(28px,3.5vw,44px)] font-bold tracking-[-0.035em] leading-[1.1] text-white">
+                  Three verticals.<br />One AI backbone.
+                </h2>
+                <p className="text-[15px] text-[#71717A] max-w-[500px] mt-3 leading-[1.6]">
+                  Insurance, property, and wealth data interact daily — powering cross-vertical intelligence no single-line platform can match.
+                </p>
+              </div>
+
+              {/* Tab bar */}
+              <div className="flex bg-[#101012] border border-white/[0.06] rounded-[14px] overflow-hidden mb-12 max-sm:flex-wrap">
+                {branches.map((b, i) => (
+                  <button
+                    key={b.key}
+                    onClick={() => selectTab(i)}
+                    className={`flex-1 max-sm:flex-[1_1_100%] flex items-center justify-center gap-2.5 px-6 py-4 max-sm:px-4 max-sm:py-3 cursor-pointer transition-all text-sm font-medium border-2 border-transparent rounded-[14px] relative ${
+                      activeTab === i
+                        ? "text-white bg-white/[0.06]"
+                        : "text-[#52525B] hover:text-[#A1A1AA] bg-transparent"
+                    }`}
+                    style={activeTab === i ? { borderColor: `${b.color}55`, background: `${b.color}14` } : {}}
+                  >
+                    <BranchLogo color={b.color} size={28} />
+                    <span className="max-sm:hidden">{b.label}</span>
+                    <span className="sm:hidden text-[13px]">{b.label}</span>
+                    {activeTab === i && (
+                      <span
+                        className="absolute bottom-0 left-0 h-0.5 rounded-full opacity-30"
+                        style={{ background: "currentColor", animation: "tabFill 5s linear forwards" }}
+                      />
+                    )}
+                  </button>
+                ))}
+              </div>
+
+              {/* Panel */}
+              {branches.map((b, i) => (
+                activeTab === i && (
+                  <div key={b.key} className="grid grid-cols-1 md:grid-cols-[1fr_1.2fr] gap-12 items-center min-h-[380px]">
+                    <div>
+                      <div className="flex items-center gap-3.5 mb-5">
+                        <BranchLogo color={b.color} size={36} />
+                        <span className="text-lg font-bold tracking-tight text-white">{b.label}</span>
+                      </div>
+                      <h3 className="text-[clamp(24px,3vw,36px)] font-bold tracking-[-0.03em] leading-[1.1] text-white mb-4 whitespace-pre-line">{b.title}</h3>
+                      <p className="text-[15px] text-[#71717A] leading-[1.65] mb-6">{b.desc}</p>
+                      <div className="flex flex-wrap gap-3 gap-y-2.5">
+                        {b.feats.map((f) => (
+                          <span key={f} className="flex items-center gap-2 text-[13px] font-medium text-[#E4E4E7]">
+                            <span className="w-[5px] h-[5px] rounded-full" style={{ background: b.colorBright }} />
+                            {f}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="rounded-[20px] overflow-hidden border border-white/[0.06] aspect-[4/3] relative">
+                      <img src={b.image} alt={b.label} className="w-full h-full object-cover hover:scale-[1.03] transition-transform duration-600" />
+                      <div className="absolute inset-0 pointer-events-none mix-blend-color opacity-45 rounded-[inherit]" style={{ background: b.color }} />
+                    </div>
+                  </div>
+                )
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ═══ PARTNERS ═══ */}
+        <section className="lp-reveal pt-[120px] max-sm:pt-20" id="partners" ref={addRevealRef}>
+          <div className="max-w-[1200px] mx-auto px-12 max-md:px-8 max-sm:px-5">
+            <div className="border-t border-white/[0.06] pt-14">
+              <div className="mb-12">
+                <div className="text-[11px] font-semibold tracking-[0.12em] uppercase text-[#71717A] mb-4">Partnerships</div>
+                <h2 className="text-[clamp(28px,3.5vw,44px)] font-bold tracking-[-0.035em] leading-[1.1] text-white mb-4">
+                  Built on relationships,<br />not transactions.
+                </h2>
+                <p className="text-[15px] text-[#71717A] leading-[1.65] max-w-[560px]">
+                  Refer clients across insurance, property, and wealth — track every touchpoint from introduction to premium placed.
+                </p>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+                {partnerCards.map((c) => (
+                  <div key={c.num} className="p-7 max-sm:p-5 bg-[#101012] border border-white/[0.06] rounded-2xl hover:border-white/[0.12] hover:-translate-y-0.5 transition-all">
+                    <div className="text-[11px] font-semibold text-[#52525B] tracking-[0.04em] mb-3.5">{c.num}</div>
+                    <div className="text-[15px] font-semibold text-white mb-2">{c.title}</div>
+                    <div className="text-[13px] text-[#71717A] leading-[1.55]">{c.desc}</div>
+                  </div>
+                ))}
+              </div>
+              <div className="flex items-center gap-6">
+                <Link
+                  to="/become-partner"
+                  className="inline-flex items-center gap-2 text-sm font-medium text-white border border-white/20 px-7 py-3 rounded-[10px] hover:border-white/45 hover:bg-white/[0.04] transition-all no-underline"
+                >
+                  Become a Partner
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
+                    <path d="M5 12h14" /><path d="M12 5l7 7-7 7" />
+                  </svg>
+                </Link>
+                <span className="text-[13px] text-[#52525B] italic">Open to individuals and organizations</span>
               </div>
             </div>
-            <div className="p-6">
-              <div className="flex items-center gap-2 mb-3">
-                <span className="text-lg font-semibold tracking-tight">AURA</span>
-                <span className="text-[11px] text-[hsl(240,5%,65%)] tracking-widest uppercase font-medium">Wealth</span>
+          </div>
+        </section>
+
+        {/* ═══ FOOTER ═══ */}
+        <footer className="max-w-[1200px] mx-auto pt-[120px] max-sm:pt-16 pb-12 max-sm:pb-6 px-12 max-md:px-8 max-sm:px-5">
+          <div className="border-t border-white/[0.06] pt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1.5fr_1fr_1fr_1fr] gap-12 mb-16">
+            <div>
+              <div className="flex items-center gap-2.5 text-sm font-semibold tracking-[0.06em] text-white mb-3">
+                <AuraLogoSVG size={20} />
+                AURA
               </div>
-              <div className="text-[13px] text-[hsl(240,5%,45%)] leading-relaxed">
-                Intelligent wealth management infrastructure. Portfolio analytics, financial planning tools, and client relationship management — built for advisors.
-              </div>
+              <p className="text-[13px] text-[#71717A] leading-[1.6] max-w-[260px]">
+                Automated Universal Risk Advisor. AI-native infrastructure for insurance, property, and wealth management.
+              </p>
+            </div>
+            <div>
+              <div className="text-[13px] font-semibold text-white mb-4">Platform</div>
+              <a href="#connect" className="block text-[13px] text-[#71717A] py-1 hover:text-white transition-colors no-underline">AURA Connect</a>
+              <a href="#branches" className="block text-[13px] text-[#71717A] py-1 hover:text-white transition-colors no-underline">AURA Risk</a>
+              <a href="#branches" className="block text-[13px] text-[#71717A] py-1 hover:text-white transition-colors no-underline">AURA Property</a>
+              <a href="#branches" className="block text-[13px] text-[#71717A] py-1 hover:text-white transition-colors no-underline">AURA Wealth</a>
+            </div>
+            <div>
+              <div className="text-[13px] font-semibold text-white mb-4">Company</div>
+              <span className="block text-[13px] text-[#71717A] py-1">About</span>
+              <span className="block text-[13px] text-[#71717A] py-1">Careers</span>
+              <a href="#partners" className="block text-[13px] text-[#71717A] py-1 hover:text-white transition-colors no-underline">Partners</a>
+              <span className="block text-[13px] text-[#71717A] py-1">Contact</span>
+            </div>
+            <div>
+              <div className="text-[13px] font-semibold text-white mb-4">Resources</div>
+              <span className="block text-[13px] text-[#71717A] py-1">Documentation</span>
+              <span className="block text-[13px] text-[#71717A] py-1">API</span>
             </div>
           </div>
-        </div>
-      </div>
-
-      {/* ── CTA ── */}
-      <div ref={addRevealRef} className="landing-reveal max-w-[1200px] mx-auto px-5 md:px-12 pt-20 md:pt-[120px]">
-        <div className="border-t border-white/[0.06] pt-16 flex flex-col md:flex-row justify-between items-start md:items-end gap-6 md:gap-12">
-          <h2 className="text-[clamp(28px,3.5vw,44px)] font-semibold tracking-[-0.035em] leading-[1.1] max-w-[500px]">
-            Ready to see what AURA can do?
-          </h2>
-          <div className="flex items-center gap-2 shrink-0 max-sm:w-full max-sm:flex-col">
-            <Link to="/auth" className="text-sm font-medium border border-white/20 hover:border-white/45 hover:bg-white/[0.04] px-[22px] py-2.5 rounded-lg transition-all max-sm:w-full max-sm:text-center">
-              Sign in
-            </Link>
-            <Link
-              to="/auth?mode=signup"
-              className="text-sm font-medium bg-white/[0.06] border border-white/[0.08] hover:bg-white/10 hover:border-white/15 px-[22px] py-2.5 rounded-lg transition-all inline-flex items-center gap-2 group max-sm:w-full max-sm:justify-center"
-            >
-              Request access
-              <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
-            </Link>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Footer — simplified ── */}
-      <footer className="max-w-[1200px] mx-auto px-5 md:px-12 pt-24 pb-8 md:pb-12">
-        <div className="border-t border-white/[0.06] pt-8">
-          <div className="mb-3">
-            <span className="text-sm font-semibold tracking-[0.06em]">AURA</span>
-          </div>
-          <p className="text-[13px] text-[hsl(240,5%,45%)] leading-relaxed max-w-[400px] mb-8">
-            Automated Universal Risk Advisor. AI-native insurance infrastructure for the next generation of producers.
-          </p>
-          <div className="flex justify-between items-center text-xs text-[hsl(240,4%,32%)]">
-            <span>© 2026 AURA Risk Group</span>
+          <div className="flex justify-between items-center text-xs text-[#52525B] border-t border-white/[0.06] pt-6">
+            <span>&copy; 2026 AURA Risk Group. Delaware C-Corp.</span>
             <div className="flex gap-5">
-              <Link to="/privacy" className="hover:text-white transition-colors">Privacy</Link>
-              <Link to="/terms" className="hover:text-white transition-colors">Terms</Link>
+              <Link to="/privacy" className="text-[#52525B] hover:text-white transition-colors no-underline">Privacy</Link>
+              <Link to="/terms" className="text-[#52525B] hover:text-white transition-colors no-underline">Terms</Link>
             </div>
           </div>
-        </div>
-      </footer>
+        </footer>
+      </div>
     </div>
   );
 }

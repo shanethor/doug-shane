@@ -19,6 +19,7 @@ import {
   XCircle, Edit3, ShieldCheck, Building2, Plus, Trash2, Handshake, ScrollText, Network,
 } from "lucide-react";
 import AdminPartnerReferrals from "@/components/AdminPartnerReferrals";
+import AdminPartnerRequests from "@/components/AdminPartnerRequests2";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
 import { toast } from "sonner";
@@ -308,6 +309,7 @@ export default function AdminDashboard() {
             </TabsTrigger>
             <TabsTrigger value="agencies" className="gap-1.5 text-xs"><Building2 className="h-3.5 w-3.5" />Agencies</TabsTrigger>
             <TabsTrigger value="partners" className="gap-1.5 text-xs"><Handshake className="h-3.5 w-3.5" />Partners</TabsTrigger>
+            <TabsTrigger value="partner-requests" className="gap-1.5 text-xs"><Users className="h-3.5 w-3.5" />Requested Partners</TabsTrigger>
             <TabsTrigger value="suggestions" className="gap-1.5 text-xs"><Lightbulb className="h-3.5 w-3.5" />Features</TabsTrigger>
             <TabsTrigger value="bugs" className="gap-1.5 text-xs"><Bug className="h-3.5 w-3.5" />Bug Fixes</TabsTrigger>
             <TabsTrigger value="log-access" className="gap-1.5 text-xs"><ScrollText className="h-3.5 w-3.5" />Log Access</TabsTrigger>
@@ -798,6 +800,16 @@ export default function AdminDashboard() {
           </div>
           <p className="text-xs text-muted-foreground">Track referrals from partner landing pages. Generate shareable tracker links for partners to view their own summary.</p>
           <AdminPartnerReferrals />
+        </TabsContent>
+
+        {/* ── Partner Requests ── */}
+        <TabsContent value="partner-requests" className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold">Requested Partners</h2>
+            <Badge variant="outline" className="text-xs">From /home</Badge>
+          </div>
+          <p className="text-xs text-muted-foreground">Inbound partner applications from the public landing page.</p>
+          <AdminPartnerRequests />
         </TabsContent>
 
         {/* ── Feature Suggestions ── */}
