@@ -2,6 +2,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useUserFeatures } from "@/hooks/useUserFeatures";
+import { useUserBranch } from "@/hooks/useUserBranch";
 import { useUnreadCount } from "@/hooks/useUnreadCount";
 import { useLossRunReminders } from "@/hooks/useLossRunReminders";
 import { LogOut, ShieldCheck, MessageCircle, HelpCircle, GitBranch, Settings, Mail, HeartPulse, FileSearch, Network, UserPlus } from "lucide-react";
@@ -11,17 +12,34 @@ import { useTrainingMode } from "@/hooks/useTrainingMode";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { NavScoreboard } from "@/components/NavScoreboard";
 import { AILogPanel } from "@/components/AILogPanel";
+import { useEffect } from "react";
 
 export function AppLayout({ children, onLogoClick }: { children: React.ReactNode; onLogoClick?: () => void }) {
   const { signOut } = useAuth();
   const { canSeeProducerHub, canSeeAdmin, canSeeChat, canSeeEmail, canSeePulse, canSeeLossRuns, canSeeClientSubmission } = useUserRole();
   const { hasConnect } = useUserFeatures();
+  const { branch } = useUserBranch();
   const location = useLocation();
   const { trainingMode, setTrainingMode } = useTrainingMode();
   const { emailCount, pulseCount } = useUnreadCount();
   const { count: lossRunReminderCount } = useLossRunReminders();
 
-  const navItems = [
+  // Apply branch theme class to <html>
+  useEffect(() => {
+    const html = document.documentElement;
+    html.classList.remove("theme-risk", "theme-property", "theme-wealth");
+    if (branch) html.classList.add(`theme-${branch}`);
+    return () => { html.classList.remove("theme-risk", "theme-property", "theme-wealth"); };
+  }, [branch]);
+
+  // For property/wealth branches, restrict nav to Connect + Settings + Admin only
+  const isBranchRestricted = branch === "property" || branch === "wealth";
+
+  const navItems = isBranchRestricted ? [
+    ...(hasConnect ? [{ to: "/connect", label: "Connect", icon: Network }] : []),
+    ...(canSeeAdmin ? [{ to: "/admin", label: "Admin", icon: ShieldCheck }] : []),
+    { to: "/settings", label: "Settings", icon: Settings },
+  ] : [
     ...(canSeeChat ? [{ to: "/hub", label: "AURA", icon: MessageCircle }] : []),
     ...(canSeeEmail ? [{ to: "/email", label: "Email", icon: Mail }] : []),
     ...(canSeePulse ? [{ to: "/pulse", label: "Pulse", icon: HeartPulse }] : []),
