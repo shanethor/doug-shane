@@ -1168,18 +1168,72 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
 
       {/* Social Profile Import Dialog */}
       <Dialog open={showSocialDialog} onOpenChange={setShowSocialDialog}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Instagram className="h-5 w-5 text-primary" />
-              Import Social Contacts
+              Social Profiles & Contacts
             </DialogTitle>
             <DialogDescription>
-              Add contacts from Instagram, Facebook, or X to your network graph.
+              Paste your own profile URLs to scrape & audit for contacts. Rescans happen when you hit Rescrape.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 mt-2">
-            {/* Primary method: paste handles/names */}
+            {/* ─── YOUR PROFILES SECTION ─── */}
+            <div className="space-y-3 rounded-lg border border-primary/20 bg-primary/5 p-3">
+              <label className="text-xs font-semibold text-primary uppercase tracking-wider">
+                Your Profile URLs
+              </label>
+              <p className="text-[11px] text-muted-foreground -mt-1">
+                Paste your own Instagram, Facebook, or X profile URL. We'll scrape public data and extract contacts.
+              </p>
+              <div className="space-y-2">
+                {([
+                  { key: "instagram" as const, label: "Instagram", placeholder: "https://instagram.com/yourprofile", icon: "📸" },
+                  { key: "facebook" as const, label: "Facebook", placeholder: "https://facebook.com/yourpage", icon: "📘" },
+                  { key: "x" as const, label: "X / Twitter", placeholder: "https://x.com/yourhandle", icon: "𝕏" },
+                ] as const).map((p) => (
+                  <div key={p.key} className="flex items-center gap-2">
+                    <span className="text-base w-6 text-center shrink-0">{p.icon}</span>
+                    <input
+                      type="url"
+                      placeholder={p.placeholder}
+                      value={myProfileUrls[p.key]}
+                      onChange={(e) => setMyProfileUrls(prev => ({ ...prev, [p.key]: e.target.value }))}
+                      className="flex h-8 w-full rounded-md border border-input bg-background px-2 py-1 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    />
+                  </div>
+                ))}
+              </div>
+              {savedProfiles.length > 0 && (
+                <div className="text-[10px] text-muted-foreground space-y-0.5">
+                  {savedProfiles.map((sp) => (
+                    <p key={sp.platform} className="flex items-center gap-1">
+                      <CheckCircle className="h-3 w-3 text-success shrink-0" />
+                      {sp.platform}: {sp.contact_count || 0} contacts
+                      {sp.last_sync && <span className="text-muted-foreground/60">· Last sync {new Date(sp.last_sync).toLocaleDateString()}</span>}
+                    </p>
+                  ))}
+                </div>
+              )}
+              <Button
+                className="w-full gap-2"
+                disabled={!myProfileUrls.instagram && !myProfileUrls.facebook && !myProfileUrls.x || actionLoading === "social"}
+                onClick={handleSaveMyProfiles}
+              >
+                {actionLoading === "social" ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                Save & Scrape Profiles
+              </Button>
+            </div>
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">or add contacts manually</span>
+              </div>
+            </div>
+
+            {/* ─── PASTE HANDLES ─── */}
             <div className="space-y-2">
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 Paste Names & Handles
@@ -1188,7 +1242,7 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
                 placeholder={"John Smith, @johnsmith_ig, Acme Corp\nJane Doe, https://instagram.com/janedoe\nBob Builder, @bob_x"}
                 value={socialHandles}
                 onChange={(e) => setSocialHandles(e.target.value)}
-                rows={5}
+                rows={4}
                 className="text-sm font-mono"
               />
               <p className="text-[11px] text-muted-foreground">
@@ -1217,14 +1271,11 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
 
             <Button
               className="w-full gap-2"
+              variant="outline"
               disabled={!socialHandles.trim() || actionLoading === "social"}
               onClick={handleSocialHandlesImport}
             >
-              {actionLoading === "social" ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Upload className="h-4 w-4" />
-              )}
+              {actionLoading === "social" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
               Import Contacts
             </Button>
 
@@ -1260,13 +1311,7 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
 
             <div className="rounded-md bg-muted/50 p-2.5">
               <p className="text-[11px] text-muted-foreground leading-relaxed">
-                <strong>Note:</strong> Instagram, Facebook, and X block automated scraping. Use the paste method above for these platforms. URL scraping works for public websites, company team pages, and LinkedIn profiles.
-              </p>
-            </div>
-
-            <div className="rounded-md border border-dashed border-muted-foreground/30 p-2.5">
-              <p className="text-[11px] text-muted-foreground leading-relaxed">
-                <strong>Coming Soon:</strong> Post/engage directly from AURA, social signal monitoring, and automated trigger detection from social activity.
+                <strong>How it works:</strong> We attempt to scrape your public profile pages for contacts, followers, and connections. Some platforms limit what's publicly visible — we'll extract whatever is available and re-audit on each rescrape.
               </p>
             </div>
           </div>
