@@ -288,7 +288,7 @@ export default function Auth() {
 
         set2FAVerified(rememberDevice);
         toast.success("Verified successfully");
-        navigate("/");
+        navigate("/hub");
       } else {
         toast.error(result.error || "Invalid code");
       }
