@@ -45,6 +45,8 @@ export default function EmailCallback() {
 
         setStatus("success");
         setMessage(`Connected ${data.email} via ${data.provider === "gmail" ? "Gmail" : "Outlook"}`);
+        sessionStorage.setItem("last_oauth_provider", data.provider);
+        sessionStorage.setItem("last_oauth_email", data.email);
 
         // Redirect back — prefer stored returnTo, fallback to settings
         const returnTo = sessionStorage.getItem("email_connect_return") || "/settings";

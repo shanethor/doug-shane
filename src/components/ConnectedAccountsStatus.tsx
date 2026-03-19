@@ -225,35 +225,7 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
   const [showPhoneDialog, setShowPhoneDialog] = useState(false);
   const [pasteContacts, setPasteContacts] = useState("");
 
-  // ─── Auto-sync contacts after OAuth return ───
-  const pendingSyncHandled = useRef(false);
-  useEffect(() => {
-    if (pendingSyncHandled.current) return;
-    const pending = sessionStorage.getItem("pending_contacts_sync");
-    if (!pending) return;
-    pendingSyncHandled.current = true;
-    sessionStorage.removeItem("pending_contacts_sync");
-    // Small delay to let the component fully mount
-    const timer = setTimeout(() => {
-      if (pending === "google") handleSyncGoogleContacts();
-      else if (pending === "outlook") handleSyncOutlookContacts();
-    }, 1500);
-    return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const requiredAccounts = accounts.filter(a => a.level === "Required");
-  const allRequiredConnected = requiredAccounts.every(a => a.connected);
-  const connectedCount = accounts.filter(a => a.connected).length;
-
-  const levelColor = (level: string) => {
-    if (level === "Required") return "text-destructive";
-    if (level === "Recommended") return "text-warning";
-    return "text-muted-foreground";
-  };
-
-  // ─── Fetch Gmail accounts for reconnect picker ───
-  const fetchGmailAccounts = async () => {
+  const fetchGmailAccounts = useCallback(async () => {
     try {
       const headers = await getAuthHeaders();
       const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/email-oauth`, {
@@ -261,27 +233,33 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
         headers,
         body: JSON.stringify({ action: "list" }),
       });
-      if (resp.ok) {
-        const data = await resp.json();
-        const gmails = (data.connections || []).filter((c: any) => c.provider === "gmail");
-        setGmailAccounts(gmails.map((c: any) => ({ id: c.id, email: c.email_address })));
-      }
-    } catch {}
-  };
+      if (!resp.ok) return [];
+      const data = await resp.json();
+      const gmails = (data.connections || []).filter((c: any) => c.provider === "gmail");
+      const mapped = gmails.map((c: any) => ({ id: c.id, email: c.email_address }));
+      setGmailAccounts(mapped);
+      return mapped;
+    } catch {
+      return [];
+    }
+  }, []);
 
-  // ─── Reconnect a specific Gmail with contacts scope ───
-  const handleReconnectGmail = async (connectionId: string) => {
+  const handleReconnectGmail = useCallback(async (connectionId: string) => {
     setShowReconnectPicker(false);
     setActionLoading("contacts");
     try {
       const headers = await getAuthHeaders();
-      // Remove the old connection
-      await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/email-oauth`, {
+      const removeResp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/email-oauth`, {
         method: "POST",
         headers,
         body: JSON.stringify({ action: "remove", connection_id: connectionId }),
       });
-      // Start new OAuth flow (which now includes contacts.readonly scope)
+
+      if (!removeResp.ok) {
+        const removeData = await removeResp.json().catch(() => ({}));
+        throw new Error(removeData.error || "Failed to clear old Gmail connection");
+      }
+
       const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/email-oauth`, {
         method: "POST",
         headers,
@@ -293,23 +271,21 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
       });
       const data = await resp.json();
       if (data.url) {
-        // Store return path so we come back to settings after reconnect
         sessionStorage.setItem("email_connect_return", "/settings?section=network");
-        // Flag so we auto-trigger contacts sync after OAuth completes
         sessionStorage.setItem("pending_contacts_sync", "google");
+        sessionStorage.removeItem("google_contacts_reconnect_attempted");
         window.location.href = data.url;
       } else {
         toast.error("Failed to start reconnection");
       }
-    } catch {
-      toast.error("Failed to reconnect Gmail");
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to reconnect Gmail");
     } finally {
       setActionLoading(null);
     }
-  };
+  }, []);
 
-  // ─── Google Contacts Sync ───
-  const handleSyncGoogleContacts = async () => {
+  const handleSyncGoogleContacts = useCallback(async (options?: { autoReconnect?: boolean }) => {
     setActionLoading("contacts");
     try {
       const headers = await getAuthHeaders();
@@ -320,28 +296,88 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
       });
       const data = await resp.json();
       if (!resp.ok) {
-        if (data.needs_reconnect || data.error?.includes("reconnect") || data.error?.includes("refresh")) {
-          // Show reconnect picker instead of a vague error
-          await fetchGmailAccounts();
-          if (gmailAccounts.length === 1) {
-            // Only one Gmail — reconnect automatically
-            handleReconnectGmail(gmailAccounts[0].id);
-          } else {
+        const shouldReconnect = data.needs_reconnect || data.error?.includes("reconnect") || data.error?.includes("refresh");
+        if (shouldReconnect) {
+          const autoReconnect = options?.autoReconnect ?? true;
+          const alreadyAttempted = sessionStorage.getItem("google_contacts_reconnect_attempted") === "true";
+
+          if (autoReconnect && !alreadyAttempted) {
+            sessionStorage.setItem("google_contacts_reconnect_attempted", "true");
+            const accounts = await fetchGmailAccounts();
+            if (accounts.length === 1) {
+              await handleReconnectGmail(accounts[0].id);
+              return;
+            }
             setShowReconnectPicker(true);
+            return;
           }
+
+          sessionStorage.removeItem("pending_contacts_sync");
+          sessionStorage.removeItem("google_contacts_reconnect_attempted");
+          toast.error(data.error || "Google Contacts still needs permission. Reconnect from Email settings and try again.");
         } else {
           toast.error(data.error || "Failed to sync contacts");
         }
         return;
       }
+      sessionStorage.removeItem("pending_contacts_sync");
+      sessionStorage.removeItem("google_contacts_reconnect_attempted");
       toast.success(`Synced ${data.imported} Google Contacts`);
       refresh();
-    } catch (e) {
+    } catch {
       toast.error("Failed to sync Google Contacts");
     } finally {
       setActionLoading(null);
     }
-  };
+  }, [fetchGmailAccounts, handleReconnectGmail, refresh]);
+
+  const handleSyncOutlookContacts = useCallback(async () => {
+    setActionLoading("outlook_contacts");
+    try {
+      const headers = await getAuthHeaders();
+      const resp = await fetch(SYNC_URL, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ action: "sync_outlook" }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) {
+        if (data.needs_reconnect) {
+          toast.error("Outlook needs to be reconnected with contacts permission. Go to Email settings to reconnect.");
+        } else {
+          toast.error(data.error || "Failed to sync Outlook contacts");
+        }
+        return;
+      }
+      toast.success(`Synced ${data.imported} Outlook Contacts`);
+      refresh();
+    } catch {
+      toast.error("Failed to sync Outlook Contacts");
+    } finally {
+      setActionLoading(null);
+    }
+  }, [refresh]);
+
+  // ─── Auto-sync contacts after OAuth return ───
+  const pendingSyncHandled = useRef(false);
+  useEffect(() => {
+    if (pendingSyncHandled.current) return;
+    const pending = sessionStorage.getItem("pending_contacts_sync");
+    const provider = sessionStorage.getItem("last_oauth_provider");
+    if (!pending || !provider || pending !== provider.replace("gmail", "google")) return;
+
+    pendingSyncHandled.current = true;
+    sessionStorage.removeItem("last_oauth_provider");
+    sessionStorage.removeItem("last_oauth_email");
+
+    const timer = setTimeout(() => {
+      if (pending === "google") void handleSyncGoogleContacts({ autoReconnect: false });
+      else if (pending === "outlook") void handleSyncOutlookContacts();
+    }, 800);
+
+    return () => clearTimeout(timer);
+  }, [handleSyncGoogleContacts, handleSyncOutlookContacts]);
+
 
   // ─── LinkedIn CSV Import ───
   const handleLinkedInFile = async (e: React.ChangeEvent<HTMLInputElement>) => {

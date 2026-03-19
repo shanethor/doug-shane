@@ -261,7 +261,7 @@ serve(async (req) => {
       }
     }
 
-    if (action === "disconnect") {
+    if (action === "disconnect" || action === "remove") {
       const { connection_id } = body;
       if (connection_id) {
         // Disconnect by specific connection ID
