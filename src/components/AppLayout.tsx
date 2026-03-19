@@ -22,7 +22,7 @@ export function AppLayout({ children, onLogoClick }: { children: React.ReactNode
   const { count: lossRunReminderCount } = useLossRunReminders();
 
   const navItems = [
-    ...(canSeeChat ? [{ to: "/", label: "AURA", icon: MessageCircle }] : []),
+    ...(canSeeChat ? [{ to: "/hub", label: "AURA", icon: MessageCircle }] : []),
     ...(canSeeEmail ? [{ to: "/email", label: "Email", icon: Mail }] : []),
     ...(canSeePulse ? [{ to: "/pulse", label: "Pulse", icon: HeartPulse }] : []),
     ...(canSeeProducerHub ? [{ to: "/hub", label: "Command Center", icon: GitBranch }] : []),
