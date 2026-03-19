@@ -20,6 +20,7 @@ import {
   Crown, Link2, ChevronRight, Linkedin, Clock,
 } from "lucide-react";
 import { ConnectedAccountsStatus } from "@/components/ConnectedAccountsStatus";
+import { ProgressiveUnlocks } from "@/components/ProgressiveUnlocks";
 import { toast } from "sonner";
 import { getAuthHeaders } from "@/lib/auth-fetch";
 
