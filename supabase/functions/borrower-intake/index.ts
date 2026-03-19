@@ -22,7 +22,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { slug, quick_apply } = await req.json();
+    const { slug, quick_apply, partner_quick_apply } = await req.json();
     if (!slug) {
       return new Response(JSON.stringify({ error: "slug required" }), {
         status: 400,
