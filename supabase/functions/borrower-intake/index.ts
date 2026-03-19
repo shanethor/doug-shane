@@ -103,6 +103,70 @@ Deno.serve(async (req) => {
       });
     }
 
+    // ── Partner Quick Apply: create lead from partner page quick info form ──
+    if (partner_quick_apply) {
+      const { first_name, last_name, email, phone, coverage } = partner_quick_apply;
+      if (!first_name || !email) {
+        return new Response(JSON.stringify({ error: "first_name and email required" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const fullName = [first_name, last_name].filter(Boolean).join(" ");
+
+      // Find linked advisor for this partner slug
+      const { data: partnerLink } = await supabase
+        .from("property_partner_links")
+        .select("linked_advisor_user_id")
+        .eq("partner_slug", slug)
+        .limit(1)
+        .maybeSingle();
+
+      const ownerUserId = partnerLink?.linked_advisor_user_id || agentId;
+
+      const { error: leadError } = await supabase.from("leads").insert({
+        account_name: fullName,
+        contact_name: fullName,
+        email: email,
+        phone: phone || null,
+        line_type: "commercial",
+        stage: "prospect",
+        owner_user_id: ownerUserId,
+        lead_source: `partner:${slug}:quick`,
+        business_type: coverage || "Not specified",
+        presenting_details: {
+          partner_quick_apply: true,
+          partner_slug: slug,
+          first_name,
+          last_name,
+          coverage_type: coverage || "",
+        },
+      });
+
+      if (leadError) {
+        console.error("Partner quick apply lead creation failed:", leadError);
+        return new Response(JSON.stringify({ error: leadError.message }), {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Notify the advisor
+      await supabase.from("notifications").insert({
+        user_id: ownerUserId,
+        type: "pipeline",
+        title: `Partner quick apply: ${fullName}`,
+        body: `${coverage || "Coverage TBD"} — via ${slug} partner page`,
+        link: "/pipeline",
+        metadata: { partner_slug: slug, is_partner_quick_apply: true },
+      });
+
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // ── Standard intake link creation ──
     const personalOnlySlugs = ["josh-chernes"];
     const lineType = personalOnlySlugs.includes(slug) ? "personal" : null;
