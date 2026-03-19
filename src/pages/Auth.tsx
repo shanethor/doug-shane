@@ -89,7 +89,7 @@ export default function Auth() {
     if (!loading && user && !is2FAVerified() && !needs2FA && !autoChecking && !isPendingApproval) {
       if (user.user_metadata?.skip_2fa) {
         set2FAVerified(true);
-        navigate("/", { replace: true });
+        navigate("/hub", { replace: true });
         return;
       }
       setAutoChecking(true);
