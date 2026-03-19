@@ -278,6 +278,8 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
       if (data.url) {
         // Store return path so we come back to settings after reconnect
         sessionStorage.setItem("email_connect_return", "/settings?section=network");
+        // Flag so we auto-trigger contacts sync after OAuth completes
+        sessionStorage.setItem("pending_contacts_sync", "google");
         window.location.href = data.url;
       } else {
         toast.error("Failed to start reconnection");
