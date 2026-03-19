@@ -14,6 +14,7 @@ const PARTNER_NAMES: Record<string, string> = {
   "michael-wengzn": "Michael Wengzn",
   "associated": "Associated Insurance Services",
   "omit": "OMiT",
+  "rayco": "Rayco Inc.",
 };
 
 const STAGE_COLORS: Record<string, string> = {
