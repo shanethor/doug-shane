@@ -120,6 +120,7 @@ export default function BorrowerPage() {
   if (slug === "omit") return <OmitPage />;
   if (slug === "domisource") return <DomisourcePage />;
   if (slug === "rayco") return <RaycoPage />;
+  if (slug === "prestige") return <PrestigePage />;
 
   const config = slug ? BORROWERS[slug] : undefined;
 
