@@ -365,7 +365,7 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
       const data = await resp.json();
       if (!resp.ok) {
         if (data.needs_reconnect) {
-          toast.error("Outlook needs to be reconnected with contacts permission. Go to Email settings to reconnect.");
+          toast.error(data.error || "Reconnect Outlook in Settings → Email Accounts, then try sync again.");
         } else {
           toast.error(data.error || "Failed to sync Outlook contacts");
         }

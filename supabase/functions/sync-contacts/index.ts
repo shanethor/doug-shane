@@ -268,8 +268,12 @@ serve(async (req) => {
         accessToken = await refreshMicrosoftToken(conn.refresh_token);
       } catch (e) {
         console.error("MS Token refresh failed:", e);
+        const errorMessage = e instanceof Error ? e.message : String(e);
+        const requiresReconnect = errorMessage.includes("AADSTS70000") || errorMessage.includes("unauthorized or expired") || errorMessage.includes("invalid_grant");
         return new Response(JSON.stringify({
-          error: "Outlook needs to be reconnected with contacts permission.",
+          error: requiresReconnect
+            ? "Outlook needs to be reconnected in Settings → Email Accounts so Microsoft can grant Contacts access again."
+            : "Outlook token refresh failed. Please reconnect Outlook in Settings → Email Accounts.",
           needs_reconnect: true,
         }), {
           status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
