@@ -45,8 +45,10 @@ export function MobileBottomNav() {
   const { config } = useNavConfig();
   const [moreOpen, setMoreOpen] = useState(false);
 
-  // Filter tabs based on role
-  const allowedTabs = ALL_NAV_TABS.filter((t) => {
+  const isBranchRestricted = branch === "property" || branch === "wealth";
+
+  // Filter tabs based on role and branch
+  const allowedTabs = isBranchRestricted ? [] : ALL_NAV_TABS.filter((t) => {
     if (t.id === "hub" && !canSeeProducerHub) return false;
     if (t.id === "aura" && !canSeeChat) return false;
     if (t.id === "email" && !canSeeEmail) return false;
