@@ -636,6 +636,40 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
     }
   };
 
+  // ─── Social Profile Scrape ───
+  const SOCIAL_SYNC_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync-social`;
+
+  const handleSocialScrape = async () => {
+    if (!socialUrl.trim()) {
+      toast.error("Enter a profile URL");
+      return;
+    }
+    setShowSocialDialog(false);
+    setActionLoading("social");
+    try {
+      const headers = await getAuthHeaders();
+      const platform = socialPlatform || detectSocialPlatform(socialUrl);
+      const resp = await fetch(SOCIAL_SYNC_URL, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ action: "scrape_profile", url: socialUrl.trim(), platform }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) {
+        toast.error(data.error || "Failed to scrape profile");
+        return;
+      }
+      toast.success(`Imported ${data.imported} contact(s) from ${data.platform}`);
+      setSocialUrl("");
+      setSocialPlatform("");
+      refresh();
+    } catch {
+      toast.error("Failed to scrape social profile");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   // ─── Disconnect ───
   const handleDisconnect = async (source: string) => {
     const sourceMap: Record<string, string> = {
@@ -643,15 +677,23 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
       outlook_contacts: "outlook_contacts",
       linkedin: "linkedin",
       phone: "phone",
+      social: "social_instagram", // disconnect all social
     };
     setActionLoading(source);
     try {
       const headers = await getAuthHeaders();
-      await fetch(SYNC_URL, {
-        method: "POST",
-        headers,
-        body: JSON.stringify({ action: "disconnect", source: sourceMap[source] || source }),
-      });
+      if (source === "social") {
+        // Disconnect all social sources
+        for (const s of ["social_instagram", "social_facebook", "social_x", "social_social"]) {
+          await fetch(SYNC_URL, { method: "POST", headers, body: JSON.stringify({ action: "disconnect", source: s }) });
+        }
+      } else {
+        await fetch(SYNC_URL, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ action: "disconnect", source: sourceMap[source] || source }),
+        });
+      }
       toast.success("Disconnected");
       refresh();
     } catch {
@@ -674,6 +716,10 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
       return;
     }
     if (id === "phone") return handlePhoneContacts();
+    if (id === "social") {
+      setShowSocialDialog(true);
+      return;
+    }
   };
 
   if (loading) return null;
