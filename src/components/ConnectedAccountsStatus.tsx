@@ -168,9 +168,16 @@ export function useConnectedAccounts() {
         label: "Instagram / Facebook / X",
         icon: <Instagram className="h-4 w-4" />,
         level: "Optional",
-        connected: false,
-        detail: undefined,
-        canConnect: false,
+        connected: !!(networkConns["social_instagram"] || networkConns["social_facebook"] || networkConns["social_x"]),
+        detail: (() => {
+          const counts = [networkConns["social_instagram"], networkConns["social_facebook"], networkConns["social_x"]]
+            .filter(Boolean)
+            .map((c: any) => c.contact_count || 0);
+          const total = counts.reduce((a: number, b: number) => a + b, 0);
+          return total > 0 ? `${total} profiles imported` : undefined;
+        })(),
+        canConnect: true,
+        canDisconnect: !!(networkConns["social_instagram"] || networkConns["social_facebook"] || networkConns["social_x"]),
       },
     ]);
     setLoading(false);
