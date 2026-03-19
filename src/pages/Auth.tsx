@@ -235,7 +235,7 @@ export default function Auth() {
 
         if (result.trusted) {
           set2FAVerified(true);
-          navigate("/");
+          navigate("/hub");
         } else if (result.sent) {
           setNeeds2FA(true);
           toast.success("Verification code sent to your email");
