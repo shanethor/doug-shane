@@ -310,7 +310,7 @@ export default function LandingPage() {
                   Three verticals.<br />One AI backbone.
                 </h2>
                 <p className="text-[15px] text-[#71717A] max-w-[500px] mt-3 leading-[1.6]">
-                  Insurance, property, and wealth data interact daily — powering cross-vertical intelligence no single-line platform can match.
+                  Insurance, property, and consulting data interact daily — powering cross-vertical intelligence no single-line platform can match.
                 </p>
               </div>
 
