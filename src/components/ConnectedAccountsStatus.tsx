@@ -838,8 +838,8 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
                   <AlertTriangle className="h-3 w-3 text-warning shrink-0" />
                   Connect Outlook email first
                 </p>
-              ) : a.id === "social" ? (
-                <p className="text-xs text-muted-foreground">Coming soon</p>
+              ) : a.id === "social" && !a.connected ? (
+                <p className="text-xs text-muted-foreground">Import profiles via URL scraping</p>
               ) : a.id === "linkedin" ? (
                 <p className="text-xs text-muted-foreground">Upload CSV or scrape profile</p>
               ) : a.id === "phone" ? (
