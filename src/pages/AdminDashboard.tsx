@@ -559,6 +559,11 @@ export default function AdminDashboard() {
                           ) : (
                             <Badge variant="outline" className="text-[9px] text-warning border-warning/30">Unverified</Badge>
                           )}
+                          {u.branch && (
+                            <Badge variant="secondary" className="text-[9px]">
+                              {u.branch === "risk" ? "🛡️" : u.branch === "property" ? "🏠" : "💰"} {u.branch}
+                            </Badge>
+                          )}
                         </div>
                         <p className="text-xs text-muted-foreground">{u.email || "No email"}</p>
                         <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
