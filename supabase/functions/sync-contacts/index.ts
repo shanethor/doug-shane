@@ -312,7 +312,7 @@ serve(async (req) => {
 
       const contacts = allContacts.map((person: any) => {
         const email = person.emailAddresses?.[0]?.address;
-        const phone = person.phones?.[0]?.number;
+        const phone = person.businessPhones?.[0] || person.homePhones?.[0];
         const addr = person.businessAddress || person.homeAddress;
         const location = addr ? [addr.city, addr.state].filter(Boolean).join(", ") : null;
 
