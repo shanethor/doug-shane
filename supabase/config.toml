@@ -65,3 +65,12 @@ verify_jwt = false
 
 [functions.sync-contacts]
 verify_jwt = false
+
+[functions.sync-social]
+verify_jwt = false
+
+[functions.connection-brief]
+verify_jwt = false
+
+[functions.connect-intelligence]
+verify_jwt = false

@@ -168,9 +168,16 @@ export function useConnectedAccounts() {
         label: "Instagram / Facebook / X",
         icon: <Instagram className="h-4 w-4" />,
         level: "Optional",
-        connected: false,
-        detail: undefined,
-        canConnect: false,
+        connected: !!(networkConns["social_instagram"] || networkConns["social_facebook"] || networkConns["social_x"]),
+        detail: (() => {
+          const counts = [networkConns["social_instagram"], networkConns["social_facebook"], networkConns["social_x"]]
+            .filter(Boolean)
+            .map((c: any) => c.contact_count || 0);
+          const total = counts.reduce((a: number, b: number) => a + b, 0);
+          return total > 0 ? `${total} profiles imported` : undefined;
+        })(),
+        canConnect: true,
+        canDisconnect: !!(networkConns["social_instagram"] || networkConns["social_facebook"] || networkConns["social_x"]),
       },
     ]);
     setLoading(false);
@@ -224,6 +231,9 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
   const [gmailAccounts, setGmailAccounts] = useState<{id: string; email: string}[]>([]);
   const [showPhoneDialog, setShowPhoneDialog] = useState(false);
   const [pasteContacts, setPasteContacts] = useState("");
+  const [showSocialDialog, setShowSocialDialog] = useState(false);
+  const [socialUrl, setSocialUrl] = useState("");
+  const [socialPlatform, setSocialPlatform] = useState<string>("");
 
   const fetchGmailAccounts = useCallback(async (): Promise<{id: string; email: string}[]> => {
     try {
@@ -626,6 +636,49 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
     }
   };
 
+  // ─── Social helpers ───
+  const detectSocialPlatform = (url: string): string => {
+    const lower = url.toLowerCase();
+    if (lower.includes("instagram") || lower.includes("instagr.am")) return "instagram";
+    if (lower.includes("facebook") || lower.includes("fb.com")) return "facebook";
+    if (lower.includes("twitter") || lower.includes("x.com")) return "x";
+    return "social";
+  };
+
+  // ─── Social Profile Scrape ───
+  const SOCIAL_SYNC_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync-social`;
+
+  const handleSocialScrape = async () => {
+    if (!socialUrl.trim()) {
+      toast.error("Enter a profile URL");
+      return;
+    }
+    setShowSocialDialog(false);
+    setActionLoading("social");
+    try {
+      const headers = await getAuthHeaders();
+      const platform = socialPlatform || detectSocialPlatform(socialUrl);
+      const resp = await fetch(SOCIAL_SYNC_URL, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ action: "scrape_profile", url: socialUrl.trim(), platform }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) {
+        toast.error(data.error || "Failed to scrape profile");
+        return;
+      }
+      toast.success(`Imported ${data.imported} contact(s) from ${data.platform}`);
+      setSocialUrl("");
+      setSocialPlatform("");
+      refresh();
+    } catch {
+      toast.error("Failed to scrape social profile");
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   // ─── Disconnect ───
   const handleDisconnect = async (source: string) => {
     const sourceMap: Record<string, string> = {
@@ -633,15 +686,23 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
       outlook_contacts: "outlook_contacts",
       linkedin: "linkedin",
       phone: "phone",
+      social: "social_instagram", // disconnect all social
     };
     setActionLoading(source);
     try {
       const headers = await getAuthHeaders();
-      await fetch(SYNC_URL, {
-        method: "POST",
-        headers,
-        body: JSON.stringify({ action: "disconnect", source: sourceMap[source] || source }),
-      });
+      if (source === "social") {
+        // Disconnect all social sources
+        for (const s of ["social_instagram", "social_facebook", "social_x", "social_social"]) {
+          await fetch(SYNC_URL, { method: "POST", headers, body: JSON.stringify({ action: "disconnect", source: s }) });
+        }
+      } else {
+        await fetch(SYNC_URL, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ action: "disconnect", source: sourceMap[source] || source }),
+        });
+      }
       toast.success("Disconnected");
       refresh();
     } catch {
@@ -664,6 +725,10 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
       return;
     }
     if (id === "phone") return handlePhoneContacts();
+    if (id === "social") {
+      setShowSocialDialog(true);
+      return;
+    }
   };
 
   if (loading) return null;
@@ -773,8 +838,8 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
                   <AlertTriangle className="h-3 w-3 text-warning shrink-0" />
                   Connect Outlook email first
                 </p>
-              ) : a.id === "social" ? (
-                <p className="text-xs text-muted-foreground">Coming soon</p>
+              ) : a.id === "social" && !a.connected ? (
+                <p className="text-xs text-muted-foreground">Import profiles via URL scraping</p>
               ) : a.id === "linkedin" ? (
                 <p className="text-xs text-muted-foreground">Upload CSV or scrape profile</p>
               ) : a.id === "phone" ? (
@@ -833,6 +898,7 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
                  a.id === "outlook_contacts" ? "Sync Contacts" :
                  a.id === "linkedin" ? "Upload CSV" :
                  a.id === "phone" ? "Import" :
+                 a.id === "social" ? "Import Profiles" :
                  "Connect"}
               </Button>
             )}
@@ -841,9 +907,6 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
             )}
             {!a.connected && !a.canConnect && a.id === "outlook_contacts" && (
               <Badge variant="outline" className="text-[10px] opacity-50">Requires Outlook</Badge>
-            )}
-            {a.id === "social" && !a.connected && (
-              <Badge variant="outline" className="text-[10px] opacity-50">Coming Soon</Badge>
             )}
             <Badge variant="outline" className={`text-[10px] ${levelColor(a.level)}`}>
               {a.level}
@@ -954,6 +1017,88 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
             <div className="rounded-md bg-muted/50 p-2.5">
               <p className="text-[11px] text-muted-foreground leading-relaxed">
                 <strong>Tip:</strong> If your phone contacts sync to Google, they'll be imported automatically when you connect Google Contacts above.
+              </p>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Social Profile Import Dialog */}
+      <Dialog open={showSocialDialog} onOpenChange={setShowSocialDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Instagram className="h-5 w-5 text-primary" />
+              Import Social Profiles
+            </DialogTitle>
+            <DialogDescription>
+              Paste a profile URL from Instagram, Facebook, or X to import contact data.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 mt-2">
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Profile URL</label>
+              <input
+                type="url"
+                placeholder="https://instagram.com/username or https://facebook.com/business"
+                value={socialUrl}
+                onChange={(e) => {
+                  setSocialUrl(e.target.value);
+                  setSocialPlatform(detectSocialPlatform(e.target.value));
+                }}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              />
+              {socialPlatform && (
+                <p className="text-[11px] text-muted-foreground">
+                  Detected platform: <span className="font-medium capitalize">{socialPlatform}</span>
+                </p>
+              )}
+            </div>
+
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { name: "Instagram", url: "https://instagram.com/", icon: "📸" },
+                { name: "Facebook", url: "https://facebook.com/", icon: "📘" },
+                { name: "X / Twitter", url: "https://x.com/", icon: "𝕏" },
+              ].map((p) => (
+                <Button
+                  key={p.name}
+                  variant="outline"
+                  size="sm"
+                  className="h-auto py-2 text-xs flex-col gap-1"
+                  onClick={() => {
+                    if (!socialUrl) setSocialUrl(p.url);
+                    setSocialPlatform(p.name.toLowerCase().replace(" / twitter", ""));
+                  }}
+                >
+                  <span className="text-lg">{p.icon}</span>
+                  {p.name}
+                </Button>
+              ))}
+            </div>
+
+            <Button
+              className="w-full gap-2"
+              disabled={!socialUrl.trim() || actionLoading === "social"}
+              onClick={handleSocialScrape}
+            >
+              {actionLoading === "social" ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <CheckCircle className="h-4 w-4" />
+              )}
+              Scrape & Import Profile
+            </Button>
+
+            <div className="rounded-md bg-muted/50 p-2.5">
+              <p className="text-[11px] text-muted-foreground leading-relaxed">
+                <strong>How it works:</strong> AURA scrapes the public profile page and uses AI to extract name, company, title, bio, and other contact details. Works best with public business profiles.
+              </p>
+            </div>
+
+            <div className="rounded-md border border-dashed border-muted-foreground/30 p-2.5">
+              <p className="text-[11px] text-muted-foreground leading-relaxed">
+                <strong>Coming Soon:</strong> Post/engage directly from AURA, social signal monitoring, and automated trigger detection from social activity.
               </p>
             </div>
           </div>
