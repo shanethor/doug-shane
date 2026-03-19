@@ -250,7 +250,7 @@ export default function LandingPage() {
             <p className="text-[17px] font-medium text-[#E4E4E7] max-w-[520px] mx-auto mt-6 leading-[1.65]">
               One platform powering <span className="text-[#0A8A8F] font-medium">insurance</span>,{" "}
               <span className="text-[#D4884A] font-medium">property</span>, and{" "}
-              <span className="text-[#D4B85C] font-medium">wealth</span> management. AI-native infrastructure for the professionals who protect, build, and grow.
+              <span className="text-[#D4B85C] font-medium">consulting</span>. AI-native infrastructure for the professionals who protect, build, and grow.
             </p>
           </div>
         </section>
