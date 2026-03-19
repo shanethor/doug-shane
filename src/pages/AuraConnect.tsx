@@ -330,6 +330,9 @@ export default function AuraConnect() {
         {/* Block 2 — Connected Accounts Status (persistent) */}
         <ConnectedAccountsStatus variant="compact" />
 
+        {/* Block 3 — Progressive Unlocks */}
+        <ProgressiveUnlocks />
+
         {/* Stats Row */}
         {dashboard?.stats && (
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
