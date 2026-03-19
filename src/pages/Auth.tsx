@@ -212,7 +212,7 @@ export default function Auth() {
 
         if (data.user.user_metadata?.skip_2fa) {
           set2FAVerified(true);
-          navigate("/", { replace: true });
+          navigate("/hub", { replace: true });
           return;
         }
 
