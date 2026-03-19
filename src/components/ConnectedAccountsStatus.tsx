@@ -234,6 +234,7 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
   const [showSocialDialog, setShowSocialDialog] = useState(false);
   const [socialUrl, setSocialUrl] = useState("");
   const [socialPlatform, setSocialPlatform] = useState<string>("");
+  const [socialHandles, setSocialHandles] = useState("");
 
   const fetchGmailAccounts = useCallback(async (): Promise<{id: string; email: string}[]> => {
     try {
