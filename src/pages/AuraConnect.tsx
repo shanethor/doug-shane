@@ -20,6 +20,7 @@ import {
   Crown, Link2, ChevronRight, Linkedin, Clock,
 } from "lucide-react";
 import { ConnectedAccountsStatus } from "@/components/ConnectedAccountsStatus";
+import { ProgressiveUnlocks } from "@/components/ProgressiveUnlocks";
 import { toast } from "sonner";
 import { getAuthHeaders } from "@/lib/auth-fetch";
 
@@ -328,6 +329,9 @@ export default function AuraConnect() {
 
         {/* Block 2 — Connected Accounts Status (persistent) */}
         <ConnectedAccountsStatus variant="compact" />
+
+        {/* Block 3 — Progressive Unlocks */}
+        <ProgressiveUnlocks />
 
         {/* Stats Row */}
         {dashboard?.stats && (

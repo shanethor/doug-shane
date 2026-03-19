@@ -19,14 +19,13 @@ Deno.serve(async (req) => {
       { global: { headers: { Authorization: authHeader } } }
     );
 
-    const token = authHeader.replace("Bearer ", "");
-    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
-    if (claimsError || !claimsData?.claims) {
-      console.error("connection-brief getClaims error:", claimsError);
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      console.error("connection-brief auth error:", userError);
       throw new Error("Not authenticated");
     }
 
-    const userId = claimsData.claims.sub as string;
+    const userId = user.id;
 
     const { name, notes } = await req.json();
     if (!name?.trim()) throw new Error("Name is required");
