@@ -53,7 +53,7 @@ export default function RequestAccess() {
 
         <h1 className="text-2xl font-bold tracking-tight text-center mb-2">AURA Connect</h1>
         <p className="text-sm text-[#71717A] text-center leading-relaxed max-w-sm mx-auto mb-8">
-          Relationship intelligence for Property &amp; Wealth professionals. 14-day free trial included.
+          Relationship intelligence for Property &amp; Consulting professionals. 14-day free trial included.
         </p>
 
         {/* Pricing card */}
