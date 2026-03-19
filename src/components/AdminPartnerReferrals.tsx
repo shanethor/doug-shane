@@ -4,9 +4,10 @@ import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Copy, ExternalLink, Link2, Loader2, Plus, Users, DollarSign, FileCheck, Send } from "lucide-react";
+import { Copy, ExternalLink, Link2, Loader2, Users, DollarSign, FileCheck, Send, UserCheck } from "lucide-react";
 import { toast } from "sonner";
 
 const PARTNER_NAMES: Record<string, string> = {
@@ -14,6 +15,7 @@ const PARTNER_NAMES: Record<string, string> = {
   "michael-wengzn": "Michael Wengzn",
   "associated": "Associated Insurance Services",
   "omit": "OMiT",
+  "domisource": "DomiSource",
   "rayco": "Rayco Inc.",
   "prestige": "Prestige Abatement & Construction",
 };
@@ -29,6 +31,8 @@ type PartnerData = {
   slug: string;
   name: string;
   token: string | null;
+  assignedAdvisorId: string | null;
+  assignedAdvisorName: string | null;
   stats: {
     total_submissions: number;
     leads_created: number;
@@ -40,16 +44,45 @@ type PartnerData = {
   loading: boolean;
 };
 
+type AdvisorOption = { id: string; name: string; role: string };
+
 export default function AdminPartnerReferrals() {
   const { user } = useAuth();
   const [partners, setPartners] = useState<PartnerData[]>([]);
   const [loadingTokens, setLoadingTokens] = useState(true);
+  const [advisors, setAdvisors] = useState<AdvisorOption[]>([]);
 
   const partnerSlugs = Object.keys(PARTNER_NAMES);
 
   useEffect(() => {
     loadTokens();
+    loadAdvisors();
   }, []);
+
+  const loadAdvisors = async () => {
+    const { data: roles } = await supabase
+      .from("user_roles")
+      .select("user_id, role")
+      .in("role", ["admin", "advisor", "manager"] as any);
+
+    if (!roles || roles.length === 0) return;
+
+    const userIds = roles.map((r: any) => r.user_id);
+    const { data: profiles } = await supabase
+      .from("profiles")
+      .select("user_id, full_name")
+      .in("user_id", userIds);
+
+    const roleMap: Record<string, string> = {};
+    roles.forEach((r: any) => { roleMap[r.user_id] = r.role; });
+
+    const list: AdvisorOption[] = (profiles ?? []).map((p: any) => ({
+      id: p.user_id,
+      name: p.full_name || "Unnamed",
+      role: roleMap[p.user_id] || "advisor",
+    }));
+    setAdvisors(list.sort((a, b) => a.name.localeCompare(b.name)));
+  };
 
   const loadTokens = async () => {
     setLoadingTokens(true);
@@ -57,20 +90,44 @@ export default function AdminPartnerReferrals() {
       .from("partner_tracker_tokens" as any)
       .select("*");
 
+    const { data: partnerLinks } = await supabase
+      .from("property_partner_links" as any)
+      .select("*");
+
     const tokenMap: Record<string, string> = {};
     (tokens ?? []).forEach((t: any) => { tokenMap[t.partner_slug] = t.token; });
+
+    const linkMap: Record<string, any> = {};
+    (partnerLinks ?? []).forEach((l: any) => { linkMap[l.partner_slug] = l; });
+
+    // Get advisor names for linked partners
+    const linkedAdvisorIds = Object.values(linkMap)
+      .map((l: any) => l.linked_advisor_user_id)
+      .filter(Boolean);
+
+    let advisorNameMap: Record<string, string> = {};
+    if (linkedAdvisorIds.length > 0) {
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("user_id, full_name")
+        .in("user_id", linkedAdvisorIds);
+      (profiles ?? []).forEach((p: any) => { advisorNameMap[p.user_id] = p.full_name || "Unnamed"; });
+    }
 
     const partnerList: PartnerData[] = partnerSlugs.map((slug) => ({
       slug,
       name: PARTNER_NAMES[slug],
       token: tokenMap[slug] || null,
+      assignedAdvisorId: linkMap[slug]?.linked_advisor_user_id || null,
+      assignedAdvisorName: linkMap[slug]?.linked_advisor_user_id
+        ? advisorNameMap[linkMap[slug].linked_advisor_user_id] || null
+        : null,
       stats: null,
       loading: false,
     }));
     setPartners(partnerList);
     setLoadingTokens(false);
 
-    // Load stats for partners that have tokens
     partnerList.forEach((p) => {
       if (p.token) loadPartnerStats(p.slug, p.token);
     });
@@ -110,6 +167,41 @@ export default function AdminPartnerReferrals() {
     loadPartnerStats(slug, newToken);
   };
 
+  const assignAdvisor = async (slug: string, advisorId: string) => {
+    // Check if a link already exists
+    const { data: existing } = await supabase
+      .from("property_partner_links" as any)
+      .select("id")
+      .eq("partner_slug", slug)
+      .limit(1)
+      .maybeSingle();
+
+    if (existing) {
+      await supabase
+        .from("property_partner_links" as any)
+        .update({ linked_advisor_user_id: advisorId } as any)
+        .eq("id", (existing as any).id);
+    } else {
+      await supabase
+        .from("property_partner_links" as any)
+        .insert({
+          partner_slug: slug,
+          linked_advisor_user_id: advisorId,
+          property_user_id: advisorId,
+        } as any);
+    }
+
+    const advisor = advisors.find((a) => a.id === advisorId);
+    setPartners((prev) =>
+      prev.map((p) =>
+        p.slug === slug
+          ? { ...p, assignedAdvisorId: advisorId, assignedAdvisorName: advisor?.name || null }
+          : p
+      )
+    );
+    toast.success(`${PARTNER_NAMES[slug]} assigned to ${advisor?.name || "advisor"}`);
+  };
+
   const copyLink = (token: string) => {
     const url = `${window.location.origin}/partner/${token}`;
     navigator.clipboard.writeText(url);
@@ -132,12 +224,32 @@ export default function AdminPartnerReferrals() {
       {partners.map((partner) => (
         <Card key={partner.slug}>
           <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <CardTitle className="text-base font-semibold flex items-center gap-2">
                 <Users className="h-4 w-4 text-primary" />
                 {partner.name}
               </CardTitle>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                {/* Advisor assignment */}
+                <div className="flex items-center gap-1.5">
+                  <UserCheck className="h-3.5 w-3.5 text-muted-foreground" />
+                  <Select
+                    value={partner.assignedAdvisorId || ""}
+                    onValueChange={(v) => assignAdvisor(partner.slug, v)}
+                  >
+                    <SelectTrigger className="h-7 text-xs w-[160px]">
+                      <SelectValue placeholder="Assign advisor" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {advisors.map((a) => (
+                        <SelectItem key={a.id} value={a.id} className="text-xs">
+                          {a.name} <span className="text-muted-foreground ml-1">({a.role})</span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 {partner.token ? (
                   <>
                     <Tooltip>
