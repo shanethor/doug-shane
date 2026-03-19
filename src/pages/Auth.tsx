@@ -13,9 +13,12 @@ import auraLogo from "@/assets/aura-logo.png";
 import { set2FAVerified, is2FAVerified, clear2FAVerified } from "@/lib/2fa-storage";
 
 
-async function getAuthHeaders(): Promise<Record<string, string>> {
-  const { data } = await supabase.auth.getSession();
-  const token = data?.session?.access_token;
+async function getAuthHeaders(explicitToken?: string): Promise<Record<string, string>> {
+  let token = explicitToken;
+  if (!token) {
+    const { data } = await supabase.auth.getSession();
+    token = data?.session?.access_token ?? undefined;
+  }
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   if (token) headers["Authorization"] = `Bearer ${token}`;
   return headers;
@@ -216,7 +219,8 @@ export default function Auth() {
         setPendingUserId(userId);
         setPendingEmail(userEmail);
         const deviceHash = getDeviceHash();
-        const authHdrs = await getAuthHeaders();
+        const loginToken = data.session?.access_token;
+        const authHdrs = await getAuthHeaders(loginToken);
         const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-2fa`, {
           method: "POST",
           headers: authHdrs,
