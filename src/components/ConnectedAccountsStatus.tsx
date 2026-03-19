@@ -636,6 +636,15 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
     }
   };
 
+  // ─── Social helpers ───
+  const detectSocialPlatform = (url: string): string => {
+    const lower = url.toLowerCase();
+    if (lower.includes("instagram") || lower.includes("instagr.am")) return "instagram";
+    if (lower.includes("facebook") || lower.includes("fb.com")) return "facebook";
+    if (lower.includes("twitter") || lower.includes("x.com")) return "x";
+    return "social";
+  };
+
   // ─── Social Profile Scrape ───
   const SOCIAL_SYNC_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync-social`;
 
