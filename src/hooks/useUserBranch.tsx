@@ -47,7 +47,7 @@ export function useUserBranch() {
     return () => { cancelled = true; };
   }, [user?.id, authLoading]);
 
-  return { branch, loading, isRisk: branch === "risk", isProperty: branch === "property", isWealth: branch === "wealth" };
+  return { branch, loading, isRisk: branch === "risk", isProperty: branch === "property", isWealth: branch === "wealth", isConsulting: branch === "wealth" };
 }
 
 export function invalidateBranchCache() {

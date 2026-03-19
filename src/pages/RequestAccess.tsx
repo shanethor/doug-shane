@@ -93,7 +93,7 @@ export default function RequestAccess() {
                         : "border-[#27272A] text-[#71717A] hover:border-[#3F3F46]"
                     }`}
                   >
-                    {b === "property" ? "Property" : "Wealth"}
+                    {b === "property" ? "Property" : "Consulting"}
                   </button>
                 ))}
               </div>

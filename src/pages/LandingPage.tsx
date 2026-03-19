@@ -426,7 +426,7 @@ export default function LandingPage() {
               <a href="#connect" className="block text-[13px] text-[#71717A] py-1 hover:text-white transition-colors no-underline">AURA Connect</a>
               <a href="#branches" className="block text-[13px] text-[#71717A] py-1 hover:text-white transition-colors no-underline">AURA Risk</a>
               <a href="#branches" className="block text-[13px] text-[#71717A] py-1 hover:text-white transition-colors no-underline">AURA Property</a>
-              <a href="#branches" className="block text-[13px] text-[#71717A] py-1 hover:text-white transition-colors no-underline">AURA Wealth</a>
+              <a href="#branches" className="block text-[13px] text-[#71717A] py-1 hover:text-white transition-colors no-underline">AURA Consulting</a>
             </div>
             <div>
               <div className="text-[13px] font-semibold text-white mb-4">Company</div>
