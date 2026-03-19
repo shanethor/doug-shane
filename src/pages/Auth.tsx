@@ -124,7 +124,7 @@ export default function Auth() {
         })
         .finally(() => setAutoChecking(false));
     } else if (!loading && user && is2FAVerified() && !isPendingApproval) {
-      navigate("/", { replace: true });
+      navigate("/hub", { replace: true });
     }
   }, [user, loading, isPendingApproval]);
 
