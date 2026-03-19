@@ -141,7 +141,28 @@ serve(async (req) => {
 
         if (!resp.ok) {
           const errText = await resp.text();
+          let errJson: any = null;
+          try {
+            errJson = JSON.parse(errText);
+          } catch {
+            errJson = null;
+          }
           console.error("People API error:", resp.status, errText);
+          const googleErrorInfo = errJson?.error?.details?.find((detail: any) => detail?.["@type"] === "type.googleapis.com/google.rpc.ErrorInfo");
+          const activationUrl = googleErrorInfo?.metadata?.activationUrl
+            || errJson?.error?.details?.find((detail: any) => detail?.["@type"] === "type.googleapis.com/google.rpc.Help")?.links?.[0]?.url
+            || null;
+
+          if (resp.status === 403 && googleErrorInfo?.reason === "SERVICE_DISABLED") {
+            return new Response(JSON.stringify({
+              error: "Google People API is disabled in your Google Cloud project. Enable the People API, wait a minute, then try again.",
+              needs_enable_api: true,
+              activation_url: activationUrl,
+            }), {
+              status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+            });
+          }
+
           if (resp.status === 403) {
             return new Response(JSON.stringify({
               error: "Contacts permission not granted. Please reconnect Gmail with contacts access.",
@@ -247,8 +268,12 @@ serve(async (req) => {
         accessToken = await refreshMicrosoftToken(conn.refresh_token);
       } catch (e) {
         console.error("MS Token refresh failed:", e);
+        const errorMessage = e instanceof Error ? e.message : String(e);
+        const requiresReconnect = errorMessage.includes("AADSTS70000") || errorMessage.includes("unauthorized or expired") || errorMessage.includes("invalid_grant");
         return new Response(JSON.stringify({
-          error: "Outlook needs to be reconnected with contacts permission.",
+          error: requiresReconnect
+            ? "Outlook needs to be reconnected in Settings → Email Accounts so Microsoft can grant Contacts access again."
+            : "Outlook token refresh failed. Please reconnect Outlook in Settings → Email Accounts.",
           needs_reconnect: true,
         }), {
           status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
