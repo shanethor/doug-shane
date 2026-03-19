@@ -130,7 +130,7 @@ export default function AuraConnect() {
   const [dismissedTouches, setDismissedTouches] = useState<Set<string>>(new Set());
 
   // Active tab
-  const [activeTab, setActiveTab] = useState("dashboard");
+  const [activeTab, setActiveTab] = useState("brief");
 
   useEffect(() => {
     if (!featuresLoading && !roleLoading && !hasConnect && !isAdmin) {
@@ -352,6 +352,10 @@ export default function AuraConnect() {
         {/* Main Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="w-full grid grid-cols-4">
+            <TabsTrigger value="brief" className="gap-1.5 text-xs sm:text-sm">
+              <Search className="h-3.5 w-3.5 hidden sm:inline" />
+              Brief
+            </TabsTrigger>
             <TabsTrigger value="dashboard" className="gap-1.5 text-xs sm:text-sm">
               <Crown className="h-3.5 w-3.5 hidden sm:inline" />
               Top 10s
@@ -363,10 +367,6 @@ export default function AuraConnect() {
             <TabsTrigger value="touches" className="gap-1.5 text-xs sm:text-sm">
               <Send className="h-3.5 w-3.5 hidden sm:inline" />
               Outreach
-            </TabsTrigger>
-            <TabsTrigger value="brief" className="gap-1.5 text-xs sm:text-sm">
-              <Search className="h-3.5 w-3.5 hidden sm:inline" />
-              Brief
             </TabsTrigger>
           </TabsList>
 
