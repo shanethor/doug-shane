@@ -36,19 +36,19 @@ export function AppLayout({ children, onLogoClick }: { children: React.ReactNode
   const isBranchRestricted = branch === "property" || branch === "wealth";
 
   const navItems = isBranchRestricted ? [
-    ...(hasConnect ? [{ to: "/connect", label: "Connect", icon: Network }] : []),
-    ...(canSeeAdmin ? [{ to: "/admin", label: "Admin", icon: ShieldCheck }] : []),
-    { to: "/settings", label: "Settings", icon: Settings },
+    ...(hasConnect ? [{ to: "/connect", label: "Connect", icon: Network, key: "connect" }] : []),
+    ...(canSeeAdmin ? [{ to: "/admin", label: "Admin", icon: ShieldCheck, key: "admin" }] : []),
+    { to: "/settings", label: "Settings", icon: Settings, key: "settings" },
   ] : [
-    ...(canSeeChat ? [{ to: "/hub", label: "AURA", icon: MessageCircle }] : []),
-    ...(canSeeEmail ? [{ to: "/email", label: "Email", icon: Mail }] : []),
-    ...(canSeePulse ? [{ to: "/pulse", label: "Pulse", icon: HeartPulse }] : []),
-    ...(canSeeProducerHub ? [{ to: "/hub", label: "Command Center", icon: GitBranch }] : []),
-    ...(canSeeLossRuns ? [{ to: "/loss-runs", label: "Loss Runs", icon: FileSearch }] : []),
-    ...(hasConnect ? [{ to: "/connect", label: "Connect", icon: Network }] : []),
-    ...(canSeeClientSubmission ? [{ to: "/submit-client", label: "Submit Client", icon: UserPlus }] : []),
-    ...(canSeeAdmin ? [{ to: "/admin", label: "Admin", icon: ShieldCheck }] : []),
-    { to: "/settings", label: "Settings", icon: Settings },
+    ...(canSeeChat ? [{ to: "/hub", label: "AURA", icon: MessageCircle, key: "aura" }] : []),
+    ...(canSeeEmail ? [{ to: "/email", label: "Email", icon: Mail, key: "email" }] : []),
+    ...(canSeePulse ? [{ to: "/pulse", label: "Pulse", icon: HeartPulse, key: "pulse" }] : []),
+    ...(canSeeProducerHub ? [{ to: "/hub", label: "Command Center", icon: GitBranch, key: "command" }] : []),
+    ...(canSeeLossRuns ? [{ to: "/loss-runs", label: "Loss Runs", icon: FileSearch, key: "lossruns" }] : []),
+    ...(hasConnect ? [{ to: "/connect", label: "Connect", icon: Network, key: "connect" }] : []),
+    ...(canSeeClientSubmission ? [{ to: "/submit-client", label: "Submit Client", icon: UserPlus, key: "submit" }] : []),
+    ...(canSeeAdmin ? [{ to: "/admin", label: "Admin", icon: ShieldCheck, key: "admin" }] : []),
+    { to: "/settings", label: "Settings", icon: Settings, key: "settings" },
   ];
 
   return (
@@ -70,7 +70,7 @@ export function AppLayout({ children, onLogoClick }: { children: React.ReactNode
           {/* Desktop nav — hidden on mobile */}
           <nav className="hidden md:flex items-center gap-1">
             {navItems.map((item) => (
-              <Link key={item.to} to={item.to}>
+              <Link key={item.key} to={item.to}>
                 <Button
                   variant={location.pathname === item.to ? "secondary" : "ghost"}
                   size="sm"
