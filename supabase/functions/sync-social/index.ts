@@ -10,7 +10,7 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const authHeader = req.headers.get("Authorization");
+    const authHeader = req.headers.get("Authorization") || req.headers.get("authorization");
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -40,7 +40,108 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // ─── Scrape a social profile URL ───
+    // ─── Save user's own profile URLs ───
+    if (action === "save_my_profiles") {
+      const { profiles } = body; // [{ platform: "instagram", url: "..." }, ...]
+      if (!Array.isArray(profiles) || profiles.length === 0) {
+        return new Response(JSON.stringify({ error: "No profiles provided" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const validProfiles = profiles.filter((p: any) => p.url?.trim() && p.platform);
+      const results: any[] = [];
+
+      for (const profile of validProfiles) {
+        const source = `social_${profile.platform}`;
+        // Store the profile URL in network_connections metadata
+        await adminClient
+          .from("network_connections")
+          .upsert({
+            user_id: userId,
+            source,
+            status: "connected",
+            last_sync_at: new Date().toISOString(),
+            contact_count: 0,
+            updated_at: new Date().toISOString(),
+            metadata: {
+              my_profile_url: profile.url.trim(),
+              platform: profile.platform,
+              saved_at: new Date().toISOString(),
+            },
+          }, { onConflict: "user_id,source" });
+
+        results.push({ platform: profile.platform, url: profile.url.trim() });
+      }
+
+      // Now attempt initial scrape of all saved profiles
+      const scrapeResults = await scrapeProfiles(adminClient, userId, validProfiles);
+
+      return new Response(JSON.stringify({
+        success: true,
+        saved: results.length,
+        scrape_results: scrapeResults,
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // ─── Rescrape all saved profile URLs ───
+    if (action === "rescrape_my_profiles") {
+      // Fetch all social connections for this user that have my_profile_url
+      const { data: connections } = await adminClient
+        .from("network_connections")
+        .select("source, metadata")
+        .eq("user_id", userId)
+        .like("source", "social_%");
+
+      const profiles = (connections || [])
+        .filter((c: any) => c.metadata?.my_profile_url)
+        .map((c: any) => ({
+          platform: c.metadata.platform || c.source.replace("social_", ""),
+          url: c.metadata.my_profile_url,
+        }));
+
+      if (profiles.length === 0) {
+        return new Response(JSON.stringify({ error: "No saved profile URLs to rescrape. Add your profiles first." }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const scrapeResults = await scrapeProfiles(adminClient, userId, profiles);
+
+      return new Response(JSON.stringify({
+        success: true,
+        rescraped: profiles.length,
+        results: scrapeResults,
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // ─── Get saved profile URLs ───
+    if (action === "get_my_profiles") {
+      const { data: connections } = await adminClient
+        .from("network_connections")
+        .select("source, metadata, last_sync_at, contact_count")
+        .eq("user_id", userId)
+        .like("source", "social_%");
+
+      const profiles = (connections || [])
+        .filter((c: any) => c.metadata?.my_profile_url)
+        .map((c: any) => ({
+          platform: c.metadata.platform || c.source.replace("social_", ""),
+          url: c.metadata.my_profile_url,
+          last_sync: c.last_sync_at,
+          contact_count: c.contact_count,
+        }));
+
+      return new Response(JSON.stringify({ profiles }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // ─── Scrape a social profile URL (single) ───
     if (action === "scrape_profile") {
       const { url, platform } = body;
       if (!url?.trim()) {
@@ -49,167 +150,20 @@ Deno.serve(async (req) => {
         });
       }
 
-      const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY");
-      if (!FIRECRAWL_API_KEY) {
-        return new Response(JSON.stringify({ error: "Scraping service not configured" }), {
+      const results = await scrapeProfiles(adminClient, userId, [{ url: url.trim(), platform: platform || detectPlatform(url) }]);
+      const result = results[0];
+
+      if (result?.error) {
+        return new Response(JSON.stringify({ error: result.error }), {
           status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-
-      console.log(`Scraping social profile: ${url} (platform: ${platform})`);
-
-      const scrapeResp = await fetch("https://api.firecrawl.dev/v1/scrape", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${FIRECRAWL_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          url: url.trim(),
-          formats: ["markdown"],
-          onlyMainContent: true,
-          waitFor: 3000,
-        }),
-      });
-
-      if (!scrapeResp.ok) {
-        const errData = await scrapeResp.json().catch(() => ({}));
-        console.error("Firecrawl error:", scrapeResp.status, JSON.stringify(errData));
-        return new Response(JSON.stringify({ error: `Failed to scrape profile (${scrapeResp.status})` }), {
-          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-
-      const scrapeData = await scrapeResp.json();
-      const markdown = scrapeData.data?.markdown || scrapeData.markdown || "";
-      const metadata = scrapeData.data?.metadata || scrapeData.metadata || {};
-
-      // Use AI to extract structured contact info from scraped profile
-      const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-      if (!LOVABLE_API_KEY) {
-        return new Response(JSON.stringify({ error: "AI service not configured" }), {
-          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-
-      const extractPrompt = `Extract contact information from this scraped ${platform || "social media"} profile page.
-
-Return ONLY valid JSON with this structure:
-{
-  "contacts": [
-    {
-      "full_name": "string or null",
-      "company": "string or null",
-      "title": "string or null",
-      "email": "string or null",
-      "phone": "string or null",
-      "location": "string or null",
-      "bio": "short bio summary or null",
-      "followers": "number or null",
-      "following": "number or null",
-      "profile_url": "the profile URL"
-    }
-  ],
-  "platform": "${platform || "unknown"}",
-  "page_type": "profile|business_page|company_page|other"
-}
-
-If this is a single profile, return one contact. If it's a page listing multiple people (like a company team page), extract all visible contacts.
-If you cannot extract meaningful contact info, return an empty contacts array.
-
-Profile content:
-${markdown.slice(0, 8000)}`;
-
-      const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        },
-        body: JSON.stringify({
-          model: "google/gemini-3-flash-preview",
-          messages: [
-            { role: "system", content: "You extract structured contact data from scraped web pages. Return only valid JSON." },
-            { role: "user", content: extractPrompt },
-          ],
-          temperature: 0.2,
-          response_format: { type: "json_object" },
-        }),
-      });
-
-      if (!aiRes.ok) {
-        console.error("AI extraction error:", aiRes.status);
-        return new Response(JSON.stringify({ error: "Failed to extract profile data" }), {
-          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-
-      const aiData = await aiRes.json();
-      const content = aiData.choices?.[0]?.message?.content;
-      let extracted;
-      try {
-        extracted = JSON.parse(content);
-      } catch {
-        return new Response(JSON.stringify({ error: "Failed to parse extracted data" }), {
-          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-
-      const detectedPlatform = extracted.platform || platform || "social";
-      const contacts = (extracted.contacts || []).filter((c: any) => c.full_name || c.email);
-
-      if (contacts.length > 0) {
-        const records = contacts.map((c: any, idx: number) => ({
-          user_id: userId,
-          source: `social_${detectedPlatform}`,
-          external_id: `${detectedPlatform}-${c.profile_url || url}-${idx}`,
-          full_name: c.full_name || null,
-          email: c.email || null,
-          phone: c.phone || null,
-          company: c.company || null,
-          title: c.title || null,
-          linkedin_url: detectedPlatform === "linkedin" ? (c.profile_url || url) : null,
-          location: c.location || null,
-          metadata: {
-            platform: detectedPlatform,
-            bio: c.bio,
-            followers: c.followers,
-            following: c.following,
-            profile_url: c.profile_url || url,
-            page_type: extracted.page_type,
-            scraped_at: new Date().toISOString(),
-          },
-        }));
-
-        const { error: upsertErr } = await adminClient
-          .from("network_contacts")
-          .upsert(records, { onConflict: "user_id,source,external_id" });
-        if (upsertErr) console.error("Social contacts upsert error:", upsertErr);
-      }
-
-      // Update network connections
-      await adminClient
-        .from("network_connections")
-        .upsert({
-          user_id: userId,
-          source: `social_${detectedPlatform}`,
-          status: "connected",
-          last_sync_at: new Date().toISOString(),
-          contact_count: contacts.length,
-          updated_at: new Date().toISOString(),
-          metadata: { urls: [url], platform: detectedPlatform },
-        }, { onConflict: "user_id,source" });
 
       return new Response(JSON.stringify({
         success: true,
-        imported: contacts.length,
-        platform: detectedPlatform,
-        contacts: contacts.map((c: any) => ({
-          name: c.full_name,
-          company: c.company,
-          title: c.title,
-          bio: c.bio,
-        })),
+        imported: result?.imported || 0,
+        platform: result?.platform || platform,
+        contacts: result?.contacts || [],
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -253,7 +207,6 @@ ${markdown.slice(0, 8000)}`;
         if (upsertErr) console.error("Social handles upsert error:", upsertErr);
       }
 
-      // Count per platform
       const platforms = new Set(contacts.map((c: any) => c.source));
       for (const src of platforms) {
         const count = contacts.filter((c: any) => c.source === src).length;
@@ -284,6 +237,214 @@ ${markdown.slice(0, 8000)}`;
     });
   }
 });
+
+// ─── Scrape multiple profiles via Firecrawl + AI extraction ───
+async function scrapeProfiles(
+  adminClient: any,
+  userId: string,
+  profiles: { url: string; platform: string }[]
+): Promise<any[]> {
+  const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY");
+  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+
+  if (!FIRECRAWL_API_KEY || !LOVABLE_API_KEY) {
+    return profiles.map((p) => ({
+      platform: p.platform,
+      error: "Scraping or AI service not configured",
+      imported: 0,
+    }));
+  }
+
+  const results: any[] = [];
+
+  for (const profile of profiles) {
+    try {
+      console.log(`Scraping profile: ${profile.url} (${profile.platform})`);
+
+      const scrapeResp = await fetch("https://api.firecrawl.dev/v1/scrape", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${FIRECRAWL_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          url: profile.url.trim(),
+          formats: ["markdown"],
+          onlyMainContent: true,
+          waitFor: 3000,
+        }),
+      });
+
+      if (!scrapeResp.ok) {
+        const errData = await scrapeResp.json().catch(() => ({}));
+        console.error(`Firecrawl error for ${profile.url}:`, scrapeResp.status, JSON.stringify(errData));
+        results.push({
+          platform: profile.platform,
+          url: profile.url,
+          error: `Scrape failed (${scrapeResp.status}). Platform may block automated access.`,
+          imported: 0,
+        });
+        // Still mark as connected with the saved URL
+        await adminClient
+          .from("network_connections")
+          .upsert({
+            user_id: userId,
+            source: `social_${profile.platform}`,
+            status: "connected",
+            updated_at: new Date().toISOString(),
+            metadata: {
+              my_profile_url: profile.url.trim(),
+              platform: profile.platform,
+              last_scrape_error: `Failed (${scrapeResp.status})`,
+              last_scrape_attempt: new Date().toISOString(),
+            },
+          }, { onConflict: "user_id,source" });
+        continue;
+      }
+
+      const scrapeData = await scrapeResp.json();
+      const markdown = scrapeData.data?.markdown || scrapeData.markdown || "";
+
+      // Use AI to extract contacts
+      const extractPrompt = `Extract contact/follower information from this scraped ${profile.platform} profile page.
+This is the user's OWN profile — extract any visible contacts, followers, following, tagged people, mentioned businesses, or linked accounts.
+
+Return ONLY valid JSON:
+{
+  "profile_info": {
+    "display_name": "string or null",
+    "bio": "string or null",
+    "followers_count": "number or null",
+    "following_count": "number or null",
+    "posts_count": "number or null",
+    "website": "string or null",
+    "location": "string or null"
+  },
+  "contacts": [
+    {
+      "full_name": "string or null",
+      "company": "string or null",
+      "title": "string or null",
+      "email": "string or null",
+      "phone": "string or null",
+      "location": "string or null",
+      "bio": "short bio or null",
+      "profile_url": "their profile URL or null",
+      "relationship": "follower|following|tagged|mentioned|linked"
+    }
+  ],
+  "platform": "${profile.platform}",
+  "scrape_quality": "full|partial|minimal"
+}
+
+If the platform blocked most content, still extract whatever is visible. Return empty contacts array if none found.
+
+Profile content:
+${markdown.slice(0, 10000)}`;
+
+      const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: "google/gemini-3-flash-preview",
+          messages: [
+            { role: "system", content: "You extract structured contact data from scraped web pages. Return only valid JSON." },
+            { role: "user", content: extractPrompt },
+          ],
+          temperature: 0.2,
+          response_format: { type: "json_object" },
+        }),
+      });
+
+      if (!aiRes.ok) {
+        console.error("AI extraction error:", aiRes.status);
+        results.push({ platform: profile.platform, url: profile.url, error: "AI extraction failed", imported: 0 });
+        continue;
+      }
+
+      const aiData = await aiRes.json();
+      const content = aiData.choices?.[0]?.message?.content;
+      let extracted;
+      try {
+        extracted = JSON.parse(content);
+      } catch {
+        results.push({ platform: profile.platform, url: profile.url, error: "Failed to parse AI output", imported: 0 });
+        continue;
+      }
+
+      const contacts = (extracted.contacts || []).filter((c: any) => c.full_name || c.email);
+      const profileInfo = extracted.profile_info || {};
+
+      if (contacts.length > 0) {
+        const records = contacts.map((c: any, idx: number) => ({
+          user_id: userId,
+          source: `social_${profile.platform}`,
+          external_id: `${profile.platform}-${c.profile_url || profile.url}-${idx}`,
+          full_name: c.full_name || null,
+          email: c.email || null,
+          phone: c.phone || null,
+          company: c.company || null,
+          title: c.title || null,
+          linkedin_url: null,
+          location: c.location || null,
+          metadata: {
+            platform: profile.platform,
+            bio: c.bio,
+            profile_url: c.profile_url,
+            relationship: c.relationship,
+            scraped_at: new Date().toISOString(),
+          },
+        }));
+
+        const { error: upsertErr } = await adminClient
+          .from("network_contacts")
+          .upsert(records, { onConflict: "user_id,source,external_id" });
+        if (upsertErr) console.error("Social contacts upsert error:", upsertErr);
+      }
+
+      // Update network connection with profile info and scrape results
+      await adminClient
+        .from("network_connections")
+        .upsert({
+          user_id: userId,
+          source: `social_${profile.platform}`,
+          status: "connected",
+          last_sync_at: new Date().toISOString(),
+          contact_count: contacts.length,
+          updated_at: new Date().toISOString(),
+          metadata: {
+            my_profile_url: profile.url.trim(),
+            platform: profile.platform,
+            profile_info: profileInfo,
+            scrape_quality: extracted.scrape_quality || "unknown",
+            last_scrape_attempt: new Date().toISOString(),
+            last_scrape_error: null,
+          },
+        }, { onConflict: "user_id,source" });
+
+      results.push({
+        platform: profile.platform,
+        url: profile.url,
+        imported: contacts.length,
+        profile_info: profileInfo,
+        scrape_quality: extracted.scrape_quality,
+        contacts: contacts.map((c: any) => ({
+          name: c.full_name,
+          company: c.company,
+          relationship: c.relationship,
+        })),
+      });
+    } catch (err: any) {
+      console.error(`Error scraping ${profile.url}:`, err);
+      results.push({ platform: profile.platform, url: profile.url, error: err.message, imported: 0 });
+    }
+  }
+
+  return results;
+}
 
 function detectPlatform(input: string): string {
   const lower = input.toLowerCase();
