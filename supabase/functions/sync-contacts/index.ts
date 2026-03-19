@@ -282,7 +282,7 @@ serve(async (req) => {
 
       // Fetch contacts from Microsoft Graph
       let allContacts: any[] = [];
-      let nextLink = `${MS_CONTACTS_API}?$top=500&$select=displayName,emailAddresses,phones,companyName,jobTitle,homeAddress,businessAddress`;
+      let nextLink = `${MS_CONTACTS_API}?$top=500&$select=displayName,emailAddresses,homePhones,businessPhones,companyName,jobTitle,homeAddress,businessAddress`;
 
       while (nextLink && allContacts.length < 10000) {
         const resp = await fetch(nextLink, {
@@ -312,7 +312,7 @@ serve(async (req) => {
 
       const contacts = allContacts.map((person: any) => {
         const email = person.emailAddresses?.[0]?.address;
-        const phone = person.phones?.[0]?.number;
+        const phone = person.businessPhones?.[0] || person.homePhones?.[0];
         const addr = person.businessAddress || person.homeAddress;
         const location = addr ? [addr.city, addr.state].filter(Boolean).join(", ") : null;
 

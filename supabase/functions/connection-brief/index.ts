@@ -10,17 +10,23 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   try {
-    const authHeader = req.headers.get("authorization");
-    if (!authHeader) throw new Error("Missing authorization");
+    const authHeader = req.headers.get("authorization") || req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) throw new Error("Missing authorization");
 
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { authorization: authHeader } } }
+      { global: { headers: { Authorization: authHeader } } }
     );
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error("Not authenticated");
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) {
+      console.error("connection-brief getClaims error:", claimsError);
+      throw new Error("Not authenticated");
+    }
+
+    const userId = claimsData.claims.sub as string;
 
     const { name, notes } = await req.json();
     if (!name?.trim()) throw new Error("Name is required");
@@ -74,7 +80,7 @@ Generate a thorough intelligence brief. If notes mention specific details (indus
         Authorization: `Bearer ${LOVABLE_API_KEY}`,
       },
       body: JSON.stringify({
-        model: "openai/gpt-5-mini",
+        model: "google/gemini-3-flash-preview",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
@@ -86,7 +92,18 @@ Generate a thorough intelligence brief. If notes mention specific details (indus
 
     if (!aiRes.ok) {
       const errText = await aiRes.text();
-      throw new Error(`AI request failed: ${aiRes.status} ${errText.slice(0, 200)}`);
+      console.error("AI gateway error:", aiRes.status, errText);
+      if (aiRes.status === 429) {
+        return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment." }), {
+          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      if (aiRes.status === 402) {
+        return new Response(JSON.stringify({ error: "AI credits exhausted. Please add funds." }), {
+          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      throw new Error(`AI request failed: ${aiRes.status}`);
     }
 
     const aiData = await aiRes.json();
@@ -104,6 +121,7 @@ Generate a thorough intelligence brief. If notes mention specific details (indus
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err: any) {
+    console.error("connection-brief error:", err.message);
     return new Response(JSON.stringify({ error: err.message }), {
       status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
