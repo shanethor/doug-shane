@@ -43,7 +43,7 @@ export function AppLayout({ children, onLogoClick }: { children: React.ReactNode
     ...(canSeeChat ? [{ to: "/hub", label: "AURA", icon: MessageCircle, key: "aura" }] : []),
     ...(canSeeEmail ? [{ to: "/email", label: "Email", icon: Mail, key: "email" }] : []),
     ...(canSeePulse ? [{ to: "/pulse", label: "Pulse", icon: HeartPulse, key: "pulse" }] : []),
-    ...(canSeeProducerHub ? [{ to: "/hub", label: "Command Center", icon: GitBranch, key: "command" }] : []),
+    ...(canSeeProducerHub ? [{ to: "/command", label: "Command Center", icon: GitBranch, key: "command" }] : []),
     ...(canSeeLossRuns ? [{ to: "/loss-runs", label: "Loss Runs", icon: FileSearch, key: "lossruns" }] : []),
     ...(hasConnect ? [{ to: "/connect", label: "Connect", icon: Network, key: "connect" }] : []),
     ...(canSeeClientSubmission ? [{ to: "/submit-client", label: "Submit Client", icon: UserPlus, key: "submit" }] : []),
