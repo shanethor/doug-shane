@@ -218,6 +218,7 @@ export default function Auth() {
 
         setPendingUserId(userId);
         setPendingEmail(userEmail);
+        const deviceHash = getDeviceHash();
         const loginToken = data.session?.access_token;
         const authHdrs = await getAuthHeaders(loginToken);
         const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-2fa`, {
