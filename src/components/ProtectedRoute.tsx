@@ -5,12 +5,14 @@ import { AppLayout } from "@/components/AppLayout";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserBranch } from "@/hooks/useUserBranch";
+import { useSubscription } from "@/hooks/useSubscription";
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const [approvalStatus, setApprovalStatus] = useState<string | null>(null);
   const [checkingApproval, setCheckingApproval] = useState(true);
   const { branch, loading: branchLoading } = useUserBranch();
+  const { subscribed, loading: subLoading } = useSubscription();
   const location = useLocation();
 
   useEffect(() => {
@@ -29,7 +31,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
       });
   }, [user]);
 
-  if (loading || checkingApproval || branchLoading) {
+  if (loading || checkingApproval || branchLoading || subLoading) {
     return (
       <AppLayout>
         <div className="flex items-center justify-center py-20">
@@ -51,10 +53,18 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
     return <Navigate to="/auth" replace />;
   }
 
-  // Branch-based routing: property/wealth users can only access Connect, Settings, Admin
+  // Branch-based routing: property/wealth users need active subscription
   const isBranchRestricted = branch === "property" || branch === "wealth";
   const allowedPaths = ["/connect", "/settings", "/admin"];
-  if (isBranchRestricted && !allowedPaths.some(p => location.pathname.startsWith(p))) {
+
+  if (isBranchRestricted && !subscribed) {
+    // No subscription — send to checkout page
+    if (location.pathname !== "/request-access") {
+      return <Navigate to="/request-access" replace />;
+    }
+  }
+
+  if (isBranchRestricted && subscribed && !allowedPaths.some(p => location.pathname.startsWith(p))) {
     return <Navigate to="/connect" replace />;
   }
 
