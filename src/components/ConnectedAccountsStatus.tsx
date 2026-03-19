@@ -358,6 +358,34 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
     }
   }, [fetchGmailAccounts, handleReconnectGmail, refresh]);
 
+  const handleReconnectOutlook = useCallback(async () => {
+    setActionLoading("outlook_contacts");
+    try {
+      const headers = await getAuthHeaders();
+      const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/email-oauth`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          action: "get_auth_url",
+          provider: "outlook",
+          redirect_uri: `${window.location.origin}/email-callback`,
+        }),
+      });
+      const data = await resp.json();
+      if (data.url) {
+        sessionStorage.setItem("email_connect_return", "/settings?section=network");
+        sessionStorage.setItem("pending_contacts_sync", "outlook");
+        window.location.href = data.url;
+      } else {
+        toast.error("Failed to start Outlook reconnection");
+      }
+    } catch (error: any) {
+      toast.error(error?.message || "Failed to reconnect Outlook");
+    } finally {
+      setActionLoading(null);
+    }
+  }, []);
+
   const handleSyncOutlookContacts = useCallback(async (options?: { emailAddress?: string }) => {
     setActionLoading("outlook_contacts");
     try {
@@ -373,7 +401,10 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
       const data = await resp.json();
       if (!resp.ok) {
         if (data.needs_reconnect) {
-          toast.error(data.error || "Reconnect Outlook in Settings → Email Accounts, then try sync again.");
+          // Auto-initiate a fresh OAuth flow instead of just showing a toast
+          toast.info("Outlook needs fresh authorization for contacts. Redirecting...");
+          await handleReconnectOutlook();
+          return;
         } else {
           toast.error(data.error || "Failed to sync Outlook contacts");
         }
@@ -388,7 +419,7 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
     } finally {
       setActionLoading(null);
     }
-  }, [refresh]);
+  }, [refresh, handleReconnectOutlook]);
 
   // ─── Auto-sync contacts after OAuth return ───
   const pendingSyncHandled = useRef(false);
