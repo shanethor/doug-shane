@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Upload, Search, CheckCircle, MessageSquare, ArrowRight, Loader2, ExternalLink, FileUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import omitLogo from "@/assets/omit-logo.png";
+import PartnerQuickApply from "@/components/PartnerQuickApply";
 
 const STEPS = [
   {
@@ -96,12 +97,19 @@ export default function OmitPage() {
         </div>
       </section>
 
+      {/* ── Quick Apply ── */}
+      <section className="border-t border-white/10">
+        <div className="mx-auto max-w-sm px-6 py-14">
+          <PartnerQuickApply slug="omit" variant="dark" accentClass="bg-white text-black hover:bg-white/90" />
+        </div>
+      </section>
+
       {/* ── Upload / Apply CTA ── */}
       <section className="border-t border-white/10">
         <div className="mx-auto max-w-2xl px-6 py-14 md:py-20 text-center">
           <div className="mx-auto max-w-md">
             <FileUp className="mx-auto mb-4 h-10 w-10 text-white/60" />
-            <h2 className="text-xl md:text-2xl font-bold mb-3">Upload Your Documents</h2>
+            <h2 className="text-xl md:text-2xl font-bold mb-3">Or Upload Your Documents</h2>
             <p className="text-sm text-white/40 mb-8">
               Personal or business insurance. AURA will handle the rest.
             </p>
