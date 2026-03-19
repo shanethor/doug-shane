@@ -70,7 +70,7 @@ export function AppLayout({ children, onLogoClick }: { children: React.ReactNode
           {/* Desktop nav — hidden on mobile */}
           <nav className="hidden md:flex items-center gap-1">
             {navItems.map((item) => (
-              <Link key={item.to} to={item.to}>
+              <Link key={item.key} to={item.to}>
                 <Button
                   variant={location.pathname === item.to ? "secondary" : "ghost"}
                   size="sm"
