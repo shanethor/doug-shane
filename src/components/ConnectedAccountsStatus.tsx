@@ -225,7 +225,7 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
   const [showPhoneDialog, setShowPhoneDialog] = useState(false);
   const [pasteContacts, setPasteContacts] = useState("");
 
-  const fetchGmailAccounts = useCallback(async () => {
+  const fetchGmailAccounts = useCallback(async (): Promise<{id: string; email: string}[]> => {
     try {
       const headers = await getAuthHeaders();
       const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/email-oauth`, {
@@ -244,7 +244,7 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
     }
   }, []);
 
-  const handleReconnectGmail = useCallback(async (connectionId: string) => {
+  const handleReconnectGmail = useCallback(async (connectionId: string, emailAddress?: string) => {
     setShowReconnectPicker(false);
     setActionLoading("contacts");
     try {
@@ -273,6 +273,9 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
       if (data.url) {
         sessionStorage.setItem("email_connect_return", "/settings?section=network");
         sessionStorage.setItem("pending_contacts_sync", "google");
+        if (emailAddress) {
+          sessionStorage.setItem("pending_contacts_email", emailAddress);
+        }
         sessionStorage.removeItem("google_contacts_reconnect_attempted");
         window.location.href = data.url;
       } else {
@@ -285,14 +288,17 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
     }
   }, []);
 
-  const handleSyncGoogleContacts = useCallback(async (options?: { autoReconnect?: boolean }) => {
+  const handleSyncGoogleContacts = useCallback(async (options?: { autoReconnect?: boolean; emailAddress?: string }) => {
     setActionLoading("contacts");
     try {
       const headers = await getAuthHeaders();
       const resp = await fetch(SYNC_URL, {
         method: "POST",
         headers,
-        body: JSON.stringify({ action: "sync_google" }),
+        body: JSON.stringify({
+          action: "sync_google",
+          email_address: options?.emailAddress,
+        }),
       });
       const data = await resp.json();
       if (!resp.ok) {
@@ -303,16 +309,27 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
 
           if (autoReconnect && !alreadyAttempted) {
             sessionStorage.setItem("google_contacts_reconnect_attempted", "true");
-            const accounts = await fetchGmailAccounts();
-            if (accounts.length === 1) {
-              await handleReconnectGmail(accounts[0].id);
+            const availableAccounts = await fetchGmailAccounts();
+            const matchingAccount = options?.emailAddress
+              ? availableAccounts.find((account) => account.email === options.emailAddress)
+              : undefined;
+
+            if (matchingAccount) {
+              await handleReconnectGmail(matchingAccount.id, matchingAccount.email);
               return;
             }
+
+            if (availableAccounts.length === 1) {
+              await handleReconnectGmail(availableAccounts[0].id, availableAccounts[0].email);
+              return;
+            }
+
             setShowReconnectPicker(true);
             return;
           }
 
           sessionStorage.removeItem("pending_contacts_sync");
+          sessionStorage.removeItem("pending_contacts_email");
           sessionStorage.removeItem("google_contacts_reconnect_attempted");
           toast.error(data.error || "Google Contacts still needs permission. Reconnect from Email settings and try again.");
         } else {
@@ -320,7 +337,9 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
         }
         return;
       }
+
       sessionStorage.removeItem("pending_contacts_sync");
+      sessionStorage.removeItem("pending_contacts_email");
       sessionStorage.removeItem("google_contacts_reconnect_attempted");
       toast.success(`Synced ${data.imported} Google Contacts`);
       refresh();
@@ -331,14 +350,17 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
     }
   }, [fetchGmailAccounts, handleReconnectGmail, refresh]);
 
-  const handleSyncOutlookContacts = useCallback(async () => {
+  const handleSyncOutlookContacts = useCallback(async (options?: { emailAddress?: string }) => {
     setActionLoading("outlook_contacts");
     try {
       const headers = await getAuthHeaders();
       const resp = await fetch(SYNC_URL, {
         method: "POST",
         headers,
-        body: JSON.stringify({ action: "sync_outlook" }),
+        body: JSON.stringify({
+          action: "sync_outlook",
+          email_address: options?.emailAddress,
+        }),
       });
       const data = await resp.json();
       if (!resp.ok) {
@@ -349,6 +371,8 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
         }
         return;
       }
+      sessionStorage.removeItem("pending_contacts_sync");
+      sessionStorage.removeItem("pending_contacts_email");
       toast.success(`Synced ${data.imported} Outlook Contacts`);
       refresh();
     } catch {
@@ -362,22 +386,38 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
   const pendingSyncHandled = useRef(false);
   useEffect(() => {
     if (pendingSyncHandled.current) return;
+
     const pending = sessionStorage.getItem("pending_contacts_sync");
     const provider = sessionStorage.getItem("last_oauth_provider");
-    if (!pending || !provider || pending !== provider.replace("gmail", "google")) return;
+    const emailAddress = sessionStorage.getItem("last_oauth_email") || sessionStorage.getItem("pending_contacts_email") || undefined;
+    const normalizedProvider = provider === "gmail" ? "google" : provider === "outlook" ? "outlook" : null;
+
+    if (!pending || !normalizedProvider || pending !== normalizedProvider) return;
 
     pendingSyncHandled.current = true;
     sessionStorage.removeItem("last_oauth_provider");
     sessionStorage.removeItem("last_oauth_email");
 
     const timer = setTimeout(() => {
-      if (pending === "google") void handleSyncGoogleContacts({ autoReconnect: false });
-      else if (pending === "outlook") void handleSyncOutlookContacts();
+      if (pending === "google") {
+        void handleSyncGoogleContacts({ autoReconnect: false, emailAddress });
+      } else if (pending === "outlook") {
+        void handleSyncOutlookContacts({ emailAddress });
+      }
     }, 800);
 
     return () => clearTimeout(timer);
   }, [handleSyncGoogleContacts, handleSyncOutlookContacts]);
 
+  const requiredAccounts = accounts.filter((a) => a.level === "Required");
+  const allRequiredConnected = requiredAccounts.every((a) => a.connected);
+  const connectedCount = accounts.filter((a) => a.connected).length;
+
+  const levelColor = (level: string) => {
+    if (level === "Required") return "text-destructive";
+    if (level === "Recommended") return "text-warning";
+    return "text-muted-foreground";
+  };
 
   // ─── LinkedIn CSV Import ───
   const handleLinkedInFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -404,7 +444,7 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
       }
       toast.success(`Imported ${data.imported} LinkedIn connections`);
       refresh();
-    } catch (e) {
+    } catch {
       toast.error("Failed to parse LinkedIn CSV");
     } finally {
       setActionLoading(null);
@@ -427,7 +467,10 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
     try {
       const props = ["name", "email", "tel"];
       const contacts = await (navigator as any).contacts.select(props, { multiple: true });
-      if (!contacts?.length) { setActionLoading(null); return; }
+      if (!contacts?.length) {
+        setActionLoading(null);
+        return;
+      }
       await submitPhoneContacts(contacts);
     } catch (e: any) {
       if (e.name !== "InvalidStateError") toast.error("Contact picker failed.");
@@ -441,23 +484,24 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
     setShowPhoneDialog(false);
     setActionLoading("phone");
     try {
-      // Parse pasted text: each line is "Name, email, phone" or just "Name phone"
-      const lines = pasteContacts.split("\n").filter(l => l.trim());
-      const contacts = lines.map(line => {
-        // Try to extract email and phone from the line
+      const lines = pasteContacts.split("\n").filter((l) => l.trim());
+      const contacts = lines.map((line) => {
         const emailMatch = line.match(/[\w.+-]+@[\w.-]+\.\w+/);
         const phoneMatch = line.match(/[\d+() -]{7,}/);
         const email = emailMatch?.[0] || null;
         const phone = phoneMatch?.[0]?.trim() || null;
-        // Remove email and phone from line to get name
         let name = line;
         if (email) name = name.replace(email, "");
         if (phone) name = name.replace(phoneMatch![0], "");
         name = name.replace(/[,;|]+/g, " ").trim();
         return { name: name || null, email, tel: phone };
-      }).filter(c => c.name || c.email || c.tel);
+      }).filter((c) => c.name || c.email || c.tel);
 
-      if (!contacts.length) { toast.error("No contacts found in text"); setActionLoading(null); return; }
+      if (!contacts.length) {
+        toast.error("No contacts found in text");
+        setActionLoading(null);
+        return;
+      }
       await submitPhoneContacts(contacts);
       setPasteContacts("");
     } catch {
@@ -475,7 +519,10 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
       body: JSON.stringify({ action: "import_phone_contacts", contacts }),
     });
     const data = await resp.json();
-    if (!resp.ok) { toast.error(data.error || "Failed"); return; }
+    if (!resp.ok) {
+      toast.error(data.error || "Failed");
+      return;
+    }
     toast.success(`Imported ${data.imported} phone contacts`);
     refresh();
   };
@@ -487,35 +534,38 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
     try {
       const text = await file.text();
       let contacts: any[] = [];
-      
+
       if (file.name.endsWith(".vcf")) {
-        // Parse vCard
         const cards = text.split("BEGIN:VCARD").filter(Boolean);
-        contacts = cards.map(card => {
+        contacts = cards.map((card) => {
           const getName = (s: string) => s.match(/FN[;:](.+)/)?.[1]?.trim();
           const getTel = (s: string) => s.match(/TEL[;:](.+)/)?.[1]?.trim();
           const getEmail = (s: string) => s.match(/EMAIL[;:](.+)/)?.[1]?.trim();
           return { name: getName(card), tel: getTel(card), email: getEmail(card) };
-        }).filter(c => c.name || c.tel);
+        }).filter((c) => c.name || c.tel);
       } else {
-        // CSV
         const lines = text.split("\n");
-        const headers = lines[0]?.split(",").map(h => h.replace(/"/g, "").trim()) || [];
+        const headers = lines[0]?.split(",").map((h) => h.replace(/"/g, "").trim()) || [];
         for (let i = 1; i < lines.length; i++) {
-          const vals = lines[i]?.split(",").map(v => v.replace(/"/g, "").trim()) || [];
+          const vals = lines[i]?.split(",").map((v) => v.replace(/"/g, "").trim()) || [];
           const obj: any = {};
-          headers.forEach((h, idx) => { obj[h.toLowerCase()] = vals[idx]; });
+          headers.forEach((h, idx) => {
+            obj[h.toLowerCase()] = vals[idx];
+          });
           contacts.push({
             name: obj.name || obj.full_name || `${obj.first_name || ""} ${obj.last_name || ""}`.trim(),
             tel: obj.phone || obj.tel || obj.mobile,
             email: obj.email,
           });
         }
-        contacts = contacts.filter(c => c.name || c.tel);
+        contacts = contacts.filter((c) => c.name || c.tel);
       }
 
-      if (!contacts.length) { toast.error("No contacts found in file"); return; }
-      
+      if (!contacts.length) {
+        toast.error("No contacts found in file");
+        return;
+      }
+
       const headers = await getAuthHeaders();
       const resp = await fetch(SYNC_URL, {
         method: "POST",
@@ -523,7 +573,10 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
         body: JSON.stringify({ action: "import_phone_contacts", contacts }),
       });
       const data = await resp.json();
-      if (!resp.ok) { toast.error(data.error || "Failed"); return; }
+      if (!resp.ok) {
+        toast.error(data.error || "Failed");
+        return;
+      }
       toast.success(`Imported ${data.imported} phone contacts`);
       refresh();
     } catch {
@@ -559,34 +612,6 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
     }
   };
 
-  // ─── Sync Outlook Contacts ───
-  const handleSyncOutlookContacts = async () => {
-    setActionLoading("outlook_contacts");
-    try {
-      const headers = await getAuthHeaders();
-      const resp = await fetch(SYNC_URL, {
-        method: "POST",
-        headers,
-        body: JSON.stringify({ action: "sync_outlook" }),
-      });
-      const data = await resp.json();
-      if (!resp.ok) {
-        if (data.needs_reconnect) {
-          toast.error("Outlook needs to be reconnected with contacts permission. Go to Email settings to reconnect.");
-        } else {
-          toast.error(data.error || "Failed to sync Outlook contacts");
-        }
-        return;
-      }
-      toast.success(`Synced ${data.imported} Outlook Contacts`);
-      refresh();
-    } catch {
-      toast.error("Failed to sync Outlook Contacts");
-    } finally {
-      setActionLoading(null);
-    }
-  };
-
   // ─── Connect action by account id ───
   const handleConnect = (id: string) => {
     if (id === "email") {
@@ -595,7 +620,10 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
     }
     if (id === "contacts") return handleSyncGoogleContacts();
     if (id === "outlook_contacts") return handleSyncOutlookContacts();
-    if (id === "linkedin") { fileInputRef.current?.click(); return; }
+    if (id === "linkedin") {
+      fileInputRef.current?.click();
+      return;
+    }
     if (id === "phone") return handlePhoneContacts();
   };
 

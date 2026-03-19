@@ -83,16 +83,29 @@ serve(async (req) => {
 
     // ─── Sync Google Contacts ───
     if (action === "sync_google") {
-      const { data: conns } = await adminClient
+      const requestedConnectionId = typeof body.connection_id === "string" ? body.connection_id : null;
+      const requestedEmailAddress = typeof body.email_address === "string" ? body.email_address : null;
+
+      let googleQuery = adminClient
         .from("email_connections")
         .select("*")
         .eq("user_id", userId)
         .eq("provider", "gmail")
-        .eq("is_active", true)
+        .eq("is_active", true);
+
+      if (requestedConnectionId) {
+        googleQuery = googleQuery.eq("id", requestedConnectionId);
+      }
+      if (requestedEmailAddress) {
+        googleQuery = googleQuery.eq("email_address", requestedEmailAddress);
+      }
+
+      const { data: conns } = await googleQuery
+        .order("updated_at", { ascending: false })
         .limit(1);
 
       if (!conns?.length) {
-        return new Response(JSON.stringify({ error: "No Gmail connection found. Please connect Gmail first." }), {
+        return new Response(JSON.stringify({ error: "No matching Gmail connection found. Please reconnect that account first." }), {
           status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
@@ -103,7 +116,7 @@ serve(async (req) => {
         accessToken = await refreshGoogleToken(conn.refresh_token);
       } catch (e) {
         console.error("Token refresh failed:", e);
-        return new Response(JSON.stringify({ 
+        return new Response(JSON.stringify({
           error: "Gmail needs to be reconnected with contacts permission.",
           needs_reconnect: true
         }), {
@@ -130,7 +143,7 @@ serve(async (req) => {
           const errText = await resp.text();
           console.error("People API error:", resp.status, errText);
           if (resp.status === 403) {
-            return new Response(JSON.stringify({ 
+            return new Response(JSON.stringify({
               error: "Contacts permission not granted. Please reconnect Gmail with contacts access.",
               needs_reconnect: true
             }), {
@@ -191,6 +204,7 @@ serve(async (req) => {
           last_sync_at: new Date().toISOString(),
           contact_count: contacts.length,
           updated_at: new Date().toISOString(),
+          metadata: { email_address: conn.email_address },
         }, { onConflict: "user_id,source" });
 
       return new Response(JSON.stringify({ success: true, imported: contacts.length, source: "google_contacts" }), {
@@ -200,16 +214,29 @@ serve(async (req) => {
 
     // ─── Sync Microsoft/Outlook Contacts ───
     if (action === "sync_outlook") {
-      const { data: conns } = await adminClient
+      const requestedConnectionId = typeof body.connection_id === "string" ? body.connection_id : null;
+      const requestedEmailAddress = typeof body.email_address === "string" ? body.email_address : null;
+
+      let outlookQuery = adminClient
         .from("email_connections")
         .select("*")
         .eq("user_id", userId)
         .eq("provider", "outlook")
-        .eq("is_active", true)
+        .eq("is_active", true);
+
+      if (requestedConnectionId) {
+        outlookQuery = outlookQuery.eq("id", requestedConnectionId);
+      }
+      if (requestedEmailAddress) {
+        outlookQuery = outlookQuery.eq("email_address", requestedEmailAddress);
+      }
+
+      const { data: conns } = await outlookQuery
+        .order("updated_at", { ascending: false })
         .limit(1);
 
       if (!conns?.length) {
-        return new Response(JSON.stringify({ error: "No Outlook connection found. Please connect Outlook first." }), {
+        return new Response(JSON.stringify({ error: "No matching Outlook connection found. Please reconnect that account first." }), {
           status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
