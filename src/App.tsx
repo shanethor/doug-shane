@@ -120,7 +120,8 @@ const App = () => (
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/" element={<LandingPage />} />
           <Route path="/email" element={<ProtectedRoute><EmailHub /></ProtectedRoute>} />
-          <Route path="/hub" element={<ProtectedRoute><ProducerHub /></ProtectedRoute>} />
+          <Route path="/hub" element={<ProtectedRoute><HomeRoute /></ProtectedRoute>} />
+          <Route path="/command" element={<ProtectedRoute><ProducerHub /></ProtectedRoute>} />
           <Route path="/pulse" element={<ProtectedRoute><AuraPulse /></ProtectedRoute>} />
           <Route path="/clients" element={<ProtectedRoute><UserDashboard /></ProtectedRoute>} />
           <Route path="/submit-plan" element={<ProtectedRoute><SubmitPlan /></ProtectedRoute>} />
