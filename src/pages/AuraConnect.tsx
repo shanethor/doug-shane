@@ -330,8 +330,6 @@ export default function AuraConnect() {
         {/* Block 2 — Connected Accounts Status (persistent) */}
         <ConnectedAccountsStatus variant="compact" />
 
-        {/* Block 3 — Progressive Unlocks */}
-        <ProgressiveUnlocks />
 
         {/* Stats Row */}
         {dashboard?.stats && (
@@ -778,6 +776,9 @@ export default function AuraConnect() {
             )}
           </TabsContent>
         </Tabs>
+
+        {/* Progressive Unlocks — below main content */}
+        <ProgressiveUnlocks />
       </div>
     </AppLayout>
   );
