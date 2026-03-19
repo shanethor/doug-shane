@@ -24,12 +24,6 @@ Deno.serve(async (req) => {
     if (claimsError || !claimsData?.claims) throw new Error("Not authenticated");
     const userId = claimsData.claims.sub as string;
 
-    // Fetch user profile
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("full_name, agency_name")
-      .eq("user_id", userId)
-      .maybeSingle();
 
     const { action, context } = await req.json();
 
