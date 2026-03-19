@@ -111,8 +111,15 @@ export default function RaycoPage() {
         </div>
       </section>
 
-      {/* ── Advisor Block ── */}
+      {/* ── Quick Apply ── */}
       <section className="border-t border-[#1B2A5C]/10 bg-white">
+        <div className="mx-auto max-w-sm px-6 py-14">
+          <PartnerQuickApply slug="rayco" variant="light" accentClass="bg-[#1B2A5C] hover:bg-[#1B2A5C]/90 text-white" />
+        </div>
+      </section>
+
+      {/* ── Advisor Block ── */}
+      <section className="border-t border-[#1B2A5C]/10 bg-[#F7F8FA]">
         <div className="mx-auto max-w-4xl px-6 py-14 md:py-18">
           <div className="mx-auto max-w-sm">
             <Card className="border-[#1B2A5C]/10 overflow-hidden shadow-lg shadow-[#1B2A5C]/5">
@@ -151,9 +158,10 @@ export default function RaycoPage() {
                     {creatingIntake ? (
                       <><Loader2 className="h-4 w-4 animate-spin" /> Loading...</>
                     ) : (
-                      <>Get Started <ArrowRight className="h-4 w-4" /></>
+                      <>Full Application <ArrowRight className="h-4 w-4" /></>
                     )}
                   </Button>
+                  <p className="mt-2 text-[10px] text-[#1D2430]/40">Upload documents for a faster, more complete review</p>
                 </div>
               </CardContent>
             </Card>

@@ -154,12 +154,19 @@ export default function DomisourcePage() {
         </div>
       </section>
 
-      {/* ── CTA ── */}
+      {/* ── Quick Apply ── */}
       <section className="border-t border-[#F57C20]/10 bg-white">
+        <div className="mx-auto max-w-sm px-6 py-14">
+          <PartnerQuickApply slug="domisource" variant="light" accentClass="bg-[#F57C20] hover:bg-[#E06A10] text-white" />
+        </div>
+      </section>
+
+      {/* ── CTA ── */}
+      <section className="border-t border-[#F57C20]/10 bg-[#FFF8F0]">
         <div className="mx-auto max-w-xl px-6 py-14 md:py-18 text-center">
-          <h2 className="text-xl font-bold md:text-2xl text-[#2D2D2D]">Start Here</h2>
+          <h2 className="text-xl font-bold md:text-2xl text-[#2D2D2D]">Or Upload Your Documents</h2>
           <p className="mt-3 text-sm text-[#2D2D2D]/60 max-w-md mx-auto">
-            Upload the documents you already have and we'll take it from there. No long forms. No starting from scratch.
+            Upload what you already have for a faster, more complete review. No long forms. No starting from scratch.
           </p>
           <Button
             size="lg"
@@ -170,7 +177,7 @@ export default function DomisourcePage() {
             {creatingIntake ? (
               <><Loader2 className="h-4 w-4 animate-spin" /> Loading...</>
             ) : (
-              <>Apply Here <ArrowRight className="h-4 w-4" /></>
+              <>Full Application <ArrowRight className="h-4 w-4" /></>
             )}
           </Button>
         </div>
