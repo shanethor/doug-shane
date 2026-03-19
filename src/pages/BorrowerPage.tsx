@@ -13,6 +13,7 @@ import AssociatedPage from "./AssociatedPage";
 import OmitPage from "./OmitPage";
 import DomisourcePage from "./DomisourcePage";
 import RaycoPage from "./RaycoPage";
+import PrestigePage from "./PrestigePage";
 
 /* ─── Borrower Config ─── */
 interface CoverageCard {
