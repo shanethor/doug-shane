@@ -86,10 +86,12 @@ Deno.serve(async (req) => {
     if (action === "approve") {
       if (!role) throw new Error("Missing role for approval");
 
-      // Update approval status
+      // Update approval status and branch
+      const profileUpdate: Record<string, any> = { approval_status: "approved" };
+      if (branch) profileUpdate.branch = branch;
       await adminClient
         .from("profiles")
-        .update({ approval_status: "approved" })
+        .update(profileUpdate)
         .eq("user_id", target_user_id);
 
       // Set role
