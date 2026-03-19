@@ -986,6 +986,30 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
                     <span className="hidden sm:inline">Resync</span>
                   </Button>
                 )}
+                {a.id === "social" && (
+                  <>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 text-xs gap-1 text-muted-foreground"
+                      disabled={actionLoading === "social"}
+                      onClick={handleRescrapeProfiles}
+                    >
+                      <RefreshCw className={`h-3 w-3 ${actionLoading === "social" ? "animate-spin" : ""}`} />
+                      <span className="hidden sm:inline">Rescrape</span>
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 text-xs gap-1 text-muted-foreground"
+                      disabled={actionLoading === "social"}
+                      onClick={() => { loadMyProfiles(); setShowSocialDialog(true); }}
+                    >
+                      <Settings className="h-3 w-3" />
+                      <span className="hidden sm:inline">Edit</span>
+                    </Button>
+                  </>
+                )}
                 <Button
                   variant="ghost"
                   size="sm"
