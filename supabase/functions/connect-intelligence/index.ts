@@ -19,8 +19,17 @@ Deno.serve(async (req) => {
       { global: { headers: { authorization: authHeader } } }
     );
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error("Not authenticated");
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
+    if (claimsError || !claimsData?.claims) throw new Error("Not authenticated");
+    const userId = claimsData.claims.sub as string;
+
+    // Fetch user profile
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("full_name, agency_name")
+      .eq("user_id", userId)
+      .maybeSingle();
 
     const { action, context } = await req.json();
 
