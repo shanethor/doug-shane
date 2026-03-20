@@ -1617,6 +1617,74 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Generic Source Import Dialog */}
+      <Dialog open={showSourceDialog} onOpenChange={setShowSourceDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Upload className="h-5 w-5 text-primary" />
+              Import from {SOURCE_IMPORT_META[activeSource]?.title || activeSource}
+            </DialogTitle>
+            <DialogDescription>
+              {SOURCE_IMPORT_META[activeSource]?.instructions || "Upload a file or paste contacts below."}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 mt-2">
+            {/* File Upload */}
+            <Button
+              variant="outline"
+              className="w-full justify-start gap-3 h-auto py-3"
+              onClick={() => { setShowSourceDialog(false); sourceFileRef.current?.click(); }}
+            >
+              <Upload className="h-4 w-4 text-primary shrink-0" />
+              <div className="text-left">
+                <p className="text-sm font-medium">Upload File</p>
+                <p className="text-[11px] text-muted-foreground">
+                  Accepts {SOURCE_IMPORT_META[activeSource]?.acceptFiles || ".csv, .json"}
+                </p>
+              </div>
+            </Button>
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">or paste contacts</span>
+              </div>
+            </div>
+
+            {/* Paste */}
+            <div className="space-y-2">
+              <Textarea
+                placeholder={"John Smith, john@email.com, Acme Corp\nJane Doe, jane@company.com\nBob Jones, 555-987-6543, Widget Inc"}
+                value={sourceContacts}
+                onChange={(e) => setSourceContacts(e.target.value)}
+                rows={5}
+                className="text-xs font-mono"
+              />
+              <p className="text-[10px] text-muted-foreground">One contact per line: Name, Email, Phone, Company (any order, comma or tab separated)</p>
+              <Button
+                className="w-full gap-1"
+                disabled={!sourceContacts.trim() || actionLoading === activeSource}
+                onClick={handleGenericSourcePaste}
+              >
+                {actionLoading === activeSource ? <Loader2 className="h-3 w-3 animate-spin" /> : <Plus className="h-3 w-3" />}
+                Import Contacts
+              </Button>
+            </div>
+
+            {/* API Coming Soon badge */}
+            <div className="rounded-md border border-dashed border-primary/30 bg-primary/5 p-3">
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="text-[10px] border-primary/40 text-primary">Coming Soon</Badge>
+                <p className="text-[11px] text-muted-foreground">
+                  Live API sync for {SOURCE_IMPORT_META[activeSource]?.title || activeSource} is in development. Manual import is available now.
+                </p>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
