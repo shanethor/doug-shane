@@ -358,24 +358,42 @@ export default function AuraConnect() {
 
         {/* Main Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="w-full grid grid-cols-4">
-            <TabsTrigger value="brief" className="gap-1.5 text-xs sm:text-sm">
-              <Search className="h-3.5 w-3.5 hidden sm:inline" />
-              Brief
-            </TabsTrigger>
-            <TabsTrigger value="dashboard" className="gap-1.5 text-xs sm:text-sm">
-              <Crown className="h-3.5 w-3.5 hidden sm:inline" />
-              Top 10s
-            </TabsTrigger>
-            <TabsTrigger value="triggers" className="gap-1.5 text-xs sm:text-sm">
-              <Zap className="h-3.5 w-3.5 hidden sm:inline" />
-              Triggers
-            </TabsTrigger>
-            <TabsTrigger value="touches" className="gap-1.5 text-xs sm:text-sm">
-              <Send className="h-3.5 w-3.5 hidden sm:inline" />
-              Outreach
-            </TabsTrigger>
-          </TabsList>
+          <div className="overflow-x-auto -mx-2 px-2">
+            <TabsList className="inline-flex w-auto min-w-full gap-0.5">
+              <TabsTrigger value="brief" className="gap-1.5 text-xs sm:text-sm">
+                <Search className="h-3.5 w-3.5 hidden sm:inline" />
+                Brief
+              </TabsTrigger>
+              <TabsTrigger value="dashboard" className="gap-1.5 text-xs sm:text-sm">
+                <Crown className="h-3.5 w-3.5 hidden sm:inline" />
+                Top 10s
+              </TabsTrigger>
+              <TabsTrigger value="triggers" className="gap-1.5 text-xs sm:text-sm">
+                <Zap className="h-3.5 w-3.5 hidden sm:inline" />
+                Triggers
+              </TabsTrigger>
+              <TabsTrigger value="touches" className="gap-1.5 text-xs sm:text-sm">
+                <Send className="h-3.5 w-3.5 hidden sm:inline" />
+                Outreach
+              </TabsTrigger>
+              <TabsTrigger value="referrals" className="gap-1.5 text-xs sm:text-sm">
+                <Handshake className="h-3.5 w-3.5 hidden sm:inline" />
+                Referrals
+              </TabsTrigger>
+              <TabsTrigger value="tools" className="gap-1.5 text-xs sm:text-sm">
+                <Wrench className="h-3.5 w-3.5 hidden sm:inline" />
+                Tools
+              </TabsTrigger>
+              <TabsTrigger value="community" className="gap-1.5 text-xs sm:text-sm">
+                <MessageCircle className="h-3.5 w-3.5 hidden sm:inline" />
+                Community
+              </TabsTrigger>
+              <TabsTrigger value="health" className="gap-1.5 text-xs sm:text-sm">
+                <Heart className="h-3.5 w-3.5 hidden sm:inline" />
+                Health
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           {/* ────── TOP 10s TAB ────── */}
           <TabsContent value="dashboard" className="space-y-4 mt-4">
