@@ -843,6 +843,11 @@ export default function AuraConnect() {
           <TabsContent value="health" className="space-y-4 mt-4">
             <ConnectHealthTab />
           </TabsContent>
+
+          {/* ────── SIGNALS TAB ────── */}
+          <TabsContent value="signals" className="space-y-4 mt-4">
+            <ConnectSignalsTab />
+          </TabsContent>
         </Tabs>
 
         {/* Progressive Unlocks — below main content */}
