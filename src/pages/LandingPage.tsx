@@ -208,7 +208,7 @@ export default function LandingPage() {
         </div>
 
         {/* ═══ HERO ═══ */}
-        <section className="relative min-h-auto flex items-start justify-center pt-[18vh] pb-[6vh] 2xl:pt-[14vh]">
+        <section className="relative min-h-screen flex items-center justify-center">
           {/* BG Image */}
            <div className="absolute top-0 left-0 right-0 h-[140%] overflow-hidden pointer-events-none">
             <div
