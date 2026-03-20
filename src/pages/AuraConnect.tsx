@@ -825,7 +825,7 @@ export default function AuraConnect() {
 
           {/* ────── SPOTLIGHT TAB ────── */}
           <TabsContent value="spotlight" className="space-y-4 mt-4">
-            <ConnectToolsTab />
+            <SpotlightTab />
           </TabsContent>
 
           {/* ────── TOOLS TAB ────── */}
