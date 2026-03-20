@@ -121,7 +121,7 @@ export default function AuraConcierge() {
             <h1 className="text-2xl font-bold tracking-tight">AURA Concierge</h1>
             <p className="text-sm text-muted-foreground mt-1">Your on-call build team</p>
           </div>
-          {!isLocked && (
+          {(!isLocked || hasConcierge || isAdmin) && (
             <div className="flex items-center gap-3">
               {isTrialActive && (
                 <Badge variant="outline" className="border-[#F59E0B] text-[#F59E0B]">
