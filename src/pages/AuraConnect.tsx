@@ -383,6 +383,10 @@ export default function AuraConnect() {
                 <Handshake className="h-3.5 w-3.5 hidden sm:inline" />
                 Referrals
               </TabsTrigger>
+              <TabsTrigger value="spotlight" className="gap-1.5 text-xs sm:text-sm">
+                <Sparkles className="h-3.5 w-3.5 hidden sm:inline" />
+                Spotlight
+              </TabsTrigger>
               <TabsTrigger value="tools" className="gap-1.5 text-xs sm:text-sm">
                 <Wrench className="h-3.5 w-3.5 hidden sm:inline" />
                 Tools
