@@ -211,19 +211,27 @@ export default function LandingPage() {
         </div>
 
         {/* ═══ HERO ═══ */}
-        <section className="relative min-h-screen flex items-start justify-center pt-[28vh] max-sm:pt-[22vh]">
-          {/* BG Image */}
-           <div className="absolute top-0 left-0 right-0 h-[140%] overflow-hidden pointer-events-none">
-            <div
-              className="absolute inset-0 bg-cover bg-no-repeat bg-center portrait:bg-[url('/images/bg-portrait.png')] landscape:bg-[url('/images/bg-wide.png')]"
-            />
+        <section className="relative min-h-screen flex items-start justify-center pt-[32vh] max-sm:pt-[26vh]">
+          {/* BG Image — eager-loaded with high priority for fast paint */}
+          <div className="absolute top-0 left-0 right-0 h-[140%] overflow-hidden pointer-events-none">
+            <picture>
+              <source media="(orientation: portrait)" srcSet="/images/bg-portrait.png" />
+              <source media="(orientation: landscape)" srcSet="/images/bg-wide.png" />
+              <img
+                src="/images/bg-wide.png"
+                alt=""
+                fetchPriority="high"
+                decoding="async"
+                className="absolute inset-0 w-full h-full object-cover"
+              />
+            </picture>
             <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(8,8,10,0.25) 0%, rgba(8,8,10,0.15) 25%, rgba(8,8,10,0.4) 50%, rgba(8,8,10,0.85) 65%, #08080A 78%)" }} />
             <div className="absolute inset-0 bg-[linear-gradient(90deg,#08080A_0%,transparent_8%,transparent_92%,#08080A_100%)]" />
           </div>
 
-          {/* Hero content */}
+          {/* Hero content — logo sits at mountain peak */}
           <div className="relative z-[2] text-center px-8">
-            <img src={auraALogo} alt="AURA" className="w-28 h-auto max-sm:w-20 mx-auto mb-6 drop-shadow-[0_0_60px_rgba(255,255,255,0.15)]" />
+            <img src={auraALogo} alt="AURA" fetchPriority="high" className="w-28 h-auto max-sm:w-20 mx-auto mb-4 drop-shadow-[0_0_60px_rgba(255,255,255,0.15)]" />
             <h1 className="text-[clamp(40px,6vw,80px)] max-sm:text-4xl font-bold leading-[1] tracking-[-0.04em] text-white mb-4">
               Intelligence Runs on
             </h1>
