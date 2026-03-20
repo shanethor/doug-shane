@@ -410,9 +410,6 @@ export default function LandingPage() {
             </div>
           </div>
         </section>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-16">
-                <div>
-                  <div className="text-[11px] font-semibold tracking-[0.12em] uppercase text-[#60A5FA] mb-4">AURA Connect</div>
                   <h2 className="text-[clamp(32px,4vw,48px)] font-bold tracking-[-0.04em] leading-[1.05] text-white mb-5">
                     Your network,<br />mapped.
                   </h2>
