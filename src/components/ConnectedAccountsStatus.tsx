@@ -1144,6 +1144,7 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
     <>
       <input ref={fileInputRef} type="file" accept=".csv" className="hidden" onChange={handleLinkedInFile} />
       <input ref={phoneFileInputRef} type="file" accept=".csv,.vcf" className="hidden" onChange={handlePhoneFile} />
+      <input ref={sourceFileRef} type="file" accept={SOURCE_IMPORT_META[activeSource]?.acceptFiles || ".csv,.json"} className="hidden" onChange={handleGenericSourceFile} />
     </>
   );
 
