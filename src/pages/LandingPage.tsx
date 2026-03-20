@@ -283,6 +283,10 @@ export default function LandingPage() {
                   </Link>
                 </div>
                 <div>
+                  <div className="rounded-[20px] overflow-hidden border border-white/[0.06] aspect-[16/9] relative mb-4">
+                    <img src="/images/connect-bridge.png" alt="AURA Connect — relationship bridge" loading="eager" decoding="async" className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-[#08080A]/60 to-transparent" />
+                  </div>
                   <IntegrationTicker />
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {[
