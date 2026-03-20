@@ -445,10 +445,17 @@ export default function LandingPage() {
                 ))}
               </div>
 
+              {/* Preload all branch images */}
+              <div className="hidden" aria-hidden="true">
+                {branches.map((b) => (
+                  <link key={b.key} rel="preload" as="image" href={b.image} />
+                ))}
+              </div>
+
               {/* Panel */}
               {branches.map((b, i) => (
                 activeTab === i && (
-                  <div key={b.key} className="grid grid-cols-1 md:grid-cols-[1fr_1.2fr] gap-12 items-center min-h-[380px]">
+                  <div key={b.key} className="grid grid-cols-1 md:grid-cols-[1fr_1.2fr] gap-12 items-center min-h-[380px] animate-[branchFadeIn_0.45s_ease_forwards]">
                     <div>
                       <div className="flex items-center gap-3.5 mb-5">
                         <BranchLogo color={b.color} size={36} />
@@ -466,7 +473,7 @@ export default function LandingPage() {
                       </div>
                     </div>
                     <div className="rounded-[20px] overflow-hidden border border-white/[0.06] aspect-[4/3] relative">
-                      <img src={b.image} alt={b.label} className="w-full h-full object-cover hover:scale-[1.03] transition-transform duration-600" />
+                      <img src={b.image} alt={b.label} loading="eager" decoding="async" className="w-full h-full object-cover hover:scale-[1.03] transition-transform duration-600" />
                       <div className="absolute inset-0 pointer-events-none mix-blend-color opacity-45 rounded-[inherit]" style={{ background: b.color }} />
                     </div>
                   </div>
