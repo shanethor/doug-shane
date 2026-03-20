@@ -365,6 +365,10 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
   const [myProfileUrls, setMyProfileUrls] = useState<{instagram: string; facebook: string; x: string}>({ instagram: "", facebook: "", x: "" });
   const [savedProfiles, setSavedProfiles] = useState<{platform: string; url: string; last_sync?: string; contact_count?: number}[]>([]);
   const [profilesLoaded, setProfilesLoaded] = useState(false);
+  const [showSourceDialog, setShowSourceDialog] = useState(false);
+  const [activeSource, setActiveSource] = useState<string>("");
+  const [sourceContacts, setSourceContacts] = useState("");
+  const sourceFileRef = useRef<HTMLInputElement>(null);
 
   const fetchGmailAccounts = useCallback(async (): Promise<{id: string; email: string}[]> => {
     try {
