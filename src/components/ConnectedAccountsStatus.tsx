@@ -1133,7 +1133,49 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
     finally { setActionLoading(null); }
   };
 
-  const GENERIC_SOURCES = ["slack", "teams", "eventbrite", "meetup", "alignable", "strava", "peloton", "nextdoor", "snapchat", "clubhouse"];
+   const GENERIC_SOURCES = ["slack", "teams", "eventbrite", "meetup", "alignable", "strava", "peloton", "nextdoor", "snapchat", "clubhouse"];
+
+  // ─── Live API Sync for supported sources ───
+  const handleApiSync = async (source: string) => {
+    const meta = SOURCE_IMPORT_META[source];
+    if (!meta?.hasApi || !meta.apiAction) return;
+    setShowSourceDialog(false);
+    setActionLoading(source);
+    try {
+      const headers = await getAuthHeaders();
+      const resp = await fetch(SYNC_URL, {
+        method: "POST", headers,
+        body: JSON.stringify({ action: meta.apiAction }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) {
+        if (data.needs_connector) {
+          toast.error(data.error || `${meta.title} connector not configured.`);
+        } else if (data.needs_secret) {
+          toast.error(data.error || `API key needed for ${meta.title}.`);
+        } else if (data.needs_outlook) {
+          toast.error(data.error || "Connect Outlook first.");
+        } else if (data.needs_oauth) {
+          // For OAuth flows like Strava, open the auth URL
+          if (data.auth_url) {
+            toast.info("Redirecting to authorize...");
+            window.open(data.auth_url, "_blank");
+          } else {
+            toast.error("OAuth setup required.");
+          }
+        } else {
+          toast.error(data.error || "API sync failed");
+        }
+        return;
+      }
+      toast.success(`Synced ${data.imported} contacts from ${meta.title} via API`);
+      refresh();
+    } catch {
+      toast.error(`Failed to sync ${meta.title}`);
+    } finally {
+      setActionLoading(null);
+    }
+  };
 
   // ─── Connect action by account id ───
   const handleConnect = (id: string) => {
