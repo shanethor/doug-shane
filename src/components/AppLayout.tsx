@@ -17,7 +17,7 @@ import { useEffect } from "react";
 export function AppLayout({ children, onLogoClick }: { children: React.ReactNode; onLogoClick?: () => void }) {
   const { signOut } = useAuth();
   const { canSeeProducerHub, canSeeAdmin, canSeeChat, canSeeEmail, canSeePulse, canSeeLossRuns, canSeeClientSubmission } = useUserRole();
-  const { hasConnect } = useUserFeatures();
+  const { hasConnect, hasConcierge } = useUserFeatures();
   const { branch } = useUserBranch();
   const location = useLocation();
   const { trainingMode, setTrainingMode } = useTrainingMode();
