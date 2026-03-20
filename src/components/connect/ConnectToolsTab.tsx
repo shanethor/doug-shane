@@ -1,8 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/hooks/useAuth";
@@ -11,8 +9,106 @@ import { toast } from "sonner";
 import {
   Calculator, Wand2, FileText, Copy, Loader2,
   DollarSign, TrendingUp, Handshake, Sparkles,
-  BookOpen, Share2, Download,
+  BookOpen, Share2, Download, Image as ImageIcon,
 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import SpotlightFlyerWizard from "./SpotlightFlyerWizard";
+
+/* ═══ SPOTLIGHT SECTION ═══ */
+function SpotlightSection() {
+  const [showWizard, setShowWizard] = useState(false);
+  const [history, setHistory] = useState<any[]>([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+
+  const loadHistory = async () => {
+    setLoadingHistory(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("spotlight-flyer", {
+        body: { action: "list" },
+      });
+      if (!error && data?.flyers) {
+        setHistory(data.flyers);
+      }
+    } catch {
+      // silent
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
+
+  useEffect(() => {
+    loadHistory();
+  }, []);
+
+  if (showWizard) {
+    return (
+      <Card>
+        <CardContent className="p-4 sm:p-6">
+          <SpotlightFlyerWizard onClose={() => { setShowWizard(false); loadHistory(); }} />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-sm flex items-center gap-2">
+          <Sparkles className="h-4 w-4 text-warning" />
+          AURA Spotlight — Marketing Flyer Generator
+        </CardTitle>
+        <p className="text-[11px] text-muted-foreground">
+          Turn your events and ideas into on-brand flyers and social posts with AI.
+        </p>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <Button className="w-full gap-2" onClick={() => setShowWizard(true)}>
+          <Sparkles className="h-4 w-4" />
+          Create New Flyer
+        </Button>
+
+        {/* History */}
+        {history.length > 0 && (
+          <>
+            <Separator />
+            <div>
+              <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground mb-2">Recent Flyers</p>
+              <div className="space-y-2">
+                {history.slice(0, 8).map((f: any) => (
+                  <div key={f.id} className="flex items-center gap-3 p-2.5 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
+                    {f.result_image_url ? (
+                      <img src={f.result_image_url} alt={f.title} className="w-10 h-10 rounded object-cover border shrink-0" />
+                    ) : (
+                      <div className="w-10 h-10 rounded bg-muted flex items-center justify-center shrink-0">
+                        <ImageIcon className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{f.title || "Untitled"}</p>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="text-[9px]">{f.type}</Badge>
+                        <Badge
+                          variant={f.status === "ready" ? "default" : f.status === "error" ? "destructive" : "secondary"}
+                          className="text-[9px]"
+                        >
+                          {f.status}
+                        </Badge>
+                        <span className="text-[10px] text-muted-foreground">
+                          {new Date(f.created_at).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
 
 /* ═══ ROI ESTIMATOR ═══ */
 function ROIEstimator() {
@@ -24,7 +120,7 @@ function ROIEstimator() {
   const dealVal = parseFloat(avgDeal) || 0;
   const refsPerYear = parseInt(referralsPerYear) || 0;
   const annualValue = dealVal * refsPerYear;
-  const lifetimeValue = annualValue * 5; // 5-year LTV
+  const lifetimeValue = annualValue * 5;
 
   const tierLabel = annualValue >= 100000 ? "S-Tier" : annualValue >= 50000 ? "A-Tier" : annualValue >= 20000 ? "B-Tier" : "C-Tier";
   const tierColor = annualValue >= 100000 ? "text-warning" : annualValue >= 50000 ? "text-success" : annualValue >= 20000 ? "text-primary" : "text-muted-foreground";
@@ -258,6 +354,7 @@ function ContentLibrary() {
 export default function ConnectToolsTab() {
   return (
     <div className="space-y-4">
+      <SpotlightSection />
       <ROIEstimator />
       <WarmIntroGenerator />
       <ContentLibrary />
