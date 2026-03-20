@@ -654,6 +654,42 @@ export type Database = {
           },
         ]
       }
+      connect_proposals: {
+        Row: {
+          client_company: string | null
+          client_name: string
+          created_at: string
+          generated_html: string | null
+          id: string
+          key_points: Json | null
+          opportunity: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          client_company?: string | null
+          client_name: string
+          created_at?: string
+          generated_html?: string | null
+          id?: string
+          key_points?: Json | null
+          opportunity?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          client_company?: string | null
+          client_name?: string
+          created_at?: string
+          generated_html?: string | null
+          id?: string
+          key_points?: Json | null
+          opportunity?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       connect_referrals: {
         Row: {
           created_at: string
@@ -2718,6 +2754,54 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      touch_cadence_contacts: {
+        Row: {
+          cadence_days: number
+          contact_company: string | null
+          contact_email: string | null
+          contact_name: string
+          created_at: string
+          id: string
+          is_active: boolean
+          last_touched_at: string | null
+          next_touch_at: string | null
+          notes: string | null
+          touch_count: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cadence_days?: number
+          contact_company?: string | null
+          contact_email?: string | null
+          contact_name: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_touched_at?: string | null
+          next_touch_at?: string | null
+          notes?: string | null
+          touch_count?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cadence_days?: number
+          contact_company?: string | null
+          contact_email?: string | null
+          contact_name?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_touched_at?: string | null
+          next_touch_at?: string | null
+          notes?: string | null
+          touch_count?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       trusted_devices: {
         Row: {
