@@ -1265,6 +1265,8 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
                 <p className="text-xs text-muted-foreground">Use Contact Picker or upload CSV/vCard</p>
               ) : a.id === "outlook_contacts" ? (
                 <p className="text-xs text-muted-foreground">Sync contacts from Outlook/Office 365</p>
+              ) : GENERIC_SOURCES.includes(a.id) && !a.connected ? (
+                <p className="text-xs text-muted-foreground">Upload CSV or paste contacts</p>
               ) : (
                 <p className="text-xs text-muted-foreground">Not connected</p>
               )}
