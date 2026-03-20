@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
+import auraALogo from "@/assets/aura-a-logo.png";
 import { Link } from "react-router-dom";
 
 /* ═══ Starfield Canvas ═══ */
