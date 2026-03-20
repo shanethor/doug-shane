@@ -267,6 +267,54 @@ export type Database = {
         }
         Relationships: []
       }
+      branding_packages: {
+        Row: {
+          brand_colors: Json
+          brand_name: string
+          created_at: string
+          disclaimer: string | null
+          id: string
+          industry: string | null
+          is_default: boolean
+          logo_url: string | null
+          name: string
+          tagline: string | null
+          tone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          brand_colors?: Json
+          brand_name?: string
+          created_at?: string
+          disclaimer?: string | null
+          id?: string
+          industry?: string | null
+          is_default?: boolean
+          logo_url?: string | null
+          name?: string
+          tagline?: string | null
+          tone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          brand_colors?: Json
+          brand_name?: string
+          created_at?: string
+          disclaimer?: string | null
+          id?: string
+          industry?: string | null
+          is_default?: boolean
+          logo_url?: string | null
+          name?: string
+          tagline?: string | null
+          tone?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       business_submissions: {
         Row: {
           company_name: string | null

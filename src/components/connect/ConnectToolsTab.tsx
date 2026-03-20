@@ -45,7 +45,7 @@ function SpotlightSection() {
     return (
       <Card>
         <CardContent className="p-4 sm:p-6">
-          <SpotlightFlyerWizard onClose={() => { setShowWizard(false); loadHistory(); }} />
+          <SpotlightFlyerWizard onClose={() => { setShowWizard(false); loadHistory(); }} brands={[]} />
         </CardContent>
       </Card>
     );

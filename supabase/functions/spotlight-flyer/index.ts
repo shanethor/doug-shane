@@ -13,8 +13,6 @@ const SUPABASE_SERVICE_KEY = () => Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || 
 
 function buildStructuredPrompt(flyer: any): string {
   const parts: string[] = [];
-
-  // Intro
   const styleMap: Record<string, string> = {
     event: "clean, professional",
     webinar: "modern, trustworthy, minimal",
@@ -24,57 +22,34 @@ function buildStructuredPrompt(flyer: any): string {
   };
   const style = styleMap[flyer.type] || "professional, clean";
 
-  parts.push(
-    `Create a ${style} vertical marketing flyer for ${flyer.brand_name || "a business"}.`
-  );
+  parts.push(`Create a ${style} vertical marketing flyer for ${flyer.brand_name || "a business"}.`);
 
-  // Brand
   const colors = Array.isArray(flyer.brand_colors) && flyer.brand_colors.length > 0
     ? flyer.brand_colors.join(" and ")
     : "professional tones";
   parts.push(`Use brand colors: ${colors}.`);
-  if (flyer.logo_url) {
-    parts.push(`Include the company logo at the top.`);
-  }
+  if (flyer.logo_url) parts.push(`Include the company logo at the top.`);
 
-  // Title
   parts.push(`Headline: "${flyer.title}".`);
 
-  // Date / time / location
-  if (!flyer.evergreen && flyer.date_time) {
-    parts.push(`Date/Time: ${flyer.date_time}.`);
-  }
-  if (flyer.location) {
-    parts.push(`Location: ${flyer.location}.`);
-  }
-  if (flyer.type === "webinar") {
-    parts.push(`Include a "Live Webinar" tag prominently.`);
-  }
+  if (!flyer.evergreen && flyer.date_time) parts.push(`Date/Time: ${flyer.date_time}.`);
+  if (flyer.location) parts.push(`Location: ${flyer.location}.`);
+  if (flyer.type === "webinar") parts.push(`Include a "Live Webinar" tag prominently.`);
 
-  // Bullets
   const bullets = Array.isArray(flyer.bullets) ? flyer.bullets : [];
   if (bullets.length > 0) {
-    parts.push(
-      `Turn these points into ${bullets.length} concise bullet points on the flyer:\n${bullets.map((b: string) => `• ${b}`).join("\n")}`
-    );
+    parts.push(`Turn these points into ${bullets.length} concise bullet points on the flyer:\n${bullets.map((b: string) => `• ${b}`).join("\n")}`);
   }
 
-  // CTA
-  if (flyer.cta) {
-    parts.push(`Call to action: "${flyer.cta}".`);
-  }
+  if (flyer.cta) parts.push(`Call to action: "${flyer.cta}".`);
 
-  // Layout guidance
   parts.push(
     `Design style: ${style}, suitable for print and social media.`,
     `Use clear hierarchy: large headline, date/time, location, bullet points, and a strong call to action.`,
     `Include 1–2 subtle background or b-roll images relevant to the topic without showing recognizable faces.`
   );
 
-  // Disclaimer
-  if (flyer.disclaimer) {
-    parts.push(`Leave a small area at the bottom for disclaimer text: "${flyer.disclaimer}".`);
-  }
+  if (flyer.disclaimer) parts.push(`Leave a small area at the bottom for disclaimer text: "${flyer.disclaimer}".`);
 
   return parts.join("\n");
 }
@@ -90,29 +65,17 @@ async function summarizeToBullets(description: string): Promise<string[]> {
       body: JSON.stringify({
         model: "google/gemini-3-flash-preview",
         messages: [
-          {
-            role: "system",
-            content: "You summarize event or campaign descriptions into 3-5 concise bullet points (8-12 words each). Return ONLY a JSON array of strings. No markdown."
-          },
+          { role: "system", content: "You summarize event or campaign descriptions into 3-5 concise bullet points (8-12 words each). Return ONLY a JSON array of strings. No markdown." },
           { role: "user", content: description },
         ],
-        tools: [
-          {
-            type: "function",
-            function: {
-              name: "return_bullets",
-              description: "Return the bullet points",
-              parameters: {
-                type: "object",
-                properties: {
-                  bullets: { type: "array", items: { type: "string" } },
-                },
-                required: ["bullets"],
-                additionalProperties: false,
-              },
-            },
+        tools: [{
+          type: "function",
+          function: {
+            name: "return_bullets",
+            description: "Return the bullet points",
+            parameters: { type: "object", properties: { bullets: { type: "array", items: { type: "string" } } }, required: ["bullets"], additionalProperties: false },
           },
-        ],
+        }],
         tool_choice: { type: "function", function: { name: "return_bullets" } },
       }),
     });
@@ -148,7 +111,6 @@ serve(async (req) => {
   });
 
   try {
-    // Auth
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) throw new Error("No authorization header");
     const token = authHeader.replace("Bearer ", "");
@@ -159,26 +121,89 @@ serve(async (req) => {
     const body = await req.json();
     const { action } = body;
 
+    // ─── BRANDING: list_brands ───
+    if (action === "list_brands") {
+      const { data, error } = await supabase
+        .from("branding_packages")
+        .select("*")
+        .eq("user_id", userId)
+        .order("is_default", { ascending: false })
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return new Response(JSON.stringify({ brands: data || [] }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // ─── BRANDING: save_brand ───
+    if (action === "save_brand") {
+      const { brand_id, name, brand_name, brand_colors, logo_url, tagline, disclaimer, industry, tone, is_default } = body;
+
+      // If setting as default, unset other defaults
+      if (is_default) {
+        await supabase.from("branding_packages").update({ is_default: false }).eq("user_id", userId);
+      }
+
+      if (brand_id) {
+        // Update existing
+        const { data: existing } = await supabase.from("branding_packages").select("id, user_id").eq("id", brand_id).single();
+        if (!existing || existing.user_id !== userId) throw new Error("Brand not found");
+
+        const { data, error } = await supabase.from("branding_packages").update({
+          name: name || "Default",
+          brand_name: brand_name || "",
+          brand_colors: brand_colors || ["#001F3F", "#C9A24B"],
+          logo_url: logo_url || null,
+          tagline: tagline || null,
+          disclaimer: disclaimer || null,
+          industry: industry || null,
+          tone: tone || "professional",
+          is_default: !!is_default,
+        }).eq("id", brand_id).select().single();
+        if (error) throw error;
+        return new Response(JSON.stringify({ brand: data }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      } else {
+        // Create new
+        const { data, error } = await supabase.from("branding_packages").insert({
+          user_id: userId,
+          name: name || "Default",
+          brand_name: brand_name || "",
+          brand_colors: brand_colors || ["#001F3F", "#C9A24B"],
+          logo_url: logo_url || null,
+          tagline: tagline || null,
+          disclaimer: disclaimer || null,
+          industry: industry || null,
+          tone: tone || "professional",
+          is_default: !!is_default,
+        }).select().single();
+        if (error) throw error;
+        return new Response(JSON.stringify({ brand: data }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+    }
+
+    // ─── BRANDING: delete_brand ───
+    if (action === "delete_brand") {
+      const { brand_id } = body;
+      if (!brand_id) throw new Error("brand_id required");
+      const { error } = await supabase.from("branding_packages").delete().eq("id", brand_id).eq("user_id", userId);
+      if (error) throw error;
+      return new Response(JSON.stringify({ ok: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     // ─── ACTION: create_draft ───
     if (action === "create_draft") {
-      const { raw_prompt, type: flyerType } = body;
+      const { raw_prompt, type: flyerType, brand_id } = body;
       if (!raw_prompt || typeof raw_prompt !== "string" || raw_prompt.length > 2000) {
         throw new Error("raw_prompt is required and must be under 2000 characters");
       }
 
-      // Rate limit: max 3 per 10 minutes
+      // Rate limits
       const tenMinAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
       const { count: recentCount } = await supabase
         .from("marketing_flyers")
         .select("id", { count: "exact", head: true })
         .eq("user_id", userId)
         .gte("created_at", tenMinAgo);
+      if ((recentCount || 0) >= 3) throw new Error("Rate limit: max 3 flyers per 10 minutes. Please wait.");
 
-      if ((recentCount || 0) >= 3) {
-        throw new Error("Rate limit: max 3 flyers per 10 minutes. Please wait.");
-      }
-
-      // Monthly limit: 20
       const monthStart = new Date();
       monthStart.setDate(1);
       monthStart.setHours(0, 0, 0, 0);
@@ -187,14 +212,25 @@ serve(async (req) => {
         .select("id", { count: "exact", head: true })
         .eq("user_id", userId)
         .gte("created_at", monthStart.toISOString());
-
-      if ((monthCount || 0) >= 20) {
-        throw new Error("Monthly limit reached: 20 flyers per month.");
-      }
+      if ((monthCount || 0) >= 20) throw new Error("Monthly limit reached: 20 flyers per month.");
 
       const detectedType = flyerType || await detectFlyerType(raw_prompt);
 
-      // Check for calendar events mentioned
+      // Load brand if specified
+      let brandData: any = {};
+      if (brand_id) {
+        const { data: brand } = await supabase.from("branding_packages").select("*").eq("id", brand_id).eq("user_id", userId).single();
+        if (brand) {
+          brandData = {
+            brand_name: brand.brand_name,
+            brand_colors: brand.brand_colors,
+            logo_url: brand.logo_url,
+            disclaimer: brand.disclaimer,
+          };
+        }
+      }
+
+      // Calendar events
       let calendarEvents: any[] = [];
       const datePatterns = raw_prompt.match(
         /(?:january|february|march|april|may|june|july|august|september|october|november|december)\s+\d{1,2}(?:st|nd|rd|th)?(?:,?\s*\d{4})?/gi
@@ -209,24 +245,23 @@ serve(async (req) => {
         calendarEvents = events || [];
       }
 
-      // Create draft row
       const { data: flyer, error: insertErr } = await supabase
         .from("marketing_flyers")
-        .insert({
-          user_id: userId,
-          type: detectedType,
-          raw_prompt,
-          status: "draft",
-        })
+        .insert({ user_id: userId, type: detectedType, raw_prompt, status: "draft", ...brandData })
         .select()
         .single();
-
       if (insertErr) throw insertErr;
 
-      return new Response(
-        JSON.stringify({ flyer, calendar_events: calendarEvents }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ flyer, calendar_events: calendarEvents }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
+    // ─── ACTION: get_flyer ───
+    if (action === "get_flyer") {
+      const { flyer_id } = body;
+      if (!flyer_id) throw new Error("flyer_id required");
+      const { data: flyer, error } = await supabase.from("marketing_flyers").select("*").eq("id", flyer_id).eq("user_id", userId).single();
+      if (error || !flyer) throw new Error("Flyer not found");
+      return new Response(JSON.stringify({ flyer }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     // ─── ACTION: update_details ───
@@ -234,12 +269,7 @@ serve(async (req) => {
       const { flyer_id, ...details } = body;
       if (!flyer_id) throw new Error("flyer_id required");
 
-      // Validate ownership
-      const { data: existing } = await supabase
-        .from("marketing_flyers")
-        .select("id, user_id")
-        .eq("id", flyer_id)
-        .single();
+      const { data: existing } = await supabase.from("marketing_flyers").select("id, user_id").eq("id", flyer_id).single();
       if (!existing || existing.user_id !== userId) throw new Error("Not found or not yours");
 
       const updateFields: any = {};
@@ -256,19 +286,10 @@ serve(async (req) => {
       if (details.calendar_event_id !== undefined) updateFields.calendar_event_id = details.calendar_event_id;
       if (details.type !== undefined) updateFields.type = details.type;
 
-      const { data: updated, error: updateErr } = await supabase
-        .from("marketing_flyers")
-        .update(updateFields)
-        .eq("id", flyer_id)
-        .select()
-        .single();
-
+      const { data: updated, error: updateErr } = await supabase.from("marketing_flyers").update(updateFields).eq("id", flyer_id).select().single();
       if (updateErr) throw updateErr;
 
-      return new Response(
-        JSON.stringify({ flyer: updated }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ flyer: updated }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     // ─── ACTION: summarize_bullets ───
@@ -276,10 +297,7 @@ serve(async (req) => {
       const { description } = body;
       if (!description) throw new Error("description required");
       const bullets = await summarizeToBullets(String(description).slice(0, 5000));
-      return new Response(
-        JSON.stringify({ bullets }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ bullets }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     // ─── ACTION: build_prompt ───
@@ -287,14 +305,9 @@ serve(async (req) => {
       const { flyer_id } = body;
       if (!flyer_id) throw new Error("flyer_id required");
 
-      const { data: flyer } = await supabase
-        .from("marketing_flyers")
-        .select("*")
-        .eq("id", flyer_id)
-        .single();
+      const { data: flyer } = await supabase.from("marketing_flyers").select("*").eq("id", flyer_id).single();
       if (!flyer || flyer.user_id !== userId) throw new Error("Not found");
 
-      // Validation
       if (!flyer.title) throw new Error("Title is required");
       if (!flyer.evergreen && !flyer.date_time) throw new Error("Date/time or evergreen flag required");
       const bullets = Array.isArray(flyer.bullets) ? flyer.bullets : [];
@@ -303,16 +316,10 @@ serve(async (req) => {
 
       const structured = buildStructuredPrompt(flyer);
 
-      const { error: saveErr } = await supabase
-        .from("marketing_flyers")
-        .update({ structured_prompt: structured, status: "pending" })
-        .eq("id", flyer_id);
+      const { error: saveErr } = await supabase.from("marketing_flyers").update({ structured_prompt: structured, status: "pending" }).eq("id", flyer_id);
       if (saveErr) throw saveErr;
 
-      return new Response(
-        JSON.stringify({ structured_prompt: structured }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ structured_prompt: structured }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     // ─── ACTION: generate ───
@@ -320,53 +327,27 @@ serve(async (req) => {
       const { flyer_id, extra_instructions } = body;
       if (!flyer_id) throw new Error("flyer_id required");
 
-      const { data: flyer } = await supabase
-        .from("marketing_flyers")
-        .select("*")
-        .eq("id", flyer_id)
-        .single();
+      const { data: flyer } = await supabase.from("marketing_flyers").select("*").eq("id", flyer_id).single();
       if (!flyer || flyer.user_id !== userId) throw new Error("Not found");
-
       if (!flyer.structured_prompt) throw new Error("Build the prompt first");
 
-      // Set generating status
-      await supabase
-        .from("marketing_flyers")
-        .update({ status: "generating" })
-        .eq("id", flyer_id);
+      await supabase.from("marketing_flyers").update({ status: "generating" }).eq("id", flyer_id);
 
       let prompt = flyer.structured_prompt;
-      if (extra_instructions) {
-        prompt += `\n\nAdditional instructions: ${String(extra_instructions).slice(0, 500)}`;
-      }
+      if (extra_instructions) prompt += `\n\nAdditional instructions: ${String(extra_instructions).slice(0, 500)}`;
 
       try {
         const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
           method: "POST",
-          headers: {
-            Authorization: `Bearer ${LOVABLE_API_KEY()}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: "google/gemini-3-pro-image-preview",
-            messages: [{ role: "user", content: prompt }],
-            modalities: ["image", "text"],
-          }),
+          headers: { Authorization: `Bearer ${LOVABLE_API_KEY()}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ model: "google/gemini-3-pro-image-preview", messages: [{ role: "user", content: prompt }], modalities: ["image", "text"] }),
         });
 
         if (!aiResp.ok) {
           const status = aiResp.status;
-          if (status === 429) {
-            await supabase.from("marketing_flyers").update({ status: "error" }).eq("id", flyer_id);
-            throw new Error("Rate limit exceeded. Please try again in a moment.");
-          }
-          if (status === 402) {
-            await supabase.from("marketing_flyers").update({ status: "error" }).eq("id", flyer_id);
-            throw new Error("AI credits exhausted. Please add funds to continue.");
-          }
-          const errText = await aiResp.text();
-          console.error("AI generation error:", status, errText);
           await supabase.from("marketing_flyers").update({ status: "error" }).eq("id", flyer_id);
+          if (status === 429) throw new Error("Rate limit exceeded. Please try again in a moment.");
+          if (status === 402) throw new Error("AI credits exhausted. Please add funds to continue.");
           throw new Error("AI generation failed");
         }
 
@@ -378,20 +359,13 @@ serve(async (req) => {
           throw new Error("No image was generated");
         }
 
-        // Store as base64 data URL directly (can be large)
-        await supabase
-          .from("marketing_flyers")
-          .update({
-            result_image_url: imageUrl,
-            result_metadata: { model: "google/gemini-3-pro-image-preview", generated_at: new Date().toISOString() },
-            status: "ready",
-          })
-          .eq("id", flyer_id);
+        await supabase.from("marketing_flyers").update({
+          result_image_url: imageUrl,
+          result_metadata: { model: "google/gemini-3-pro-image-preview", generated_at: new Date().toISOString() },
+          status: "ready",
+        }).eq("id", flyer_id);
 
-        return new Response(
-          JSON.stringify({ image_url: imageUrl, status: "ready" }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return new Response(JSON.stringify({ image_url: imageUrl, status: "ready" }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
       } catch (genErr: any) {
         await supabase.from("marketing_flyers").update({ status: "error" }).eq("id", flyer_id);
         throw genErr;
@@ -402,26 +376,18 @@ serve(async (req) => {
     if (action === "list") {
       const { data: flyers, error: listErr } = await supabase
         .from("marketing_flyers")
-        .select("id, title, type, status, result_image_url, created_at")
+        .select("id, title, type, status, result_image_url, created_at, brand_name, bullets, cta, evergreen, date_time, location")
         .eq("user_id", userId)
         .order("created_at", { ascending: false })
         .limit(50);
-
       if (listErr) throw listErr;
-
-      return new Response(
-        JSON.stringify({ flyers: flyers || [] }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ flyers: flyers || [] }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     throw new Error(`Unknown action: ${action}`);
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
     console.error("[spotlight-flyer]", msg);
-    return new Response(
-      JSON.stringify({ error: msg }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
-    );
+    return new Response(JSON.stringify({ error: msg }), { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 });
   }
 });
