@@ -18,7 +18,7 @@ import {
   AlertTriangle, Mail, MessageSquare, Send, Check, X,
   Target, Handshake, Bell, RefreshCw, Settings, Flame,
   Crown, Link2, ChevronRight, Linkedin, Clock,
-  MessageCircle, Wrench, Heart, RotateCcw,
+  MessageCircle, Wrench, Heart, RotateCcw, Rss,
 } from "lucide-react";
 import ConnectCommunityTab from "@/components/connect/ConnectCommunityTab";
 import ConnectToolsTab from "@/components/connect/ConnectToolsTab";
@@ -26,6 +26,7 @@ import ConnectReferralsTab from "@/components/connect/ConnectReferralsTab";
 import ConnectHealthTab from "@/components/connect/ConnectHealthTab";
 import ConnectCadenceTab from "@/components/connect/ConnectCadenceTab";
 import ConnectNetworkTab from "@/components/connect/ConnectNetworkTab";
+import ConnectSignalsTab from "@/components/connect/ConnectSignalsTab";
 import { ConnectedAccountsStatus } from "@/components/ConnectedAccountsStatus";
 import { ProgressiveUnlocks } from "@/components/ProgressiveUnlocks";
 import { toast } from "sonner";
@@ -401,6 +402,10 @@ export default function AuraConnect() {
               <TabsTrigger value="health" className="gap-1.5 text-xs sm:text-sm">
                 <Heart className="h-3.5 w-3.5 hidden sm:inline" />
                 Health
+              </TabsTrigger>
+              <TabsTrigger value="signals" className="gap-1.5 text-xs sm:text-sm">
+                <Rss className="h-3.5 w-3.5 hidden sm:inline" />
+                Signals
               </TabsTrigger>
             </TabsList>
           </div>
@@ -837,6 +842,11 @@ export default function AuraConnect() {
           {/* ────── HEALTH TAB ────── */}
           <TabsContent value="health" className="space-y-4 mt-4">
             <ConnectHealthTab />
+          </TabsContent>
+
+          {/* ────── SIGNALS TAB ────── */}
+          <TabsContent value="signals" className="space-y-4 mt-4">
+            <ConnectSignalsTab />
           </TabsContent>
         </Tabs>
 
