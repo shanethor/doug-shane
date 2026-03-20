@@ -412,9 +412,6 @@ export default function LandingPage() {
         </section>
 
 
-                  <p className="text-[15px] text-[#71717A] leading-[1.65] mb-8">
-                    Stitch your email, calendar, social, and financial accounts into a unified relationship graph. Find the warmest path to any prospect — no third-party data. Available across all three AURA branches.
-                  </p>
                   <Link
                     to="/request-access"
                     className="inline-flex items-center gap-2 text-sm font-medium text-white bg-[#3B82F6] px-7 py-3 rounded-[10px] hover:bg-[#60A5FA] transition-colors no-underline"
