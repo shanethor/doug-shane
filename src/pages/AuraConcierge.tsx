@@ -140,7 +140,7 @@ export default function AuraConcierge() {
         {isLocked && !hasConcierge && !isAdmin && <ConciergePaywall onStartTrial={handleStartTrial} />}
 
         {/* Active user view */}
-        {!isLocked && (
+        {(!isLocked || hasConcierge || isAdmin) && (
           <>
             {/* New request button */}
             <Button
