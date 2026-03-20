@@ -871,14 +871,22 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
         {hiddenInputs}
         <Card className={`border ${allRequiredConnected ? "border-success/30 bg-success/5" : "border-warning/30 bg-warning/5"}`}>
           <CardContent className="py-3 px-4">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2">
+            <div className="flex items-center justify-between">
+              <button
+                onClick={() => {
+                  const next = !collapsed;
+                  setCollapsed(next);
+                  try { localStorage.setItem("aura-connected-accounts-collapsed", String(next)); } catch {}
+                }}
+                className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+              >
                 <Network className="h-4 w-4 text-primary" />
                 <span className="text-xs font-semibold uppercase tracking-wider">Connected Accounts</span>
                 <Badge variant="outline" className="text-[10px]">
                   {connectedCount}/{accounts.length}
                 </Badge>
-              </div>
+                {collapsed ? <ChevronDown className="h-3 w-3 text-muted-foreground" /> : <ChevronUp className="h-3 w-3 text-muted-foreground" />}
+              </button>
               <Button variant="ghost" size="sm" className="gap-1 h-7 text-xs" asChild>
                 <Link to="/settings?section=network">
                   <Settings className="h-3 w-3" />
@@ -886,32 +894,36 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
                 </Link>
               </Button>
             </div>
-            <div className="flex flex-wrap gap-2">
-              {accounts.map((a) => (
-                <div
-                  key={a.id}
-                  className={`flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs transition-colors ${
-                    a.connected
-                      ? "border-success/30 bg-success/5 text-success"
-                      : "border-border bg-muted/30 text-muted-foreground"
-                  }`}
-                >
-                  {a.connected ? (
-                    <CheckCircle className="h-3 w-3 shrink-0" />
-                  ) : (
-                    <Circle className="h-3 w-3 shrink-0" />
-                  )}
-                  <span className="truncate">{a.label}</span>
-                  <Badge variant="outline" className={`text-[8px] px-1 py-0 ${levelColor(a.level)}`}>
-                    {a.level}
-                  </Badge>
+            {!collapsed && (
+              <>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {accounts.map((a) => (
+                    <div
+                      key={a.id}
+                      className={`flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs transition-colors ${
+                        a.connected
+                          ? "border-success/30 bg-success/5 text-success"
+                          : "border-border bg-muted/30 text-muted-foreground"
+                      }`}
+                    >
+                      {a.connected ? (
+                        <CheckCircle className="h-3 w-3 shrink-0" />
+                      ) : (
+                        <Circle className="h-3 w-3 shrink-0" />
+                      )}
+                      <span className="truncate">{a.label}</span>
+                      <Badge variant="outline" className={`text-[8px] px-1 py-0 ${levelColor(a.level)}`}>
+                        {a.level}
+                      </Badge>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-            {!allRequiredConnected && (
-              <p className="text-[10px] text-warning mt-2">
-                All 3 required accounts connected = full brief with warm path. Any missing = research-only brief.
-              </p>
+                {!allRequiredConnected && (
+                  <p className="text-[10px] text-warning mt-2">
+                    All 3 required accounts connected = full brief with warm path. Any missing = research-only brief.
+                  </p>
+                )}
+              </>
             )}
           </CardContent>
         </Card>
