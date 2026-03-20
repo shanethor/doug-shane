@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,129 +7,341 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
-  Network, Users, Search, Loader2, Link2,
-  Building2, User, ArrowRight, Sparkles, FileText,
-  Download, Copy,
+  Network, Users, Search, Loader2,
+  Building2, User, Sparkles, FileText,
+  Copy, Eye, ChevronDown,
 } from "lucide-react";
 
-/* ═══ MUTUAL NETWORK OVERLAP ═══ */
+/* ═══ Types ═══ */
+interface SharedContact {
+  name: string;
+  company: string;
+  email: string;
+  context: string;
+}
+
 interface OverlapResult {
+  found: boolean;
+  message?: string;
   partner_name: string;
-  shared_contacts: Array<{ name: string; company: string; context: string }>;
+  partner_agency: string | null;
+  your_contacts: number;
+  their_contacts: number;
+  shared_contacts: SharedContact[];
   overlap_count: number;
   partnership_potential: "high" | "medium" | "low";
-  suggested_action: string;
 }
 
-function NetworkOverlap() {
+interface PlatformPartner {
+  user_id: string;
+  name: string;
+  agency: string;
+  email: string;
+  branch: string | null;
+}
+
+/* ═══ Venn Diagram SVG ═══ */
+function VennDiagram({
+  leftCount,
+  rightCount,
+  sharedCount,
+  leftLabel,
+  rightLabel,
+}: {
+  leftCount: number;
+  rightCount: number;
+  sharedCount: number;
+  leftLabel: string;
+  rightLabel: string;
+}) {
+  const total = leftCount + rightCount - sharedCount;
+  const overlapPct = total > 0 ? Math.min(sharedCount / total, 0.5) : 0;
+  // Distance between centers: less distance = more overlap
+  const cx1 = 130;
+  const cx2 = 270;
+  const r = 90;
+
+  return (
+    <svg viewBox="0 0 400 220" className="w-full max-w-[400px] mx-auto" aria-label="Network overlap Venn diagram">
+      {/* Left circle */}
+      <circle cx={cx1} cy={110} r={r} fill="hsl(var(--primary) / 0.15)" stroke="hsl(var(--primary))" strokeWidth="2" />
+      {/* Right circle */}
+      <circle cx={cx2} cy={110} r={r} fill="hsl(var(--accent) / 0.15)" stroke="hsl(var(--accent))" strokeWidth="2" />
+      {/* Overlap region highlight */}
+      <clipPath id="clip-left"><circle cx={cx1} cy={110} r={r} /></clipPath>
+      <circle cx={cx2} cy={110} r={r} fill="hsl(var(--primary) / 0.25)" clipPath="url(#clip-left)" />
+
+      {/* Labels */}
+      <text x={cx1 - 30} y={105} fill="hsl(var(--foreground))" fontSize="24" fontWeight="700" textAnchor="middle">
+        {leftCount - sharedCount}
+      </text>
+      <text x={cx1 - 30} y={122} fill="hsl(var(--muted-foreground))" fontSize="9" textAnchor="middle">
+        only you
+      </text>
+
+      <text x={200} y={100} fill="hsl(var(--foreground))" fontSize="28" fontWeight="800" textAnchor="middle">
+        {sharedCount}
+      </text>
+      <text x={200} y={118} fill="hsl(var(--primary))" fontSize="10" fontWeight="600" textAnchor="middle">
+        shared
+      </text>
+
+      <text x={cx2 + 30} y={105} fill="hsl(var(--foreground))" fontSize="24" fontWeight="700" textAnchor="middle">
+        {rightCount - sharedCount}
+      </text>
+      <text x={cx2 + 30} y={122} fill="hsl(var(--muted-foreground))" fontSize="9" textAnchor="middle">
+        only them
+      </text>
+
+      {/* Circle labels at top */}
+      <text x={cx1} y={20} fill="hsl(var(--foreground))" fontSize="11" fontWeight="600" textAnchor="middle">
+        {leftLabel.length > 16 ? leftLabel.slice(0, 14) + "…" : leftLabel}
+      </text>
+      <text x={cx2} y={20} fill="hsl(var(--foreground))" fontSize="11" fontWeight="600" textAnchor="middle">
+        {rightLabel.length > 16 ? rightLabel.slice(0, 14) + "…" : rightLabel}
+      </text>
+    </svg>
+  );
+}
+
+/* ═══ MUTUAL NETWORK OVERLAP VISUALIZER ═══ */
+function NetworkOverlapVisualizer() {
   const { user } = useAuth();
-  const [partnerName, setPartnerName] = useState("");
+  const [partnerEmail, setPartnerEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<OverlapResult | null>(null);
+  const [partners, setPartners] = useState<PlatformPartner[]>([]);
+  const [partnersLoading, setPartnersLoading] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [showAll, setShowAll] = useState(false);
 
-  const handleAnalyze = async () => {
-    if (!partnerName.trim()) return;
+  // Load platform partners on mount
+  useEffect(() => {
+    const load = async () => {
+      setPartnersLoading(true);
+      try {
+        const { data, error } = await supabase.functions.invoke("network-overlap", {
+          body: { action: "list_partners" },
+        });
+        if (error) throw error;
+        setPartners(data?.partners || []);
+      } catch {
+        // Silent fail — user can still type email manually
+      } finally {
+        setPartnersLoading(false);
+      }
+    };
+    load();
+  }, []);
+
+  const filteredPartners = useMemo(() => {
+    if (!partnerEmail.trim()) return partners.slice(0, 8);
+    const q = partnerEmail.toLowerCase();
+    return partners.filter(
+      p => p.name.toLowerCase().includes(q) || p.email.toLowerCase().includes(q) || (p.agency || "").toLowerCase().includes(q)
+    ).slice(0, 8);
+  }, [partnerEmail, partners]);
+
+  const handleAnalyze = async (email?: string) => {
+    const emailToUse = email || partnerEmail.trim();
+    if (!emailToUse) {
+      toast.error("Enter or select a partner");
+      return;
+    }
     setLoading(true);
     setResult(null);
+    setShowDropdown(false);
     try {
-      const { data, error } = await supabase.functions.invoke("ai-router", {
-        body: {
-          action: "general",
-          payload: {
-            prompt: `You are a networking intelligence tool. A sales professional wants to see their mutual network overlap with "${partnerName}". Generate a realistic analysis showing:
-
-Return a JSON object:
-{
-  "partner_name": "${partnerName}",
-  "shared_contacts": [
-    { "name": "contact name", "company": "company name", "context": "how they're connected" }
-  ],
-  "overlap_count": number (3-8),
-  "partnership_potential": "high" or "medium" or "low",
-  "suggested_action": "one sentence recommended next step"
-}
-
-Generate 3-6 realistic shared contacts with realistic company names. Return ONLY the JSON object.`,
-          },
-        },
+      const { data, error } = await supabase.functions.invoke("network-overlap", {
+        body: { action: "find_overlap", partner_email: emailToUse },
       });
       if (error) throw error;
-      const text = data?.text || data?.response || "{}";
-      const jsonMatch = text.match(/\{[\s\S]*\}/);
-      setResult(JSON.parse(jsonMatch ? jsonMatch[0] : "{}"));
-    } catch {
-      toast.error("Failed to analyze overlap");
+      if (data?.found === false) {
+        toast.error(data.message || "Partner not found");
+        return;
+      }
+      setResult(data);
+    } catch (err: any) {
+      toast.error(err.message || "Failed to analyze overlap");
     } finally {
       setLoading(false);
     }
   };
 
-  const potentialColor = (p: string) => {
+  const selectPartner = (p: PlatformPartner) => {
+    setPartnerEmail(p.email);
+    setShowDropdown(false);
+    handleAnalyze(p.email);
+  };
+
+  const potentialStyles = (p: string) => {
     if (p === "high") return "text-success bg-success/10 border-success/20";
     if (p === "medium") return "text-warning bg-warning/10 border-warning/20";
-    return "text-muted-foreground";
+    return "text-muted-foreground bg-muted";
   };
+
+  const visibleContacts = showAll ? (result?.shared_contacts || []) : (result?.shared_contacts || []).slice(0, 6);
 
   return (
     <Card>
       <CardHeader className="pb-3">
         <CardTitle className="text-sm flex items-center gap-2">
           <Network className="h-4 w-4 text-primary" />
-          Mutual Network Overlap
+          Mutual Network Overlap Visualizer
         </CardTitle>
         <p className="text-[11px] text-muted-foreground">
-          See how many contacts you share with a partner — and where to collaborate
+          See how many real contacts you share with another professional on the platform — powered by your synced network data.
         </p>
       </CardHeader>
-      <CardContent className="space-y-3">
-        <div className="flex gap-3">
-          <Input
-            className="flex-1"
-            placeholder="Enter partner's name (e.g. Sarah Johnson, CPA)"
-            value={partnerName}
-            onChange={e => setPartnerName(e.target.value)}
-          />
-          <Button className="gap-1.5 shrink-0" onClick={handleAnalyze} disabled={loading || !partnerName.trim()}>
-            {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Search className="h-3.5 w-3.5" />}
-            Analyze
-          </Button>
-        </div>
-
-        {result && (
-          <div className="rounded-lg border bg-muted/30 p-4 space-y-4 animate-in fade-in-0 slide-in-from-bottom-2 duration-300">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Users className="h-5 w-5 text-primary" />
-                <div>
-                  <p className="text-sm font-semibold">{result.overlap_count} Shared Contacts</p>
-                  <p className="text-[10px] text-muted-foreground">with {result.partner_name}</p>
-                </div>
-              </div>
-              <Badge variant="outline" className={`text-[10px] ${potentialColor(result.partnership_potential)}`}>
-                {result.partnership_potential} potential
-              </Badge>
+      <CardContent className="space-y-4">
+        {/* Search / Select */}
+        <div className="relative">
+          <div className="flex gap-3">
+            <div className="relative flex-1">
+              <Input
+                className="pr-8"
+                placeholder="Search by name or email…"
+                value={partnerEmail}
+                onChange={e => {
+                  setPartnerEmail(e.target.value);
+                  setShowDropdown(true);
+                }}
+                onFocus={() => setShowDropdown(true)}
+              />
+              <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
             </div>
+            <Button className="gap-1.5 shrink-0" onClick={() => handleAnalyze()} disabled={loading || !partnerEmail.trim()}>
+              {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Eye className="h-3.5 w-3.5" />}
+              Visualize
+            </Button>
+          </div>
 
-            <div className="space-y-2">
-              {result.shared_contacts?.map((contact, i) => (
-                <div key={i} className="flex items-center gap-3 p-2 rounded-lg bg-background/50">
+          {/* Partner dropdown */}
+          {showDropdown && filteredPartners.length > 0 && (
+            <div className="absolute z-20 top-full mt-1 left-0 right-12 bg-popover border rounded-lg shadow-lg max-h-[240px] overflow-y-auto">
+              {filteredPartners.map(p => (
+                <button
+                  key={p.user_id}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-muted/50 transition-colors"
+                  onClick={() => selectPartner(p)}
+                >
                   <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                     <User className="h-3.5 w-3.5 text-primary" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium">{contact.name}</p>
-                    <p className="text-[10px] text-muted-foreground">{contact.company} · {contact.context}</p>
+                    <p className="text-sm font-medium truncate">{p.name}</p>
+                    <p className="text-[10px] text-muted-foreground truncate">
+                      {p.agency ? `${p.agency} · ` : ""}{p.email}
+                    </p>
                   </div>
-                </div>
+                  {p.branch && (
+                    <Badge variant="outline" className="text-[9px] shrink-0">{p.branch}</Badge>
+                  )}
+                </button>
               ))}
             </div>
+          )}
+        </div>
 
-            <div className="rounded-lg bg-primary/5 border border-primary/10 p-3">
-              <div className="flex items-center gap-2">
-                <Sparkles className="h-3.5 w-3.5 text-primary shrink-0" />
-                <p className="text-xs">{result.suggested_action}</p>
+        {/* Results */}
+        {result && (
+          <div className="rounded-xl border bg-muted/20 p-5 space-y-5 animate-in fade-in-0 slide-in-from-bottom-2 duration-300">
+            {/* Header */}
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div>
+                <p className="text-base font-semibold">{result.partner_name}</p>
+                {result.partner_agency && (
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Building2 className="h-3 w-3" /> {result.partner_agency}
+                  </p>
+                )}
+              </div>
+              <Badge variant="outline" className={`text-xs ${potentialStyles(result.partnership_potential)}`}>
+                {result.partnership_potential} partnership potential
+              </Badge>
+            </div>
+
+            {/* Venn Diagram */}
+            <VennDiagram
+              leftCount={result.your_contacts}
+              rightCount={result.their_contacts}
+              sharedCount={result.overlap_count}
+              leftLabel="You"
+              rightLabel={result.partner_name}
+            />
+
+            {/* Stats row */}
+            <div className="grid grid-cols-3 gap-3 text-center">
+              <div className="p-3 rounded-lg bg-background border">
+                <p className="text-lg font-bold">{result.your_contacts}</p>
+                <p className="text-[10px] text-muted-foreground">Your contacts</p>
+              </div>
+              <div className="p-3 rounded-lg bg-primary/5 border border-primary/20">
+                <p className="text-lg font-bold text-primary">{result.overlap_count}</p>
+                <p className="text-[10px] text-primary">Shared</p>
+              </div>
+              <div className="p-3 rounded-lg bg-background border">
+                <p className="text-lg font-bold">{result.their_contacts}</p>
+                <p className="text-[10px] text-muted-foreground">Their contacts</p>
               </div>
             </div>
+
+            {/* Shared contacts list */}
+            {result.shared_contacts.length > 0 ? (
+              <div className="space-y-2">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Shared Contacts</p>
+                {visibleContacts.map((contact, i) => (
+                  <div key={i} className="flex items-center gap-3 p-2.5 rounded-lg bg-background/60 border border-border/50">
+                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                      <User className="h-4 w-4 text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{contact.name}</p>
+                      <p className="text-[10px] text-muted-foreground truncate">
+                        {contact.company}{contact.company && contact.email ? " · " : ""}{contact.email}
+                      </p>
+                      <p className="text-[10px] text-accent">{contact.context}</p>
+                    </div>
+                  </div>
+                ))}
+                {result.shared_contacts.length > 6 && !showAll && (
+                  <Button variant="ghost" size="sm" className="w-full text-xs" onClick={() => setShowAll(true)}>
+                    Show all {result.shared_contacts.length} shared contacts
+                  </Button>
+                )}
+              </div>
+            ) : (
+              <div className="text-center py-4">
+                <Users className="h-8 w-8 mx-auto text-muted-foreground/40 mb-2" />
+                <p className="text-sm text-muted-foreground">No shared contacts found yet</p>
+                <p className="text-[11px] text-muted-foreground">Sync more accounts to discover overlaps</p>
+              </div>
+            )}
+
+            {/* Suggested action */}
+            {result.overlap_count > 0 && (
+              <div className="rounded-lg bg-primary/5 border border-primary/10 p-3">
+                <div className="flex items-start gap-2">
+                  <Sparkles className="h-3.5 w-3.5 text-primary shrink-0 mt-0.5" />
+                  <p className="text-xs">
+                    {result.partnership_potential === "high"
+                      ? `Strong overlap with ${result.partner_name} — consider scheduling a joint review of your shared contacts to identify co-introduction opportunities.`
+                      : result.partnership_potential === "medium"
+                        ? `Moderate overlap detected. Explore which shared contacts might benefit from a coordinated approach.`
+                        : `Limited overlap right now. As both networks grow on the platform, new connections will surface automatically.`}
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Empty state */}
+        {!result && !loading && (
+          <div className="text-center py-8 text-muted-foreground">
+            <Network className="h-10 w-10 mx-auto mb-3 opacity-30" />
+            <p className="text-sm font-medium">Select a partner to visualize your network overlap</p>
+            <p className="text-[11px] mt-1">Results are based on your synced contacts and unified records</p>
           </div>
         )}
       </CardContent>
@@ -241,7 +453,7 @@ Keep it concise and professional. Use real formatting (headers, bullets). This s
 export default function ConnectNetworkTab() {
   return (
     <div className="space-y-4">
-      <NetworkOverlap />
+      <NetworkOverlapVisualizer />
       <ProposalBuilder />
     </div>
   );
