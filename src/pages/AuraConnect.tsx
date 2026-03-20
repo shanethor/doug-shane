@@ -18,7 +18,7 @@ import {
   AlertTriangle, Mail, MessageSquare, Send, Check, X,
   Target, Handshake, Bell, RefreshCw, Settings, Flame,
   Crown, Link2, ChevronRight, Linkedin, Clock,
-  MessageCircle, Wrench, Heart, RotateCcw, Rss,
+  MessageCircle, Wrench, Heart, RotateCcw, Rss, Sparkles,
 } from "lucide-react";
 import ConnectCommunityTab from "@/components/connect/ConnectCommunityTab";
 import ConnectToolsTab from "@/components/connect/ConnectToolsTab";
@@ -27,6 +27,7 @@ import ConnectHealthTab from "@/components/connect/ConnectHealthTab";
 import ConnectCadenceTab from "@/components/connect/ConnectCadenceTab";
 import ConnectNetworkTab from "@/components/connect/ConnectNetworkTab";
 import ConnectSignalsTab from "@/components/connect/ConnectSignalsTab";
+import ConnectSpotlightTab from "@/components/connect/ConnectSpotlightTab";
 import { ConnectedAccountsStatus } from "@/components/ConnectedAccountsStatus";
 import { ProgressiveUnlocks } from "@/components/ProgressiveUnlocks";
 import { toast } from "sonner";
@@ -382,6 +383,10 @@ export default function AuraConnect() {
               <TabsTrigger value="referrals" className="gap-1.5 text-xs sm:text-sm">
                 <Handshake className="h-3.5 w-3.5 hidden sm:inline" />
                 Referrals
+              </TabsTrigger>
+              <TabsTrigger value="spotlight" className="gap-1.5 text-xs sm:text-sm">
+                <Sparkles className="h-3.5 w-3.5 hidden sm:inline" />
+                Spotlight
               </TabsTrigger>
               <TabsTrigger value="tools" className="gap-1.5 text-xs sm:text-sm">
                 <Wrench className="h-3.5 w-3.5 hidden sm:inline" />
@@ -817,6 +822,11 @@ export default function AuraConnect() {
           {/* ────── REFERRALS TAB ────── */}
           <TabsContent value="referrals" className="space-y-4 mt-4">
             <ConnectReferralsTab />
+          </TabsContent>
+
+          {/* ────── SPOTLIGHT TAB ────── */}
+          <TabsContent value="spotlight" className="space-y-4 mt-4">
+            <ConnectSpotlightTab />
           </TabsContent>
 
           {/* ────── TOOLS TAB ────── */}
