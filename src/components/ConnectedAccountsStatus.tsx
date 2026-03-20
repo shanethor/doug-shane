@@ -1344,6 +1344,7 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
                  a.id === "linkedin" ? "Upload CSV" :
                  a.id === "phone" ? "Import" :
                  a.id === "social" ? "Import Profiles" :
+                 GENERIC_SOURCES.includes(a.id) ? "Import" :
                  "Connect"}
               </Button>
             )}
