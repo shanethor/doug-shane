@@ -586,6 +586,81 @@ export type Database = {
           },
         ]
       }
+      concierge_requests: {
+        Row: {
+          category: string
+          completed_at: string | null
+          created_at: string
+          description: string
+          id: string
+          internal_notes: string | null
+          priority: string
+          status: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category?: string
+          completed_at?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          internal_notes?: string | null
+          priority?: string
+          status?: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          completed_at?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          internal_notes?: string | null
+          priority?: string
+          status?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      concierge_subscriptions: {
+        Row: {
+          created_at: string
+          id: string
+          max_active_requests: number
+          subscription_status: string
+          trial_end_at: string | null
+          trial_start_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          max_active_requests?: number
+          subscription_status?: string
+          trial_end_at?: string | null
+          trial_start_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          max_active_requests?: number
+          subscription_status?: string
+          trial_end_at?: string | null
+          trial_start_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       connect_community_posts: {
         Row: {
           body: string
