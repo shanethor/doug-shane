@@ -242,9 +242,174 @@ export default function LandingPage() {
         </section>
 
         {/* ═══ AURA CONNECT ═══ */}
-        <section className="lp-reveal pt-10 relative" id="connect" ref={addRevealRef}>
+        <section className="lp-reveal pt-[120px] max-sm:pt-20 pb-[60px] relative" id="connect" ref={addRevealRef}>
           <div className="max-w-[1200px] mx-auto px-12 max-md:px-8 max-sm:px-5">
-            <div className="border-t border-white/[0.06] pt-12">
+            <div className="border-t border-white/[0.06] pt-14">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-16">
+                <div>
+                  <div className="text-[11px] font-semibold tracking-[0.12em] uppercase text-[#60A5FA] mb-4">AURA Connect</div>
+                  <h2 className="text-[clamp(32px,4vw,48px)] font-bold tracking-[-0.04em] leading-[1.05] text-white mb-5">
+                    Your network,<br />mapped.
+                  </h2>
+                  <div className="text-sm text-[#A1A1AA] mb-6"><strong>$250</strong>/month per seat</div>
+                  <p className="text-[15px] text-[#71717A] leading-[1.65] mb-8">
+                    Stitch your email, calendar, social, and financial accounts into a unified relationship graph. Find the warmest path to any prospect — no third-party data. Available across all three AURA branches.
+                  </p>
+                  <Link
+                    to="/request-access"
+                    className="inline-flex items-center gap-2 text-sm font-medium text-white bg-[#3B82F6] px-7 py-3 rounded-[10px] hover:bg-[#60A5FA] transition-colors no-underline"
+                  >
+                    Request Access
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                      <path d="M5 12h14" /><path d="M12 5l7 7-7 7" />
+                    </svg>
+                  </Link>
+                </div>
+                <div>
+                  <div className="rounded-[20px] overflow-hidden border border-white/[0.06] aspect-[16/9] relative mb-4">
+                    <img src="/images/connect-bridge.png" alt="AURA Connect — relationship bridge" loading="eager" decoding="async" className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-[#08080A]/60 to-transparent" />
+                  </div>
+                  <IntegrationTicker />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {[
+                      { t: "Mutual contacts", d: "Warm intros through shared connections across your team's combined network." },
+                      { t: "Relationship graph", d: "One de-duplicated map across all platforms and accounts." },
+                      { t: "Money-in-motion", d: "Plaid-powered signals for perfectly timed outreach." },
+                      { t: "Privacy-first", d: "First-party data only. Opt-in sharing. No content stored." },
+                    ].map((f) => (
+                      <div key={f.t} className="p-4 bg-[#101012] border border-white/[0.06] rounded-xl">
+                        <div className="text-[13px] font-semibold text-white mb-1">{f.t}</div>
+                        <div className="text-[12px] text-[#71717A] leading-[1.55]">{f.d}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* ═══ AURA CONCIERGE ═══ */}
+        <section className="lp-reveal pt-[120px] max-sm:pt-20 pb-[60px] relative" id="concierge" ref={addRevealRef}>
+          <div className="max-w-[1200px] mx-auto px-12 max-md:px-8 max-sm:px-5">
+            <div className="border-t border-white/[0.06] pt-14">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-16">
+                {/* Left column */}
+                <div>
+                  <div className="text-[11px] font-semibold tracking-[0.12em] uppercase text-[#F59E0B] mb-4">AURA Concierge</div>
+                  <h2 className="text-[clamp(32px,4vw,48px)] font-bold tracking-[-0.04em] leading-[1.05] text-white mb-5">
+                    Your on‑call<br />build team.
+                  </h2>
+                  <p className="text-[15px] text-[#71717A] leading-[1.65] mb-6">
+                    Systems, tools, and assets that make your business easier to run — and easier to sell.
+                  </p>
+
+                  {/* Pricing callout */}
+                  <div className="p-5 bg-[#101012] border border-white/[0.06] rounded-xl mb-6">
+                    <div className="text-[13px] font-semibold text-white mb-2">Pricing</div>
+                    <div className="text-sm text-[#A1A1AA] mb-1"><strong className="text-white">$1,000</strong>/month subscription</div>
+                    <div className="text-sm text-[#F59E0B] font-medium mb-1">Launch offer: first 3 months at $500/month</div>
+                    <div className="text-[12px] text-[#71717A] leading-[1.55]">1‑week free trial · card on file required · first month billed before your first deliverable ships.</div>
+                  </div>
+
+                  {/* Who it's for */}
+                  <div className="text-[12px] text-[#52525B] leading-[1.55] mb-6 border-l-2 border-[#F59E0B]/30 pl-3">
+                    <span className="text-[#A1A1AA] font-medium">Who it's for:</span> Non‑software businesses doing $500K–$10M+ in revenue, especially owners preparing to grow or sell.
+                  </div>
+
+                  {/* Disclaimer */}
+                  <div className="text-[11px] text-[#52525B] leading-[1.5] mb-8">
+                    <span className="text-[#71717A] font-medium">Disclaimer:</span> AURA Concierge delivers digital assets (websites, dashboards, templates, automations). Physical product shipping is not included. Deliverable timelines vary by scope and complexity. Your 7‑day trial begins at checkout; cancel anytime before it ends to avoid charges.
+                  </div>
+
+                  <Link
+                    to="/concierge"
+                    className="inline-flex items-center gap-2 text-sm font-medium text-[#08080A] bg-[#F59E0B] px-7 py-3 rounded-[10px] hover:bg-[#FBBF24] transition-colors no-underline"
+                    aria-label="Request Concierge Access"
+                  >
+                    Request Concierge Access
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                      <path d="M5 12h14" /><path d="M12 5l7 7-7 7" />
+                    </svg>
+                  </Link>
+                </div>
+
+                {/* Right column — image + feature cards */}
+                <div>
+                  <div className="rounded-[20px] overflow-hidden border border-white/[0.06] aspect-[16/9] relative mb-4">
+                    <img src="/images/concierge-toolkit.png" alt="AURA Concierge — your build toolkit" loading="eager" decoding="async" className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-[#08080A]/60 to-transparent" />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {[
+                      {
+                        icon: (
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 text-[#F59E0B]">
+                            <rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" />
+                          </svg>
+                        ),
+                        t: "Custom web tools & landing pages",
+                        d: "Simple websites, landing pages, and quote/intake tools that plug into your existing workflows.",
+                      },
+                      {
+                        icon: (
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 text-[#F59E0B]">
+                            <path d="M3 3v18h18" /><path d="M7 16l4-8 4 5 5-6" />
+                          </svg>
+                        ),
+                        t: "Marketing dashboards & reporting",
+                        d: "Owner‑ready KPI dashboards pulling from your CRM, ads, and accounting tools.",
+                      },
+                      {
+                        icon: (
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 text-[#F59E0B]">
+                            <path d="M4 4h16v16H4z" /><path d="M9 9h6v6H9z" />
+                          </svg>
+                        ),
+                        t: "Design & template library",
+                        d: "Sales decks, one‑pagers, proposal templates, and social graphics — all on brand.",
+                      },
+                      {
+                        icon: (
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 text-[#F59E0B]">
+                            <path d="M12 20V10" /><path d="M6 20V4" /><path d="M18 20v-6" />
+                          </svg>
+                        ),
+                        t: "Sales systems & coaching assets",
+                        d: "Pipelines, email sequences, call frameworks, and playbooks so your team can execute.",
+                      },
+                      {
+                        icon: (
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 text-[#F59E0B]">
+                            <path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83" />
+                          </svg>
+                        ),
+                        t: "Process & automation builds",
+                        d: "Intake forms, checklists, and automations that connect the tools you already use.",
+                      },
+                      {
+                        icon: (
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 text-[#F59E0B]">
+                            <circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" />
+                          </svg>
+                        ),
+                        t: "Ongoing support & iteration",
+                        d: "Monthly retainer includes revisions, updates, and new builds as your business evolves.",
+                      },
+                    ].map((f) => (
+                      <div key={f.t} className="p-4 bg-[#101012] border border-white/[0.06] rounded-xl">
+                        <div className="mb-2">{f.icon}</div>
+                        <div className="text-[13px] font-semibold text-white mb-1">{f.t}</div>
+                        <div className="text-[12px] text-[#71717A] leading-[1.55]">{f.d}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-16">
                 <div>
                   <div className="text-[11px] font-semibold tracking-[0.12em] uppercase text-[#60A5FA] mb-4">AURA Connect</div>
