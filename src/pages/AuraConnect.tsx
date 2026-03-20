@@ -25,6 +25,7 @@ import ConnectToolsTab from "@/components/connect/ConnectToolsTab";
 import ConnectReferralsTab from "@/components/connect/ConnectReferralsTab";
 import ConnectHealthTab from "@/components/connect/ConnectHealthTab";
 import ConnectCadenceTab from "@/components/connect/ConnectCadenceTab";
+import ConnectNetworkTab from "@/components/connect/ConnectNetworkTab";
 import { ConnectedAccountsStatus } from "@/components/ConnectedAccountsStatus";
 import { ProgressiveUnlocks } from "@/components/ProgressiveUnlocks";
 import { toast } from "sonner";
@@ -392,6 +393,10 @@ export default function AuraConnect() {
               <TabsTrigger value="cadence" className="gap-1.5 text-xs sm:text-sm">
                 <RotateCcw className="h-3.5 w-3.5 hidden sm:inline" />
                 Cadence
+              </TabsTrigger>
+              <TabsTrigger value="network" className="gap-1.5 text-xs sm:text-sm">
+                <Network className="h-3.5 w-3.5 hidden sm:inline" />
+                Network
               </TabsTrigger>
               <TabsTrigger value="health" className="gap-1.5 text-xs sm:text-sm">
                 <Heart className="h-3.5 w-3.5 hidden sm:inline" />
@@ -822,6 +827,11 @@ export default function AuraConnect() {
           {/* ────── CADENCE TAB ────── */}
           <TabsContent value="cadence" className="space-y-4 mt-4">
             <ConnectCadenceTab />
+          </TabsContent>
+
+          {/* ────── NETWORK TAB ────── */}
+          <TabsContent value="network" className="space-y-4 mt-4">
+            <ConnectNetworkTab />
           </TabsContent>
 
           {/* ────── HEALTH TAB ────── */}
