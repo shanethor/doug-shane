@@ -136,8 +136,8 @@ export default function AuraConcierge() {
           )}
         </div>
 
-        {/* Paywall */}
-        {isLocked && <ConciergePaywall onStartTrial={handleStartTrial} />}
+        {/* Paywall — skip if admin or feature-flag granted */}
+        {isLocked && !hasConcierge && !isAdmin && <ConciergePaywall onStartTrial={handleStartTrial} />}
 
         {/* Active user view */}
         {!isLocked && (
