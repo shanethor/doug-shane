@@ -403,6 +403,10 @@ export default function AuraConnect() {
                 <Heart className="h-3.5 w-3.5 hidden sm:inline" />
                 Health
               </TabsTrigger>
+              <TabsTrigger value="signals" className="gap-1.5 text-xs sm:text-sm">
+                <Rss className="h-3.5 w-3.5 hidden sm:inline" />
+                Signals
+              </TabsTrigger>
             </TabsList>
           </div>
 
