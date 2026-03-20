@@ -5,7 +5,7 @@ import { useUserFeatures } from "@/hooks/useUserFeatures";
 import { useUserBranch } from "@/hooks/useUserBranch";
 import { useUnreadCount } from "@/hooks/useUnreadCount";
 import { useLossRunReminders } from "@/hooks/useLossRunReminders";
-import { LogOut, ShieldCheck, MessageCircle, HelpCircle, GitBranch, Settings, Mail, HeartPulse, FileSearch, Network, UserPlus } from "lucide-react";
+import { LogOut, ShieldCheck, MessageCircle, HelpCircle, GitBranch, Settings, Mail, HeartPulse, FileSearch, Network, UserPlus, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { useTrainingMode } from "@/hooks/useTrainingMode";
