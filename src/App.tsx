@@ -51,6 +51,7 @@ import LossRunDetail from "./pages/LossRunDetail";
 import LossRunSign from "./pages/LossRunSign";
 import CarrierDirectory from "./pages/CarrierDirectory";
 import AuraConnect from "./pages/AuraConnect";
+import AuraConcierge from "./pages/AuraConcierge";
 import ClientSubmission from "./pages/ClientSubmission";
 import LandingPage from "./pages/LandingPage";
 import BecomePartner from "./pages/BecomePartner";
