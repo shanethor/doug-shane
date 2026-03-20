@@ -462,6 +462,7 @@ export default function LandingPage() {
               </div>
 
               {/* Panel — all rendered, only active visible */}
+              <div className="relative">
               {branches.map((b, i) => (
                 <div
                   key={b.key}
