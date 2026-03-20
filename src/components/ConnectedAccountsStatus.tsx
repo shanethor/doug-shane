@@ -1435,7 +1435,7 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
           <strong>LinkedIn:</strong> Settings → Data Privacy → Get a copy of your data → Select "Connections" → Download CSV.
         </p>
         <p className="text-[11px] text-muted-foreground leading-relaxed">
-          <strong>All sources:</strong> Click "Import" on any source to upload a CSV/JSON file or paste contact data directly. Live API sync is coming soon for select platforms.
+          <strong>All sources:</strong> Click "Import" to upload CSV/JSON, paste contacts, or use live API sync (Slack, Teams, Eventbrite, Strava). API keys may be needed for some platforms.
         </p>
       </div>
 
