@@ -1361,12 +1361,13 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
         </div>
       ))}
 
-      {/* LinkedIn instructions */}
-      <div className="rounded-md bg-muted/50 p-3">
+      {/* Import instructions */}
+      <div className="rounded-md bg-muted/50 p-3 space-y-1.5">
         <p className="text-[11px] text-muted-foreground leading-relaxed">
-          <strong>LinkedIn:</strong> To export your connections, go to LinkedIn →
-          Settings → Data Privacy → Get a copy of your data → Select "Connections" → Download.
-          Upload the resulting CSV file here.
+          <strong>LinkedIn:</strong> Settings → Data Privacy → Get a copy of your data → Select "Connections" → Download CSV.
+        </p>
+        <p className="text-[11px] text-muted-foreground leading-relaxed">
+          <strong>All sources:</strong> Click "Import" on any source to upload a CSV/JSON file or paste contact data directly. Live API sync is coming soon for select platforms.
         </p>
       </div>
 
