@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
+import auraALogo from "@/assets/aura-a-logo.png";
 import { Link } from "react-router-dom";
 
 /* ═══ Starfield Canvas ═══ */
@@ -220,7 +221,7 @@ export default function LandingPage() {
 
           {/* Orbit rings */}
           <div className="absolute inset-0 z-[1] pointer-events-none flex items-center justify-center">
-            <div className="relative w-[700px] h-[700px] max-md:w-[450px] max-md:h-[450px] max-sm:w-[360px] max-sm:h-[360px] -translate-y-1/2">
+            <div className="relative w-[700px] h-[700px] max-md:w-[450px] max-md:h-[450px] max-sm:w-[360px] max-sm:h-[360px]">
               <div className="absolute border border-dashed border-white/10 rounded-full w-[500px] h-[500px] max-md:w-[340px] max-md:h-[340px] max-sm:w-[280px] max-sm:h-[280px] top-1/2 left-1/2 animate-[orbitSpin1_35s_linear_infinite]">
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 max-sm:w-[34px] max-sm:h-[34px] rounded-full bg-[#101012]/85 border border-white/10 flex items-center justify-center backdrop-blur-lg animate-[counterSpin1_35s_linear_infinite]" style={{ borderColor: "rgba(10,138,143,0.3)" }}>
                   <BranchLogo color="#01696F" size={22} />
@@ -239,6 +240,7 @@ export default function LandingPage() {
 
           {/* Hero content */}
           <div className="relative z-[2] text-center px-8">
+            <img src={auraALogo} alt="AURA" className="w-28 h-auto max-sm:w-20 mx-auto mb-6 drop-shadow-[0_0_60px_rgba(255,255,255,0.15)]" />
             <h1 className="text-[clamp(40px,6vw,80px)] max-sm:text-4xl font-bold leading-[1] tracking-[-0.04em] text-white mb-4">
               Intelligence Runs on
             </h1>
