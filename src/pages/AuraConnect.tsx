@@ -798,6 +798,26 @@ export default function AuraConnect() {
               </div>
             )}
           </TabsContent>
+
+          {/* ────── REFERRALS TAB ────── */}
+          <TabsContent value="referrals" className="space-y-4 mt-4">
+            <ConnectReferralsTab />
+          </TabsContent>
+
+          {/* ────── TOOLS TAB ────── */}
+          <TabsContent value="tools" className="space-y-4 mt-4">
+            <ConnectToolsTab />
+          </TabsContent>
+
+          {/* ────── COMMUNITY TAB ────── */}
+          <TabsContent value="community" className="space-y-4 mt-4">
+            <ConnectCommunityTab />
+          </TabsContent>
+
+          {/* ────── HEALTH TAB ────── */}
+          <TabsContent value="health" className="space-y-4 mt-4">
+            <ConnectHealthTab />
+          </TabsContent>
         </Tabs>
 
         {/* Progressive Unlocks — below main content */}
