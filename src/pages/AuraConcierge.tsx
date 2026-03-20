@@ -89,10 +89,12 @@ export default function AuraConcierge() {
     else toast.success("Trial started! You have 7 days to explore Concierge.");
   };
 
+  const canBypassLock = hasConcierge || isAdmin;
+
   const handleSubmit = async () => {
     if (!title.trim()) { toast.error("Title is required"); return; }
     setSubmitting(true);
-    const { error } = await createRequest({ title: title.trim(), description: description.trim(), category });
+    const { error } = await createRequest({ title: title.trim(), description: description.trim(), category }, canBypassLock);
     setSubmitting(false);
     if (error) { toast.error(error); return; }
     toast.success("Request submitted!");
