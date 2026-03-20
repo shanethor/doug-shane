@@ -394,6 +394,10 @@ export default function AuraConnect() {
                 <RotateCcw className="h-3.5 w-3.5 hidden sm:inline" />
                 Cadence
               </TabsTrigger>
+              <TabsTrigger value="network" className="gap-1.5 text-xs sm:text-sm">
+                <Network className="h-3.5 w-3.5 hidden sm:inline" />
+                Network
+              </TabsTrigger>
               <TabsTrigger value="health" className="gap-1.5 text-xs sm:text-sm">
                 <Heart className="h-3.5 w-3.5 hidden sm:inline" />
                 Health
