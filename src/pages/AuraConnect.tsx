@@ -24,6 +24,7 @@ import ConnectCommunityTab from "@/components/connect/ConnectCommunityTab";
 import ConnectToolsTab from "@/components/connect/ConnectToolsTab";
 import ConnectReferralsTab from "@/components/connect/ConnectReferralsTab";
 import ConnectHealthTab from "@/components/connect/ConnectHealthTab";
+import ConnectCadenceTab from "@/components/connect/ConnectCadenceTab";
 import { ConnectedAccountsStatus } from "@/components/ConnectedAccountsStatus";
 import { ProgressiveUnlocks } from "@/components/ProgressiveUnlocks";
 import { toast } from "sonner";
