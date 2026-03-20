@@ -210,33 +210,14 @@ export default function LandingPage() {
         </div>
 
         {/* ═══ HERO ═══ */}
-        <section className="relative min-h-screen flex items-center justify-center">
+        <section className="relative min-h-screen flex items-start justify-center pt-[28vh] max-sm:pt-[22vh]">
           {/* BG Image */}
            <div className="absolute top-0 left-0 right-0 h-[140%] overflow-hidden pointer-events-none">
             <div
               className="absolute inset-0 bg-cover bg-no-repeat bg-center portrait:bg-[url('/images/bg-portrait.png')] landscape:bg-[url('/images/bg-wide.png')]"
             />
-            <div className="absolute inset-0 bg-gradient-to-b from-[#08080A]/30 via-[#08080A]/20 via-[35%] to-[#08080A]" />
+            <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(8,8,10,0.25) 0%, rgba(8,8,10,0.15) 25%, rgba(8,8,10,0.4) 50%, rgba(8,8,10,0.85) 65%, #08080A 78%)" }} />
             <div className="absolute inset-0 bg-[linear-gradient(90deg,#08080A_0%,transparent_8%,transparent_92%,#08080A_100%)]" />
-          </div>
-
-          {/* Orbit rings */}
-          <div className="absolute inset-0 z-[1] pointer-events-none flex items-center justify-center">
-            <div className="relative w-[700px] h-[700px] max-md:w-[450px] max-md:h-[450px] max-sm:w-[360px] max-sm:h-[360px]">
-              <div className="absolute border border-dashed border-white/10 rounded-full w-[500px] h-[500px] max-md:w-[340px] max-md:h-[340px] max-sm:w-[280px] max-sm:h-[280px] top-1/2 left-1/2 animate-[orbitSpin1_35s_linear_infinite]">
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 max-sm:w-[34px] max-sm:h-[34px] rounded-full bg-[#101012]/85 border border-white/10 flex items-center justify-center backdrop-blur-lg animate-[counterSpin1_35s_linear_infinite]" style={{ borderColor: "rgba(10,138,143,0.3)" }}>
-                  <BranchLogo color="#01696F" size={22} />
-                </div>
-                <div className="absolute bottom-[15%] right-0 translate-x-1/2 translate-y-1/2 w-12 h-12 max-sm:w-[34px] max-sm:h-[34px] rounded-full bg-[#101012]/85 border border-white/10 flex items-center justify-center backdrop-blur-lg animate-[counterSpin1_35s_linear_infinite]" style={{ borderColor: "rgba(212,136,74,0.3)" }}>
-                  <BranchLogo color="#B87333" size={22} />
-                </div>
-              </div>
-              <div className="absolute border border-dashed border-white/10 rounded-full w-[680px] h-[680px] max-md:w-[440px] max-md:h-[440px] max-sm:w-[360px] max-sm:h-[360px] top-1/2 left-1/2 animate-[orbitSpin2_50s_linear_infinite]">
-                <div className="absolute top-1/2 right-0 translate-x-1/2 -translate-y-1/2 w-12 h-12 max-sm:w-[34px] max-sm:h-[34px] rounded-full bg-[#101012]/85 border border-white/10 flex items-center justify-center backdrop-blur-lg animate-[counterSpin2_50s_linear_infinite]" style={{ borderColor: "rgba(201,168,76,0.3)" }}>
-                  <BranchLogo color="#C9A84C" size={22} />
-                </div>
-              </div>
-            </div>
           </div>
 
           {/* Hero content */}
@@ -245,11 +226,12 @@ export default function LandingPage() {
             <h1 className="text-[clamp(40px,6vw,80px)] max-sm:text-4xl font-bold leading-[1] tracking-[-0.04em] text-white mb-4">
               Intelligence Runs on
             </h1>
-            <div className="inline-block bg-white/[0.06] border border-white/10 rounded-[20px] max-sm:rounded-2xl px-10 max-sm:px-6 py-2 pb-3 backdrop-blur-2xl">
-              <span className="inline-block tracking-[0.12em] max-sm:tracking-[0.08em] text-[clamp(52px,8vw,110px)] font-bold bg-gradient-to-br from-[#F0F0F4] via-[#C0C0C8] via-[40%] to-[#C8C8D0] bg-clip-text text-transparent drop-shadow-[0_0_40px_rgba(255,255,255,0.1)]">
-                AURA
-              </span>
-            </div>
+            <span
+              className="inline-block tracking-[0.12em] max-sm:tracking-[0.08em] text-[clamp(52px,8vw,110px)] font-bold bg-gradient-to-br from-[#F0F0F4] via-[#C0C0C8] via-[40%] to-[#C8C8D0] bg-clip-text text-transparent"
+              style={{ textShadow: "0 0 80px rgba(255,255,255,0.15), 0 0 30px rgba(255,255,255,0.08)" }}
+            >
+              AURA
+            </span>
             <p className="text-[17px] font-medium text-[#E4E4E7] max-w-[520px] mx-auto mt-6 leading-[1.65]">
               One platform powering <span className="text-[#0A8A8F] font-medium">insurance</span>,{" "}
               <span className="text-[#D4884A] font-medium">property</span>, and{" "}
