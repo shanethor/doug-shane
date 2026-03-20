@@ -586,6 +586,113 @@ export type Database = {
           },
         ]
       }
+      connect_community_posts: {
+        Row: {
+          body: string
+          category: string
+          created_at: string
+          id: string
+          likes_count: number
+          post_type: string
+          replies_count: number
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          body: string
+          category?: string
+          created_at?: string
+          id?: string
+          likes_count?: number
+          post_type?: string
+          replies_count?: number
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          category?: string
+          created_at?: string
+          id?: string
+          likes_count?: number
+          post_type?: string
+          replies_count?: number
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      connect_post_likes: {
+        Row: {
+          created_at: string
+          id: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "connect_post_likes_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "connect_community_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      connect_referrals: {
+        Row: {
+          created_at: string
+          id: string
+          outcome: string | null
+          recipient_company: string | null
+          recipient_name: string
+          referred_contact_company: string | null
+          referred_contact_name: string
+          sender_user_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          outcome?: string | null
+          recipient_company?: string | null
+          recipient_name: string
+          referred_contact_company?: string | null
+          referred_contact_name: string
+          sender_user_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          outcome?: string | null
+          recipient_company?: string | null
+          recipient_name?: string
+          referred_contact_company?: string | null
+          referred_contact_name?: string
+          sender_user_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       contact_merge_queue: {
         Row: {
           confidence: number | null
@@ -2513,6 +2620,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      relationship_health_checks: {
+        Row: {
+          checked_at: string
+          contact_company: string | null
+          contact_name: string
+          health_score: number
+          id: string
+          notes: string | null
+          user_id: string
+        }
+        Insert: {
+          checked_at?: string
+          contact_company?: string | null
+          contact_name: string
+          health_score: number
+          id?: string
+          notes?: string | null
+          user_id: string
+        }
+        Update: {
+          checked_at?: string
+          contact_company?: string | null
+          contact_name?: string
+          health_score?: number
+          id?: string
+          notes?: string | null
+          user_id?: string
+        }
+        Relationships: []
       }
       synced_emails: {
         Row: {
