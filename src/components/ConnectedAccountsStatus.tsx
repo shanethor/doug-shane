@@ -962,56 +962,80 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
   };
 
   // ─── Generic Source Import Metadata ───
-  const SOURCE_IMPORT_META: Record<string, { title: string; instructions: string; acceptFiles: string; parsePaste: boolean }> = {
+  const SOURCE_IMPORT_META: Record<string, { title: string; instructions: string; acceptFiles: string; parsePaste: boolean; hasApi: boolean; apiLabel?: string; apiAction?: string; apiInstructions?: string }> = {
     slack: {
       title: "Slack Workspace",
       instructions: "Export your Slack workspace members: Admin Panel → Members → Export as CSV. Or paste member names/emails below.",
       acceptFiles: ".csv,.json", parsePaste: true,
+      hasApi: true, apiLabel: "Sync via Slack API",
+      apiAction: "sync_slack_api",
+      apiInstructions: "Requires Slack connector. We'll pull all workspace members automatically.",
     },
     teams: {
       title: "Microsoft Teams",
       instructions: "Export team members from Teams Admin Center → Users → Export. Or paste names/emails below.",
       acceptFiles: ".csv,.xlsx", parsePaste: true,
+      hasApi: true, apiLabel: "Sync via Microsoft Graph",
+      apiAction: "sync_teams_api",
+      apiInstructions: "Uses your connected Outlook account to pull org directory via Microsoft Graph API.",
     },
     eventbrite: {
       title: "Eventbrite",
       instructions: "Export attendees from Eventbrite: Manage Event → Orders → Download Attendee Summary (CSV). Or paste names/emails.",
       acceptFiles: ".csv", parsePaste: true,
+      hasApi: true, apiLabel: "Sync via Eventbrite API",
+      apiAction: "sync_eventbrite_api",
+      apiInstructions: "Get your private token from eventbrite.com/platform/api-keys",
     },
     meetup: {
       title: "Meetup",
       instructions: "Export RSVP lists from Meetup: Manage Group → Members → Download Members. Or paste names/emails.",
       acceptFiles: ".csv", parsePaste: true,
+      hasApi: false,
+      apiInstructions: "Meetup's API requires OAuth — apply at meetup.com/api/. Manual import recommended for now.",
     },
     alignable: {
       title: "Alignable",
       instructions: "Export your Alignable connections: Settings → Export Connections. Or paste names/emails/companies below.",
       acceptFiles: ".csv", parsePaste: true,
+      hasApi: false,
+      apiInstructions: "Alignable has no public API. Use CSV export from your account settings.",
     },
     strava: {
       title: "Strava",
       instructions: "Download your Strava data: Settings → My Account → Download Your Data. Upload the followers CSV, or paste names below.",
       acceptFiles: ".csv,.json,.zip", parsePaste: true,
+      hasApi: true, apiLabel: "Sync via Strava API",
+      apiAction: "sync_strava_api",
+      apiInstructions: "Create an API app at strava.com/settings/api to get Client ID & Secret.",
     },
     peloton: {
       title: "Peloton",
       instructions: "Peloton doesn't offer direct export. Paste follower names/usernames below, or upload a CSV if you've exported via third-party tools.",
       acceptFiles: ".csv", parsePaste: true,
+      hasApi: false,
+      apiInstructions: "Peloton has no public API. Use third-party export tools or paste contacts manually.",
     },
     nextdoor: {
       title: "Nextdoor",
       instructions: "Export your Nextdoor connections or paste neighbor/business names below. Nextdoor API access is limited — manual paste is recommended.",
       acceptFiles: ".csv,.json", parsePaste: true,
+      hasApi: false,
+      apiInstructions: "Nextdoor's API is restricted to verified businesses. Manual import recommended.",
     },
     snapchat: {
       title: "Snapchat",
       instructions: "Request your data: Snapchat → Settings → My Data → Submit Request. Upload the downloaded JSON/ZIP, or paste friend usernames.",
       acceptFiles: ".csv,.json,.zip", parsePaste: true,
+      hasApi: false,
+      apiInstructions: "Snapchat's Snap Kit doesn't expose contact data. Use the data download feature instead.",
     },
     clubhouse: {
       title: "Clubhouse",
       instructions: "Export your Clubhouse followers using third-party tools (export_clubhouse on GitHub). Upload CSV or paste names/handles below.",
       acceptFiles: ".csv", parsePaste: true,
+      hasApi: false,
+      apiInstructions: "Clubhouse has no public API. Use third-party tools or paste contacts.",
     },
   };
 
@@ -1109,7 +1133,49 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
     finally { setActionLoading(null); }
   };
 
-  const GENERIC_SOURCES = ["slack", "teams", "eventbrite", "meetup", "alignable", "strava", "peloton", "nextdoor", "snapchat", "clubhouse"];
+   const GENERIC_SOURCES = ["slack", "teams", "eventbrite", "meetup", "alignable", "strava", "peloton", "nextdoor", "snapchat", "clubhouse"];
+
+  // ─── Live API Sync for supported sources ───
+  const handleApiSync = async (source: string) => {
+    const meta = SOURCE_IMPORT_META[source];
+    if (!meta?.hasApi || !meta.apiAction) return;
+    setShowSourceDialog(false);
+    setActionLoading(source);
+    try {
+      const headers = await getAuthHeaders();
+      const resp = await fetch(SYNC_URL, {
+        method: "POST", headers,
+        body: JSON.stringify({ action: meta.apiAction }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) {
+        if (data.needs_connector) {
+          toast.error(data.error || `${meta.title} connector not configured.`);
+        } else if (data.needs_secret) {
+          toast.error(data.error || `API key needed for ${meta.title}.`);
+        } else if (data.needs_outlook) {
+          toast.error(data.error || "Connect Outlook first.");
+        } else if (data.needs_oauth) {
+          // For OAuth flows like Strava, open the auth URL
+          if (data.auth_url) {
+            toast.info("Redirecting to authorize...");
+            window.open(data.auth_url, "_blank");
+          } else {
+            toast.error("OAuth setup required.");
+          }
+        } else {
+          toast.error(data.error || "API sync failed");
+        }
+        return;
+      }
+      toast.success(`Synced ${data.imported} contacts from ${meta.title} via API`);
+      refresh();
+    } catch {
+      toast.error(`Failed to sync ${meta.title}`);
+    } finally {
+      setActionLoading(null);
+    }
+  };
 
   // ─── Connect action by account id ───
   const handleConnect = (id: string) => {
@@ -1265,7 +1331,9 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
                 <p className="text-xs text-muted-foreground">Use Contact Picker or upload CSV/vCard</p>
               ) : a.id === "outlook_contacts" ? (
                 <p className="text-xs text-muted-foreground">Sync contacts from Outlook/Office 365</p>
-              ) : GENERIC_SOURCES.includes(a.id) && !a.connected ? (
+              ) : GENERIC_SOURCES.includes(a.id) && SOURCE_IMPORT_META[a.id]?.hasApi ? (
+                <p className="text-xs text-muted-foreground">API sync + manual import available</p>
+              ) : GENERIC_SOURCES.includes(a.id) ? (
                 <p className="text-xs text-muted-foreground">Upload CSV or paste contacts</p>
               ) : (
                 <p className="text-xs text-muted-foreground">Not connected</p>
@@ -1367,7 +1435,7 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
           <strong>LinkedIn:</strong> Settings → Data Privacy → Get a copy of your data → Select "Connections" → Download CSV.
         </p>
         <p className="text-[11px] text-muted-foreground leading-relaxed">
-          <strong>All sources:</strong> Click "Import" on any source to upload a CSV/JSON file or paste contact data directly. Live API sync is coming soon for select platforms.
+          <strong>All sources:</strong> Click "Import" to upload CSV/JSON, paste contacts, or use live API sync (Slack, Teams, Eventbrite, Strava). API keys may be needed for some platforms.
         </p>
       </div>
 
@@ -1624,7 +1692,7 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
 
       {/* Generic Source Import Dialog */}
       <Dialog open={showSourceDialog} onOpenChange={setShowSourceDialog}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Upload className="h-5 w-5 text-primary" />
@@ -1635,6 +1703,35 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 mt-2">
+            {/* Live API Sync (if available) */}
+            {SOURCE_IMPORT_META[activeSource]?.hasApi && (
+              <>
+                <Button
+                  className="w-full justify-start gap-3 h-auto py-3"
+                  disabled={actionLoading === activeSource}
+                  onClick={() => handleApiSync(activeSource)}
+                >
+                  {actionLoading === activeSource ? (
+                    <Loader2 className="h-4 w-4 animate-spin text-primary-foreground shrink-0" />
+                  ) : (
+                    <RefreshCw className="h-4 w-4 shrink-0" />
+                  )}
+                  <div className="text-left">
+                    <p className="text-sm font-medium">{SOURCE_IMPORT_META[activeSource]?.apiLabel || "Sync via API"}</p>
+                    <p className="text-[11px] opacity-80">
+                      {SOURCE_IMPORT_META[activeSource]?.apiInstructions || "Pull contacts automatically via API."}
+                    </p>
+                  </div>
+                </Button>
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-background px-2 text-muted-foreground">or import manually</span>
+                  </div>
+                </div>
+              </>
+            )}
+
             {/* File Upload */}
             <Button
               variant="outline"
@@ -1669,6 +1766,7 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
               <p className="text-[10px] text-muted-foreground">One contact per line: Name, Email, Phone, Company (any order, comma or tab separated)</p>
               <Button
                 className="w-full gap-1"
+                variant="outline"
                 disabled={!sourceContacts.trim() || actionLoading === activeSource}
                 onClick={handleGenericSourcePaste}
               >
@@ -1677,12 +1775,14 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
               </Button>
             </div>
 
-            {/* API Coming Soon badge */}
-            <div className="rounded-md border border-dashed border-primary/30 bg-primary/5 p-3">
-              <div className="flex items-center gap-2">
-                <Badge variant="outline" className="text-[10px] border-primary/40 text-primary">Coming Soon</Badge>
+            {/* API status info */}
+            <div className={`rounded-md border p-3 ${SOURCE_IMPORT_META[activeSource]?.hasApi ? "border-success/30 bg-success/5" : "border-dashed border-muted-foreground/30 bg-muted/30"}`}>
+              <div className="flex items-start gap-2">
+                <Badge variant="outline" className={`text-[10px] shrink-0 ${SOURCE_IMPORT_META[activeSource]?.hasApi ? "border-success/40 text-success" : "border-muted-foreground/40 text-muted-foreground"}`}>
+                  {SOURCE_IMPORT_META[activeSource]?.hasApi ? "API Ready" : "Manual Only"}
+                </Badge>
                 <p className="text-[11px] text-muted-foreground">
-                  Live API sync for {SOURCE_IMPORT_META[activeSource]?.title || activeSource} is in development. Manual import is available now.
+                  {SOURCE_IMPORT_META[activeSource]?.apiInstructions || `Manual import available for ${SOURCE_IMPORT_META[activeSource]?.title || activeSource}.`}
                 </p>
               </div>
             </div>
