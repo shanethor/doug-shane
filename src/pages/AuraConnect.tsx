@@ -18,7 +18,7 @@ import {
   AlertTriangle, Mail, MessageSquare, Send, Check, X,
   Target, Handshake, Bell, RefreshCw, Settings, Flame,
   Crown, Link2, ChevronRight, Linkedin, Clock,
-  MessageCircle, Wrench, Heart, RotateCcw, Rss,
+  MessageCircle, Wrench, Heart, RotateCcw, Rss, Sparkles,
 } from "lucide-react";
 import ConnectCommunityTab from "@/components/connect/ConnectCommunityTab";
 import ConnectToolsTab from "@/components/connect/ConnectToolsTab";
