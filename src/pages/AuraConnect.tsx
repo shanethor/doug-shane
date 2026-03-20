@@ -829,6 +829,11 @@ export default function AuraConnect() {
             <ConnectCadenceTab />
           </TabsContent>
 
+          {/* ────── NETWORK TAB ────── */}
+          <TabsContent value="network" className="space-y-4 mt-4">
+            <ConnectNetworkTab />
+          </TabsContent>
+
           {/* ────── HEALTH TAB ────── */}
           <TabsContent value="health" className="space-y-4 mt-4">
             <ConnectHealthTab />
