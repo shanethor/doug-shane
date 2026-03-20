@@ -2029,6 +2029,86 @@ export type Database = {
         }
         Relationships: []
       }
+      marketing_flyers: {
+        Row: {
+          brand_colors: Json
+          brand_name: string
+          bullets: Json
+          calendar_event_id: string | null
+          created_at: string
+          cta: string
+          date_time: string | null
+          disclaimer: string | null
+          evergreen: boolean
+          id: string
+          location: string | null
+          logo_url: string | null
+          raw_prompt: string
+          result_image_url: string | null
+          result_metadata: Json | null
+          status: string
+          structured_prompt: string
+          title: string
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          brand_colors?: Json
+          brand_name?: string
+          bullets?: Json
+          calendar_event_id?: string | null
+          created_at?: string
+          cta?: string
+          date_time?: string | null
+          disclaimer?: string | null
+          evergreen?: boolean
+          id?: string
+          location?: string | null
+          logo_url?: string | null
+          raw_prompt?: string
+          result_image_url?: string | null
+          result_metadata?: Json | null
+          status?: string
+          structured_prompt?: string
+          title?: string
+          type?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          brand_colors?: Json
+          brand_name?: string
+          bullets?: Json
+          calendar_event_id?: string | null
+          created_at?: string
+          cta?: string
+          date_time?: string | null
+          disclaimer?: string | null
+          evergreen?: boolean
+          id?: string
+          location?: string | null
+          logo_url?: string | null
+          raw_prompt?: string
+          result_image_url?: string | null
+          result_metadata?: Json | null
+          status?: string
+          structured_prompt?: string
+          title?: string
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_flyers_calendar_event_id_fkey"
+            columns: ["calendar_event_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       network_connections: {
         Row: {
           contact_count: number | null
