@@ -455,6 +455,65 @@ serve(async (req) => {
       });
     }
 
+    // ─── Generic Source Import (for any platform CSV/paste/file) ───
+    if (action === "import_source_contacts") {
+      const { source, contacts: rawContacts } = body;
+      const validSources = [
+        "slack", "teams", "eventbrite", "meetup", "alignable",
+        "strava", "peloton", "nextdoor", "snapchat", "clubhouse",
+        "discord", "steam", "whatsapp", "telegram",
+      ];
+      if (!source || !validSources.includes(source)) {
+        return new Response(JSON.stringify({ error: `Invalid source. Must be one of: ${validSources.join(", ")}` }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      if (!Array.isArray(rawContacts) || rawContacts.length === 0) {
+        return new Response(JSON.stringify({ error: "No contacts provided" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const contacts = rawContacts.slice(0, 5000).map((c: any, idx: number) => ({
+        user_id: userId,
+        source,
+        external_id: c.external_id || `${source}-${idx}-${c.name || c.full_name || c.email || idx}`,
+        full_name: c.full_name || c.name || c.display_name || c.displayName || null,
+        email: c.email || c.emailAddress || null,
+        phone: c.phone || c.tel || null,
+        company: c.company || c.organization || null,
+        title: c.title || c.jobTitle || c.position || null,
+        linkedin_url: c.linkedin_url || c.linkedinUrl || null,
+        location: c.location || c.city || null,
+        metadata: { raw: c, imported_from: source },
+      })).filter((c: any) => c.full_name || c.email || c.phone);
+
+      if (contacts.length > 0) {
+        for (let i = 0; i < contacts.length; i += 500) {
+          const batch = contacts.slice(i, i + 500);
+          const { error } = await adminClient
+            .from("network_contacts")
+            .upsert(batch, { onConflict: "user_id,source,external_id" });
+          if (error) console.error(`${source} upsert error:`, error);
+        }
+      }
+
+      await adminClient
+        .from("network_connections")
+        .upsert({
+          user_id: userId,
+          source,
+          status: "connected",
+          last_sync_at: new Date().toISOString(),
+          contact_count: contacts.length,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: "user_id,source" });
+
+      return new Response(JSON.stringify({ success: true, imported: contacts.length, source }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // ─── Get Connection Status ───
     if (action === "status") {
       const { data: connections } = await adminClient

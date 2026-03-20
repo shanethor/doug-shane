@@ -8,7 +8,8 @@ import {
   Mail, Users, Linkedin, Phone, Instagram,
   CheckCircle, Circle, Settings, Network, Loader2,
   Upload, RefreshCw, Unlink, AlertTriangle, Plus, ClipboardPaste,
-  ChevronDown, ChevronUp,
+  ChevronDown, ChevronUp, MessageSquare, Gamepad2, Dumbbell, MapPin,
+  Camera, Headphones, Globe, Hash,
 } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
@@ -180,6 +181,128 @@ export function useConnectedAccounts() {
         canConnect: true,
         canDisconnect: !!(networkConns["social_instagram"] || networkConns["social_facebook"] || networkConns["social_x"]),
       },
+      // ─── Professional Networks ───
+      {
+        id: "slack",
+        label: "Slack",
+        icon: <Hash className="h-4 w-4" />,
+        level: "Optional",
+        connected: !!networkConns["slack"],
+        detail: networkConns["slack"] ? `${networkConns["slack"].contact_count} members imported` : undefined,
+        contactCount: networkConns["slack"]?.contact_count,
+        lastSync: networkConns["slack"]?.last_sync_at,
+        canConnect: true,
+        canDisconnect: !!networkConns["slack"],
+      },
+      {
+        id: "teams",
+        label: "Microsoft Teams",
+        icon: <Users className="h-4 w-4" />,
+        level: "Optional",
+        connected: !!networkConns["teams"],
+        detail: networkConns["teams"] ? `${networkConns["teams"].contact_count} contacts imported` : undefined,
+        contactCount: networkConns["teams"]?.contact_count,
+        lastSync: networkConns["teams"]?.last_sync_at,
+        canConnect: true,
+        canDisconnect: !!networkConns["teams"],
+      },
+      {
+        id: "eventbrite",
+        label: "Eventbrite",
+        icon: <Globe className="h-4 w-4" />,
+        level: "Optional",
+        connected: !!networkConns["eventbrite"],
+        detail: networkConns["eventbrite"] ? `${networkConns["eventbrite"].contact_count} attendees imported` : undefined,
+        contactCount: networkConns["eventbrite"]?.contact_count,
+        lastSync: networkConns["eventbrite"]?.last_sync_at,
+        canConnect: true,
+        canDisconnect: !!networkConns["eventbrite"],
+      },
+      {
+        id: "meetup",
+        label: "Meetup",
+        icon: <Users className="h-4 w-4" />,
+        level: "Optional",
+        connected: !!networkConns["meetup"],
+        detail: networkConns["meetup"] ? `${networkConns["meetup"].contact_count} contacts imported` : undefined,
+        contactCount: networkConns["meetup"]?.contact_count,
+        lastSync: networkConns["meetup"]?.last_sync_at,
+        canConnect: true,
+        canDisconnect: !!networkConns["meetup"],
+      },
+      {
+        id: "alignable",
+        label: "Alignable",
+        icon: <Network className="h-4 w-4" />,
+        level: "Optional",
+        connected: !!networkConns["alignable"],
+        detail: networkConns["alignable"] ? `${networkConns["alignable"].contact_count} connections imported` : undefined,
+        contactCount: networkConns["alignable"]?.contact_count,
+        lastSync: networkConns["alignable"]?.last_sync_at,
+        canConnect: true,
+        canDisconnect: !!networkConns["alignable"],
+      },
+      // ─── Fitness & Community ───
+      {
+        id: "strava",
+        label: "Strava",
+        icon: <Dumbbell className="h-4 w-4" />,
+        level: "Optional",
+        connected: !!networkConns["strava"],
+        detail: networkConns["strava"] ? `${networkConns["strava"].contact_count} athletes imported` : undefined,
+        contactCount: networkConns["strava"]?.contact_count,
+        lastSync: networkConns["strava"]?.last_sync_at,
+        canConnect: true,
+        canDisconnect: !!networkConns["strava"],
+      },
+      {
+        id: "peloton",
+        label: "Peloton",
+        icon: <Dumbbell className="h-4 w-4" />,
+        level: "Optional",
+        connected: !!networkConns["peloton"],
+        detail: networkConns["peloton"] ? `${networkConns["peloton"].contact_count} followers imported` : undefined,
+        contactCount: networkConns["peloton"]?.contact_count,
+        lastSync: networkConns["peloton"]?.last_sync_at,
+        canConnect: true,
+        canDisconnect: !!networkConns["peloton"],
+      },
+      {
+        id: "nextdoor",
+        label: "Nextdoor",
+        icon: <MapPin className="h-4 w-4" />,
+        level: "Optional",
+        connected: !!networkConns["nextdoor"],
+        detail: networkConns["nextdoor"] ? `${networkConns["nextdoor"].contact_count} neighbors imported` : undefined,
+        contactCount: networkConns["nextdoor"]?.contact_count,
+        lastSync: networkConns["nextdoor"]?.last_sync_at,
+        canConnect: true,
+        canDisconnect: !!networkConns["nextdoor"],
+      },
+      {
+        id: "snapchat",
+        label: "Snapchat",
+        icon: <Camera className="h-4 w-4" />,
+        level: "Optional",
+        connected: !!networkConns["snapchat"],
+        detail: networkConns["snapchat"] ? `${networkConns["snapchat"].contact_count} friends imported` : undefined,
+        contactCount: networkConns["snapchat"]?.contact_count,
+        lastSync: networkConns["snapchat"]?.last_sync_at,
+        canConnect: true,
+        canDisconnect: !!networkConns["snapchat"],
+      },
+      {
+        id: "clubhouse",
+        label: "Clubhouse",
+        icon: <Headphones className="h-4 w-4" />,
+        level: "Optional",
+        connected: !!networkConns["clubhouse"],
+        detail: networkConns["clubhouse"] ? `${networkConns["clubhouse"].contact_count} contacts imported` : undefined,
+        contactCount: networkConns["clubhouse"]?.contact_count,
+        lastSync: networkConns["clubhouse"]?.last_sync_at,
+        canConnect: true,
+        canDisconnect: !!networkConns["clubhouse"],
+      },
     ]);
     setLoading(false);
   }, [user]);
@@ -242,6 +365,10 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
   const [myProfileUrls, setMyProfileUrls] = useState<{instagram: string; facebook: string; x: string}>({ instagram: "", facebook: "", x: "" });
   const [savedProfiles, setSavedProfiles] = useState<{platform: string; url: string; last_sync?: string; contact_count?: number}[]>([]);
   const [profilesLoaded, setProfilesLoaded] = useState(false);
+  const [showSourceDialog, setShowSourceDialog] = useState(false);
+  const [activeSource, setActiveSource] = useState<string>("");
+  const [sourceContacts, setSourceContacts] = useState("");
+  const sourceFileRef = useRef<HTMLInputElement>(null);
 
   const fetchGmailAccounts = useCallback(async (): Promise<{id: string; email: string}[]> => {
     try {
@@ -834,6 +961,156 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
     }
   };
 
+  // ─── Generic Source Import Metadata ───
+  const SOURCE_IMPORT_META: Record<string, { title: string; instructions: string; acceptFiles: string; parsePaste: boolean }> = {
+    slack: {
+      title: "Slack Workspace",
+      instructions: "Export your Slack workspace members: Admin Panel → Members → Export as CSV. Or paste member names/emails below.",
+      acceptFiles: ".csv,.json", parsePaste: true,
+    },
+    teams: {
+      title: "Microsoft Teams",
+      instructions: "Export team members from Teams Admin Center → Users → Export. Or paste names/emails below.",
+      acceptFiles: ".csv,.xlsx", parsePaste: true,
+    },
+    eventbrite: {
+      title: "Eventbrite",
+      instructions: "Export attendees from Eventbrite: Manage Event → Orders → Download Attendee Summary (CSV). Or paste names/emails.",
+      acceptFiles: ".csv", parsePaste: true,
+    },
+    meetup: {
+      title: "Meetup",
+      instructions: "Export RSVP lists from Meetup: Manage Group → Members → Download Members. Or paste names/emails.",
+      acceptFiles: ".csv", parsePaste: true,
+    },
+    alignable: {
+      title: "Alignable",
+      instructions: "Export your Alignable connections: Settings → Export Connections. Or paste names/emails/companies below.",
+      acceptFiles: ".csv", parsePaste: true,
+    },
+    strava: {
+      title: "Strava",
+      instructions: "Download your Strava data: Settings → My Account → Download Your Data. Upload the followers CSV, or paste names below.",
+      acceptFiles: ".csv,.json,.zip", parsePaste: true,
+    },
+    peloton: {
+      title: "Peloton",
+      instructions: "Peloton doesn't offer direct export. Paste follower names/usernames below, or upload a CSV if you've exported via third-party tools.",
+      acceptFiles: ".csv", parsePaste: true,
+    },
+    nextdoor: {
+      title: "Nextdoor",
+      instructions: "Export your Nextdoor connections or paste neighbor/business names below. Nextdoor API access is limited — manual paste is recommended.",
+      acceptFiles: ".csv,.json", parsePaste: true,
+    },
+    snapchat: {
+      title: "Snapchat",
+      instructions: "Request your data: Snapchat → Settings → My Data → Submit Request. Upload the downloaded JSON/ZIP, or paste friend usernames.",
+      acceptFiles: ".csv,.json,.zip", parsePaste: true,
+    },
+    clubhouse: {
+      title: "Clubhouse",
+      instructions: "Export your Clubhouse followers using third-party tools (export_clubhouse on GitHub). Upload CSV or paste names/handles below.",
+      acceptFiles: ".csv", parsePaste: true,
+    },
+  };
+
+  const handleGenericSourceFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !activeSource) return;
+    setShowSourceDialog(false);
+    setActionLoading(activeSource);
+    try {
+      const text = await file.text();
+      let contacts: any[] = [];
+
+      if (file.name.endsWith(".json")) {
+        try {
+          const parsed = JSON.parse(text);
+          contacts = Array.isArray(parsed) ? parsed : (parsed.contacts || parsed.members || parsed.attendees || parsed.followers || parsed.friends || []);
+        } catch { toast.error("Invalid JSON file"); return; }
+      } else {
+        // CSV parse
+        const lines = text.split("\n");
+        const headers = lines[0]?.split(",").map((h: string) => h.replace(/"/g, "").trim()) || [];
+        for (let i = 1; i < lines.length; i++) {
+          const vals = lines[i]?.split(",").map((v: string) => v.replace(/"/g, "").trim()) || [];
+          if (!vals.some(Boolean)) continue;
+          const obj: any = {};
+          headers.forEach((h: string, idx: number) => { obj[h.toLowerCase().replace(/\s+/g, "_")] = vals[idx]; });
+          contacts.push({
+            name: obj.name || obj.full_name || obj.display_name || obj.displayname
+              || [obj.first_name || obj.firstname, obj.last_name || obj.lastname].filter(Boolean).join(" ") || null,
+            email: obj.email || obj.email_address || null,
+            phone: obj.phone || obj.mobile || obj.tel || null,
+            company: obj.company || obj.organization || obj.org || null,
+            title: obj.title || obj.job_title || obj.position || null,
+            location: obj.location || obj.city || null,
+          });
+        }
+        contacts = contacts.filter((c: any) => c.name || c.email || c.phone);
+      }
+
+      if (!contacts.length) { toast.error("No contacts found in file"); return; }
+
+      const headers = await getAuthHeaders();
+      const resp = await fetch(SYNC_URL, {
+        method: "POST", headers,
+        body: JSON.stringify({ action: "import_source_contacts", source: activeSource, contacts }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) { toast.error(data.error || "Import failed"); return; }
+      toast.success(`Imported ${data.imported} contacts from ${SOURCE_IMPORT_META[activeSource]?.title || activeSource}`);
+      refresh();
+    } catch { toast.error("Failed to parse file"); }
+    finally {
+      setActionLoading(null);
+      if (sourceFileRef.current) sourceFileRef.current.value = "";
+    }
+  };
+
+  const handleGenericSourcePaste = async () => {
+    if (!sourceContacts.trim() || !activeSource) return;
+    setShowSourceDialog(false);
+    setActionLoading(activeSource);
+    try {
+      const lines = sourceContacts.split("\n").filter((l: string) => l.trim());
+      const contacts = lines.map((line: string) => {
+        const emailMatch = line.match(/[\w.+-]+@[\w.-]+\.\w+/);
+        const phoneMatch = line.match(/[\d+() -]{7,}/);
+        const email = emailMatch?.[0] || null;
+        const phone = phoneMatch?.[0]?.trim() || null;
+        let name = line;
+        if (email) name = name.replace(email, "");
+        if (phone && phoneMatch) name = name.replace(phoneMatch[0], "");
+        name = name.replace(/[,;|]+/g, " ").trim();
+        const parts = name.split(/\t/).map((p: string) => p.trim());
+        return {
+          name: parts[0] || null,
+          email,
+          phone,
+          company: parts[1] || null,
+        };
+      }).filter((c: any) => c.name || c.email || c.phone);
+
+      if (!contacts.length) { toast.error("No contacts found in text"); setActionLoading(null); return; }
+
+      const headers = await getAuthHeaders();
+      const resp = await fetch(SYNC_URL, {
+        method: "POST", headers,
+        body: JSON.stringify({ action: "import_source_contacts", source: activeSource, contacts }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) { toast.error(data.error || "Import failed"); return; }
+      toast.success(`Imported ${data.imported} contacts from ${SOURCE_IMPORT_META[activeSource]?.title || activeSource}`);
+      setSourceContacts("");
+      refresh();
+    } catch { toast.error("Failed to import contacts"); }
+    finally { setActionLoading(null); }
+  };
+
+  const GENERIC_SOURCES = ["slack", "teams", "eventbrite", "meetup", "alignable", "strava", "peloton", "nextdoor", "snapchat", "clubhouse"];
+
   // ─── Connect action by account id ───
   const handleConnect = (id: string) => {
     if (id === "email") {
@@ -852,6 +1129,12 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
       setShowSocialDialog(true);
       return;
     }
+    if (GENERIC_SOURCES.includes(id)) {
+      setActiveSource(id);
+      setSourceContacts("");
+      setShowSourceDialog(true);
+      return;
+    }
   };
 
   if (loading) return null;
@@ -861,6 +1144,7 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
     <>
       <input ref={fileInputRef} type="file" accept=".csv" className="hidden" onChange={handleLinkedInFile} />
       <input ref={phoneFileInputRef} type="file" accept=".csv,.vcf" className="hidden" onChange={handlePhoneFile} />
+      <input ref={sourceFileRef} type="file" accept={SOURCE_IMPORT_META[activeSource]?.acceptFiles || ".csv,.json"} className="hidden" onChange={handleGenericSourceFile} />
     </>
   );
 
@@ -981,6 +1265,8 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
                 <p className="text-xs text-muted-foreground">Use Contact Picker or upload CSV/vCard</p>
               ) : a.id === "outlook_contacts" ? (
                 <p className="text-xs text-muted-foreground">Sync contacts from Outlook/Office 365</p>
+              ) : GENERIC_SOURCES.includes(a.id) && !a.connected ? (
+                <p className="text-xs text-muted-foreground">Upload CSV or paste contacts</p>
               ) : (
                 <p className="text-xs text-muted-foreground">Not connected</p>
               )}
@@ -1058,6 +1344,7 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
                  a.id === "linkedin" ? "Upload CSV" :
                  a.id === "phone" ? "Import" :
                  a.id === "social" ? "Import Profiles" :
+                 GENERIC_SOURCES.includes(a.id) ? "Import" :
                  "Connect"}
               </Button>
             )}
@@ -1074,12 +1361,13 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
         </div>
       ))}
 
-      {/* LinkedIn instructions */}
-      <div className="rounded-md bg-muted/50 p-3">
+      {/* Import instructions */}
+      <div className="rounded-md bg-muted/50 p-3 space-y-1.5">
         <p className="text-[11px] text-muted-foreground leading-relaxed">
-          <strong>LinkedIn:</strong> To export your connections, go to LinkedIn →
-          Settings → Data Privacy → Get a copy of your data → Select "Connections" → Download.
-          Upload the resulting CSV file here.
+          <strong>LinkedIn:</strong> Settings → Data Privacy → Get a copy of your data → Select "Connections" → Download CSV.
+        </p>
+        <p className="text-[11px] text-muted-foreground leading-relaxed">
+          <strong>All sources:</strong> Click "Import" on any source to upload a CSV/JSON file or paste contact data directly. Live API sync is coming soon for select platforms.
         </p>
       </div>
 
@@ -1329,6 +1617,74 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
               <p className="text-[11px] text-muted-foreground leading-relaxed">
                 <strong>How it works:</strong> We attempt to scrape your public profile pages for contacts, followers, and connections. Some platforms limit what's publicly visible — we'll extract whatever is available and re-audit on each rescrape.
               </p>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Generic Source Import Dialog */}
+      <Dialog open={showSourceDialog} onOpenChange={setShowSourceDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Upload className="h-5 w-5 text-primary" />
+              Import from {SOURCE_IMPORT_META[activeSource]?.title || activeSource}
+            </DialogTitle>
+            <DialogDescription>
+              {SOURCE_IMPORT_META[activeSource]?.instructions || "Upload a file or paste contacts below."}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 mt-2">
+            {/* File Upload */}
+            <Button
+              variant="outline"
+              className="w-full justify-start gap-3 h-auto py-3"
+              onClick={() => { setShowSourceDialog(false); sourceFileRef.current?.click(); }}
+            >
+              <Upload className="h-4 w-4 text-primary shrink-0" />
+              <div className="text-left">
+                <p className="text-sm font-medium">Upload File</p>
+                <p className="text-[11px] text-muted-foreground">
+                  Accepts {SOURCE_IMPORT_META[activeSource]?.acceptFiles || ".csv, .json"}
+                </p>
+              </div>
+            </Button>
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">or paste contacts</span>
+              </div>
+            </div>
+
+            {/* Paste */}
+            <div className="space-y-2">
+              <Textarea
+                placeholder={"John Smith, john@email.com, Acme Corp\nJane Doe, jane@company.com\nBob Jones, 555-987-6543, Widget Inc"}
+                value={sourceContacts}
+                onChange={(e) => setSourceContacts(e.target.value)}
+                rows={5}
+                className="text-xs font-mono"
+              />
+              <p className="text-[10px] text-muted-foreground">One contact per line: Name, Email, Phone, Company (any order, comma or tab separated)</p>
+              <Button
+                className="w-full gap-1"
+                disabled={!sourceContacts.trim() || actionLoading === activeSource}
+                onClick={handleGenericSourcePaste}
+              >
+                {actionLoading === activeSource ? <Loader2 className="h-3 w-3 animate-spin" /> : <Plus className="h-3 w-3" />}
+                Import Contacts
+              </Button>
+            </div>
+
+            {/* API Coming Soon badge */}
+            <div className="rounded-md border border-dashed border-primary/30 bg-primary/5 p-3">
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="text-[10px] border-primary/40 text-primary">Coming Soon</Badge>
+                <p className="text-[11px] text-muted-foreground">
+                  Live API sync for {SOURCE_IMPORT_META[activeSource]?.title || activeSource} is in development. Manual import is available now.
+                </p>
+              </div>
             </div>
           </div>
         </DialogContent>
