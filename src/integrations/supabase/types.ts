@@ -2757,51 +2757,120 @@ export type Database = {
       }
       touch_cadence_contacts: {
         Row: {
+          anniversary: string | null
+          birthday: string | null
           cadence_days: number
           contact_company: string | null
           contact_email: string | null
           contact_name: string
           created_at: string
+          gift_preferences: string | null
           id: string
           is_active: boolean
+          last_gift_at: string | null
           last_touched_at: string | null
+          milestone_date: string | null
+          milestone_label: string | null
           next_touch_at: string | null
           notes: string | null
+          relationship_tier: string | null
           touch_count: number
+          touch_type: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          anniversary?: string | null
+          birthday?: string | null
           cadence_days?: number
           contact_company?: string | null
           contact_email?: string | null
           contact_name: string
           created_at?: string
+          gift_preferences?: string | null
           id?: string
           is_active?: boolean
+          last_gift_at?: string | null
           last_touched_at?: string | null
+          milestone_date?: string | null
+          milestone_label?: string | null
           next_touch_at?: string | null
           notes?: string | null
+          relationship_tier?: string | null
           touch_count?: number
+          touch_type?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          anniversary?: string | null
+          birthday?: string | null
           cadence_days?: number
           contact_company?: string | null
           contact_email?: string | null
           contact_name?: string
           created_at?: string
+          gift_preferences?: string | null
           id?: string
           is_active?: boolean
+          last_gift_at?: string | null
           last_touched_at?: string | null
+          milestone_date?: string | null
+          milestone_label?: string | null
           next_touch_at?: string | null
           notes?: string | null
+          relationship_tier?: string | null
           touch_count?: number
+          touch_type?: string | null
           updated_at?: string
           user_id?: string
         }
         Relationships: []
+      }
+      touch_history: {
+        Row: {
+          cadence_contact_id: string
+          calendar_event_id: string | null
+          created_at: string
+          id: string
+          note: string | null
+          touch_type: string
+          user_id: string
+        }
+        Insert: {
+          cadence_contact_id: string
+          calendar_event_id?: string | null
+          created_at?: string
+          id?: string
+          note?: string | null
+          touch_type?: string
+          user_id: string
+        }
+        Update: {
+          cadence_contact_id?: string
+          calendar_event_id?: string | null
+          created_at?: string
+          id?: string
+          note?: string | null
+          touch_type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "touch_history_cadence_contact_id_fkey"
+            columns: ["cadence_contact_id"]
+            isOneToOne: false
+            referencedRelation: "touch_cadence_contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "touch_history_calendar_event_id_fkey"
+            columns: ["calendar_event_id"]
+            isOneToOne: false
+            referencedRelation: "calendar_events"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       trusted_devices: {
         Row: {
