@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
-export type FeatureFlag = "connect"; // extend as needed
+export type FeatureFlag = "connect" | "concierge"; // extend as needed
 
 const featureCache: { userId: string | null; features: FeatureFlag[]; ts: number } = {
   userId: null,
