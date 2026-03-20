@@ -15,6 +15,7 @@ import {
   LogOut,
   HeartPulse,
   Network,
+  Sparkles,
 } from "lucide-react";
 import { useState } from "react";
 import {
