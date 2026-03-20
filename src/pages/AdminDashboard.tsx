@@ -952,6 +952,11 @@ export default function AdminDashboard() {
         <TabsContent value="user-features" className="space-y-6">
           <UserFeaturesTab profiles={profiles} adminUsers={adminUsers} userId={user?.id} />
         </TabsContent>
+
+        {/* ── Concierge Queue ── */}
+        <TabsContent value="concierge" className="space-y-6">
+          <AdminConciergeQueue profileMap={profileNameMap} />
+        </TabsContent>
       </Tabs>
 
       {/* Reject policy dialog */}
