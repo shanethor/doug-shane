@@ -37,6 +37,7 @@ export function AppLayout({ children, onLogoClick }: { children: React.ReactNode
 
   const navItems = isBranchRestricted ? [
     ...(hasConnect ? [{ to: "/connect", label: "Connect", icon: Network, key: "connect" }] : []),
+    ...(hasConcierge ? [{ to: "/concierge", label: "Concierge", icon: Sparkles, key: "concierge" }] : []),
     ...(canSeeAdmin ? [{ to: "/admin", label: "Admin", icon: ShieldCheck, key: "admin" }] : []),
     { to: "/settings", label: "Settings", icon: Settings, key: "settings" },
   ] : [
