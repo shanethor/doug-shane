@@ -410,9 +410,8 @@ export default function LandingPage() {
             </div>
           </div>
         </section>
-                  <h2 className="text-[clamp(32px,4vw,48px)] font-bold tracking-[-0.04em] leading-[1.05] text-white mb-5">
-                    Your network,<br />mapped.
-                  </h2>
+
+
                   <div className="text-sm text-[#A1A1AA] mb-6"><strong>$250</strong>/month per seat</div>
                   <p className="text-[15px] text-[#71717A] leading-[1.65] mb-8">
                     Stitch your email, calendar, social, and financial accounts into a unified relationship graph. Find the warmest path to any prospect — no third-party data. Available across all three AURA branches.
