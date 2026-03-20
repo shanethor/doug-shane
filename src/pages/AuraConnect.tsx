@@ -18,7 +18,12 @@ import {
   AlertTriangle, Mail, MessageSquare, Send, Check, X,
   Target, Handshake, Bell, RefreshCw, Settings, Flame,
   Crown, Link2, ChevronRight, Linkedin, Clock,
+  MessageCircle, Wrench, Heart,
 } from "lucide-react";
+import ConnectCommunityTab from "@/components/connect/ConnectCommunityTab";
+import ConnectToolsTab from "@/components/connect/ConnectToolsTab";
+import ConnectReferralsTab from "@/components/connect/ConnectReferralsTab";
+import ConnectHealthTab from "@/components/connect/ConnectHealthTab";
 import { ConnectedAccountsStatus } from "@/components/ConnectedAccountsStatus";
 import { ProgressiveUnlocks } from "@/components/ProgressiveUnlocks";
 import { toast } from "sonner";
