@@ -91,7 +91,7 @@ export function useConcierge() {
     return error;
   }, [user, fetchAll]);
 
-  const createRequest = useCallback(async (data: { title: string; description: string; category: string }, bypassLock?: boolean) => {
+  const createRequest = useCallback(async (data: { title: string; description: string; category: string; contact_preference?: string; contact_phone?: string | null }, bypassLock?: boolean) => {
     if (!user) return { error: "Not authenticated" };
     if (isLocked && !bypassLock) return { error: "Concierge subscription required" };
     if (activeCount >= maxActive) return { error: `Maximum ${maxActive} active requests reached` };

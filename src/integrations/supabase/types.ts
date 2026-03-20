@@ -586,10 +586,53 @@ export type Database = {
           },
         ]
       }
+      concierge_files: {
+        Row: {
+          created_at: string
+          file_name: string
+          file_size: number | null
+          file_url: string
+          id: string
+          request_id: string
+          uploaded_by_role: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          file_name: string
+          file_size?: number | null
+          file_url: string
+          id?: string
+          request_id: string
+          uploaded_by_role?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          file_name?: string
+          file_size?: number | null
+          file_url?: string
+          id?: string
+          request_id?: string
+          uploaded_by_role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "concierge_files_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "concierge_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       concierge_requests: {
         Row: {
           category: string
           completed_at: string | null
+          contact_phone: string | null
+          contact_preference: string
           created_at: string
           description: string
           id: string
@@ -603,6 +646,8 @@ export type Database = {
         Insert: {
           category?: string
           completed_at?: string | null
+          contact_phone?: string | null
+          contact_preference?: string
           created_at?: string
           description?: string
           id?: string
@@ -616,6 +661,8 @@ export type Database = {
         Update: {
           category?: string
           completed_at?: string | null
+          contact_phone?: string | null
+          contact_preference?: string
           created_at?: string
           description?: string
           id?: string
