@@ -219,7 +219,7 @@ export default function LandingPage() {
           </div>
 
           {/* Orbit rings */}
-          <div className="absolute inset-0 z-[1] pointer-events-none flex items-start justify-center pt-[calc(18vh+16vh)] 2xl:pt-[calc(14vh+14vh)]">
+          <div className="absolute inset-0 z-[1] pointer-events-none flex items-center justify-center">
             <div className="relative w-[700px] h-[700px] max-md:w-[450px] max-md:h-[450px] max-sm:w-[360px] max-sm:h-[360px] -translate-y-1/2">
               <div className="absolute border border-dashed border-white/10 rounded-full w-[500px] h-[500px] max-md:w-[340px] max-md:h-[340px] max-sm:w-[280px] max-sm:h-[280px] top-1/2 left-1/2 animate-[orbitSpin1_35s_linear_infinite]">
                 <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 max-sm:w-[34px] max-sm:h-[34px] rounded-full bg-[#101012]/85 border border-white/10 flex items-center justify-center backdrop-blur-lg animate-[counterSpin1_35s_linear_infinite]" style={{ borderColor: "rgba(10,138,143,0.3)" }}>
