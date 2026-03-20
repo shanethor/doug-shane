@@ -89,10 +89,12 @@ export default function AuraConcierge() {
     else toast.success("Trial started! You have 7 days to explore Concierge.");
   };
 
+  const canBypassLock = hasConcierge || isAdmin;
+
   const handleSubmit = async () => {
     if (!title.trim()) { toast.error("Title is required"); return; }
     setSubmitting(true);
-    const { error } = await createRequest({ title: title.trim(), description: description.trim(), category });
+    const { error } = await createRequest({ title: title.trim(), description: description.trim(), category }, canBypassLock);
     setSubmitting(false);
     if (error) { toast.error(error); return; }
     toast.success("Request submitted!");
@@ -121,7 +123,7 @@ export default function AuraConcierge() {
             <h1 className="text-2xl font-bold tracking-tight">AURA Concierge</h1>
             <p className="text-sm text-muted-foreground mt-1">Your on-call build team</p>
           </div>
-          {!isLocked && (
+          {(!isLocked || hasConcierge || isAdmin) && (
             <div className="flex items-center gap-3">
               {isTrialActive && (
                 <Badge variant="outline" className="border-[#F59E0B] text-[#F59E0B]">
@@ -136,11 +138,11 @@ export default function AuraConcierge() {
           )}
         </div>
 
-        {/* Paywall */}
-        {isLocked && <ConciergePaywall onStartTrial={handleStartTrial} />}
+        {/* Paywall — skip if admin or feature-flag granted */}
+        {isLocked && !hasConcierge && !isAdmin && <ConciergePaywall onStartTrial={handleStartTrial} />}
 
         {/* Active user view */}
-        {!isLocked && (
+        {(!isLocked || hasConcierge || isAdmin) && (
           <>
             {/* New request button */}
             <Button
