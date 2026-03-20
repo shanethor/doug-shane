@@ -231,7 +231,6 @@ export default function LandingPage() {
 
           {/* Hero content — logo sits at mountain peak */}
           <div className="relative z-[2] text-center px-8">
-            <img src={auraALogo} alt="AURA" fetchPriority="high" className="w-28 h-auto max-sm:w-20 mx-auto mb-4 drop-shadow-[0_0_60px_rgba(255,255,255,0.15)]" />
             <h1 className="text-[clamp(40px,6vw,80px)] max-sm:text-4xl font-bold leading-[1] tracking-[-0.04em] text-white mb-4">
               Intelligence Runs on
             </h1>
