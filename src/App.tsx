@@ -51,6 +51,7 @@ import LossRunDetail from "./pages/LossRunDetail";
 import LossRunSign from "./pages/LossRunSign";
 import CarrierDirectory from "./pages/CarrierDirectory";
 import AuraConnect from "./pages/AuraConnect";
+import AuraConcierge from "./pages/AuraConcierge";
 import ClientSubmission from "./pages/ClientSubmission";
 import LandingPage from "./pages/LandingPage";
 import BecomePartner from "./pages/BecomePartner";
@@ -154,6 +155,7 @@ const App = () => (
           <Route path="/calendar" element={<Navigate to="/email" replace />} />
           <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
           <Route path="/connect" element={<ProtectedRoute><AuraConnect /></ProtectedRoute>} />
+          <Route path="/concierge" element={<ProtectedRoute><AuraConcierge /></ProtectedRoute>} />
           <Route path="/submit-client" element={<ProtectedRoute><ClientSubmission /></ProtectedRoute>} />
           <Route path="/loss-runs" element={<ProtectedRoute><LossRunDashboard /></ProtectedRoute>} />
           <Route path="/loss-runs/new" element={<ProtectedRoute><LossRunNew /></ProtectedRoute>} />

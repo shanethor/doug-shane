@@ -15,6 +15,7 @@ import {
   LogOut,
   HeartPulse,
   Network,
+  Sparkles,
 } from "lucide-react";
 import { useState } from "react";
 import {
@@ -37,7 +38,7 @@ const ICON_MAP: Record<string, any> = {
 export function MobileBottomNav() {
   const location = useLocation();
   const { canSeeProducerHub, canSeeAdmin, canSeeChat, canSeeEmail, canSeePulse } = useUserRole();
-  const { hasConnect } = useUserFeatures();
+  const { hasConnect, hasConcierge } = useUserFeatures();
   const { branch } = useUserBranch();
   const { signOut } = useAuth();
   const { trainingMode, setTrainingMode } = useTrainingMode();
@@ -156,7 +157,22 @@ export function MobileBottomNav() {
               </Link>
             )}
 
-            {(hiddenTabs.length > 0 || hasConnect) && <div className="border-t my-2" />}
+            {hasConcierge && (
+              <Link
+                to="/concierge"
+                onClick={() => setMoreOpen(false)}
+                className={`flex items-center gap-3 rounded-lg px-3 py-3 text-sm transition-colors ${
+                  isActive("/concierge")
+                    ? "bg-primary/10 text-primary font-medium"
+                    : "text-foreground hover:bg-muted"
+                }`}
+              >
+                <Sparkles className="h-5 w-5" />
+                Concierge
+              </Link>
+            )}
+
+            {(hiddenTabs.length > 0 || hasConnect || hasConcierge) && <div className="border-t my-2" />}
 
             {canSeeAdmin && (
               <Link

@@ -16,10 +16,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   Users, FileText, CheckCircle, Clock, Bug, Lightbulb,
   BarChart3, DollarSign, AlertTriangle, Eye, TrendingUp,
-  XCircle, Edit3, ShieldCheck, Building2, Plus, Trash2, Handshake, ScrollText, Network,
+  XCircle, Edit3, ShieldCheck, Building2, Plus, Trash2, Handshake, ScrollText, Network, Sparkles,
 } from "lucide-react";
 import AdminPartnerReferrals from "@/components/AdminPartnerReferrals";
 import AdminPartnerRequests from "@/components/AdminPartnerRequests2";
+import AdminConciergeQueue from "@/components/AdminConciergeQueue";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
 import { toast } from "sonner";
@@ -314,6 +315,7 @@ export default function AdminDashboard() {
             <TabsTrigger value="bugs" className="gap-1.5 text-xs"><Bug className="h-3.5 w-3.5" />Bug Fixes</TabsTrigger>
             <TabsTrigger value="log-access" className="gap-1.5 text-xs"><ScrollText className="h-3.5 w-3.5" />Log Access</TabsTrigger>
             <TabsTrigger value="user-features" className="gap-1.5 text-xs"><Network className="h-3.5 w-3.5" />Features</TabsTrigger>
+            <TabsTrigger value="concierge" className="gap-1.5 text-xs"><Sparkles className="h-3.5 w-3.5" />Concierge</TabsTrigger>
           </TabsList>
         </div>
 
@@ -950,6 +952,11 @@ export default function AdminDashboard() {
         <TabsContent value="user-features" className="space-y-6">
           <UserFeaturesTab profiles={profiles} adminUsers={adminUsers} userId={user?.id} />
         </TabsContent>
+
+        {/* ── Concierge Queue ── */}
+        <TabsContent value="concierge" className="space-y-6">
+          <AdminConciergeQueue profileMap={profileNameMap} />
+        </TabsContent>
       </Tabs>
 
       {/* Reject policy dialog */}
@@ -1088,6 +1095,7 @@ function LogAccessTab({ profiles, userId }: { profiles: any[]; userId?: string }
 
 const AVAILABLE_FEATURES = [
   { id: "connect", label: "AURA Connect", description: "Relationship intelligence & warm intro tool" },
+  { id: "concierge", label: "AURA Concierge", description: "On-call build team for systems, tools & assets" },
 ] as const;
 
 function UserFeaturesTab({ profiles, adminUsers, userId }: { profiles: any[]; adminUsers: any[]; userId?: string }) {

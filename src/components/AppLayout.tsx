@@ -5,7 +5,7 @@ import { useUserFeatures } from "@/hooks/useUserFeatures";
 import { useUserBranch } from "@/hooks/useUserBranch";
 import { useUnreadCount } from "@/hooks/useUnreadCount";
 import { useLossRunReminders } from "@/hooks/useLossRunReminders";
-import { LogOut, ShieldCheck, MessageCircle, HelpCircle, GitBranch, Settings, Mail, HeartPulse, FileSearch, Network, UserPlus } from "lucide-react";
+import { LogOut, ShieldCheck, MessageCircle, HelpCircle, GitBranch, Settings, Mail, HeartPulse, FileSearch, Network, UserPlus, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { useTrainingMode } from "@/hooks/useTrainingMode";
@@ -17,7 +17,7 @@ import { useEffect } from "react";
 export function AppLayout({ children, onLogoClick }: { children: React.ReactNode; onLogoClick?: () => void }) {
   const { signOut } = useAuth();
   const { canSeeProducerHub, canSeeAdmin, canSeeChat, canSeeEmail, canSeePulse, canSeeLossRuns, canSeeClientSubmission } = useUserRole();
-  const { hasConnect } = useUserFeatures();
+  const { hasConnect, hasConcierge } = useUserFeatures();
   const { branch } = useUserBranch();
   const location = useLocation();
   const { trainingMode, setTrainingMode } = useTrainingMode();
@@ -37,6 +37,7 @@ export function AppLayout({ children, onLogoClick }: { children: React.ReactNode
 
   const navItems = isBranchRestricted ? [
     ...(hasConnect ? [{ to: "/connect", label: "Connect", icon: Network, key: "connect" }] : []),
+    ...(hasConcierge ? [{ to: "/concierge", label: "Concierge", icon: Sparkles, key: "concierge" }] : []),
     ...(canSeeAdmin ? [{ to: "/admin", label: "Admin", icon: ShieldCheck, key: "admin" }] : []),
     { to: "/settings", label: "Settings", icon: Settings, key: "settings" },
   ] : [
@@ -46,6 +47,7 @@ export function AppLayout({ children, onLogoClick }: { children: React.ReactNode
     ...(canSeeProducerHub ? [{ to: "/command", label: "Command Center", icon: GitBranch, key: "command" }] : []),
     ...(canSeeLossRuns ? [{ to: "/loss-runs", label: "Loss Runs", icon: FileSearch, key: "lossruns" }] : []),
     ...(hasConnect ? [{ to: "/connect", label: "Connect", icon: Network, key: "connect" }] : []),
+    ...(hasConcierge ? [{ to: "/concierge", label: "Concierge", icon: Sparkles, key: "concierge" }] : []),
     ...(canSeeClientSubmission ? [{ to: "/submit-client", label: "Submit Client", icon: UserPlus, key: "submit" }] : []),
     ...(canSeeAdmin ? [{ to: "/admin", label: "Admin", icon: ShieldCheck, key: "admin" }] : []),
     { to: "/settings", label: "Settings", icon: Settings, key: "settings" },
