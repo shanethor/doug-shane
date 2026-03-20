@@ -962,56 +962,80 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
   };
 
   // ─── Generic Source Import Metadata ───
-  const SOURCE_IMPORT_META: Record<string, { title: string; instructions: string; acceptFiles: string; parsePaste: boolean }> = {
+  const SOURCE_IMPORT_META: Record<string, { title: string; instructions: string; acceptFiles: string; parsePaste: boolean; hasApi: boolean; apiLabel?: string; apiAction?: string; apiInstructions?: string }> = {
     slack: {
       title: "Slack Workspace",
       instructions: "Export your Slack workspace members: Admin Panel → Members → Export as CSV. Or paste member names/emails below.",
       acceptFiles: ".csv,.json", parsePaste: true,
+      hasApi: true, apiLabel: "Sync via Slack API",
+      apiAction: "sync_slack_api",
+      apiInstructions: "Requires Slack connector. We'll pull all workspace members automatically.",
     },
     teams: {
       title: "Microsoft Teams",
       instructions: "Export team members from Teams Admin Center → Users → Export. Or paste names/emails below.",
       acceptFiles: ".csv,.xlsx", parsePaste: true,
+      hasApi: true, apiLabel: "Sync via Microsoft Graph",
+      apiAction: "sync_teams_api",
+      apiInstructions: "Uses your connected Outlook account to pull org directory via Microsoft Graph API.",
     },
     eventbrite: {
       title: "Eventbrite",
       instructions: "Export attendees from Eventbrite: Manage Event → Orders → Download Attendee Summary (CSV). Or paste names/emails.",
       acceptFiles: ".csv", parsePaste: true,
+      hasApi: true, apiLabel: "Sync via Eventbrite API",
+      apiAction: "sync_eventbrite_api",
+      apiInstructions: "Get your private token from eventbrite.com/platform/api-keys",
     },
     meetup: {
       title: "Meetup",
       instructions: "Export RSVP lists from Meetup: Manage Group → Members → Download Members. Or paste names/emails.",
       acceptFiles: ".csv", parsePaste: true,
+      hasApi: false,
+      apiInstructions: "Meetup's API requires OAuth — apply at meetup.com/api/. Manual import recommended for now.",
     },
     alignable: {
       title: "Alignable",
       instructions: "Export your Alignable connections: Settings → Export Connections. Or paste names/emails/companies below.",
       acceptFiles: ".csv", parsePaste: true,
+      hasApi: false,
+      apiInstructions: "Alignable has no public API. Use CSV export from your account settings.",
     },
     strava: {
       title: "Strava",
       instructions: "Download your Strava data: Settings → My Account → Download Your Data. Upload the followers CSV, or paste names below.",
       acceptFiles: ".csv,.json,.zip", parsePaste: true,
+      hasApi: true, apiLabel: "Sync via Strava API",
+      apiAction: "sync_strava_api",
+      apiInstructions: "Create an API app at strava.com/settings/api to get Client ID & Secret.",
     },
     peloton: {
       title: "Peloton",
       instructions: "Peloton doesn't offer direct export. Paste follower names/usernames below, or upload a CSV if you've exported via third-party tools.",
       acceptFiles: ".csv", parsePaste: true,
+      hasApi: false,
+      apiInstructions: "Peloton has no public API. Use third-party export tools or paste contacts manually.",
     },
     nextdoor: {
       title: "Nextdoor",
       instructions: "Export your Nextdoor connections or paste neighbor/business names below. Nextdoor API access is limited — manual paste is recommended.",
       acceptFiles: ".csv,.json", parsePaste: true,
+      hasApi: false,
+      apiInstructions: "Nextdoor's API is restricted to verified businesses. Manual import recommended.",
     },
     snapchat: {
       title: "Snapchat",
       instructions: "Request your data: Snapchat → Settings → My Data → Submit Request. Upload the downloaded JSON/ZIP, or paste friend usernames.",
       acceptFiles: ".csv,.json,.zip", parsePaste: true,
+      hasApi: false,
+      apiInstructions: "Snapchat's Snap Kit doesn't expose contact data. Use the data download feature instead.",
     },
     clubhouse: {
       title: "Clubhouse",
       instructions: "Export your Clubhouse followers using third-party tools (export_clubhouse on GitHub). Upload CSV or paste names/handles below.",
       acceptFiles: ".csv", parsePaste: true,
+      hasApi: false,
+      apiInstructions: "Clubhouse has no public API. Use third-party tools or paste contacts.",
     },
   };
 
