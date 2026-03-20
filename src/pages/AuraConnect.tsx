@@ -823,6 +823,11 @@ export default function AuraConnect() {
             <ConnectReferralsTab />
           </TabsContent>
 
+          {/* ────── SPOTLIGHT TAB ────── */}
+          <TabsContent value="spotlight" className="space-y-4 mt-4">
+            <ConnectToolsTab />
+          </TabsContent>
+
           {/* ────── TOOLS TAB ────── */}
           <TabsContent value="tools" className="space-y-4 mt-4">
             <ConnectToolsTab />
