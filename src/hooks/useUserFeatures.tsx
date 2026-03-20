@@ -73,6 +73,7 @@ export function useUserFeatures() {
     loading,
     hasFeature: (f: FeatureFlag) => !loading && features.includes(f),
     hasConnect: !loading && features.includes("connect"),
+    hasConcierge: !loading && features.includes("concierge"),
   };
 }
 
