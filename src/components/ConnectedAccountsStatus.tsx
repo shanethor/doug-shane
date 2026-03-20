@@ -8,7 +8,8 @@ import {
   Mail, Users, Linkedin, Phone, Instagram,
   CheckCircle, Circle, Settings, Network, Loader2,
   Upload, RefreshCw, Unlink, AlertTriangle, Plus, ClipboardPaste,
-  ChevronDown, ChevronUp,
+  ChevronDown, ChevronUp, MessageSquare, Gamepad2, Dumbbell, MapPin,
+  Camera, Headphones, Globe, Hash,
 } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
