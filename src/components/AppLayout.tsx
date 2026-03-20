@@ -47,6 +47,7 @@ export function AppLayout({ children, onLogoClick }: { children: React.ReactNode
     ...(canSeeProducerHub ? [{ to: "/command", label: "Command Center", icon: GitBranch, key: "command" }] : []),
     ...(canSeeLossRuns ? [{ to: "/loss-runs", label: "Loss Runs", icon: FileSearch, key: "lossruns" }] : []),
     ...(hasConnect ? [{ to: "/connect", label: "Connect", icon: Network, key: "connect" }] : []),
+    ...(hasConcierge ? [{ to: "/concierge", label: "Concierge", icon: Sparkles, key: "concierge" }] : []),
     ...(canSeeClientSubmission ? [{ to: "/submit-client", label: "Submit Client", icon: UserPlus, key: "submit" }] : []),
     ...(canSeeAdmin ? [{ to: "/admin", label: "Admin", icon: ShieldCheck, key: "admin" }] : []),
     { to: "/settings", label: "Settings", icon: Settings, key: "settings" },

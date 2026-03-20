@@ -155,6 +155,7 @@ const App = () => (
           <Route path="/calendar" element={<Navigate to="/email" replace />} />
           <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
           <Route path="/connect" element={<ProtectedRoute><AuraConnect /></ProtectedRoute>} />
+          <Route path="/concierge" element={<ProtectedRoute><AuraConcierge /></ProtectedRoute>} />
           <Route path="/submit-client" element={<ProtectedRoute><ClientSubmission /></ProtectedRoute>} />
           <Route path="/loss-runs" element={<ProtectedRoute><LossRunDashboard /></ProtectedRoute>} />
           <Route path="/loss-runs/new" element={<ProtectedRoute><LossRunNew /></ProtectedRoute>} />
