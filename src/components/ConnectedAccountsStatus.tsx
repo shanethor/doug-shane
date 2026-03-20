@@ -961,6 +961,156 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
     }
   };
 
+  // ─── Generic Source Import Metadata ───
+  const SOURCE_IMPORT_META: Record<string, { title: string; instructions: string; acceptFiles: string; parsePaste: boolean }> = {
+    slack: {
+      title: "Slack Workspace",
+      instructions: "Export your Slack workspace members: Admin Panel → Members → Export as CSV. Or paste member names/emails below.",
+      acceptFiles: ".csv,.json", parsePaste: true,
+    },
+    teams: {
+      title: "Microsoft Teams",
+      instructions: "Export team members from Teams Admin Center → Users → Export. Or paste names/emails below.",
+      acceptFiles: ".csv,.xlsx", parsePaste: true,
+    },
+    eventbrite: {
+      title: "Eventbrite",
+      instructions: "Export attendees from Eventbrite: Manage Event → Orders → Download Attendee Summary (CSV). Or paste names/emails.",
+      acceptFiles: ".csv", parsePaste: true,
+    },
+    meetup: {
+      title: "Meetup",
+      instructions: "Export RSVP lists from Meetup: Manage Group → Members → Download Members. Or paste names/emails.",
+      acceptFiles: ".csv", parsePaste: true,
+    },
+    alignable: {
+      title: "Alignable",
+      instructions: "Export your Alignable connections: Settings → Export Connections. Or paste names/emails/companies below.",
+      acceptFiles: ".csv", parsePaste: true,
+    },
+    strava: {
+      title: "Strava",
+      instructions: "Download your Strava data: Settings → My Account → Download Your Data. Upload the followers CSV, or paste names below.",
+      acceptFiles: ".csv,.json,.zip", parsePaste: true,
+    },
+    peloton: {
+      title: "Peloton",
+      instructions: "Peloton doesn't offer direct export. Paste follower names/usernames below, or upload a CSV if you've exported via third-party tools.",
+      acceptFiles: ".csv", parsePaste: true,
+    },
+    nextdoor: {
+      title: "Nextdoor",
+      instructions: "Export your Nextdoor connections or paste neighbor/business names below. Nextdoor API access is limited — manual paste is recommended.",
+      acceptFiles: ".csv,.json", parsePaste: true,
+    },
+    snapchat: {
+      title: "Snapchat",
+      instructions: "Request your data: Snapchat → Settings → My Data → Submit Request. Upload the downloaded JSON/ZIP, or paste friend usernames.",
+      acceptFiles: ".csv,.json,.zip", parsePaste: true,
+    },
+    clubhouse: {
+      title: "Clubhouse",
+      instructions: "Export your Clubhouse followers using third-party tools (export_clubhouse on GitHub). Upload CSV or paste names/handles below.",
+      acceptFiles: ".csv", parsePaste: true,
+    },
+  };
+
+  const handleGenericSourceFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !activeSource) return;
+    setShowSourceDialog(false);
+    setActionLoading(activeSource);
+    try {
+      const text = await file.text();
+      let contacts: any[] = [];
+
+      if (file.name.endsWith(".json")) {
+        try {
+          const parsed = JSON.parse(text);
+          contacts = Array.isArray(parsed) ? parsed : (parsed.contacts || parsed.members || parsed.attendees || parsed.followers || parsed.friends || []);
+        } catch { toast.error("Invalid JSON file"); return; }
+      } else {
+        // CSV parse
+        const lines = text.split("\n");
+        const headers = lines[0]?.split(",").map((h: string) => h.replace(/"/g, "").trim()) || [];
+        for (let i = 1; i < lines.length; i++) {
+          const vals = lines[i]?.split(",").map((v: string) => v.replace(/"/g, "").trim()) || [];
+          if (!vals.some(Boolean)) continue;
+          const obj: any = {};
+          headers.forEach((h: string, idx: number) => { obj[h.toLowerCase().replace(/\s+/g, "_")] = vals[idx]; });
+          contacts.push({
+            name: obj.name || obj.full_name || obj.display_name || obj.displayname
+              || [obj.first_name || obj.firstname, obj.last_name || obj.lastname].filter(Boolean).join(" ") || null,
+            email: obj.email || obj.email_address || null,
+            phone: obj.phone || obj.mobile || obj.tel || null,
+            company: obj.company || obj.organization || obj.org || null,
+            title: obj.title || obj.job_title || obj.position || null,
+            location: obj.location || obj.city || null,
+          });
+        }
+        contacts = contacts.filter((c: any) => c.name || c.email || c.phone);
+      }
+
+      if (!contacts.length) { toast.error("No contacts found in file"); return; }
+
+      const headers = await getAuthHeaders();
+      const resp = await fetch(SYNC_URL, {
+        method: "POST", headers,
+        body: JSON.stringify({ action: "import_source_contacts", source: activeSource, contacts }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) { toast.error(data.error || "Import failed"); return; }
+      toast.success(`Imported ${data.imported} contacts from ${SOURCE_IMPORT_META[activeSource]?.title || activeSource}`);
+      refresh();
+    } catch { toast.error("Failed to parse file"); }
+    finally {
+      setActionLoading(null);
+      if (sourceFileRef.current) sourceFileRef.current.value = "";
+    }
+  };
+
+  const handleGenericSourcePaste = async () => {
+    if (!sourceContacts.trim() || !activeSource) return;
+    setShowSourceDialog(false);
+    setActionLoading(activeSource);
+    try {
+      const lines = sourceContacts.split("\n").filter((l: string) => l.trim());
+      const contacts = lines.map((line: string) => {
+        const emailMatch = line.match(/[\w.+-]+@[\w.-]+\.\w+/);
+        const phoneMatch = line.match(/[\d+() -]{7,}/);
+        const email = emailMatch?.[0] || null;
+        const phone = phoneMatch?.[0]?.trim() || null;
+        let name = line;
+        if (email) name = name.replace(email, "");
+        if (phone && phoneMatch) name = name.replace(phoneMatch[0], "");
+        name = name.replace(/[,;|]+/g, " ").trim();
+        const parts = name.split(/\t/).map((p: string) => p.trim());
+        return {
+          name: parts[0] || null,
+          email,
+          phone,
+          company: parts[1] || null,
+        };
+      }).filter((c: any) => c.name || c.email || c.phone);
+
+      if (!contacts.length) { toast.error("No contacts found in text"); setActionLoading(null); return; }
+
+      const headers = await getAuthHeaders();
+      const resp = await fetch(SYNC_URL, {
+        method: "POST", headers,
+        body: JSON.stringify({ action: "import_source_contacts", source: activeSource, contacts }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) { toast.error(data.error || "Import failed"); return; }
+      toast.success(`Imported ${data.imported} contacts from ${SOURCE_IMPORT_META[activeSource]?.title || activeSource}`);
+      setSourceContacts("");
+      refresh();
+    } catch { toast.error("Failed to import contacts"); }
+    finally { setActionLoading(null); }
+  };
+
+  const GENERIC_SOURCES = ["slack", "teams", "eventbrite", "meetup", "alignable", "strava", "peloton", "nextdoor", "snapchat", "clubhouse"];
+
   // ─── Connect action by account id ───
   const handleConnect = (id: string) => {
     if (id === "email") {
@@ -977,6 +1127,12 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
     if (id === "social") {
       loadMyProfiles();
       setShowSocialDialog(true);
+      return;
+    }
+    if (GENERIC_SOURCES.includes(id)) {
+      setActiveSource(id);
+      setSourceContacts("");
+      setShowSourceDialog(true);
       return;
     }
   };
