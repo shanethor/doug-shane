@@ -91,9 +91,9 @@ export function useConcierge() {
     return error;
   }, [user, fetchAll]);
 
-  const createRequest = useCallback(async (data: { title: string; description: string; category: string }) => {
+  const createRequest = useCallback(async (data: { title: string; description: string; category: string }, bypassLock?: boolean) => {
     if (!user) return { error: "Not authenticated" };
-    if (isLocked) return { error: "Concierge subscription required" };
+    if (isLocked && !bypassLock) return { error: "Concierge subscription required" };
     if (activeCount >= maxActive) return { error: `Maximum ${maxActive} active requests reached` };
     const { error } = await (supabase.from("concierge_requests" as any) as any).insert({
       user_id: user.id,
