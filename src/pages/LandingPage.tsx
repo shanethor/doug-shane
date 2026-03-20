@@ -461,32 +461,34 @@ export default function LandingPage() {
                 ))}
               </div>
 
-              {/* Panel */}
+              {/* Panel — all rendered, only active visible */}
               {branches.map((b, i) => (
-                activeTab === i && (
-                  <div key={b.key} className="grid grid-cols-1 md:grid-cols-[1fr_1.2fr] gap-12 items-center min-h-[380px] animate-[branchFadeIn_0.45s_ease_forwards]">
-                    <div>
-                      <div className="flex items-center gap-3.5 mb-5">
-                        <BranchLogo color={b.color} size={36} />
-                        <span className="text-lg font-bold tracking-tight text-white">{b.label}</span>
-                      </div>
-                      <h3 className="text-[clamp(24px,3vw,36px)] font-bold tracking-[-0.03em] leading-[1.1] text-white mb-4 whitespace-pre-line">{b.title}</h3>
-                      <p className="text-[15px] text-[#71717A] leading-[1.65] mb-6">{b.desc}</p>
-                      <div className="flex flex-wrap gap-3 gap-y-2.5">
-                        {b.feats.map((f) => (
-                          <span key={f} className="flex items-center gap-2 text-[13px] font-medium text-[#E4E4E7]">
-                            <span className="w-[5px] h-[5px] rounded-full" style={{ background: b.colorBright }} />
-                            {f}
-                          </span>
-                        ))}
-                      </div>
+                <div
+                  key={b.key}
+                  className={`grid grid-cols-1 md:grid-cols-[1fr_1.2fr] gap-12 items-center min-h-[380px] transition-opacity duration-300 ${activeTab === i ? "opacity-100" : "opacity-0 absolute pointer-events-none"}`}
+                  style={activeTab !== i ? { position: "absolute", top: 0, left: 0, right: 0, visibility: "hidden" } : {}}
+                >
+                  <div>
+                    <div className="flex items-center gap-3.5 mb-5">
+                      <BranchLogo color={b.color} size={36} />
+                      <span className="text-lg font-bold tracking-tight text-white">{b.label}</span>
                     </div>
-                    <div className="rounded-[20px] overflow-hidden border border-white/[0.06] aspect-[4/3] relative">
-                      <img src={b.image} alt={b.label} loading="eager" decoding="async" className="w-full h-full object-cover hover:scale-[1.03] transition-transform duration-600" />
-                      <div className="absolute inset-0 pointer-events-none mix-blend-color opacity-45 rounded-[inherit]" style={{ background: b.color }} />
+                    <h3 className="text-[clamp(24px,3vw,36px)] font-bold tracking-[-0.03em] leading-[1.1] text-white mb-4 whitespace-pre-line">{b.title}</h3>
+                    <p className="text-[15px] text-[#71717A] leading-[1.65] mb-6">{b.desc}</p>
+                    <div className="flex flex-wrap gap-3 gap-y-2.5">
+                      {b.feats.map((f) => (
+                        <span key={f} className="flex items-center gap-2 text-[13px] font-medium text-[#E4E4E7]">
+                          <span className="w-[5px] h-[5px] rounded-full" style={{ background: b.colorBright }} />
+                          {f}
+                        </span>
+                      ))}
                     </div>
                   </div>
-                )
+                  <div className="rounded-[20px] overflow-hidden border border-white/[0.06] aspect-[4/3] relative">
+                    <img src={b.image} alt={b.label} loading="eager" decoding="async" className="w-full h-full object-cover hover:scale-[1.03] transition-transform duration-600" />
+                    <div className="absolute inset-0 pointer-events-none mix-blend-color opacity-45 rounded-[inherit]" style={{ background: b.color }} />
+                  </div>
+                </div>
               ))}
             </div>
           </div>
