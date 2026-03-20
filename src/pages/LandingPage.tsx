@@ -431,32 +431,8 @@ export default function LandingPage() {
                   </Link>
                 </div>
                 <div>
-                  <div className="rounded-[20px] overflow-hidden border border-white/[0.06] aspect-[16/9] relative mb-4">
-                    <img src="/images/connect-bridge.png" alt="AURA Connect — relationship bridge" loading="eager" decoding="async" className="w-full h-full object-cover" />
-                    <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-[#08080A]/60 to-transparent" />
-                  </div>
-                  <IntegrationTicker />
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {[
-                      { t: "Mutual contacts", d: "Warm intros through shared connections across your team's combined network." },
-                      { t: "Relationship graph", d: "One de-duplicated map across all platforms and accounts." },
-                      { t: "Money-in-motion", d: "Plaid-powered signals for perfectly timed outreach." },
-                      { t: "Privacy-first", d: "First-party data only. Opt-in sharing. No content stored." },
-                    ].map((f) => (
-                      <div key={f.t} className="p-4 bg-[#101012] border border-white/[0.06] rounded-xl">
-                        <div className="text-[13px] font-semibold text-white mb-1">{f.t}</div>
-                        <div className="text-[12px] text-[#71717A] leading-[1.55]">{f.d}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
 
-        {/* ═══ AURA CONCIERGE ═══ */}
-        <section className="lp-reveal pt-[100px] max-sm:pt-16 relative" id="concierge" ref={addRevealRef}>
+
           <div className="max-w-[1200px] mx-auto px-12 max-md:px-8 max-sm:px-5">
             <div className="border-t border-white/[0.06] pt-12">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-16">
