@@ -225,6 +225,9 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
   const loading = accountsProp ? false : hook.loading;
   const refresh = onRefresh ?? hook.refresh;
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [collapsed, setCollapsed] = useState(() => {
+    try { return localStorage.getItem("aura-connected-accounts-collapsed") === "true"; } catch { return false; }
+  });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const phoneFileInputRef = useRef<HTMLInputElement>(null);
   const [showReconnectPicker, setShowReconnectPicker] = useState(false);
