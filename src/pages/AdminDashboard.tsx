@@ -1095,6 +1095,7 @@ function LogAccessTab({ profiles, userId }: { profiles: any[]; userId?: string }
 
 const AVAILABLE_FEATURES = [
   { id: "connect", label: "AURA Connect", description: "Relationship intelligence & warm intro tool" },
+  { id: "concierge", label: "AURA Concierge", description: "On-call build team for systems, tools & assets" },
 ] as const;
 
 function UserFeaturesTab({ profiles, adminUsers, userId }: { profiles: any[]; adminUsers: any[]; userId?: string }) {
