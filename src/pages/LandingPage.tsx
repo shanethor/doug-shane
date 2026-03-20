@@ -199,6 +199,7 @@ export default function LandingPage() {
               </Link>
               <div className="hidden md:flex gap-1">
                 <a href="#connect" className="text-[13px] text-[#A1A1AA] no-underline px-3 py-1.5 rounded-full hover:text-white transition-colors">Connect</a>
+                <Link to="/concierge" className="text-[13px] text-[#A1A1AA] no-underline px-3 py-1.5 rounded-full hover:text-white transition-colors">Concierge</Link>
                 <a href="#branches" className="text-[13px] text-[#A1A1AA] no-underline px-3 py-1.5 rounded-full hover:text-white transition-colors">Platform</a>
                 <a href="#partners" className="text-[13px] text-[#A1A1AA] no-underline px-3 py-1.5 rounded-full hover:text-white transition-colors">Partners</a>
               </div>
