@@ -1690,7 +1690,7 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
 
       {/* Generic Source Import Dialog */}
       <Dialog open={showSourceDialog} onOpenChange={setShowSourceDialog}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Upload className="h-5 w-5 text-primary" />
@@ -1701,6 +1701,35 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 mt-2">
+            {/* Live API Sync (if available) */}
+            {SOURCE_IMPORT_META[activeSource]?.hasApi && (
+              <>
+                <Button
+                  className="w-full justify-start gap-3 h-auto py-3"
+                  disabled={actionLoading === activeSource}
+                  onClick={() => handleApiSync(activeSource)}
+                >
+                  {actionLoading === activeSource ? (
+                    <Loader2 className="h-4 w-4 animate-spin text-primary-foreground shrink-0" />
+                  ) : (
+                    <RefreshCw className="h-4 w-4 shrink-0" />
+                  )}
+                  <div className="text-left">
+                    <p className="text-sm font-medium">{SOURCE_IMPORT_META[activeSource]?.apiLabel || "Sync via API"}</p>
+                    <p className="text-[11px] opacity-80">
+                      {SOURCE_IMPORT_META[activeSource]?.apiInstructions || "Pull contacts automatically via API."}
+                    </p>
+                  </div>
+                </Button>
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-background px-2 text-muted-foreground">or import manually</span>
+                  </div>
+                </div>
+              </>
+            )}
+
             {/* File Upload */}
             <Button
               variant="outline"
@@ -1735,6 +1764,7 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
               <p className="text-[10px] text-muted-foreground">One contact per line: Name, Email, Phone, Company (any order, comma or tab separated)</p>
               <Button
                 className="w-full gap-1"
+                variant="outline"
                 disabled={!sourceContacts.trim() || actionLoading === activeSource}
                 onClick={handleGenericSourcePaste}
               >
@@ -1743,12 +1773,14 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
               </Button>
             </div>
 
-            {/* API Coming Soon badge */}
-            <div className="rounded-md border border-dashed border-primary/30 bg-primary/5 p-3">
-              <div className="flex items-center gap-2">
-                <Badge variant="outline" className="text-[10px] border-primary/40 text-primary">Coming Soon</Badge>
+            {/* API status info */}
+            <div className={`rounded-md border p-3 ${SOURCE_IMPORT_META[activeSource]?.hasApi ? "border-success/30 bg-success/5" : "border-dashed border-muted-foreground/30 bg-muted/30"}`}>
+              <div className="flex items-start gap-2">
+                <Badge variant="outline" className={`text-[10px] shrink-0 ${SOURCE_IMPORT_META[activeSource]?.hasApi ? "border-success/40 text-success" : "border-muted-foreground/40 text-muted-foreground"}`}>
+                  {SOURCE_IMPORT_META[activeSource]?.hasApi ? "API Ready" : "Manual Only"}
+                </Badge>
                 <p className="text-[11px] text-muted-foreground">
-                  Live API sync for {SOURCE_IMPORT_META[activeSource]?.title || activeSource} is in development. Manual import is available now.
+                  {SOURCE_IMPORT_META[activeSource]?.apiInstructions || `Manual import available for ${SOURCE_IMPORT_META[activeSource]?.title || activeSource}.`}
                 </p>
               </div>
             </div>
