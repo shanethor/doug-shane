@@ -18,7 +18,7 @@ import { useNavigate } from "react-router-dom";
 import { getAuthHeaders } from "@/lib/auth-fetch";
 import {
   CalendarDays, Plus, Clock, MapPin, Users, ChevronLeft, ChevronRight,
-  Video, RefreshCw, ExternalLink, Trash2, Check, X, GitBranch, Loader2
+  Video, RefreshCw, ExternalLink, Trash2, Check, X, GitBranch, Loader2, Link2
 } from "lucide-react";
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, addDays, addWeeks, addMonths, subWeeks, subMonths, isSameDay, isToday, parseISO, isBefore, isAfter, startOfDay, endOfDay } from "date-fns";
 
