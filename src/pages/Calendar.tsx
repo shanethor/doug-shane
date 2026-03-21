@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { AppLayout } from "@/components/AppLayout";
+import BookingLinksManager from "@/components/BookingLinksManager";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -17,7 +18,7 @@ import { useNavigate } from "react-router-dom";
 import { getAuthHeaders } from "@/lib/auth-fetch";
 import {
   CalendarDays, Plus, Clock, MapPin, Users, ChevronLeft, ChevronRight,
-  Video, RefreshCw, ExternalLink, Trash2, Check, X, GitBranch, Loader2
+  Video, RefreshCw, ExternalLink, Trash2, Check, X, GitBranch, Loader2, Link2
 } from "lucide-react";
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, addDays, addWeeks, addMonths, subWeeks, subMonths, isSameDay, isToday, parseISO, isBefore, isAfter, startOfDay, endOfDay } from "date-fns";
 
@@ -80,6 +81,7 @@ export default function Calendar({ embedded }: { embedded?: boolean } = {}) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [createOpen, setCreateOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  const [activeSection, setActiveSection] = useState<"calendar" | "booking">("calendar");
   const [filterType, setFilterType] = useState<string>("all");
   const [newEvent, setNewEvent] = useState({
     title: "",
@@ -343,6 +345,16 @@ export default function Calendar({ embedded }: { embedded?: boolean } = {}) {
               <span className="hidden sm:inline">Connect Calendar</span>
             </Button>
           )}
+          <Button
+            variant={activeSection === "booking" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setActiveSection(activeSection === "booking" ? "calendar" : "booking")}
+            className="gap-1.5"
+          >
+            <Link2 className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Booking Links</span>
+          </Button>
+          {activeSection === "calendar" && (
           <Dialog open={createOpen} onOpenChange={setCreateOpen}>
             <DialogTrigger asChild>
               <Button size="sm" className="gap-1.5">
@@ -448,8 +460,14 @@ export default function Calendar({ embedded }: { embedded?: boolean } = {}) {
               </div>
             </DialogContent>
           </Dialog>
+          )}
         </div>
       </div>
+
+      {activeSection === "booking" ? (
+        <BookingLinksManager />
+      ) : (
+      <>
 
       {/* View switcher + filters */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
@@ -652,6 +670,8 @@ export default function Calendar({ embedded }: { embedded?: boolean } = {}) {
             })}
           </div>
         </div>
+      )}
+      </>
       )}
     </>
   );

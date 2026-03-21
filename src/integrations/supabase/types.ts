@@ -276,6 +276,113 @@ export type Database = {
         }
         Relationships: []
       }
+      booked_meetings: {
+        Row: {
+          booking_link_id: string
+          client_email: string
+          client_name: string
+          client_phone: string | null
+          created_at: string
+          end_time: string
+          external_event_id: string | null
+          id: string
+          notes: string | null
+          start_time: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          booking_link_id: string
+          client_email: string
+          client_name: string
+          client_phone?: string | null
+          created_at?: string
+          end_time: string
+          external_event_id?: string | null
+          id?: string
+          notes?: string | null
+          start_time: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          booking_link_id?: string
+          client_email?: string
+          client_name?: string
+          client_phone?: string | null
+          created_at?: string
+          end_time?: string
+          external_event_id?: string | null
+          id?: string
+          notes?: string | null
+          start_time?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booked_meetings_booking_link_id_fkey"
+            columns: ["booking_link_id"]
+            isOneToOne: false
+            referencedRelation: "booking_links"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      booking_links: {
+        Row: {
+          availability_template: Json
+          buffer_after: number
+          buffer_before: number
+          created_at: string
+          description: string | null
+          duration_minutes: number
+          id: string
+          is_active: boolean
+          min_notice_minutes: number
+          public_slug: string
+          timezone: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          availability_template?: Json
+          buffer_after?: number
+          buffer_before?: number
+          created_at?: string
+          description?: string | null
+          duration_minutes?: number
+          id?: string
+          is_active?: boolean
+          min_notice_minutes?: number
+          public_slug: string
+          timezone?: string
+          title?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          availability_template?: Json
+          buffer_after?: number
+          buffer_before?: number
+          created_at?: string
+          description?: string | null
+          duration_minutes?: number
+          id?: string
+          is_active?: boolean
+          min_notice_minutes?: number
+          public_slug?: string
+          timezone?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       branding_packages: {
         Row: {
           brand_colors: Json

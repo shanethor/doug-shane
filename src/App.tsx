@@ -33,6 +33,7 @@ import InboxPage from "./pages/Inbox";
 import EmailCallback from "./pages/EmailCallback";
 import CalendarPage from "./pages/Calendar";
 import BookingPage from "./pages/BookingPage";
+import PublicBooking from "./pages/PublicBooking";
 import Settings from "./pages/Settings";
 import AuraPulse from "./pages/AuraPulse";
 import EmailHub from "./pages/EmailHub";
@@ -146,6 +147,7 @@ const App = () => (
           <Route path="/approvals" element={<Navigate to="/admin" replace />} />
           <Route path="/intake/:token" element={<IntakeForm />} />
           <Route path="/b/:slug" element={<BorrowerPage />} />
+          <Route path="/book/:slug" element={<PublicBooking />} />
           <Route path="/tracker" element={<PipelineTracker />} />
           <Route path="/partner/:token" element={<PartnerTracker />} />
           <Route path="/personal-intake/:token" element={<IntakeForm />} />
