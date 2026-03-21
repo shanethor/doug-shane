@@ -92,12 +92,22 @@ export default function ConnectDemoAuth() {
   const [name, setName] = useState("");
   const [welcomeReady, setWelcomeReady] = useState(false);
 
+  const [buildPhase, setBuildPhase] = useState(0); // 0=card, 1=logo, 2=title, 3=subtitle, 4=features, 5=button
+
   useEffect(() => {
     if (step === "welcome") {
-      const t = setTimeout(() => setWelcomeReady(true), 100);
-      return () => clearTimeout(t);
+      setWelcomeReady(false);
+      setBuildPhase(0);
+      const t0 = setTimeout(() => setWelcomeReady(true), 100);
+      const t1 = setTimeout(() => setBuildPhase(1), 400);   // logo
+      const t2 = setTimeout(() => setBuildPhase(2), 1000);  // title
+      const t3 = setTimeout(() => setBuildPhase(3), 1600);  // subtitle
+      const t4 = setTimeout(() => setBuildPhase(4), 2200);  // features
+      const t5 = setTimeout(() => setBuildPhase(5), 3400);  // button
+      return () => [t0, t1, t2, t3, t4, t5].forEach(clearTimeout);
     }
     setWelcomeReady(false);
+    setBuildPhase(0);
   }, [step]);
 
   const handleAuth = (e: React.FormEvent) => {
@@ -185,27 +195,50 @@ export default function ConnectDemoAuth() {
 
         {step === "welcome" && (
           <div className="space-y-6">
-            {/* Welcome card */}
             <div
-              className="rounded-xl border p-8 text-center space-y-5 transition-all duration-700"
+              className="rounded-xl border p-8 text-center transition-all duration-700 overflow-hidden"
               style={{
                 background: "hsl(240 8% 7%)",
-                borderColor: "hsl(240 6% 14%)",
+                borderColor: welcomeReady ? "hsl(174 97% 22% / 0.3)" : "hsl(240 6% 14%)",
                 opacity: welcomeReady ? 1 : 0,
                 transform: welcomeReady ? "translateY(0) scale(1)" : "translateY(30px) scale(0.95)",
+                boxShadow: welcomeReady ? "0 0 60px hsl(174 97% 22% / 0.08)" : "none",
               }}
             >
-              {/* Pulsing glow ring */}
-              <div className="relative mx-auto w-20 h-20 flex items-center justify-center">
+              {/* Phase 1: Logo with glow ring */}
+              <div
+                className="relative mx-auto w-20 h-20 flex items-center justify-center mb-5 transition-all duration-700"
+                style={{ opacity: buildPhase >= 1 ? 1 : 0, transform: buildPhase >= 1 ? "scale(1)" : "scale(0.5)" }}
+              >
                 <div className="absolute inset-0 rounded-full animate-ping" style={{ background: "hsl(174 97% 22% / 0.15)", animationDuration: "2s" }} />
                 <div className="absolute inset-1 rounded-full" style={{ background: "hsl(174 97% 22% / 0.1)" }} />
                 <AuraLogo size={52} />
               </div>
-              <h2 className="text-2xl font-bold text-white">Welcome to AURA Connect</h2>
-              <p style={{ color: "hsl(240 5% 46%)" }}>Your workspace is ready. Let's get started.</p>
 
-              {/* Feature pills with staggered fade */}
-              <div className="flex flex-wrap justify-center gap-2 pt-2">
+              {/* Phase 2: Title */}
+              <h2
+                className="text-2xl font-bold text-white mb-2 transition-all"
+                style={{ transitionDuration: "600ms", opacity: buildPhase >= 2 ? 1 : 0, transform: buildPhase >= 2 ? "translateY(0)" : "translateY(15px)" }}
+              >
+                Welcome to AURA Connect
+              </h2>
+
+              {/* Phase 3: Subtitle */}
+              <p
+                className="mb-4 transition-all duration-500"
+                style={{ color: "hsl(240 5% 46%)", opacity: buildPhase >= 3 ? 1 : 0, transform: buildPhase >= 3 ? "translateY(0)" : "translateY(10px)" }}
+              >
+                Your workspace is ready. Here's what's inside:
+              </p>
+
+              {/* Divider line draws in */}
+              <div className="mx-auto mb-4 h-px transition-all duration-700" style={{
+                background: "hsl(174 97% 22% / 0.3)",
+                width: buildPhase >= 3 ? "80%" : "0%",
+              }} />
+
+              {/* Phase 4: Feature pills stagger in */}
+              <div className="flex flex-wrap justify-center gap-2 pt-1 mb-5">
                 {FEATURES.map((f, i) => (
                   <span
                     key={f.label}
@@ -214,9 +247,9 @@ export default function ConnectDemoAuth() {
                       background: "hsl(174 97% 22% / 0.1)",
                       color: "hsl(174 97% 40%)",
                       border: "1px solid hsl(174 97% 22% / 0.2)",
-                      opacity: welcomeReady ? 1 : 0,
-                      transform: welcomeReady ? "translateY(0)" : "translateY(12px)",
-                      transitionDelay: f.delay,
+                      opacity: buildPhase >= 4 ? 1 : 0,
+                      transform: buildPhase >= 4 ? "translateY(0) scale(1)" : "translateY(12px) scale(0.9)",
+                      transitionDelay: `${i * 200}ms`,
                     }}
                   >
                     <f.icon className="h-3 w-3" />
@@ -225,15 +258,16 @@ export default function ConnectDemoAuth() {
                 ))}
               </div>
 
+              {/* Phase 5: Button */}
               <Button
                 size="lg"
-                className="text-white font-semibold hover:brightness-110 transition-all mt-2"
+                className="text-white font-semibold hover:brightness-110 transition-all"
                 style={{
                   background: "hsl(174 97% 22%)",
-                  opacity: welcomeReady ? 1 : 0,
-                  transform: welcomeReady ? "translateY(0)" : "translateY(10px)",
-                  transitionDelay: "1.3s",
+                  opacity: buildPhase >= 5 ? 1 : 0,
+                  transform: buildPhase >= 5 ? "translateY(0) scale(1)" : "translateY(10px) scale(0.95)",
                   transitionDuration: "500ms",
+                  pointerEvents: buildPhase >= 5 ? "auto" : "none",
                 }}
                 onClick={handleEnter}
               >
