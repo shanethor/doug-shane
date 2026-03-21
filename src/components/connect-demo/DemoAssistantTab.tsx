@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Send, Sparkles, FileUp, Users, Mail, BarChart3, Globe, Loader2 } from "lucide-react";
+import { Send, Sparkles, FileUp, Users, Mail, BarChart3, Globe, Loader2, Paperclip, X } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { toast } from "sonner";
 
@@ -86,13 +85,14 @@ async function streamChat({
 }
 
 export default function DemoAssistantTab() {
-  const [messages, setMessages] = useState<Msg[]>([
-    { role: "assistant", content: "Welcome to AURA Connect! I'm your AI assistant. I can help you manage your calendar, draft emails & texts, update your pipeline, create marketing assets, and more. What would you like to do?" },
-  ]);
+  const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
+  const [dragOver, setDragOver] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
@@ -100,10 +100,14 @@ export default function DemoAssistantTab() {
 
   const send = useCallback((text: string) => {
     if (!text.trim() || loading) return;
-    const userMsg: Msg = { role: "user", content: text.trim() };
+    const fileNote = attachedFiles.length > 0
+      ? `\n\n📎 Attached: ${attachedFiles.map(f => f.name).join(", ")}`
+      : "";
+    const userMsg: Msg = { role: "user", content: text.trim() + fileNote };
     const history = [...messages, userMsg];
     setMessages(history);
     setInput("");
+    setAttachedFiles([]);
     setLoading(true);
 
     let assistantSoFar = "";
@@ -114,7 +118,7 @@ export default function DemoAssistantTab() {
       assistantSoFar += chunk;
       setMessages(prev => {
         const last = prev[prev.length - 1];
-        if (last?.role === "assistant" && prev.length > 1 && prev[prev.length - 2]?.role === "user" && prev[prev.length - 2]?.content === userMsg.content) {
+        if (last?.role === "assistant" && prev.length > 1 && prev[prev.length - 2]?.role === "user") {
           return prev.map((m, i) => i === prev.length - 1 ? { ...m, content: assistantSoFar } : m);
         }
         return [...prev, { role: "assistant", content: assistantSoFar }];
@@ -125,58 +129,98 @@ export default function DemoAssistantTab() {
       messages: history.map(m => ({ role: m.role, content: m.content })),
       onDelta: upsert,
       onDone: () => setLoading(false),
-      onError: (err) => {
-        toast.error(err);
-        setLoading(false);
-      },
+      onError: (err) => { toast.error(err); setLoading(false); },
       signal: ac.signal,
     });
-  }, [messages, loading]);
+  }, [messages, loading, attachedFiles]);
 
   const stop = useCallback(() => {
     abortRef.current?.abort();
     setLoading(false);
   }, []);
 
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+    const files = Array.from(e.dataTransfer.files).slice(0, 10);
+    if (files.length) setAttachedFiles(prev => [...prev, ...files].slice(0, 10));
+  }, []);
+
+  const removeFile = (idx: number) => setAttachedFiles(prev => prev.filter((_, i) => i !== idx));
+
+  const hasMessages = messages.length > 0;
+
   return (
-    <div className="flex flex-col h-full" style={{ minHeight: "calc(100vh - 160px)" }}>
-      {/* Messages */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-        {messages.map((msg, i) => (
-          <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-            <div
-              className={`max-w-[80%] rounded-xl px-4 py-3 text-sm ${
-                msg.role === "user"
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted/60 text-foreground border border-border"
-              }`}
-            >
-              {msg.role === "assistant" ? (
-                <div className="prose prose-sm prose-invert max-w-none [&_p]:my-1 [&_ul]:my-1 [&_li]:my-0.5">
-                  <ReactMarkdown>{msg.content}</ReactMarkdown>
-                </div>
-              ) : (
-                <span className="whitespace-pre-wrap">{msg.content}</span>
-              )}
+    <div
+      className="flex flex-col h-full relative"
+      style={{ minHeight: "calc(100vh - 160px)" }}
+      onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+      onDragLeave={() => setDragOver(false)}
+      onDrop={handleDrop}
+    >
+      {/* Drag overlay */}
+      {dragOver && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center rounded-xl bg-primary/10 border-2 border-dashed border-primary backdrop-blur-sm">
+          <div className="text-center space-y-2">
+            <FileUp className="h-10 w-10 text-primary mx-auto" />
+            <p className="text-lg font-semibold text-primary">Drop files to attach</p>
+            <p className="text-xs text-muted-foreground">PDF, images, or documents</p>
+          </div>
+        </div>
+      )}
+
+      <input
+        type="file"
+        ref={fileInputRef}
+        className="hidden"
+        multiple
+        onChange={(e) => {
+          const files = Array.from(e.target.files || []).slice(0, 10);
+          if (files.length) setAttachedFiles(prev => [...prev, ...files].slice(0, 10));
+          e.target.value = "";
+        }}
+      />
+
+      {!hasMessages ? (
+        /* ── Empty state: centered input at top with suggestions ── */
+        <div className="flex-1 flex flex-col items-center justify-start pt-[8vh] px-4 animate-fade-in">
+          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-6 aura-gradient-text text-center">
+            How can AURA help you today?
+          </h1>
+
+          {/* Chat input card */}
+          <div className="w-full max-w-2xl mb-8">
+            {attachedFiles.length > 0 && (
+              <div className="mb-2 flex flex-wrap gap-2">
+                {attachedFiles.map((f, i) => (
+                  <div key={i} className="flex items-center gap-1.5 rounded-md bg-card border border-border px-2.5 py-1.5 text-xs">
+                    <Paperclip className="h-3 w-3 text-muted-foreground" />
+                    <span className="max-w-[120px] truncate">{f.name}</span>
+                    <button onClick={() => removeFile(i)} className="text-muted-foreground hover:text-foreground"><X className="h-3 w-3" /></button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="flex items-end gap-2 rounded-xl border border-border bg-card p-4 aura-glow-shadow focus-within:ring-2 focus-within:ring-ring">
+              <Button variant="ghost" size="icon" className="shrink-0 h-9 w-9 text-muted-foreground hover:text-foreground" onClick={() => fileInputRef.current?.click()}>
+                <Paperclip className="h-4 w-4" />
+              </Button>
+              <textarea
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(input); } }}
+                placeholder="Ask AURA anything..."
+                rows={3}
+                className="flex-1 resize-none bg-transparent border-0 outline-none text-sm placeholder:text-muted-foreground min-h-[72px] max-h-48 py-2"
+              />
+              <Button size="icon" onClick={() => send(input)} disabled={!input.trim()} className="shrink-0 h-9 w-9 bg-primary text-primary-foreground hover:bg-primary/90">
+                <Send className="h-4 w-4" />
+              </Button>
             </div>
           </div>
-        ))}
 
-        {loading && messages[messages.length - 1]?.role === "user" && (
-          <div className="flex justify-start">
-            <div className="rounded-xl px-4 py-3 text-sm bg-muted/60 border border-border">
-              <span className="flex gap-1">
-                <span className="w-2 h-2 rounded-full bg-foreground/30 animate-bounce" style={{ animationDelay: "0ms" }} />
-                <span className="w-2 h-2 rounded-full bg-foreground/30 animate-bounce" style={{ animationDelay: "150ms" }} />
-                <span className="w-2 h-2 rounded-full bg-foreground/30 animate-bounce" style={{ animationDelay: "300ms" }} />
-              </span>
-            </div>
-          </div>
-        )}
-
-        {/* Suggestions — shown when only welcome message */}
-        {messages.length === 1 && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-4">
+          {/* Suggestions grid */}
+          <div className="w-full max-w-2xl grid grid-cols-2 sm:grid-cols-3 gap-2">
             {SUGGESTIONS.map((s) => (
               <button
                 key={s.label}
@@ -188,36 +232,80 @@ export default function DemoAssistantTab() {
               </button>
             ))}
           </div>
-        )}
-      </div>
-
-      {/* Input — styled like main AURA chat */}
-      <div className="p-4">
-        <div className="flex items-end gap-2 rounded-xl border bg-card p-4 aura-glow-shadow focus-within:ring-2 focus-within:ring-ring max-w-2xl w-full mx-auto">
-          <textarea
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(input); } }}
-            placeholder="Ask AURA anything..."
-            rows={3}
-            className="flex-1 resize-none bg-transparent border-0 outline-none text-sm placeholder:text-muted-foreground min-h-[72px] max-h-48 py-2"
-          />
-          {loading ? (
-            <Button size="icon" variant="ghost" onClick={stop} className="shrink-0 h-9 w-9 text-muted-foreground hover:text-foreground">
-              <Loader2 className="h-4 w-4 animate-spin" />
-            </Button>
-          ) : (
-            <Button
-              size="icon"
-              onClick={() => send(input)}
-              disabled={!input.trim()}
-              className="shrink-0 h-9 w-9 bg-primary text-primary-foreground hover:bg-primary/90"
-            >
-              <Send className="h-4 w-4" />
-            </Button>
-          )}
         </div>
-      </div>
+      ) : (
+        /* ── Conversation mode ── */
+        <>
+          <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+            {messages.map((msg, i) => (
+              <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+                <div className={`max-w-[80%] rounded-xl px-4 py-3 text-sm ${
+                  msg.role === "user"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted/60 text-foreground border border-border"
+                }`}>
+                  {msg.role === "assistant" ? (
+                    <div className="prose prose-sm prose-invert max-w-none [&_p]:my-1 [&_ul]:my-1 [&_li]:my-0.5">
+                      <ReactMarkdown>{msg.content}</ReactMarkdown>
+                    </div>
+                  ) : (
+                    <span className="whitespace-pre-wrap">{msg.content}</span>
+                  )}
+                </div>
+              </div>
+            ))}
+
+            {loading && messages[messages.length - 1]?.role === "user" && (
+              <div className="flex justify-start">
+                <div className="rounded-xl px-4 py-3 text-sm bg-muted/60 border border-border">
+                  <span className="flex gap-1">
+                    <span className="w-2 h-2 rounded-full bg-foreground/30 animate-bounce" style={{ animationDelay: "0ms" }} />
+                    <span className="w-2 h-2 rounded-full bg-foreground/30 animate-bounce" style={{ animationDelay: "150ms" }} />
+                    <span className="w-2 h-2 rounded-full bg-foreground/30 animate-bounce" style={{ animationDelay: "300ms" }} />
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Bottom input in conversation mode */}
+          <div className="p-4">
+            {attachedFiles.length > 0 && (
+              <div className="mb-2 flex flex-wrap gap-2 max-w-2xl mx-auto">
+                {attachedFiles.map((f, i) => (
+                  <div key={i} className="flex items-center gap-1.5 rounded-md bg-card border border-border px-2.5 py-1.5 text-xs">
+                    <Paperclip className="h-3 w-3 text-muted-foreground" />
+                    <span className="max-w-[120px] truncate">{f.name}</span>
+                    <button onClick={() => removeFile(i)} className="text-muted-foreground hover:text-foreground"><X className="h-3 w-3" /></button>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className="flex items-end gap-2 rounded-xl border border-border bg-card p-4 aura-glow-shadow focus-within:ring-2 focus-within:ring-ring max-w-2xl mx-auto">
+              <Button variant="ghost" size="icon" className="shrink-0 h-9 w-9 text-muted-foreground hover:text-foreground" onClick={() => fileInputRef.current?.click()}>
+                <Paperclip className="h-4 w-4" />
+              </Button>
+              <textarea
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(input); } }}
+                placeholder="Ask AURA anything..."
+                rows={2}
+                className="flex-1 resize-none bg-transparent border-0 outline-none text-sm placeholder:text-muted-foreground min-h-[48px] max-h-36 py-2"
+              />
+              {loading ? (
+                <Button size="icon" variant="ghost" onClick={stop} className="shrink-0 h-9 w-9 text-muted-foreground hover:text-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                </Button>
+              ) : (
+                <Button size="icon" onClick={() => send(input)} disabled={!input.trim()} className="shrink-0 h-9 w-9 bg-primary text-primary-foreground hover:bg-primary/90">
+                  <Send className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

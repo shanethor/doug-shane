@@ -1,11 +1,18 @@
 import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Mail, CalendarDays, LayoutGrid, Sparkles, MessageSquare } from "lucide-react";
+import {
+  Mail, CalendarDays, LayoutGrid, Sparkles, MessageSquare,
+  Network, Zap, Send, Crown,
+} from "lucide-react";
 import ConnectSpotlightTab from "@/components/connect/ConnectSpotlightTab";
 import DemoPipelineTab from "@/components/connect-demo/DemoPipelineTab";
 import DemoEmailTab from "@/components/connect-demo/DemoEmailTab";
 import DemoCalendarTab from "@/components/connect-demo/DemoCalendarTab";
 import DemoAssistantTab from "@/components/connect-demo/DemoAssistantTab";
+import DemoConnectTab from "@/components/connect-demo/DemoConnectTab";
+import DemoTriggersTab from "@/components/connect-demo/DemoTriggersTab";
+import DemoOutreachTab from "@/components/connect-demo/DemoOutreachTab";
+import DemoTop10Tab from "@/components/connect-demo/DemoTop10Tab";
 
 const QUOTES = [
   "Success is not final, failure is not fatal: it is the courage to continue that counts. – Winston Churchill",
@@ -44,8 +51,20 @@ function QuoteTicker() {
   );
 }
 
+const TABS = [
+  { value: "connect", icon: Network, label: "Connect" },
+  { value: "pipeline", icon: LayoutGrid, label: "Pipeline" },
+  { value: "email", icon: Mail, label: "Email" },
+  { value: "calendar", icon: CalendarDays, label: "Calendar" },
+  { value: "triggers", icon: Zap, label: "Triggers" },
+  { value: "outreach", icon: Send, label: "Outreach" },
+  { value: "top10", icon: Crown, label: "Top 10" },
+  { value: "spotlight", icon: Sparkles, label: "Spotlight" },
+  { value: "assistant", icon: MessageSquare, label: "Assistant" },
+];
+
 export default function ConnectDemo() {
-  const [activeTab, setActiveTab] = useState("pipeline");
+  const [activeTab, setActiveTab] = useState("connect");
 
   useEffect(() => {
     const demoAuth = sessionStorage.getItem("connect-demo-auth");
@@ -80,40 +99,22 @@ export default function ConnectDemo() {
       <div className="flex-1 w-full px-2 sm:px-4 lg:px-6 py-4">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="flex flex-wrap h-auto gap-1 p-1 mb-4" style={{ background: "hsl(240 8% 7%)", border: "1px solid hsl(240 6% 14%)" }}>
-            {[
-              { value: "pipeline", icon: LayoutGrid, label: "Pipeline" },
-              { value: "email", icon: Mail, label: "Email" },
-              { value: "calendar", icon: CalendarDays, label: "Calendar" },
-              { value: "spotlight", icon: Sparkles, label: "Spotlight" },
-              { value: "assistant", icon: MessageSquare, label: "Assistant" },
-            ].map(t => (
+            {TABS.map(t => (
               <TabsTrigger key={t.value} value={t.value} className="flex items-center gap-1.5 data-[state=active]:text-white" style={{ color: "hsl(240 5% 46%)" }}>
                 <t.icon className="h-4 w-4" /> {t.label}
               </TabsTrigger>
             ))}
           </TabsList>
 
-          <TabsContent value="pipeline" className="mt-0">
-            <DemoPipelineTab />
-          </TabsContent>
-
-          <TabsContent value="email" className="mt-0">
-            <DemoEmailTab />
-          </TabsContent>
-
-          <TabsContent value="calendar" className="mt-0">
-            <DemoCalendarTab />
-          </TabsContent>
-
-          <TabsContent value="spotlight" className="mt-0">
-            <ConnectSpotlightTab />
-          </TabsContent>
-
-          <TabsContent value="assistant" className="mt-0">
-            <div className="rounded-lg overflow-hidden" style={{ border: "1px solid hsl(240 6% 14%)" }}>
-              <DemoAssistantTab />
-            </div>
-          </TabsContent>
+          <TabsContent value="connect" className="mt-0"><DemoConnectTab /></TabsContent>
+          <TabsContent value="pipeline" className="mt-0"><DemoPipelineTab /></TabsContent>
+          <TabsContent value="email" className="mt-0"><DemoEmailTab /></TabsContent>
+          <TabsContent value="calendar" className="mt-0"><DemoCalendarTab /></TabsContent>
+          <TabsContent value="triggers" className="mt-0"><DemoTriggersTab /></TabsContent>
+          <TabsContent value="outreach" className="mt-0"><DemoOutreachTab /></TabsContent>
+          <TabsContent value="top10" className="mt-0"><DemoTop10Tab /></TabsContent>
+          <TabsContent value="spotlight" className="mt-0"><ConnectSpotlightTab /></TabsContent>
+          <TabsContent value="assistant" className="mt-0"><DemoAssistantTab /></TabsContent>
         </Tabs>
       </div>
     </div>
