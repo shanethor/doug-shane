@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Mail, CalendarDays, LayoutGrid, Sparkles, MessageSquare } from "lucide-react";
-import ConnectPipelineTab from "@/components/connect/ConnectPipelineTab";
 import ConnectSpotlightTab from "@/components/connect/ConnectSpotlightTab";
-import EmailHub from "@/pages/EmailHub";
-import CalendarPage from "@/pages/Calendar";
-import Chat from "@/pages/Chat";
+import DemoPipelineTab from "@/components/connect-demo/DemoPipelineTab";
+import DemoEmailTab from "@/components/connect-demo/DemoEmailTab";
+import DemoCalendarTab from "@/components/connect-demo/DemoCalendarTab";
+import DemoAssistantTab from "@/components/connect-demo/DemoAssistantTab";
 
 const QUOTES = [
   "Success is not final, failure is not fatal: it is the courage to continue that counts. – Winston Churchill",
@@ -94,19 +94,15 @@ export default function ConnectDemo() {
           </TabsList>
 
           <TabsContent value="pipeline" className="mt-0">
-            <ConnectPipelineTab />
+            <DemoPipelineTab />
           </TabsContent>
 
           <TabsContent value="email" className="mt-0">
-            <div className="rounded-lg overflow-hidden" style={{ minHeight: "70vh", border: "1px solid hsl(240 6% 14%)" }}>
-              <EmailHub />
-            </div>
+            <DemoEmailTab />
           </TabsContent>
 
           <TabsContent value="calendar" className="mt-0">
-            <div className="rounded-lg overflow-hidden" style={{ minHeight: "70vh", border: "1px solid hsl(240 6% 14%)" }}>
-              <CalendarPage />
-            </div>
+            <DemoCalendarTab />
           </TabsContent>
 
           <TabsContent value="spotlight" className="mt-0">
@@ -114,8 +110,8 @@ export default function ConnectDemo() {
           </TabsContent>
 
           <TabsContent value="assistant" className="mt-0">
-            <div className="rounded-lg overflow-hidden" style={{ minHeight: "70vh", border: "1px solid hsl(240 6% 14%)" }}>
-              <Chat />
+            <div className="rounded-lg overflow-hidden" style={{ border: "1px solid hsl(240 6% 14%)" }}>
+              <DemoAssistantTab />
             </div>
           </TabsContent>
         </Tabs>
