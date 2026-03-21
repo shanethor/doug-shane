@@ -231,7 +231,10 @@ export default function LandingPage() {
 
           {/* Hero content — logo sits at mountain peak */}
           <div className="relative z-[2] text-center px-8">
-            <h1 className="text-[clamp(40px,6vw,80px)] max-sm:text-4xl font-bold leading-[1] tracking-[-0.04em] text-white mb-4">
+            <h1
+              className="text-[clamp(40px,6vw,80px)] max-sm:text-4xl font-bold leading-[1] tracking-[-0.04em] text-white mb-4"
+              style={{ textShadow: "0 4px 24px rgba(0,0,0,0.55), 0 1px 6px rgba(0,0,0,0.35)" }}
+            >
               Intelligence Runs on
             </h1>
             <span
