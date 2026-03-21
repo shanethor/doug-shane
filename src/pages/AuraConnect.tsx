@@ -923,7 +923,15 @@ export default function AuraConnect() {
           <TabsContent value="signals" className="space-y-4 mt-4">
             <ConnectSignalsTab />
           </TabsContent>
+
+          {/* ────── PIPELINE TAB ────── */}
+          <TabsContent value="pipeline" className="space-y-4 mt-4">
+            <ConnectPipelineTab />
+          </TabsContent>
         </Tabs>
+
+        {/* Connected Accounts — below tabs, above unlocks */}
+        <ConnectedAccountsStatus variant="compact" />
 
         {/* Progressive Unlocks — below main content */}
         <ProgressiveUnlocks />
