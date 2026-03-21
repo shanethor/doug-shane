@@ -198,7 +198,7 @@ export default function DemoAssistantTab() {
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && send(input)}
           placeholder="Ask AURA anything..."
-          className="flex-1 text-sm bg-background border-border"
+          className="flex-1 text-base h-12 bg-background border-border px-4"
         />
         {loading ? (
           <Button size="sm" variant="outline" onClick={stop}>
