@@ -216,6 +216,11 @@ export default function ConnectDemoAuth() {
                 )}
               </div>
               <div className="space-y-2">
+                <Label className="text-white/80">Email</Label>
+                <Input type="email" placeholder="you@example.com" required value={email} onChange={e => setEmail(e.target.value)}
+                  className="bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-[hsl(174,97%,22%)] transition-colors" />
+              </div>
+              <div className="space-y-2">
                 <Label className="text-white/80">Password</Label>
                 <Input type="password" placeholder="••••••••" required value={password} onChange={e => setPassword(e.target.value)}
                   className="bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-[hsl(174,97%,22%)] transition-colors" />
