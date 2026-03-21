@@ -1692,17 +1692,17 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
 
       {/* Generic Source Import Dialog */}
       <Dialog open={showSourceDialog} onOpenChange={setShowSourceDialog}>
-        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
+        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto overflow-x-hidden">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Upload className="h-5 w-5 text-primary" />
-              Import from {SOURCE_IMPORT_META[activeSource]?.title || activeSource}
+              <Upload className="h-5 w-5 text-primary shrink-0" />
+              <span className="truncate">Import from {SOURCE_IMPORT_META[activeSource]?.title || activeSource}</span>
             </DialogTitle>
-            <DialogDescription>
+            <DialogDescription className="break-words">
               {SOURCE_IMPORT_META[activeSource]?.instructions || "Upload a file or paste contacts below."}
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 mt-2">
+          <div className="space-y-4 mt-2 min-w-0">
             {/* Live API Sync (if available) */}
             {SOURCE_IMPORT_META[activeSource]?.hasApi && (
               <>
@@ -1716,9 +1716,9 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
                   ) : (
                     <RefreshCw className="h-4 w-4 shrink-0" />
                   )}
-                  <div className="text-left">
-                    <p className="text-sm font-medium">{SOURCE_IMPORT_META[activeSource]?.apiLabel || "Sync via API"}</p>
-                    <p className="text-[11px] opacity-80">
+                  <div className="text-left min-w-0">
+                    <p className="text-sm font-medium truncate">{SOURCE_IMPORT_META[activeSource]?.apiLabel || "Sync via API"}</p>
+                    <p className="text-[11px] opacity-80 break-words">
                       {SOURCE_IMPORT_META[activeSource]?.apiInstructions || "Pull contacts automatically via API."}
                     </p>
                   </div>
@@ -1739,7 +1739,7 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
               onClick={() => { setShowSourceDialog(false); sourceFileRef.current?.click(); }}
             >
               <Upload className="h-4 w-4 text-primary shrink-0" />
-              <div className="text-left">
+              <div className="text-left min-w-0">
                 <p className="text-sm font-medium">Upload File</p>
                 <p className="text-[11px] text-muted-foreground">
                   Accepts {SOURCE_IMPORT_META[activeSource]?.acceptFiles || ".csv, .json"}
@@ -1763,7 +1763,7 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
                 rows={5}
                 className="text-xs font-mono"
               />
-              <p className="text-[10px] text-muted-foreground">One contact per line: Name, Email, Phone, Company (any order, comma or tab separated)</p>
+              <p className="text-[10px] text-muted-foreground break-words">One contact per line: Name, Email, Phone, Company (any order, comma or tab separated)</p>
               <Button
                 className="w-full gap-1"
                 variant="outline"
@@ -1777,11 +1777,11 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
 
             {/* API status info */}
             <div className={`rounded-md border p-3 ${SOURCE_IMPORT_META[activeSource]?.hasApi ? "border-success/30 bg-success/5" : "border-dashed border-muted-foreground/30 bg-muted/30"}`}>
-              <div className="flex items-start gap-2">
-                <Badge variant="outline" className={`text-[10px] shrink-0 ${SOURCE_IMPORT_META[activeSource]?.hasApi ? "border-success/40 text-success" : "border-muted-foreground/40 text-muted-foreground"}`}>
+              <div className="flex items-start gap-2 min-w-0">
+                <Badge variant="outline" className={`text-[10px] shrink-0 whitespace-nowrap ${SOURCE_IMPORT_META[activeSource]?.hasApi ? "border-success/40 text-success" : "border-muted-foreground/40 text-muted-foreground"}`}>
                   {SOURCE_IMPORT_META[activeSource]?.hasApi ? "API Ready" : "Manual Only"}
                 </Badge>
-                <p className="text-[11px] text-muted-foreground">
+                <p className="text-[11px] text-muted-foreground break-words min-w-0">
                   {SOURCE_IMPORT_META[activeSource]?.apiInstructions || `Manual import available for ${SOURCE_IMPORT_META[activeSource]?.title || activeSource}.`}
                 </p>
               </div>
