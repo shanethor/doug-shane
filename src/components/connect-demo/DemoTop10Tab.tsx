@@ -103,7 +103,7 @@ export default function DemoTop10Tab() {
           {OUTREACH_STEPS.map((step, i) => {
             if (i >= visibleSteps) return null;
             return (
-              <Card key={i} className="animate-fade-in overflow-hidden" style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 14%)", animationDelay: `${i * 100}ms` }}>
+              <Card key={i} className="animate-slide-up-fade overflow-hidden" style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 14%)", animationDelay: `${i * 150}ms` }}>
                 <CardContent className="p-4">
                   <div className="flex items-center gap-2 mb-3">
                     <div className="h-7 w-7 rounded-full flex items-center justify-center text-xs font-bold" style={{ background: "hsl(174 97% 22% / 0.15)", color: "hsl(174 97% 40%)" }}>{i + 1}</div>
@@ -111,7 +111,7 @@ export default function DemoTop10Tab() {
                   </div>
                   <ul className="space-y-2">
                     {step.items.map((item, j) => (
-                      <li key={j} className="flex items-start gap-2 text-xs" style={{ color: "hsl(240 5% 60%)" }}>
+                      <li key={j} className="animate-fade-in flex items-start gap-2 text-xs" style={{ color: "hsl(240 5% 60%)", animationDelay: `${i * 150 + (j + 1) * 100}ms` }}>
                         <ArrowRight className="h-3 w-3 mt-0.5 shrink-0" style={{ color: "hsl(174 97% 40%)" }} />
                         {item}
                       </li>
