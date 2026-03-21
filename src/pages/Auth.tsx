@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/useAuth";
 import { Navigate } from "react-router-dom";
 import { toast } from "sonner";
-import { Loader2, ShieldCheck, Building2 } from "lucide-react";
+import { Loader2, ShieldCheck, Building2, Search, Plus, X, Globe } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import auraLogo from "@/assets/aura-logo.png";
 import { set2FAVerified, is2FAVerified, clear2FAVerified } from "@/lib/2fa-storage";
