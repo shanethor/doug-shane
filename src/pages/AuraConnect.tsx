@@ -473,6 +473,10 @@ export default function AuraConnect() {
                 <Rss className="h-3.5 w-3.5 hidden sm:inline" />
                 Signals
               </TabsTrigger>
+              <TabsTrigger value="pipeline" className="gap-1.5 text-xs sm:text-sm">
+                <TrendingUp className="h-3.5 w-3.5 hidden sm:inline" />
+                Pipeline
+              </TabsTrigger>
             </TabsList>
           </div>
 
