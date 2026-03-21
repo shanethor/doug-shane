@@ -81,6 +81,7 @@ export default function Calendar({ embedded }: { embedded?: boolean } = {}) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [createOpen, setCreateOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  const [activeSection, setActiveSection] = useState<"calendar" | "booking">("calendar");
   const [filterType, setFilterType] = useState<string>("all");
   const [newEvent, setNewEvent] = useState({
     title: "",
