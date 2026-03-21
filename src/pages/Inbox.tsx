@@ -1526,48 +1526,69 @@ export default function Inbox({ emailOnly, embedded, selectedClientId, onClearSe
       {/* Email list / Sent list */}
       <ScrollArea className="h-[calc(100vh-280px)]">
         {tab === "sent" ? (
-          sentEmails.length === 0 ? (
+          filteredSentEmails.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
               <History className="h-10 w-10 mb-3 opacity-40" />
               <p className="text-sm">No sent emails yet</p>
             </div>
           ) : (
-            <div className="space-y-1">
-              {sentEmails.map((sent) => (
-                <div
-                  key={sent.id}
-                  className="rounded-lg border px-4 py-3 transition-colors hover:bg-muted/50 opacity-90"
+            <div>
+              <div className="flex items-center justify-end mb-2">
+                <button
+                  onClick={() => setSentSortBy(sentSortBy === "date" ? "recipient" : "date")}
+                  className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  <div className="flex items-start gap-3">
-                    <div className="mt-0.5 shrink-0">
-                      {sent.status === "scheduled" ? (
-                        <Clock className="h-4 w-4 text-amber-500" />
-                      ) : (
-                        <Send className="h-4 w-4 text-emerald-500" />
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className="text-sm truncate">To: {sent.to_addresses?.join(", ")}</p>
-                        <Badge variant="outline" className={`text-[10px] shrink-0 ${
-                          sent.status === "scheduled" ? "border-amber-400/50 text-amber-600" : "border-emerald-400/50 text-emerald-600"
-                        }`}>
-                          {sent.status === "scheduled" ? "Scheduled" : "Sent"}
-                        </Badge>
+                  <ArrowUpDown className="h-3.5 w-3.5" />
+                  Sort by {sentSortBy === "date" ? "date" : "recipient"}
+                </button>
+              </div>
+              <div className="space-y-1">
+                {filteredSentEmails.map((sent) => (
+                  <div
+                    key={sent.id}
+                    className="rounded-lg border px-4 py-3 transition-colors hover:bg-muted/50 opacity-90"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="mt-0.5 shrink-0">
+                        {sent.status === "scheduled" ? (
+                          <Clock className="h-4 w-4 text-amber-500" />
+                        ) : (
+                          <Send className="h-4 w-4 text-emerald-500" />
+                        )}
                       </div>
-                      <p className="text-xs text-muted-foreground truncate mt-0.5">{sent.subject || "(no subject)"}</p>
-                      {sent.scheduled_for && sent.status === "scheduled" && (
-                        <p className="text-[10px] text-amber-600 mt-0.5">
-                          Scheduled for {format(new Date(sent.scheduled_for), "MMM d 'at' h:mm a")}
-                        </p>
-                      )}
-                      <span className="text-[10px] text-muted-foreground mt-1 block">
-                        {formatDistanceToNow(new Date(sent.sent_at || sent.created_at), { addSuffix: true })}
-                      </span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm truncate">To: {sent.to_addresses?.join(", ")}</p>
+                          {sent.from_address && (
+                            <Badge variant="outline" className="text-[10px] shrink-0 text-muted-foreground">
+                              from {sent.from_address}
+                            </Badge>
+                          )}
+                          {!sent.from_address && sent.connection_id === null && (
+                            <Badge variant="outline" className="text-[10px] shrink-0 text-muted-foreground">
+                              via AURA
+                            </Badge>
+                          )}
+                          <Badge variant="outline" className={`text-[10px] shrink-0 ${
+                            sent.status === "scheduled" ? "border-amber-400/50 text-amber-600" : "border-emerald-400/50 text-emerald-600"
+                          }`}>
+                            {sent.status === "scheduled" ? "Scheduled" : "Sent"}
+                          </Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground truncate mt-0.5">{sent.subject || "(no subject)"}</p>
+                        {sent.scheduled_for && sent.status === "scheduled" && (
+                          <p className="text-[10px] text-amber-600 mt-0.5">
+                            Scheduled for {format(new Date(sent.scheduled_for), "MMM d 'at' h:mm a")}
+                          </p>
+                        )}
+                        <span className="text-[10px] text-muted-foreground mt-1 block">
+                          {formatDistanceToNow(new Date(sent.sent_at || sent.created_at), { addSuffix: true })}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           )
         ) : filtered.length === 0 ? (
