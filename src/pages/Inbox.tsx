@@ -234,10 +234,11 @@ export default function Inbox({ emailOnly, embedded, selectedClientId, onClearSe
         : Promise.resolve({ data: [] as any[] }),
     ]);
 
-    const draftEmails = ((draftsRes.data as SentEmail[]) || []).map((email) => ({
+    const draftEmails = ((draftsRes.data as any[]) || []).map((email: any) => ({
       ...email,
       body_html: email.body_html || null,
-    }));
+      from_address: activeConnections.find((c) => c.id === email.connection_id)?.email_address || null,
+    } as SentEmail));
 
     const syncedSentEmails = ((syncedRes.data as Array<{
       id: string;
