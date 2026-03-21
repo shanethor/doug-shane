@@ -1948,6 +1948,18 @@ export default function Inbox({ emailOnly, embedded, selectedClientId, onClearSe
               />
             </div>
 
+            {/* Google Meet link */}
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 text-xs w-fit"
+              onClick={handleCreateMeetLink}
+              disabled={creatingMeet}
+            >
+              {creatingMeet ? <Loader2 className="h-3 w-3 animate-spin" /> : <Video className="h-3 w-3" />}
+              {creatingMeet ? "Creating…" : "Add Google Meet Link"}
+            </Button>
+
             {/* Schedule send */}
             <div className="space-y-2">
               <Label className="text-xs flex items-center gap-1.5">
