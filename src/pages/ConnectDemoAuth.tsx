@@ -92,12 +92,22 @@ export default function ConnectDemoAuth() {
   const [name, setName] = useState("");
   const [welcomeReady, setWelcomeReady] = useState(false);
 
+  const [buildPhase, setBuildPhase] = useState(0); // 0=card, 1=logo, 2=title, 3=subtitle, 4=features, 5=button
+
   useEffect(() => {
     if (step === "welcome") {
-      const t = setTimeout(() => setWelcomeReady(true), 100);
-      return () => clearTimeout(t);
+      setWelcomeReady(false);
+      setBuildPhase(0);
+      const t0 = setTimeout(() => setWelcomeReady(true), 100);
+      const t1 = setTimeout(() => setBuildPhase(1), 400);   // logo
+      const t2 = setTimeout(() => setBuildPhase(2), 1000);  // title
+      const t3 = setTimeout(() => setBuildPhase(3), 1600);  // subtitle
+      const t4 = setTimeout(() => setBuildPhase(4), 2200);  // features
+      const t5 = setTimeout(() => setBuildPhase(5), 3400);  // button
+      return () => [t0, t1, t2, t3, t4, t5].forEach(clearTimeout);
     }
     setWelcomeReady(false);
+    setBuildPhase(0);
   }, [step]);
 
   const handleAuth = (e: React.FormEvent) => {
