@@ -162,9 +162,13 @@ export default function AdminAgencySection({ agencies, setAgencies, adminUsers, 
                     className="flex items-start gap-3 text-left flex-1 min-w-0"
                     onClick={() => setExpandedAgency(isExpanded ? null : a.id)}
                   >
-                    <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
-                      <Building2 className="h-4 w-4 text-primary" />
-                    </div>
+                    {a.logo_url ? (
+                      <img src={a.logo_url} alt={a.name} className="h-9 w-9 rounded-lg object-contain bg-background shrink-0 mt-0.5" />
+                    ) : (
+                      <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+                        <Building2 className="h-4 w-4 text-primary" />
+                      </div>
+                    )}
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className="font-medium text-sm">{a.name}</p>
