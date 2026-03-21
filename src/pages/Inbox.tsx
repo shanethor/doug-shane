@@ -175,6 +175,8 @@ export default function Inbox({ emailOnly, embedded, selectedClientId, onClearSe
 
   // Sent history
   const [sentEmails, setSentEmails] = useState<SentEmail[]>([]);
+  const [sentSortBy, setSentSortBy] = useState<"date" | "recipient">("date");
+  const [creatingMeet, setCreatingMeet] = useState(false);
 
   const updateLastSyncedFromEmails = useCallback((emails: SyncedEmail[]) => {
     const syncedTimes = emails
