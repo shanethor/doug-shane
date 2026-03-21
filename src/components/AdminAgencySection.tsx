@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -6,8 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Building2, Plus, Trash2, Users, Globe, Shield, ChevronDown, ChevronUp, Search } from "lucide-react";
+import { Building2, Plus, Trash2, Users, Globe, Shield, ChevronDown, ChevronUp, Search, Upload, Image } from "lucide-react";
 import { toast } from "sonner";
 
 interface Agency {
@@ -43,6 +42,29 @@ export default function AdminAgencySection({ agencies, setAgencies, adminUsers, 
   const [newAgencyWebsite, setNewAgencyWebsite] = useState("");
   const [creatingAgency, setCreatingAgency] = useState(false);
   const [search, setSearch] = useState("");
+  const [uploadingLogo, setUploadingLogo] = useState<string | null>(null);
+  const logoInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+
+  const handleLogoUpload = async (agencyId: string, file: File) => {
+    if (!file.type.startsWith("image/")) { toast.error("Please upload an image file"); return; }
+    if (file.size > 2 * 1024 * 1024) { toast.error("Logo must be under 2MB"); return; }
+    setUploadingLogo(agencyId);
+    try {
+      const ext = file.name.split(".").pop() || "png";
+      const path = `agency-logos/${agencyId}.${ext}`;
+      const { error: uploadErr } = await supabase.storage.from("agency-assets").upload(path, file, { upsert: true });
+      if (uploadErr) throw uploadErr;
+      const { data: urlData } = supabase.storage.from("agency-assets").getPublicUrl(path);
+      const logo_url = urlData.publicUrl + "?t=" + Date.now();
+      const { error: updateErr } = await supabase.from("agencies").update({ logo_url } as any).eq("id", agencyId);
+      if (updateErr) throw updateErr;
+      setAgencies(prev => prev.map(a => a.id === agencyId ? { ...a, logo_url } : a));
+      toast.success("Logo updated!");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to upload logo");
+    }
+    setUploadingLogo(null);
+  };
 
   const filteredAgencies = useMemo(() => {
     if (!search) return agencies;
@@ -163,9 +185,13 @@ export default function AdminAgencySection({ agencies, setAgencies, adminUsers, 
                     className="flex items-start gap-3 text-left flex-1 min-w-0"
                     onClick={() => setExpandedAgency(isExpanded ? null : a.id)}
                   >
-                    <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
-                      <Building2 className="h-4 w-4 text-primary" />
-                    </div>
+                    {a.logo_url ? (
+                      <img src={a.logo_url} alt={a.name} className="h-9 w-9 rounded-lg object-contain bg-background shrink-0 mt-0.5" />
+                    ) : (
+                      <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+                        <Building2 className="h-4 w-4 text-primary" />
+                      </div>
+                    )}
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className="font-medium text-sm">{a.name}</p>
@@ -200,6 +226,32 @@ export default function AdminAgencySection({ agencies, setAgencies, adminUsers, 
                 {/* Expanded: settings + user list */}
                 {isExpanded && (
                   <div className="mt-4 space-y-4 border-t pt-4">
+                    {/* Agency logo */}
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium flex items-center gap-1.5">
+                          <Image className="h-3.5 w-3.5 text-primary" />
+                          Agency Logo
+                        </p>
+                        <p className="text-[11px] text-muted-foreground">PNG, JPG — max 2MB</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {a.logo_url && <img src={a.logo_url} alt="" className="h-8 w-8 rounded object-contain border" />}
+                        <input
+                          ref={el => { logoInputRefs.current[a.id] = el; }}
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={e => { const f = e.target.files?.[0]; if (f) handleLogoUpload(a.id, f); e.target.value = ""; }}
+                        />
+                        <Button variant="outline" size="sm" className="h-7 text-xs gap-1" disabled={uploadingLogo === a.id}
+                          onClick={() => logoInputRefs.current[a.id]?.click()}>
+                          <Upload className="h-3 w-3" />
+                          {uploadingLogo === a.id ? "Uploading…" : a.logo_url ? "Change" : "Upload"}
+                        </Button>
+                      </div>
+                    </div>
+
                     {/* Agency permissions */}
                     <div className="flex items-center justify-between">
                       <div>
