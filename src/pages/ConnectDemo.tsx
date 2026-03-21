@@ -22,12 +22,20 @@ const QUOTES = [
   "What you do today can improve all your tomorrows. – Ralph Marston",
 ];
 
+const AuraLogo = ({ size = 28 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 100 100" fill="none">
+    <rect width="100" height="100" rx="22" fill="white" />
+    <path d="M50 18L74 82H62.5L58 70H42L37.5 82H26L50 18Z" fill="#08080A" />
+    <rect x="39" y="62" width="22" height="5.5" rx="2.75" fill="white" />
+  </svg>
+);
+
 function QuoteTicker() {
   return (
-    <div className="w-full overflow-hidden bg-primary/10 border-b border-border py-2">
+    <div className="w-full overflow-hidden py-2" style={{ background: "hsl(174 97% 22% / 0.08)", borderBottom: "1px solid hsl(240 6% 14%)" }}>
       <div className="flex animate-marquee whitespace-nowrap">
         {[...QUOTES, ...QUOTES].map((q, i) => (
-          <span key={i} className="mx-8 text-sm text-muted-foreground italic">
+          <span key={i} className="mx-8 text-sm italic" style={{ color: "hsl(240 5% 46%)" }}>
             {q}
           </span>
         ))}
@@ -39,7 +47,6 @@ function QuoteTicker() {
 export default function ConnectDemo() {
   const [activeTab, setActiveTab] = useState("pipeline");
 
-  // Check if demo user is "authenticated"
   useEffect(() => {
     const demoAuth = sessionStorage.getItem("connect-demo-auth");
     if (!demoAuth) {
@@ -48,17 +55,16 @@ export default function ConnectDemo() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen flex flex-col" style={{ background: "#08080A", color: "hsl(240 6% 95%)" }}>
       {/* Header */}
-      <header className="border-b border-border bg-card px-4 py-3 flex items-center justify-between">
+      <header className="px-4 py-3 flex items-center justify-between" style={{ borderBottom: "1px solid hsl(240 6% 14%)", background: "hsl(240 8% 7%)" }}>
         <div className="flex items-center gap-3">
-          <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center">
-            <Sparkles className="h-4 w-4 text-primary-foreground" />
-          </div>
-          <h1 className="text-lg font-bold">AURA Connect</h1>
+          <AuraLogo size={32} />
+          <h1 className="text-lg font-bold text-white">AURA Connect</h1>
         </div>
         <button
-          className="text-xs text-muted-foreground hover:text-foreground"
+          className="text-xs hover:text-white transition-colors"
+          style={{ color: "hsl(240 5% 46%)" }}
           onClick={() => {
             sessionStorage.removeItem("connect-demo-auth");
             window.location.href = "/connectdemo/auth";
@@ -73,22 +79,18 @@ export default function ConnectDemo() {
       {/* Main content */}
       <div className="flex-1 w-full px-2 sm:px-4 lg:px-6 py-4">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="flex flex-wrap h-auto gap-1 p-1 mb-4">
-            <TabsTrigger value="pipeline" className="flex items-center gap-1.5">
-              <LayoutGrid className="h-4 w-4" /> Pipeline
-            </TabsTrigger>
-            <TabsTrigger value="email" className="flex items-center gap-1.5">
-              <Mail className="h-4 w-4" /> Email
-            </TabsTrigger>
-            <TabsTrigger value="calendar" className="flex items-center gap-1.5">
-              <CalendarDays className="h-4 w-4" /> Calendar
-            </TabsTrigger>
-            <TabsTrigger value="spotlight" className="flex items-center gap-1.5">
-              <Sparkles className="h-4 w-4" /> Spotlight
-            </TabsTrigger>
-            <TabsTrigger value="assistant" className="flex items-center gap-1.5">
-              <MessageSquare className="h-4 w-4" /> Assistant
-            </TabsTrigger>
+          <TabsList className="flex flex-wrap h-auto gap-1 p-1 mb-4" style={{ background: "hsl(240 8% 7%)", border: "1px solid hsl(240 6% 14%)" }}>
+            {[
+              { value: "pipeline", icon: LayoutGrid, label: "Pipeline" },
+              { value: "email", icon: Mail, label: "Email" },
+              { value: "calendar", icon: CalendarDays, label: "Calendar" },
+              { value: "spotlight", icon: Sparkles, label: "Spotlight" },
+              { value: "assistant", icon: MessageSquare, label: "Assistant" },
+            ].map(t => (
+              <TabsTrigger key={t.value} value={t.value} className="flex items-center gap-1.5 data-[state=active]:text-white" style={{ color: "hsl(240 5% 46%)" }}>
+                <t.icon className="h-4 w-4" /> {t.label}
+              </TabsTrigger>
+            ))}
           </TabsList>
 
           <TabsContent value="pipeline" className="mt-0">
@@ -96,13 +98,13 @@ export default function ConnectDemo() {
           </TabsContent>
 
           <TabsContent value="email" className="mt-0">
-            <div className="rounded-lg border border-border overflow-hidden" style={{ minHeight: "70vh" }}>
+            <div className="rounded-lg overflow-hidden" style={{ minHeight: "70vh", border: "1px solid hsl(240 6% 14%)" }}>
               <EmailHub />
             </div>
           </TabsContent>
 
           <TabsContent value="calendar" className="mt-0">
-            <div className="rounded-lg border border-border overflow-hidden" style={{ minHeight: "70vh" }}>
+            <div className="rounded-lg overflow-hidden" style={{ minHeight: "70vh", border: "1px solid hsl(240 6% 14%)" }}>
               <CalendarPage />
             </div>
           </TabsContent>
@@ -112,7 +114,7 @@ export default function ConnectDemo() {
           </TabsContent>
 
           <TabsContent value="assistant" className="mt-0">
-            <div className="rounded-lg border border-border overflow-hidden" style={{ minHeight: "70vh" }}>
+            <div className="rounded-lg overflow-hidden" style={{ minHeight: "70vh", border: "1px solid hsl(240 6% 14%)" }}>
               <Chat />
             </div>
           </TabsContent>
