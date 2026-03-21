@@ -153,6 +153,10 @@ export default function Auth() {
           toast.error("Please select an agency or choose 'No Agency'");
           return;
         }
+        if (!selectedIndustry) {
+          toast.error("Please select your industry");
+          return;
+        }
 
         const signupMeta: Record<string, any> = { full_name: fullName };
         if (selectedAgency) signupMeta.agency_id = selectedAgency.id;
