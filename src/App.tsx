@@ -175,6 +175,8 @@ const App = () => (
               <Route path="video" element={<BetaVideo />} />
             </Route>
           </Route>
+          <Route path="/connectdemo" element={<ConnectDemo />} />
+          <Route path="/connectdemo/auth" element={<ConnectDemoAuth />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<TermsOfService />} />
           <Route path="*" element={<NotFound />} />
