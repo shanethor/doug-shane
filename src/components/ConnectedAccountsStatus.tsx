@@ -303,6 +303,30 @@ export function useConnectedAccounts() {
         canConnect: true,
         canDisconnect: !!networkConns["clubhouse"],
       },
+      {
+        id: "x_twitter",
+        label: "X (Twitter)",
+        icon: <Hash className="h-4 w-4" />,
+        level: "Optional",
+        connected: !!networkConns["x_twitter"],
+        detail: networkConns["x_twitter"] ? `${networkConns["x_twitter"].contact_count} contacts imported` : undefined,
+        contactCount: networkConns["x_twitter"]?.contact_count,
+        lastSync: networkConns["x_twitter"]?.last_sync_at,
+        canConnect: true,
+        canDisconnect: !!networkConns["x_twitter"],
+      },
+      {
+        id: "meta",
+        label: "Meta (Facebook/Instagram)",
+        icon: <Globe className="h-4 w-4" />,
+        level: "Optional",
+        connected: !!networkConns["meta"],
+        detail: networkConns["meta"] ? `${networkConns["meta"].contact_count} contacts imported` : undefined,
+        contactCount: networkConns["meta"]?.contact_count,
+        lastSync: networkConns["meta"]?.last_sync_at,
+        canConnect: true,
+        canDisconnect: !!networkConns["meta"],
+      },
     ]);
     setLoading(false);
   }, [user]);
@@ -1037,6 +1061,22 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
       hasApi: false,
       apiInstructions: "Clubhouse has no public API. Use third-party tools or paste contacts.",
     },
+    x_twitter: {
+      title: "X (Twitter)",
+      instructions: "Request your data archive: X → Settings → Your Account → Download an archive. Upload the followers CSV/JSON, or paste handles/names below.",
+      acceptFiles: ".csv,.json,.zip", parsePaste: true,
+      hasApi: true, apiLabel: "Sync via X API",
+      apiAction: "sync_x_twitter_api",
+      apiInstructions: "Requires X API v2 access (developer.x.com). We'll pull your followers & following lists automatically.",
+    },
+    meta: {
+      title: "Meta (Facebook/Instagram)",
+      instructions: "Download your data: Facebook → Settings → Your Information → Download Your Information. Upload the friends JSON/CSV, or paste names below.",
+      acceptFiles: ".csv,.json,.zip", parsePaste: true,
+      hasApi: true, apiLabel: "Sync via Meta Graph API",
+      apiAction: "sync_meta_api",
+      apiInstructions: "Requires a Meta Developer App with user_friends permission (developers.facebook.com). We'll import your Facebook friends & Instagram contacts.",
+    },
   };
 
   const handleGenericSourceFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1133,7 +1173,7 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
     finally { setActionLoading(null); }
   };
 
-   const GENERIC_SOURCES = ["slack", "teams", "eventbrite", "meetup", "alignable", "strava", "peloton", "nextdoor", "snapchat", "clubhouse"];
+   const GENERIC_SOURCES = ["slack", "teams", "eventbrite", "meetup", "alignable", "strava", "peloton", "nextdoor", "snapchat", "clubhouse", "x_twitter", "meta"];
 
   // ─── Live API Sync for supported sources ───
   const handleApiSync = async (source: string) => {
