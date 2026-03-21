@@ -48,6 +48,7 @@ export default function Auth() {
   const [showCreateAgency, setShowCreateAgency] = useState(false);
   const [newAgencyName, setNewAgencyName] = useState("");
   const [newAgencyWebsite, setNewAgencyWebsite] = useState("");
+  const [selectedIndustry, setSelectedIndustry] = useState("");
   const [searchingAgencies, setSearchingAgencies] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -152,6 +153,10 @@ export default function Auth() {
           toast.error("Please select an agency or choose 'No Agency'");
           return;
         }
+        if (!selectedIndustry) {
+          toast.error("Please select your industry");
+          return;
+        }
 
         const signupMeta: Record<string, any> = { full_name: fullName };
         if (selectedAgency) signupMeta.agency_id = selectedAgency.id;
@@ -172,6 +177,7 @@ export default function Auth() {
             const profileUpdate: Record<string, any> = {
               full_name: fullName,
               approval_status: "pending",
+              industry: selectedIndustry,
             };
             if (selectedAgency) {
               profileUpdate.agency_id = selectedAgency.id;
@@ -717,6 +723,25 @@ export default function Auth() {
                       </div>
                     </div>
                   )}
+                </div>
+
+                {/* Industry Selection */}
+                <div className="space-y-2">
+                  <Label className="text-xs uppercase tracking-wider text-muted-foreground">Industry *</Label>
+                  <select
+                    value={selectedIndustry}
+                    onChange={(e) => setSelectedIndustry(e.target.value)}
+                    className="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    required
+                  >
+                    <option value="">Select your industry...</option>
+                    <option value="insurance">Insurance</option>
+                    <option value="mortgage">Mortgage / Property</option>
+                    <option value="wealth">Wealth Management</option>
+                    <option value="real_estate">Real Estate</option>
+                    <option value="consulting">Consulting / Professional Services</option>
+                    <option value="generic">Other</option>
+                  </select>
                 </div>
               </>
             )}

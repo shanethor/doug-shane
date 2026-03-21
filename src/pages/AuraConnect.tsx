@@ -28,6 +28,7 @@ import ConnectCadenceTab from "@/components/connect/ConnectCadenceTab";
 import ConnectNetworkTab from "@/components/connect/ConnectNetworkTab";
 import ConnectSignalsTab from "@/components/connect/ConnectSignalsTab";
 import ConnectSpotlightTab from "@/components/connect/ConnectSpotlightTab";
+import ConnectPipelineTab from "@/components/connect/ConnectPipelineTab";
 import { ConnectedAccountsStatus } from "@/components/ConnectedAccountsStatus";
 import { ProgressiveUnlocks } from "@/components/ProgressiveUnlocks";
 import { toast } from "sonner";
@@ -376,7 +377,7 @@ export default function AuraConnect() {
 
   return (
     <AppLayout>
-      <div className="max-w-5xl mx-auto space-y-6 pb-24 px-2 sm:px-0">
+      <div className="max-w-7xl mx-auto space-y-6 pb-24 px-2 sm:px-4">
         {/* Header */}
         <div className="flex items-start justify-between">
           <div className="space-y-1">
@@ -399,10 +400,6 @@ export default function AuraConnect() {
             Refresh
           </Button>
         </div>
-
-        {/* Block 2 — Connected Accounts Status (persistent) */}
-        <ConnectedAccountsStatus variant="compact" />
-
 
         {/* Stats Row */}
         {dashboard?.stats && (
@@ -475,6 +472,10 @@ export default function AuraConnect() {
               <TabsTrigger value="signals" className="gap-1.5 text-xs sm:text-sm">
                 <Rss className="h-3.5 w-3.5 hidden sm:inline" />
                 Signals
+              </TabsTrigger>
+              <TabsTrigger value="pipeline" className="gap-1.5 text-xs sm:text-sm">
+                <TrendingUp className="h-3.5 w-3.5 hidden sm:inline" />
+                Pipeline
               </TabsTrigger>
             </TabsList>
           </div>
@@ -922,7 +923,15 @@ export default function AuraConnect() {
           <TabsContent value="signals" className="space-y-4 mt-4">
             <ConnectSignalsTab />
           </TabsContent>
+
+          {/* ────── PIPELINE TAB ────── */}
+          <TabsContent value="pipeline" className="space-y-4 mt-4">
+            <ConnectPipelineTab />
+          </TabsContent>
         </Tabs>
+
+        {/* Connected Accounts — below tabs, above unlocks */}
+        <ConnectedAccountsStatus variant="compact" />
 
         {/* Progressive Unlocks — below main content */}
         <ProgressiveUnlocks />
