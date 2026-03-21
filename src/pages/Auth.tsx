@@ -148,45 +148,38 @@ export default function Auth() {
 
     try {
       if (isSignUp) {
-        // Validate agency code
-        if (!agencyCode.trim()) {
-          toast.error("Agency code is required");
+        if (!noAgency && !selectedAgency) {
+          toast.error("Please select an agency or choose 'No Agency'");
           return;
         }
 
-        const { data: agency } = await supabase
-          .from("agencies")
-          .select("id, name")
-          .eq("code", agencyCode.trim().toUpperCase())
-          .single();
-
-        if (!agency) {
-          toast.error("Invalid agency code. Please check with your administrator.");
-          return;
-        }
+        const signupMeta: Record<string, any> = { full_name: fullName };
+        if (selectedAgency) signupMeta.agency_id = selectedAgency.id;
 
         const { data: signUpData, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
             emailRedirectTo: window.location.origin,
-            data: { full_name: fullName, agency_id: agency.id },
+            data: signupMeta,
           },
         });
         if (error) throw error;
 
         // Update profile with agency and pending status
         if (signUpData.user) {
-          // Wait a moment for the profile trigger to create the row
           setTimeout(async () => {
+            const profileUpdate: Record<string, any> = {
+              full_name: fullName,
+              approval_status: "pending",
+            };
+            if (selectedAgency) {
+              profileUpdate.agency_id = selectedAgency.id;
+              profileUpdate.agency_name = selectedAgency.name;
+            }
             await supabase
               .from("profiles")
-              .update({
-                agency_id: agency.id,
-                agency_name: agency.name,
-                full_name: fullName,
-                approval_status: "pending",
-              })
+              .update(profileUpdate)
               .eq("user_id", signUpData.user!.id);
           }, 1000);
         }
