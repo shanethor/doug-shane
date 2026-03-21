@@ -345,6 +345,16 @@ export default function Calendar({ embedded }: { embedded?: boolean } = {}) {
               <span className="hidden sm:inline">Connect Calendar</span>
             </Button>
           )}
+          <Button
+            variant={activeSection === "booking" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setActiveSection(activeSection === "booking" ? "calendar" : "booking")}
+            className="gap-1.5"
+          >
+            <Link2 className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Booking Links</span>
+          </Button>
+          {activeSection === "calendar" && (
           <Dialog open={createOpen} onOpenChange={setCreateOpen}>
             <DialogTrigger asChild>
               <Button size="sm" className="gap-1.5">
