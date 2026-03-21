@@ -1,24 +1,18 @@
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Target, Handshake, Users, Zap, ArrowRight, Building2,
-  Crown, TrendingUp,
+  Crown, TrendingUp, Sparkles, X,
 } from "lucide-react";
 
 interface Owner {
-  name: string;
-  company: string;
-  reason: string;
-  signal: string;
-  warmth: number;
-  best_path: string;
+  name: string; company: string; reason: string; signal: string;
+  warmth: number; best_path: string;
 }
-
 interface Partner {
-  name: string;
-  type: string;
-  reason: string;
-  owners_unlocked: number;
+  name: string; type: string; reason: string; owners_unlocked: number;
   last_interaction: string;
 }
 
@@ -49,51 +43,136 @@ const DUMMY_PARTNERS: Partner[] = [
 ];
 
 const warmthColor = (w: number) => {
-  if (w >= 85) return "text-success border-success/30";
-  if (w >= 70) return "text-primary border-primary/30";
-  return "text-warning border-warning/30";
+  if (w >= 85) return { color: "hsl(142 71% 45%)", borderColor: "hsl(142 71% 25% / 0.3)" };
+  if (w >= 70) return { color: "hsl(174 97% 40%)", borderColor: "hsl(174 97% 22% / 0.3)" };
+  return { color: "hsl(45 93% 47%)", borderColor: "hsl(45 93% 30% / 0.3)" };
 };
 
+const OUTREACH_STEPS = [
+  { title: "Week 1: Warm Introduction", items: ["Have Doug Martinez introduce you via email or phone", "Send a personalized intro note referencing the shared connection", "Include a brief value proposition specific to their industry"] },
+  { title: "Week 2: Value-First Follow-Up", items: ["Share a relevant industry insight or market report", "Offer a complimentary risk assessment or coverage review", "Reference a specific trigger signal to show you understand their needs"] },
+  { title: "Week 3: Schedule the Meeting", items: ["Propose 2-3 specific meeting times", "Offer both virtual and in-person options", "Prepare a tailored presentation addressing their key pain points"] },
+  { title: "Week 4: Close & Nurture", items: ["Present customized coverage options", "Provide competitive pricing analysis", "Set up ongoing quarterly check-ins for relationship building"] },
+];
+
 export default function DemoTop10Tab() {
+  const [showPlan, setShowPlan] = useState(false);
+  const [planTarget, setPlanTarget] = useState<Owner | null>(null);
+  const [visibleSteps, setVisibleSteps] = useState(0);
+
+  const generatePlan = (owner: Owner) => {
+    setPlanTarget(owner);
+    setShowPlan(true);
+    setVisibleSteps(0);
+  };
+
+  useEffect(() => {
+    if (!showPlan) return;
+    if (visibleSteps >= OUTREACH_STEPS.length) return;
+    const timer = setTimeout(() => setVisibleSteps(v => v + 1), 600);
+    return () => clearTimeout(timer);
+  }, [showPlan, visibleSteps]);
+
+  if (showPlan && planTarget) {
+    return (
+      <div className="space-y-4 animate-fade-in">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-5 w-5" style={{ color: "hsl(174 97% 40%)" }} />
+            <h2 className="text-sm font-semibold text-white">Outreach Plan for {planTarget.name}</h2>
+          </div>
+          <Button variant="ghost" size="sm" className="text-xs" onClick={() => setShowPlan(false)}>
+            <X className="h-4 w-4 mr-1" /> Close
+          </Button>
+        </div>
+
+        <Card style={{ background: "hsl(174 97% 22% / 0.06)", borderColor: "hsl(174 97% 22% / 0.15)" }}>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div>
+                <p className="text-sm font-semibold text-white">{planTarget.name}</p>
+                <p className="text-xs" style={{ color: "hsl(240 5% 46%)" }}>{planTarget.company}</p>
+              </div>
+              <Badge variant="outline" style={warmthColor(planTarget.warmth)} className="text-[10px]">{planTarget.warmth}% warm</Badge>
+            </div>
+            <p className="text-xs mt-2" style={{ color: "hsl(240 5% 46%)" }}>Best path: {planTarget.best_path}</p>
+          </CardContent>
+        </Card>
+
+        <div className="space-y-3">
+          {OUTREACH_STEPS.map((step, i) => {
+            if (i >= visibleSteps) return null;
+            return (
+              <Card key={i} className="animate-fade-in overflow-hidden" style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 14%)", animationDelay: `${i * 100}ms` }}>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="h-7 w-7 rounded-full flex items-center justify-center text-xs font-bold" style={{ background: "hsl(174 97% 22% / 0.15)", color: "hsl(174 97% 40%)" }}>{i + 1}</div>
+                    <h3 className="text-sm font-semibold text-white">{step.title}</h3>
+                  </div>
+                  <ul className="space-y-2">
+                    {step.items.map((item, j) => (
+                      <li key={j} className="flex items-start gap-2 text-xs" style={{ color: "hsl(240 5% 60%)" }}>
+                        <ArrowRight className="h-3 w-3 mt-0.5 shrink-0" style={{ color: "hsl(174 97% 40%)" }} />
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+            );
+          })}
+          {visibleSteps < OUTREACH_STEPS.length && (
+            <div className="flex justify-center py-4">
+              <div className="flex items-center gap-2 text-xs animate-pulse" style={{ color: "hsl(174 97% 40%)" }}>
+                <Sparkles className="h-4 w-4" /> Building your outreach plan...
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 animate-fade-in">
       <div className="flex items-center gap-2 mb-2">
         <Crown className="h-5 w-5 text-warning" />
-        <h2 className="text-sm font-semibold">Your Top 10 Intelligence</h2>
+        <h2 className="text-sm font-semibold text-white">Your Top 10 Intelligence</h2>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Top 10 Owners */}
-        <Card>
+        <Card style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 14%)" }}>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Target className="h-4 w-4 text-primary" />
+            <CardTitle className="text-sm flex items-center gap-2 text-white">
+              <Target className="h-4 w-4" style={{ color: "hsl(174 97% 40%)" }} />
               Top 10 Owners to Reach
             </CardTitle>
-            <p className="text-[11px] text-muted-foreground">Ranked by warmth and trigger signals</p>
+            <p className="text-[11px]" style={{ color: "hsl(240 5% 46%)" }}>Ranked by warmth and trigger signals</p>
           </CardHeader>
           <CardContent className="space-y-2">
             {DUMMY_OWNERS.map((o, i) => (
-              <div key={i} className="flex items-start gap-3 p-2.5 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
-                <div className="flex items-center justify-center h-7 w-7 rounded-full bg-primary/10 text-primary text-xs font-bold shrink-0">
-                  {i + 1}
-                </div>
-                <div className="flex-1 min-w-0 space-y-0.5">
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm font-medium truncate">{o.name}</p>
-                    <Badge variant="outline" className={`text-[9px] shrink-0 ${warmthColor(o.warmth)}`}>
-                      {o.warmth}% warm
-                    </Badge>
-                  </div>
-                  <p className="text-xs text-muted-foreground truncate">{o.company}</p>
-                  <p className="text-[11px] text-muted-foreground">{o.reason}</p>
-                  <div className="flex items-center gap-1 mt-1">
-                    <Zap className="h-3 w-3 text-warning shrink-0" />
-                    <span className="text-[10px] text-warning">{o.signal}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <ArrowRight className="h-3 w-3 text-accent shrink-0" />
-                    <span className="text-[10px] text-accent">{o.best_path}</span>
+              <div key={i} className="p-2.5 rounded-lg hover:bg-white/[0.03] transition-all animate-fade-in" style={{ background: "hsl(240 6% 7%)", animationDelay: `${i * 50}ms` }}>
+                <div className="flex items-start gap-3">
+                  <div className="flex items-center justify-center h-7 w-7 rounded-full text-xs font-bold shrink-0" style={{ background: "hsl(174 97% 22% / 0.15)", color: "hsl(174 97% 40%)" }}>{i + 1}</div>
+                  <div className="flex-1 min-w-0 space-y-0.5">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-medium truncate text-white">{o.name}</p>
+                      <Badge variant="outline" className="text-[9px] shrink-0" style={warmthColor(o.warmth)}>{o.warmth}% warm</Badge>
+                    </div>
+                    <p className="text-xs truncate" style={{ color: "hsl(240 5% 46%)" }}>{o.company}</p>
+                    <p className="text-[11px]" style={{ color: "hsl(240 5% 46%)" }}>{o.reason}</p>
+                    <div className="flex items-center gap-1 mt-1">
+                      <Zap className="h-3 w-3 shrink-0 text-warning" />
+                      <span className="text-[10px] text-warning">{o.signal}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <ArrowRight className="h-3 w-3 shrink-0" style={{ color: "hsl(174 97% 40%)" }} />
+                      <span className="text-[10px]" style={{ color: "hsl(174 97% 40%)" }}>{o.best_path}</span>
+                    </div>
+                    <Button size="sm" variant="outline" className="text-[10px] h-6 mt-1.5 gap-1" onClick={() => generatePlan(o)}>
+                      <Sparkles className="h-3 w-3" /> Generate Outreach Plan
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -102,33 +181,32 @@ export default function DemoTop10Tab() {
         </Card>
 
         {/* Top 10 Partners */}
-        <Card>
+        <Card style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 14%)" }}>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Handshake className="h-4 w-4 text-accent" />
+            <CardTitle className="text-sm flex items-center gap-2 text-white">
+              <Handshake className="h-4 w-4" style={{ color: "hsl(174 97% 40%)" }} />
               Top 10 Partners to Deepen
             </CardTitle>
-            <p className="text-[11px] text-muted-foreground">CPAs, attorneys, lenders who unlock the most owners</p>
+            <p className="text-[11px]" style={{ color: "hsl(240 5% 46%)" }}>CPAs, attorneys, lenders who unlock the most owners</p>
           </CardHeader>
           <CardContent className="space-y-2">
             {DUMMY_PARTNERS.map((p, i) => (
-              <div key={i} className="flex items-start gap-3 p-2.5 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
-                <div className="flex items-center justify-center h-7 w-7 rounded-full bg-accent/10 text-accent text-xs font-bold shrink-0">
-                  {i + 1}
-                </div>
-                <div className="flex-1 min-w-0 space-y-0.5">
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm font-medium truncate">{p.name}</p>
-                    <Badge variant="outline" className="text-[9px] shrink-0">{p.type}</Badge>
+              <div key={i} className="p-2.5 rounded-lg hover:bg-white/[0.03] transition-all animate-fade-in" style={{ background: "hsl(240 6% 7%)", animationDelay: `${i * 50}ms` }}>
+                <div className="flex items-start gap-3">
+                  <div className="flex items-center justify-center h-7 w-7 rounded-full text-xs font-bold shrink-0" style={{ background: "hsl(174 97% 22% / 0.15)", color: "hsl(174 97% 40%)" }}>{i + 1}</div>
+                  <div className="flex-1 min-w-0 space-y-0.5">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-medium truncate text-white">{p.name}</p>
+                      <Badge variant="outline" className="text-[9px] shrink-0" style={{ borderColor: "hsl(240 6% 20%)", color: "hsl(240 5% 60%)" }}>{p.type}</Badge>
+                    </div>
+                    <p className="text-xs" style={{ color: "hsl(240 5% 46%)" }}>{p.reason}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Badge className="text-[9px]" style={{ background: "hsl(240 5% 15%)", color: "hsl(240 5% 60%)" }}>
+                        <Users className="h-3 w-3 mr-1" />{p.owners_unlocked} owners unlocked
+                      </Badge>
+                    </div>
+                    <p className="text-[10px] italic" style={{ color: "hsl(240 5% 36%)" }}>{p.last_interaction}</p>
                   </div>
-                  <p className="text-xs text-muted-foreground">{p.reason}</p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <Badge variant="secondary" className="text-[9px]">
-                      <Users className="h-3 w-3 mr-1" />
-                      {p.owners_unlocked} owners unlocked
-                    </Badge>
-                  </div>
-                  <p className="text-[10px] text-muted-foreground italic">{p.last_interaction}</p>
                 </div>
               </div>
             ))}
