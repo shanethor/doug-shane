@@ -203,6 +203,32 @@ export default function AdminAgencySection({ agencies, setAgencies, adminUsers, 
                 {/* Expanded: settings + user list */}
                 {isExpanded && (
                   <div className="mt-4 space-y-4 border-t pt-4">
+                    {/* Agency logo */}
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium flex items-center gap-1.5">
+                          <Image className="h-3.5 w-3.5 text-primary" />
+                          Agency Logo
+                        </p>
+                        <p className="text-[11px] text-muted-foreground">PNG, JPG — max 2MB</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {a.logo_url && <img src={a.logo_url} alt="" className="h-8 w-8 rounded object-contain border" />}
+                        <input
+                          ref={el => { logoInputRefs.current[a.id] = el; }}
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={e => { const f = e.target.files?.[0]; if (f) handleLogoUpload(a.id, f); e.target.value = ""; }}
+                        />
+                        <Button variant="outline" size="sm" className="h-7 text-xs gap-1" disabled={uploadingLogo === a.id}
+                          onClick={() => logoInputRefs.current[a.id]?.click()}>
+                          <Upload className="h-3 w-3" />
+                          {uploadingLogo === a.id ? "Uploading…" : a.logo_url ? "Change" : "Upload"}
+                        </Button>
+                      </div>
+                    </div>
+
                     {/* Agency permissions */}
                     <div className="flex items-center justify-between">
                       <div>
