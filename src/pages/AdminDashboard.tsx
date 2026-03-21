@@ -749,84 +749,12 @@ export default function AdminDashboard() {
 
         {/* ── Agencies ── */}
         <TabsContent value="agencies" className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Agencies</h2>
-            <Badge variant="outline" className="text-xs">{agencies.length} total</Badge>
-          </div>
-
-          {/* Create new agency */}
-          <Card>
-            <CardContent className="p-4">
-              <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
-                <Plus className="h-4 w-4" />
-                Create New Agency
-              </h3>
-              <div className="flex gap-3 items-end flex-wrap">
-                <div className="flex-1 min-w-[180px] space-y-1">
-                  <label className="text-[11px] uppercase tracking-wider text-muted-foreground">Agency Name</label>
-                  <Input
-                    value={newAgencyName}
-                    onChange={(e) => setNewAgencyName(e.target.value)}
-                    placeholder="ABC Insurance"
-                    className="h-9"
-                  />
-                </div>
-                <div className="w-40 space-y-1">
-                  <label className="text-[11px] uppercase tracking-wider text-muted-foreground">Agency Code</label>
-                  <Input
-                    value={newAgencyCode}
-                    onChange={(e) => setNewAgencyCode(e.target.value.toUpperCase())}
-                    placeholder="ABC"
-                    className="h-9 uppercase font-mono tracking-wider"
-                  />
-                </div>
-                <Button
-                  onClick={handleCreateAgency}
-                  disabled={creatingAgency || !newAgencyName.trim() || !newAgencyCode.trim()}
-                  size="sm"
-                  className="h-9"
-                >
-                  {creatingAgency ? "Creating…" : "Create"}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Agency list */}
-          <div className="grid gap-2">
-            {agencies.map((a: any) => {
-              const agencyUsers = adminUsers.filter((u: any) => u.agency_id === a.id);
-              return (
-                <Card key={a.id}>
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <Building2 className="h-4 w-4 text-primary" />
-                          <p className="font-medium text-sm">{a.name}</p>
-                          <Badge variant="secondary" className="text-[10px] font-mono">{a.code}</Badge>
-                        </div>
-                        <p className="text-[11px] text-muted-foreground">
-                          {agencyUsers.length} member{agencyUsers.length !== 1 ? "s" : ""}
-                          {agencyUsers.length > 0 && (
-                            <span> · {agencyUsers.map((u: any) => u.full_name || u.email).join(", ")}</span>
-                          )}
-                        </p>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 text-destructive hover:text-destructive"
-                        onClick={() => handleDeleteAgency(a.id, a.name)}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
+          <AdminAgencySection
+            agencies={agencies}
+            setAgencies={setAgencies}
+            adminUsers={adminUsers}
+            setAdminUsers={setAdminUsers}
+          />
         </TabsContent>
 
         {/* ── Partner Referrals ── */}
