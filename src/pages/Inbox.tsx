@@ -18,7 +18,7 @@ import { useNavigate } from "react-router-dom";
 import {
   Bell, Mail, GitBranch, FileText, Check, CheckCheck, Sparkles,
   Send, Loader2, Inbox as InboxIcon, MailOpen, RefreshCw, User, Reply, ReplyAll, ArrowLeft, X, Search, SlidersHorizontal, Plus,
-  Paperclip, Download, Zap, ExternalLink, Clock, SendHorizonal, History
+  Paperclip, Download, Zap, ExternalLink, Clock, SendHorizonal, History, Video, ArrowUpDown
 } from "lucide-react";
 import { formatDistanceToNow, format } from "date-fns";
 import { getAuthHeaders } from "@/lib/auth-fetch";
