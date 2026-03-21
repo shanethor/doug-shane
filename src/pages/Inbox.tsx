@@ -82,6 +82,8 @@ type SentEmail = {
   status: string;
   created_at: string;
   scheduled_for?: string | null;
+  connection_id?: string | null;
+  from_address?: string | null;
 };
 
 function buildSentEmailKey(subject: string | null | undefined, toAddresses: string[] | null | undefined, timestamp: string | null | undefined) {
