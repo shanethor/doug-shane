@@ -53,7 +53,7 @@ export default function AdminDashboard() {
   const [policyFilter, setPolicyFilter] = useState<"pending" | "all">("pending");
   const [adminUsers, setAdminUsers] = useState<any[]>([]);
   const [agencies, setAgencies] = useState<any[]>([]);
-  const [creatingAgency, setCreatingAgency] = useState(false);
+  
   const [loading, setLoading] = useState(true);
   const [partnerLinks, setPartnerLinks] = useState<any[]>([]);
 
