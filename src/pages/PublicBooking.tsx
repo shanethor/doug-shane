@@ -17,7 +17,8 @@ const ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 type SlotData = {
   slots: string[];
   link: { title: string; description: string | null; duration_minutes: number; timezone: string };
-  profile: { full_name: string; avatar_url?: string; agency_name?: string };
+  profile: { full_name: string; agency_name?: string | null };
+  agency?: { name: string; logo_url: string | null; website: string | null } | null;
 };
 
 export default function PublicBooking() {
