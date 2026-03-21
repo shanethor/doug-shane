@@ -4,11 +4,12 @@ import { Badge } from "@/components/ui/badge";
 import {
   Lock, Unlock, Star, Zap, Search, Users, Target,
   Mail, Linkedin, Phone, Calendar, CheckCircle, Circle,
+  Crown, Sparkles,
 } from "lucide-react";
 
 interface UnlockTier {
   label: string;
-  requirements: string[];
+  minConnections: number;
   features: string[];
   icon: React.ReactNode;
 }
@@ -16,62 +17,67 @@ interface UnlockTier {
 const TIERS: UnlockTier[] = [
   {
     label: "Basic Intelligence",
-    requirements: ["Email (Gmail or Outlook)"],
+    minConnections: 1,
     features: ["Connection Brief (research-only)", "Email metadata for relationship scoring"],
     icon: <Search className="h-4 w-4" />,
   },
   {
     label: "Warm Path Finder",
-    requirements: ["Email", "LinkedIn"],
+    minConnections: 2,
     features: ["Top 10 owners to reach", "Mutual contact discovery", "Trigger detection"],
     icon: <Target className="h-4 w-4" />,
   },
   {
-    label: "Full Relationship Engine",
-    requirements: ["Email", "LinkedIn", "Google/Outlook Contacts"],
+    label: "Relationship Engine",
+    minConnections: 4,
     features: ["Best Path cards with confidence scores", "AI-drafted outreach", "Social Touch Queue"],
     icon: <Star className="h-4 w-4" />,
   },
   {
-    label: "Maximum Intelligence",
-    requirements: ["Email", "LinkedIn", "Contacts", "Phone", "Calendar"],
-    features: ["Interaction recency & frequency scoring", "Meeting-aware path recommendations", "Follow-up SLA tracking"],
+    label: "Advanced Intelligence",
+    minConnections: 6,
+    features: ["Interaction recency & frequency scoring", "Meeting-aware recommendations", "Follow-up SLA tracking"],
     icon: <Zap className="h-4 w-4" />,
+  },
+  {
+    label: "Maximum Intelligence",
+    minConnections: 8,
+    features: ["Full network graph analysis", "Cross-platform relationship mapping", "Priority signal detection", "All features unlocked"],
+    icon: <Crown className="h-4 w-4" />,
   },
 ];
 
 export function ProgressiveUnlocks() {
   const { accounts } = useConnectedAccounts();
 
-  const connectedIds = new Set(accounts.filter(a => a.connected).map(a => a.id));
+  const connectedCount = accounts.filter(a => a.connected).length;
+  const totalCount = accounts.length;
 
   const getTierStatus = (tier: UnlockTier): "locked" | "partial" | "unlocked" => {
-    const reqMap: Record<string, string[]> = {
-      "Email (Gmail or Outlook)": ["email"],
-      "Email": ["email"],
-      "LinkedIn": ["linkedin"],
-      "Google/Outlook Contacts": ["contacts", "outlook_contacts"],
-      "Contacts": ["contacts", "outlook_contacts"],
-      "Phone": ["phone"],
-      "Calendar": ["email"], // Calendar comes with email OAuth
-    };
-
-    let met = 0;
-    for (const req of tier.requirements) {
-      const ids = reqMap[req] || [];
-      if (ids.some(id => connectedIds.has(id))) met++;
-    }
-
-    if (met === tier.requirements.length) return "unlocked";
-    if (met > 0) return "partial";
+    if (connectedCount >= tier.minConnections) return "unlocked";
+    if (connectedCount >= tier.minConnections - 1) return "partial";
     return "locked";
   };
 
   return (
     <div className="space-y-2">
-      <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-3">
-        Feature Unlocks
-      </p>
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+          Feature Unlocks
+        </p>
+        <Badge variant="secondary" className="text-[10px]">
+          {connectedCount}/{totalCount} connected
+        </Badge>
+      </div>
+
+      {/* Progress bar */}
+      <div className="w-full bg-muted rounded-full h-2 mb-4">
+        <div
+          className="bg-primary rounded-full h-2 transition-all duration-500"
+          style={{ width: `${Math.min((connectedCount / 8) * 100, 100)}%` }}
+        />
+      </div>
+
       {TIERS.map((tier, i) => {
         const status = getTierStatus(tier);
         return (
@@ -108,21 +114,9 @@ export function ProgressiveUnlocks() {
                       }`}
                     >
                       {status === "unlocked" ? "Unlocked" :
-                       status === "partial" ? "Partial" :
-                       "Locked"}
+                       status === "partial" ? "Almost there" :
+                       `${tier.minConnections}+ connections`}
                     </Badge>
-                  </div>
-                  <div className="flex flex-wrap gap-1 mb-1">
-                    {tier.requirements.map((req, j) => (
-                      <Badge key={j} variant="secondary" className="text-[9px] gap-0.5">
-                        {status === "unlocked" || (status === "partial") ? (
-                          <CheckCircle className="h-2.5 w-2.5" />
-                        ) : (
-                          <Circle className="h-2.5 w-2.5" />
-                        )}
-                        {req}
-                      </Badge>
-                    ))}
                   </div>
                   <ul className="space-y-0.5">
                     {tier.features.map((f, j) => (
