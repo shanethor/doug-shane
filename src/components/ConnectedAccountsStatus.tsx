@@ -1061,6 +1061,22 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
       hasApi: false,
       apiInstructions: "Clubhouse has no public API. Use third-party tools or paste contacts.",
     },
+    x_twitter: {
+      title: "X (Twitter)",
+      instructions: "Request your data archive: X → Settings → Your Account → Download an archive. Upload the followers CSV/JSON, or paste handles/names below.",
+      acceptFiles: ".csv,.json,.zip", parsePaste: true,
+      hasApi: true, apiLabel: "Sync via X API",
+      apiAction: "sync_x_twitter_api",
+      apiInstructions: "Requires X API v2 access (developer.x.com). We'll pull your followers & following lists automatically.",
+    },
+    meta: {
+      title: "Meta (Facebook/Instagram)",
+      instructions: "Download your data: Facebook → Settings → Your Information → Download Your Information. Upload the friends JSON/CSV, or paste names below.",
+      acceptFiles: ".csv,.json,.zip", parsePaste: true,
+      hasApi: true, apiLabel: "Sync via Meta Graph API",
+      apiAction: "sync_meta_api",
+      apiInstructions: "Requires a Meta Developer App with user_friends permission (developers.facebook.com). We'll import your Facebook friends & Instagram contacts.",
+    },
   };
 
   const handleGenericSourceFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
