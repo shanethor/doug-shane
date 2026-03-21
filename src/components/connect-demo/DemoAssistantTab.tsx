@@ -191,24 +191,32 @@ export default function DemoAssistantTab() {
         )}
       </div>
 
-      {/* Input */}
-      <div className="p-4 border-t border-border flex gap-2">
-        <Input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && send(input)}
-          placeholder="Ask AURA anything..."
-          className="flex-1 text-base h-12 bg-background border-border px-4"
-        />
-        {loading ? (
-          <Button size="sm" variant="outline" onClick={stop}>
-            <Loader2 className="h-4 w-4 animate-spin" />
-          </Button>
-        ) : (
-          <Button size="sm" onClick={() => send(input)} disabled={!input.trim()} className="bg-primary hover:bg-primary/90">
-            <Send className="h-4 w-4" />
-          </Button>
-        )}
+      {/* Input — styled like main AURA chat */}
+      <div className="p-4">
+        <div className="flex items-end gap-2 rounded-xl border bg-card p-4 aura-glow-shadow focus-within:ring-2 focus-within:ring-ring max-w-2xl w-full mx-auto">
+          <textarea
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(input); } }}
+            placeholder="Ask AURA anything..."
+            rows={3}
+            className="flex-1 resize-none bg-transparent border-0 outline-none text-sm placeholder:text-muted-foreground min-h-[72px] max-h-48 py-2"
+          />
+          {loading ? (
+            <Button size="icon" variant="ghost" onClick={stop} className="shrink-0 h-9 w-9 text-muted-foreground hover:text-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+            </Button>
+          ) : (
+            <Button
+              size="icon"
+              onClick={() => send(input)}
+              disabled={!input.trim()}
+              className="shrink-0 h-9 w-9 bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              <Send className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   );
