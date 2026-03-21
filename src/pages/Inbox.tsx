@@ -953,6 +953,39 @@ export default function Inbox({ emailOnly, embedded, selectedClientId, onClearSe
     }
   };
 
+  // Google Meet link creation handler
+  const handleCreateMeetLink = async () => {
+    setCreatingMeet(true);
+    try {
+      const headers = await getAuthHeaders();
+      const recipients = composeTo.split(",").map((e) => e.trim()).filter(Boolean);
+      const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/calendar-sync`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          action: "create_meet",
+          title: composeSubject || "Meeting",
+          attendees: recipients,
+        }),
+      });
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({ error: "Failed" }));
+        throw new Error(err.error || "Failed to create Meet link");
+      }
+      const { meet_link } = await resp.json();
+      if (meet_link) {
+        setComposeBody((prev) => prev + (prev ? "\n\n" : "") + `📹 Join Google Meet: ${meet_link}`);
+        toast.success("Google Meet link added to email");
+      } else {
+        toast.error("Meet link was not generated");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Failed to create Google Meet link");
+    } finally {
+      setCreatingMeet(false);
+    }
+  };
+
   // AI draft handler via router
   const handleAiDraft = async () => {
     if (!aiPrompt.trim()) return;
