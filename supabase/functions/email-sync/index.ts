@@ -1478,6 +1478,15 @@ Return ONLY valid JSON. No markdown fences, no explanation.`;
         }
 
         const result = await sendResp.json();
+        await adminClient.from("email_drafts").insert({
+          user_id: userId,
+          to_addresses: recipients,
+          subject,
+          body_html: body_html || "",
+          status: "sent",
+          sent_at: new Date().toISOString(),
+          connection_id: conn.id,
+        });
         return new Response(JSON.stringify({ success: true, id: result.id, sent_from: conn.email_address }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
@@ -1514,6 +1523,15 @@ Return ONLY valid JSON. No markdown fences, no explanation.`;
           });
         }
 
+        await adminClient.from("email_drafts").insert({
+          user_id: userId,
+          to_addresses: recipients,
+          subject,
+          body_html: body_html || "",
+          status: "sent",
+          sent_at: new Date().toISOString(),
+          connection_id: conn.id,
+        });
         return new Response(JSON.stringify({ success: true, sent_from: conn.email_address }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });

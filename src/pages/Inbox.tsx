@@ -993,6 +993,15 @@ export default function Inbox({ emailOnly, embedded, selectedClientId, onClearSe
           body: JSON.stringify({ to: recipients, subject: composeSubject, html: htmlBody }),
         });
         if (!resp.ok) throw new Error("Failed to send via AURA");
+        await supabase.from("email_drafts").insert({
+          user_id: user!.id,
+          to_addresses: recipients,
+          subject: composeSubject,
+          body_html: htmlBody,
+          status: "sent",
+          sent_at: new Date().toISOString(),
+          connection_id: null,
+        } as any);
         toast.success("Email sent via AURA!");
       } else {
         const connectionId = sendVia;
