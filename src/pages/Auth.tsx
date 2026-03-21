@@ -41,7 +41,14 @@ export default function Auth() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
-  const [agencyCode, setAgencyCode] = useState("");
+  const [agencySearch, setAgencySearch] = useState("");
+  const [agencyResults, setAgencyResults] = useState<any[]>([]);
+  const [selectedAgency, setSelectedAgency] = useState<{ id: string; name: string } | null>(null);
+  const [noAgency, setNoAgency] = useState(false);
+  const [showCreateAgency, setShowCreateAgency] = useState(false);
+  const [newAgencyName, setNewAgencyName] = useState("");
+  const [newAgencyWebsite, setNewAgencyWebsite] = useState("");
+  const [searchingAgencies, setSearchingAgencies] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   // 2FA state
