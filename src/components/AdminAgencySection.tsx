@@ -42,6 +42,29 @@ export default function AdminAgencySection({ agencies, setAgencies, adminUsers, 
   const [newAgencyWebsite, setNewAgencyWebsite] = useState("");
   const [creatingAgency, setCreatingAgency] = useState(false);
   const [search, setSearch] = useState("");
+  const [uploadingLogo, setUploadingLogo] = useState<string | null>(null);
+  const logoInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+
+  const handleLogoUpload = async (agencyId: string, file: File) => {
+    if (!file.type.startsWith("image/")) { toast.error("Please upload an image file"); return; }
+    if (file.size > 2 * 1024 * 1024) { toast.error("Logo must be under 2MB"); return; }
+    setUploadingLogo(agencyId);
+    try {
+      const ext = file.name.split(".").pop() || "png";
+      const path = `agency-logos/${agencyId}.${ext}`;
+      const { error: uploadErr } = await supabase.storage.from("agency-assets").upload(path, file, { upsert: true });
+      if (uploadErr) throw uploadErr;
+      const { data: urlData } = supabase.storage.from("agency-assets").getPublicUrl(path);
+      const logo_url = urlData.publicUrl + "?t=" + Date.now();
+      const { error: updateErr } = await supabase.from("agencies").update({ logo_url } as any).eq("id", agencyId);
+      if (updateErr) throw updateErr;
+      setAgencies(prev => prev.map(a => a.id === agencyId ? { ...a, logo_url } : a));
+      toast.success("Logo updated!");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to upload logo");
+    }
+    setUploadingLogo(null);
+  };
 
   const filteredAgencies = useMemo(() => {
     if (!search) return agencies;
