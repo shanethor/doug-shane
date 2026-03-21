@@ -256,6 +256,8 @@ export default function Inbox({ emailOnly, embedded, selectedClientId, onClearSe
       status: "sent",
       created_at: email.received_at,
       scheduled_for: null,
+      connection_id: null,
+      from_address: email.from_address,
     } satisfies SentEmail));
 
     const existingKeys = new Set(
