@@ -81,8 +81,24 @@ const FEATURES = [
   { icon: Shield, label: "Spotlight Marketing", delay: "0.9s" },
   { icon: Zap, label: "AI Assistant", delay: "1.1s" },
 ];
+const INDUSTRIES = [
+  "Accounting", "Advertising & Marketing", "Agriculture", "Architecture", "Automotive",
+  "Banking & Finance", "Biotechnology", "Cannabis", "Commercial Real Estate", "Construction",
+  "Consulting", "Cybersecurity", "Dental", "E-Commerce", "Education", "Energy & Utilities",
+  "Engineering", "Entertainment", "Environmental Services", "Event Planning", "Fashion & Apparel",
+  "Film & Media", "Financial Planning", "Fitness & Wellness", "Food & Beverage", "Franchise",
+  "Government", "Healthcare", "Hospitality & Hotels", "Human Resources", "Import / Export",
+  "Information Technology", "Insurance", "Interior Design", "Investment Management", "Law / Legal",
+  "Logistics & Supply Chain", "Manufacturing", "Medical Devices", "Mining", "Mortgage & Lending",
+  "Music", "Nonprofit", "Oil & Gas", "Pharmaceuticals", "Photography", "Private Equity",
+  "Professional Services", "Property Management", "Publishing", "Real Estate",
+  "Recruiting & Staffing", "Renewable Energy", "Residential Real Estate", "Restaurant",
+  "Retail", "SaaS / Software", "Security Services", "Social Media", "Sports & Recreation",
+  "Telecommunications", "Transportation", "Travel & Tourism", "Venture Capital",
+  "Veterinary", "Video Production", "Warehousing", "Wealth Management", "Wholesale", "Other",
+];
 
-type Step = "auth" | "subscribe" | "welcome";
+
 
 export default function ConnectDemoAuth() {
   const navigate = useNavigate();
