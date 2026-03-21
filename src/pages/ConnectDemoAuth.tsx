@@ -184,10 +184,36 @@ export default function ConnectDemoAuth() {
                 <Input placeholder="Your name" value={name} onChange={e => setName(e.target.value)}
                   className="bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-[hsl(174,97%,22%)] transition-colors" />
               </div>
-              <div className="space-y-2">
-                <Label className="text-white/80">Email</Label>
-                <Input type="email" placeholder="you@example.com" required value={email} onChange={e => setEmail(e.target.value)}
-                  className="bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-[hsl(174,97%,22%)] transition-colors" />
+              <div className="space-y-2 relative" ref={industryRef}>
+                <Label className="text-white/80">Industry</Label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/30 pointer-events-none" />
+                  <Input
+                    placeholder="Search your industry…"
+                    value={industry}
+                    onChange={e => { setIndustry(e.target.value); setIndustryOpen(true); }}
+                    onFocus={() => setIndustryOpen(true)}
+                    className="bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-[hsl(174,97%,22%)] transition-colors pl-9"
+                  />
+                </div>
+                {industryOpen && filteredIndustries.length > 0 && (
+                  <div className="absolute z-50 w-full mt-1 rounded-lg border overflow-hidden max-h-48 overflow-y-auto"
+                    style={{ background: "hsl(240 8% 10%)", borderColor: "hsl(240 6% 18%)" }}>
+                    {filteredIndustries.map(ind => (
+                      <button
+                        key={ind}
+                        type="button"
+                        className="w-full text-left px-3 py-2 text-sm text-white/80 hover:text-white transition-colors"
+                        style={{ background: industry === ind ? "hsl(174 97% 22% / 0.15)" : "transparent" }}
+                        onMouseEnter={e => (e.currentTarget.style.background = "hsl(174 97% 22% / 0.1)")}
+                        onMouseLeave={e => (e.currentTarget.style.background = industry === ind ? "hsl(174 97% 22% / 0.15)" : "transparent")}
+                        onClick={() => { setIndustry(ind); setIndustryOpen(false); }}
+                      >
+                        {ind}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
               <div className="space-y-2">
                 <Label className="text-white/80">Password</Label>
