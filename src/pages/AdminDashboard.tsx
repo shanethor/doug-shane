@@ -19,6 +19,7 @@ import {
   XCircle, Edit3, ShieldCheck, Building2, Plus, Trash2, Handshake, ScrollText, Network, Sparkles,
 } from "lucide-react";
 import AdminPartnerReferrals from "@/components/AdminPartnerReferrals";
+import AdminAgencySection from "@/components/AdminAgencySection";
 import AdminPartnerRequests from "@/components/AdminPartnerRequests2";
 import AdminConciergeQueue from "@/components/AdminConciergeQueue";
 import { Checkbox } from "@/components/ui/checkbox";
