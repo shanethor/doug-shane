@@ -377,7 +377,7 @@ export default function AuraConnect() {
 
   return (
     <AppLayout>
-      <div className="max-w-5xl mx-auto space-y-6 pb-24 px-2 sm:px-0">
+      <div className="max-w-7xl mx-auto space-y-6 pb-24 px-2 sm:px-4">
         {/* Header */}
         <div className="flex items-start justify-between">
           <div className="space-y-1">
