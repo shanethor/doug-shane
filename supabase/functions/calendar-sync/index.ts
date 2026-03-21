@@ -212,7 +212,7 @@ async function syncGoogle(accessToken: string, userId: string, adminClient: any)
 
 /* ─── Google Create Event ─── */
 async function createGoogleEvent(accessToken: string, body: any) {
-  const { title, start, end, description, location, attendees } = body;
+  const { title, start, end, description, location, attendees, conferenceData } = body;
 
   const eventBody: any = {
     summary: title,
@@ -225,8 +225,15 @@ async function createGoogleEvent(accessToken: string, body: any) {
   if (attendees?.length > 0) {
     eventBody.attendees = attendees.map((email: string) => ({ email }));
   }
+  if (conferenceData) {
+    eventBody.conferenceData = conferenceData;
+  }
 
-  const resp = await fetch(`${GOOGLE_CAL_BASE}/calendars/primary/events`, {
+  const url = conferenceData
+    ? `${GOOGLE_CAL_BASE}/calendars/primary/events?conferenceDataVersion=1`
+    : `${GOOGLE_CAL_BASE}/calendars/primary/events`;
+
+  const resp = await fetch(url, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${accessToken}`,
