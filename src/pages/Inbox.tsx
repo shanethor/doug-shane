@@ -919,6 +919,30 @@ export default function Inbox({ emailOnly, embedded, selectedClientId, onClearSe
   const clientFiltered = applyClientFolderFilter(tabFiltered);
   const filtered = applySearchFilter(applyNonInsuranceFilter(applyAccountFilter(applyInsuranceFilters(clientFiltered))));
 
+  // Filtered + sorted sent emails
+  const filteredSentEmails = (() => {
+    let items = [...sentEmails];
+    // Search filter
+    const q = searchQuery.trim().toLowerCase();
+    if (q) {
+      items = items.filter((s) => {
+        const text = `${s.subject || ""} ${s.to_addresses?.join(" ") || ""} ${s.from_address || ""}`.toLowerCase();
+        return text.includes(q);
+      });
+    }
+    // Account filter
+    if (selectedAccountId !== "all") {
+      items = items.filter((s) => s.connection_id === selectedAccountId);
+    }
+    // Sort
+    if (sentSortBy === "recipient") {
+      items.sort((a, b) => (a.to_addresses?.[0] || "").localeCompare(b.to_addresses?.[0] || ""));
+    } else {
+      items.sort((a, b) => new Date(b.sent_at || b.created_at).getTime() - new Date(a.sent_at || a.created_at).getTime());
+    }
+    return items;
+  })();
+
   const unreadCount = applyClientFolderFilter(baseUnified).filter((u) => !u.is_read).length;
 
   const handleUnifiedClick = (item: UnifiedItem) => {
