@@ -97,8 +97,7 @@ const INDUSTRIES = [
   "Telecommunications", "Transportation", "Travel & Tourism", "Venture Capital",
   "Veterinary", "Video Production", "Warehousing", "Wealth Management", "Wholesale", "Other",
 ];
-
-
+type Step = "auth" | "subscribe" | "welcome";
 
 export default function ConnectDemoAuth() {
   const navigate = useNavigate();
