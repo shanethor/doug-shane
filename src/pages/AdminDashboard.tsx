@@ -243,27 +243,6 @@ export default function AdminDashboard() {
     );
   };
 
-  const handleCreateAgency = async () => {
-    if (!newAgencyName.trim() || !newAgencyCode.trim()) {
-      toast.error("Agency name and code are required");
-      return;
-    }
-    setCreatingAgency(true);
-    const { data, error } = await supabase.from("agencies").insert({
-      name: newAgencyName.trim(),
-      code: newAgencyCode.trim().toUpperCase(),
-    }).select().single();
-    if (error) {
-      toast.error(error.message.includes("duplicate") ? "Agency code already exists" : error.message);
-    } else {
-      toast.success("Agency created!");
-      setAgencies((prev) => [...prev, data]);
-      setNewAgencyName("");
-      setNewAgencyCode("");
-    }
-    setCreatingAgency(false);
-  };
-
   const handleDeleteUser = async (userId: string, userName: string) => {
     if (!confirm(`Delete user "${userName}"? This cannot be undone.`)) return;
     const { data, error } = await supabase.functions.invoke("approve-user", {
@@ -275,20 +254,6 @@ export default function AdminDashboard() {
     }
     toast.success("User deleted");
     setAdminUsers((prev) => prev.filter((u: any) => u.id !== userId));
-  };
-
-  const handleDeleteAgency = async (agencyId: string, agencyName: string) => {
-    if (!confirm(`Delete agency "${agencyName}"? Users will be unassigned.`)) return;
-    const { data, error } = await supabase.functions.invoke("approve-user", {
-      body: { target_user_id: agencyId, action: "delete_agency" },
-    });
-    if (error || data?.error) {
-      toast.error(data?.error || "Failed to delete agency");
-      return;
-    }
-    toast.success("Agency deleted");
-    setAgencies((prev) => prev.filter((a: any) => a.id !== agencyId));
-    setAdminUsers((prev) => prev.map((u: any) => u.agency_id === agencyId ? { ...u, agency_id: null, agency_name: null } : u));
   };
 
   return (
