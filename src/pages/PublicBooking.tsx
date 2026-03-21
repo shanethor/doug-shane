@@ -117,10 +117,17 @@ END:VCALENDAR`;
 
   if (submitted && slotData) {
     const dt = new Date(confirmedTime);
+    const confAgencyLogo = slotData.agency?.logo_url;
+    const confAgencyName = slotData.agency?.name || slotData.profile.agency_name;
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-4">
         <Card className="w-full max-w-lg text-center">
           <CardContent className="p-8 space-y-4">
+            {confAgencyLogo ? (
+              <img src={confAgencyLogo} alt={confAgencyName || ""} className="h-10 w-auto mx-auto object-contain rounded" />
+            ) : confAgencyName ? (
+              <p className="text-sm font-medium text-muted-foreground">{confAgencyName}</p>
+            ) : null}
             <div className="mx-auto w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
               <Check className="h-7 w-7 text-primary" />
             </div>
