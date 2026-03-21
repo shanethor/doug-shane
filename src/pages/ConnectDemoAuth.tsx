@@ -128,14 +128,29 @@ export default function ConnectDemoAuth() {
     setBuildPhase(0);
   }, [step]);
 
+  const filteredIndustries = useMemo(() => {
+    if (!industry.trim()) return INDUSTRIES.slice(0, 8);
+    const q = industry.toLowerCase();
+    return INDUSTRIES.filter(i => i.toLowerCase().includes(q)).slice(0, 8);
+  }, [industry]);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (industryRef.current && !industryRef.current.contains(e.target as Node)) setIndustryOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
   const handleAuth = (e: React.FormEvent) => {
     e.preventDefault();
-    if (email && password) setStep("subscribe");
+    if (email && password && industry) setStep("subscribe");
   };
   const handleSubscribe = () => setStep("welcome");
   const handleEnter = () => {
     sessionStorage.setItem("connect-demo-auth", "true");
     sessionStorage.setItem("connect-demo-name", name || email.split("@")[0]);
+    sessionStorage.setItem("connect-demo-industry", industry);
     navigate("/connectdemo");
   };
 
