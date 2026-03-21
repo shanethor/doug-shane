@@ -33,6 +33,7 @@ import InboxPage from "./pages/Inbox";
 import EmailCallback from "./pages/EmailCallback";
 import CalendarPage from "./pages/Calendar";
 import BookingPage from "./pages/BookingPage";
+import PublicBooking from "./pages/PublicBooking";
 import Settings from "./pages/Settings";
 import AuraPulse from "./pages/AuraPulse";
 import EmailHub from "./pages/EmailHub";
