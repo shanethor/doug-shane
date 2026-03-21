@@ -177,6 +177,7 @@ export default function Auth() {
             const profileUpdate: Record<string, any> = {
               full_name: fullName,
               approval_status: "pending",
+              industry: selectedIndustry,
             };
             if (selectedAgency) {
               profileUpdate.agency_id = selectedAgency.id;
