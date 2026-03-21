@@ -142,7 +142,7 @@ export default function AuraConnect() {
   const [dismissedTouches, setDismissedTouches] = useState<Set<string>>(new Set());
 
   // Active tab
-  const [activeTab, setActiveTab] = useState("brief");
+  const [activeTab, setActiveTab] = useState("pipeline");
 
   useEffect(() => {
     if (!featuresLoading && !roleLoading && !hasConnect && !isAdmin) {
@@ -377,7 +377,7 @@ export default function AuraConnect() {
 
   return (
     <AppLayout>
-      <div className="max-w-7xl mx-auto space-y-6 pb-24 px-2 sm:px-4">
+      <div className="w-full mx-auto space-y-6 pb-24 px-2 sm:px-4 lg:px-6">
         {/* Header */}
         <div className="flex items-start justify-between">
           <div className="space-y-1">
@@ -423,8 +423,11 @@ export default function AuraConnect() {
 
         {/* Main Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <div className="overflow-x-auto -mx-2 px-2">
-            <TabsList className="inline-flex w-auto min-w-full gap-0.5">
+          <TabsList className="flex flex-wrap h-auto gap-1 p-1">
+              <TabsTrigger value="pipeline" className="gap-1.5 text-xs sm:text-sm">
+                <TrendingUp className="h-3.5 w-3.5 hidden sm:inline" />
+                Pipeline
+              </TabsTrigger>
               <TabsTrigger value="brief" className="gap-1.5 text-xs sm:text-sm">
                 <Search className="h-3.5 w-3.5 hidden sm:inline" />
                 Brief
@@ -473,12 +476,7 @@ export default function AuraConnect() {
                 <Rss className="h-3.5 w-3.5 hidden sm:inline" />
                 Signals
               </TabsTrigger>
-              <TabsTrigger value="pipeline" className="gap-1.5 text-xs sm:text-sm">
-                <TrendingUp className="h-3.5 w-3.5 hidden sm:inline" />
-                Pipeline
-              </TabsTrigger>
-            </TabsList>
-          </div>
+          </TabsList>
 
           {/* ────── TOP 10s TAB ────── */}
           <TabsContent value="dashboard" className="space-y-4 mt-4">
