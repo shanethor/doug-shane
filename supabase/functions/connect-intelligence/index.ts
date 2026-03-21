@@ -121,7 +121,7 @@ Return ONLY valid JSON with this structure:
     { "type": "job_change|funding|expansion|renewal|dormant_reactivation|new_contact|content_engagement", "title": "short title", "description": "what happened", "person": "who it involves", "company": "company name", "date": "when", "urgency": "high|medium|low", "suggested_action": "what to do" }
   ],
   "touch_queue": [
-    { "id": "unique_id", "type": "email|linkedin_dm|comment|intro_request", "target": "person name", "company": "company name", "subject": "email subject or action", "draft": "the actual draft message", "reason": "why now", "priority": "high|medium|low" }
+    { "id": "unique_id", "type": "email|linkedin_dm|comment|intro_request", "target": "person name", "company": "company name", "email": "recipient@example.com or null", "subject": "email subject or action", "draft": "the actual draft message", "reason": "why now", "priority": "high|medium|low" }
   ],
   "stats": {
     "warm_paths": 10,
@@ -134,6 +134,7 @@ Return ONLY valid JSON with this structure:
 Generate up to 10 top owners, up to 10 top partners, 8-12 triggers, and 6-10 touch queue items.
 Use REAL data from the contacts and leads provided. Make every recommendation specific and actionable.
 Touch queue drafts should be 2-4 sentences, professional but warm, in the advisor's voice.
+For email-type touch_queue items, include a real recipient email from the provided contact data whenever one exists. If no email exists, return null for the email field.
 Stats should reflect the actual data counts where possible.`;
 
       userPrompt = `Here is my current pipeline of ${(leads || []).length} accounts:

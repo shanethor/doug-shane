@@ -99,6 +99,7 @@ interface TouchItem {
   draft: string;
   reason: string;
   priority: "high" | "medium" | "low";
+    email?: string;
 }
 
 interface DashboardData {
@@ -224,17 +225,80 @@ export default function AuraConnect() {
   // ─── Touch queue actions ───
 
   const handleApproveTouch = async (touch: TouchItem) => {
-    setApprovedTouches(prev => new Set(prev).add(touch.id));
-    toast.success("Message approved & queued");
-    // Track feedback
-    await supabase.from("outreach_feedback").insert({
-      user_id: user!.id,
-      touch_id: touch.id,
-      target_name: touch.target,
-      target_company: touch.company,
-      outreach_type: touch.type,
-      action: "approved",
-    });
+    if (touch.type !== "email") {
+      setApprovedTouches(prev => new Set(prev).add(touch.id));
+      toast.success("Non-email touch approved");
+      await supabase.from("outreach_feedback").insert({
+        user_id: user!.id,
+        touch_id: touch.id,
+        target_name: touch.target,
+        target_company: touch.company,
+        outreach_type: touch.type,
+        action: "approved",
+        notes: "Approved non-email outreach suggestion",
+      });
+      return;
+    }
+
+    const recipientEmail = touch.email?.trim();
+    if (!recipientEmail) {
+      toast.error("This outreach item has no email address to send to yet.");
+      await supabase.from("outreach_feedback").insert({
+        user_id: user!.id,
+        touch_id: touch.id,
+        target_name: touch.target,
+        target_company: touch.company,
+        outreach_type: touch.type,
+        action: "failed",
+        notes: "Missing recipient email address",
+      });
+      return;
+    }
+
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/email-sync`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          action: "send",
+          to: [recipientEmail],
+          subject: touch.subject || `Following up with ${touch.target}`,
+          body_html: touch.draft.replace(/\n/g, "<br/>") ,
+        }),
+      });
+
+      const result = await response.json().catch(() => null);
+      if (!response.ok) {
+        throw new Error(result?.error || "Failed to send outreach email");
+      }
+
+      setApprovedTouches(prev => new Set(prev).add(touch.id));
+      toast.success(`Email sent to ${recipientEmail}`);
+
+      await supabase.from("outreach_feedback").insert({
+        user_id: user!.id,
+        touch_id: touch.id,
+        target_name: touch.target,
+        target_company: touch.company,
+        outreach_type: touch.type,
+        action: "approved",
+        notes: `Email sent to ${recipientEmail}`,
+        metadata: { recipient_email: recipientEmail, sent_from: result?.sent_from ?? null },
+      });
+    } catch (err: any) {
+      toast.error(err.message || "Failed to send outreach email");
+      await supabase.from("outreach_feedback").insert({
+        user_id: user!.id,
+        touch_id: touch.id,
+        target_name: touch.target,
+        target_company: touch.company,
+        outreach_type: touch.type,
+        action: "failed",
+        notes: err.message || "Failed to send outreach email",
+        metadata: { recipient_email: recipientEmail },
+      });
+    }
   };
 
   const handleDismissTouch = async (touch: TouchItem) => {
