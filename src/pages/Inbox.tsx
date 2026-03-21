@@ -218,7 +218,7 @@ export default function Inbox({ emailOnly, embedded, selectedClientId, onClearSe
     const [draftsRes, syncedRes] = await Promise.all([
       supabase
         .from("email_drafts")
-        .select("id, subject, to_addresses, body_html, sent_at, status, created_at, scheduled_for")
+        .select("id, subject, to_addresses, body_html, sent_at, status, created_at, scheduled_for, connection_id")
         .eq("user_id", user.id)
         .in("status", ["sent", "scheduled"])
         .order("created_at", { ascending: false })
