@@ -147,6 +147,7 @@ const App = () => (
           <Route path="/approvals" element={<Navigate to="/admin" replace />} />
           <Route path="/intake/:token" element={<IntakeForm />} />
           <Route path="/b/:slug" element={<BorrowerPage />} />
+          <Route path="/book/:slug" element={<PublicBooking />} />
           <Route path="/tracker" element={<PipelineTracker />} />
           <Route path="/partner/:token" element={<PartnerTracker />} />
           <Route path="/personal-intake/:token" element={<IntakeForm />} />
