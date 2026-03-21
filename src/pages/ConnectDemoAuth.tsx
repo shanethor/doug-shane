@@ -90,6 +90,9 @@ export default function ConnectDemoAuth() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
+  const [industry, setIndustry] = useState("");
+  const [industryOpen, setIndustryOpen] = useState(false);
+  const industryRef = useRef<HTMLDivElement>(null);
   const [welcomeReady, setWelcomeReady] = useState(false);
 
   const [buildPhase, setBuildPhase] = useState(0); // 0=card, 1=logo, 2=title, 3=subtitle, 4=features, 5=button
