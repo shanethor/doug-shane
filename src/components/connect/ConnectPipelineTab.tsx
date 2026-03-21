@@ -5,16 +5,18 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
 } from "@/components/ui/dialog";
 import {
-  Plus, Building2, DollarSign, Loader2, RefreshCw,
+  Tooltip, TooltipContent, TooltipProvider, TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
+  Plus, Building2, DollarSign, Loader2, RefreshCw, Users, Info, CalendarDays,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
@@ -107,8 +109,12 @@ type Lead = {
   target_premium: number | null;
   lead_source: string | null;
   business_type: string | null;
+  loss_reason: string | null;
+  estimated_renewal_date: string | null;
   updated_at: string;
 };
+
+const COLUMN_LIMIT = 5;
 
 export default function ConnectPipelineTab() {
   const { user } = useAuth();
@@ -118,8 +124,8 @@ export default function ConnectPipelineTab() {
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loadingLeads, setLoadingLeads] = useState(false);
+  const [expandedColumns, setExpandedColumns] = useState<Record<string, boolean>>({});
 
-  // Load user's industry from profile
   useEffect(() => {
     if (!user) return;
     supabase.from("profiles").select("industry").eq("user_id", user.id).single().then(({ data }) => {
@@ -128,19 +134,17 @@ export default function ConnectPipelineTab() {
     });
   }, [user]);
 
-  // Determine industry
   useEffect(() => {
     const fromBranch = branchToIndustry(branch);
     setIndustry(fromBranch || profileIndustry || null);
   }, [branch, profileIndustry]);
 
-  // Fetch leads from DB
   const fetchLeads = useCallback(async () => {
     if (!user) return;
     setLoadingLeads(true);
     const { data } = await supabase
       .from("leads")
-      .select("id, account_name, contact_name, email, phone, stage, target_premium, lead_source, business_type, updated_at")
+      .select("id, account_name, contact_name, email, phone, stage, target_premium, lead_source, business_type, loss_reason, estimated_renewal_date, updated_at")
       .eq("owner_user_id", user.id)
       .order("updated_at", { ascending: false });
     setLeads((data as Lead[]) || []);
@@ -150,7 +154,16 @@ export default function ConnectPipelineTab() {
   useEffect(() => { fetchLeads(); }, [fetchLeads]);
 
   const config = industry ? PIPELINE_CONFIGS[industry] : null;
-  const stages = config?.stages || [];
+  const allStages = config?.stages || [];
+  const activeStages = allStages.filter(s => s.key !== "lost");
+  const lostStageConfig = allStages.find(s => s.key === "lost");
+
+  const lostLeads = leads.filter(l => l.stage === "lost");
+  const activeLeads = leads.filter(l => l.stage !== "lost");
+
+  const toggleColumnExpand = (stage: string) => {
+    setExpandedColumns(prev => ({ ...prev, [stage]: !prev[stage] }));
+  };
 
   const moveStage = async (leadId: string, newStage: string) => {
     const { error } = await supabase
@@ -176,7 +189,6 @@ export default function ConnectPipelineTab() {
     );
   }
 
-  // Industry picker if not set
   if (!industry) {
     return (
       <Card>
@@ -210,6 +222,7 @@ export default function ConnectPipelineTab() {
   }
 
   return (
+    <TooltipProvider delayDuration={200}>
     <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -242,12 +255,12 @@ export default function ConnectPipelineTab() {
         </div>
       </div>
 
-      {/* Kanban-style columns */}
-      <div className="grid gap-3" style={{ gridTemplateColumns: `repeat(${stages.length}, minmax(0, 1fr))` }}>
-        {stages.map(stage => {
-          // Map the stage key to matching leads (bound = leads with approved policies would show differently on main pipeline, but here we use the stage field directly)
-          const stageLeads = leads.filter(l => l.stage === stage.key);
+      {/* Kanban columns — active stages only (no lost) */}
+      <div className="grid gap-3" style={{ gridTemplateColumns: `repeat(${activeStages.length}, minmax(0, 1fr))` }}>
+        {activeStages.map(stage => {
+          const stageLeads = activeLeads.filter(l => l.stage === stage.key);
           const totalValue = stageLeads.reduce((sum, l) => sum + (l.target_premium || 0), 0);
+          const visibleLeads = expandedColumns[stage.key] ? stageLeads : stageLeads.slice(0, COLUMN_LIMIT);
           return (
             <div key={stage.key} className="space-y-2">
               <div className={`rounded-lg px-3 py-2 border ${stage.color}`}>
@@ -262,11 +275,11 @@ export default function ConnectPipelineTab() {
                 )}
               </div>
               <div className="space-y-2 min-h-[80px]">
-                {stageLeads.map(lead => (
+                {visibleLeads.map(lead => (
                   <Card key={lead.id} className="group">
                     <CardContent className="p-3 space-y-1.5">
                       <div className="flex items-start justify-between">
-                        <Link to={`/pipeline?lead=${lead.id}`} className="text-xs font-medium truncate hover:underline">
+                        <Link to={`/pipeline/${lead.id}`} className="text-xs font-medium truncate hover:underline">
                           {lead.account_name}
                         </Link>
                       </div>
@@ -285,13 +298,12 @@ export default function ConnectPipelineTab() {
                           <DollarSign className="h-2.5 w-2.5" /> {lead.target_premium.toLocaleString()}
                         </p>
                       )}
-                      {/* Stage mover */}
                       <Select value={lead.stage} onValueChange={(v) => moveStage(lead.id, v)}>
                         <SelectTrigger className="h-6 text-[10px] mt-1">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          {stages.map(s => (
+                          {allStages.map(s => (
                             <SelectItem key={s.key} value={s.key} className="text-xs">{s.label}</SelectItem>
                           ))}
                         </SelectContent>
@@ -299,11 +311,85 @@ export default function ConnectPipelineTab() {
                     </CardContent>
                   </Card>
                 ))}
+                {/* Show more / less toggle */}
+                {stageLeads.length > COLUMN_LIMIT && (
+                  <button
+                    onClick={() => toggleColumnExpand(stage.key)}
+                    className="w-full text-center text-xs text-muted-foreground hover:text-foreground py-2 transition-colors"
+                  >
+                    {expandedColumns[stage.key]
+                      ? "Show less"
+                      : `Show all ${stageLeads.length} leads`}
+                  </button>
+                )}
               </div>
+              {stageLeads.length === 0 && (
+                <p className="text-xs text-muted-foreground text-center py-6">No leads</p>
+              )}
             </div>
           );
         })}
       </div>
+
+      {/* Lost Section — centered at bottom */}
+      {lostStageConfig && (
+        <div className="rounded-lg border-2 border-dashed border-border p-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" className={`text-[10px] uppercase tracking-wider ${lostStageConfig.color}`}>
+                {lostStageConfig.label}
+              </Badge>
+              <span className="text-xs text-muted-foreground">{lostLeads.length}</span>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-3 w-3 text-muted-foreground/40 cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-[200px] text-xs">
+                  Client went in another direction. Move leads here to mark as lost.
+                </TooltipContent>
+              </Tooltip>
+            </div>
+            <div className="flex items-center gap-2">
+              <p className="text-xs text-muted-foreground">Move leads here to mark as lost</p>
+              {lostLeads.length > 0 && (
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="sm" className="gap-1.5 text-xs h-7">
+                      <Users className="h-3 w-3" />
+                      View All Lost ({lostLeads.length})
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-lg max-h-[70vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle>Lost Clients ({lostLeads.length})</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-2 mt-2">
+                      {lostLeads.map((lead) => (
+                        <Link key={lead.id} to={`/pipeline/${lead.id}`}>
+                          <Card className="hover:bg-muted/50 transition-colors cursor-pointer">
+                            <CardContent className="p-2 px-3 flex items-center gap-2">
+                              <span className="text-sm font-medium">{lead.account_name}</span>
+                              {lead.estimated_renewal_date && (
+                                <Badge variant="outline" className="text-[9px] gap-0.5">
+                                  <CalendarDays className="h-2.5 w-2.5" />
+                                  {lead.estimated_renewal_date}
+                                </Badge>
+                              )}
+                              {lead.loss_reason && (
+                                <span className="text-[10px] text-muted-foreground ml-auto">{lead.loss_reason}</span>
+                              )}
+                            </CardContent>
+                          </Card>
+                        </Link>
+                      ))}
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {leads.length === 0 && !loadingLeads && (
         <Card className="border-dashed">
@@ -317,5 +403,6 @@ export default function ConnectPipelineTab() {
         </Card>
       )}
     </div>
+    </TooltipProvider>
   );
 }
