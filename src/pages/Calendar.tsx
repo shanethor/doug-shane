@@ -460,8 +460,14 @@ export default function Calendar({ embedded }: { embedded?: boolean } = {}) {
               </div>
             </DialogContent>
           </Dialog>
+          )}
         </div>
       </div>
+
+      {activeSection === "booking" ? (
+        <BookingLinksManager />
+      ) : (
+      <>
 
       {/* View switcher + filters */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
