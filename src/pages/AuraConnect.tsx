@@ -142,7 +142,7 @@ export default function AuraConnect() {
   const [dismissedTouches, setDismissedTouches] = useState<Set<string>>(new Set());
 
   // Active tab
-  const [activeTab, setActiveTab] = useState("brief");
+  const [activeTab, setActiveTab] = useState("pipeline");
 
   useEffect(() => {
     if (!featuresLoading && !roleLoading && !hasConnect && !isAdmin) {

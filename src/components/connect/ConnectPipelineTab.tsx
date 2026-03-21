@@ -263,7 +263,7 @@ export default function ConnectPipelineTab() {
       </div>
 
       {/* Kanban-style columns */}
-      <div className="grid gap-3" style={{ gridTemplateColumns: `repeat(${Math.min(stages.length, 6)}, minmax(0, 1fr))` }}>
+      <div className="grid gap-3" style={{ gridTemplateColumns: `repeat(${stages.length}, minmax(0, 1fr))` }}>
         {stages.map(stage => {
           const stageItems = items.filter(i => i.stage === stage.key);
           const totalValue = stageItems.reduce((sum, i) => sum + (parseFloat(i.value) || 0), 0);
