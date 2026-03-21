@@ -48,6 +48,7 @@ export default function Auth() {
   const [showCreateAgency, setShowCreateAgency] = useState(false);
   const [newAgencyName, setNewAgencyName] = useState("");
   const [newAgencyWebsite, setNewAgencyWebsite] = useState("");
+  const [selectedIndustry, setSelectedIndustry] = useState("");
   const [searchingAgencies, setSearchingAgencies] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
