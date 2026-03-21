@@ -303,6 +303,30 @@ export function useConnectedAccounts() {
         canConnect: true,
         canDisconnect: !!networkConns["clubhouse"],
       },
+      {
+        id: "x_twitter",
+        label: "X (Twitter)",
+        icon: <Hash className="h-4 w-4" />,
+        level: "Optional",
+        connected: !!networkConns["x_twitter"],
+        detail: networkConns["x_twitter"] ? `${networkConns["x_twitter"].contact_count} contacts imported` : undefined,
+        contactCount: networkConns["x_twitter"]?.contact_count,
+        lastSync: networkConns["x_twitter"]?.last_sync_at,
+        canConnect: true,
+        canDisconnect: !!networkConns["x_twitter"],
+      },
+      {
+        id: "meta",
+        label: "Meta (Facebook/Instagram)",
+        icon: <Globe className="h-4 w-4" />,
+        level: "Optional",
+        connected: !!networkConns["meta"],
+        detail: networkConns["meta"] ? `${networkConns["meta"].contact_count} contacts imported` : undefined,
+        contactCount: networkConns["meta"]?.contact_count,
+        lastSync: networkConns["meta"]?.last_sync_at,
+        canConnect: true,
+        canDisconnect: !!networkConns["meta"],
+      },
     ]);
     setLoading(false);
   }, [user]);
