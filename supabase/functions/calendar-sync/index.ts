@@ -212,7 +212,7 @@ async function syncGoogle(accessToken: string, userId: string, adminClient: any)
 
 /* ─── Google Create Event ─── */
 async function createGoogleEvent(accessToken: string, body: any) {
-  const { title, start, end, description, location, attendees } = body;
+  const { title, start, end, description, location, attendees, conferenceData } = body;
 
   const eventBody: any = {
     summary: title,
@@ -225,8 +225,15 @@ async function createGoogleEvent(accessToken: string, body: any) {
   if (attendees?.length > 0) {
     eventBody.attendees = attendees.map((email: string) => ({ email }));
   }
+  if (conferenceData) {
+    eventBody.conferenceData = conferenceData;
+  }
 
-  const resp = await fetch(`${GOOGLE_CAL_BASE}/calendars/primary/events`, {
+  const url = conferenceData
+    ? `${GOOGLE_CAL_BASE}/calendars/primary/events?conferenceDataVersion=1`
+    : `${GOOGLE_CAL_BASE}/calendars/primary/events`;
+
+  const resp = await fetch(url, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -383,6 +390,57 @@ serve(async (req) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
+    }
+
+    // --- CREATE MEET LINK ---
+    if (action === "create_meet") {
+      const { data: calConn } = await adminClient
+        .from("external_calendars")
+        .select("*")
+        .eq("user_id", userId)
+        .eq("provider", "google")
+        .eq("is_active", true)
+        .maybeSingle();
+
+      if (!calConn) {
+        return new Response(JSON.stringify({ error: "No Google Calendar connected. Connect Google Calendar in Settings to create Meet links." }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const accessToken = await ensureToken(calConn, adminClient);
+      if (!accessToken) {
+        return new Response(JSON.stringify({ error: "Google Calendar token expired. Please reconnect." }), {
+          status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const now = new Date();
+      const meetEvent = await createGoogleEvent(accessToken, {
+        title: body.title || "Quick Meeting",
+        start: body.start || new Date(now.getTime() + 60 * 60 * 1000).toISOString(),
+        end: body.end || new Date(now.getTime() + 2 * 60 * 60 * 1000).toISOString(),
+        description: body.description || "Meeting created from AURA",
+        attendees: body.attendees || [],
+        conferenceData: {
+          createRequest: {
+            requestId: crypto.randomUUID(),
+            conferenceSolutionKey: { type: "hangoutsMeet" },
+          },
+        },
+      });
+
+      if (!meetEvent) {
+        return new Response(JSON.stringify({ error: "Failed to create Google Meet" }), {
+          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const meetLink = meetEvent.hangoutLink || meetEvent.conferenceData?.entryPoints?.find((e: any) => e.entryPointType === "video")?.uri || null;
+
+      return new Response(JSON.stringify({ success: true, meet_link: meetLink, event_id: meetEvent.id }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     // --- BUSY SLOTS ---
