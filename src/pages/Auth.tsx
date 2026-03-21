@@ -583,7 +583,7 @@ export default function Auth() {
 
           <h2 className="text-3xl mb-2 tracking-tight">{isSignUp ? "Create account" : "Welcome back"}</h2>
           <p className="text-muted-foreground mb-8 text-sm">
-            {isSignUp ? "Enter your agency code to get started." : "Sign in to your agent portal."}
+            {isSignUp ? "Select or create your agency to get started." : "Sign in to your agent portal."}
           </p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
