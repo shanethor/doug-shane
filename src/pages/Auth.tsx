@@ -724,6 +724,25 @@ export default function Auth() {
                     </div>
                   )}
                 </div>
+
+                {/* Industry Selection */}
+                <div className="space-y-2">
+                  <Label className="text-xs uppercase tracking-wider text-muted-foreground">Industry *</Label>
+                  <select
+                    value={selectedIndustry}
+                    onChange={(e) => setSelectedIndustry(e.target.value)}
+                    className="flex h-11 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    required
+                  >
+                    <option value="">Select your industry...</option>
+                    <option value="insurance">Insurance</option>
+                    <option value="mortgage">Mortgage / Property</option>
+                    <option value="wealth">Wealth Management</option>
+                    <option value="real_estate">Real Estate</option>
+                    <option value="consulting">Consulting / Professional Services</option>
+                    <option value="generic">Other</option>
+                  </select>
+                </div>
               </>
             )}
             <div className="space-y-2">
