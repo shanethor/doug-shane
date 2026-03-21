@@ -671,6 +671,8 @@ export default function Calendar({ embedded }: { embedded?: boolean } = {}) {
           </div>
         </div>
       )}
+      </>
+      )}
     </>
   );
   return embedded ? mainContent : <AppLayout>{mainContent}</AppLayout>;
