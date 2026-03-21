@@ -593,20 +593,130 @@ export default function Auth() {
                   <Label htmlFor="name" className="text-xs uppercase tracking-wider text-muted-foreground">Full Name</Label>
                   <Input id="name" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Jane Smith" required className="h-11" />
                 </div>
+
+                {/* Agency Selection */}
                 <div className="space-y-2">
-                  <Label htmlFor="agency-code" className="text-xs uppercase tracking-wider text-muted-foreground">Agency Code</Label>
-                  <div className="relative">
-                    <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="agency-code"
-                      value={agencyCode}
-                      onChange={(e) => setAgencyCode(e.target.value.toUpperCase())}
-                      placeholder="Enter your agency code"
-                      required
-                      className="h-11 pl-10 uppercase tracking-wider font-mono"
-                    />
-                  </div>
-                  <p className="text-[10px] text-muted-foreground">Contact your agency administrator for this code</p>
+                  <Label className="text-xs uppercase tracking-wider text-muted-foreground">Agency</Label>
+                  
+                  {selectedAgency ? (
+                    <div className="flex items-center gap-2 h-11 px-3 rounded-md border bg-primary/5 border-primary/20">
+                      <Building2 className="h-4 w-4 text-primary shrink-0" />
+                      <span className="text-sm flex-1 truncate">{selectedAgency.name}</span>
+                      <button type="button" onClick={() => { setSelectedAgency(null); setNoAgency(false); setAgencySearch(""); }} className="text-muted-foreground hover:text-foreground">
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ) : noAgency ? (
+                    <div className="flex items-center gap-2 h-11 px-3 rounded-md border bg-muted/50">
+                      <span className="text-sm flex-1 text-muted-foreground">No Agency</span>
+                      <button type="button" onClick={() => setNoAgency(false)} className="text-muted-foreground hover:text-foreground">
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ) : showCreateAgency ? (
+                    <div className="space-y-2 rounded-md border p-3">
+                      <p className="text-xs font-medium">Create New Agency</p>
+                      <Input
+                        value={newAgencyName}
+                        onChange={(e) => setNewAgencyName(e.target.value)}
+                        placeholder="Agency name"
+                        className="h-9"
+                      />
+                      <div className="relative">
+                        <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                        <Input
+                          value={newAgencyWebsite}
+                          onChange={(e) => setNewAgencyWebsite(e.target.value)}
+                          placeholder="Website (optional)"
+                          className="h-9 pl-9"
+                        />
+                      </div>
+                      <div className="flex gap-2">
+                        <Button type="button" size="sm" variant="outline" className="h-8" onClick={() => { setShowCreateAgency(false); setNewAgencyName(""); setNewAgencyWebsite(""); }}>
+                          Cancel
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          className="h-8 flex-1"
+                          disabled={!newAgencyName.trim()}
+                          onClick={async () => {
+                            const code = newAgencyName.trim().replace(/\s+/g, "").slice(0, 6).toUpperCase() + Math.floor(Math.random() * 900 + 100);
+                            const { data, error } = await supabase.from("agencies").insert({
+                              name: newAgencyName.trim(),
+                              code,
+                              website: newAgencyWebsite.trim() || null,
+                            }).select("id, name").single();
+                            if (error) {
+                              toast.error("Failed to create agency");
+                            } else {
+                              setSelectedAgency({ id: data.id, name: data.name });
+                              setShowCreateAgency(false);
+                              setNewAgencyName("");
+                              setNewAgencyWebsite("");
+                              toast.success("Agency created!");
+                            }
+                          }}
+                        >
+                          Create
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-1">
+                      <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          value={agencySearch}
+                          onChange={async (e) => {
+                            const q = e.target.value;
+                            setAgencySearch(q);
+                            if (q.length < 2) { setAgencyResults([]); return; }
+                            setSearchingAgencies(true);
+                            const { data } = await supabase
+                              .from("agencies")
+                              .select("id, name")
+                              .ilike("name", `%${q}%`)
+                              .limit(5);
+                            setAgencyResults(data || []);
+                            setSearchingAgencies(false);
+                          }}
+                          placeholder="Search for your agency..."
+                          className="h-11 pl-10"
+                        />
+                        {searchingAgencies && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />}
+                      </div>
+                      
+                      {agencySearch.length >= 2 && (
+                        <div className="rounded-md border bg-popover max-h-40 overflow-y-auto">
+                          {agencyResults.map((a) => (
+                            <button
+                              key={a.id}
+                              type="button"
+                              onClick={() => { setSelectedAgency({ id: a.id, name: a.name }); setAgencySearch(""); setAgencyResults([]); }}
+                              className="w-full text-left px-3 py-2 text-sm hover:bg-accent flex items-center gap-2"
+                            >
+                              <Building2 className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                              {a.name}
+                            </button>
+                          ))}
+                          {agencyResults.length === 0 && !searchingAgencies && (
+                            <p className="px-3 py-2 text-xs text-muted-foreground">No agencies found</p>
+                          )}
+                        </div>
+                      )}
+
+                      <div className="flex gap-2 pt-1">
+                        <button type="button" onClick={() => setShowCreateAgency(true)} className="text-xs text-primary hover:underline flex items-center gap-1">
+                          <Plus className="h-3 w-3" /> Add New Agency
+                        </button>
+                        <span className="text-xs text-muted-foreground">·</span>
+                        <button type="button" onClick={() => setNoAgency(true)} className="text-xs text-muted-foreground hover:underline">
+                          No Agency
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </>
             )}
