@@ -115,23 +115,32 @@ export type Database = {
         Row: {
           code: string
           created_at: string
+          full_site_access: boolean
           id: string
+          logo_url: string | null
           name: string
           updated_at: string
+          website: string | null
         }
         Insert: {
           code: string
           created_at?: string
+          full_site_access?: boolean
           id?: string
+          logo_url?: string | null
           name: string
           updated_at?: string
+          website?: string | null
         }
         Update: {
           code?: string
           created_at?: string
+          full_site_access?: boolean
           id?: string
+          logo_url?: string | null
           name?: string
           updated_at?: string
+          website?: string | null
         }
         Relationships: []
       }
