@@ -1,9 +1,9 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowRight, Zap, Shield, BarChart3, Mail, Users, Sparkles as SparklesIcon } from "lucide-react";
+import { ArrowRight, Zap, Shield, BarChart3, Mail, Users, Sparkles as SparklesIcon, Search } from "lucide-react";
 
 const AuraLogo = ({ size = 56 }: { size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 100 100" fill="none">
@@ -81,7 +81,22 @@ const FEATURES = [
   { icon: Shield, label: "Spotlight Marketing", delay: "0.9s" },
   { icon: Zap, label: "AI Assistant", delay: "1.1s" },
 ];
-
+const INDUSTRIES = [
+  "Accounting", "Advertising & Marketing", "Agriculture", "Architecture", "Automotive",
+  "Banking & Finance", "Biotechnology", "Cannabis", "Commercial Real Estate", "Construction",
+  "Consulting", "Cybersecurity", "Dental", "E-Commerce", "Education", "Energy & Utilities",
+  "Engineering", "Entertainment", "Environmental Services", "Event Planning", "Fashion & Apparel",
+  "Film & Media", "Financial Planning", "Fitness & Wellness", "Food & Beverage", "Franchise",
+  "Government", "Healthcare", "Hospitality & Hotels", "Human Resources", "Import / Export",
+  "Information Technology", "Insurance", "Interior Design", "Investment Management", "Law / Legal",
+  "Logistics & Supply Chain", "Manufacturing", "Medical Devices", "Mining", "Mortgage & Lending",
+  "Music", "Nonprofit", "Oil & Gas", "Pharmaceuticals", "Photography", "Private Equity",
+  "Professional Services", "Property Management", "Publishing", "Real Estate",
+  "Recruiting & Staffing", "Renewable Energy", "Residential Real Estate", "Restaurant",
+  "Retail", "SaaS / Software", "Security Services", "Social Media", "Sports & Recreation",
+  "Telecommunications", "Transportation", "Travel & Tourism", "Venture Capital",
+  "Veterinary", "Video Production", "Warehousing", "Wealth Management", "Wholesale", "Other",
+];
 type Step = "auth" | "subscribe" | "welcome";
 
 export default function ConnectDemoAuth() {
@@ -90,6 +105,9 @@ export default function ConnectDemoAuth() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
+  const [industry, setIndustry] = useState("");
+  const [industryOpen, setIndustryOpen] = useState(false);
+  const industryRef = useRef<HTMLDivElement>(null);
   const [welcomeReady, setWelcomeReady] = useState(false);
 
   const [buildPhase, setBuildPhase] = useState(0); // 0=card, 1=logo, 2=title, 3=subtitle, 4=features, 5=button
@@ -110,14 +128,29 @@ export default function ConnectDemoAuth() {
     setBuildPhase(0);
   }, [step]);
 
+  const filteredIndustries = useMemo(() => {
+    if (!industry.trim()) return INDUSTRIES.slice(0, 8);
+    const q = industry.toLowerCase();
+    return INDUSTRIES.filter(i => i.toLowerCase().includes(q)).slice(0, 8);
+  }, [industry]);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (industryRef.current && !industryRef.current.contains(e.target as Node)) setIndustryOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
   const handleAuth = (e: React.FormEvent) => {
     e.preventDefault();
-    if (email && password) setStep("subscribe");
+    if (email && password && industry) setStep("subscribe");
   };
   const handleSubscribe = () => setStep("welcome");
   const handleEnter = () => {
     sessionStorage.setItem("connect-demo-auth", "true");
     sessionStorage.setItem("connect-demo-name", name || email.split("@")[0]);
+    sessionStorage.setItem("connect-demo-industry", industry);
     navigate("/connectdemo");
   };
 
@@ -150,6 +183,37 @@ export default function ConnectDemoAuth() {
                 <Label className="text-white/80">Name</Label>
                 <Input placeholder="Your name" value={name} onChange={e => setName(e.target.value)}
                   className="bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-[hsl(174,97%,22%)] transition-colors" />
+              </div>
+              <div className="space-y-2 relative" ref={industryRef}>
+                <Label className="text-white/80">Industry</Label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/30 pointer-events-none" />
+                  <Input
+                    placeholder="Search your industry…"
+                    value={industry}
+                    onChange={e => { setIndustry(e.target.value); setIndustryOpen(true); }}
+                    onFocus={() => setIndustryOpen(true)}
+                    className="bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-[hsl(174,97%,22%)] transition-colors pl-9"
+                  />
+                </div>
+                {industryOpen && filteredIndustries.length > 0 && (
+                  <div className="absolute z-50 w-full mt-1 rounded-lg border overflow-hidden max-h-48 overflow-y-auto"
+                    style={{ background: "hsl(240 8% 10%)", borderColor: "hsl(240 6% 18%)" }}>
+                    {filteredIndustries.map(ind => (
+                      <button
+                        key={ind}
+                        type="button"
+                        className="w-full text-left px-3 py-2 text-sm text-white/80 hover:text-white transition-colors"
+                        style={{ background: industry === ind ? "hsl(174 97% 22% / 0.15)" : "transparent" }}
+                        onMouseEnter={e => (e.currentTarget.style.background = "hsl(174 97% 22% / 0.1)")}
+                        onMouseLeave={e => (e.currentTarget.style.background = industry === ind ? "hsl(174 97% 22% / 0.15)" : "transparent")}
+                        onClick={() => { setIndustry(ind); setIndustryOpen(false); }}
+                      >
+                        {ind}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
               <div className="space-y-2">
                 <Label className="text-white/80">Email</Label>
