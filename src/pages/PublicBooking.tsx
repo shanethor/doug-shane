@@ -39,6 +39,24 @@ export default function PublicBooking() {
   const weekDates = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i))
     .filter(d => !isBefore(d, startOfDay(new Date())));
 
+  // Fetch metadata (branding) on mount
+  useEffect(() => {
+    if (!slug) return;
+    (async () => {
+      try {
+        const resp = await fetch(`${SUPABASE_URL}/functions/v1/booking`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", apikey: ANON_KEY },
+          body: JSON.stringify({ action: "metadata", slug }),
+        });
+        if (resp.ok) {
+          const data = await resp.json();
+          setSlotData(prev => prev ? { ...prev, ...data } : { slots: [], ...data });
+        }
+      } catch { /* ignore */ }
+    })();
+  }, [slug]);
+
   useEffect(() => {
     if (selectedDate) fetchSlots(selectedDate);
   }, [selectedDate]);

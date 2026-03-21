@@ -172,6 +172,33 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
+    // ── GET METADATA (public, no date needed) ──
+    if (action === "metadata") {
+      const { slug } = body;
+      if (!slug) {
+        return new Response(JSON.stringify({ error: "slug required" }), {
+          status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const { data: link } = await admin.from("booking_links").select("*").eq("public_slug", slug).eq("is_active", true).maybeSingle();
+      if (!link) {
+        return new Response(JSON.stringify({ error: "Booking link not found" }), {
+          status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      const { data: profile } = await admin.from("profiles").select("full_name, agency_name, agency_id").eq("user_id", link.user_id).maybeSingle();
+      let agency: any = null;
+      if (profile?.agency_id) {
+        const { data: ag } = await admin.from("agencies").select("name, logo_url, website").eq("id", profile.agency_id).maybeSingle();
+        agency = ag;
+      }
+      return new Response(JSON.stringify({
+        link: { title: link.title, description: link.description, duration_minutes: link.duration_minutes, timezone: link.timezone },
+        profile: { full_name: profile?.full_name || "Advisor", agency_name: profile?.agency_name || agency?.name || null },
+        agency: agency ? { name: agency.name, logo_url: agency.logo_url, website: agency.website } : null,
+      }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     // ── GET AVAILABILITY (public) ──
     if (action === "availability") {
       const { slug, date } = body;
