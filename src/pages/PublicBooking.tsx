@@ -141,20 +141,35 @@ END:VCALENDAR`;
     );
   }
 
+  const agencyLogo = slotData?.agency?.logo_url;
+  const agencyName = slotData?.agency?.name || slotData?.profile.agency_name;
+  const agencyWebsite = slotData?.agency?.website;
+
   return (
     <div className="min-h-screen bg-background flex items-start justify-center p-4 pt-8 sm:pt-16">
       <Card className="w-full max-w-2xl">
         <CardHeader className="text-center pb-3">
-          <div className="flex items-center justify-center gap-2 mb-1">
-            <CalendarDays className="h-5 w-5 text-primary" />
-            <span className="text-lg font-bold tracking-tight">AURA</span>
+          {/* Agency branding or fallback */}
+          <div className="flex flex-col items-center gap-2 mb-2">
+            {agencyLogo ? (
+              <img src={agencyLogo} alt={agencyName || "Agency"} className="h-12 w-auto object-contain rounded" />
+            ) : (
+              <div className="flex items-center gap-2">
+                <CalendarDays className="h-5 w-5 text-primary" />
+                <span className="text-lg font-bold tracking-tight">{agencyName || "AURA"}</span>
+              </div>
+            )}
+            {agencyLogo && agencyName && (
+              <span className="text-sm font-medium text-muted-foreground">{agencyName}</span>
+            )}
           </div>
+
           {slotData ? (
             <>
               <CardTitle className="text-xl">{slotData.link.title}</CardTitle>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-muted-foreground flex items-center justify-center gap-1.5">
+                <User className="h-3.5 w-3.5" />
                 with {slotData.profile.full_name}
-                {slotData.profile.agency_name && ` — ${slotData.profile.agency_name}`}
               </p>
               <Badge variant="outline" className="mx-auto mt-1 text-xs gap-1">
                 <Clock className="h-3 w-3" /> {slotData.link.duration_minutes} min

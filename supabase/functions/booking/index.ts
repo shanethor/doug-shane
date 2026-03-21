@@ -218,13 +218,20 @@ serve(async (req) => {
         allBusy, link.min_notice_minutes, link.buffer_before, link.buffer_after, link.timezone,
       );
 
-      // Get user profile for display
-      const { data: profile } = await admin.from("profiles").select("full_name, avatar_url, agency_name").eq("user_id", link.user_id).maybeSingle();
+      // Get user profile + agency for display
+      const { data: profile } = await admin.from("profiles").select("full_name, agency_name, agency_id").eq("user_id", link.user_id).maybeSingle();
+
+      let agency: any = null;
+      if (profile?.agency_id) {
+        const { data: ag } = await admin.from("agencies").select("name, logo_url, website").eq("id", profile.agency_id).maybeSingle();
+        agency = ag;
+      }
 
       return new Response(JSON.stringify({
         slots,
         link: { title: link.title, description: link.description, duration_minutes: link.duration_minutes, timezone: link.timezone },
-        profile: profile || { full_name: "Advisor" },
+        profile: { full_name: profile?.full_name || "Advisor", agency_name: profile?.agency_name || agency?.name || null },
+        agency: agency ? { name: agency.name, logo_url: agency.logo_url, website: agency.website } : null,
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
