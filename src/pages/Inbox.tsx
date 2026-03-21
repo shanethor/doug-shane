@@ -77,12 +77,25 @@ type SentEmail = {
   id: string;
   subject: string;
   to_addresses: string[];
-  body_html: string;
+  body_html: string | null;
   sent_at: string | null;
   status: string;
   created_at: string;
   scheduled_for?: string | null;
 };
+
+function buildSentEmailKey(subject: string | null | undefined, toAddresses: string[] | null | undefined, timestamp: string | null | undefined) {
+  const normalizedSubject = (subject || "").trim().toLowerCase();
+  const normalizedRecipients = [...(toAddresses || [])]
+    .map((value) => value.trim().toLowerCase())
+    .sort()
+    .join(",");
+  const roundedBucket = timestamp
+    ? Math.floor(new Date(timestamp).getTime() / (10 * 60 * 1000))
+    : "no-time";
+
+  return `${normalizedSubject}|${normalizedRecipients}|${roundedBucket}`;
+}
 
 type EmailConnection = {
   id: string;
@@ -191,17 +204,70 @@ export default function Inbox({ emailOnly, embedded, selectedClientId, onClearSe
     return emails;
   }, [user, updateLastSyncedFromEmails]);
 
-  const fetchSentEmails = useCallback(async () => {
+  const fetchSentEmails = useCallback(async (connectionsOverride?: EmailConnection[]) => {
     if (!user) return;
-    const { data } = await supabase
-      .from("email_drafts")
-      .select("id, subject, to_addresses, body_html, sent_at, status, created_at, scheduled_for")
-      .eq("user_id", user.id)
-      .in("status", ["sent", "scheduled"])
-      .order("created_at", { ascending: false })
-      .limit(50);
-    setSentEmails((data as SentEmail[]) || []);
-  }, [user]);
+    const activeConnections = connectionsOverride ?? emailConnections;
+    const sentAddresses = Array.from(
+      new Set(activeConnections.map((connection) => connection.email_address).filter(Boolean))
+    );
+
+    const [draftsRes, syncedRes] = await Promise.all([
+      supabase
+        .from("email_drafts")
+        .select("id, subject, to_addresses, body_html, sent_at, status, created_at, scheduled_for")
+        .eq("user_id", user.id)
+        .in("status", ["sent", "scheduled"])
+        .order("created_at", { ascending: false })
+        .limit(50),
+      sentAddresses.length > 0
+        ? supabase
+            .from("synced_emails")
+            .select("id, subject, to_addresses, body_html, received_at, from_address")
+            .eq("user_id", user.id)
+            .in("from_address", sentAddresses)
+            .order("received_at", { ascending: false })
+            .limit(50)
+        : Promise.resolve({ data: [] as any[] }),
+    ]);
+
+    const draftEmails = ((draftsRes.data as SentEmail[]) || []).map((email) => ({
+      ...email,
+      body_html: email.body_html || null,
+    }));
+
+    const syncedSentEmails = ((syncedRes.data as Array<{
+      id: string;
+      subject: string;
+      to_addresses: string[];
+      body_html: string | null;
+      received_at: string;
+      from_address: string;
+    }>) || []).map((email) => ({
+      id: `synced-${email.id}`,
+      subject: email.subject,
+      to_addresses: email.to_addresses || [],
+      body_html: email.body_html || null,
+      sent_at: email.received_at,
+      status: "sent",
+      created_at: email.received_at,
+      scheduled_for: null,
+    } satisfies SentEmail));
+
+    const existingKeys = new Set(
+      draftEmails.map((email) => buildSentEmailKey(email.subject, email.to_addresses, email.sent_at || email.created_at))
+    );
+
+    const merged = [
+      ...draftEmails,
+      ...syncedSentEmails.filter(
+        (email) => !existingKeys.has(buildSentEmailKey(email.subject, email.to_addresses, email.sent_at || email.created_at))
+      ),
+    ]
+      .sort((a, b) => new Date(b.sent_at || b.created_at).getTime() - new Date(a.sent_at || a.created_at).getTime())
+      .slice(0, 50);
+
+    setSentEmails(merged);
+  }, [user, emailConnections]);
 
   const fetchAttachmentsForEmail = useCallback(async (emailId: string) => {
     const { data } = await supabase
@@ -265,11 +331,12 @@ export default function Inbox({ emailOnly, embedded, selectedClientId, onClearSe
       }
 
       await fetchLatestEmails();
+      await fetchSentEmails(emailConnections);
       setLastSyncedAt(new Date());
     } catch (error) {
       console.error("Auto-sync failed", error);
     }
-  }, [user, emailConnections, fetchLatestEmails]);
+  }, [user, emailConnections, fetchLatestEmails, fetchSentEmails]);
 
   useEffect(() => {
     if (!user) return;
@@ -362,7 +429,7 @@ export default function Inbox({ emailOnly, embedded, selectedClientId, onClearSe
       setSendVia(conns[0].id);
       setSendViaInitialized(true);
     }
-    await fetchSentEmails();
+    await fetchSentEmails(conns);
     setLoading(false);
   };
 
@@ -386,6 +453,7 @@ export default function Inbox({ emailOnly, embedded, selectedClientId, onClearSe
         }
       }
       await fetchLatestEmails();
+      await fetchSentEmails(emailConnections);
       setLastSyncedAt(new Date());
     } catch (err: any) {
       toast.error("Sync failed: " + (err.message || "Unknown error"));
@@ -946,17 +1014,7 @@ export default function Inbox({ emailOnly, embedded, selectedClientId, onClearSe
         toast.success(`Sent from ${data.sent_from}`);
       }
 
-      // Save to sent history
-      await supabase.from("email_drafts").insert({
-        user_id: user!.id,
-        to_addresses: recipients,
-        subject: composeSubject,
-        body_html: htmlBody,
-        status: "sent",
-        sent_at: new Date().toISOString(),
-        connection_id: sendVia !== "aura" ? sendVia : null,
-      } as any);
-      await fetchSentEmails();
+      await fetchSentEmails(emailConnections);
 
       setComposeOpen(false);
       setComposeTo("");
