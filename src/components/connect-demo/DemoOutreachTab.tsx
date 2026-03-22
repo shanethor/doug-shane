@@ -354,7 +354,7 @@ export default function DemoOutreachTab() {
                     </div>
 
                     {isExpanded && (
-                      <div className="mt-3 pt-3 space-y-3" style={{ borderTop: "1px solid hsl(240 6% 14%)", animation: "smoothFadeSlide 0.3s cubic-bezier(0.16,1,0.3,1) both" }}>
+                      <div className="mt-3 pt-3 space-y-3 animate-fade-in" style={{ borderTop: "1px solid hsl(240 6% 14%)" }}>
                         <div className="flex items-center gap-4 text-xs" style={{ color: "hsl(240 5% 46%)" }}>
                           <span>Every {c.cadenceDays} days</span>
                           <span>{c.touchCount} total touches</span>
