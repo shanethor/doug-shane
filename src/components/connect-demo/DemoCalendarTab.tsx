@@ -74,7 +74,7 @@ export default function DemoCalendarTab() {
             <button onClick={() => setView("agenda")} className={`text-xs px-3 py-1.5 transition-colors ${view === "agenda" ? "bg-white/10 text-white" : ""}`} style={view !== "agenda" ? { color: "hsl(240 5% 46%)" } : {}}>Agenda</button>
             <button onClick={() => setView("week")} className={`text-xs px-3 py-1.5 transition-colors ${view === "week" ? "bg-white/10 text-white" : ""}`} style={view !== "week" ? { color: "hsl(240 5% 46%)" } : {}}>Week</button>
           </div>
-          <Button size="sm" className="gap-1.5 text-xs" style={{ background: "hsl(140 12% 42%)" }}>
+          <Button size="sm" className="gap-1.5 text-xs text-white" style={{ background: "hsl(140 12% 42%)" }}>
             <Plus className="h-3.5 w-3.5" /> New Event
           </Button>
         </div>
