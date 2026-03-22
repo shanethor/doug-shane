@@ -70,7 +70,7 @@ export default function ConnectDemo() {
   }, []);
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: "#08080A", color: "hsl(240 6% 95%)", minHeight: "100dvh" }}>
+    <div className="min-h-screen flex flex-col w-full overflow-x-hidden" style={{ background: "#08080A", color: "hsl(240 6% 95%)", minHeight: "100dvh" }}>
       {/* Header */}
       <header className="px-4 py-3 flex items-center justify-between" style={{ borderBottom: "1px solid hsl(240 6% 14%)", background: "hsl(240 8% 7%)" }}>
         <div className="flex items-center gap-3">
