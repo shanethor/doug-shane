@@ -338,7 +338,7 @@ function NetworkGraph() {
         ctx.beginPath();
         ctx.moveTo(ax, ay);
         ctx.lineTo(bx, by);
-        ctx.strokeStyle = `rgba(${teal[0]},${teal[1]},${teal[2]},${alpha})`;
+        ctx.strokeStyle = `rgba(${sage[0]},${sage[1]},${sage[2]},${alpha})`;
         ctx.lineWidth = p > 0.3 ? 2 : 0.8;
         ctx.stroke();
 
@@ -346,7 +346,7 @@ function NetworkGraph() {
           const t = 1 - p;
           ctx.beginPath();
           ctx.arc(ax + (bx - ax) * t, ay + (by - ay) * t, 2.5, 0, Math.PI * 2);
-          ctx.fillStyle = `rgba(${teal[0]},${teal[1]},${teal[2]},${p * 0.9 * edgeAlpha})`;
+          ctx.fillStyle = `rgba(${sage[0]},${sage[1]},${sage[2]},${p * 0.9 * edgeAlpha})`;
           ctx.fill();
         }
 
@@ -363,7 +363,7 @@ function NetworkGraph() {
 
         const n = nodes[i];
         const [px, py] = toPixel(n.gx, n.gy);
-        const c = n.tier === 0 ? gold : teal;
+        const c = n.tier === 0 ? softWhite : sage;
         const breathe = 1 + Math.sin(frame * 0.018 + i * 0.7) * 0.12;
 
         if (n.tier === 0) {

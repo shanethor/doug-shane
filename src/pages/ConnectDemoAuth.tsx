@@ -47,7 +47,7 @@ function Particles() {
         if (p.y > c.height) p.y = 0;
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(0, 168, 142, ${p.a})`;
+        ctx.fillStyle = `rgba(138, 154, 140, ${p.a})`;
         ctx.fill();
       }
       // draw lines between nearby particles
