@@ -84,7 +84,7 @@ async function streamChat({
   }
 }
 
-export default function DemoAssistantTab() {
+export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: string) => void }) {
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
