@@ -16,14 +16,16 @@ Always:
 - If you don't have enough data (e.g., no calendar connected), say so and tell the user exactly how to fix it.
 
 ## 1) Company Research
-You CAN research companies. When the user asks to look up or research a company and provides a name or URL, you will receive live research data scraped from the web. Use it to provide:
-- A company overview (what they do, industry, size)
-- Key contacts or leadership if found
-- Insurance-relevant insights (risks, coverage needs, pain points)
-- Outreach suggestions and talking points
+You CAN research companies. When the user asks to look up, research, or learn about a company, USE YOUR KNOWLEDGE to provide:
+- A company overview (what they do, industry, size, headquarters)
+- Key leadership and decision-makers if known
+- Insurance-relevant insights (risks, coverage needs, pain points based on their industry)
+- Outreach suggestions and talking points tailored to their business
 - A recommended next step (add to pipeline, draft outreach email, schedule call)
 
-If research data is provided as context, analyze it thoroughly and present findings in a clear, actionable format. DO NOT say you "can't browse the web" or "can't look up information" — the system handles research for you.
+NEVER say you "can't browse the web" or "can't look up information." You have extensive knowledge about companies. If you're unsure about very recent details, say so but still provide everything you do know. Always be helpful and actionable.
+
+For lesser-known companies, provide industry-standard insights based on what you can infer from the company name, industry, or any context the user provides. Ask clarifying questions if needed (e.g., "What industry are they in?" or "Do you have their website URL?").
 
 ## 2) Calendar & meetings
 You can:
@@ -68,127 +70,13 @@ You can:
 
 The goal is that the AURA CONNECT assistant always has a useful, concrete next step for calendar, email, text, pipeline, research, and graphics tasks.`;
 
-/** Try to scrape a company using Firecrawl search */
-async function researchCompany(query: string, firecrawlKey: string, lovableKey: string): Promise<string | null> {
-  try {
-    // Step 1: Search for the company
-    console.log("Researching company:", query);
-    const searchResp = await fetch("https://api.firecrawl.dev/v1/search", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${firecrawlKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        query: query,
-        limit: 3,
-        scrapeOptions: { formats: ["markdown"] },
-      }),
-    });
-
-    if (!searchResp.ok) {
-      console.error("Firecrawl search error:", searchResp.status);
-      return null;
-    }
-
-    const searchData = await searchResp.json();
-    const results = searchData.data || [];
-
-    if (results.length === 0) {
-      console.log("No search results found");
-      return null;
-    }
-
-    // Combine top results into research context
-    let researchContext = `## Live Research Results for: "${query}"\n\n`;
-    for (const result of results.slice(0, 3)) {
-      researchContext += `### Source: ${result.title || result.url}\n`;
-      researchContext += `URL: ${result.url}\n`;
-      if (result.description) researchContext += `Summary: ${result.description}\n`;
-      if (result.markdown) {
-        researchContext += `Content:\n${result.markdown.slice(0, 4000)}\n`;
-      }
-      researchContext += "\n---\n\n";
-    }
-
-    console.log(`Research gathered: ${researchContext.length} chars from ${results.length} sources`);
-    return researchContext;
-  } catch (e) {
-    console.error("Research error:", e);
-    return null;
-  }
-}
-
-/** Detect if a message is asking for company research and extract the query */
-function detectResearchIntent(messages: Array<{ role: string; content: string }>): string | null {
-  if (messages.length === 0) return null;
-  const lastUser = [...messages].reverse().find(m => m.role === "user");
-  if (!lastUser) return null;
-
-  const text = lastUser.content.toLowerCase();
-
-  // Check for research-related keywords
-  const researchPatterns = [
-    /(?:research|look up|look into|find out about|tell me about|info(?:rmation)? (?:on|about)|investigate|check out|what do you know about|learn about)\s+(.+)/i,
-    /(?:research|look up|info)\s+(.+)/i,
-  ];
-
-  for (const pattern of researchPatterns) {
-    const match = lastUser.content.match(pattern);
-    if (match) {
-      // Clean up the extracted company name
-      let company = match[1].trim();
-      company = company.replace(/[?.!]$/, "").trim();
-      if (company.length > 2 && company.length < 200) {
-        return company;
-      }
-    }
-  }
-
-  // Check if conversation context suggests research (e.g., user answered "What company?")
-  if (messages.length >= 3) {
-    const prevAssistant = messages[messages.length - 2];
-    if (prevAssistant?.role === "assistant" && 
-        /what.*company|company name|which company|what.*business/i.test(prevAssistant.content)) {
-      const answer = lastUser.content.trim();
-      if (answer.length > 1 && answer.length < 200 && !/^(yes|no|ok|sure|thanks)/i.test(answer)) {
-        return answer;
-      }
-    }
-  }
-
-  return null;
-}
-
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { messages, research_query } = await req.json();
+    const { messages } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
-
-    const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY");
-
-    // Determine if we need to research
-    let researchData: string | null = null;
-    const queryToResearch = research_query || (FIRECRAWL_API_KEY ? detectResearchIntent(messages) : null);
-
-    if (queryToResearch && FIRECRAWL_API_KEY) {
-      researchData = await researchCompany(queryToResearch, FIRECRAWL_API_KEY, LOVABLE_API_KEY);
-    }
-
-    // Build messages with research context
-    const systemMessages: Array<{ role: string; content: string }> = [
-      { role: "system", content: SYSTEM_PROMPT },
-    ];
-
-    if (researchData) {
-      systemMessages.push({
-        role: "system",
-        content: `The following is LIVE research data gathered from the web. Use this to provide a comprehensive company overview and actionable insights:\n\n${researchData}`,
-      });
-    }
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -198,7 +86,10 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         model: "google/gemini-3-flash-preview",
-        messages: [...systemMessages, ...messages],
+        messages: [
+          { role: "system", content: SYSTEM_PROMPT },
+          ...messages,
+        ],
         stream: true,
       }),
     });
