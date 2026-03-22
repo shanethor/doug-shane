@@ -155,7 +155,7 @@ export default function ConnectDemoAuth() {
   };
 
   return (
-    <div className="min-h-[100dvh] flex items-center justify-center p-4" style={{ background: "#08080A" }}>
+    <div className="min-h-[100dvh] w-full overflow-x-hidden flex items-center justify-center p-4" style={{ background: "#08080A" }}>
       <Particles />
 
       {/* Radial glow behind content */}
