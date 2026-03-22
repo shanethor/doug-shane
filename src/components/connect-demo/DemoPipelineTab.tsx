@@ -128,7 +128,7 @@ export default function DemoPipelineTab() {
           const expanded = expandedColumns[stage.key];
           const visibleLeads = expanded ? stageLeads : stageLeads.slice(0, COLUMN_LIMIT);
           return (
-            <div key={stage.key} className="space-y-2" style={{ animation: `smoothFadeSlide 0.5s cubic-bezier(0.16,1,0.3,1) ${colIdx * 120}ms both` }}>
+            <div key={stage.key} className="space-y-2 animate-fade-in" style={{ animationDelay: `${colIdx * 100}ms` }}>
               <div className={`rounded-lg px-3 py-2 border ${stage.color}`}>
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-semibold">{stage.label}</span>
@@ -138,7 +138,7 @@ export default function DemoPipelineTab() {
               </div>
               <div className="space-y-2 min-h-[80px]">
                 {visibleLeads.map((lead, cardIdx) => (
-                  <Card key={lead.id} className="group" style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 14%)", animation: `smoothFadeSlide 0.4s cubic-bezier(0.16,1,0.3,1) ${colIdx * 120 + cardIdx * 60 + 200}ms both` }}>
+                  <Card key={lead.id} className="group animate-fade-in" style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 14%)", animationDelay: `${colIdx * 100 + cardIdx * 60 + 150}ms` }}>
                     <CardContent className="p-3 space-y-1.5">
                       <p className="text-xs font-medium text-white truncate">{lead.name}</p>
                       <p className="text-[10px] truncate" style={{ color: "hsl(240 5% 46%)" }}>{lead.contact}</p>
