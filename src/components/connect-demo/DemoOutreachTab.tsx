@@ -249,17 +249,6 @@ export default function DemoOutreachTab() {
 
   return (
     <div className="space-y-4" style={{ animation: "smoothFadeSlide 0.6s cubic-bezier(0.16,1,0.3,1) both" }}>
-      {/* Signals banner */}
-      <div className="flex items-center gap-2 p-3 rounded-lg" style={{ background: "hsl(174 97% 22% / 0.06)", border: "1px solid hsl(174 97% 22% / 0.1)" }}>
-        <Zap className="h-4 w-4 shrink-0" style={{ color: "hsl(174 97% 40%)" }} />
-        <span className="text-xs font-medium" style={{ color: "hsl(174 97% 40%)" }}>
-          {DUMMY_TRIGGERS.filter(t => t.urgency === "high").length} high-priority signals detected in your territory
-        </span>
-        <Badge variant="outline" className="text-[10px] ml-auto" style={{ borderColor: "hsl(240 6% 20%)", color: "hsl(240 5% 60%)" }}>
-          {DUMMY_TRIGGERS.length} total
-        </Badge>
-      </div>
-
       {/* Section tabs */}
       <Tabs value={section} onValueChange={setSection}>
         <TabsList className="h-9 p-0.5" style={{ background: "hsl(240 8% 7%)", border: "1px solid hsl(240 6% 14%)" }}>
@@ -269,13 +258,40 @@ export default function DemoOutreachTab() {
           <TabsTrigger value="top10" className="text-xs gap-1.5 data-[state=active]:text-white" style={{ color: "hsl(240 5% 46%)" }}>
             <Crown className="h-3.5 w-3.5" /> Top 10
           </TabsTrigger>
-          <TabsTrigger value="signals" className="text-xs gap-1.5 data-[state=active]:text-white" style={{ color: "hsl(240 5% 46%)" }}>
-            <Zap className="h-3.5 w-3.5" /> Signals
-          </TabsTrigger>
         </TabsList>
 
         {/* ── TIERS ── */}
         <TabsContent value="tiers" className="mt-4 space-y-4" style={{ animation: "smoothFadeSlide 0.4s cubic-bezier(0.16,1,0.3,1) both" }}>
+          {/* Tier Explainer */}
+          <Card style={{ background: "hsl(174 97% 22% / 0.04)", borderColor: "hsl(174 97% 22% / 0.12)" }}>
+            <CardContent className="p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <Target className="h-4 w-4" style={{ color: "hsl(174 97% 40%)" }} />
+                <p className="text-sm font-semibold text-white">How Tiers &amp; Cadence Work</p>
+              </div>
+              <p className="text-xs leading-relaxed" style={{ color: "hsl(240 5% 56%)" }}>
+                Every contact is assigned a tier based on their value to your book of business. The tier determines how often you should reach out — your <span className="font-medium text-white">cadence</span>. AURA tracks your last touch and counts down to the next one so no relationship goes cold.
+              </p>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {[
+                  { tier: "S", days: 7, desc: "Weekly", color: "bg-warning/10 text-warning border-warning/20" },
+                  { tier: "A", days: 14, desc: "Bi-weekly", color: "bg-success/10 text-success border-success/20" },
+                  { tier: "B", days: 30, desc: "Monthly", color: "" },
+                  { tier: "C", days: 90, desc: "Quarterly", color: "" },
+                ].map(t => (
+                  <div key={t.tier} className={`rounded-lg p-2.5 text-center border ${t.color}`}
+                    style={!t.color ? { background: "hsl(240 5% 12%)", borderColor: "hsl(240 6% 18%)" } : {}}>
+                    <p className="text-sm font-bold">{t.tier}-Tier</p>
+                    <p className="text-[10px] mt-0.5" style={{ color: "hsl(240 5% 50%)" }}>Every {t.days} days</p>
+                    <p className="text-[10px] font-medium" style={{ color: "hsl(174 97% 40%)" }}>{t.desc}</p>
+                  </div>
+                ))}
+              </div>
+              <p className="text-[11px]" style={{ color: "hsl(240 5% 40%)" }}>
+                <span className="text-destructive font-medium">Overdue</span> contacts have passed their cadence window and should be prioritized. Touches include calls, emails, texts, LinkedIn messages, meetings, and gifts.
+              </p>
+            </CardContent>
+          </Card>
           <div className="flex flex-wrap gap-3">
             {[
               { val: DUMMY_CONTACTS.length, label: "Active Contacts", color: "text-white" },
@@ -435,55 +451,7 @@ export default function DemoOutreachTab() {
           </div>
         </TabsContent>
 
-        {/* ── SIGNALS (Triggers) ── */}
-        <TabsContent value="signals" className="mt-4 space-y-3" style={{ animation: "smoothFadeSlide 0.4s cubic-bezier(0.16,1,0.3,1) both" }}>
-          <div className="flex items-center gap-2 mb-2">
-            <Zap className="h-5 w-5" style={{ color: "hsl(174 97% 40%)" }} />
-            <h2 className="text-sm font-semibold text-white">Territory Intelligence</h2>
-            <Badge variant="outline" className="text-[10px]" style={{ borderColor: "hsl(240 6% 20%)", color: "hsl(240 5% 60%)" }}>{DUMMY_TRIGGERS.length} signals</Badge>
-          </div>
-
-          {DUMMY_TRIGGERS.map((t, i) => (
-            <Card key={i} className="overflow-hidden" style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 14%)", animation: `smoothFadeSlide 0.4s cubic-bezier(0.16,1,0.3,1) ${i * 50}ms both` }}>
-              <CardContent className="p-4">
-                <div className="flex items-start gap-3">
-                  <div className="rounded-lg p-2 shrink-0 mt-0.5" style={{ background: "hsl(240 6% 12%)" }}>
-                    {triggerIcon(t.type)}
-                  </div>
-                  <div className="flex-1 min-w-0 space-y-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className="text-sm font-semibold text-white">{t.title}</p>
-                      <Badge variant="outline" className={`text-[9px] ${urgencyColor(t.urgency)}`}>{t.urgency}</Badge>
-                    </div>
-                    <p className="text-xs" style={{ color: "hsl(240 5% 46%)" }}>{t.description}</p>
-                    <div className="flex items-center gap-3 text-[11px]" style={{ color: "hsl(240 5% 46%)" }}>
-                      <span className="flex items-center gap-1"><User className="h-3 w-3" />{t.person}</span>
-                      <span className="flex items-center gap-1"><Building2 className="h-3 w-3" />{t.company}</span>
-                      <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{t.date}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 mt-1.5 p-2 rounded" style={{ background: "hsl(174 97% 22% / 0.06)", border: "1px solid hsl(174 97% 22% / 0.1)" }}>
-                      <ArrowRight className="h-3 w-3 shrink-0" style={{ color: "hsl(174 97% 40%)" }} />
-                      <span className="text-[11px] font-medium" style={{ color: "hsl(174 97% 40%)" }}>{t.suggested_action}</span>
-                    </div>
-                    <div className="flex gap-2 mt-2">
-                      <Button size="sm" variant="outline" className="text-xs h-7 gap-1" onClick={() => openTriggerAction(t, "meeting")}>
-                        <Calendar className="h-3 w-3" /> Schedule Meeting
-                      </Button>
-                      <Button size="sm" variant="outline" className="text-xs h-7 gap-1" onClick={() => openTriggerAction(t, "email")}>
-                        <Mail className="h-3 w-3" /> Send Email
-                      </Button>
-                      {t.phone && (
-                        <Button size="sm" variant="outline" className="text-xs h-7 gap-1" onClick={() => toast.info(`Calling ${t.person} at ${t.phone}`)}>
-                          <Phone className="h-3 w-3" /> Call
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </TabsContent>
+        {/* Signals hidden for now */}
       </Tabs>
 
       {/* Cadence Action Dialog */}
