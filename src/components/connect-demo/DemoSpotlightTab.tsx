@@ -174,13 +174,13 @@ export default function DemoSpotlightTab() {
 
   return (
     <div className="space-y-4">
-      <Card className="animate-fade-in" style={{ animationDelay: "80ms" }}>
+      <Card className="animate-fade-in" style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 14%)", animationDelay: "80ms" }}>
         <CardHeader className="pb-3">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-warning" />
+          <CardTitle className="text-sm flex items-center gap-2 text-white">
+            <Sparkles className="h-4 w-4" style={{ color: "hsl(140 12% 58%)" }} />
             Create — Marketing & Social Content
           </CardTitle>
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-[11px]" style={{ color: "hsl(240 5% 56%)" }}>
             Design on-brand flyers for events, social media posts, announcements, and promotions — powered by AI. Up to 20 creations/month.
           </p>
         </CardHeader>
