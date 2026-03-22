@@ -60,7 +60,7 @@ function Particles() {
             ctx.beginPath();
             ctx.moveTo(particles[i].x, particles[i].y);
             ctx.lineTo(particles[j].x, particles[j].y);
-            ctx.strokeStyle = `rgba(0, 168, 142, ${0.06 * (1 - d / 120)})`;
+            ctx.strokeStyle = `rgba(138, 154, 140, ${0.06 * (1 - d / 120)})`;
             ctx.stroke();
           }
         }
