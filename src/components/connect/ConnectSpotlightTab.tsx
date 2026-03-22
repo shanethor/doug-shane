@@ -93,7 +93,7 @@ export default function ConnectSpotlightTab() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" style={{ animation: "smoothFadeSlide 0.6s cubic-bezier(0.16,1,0.3,1) both" }}>
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-sm flex items-center gap-2">
