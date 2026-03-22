@@ -257,14 +257,14 @@ function NetworkGraph() {
       }
       if (frame % 200 === 0) startTrace();
 
-      // Ambient random pulses
-      if (frame % 25 === 0) {
-        const idx = (frame * 7) % edges.length;
+      // Ambient random pulses on visible edges only
+      if (frame % 25 === 0 && visibleEdges.length > 0) {
+        const idx = visibleEdges[(frame * 7) % visibleEdges.length];
         if (edgePulse[idx] < 0.1) edgePulse[idx] = 0.5;
       }
 
-      // Draw edges
-      for (let ei = 0; ei < edges.length; ei++) {
+      // Draw only visible edges
+      for (const ei of visibleEdges) {
         const [a, b] = edges[ei];
         const [ax, ay] = toPixel(nodes[a].gx, nodes[a].gy);
         const [bx, by] = toPixel(nodes[b].gx, nodes[b].gy);
@@ -278,7 +278,6 @@ function NetworkGraph() {
         ctx.lineWidth = p > 0.3 ? 2 : 0.8;
         ctx.stroke();
 
-        // Traveling dot
         if (p > 0.15) {
           const t = 1 - p;
           ctx.beginPath();
@@ -291,8 +290,8 @@ function NetworkGraph() {
         if (edgePulse[ei] < 0.005) edgePulse[ei] = 0;
       }
 
-      // Draw nodes
-      for (let i = 0; i < nodes.length; i++) {
+      // Draw only visible nodes
+      for (const i of visibleSet) {
         const n = nodes[i];
         const [px, py] = toPixel(n.gx, n.gy);
         const c = n.tier === 0 ? gold : teal;
