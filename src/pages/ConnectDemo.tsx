@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Mail, CalendarDays, LayoutGrid, Sparkles, MessageSquare,
-  Network, Zap, Send, Crown,
+  Network, Send,
 } from "lucide-react";
 import ConnectSpotlightTab from "@/components/connect/ConnectSpotlightTab";
 import DemoPipelineTab from "@/components/connect-demo/DemoPipelineTab";
@@ -10,9 +10,7 @@ import DemoEmailTab from "@/components/connect-demo/DemoEmailTab";
 import DemoCalendarTab from "@/components/connect-demo/DemoCalendarTab";
 import DemoAssistantTab from "@/components/connect-demo/DemoAssistantTab";
 import DemoConnectTab from "@/components/connect-demo/DemoConnectTab";
-import DemoTriggersTab from "@/components/connect-demo/DemoTriggersTab";
 import DemoOutreachTab from "@/components/connect-demo/DemoOutreachTab";
-import DemoTop10Tab from "@/components/connect-demo/DemoTop10Tab";
 
 const QUOTES = [
   "Success is not final, failure is not fatal: it is the courage to continue that counts. – Winston Churchill",
@@ -56,9 +54,7 @@ const TABS = [
   { value: "pipeline", icon: LayoutGrid, label: "Pipeline" },
   { value: "email", icon: Mail, label: "Email" },
   { value: "calendar", icon: CalendarDays, label: "Calendar" },
-  { value: "triggers", icon: Zap, label: "Triggers" },
   { value: "outreach", icon: Send, label: "Outreach" },
-  { value: "top10", icon: Crown, label: "Top 10" },
   { value: "spotlight", icon: Sparkles, label: "Spotlight" },
   { value: "assistant", icon: MessageSquare, label: "Assistant" },
 ];
@@ -110,9 +106,7 @@ export default function ConnectDemo() {
           <TabsContent value="pipeline" className="mt-0"><DemoPipelineTab /></TabsContent>
           <TabsContent value="email" className="mt-0"><DemoEmailTab /></TabsContent>
           <TabsContent value="calendar" className="mt-0"><DemoCalendarTab /></TabsContent>
-          <TabsContent value="triggers" className="mt-0"><DemoTriggersTab /></TabsContent>
           <TabsContent value="outreach" className="mt-0"><DemoOutreachTab /></TabsContent>
-          <TabsContent value="top10" className="mt-0"><DemoTop10Tab /></TabsContent>
           <TabsContent value="spotlight" className="mt-0"><ConnectSpotlightTab /></TabsContent>
           <TabsContent value="assistant" className="mt-0"><DemoAssistantTab /></TabsContent>
         </Tabs>
