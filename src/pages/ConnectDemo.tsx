@@ -4,7 +4,7 @@ import {
   Mail, CalendarDays, LayoutGrid, Sparkles, MessageSquare,
   Network, Send,
 } from "lucide-react";
-import ConnectSpotlightTab from "@/components/connect/ConnectSpotlightTab";
+import DemoSpotlightTab from "@/components/connect-demo/DemoSpotlightTab";
 import DemoPipelineTab from "@/components/connect-demo/DemoPipelineTab";
 import DemoEmailTab from "@/components/connect-demo/DemoEmailTab";
 import DemoCalendarTab from "@/components/connect-demo/DemoCalendarTab";
