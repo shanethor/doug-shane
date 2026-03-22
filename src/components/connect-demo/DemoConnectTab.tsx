@@ -283,7 +283,7 @@ export default function DemoConnectTab() {
   };
 
   return (
-    <div className="space-y-6" style={{ animation: "smoothFadeSlide 0.6s cubic-bezier(0.16,1,0.3,1) both" }}>
+    <div className="flex flex-col h-full" style={{ animation: "smoothFadeSlide 0.6s cubic-bezier(0.16,1,0.3,1) both" }}>
       {/* Hero */}
       <div className="flex flex-col items-center text-center pt-6 pb-2 space-y-5">
         <div className="space-y-2">
