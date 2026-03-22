@@ -175,11 +175,11 @@ export default function DemoEmailTab() {
           </div>
 
           <div className="flex gap-2 pt-2 border-t flex-wrap" style={{ borderColor: "hsl(240 6% 14%)" }}>
-            <Button size="sm" variant="outline" className="gap-1.5 text-xs"><Reply className="h-3 w-3" /> Reply</Button>
-            <Button size="sm" variant="outline" className="gap-1.5 text-xs" onClick={handleAiDraft}><Sparkles className="h-3 w-3" /> AI Draft</Button>
-            <Button size="sm" variant="outline" className="gap-1.5 text-xs"><Paperclip className="h-3 w-3" /> Attach</Button>
-            <Button size="sm" variant="outline" className="gap-1.5 text-xs" onClick={() => toast.success("Follow-up reminder set for tomorrow 9 AM")}><Clock className="h-3 w-3" /> Set Reminder</Button>
-            <Button size="sm" variant="outline" className="gap-1.5 text-xs" onClick={() => toast.success("Thread summarized — 3 key points extracted")}><FileText className="h-3 w-3" /> Summarize</Button>
+            <Button size="sm" variant="outline" className="gap-1.5 text-xs" style={{ borderColor: "hsl(240 6% 20%)", color: "hsl(240 5% 70%)" }}><Reply className="h-3 w-3" /> Reply</Button>
+            <Button size="sm" variant="outline" className="gap-1.5 text-xs" style={{ borderColor: "hsl(240 6% 20%)", color: "hsl(240 5% 70%)" }} onClick={handleAiDraft}><Sparkles className="h-3 w-3" /> AI Draft</Button>
+            <Button size="sm" variant="outline" className="gap-1.5 text-xs" style={{ borderColor: "hsl(240 6% 20%)", color: "hsl(240 5% 70%)" }}><Paperclip className="h-3 w-3" /> Attach</Button>
+            <Button size="sm" variant="outline" className="gap-1.5 text-xs" style={{ borderColor: "hsl(240 6% 20%)", color: "hsl(240 5% 70%)" }} onClick={() => toast.success("Follow-up reminder set for tomorrow 9 AM")}><Clock className="h-3 w-3" /> Set Reminder</Button>
+            <Button size="sm" variant="outline" className="gap-1.5 text-xs" style={{ borderColor: "hsl(240 6% 20%)", color: "hsl(240 5% 70%)" }} onClick={() => toast.success("Thread summarized — 3 key points extracted")}><FileText className="h-3 w-3" /> Summarize</Button>
           </div>
 
           {showAiDraft && (

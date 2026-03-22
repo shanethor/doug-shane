@@ -194,7 +194,7 @@ export default function DemoSpotlightTab() {
           <Separator />
           <div>
             <div className="flex items-center justify-between mb-2">
-              <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+              <p className="text-[10px] font-medium uppercase tracking-wider flex items-center gap-1" style={{ color: "hsl(240 5% 56%)" }}>
                 <Palette className="h-3 w-3" /> Brand Packages
               </p>
               <Button variant="ghost" size="sm" className="h-6 text-[10px] gap-1" onClick={() => { setEditBrand(null); setView("brand_setup"); }}>
