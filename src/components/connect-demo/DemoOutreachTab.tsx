@@ -225,7 +225,7 @@ export default function DemoOutreachTab() {
                   </div>
                   <ul className="space-y-2">
                     {step.items.map((item, j) => (
-                      <li key={j} className="flex items-start gap-2 text-xs" style={{ color: "hsl(240 5% 60%)", animation: `smoothFadeSlide 0.4s cubic-bezier(0.16,1,0.3,1) ${i * 150 + (j + 1) * 100}ms both` }}>
+                      <li key={j} className="flex items-start gap-2 text-xs animate-fade-in" style={{ color: "hsl(240 5% 60%)", animationDelay: `${i * 150 + (j + 1) * 100}ms` }}>
                         <ArrowRight className="h-3 w-3 mt-0.5 shrink-0" style={{ color: "hsl(174 97% 40%)" }} />
                         {item}
                       </li>
