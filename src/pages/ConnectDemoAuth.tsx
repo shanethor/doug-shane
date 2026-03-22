@@ -75,11 +75,11 @@ function Particles() {
 }
 
 const FEATURES = [
-  { icon: BarChart3, label: "AI Pipeline", delay: "0.3s" },
-  { icon: Mail, label: "Email & Calendar", delay: "0.5s" },
-  { icon: Users, label: "Network Intelligence", delay: "0.7s" },
-  { icon: Shield, label: "Spotlight Marketing", delay: "0.9s" },
-  { icon: Zap, label: "AI Assistant", delay: "1.1s" },
+  { icon: Users, label: "Network Intelligence", delay: "0.3s" },
+  { icon: BarChart3, label: "AI Pipeline", delay: "0.5s" },
+  { icon: Mail, label: "Email & Calendar", delay: "0.7s" },
+  { icon: SparklesIcon, label: "Create", delay: "0.9s" },
+  { icon: Zap, label: "Sage AI", delay: "1.1s" },
 ];
 const INDUSTRIES = [
   "Accounting", "Advertising & Marketing", "Agriculture", "Architecture", "Automotive",
