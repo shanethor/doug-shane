@@ -201,7 +201,7 @@ export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: st
                 ))}
               </div>
             )}
-            <div className="flex items-end gap-2 rounded-xl border border-[hsl(240_6%_14%)] bg-[hsl(240_8%_9%)] p-4 aura-glow-shadow focus-within:ring-2 focus-within:ring-ring">
+            <div className="flex items-end gap-2 rounded-xl p-4 focus-within:ring-2" style={{ background: "hsl(240 8% 9%)", border: "1px solid hsl(240 6% 14%)", boxShadow: "0 8px 32px -8px hsl(140 12% 42% / 0.08)" }}>
               <Button variant="ghost" size="icon" className="shrink-0 h-9 w-9 text-muted-foreground hover:text-foreground" onClick={() => fileInputRef.current?.click()}>
                 <Paperclip className="h-4 w-4" />
               </Button>
