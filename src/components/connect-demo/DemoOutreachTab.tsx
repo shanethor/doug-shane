@@ -217,7 +217,7 @@ export default function DemoOutreachTab() {
           {OUTREACH_STEPS.map((step, i) => {
             if (i >= visibleSteps) return null;
             return (
-              <Card key={i} className="overflow-hidden" style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 14%)", animation: `smoothFadeSlide 0.5s cubic-bezier(0.16,1,0.3,1) ${i * 150}ms both` }}>
+              <Card key={i} className="overflow-hidden animate-fade-in" style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 14%)", animationDelay: `${i * 150}ms` }}>
                 <CardContent className="p-4">
                   <div className="flex items-center gap-2 mb-3">
                     <div className="h-7 w-7 rounded-full flex items-center justify-center text-xs font-bold" style={{ background: "hsl(174 97% 22% / 0.15)", color: "hsl(174 97% 40%)" }}>{i + 1}</div>
