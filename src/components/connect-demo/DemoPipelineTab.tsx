@@ -77,8 +77,17 @@ export default function DemoPipelineTab() {
   const initialIndustry = lower.includes("real estate") ? "real_estate" : lower.includes("consult") ? "consulting" : lower.includes("insurance") ? "insurance" : "generic";
 
   const [industry, setIndustry] = useState(initialIndustry);
-  const [leads, setLeads] = useState(DEMO_LEADS);
+  const [leads, setLeads] = useState<DemoLead[]>(() => {
+    const stored = sessionStorage.getItem("connect-demo-leads");
+    if (stored) { try { return JSON.parse(stored); } catch {} }
+    return DEMO_LEADS;
+  });
   const [expandedColumns, setExpandedColumns] = useState<Record<string, boolean>>({});
+
+  // Persist leads to sessionStorage so they sync across tabs
+  useEffect(() => {
+    sessionStorage.setItem("connect-demo-leads", JSON.stringify(leads));
+  }, [leads]);
 
   const config = PIPELINE_CONFIGS[industry];
   const allStages = config.stages;
