@@ -175,11 +175,11 @@ export default function DemoEmailTab() {
           </div>
 
           <div className="flex gap-2 pt-2 border-t flex-wrap" style={{ borderColor: "hsl(240 6% 14%)" }}>
-            <Button size="sm" variant="outline" className="gap-1.5 text-xs"><Reply className="h-3 w-3" /> Reply</Button>
-            <Button size="sm" variant="outline" className="gap-1.5 text-xs" onClick={handleAiDraft}><Sparkles className="h-3 w-3" /> AI Draft</Button>
-            <Button size="sm" variant="outline" className="gap-1.5 text-xs"><Paperclip className="h-3 w-3" /> Attach</Button>
-            <Button size="sm" variant="outline" className="gap-1.5 text-xs" onClick={() => toast.success("Follow-up reminder set for tomorrow 9 AM")}><Clock className="h-3 w-3" /> Set Reminder</Button>
-            <Button size="sm" variant="outline" className="gap-1.5 text-xs" onClick={() => toast.success("Thread summarized — 3 key points extracted")}><FileText className="h-3 w-3" /> Summarize</Button>
+            <Button size="sm" variant="outline" className="gap-1.5 text-xs" style={{ borderColor: "hsl(240 6% 20%)", color: "hsl(240 5% 70%)" }}><Reply className="h-3 w-3" /> Reply</Button>
+            <Button size="sm" variant="outline" className="gap-1.5 text-xs" style={{ borderColor: "hsl(240 6% 20%)", color: "hsl(240 5% 70%)" }} onClick={handleAiDraft}><Sparkles className="h-3 w-3" /> AI Draft</Button>
+            <Button size="sm" variant="outline" className="gap-1.5 text-xs" style={{ borderColor: "hsl(240 6% 20%)", color: "hsl(240 5% 70%)" }}><Paperclip className="h-3 w-3" /> Attach</Button>
+            <Button size="sm" variant="outline" className="gap-1.5 text-xs" style={{ borderColor: "hsl(240 6% 20%)", color: "hsl(240 5% 70%)" }} onClick={() => toast.success("Follow-up reminder set for tomorrow 9 AM")}><Clock className="h-3 w-3" /> Set Reminder</Button>
+            <Button size="sm" variant="outline" className="gap-1.5 text-xs" style={{ borderColor: "hsl(240 6% 20%)", color: "hsl(240 5% 70%)" }} onClick={() => toast.success("Thread summarized — 3 key points extracted")}><FileText className="h-3 w-3" /> Summarize</Button>
           </div>
 
           {showAiDraft && (
@@ -214,13 +214,13 @@ export default function DemoEmailTab() {
           <span className="text-xs" style={{ color: "hsl(240 5% 46%)" }}>Last synced 3 minutes ago</span>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => setShowAccounts(true)}>
+          <Button variant="outline" size="sm" className="gap-1.5 text-xs" style={{ borderColor: "hsl(240 6% 20%)", color: "hsl(240 5% 70%)" }} onClick={() => setShowAccounts(true)}>
             <Link2 className="h-3 w-3" /> Inboxes ({SYNCED_ACCOUNTS.filter(a => a.synced).length})
           </Button>
-          <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => setShowClientLookup(true)}>
+          <Button variant="outline" size="sm" className="gap-1.5 text-xs" style={{ borderColor: "hsl(240 6% 20%)", color: "hsl(240 5% 70%)" }} onClick={() => setShowClientLookup(true)}>
             <User className="h-3 w-3" /> Client Lookup
           </Button>
-          <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => toast.success("All emails marked as read")}>
+          <Button variant="outline" size="sm" className="gap-1.5 text-xs" style={{ borderColor: "hsl(240 6% 20%)", color: "hsl(240 5% 70%)" }} onClick={() => toast.success("All emails marked as read")}>
             <CheckCheck className="h-3 w-3" /> Mark all read
           </Button>
           <Button size="sm" className="gap-1.5 text-xs" style={{ background: "hsl(140 12% 42%)" }} onClick={() => setShowCompose(true)}>

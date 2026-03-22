@@ -141,7 +141,7 @@ export default function DemoPipelineTab() {
               <div className={`rounded-lg px-3 py-2 border ${stage.color}`}>
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-semibold">{stage.label}</span>
-                  <Badge variant="secondary" className="text-[9px] h-5">{stageLeads.length}</Badge>
+                  <Badge className="text-[9px] h-5" style={{ background: "hsl(140 12% 42% / 0.15)", color: "hsl(140 12% 58%)", border: "1px solid hsl(140 12% 42% / 0.25)" }}>{stageLeads.length}</Badge>
                 </div>
                 {totalValue > 0 && <p className="text-[10px] mt-0.5 opacity-70">${totalValue.toLocaleString()}</p>}
               </div>
