@@ -46,11 +46,10 @@ interface PathResult {
   confidence: number;
 }
 
-/* ── Hex-grid Network Visualization ── */
-// Stationary nodes on a responsive hex grid. Animation = edge pulses + path traces only.
+/* ── Full-page Hex-grid Network Visualization ── */
 
-const COLS = 14;
-const ROWS = 7;
+const COLS = 21;
+const ROWS = 14;
 
 interface GNode {
   gx: number; gy: number;
@@ -62,30 +61,49 @@ function buildGraph() {
   const cx = Math.floor(COLS / 2);
   const cy = Math.floor(ROWS / 2);
 
-  const names = [
-    "You","Doug M.","James W.","Priya P.","Tom N.","Sarah M.","Alex K.","Maria L.",
-    "Chris B.","Jordan T.","Sam R.","Casey D.","Pat H.","Quinn F.","Riley J.",
-    "Morgan S.","Avery C.","Blake N.","Dana W.","Ellis R.","Frankie G.","Harper L.",
-    "Jules M.","Kai P.","Logan D.","Noel B.","Oakley S.","Peyton H.","Reese A.",
-    "Skyler V.","Tatum J.","Val K.","Wren E.","Zion F.","Ari M.","Rowan S.",
-    "Sage T.","Emery F.","Finley H.","Hayden C.","Jamie K.","Kendall L.","Lane M.",
-    "Micah N.","Nico P.","Parker R.","Remy S.","Shea T.","Taylor U.","Uma V.",
-    "Vince W.","Wade X.","Xander Y.","Yara Z.","Brynn A.","Cade B.","Dex C.",
-    "Eve D.","Flynn E.","Gia F.","Hugo G.","Iris H.","Jude I.","Kira J.",
-    "Leo K.","Mila L.","Nate M.","Opal N.","Rex O.","Sia P.","Theo Q.",
-    "Uri R.","Vera S.","Wes T.","Xena U.","Yael V.","Zeke W.","Ada X.",
-    "Bo Y.","Cal Z.","Dot A.","Eli B.","Faye C.","Gil D.","Hope E.",
-    "Ian F.","Joy G.","Kit H.","Liv I.","Max J.","Nell K.","Otto L.",
-    "Pam M.","Roy N.","Sue O.","Ty P.","Una Q.","Vic R.","Zoe S.",
+  const firstNames = [
+    "Doug","James","Priya","Tom","Sarah","Alex","Maria","Chris","Jordan","Sam",
+    "Casey","Pat","Quinn","Riley","Morgan","Avery","Blake","Dana","Ellis","Frankie",
+    "Harper","Jules","Kai","Logan","Noel","Oakley","Peyton","Reese","Skyler","Tatum",
+    "Val","Wren","Zion","Ari","Rowan","Sage","Emery","Finley","Hayden","Jamie",
+    "Kendall","Lane","Micah","Nico","Parker","Remy","Shea","Taylor","Uma","Vince",
+    "Wade","Xander","Yara","Brynn","Cade","Dex","Eve","Flynn","Gia","Hugo",
+    "Iris","Jude","Kira","Leo","Mila","Nate","Opal","Rex","Sia","Theo",
+    "Uri","Vera","Wes","Xena","Yael","Zeke","Ada","Bo","Cal","Dot",
+    "Eli","Faye","Gil","Hope","Ian","Joy","Kit","Liv","Max","Nell",
+    "Otto","Pam","Roy","Sue","Ty","Una","Vic","Zoe","Beau","Cleo",
+    "Drew","Erin","Ford","Gwen","Hank","Ivy","Jack","Kate","Luke","May",
+    "Ned","Olive","Pete","Rose","Seth","Tara","Wade","Xara","Yuri","Zara",
+    "Abel","Beth","Cole","Dara","Evan","Fern","Glen","Hana","Ike","Jill",
+    "Kurt","Lena","Milo","Nina","Omar","Prue","Reid","Sara","Tess","Ugo",
+    "Vega","Walt","Xia","York","Zena","Alan","Bree","Cyra","Dale","Edna",
+    "Finn","Gabe","Hera","Igor","Jana","Karl","Lyla","Mara","Nils","Ora",
+    "Penn","Rhea","Sven","Tina","Ulma","Vida","Will","Xyla","Yoko","Zita",
+    "Aldo","Bibi","Cruz","Dina","Emir","Fara","Gary","Hedy","Ivan","Juno",
+    "Kobe","Lisa","Mars","Neva","Odin","Pia","Roan","Suki","Troy","Ulla",
+    "Vito","Wynn","Xeno","Yves","Zeno","Aiko","Bram","Cora","Dirk","Elsa",
+    "Fitz","Gray","Hugh","Isis","Joel","Kaia","Lars","Mina","Nora","Oslo",
+    "Pax","Roma","Sean","Thea","Umi","Vern","West","Xavi","Yael","Zack",
+    "Amos","Bria","Chad","Devi","Esme","Faye","Gail","Hart","Iona","Jade",
+    "Kari","Lana","Moss","Neve","Owen","Peri","Ravi","Shay","Tove","Usha",
+    "Vada","Wynn","Xara","Yemi","Zoya","Alma","Buck","Clay","Dawn","Elan",
+    "Flo","Gage","Hero","Ilsa","Jett","Knox","Lark","Myra","Nash","Oona",
+    "Pike","Rena","Siri","Toby","Uta","Voss","Wart","Xola","Yuma","Zeph",
+    "Anya","Berg","Cass","Dane","Elke","Flux","Grif","Holt","Izzy","Joss",
   ];
+  const lastInits = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
-  // Collect all grid slots
+  const names: string[] = ["You"];
+  for (let i = 0; i < firstNames.length; i++) {
+    names.push(`${firstNames[i]} ${lastInits[i % 26]}.`);
+  }
+
   const allSlots: [number, number][] = [];
   for (let r = 0; r < ROWS; r++)
     for (let c = 0; c < COLS; c++)
       if (!(c === cx && r === cy)) allSlots.push([c, r]);
 
-  // Shuffle deterministically-ish
+  // Shuffle deterministically
   for (let i = allSlots.length - 1; i > 0; i--) {
     const j = (i * 7 + 3) % (i + 1);
     [allSlots[i], allSlots[j]] = [allSlots[j], allSlots[i]];
@@ -95,11 +113,11 @@ function buildGraph() {
   for (let i = 0; i < Math.min(names.length - 1, allSlots.length); i++) {
     const [gx, gy] = allSlots[i];
     const dist = Math.abs(gx - cx) + Math.abs(gy - cy);
-    const tier: 1 | 2 | 3 = dist <= 2 ? 1 : dist <= 4 ? 2 : 3;
+    const tier: 1 | 2 | 3 = dist <= 3 ? 1 : dist <= 6 ? 2 : 3;
     nodes.push({ gx, gy, label: names[i + 1], tier });
   }
 
-  // Edges: connect grid neighbors (dist ≤ 1 in hex)
+  // Edges: connect grid neighbors
   const edges: [number, number][] = [];
   for (let i = 0; i < nodes.length; i++) {
     for (let j = i + 1; j < nodes.length; j++) {
@@ -109,20 +127,19 @@ function buildGraph() {
     }
   }
   // Longer-range connections
-  for (let k = 0; k < 25; k++) {
+  for (let k = 0; k < 60; k++) {
     const a = (k * 13 + 5) % nodes.length;
     const b = (k * 7 + 11) % nodes.length;
     if (a !== b) {
       const dx = Math.abs(nodes[a].gx - nodes[b].gx);
       const dy = Math.abs(nodes[a].gy - nodes[b].gy);
-      if (dx <= 3 && dy <= 2) edges.push([a, b]);
+      if (dx <= 4 && dy <= 3) edges.push([a, b]);
     }
   }
 
   return { nodes, edges };
 }
 
-// Build once at module level so it's stable across re-renders
 const GRAPH = buildGraph();
 
 function NetworkGraph() {
@@ -143,11 +160,9 @@ function NetworkGraph() {
     let frame = 0;
     let w = 0, h = 0;
 
-    // Visible node indices (recalculated on resize)
     let visibleSet = new Set<number>();
     let visibleEdges: number[] = [];
 
-    // BFS adjacency (full graph)
     const adj: number[][] = Array.from({ length: nodes.length }, () => []);
     for (let ei = 0; ei < edges.length; ei++) {
       adj[edges[ei][0]].push(ei);
@@ -158,13 +173,11 @@ function NetworkGraph() {
     let traceProgress = 0;
 
     function computeVisible() {
-      // Target: 75+ on large (>1200), 40+ on mid (>600), 20+ on small
       let targetCount: number;
-      if (w >= 1200) targetCount = 80;
-      else if (w >= 600) targetCount = 45;
-      else targetCount = 24;
+      if (w >= 1200) targetCount = 240;
+      else if (w >= 600) targetCount = 120;
+      else targetCount = 60;
 
-      // Sort nodes by distance from center of grid, always include "You" first
       const cx = Math.floor(COLS / 2);
       const cy = Math.floor(ROWS / 2);
       const sorted = nodes.map((n, i) => ({
@@ -175,7 +188,7 @@ function NetworkGraph() {
       for (let k = 0; k < Math.min(targetCount, sorted.length); k++) {
         visibleSet.add(sorted[k].i);
       }
-      visibleSet.add(0); // always include "You"
+      visibleSet.add(0);
 
       visibleEdges = [];
       for (let ei = 0; ei < edges.length; ei++) {
@@ -199,8 +212,8 @@ function NetworkGraph() {
     }
 
     function toPixel(gx: number, gy: number): [number, number] {
-      const padX = w * 0.06;
-      const padY = h * 0.1;
+      const padX = w * 0.04;
+      const padY = h * 0.06;
       const cellW = (w - padX * 2) / (COLS - 1);
       const cellH = (h - padY * 2) / (ROWS - 1);
       const offX = (gy % 2) * cellW * 0.5;
@@ -208,7 +221,8 @@ function NetworkGraph() {
     }
 
     function startTrace() {
-      const targets = nodes.map((_, i) => i).filter(i => nodes[i].tier >= 2);
+      const targets = nodes.map((_, i) => i).filter(i => nodes[i].tier >= 2 && visibleSet.has(i));
+      if (targets.length === 0) return;
       const target = targets[(frame * 3 + 7) % targets.length];
       const visited = new Set<number>([0]);
       const parent = new Map<number, { node: number; edge: number }>();
@@ -249,20 +263,17 @@ function NetworkGraph() {
       frame++;
       ctx.clearRect(0, 0, w, h);
 
-      // Advance path trace
       if (frame % 8 === 0 && traceProgress < traceEdges.length) {
         edgePulse[traceEdges[traceProgress]] = 1;
         traceProgress++;
       }
-      if (frame % 200 === 0) startTrace();
+      if (frame % 180 === 0) startTrace();
 
-      // Ambient random pulses on visible edges only
-      if (frame % 25 === 0 && visibleEdges.length > 0) {
+      if (frame % 20 === 0 && visibleEdges.length > 0) {
         const idx = visibleEdges[(frame * 7) % visibleEdges.length];
         if (edgePulse[idx] < 0.1) edgePulse[idx] = 0.5;
       }
 
-      // Draw only visible edges
       for (const ei of visibleEdges) {
         const [a, b] = edges[ei];
         const [ax, ay] = toPixel(nodes[a].gx, nodes[a].gy);
@@ -289,7 +300,6 @@ function NetworkGraph() {
         if (edgePulse[ei] < 0.005) edgePulse[ei] = 0;
       }
 
-      // Draw only visible nodes — all with name labels
       const fontSize = w >= 1200 ? 9 : w >= 600 ? 8 : 7;
       for (const i of visibleSet) {
         const n = nodes[i];
@@ -375,7 +385,7 @@ function NetworkGraph() {
   }, []);
 
   return (
-    <div ref={containerRef} className="w-full flex-1" style={{ minHeight: 200 }}>
+    <div ref={containerRef} className="absolute inset-0">
       <canvas ref={canvasRef} className="pointer-events-none" />
     </div>
   );
@@ -407,9 +417,9 @@ export default function DemoConnectTab() {
   };
 
   return (
-    <div className="flex flex-col h-full" style={{ animation: "smoothFadeSlide 0.6s cubic-bezier(0.16,1,0.3,1) both" }}>
-      {/* Hero */}
-      <div className="flex flex-col items-center text-center pt-6 pb-2 space-y-5">
+    <div className="flex flex-col" style={{ animation: "smoothFadeSlide 0.6s cubic-bezier(0.16,1,0.3,1) both", height: "calc(100dvh - 140px)" }}>
+      {/* Hero + Search overlaid on top */}
+      <div className="relative z-10 flex flex-col items-center text-center pt-6 pb-2 space-y-5">
         <div className="space-y-2">
           <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-white">
             Find the fastest path to{" "}
@@ -438,11 +448,11 @@ export default function DemoConnectTab() {
         </div>
       </div>
 
-      {/* Network Graph — fills remaining space */}
+      {/* Network Graph — fills ALL remaining space */}
       {!searching && !result && (
-        <div className="relative flex-1 rounded-2xl overflow-hidden mt-4" style={{ background: "hsl(240 8% 5% / 0.6)", border: "1px solid hsl(174 97% 22% / 0.08)", minHeight: 200 }}>
+        <div className="relative flex-1 overflow-hidden mt-2">
           <NetworkGraph />
-          <div className="absolute bottom-4 left-0 right-0 text-center">
+          <div className="absolute bottom-4 left-0 right-0 text-center z-10">
             <span className="text-xs px-3 py-1 rounded-full" style={{ background: "hsl(240 8% 9% / 0.8)", color: "hsl(240 5% 50%)", border: "1px solid hsl(240 6% 14%)" }}>
               Live network map — search a name to trace a path
             </span>
@@ -452,7 +462,7 @@ export default function DemoConnectTab() {
 
       {/* Searching */}
       {searching && (
-        <div className="flex items-center justify-center py-16">
+        <div className="flex-1 flex items-center justify-center">
           <div className="text-center space-y-3">
             <Loader2 className="h-10 w-10 animate-spin mx-auto" style={{ color: "hsl(174 97% 40%)" }} />
             <p className="text-sm" style={{ color: "hsl(240 5% 46%)" }}>Scanning your network for paths to {searchName}…</p>
