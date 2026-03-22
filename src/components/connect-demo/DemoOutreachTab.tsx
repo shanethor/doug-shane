@@ -298,7 +298,7 @@ export default function DemoOutreachTab() {
               { val: overdue.length, label: "Overdue", color: "text-destructive" },
               { val: DUMMY_CONTACTS.reduce((s, c) => s + c.touchCount, 0), label: "Total Touches", color: "" },
             ].map((s, i) => (
-              <Card key={i} className="flex-1 min-w-[140px]" style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 14%)", animation: `smoothFadeSlide 0.4s cubic-bezier(0.16,1,0.3,1) ${i * 80}ms both` }}>
+              <Card key={i} className="flex-1 min-w-[140px] animate-fade-in" style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 14%)", animationDelay: `${i * 80}ms` }}>
                 <CardContent className="p-3 text-center">
                   <p className={`text-2xl font-bold ${s.color}`} style={!s.color ? { color: "hsl(174 97% 40%)" } : {}}>{s.val}</p>
                   <p className="text-[11px]" style={{ color: "hsl(240 5% 46%)" }}>{s.label}</p>
