@@ -284,7 +284,7 @@ export default function ConnectDemoAuth() {
                 className="text-2xl font-bold text-white mb-2 transition-all"
                 style={{ transitionDuration: "600ms", opacity: buildPhase >= 2 ? 1 : 0, transform: buildPhase >= 2 ? "translateY(0)" : "translateY(15px)" }}
               >
-                Welcome to AURA Connect
+                Welcome to AuRa Connect
               </h2>
 
               {/* Phase 3: Subtitle */}
