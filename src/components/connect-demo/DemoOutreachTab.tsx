@@ -248,7 +248,7 @@ export default function DemoOutreachTab() {
   }
 
   return (
-    <div className="space-y-4" style={{ animation: "smoothFadeSlide 0.6s cubic-bezier(0.16,1,0.3,1) both" }}>
+    <div className="space-y-4 animate-fade-in">
       {/* Section tabs */}
       <Tabs value={section} onValueChange={setSection}>
         <TabsList className="h-9 p-0.5" style={{ background: "hsl(240 8% 7%)", border: "1px solid hsl(240 6% 14%)" }}>
