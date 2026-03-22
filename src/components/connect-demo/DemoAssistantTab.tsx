@@ -98,6 +98,8 @@ export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: st
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages]);
 
+  const [researching, setResearching] = useState(false);
+
   const send = useCallback((text: string) => {
     if (!text.trim() || loading) return;
     const fileNote = attachedFiles.length > 0
@@ -110,11 +112,17 @@ export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: st
     setAttachedFiles([]);
     setLoading(true);
 
+    // Detect if this looks like a research request for the UI indicator
+    const researchPattern = /(?:research|look up|look into|find out about|tell me about|info(?:rmation)? (?:on|about)|investigate|check out|what do you know about|learn about)\s+.+/i;
+    const isResearch = researchPattern.test(text.trim());
+    if (isResearch) setResearching(true);
+
     let assistantSoFar = "";
     const ac = new AbortController();
     abortRef.current = ac;
 
     const upsert = (chunk: string) => {
+      if (researching || isResearch) setResearching(false);
       assistantSoFar += chunk;
       setMessages(prev => {
         const last = prev[prev.length - 1];
@@ -128,11 +136,11 @@ export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: st
     streamChat({
       messages: history.map(m => ({ role: m.role, content: m.content })),
       onDelta: upsert,
-      onDone: () => setLoading(false),
-      onError: (err) => { toast.error(err); setLoading(false); },
+      onDone: () => { setLoading(false); setResearching(false); },
+      onError: (err) => { toast.error(err); setLoading(false); setResearching(false); },
       signal: ac.signal,
     });
-  }, [messages, loading, attachedFiles]);
+  }, [messages, loading, attachedFiles, researching]);
 
   const stop = useCallback(() => {
     abortRef.current?.abort();
@@ -280,11 +288,18 @@ export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: st
             {loading && messages[messages.length - 1]?.role === "user" && (
               <div className="flex justify-start">
                 <div className="rounded-xl px-4 py-3 text-sm bg-muted/60 border border-border">
-                  <span className="flex gap-1">
-                    <span className="w-2 h-2 rounded-full bg-foreground/30 animate-bounce" style={{ animationDelay: "0ms" }} />
-                    <span className="w-2 h-2 rounded-full bg-foreground/30 animate-bounce" style={{ animationDelay: "150ms" }} />
-                    <span className="w-2 h-2 rounded-full bg-foreground/30 animate-bounce" style={{ animationDelay: "300ms" }} />
-                  </span>
+                  {researching ? (
+                    <span className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <Globe className="h-3.5 w-3.5 animate-spin" />
+                      Researching company…
+                    </span>
+                  ) : (
+                    <span className="flex gap-1">
+                      <span className="w-2 h-2 rounded-full bg-foreground/30 animate-bounce" style={{ animationDelay: "0ms" }} />
+                      <span className="w-2 h-2 rounded-full bg-foreground/30 animate-bounce" style={{ animationDelay: "150ms" }} />
+                      <span className="w-2 h-2 rounded-full bg-foreground/30 animate-bounce" style={{ animationDelay: "300ms" }} />
+                    </span>
+                  )}
                 </div>
               </div>
             )}
