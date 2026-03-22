@@ -143,16 +143,48 @@ function NetworkGraph() {
     let frame = 0;
     let w = 0, h = 0;
 
-    // BFS adjacency
+    // Visible node indices (recalculated on resize)
+    let visibleSet = new Set<number>();
+    let visibleEdges: number[] = [];
+
+    // BFS adjacency (full graph)
     const adj: number[][] = Array.from({ length: nodes.length }, () => []);
     for (let ei = 0; ei < edges.length; ei++) {
       adj[edges[ei][0]].push(ei);
       adj[edges[ei][1]].push(ei);
     }
 
-    // Trace state
     let traceEdges: number[] = [];
     let traceProgress = 0;
+
+    function computeVisible() {
+      // Determine how many cols/rows fit with min 36px spacing
+      const minCell = 36;
+      const maxCols = Math.max(4, Math.floor(w / minCell));
+      const maxRows = Math.max(3, Math.floor(h / minCell));
+      const showCols = Math.min(COLS, maxCols);
+      const showRows = Math.min(ROWS, maxRows);
+      // Center the visible grid
+      const colStart = Math.floor((COLS - showCols) / 2);
+      const rowStart = Math.floor((ROWS - showRows) / 2);
+      visibleSet = new Set<number>();
+      for (let i = 0; i < nodes.length; i++) {
+        const n = nodes[i];
+        if (n.gx >= colStart && n.gx < colStart + showCols &&
+            n.gy >= rowStart && n.gy < rowStart + showRows) {
+          visibleSet.add(i);
+        }
+      }
+      // Always include "You" (index 0)
+      visibleSet.add(0);
+      // Filter edges to only visible pairs
+      visibleEdges = [];
+      for (let ei = 0; ei < edges.length; ei++) {
+        if (visibleSet.has(edges[ei][0]) && visibleSet.has(edges[ei][1])) {
+          visibleEdges.push(ei);
+        }
+      }
+    }
 
     function resize() {
       const dpr = window.devicePixelRatio || 1;
@@ -164,11 +196,12 @@ function NetworkGraph() {
       canvas!.style.width = w + "px";
       canvas!.style.height = h + "px";
       ctx!.setTransform(dpr, 0, 0, dpr, 0, 0);
+      computeVisible();
     }
 
     function toPixel(gx: number, gy: number): [number, number] {
-      const padX = w * 0.05;
-      const padY = h * 0.08;
+      const padX = w * 0.06;
+      const padY = h * 0.1;
       const cellW = (w - padX * 2) / (COLS - 1);
       const cellH = (h - padY * 2) / (ROWS - 1);
       const offX = (gy % 2) * cellW * 0.5;
@@ -224,14 +257,14 @@ function NetworkGraph() {
       }
       if (frame % 200 === 0) startTrace();
 
-      // Ambient random pulses
-      if (frame % 25 === 0) {
-        const idx = (frame * 7) % edges.length;
+      // Ambient random pulses on visible edges only
+      if (frame % 25 === 0 && visibleEdges.length > 0) {
+        const idx = visibleEdges[(frame * 7) % visibleEdges.length];
         if (edgePulse[idx] < 0.1) edgePulse[idx] = 0.5;
       }
 
-      // Draw edges
-      for (let ei = 0; ei < edges.length; ei++) {
+      // Draw only visible edges
+      for (const ei of visibleEdges) {
         const [a, b] = edges[ei];
         const [ax, ay] = toPixel(nodes[a].gx, nodes[a].gy);
         const [bx, by] = toPixel(nodes[b].gx, nodes[b].gy);
@@ -245,7 +278,6 @@ function NetworkGraph() {
         ctx.lineWidth = p > 0.3 ? 2 : 0.8;
         ctx.stroke();
 
-        // Traveling dot
         if (p > 0.15) {
           const t = 1 - p;
           ctx.beginPath();
@@ -258,8 +290,8 @@ function NetworkGraph() {
         if (edgePulse[ei] < 0.005) edgePulse[ei] = 0;
       }
 
-      // Draw nodes
-      for (let i = 0; i < nodes.length; i++) {
+      // Draw only visible nodes
+      for (const i of visibleSet) {
         const n = nodes[i];
         const [px, py] = toPixel(n.gx, n.gy);
         const c = n.tier === 0 ? gold : teal;
