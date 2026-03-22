@@ -288,11 +288,18 @@ export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: st
             {loading && messages[messages.length - 1]?.role === "user" && (
               <div className="flex justify-start">
                 <div className="rounded-xl px-4 py-3 text-sm bg-muted/60 border border-border">
-                  <span className="flex gap-1">
-                    <span className="w-2 h-2 rounded-full bg-foreground/30 animate-bounce" style={{ animationDelay: "0ms" }} />
-                    <span className="w-2 h-2 rounded-full bg-foreground/30 animate-bounce" style={{ animationDelay: "150ms" }} />
-                    <span className="w-2 h-2 rounded-full bg-foreground/30 animate-bounce" style={{ animationDelay: "300ms" }} />
-                  </span>
+                  {researching ? (
+                    <span className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <Globe className="h-3.5 w-3.5 animate-spin" />
+                      Researching company…
+                    </span>
+                  ) : (
+                    <span className="flex gap-1">
+                      <span className="w-2 h-2 rounded-full bg-foreground/30 animate-bounce" style={{ animationDelay: "0ms" }} />
+                      <span className="w-2 h-2 rounded-full bg-foreground/30 animate-bounce" style={{ animationDelay: "150ms" }} />
+                      <span className="w-2 h-2 rounded-full bg-foreground/30 animate-bounce" style={{ animationDelay: "300ms" }} />
+                    </span>
+                  )}
                 </div>
               </div>
             )}
