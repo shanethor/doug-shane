@@ -219,14 +219,14 @@ export default function DemoSpotlightTab() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5">
-                        <p className="text-xs font-medium truncate">{b.name}</p>
-                        {b.is_default && <Badge variant="secondary" className="text-[8px] h-4">Default</Badge>}
-                        {isSample && <Badge variant="outline" className="text-[8px] h-4 opacity-50">Sample</Badge>}
+                        <p className="text-xs font-medium truncate text-white">{b.name}</p>
+                        {b.is_default && <Badge className="text-[8px] h-4" style={{ background: "hsl(140 12% 42% / 0.15)", color: "hsl(140 12% 58%)", border: "1px solid hsl(140 12% 42% / 0.25)" }}>Default</Badge>}
+                        {isSample && <Badge className="text-[8px] h-4" style={{ background: "transparent", color: "hsl(240 5% 50%)", border: "1px solid hsl(240 6% 20%)" }}>Sample</Badge>}
                       </div>
                       <div className="flex items-center gap-1.5 mt-0.5">
-                        <span className="text-[10px] text-muted-foreground truncate">{b.brand_name}</span>
+                        <span className="text-[10px] text-[hsl(240_5%_56%)] truncate">{b.brand_name}</span>
                         <div className="flex gap-0.5 shrink-0">
-                          {b.brand_colors.slice(0, 3).map((c, i) => <div key={i} className="w-2.5 h-2.5 rounded-full border border-border" style={{ background: c }} />)}
+                          {b.brand_colors.slice(0, 3).map((c, i) => <div key={i} className="w-2.5 h-2.5 rounded-full border border-[hsl(240_6%_14%)]" style={{ background: c }} />)}
                         </div>
                       </div>
                     </div>
@@ -250,7 +250,7 @@ export default function DemoSpotlightTab() {
           {/* Flyer History */}
           <Separator />
           <div>
-            <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground mb-2">Your Flyers</p>
+            <p className="text-[10px] font-medium uppercase tracking-wider text-[hsl(240_5%_56%)] mb-2">Your Flyers</p>
             <div className="space-y-2">
               {allFlyers.map((f: any, idx: number) => {
                 const isSample = f._sample || f.id?.startsWith("sample-");
@@ -264,18 +264,18 @@ export default function DemoSpotlightTab() {
                       <img src={f.result_image_url} alt={f.title} className="w-12 h-12 rounded object-cover border shrink-0" />
                     ) : (
                       <div className="w-12 h-12 rounded bg-[hsl(240_6%_7%)] flex items-center justify-center shrink-0 border border-border">
-                        <ImageIcon className="h-4 w-4 text-muted-foreground" />
+                        <ImageIcon className="h-4 w-4 text-[hsl(240_5%_56%)]" />
                       </div>
                     )}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5">
                         <p className="text-sm font-medium truncate">{f.title || "Untitled"}</p>
-                        {isSample && <Badge variant="outline" className="text-[8px] h-4 opacity-50">Sample</Badge>}
+                        {isSample && <Badge className="text-[8px] h-4" style={{ background: "transparent", color: "hsl(240 5% 50%)", border: "1px solid hsl(240 6% 20%)" }}>Sample</Badge>}
                       </div>
                       <div className="flex items-center gap-2 flex-wrap">
                         <Badge variant="outline" className={`text-[9px] ${TYPE_COLORS[f.type] || ""}`}>{f.type}</Badge>
                         <Badge variant={f.status === "ready" ? "default" : f.status === "error" ? "destructive" : "secondary"} className="text-[9px]">{f.status}</Badge>
-                        <span className="text-[10px] text-muted-foreground">{new Date(f.created_at).toLocaleDateString()}</span>
+                        <span className="text-[10px] text-[hsl(240_5%_56%)]">{new Date(f.created_at).toLocaleDateString()}</span>
                       </div>
                     </div>
                     <div className="flex gap-1 shrink-0">
