@@ -219,7 +219,7 @@ export default function DemoPipelineTab() {
                     </DialogHeader>
                     <div className="space-y-2 mt-2">
                       {lostLeads.map((lead) => (
-                        <Card key={lead.id} className="hover:bg-muted/50 transition-colors cursor-pointer">
+                        <Card key={lead.id} className="hover:bg-[hsl(240_8%_11%)] transition-colors cursor-pointer">
                           <CardContent className="p-2 px-3 flex items-center gap-2">
                             <span className="text-sm font-medium">{lead.name}</span>
                             {lead.lossReason && (
