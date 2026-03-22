@@ -185,7 +185,7 @@ export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: st
         /* ── Empty state: centered input at top with suggestions ── */
         <div className="flex-1 flex flex-col items-center justify-start pt-[8vh] px-4 animate-fade-in">
           <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-6 aura-gradient-text text-center">
-            How can AURA help you today?
+            How can AuRa help you today?
           </h1>
 
           {/* Chat input card */}
