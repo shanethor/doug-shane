@@ -54,9 +54,7 @@ const TABS = [
   { value: "pipeline", icon: LayoutGrid, label: "Pipeline" },
   { value: "email", icon: Mail, label: "Email" },
   { value: "calendar", icon: CalendarDays, label: "Calendar" },
-  { value: "triggers", icon: Zap, label: "Triggers" },
   { value: "outreach", icon: Send, label: "Outreach" },
-  { value: "top10", icon: Crown, label: "Top 10" },
   { value: "spotlight", icon: Sparkles, label: "Spotlight" },
   { value: "assistant", icon: MessageSquare, label: "Assistant" },
 ];
