@@ -191,7 +191,7 @@ export default function DemoOutreachTab() {
   // Outreach plan view
   if (showPlan && planTarget) {
     return (
-      <div className="space-y-4" style={{ animation: "smoothFadeSlide 0.5s cubic-bezier(0.16,1,0.3,1) both" }}>
+      <div className="space-y-4 animate-fade-in">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Sparkles className="h-5 w-5" style={{ color: "hsl(174 97% 40%)" }} />
