@@ -307,6 +307,8 @@ export default function DemoEmailTab() {
           </button>
         ))}
       </div>
+      </>
+      )}
 
       {/* Synced Accounts Dialog */}
       <Dialog open={showAccounts} onOpenChange={setShowAccounts}>
