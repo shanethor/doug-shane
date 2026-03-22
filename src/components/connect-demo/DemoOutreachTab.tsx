@@ -249,17 +249,6 @@ export default function DemoOutreachTab() {
 
   return (
     <div className="space-y-4" style={{ animation: "smoothFadeSlide 0.6s cubic-bezier(0.16,1,0.3,1) both" }}>
-      {/* Signals banner */}
-      <div className="flex items-center gap-2 p-3 rounded-lg" style={{ background: "hsl(174 97% 22% / 0.06)", border: "1px solid hsl(174 97% 22% / 0.1)" }}>
-        <Zap className="h-4 w-4 shrink-0" style={{ color: "hsl(174 97% 40%)" }} />
-        <span className="text-xs font-medium" style={{ color: "hsl(174 97% 40%)" }}>
-          {DUMMY_TRIGGERS.filter(t => t.urgency === "high").length} high-priority signals detected in your territory
-        </span>
-        <Badge variant="outline" className="text-[10px] ml-auto" style={{ borderColor: "hsl(240 6% 20%)", color: "hsl(240 5% 60%)" }}>
-          {DUMMY_TRIGGERS.length} total
-        </Badge>
-      </div>
-
       {/* Section tabs */}
       <Tabs value={section} onValueChange={setSection}>
         <TabsList className="h-9 p-0.5" style={{ background: "hsl(240 8% 7%)", border: "1px solid hsl(240 6% 14%)" }}>
@@ -268,9 +257,6 @@ export default function DemoOutreachTab() {
           </TabsTrigger>
           <TabsTrigger value="top10" className="text-xs gap-1.5 data-[state=active]:text-white" style={{ color: "hsl(240 5% 46%)" }}>
             <Crown className="h-3.5 w-3.5" /> Top 10
-          </TabsTrigger>
-          <TabsTrigger value="signals" className="text-xs gap-1.5 data-[state=active]:text-white" style={{ color: "hsl(240 5% 46%)" }}>
-            <Zap className="h-3.5 w-3.5" /> Signals
           </TabsTrigger>
         </TabsList>
 
