@@ -160,7 +160,7 @@ export default function DemoSpotlightTab() {
 
   if (view === "wizard") {
     return (
-      <Card>
+      <Card style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 14%)" }}>
         <CardContent className="p-4 sm:p-6">
           <SpotlightFlyerWizard
             onClose={() => { setView("home"); loadHistory(); }}
