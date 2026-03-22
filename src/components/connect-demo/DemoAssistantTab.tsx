@@ -185,7 +185,7 @@ export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: st
         /* ── Empty state: centered input at top with suggestions ── */
         <div className="flex-1 flex flex-col items-center justify-start pt-[8vh] px-4 animate-fade-in">
           <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-6 aura-gradient-text text-center">
-            How can AURA help you today?
+            How can AuRa help you today?
           </h1>
 
           {/* Chat input card */}
@@ -209,7 +209,7 @@ export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: st
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(input); } }}
-                placeholder="Ask AURA anything..."
+                placeholder="Ask AuRa anything..."
                 rows={3}
                 className="flex-1 resize-none bg-transparent border-0 outline-none text-sm placeholder:text-muted-foreground min-h-[72px] max-h-48 py-2"
               />
@@ -311,7 +311,7 @@ export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: st
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(input); } }}
-                placeholder="Ask AURA anything..."
+                placeholder="Ask AuRa anything..."
                 rows={2}
                 className="flex-1 resize-none bg-transparent border-0 outline-none text-sm placeholder:text-muted-foreground min-h-[48px] max-h-36 py-2"
               />

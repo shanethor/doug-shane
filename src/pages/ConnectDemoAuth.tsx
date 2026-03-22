@@ -168,7 +168,7 @@ export default function ConnectDemoAuth() {
           <div className="mx-auto flex items-center justify-center">
             <AuraLogo size={56} />
           </div>
-          <h1 className="text-2xl font-bold text-white">AURA Connect</h1>
+          <h1 className="text-2xl font-bold text-white">AuRa Connect</h1>
           <p className="text-sm" style={{ color: "hsl(174 97% 40%)" }}>Your relationship intelligence suite</p>
         </div>
 
@@ -176,7 +176,7 @@ export default function ConnectDemoAuth() {
           <div className="rounded-xl border p-6 space-y-6 animate-scale-in" style={{ background: "hsl(240 8% 7%)", borderColor: "hsl(240 6% 14%)" }}>
             <div>
               <h2 className="text-lg font-semibold text-white">Create your account</h2>
-              <p className="text-sm" style={{ color: "hsl(240 5% 46%)" }}>Sign up to explore AURA Connect</p>
+              <p className="text-sm" style={{ color: "hsl(240 5% 46%)" }}>Sign up to explore AuRa Connect</p>
             </div>
             <form onSubmit={handleAuth} className="space-y-4">
               <div className="space-y-2">
@@ -236,11 +236,11 @@ export default function ConnectDemoAuth() {
           <div className="rounded-xl border p-6 space-y-6 animate-scale-in" style={{ background: "hsl(240 8% 7%)", borderColor: "hsl(240 6% 14%)" }}>
             <div>
               <h2 className="text-lg font-semibold text-white">Choose your plan</h2>
-              <p className="text-sm" style={{ color: "hsl(240 5% 46%)" }}>Start with AURA Connect</p>
+              <p className="text-sm" style={{ color: "hsl(240 5% 46%)" }}>Start with AuRa Connect</p>
             </div>
             <div className="rounded-lg border-2 p-4 space-y-3" style={{ borderColor: "hsl(174 97% 22%)", background: "hsl(174 97% 22% / 0.05)" }}>
               <div className="flex items-center justify-between">
-                <span className="font-semibold text-white">AURA Connect Pro</span>
+                <span className="font-semibold text-white">AuRa Connect Pro</span>
                 <span className="text-lg font-bold" style={{ color: "hsl(174 97% 40%)" }}>$250/mo</span>
               </div>
               <ul className="text-sm space-y-1" style={{ color: "hsl(240 5% 46%)" }}>
@@ -284,7 +284,7 @@ export default function ConnectDemoAuth() {
                 className="text-2xl font-bold text-white mb-2 transition-all"
                 style={{ transitionDuration: "600ms", opacity: buildPhase >= 2 ? 1 : 0, transform: buildPhase >= 2 ? "translateY(0)" : "translateY(15px)" }}
               >
-                Welcome to AURA Connect
+                Welcome to AuRa Connect
               </h2>
 
               {/* Phase 3: Subtitle */}
@@ -335,7 +335,7 @@ export default function ConnectDemoAuth() {
                 }}
                 onClick={handleEnter}
               >
-                Enter AURA Connect <ArrowRight className="ml-2 h-4 w-4" />
+                Enter AuRa Connect <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </div>
           </div>

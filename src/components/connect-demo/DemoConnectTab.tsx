@@ -485,7 +485,7 @@ export default function DemoConnectTab() {
             <span style={{ color: "hsl(174 97% 40%)" }}>anyone</span>
           </h2>
           <p className="text-sm md:text-base max-w-lg mx-auto" style={{ color: "hsl(240 5% 50%)" }}>
-            AURA Connect traverses millions of business connections to find the warmest intro path for you.
+            AuRa Connect traverses millions of business connections to find the warmest intro path for you.
           </p>
         </div>
 
