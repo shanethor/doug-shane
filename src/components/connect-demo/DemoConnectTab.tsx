@@ -52,16 +52,24 @@ interface Node {
   r: number; label: string; type: "you" | "connection" | "person";
 }
 
-const NETWORK_LABELS = [
-  "You",
-  "Doug M.", "James W.", "Priya P.", "Tom N.", "Sarah M.",
-  "Alex K.", "Maria L.", "Chris B.", "Jordan T.", "Sam R.",
-  "Casey D.", "Pat H.", "Quinn F.", "Riley J.", "Morgan S.",
-  "Avery C.", "Blake N.", "Dana W.", "Ellis R.", "Frankie G.",
-  "Harper L.", "Indigo T.", "Jules M.", "Kai P.", "Logan D.",
-  "Noel B.", "Oakley S.", "Peyton H.", "Reese A.", "Skyler V.",
-  "Tatum J.", "Val K.", "Wren E.", "Zion F.", "Ari M.",
+const NETWORK_LABELS: string[] = ["You"];
+const FIRST_NAMES = [
+  "Doug","James","Priya","Tom","Sarah","Alex","Maria","Chris","Jordan","Sam",
+  "Casey","Pat","Quinn","Riley","Morgan","Avery","Blake","Dana","Ellis","Frankie",
+  "Harper","Indigo","Jules","Kai","Logan","Noel","Oakley","Peyton","Reese","Skyler",
+  "Tatum","Val","Wren","Zion","Ari","Rowan","Sage","Emery","Finley","Hayden",
+  "Jamie","Kendall","Lane","Micah","Nico","Parker","Remy","Shea","Taylor","Uma",
+  "Vince","Wade","Xander","Yara","Zara","Brynn","Cade","Dex","Eve","Flynn",
+  "Gia","Hugo","Iris","Jude","Kira","Leo","Mila","Nate","Opal","Rex",
+  "Sia","Theo","Uri","Vera","Wes","Xena","Yael","Zeke","Ada","Bo",
+  "Cal","Dot","Eli","Faye","Gil","Hope","Ian","Joy","Kit","Liv","Max","Nell","Otto",
 ];
+const LAST_INITIALS = "ABCDEFGHJKLMNPRSTUVWXYZ";
+for (let i = 0; i < 99; i++) {
+  const fn = FIRST_NAMES[i % FIRST_NAMES.length];
+  const li = LAST_INITIALS[i % LAST_INITIALS.length];
+  NETWORK_LABELS.push(`${fn} ${li}.`);
+}
 
 function NetworkGraph() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
