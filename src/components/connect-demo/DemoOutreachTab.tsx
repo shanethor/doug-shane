@@ -262,6 +262,36 @@ export default function DemoOutreachTab() {
 
         {/* ── TIERS ── */}
         <TabsContent value="tiers" className="mt-4 space-y-4" style={{ animation: "smoothFadeSlide 0.4s cubic-bezier(0.16,1,0.3,1) both" }}>
+          {/* Tier Explainer */}
+          <Card style={{ background: "hsl(174 97% 22% / 0.04)", borderColor: "hsl(174 97% 22% / 0.12)" }}>
+            <CardContent className="p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                <Target className="h-4 w-4" style={{ color: "hsl(174 97% 40%)" }} />
+                <p className="text-sm font-semibold text-white">How Tiers &amp; Cadence Work</p>
+              </div>
+              <p className="text-xs leading-relaxed" style={{ color: "hsl(240 5% 56%)" }}>
+                Every contact is assigned a tier based on their value to your book of business. The tier determines how often you should reach out — your <span className="font-medium text-white">cadence</span>. AURA tracks your last touch and counts down to the next one so no relationship goes cold.
+              </p>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {[
+                  { tier: "S", days: 7, desc: "Weekly", color: "bg-warning/10 text-warning border-warning/20" },
+                  { tier: "A", days: 14, desc: "Bi-weekly", color: "bg-success/10 text-success border-success/20" },
+                  { tier: "B", days: 30, desc: "Monthly", color: "" },
+                  { tier: "C", days: 90, desc: "Quarterly", color: "" },
+                ].map(t => (
+                  <div key={t.tier} className={`rounded-lg p-2.5 text-center border ${t.color}`}
+                    style={!t.color ? { background: "hsl(240 5% 12%)", borderColor: "hsl(240 6% 18%)" } : {}}>
+                    <p className="text-sm font-bold">{t.tier}-Tier</p>
+                    <p className="text-[10px] mt-0.5" style={{ color: "hsl(240 5% 50%)" }}>Every {t.days} days</p>
+                    <p className="text-[10px] font-medium" style={{ color: "hsl(174 97% 40%)" }}>{t.desc}</p>
+                  </div>
+                ))}
+              </div>
+              <p className="text-[11px]" style={{ color: "hsl(240 5% 40%)" }}>
+                <span className="text-destructive font-medium">Overdue</span> contacts have passed their cadence window and should be prioritized. Touches include calls, emails, texts, LinkedIn messages, meetings, and gifts.
+              </p>
+            </CardContent>
+          </Card>
           <div className="flex flex-wrap gap-3">
             {[
               { val: DUMMY_CONTACTS.length, label: "Active Contacts", color: "text-white" },
