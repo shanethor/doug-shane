@@ -46,30 +46,84 @@ interface PathResult {
   confidence: number;
 }
 
-/* ── Animated Network Graph ── */
-interface Node {
-  x: number; y: number; vx: number; vy: number;
-  r: number; label: string; type: "you" | "connection" | "person";
+/* ── Hex-grid Network Visualization ── */
+// Stationary nodes on a responsive hex grid. Animation = edge pulses + path traces only.
+
+const COLS = 14;
+const ROWS = 7;
+
+interface GNode {
+  gx: number; gy: number;
+  label: string;
+  tier: 0 | 1 | 2 | 3;
 }
 
-const NETWORK_LABELS: string[] = ["You"];
-const FIRST_NAMES = [
-  "Doug","James","Priya","Tom","Sarah","Alex","Maria","Chris","Jordan","Sam",
-  "Casey","Pat","Quinn","Riley","Morgan","Avery","Blake","Dana","Ellis","Frankie",
-  "Harper","Indigo","Jules","Kai","Logan","Noel","Oakley","Peyton","Reese","Skyler",
-  "Tatum","Val","Wren","Zion","Ari","Rowan","Sage","Emery","Finley","Hayden",
-  "Jamie","Kendall","Lane","Micah","Nico","Parker","Remy","Shea","Taylor","Uma",
-  "Vince","Wade","Xander","Yara","Zara","Brynn","Cade","Dex","Eve","Flynn",
-  "Gia","Hugo","Iris","Jude","Kira","Leo","Mila","Nate","Opal","Rex",
-  "Sia","Theo","Uri","Vera","Wes","Xena","Yael","Zeke","Ada","Bo",
-  "Cal","Dot","Eli","Faye","Gil","Hope","Ian","Joy","Kit","Liv","Max","Nell","Otto",
-];
-const LAST_INITIALS = "ABCDEFGHJKLMNPRSTUVWXYZ";
-for (let i = 0; i < 99; i++) {
-  const fn = FIRST_NAMES[i % FIRST_NAMES.length];
-  const li = LAST_INITIALS[i % LAST_INITIALS.length];
-  NETWORK_LABELS.push(`${fn} ${li}.`);
+function buildGraph() {
+  const cx = Math.floor(COLS / 2);
+  const cy = Math.floor(ROWS / 2);
+
+  const names = [
+    "You","Doug M.","James W.","Priya P.","Tom N.","Sarah M.","Alex K.","Maria L.",
+    "Chris B.","Jordan T.","Sam R.","Casey D.","Pat H.","Quinn F.","Riley J.",
+    "Morgan S.","Avery C.","Blake N.","Dana W.","Ellis R.","Frankie G.","Harper L.",
+    "Jules M.","Kai P.","Logan D.","Noel B.","Oakley S.","Peyton H.","Reese A.",
+    "Skyler V.","Tatum J.","Val K.","Wren E.","Zion F.","Ari M.","Rowan S.",
+    "Sage T.","Emery F.","Finley H.","Hayden C.","Jamie K.","Kendall L.","Lane M.",
+    "Micah N.","Nico P.","Parker R.","Remy S.","Shea T.","Taylor U.","Uma V.",
+    "Vince W.","Wade X.","Xander Y.","Yara Z.","Brynn A.","Cade B.","Dex C.",
+    "Eve D.","Flynn E.","Gia F.","Hugo G.","Iris H.","Jude I.","Kira J.",
+    "Leo K.","Mila L.","Nate M.","Opal N.","Rex O.","Sia P.","Theo Q.",
+    "Uri R.","Vera S.","Wes T.","Xena U.","Yael V.","Zeke W.","Ada X.",
+    "Bo Y.","Cal Z.","Dot A.","Eli B.","Faye C.","Gil D.","Hope E.",
+    "Ian F.","Joy G.","Kit H.","Liv I.","Max J.","Nell K.","Otto L.",
+    "Pam M.","Roy N.","Sue O.","Ty P.","Una Q.","Vic R.","Zoe S.",
+  ];
+
+  // Collect all grid slots
+  const allSlots: [number, number][] = [];
+  for (let r = 0; r < ROWS; r++)
+    for (let c = 0; c < COLS; c++)
+      if (!(c === cx && r === cy)) allSlots.push([c, r]);
+
+  // Shuffle deterministically-ish
+  for (let i = allSlots.length - 1; i > 0; i--) {
+    const j = (i * 7 + 3) % (i + 1);
+    [allSlots[i], allSlots[j]] = [allSlots[j], allSlots[i]];
+  }
+
+  const nodes: GNode[] = [{ gx: cx, gy: cy, label: "You", tier: 0 }];
+  for (let i = 0; i < Math.min(names.length - 1, allSlots.length); i++) {
+    const [gx, gy] = allSlots[i];
+    const dist = Math.abs(gx - cx) + Math.abs(gy - cy);
+    const tier: 1 | 2 | 3 = dist <= 2 ? 1 : dist <= 4 ? 2 : 3;
+    nodes.push({ gx, gy, label: names[i + 1], tier });
+  }
+
+  // Edges: connect grid neighbors (dist ≤ 1 in hex)
+  const edges: [number, number][] = [];
+  for (let i = 0; i < nodes.length; i++) {
+    for (let j = i + 1; j < nodes.length; j++) {
+      const dx = Math.abs(nodes[i].gx - nodes[j].gx);
+      const dy = Math.abs(nodes[i].gy - nodes[j].gy);
+      if (dx <= 1 && dy <= 1 && dx + dy > 0) edges.push([i, j]);
+    }
+  }
+  // Longer-range connections
+  for (let k = 0; k < 25; k++) {
+    const a = (k * 13 + 5) % nodes.length;
+    const b = (k * 7 + 11) % nodes.length;
+    if (a !== b) {
+      const dx = Math.abs(nodes[a].gx - nodes[b].gx);
+      const dy = Math.abs(nodes[a].gy - nodes[b].gy);
+      if (dx <= 3 && dy <= 2) edges.push([a, b]);
+    }
+  }
+
+  return { nodes, edges };
 }
+
+// Build once at module level so it's stable across re-renders
+const GRAPH = buildGraph();
 
 function NetworkGraph() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -83,10 +137,22 @@ function NetworkGraph() {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
+    const { nodes, edges } = GRAPH;
+
+    const edgePulse = new Float32Array(edges.length);
+    let frame = 0;
     let w = 0, h = 0;
-    let nodes: Node[] = [];
-    let edges: [number, number][] = [];
-    let edgeLitTime: Float32Array;
+
+    // BFS adjacency
+    const adj: number[][] = Array.from({ length: nodes.length }, () => []);
+    for (let ei = 0; ei < edges.length; ei++) {
+      adj[edges[ei][0]].push(ei);
+      adj[edges[ei][1]].push(ei);
+    }
+
+    // Trace state
+    let traceEdges: number[] = [];
+    let traceProgress = 0;
 
     function resize() {
       const dpr = window.devicePixelRatio || 1;
@@ -100,153 +166,178 @@ function NetworkGraph() {
       ctx!.setTransform(dpr, 0, 0, dpr, 0, 0);
     }
 
-    function initGraph() {
-      // Scale factor so nodes are proportional to canvas
-      const s = Math.min(w, h) / 600;
+    function toPixel(gx: number, gy: number): [number, number] {
+      const padX = w * 0.05;
+      const padY = h * 0.08;
+      const cellW = (w - padX * 2) / (COLS - 1);
+      const cellH = (h - padY * 2) / (ROWS - 1);
+      const offX = (gy % 2) * cellW * 0.5;
+      return [padX + gx * cellW + offX, padY + gy * cellH];
+    }
 
-      nodes = NETWORK_LABELS.map((label, i) => {
-        const type = i === 0 ? "you" : i < 8 ? "connection" : "person";
-        const r = (type === "you" ? 14 : type === "connection" ? 7 : 3) * s;
-        const x = i === 0 ? w / 2 : Math.random() * (w - 40) + 20;
-        const y = i === 0 ? h / 2 : Math.random() * (h - 30) + 15;
-        return { x, y, vx: (Math.random() - 0.5) * 0.3, vy: (Math.random() - 0.5) * 0.3, r, label, type } as Node;
-      });
-
-      edges = [];
-      for (let i = 1; i < 8; i++) edges.push([0, i]);
-      for (let i = 1; i < 7; i++) edges.push([i, i + 1]);
-      for (let i = 8; i < 30; i++) {
-        edges.push([1 + (i % 7), i]);
-        if (Math.random() > 0.6) edges.push([1 + ((i + 3) % 7), i]);
+    function startTrace() {
+      const targets = nodes.map((_, i) => i).filter(i => nodes[i].tier >= 2);
+      const target = targets[(frame * 3 + 7) % targets.length];
+      const visited = new Set<number>([0]);
+      const parent = new Map<number, { node: number; edge: number }>();
+      const queue = [0];
+      outer: while (queue.length) {
+        const cur = queue.shift()!;
+        if (cur === target) break;
+        for (const ei of adj[cur]) {
+          const [a, b] = edges[ei];
+          const nb = a === cur ? b : a;
+          if (!visited.has(nb)) {
+            visited.add(nb);
+            parent.set(nb, { node: cur, edge: ei });
+            queue.push(nb);
+            if (nb === target) break outer;
+          }
+        }
       }
-      for (let i = 30; i < 60; i++) edges.push([8 + ((i - 30) % 22), i]);
-      for (let i = 60; i < nodes.length; i++) edges.push([30 + ((i - 60) % 30), i]);
-      for (let k = 0; k < 50; k++) {
-        const a = Math.floor(Math.random() * nodes.length);
-        const b = Math.floor(Math.random() * nodes.length);
-        if (a !== b) edges.push([a, b]);
+      const path: number[] = [];
+      let c = target;
+      while (parent.has(c)) {
+        const p = parent.get(c)!;
+        path.unshift(p.edge);
+        c = p.node;
       }
-      edgeLitTime = new Float32Array(edges.length);
+      traceEdges = path;
+      traceProgress = 0;
     }
 
     resize();
-    initGraph();
+    startTrace();
 
     const teal = [0, 140, 120];
     const gold = [201, 168, 76];
-    let frame = 0;
 
     function draw() {
       if (!ctx) return;
       frame++;
       ctx.clearRect(0, 0, w, h);
-      const s = Math.min(w, h) / 600;
 
-      if (frame % 8 === 0) {
-        const idx = Math.floor(Math.random() * edges.length);
-        edgeLitTime[idx] = 1;
+      // Advance path trace
+      if (frame % 8 === 0 && traceProgress < traceEdges.length) {
+        edgePulse[traceEdges[traceProgress]] = 1;
+        traceProgress++;
+      }
+      if (frame % 200 === 0) startTrace();
+
+      // Ambient random pulses
+      if (frame % 25 === 0) {
+        const idx = (frame * 7) % edges.length;
+        if (edgePulse[idx] < 0.1) edgePulse[idx] = 0.5;
       }
 
-      for (const n of nodes) {
-        if (n.type === "you") {
-          n.vx += (w / 2 - n.x) * 0.001;
-          n.vy += (h / 2 - n.y) * 0.001;
-        }
-        n.x += n.vx;
-        n.y += n.vy;
-        if (n.x < 20 || n.x > w - 20) n.vx *= -1;
-        if (n.y < 15 || n.y > h - 15) n.vy *= -1;
-        n.vx += (Math.random() - 0.5) * 0.015;
-        n.vy += (Math.random() - 0.5) * 0.015;
-        n.vx *= 0.997;
-        n.vy *= 0.997;
-      }
-
-      const maxDist = 300 * s;
+      // Draw edges
       for (let ei = 0; ei < edges.length; ei++) {
         const [a, b] = edges[ei];
-        const na = nodes[a], nb = nodes[b];
-        const dx = nb.x - na.x, dy = nb.y - na.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist > maxDist) continue;
-
-        const baseFade = 1 - dist / maxDist;
-        const lit = edgeLitTime[ei];
-        const alpha = baseFade * (0.08 + lit * 0.5);
+        const [ax, ay] = toPixel(nodes[a].gx, nodes[a].gy);
+        const [bx, by] = toPixel(nodes[b].gx, nodes[b].gy);
+        const p = edgePulse[ei];
+        const alpha = 0.04 + p * 0.55;
 
         ctx.beginPath();
-        ctx.moveTo(na.x, na.y);
-        ctx.lineTo(nb.x, nb.y);
+        ctx.moveTo(ax, ay);
+        ctx.lineTo(bx, by);
         ctx.strokeStyle = `rgba(${teal[0]},${teal[1]},${teal[2]},${alpha})`;
-        ctx.lineWidth = lit > 0.3 ? 2 * s : 1 * s;
+        ctx.lineWidth = p > 0.3 ? 2 : 0.8;
         ctx.stroke();
 
-        if (lit > 0.2) {
-          const t = 1 - lit;
-          const px = na.x + dx * t;
-          const py = na.y + dy * t;
+        // Traveling dot
+        if (p > 0.15) {
+          const t = 1 - p;
           ctx.beginPath();
-          ctx.arc(px, py, 3 * s, 0, Math.PI * 2);
-          ctx.fillStyle = `rgba(${teal[0]},${teal[1]},${teal[2]},${lit * 0.9})`;
+          ctx.arc(ax + (bx - ax) * t, ay + (by - ay) * t, 2.5, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(${teal[0]},${teal[1]},${teal[2]},${p * 0.9})`;
           ctx.fill();
         }
 
-        if (edgeLitTime[ei] > 0) edgeLitTime[ei] *= 0.985;
-        if (edgeLitTime[ei] < 0.01) edgeLitTime[ei] = 0;
+        if (edgePulse[ei] > 0) edgePulse[ei] *= 0.98;
+        if (edgePulse[ei] < 0.005) edgePulse[ei] = 0;
       }
 
-      for (const n of nodes) {
-        const breathe = 1 + Math.sin(frame * 0.025 + n.x * 0.01) * 0.1;
-        const r = n.r * breathe;
-        const c = n.type === "you" ? gold : teal;
-        const glowR = (n.type === "you" ? 28 : n.type === "connection" ? 14 : 8) * s;
+      // Draw nodes
+      for (let i = 0; i < nodes.length; i++) {
+        const n = nodes[i];
+        const [px, py] = toPixel(n.gx, n.gy);
+        const c = n.tier === 0 ? gold : teal;
+        const breathe = 1 + Math.sin(frame * 0.018 + i * 0.7) * 0.12;
 
-        const grad = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, r + glowR);
-        grad.addColorStop(0, `rgba(${c[0]},${c[1]},${c[2]},${n.type === "you" ? 0.4 : 0.2})`);
-        grad.addColorStop(1, `rgba(${c[0]},${c[1]},${c[2]},0)`);
-        ctx.beginPath();
-        ctx.arc(n.x, n.y, r + glowR, 0, Math.PI * 2);
-        ctx.fillStyle = grad;
-        ctx.fill();
+        if (n.tier === 0) {
+          // "You" — prominent rounded rect
+          const rw = 18 * breathe, rh = 12 * breathe;
+          const grad = ctx.createRadialGradient(px, py, 0, px, py, 30);
+          grad.addColorStop(0, `rgba(${c[0]},${c[1]},${c[2]},0.25)`);
+          grad.addColorStop(1, `rgba(${c[0]},${c[1]},${c[2]},0)`);
+          ctx.beginPath();
+          ctx.arc(px, py, 30, 0, Math.PI * 2);
+          ctx.fillStyle = grad;
+          ctx.fill();
 
-        ctx.beginPath();
-        ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},${n.type === "person" ? 0.15 : 0.25})`;
-        ctx.fill();
-        ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},${n.type === "person" ? 0.3 : 0.6})`;
-        ctx.lineWidth = (n.type === "person" ? 0.8 : 1.5) * s;
-        ctx.stroke();
+          ctx.beginPath();
+          ctx.roundRect(px - rw, py - rh, rw * 2, rh * 2, 4);
+          ctx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},0.25)`;
+          ctx.fill();
+          ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},0.8)`;
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
 
-        if (n.type !== "person") {
-          const fontSize = Math.round((n.type === "you" ? 13 : 11) * s);
-          ctx.font = `${n.type === "you" ? "bold " : ""}${fontSize}px system-ui, sans-serif`;
-          ctx.fillStyle = `rgba(255,255,255,${n.type === "you" ? 0.95 : 0.55})`;
+          ctx.font = "bold 11px system-ui, sans-serif";
+          ctx.fillStyle = "rgba(255,255,255,0.95)";
           ctx.textAlign = "center";
-          ctx.fillText(n.label, n.x, n.y + r + 14 * s);
+          ctx.fillText("You", px, py + 4);
+        } else if (n.tier === 1) {
+          // Inner ring — small rounded rect
+          const s = 6 * breathe;
+          ctx.beginPath();
+          ctx.roundRect(px - s * 1.5, py - s, s * 3, s * 2, 3);
+          ctx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},0.15)`;
+          ctx.fill();
+          ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},0.45)`;
+          ctx.lineWidth = 1;
+          ctx.stroke();
+
+          ctx.font = "9px system-ui, sans-serif";
+          ctx.fillStyle = "rgba(255,255,255,0.45)";
+          ctx.textAlign = "center";
+          ctx.fillText(n.label, px, py + s + 12);
+        } else if (n.tier === 2) {
+          // Mid — small diamond
+          const s = 3.5 * breathe;
+          ctx.beginPath();
+          ctx.moveTo(px, py - s);
+          ctx.lineTo(px + s, py);
+          ctx.lineTo(px, py + s);
+          ctx.lineTo(px - s, py);
+          ctx.closePath();
+          ctx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},0.12)`;
+          ctx.fill();
+          ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},0.25)`;
+          ctx.lineWidth = 0.7;
+          ctx.stroke();
+        } else {
+          // Outer — tiny dot
+          const s = 2 * breathe;
+          ctx.beginPath();
+          ctx.arc(px, py, s, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},0.1)`;
+          ctx.fill();
+          ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},0.18)`;
+          ctx.lineWidth = 0.5;
+          ctx.stroke();
         }
       }
 
       animRef.current = requestAnimationFrame(draw);
     }
 
-    const onResize = () => {
-      resize();
-      // Rescale existing node positions proportionally
-      const newS = Math.min(w, h) / 600;
-      for (const n of nodes) {
-        const type = n.type;
-        n.r = (type === "you" ? 14 : type === "connection" ? 7 : 3) * newS;
-        // Clamp to bounds
-        n.x = Math.min(Math.max(n.x, 20), w - 20);
-        n.y = Math.min(Math.max(n.y, 15), h - 15);
-      }
-    };
-
-    window.addEventListener("resize", onResize);
+    window.addEventListener("resize", resize);
     draw();
     return () => {
       cancelAnimationFrame(animRef.current);
-      window.removeEventListener("resize", onResize);
+      window.removeEventListener("resize", resize);
     };
   }, []);
 
@@ -338,7 +429,7 @@ export default function DemoConnectTab() {
 
       {/* Result */}
       {!searching && result && (
-        <Card className="max-w-2xl mx-auto" style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 14%)", animation: "smoothFadeSlide 0.5s cubic-bezier(0.16,1,0.3,1) both" }}>
+        <Card className="max-w-2xl mx-auto mt-4" style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 14%)", animation: "smoothFadeSlide 0.5s cubic-bezier(0.16,1,0.3,1) both" }}>
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <Sparkles className="h-5 w-5" style={{ color: "hsl(174 97% 40%)" }} />
@@ -353,7 +444,6 @@ export default function DemoConnectTab() {
               <span>via <span className="font-medium text-white">{result.connection}</span></span>
             </div>
 
-            {/* Visual path with arrows */}
             <div className="flex items-center justify-center gap-2 p-4 rounded-lg" style={{ background: "hsl(240 6% 7%)" }}>
               <div className="flex items-center justify-center h-10 w-10 rounded-full text-xs font-bold" style={{ background: "hsl(45 93% 47% / 0.15)", color: "hsl(45 93% 47%)" }}>You</div>
               <ArrowRight className="h-5 w-5 shrink-0" style={{ color: "hsl(174 97% 40%)" }} />
