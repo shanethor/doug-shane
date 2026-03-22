@@ -184,7 +184,7 @@ export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: st
       {!hasMessages ? (
         /* ── Empty state: centered input at top with suggestions ── */
         <div className="flex-1 flex flex-col items-center justify-start pt-[8vh] px-4 animate-fade-in">
-          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-6 aura-gradient-text text-center">
+          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-6 text-center" style={{ background: "linear-gradient(135deg, hsl(140 12% 58%), hsl(140 12% 42%), hsl(240 5% 80%))", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
             How can Lumen help you today?
           </h1>
 
