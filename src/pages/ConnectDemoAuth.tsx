@@ -155,11 +155,11 @@ export default function ConnectDemoAuth() {
   };
 
   return (
-    <div className="min-h-[100dvh] flex items-center justify-center p-4" style={{ background: "#08080A" }}>
+    <div className="min-h-[100dvh] w-full overflow-x-hidden flex items-center justify-center p-4" style={{ background: "#08080A" }}>
       <Particles />
 
       {/* Radial glow behind content */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full pointer-events-none z-0"
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[min(600px,100vw)] h-[min(600px,100vh)] rounded-full pointer-events-none z-0"
         style={{ background: "radial-gradient(circle, hsl(140 12% 42% / 0.08) 0%, transparent 70%)" }} />
 
       <div className="w-full max-w-md space-y-6 relative z-10">
