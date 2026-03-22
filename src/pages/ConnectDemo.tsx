@@ -106,9 +106,7 @@ export default function ConnectDemo() {
           <TabsContent value="pipeline" className="mt-0"><DemoPipelineTab /></TabsContent>
           <TabsContent value="email" className="mt-0"><DemoEmailTab /></TabsContent>
           <TabsContent value="calendar" className="mt-0"><DemoCalendarTab /></TabsContent>
-          <TabsContent value="triggers" className="mt-0"><DemoTriggersTab /></TabsContent>
           <TabsContent value="outreach" className="mt-0"><DemoOutreachTab /></TabsContent>
-          <TabsContent value="top10" className="mt-0"><DemoTop10Tab /></TabsContent>
           <TabsContent value="spotlight" className="mt-0"><ConnectSpotlightTab /></TabsContent>
           <TabsContent value="assistant" className="mt-0"><DemoAssistantTab /></TabsContent>
         </Tabs>
