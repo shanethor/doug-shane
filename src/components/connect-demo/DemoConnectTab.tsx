@@ -91,41 +91,45 @@ function NetworkGraph() {
     const w = rect.width;
     const h = rect.height;
 
-    // Create nodes
+    // Create nodes — 100 total
     const nodes: Node[] = NETWORK_LABELS.map((label, i) => {
-      const type = i === 0 ? "you" : i < 6 ? "connection" : "person";
-      const r = type === "you" ? 14 : type === "connection" ? 8 : 4;
-      // Place "You" near center
-      const x = i === 0 ? w / 2 : Math.random() * (w - 80) + 40;
-      const y = i === 0 ? h / 2 : Math.random() * (h - 60) + 30;
+      const type = i === 0 ? "you" : i < 8 ? "connection" : "person";
+      const r = type === "you" ? 14 : type === "connection" ? 7 : 3;
+      const x = i === 0 ? w / 2 : Math.random() * (w - 60) + 30;
+      const y = i === 0 ? h / 2 : Math.random() * (h - 40) + 20;
       return {
         x, y,
-        vx: (Math.random() - 0.5) * 0.4,
-        vy: (Math.random() - 0.5) * 0.4,
+        vx: (Math.random() - 0.5) * 0.3,
+        vy: (Math.random() - 0.5) * 0.3,
         r, label, type,
       };
     });
 
-    // Create edges
+    // Create edges — layered network
     const edges: [number, number][] = [];
-    // You -> connections
-    for (let i = 1; i < 6; i++) edges.push([0, i]);
-    // Connections -> people (2nd degree)
-    for (let i = 6; i < 16; i++) {
-      edges.push([1 + (i % 5), i]);
+    // You -> inner connections
+    for (let i = 1; i < 8; i++) edges.push([0, i]);
+    // Inner connections cross-linked
+    for (let i = 1; i < 7; i++) edges.push([i, i + 1]);
+    // 2nd degree: nodes 8-30 connect to inner ring
+    for (let i = 8; i < 30; i++) {
+      edges.push([1 + (i % 7), i]);
+      if (Math.random() > 0.6) edges.push([1 + ((i + 3) % 7), i]);
     }
-    // People -> people (3rd degree)
-    for (let i = 16; i < nodes.length; i++) {
-      edges.push([6 + ((i - 16) % 10), i]);
+    // 3rd degree: nodes 30-60 connect to 2nd degree
+    for (let i = 30; i < 60; i++) {
+      edges.push([8 + ((i - 30) % 22), i]);
     }
-    // Extra cross-connections for density
-    for (let k = 0; k < 20; k++) {
+    // 4th degree: nodes 60-100 connect to 3rd degree
+    for (let i = 60; i < nodes.length; i++) {
+      edges.push([30 + ((i - 60) % 30), i]);
+    }
+    // Random cross-connections for organic density
+    for (let k = 0; k < 50; k++) {
       const a = Math.floor(Math.random() * nodes.length);
       const b = Math.floor(Math.random() * nodes.length);
       if (a !== b) edges.push([a, b]);
     }
-    // Connection-to-connection links
-    for (let i = 1; i < 5; i++) edges.push([i, i + 1]);
 
     const teal = [0, 140, 120];
     const gold = [201, 168, 76];
