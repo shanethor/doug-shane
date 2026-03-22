@@ -191,7 +191,7 @@ export default function DemoOutreachTab() {
   // Outreach plan view
   if (showPlan && planTarget) {
     return (
-      <div className="space-y-4" style={{ animation: "smoothFadeSlide 0.5s cubic-bezier(0.16,1,0.3,1) both" }}>
+      <div className="space-y-4 animate-fade-in">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Sparkles className="h-5 w-5" style={{ color: "hsl(174 97% 40%)" }} />
@@ -217,7 +217,7 @@ export default function DemoOutreachTab() {
           {OUTREACH_STEPS.map((step, i) => {
             if (i >= visibleSteps) return null;
             return (
-              <Card key={i} className="overflow-hidden" style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 14%)", animation: `smoothFadeSlide 0.5s cubic-bezier(0.16,1,0.3,1) ${i * 150}ms both` }}>
+              <Card key={i} className="overflow-hidden animate-fade-in" style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 14%)", animationDelay: `${i * 150}ms` }}>
                 <CardContent className="p-4">
                   <div className="flex items-center gap-2 mb-3">
                     <div className="h-7 w-7 rounded-full flex items-center justify-center text-xs font-bold" style={{ background: "hsl(174 97% 22% / 0.15)", color: "hsl(174 97% 40%)" }}>{i + 1}</div>
@@ -225,7 +225,7 @@ export default function DemoOutreachTab() {
                   </div>
                   <ul className="space-y-2">
                     {step.items.map((item, j) => (
-                      <li key={j} className="flex items-start gap-2 text-xs" style={{ color: "hsl(240 5% 60%)", animation: `smoothFadeSlide 0.4s cubic-bezier(0.16,1,0.3,1) ${i * 150 + (j + 1) * 100}ms both` }}>
+                      <li key={j} className="flex items-start gap-2 text-xs animate-fade-in" style={{ color: "hsl(240 5% 60%)", animationDelay: `${i * 150 + (j + 1) * 100}ms` }}>
                         <ArrowRight className="h-3 w-3 mt-0.5 shrink-0" style={{ color: "hsl(174 97% 40%)" }} />
                         {item}
                       </li>
@@ -248,7 +248,7 @@ export default function DemoOutreachTab() {
   }
 
   return (
-    <div className="space-y-4" style={{ animation: "smoothFadeSlide 0.6s cubic-bezier(0.16,1,0.3,1) both" }}>
+    <div className="space-y-4 animate-fade-in">
       {/* Section tabs */}
       <Tabs value={section} onValueChange={setSection}>
         <TabsList className="h-9 p-0.5" style={{ background: "hsl(240 8% 7%)", border: "1px solid hsl(240 6% 14%)" }}>
@@ -261,7 +261,7 @@ export default function DemoOutreachTab() {
         </TabsList>
 
         {/* ── TIERS ── */}
-        <TabsContent value="tiers" className="mt-4 space-y-4" style={{ animation: "smoothFadeSlide 0.4s cubic-bezier(0.16,1,0.3,1) both" }}>
+        <TabsContent value="tiers" className="mt-4 space-y-4 animate-fade-in">
           {/* Tier Explainer */}
           <Card style={{ background: "hsl(174 97% 22% / 0.04)", borderColor: "hsl(174 97% 22% / 0.12)" }}>
             <CardContent className="p-4 space-y-3">
@@ -298,7 +298,7 @@ export default function DemoOutreachTab() {
               { val: overdue.length, label: "Overdue", color: "text-destructive" },
               { val: DUMMY_CONTACTS.reduce((s, c) => s + c.touchCount, 0), label: "Total Touches", color: "" },
             ].map((s, i) => (
-              <Card key={i} className="flex-1 min-w-[140px]" style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 14%)", animation: `smoothFadeSlide 0.4s cubic-bezier(0.16,1,0.3,1) ${i * 80}ms both` }}>
+              <Card key={i} className="flex-1 min-w-[140px] animate-fade-in" style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 14%)", animationDelay: `${i * 80}ms` }}>
                 <CardContent className="p-3 text-center">
                   <p className={`text-2xl font-bold ${s.color}`} style={!s.color ? { color: "hsl(174 97% 40%)" } : {}}>{s.val}</p>
                   <p className="text-[11px]" style={{ color: "hsl(240 5% 46%)" }}>{s.label}</p>
@@ -327,8 +327,8 @@ export default function DemoOutreachTab() {
             {filtered.map((c, idx) => {
               const isExpanded = expanded === c.id;
               return (
-                <Card key={c.id} className={`overflow-hidden transition-colors ${c.overdue ? "border-destructive/30" : ""}`}
-                  style={{ background: "hsl(240 8% 9%)", borderColor: c.overdue ? undefined : "hsl(240 6% 14%)", animation: `smoothFadeSlide 0.4s cubic-bezier(0.16,1,0.3,1) ${idx * 40}ms both` }}>
+                <Card key={c.id} className={`overflow-hidden transition-colors animate-fade-in ${c.overdue ? "border-destructive/30" : ""}`}
+                  style={{ background: "hsl(240 8% 9%)", borderColor: c.overdue ? undefined : "hsl(240 6% 14%)", animationDelay: `${idx * 40}ms` }}>
                   <CardContent className="p-3">
                     <div className="flex items-center gap-3 cursor-pointer" onClick={() => setExpanded(isExpanded ? null : c.id)}>
                       <div className={`flex items-center justify-center h-8 w-8 rounded-full text-xs font-bold shrink-0 ${
@@ -354,7 +354,7 @@ export default function DemoOutreachTab() {
                     </div>
 
                     {isExpanded && (
-                      <div className="mt-3 pt-3 space-y-3" style={{ borderTop: "1px solid hsl(240 6% 14%)", animation: "smoothFadeSlide 0.3s cubic-bezier(0.16,1,0.3,1) both" }}>
+                      <div className="mt-3 pt-3 space-y-3 animate-fade-in" style={{ borderTop: "1px solid hsl(240 6% 14%)" }}>
                         <div className="flex items-center gap-4 text-xs" style={{ color: "hsl(240 5% 46%)" }}>
                           <span>Every {c.cadenceDays} days</span>
                           <span>{c.touchCount} total touches</span>
@@ -377,7 +377,7 @@ export default function DemoOutreachTab() {
         </TabsContent>
 
         {/* ── TOP 10 ── */}
-        <TabsContent value="top10" className="mt-4 space-y-4" style={{ animation: "smoothFadeSlide 0.4s cubic-bezier(0.16,1,0.3,1) both" }}>
+        <TabsContent value="top10" className="mt-4 space-y-4 animate-fade-in">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <Card style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 14%)" }}>
               <CardHeader className="pb-3">
@@ -389,7 +389,7 @@ export default function DemoOutreachTab() {
               </CardHeader>
               <CardContent className="space-y-2">
                 {DUMMY_OWNERS.map((o, i) => (
-                  <div key={i} className="p-2.5 rounded-lg hover:bg-white/[0.03] transition-all" style={{ background: "hsl(240 6% 7%)", animation: `smoothFadeSlide 0.4s cubic-bezier(0.16,1,0.3,1) ${i * 50}ms both` }}>
+                  <div key={i} className="p-2.5 rounded-lg hover:bg-white/[0.03] transition-all animate-fade-in" style={{ background: "hsl(240 6% 7%)", animationDelay: `${i * 50}ms` }}>
                     <div className="flex items-start gap-3">
                       <div className="flex items-center justify-center h-7 w-7 rounded-full text-xs font-bold shrink-0" style={{ background: "hsl(174 97% 22% / 0.15)", color: "hsl(174 97% 40%)" }}>{i + 1}</div>
                       <div className="flex-1 min-w-0 space-y-0.5">
@@ -427,7 +427,7 @@ export default function DemoOutreachTab() {
               </CardHeader>
               <CardContent className="space-y-2">
                 {DUMMY_PARTNERS.map((p, i) => (
-                  <div key={i} className="p-2.5 rounded-lg hover:bg-white/[0.03] transition-all" style={{ background: "hsl(240 6% 7%)", animation: `smoothFadeSlide 0.4s cubic-bezier(0.16,1,0.3,1) ${i * 50}ms both` }}>
+                  <div key={i} className="p-2.5 rounded-lg hover:bg-white/[0.03] transition-all animate-fade-in" style={{ background: "hsl(240 6% 7%)", animationDelay: `${i * 50}ms` }}>
                     <div className="flex items-start gap-3">
                       <div className="flex items-center justify-center h-7 w-7 rounded-full text-xs font-bold shrink-0" style={{ background: "hsl(174 97% 22% / 0.15)", color: "hsl(174 97% 40%)" }}>{i + 1}</div>
                       <div className="flex-1 min-w-0 space-y-0.5">

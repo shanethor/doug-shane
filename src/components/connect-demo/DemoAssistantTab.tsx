@@ -84,7 +84,7 @@ async function streamChat({
   }
 }
 
-export default function DemoAssistantTab() {
+export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: string) => void }) {
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -246,7 +246,29 @@ export default function DemoAssistantTab() {
                 }`}>
                   {msg.role === "assistant" ? (
                     <div className="prose prose-sm prose-invert max-w-none [&_p]:my-1 [&_ul]:my-1 [&_li]:my-0.5">
-                      <ReactMarkdown>{msg.content}</ReactMarkdown>
+                      <ReactMarkdown
+                        components={{
+                          a: ({ href, children, ...props }) => {
+                            // Detect internal action links like [✨ Create New Opportunity]
+                            const text = String(children);
+                            if (text.includes("Create New Opportunity") || text.includes("Create Opportunity")) {
+                              return (
+                                <button
+                                  onClick={() => onNavigate?.("pipeline")}
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors mt-1"
+                                  style={{ background: "hsl(174 97% 22%)", color: "white" }}
+                                >
+                                  <Sparkles className="h-3.5 w-3.5" />
+                                  {text.replace(/[\[\]]/g, "")}
+                                </button>
+                              );
+                            }
+                            return <a href={href} {...props} className="text-primary underline">{children}</a>;
+                          },
+                        }}
+                      >
+                        {msg.content}
+                      </ReactMarkdown>
                     </div>
                   ) : (
                     <span className="whitespace-pre-wrap">{msg.content}</span>
