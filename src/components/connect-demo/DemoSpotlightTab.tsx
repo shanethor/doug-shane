@@ -71,6 +71,7 @@ export default function DemoSpotlightTab() {
   const [realBrands, setRealBrands] = useState<BrandPackage[]>([]);
   const [editFlyerId, setEditFlyerId] = useState<string | null>(null);
   const [editBrand, setEditBrand] = useState<BrandPackage | null>(null);
+  const [selectedType, setSelectedType] = useState<string>("");
 
   const loadHistory = useCallback(async () => {}, []);
   const loadBrands = useCallback(async () => {}, []);
@@ -78,7 +79,7 @@ export default function DemoSpotlightTab() {
   const allBrands = [...realBrands, ...SAMPLE_BRANDS.filter(sb => !realBrands.some(rb => rb.name === sb.name))];
   const allFlyers = [...realHistory, ...SAMPLE_FLYERS];
 
-  const handleCreateFlyer = () => { setEditFlyerId(null); setView("wizard"); };
+  const handleCreateFlyer = (type?: string) => { setEditFlyerId(null); setSelectedType(type || ""); setView("wizard"); };
 
   const handleEditFlyer = (flyerId: string) => {
     if (flyerId.startsWith("sample-")) { toast.info("This is a sample — create a new one to get started!"); return; }
