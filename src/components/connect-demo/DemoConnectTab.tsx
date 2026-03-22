@@ -158,26 +158,25 @@ function NetworkGraph() {
     let traceProgress = 0;
 
     function computeVisible() {
-      // Determine how many cols/rows fit with min 36px spacing
-      const minCell = 36;
-      const maxCols = Math.max(4, Math.floor(w / minCell));
-      const maxRows = Math.max(3, Math.floor(h / minCell));
-      const showCols = Math.min(COLS, maxCols);
-      const showRows = Math.min(ROWS, maxRows);
-      // Center the visible grid
-      const colStart = Math.floor((COLS - showCols) / 2);
-      const rowStart = Math.floor((ROWS - showRows) / 2);
+      // Target: 75+ on large (>1200), 40+ on mid (>600), 20+ on small
+      let targetCount: number;
+      if (w >= 1200) targetCount = 80;
+      else if (w >= 600) targetCount = 45;
+      else targetCount = 24;
+
+      // Sort nodes by distance from center of grid, always include "You" first
+      const cx = Math.floor(COLS / 2);
+      const cy = Math.floor(ROWS / 2);
+      const sorted = nodes.map((n, i) => ({
+        i, dist: Math.abs(n.gx - cx) + Math.abs(n.gy - cy)
+      })).sort((a, b) => a.dist - b.dist);
+
       visibleSet = new Set<number>();
-      for (let i = 0; i < nodes.length; i++) {
-        const n = nodes[i];
-        if (n.gx >= colStart && n.gx < colStart + showCols &&
-            n.gy >= rowStart && n.gy < rowStart + showRows) {
-          visibleSet.add(i);
-        }
+      for (let k = 0; k < Math.min(targetCount, sorted.length); k++) {
+        visibleSet.add(sorted[k].i);
       }
-      // Always include "You" (index 0)
-      visibleSet.add(0);
-      // Filter edges to only visible pairs
+      visibleSet.add(0); // always include "You"
+
       visibleEdges = [];
       for (let ei = 0; ei < edges.length; ei++) {
         if (visibleSet.has(edges[ei][0]) && visibleSet.has(edges[ei][1])) {
