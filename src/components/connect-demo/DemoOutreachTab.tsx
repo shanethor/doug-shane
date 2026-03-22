@@ -377,7 +377,7 @@ export default function DemoOutreachTab() {
         </TabsContent>
 
         {/* ── TOP 10 ── */}
-        <TabsContent value="top10" className="mt-4 space-y-4" style={{ animation: "smoothFadeSlide 0.4s cubic-bezier(0.16,1,0.3,1) both" }}>
+        <TabsContent value="top10" className="mt-4 space-y-4 animate-fade-in">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <Card style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 14%)" }}>
               <CardHeader className="pb-3">
