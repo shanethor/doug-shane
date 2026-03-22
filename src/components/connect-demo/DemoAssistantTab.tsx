@@ -215,7 +215,7 @@ export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: st
                 style={{ color: "white" }}
                 placeholder-style="color: hsl(240 5% 46%)"
               />
-              <Button size="icon" onClick={() => send(input)} disabled={!input.trim()} className="shrink-0 h-9 w-9 bg-primary text-primary-foreground hover:bg-primary/90">
+              <Button size="icon" onClick={() => send(input)} disabled={!input.trim()} className="shrink-0 h-9 w-9" style={{ background: "hsl(140 12% 42%)", color: "white" }}>
                 <Send className="h-4 w-4" />
               </Button>
             </div>
