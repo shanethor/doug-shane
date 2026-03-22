@@ -149,7 +149,7 @@ export default function DemoSpotlightTab() {
             {CONTENT_TYPES.map((ct) => (
               <button
                 key={ct.type}
-                onClick={handleCreateFlyer}
+                onClick={() => handleCreateFlyer(ct.type)}
                 className="flex flex-col items-center gap-1 p-2.5 rounded-lg transition-colors text-center"
                 style={{ background: "hsl(240 6% 7%)", border: "1px solid hsl(240 6% 14%)" }}
                 onMouseEnter={e => { e.currentTarget.style.borderColor = "hsl(140 12% 42% / 0.4)"; }}
