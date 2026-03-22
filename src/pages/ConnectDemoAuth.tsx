@@ -76,10 +76,10 @@ function Particles() {
 
 const FEATURES = [
   { icon: Users, label: "Network Intelligence", delay: "0.3s" },
-  { icon: BarChart3, label: "AI Pipeline", delay: "0.5s" },
+  { icon: BarChart3, label: "Pipeline", delay: "0.5s" },
   { icon: Mail, label: "Email & Calendar", delay: "0.7s" },
   { icon: SparklesIcon, label: "Create", delay: "0.9s" },
-  { icon: Zap, label: "Sage AI", delay: "1.1s" },
+  { icon: Zap, label: "Sage", delay: "1.1s" },
 ];
 const INDUSTRIES = [
   "Accounting", "Advertising & Marketing", "Agriculture", "Architecture", "Automotive",
@@ -244,10 +244,10 @@ export default function ConnectDemoAuth() {
                 <span className="text-lg font-bold" style={{ color: "hsl(140 12% 58%)" }}>$250/mo</span>
               </div>
               <ul className="text-sm space-y-1" style={{ color: "hsl(240 5% 46%)" }}>
-                <li>✓ AI-Powered Pipeline</li>
+                <li>✓ Smart Pipeline</li>
                 <li>✓ Email & Calendar Integration</li>
-                <li>✓ Spotlight Marketing Tools</li>
-                <li>✓ AI Assistant</li>
+                <li>✓ Create — Marketing & Social Content</li>
+                <li>✓ Sage Assistant</li>
               </ul>
             </div>
             <Button className="w-full text-white font-semibold hover:brightness-110 transition-all" style={{ background: "hsl(140 12% 42%)" }} onClick={handleSubscribe}>

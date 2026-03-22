@@ -162,19 +162,67 @@ export default function DemoSpotlightTab() {
 
   return (
     <div className="space-y-4">
-      <Card className="animate-fade-in" style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 14%)", animationDelay: "80ms" }}>
+      {/* Explainer Banner */}
+      <Card className="animate-fade-in" style={{ background: "hsl(140 12% 42% / 0.08)", borderColor: "hsl(140 12% 42% / 0.25)", animationDelay: "0ms" }}>
+        <CardContent className="p-4">
+          <div className="flex items-start gap-3">
+            <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ background: "hsl(140 12% 42% / 0.15)" }}>
+              <Sparkles className="h-4.5 w-4.5" style={{ color: "hsl(140 12% 58%)" }} />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-white mb-1">Create event flyers and graphics for social media posts to grow your network.</p>
+              <p className="text-[11px] leading-relaxed" style={{ color: "hsl(240 5% 60%)" }}>
+                Generate on-brand marketing content in seconds — event invitations, social media graphics, announcements, and promotional flyers.
+                Choose from your saved brand packages or start fresh. Up to 20 creations per month.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Sample Gallery */}
+      <Card className="animate-fade-in" style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 14%)", animationDelay: "60ms" }}>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-xs flex items-center gap-2 uppercase tracking-wider" style={{ color: "hsl(240 5% 56%)" }}>
+            <Eye className="h-3 w-3" /> Sample Creations
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="pb-4">
+          <div className="grid grid-cols-2 gap-2">
+            {[
+              { title: "Networking Mixer", type: "event", color: "hsl(200 70% 50%)", icon: "🎉" },
+              { title: "Coverage Tips", type: "educational", color: "hsl(270 60% 55%)", icon: "📚" },
+              { title: "Referral Bonus", type: "promotion", color: "hsl(140 50% 45%)", icon: "🤝" },
+              { title: "Open Enrollment", type: "announcement", color: "hsl(35 80% 55%)", icon: "📢" },
+            ].map((s, i) => (
+              <div
+                key={i}
+                className="rounded-lg p-3 flex flex-col items-center justify-center text-center gap-1.5 aspect-[4/3] animate-fade-in"
+                style={{
+                  background: `linear-gradient(135deg, ${s.color}15, ${s.color}08)`,
+                  border: `1px solid ${s.color}30`,
+                  animationDelay: `${100 + i * 80}ms`,
+                }}
+              >
+                <span className="text-2xl">{s.icon}</span>
+                <p className="text-[11px] font-medium text-white leading-tight">{s.title}</p>
+                <Badge variant="outline" className={`text-[8px] ${TYPE_COLORS[s.type] || ""}`}>{s.type}</Badge>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="animate-fade-in" style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 14%)", animationDelay: "120ms" }}>
         <CardHeader className="pb-3">
           <CardTitle className="text-sm flex items-center gap-2 text-white">
             <Sparkles className="h-4 w-4" style={{ color: "hsl(140 12% 58%)" }} />
-            Create — Marketing & Social Content
+            Your Creations
           </CardTitle>
-          <p className="text-[11px]" style={{ color: "hsl(240 5% 56%)" }}>
-            Design on-brand flyers for events, social media posts, announcements, and promotions — powered by AI. Up to 20 creations/month.
-          </p>
         </CardHeader>
         <CardContent className="space-y-4">
           <Button className="w-full gap-2 text-white" style={{ background: "hsl(140 12% 42%)" }} onClick={handleCreateFlyer}>
-            <Sparkles className="h-4 w-4" />
+            <Plus className="h-4 w-4" />
             Create New Flyer
           </Button>
 
