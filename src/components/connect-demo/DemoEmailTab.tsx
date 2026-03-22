@@ -229,23 +229,27 @@ export default function DemoEmailTab() {
         </div>
       </div>
 
-      {/* Smart Features Bar */}
+      {/* Smart Features Bar — always visible, contextual to open email */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
         {SMART_FEATURES.map((f, i) => (
           <button
             key={i}
-            onClick={() => toast.success(`${f.label} activated`)}
+            onClick={() => handleSmartFeature(f.label)}
             className="p-2.5 rounded-lg text-left transition-all hover:scale-[1.02] hover:bg-white/5"
-            style={{ background: "hsl(240 8% 9%)", border: "1px solid hsl(240 6% 14%)" }}
+            style={{ background: "hsl(240 8% 9%)", border: `1px solid ${selected ? "hsl(174 97% 22% / 0.25)" : "hsl(240 6% 14%)"}` }}
           >
             <f.icon className="h-4 w-4 mb-1" style={{ color: "hsl(174 97% 40%)" }} />
             <p className="text-[11px] font-medium text-white">{f.label}</p>
-            <p className="text-[9px]" style={{ color: "hsl(240 5% 40%)" }}>{f.desc}</p>
+            <p className="text-[9px]" style={{ color: "hsl(240 5% 40%)" }}>
+              {selected ? `Apply to ${selected.from.split(" ")[0]}'s email` : f.desc}
+            </p>
           </button>
         ))}
       </div>
 
-      {/* Account filter + Filters */}
+      {/* Email detail OR inbox list */}
+      {emailDetailView ? emailDetailView : (
+        <>
       <div className="flex items-center gap-2 flex-wrap">
         <button onClick={() => { setAccountFilter("all"); setSelectedClient(null); }} className={`text-xs px-3 py-1 rounded-md transition-colors ${accountFilter === "all" && !selectedClient ? "bg-white/10 text-white" : ""}`} style={accountFilter !== "all" || selectedClient ? { color: "hsl(240 5% 46%)" } : {}}>All Inboxes</button>
         {SYNCED_ACCOUNTS.filter(a => a.synced).map(a => (
