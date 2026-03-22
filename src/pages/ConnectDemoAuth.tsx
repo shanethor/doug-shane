@@ -236,7 +236,7 @@ export default function ConnectDemoAuth() {
           <div className="rounded-xl border p-6 space-y-6 animate-scale-in" style={{ background: "hsl(240 8% 7%)", borderColor: "hsl(240 6% 14%)" }}>
             <div>
               <h2 className="text-lg font-semibold text-white">Choose your plan</h2>
-              <p className="text-sm" style={{ color: "hsl(240 5% 46%)" }}>Start with AURA Connect</p>
+              <p className="text-sm" style={{ color: "hsl(240 5% 46%)" }}>Start with AuRa Connect</p>
             </div>
             <div className="rounded-lg border-2 p-4 space-y-3" style={{ borderColor: "hsl(174 97% 22%)", background: "hsl(174 97% 22% / 0.05)" }}>
               <div className="flex items-center justify-between">
