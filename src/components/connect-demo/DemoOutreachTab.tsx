@@ -261,7 +261,7 @@ export default function DemoOutreachTab() {
         </TabsList>
 
         {/* ── TIERS ── */}
-        <TabsContent value="tiers" className="mt-4 space-y-4" style={{ animation: "smoothFadeSlide 0.4s cubic-bezier(0.16,1,0.3,1) both" }}>
+        <TabsContent value="tiers" className="mt-4 space-y-4 animate-fade-in">
           {/* Tier Explainer */}
           <Card style={{ background: "hsl(174 97% 22% / 0.04)", borderColor: "hsl(174 97% 22% / 0.12)" }}>
             <CardContent className="p-4 space-y-3">
