@@ -211,7 +211,9 @@ export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: st
                 onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(input); } }}
                 placeholder="Ask Lumen anything..."
                 rows={3}
-                className="flex-1 resize-none bg-transparent border-0 outline-none text-sm placeholder:text-muted-foreground min-h-[72px] max-h-48 py-2"
+                className="flex-1 resize-none bg-transparent border-0 outline-none text-sm min-h-[72px] max-h-48 py-2 text-white"
+                style={{ color: "white" }}
+                placeholder-style="color: hsl(240 5% 46%)"
               />
               <Button size="icon" onClick={() => send(input)} disabled={!input.trim()} className="shrink-0 h-9 w-9 bg-primary text-primary-foreground hover:bg-primary/90">
                 <Send className="h-4 w-4" />
