@@ -168,7 +168,7 @@ export default function ConnectDemoAuth() {
           <div className="mx-auto flex items-center justify-center">
             <AuraLogo size={56} />
           </div>
-          <h1 className="text-2xl font-bold text-white">AURA Connect</h1>
+          <h1 className="text-2xl font-bold text-white">AuRa Connect</h1>
           <p className="text-sm" style={{ color: "hsl(174 97% 40%)" }}>Your relationship intelligence suite</p>
         </div>
 
