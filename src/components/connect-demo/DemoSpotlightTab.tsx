@@ -92,21 +92,9 @@ export default function DemoSpotlightTab() {
   const [editFlyerId, setEditFlyerId] = useState<string | null>(null);
   const [editBrand, setEditBrand] = useState<BrandPackage | null>(null);
 
-  const loadHistory = useCallback(async () => {
-    try {
-      const { data, error } = await supabase.functions.invoke("spotlight-flyer", { body: { action: "list" } });
-      if (!error && data?.flyers) setRealHistory(data.flyers);
-    } catch { /* silent */ }
-  }, []);
-
-  const loadBrands = useCallback(async () => {
-    try {
-      const { data, error } = await supabase.functions.invoke("spotlight-flyer", { body: { action: "list_brands" } });
-      if (!error && data?.brands) setRealBrands(data.brands);
-    } catch { /* silent */ }
-  }, []);
-
-  useEffect(() => { loadHistory(); loadBrands(); }, [loadHistory, loadBrands]);
+  // Demo mode: skip real API calls, only use sample data
+  const loadHistory = useCallback(async () => {}, []);
+  const loadBrands = useCallback(async () => {}, []);
 
   // Merge sample + real data
   const allBrands = [...realBrands, ...SAMPLE_BRANDS.filter(sb => !realBrands.some(rb => rb.name === sb.name))];
