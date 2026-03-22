@@ -98,7 +98,7 @@ export default function DemoPipelineTab() {
       <div className="flex items-center justify-between animate-fade-in" style={{ animationDelay: "0ms" }}>
         <div>
           <h3 className="text-sm font-semibold flex items-center gap-2 text-white">
-            <Building2 className="h-4 w-4" style={{ color: "hsl(174 97% 40%)" }} />
+            <Building2 className="h-4 w-4" style={{ color: "hsl(140 12% 58%)" }} />
             {config.label} Pipeline
           </h3>
           <p className="text-xs" style={{ color: "hsl(240 5% 46%)" }}>Demo pipeline with sample data</p>
@@ -114,7 +114,7 @@ export default function DemoPipelineTab() {
               ))}
             </SelectContent>
           </Select>
-          <Button size="sm" className="gap-1.5 h-8 text-xs" style={{ background: "hsl(174 97% 22%)" }}>
+          <Button size="sm" className="gap-1.5 h-8 text-xs" style={{ background: "hsl(140 12% 42%)" }}>
             <Plus className="h-3.5 w-3.5" /> Add Lead
           </Button>
         </div>

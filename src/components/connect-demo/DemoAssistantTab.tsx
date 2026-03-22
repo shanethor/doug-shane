@@ -256,7 +256,7 @@ export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: st
                                 <button
                                   onClick={() => onNavigate?.("pipeline")}
                                   className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors mt-1"
-                                  style={{ background: "hsl(174 97% 22%)", color: "white" }}
+                                  style={{ background: "hsl(140 12% 42%)", color: "white" }}
                                 >
                                   <Sparkles className="h-3.5 w-3.5" />
                                   {text.replace(/[\[\]]/g, "")}

@@ -169,7 +169,7 @@ export default function ConnectDemoAuth() {
             <AuraLogo size={56} />
           </div>
           <h1 className="text-2xl font-bold text-white">AuRa Connect</h1>
-          <p className="text-sm" style={{ color: "hsl(174 97% 40%)" }}>Your relationship intelligence suite</p>
+          <p className="text-sm" style={{ color: "hsl(140 12% 58%)" }}>Your relationship intelligence suite</p>
         </div>
 
         {step === "auth" && (
@@ -225,7 +225,7 @@ export default function ConnectDemoAuth() {
                 <Input type="password" placeholder="••••••••" required value={password} onChange={e => setPassword(e.target.value)}
                   className="bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-[hsl(174,97%,22%)] transition-colors" />
               </div>
-              <Button type="submit" className="w-full text-white font-semibold hover:brightness-110 transition-all" style={{ background: "hsl(174 97% 22%)" }}>
+              <Button type="submit" className="w-full text-white font-semibold hover:brightness-110 transition-all" style={{ background: "hsl(140 12% 42%)" }}>
                 Sign Up <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </form>
@@ -238,10 +238,10 @@ export default function ConnectDemoAuth() {
               <h2 className="text-lg font-semibold text-white">Choose your plan</h2>
               <p className="text-sm" style={{ color: "hsl(240 5% 46%)" }}>Start with AuRa Connect</p>
             </div>
-            <div className="rounded-lg border-2 p-4 space-y-3" style={{ borderColor: "hsl(174 97% 22%)", background: "hsl(174 97% 22% / 0.05)" }}>
+            <div className="rounded-lg border-2 p-4 space-y-3" style={{ borderColor: "hsl(140 12% 42%)", background: "hsl(174 97% 22% / 0.05)" }}>
               <div className="flex items-center justify-between">
                 <span className="font-semibold text-white">AuRa Connect Pro</span>
-                <span className="text-lg font-bold" style={{ color: "hsl(174 97% 40%)" }}>$250/mo</span>
+                <span className="text-lg font-bold" style={{ color: "hsl(140 12% 58%)" }}>$250/mo</span>
               </div>
               <ul className="text-sm space-y-1" style={{ color: "hsl(240 5% 46%)" }}>
                 <li>✓ AI-Powered Pipeline</li>
@@ -250,7 +250,7 @@ export default function ConnectDemoAuth() {
                 <li>✓ AI Assistant</li>
               </ul>
             </div>
-            <Button className="w-full text-white font-semibold hover:brightness-110 transition-all" style={{ background: "hsl(174 97% 22%)" }} onClick={handleSubscribe}>
+            <Button className="w-full text-white font-semibold hover:brightness-110 transition-all" style={{ background: "hsl(140 12% 42%)" }} onClick={handleSubscribe}>
               Subscribe <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
             <p className="text-xs text-center" style={{ color: "hsl(240 5% 46%)" }}>Demo mode — no payment required</p>
@@ -309,7 +309,7 @@ export default function ConnectDemoAuth() {
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-500"
                     style={{
                       background: "hsl(174 97% 22% / 0.1)",
-                      color: "hsl(174 97% 40%)",
+                      color: "hsl(140 12% 58%)",
                       border: "1px solid hsl(174 97% 22% / 0.2)",
                       opacity: buildPhase >= 4 ? 1 : 0,
                       transform: buildPhase >= 4 ? "translateY(0) scale(1)" : "translateY(12px) scale(0.9)",
@@ -327,7 +327,7 @@ export default function ConnectDemoAuth() {
                 size="lg"
                 className="text-white font-semibold hover:brightness-110 transition-all"
                 style={{
-                  background: "hsl(174 97% 22%)",
+                  background: "hsl(140 12% 42%)",
                   opacity: buildPhase >= 5 ? 1 : 0,
                   transform: buildPhase >= 5 ? "translateY(0) scale(1)" : "translateY(10px) scale(0.95)",
                   transitionDuration: "500ms",

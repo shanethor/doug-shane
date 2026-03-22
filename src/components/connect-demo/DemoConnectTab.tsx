@@ -482,7 +482,7 @@ export default function DemoConnectTab() {
         <div className="space-y-2">
           <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-white">
             Find the fastest path to{" "}
-            <span style={{ color: "hsl(174 97% 40%)" }}>anyone</span>
+            <span style={{ color: "hsl(140 12% 58%)" }}>anyone</span>
           </h2>
           <p className="text-sm md:text-base max-w-lg mx-auto" style={{ color: "hsl(240 5% 50%)" }}>
             AuRa Connect traverses millions of business connections to find the warmest intro path for you.
@@ -501,7 +501,7 @@ export default function DemoConnectTab() {
               style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(174 97% 22% / 0.25)", color: "white", fontSize: "1rem" }}
             />
           </div>
-          <Button onClick={handleSearch} disabled={!searchName.trim() || searching} className="h-12 px-6 rounded-xl text-base font-semibold" style={{ background: "hsl(174 97% 22%)", color: "white" }}>
+          <Button onClick={handleSearch} disabled={!searchName.trim() || searching} className="h-12 px-6 rounded-xl text-base font-semibold" style={{ background: "hsl(140 12% 42%)", color: "white" }}>
             {searching ? <Loader2 className="h-5 w-5 animate-spin" /> : "Find Path"}
           </Button>
         </div>
@@ -523,7 +523,7 @@ export default function DemoConnectTab() {
       {searching && (
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center space-y-3">
-            <Loader2 className="h-10 w-10 animate-spin mx-auto" style={{ color: "hsl(174 97% 40%)" }} />
+            <Loader2 className="h-10 w-10 animate-spin mx-auto" style={{ color: "hsl(140 12% 58%)" }} />
             <p className="text-sm" style={{ color: "hsl(240 5% 46%)" }}>Scanning your network for paths to {searchName}…</p>
           </div>
         </div>
@@ -534,13 +534,13 @@ export default function DemoConnectTab() {
         <Card className="max-w-2xl mx-auto mt-4" style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 14%)", animation: "smoothFadeSlide 0.5s cubic-bezier(0.16,1,0.3,1) both" }}>
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
-              <Sparkles className="h-5 w-5" style={{ color: "hsl(174 97% 40%)" }} />
+              <Sparkles className="h-5 w-5" style={{ color: "hsl(140 12% 58%)" }} />
               <span className="text-white">Path to {result.target}</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center gap-3 text-xs" style={{ color: "hsl(240 5% 46%)" }}>
-              <Badge variant="outline" style={{ color: "hsl(174 97% 40%)", borderColor: "hsl(174 97% 22% / 0.3)" }}>
+              <Badge variant="outline" style={{ color: "hsl(140 12% 58%)", borderColor: "hsl(174 97% 22% / 0.3)" }}>
                 {result.confidence}% confidence
               </Badge>
               <span>via <span className="font-medium text-white">{result.connection}</span></span>
@@ -548,10 +548,10 @@ export default function DemoConnectTab() {
 
             <div className="flex items-center justify-center gap-2 p-4 rounded-lg" style={{ background: "hsl(240 6% 7%)" }}>
               <div className="flex items-center justify-center h-10 w-10 rounded-full text-xs font-bold" style={{ background: "hsl(45 93% 47% / 0.15)", color: "hsl(45 93% 47%)" }}>You</div>
-              <ArrowRight className="h-5 w-5 shrink-0" style={{ color: "hsl(174 97% 40%)" }} />
-              <div className="flex items-center justify-center h-10 px-4 rounded-full text-xs font-bold" style={{ background: "hsl(174 97% 22% / 0.15)", color: "hsl(174 97% 40%)" }}>{result.connection}</div>
-              <ArrowRight className="h-5 w-5 shrink-0" style={{ color: "hsl(174 97% 40%)" }} />
-              <div className="flex items-center justify-center h-10 px-4 rounded-full text-xs font-bold" style={{ background: "hsl(174 97% 22% / 0.15)", color: "hsl(174 97% 40%)" }}>{result.target}</div>
+              <ArrowRight className="h-5 w-5 shrink-0" style={{ color: "hsl(140 12% 58%)" }} />
+              <div className="flex items-center justify-center h-10 px-4 rounded-full text-xs font-bold" style={{ background: "hsl(174 97% 22% / 0.15)", color: "hsl(140 12% 58%)" }}>{result.connection}</div>
+              <ArrowRight className="h-5 w-5 shrink-0" style={{ color: "hsl(140 12% 58%)" }} />
+              <div className="flex items-center justify-center h-10 px-4 rounded-full text-xs font-bold" style={{ background: "hsl(174 97% 22% / 0.15)", color: "hsl(140 12% 58%)" }}>{result.target}</div>
             </div>
 
             <div className="p-3 rounded-lg" style={{ background: "hsl(240 6% 7%)", border: "1px solid hsl(240 6% 14%)" }}>
@@ -559,8 +559,8 @@ export default function DemoConnectTab() {
             </div>
 
             <div className="flex items-center gap-2 p-3 rounded-lg" style={{ background: "hsl(174 97% 22% / 0.06)", border: "1px solid hsl(174 97% 22% / 0.15)" }}>
-              <ArrowRight className="h-4 w-4 shrink-0" style={{ color: "hsl(174 97% 40%)" }} />
-              <p className="text-sm font-medium" style={{ color: "hsl(174 97% 40%)" }}>{result.action}</p>
+              <ArrowRight className="h-4 w-4 shrink-0" style={{ color: "hsl(140 12% 58%)" }} />
+              <p className="text-sm font-medium" style={{ color: "hsl(140 12% 58%)" }}>{result.action}</p>
             </div>
           </CardContent>
         </Card>
