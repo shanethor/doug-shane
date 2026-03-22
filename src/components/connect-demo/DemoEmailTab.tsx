@@ -230,19 +230,16 @@ export default function DemoEmailTab() {
       </div>
 
       {/* Smart Features Bar — always visible, contextual to open email */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+      <div className="grid grid-cols-3 sm:grid-cols-3 lg:grid-cols-6 gap-1.5">
         {SMART_FEATURES.map((f, i) => (
           <button
             key={i}
             onClick={() => handleSmartFeature(f.label)}
-            className="p-2.5 rounded-lg text-left transition-all hover:scale-[1.02] hover:bg-white/5"
+            className="p-1.5 rounded-md text-left transition-all hover:scale-[1.02] hover:bg-white/5"
             style={{ background: "hsl(240 8% 9%)", border: `1px solid ${selected ? "hsl(140 12% 42% / 0.25)" : "hsl(240 6% 14%)"}` }}
           >
-            <f.icon className="h-4 w-4 mb-1" style={{ color: "hsl(140 12% 58%)" }} />
-            <p className="text-[11px] font-medium text-white">{f.label}</p>
-            <p className="text-[9px]" style={{ color: "hsl(240 5% 56%)" }}>
-              {selected ? `Apply to ${selected.from.split(" ")[0]}'s email` : f.desc}
-            </p>
+            <f.icon className="h-3 w-3 mb-0.5" style={{ color: "hsl(140 12% 58%)" }} />
+            <p className="text-[9px] font-medium text-white leading-tight">{f.label}</p>
           </button>
         ))}
       </div>
