@@ -55,8 +55,8 @@ const TABS = [
   { value: "email", icon: Mail, label: "Email" },
   { value: "calendar", icon: CalendarDays, label: "Calendar" },
   { value: "outreach", icon: Send, label: "Outreach" },
-  { value: "spotlight", icon: Sparkles, label: "Spotlight" },
-  { value: "assistant", icon: MessageSquare, label: "Assistant" },
+  { value: "spotlight", icon: Sparkles, label: "Create" },
+  { value: "assistant", icon: MessageSquare, label: "Lumen" },
 ];
 
 export default function ConnectDemo() {
