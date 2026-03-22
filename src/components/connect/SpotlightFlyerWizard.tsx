@@ -17,33 +17,37 @@ import {
 import type { BrandPackage } from "./SpotlightBrandSetup";
 
 const FLYER_TYPES = [
-  { value: "event", label: "Event" },
-  { value: "webinar", label: "Webinar" },
-  { value: "promo", label: "Promo" },
-  { value: "hiring", label: "Hiring" },
+  { value: "event", label: "Event Flyer" },
+  { value: "social", label: "Social Post" },
   { value: "announcement", label: "Announcement" },
+  { value: "educational", label: "Educational" },
+  { value: "promotion", label: "Promotion" },
+  { value: "custom", label: "Custom" },
 ];
+
+/* dark-themed inline styles for inputs to avoid white backgrounds */
+const darkInput: React.CSSProperties = { background: "hsl(240 6% 7%)", borderColor: "hsl(240 6% 16%)", color: "#F5F5F0" };
+const darkTextarea: React.CSSProperties = { ...darkInput };
 
 interface SpotlightFlyerWizardProps {
   onClose: () => void;
   brands: BrandPackage[];
   editFlyerId?: string | null;
+  initialType?: string;
 }
 
-export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId }: SpotlightFlyerWizardProps) {
-  const [step, setStep] = useState(editFlyerId ? 0 : 1); // 0 = loading edit
+export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId, initialType }: SpotlightFlyerWizardProps) {
+  const [step, setStep] = useState(editFlyerId ? 0 : 1);
   const [loading, setLoading] = useState(false);
 
-  // Brand selection
   const defaultBrand = brands.find(b => b.is_default) || brands[0] || null;
   const [selectedBrandId, setSelectedBrandId] = useState(defaultBrand?.id || "");
 
   // Step 1
   const [rawPrompt, setRawPrompt] = useState("");
-  const [flyerType, setFlyerType] = useState("");
+  const [flyerType, setFlyerType] = useState(initialType || "");
   const [useDefaults, setUseDefaults] = useState(true);
 
-  // Draft state
   const [flyerId, setFlyerId] = useState<string | null>(editFlyerId || null);
   const [calendarEvents, setCalendarEvents] = useState<any[]>([]);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
@@ -55,7 +59,7 @@ export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId }: S
   const [location, setLocation] = useState("");
   const [description, setDescription] = useState("");
   const [brandName, setBrandName] = useState(defaultBrand?.brand_name || "");
-  const [brandColors, setBrandColors] = useState<string[]>(defaultBrand?.brand_colors || ["#001F3F", "#C9A24B"]);
+  const [brandColors, setBrandColors] = useState<string[]>(defaultBrand?.brand_colors || ["#8A9A8C", "#F5F5F0"]);
   const [logoUrl, setLogoUrl] = useState(defaultBrand?.logo_url || "");
 
   // Step 3
@@ -67,6 +71,9 @@ export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId }: S
   const [resultImageUrl, setResultImageUrl] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
   const [tweakText, setTweakText] = useState("");
+
+  // Sync initialType
+  useEffect(() => { if (initialType) setFlyerType(initialType); }, [initialType]);
 
   // Load existing flyer for editing
   useEffect(() => {
@@ -88,23 +95,16 @@ export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId }: S
         setIsEvergreen(f.evergreen || false);
         setLocation(f.location || "");
         setBrandName(f.brand_name || "");
-        setBrandColors(Array.isArray(f.brand_colors) ? f.brand_colors : ["#001F3F", "#C9A24B"]);
+        setBrandColors(Array.isArray(f.brand_colors) ? f.brand_colors : ["#8A9A8C", "#F5F5F0"]);
         setLogoUrl(f.logo_url || "");
         setBullets(Array.isArray(f.bullets) && f.bullets.length > 0 ? f.bullets : [""]);
         setCta(f.cta || "");
         setDisclaimer(f.disclaimer || "");
         setResultImageUrl(f.result_image_url || null);
-
-        // Determine which step to show
-        if (f.status === "ready" && f.result_image_url) {
-          setStep(4);
-        } else if (f.bullets && f.bullets.length > 0) {
-          setStep(3);
-        } else if (f.title) {
-          setStep(2);
-        } else {
-          setStep(1);
-        }
+        if (f.status === "ready" && f.result_image_url) setStep(4);
+        else if (f.bullets && f.bullets.length > 0) setStep(3);
+        else if (f.title) setStep(2);
+        else setStep(1);
       } catch (err: any) {
         toast.error("Failed to load flyer");
         onClose();
@@ -115,7 +115,6 @@ export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId }: S
     load();
   }, [editFlyerId]);
 
-  // Apply brand when selection changes
   const applyBrand = (brandId: string) => {
     setSelectedBrandId(brandId);
     const brand = brands.find(b => b.id === brandId);
@@ -127,7 +126,6 @@ export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId }: S
     }
   };
 
-  // ─── Step 1: Create Draft ───
   const handleCreateDraft = async () => {
     if (!rawPrompt.trim()) { toast.error("Describe what you need"); return; }
     setLoading(true);
@@ -140,7 +138,6 @@ export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId }: S
       setFlyerId(data.flyer.id);
       setFlyerType(data.flyer.type);
       setCalendarEvents(data.calendar_events || []);
-      // Apply brand from draft if set
       if (data.flyer.brand_name) setBrandName(data.flyer.brand_name);
       if (Array.isArray(data.flyer.brand_colors)) setBrandColors(data.flyer.brand_colors);
       if (data.flyer.logo_url) setLogoUrl(data.flyer.logo_url);
@@ -190,8 +187,9 @@ export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId }: S
 
       if (!cta) {
         const ctaMap: Record<string, string> = {
-          event: "RSVP today to reserve your seat.", webinar: "Register today – limited virtual seats.",
-          promo: "Call today or book online.", hiring: "Apply now – positions filling fast.", announcement: "Learn more today.",
+          event: "RSVP today to reserve your seat.", social: "Like, share, and follow for more.",
+          promotion: "Call today or book online.", educational: "Learn more today.",
+          announcement: "Stay tuned for more updates.", custom: "Contact us today.",
         };
         setCta(ctaMap[flyerType] || "Contact us today.");
       }
@@ -211,7 +209,6 @@ export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId }: S
     const cleanBullets = bullets.filter(b => b.trim());
     if (cleanBullets.length === 0) { toast.error("Add at least one bullet point"); return; }
     if (!cta.trim()) { toast.error("Add a call to action"); return; }
-
     setLoading(true);
     try {
       await supabase.functions.invoke("spotlight-flyer", {
@@ -222,7 +219,6 @@ export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId }: S
       });
       if (promptErr) throw promptErr;
       if (promptData?.error) throw new Error(promptData.error);
-
       setStep(4);
       setGenerating(true);
       const { data: genData, error: genErr } = await supabase.functions.invoke("spotlight-flyer", {
@@ -250,7 +246,7 @@ export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId }: S
       if (data?.error) throw new Error(data.error);
       setResultImageUrl(data.image_url);
       setTweakText("");
-      toast.success("Flyer regenerated");
+      toast.success("Graphic regenerated");
     } catch (err: any) {
       toast.error(err.message || "Regeneration failed");
     } finally {
@@ -262,7 +258,7 @@ export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId }: S
     if (!resultImageUrl) return;
     const link = document.createElement("a");
     link.href = resultImageUrl;
-    link.download = `${title || "flyer"}.png`;
+    link.download = `${title || "graphic"}.png`;
     link.click();
   };
 
@@ -273,11 +269,12 @@ export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId }: S
     toast.success("Caption copied to clipboard");
   };
 
-  // Loading state for edit mode
+  const typeLabel = FLYER_TYPES.find(t => t.value === flyerType)?.label || "Graphic";
+
   if (step === 0) {
     return (
       <div className="flex items-center justify-center py-16">
-        <Loader2 className="h-8 w-8 animate-spin text-warning" />
+        <Loader2 className="h-8 w-8 animate-spin" style={{ color: "hsl(140 12% 58%)" }} />
       </div>
     );
   }
@@ -287,65 +284,80 @@ export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId }: S
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8">
+          <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8" style={{ color: "hsl(240 5% 56%)" }}>
             <X className="h-4 w-4" />
           </Button>
           <div>
-            <h2 className="text-lg font-bold flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-warning" />
-              AURA Spotlight
+            <h2 className="text-base font-bold flex items-center gap-2 text-white">
+              <Sparkles className="h-4 w-4" style={{ color: "hsl(140 12% 58%)" }} />
+              AuRa Create
             </h2>
-            <p className="text-xs text-muted-foreground">{editFlyerId ? "Edit Flyer" : "Marketing Flyer Generator"}</p>
+            <p className="text-[10px]" style={{ color: "hsl(240 5% 50%)" }}>
+              {editFlyerId ? `Edit ${typeLabel}` : `New ${typeLabel}`}
+            </p>
           </div>
         </div>
         <div className="flex items-center gap-1.5">
           {[1, 2, 3, 4].map(s => (
-            <div key={s} className={`h-1.5 rounded-full transition-all ${s === step ? "w-8 bg-warning" : s < step ? "w-4 bg-warning/40" : "w-4 bg-muted"}`} />
+            <div
+              key={s}
+              className="h-1.5 rounded-full transition-all"
+              style={{
+                width: s === step ? 28 : 14,
+                background: s === step ? "hsl(140 12% 50%)" : s < step ? "hsl(140 12% 42% / 0.4)" : "hsl(240 6% 18%)",
+              }}
+            />
           ))}
         </div>
       </div>
 
-      <Separator />
+      <Separator style={{ background: "hsl(240 6% 14%)" }} />
 
-      {/* ═══ STEP 1: Simple Request ═══ */}
+      {/* ═══ STEP 1: Request ═══ */}
       {step === 1 && (
         <div className="space-y-4">
           <div>
-            <h3 className="text-sm font-semibold mb-1">What do you need?</h3>
-            <p className="text-xs text-muted-foreground mb-3">Describe your flyer in plain English. We'll pull context from your calendar and brand settings.</p>
-            <Textarea placeholder="I need a marketing flyer for my March 21st CLE event for young attorneys..." value={rawPrompt} onChange={e => setRawPrompt(e.target.value)} className="min-h-[100px]" maxLength={2000} />
-            <p className="text-[10px] text-muted-foreground text-right mt-1">{rawPrompt.length}/2000</p>
+            <h3 className="text-sm font-semibold mb-1 text-white">What do you need?</h3>
+            <p className="text-[10px] mb-3" style={{ color: "hsl(240 5% 50%)" }}>
+              Describe your {typeLabel.toLowerCase()} in plain English. We'll pull context from your calendar and brand settings.
+            </p>
+            <Textarea
+              placeholder={flyerType === "social" ? "Create a tip graphic about umbrella coverage for LinkedIn..." : flyerType === "educational" ? "Design an infographic about hurricane preparedness..." : "I need a marketing flyer for my March 21st CLE event for young attorneys..."}
+              value={rawPrompt}
+              onChange={e => setRawPrompt(e.target.value)}
+              className="min-h-[100px]"
+              style={darkTextarea}
+              maxLength={2000}
+            />
+            <p className="text-[9px] text-right mt-1" style={{ color: "hsl(240 5% 40%)" }}>{rawPrompt.length}/2000</p>
           </div>
 
-          <div className="flex items-center gap-4 flex-wrap">
-            <div className="space-y-1 flex-1 min-w-[140px]">
-              <label className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Flyer Type (optional)</label>
+          <div className="flex items-center gap-3 flex-wrap">
+            <div className="space-y-1 flex-1 min-w-[130px]">
+              <label className="text-[9px] font-medium uppercase tracking-wider" style={{ color: "hsl(240 5% 50%)" }}>Content Type</label>
               <Select value={flyerType} onValueChange={setFlyerType}>
-                <SelectTrigger className="h-9"><SelectValue placeholder="Auto-detect" /></SelectTrigger>
-                <SelectContent>
-                  {FLYER_TYPES.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
+                <SelectTrigger className="h-8 text-xs" style={darkInput}><SelectValue placeholder="Auto-detect" /></SelectTrigger>
+                <SelectContent style={{ background: "hsl(240 8% 12%)", borderColor: "hsl(240 6% 18%)" }}>
+                  {FLYER_TYPES.map(t => <SelectItem key={t.value} value={t.value} className="text-xs text-white">{t.label}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
 
-            {/* Brand selector */}
             {brands.length > 0 && (
-              <div className="space-y-1 flex-1 min-w-[140px]">
-                <label className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground flex items-center gap-1">
-                  <Palette className="h-3 w-3" /> Brand Package
+              <div className="space-y-1 flex-1 min-w-[130px]">
+                <label className="text-[9px] font-medium uppercase tracking-wider flex items-center gap-1" style={{ color: "hsl(240 5% 50%)" }}>
+                  <Palette className="h-2.5 w-2.5" /> Brand
                 </label>
                 <Select value={selectedBrandId} onValueChange={applyBrand}>
-                  <SelectTrigger className="h-9"><SelectValue placeholder="Select brand..." /></SelectTrigger>
-                  <SelectContent>
+                  <SelectTrigger className="h-8 text-xs" style={darkInput}><SelectValue placeholder="Select brand..." /></SelectTrigger>
+                  <SelectContent style={{ background: "hsl(240 8% 12%)", borderColor: "hsl(240 6% 18%)" }}>
                     {brands.map(b => (
-                      <SelectItem key={b.id} value={b.id}>
+                      <SelectItem key={b.id} value={b.id} className="text-xs text-white">
                         <div className="flex items-center gap-2">
                           <div className="flex gap-0.5">
-                            {b.brand_colors.slice(0, 2).map((c, i) => (
-                              <div key={i} className="w-2.5 h-2.5 rounded-full border" style={{ background: c }} />
-                            ))}
+                            {b.brand_colors.slice(0, 2).map((c, i) => <div key={i} className="w-2 h-2 rounded-full" style={{ background: c }} />)}
                           </div>
-                          {b.name} {b.is_default && <span className="text-[9px] text-muted-foreground">(default)</span>}
+                          {b.name}
                         </div>
                       </SelectItem>
                     ))}
@@ -355,72 +367,82 @@ export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId }: S
             )}
           </div>
 
-          <Button className="w-full gap-2" onClick={handleCreateDraft} disabled={loading || !rawPrompt.trim()}>
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
+          <Button
+            className="w-full gap-2 text-white text-xs h-9"
+            style={{ background: "hsl(140 12% 42%)" }}
+            onClick={handleCreateDraft}
+            disabled={loading || !rawPrompt.trim()}
+          >
+            {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ArrowRight className="h-3.5 w-3.5" />}
             Continue
           </Button>
         </div>
       )}
 
-      {/* ═══ STEP 2: Event & Details ═══ */}
+      {/* ═══ STEP 2: Details ═══ */}
       {step === 2 && (
         <div className="space-y-4">
           {calendarEvents.length > 0 && (
             <div>
-              <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-primary" /> Matching Calendar Events
+              <h3 className="text-xs font-semibold mb-2 flex items-center gap-2 text-white">
+                <Calendar className="h-3.5 w-3.5" style={{ color: "hsl(140 12% 58%)" }} /> Matching Calendar Events
               </h3>
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 {calendarEvents.map((ev: any) => (
-                  <button key={ev.id} onClick={() => handleSelectEvent(ev.id)} className={`w-full text-left p-3 rounded-lg border transition-colors ${selectedEventId === ev.id ? "border-primary bg-primary/5" : "border-border hover:border-primary/30 hover:bg-muted/30"}`}>
-                    <p className="text-sm font-medium">{ev.title}</p>
-                    <p className="text-xs text-muted-foreground">{new Date(ev.start_time).toLocaleDateString()} · {ev.location || "No location"}</p>
+                  <button
+                    key={ev.id}
+                    onClick={() => handleSelectEvent(ev.id)}
+                    className="w-full text-left p-2.5 rounded-lg transition-colors"
+                    style={{
+                      background: selectedEventId === ev.id ? "hsl(140 12% 42% / 0.1)" : "hsl(240 6% 7%)",
+                      border: `1px solid ${selectedEventId === ev.id ? "hsl(140 12% 42% / 0.4)" : "hsl(240 6% 14%)"}`,
+                    }}
+                  >
+                    <p className="text-xs font-medium text-white">{ev.title}</p>
+                    <p className="text-[10px]" style={{ color: "hsl(240 5% 50%)" }}>{new Date(ev.start_time).toLocaleDateString()} · {ev.location || "No location"}</p>
                   </button>
                 ))}
               </div>
-              <Separator className="my-3" />
+              <Separator className="my-3" style={{ background: "hsl(240 6% 14%)" }} />
             </div>
           )}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1 sm:col-span-2">
-              <label className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground flex items-center gap-1"><Type className="h-3 w-3" /> Title *</label>
-              <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="Event or campaign title" maxLength={200} />
+              <label className="text-[9px] font-medium uppercase tracking-wider flex items-center gap-1" style={{ color: "hsl(240 5% 50%)" }}><Type className="h-2.5 w-2.5" /> Title *</label>
+              <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="Event or campaign title" maxLength={200} style={darkInput} />
             </div>
             <div className="space-y-1">
-              <label className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground flex items-center gap-1"><Clock className="h-3 w-3" /> Date & Time</label>
-              <Input value={dateTime} onChange={e => setDateTime(e.target.value)} placeholder="March 21, 2026 at 5:30 PM" disabled={isEvergreen} />
+              <label className="text-[9px] font-medium uppercase tracking-wider flex items-center gap-1" style={{ color: "hsl(240 5% 50%)" }}><Clock className="h-2.5 w-2.5" /> Date & Time</label>
+              <Input value={dateTime} onChange={e => setDateTime(e.target.value)} placeholder="March 21, 2026 at 5:30 PM" disabled={isEvergreen} style={darkInput} />
               <div className="flex items-center gap-2 mt-1">
                 <Switch checked={isEvergreen} onCheckedChange={setIsEvergreen} id="evergreen" />
-                <label htmlFor="evergreen" className="text-[10px] text-muted-foreground cursor-pointer">Evergreen (no date)</label>
+                <label htmlFor="evergreen" className="text-[9px] cursor-pointer" style={{ color: "hsl(240 5% 50%)" }}>Evergreen (no date)</label>
               </div>
             </div>
             <div className="space-y-1">
-              <label className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground flex items-center gap-1"><MapPin className="h-3 w-3" /> Location</label>
-              <Input value={location} onChange={e => setLocation(e.target.value)} placeholder="123 Main St or Online" />
+              <label className="text-[9px] font-medium uppercase tracking-wider flex items-center gap-1" style={{ color: "hsl(240 5% 50%)" }}><MapPin className="h-2.5 w-2.5" /> Location</label>
+              <Input value={location} onChange={e => setLocation(e.target.value)} placeholder="123 Main St or Online" style={darkInput} />
             </div>
             <div className="space-y-1 sm:col-span-2">
-              <label className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground flex items-center gap-1"><FileText className="h-3 w-3" /> Description (we'll turn into bullets)</label>
-              <Textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="Key talking points, offer details, or event agenda..." className="min-h-[80px]" maxLength={5000} />
+              <label className="text-[9px] font-medium uppercase tracking-wider flex items-center gap-1" style={{ color: "hsl(240 5% 50%)" }}><FileText className="h-2.5 w-2.5" /> Description (we'll turn into bullets)</label>
+              <Textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="Key talking points, offer details, or event agenda..." className="min-h-[70px]" maxLength={5000} style={darkTextarea} />
             </div>
           </div>
 
-          <Separator />
+          <Separator style={{ background: "hsl(240 6% 14%)" }} />
 
-          <h4 className="text-xs font-semibold flex items-center gap-2"><Palette className="h-3.5 w-3.5 text-warning" /> Brand Settings</h4>
+          <h4 className="text-[10px] font-semibold flex items-center gap-2 uppercase tracking-wider" style={{ color: "hsl(140 12% 58%)" }}>
+            <Palette className="h-3 w-3" /> Brand Settings
+          </h4>
 
-          {/* Quick brand switch */}
           {brands.length > 1 && (
             <div className="space-y-1">
-              <label className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Switch Brand Package</label>
+              <label className="text-[9px] font-medium uppercase tracking-wider" style={{ color: "hsl(240 5% 50%)" }}>Switch Brand</label>
               <Select value={selectedBrandId} onValueChange={applyBrand}>
-                <SelectTrigger className="h-9"><SelectValue placeholder="Select..." /></SelectTrigger>
-                <SelectContent>
-                  {brands.map(b => (
-                    <SelectItem key={b.id} value={b.id}>
-                      {b.name} — {b.brand_name}
-                    </SelectItem>
-                  ))}
+                <SelectTrigger className="h-8 text-xs" style={darkInput}><SelectValue placeholder="Select..." /></SelectTrigger>
+                <SelectContent style={{ background: "hsl(240 8% 12%)", borderColor: "hsl(240 6% 18%)" }}>
+                  {brands.map(b => <SelectItem key={b.id} value={b.id} className="text-xs text-white">{b.name} — {b.brand_name}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -428,33 +450,35 @@ export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId }: S
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1">
-              <label className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Brand / Company Name</label>
-              <Input value={brandName} onChange={e => setBrandName(e.target.value)} placeholder="Hamilton & Cole LLP" />
+              <label className="text-[9px] font-medium uppercase tracking-wider" style={{ color: "hsl(240 5% 50%)" }}>Brand / Company Name</label>
+              <Input value={brandName} onChange={e => setBrandName(e.target.value)} placeholder="Hamilton & Cole LLP" style={darkInput} />
             </div>
             <div className="space-y-1">
-              <label className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Logo URL (optional)</label>
-              <Input value={logoUrl} onChange={e => setLogoUrl(e.target.value)} placeholder="https://..." />
+              <label className="text-[9px] font-medium uppercase tracking-wider" style={{ color: "hsl(240 5% 50%)" }}>Logo URL (optional)</label>
+              <Input value={logoUrl} onChange={e => setLogoUrl(e.target.value)} placeholder="https://..." style={darkInput} />
             </div>
             <div className="space-y-1 sm:col-span-2">
-              <label className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Brand Colors</label>
+              <label className="text-[9px] font-medium uppercase tracking-wider" style={{ color: "hsl(240 5% 50%)" }}>Brand Colors</label>
               <div className="flex gap-2 items-center">
                 {brandColors.map((c, i) => (
                   <div key={i} className="flex items-center gap-1">
-                    <input type="color" value={c} onChange={e => { const u = [...brandColors]; u[i] = e.target.value; setBrandColors(u); }} className="w-8 h-8 rounded border cursor-pointer" />
-                    <span className="text-[10px] text-muted-foreground font-mono">{c}</span>
+                    <input type="color" value={c} onChange={e => { const u = [...brandColors]; u[i] = e.target.value; setBrandColors(u); }} className="w-7 h-7 rounded cursor-pointer" style={{ border: "1px solid hsl(240 6% 18%)", background: "transparent" }} />
+                    <span className="text-[9px] font-mono" style={{ color: "hsl(240 5% 46%)" }}>{c}</span>
                   </div>
                 ))}
                 {brandColors.length < 3 && (
-                  <Button variant="ghost" size="sm" className="text-[10px] h-7" onClick={() => setBrandColors([...brandColors, "#555555"])}>+ Add</Button>
+                  <Button variant="ghost" size="sm" className="text-[9px] h-6" style={{ color: "hsl(140 12% 58%)" }} onClick={() => setBrandColors([...brandColors, "#555555"])}>+ Add</Button>
                 )}
               </div>
             </div>
           </div>
 
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setStep(1)} className="gap-1.5"><ArrowLeft className="h-3.5 w-3.5" /> Back</Button>
-            <Button className="flex-1 gap-2" onClick={handleSaveDetails} disabled={loading || !title.trim()}>
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
+            <Button variant="outline" onClick={() => setStep(1)} className="gap-1.5 text-xs h-9" style={{ borderColor: "hsl(240 6% 18%)", color: "hsl(240 5% 70%)", background: "transparent" }}>
+              <ArrowLeft className="h-3 w-3" /> Back
+            </Button>
+            <Button className="flex-1 gap-2 text-white text-xs h-9" style={{ background: "hsl(140 12% 42%)" }} onClick={handleSaveDetails} disabled={loading || !title.trim()}>
+              {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ArrowRight className="h-3.5 w-3.5" />}
               Continue to Review
             </Button>
           </div>
@@ -464,79 +488,81 @@ export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId }: S
       {/* ═══ STEP 3: Review & Generate ═══ */}
       {step === 3 && (
         <div className="space-y-4">
-          <h3 className="text-sm font-semibold flex items-center gap-2"><Eye className="h-4 w-4 text-primary" /> Review Your Flyer</h3>
+          <h3 className="text-xs font-semibold flex items-center gap-2 text-white"><Eye className="h-3.5 w-3.5" style={{ color: "hsl(140 12% 58%)" }} /> Review Your {typeLabel}</h3>
 
-          <div className="rounded-lg border bg-muted/20 p-4 space-y-2">
+          <div className="rounded-lg p-3 space-y-2" style={{ background: "hsl(240 6% 7%)", border: "1px solid hsl(240 6% 14%)" }}>
             <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground">Title</span>
-              <span className="text-sm font-medium">{title}</span>
+              <span className="text-[10px]" style={{ color: "hsl(240 5% 50%)" }}>Title</span>
+              <span className="text-xs font-medium text-white">{title}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground">Type</span>
-              <Badge variant="outline" className="text-[10px]">{flyerType}</Badge>
+              <span className="text-[10px]" style={{ color: "hsl(240 5% 50%)" }}>Type</span>
+              <Badge variant="outline" className="text-[9px]" style={{ borderColor: "hsl(140 12% 42% / 0.3)", color: "hsl(140 12% 62%)" }}>{flyerType}</Badge>
             </div>
             {!isEvergreen && dateTime && (
               <div className="flex items-center justify-between">
-                <span className="text-xs text-muted-foreground">Date/Time</span>
-                <span className="text-sm">{dateTime}</span>
+                <span className="text-[10px]" style={{ color: "hsl(240 5% 50%)" }}>Date/Time</span>
+                <span className="text-xs text-white">{dateTime}</span>
               </div>
             )}
             {isEvergreen && (
               <div className="flex items-center justify-between">
-                <span className="text-xs text-muted-foreground">Date</span>
-                <Badge variant="secondary" className="text-[10px]">Evergreen</Badge>
+                <span className="text-[10px]" style={{ color: "hsl(240 5% 50%)" }}>Date</span>
+                <Badge className="text-[9px]" style={{ background: "hsl(240 6% 14%)", color: "hsl(240 5% 60%)" }}>Evergreen</Badge>
               </div>
             )}
             {location && (
               <div className="flex items-center justify-between">
-                <span className="text-xs text-muted-foreground">Location</span>
-                <span className="text-sm">{location}</span>
+                <span className="text-[10px]" style={{ color: "hsl(240 5% 50%)" }}>Location</span>
+                <span className="text-xs text-white">{location}</span>
               </div>
             )}
             <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground">Brand</span>
+              <span className="text-[10px]" style={{ color: "hsl(240 5% 50%)" }}>Brand</span>
               <div className="flex items-center gap-2">
-                <span className="text-sm">{brandName || "—"}</span>
+                <span className="text-xs text-white">{brandName || "—"}</span>
                 <div className="flex gap-0.5">
-                  {brandColors.map((c, i) => <div key={i} className="w-3 h-3 rounded-full border" style={{ background: c }} />)}
+                  {brandColors.map((c, i) => <div key={i} className="w-2.5 h-2.5 rounded-full" style={{ background: c, border: "1px solid hsl(240 6% 20%)" }} />)}
                 </div>
               </div>
             </div>
           </div>
 
           <div>
-            <label className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground mb-2 block">Bullet Points *</label>
-            <div className="space-y-2">
+            <label className="text-[9px] font-medium uppercase tracking-wider mb-2 block" style={{ color: "hsl(240 5% 50%)" }}>Bullet Points *</label>
+            <div className="space-y-1.5">
               {bullets.map((b, i) => (
                 <div key={i} className="flex gap-2 items-center">
-                  <span className="text-xs text-muted-foreground w-4 shrink-0">•</span>
-                  <Input value={b} onChange={e => updateBullet(i, e.target.value)} placeholder="Key point..." className="flex-1" maxLength={200} />
+                  <span className="text-[10px] w-3 shrink-0" style={{ color: "hsl(240 5% 46%)" }}>•</span>
+                  <Input value={b} onChange={e => updateBullet(i, e.target.value)} placeholder="Key point..." className="flex-1 text-xs" maxLength={200} style={darkInput} />
                   {bullets.length > 1 && (
-                    <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => removeBullet(i)}><X className="h-3 w-3" /></Button>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" style={{ color: "hsl(240 5% 50%)" }} onClick={() => removeBullet(i)}><X className="h-3 w-3" /></Button>
                   )}
                 </div>
               ))}
               {bullets.length < 6 && (
-                <Button variant="ghost" size="sm" className="text-xs gap-1 h-7" onClick={addBullet}>+ Add bullet</Button>
+                <Button variant="ghost" size="sm" className="text-[10px] gap-1 h-6" style={{ color: "hsl(140 12% 58%)" }} onClick={addBullet}>+ Add bullet</Button>
               )}
             </div>
           </div>
 
           <div className="space-y-1">
-            <label className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Call to Action *</label>
-            <Input value={cta} onChange={e => setCta(e.target.value)} placeholder="RSVP today to reserve your seat." maxLength={200} />
+            <label className="text-[9px] font-medium uppercase tracking-wider" style={{ color: "hsl(240 5% 50%)" }}>Call to Action *</label>
+            <Input value={cta} onChange={e => setCta(e.target.value)} placeholder="RSVP today to reserve your seat." maxLength={200} style={darkInput} />
           </div>
 
           <div className="space-y-1">
-            <label className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Disclaimer / Footer (optional)</label>
-            <Textarea value={disclaimer} onChange={e => setDisclaimer(e.target.value)} placeholder="Required disclosures, license numbers..." className="min-h-[60px]" maxLength={500} />
+            <label className="text-[9px] font-medium uppercase tracking-wider" style={{ color: "hsl(240 5% 50%)" }}>Disclaimer / Footer (optional)</label>
+            <Textarea value={disclaimer} onChange={e => setDisclaimer(e.target.value)} placeholder="Required disclosures, license numbers..." className="min-h-[50px]" maxLength={500} style={darkTextarea} />
           </div>
 
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setStep(2)} className="gap-1.5"><ArrowLeft className="h-3.5 w-3.5" /> Back</Button>
-            <Button className="flex-1 gap-2" onClick={handleGenerate} disabled={loading}>
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
-              {resultImageUrl ? "Regenerate Flyer" : "Generate Flyer"}
+            <Button variant="outline" onClick={() => setStep(2)} className="gap-1.5 text-xs h-9" style={{ borderColor: "hsl(240 6% 18%)", color: "hsl(240 5% 70%)", background: "transparent" }}>
+              <ArrowLeft className="h-3 w-3" /> Back
+            </Button>
+            <Button className="flex-1 gap-2 text-white text-xs h-9" style={{ background: "hsl(140 12% 42%)" }} onClick={handleGenerate} disabled={loading}>
+              {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Wand2 className="h-3.5 w-3.5" />}
+              {resultImageUrl ? `Regenerate ${typeLabel}` : `Generate ${typeLabel}`}
             </Button>
           </div>
         </div>
@@ -548,41 +574,49 @@ export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId }: S
           {generating ? (
             <div className="flex flex-col items-center justify-center py-16 space-y-4">
               <div className="relative">
-                <Loader2 className="h-12 w-12 animate-spin text-warning" />
-                <Sparkles className="h-5 w-5 text-warning absolute -top-1 -right-1 animate-pulse" />
+                <Loader2 className="h-10 w-10 animate-spin" style={{ color: "hsl(140 12% 50%)" }} />
+                <Sparkles className="h-4 w-4 absolute -top-1 -right-1 animate-pulse" style={{ color: "hsl(140 12% 58%)" }} />
               </div>
               <div className="text-center">
-                <p className="text-sm font-medium">Generating your flyer...</p>
-                <p className="text-xs text-muted-foreground mt-1">This may take 15–30 seconds</p>
+                <p className="text-sm font-medium text-white">Generating your {typeLabel.toLowerCase()}...</p>
+                <p className="text-[10px] mt-1" style={{ color: "hsl(240 5% 50%)" }}>This may take 15–30 seconds</p>
               </div>
             </div>
           ) : resultImageUrl ? (
             <>
-              <div className="rounded-xl border overflow-hidden bg-muted/20">
+              <div className="rounded-lg overflow-hidden" style={{ border: "1px solid hsl(240 6% 14%)", background: "hsl(240 6% 5%)" }}>
                 <img src={resultImageUrl} alt={title} className="w-full h-auto max-h-[600px] object-contain mx-auto" />
               </div>
 
               <div className="flex flex-wrap gap-2">
-                <Button size="sm" className="gap-1.5" onClick={handleDownload}><Download className="h-3.5 w-3.5" /> Download PNG</Button>
-                <Button size="sm" variant="outline" className="gap-1.5" onClick={handleCopyCaption}><Copy className="h-3.5 w-3.5" /> Copy Social Caption</Button>
-                <Button size="sm" variant="outline" className="gap-1.5" onClick={() => setStep(3)}><ArrowLeft className="h-3.5 w-3.5" /> Edit & Regenerate</Button>
+                <Button size="sm" className="gap-1.5 text-white text-xs" style={{ background: "hsl(140 12% 42%)" }} onClick={handleDownload}>
+                  <Download className="h-3 w-3" /> Download PNG
+                </Button>
+                <Button size="sm" className="gap-1.5 text-xs" style={{ background: "transparent", border: "1px solid hsl(240 6% 18%)", color: "hsl(240 5% 70%)" }} onClick={handleCopyCaption}>
+                  <Copy className="h-3 w-3" /> Copy Caption
+                </Button>
+                <Button size="sm" className="gap-1.5 text-xs" style={{ background: "transparent", border: "1px solid hsl(240 6% 18%)", color: "hsl(240 5% 70%)" }} onClick={() => setStep(3)}>
+                  <ArrowLeft className="h-3 w-3" /> Edit
+                </Button>
               </div>
 
-              <Separator />
+              <Separator style={{ background: "hsl(240 6% 14%)" }} />
               <div className="space-y-2">
-                <label className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Quick regenerate with tweaks</label>
-                <Textarea value={tweakText} onChange={e => setTweakText(e.target.value)} placeholder="Make the headline larger, use a lighter background..." className="min-h-[60px]" maxLength={500} />
-                <Button variant="secondary" size="sm" className="gap-1.5" onClick={handleRegenerate} disabled={generating}>
-                  {generating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+                <label className="text-[9px] font-medium uppercase tracking-wider" style={{ color: "hsl(240 5% 50%)" }}>Quick regenerate with tweaks</label>
+                <Textarea value={tweakText} onChange={e => setTweakText(e.target.value)} placeholder="Make the headline larger, use a lighter background..." className="min-h-[50px]" maxLength={500} style={darkTextarea} />
+                <Button size="sm" className="gap-1.5 text-xs text-white" style={{ background: "hsl(240 6% 14%)" }} onClick={handleRegenerate} disabled={generating}>
+                  {generating ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
                   Regenerate
                 </Button>
               </div>
             </>
           ) : (
             <div className="text-center py-12 space-y-2">
-              <ImageIcon className="h-10 w-10 text-muted-foreground mx-auto" />
-              <p className="text-sm text-muted-foreground">Generation failed. Try again.</p>
-              <Button size="sm" variant="outline" onClick={() => setStep(3)}><ArrowLeft className="h-3.5 w-3.5 mr-1" /> Back to Review</Button>
+              <ImageIcon className="h-8 w-8 mx-auto" style={{ color: "hsl(240 5% 40%)" }} />
+              <p className="text-xs" style={{ color: "hsl(240 5% 50%)" }}>Generation failed. Try again.</p>
+              <Button size="sm" className="text-xs" style={{ background: "transparent", border: "1px solid hsl(240 6% 18%)", color: "hsl(240 5% 70%)" }} onClick={() => setStep(3)}>
+                <ArrowLeft className="h-3 w-3 mr-1" /> Back to Review
+              </Button>
             </div>
           )}
         </div>
