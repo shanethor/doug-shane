@@ -4,7 +4,7 @@ import {
   Mail, CalendarDays, LayoutGrid, Sparkles, MessageSquare,
   Network, Send,
 } from "lucide-react";
-import ConnectSpotlightTab from "@/components/connect/ConnectSpotlightTab";
+import DemoSpotlightTab from "@/components/connect-demo/DemoSpotlightTab";
 import DemoPipelineTab from "@/components/connect-demo/DemoPipelineTab";
 import DemoEmailTab from "@/components/connect-demo/DemoEmailTab";
 import DemoCalendarTab from "@/components/connect-demo/DemoCalendarTab";
@@ -107,7 +107,7 @@ export default function ConnectDemo() {
           <TabsContent value="email" className="mt-0"><DemoEmailTab /></TabsContent>
           <TabsContent value="calendar" className="mt-0"><DemoCalendarTab /></TabsContent>
           <TabsContent value="outreach" className="mt-0"><DemoOutreachTab /></TabsContent>
-          <TabsContent value="spotlight" className="mt-0"><ConnectSpotlightTab /></TabsContent>
+          <TabsContent value="spotlight" className="mt-0"><DemoSpotlightTab /></TabsContent>
           <TabsContent value="assistant" className="mt-0"><DemoAssistantTab onNavigate={setActiveTab} /></TabsContent>
         </Tabs>
       </div>
