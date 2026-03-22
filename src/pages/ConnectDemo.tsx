@@ -107,7 +107,7 @@ export default function ConnectDemo() {
           <TabsContent value="email" className="mt-0"><DemoEmailTab /></TabsContent>
           <TabsContent value="calendar" className="mt-0"><DemoCalendarTab /></TabsContent>
           <TabsContent value="outreach" className="mt-0"><DemoOutreachTab /></TabsContent>
-          <TabsContent value="spotlight" className="mt-0"><ConnectSpotlightTab /></TabsContent>
+          <TabsContent value="spotlight" className="mt-0"><DemoSpotlightTab /></TabsContent>
           <TabsContent value="assistant" className="mt-0"><DemoAssistantTab onNavigate={setActiveTab} /></TabsContent>
         </Tabs>
       </div>
