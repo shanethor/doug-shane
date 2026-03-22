@@ -427,7 +427,7 @@ export default function DemoOutreachTab() {
               </CardHeader>
               <CardContent className="space-y-2">
                 {DUMMY_PARTNERS.map((p, i) => (
-                  <div key={i} className="p-2.5 rounded-lg hover:bg-white/[0.03] transition-all" style={{ background: "hsl(240 6% 7%)", animation: `smoothFadeSlide 0.4s cubic-bezier(0.16,1,0.3,1) ${i * 50}ms both` }}>
+                  <div key={i} className="p-2.5 rounded-lg hover:bg-white/[0.03] transition-all animate-fade-in" style={{ background: "hsl(240 6% 7%)", animationDelay: `${i * 50}ms` }}>
                     <div className="flex items-start gap-3">
                       <div className="flex items-center justify-center h-7 w-7 rounded-full text-xs font-bold shrink-0" style={{ background: "hsl(174 97% 22% / 0.15)", color: "hsl(174 97% 40%)" }}>{i + 1}</div>
                       <div className="flex-1 min-w-0 space-y-0.5">
