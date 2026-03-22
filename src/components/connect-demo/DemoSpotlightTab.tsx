@@ -111,6 +111,7 @@ export default function DemoSpotlightTab() {
             onClose={() => { setView("home"); loadHistory(); }}
             brands={realBrands.length > 0 ? realBrands : SAMPLE_BRANDS}
             editFlyerId={editFlyerId}
+            initialType={selectedType}
           />
         </CardContent>
       </Card>
