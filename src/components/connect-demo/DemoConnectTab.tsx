@@ -314,9 +314,9 @@ export default function DemoConnectTab() {
         </div>
       </div>
 
-      {/* Network Graph — shown when no result */}
+      {/* Network Graph — fills remaining space */}
       {!searching && !result && (
-        <div className="relative rounded-2xl overflow-hidden" style={{ background: "hsl(240 8% 5% / 0.6)", border: "1px solid hsl(174 97% 22% / 0.08)" }}>
+        <div className="relative flex-1 rounded-2xl overflow-hidden mt-4" style={{ background: "hsl(240 8% 5% / 0.6)", border: "1px solid hsl(174 97% 22% / 0.08)", minHeight: 200 }}>
           <NetworkGraph />
           <div className="absolute bottom-4 left-0 right-0 text-center">
             <span className="text-xs px-3 py-1 rounded-full" style={{ background: "hsl(240 8% 9% / 0.8)", color: "hsl(240 5% 50%)", border: "1px solid hsl(240 6% 14%)" }}>
