@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -77,8 +77,17 @@ export default function DemoPipelineTab() {
   const initialIndustry = lower.includes("real estate") ? "real_estate" : lower.includes("consult") ? "consulting" : lower.includes("insurance") ? "insurance" : "generic";
 
   const [industry, setIndustry] = useState(initialIndustry);
-  const [leads, setLeads] = useState(DEMO_LEADS);
+  const [leads, setLeads] = useState<DemoLead[]>(() => {
+    const stored = sessionStorage.getItem("connect-demo-leads");
+    if (stored) { try { return JSON.parse(stored); } catch {} }
+    return DEMO_LEADS;
+  });
   const [expandedColumns, setExpandedColumns] = useState<Record<string, boolean>>({});
+
+  // Persist leads to sessionStorage so they sync across tabs
+  useEffect(() => {
+    sessionStorage.setItem("connect-demo-leads", JSON.stringify(leads));
+  }, [leads]);
 
   const config = PIPELINE_CONFIGS[industry];
   const allStages = config.stages;
@@ -98,7 +107,7 @@ export default function DemoPipelineTab() {
       <div className="flex items-center justify-between animate-fade-in" style={{ animationDelay: "0ms" }}>
         <div>
           <h3 className="text-sm font-semibold flex items-center gap-2 text-white">
-            <Building2 className="h-4 w-4" style={{ color: "hsl(174 97% 40%)" }} />
+            <Building2 className="h-4 w-4" style={{ color: "hsl(140 12% 58%)" }} />
             {config.label} Pipeline
           </h3>
           <p className="text-xs" style={{ color: "hsl(240 5% 46%)" }}>Demo pipeline with sample data</p>
@@ -114,7 +123,7 @@ export default function DemoPipelineTab() {
               ))}
             </SelectContent>
           </Select>
-          <Button size="sm" className="gap-1.5 h-8 text-xs" style={{ background: "hsl(174 97% 22%)" }}>
+          <Button size="sm" className="gap-1.5 h-8 text-xs" style={{ background: "hsl(140 12% 42%)" }}>
             <Plus className="h-3.5 w-3.5" /> Add Lead
           </Button>
         </div>

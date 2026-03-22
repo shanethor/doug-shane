@@ -112,9 +112,9 @@ const touchIcon = (type: string) => {
 const triggerIcon = (type: string) => {
   switch (type) {
     case "renewal": return <Calendar className="h-4 w-4 text-warning" />;
-    case "news": return <TrendingUp className="h-4 w-4" style={{ color: "hsl(174 97% 40%)" }} />;
+    case "news": return <TrendingUp className="h-4 w-4" style={{ color: "hsl(140 12% 58%)" }} />;
     case "filing": return <FileText className="h-4 w-4" style={{ color: "hsl(262 83% 58%)" }} />;
-    case "event": return <Calendar className="h-4 w-4" style={{ color: "hsl(174 97% 40%)" }} />;
+    case "event": return <Calendar className="h-4 w-4" style={{ color: "hsl(140 12% 58%)" }} />;
     case "permit": return <MapPin className="h-4 w-4" style={{ color: "hsl(142 71% 45%)" }} />;
     case "social": return <User className="h-4 w-4 text-blue-400" />;
     default: return <Zap className="h-4 w-4" style={{ color: "hsl(240 5% 46%)" }} />;
@@ -129,7 +129,7 @@ const urgencyColor = (u: string) => {
 
 const warmthColor = (w: number) => {
   if (w >= 85) return { color: "hsl(142 71% 45%)", borderColor: "hsl(142 71% 25% / 0.3)" };
-  if (w >= 70) return { color: "hsl(174 97% 40%)", borderColor: "hsl(174 97% 22% / 0.3)" };
+  if (w >= 70) return { color: "hsl(140 12% 58%)", borderColor: "hsl(140 12% 42% / 0.3)" };
   return { color: "hsl(45 93% 47%)", borderColor: "hsl(45 93% 30% / 0.3)" };
 };
 
@@ -194,14 +194,14 @@ export default function DemoOutreachTab() {
       <div className="space-y-4 animate-fade-in">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5" style={{ color: "hsl(174 97% 40%)" }} />
+            <Sparkles className="h-5 w-5" style={{ color: "hsl(140 12% 58%)" }} />
             <h2 className="text-sm font-semibold text-white">Outreach Plan for {planTarget.name}</h2>
           </div>
           <Button variant="ghost" size="sm" className="text-xs" onClick={() => setShowPlan(false)}>
             <X className="h-4 w-4 mr-1" /> Close
           </Button>
         </div>
-        <Card style={{ background: "hsl(174 97% 22% / 0.06)", borderColor: "hsl(174 97% 22% / 0.15)" }}>
+        <Card style={{ background: "hsl(140 12% 42% / 0.06)", borderColor: "hsl(140 12% 42% / 0.15)" }}>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div>
@@ -220,13 +220,13 @@ export default function DemoOutreachTab() {
               <Card key={i} className="overflow-hidden animate-fade-in" style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 14%)", animationDelay: `${i * 150}ms` }}>
                 <CardContent className="p-4">
                   <div className="flex items-center gap-2 mb-3">
-                    <div className="h-7 w-7 rounded-full flex items-center justify-center text-xs font-bold" style={{ background: "hsl(174 97% 22% / 0.15)", color: "hsl(174 97% 40%)" }}>{i + 1}</div>
+                    <div className="h-7 w-7 rounded-full flex items-center justify-center text-xs font-bold" style={{ background: "hsl(140 12% 42% / 0.15)", color: "hsl(140 12% 58%)" }}>{i + 1}</div>
                     <h3 className="text-sm font-semibold text-white">{step.title}</h3>
                   </div>
                   <ul className="space-y-2">
                     {step.items.map((item, j) => (
                       <li key={j} className="flex items-start gap-2 text-xs animate-fade-in" style={{ color: "hsl(240 5% 60%)", animationDelay: `${i * 150 + (j + 1) * 100}ms` }}>
-                        <ArrowRight className="h-3 w-3 mt-0.5 shrink-0" style={{ color: "hsl(174 97% 40%)" }} />
+                        <ArrowRight className="h-3 w-3 mt-0.5 shrink-0" style={{ color: "hsl(140 12% 58%)" }} />
                         {item}
                       </li>
                     ))}
@@ -237,7 +237,7 @@ export default function DemoOutreachTab() {
           })}
           {visibleSteps < OUTREACH_STEPS.length && (
             <div className="flex justify-center py-4">
-              <div className="flex items-center gap-2 text-xs animate-pulse" style={{ color: "hsl(174 97% 40%)" }}>
+              <div className="flex items-center gap-2 text-xs animate-pulse" style={{ color: "hsl(140 12% 58%)" }}>
                 <Sparkles className="h-4 w-4" /> Building your outreach plan...
               </div>
             </div>
@@ -263,10 +263,10 @@ export default function DemoOutreachTab() {
         {/* ── TIERS ── */}
         <TabsContent value="tiers" className="mt-4 space-y-4 animate-fade-in">
           {/* Tier Explainer */}
-          <Card style={{ background: "hsl(174 97% 22% / 0.04)", borderColor: "hsl(174 97% 22% / 0.12)" }}>
+          <Card style={{ background: "hsl(140 12% 42% / 0.04)", borderColor: "hsl(140 12% 42% / 0.12)" }}>
             <CardContent className="p-4 space-y-3">
               <div className="flex items-center gap-2">
-                <Target className="h-4 w-4" style={{ color: "hsl(174 97% 40%)" }} />
+                <Target className="h-4 w-4" style={{ color: "hsl(140 12% 58%)" }} />
                 <p className="text-sm font-semibold text-white">How Tiers &amp; Cadence Work</p>
               </div>
               <p className="text-xs leading-relaxed" style={{ color: "hsl(240 5% 56%)" }}>
@@ -283,7 +283,7 @@ export default function DemoOutreachTab() {
                     style={!t.color ? { background: "hsl(240 5% 12%)", borderColor: "hsl(240 6% 18%)" } : {}}>
                     <p className="text-sm font-bold">{t.tier}-Tier</p>
                     <p className="text-[10px] mt-0.5" style={{ color: "hsl(240 5% 50%)" }}>Every {t.days} days</p>
-                    <p className="text-[10px] font-medium" style={{ color: "hsl(174 97% 40%)" }}>{t.desc}</p>
+                    <p className="text-[10px] font-medium" style={{ color: "hsl(140 12% 58%)" }}>{t.desc}</p>
                   </div>
                 ))}
               </div>
@@ -300,7 +300,7 @@ export default function DemoOutreachTab() {
             ].map((s, i) => (
               <Card key={i} className="flex-1 min-w-[140px] animate-fade-in" style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 14%)", animationDelay: `${i * 80}ms` }}>
                 <CardContent className="p-3 text-center">
-                  <p className={`text-2xl font-bold ${s.color}`} style={!s.color ? { color: "hsl(174 97% 40%)" } : {}}>{s.val}</p>
+                  <p className={`text-2xl font-bold ${s.color}`} style={!s.color ? { color: "hsl(140 12% 58%)" } : {}}>{s.val}</p>
                   <p className="text-[11px]" style={{ color: "hsl(240 5% 46%)" }}>{s.label}</p>
                 </CardContent>
               </Card>
@@ -317,7 +317,7 @@ export default function DemoOutreachTab() {
               { key: "C", label: "C-Tier" },
             ].map(f => (
               <Button key={f.key} size="sm" variant={filter === f.key ? "default" : "outline"} className="text-xs h-7" onClick={() => setFilter(f.key)}
-                style={filter === f.key ? { background: "hsl(174 97% 22%)" } : {}}>
+                style={filter === f.key ? { background: "hsl(140 12% 42%)" } : {}}>
                 {f.label}
               </Button>
             ))}
@@ -336,7 +336,7 @@ export default function DemoOutreachTab() {
                         c.tier === "A" ? "bg-success/10 text-success" :
                         ""
                       }`} style={
-                        c.tier === "B" ? { background: "hsl(174 97% 22% / 0.1)", color: "hsl(174 97% 40%)" } :
+                        c.tier === "B" ? { background: "hsl(140 12% 42% / 0.1)", color: "hsl(140 12% 58%)" } :
                         c.tier === "C" ? { background: "hsl(240 5% 15%)", color: "hsl(240 5% 46%)" } : {}
                       }>{c.tier}</div>
                       <div className="flex-1 min-w-0">
@@ -382,7 +382,7 @@ export default function DemoOutreachTab() {
             <Card style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 14%)" }}>
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm flex items-center gap-2 text-white">
-                  <Target className="h-4 w-4" style={{ color: "hsl(174 97% 40%)" }} />
+                  <Target className="h-4 w-4" style={{ color: "hsl(140 12% 58%)" }} />
                   Top 10 Owners to Reach
                 </CardTitle>
                 <p className="text-[11px]" style={{ color: "hsl(240 5% 46%)" }}>Ranked by warmth and trigger signals</p>
@@ -391,7 +391,7 @@ export default function DemoOutreachTab() {
                 {DUMMY_OWNERS.map((o, i) => (
                   <div key={i} className="p-2.5 rounded-lg hover:bg-white/[0.03] transition-all animate-fade-in" style={{ background: "hsl(240 6% 7%)", animationDelay: `${i * 50}ms` }}>
                     <div className="flex items-start gap-3">
-                      <div className="flex items-center justify-center h-7 w-7 rounded-full text-xs font-bold shrink-0" style={{ background: "hsl(174 97% 22% / 0.15)", color: "hsl(174 97% 40%)" }}>{i + 1}</div>
+                      <div className="flex items-center justify-center h-7 w-7 rounded-full text-xs font-bold shrink-0" style={{ background: "hsl(140 12% 42% / 0.15)", color: "hsl(140 12% 58%)" }}>{i + 1}</div>
                       <div className="flex-1 min-w-0 space-y-0.5">
                         <div className="flex items-center gap-2">
                           <p className="text-sm font-medium truncate text-white">{o.name}</p>
@@ -404,8 +404,8 @@ export default function DemoOutreachTab() {
                           <span className="text-[10px] text-warning">{o.signal}</span>
                         </div>
                         <div className="flex items-center gap-1">
-                          <ArrowRight className="h-3 w-3 shrink-0" style={{ color: "hsl(174 97% 40%)" }} />
-                          <span className="text-[10px]" style={{ color: "hsl(174 97% 40%)" }}>{o.best_path}</span>
+                          <ArrowRight className="h-3 w-3 shrink-0" style={{ color: "hsl(140 12% 58%)" }} />
+                          <span className="text-[10px]" style={{ color: "hsl(140 12% 58%)" }}>{o.best_path}</span>
                         </div>
                         <Button size="sm" variant="outline" className="text-[10px] h-6 mt-1.5 gap-1" onClick={() => generatePlan(o)}>
                           <Sparkles className="h-3 w-3" /> Generate Outreach Plan
@@ -420,7 +420,7 @@ export default function DemoOutreachTab() {
             <Card style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 14%)" }}>
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm flex items-center gap-2 text-white">
-                  <Handshake className="h-4 w-4" style={{ color: "hsl(174 97% 40%)" }} />
+                  <Handshake className="h-4 w-4" style={{ color: "hsl(140 12% 58%)" }} />
                   Top 10 Partners to Deepen
                 </CardTitle>
                 <p className="text-[11px]" style={{ color: "hsl(240 5% 46%)" }}>CPAs, attorneys, lenders who unlock the most owners</p>
@@ -429,7 +429,7 @@ export default function DemoOutreachTab() {
                 {DUMMY_PARTNERS.map((p, i) => (
                   <div key={i} className="p-2.5 rounded-lg hover:bg-white/[0.03] transition-all animate-fade-in" style={{ background: "hsl(240 6% 7%)", animationDelay: `${i * 50}ms` }}>
                     <div className="flex items-start gap-3">
-                      <div className="flex items-center justify-center h-7 w-7 rounded-full text-xs font-bold shrink-0" style={{ background: "hsl(174 97% 22% / 0.15)", color: "hsl(174 97% 40%)" }}>{i + 1}</div>
+                      <div className="flex items-center justify-center h-7 w-7 rounded-full text-xs font-bold shrink-0" style={{ background: "hsl(140 12% 42% / 0.15)", color: "hsl(140 12% 58%)" }}>{i + 1}</div>
                       <div className="flex-1 min-w-0 space-y-0.5">
                         <div className="flex items-center gap-2">
                           <p className="text-sm font-medium truncate text-white">{p.name}</p>
@@ -461,14 +461,14 @@ export default function DemoOutreachTab() {
             <>
               <DialogHeader><DialogTitle className="text-white">Call {actionDialog.contact.name}</DialogTitle></DialogHeader>
               <div className="space-y-4 text-center py-4">
-                <Phone className="h-12 w-12 mx-auto" style={{ color: "hsl(174 97% 40%)" }} />
+                <Phone className="h-12 w-12 mx-auto" style={{ color: "hsl(140 12% 58%)" }} />
                 <p className="text-2xl font-bold text-white">{actionDialog.contact.phone}</p>
                 <p className="text-sm" style={{ color: "hsl(240 5% 46%)" }}>{actionDialog.contact.company}</p>
                 <div className="flex gap-2 justify-center">
                   <Button size="sm" variant="outline" className="text-xs gap-1" onClick={() => { navigator.clipboard.writeText(actionDialog.contact.phone); toast.success("Number copied!"); }}>
                     <Copy className="h-3 w-3" /> Copy
                   </Button>
-                  <Button size="sm" className="text-xs gap-1" style={{ background: "hsl(174 97% 22%)" }} onClick={() => { toast.success(`Calling ${actionDialog.contact.name}...`); setActionDialog(null); }}>
+                  <Button size="sm" className="text-xs gap-1" style={{ background: "hsl(140 12% 42%)" }} onClick={() => { toast.success(`Calling ${actionDialog.contact.name}...`); setActionDialog(null); }}>
                     <Phone className="h-3 w-3" /> Call Now
                   </Button>
                 </div>
@@ -482,7 +482,7 @@ export default function DemoOutreachTab() {
                 <Input defaultValue={actionDialog.contact.email} readOnly className="text-sm" style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 14%)", color: "white" }} />
                 <Input placeholder="Subject:" defaultValue={`Checking in — ${actionDialog.contact.company}`} className="text-sm" style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 14%)", color: "white" }} />
                 <textarea value={emailBody} onChange={(e) => setEmailBody(e.target.value)} className="w-full h-32 rounded-lg p-3 text-sm resize-none" style={{ background: "hsl(240 8% 9%)", border: "1px solid hsl(240 6% 14%)", color: "white" }} />
-                <Button className="w-full text-xs" style={{ background: "hsl(174 97% 22%)" }} onClick={() => { toast.success(`Email sent to ${actionDialog.contact.name}`); setActionDialog(null); }}>
+                <Button className="w-full text-xs" style={{ background: "hsl(140 12% 42%)" }} onClick={() => { toast.success(`Email sent to ${actionDialog.contact.name}`); setActionDialog(null); }}>
                   <Send className="h-3 w-3 mr-1.5" /> Send
                 </Button>
               </div>
@@ -494,7 +494,7 @@ export default function DemoOutreachTab() {
               <div className="space-y-3">
                 <p className="text-sm text-white">{actionDialog.contact.phone}</p>
                 <textarea value={textMsg} onChange={(e) => setTextMsg(e.target.value)} className="w-full h-24 rounded-lg p-3 text-sm resize-none" style={{ background: "hsl(240 8% 9%)", border: "1px solid hsl(240 6% 14%)", color: "white" }} />
-                <Button className="w-full text-xs" style={{ background: "hsl(174 97% 22%)" }} onClick={() => { toast.success(`Text sent to ${actionDialog.contact.name}`); setActionDialog(null); }}>
+                <Button className="w-full text-xs" style={{ background: "hsl(140 12% 42%)" }} onClick={() => { toast.success(`Text sent to ${actionDialog.contact.name}`); setActionDialog(null); }}>
                   <MessageSquare className="h-3 w-3 mr-1.5" /> Send Text
                 </Button>
               </div>
@@ -509,7 +509,7 @@ export default function DemoOutreachTab() {
                   <Input type="date" className="text-sm" style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 14%)", color: "white" }} />
                   <Input type="time" defaultValue="10:00" className="text-sm" style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 14%)", color: "white" }} />
                 </div>
-                <Button className="w-full text-xs" style={{ background: "hsl(174 97% 22%)" }} onClick={() => { toast.success(`Meeting scheduled with ${actionDialog.contact.name}`); setActionDialog(null); }}>
+                <Button className="w-full text-xs" style={{ background: "hsl(140 12% 42%)" }} onClick={() => { toast.success(`Meeting scheduled with ${actionDialog.contact.name}`); setActionDialog(null); }}>
                   <Calendar className="h-3 w-3 mr-1.5" /> Schedule
                 </Button>
               </div>
@@ -534,7 +534,7 @@ export default function DemoOutreachTab() {
                   <Input type="date" className="text-sm" style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 14%)", color: "white" }} />
                   <Input type="time" defaultValue="10:00" className="text-sm" style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 14%)", color: "white" }} />
                 </div>
-                <Button className="w-full text-xs" style={{ background: "hsl(174 97% 22%)" }} onClick={() => { toast.success(`Meeting scheduled with ${triggerAction.trigger.person}`); setTriggerAction(null); }}>
+                <Button className="w-full text-xs" style={{ background: "hsl(140 12% 42%)" }} onClick={() => { toast.success(`Meeting scheduled with ${triggerAction.trigger.person}`); setTriggerAction(null); }}>
                   <Calendar className="h-3 w-3 mr-1.5" /> Schedule & Send Invite
                 </Button>
               </div>
@@ -547,7 +547,7 @@ export default function DemoOutreachTab() {
                 <Input placeholder="To:" defaultValue={triggerAction.trigger.email} readOnly className="text-sm" style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 14%)", color: "white" }} />
                 <Input placeholder="Subject:" defaultValue={`Re: ${triggerAction.trigger.title}`} className="text-sm" style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 14%)", color: "white" }} />
                 <textarea value={triggerEmailBody} onChange={(e) => setTriggerEmailBody(e.target.value)} className="w-full h-32 rounded-lg p-3 text-sm resize-none" style={{ background: "hsl(240 8% 9%)", border: "1px solid hsl(240 6% 14%)", color: "white" }} />
-                <Button className="w-full text-xs" style={{ background: "hsl(174 97% 22%)" }} onClick={() => { toast.success(`Email sent to ${triggerAction.trigger.person}`); setTriggerAction(null); }}>
+                <Button className="w-full text-xs" style={{ background: "hsl(140 12% 42%)" }} onClick={() => { toast.success(`Email sent to ${triggerAction.trigger.person}`); setTriggerAction(null); }}>
                   <Send className="h-3 w-3 mr-1.5" /> Send Email
                 </Button>
               </div>

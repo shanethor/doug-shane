@@ -31,9 +31,9 @@ const DUMMY_TRIGGERS: Trigger[] = [
 const triggerIcon = (type: string) => {
   switch (type) {
     case "renewal": return <Calendar className="h-4 w-4 text-warning" />;
-    case "news": return <TrendingUp className="h-4 w-4" style={{ color: "hsl(174 97% 40%)" }} />;
+    case "news": return <TrendingUp className="h-4 w-4" style={{ color: "hsl(140 12% 58%)" }} />;
     case "filing": return <FileText className="h-4 w-4" style={{ color: "hsl(262 83% 58%)" }} />;
-    case "event": return <Calendar className="h-4 w-4" style={{ color: "hsl(174 97% 40%)" }} />;
+    case "event": return <Calendar className="h-4 w-4" style={{ color: "hsl(140 12% 58%)" }} />;
     case "permit": return <MapPin className="h-4 w-4" style={{ color: "hsl(142 71% 45%)" }} />;
     case "social": return <User className="h-4 w-4 text-blue-400" />;
     default: return <Zap className="h-4 w-4" style={{ color: "hsl(240 5% 46%)" }} />;
@@ -62,7 +62,7 @@ export default function DemoTriggersTab() {
   return (
     <div className="space-y-3 animate-fade-in">
       <div className="flex items-center gap-2 mb-2">
-        <Zap className="h-5 w-5" style={{ color: "hsl(174 97% 40%)" }} />
+        <Zap className="h-5 w-5" style={{ color: "hsl(140 12% 58%)" }} />
         <h2 className="text-sm font-semibold text-white">Territory Intelligence</h2>
         <Badge variant="outline" className="text-[10px]" style={{ borderColor: "hsl(240 6% 20%)", color: "hsl(240 5% 60%)" }}>{DUMMY_TRIGGERS.length} signals</Badge>
       </div>
@@ -85,9 +85,9 @@ export default function DemoTriggersTab() {
                   <span className="flex items-center gap-1"><Building2 className="h-3 w-3" />{t.company}</span>
                   <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{t.date}</span>
                 </div>
-                <div className="flex items-center gap-1.5 mt-1.5 p-2 rounded" style={{ background: "hsl(174 97% 22% / 0.06)", border: "1px solid hsl(174 97% 22% / 0.1)" }}>
-                  <ArrowRight className="h-3 w-3 shrink-0" style={{ color: "hsl(174 97% 40%)" }} />
-                  <span className="text-[11px] font-medium" style={{ color: "hsl(174 97% 40%)" }}>{t.suggested_action}</span>
+                <div className="flex items-center gap-1.5 mt-1.5 p-2 rounded" style={{ background: "hsl(140 12% 42% / 0.06)", border: "1px solid hsl(140 12% 42% / 0.1)" }}>
+                  <ArrowRight className="h-3 w-3 shrink-0" style={{ color: "hsl(140 12% 58%)" }} />
+                  <span className="text-[11px] font-medium" style={{ color: "hsl(140 12% 58%)" }}>{t.suggested_action}</span>
                 </div>
 
                 {/* Action buttons */}
@@ -120,14 +120,14 @@ export default function DemoTriggersTab() {
                 <div className="p-3 rounded-lg" style={{ background: "hsl(240 8% 9%)", border: "1px solid hsl(240 6% 14%)" }}>
                   <p className="text-xs" style={{ color: "hsl(240 5% 46%)" }}>Re: {actionTrigger.title}</p>
                   <p className="text-sm text-white mt-1">{actionTrigger.person} — {actionTrigger.company}</p>
-                  {actionTrigger.email && <p className="text-xs mt-0.5" style={{ color: "hsl(174 97% 40%)" }}>{actionTrigger.email}</p>}
+                  {actionTrigger.email && <p className="text-xs mt-0.5" style={{ color: "hsl(140 12% 58%)" }}>{actionTrigger.email}</p>}
                 </div>
                 <Input placeholder="Meeting title" defaultValue={`Discuss: ${actionTrigger.title}`} className="text-sm" style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 14%)", color: "white" }} />
                 <div className="grid grid-cols-2 gap-2">
                   <Input type="date" className="text-sm" style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 14%)", color: "white" }} />
                   <Input type="time" defaultValue="10:00" className="text-sm" style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 14%)", color: "white" }} />
                 </div>
-                <Button className="w-full text-xs" style={{ background: "hsl(174 97% 22%)" }} onClick={() => { toast.success(`Meeting scheduled with ${actionTrigger.person}`); setActionType(null); }}>
+                <Button className="w-full text-xs" style={{ background: "hsl(140 12% 42%)" }} onClick={() => { toast.success(`Meeting scheduled with ${actionTrigger.person}`); setActionType(null); }}>
                   <Calendar className="h-3 w-3 mr-1.5" /> Schedule & Send Invite
                 </Button>
               </div>
@@ -140,7 +140,7 @@ export default function DemoTriggersTab() {
                 <Input placeholder="To:" defaultValue={actionTrigger.email} readOnly className="text-sm" style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 14%)", color: "white" }} />
                 <Input placeholder="Subject:" defaultValue={`Re: ${actionTrigger.title}`} className="text-sm" style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 14%)", color: "white" }} />
                 <textarea value={emailBody} onChange={(e) => setEmailBody(e.target.value)} className="w-full h-32 rounded-lg p-3 text-sm resize-none" style={{ background: "hsl(240 8% 9%)", border: "1px solid hsl(240 6% 14%)", color: "white" }} />
-                <Button className="w-full text-xs" style={{ background: "hsl(174 97% 22%)" }} onClick={() => { toast.success(`Email sent to ${actionTrigger.person}`); setActionType(null); }}>
+                <Button className="w-full text-xs" style={{ background: "hsl(140 12% 42%)" }} onClick={() => { toast.success(`Email sent to ${actionTrigger.person}`); setActionType(null); }}>
                   <Send className="h-3 w-3 mr-1.5" /> Send Email
                 </Button>
               </div>

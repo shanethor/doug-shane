@@ -30,7 +30,7 @@ const DEMO_EMAILS: DemoEmail[] = [
 ];
 
 const SYNCED_ACCOUNTS = [
-  { label: "Work — you@auraconnect.com", key: "work", color: "hsl(174 97% 40%)", synced: true },
+  { label: "Work — you@auraconnect.com", key: "work", color: "hsl(140 12% 58%)", synced: true },
   { label: "Personal — yourname@gmail.com", key: "personal", color: "hsl(262 83% 58%)", synced: true },
   { label: "Agency — team@agencymail.com", key: "agency", color: "hsl(45 93% 47%)", synced: false },
 ];
@@ -153,15 +153,15 @@ export default function DemoEmailTab() {
             </div>
             <div className="flex gap-1">
               {selected.tags.map(t => (
-                <Badge key={t} variant="outline" className="text-[9px]" style={{ borderColor: "hsl(174 97% 22% / 0.3)", color: "hsl(174 97% 40%)" }}>{t}</Badge>
+                <Badge key={t} variant="outline" className="text-[9px]" style={{ borderColor: "hsl(140 12% 42% / 0.3)", color: "hsl(140 12% 58%)" }}>{t}</Badge>
               ))}
             </div>
           </div>
 
           {/* Smart insights bar */}
-          <div className="flex items-center gap-3 p-2.5 rounded-lg" style={{ background: "hsl(174 97% 22% / 0.06)", border: "1px solid hsl(174 97% 22% / 0.15)" }}>
-            <Sparkles className="h-4 w-4 shrink-0" style={{ color: "hsl(174 97% 40%)" }} />
-            <span className="text-[11px]" style={{ color: "hsl(174 97% 40%)" }}>
+          <div className="flex items-center gap-3 p-2.5 rounded-lg" style={{ background: "hsl(140 12% 42% / 0.06)", border: "1px solid hsl(140 12% 42% / 0.15)" }}>
+            <Sparkles className="h-4 w-4 shrink-0" style={{ color: "hsl(140 12% 58%)" }} />
+            <span className="text-[11px]" style={{ color: "hsl(140 12% 58%)" }}>
               AI Insight: This email relates to an active pipeline deal. Suggested priority: <strong>High</strong>. Sentiment: <strong>Positive</strong>.
             </span>
           </div>
@@ -183,16 +183,16 @@ export default function DemoEmailTab() {
           </div>
 
           {showAiDraft && (
-            <div className="rounded-lg p-4 space-y-2 animate-fade-in" style={{ background: "hsl(174 97% 22% / 0.06)", border: "1px solid hsl(174 97% 22% / 0.2)" }}>
+            <div className="rounded-lg p-4 space-y-2 animate-fade-in" style={{ background: "hsl(140 12% 42% / 0.06)", border: "1px solid hsl(140 12% 42% / 0.2)" }}>
               <div className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4" style={{ color: "hsl(174 97% 40%)" }} />
-                <span className="text-xs font-semibold" style={{ color: "hsl(174 97% 40%)" }}>AI-Generated Draft</span>
+                <Sparkles className="h-4 w-4" style={{ color: "hsl(140 12% 58%)" }} />
+                <span className="text-xs font-semibold" style={{ color: "hsl(140 12% 58%)" }}>AI-Generated Draft</span>
                 {aiDraftLoading && <span className="text-[10px] animate-pulse" style={{ color: "hsl(240 5% 46%)" }}>generating...</span>}
               </div>
               <pre className="text-sm whitespace-pre-wrap" style={{ color: "hsl(240 5% 80%)" }}>{aiDraft}</pre>
               {!aiDraftLoading && aiDraft && (
                 <div className="flex gap-2 pt-1">
-                  <Button size="sm" className="text-xs h-7" style={{ background: "hsl(174 97% 22%)" }} onClick={() => toast.success("Draft copied to reply")}>Use Draft</Button>
+                  <Button size="sm" className="text-xs h-7" style={{ background: "hsl(140 12% 42%)" }} onClick={() => toast.success("Draft copied to reply")}>Use Draft</Button>
                   <Button size="sm" variant="outline" className="text-xs h-7" onClick={() => toast.info("Regenerating...")}>Regenerate</Button>
                 </div>
               )}
@@ -208,9 +208,9 @@ export default function DemoEmailTab() {
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-3">
-          <Mail className="h-5 w-5" style={{ color: "hsl(174 97% 40%)" }} />
+          <Mail className="h-5 w-5" style={{ color: "hsl(140 12% 58%)" }} />
           <h2 className="text-lg font-semibold text-white">Email</h2>
-          <Badge className="text-[10px]" style={{ background: "hsl(174 97% 22%)", color: "white" }}>{unreadCount} new</Badge>
+          <Badge className="text-[10px]" style={{ background: "hsl(140 12% 42%)", color: "white" }}>{unreadCount} new</Badge>
           <span className="text-xs" style={{ color: "hsl(240 5% 46%)" }}>Last synced 3 minutes ago</span>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
@@ -223,7 +223,7 @@ export default function DemoEmailTab() {
           <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => toast.success("All emails marked as read")}>
             <CheckCheck className="h-3 w-3" /> Mark all read
           </Button>
-          <Button size="sm" className="gap-1.5 text-xs" style={{ background: "hsl(174 97% 22%)" }} onClick={() => setShowCompose(true)}>
+          <Button size="sm" className="gap-1.5 text-xs" style={{ background: "hsl(140 12% 42%)" }} onClick={() => setShowCompose(true)}>
             <Sparkles className="h-3 w-3" /> Compose
           </Button>
         </div>
@@ -236,9 +236,9 @@ export default function DemoEmailTab() {
             key={i}
             onClick={() => handleSmartFeature(f.label)}
             className="p-2.5 rounded-lg text-left transition-all hover:scale-[1.02] hover:bg-white/5"
-            style={{ background: "hsl(240 8% 9%)", border: `1px solid ${selected ? "hsl(174 97% 22% / 0.25)" : "hsl(240 6% 14%)"}` }}
+            style={{ background: "hsl(240 8% 9%)", border: `1px solid ${selected ? "hsl(140 12% 42% / 0.25)" : "hsl(240 6% 14%)"}` }}
           >
-            <f.icon className="h-4 w-4 mb-1" style={{ color: "hsl(174 97% 40%)" }} />
+            <f.icon className="h-4 w-4 mb-1" style={{ color: "hsl(140 12% 58%)" }} />
             <p className="text-[11px] font-medium text-white">{f.label}</p>
             <p className="text-[9px]" style={{ color: "hsl(240 5% 40%)" }}>
               {selected ? `Apply to ${selected.from.split(" ")[0]}'s email` : f.desc}
@@ -261,7 +261,7 @@ export default function DemoEmailTab() {
         <button onClick={() => setFilter("all")} className={`text-xs px-3 py-1 rounded-md transition-colors ${filter === "all" ? "bg-white/10 text-white" : ""}`} style={filter !== "all" ? { color: "hsl(240 5% 46%)" } : {}}>All</button>
         <button onClick={() => setFilter("unread")} className={`text-xs px-3 py-1 rounded-md transition-colors ${filter === "unread" ? "bg-white/10 text-white" : ""}`} style={filter !== "unread" ? { color: "hsl(240 5% 46%)" } : {}}>Unread ({unreadCount})</button>
         {selectedClient && (
-          <Badge variant="outline" className="text-[10px] gap-1 cursor-pointer" style={{ borderColor: "hsl(174 97% 22% / 0.3)", color: "hsl(174 97% 40%)" }} onClick={() => setSelectedClient(null)}>
+          <Badge variant="outline" className="text-[10px] gap-1 cursor-pointer" style={{ borderColor: "hsl(140 12% 42% / 0.3)", color: "hsl(140 12% 58%)" }} onClick={() => setSelectedClient(null)}>
             Client: {CLIENT_CONTACTS.find(c => c.email === selectedClient)?.name} <X className="h-2.5 w-2.5" />
           </Badge>
         )}
@@ -281,13 +281,13 @@ export default function DemoEmailTab() {
             onClick={() => setSelectedEmail(email.id)}
             className="w-full text-left p-3 rounded-lg transition-all hover:bg-white/5 flex items-start gap-3 animate-fade-in"
             style={{
-              background: email.unread ? "hsl(174 97% 22% / 0.06)" : "transparent",
+              background: email.unread ? "hsl(140 12% 42% / 0.06)" : "transparent",
               borderBottom: "1px solid hsl(240 6% 12%)",
               animationDelay: `${idx * 30}ms`,
             }}
           >
             <div className="mt-1">
-              {email.unread ? <Mail className="h-4 w-4" style={{ color: "hsl(174 97% 40%)" }} /> : <MailOpen className="h-4 w-4" style={{ color: "hsl(240 5% 36%)" }} />}
+              {email.unread ? <Mail className="h-4 w-4" style={{ color: "hsl(140 12% 58%)" }} /> : <MailOpen className="h-4 w-4" style={{ color: "hsl(240 5% 36%)" }} />}
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
@@ -300,7 +300,7 @@ export default function DemoEmailTab() {
               <div className="flex items-center gap-2 mt-1">
                 <span className="text-[10px]" style={{ color: "hsl(240 5% 36%)" }}>{email.time}</span>
                 {email.tags.map(t => (
-                  <Badge key={t} variant="outline" className="text-[9px] h-4" style={{ borderColor: "hsl(174 97% 22% / 0.3)", color: "hsl(174 97% 40%)" }}>{t}</Badge>
+                  <Badge key={t} variant="outline" className="text-[9px] h-4" style={{ borderColor: "hsl(140 12% 42% / 0.3)", color: "hsl(140 12% 58%)" }}>{t}</Badge>
                 ))}
               </div>
             </div>
@@ -324,7 +324,7 @@ export default function DemoEmailTab() {
                 {a.synced ? (
                   <Badge className="text-[10px]" style={{ background: "hsl(142 71% 25%)", color: "white" }}>Synced</Badge>
                 ) : (
-                  <Button size="sm" className="text-xs h-7" style={{ background: "hsl(174 97% 22%)" }} onClick={() => toast.success(`${a.label} connected!`)}>
+                  <Button size="sm" className="text-xs h-7" style={{ background: "hsl(140 12% 42%)" }} onClick={() => toast.success(`${a.label} connected!`)}>
                     <Plus className="h-3 w-3 mr-1" /> Connect
                   </Button>
                 )}
@@ -369,7 +369,7 @@ export default function DemoEmailTab() {
                 <Button size="sm" variant="outline" className="text-xs h-7 gap-1"><Paperclip className="h-3 w-3" /> Attach</Button>
                 <Button size="sm" variant="outline" className="text-xs h-7 gap-1" onClick={() => toast.success("AI draft generated")}><Sparkles className="h-3 w-3" /> AI Draft</Button>
               </div>
-              <Button size="sm" className="text-xs h-8 gap-1.5" style={{ background: "hsl(174 97% 22%)" }} onClick={() => { toast.success("Email sent!"); setShowCompose(false); }}>
+              <Button size="sm" className="text-xs h-8 gap-1.5" style={{ background: "hsl(140 12% 42%)" }} onClick={() => { toast.success("Email sent!"); setShowCompose(false); }}>
                 <Send className="h-3 w-3" /> Send
               </Button>
             </div>

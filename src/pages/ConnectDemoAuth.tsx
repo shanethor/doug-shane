@@ -47,7 +47,7 @@ function Particles() {
         if (p.y > c.height) p.y = 0;
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(0, 168, 142, ${p.a})`;
+        ctx.fillStyle = `rgba(138, 154, 140, ${p.a})`;
         ctx.fill();
       }
       // draw lines between nearby particles
@@ -60,7 +60,7 @@ function Particles() {
             ctx.beginPath();
             ctx.moveTo(particles[i].x, particles[i].y);
             ctx.lineTo(particles[j].x, particles[j].y);
-            ctx.strokeStyle = `rgba(0, 168, 142, ${0.06 * (1 - d / 120)})`;
+            ctx.strokeStyle = `rgba(138, 154, 140, ${0.06 * (1 - d / 120)})`;
             ctx.stroke();
           }
         }
@@ -160,7 +160,7 @@ export default function ConnectDemoAuth() {
 
       {/* Radial glow behind content */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full pointer-events-none z-0"
-        style={{ background: "radial-gradient(circle, hsl(174 97% 22% / 0.08) 0%, transparent 70%)" }} />
+        style={{ background: "radial-gradient(circle, hsl(140 12% 42% / 0.08) 0%, transparent 70%)" }} />
 
       <div className="w-full max-w-md space-y-6 relative z-10">
         {/* Logo */}
@@ -169,7 +169,7 @@ export default function ConnectDemoAuth() {
             <AuraLogo size={56} />
           </div>
           <h1 className="text-2xl font-bold text-white">AuRa Connect</h1>
-          <p className="text-sm" style={{ color: "hsl(174 97% 40%)" }}>Your relationship intelligence suite</p>
+          <p className="text-sm" style={{ color: "hsl(140 12% 58%)" }}>Your relationship intelligence suite</p>
         </div>
 
         {step === "auth" && (
@@ -182,7 +182,7 @@ export default function ConnectDemoAuth() {
               <div className="space-y-2">
                 <Label className="text-white/80">Name</Label>
                 <Input placeholder="Your name" value={name} onChange={e => setName(e.target.value)}
-                  className="bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-[hsl(174,97%,22%)] transition-colors" />
+                  className="bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-[hsl(140,12%,42%)] transition-colors" />
               </div>
               <div className="space-y-2 relative" ref={industryRef}>
                 <Label className="text-white/80">Industry</Label>
@@ -193,7 +193,7 @@ export default function ConnectDemoAuth() {
                     value={industry}
                     onChange={e => { setIndustry(e.target.value); setIndustryOpen(true); }}
                     onFocus={() => setIndustryOpen(true)}
-                    className="bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-[hsl(174,97%,22%)] transition-colors pl-9"
+                    className="bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-[hsl(140,12%,42%)] transition-colors pl-9"
                   />
                 </div>
                 {industryOpen && filteredIndustries.length > 0 && (
@@ -204,9 +204,9 @@ export default function ConnectDemoAuth() {
                         key={ind}
                         type="button"
                         className="w-full text-left px-3 py-2 text-sm text-white/80 hover:text-white transition-colors"
-                        style={{ background: industry === ind ? "hsl(174 97% 22% / 0.15)" : "transparent" }}
-                        onMouseEnter={e => (e.currentTarget.style.background = "hsl(174 97% 22% / 0.1)")}
-                        onMouseLeave={e => (e.currentTarget.style.background = industry === ind ? "hsl(174 97% 22% / 0.15)" : "transparent")}
+                        style={{ background: industry === ind ? "hsl(140 12% 42% / 0.15)" : "transparent" }}
+                        onMouseEnter={e => (e.currentTarget.style.background = "hsl(140 12% 42% / 0.1)")}
+                        onMouseLeave={e => (e.currentTarget.style.background = industry === ind ? "hsl(140 12% 42% / 0.15)" : "transparent")}
                         onClick={() => { setIndustry(ind); setIndustryOpen(false); }}
                       >
                         {ind}
@@ -218,14 +218,14 @@ export default function ConnectDemoAuth() {
               <div className="space-y-2">
                 <Label className="text-white/80">Email</Label>
                 <Input type="email" placeholder="you@example.com" required value={email} onChange={e => setEmail(e.target.value)}
-                  className="bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-[hsl(174,97%,22%)] transition-colors" />
+                  className="bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-[hsl(140,12%,42%)] transition-colors" />
               </div>
               <div className="space-y-2">
                 <Label className="text-white/80">Password</Label>
                 <Input type="password" placeholder="••••••••" required value={password} onChange={e => setPassword(e.target.value)}
-                  className="bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-[hsl(174,97%,22%)] transition-colors" />
+                  className="bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-[hsl(140,12%,42%)] transition-colors" />
               </div>
-              <Button type="submit" className="w-full text-white font-semibold hover:brightness-110 transition-all" style={{ background: "hsl(174 97% 22%)" }}>
+              <Button type="submit" className="w-full text-white font-semibold hover:brightness-110 transition-all" style={{ background: "hsl(140 12% 42%)" }}>
                 Sign Up <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </form>
@@ -238,10 +238,10 @@ export default function ConnectDemoAuth() {
               <h2 className="text-lg font-semibold text-white">Choose your plan</h2>
               <p className="text-sm" style={{ color: "hsl(240 5% 46%)" }}>Start with AuRa Connect</p>
             </div>
-            <div className="rounded-lg border-2 p-4 space-y-3" style={{ borderColor: "hsl(174 97% 22%)", background: "hsl(174 97% 22% / 0.05)" }}>
+            <div className="rounded-lg border-2 p-4 space-y-3" style={{ borderColor: "hsl(140 12% 42%)", background: "hsl(140 12% 42% / 0.05)" }}>
               <div className="flex items-center justify-between">
                 <span className="font-semibold text-white">AuRa Connect Pro</span>
-                <span className="text-lg font-bold" style={{ color: "hsl(174 97% 40%)" }}>$250/mo</span>
+                <span className="text-lg font-bold" style={{ color: "hsl(140 12% 58%)" }}>$250/mo</span>
               </div>
               <ul className="text-sm space-y-1" style={{ color: "hsl(240 5% 46%)" }}>
                 <li>✓ AI-Powered Pipeline</li>
@@ -250,7 +250,7 @@ export default function ConnectDemoAuth() {
                 <li>✓ AI Assistant</li>
               </ul>
             </div>
-            <Button className="w-full text-white font-semibold hover:brightness-110 transition-all" style={{ background: "hsl(174 97% 22%)" }} onClick={handleSubscribe}>
+            <Button className="w-full text-white font-semibold hover:brightness-110 transition-all" style={{ background: "hsl(140 12% 42%)" }} onClick={handleSubscribe}>
               Subscribe <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
             <p className="text-xs text-center" style={{ color: "hsl(240 5% 46%)" }}>Demo mode — no payment required</p>
@@ -263,10 +263,10 @@ export default function ConnectDemoAuth() {
               className="rounded-xl border p-8 text-center transition-all duration-700 overflow-hidden"
               style={{
                 background: "hsl(240 8% 7%)",
-                borderColor: welcomeReady ? "hsl(174 97% 22% / 0.3)" : "hsl(240 6% 14%)",
+                borderColor: welcomeReady ? "hsl(140 12% 42% / 0.3)" : "hsl(240 6% 14%)",
                 opacity: welcomeReady ? 1 : 0,
                 transform: welcomeReady ? "translateY(0) scale(1)" : "translateY(30px) scale(0.95)",
-                boxShadow: welcomeReady ? "0 0 60px hsl(174 97% 22% / 0.08)" : "none",
+                boxShadow: welcomeReady ? "0 0 60px hsl(140 12% 42% / 0.08)" : "none",
               }}
             >
               {/* Phase 1: Logo with glow ring */}
@@ -274,8 +274,8 @@ export default function ConnectDemoAuth() {
                 className="relative mx-auto w-20 h-20 flex items-center justify-center mb-5 transition-all duration-700"
                 style={{ opacity: buildPhase >= 1 ? 1 : 0, transform: buildPhase >= 1 ? "scale(1)" : "scale(0.5)" }}
               >
-                <div className="absolute inset-0 rounded-full animate-ping" style={{ background: "hsl(174 97% 22% / 0.15)", animationDuration: "2s" }} />
-                <div className="absolute inset-1 rounded-full" style={{ background: "hsl(174 97% 22% / 0.1)" }} />
+                <div className="absolute inset-0 rounded-full animate-ping" style={{ background: "hsl(140 12% 42% / 0.15)", animationDuration: "2s" }} />
+                <div className="absolute inset-1 rounded-full" style={{ background: "hsl(140 12% 42% / 0.1)" }} />
                 <AuraLogo size={52} />
               </div>
 
@@ -297,7 +297,7 @@ export default function ConnectDemoAuth() {
 
               {/* Divider line draws in */}
               <div className="mx-auto mb-4 h-px transition-all duration-700" style={{
-                background: "hsl(174 97% 22% / 0.3)",
+                background: "hsl(140 12% 42% / 0.3)",
                 width: buildPhase >= 3 ? "80%" : "0%",
               }} />
 
@@ -308,9 +308,9 @@ export default function ConnectDemoAuth() {
                     key={f.label}
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-500"
                     style={{
-                      background: "hsl(174 97% 22% / 0.1)",
-                      color: "hsl(174 97% 40%)",
-                      border: "1px solid hsl(174 97% 22% / 0.2)",
+                      background: "hsl(140 12% 42% / 0.1)",
+                      color: "hsl(140 12% 58%)",
+                      border: "1px solid hsl(140 12% 42% / 0.2)",
                       opacity: buildPhase >= 4 ? 1 : 0,
                       transform: buildPhase >= 4 ? "translateY(0) scale(1)" : "translateY(12px) scale(0.9)",
                       transitionDelay: `${i * 200}ms`,
@@ -327,7 +327,7 @@ export default function ConnectDemoAuth() {
                 size="lg"
                 className="text-white font-semibold hover:brightness-110 transition-all"
                 style={{
-                  background: "hsl(174 97% 22%)",
+                  background: "hsl(140 12% 42%)",
                   opacity: buildPhase >= 5 ? 1 : 0,
                   transform: buildPhase >= 5 ? "translateY(0) scale(1)" : "translateY(10px) scale(0.95)",
                   transitionDuration: "500ms",
