@@ -272,8 +272,8 @@ function NetworkGraph() {
     // Node opacity map for smooth fade-in
     const nodeOpacity = new Float32Array(nodes.length);
 
-    const teal = [0, 140, 120];
-    const gold = [201, 168, 76];
+    const sage = [138, 154, 140];
+    const softWhite = [245, 245, 240];
 
     function draw() {
       if (!ctx) return;
