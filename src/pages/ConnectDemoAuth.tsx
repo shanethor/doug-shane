@@ -7,9 +7,9 @@ import { ArrowRight, Zap, Shield, BarChart3, Mail, Users, Sparkles as SparklesIc
 
 const AuraLogo = ({ size = 56 }: { size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 100 100" fill="none">
-    <rect width="100" height="100" rx="22" fill="white" />
+    <rect width="100" height="100" rx="22" fill="hsl(140 12% 42%)" />
     <path d="M50 18L74 82H62.5L58 70H42L37.5 82H26L50 18Z" fill="#08080A" />
-    <rect x="39" y="62" width="22" height="5.5" rx="2.75" fill="white" />
+    <rect x="39" y="62" width="22" height="5.5" rx="2.75" fill="hsl(140 12% 42%)" />
   </svg>
 );
 

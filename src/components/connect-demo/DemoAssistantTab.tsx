@@ -185,7 +185,7 @@ export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: st
         /* ── Empty state: centered input at top with suggestions ── */
         <div className="flex-1 flex flex-col items-center justify-start pt-[8vh] px-4 animate-fade-in">
           <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-6 text-center" style={{ background: "linear-gradient(135deg, hsl(140 12% 58%), hsl(140 12% 42%), hsl(240 5% 80%))", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-            How can Lumen help you today?
+            How can Sage help you today?
           </h1>
 
           {/* Chat input card */}
@@ -209,7 +209,7 @@ export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: st
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(input); } }}
-                placeholder="Ask Lumen anything..."
+                placeholder="Ask Sage anything..."
                 rows={3}
                 className="flex-1 resize-none bg-transparent border-0 outline-none text-sm min-h-[72px] max-h-48 py-2 text-white placeholder:text-[hsl(240_5%_46%)]"
               />
@@ -312,7 +312,7 @@ export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: st
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(input); } }}
-                placeholder="Ask Lumen anything..."
+                placeholder="Ask Sage anything..."
                 rows={2}
                 className="flex-1 resize-none bg-transparent border-0 outline-none text-sm placeholder:text-muted-foreground min-h-[48px] max-h-36 py-2"
               />
