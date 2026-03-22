@@ -227,9 +227,10 @@ export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: st
               <button
                 key={s.label}
                 onClick={() => send(s.message)}
-                className="flex items-center gap-2 p-3 rounded-lg text-left text-xs transition-colors hover:bg-accent/10 border border-border text-muted-foreground"
+                className="flex items-center gap-2 p-3 rounded-lg text-left text-xs transition-colors hover:bg-[hsl(240_8%_11%)]"
+                style={{ border: "1px solid hsl(240 6% 14%)", color: "hsl(240 5% 70%)" }}
               >
-                <s.icon className="h-4 w-4 shrink-0 text-primary" />
+                <s.icon className="h-4 w-4 shrink-0" style={{ color: "hsl(140 12% 58%)" }} />
                 {s.label}
               </button>
             ))}
