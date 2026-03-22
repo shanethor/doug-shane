@@ -94,7 +94,7 @@ export default function DemoPipelineTab() {
 
   return (
     <TooltipProvider delayDuration={200}>
-    <div className="space-y-4">
+    <div className="space-y-4" style={{ animation: "smoothFadeSlide 0.6s cubic-bezier(0.16,1,0.3,1) both" }}>
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-sm font-semibold flex items-center gap-2 text-white">
