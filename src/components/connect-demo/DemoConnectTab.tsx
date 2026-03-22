@@ -163,6 +163,12 @@ function NetworkGraph() {
     let visibleSet = new Set<number>();
     let visibleEdges: number[] = [];
 
+    // Node reveal system — nodes appear one-by-one on first load
+    let revealedSet = new Set<number>();
+    let revealOrder: number[] = [];
+    let revealIdx = 0;
+    let introComplete = false;
+
     const adj: number[][] = Array.from({ length: nodes.length }, () => []);
     for (let ei = 0; ei < edges.length; ei++) {
       adj[edges[ei][0]].push(ei);
@@ -189,6 +195,14 @@ function NetworkGraph() {
         visibleSet.add(sorted[k].i);
       }
       visibleSet.add(0);
+
+      // Build reveal order: BFS from center outward for intro
+      if (revealOrder.length === 0) {
+        revealOrder = sorted.filter(s => visibleSet.has(s.i)).map(s => s.i);
+        // Always start with "You" node
+        revealOrder = [0, ...revealOrder.filter(i => i !== 0)];
+        revealedSet = new Set<number>();
+      }
 
       visibleEdges = [];
       for (let ei = 0; ei < edges.length; ei++) {
@@ -221,7 +235,8 @@ function NetworkGraph() {
     }
 
     function startTrace() {
-      const targets = nodes.map((_, i) => i).filter(i => nodes[i].tier >= 2 && visibleSet.has(i));
+      if (!introComplete) return;
+      const targets = nodes.map((_, i) => i).filter(i => nodes[i].tier >= 2 && revealedSet.has(i));
       if (targets.length === 0) return;
       const target = targets[(frame * 3 + 7) % targets.length];
       const visited = new Set<number>([0]);
@@ -253,7 +268,9 @@ function NetworkGraph() {
     }
 
     resize();
-    startTrace();
+
+    // Node opacity map for smooth fade-in
+    const nodeOpacity = new Float32Array(nodes.length);
 
     const teal = [0, 140, 120];
     const gold = [201, 168, 76];
@@ -263,15 +280,46 @@ function NetworkGraph() {
       frame++;
       ctx.clearRect(0, 0, w, h);
 
-      if (frame % 8 === 0 && traceProgress < traceEdges.length) {
-        edgePulse[traceEdges[traceProgress]] = 1;
-        traceProgress++;
+      // Reveal nodes progressively during intro — 3 nodes per frame for speed
+      if (!introComplete && revealOrder.length > 0) {
+        const revealPerFrame = Math.max(3, Math.ceil(revealOrder.length / 90));
+        for (let r = 0; r < revealPerFrame && revealIdx < revealOrder.length; r++) {
+          const ni = revealOrder[revealIdx];
+          revealedSet.add(ni);
+          revealIdx++;
+          // Fire edges connected to newly revealed node
+          for (const ei of adj[ni]) {
+            const [a, b] = edges[ei];
+            if (revealedSet.has(a) && revealedSet.has(b)) {
+              edgePulse[ei] = 0.8;
+            }
+          }
+        }
+        if (revealIdx >= revealOrder.length) {
+          introComplete = true;
+          startTrace();
+        }
       }
-      if (frame % 180 === 0) startTrace();
 
-      if (frame % 20 === 0 && visibleEdges.length > 0) {
-        const idx = visibleEdges[(frame * 7) % visibleEdges.length];
-        if (edgePulse[idx] < 0.1) edgePulse[idx] = 0.5;
+      // Fade in node opacity
+      for (const i of visibleSet) {
+        if (revealedSet.has(i)) {
+          nodeOpacity[i] = Math.min(1, nodeOpacity[i] + 0.06);
+        }
+      }
+
+      // Normal trace + ambient pulses (only after intro)
+      if (introComplete) {
+        if (frame % 8 === 0 && traceProgress < traceEdges.length) {
+          edgePulse[traceEdges[traceProgress]] = 1;
+          traceProgress++;
+        }
+        if (frame % 180 === 0) startTrace();
+
+        if (frame % 20 === 0 && visibleEdges.length > 0) {
+          const idx = visibleEdges[(frame * 7) % visibleEdges.length];
+          if (edgePulse[idx] < 0.1) edgePulse[idx] = 0.5;
+        }
       }
 
       for (const ei of visibleEdges) {
