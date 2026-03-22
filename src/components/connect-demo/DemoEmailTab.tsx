@@ -104,75 +104,104 @@ export default function DemoEmailTab() {
     }, 20);
   };
 
-  // Email detail view
-  if (selected) {
-    return (
-      <div className="space-y-4 animate-fade-in">
-        <Button variant="ghost" size="sm" className="gap-1.5 text-xs" onClick={() => { setSelectedEmail(null); setShowAiDraft(false); }}>
-          <ArrowLeft className="h-3.5 w-3.5" /> Back to inbox
-        </Button>
-        <Card style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 14%)" }}>
-          <CardContent className="p-6 space-y-4">
-            <div className="flex items-start justify-between">
-              <div>
-                <h2 className="text-lg font-semibold text-white">{selected.subject}</h2>
-                <p className="text-sm mt-1" style={{ color: "hsl(240 5% 46%)" }}>
-                  From: <span className="text-white">{selected.from}</span> &lt;{selected.fromAddr}&gt;
-                </p>
-                <p className="text-xs mt-0.5" style={{ color: "hsl(240 5% 36%)" }}>{selected.time}</p>
+  // Smart feature handlers for specific email context
+  const handleSmartFeature = (label: string) => {
+    if (!selected) {
+      toast.success(`${label} activated`);
+      return;
+    }
+    const name = selected.from.split(" ")[0];
+    switch (label) {
+      case "AI Smart Reply":
+        handleAiDraft();
+        break;
+      case "Auto-Summarize":
+        toast.success(`Summarized thread with ${selected.from}: 3 key points extracted — pipeline review, scheduling, next steps.`);
+        break;
+      case "Compliance Check":
+        toast.success(`Compliance scan complete for "${selected.subject}" — no issues detected.`);
+        break;
+      case "Sentiment Analysis":
+        toast.success(`Sentiment for ${name}'s email: Positive (87%) — professional and eager to proceed.`);
+        break;
+      case "Follow-Up Reminder":
+        toast.success(`Follow-up reminder set for ${name}'s email — tomorrow at 9:00 AM.`);
+        break;
+      case "Priority Scoring":
+        toast.success(`Priority score for "${selected.subject}": High (8.4/10) — relates to active pipeline deal.`);
+        break;
+      default:
+        toast.success(`${label} activated for this email`);
+    }
+  };
+
+  // Email detail view — rendered BELOW the persistent header
+  const emailDetailView = selected ? (
+    <div className="space-y-4" style={{ animation: "smoothFadeSlide 0.4s cubic-bezier(0.16,1,0.3,1) both" }}>
+      <Button variant="ghost" size="sm" className="gap-1.5 text-xs" onClick={() => { setSelectedEmail(null); setShowAiDraft(false); }}>
+        <ArrowLeft className="h-3.5 w-3.5" /> Back to inbox
+      </Button>
+      <Card style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 14%)" }}>
+        <CardContent className="p-6 space-y-4">
+          <div className="flex items-start justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-white">{selected.subject}</h2>
+              <p className="text-sm mt-1" style={{ color: "hsl(240 5% 46%)" }}>
+                From: <span className="text-white">{selected.from}</span> &lt;{selected.fromAddr}&gt;
+              </p>
+              <p className="text-xs mt-0.5" style={{ color: "hsl(240 5% 36%)" }}>{selected.time}</p>
+            </div>
+            <div className="flex gap-1">
+              {selected.tags.map(t => (
+                <Badge key={t} variant="outline" className="text-[9px]" style={{ borderColor: "hsl(174 97% 22% / 0.3)", color: "hsl(174 97% 40%)" }}>{t}</Badge>
+              ))}
+            </div>
+          </div>
+
+          {/* Smart insights bar */}
+          <div className="flex items-center gap-3 p-2.5 rounded-lg" style={{ background: "hsl(174 97% 22% / 0.06)", border: "1px solid hsl(174 97% 22% / 0.15)" }}>
+            <Sparkles className="h-4 w-4 shrink-0" style={{ color: "hsl(174 97% 40%)" }} />
+            <span className="text-[11px]" style={{ color: "hsl(174 97% 40%)" }}>
+              AI Insight: This email relates to an active pipeline deal. Suggested priority: <strong>High</strong>. Sentiment: <strong>Positive</strong>.
+            </span>
+          </div>
+
+          <div className="border-t pt-4 text-sm leading-relaxed" style={{ borderColor: "hsl(240 6% 14%)", color: "hsl(240 5% 70%)" }}>
+            <p>Hi there,</p><br />
+            <p>{selected.snippet}</p><br />
+            <p>We should schedule some time this week to discuss next steps. I've been looking at the numbers and I think there's a real opportunity here if we move quickly.</p><br />
+            <p>Let me know what works for your schedule.</p><br />
+            <p>Best regards,<br />{selected.from}</p>
+          </div>
+
+          <div className="flex gap-2 pt-2 border-t flex-wrap" style={{ borderColor: "hsl(240 6% 14%)" }}>
+            <Button size="sm" variant="outline" className="gap-1.5 text-xs"><Reply className="h-3 w-3" /> Reply</Button>
+            <Button size="sm" variant="outline" className="gap-1.5 text-xs" onClick={handleAiDraft}><Sparkles className="h-3 w-3" /> AI Draft</Button>
+            <Button size="sm" variant="outline" className="gap-1.5 text-xs"><Paperclip className="h-3 w-3" /> Attach</Button>
+            <Button size="sm" variant="outline" className="gap-1.5 text-xs" onClick={() => toast.success("Follow-up reminder set for tomorrow 9 AM")}><Clock className="h-3 w-3" /> Set Reminder</Button>
+            <Button size="sm" variant="outline" className="gap-1.5 text-xs" onClick={() => toast.success("Thread summarized — 3 key points extracted")}><FileText className="h-3 w-3" /> Summarize</Button>
+          </div>
+
+          {showAiDraft && (
+            <div className="rounded-lg p-4 space-y-2 animate-fade-in" style={{ background: "hsl(174 97% 22% / 0.06)", border: "1px solid hsl(174 97% 22% / 0.2)" }}>
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4" style={{ color: "hsl(174 97% 40%)" }} />
+                <span className="text-xs font-semibold" style={{ color: "hsl(174 97% 40%)" }}>AI-Generated Draft</span>
+                {aiDraftLoading && <span className="text-[10px] animate-pulse" style={{ color: "hsl(240 5% 46%)" }}>generating...</span>}
               </div>
-              <div className="flex gap-1">
-                {selected.tags.map(t => (
-                  <Badge key={t} variant="outline" className="text-[9px]" style={{ borderColor: "hsl(174 97% 22% / 0.3)", color: "hsl(174 97% 40%)" }}>{t}</Badge>
-                ))}
-              </div>
-            </div>
-
-            {/* Smart insights bar */}
-            <div className="flex items-center gap-3 p-2.5 rounded-lg" style={{ background: "hsl(174 97% 22% / 0.06)", border: "1px solid hsl(174 97% 22% / 0.15)" }}>
-              <Sparkles className="h-4 w-4 shrink-0" style={{ color: "hsl(174 97% 40%)" }} />
-              <span className="text-[11px]" style={{ color: "hsl(174 97% 40%)" }}>
-                AI Insight: This email relates to an active pipeline deal. Suggested priority: <strong>High</strong>. Sentiment: <strong>Positive</strong>.
-              </span>
-            </div>
-
-            <div className="border-t pt-4 text-sm leading-relaxed" style={{ borderColor: "hsl(240 6% 14%)", color: "hsl(240 5% 70%)" }}>
-              <p>Hi there,</p><br />
-              <p>{selected.snippet}</p><br />
-              <p>We should schedule some time this week to discuss next steps. I've been looking at the numbers and I think there's a real opportunity here if we move quickly.</p><br />
-              <p>Let me know what works for your schedule.</p><br />
-              <p>Best regards,<br />{selected.from}</p>
-            </div>
-
-            <div className="flex gap-2 pt-2 border-t flex-wrap" style={{ borderColor: "hsl(240 6% 14%)" }}>
-              <Button size="sm" variant="outline" className="gap-1.5 text-xs"><Reply className="h-3 w-3" /> Reply</Button>
-              <Button size="sm" variant="outline" className="gap-1.5 text-xs" onClick={handleAiDraft}><Sparkles className="h-3 w-3" /> AI Draft</Button>
-              <Button size="sm" variant="outline" className="gap-1.5 text-xs"><Paperclip className="h-3 w-3" /> Attach</Button>
-              <Button size="sm" variant="outline" className="gap-1.5 text-xs" onClick={() => toast.success("Follow-up reminder set for tomorrow 9 AM")}><Clock className="h-3 w-3" /> Set Reminder</Button>
-              <Button size="sm" variant="outline" className="gap-1.5 text-xs" onClick={() => toast.success("Thread summarized — 3 key points extracted")}><FileText className="h-3 w-3" /> Summarize</Button>
-            </div>
-
-            {showAiDraft && (
-              <div className="rounded-lg p-4 space-y-2 animate-fade-in" style={{ background: "hsl(174 97% 22% / 0.06)", border: "1px solid hsl(174 97% 22% / 0.2)" }}>
-                <div className="flex items-center gap-2">
-                  <Sparkles className="h-4 w-4" style={{ color: "hsl(174 97% 40%)" }} />
-                  <span className="text-xs font-semibold" style={{ color: "hsl(174 97% 40%)" }}>AI-Generated Draft</span>
-                  {aiDraftLoading && <span className="text-[10px] animate-pulse" style={{ color: "hsl(240 5% 46%)" }}>generating...</span>}
+              <pre className="text-sm whitespace-pre-wrap" style={{ color: "hsl(240 5% 80%)" }}>{aiDraft}</pre>
+              {!aiDraftLoading && aiDraft && (
+                <div className="flex gap-2 pt-1">
+                  <Button size="sm" className="text-xs h-7" style={{ background: "hsl(174 97% 22%)" }} onClick={() => toast.success("Draft copied to reply")}>Use Draft</Button>
+                  <Button size="sm" variant="outline" className="text-xs h-7" onClick={() => toast.info("Regenerating...")}>Regenerate</Button>
                 </div>
-                <pre className="text-sm whitespace-pre-wrap" style={{ color: "hsl(240 5% 80%)" }}>{aiDraft}</pre>
-                {!aiDraftLoading && aiDraft && (
-                  <div className="flex gap-2 pt-1">
-                    <Button size="sm" className="text-xs h-7" style={{ background: "hsl(174 97% 22%)" }} onClick={() => toast.success("Draft copied to reply")}>Use Draft</Button>
-                    <Button size="sm" variant="outline" className="text-xs h-7" onClick={() => toast.info("Regenerating...")}>Regenerate</Button>
-                  </div>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  ) : null;
 
   return (
     <div className="space-y-3 animate-fade-in">
@@ -200,23 +229,27 @@ export default function DemoEmailTab() {
         </div>
       </div>
 
-      {/* Smart Features Bar */}
+      {/* Smart Features Bar — always visible, contextual to open email */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
         {SMART_FEATURES.map((f, i) => (
           <button
             key={i}
-            onClick={() => toast.success(`${f.label} activated`)}
+            onClick={() => handleSmartFeature(f.label)}
             className="p-2.5 rounded-lg text-left transition-all hover:scale-[1.02] hover:bg-white/5"
-            style={{ background: "hsl(240 8% 9%)", border: "1px solid hsl(240 6% 14%)" }}
+            style={{ background: "hsl(240 8% 9%)", border: `1px solid ${selected ? "hsl(174 97% 22% / 0.25)" : "hsl(240 6% 14%)"}` }}
           >
             <f.icon className="h-4 w-4 mb-1" style={{ color: "hsl(174 97% 40%)" }} />
             <p className="text-[11px] font-medium text-white">{f.label}</p>
-            <p className="text-[9px]" style={{ color: "hsl(240 5% 40%)" }}>{f.desc}</p>
+            <p className="text-[9px]" style={{ color: "hsl(240 5% 40%)" }}>
+              {selected ? `Apply to ${selected.from.split(" ")[0]}'s email` : f.desc}
+            </p>
           </button>
         ))}
       </div>
 
-      {/* Account filter + Filters */}
+      {/* Email detail OR inbox list */}
+      {emailDetailView ? emailDetailView : (
+        <>
       <div className="flex items-center gap-2 flex-wrap">
         <button onClick={() => { setAccountFilter("all"); setSelectedClient(null); }} className={`text-xs px-3 py-1 rounded-md transition-colors ${accountFilter === "all" && !selectedClient ? "bg-white/10 text-white" : ""}`} style={accountFilter !== "all" || selectedClient ? { color: "hsl(240 5% 46%)" } : {}}>All Inboxes</button>
         {SYNCED_ACCOUNTS.filter(a => a.synced).map(a => (
@@ -274,6 +307,8 @@ export default function DemoEmailTab() {
           </button>
         ))}
       </div>
+      </>
+      )}
 
       {/* Synced Accounts Dialog */}
       <Dialog open={showAccounts} onOpenChange={setShowAccounts}>
