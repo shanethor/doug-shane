@@ -209,7 +209,7 @@ export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: st
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(input); } }}
-                placeholder="Ask Lumen anything..."
+                placeholder="Ask Sage anything..."
                 rows={3}
                 className="flex-1 resize-none bg-transparent border-0 outline-none text-sm min-h-[72px] max-h-48 py-2 text-white placeholder:text-[hsl(240_5%_46%)]"
               />
