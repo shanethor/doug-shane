@@ -193,7 +193,7 @@ export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: st
             {attachedFiles.length > 0 && (
               <div className="mb-2 flex flex-wrap gap-2">
                 {attachedFiles.map((f, i) => (
-                  <div key={i} className="flex items-center gap-1.5 rounded-md bg-card border border-border px-2.5 py-1.5 text-xs">
+                  <div key={i} className="flex items-center gap-1.5 rounded-md border border-[hsl(240_6%_14%)] px-2.5 py-1.5 text-xs">
                     <Paperclip className="h-3 w-3 text-muted-foreground" />
                     <span className="max-w-[120px] truncate">{f.name}</span>
                     <button onClick={() => removeFile(i)} className="text-muted-foreground hover:text-foreground"><X className="h-3 w-3" /></button>
@@ -201,7 +201,7 @@ export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: st
                 ))}
               </div>
             )}
-            <div className="flex items-end gap-2 rounded-xl border border-border bg-card p-4 aura-glow-shadow focus-within:ring-2 focus-within:ring-ring">
+            <div className="flex items-end gap-2 rounded-xl border border-[hsl(240_6%_14%)] bg-[hsl(240_8%_9%)] p-4 aura-glow-shadow focus-within:ring-2 focus-within:ring-ring">
               <Button variant="ghost" size="icon" className="shrink-0 h-9 w-9 text-muted-foreground hover:text-foreground" onClick={() => fileInputRef.current?.click()}>
                 <Paperclip className="h-4 w-4" />
               </Button>
@@ -242,7 +242,7 @@ export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: st
                 <div className={`max-w-[80%] rounded-xl px-4 py-3 text-sm ${
                   msg.role === "user"
                     ? "bg-primary text-primary-foreground"
-                    : "bg-muted/60 text-foreground border border-border"
+                    : "bg-[hsl(240_8%_9%)] text-white border border-[hsl(240_6%_14%)]"
                 }`}>
                   {msg.role === "assistant" ? (
                     <div className="prose prose-sm prose-invert max-w-none [&_p]:my-1 [&_ul]:my-1 [&_li]:my-0.5">
@@ -279,7 +279,7 @@ export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: st
 
             {loading && messages[messages.length - 1]?.role === "user" && (
               <div className="flex justify-start">
-                <div className="rounded-xl px-4 py-3 text-sm bg-muted/60 border border-border">
+                <div className="rounded-xl px-4 py-3 text-sm bg-[hsl(240_8%_9%)] border border-[hsl(240_6%_14%)]">
                   <span className="flex gap-1">
                     <span className="w-2 h-2 rounded-full bg-foreground/30 animate-bounce" style={{ animationDelay: "0ms" }} />
                     <span className="w-2 h-2 rounded-full bg-foreground/30 animate-bounce" style={{ animationDelay: "150ms" }} />
@@ -295,7 +295,7 @@ export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: st
             {attachedFiles.length > 0 && (
               <div className="mb-2 flex flex-wrap gap-2 max-w-2xl mx-auto">
                 {attachedFiles.map((f, i) => (
-                  <div key={i} className="flex items-center gap-1.5 rounded-md bg-card border border-border px-2.5 py-1.5 text-xs">
+                  <div key={i} className="flex items-center gap-1.5 rounded-md border border-[hsl(240_6%_14%)] px-2.5 py-1.5 text-xs">
                     <Paperclip className="h-3 w-3 text-muted-foreground" />
                     <span className="max-w-[120px] truncate">{f.name}</span>
                     <button onClick={() => removeFile(i)} className="text-muted-foreground hover:text-foreground"><X className="h-3 w-3" /></button>
@@ -303,7 +303,7 @@ export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: st
                 ))}
               </div>
             )}
-            <div className="flex items-end gap-2 rounded-xl border border-border bg-card p-4 aura-glow-shadow focus-within:ring-2 focus-within:ring-ring max-w-2xl mx-auto">
+            <div className="flex items-end gap-2 rounded-xl border border-[hsl(240_6%_14%)] bg-[hsl(240_8%_9%)] p-4 aura-glow-shadow focus-within:ring-2 focus-within:ring-ring max-w-2xl mx-auto">
               <Button variant="ghost" size="icon" className="shrink-0 h-9 w-9 text-muted-foreground hover:text-foreground" onClick={() => fileInputRef.current?.click()}>
                 <Paperclip className="h-4 w-4" />
               </Button>

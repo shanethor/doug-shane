@@ -207,7 +207,7 @@ export default function DemoSpotlightTab() {
                 return (
                   <div
                     key={b.id}
-                    className="flex items-center gap-3 p-2.5 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors animate-fade-in"
+                    className="flex items-center gap-3 p-2.5 rounded-lg bg-[hsl(240_8%_9%)] hover:bg-[hsl(240_8%_11%)] transition-colors animate-fade-in"
                     style={{ animationDelay: `${200 + idx * 80}ms` }}
                   >
                     <div className="w-8 h-8 rounded flex items-center justify-center shrink-0" style={{ background: b.brand_colors[0] + "22", border: `1px solid ${b.brand_colors[0]}44` }}>
@@ -257,13 +257,13 @@ export default function DemoSpotlightTab() {
                 return (
                   <div
                     key={f.id}
-                    className="flex items-center gap-3 p-2.5 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors animate-fade-in"
+                    className="flex items-center gap-3 p-2.5 rounded-lg bg-[hsl(240_8%_9%)] hover:bg-[hsl(240_8%_11%)] transition-colors animate-fade-in"
                     style={{ animationDelay: `${400 + idx * 80}ms` }}
                   >
                     {f.result_image_url ? (
                       <img src={f.result_image_url} alt={f.title} className="w-12 h-12 rounded object-cover border shrink-0" />
                     ) : (
-                      <div className="w-12 h-12 rounded bg-muted/60 flex items-center justify-center shrink-0 border border-border">
+                      <div className="w-12 h-12 rounded bg-[hsl(240_6%_7%)] flex items-center justify-center shrink-0 border border-border">
                         <ImageIcon className="h-4 w-4 text-muted-foreground" />
                       </div>
                     )}
