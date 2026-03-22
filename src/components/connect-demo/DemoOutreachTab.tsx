@@ -421,55 +421,7 @@ export default function DemoOutreachTab() {
           </div>
         </TabsContent>
 
-        {/* ── SIGNALS (Triggers) ── */}
-        <TabsContent value="signals" className="mt-4 space-y-3" style={{ animation: "smoothFadeSlide 0.4s cubic-bezier(0.16,1,0.3,1) both" }}>
-          <div className="flex items-center gap-2 mb-2">
-            <Zap className="h-5 w-5" style={{ color: "hsl(174 97% 40%)" }} />
-            <h2 className="text-sm font-semibold text-white">Territory Intelligence</h2>
-            <Badge variant="outline" className="text-[10px]" style={{ borderColor: "hsl(240 6% 20%)", color: "hsl(240 5% 60%)" }}>{DUMMY_TRIGGERS.length} signals</Badge>
-          </div>
-
-          {DUMMY_TRIGGERS.map((t, i) => (
-            <Card key={i} className="overflow-hidden" style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 14%)", animation: `smoothFadeSlide 0.4s cubic-bezier(0.16,1,0.3,1) ${i * 50}ms both` }}>
-              <CardContent className="p-4">
-                <div className="flex items-start gap-3">
-                  <div className="rounded-lg p-2 shrink-0 mt-0.5" style={{ background: "hsl(240 6% 12%)" }}>
-                    {triggerIcon(t.type)}
-                  </div>
-                  <div className="flex-1 min-w-0 space-y-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className="text-sm font-semibold text-white">{t.title}</p>
-                      <Badge variant="outline" className={`text-[9px] ${urgencyColor(t.urgency)}`}>{t.urgency}</Badge>
-                    </div>
-                    <p className="text-xs" style={{ color: "hsl(240 5% 46%)" }}>{t.description}</p>
-                    <div className="flex items-center gap-3 text-[11px]" style={{ color: "hsl(240 5% 46%)" }}>
-                      <span className="flex items-center gap-1"><User className="h-3 w-3" />{t.person}</span>
-                      <span className="flex items-center gap-1"><Building2 className="h-3 w-3" />{t.company}</span>
-                      <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{t.date}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 mt-1.5 p-2 rounded" style={{ background: "hsl(174 97% 22% / 0.06)", border: "1px solid hsl(174 97% 22% / 0.1)" }}>
-                      <ArrowRight className="h-3 w-3 shrink-0" style={{ color: "hsl(174 97% 40%)" }} />
-                      <span className="text-[11px] font-medium" style={{ color: "hsl(174 97% 40%)" }}>{t.suggested_action}</span>
-                    </div>
-                    <div className="flex gap-2 mt-2">
-                      <Button size="sm" variant="outline" className="text-xs h-7 gap-1" onClick={() => openTriggerAction(t, "meeting")}>
-                        <Calendar className="h-3 w-3" /> Schedule Meeting
-                      </Button>
-                      <Button size="sm" variant="outline" className="text-xs h-7 gap-1" onClick={() => openTriggerAction(t, "email")}>
-                        <Mail className="h-3 w-3" /> Send Email
-                      </Button>
-                      {t.phone && (
-                        <Button size="sm" variant="outline" className="text-xs h-7 gap-1" onClick={() => toast.info(`Calling ${t.person} at ${t.phone}`)}>
-                          <Phone className="h-3 w-3" /> Call
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </TabsContent>
+        {/* Signals hidden for now */}
       </Tabs>
 
       {/* Cadence Action Dialog */}
