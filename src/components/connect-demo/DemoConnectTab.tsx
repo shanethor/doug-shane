@@ -73,83 +73,80 @@ for (let i = 0; i < 99; i++) {
 
 function NetworkGraph() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const animRef = useRef<number>(0);
 
   useEffect(() => {
+    const container = containerRef.current;
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas || !container) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const dpr = window.devicePixelRatio || 1;
-    const rect = canvas.getBoundingClientRect();
-    const W = rect.width * dpr;
-    const H = rect.height * dpr;
-    canvas.width = W;
-    canvas.height = H;
-    ctx.scale(dpr, dpr);
-    const w = rect.width;
-    const h = rect.height;
+    let w = 0, h = 0;
+    let nodes: Node[] = [];
+    let edges: [number, number][] = [];
+    let edgeLitTime: Float32Array;
 
-    // Create nodes — 100 total
-    const nodes: Node[] = NETWORK_LABELS.map((label, i) => {
-      const type = i === 0 ? "you" : i < 8 ? "connection" : "person";
-      const r = type === "you" ? 14 : type === "connection" ? 7 : 3;
-      const x = i === 0 ? w / 2 : Math.random() * (w - 60) + 30;
-      const y = i === 0 ? h / 2 : Math.random() * (h - 40) + 20;
-      return {
-        x, y,
-        vx: (Math.random() - 0.5) * 0.3,
-        vy: (Math.random() - 0.5) * 0.3,
-        r, label, type,
-      };
-    });
+    function resize() {
+      const dpr = window.devicePixelRatio || 1;
+      const rect = container!.getBoundingClientRect();
+      w = rect.width;
+      h = rect.height;
+      canvas!.width = w * dpr;
+      canvas!.height = h * dpr;
+      canvas!.style.width = w + "px";
+      canvas!.style.height = h + "px";
+      ctx!.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
 
-    // Create edges — layered network
-    const edges: [number, number][] = [];
-    // You -> inner connections
-    for (let i = 1; i < 8; i++) edges.push([0, i]);
-    // Inner connections cross-linked
-    for (let i = 1; i < 7; i++) edges.push([i, i + 1]);
-    // 2nd degree: nodes 8-30 connect to inner ring
-    for (let i = 8; i < 30; i++) {
-      edges.push([1 + (i % 7), i]);
-      if (Math.random() > 0.6) edges.push([1 + ((i + 3) % 7), i]);
+    function initGraph() {
+      // Scale factor so nodes are proportional to canvas
+      const s = Math.min(w, h) / 600;
+
+      nodes = NETWORK_LABELS.map((label, i) => {
+        const type = i === 0 ? "you" : i < 8 ? "connection" : "person";
+        const r = (type === "you" ? 14 : type === "connection" ? 7 : 3) * s;
+        const x = i === 0 ? w / 2 : Math.random() * (w - 40) + 20;
+        const y = i === 0 ? h / 2 : Math.random() * (h - 30) + 15;
+        return { x, y, vx: (Math.random() - 0.5) * 0.3, vy: (Math.random() - 0.5) * 0.3, r, label, type } as Node;
+      });
+
+      edges = [];
+      for (let i = 1; i < 8; i++) edges.push([0, i]);
+      for (let i = 1; i < 7; i++) edges.push([i, i + 1]);
+      for (let i = 8; i < 30; i++) {
+        edges.push([1 + (i % 7), i]);
+        if (Math.random() > 0.6) edges.push([1 + ((i + 3) % 7), i]);
+      }
+      for (let i = 30; i < 60; i++) edges.push([8 + ((i - 30) % 22), i]);
+      for (let i = 60; i < nodes.length; i++) edges.push([30 + ((i - 60) % 30), i]);
+      for (let k = 0; k < 50; k++) {
+        const a = Math.floor(Math.random() * nodes.length);
+        const b = Math.floor(Math.random() * nodes.length);
+        if (a !== b) edges.push([a, b]);
+      }
+      edgeLitTime = new Float32Array(edges.length);
     }
-    // 3rd degree: nodes 30-60 connect to 2nd degree
-    for (let i = 30; i < 60; i++) {
-      edges.push([8 + ((i - 30) % 22), i]);
-    }
-    // 4th degree: nodes 60-100 connect to 3rd degree
-    for (let i = 60; i < nodes.length; i++) {
-      edges.push([30 + ((i - 60) % 30), i]);
-    }
-    // Random cross-connections for organic density
-    for (let k = 0; k < 50; k++) {
-      const a = Math.floor(Math.random() * nodes.length);
-      const b = Math.floor(Math.random() * nodes.length);
-      if (a !== b) edges.push([a, b]);
-    }
+
+    resize();
+    initGraph();
 
     const teal = [0, 140, 120];
     const gold = [201, 168, 76];
     let frame = 0;
 
-    // Track which edges are "lit up"
-    const edgeLitTime = new Float32Array(edges.length);
-
     function draw() {
       if (!ctx) return;
       frame++;
       ctx.clearRect(0, 0, w, h);
+      const s = Math.min(w, h) / 600;
 
-      // Light up random edges periodically
       if (frame % 8 === 0) {
         const idx = Math.floor(Math.random() * edges.length);
         edgeLitTime[idx] = 1;
       }
 
-      // Update positions with gentle force toward center for "You"
       for (const n of nodes) {
         if (n.type === "you") {
           n.vx += (w / 2 - n.x) * 0.001;
@@ -157,59 +154,53 @@ function NetworkGraph() {
         }
         n.x += n.vx;
         n.y += n.vy;
-        if (n.x < 30 || n.x > w - 30) n.vx *= -1;
-        if (n.y < 20 || n.y > h - 20) n.vy *= -1;
+        if (n.x < 20 || n.x > w - 20) n.vx *= -1;
+        if (n.y < 15 || n.y > h - 15) n.vy *= -1;
         n.vx += (Math.random() - 0.5) * 0.015;
         n.vy += (Math.random() - 0.5) * 0.015;
         n.vx *= 0.997;
         n.vy *= 0.997;
       }
 
-      // Draw edges
+      const maxDist = 300 * s;
       for (let ei = 0; ei < edges.length; ei++) {
         const [a, b] = edges[ei];
         const na = nodes[a], nb = nodes[b];
         const dx = nb.x - na.x, dy = nb.y - na.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
-        const maxDist = 400;
         if (dist > maxDist) continue;
 
-        const baseFade = (1 - dist / maxDist);
+        const baseFade = 1 - dist / maxDist;
         const lit = edgeLitTime[ei];
         const alpha = baseFade * (0.08 + lit * 0.5);
 
         ctx.beginPath();
         ctx.moveTo(na.x, na.y);
         ctx.lineTo(nb.x, nb.y);
-        const c = lit > 0.3 ? teal : teal;
-        ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},${alpha})`;
-        ctx.lineWidth = lit > 0.3 ? 2 : 1;
+        ctx.strokeStyle = `rgba(${teal[0]},${teal[1]},${teal[2]},${alpha})`;
+        ctx.lineWidth = lit > 0.3 ? 2 * s : 1 * s;
         ctx.stroke();
 
-        // Traveling pulse along lit edges
         if (lit > 0.2) {
-          const t = (1 - lit);
+          const t = 1 - lit;
           const px = na.x + dx * t;
           const py = na.y + dy * t;
           ctx.beginPath();
-          ctx.arc(px, py, 3.5, 0, Math.PI * 2);
+          ctx.arc(px, py, 3 * s, 0, Math.PI * 2);
           ctx.fillStyle = `rgba(${teal[0]},${teal[1]},${teal[2]},${lit * 0.9})`;
           ctx.fill();
         }
 
-        // Decay lit time
         if (edgeLitTime[ei] > 0) edgeLitTime[ei] *= 0.985;
         if (edgeLitTime[ei] < 0.01) edgeLitTime[ei] = 0;
       }
 
-      // Draw nodes
       for (const n of nodes) {
         const breathe = 1 + Math.sin(frame * 0.025 + n.x * 0.01) * 0.1;
         const r = n.r * breathe;
         const c = n.type === "you" ? gold : teal;
-        const glowR = n.type === "you" ? 28 : n.type === "connection" ? 14 : 8;
+        const glowR = (n.type === "you" ? 28 : n.type === "connection" ? 14 : 8) * s;
 
-        // Glow
         const grad = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, r + glowR);
         grad.addColorStop(0, `rgba(${c[0]},${c[1]},${c[2]},${n.type === "you" ? 0.4 : 0.2})`);
         grad.addColorStop(1, `rgba(${c[0]},${c[1]},${c[2]},0)`);
@@ -218,37 +209,51 @@ function NetworkGraph() {
         ctx.fillStyle = grad;
         ctx.fill();
 
-        // Circle
         ctx.beginPath();
         ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
         ctx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},${n.type === "person" ? 0.15 : 0.25})`;
         ctx.fill();
         ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},${n.type === "person" ? 0.3 : 0.6})`;
-        ctx.lineWidth = n.type === "person" ? 0.8 : 1.5;
+        ctx.lineWidth = (n.type === "person" ? 0.8 : 1.5) * s;
         ctx.stroke();
 
-        // Labels for You + connections
         if (n.type !== "person") {
-          ctx.font = n.type === "you" ? "bold 13px system-ui, sans-serif" : "11px system-ui, sans-serif";
+          const fontSize = Math.round((n.type === "you" ? 13 : 11) * s);
+          ctx.font = `${n.type === "you" ? "bold " : ""}${fontSize}px system-ui, sans-serif`;
           ctx.fillStyle = `rgba(255,255,255,${n.type === "you" ? 0.95 : 0.55})`;
           ctx.textAlign = "center";
-          ctx.fillText(n.label, n.x, n.y + r + 15);
+          ctx.fillText(n.label, n.x, n.y + r + 14 * s);
         }
       }
 
       animRef.current = requestAnimationFrame(draw);
     }
 
+    const onResize = () => {
+      resize();
+      // Rescale existing node positions proportionally
+      const newS = Math.min(w, h) / 600;
+      for (const n of nodes) {
+        const type = n.type;
+        n.r = (type === "you" ? 14 : type === "connection" ? 7 : 3) * newS;
+        // Clamp to bounds
+        n.x = Math.min(Math.max(n.x, 20), w - 20);
+        n.y = Math.min(Math.max(n.y, 15), h - 15);
+      }
+    };
+
+    window.addEventListener("resize", onResize);
     draw();
-    return () => cancelAnimationFrame(animRef.current);
+    return () => {
+      cancelAnimationFrame(animRef.current);
+      window.removeEventListener("resize", onResize);
+    };
   }, []);
 
   return (
-    <canvas
-      ref={canvasRef}
-      className="w-full pointer-events-none"
-      style={{ height: 380 }}
-    />
+    <div ref={containerRef} className="w-full flex-1" style={{ minHeight: 200 }}>
+      <canvas ref={canvasRef} className="pointer-events-none" />
+    </div>
   );
 }
 
