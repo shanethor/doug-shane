@@ -240,7 +240,7 @@ export default function DemoEmailTab() {
           >
             <f.icon className="h-4 w-4 mb-1" style={{ color: "hsl(140 12% 58%)" }} />
             <p className="text-[11px] font-medium text-white">{f.label}</p>
-            <p className="text-[9px]" style={{ color: "hsl(240 5% 40%)" }}>
+            <p className="text-[9px]" style={{ color: "hsl(240 5% 56%)" }}>
               {selected ? `Apply to ${selected.from.split(" ")[0]}'s email` : f.desc}
             </p>
           </button>

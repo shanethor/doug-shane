@@ -184,7 +184,7 @@ export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: st
       {!hasMessages ? (
         /* ── Empty state: centered input at top with suggestions ── */
         <div className="flex-1 flex flex-col items-center justify-start pt-[8vh] px-4 animate-fade-in">
-          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-6 aura-gradient-text text-center">
+          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-6 text-center" style={{ background: "linear-gradient(135deg, hsl(140 12% 58%), hsl(140 12% 42%), hsl(240 5% 80%))", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
             How can Lumen help you today?
           </h1>
 
@@ -201,7 +201,7 @@ export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: st
                 ))}
               </div>
             )}
-            <div className="flex items-end gap-2 rounded-xl border border-[hsl(240_6%_14%)] bg-[hsl(240_8%_9%)] p-4 aura-glow-shadow focus-within:ring-2 focus-within:ring-ring">
+            <div className="flex items-end gap-2 rounded-xl p-4 focus-within:ring-2" style={{ background: "hsl(240 8% 9%)", border: "1px solid hsl(240 6% 14%)", boxShadow: "0 8px 32px -8px hsl(140 12% 42% / 0.08)" }}>
               <Button variant="ghost" size="icon" className="shrink-0 h-9 w-9 text-muted-foreground hover:text-foreground" onClick={() => fileInputRef.current?.click()}>
                 <Paperclip className="h-4 w-4" />
               </Button>
@@ -211,9 +211,9 @@ export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: st
                 onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(input); } }}
                 placeholder="Ask Lumen anything..."
                 rows={3}
-                className="flex-1 resize-none bg-transparent border-0 outline-none text-sm placeholder:text-muted-foreground min-h-[72px] max-h-48 py-2"
+                className="flex-1 resize-none bg-transparent border-0 outline-none text-sm min-h-[72px] max-h-48 py-2 text-white placeholder:text-[hsl(240_5%_46%)]"
               />
-              <Button size="icon" onClick={() => send(input)} disabled={!input.trim()} className="shrink-0 h-9 w-9 bg-primary text-primary-foreground hover:bg-primary/90">
+              <Button size="icon" onClick={() => send(input)} disabled={!input.trim()} className="shrink-0 h-9 w-9" style={{ background: "hsl(140 12% 42%)", color: "white" }}>
                 <Send className="h-4 w-4" />
               </Button>
             </div>
@@ -225,9 +225,10 @@ export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: st
               <button
                 key={s.label}
                 onClick={() => send(s.message)}
-                className="flex items-center gap-2 p-3 rounded-lg text-left text-xs transition-colors hover:bg-accent/10 border border-border text-muted-foreground"
+                className="flex items-center gap-2 p-3 rounded-lg text-left text-xs transition-colors hover:bg-[hsl(240_8%_11%)]"
+                style={{ border: "1px solid hsl(240 6% 14%)", color: "hsl(240 5% 70%)" }}
               >
-                <s.icon className="h-4 w-4 shrink-0 text-primary" />
+                <s.icon className="h-4 w-4 shrink-0" style={{ color: "hsl(140 12% 58%)" }} />
                 {s.label}
               </button>
             ))}
