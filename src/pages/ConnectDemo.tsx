@@ -75,7 +75,7 @@ export default function ConnectDemo() {
       <header className="px-4 py-3 flex items-center justify-between" style={{ borderBottom: "1px solid hsl(240 6% 14%)", background: "hsl(240 8% 7%)" }}>
         <div className="flex items-center gap-3">
           <AuraLogo size={32} />
-          <h1 className="text-lg font-bold text-white">AURA Connect</h1>
+          <h1 className="text-lg font-bold text-white">AuRa Connect</h1>
         </div>
         <button
           className="text-xs hover:text-white transition-colors"

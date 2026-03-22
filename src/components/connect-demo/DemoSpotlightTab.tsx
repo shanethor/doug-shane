@@ -178,7 +178,7 @@ export default function DemoSpotlightTab() {
         <CardHeader className="pb-3">
           <CardTitle className="text-sm flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-warning" />
-            AURA Spotlight — Marketing Flyer Generator
+            AuRa Spotlight — Marketing Flyer Generator
           </CardTitle>
           <p className="text-[11px] text-muted-foreground">
             Turn your events and ideas into on-brand flyers and social posts with AI. Up to 20/month.

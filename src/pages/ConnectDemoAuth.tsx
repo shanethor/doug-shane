@@ -335,7 +335,7 @@ export default function ConnectDemoAuth() {
                 }}
                 onClick={handleEnter}
               >
-                Enter AURA Connect <ArrowRight className="ml-2 h-4 w-4" />
+                Enter AuRa Connect <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </div>
           </div>
