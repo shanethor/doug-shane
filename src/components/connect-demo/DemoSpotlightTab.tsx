@@ -185,7 +185,7 @@ export default function DemoSpotlightTab() {
           </p>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Button className="w-full gap-2" onClick={handleCreateFlyer}>
+          <Button className="w-full gap-2 text-white" style={{ background: "hsl(140 12% 42%)" }} onClick={handleCreateFlyer}>
             <Sparkles className="h-4 w-4" />
             Create New Flyer
           </Button>
