@@ -98,8 +98,6 @@ export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: st
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages]);
 
-  const [researching, setResearching] = useState(false);
-
   const send = useCallback((text: string) => {
     if (!text.trim() || loading) return;
     const fileNote = attachedFiles.length > 0
@@ -112,17 +110,11 @@ export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: st
     setAttachedFiles([]);
     setLoading(true);
 
-    // Detect if this looks like a research request for the UI indicator
-    const researchPattern = /(?:research|look up|look into|find out about|tell me about|info(?:rmation)? (?:on|about)|investigate|check out|what do you know about|learn about)\s+.+/i;
-    const isResearch = researchPattern.test(text.trim());
-    if (isResearch) setResearching(true);
-
     let assistantSoFar = "";
     const ac = new AbortController();
     abortRef.current = ac;
 
     const upsert = (chunk: string) => {
-      if (researching || isResearch) setResearching(false);
       assistantSoFar += chunk;
       setMessages(prev => {
         const last = prev[prev.length - 1];
@@ -136,11 +128,11 @@ export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: st
     streamChat({
       messages: history.map(m => ({ role: m.role, content: m.content })),
       onDelta: upsert,
-      onDone: () => { setLoading(false); setResearching(false); },
-      onError: (err) => { toast.error(err); setLoading(false); setResearching(false); },
+      onDone: () => setLoading(false),
+      onError: (err) => { toast.error(err); setLoading(false); },
       signal: ac.signal,
     });
-  }, [messages, loading, attachedFiles, researching]);
+  }, [messages, loading, attachedFiles]);
 
   const stop = useCallback(() => {
     abortRef.current?.abort();
