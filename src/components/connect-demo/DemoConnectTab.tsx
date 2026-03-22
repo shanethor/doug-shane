@@ -289,7 +289,8 @@ function NetworkGraph() {
         if (edgePulse[ei] < 0.005) edgePulse[ei] = 0;
       }
 
-      // Draw only visible nodes
+      // Draw only visible nodes — all with name labels
+      const fontSize = w >= 1200 ? 9 : w >= 600 ? 8 : 7;
       for (const i of visibleSet) {
         const n = nodes[i];
         const [px, py] = toPixel(n.gx, n.gy);
@@ -297,7 +298,6 @@ function NetworkGraph() {
         const breathe = 1 + Math.sin(frame * 0.018 + i * 0.7) * 0.12;
 
         if (n.tier === 0) {
-          // "You" — prominent rounded rect
           const rw = 18 * breathe, rh = 12 * breathe;
           const grad = ctx.createRadialGradient(px, py, 0, px, py, 30);
           grad.addColorStop(0, `rgba(${c[0]},${c[1]},${c[2]},0.25)`);
@@ -306,7 +306,6 @@ function NetworkGraph() {
           ctx.arc(px, py, 30, 0, Math.PI * 2);
           ctx.fillStyle = grad;
           ctx.fill();
-
           ctx.beginPath();
           ctx.roundRect(px - rw, py - rh, rw * 2, rh * 2, 4);
           ctx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},0.25)`;
@@ -314,13 +313,11 @@ function NetworkGraph() {
           ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},0.8)`;
           ctx.lineWidth = 1.5;
           ctx.stroke();
-
           ctx.font = "bold 11px system-ui, sans-serif";
           ctx.fillStyle = "rgba(255,255,255,0.95)";
           ctx.textAlign = "center";
           ctx.fillText("You", px, py + 4);
         } else if (n.tier === 1) {
-          // Inner ring — small rounded rect
           const s = 6 * breathe;
           ctx.beginPath();
           ctx.roundRect(px - s * 1.5, py - s, s * 3, s * 2, 3);
@@ -329,13 +326,11 @@ function NetworkGraph() {
           ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},0.45)`;
           ctx.lineWidth = 1;
           ctx.stroke();
-
-          ctx.font = "9px system-ui, sans-serif";
-          ctx.fillStyle = "rgba(255,255,255,0.45)";
+          ctx.font = `${fontSize}px system-ui, sans-serif`;
+          ctx.fillStyle = "rgba(255,255,255,0.5)";
           ctx.textAlign = "center";
           ctx.fillText(n.label, px, py + s + 12);
         } else if (n.tier === 2) {
-          // Mid — small diamond
           const s = 3.5 * breathe;
           ctx.beginPath();
           ctx.moveTo(px, py - s);
@@ -348,16 +343,23 @@ function NetworkGraph() {
           ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},0.25)`;
           ctx.lineWidth = 0.7;
           ctx.stroke();
+          ctx.font = `${fontSize}px system-ui, sans-serif`;
+          ctx.fillStyle = "rgba(255,255,255,0.35)";
+          ctx.textAlign = "center";
+          ctx.fillText(n.label, px, py + s + 11);
         } else {
-          // Outer — tiny dot
-          const s = 2 * breathe;
+          const s = 2.5 * breathe;
           ctx.beginPath();
           ctx.arc(px, py, s, 0, Math.PI * 2);
           ctx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},0.1)`;
           ctx.fill();
-          ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},0.18)`;
+          ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},0.2)`;
           ctx.lineWidth = 0.5;
           ctx.stroke();
+          ctx.font = `${fontSize}px system-ui, sans-serif`;
+          ctx.fillStyle = "rgba(255,255,255,0.22)";
+          ctx.textAlign = "center";
+          ctx.fillText(n.label, px, py + s + 10);
         }
       }
 
