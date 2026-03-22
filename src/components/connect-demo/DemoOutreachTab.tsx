@@ -327,7 +327,7 @@ export default function DemoOutreachTab() {
             {filtered.map((c, idx) => {
               const isExpanded = expanded === c.id;
               return (
-                <Card key={c.id} className={`overflow-hidden transition-colors ${c.overdue ? "border-destructive/30" : ""}`}
+                <Card key={c.id} className={`overflow-hidden transition-colors animate-fade-in ${c.overdue ? "border-destructive/30" : ""}`}
                   style={{ background: "hsl(240 8% 9%)", borderColor: c.overdue ? undefined : "hsl(240 6% 14%)", animationDelay: `${idx * 40}ms` }}>
                   <CardContent className="p-3">
                     <div className="flex items-center gap-3 cursor-pointer" onClick={() => setExpanded(isExpanded ? null : c.id)}>
