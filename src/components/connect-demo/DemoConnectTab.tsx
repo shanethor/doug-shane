@@ -163,6 +163,12 @@ function NetworkGraph() {
     let visibleSet = new Set<number>();
     let visibleEdges: number[] = [];
 
+    // Node reveal system — nodes appear one-by-one on first load
+    let revealedSet = new Set<number>();
+    let revealOrder: number[] = [];
+    let revealIdx = 0;
+    let introComplete = false;
+
     const adj: number[][] = Array.from({ length: nodes.length }, () => []);
     for (let ei = 0; ei < edges.length; ei++) {
       adj[edges[ei][0]].push(ei);
@@ -189,6 +195,14 @@ function NetworkGraph() {
         visibleSet.add(sorted[k].i);
       }
       visibleSet.add(0);
+
+      // Build reveal order: BFS from center outward for intro
+      if (revealOrder.length === 0) {
+        revealOrder = sorted.filter(s => visibleSet.has(s.i)).map(s => s.i);
+        // Always start with "You" node
+        revealOrder = [0, ...revealOrder.filter(i => i !== 0)];
+        revealedSet = new Set<number>();
+      }
 
       visibleEdges = [];
       for (let ei = 0; ei < edges.length; ei++) {
@@ -221,7 +235,8 @@ function NetworkGraph() {
     }
 
     function startTrace() {
-      const targets = nodes.map((_, i) => i).filter(i => nodes[i].tier >= 2 && visibleSet.has(i));
+      if (!introComplete) return;
+      const targets = nodes.map((_, i) => i).filter(i => nodes[i].tier >= 2 && revealedSet.has(i));
       if (targets.length === 0) return;
       const target = targets[(frame * 3 + 7) % targets.length];
       const visited = new Set<number>([0]);
@@ -253,7 +268,9 @@ function NetworkGraph() {
     }
 
     resize();
-    startTrace();
+
+    // Node opacity map for smooth fade-in
+    const nodeOpacity = new Float32Array(nodes.length);
 
     const teal = [0, 140, 120];
     const gold = [201, 168, 76];
@@ -263,23 +280,60 @@ function NetworkGraph() {
       frame++;
       ctx.clearRect(0, 0, w, h);
 
-      if (frame % 8 === 0 && traceProgress < traceEdges.length) {
-        edgePulse[traceEdges[traceProgress]] = 1;
-        traceProgress++;
+      // Reveal nodes progressively during intro — 3 nodes per frame for speed
+      if (!introComplete && revealOrder.length > 0) {
+        const revealPerFrame = Math.max(3, Math.ceil(revealOrder.length / 90));
+        for (let r = 0; r < revealPerFrame && revealIdx < revealOrder.length; r++) {
+          const ni = revealOrder[revealIdx];
+          revealedSet.add(ni);
+          revealIdx++;
+          // Fire edges connected to newly revealed node
+          for (const ei of adj[ni]) {
+            const [a, b] = edges[ei];
+            if (revealedSet.has(a) && revealedSet.has(b)) {
+              edgePulse[ei] = 0.8;
+            }
+          }
+        }
+        if (revealIdx >= revealOrder.length) {
+          introComplete = true;
+          startTrace();
+        }
       }
-      if (frame % 180 === 0) startTrace();
 
-      if (frame % 20 === 0 && visibleEdges.length > 0) {
-        const idx = visibleEdges[(frame * 7) % visibleEdges.length];
-        if (edgePulse[idx] < 0.1) edgePulse[idx] = 0.5;
+      // Fade in node opacity
+      for (const i of visibleSet) {
+        if (revealedSet.has(i)) {
+          nodeOpacity[i] = Math.min(1, nodeOpacity[i] + 0.06);
+        }
       }
 
+      // Normal trace + ambient pulses (only after intro)
+      if (introComplete) {
+        if (frame % 8 === 0 && traceProgress < traceEdges.length) {
+          edgePulse[traceEdges[traceProgress]] = 1;
+          traceProgress++;
+        }
+        if (frame % 180 === 0) startTrace();
+
+        if (frame % 20 === 0 && visibleEdges.length > 0) {
+          const idx = visibleEdges[(frame * 7) % visibleEdges.length];
+          if (edgePulse[idx] < 0.1) edgePulse[idx] = 0.5;
+        }
+      }
+
+      // Draw edges — only between revealed nodes
       for (const ei of visibleEdges) {
         const [a, b] = edges[ei];
+        if (!revealedSet.has(a) || !revealedSet.has(b)) continue;
+        const oa = nodeOpacity[a], ob = nodeOpacity[b];
+        const edgeAlpha = Math.min(oa, ob);
+        if (edgeAlpha < 0.01) continue;
+
         const [ax, ay] = toPixel(nodes[a].gx, nodes[a].gy);
         const [bx, by] = toPixel(nodes[b].gx, nodes[b].gy);
         const p = edgePulse[ei];
-        const alpha = 0.04 + p * 0.55;
+        const alpha = (0.04 + p * 0.55) * edgeAlpha;
 
         ctx.beginPath();
         ctx.moveTo(ax, ay);
@@ -292,7 +346,7 @@ function NetworkGraph() {
           const t = 1 - p;
           ctx.beginPath();
           ctx.arc(ax + (bx - ax) * t, ay + (by - ay) * t, 2.5, 0, Math.PI * 2);
-          ctx.fillStyle = `rgba(${teal[0]},${teal[1]},${teal[2]},${p * 0.9})`;
+          ctx.fillStyle = `rgba(${teal[0]},${teal[1]},${teal[2]},${p * 0.9 * edgeAlpha})`;
           ctx.fill();
         }
 
@@ -300,8 +354,13 @@ function NetworkGraph() {
         if (edgePulse[ei] < 0.005) edgePulse[ei] = 0;
       }
 
+      // Draw only revealed nodes with fade-in opacity
       const fontSize = w >= 1200 ? 9 : w >= 600 ? 8 : 7;
       for (const i of visibleSet) {
+        if (!revealedSet.has(i)) continue;
+        const op = nodeOpacity[i];
+        if (op < 0.01) continue;
+
         const n = nodes[i];
         const [px, py] = toPixel(n.gx, n.gy);
         const c = n.tier === 0 ? gold : teal;
@@ -310,7 +369,7 @@ function NetworkGraph() {
         if (n.tier === 0) {
           const rw = 18 * breathe, rh = 12 * breathe;
           const grad = ctx.createRadialGradient(px, py, 0, px, py, 30);
-          grad.addColorStop(0, `rgba(${c[0]},${c[1]},${c[2]},0.25)`);
+          grad.addColorStop(0, `rgba(${c[0]},${c[1]},${c[2]},${0.25 * op})`);
           grad.addColorStop(1, `rgba(${c[0]},${c[1]},${c[2]},0)`);
           ctx.beginPath();
           ctx.arc(px, py, 30, 0, Math.PI * 2);
@@ -318,26 +377,26 @@ function NetworkGraph() {
           ctx.fill();
           ctx.beginPath();
           ctx.roundRect(px - rw, py - rh, rw * 2, rh * 2, 4);
-          ctx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},0.25)`;
+          ctx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},${0.25 * op})`;
           ctx.fill();
-          ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},0.8)`;
+          ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},${0.8 * op})`;
           ctx.lineWidth = 1.5;
           ctx.stroke();
           ctx.font = "bold 11px system-ui, sans-serif";
-          ctx.fillStyle = "rgba(255,255,255,0.95)";
+          ctx.fillStyle = `rgba(255,255,255,${0.95 * op})`;
           ctx.textAlign = "center";
           ctx.fillText("You", px, py + 4);
         } else if (n.tier === 1) {
           const s = 6 * breathe;
           ctx.beginPath();
           ctx.roundRect(px - s * 1.5, py - s, s * 3, s * 2, 3);
-          ctx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},0.15)`;
+          ctx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},${0.15 * op})`;
           ctx.fill();
-          ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},0.45)`;
+          ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},${0.45 * op})`;
           ctx.lineWidth = 1;
           ctx.stroke();
           ctx.font = `${fontSize}px system-ui, sans-serif`;
-          ctx.fillStyle = "rgba(255,255,255,0.5)";
+          ctx.fillStyle = `rgba(255,255,255,${0.5 * op})`;
           ctx.textAlign = "center";
           ctx.fillText(n.label, px, py + s + 12);
         } else if (n.tier === 2) {
@@ -348,26 +407,26 @@ function NetworkGraph() {
           ctx.lineTo(px, py + s);
           ctx.lineTo(px - s, py);
           ctx.closePath();
-          ctx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},0.12)`;
+          ctx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},${0.12 * op})`;
           ctx.fill();
-          ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},0.25)`;
+          ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},${0.25 * op})`;
           ctx.lineWidth = 0.7;
           ctx.stroke();
           ctx.font = `${fontSize}px system-ui, sans-serif`;
-          ctx.fillStyle = "rgba(255,255,255,0.35)";
+          ctx.fillStyle = `rgba(255,255,255,${0.35 * op})`;
           ctx.textAlign = "center";
           ctx.fillText(n.label, px, py + s + 11);
         } else {
           const s = 2.5 * breathe;
           ctx.beginPath();
           ctx.arc(px, py, s, 0, Math.PI * 2);
-          ctx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},0.1)`;
+          ctx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},${0.1 * op})`;
           ctx.fill();
-          ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},0.2)`;
+          ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},${0.2 * op})`;
           ctx.lineWidth = 0.5;
           ctx.stroke();
           ctx.font = `${fontSize}px system-ui, sans-serif`;
-          ctx.fillStyle = "rgba(255,255,255,0.22)";
+          ctx.fillStyle = `rgba(255,255,255,${0.22 * op})`;
           ctx.textAlign = "center";
           ctx.fillText(n.label, px, py + s + 10);
         }
