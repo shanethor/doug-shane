@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Mail, CalendarDays, LayoutGrid, Sparkles, MessageSquare,
-  Network, Zap, Send, Crown,
+  Network, Send,
 } from "lucide-react";
 import ConnectSpotlightTab from "@/components/connect/ConnectSpotlightTab";
 import DemoPipelineTab from "@/components/connect-demo/DemoPipelineTab";
@@ -10,9 +10,7 @@ import DemoEmailTab from "@/components/connect-demo/DemoEmailTab";
 import DemoCalendarTab from "@/components/connect-demo/DemoCalendarTab";
 import DemoAssistantTab from "@/components/connect-demo/DemoAssistantTab";
 import DemoConnectTab from "@/components/connect-demo/DemoConnectTab";
-import DemoTriggersTab from "@/components/connect-demo/DemoTriggersTab";
 import DemoOutreachTab from "@/components/connect-demo/DemoOutreachTab";
-import DemoTop10Tab from "@/components/connect-demo/DemoTop10Tab";
 
 const QUOTES = [
   "Success is not final, failure is not fatal: it is the courage to continue that counts. – Winston Churchill",
