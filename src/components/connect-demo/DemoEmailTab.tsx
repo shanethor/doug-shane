@@ -153,13 +153,13 @@ export default function DemoEmailTab() {
             </div>
             <div className="flex gap-1">
               {selected.tags.map(t => (
-                <Badge key={t} variant="outline" className="text-[9px]" style={{ borderColor: "hsl(174 97% 22% / 0.3)", color: "hsl(140 12% 58%)" }}>{t}</Badge>
+                <Badge key={t} variant="outline" className="text-[9px]" style={{ borderColor: "hsl(140 12% 42% / 0.3)", color: "hsl(140 12% 58%)" }}>{t}</Badge>
               ))}
             </div>
           </div>
 
           {/* Smart insights bar */}
-          <div className="flex items-center gap-3 p-2.5 rounded-lg" style={{ background: "hsl(174 97% 22% / 0.06)", border: "1px solid hsl(174 97% 22% / 0.15)" }}>
+          <div className="flex items-center gap-3 p-2.5 rounded-lg" style={{ background: "hsl(140 12% 42% / 0.06)", border: "1px solid hsl(140 12% 42% / 0.15)" }}>
             <Sparkles className="h-4 w-4 shrink-0" style={{ color: "hsl(140 12% 58%)" }} />
             <span className="text-[11px]" style={{ color: "hsl(140 12% 58%)" }}>
               AI Insight: This email relates to an active pipeline deal. Suggested priority: <strong>High</strong>. Sentiment: <strong>Positive</strong>.
@@ -183,7 +183,7 @@ export default function DemoEmailTab() {
           </div>
 
           {showAiDraft && (
-            <div className="rounded-lg p-4 space-y-2 animate-fade-in" style={{ background: "hsl(174 97% 22% / 0.06)", border: "1px solid hsl(174 97% 22% / 0.2)" }}>
+            <div className="rounded-lg p-4 space-y-2 animate-fade-in" style={{ background: "hsl(140 12% 42% / 0.06)", border: "1px solid hsl(140 12% 42% / 0.2)" }}>
               <div className="flex items-center gap-2">
                 <Sparkles className="h-4 w-4" style={{ color: "hsl(140 12% 58%)" }} />
                 <span className="text-xs font-semibold" style={{ color: "hsl(140 12% 58%)" }}>AI-Generated Draft</span>
@@ -236,7 +236,7 @@ export default function DemoEmailTab() {
             key={i}
             onClick={() => handleSmartFeature(f.label)}
             className="p-2.5 rounded-lg text-left transition-all hover:scale-[1.02] hover:bg-white/5"
-            style={{ background: "hsl(240 8% 9%)", border: `1px solid ${selected ? "hsl(174 97% 22% / 0.25)" : "hsl(240 6% 14%)"}` }}
+            style={{ background: "hsl(240 8% 9%)", border: `1px solid ${selected ? "hsl(140 12% 42% / 0.25)" : "hsl(240 6% 14%)"}` }}
           >
             <f.icon className="h-4 w-4 mb-1" style={{ color: "hsl(140 12% 58%)" }} />
             <p className="text-[11px] font-medium text-white">{f.label}</p>
@@ -261,7 +261,7 @@ export default function DemoEmailTab() {
         <button onClick={() => setFilter("all")} className={`text-xs px-3 py-1 rounded-md transition-colors ${filter === "all" ? "bg-white/10 text-white" : ""}`} style={filter !== "all" ? { color: "hsl(240 5% 46%)" } : {}}>All</button>
         <button onClick={() => setFilter("unread")} className={`text-xs px-3 py-1 rounded-md transition-colors ${filter === "unread" ? "bg-white/10 text-white" : ""}`} style={filter !== "unread" ? { color: "hsl(240 5% 46%)" } : {}}>Unread ({unreadCount})</button>
         {selectedClient && (
-          <Badge variant="outline" className="text-[10px] gap-1 cursor-pointer" style={{ borderColor: "hsl(174 97% 22% / 0.3)", color: "hsl(140 12% 58%)" }} onClick={() => setSelectedClient(null)}>
+          <Badge variant="outline" className="text-[10px] gap-1 cursor-pointer" style={{ borderColor: "hsl(140 12% 42% / 0.3)", color: "hsl(140 12% 58%)" }} onClick={() => setSelectedClient(null)}>
             Client: {CLIENT_CONTACTS.find(c => c.email === selectedClient)?.name} <X className="h-2.5 w-2.5" />
           </Badge>
         )}
@@ -281,7 +281,7 @@ export default function DemoEmailTab() {
             onClick={() => setSelectedEmail(email.id)}
             className="w-full text-left p-3 rounded-lg transition-all hover:bg-white/5 flex items-start gap-3 animate-fade-in"
             style={{
-              background: email.unread ? "hsl(174 97% 22% / 0.06)" : "transparent",
+              background: email.unread ? "hsl(140 12% 42% / 0.06)" : "transparent",
               borderBottom: "1px solid hsl(240 6% 12%)",
               animationDelay: `${idx * 30}ms`,
             }}
@@ -300,7 +300,7 @@ export default function DemoEmailTab() {
               <div className="flex items-center gap-2 mt-1">
                 <span className="text-[10px]" style={{ color: "hsl(240 5% 36%)" }}>{email.time}</span>
                 {email.tags.map(t => (
-                  <Badge key={t} variant="outline" className="text-[9px] h-4" style={{ borderColor: "hsl(174 97% 22% / 0.3)", color: "hsl(140 12% 58%)" }}>{t}</Badge>
+                  <Badge key={t} variant="outline" className="text-[9px] h-4" style={{ borderColor: "hsl(140 12% 42% / 0.3)", color: "hsl(140 12% 58%)" }}>{t}</Badge>
                 ))}
               </div>
             </div>

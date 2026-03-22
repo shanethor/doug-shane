@@ -140,7 +140,7 @@ export default function DemoCalendarTab() {
               const dayEvents = DEMO_EVENTS.filter(e => format(e.date, "yyyy-MM-dd") === format(day, "yyyy-MM-dd"));
               const isToday = format(day, "yyyy-MM-dd") === format(today, "yyyy-MM-dd");
               return (
-                <div key={day.toISOString()} className="rounded-lg p-2 min-h-[120px]" style={{ background: isToday ? "hsl(174 97% 22% / 0.08)" : "hsl(240 8% 9%)", border: `1px solid ${isToday ? "hsl(174 97% 22% / 0.3)" : "hsl(240 6% 14%)"}` }}>
+                <div key={day.toISOString()} className="rounded-lg p-2 min-h-[120px]" style={{ background: isToday ? "hsl(140 12% 42% / 0.08)" : "hsl(240 8% 9%)", border: `1px solid ${isToday ? "hsl(140 12% 42% / 0.3)" : "hsl(240 6% 14%)"}` }}>
                   <p className={`text-[10px] font-semibold mb-1 ${isToday ? "text-white" : ""}`} style={!isToday ? { color: "hsl(240 5% 46%)" } : {}}>{format(day, "EEE d")}</p>
                   {dayEvents.map(e => (
                     <div key={e.id} className="text-[9px] rounded px-1.5 py-0.5 mb-0.5 truncate text-white" style={{ background: e.color + "33" }}>

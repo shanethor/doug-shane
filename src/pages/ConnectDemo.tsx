@@ -37,7 +37,7 @@ const AuraLogo = ({ size = 28 }: { size?: number }) => (
 
 function QuoteTicker() {
   return (
-    <div className="w-full overflow-hidden py-2" style={{ background: "hsl(174 97% 22% / 0.08)", borderBottom: "1px solid hsl(240 6% 14%)" }}>
+    <div className="w-full overflow-hidden py-2" style={{ background: "hsl(140 12% 42% / 0.08)", borderBottom: "1px solid hsl(240 6% 14%)" }}>
       <div className="flex animate-marquee whitespace-nowrap">
         {[...QUOTES, ...QUOTES].map((q, i) => (
           <span key={i} className="mx-8 text-sm italic" style={{ color: "hsl(240 5% 46%)" }}>

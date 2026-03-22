@@ -85,7 +85,7 @@ export default function DemoTriggersTab() {
                   <span className="flex items-center gap-1"><Building2 className="h-3 w-3" />{t.company}</span>
                   <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{t.date}</span>
                 </div>
-                <div className="flex items-center gap-1.5 mt-1.5 p-2 rounded" style={{ background: "hsl(174 97% 22% / 0.06)", border: "1px solid hsl(174 97% 22% / 0.1)" }}>
+                <div className="flex items-center gap-1.5 mt-1.5 p-2 rounded" style={{ background: "hsl(140 12% 42% / 0.06)", border: "1px solid hsl(140 12% 42% / 0.1)" }}>
                   <ArrowRight className="h-3 w-3 shrink-0" style={{ color: "hsl(140 12% 58%)" }} />
                   <span className="text-[11px] font-medium" style={{ color: "hsl(140 12% 58%)" }}>{t.suggested_action}</span>
                 </div>

@@ -129,7 +129,7 @@ const urgencyColor = (u: string) => {
 
 const warmthColor = (w: number) => {
   if (w >= 85) return { color: "hsl(142 71% 45%)", borderColor: "hsl(142 71% 25% / 0.3)" };
-  if (w >= 70) return { color: "hsl(140 12% 58%)", borderColor: "hsl(174 97% 22% / 0.3)" };
+  if (w >= 70) return { color: "hsl(140 12% 58%)", borderColor: "hsl(140 12% 42% / 0.3)" };
   return { color: "hsl(45 93% 47%)", borderColor: "hsl(45 93% 30% / 0.3)" };
 };
 
@@ -201,7 +201,7 @@ export default function DemoOutreachTab() {
             <X className="h-4 w-4 mr-1" /> Close
           </Button>
         </div>
-        <Card style={{ background: "hsl(174 97% 22% / 0.06)", borderColor: "hsl(174 97% 22% / 0.15)" }}>
+        <Card style={{ background: "hsl(140 12% 42% / 0.06)", borderColor: "hsl(140 12% 42% / 0.15)" }}>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div>
@@ -220,7 +220,7 @@ export default function DemoOutreachTab() {
               <Card key={i} className="overflow-hidden animate-fade-in" style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 14%)", animationDelay: `${i * 150}ms` }}>
                 <CardContent className="p-4">
                   <div className="flex items-center gap-2 mb-3">
-                    <div className="h-7 w-7 rounded-full flex items-center justify-center text-xs font-bold" style={{ background: "hsl(174 97% 22% / 0.15)", color: "hsl(140 12% 58%)" }}>{i + 1}</div>
+                    <div className="h-7 w-7 rounded-full flex items-center justify-center text-xs font-bold" style={{ background: "hsl(140 12% 42% / 0.15)", color: "hsl(140 12% 58%)" }}>{i + 1}</div>
                     <h3 className="text-sm font-semibold text-white">{step.title}</h3>
                   </div>
                   <ul className="space-y-2">
@@ -263,7 +263,7 @@ export default function DemoOutreachTab() {
         {/* ── TIERS ── */}
         <TabsContent value="tiers" className="mt-4 space-y-4 animate-fade-in">
           {/* Tier Explainer */}
-          <Card style={{ background: "hsl(174 97% 22% / 0.04)", borderColor: "hsl(174 97% 22% / 0.12)" }}>
+          <Card style={{ background: "hsl(140 12% 42% / 0.04)", borderColor: "hsl(140 12% 42% / 0.12)" }}>
             <CardContent className="p-4 space-y-3">
               <div className="flex items-center gap-2">
                 <Target className="h-4 w-4" style={{ color: "hsl(140 12% 58%)" }} />
@@ -336,7 +336,7 @@ export default function DemoOutreachTab() {
                         c.tier === "A" ? "bg-success/10 text-success" :
                         ""
                       }`} style={
-                        c.tier === "B" ? { background: "hsl(174 97% 22% / 0.1)", color: "hsl(140 12% 58%)" } :
+                        c.tier === "B" ? { background: "hsl(140 12% 42% / 0.1)", color: "hsl(140 12% 58%)" } :
                         c.tier === "C" ? { background: "hsl(240 5% 15%)", color: "hsl(240 5% 46%)" } : {}
                       }>{c.tier}</div>
                       <div className="flex-1 min-w-0">
@@ -391,7 +391,7 @@ export default function DemoOutreachTab() {
                 {DUMMY_OWNERS.map((o, i) => (
                   <div key={i} className="p-2.5 rounded-lg hover:bg-white/[0.03] transition-all animate-fade-in" style={{ background: "hsl(240 6% 7%)", animationDelay: `${i * 50}ms` }}>
                     <div className="flex items-start gap-3">
-                      <div className="flex items-center justify-center h-7 w-7 rounded-full text-xs font-bold shrink-0" style={{ background: "hsl(174 97% 22% / 0.15)", color: "hsl(140 12% 58%)" }}>{i + 1}</div>
+                      <div className="flex items-center justify-center h-7 w-7 rounded-full text-xs font-bold shrink-0" style={{ background: "hsl(140 12% 42% / 0.15)", color: "hsl(140 12% 58%)" }}>{i + 1}</div>
                       <div className="flex-1 min-w-0 space-y-0.5">
                         <div className="flex items-center gap-2">
                           <p className="text-sm font-medium truncate text-white">{o.name}</p>
@@ -429,7 +429,7 @@ export default function DemoOutreachTab() {
                 {DUMMY_PARTNERS.map((p, i) => (
                   <div key={i} className="p-2.5 rounded-lg hover:bg-white/[0.03] transition-all animate-fade-in" style={{ background: "hsl(240 6% 7%)", animationDelay: `${i * 50}ms` }}>
                     <div className="flex items-start gap-3">
-                      <div className="flex items-center justify-center h-7 w-7 rounded-full text-xs font-bold shrink-0" style={{ background: "hsl(174 97% 22% / 0.15)", color: "hsl(140 12% 58%)" }}>{i + 1}</div>
+                      <div className="flex items-center justify-center h-7 w-7 rounded-full text-xs font-bold shrink-0" style={{ background: "hsl(140 12% 42% / 0.15)", color: "hsl(140 12% 58%)" }}>{i + 1}</div>
                       <div className="flex-1 min-w-0 space-y-0.5">
                         <div className="flex items-center gap-2">
                           <p className="text-sm font-medium truncate text-white">{p.name}</p>

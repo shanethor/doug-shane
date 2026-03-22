@@ -498,7 +498,7 @@ export default function DemoConnectTab() {
               onKeyDown={(e) => e.key === "Enter" && handleSearch()}
               placeholder="Search a name... e.g. Douglas Wenz"
               className="pl-12 h-12 text-base rounded-xl"
-              style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(174 97% 22% / 0.25)", color: "white", fontSize: "1rem" }}
+              style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(140 12% 42% / 0.25)", color: "white", fontSize: "1rem" }}
             />
           </div>
           <Button onClick={handleSearch} disabled={!searchName.trim() || searching} className="h-12 px-6 rounded-xl text-base font-semibold" style={{ background: "hsl(140 12% 42%)", color: "white" }}>
@@ -540,7 +540,7 @@ export default function DemoConnectTab() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center gap-3 text-xs" style={{ color: "hsl(240 5% 46%)" }}>
-              <Badge variant="outline" style={{ color: "hsl(140 12% 58%)", borderColor: "hsl(174 97% 22% / 0.3)" }}>
+              <Badge variant="outline" style={{ color: "hsl(140 12% 58%)", borderColor: "hsl(140 12% 42% / 0.3)" }}>
                 {result.confidence}% confidence
               </Badge>
               <span>via <span className="font-medium text-white">{result.connection}</span></span>
@@ -549,16 +549,16 @@ export default function DemoConnectTab() {
             <div className="flex items-center justify-center gap-2 p-4 rounded-lg" style={{ background: "hsl(240 6% 7%)" }}>
               <div className="flex items-center justify-center h-10 w-10 rounded-full text-xs font-bold" style={{ background: "hsl(45 93% 47% / 0.15)", color: "hsl(45 93% 47%)" }}>You</div>
               <ArrowRight className="h-5 w-5 shrink-0" style={{ color: "hsl(140 12% 58%)" }} />
-              <div className="flex items-center justify-center h-10 px-4 rounded-full text-xs font-bold" style={{ background: "hsl(174 97% 22% / 0.15)", color: "hsl(140 12% 58%)" }}>{result.connection}</div>
+              <div className="flex items-center justify-center h-10 px-4 rounded-full text-xs font-bold" style={{ background: "hsl(140 12% 42% / 0.15)", color: "hsl(140 12% 58%)" }}>{result.connection}</div>
               <ArrowRight className="h-5 w-5 shrink-0" style={{ color: "hsl(140 12% 58%)" }} />
-              <div className="flex items-center justify-center h-10 px-4 rounded-full text-xs font-bold" style={{ background: "hsl(174 97% 22% / 0.15)", color: "hsl(140 12% 58%)" }}>{result.target}</div>
+              <div className="flex items-center justify-center h-10 px-4 rounded-full text-xs font-bold" style={{ background: "hsl(140 12% 42% / 0.15)", color: "hsl(140 12% 58%)" }}>{result.target}</div>
             </div>
 
             <div className="p-3 rounded-lg" style={{ background: "hsl(240 6% 7%)", border: "1px solid hsl(240 6% 14%)" }}>
               <p className="text-sm leading-relaxed" style={{ color: "hsl(240 5% 60%)" }}>{result.path}</p>
             </div>
 
-            <div className="flex items-center gap-2 p-3 rounded-lg" style={{ background: "hsl(174 97% 22% / 0.06)", border: "1px solid hsl(174 97% 22% / 0.15)" }}>
+            <div className="flex items-center gap-2 p-3 rounded-lg" style={{ background: "hsl(140 12% 42% / 0.06)", border: "1px solid hsl(140 12% 42% / 0.15)" }}>
               <ArrowRight className="h-4 w-4 shrink-0" style={{ color: "hsl(140 12% 58%)" }} />
               <p className="text-sm font-medium" style={{ color: "hsl(140 12% 58%)" }}>{result.action}</p>
             </div>
