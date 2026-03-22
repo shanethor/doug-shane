@@ -176,7 +176,7 @@ export default function ConnectDemoAuth() {
           <div className="rounded-xl border p-6 space-y-6 animate-scale-in" style={{ background: "hsl(240 8% 7%)", borderColor: "hsl(240 6% 14%)" }}>
             <div>
               <h2 className="text-lg font-semibold text-white">Create your account</h2>
-              <p className="text-sm" style={{ color: "hsl(240 5% 46%)" }}>Sign up to explore AURA Connect</p>
+              <p className="text-sm" style={{ color: "hsl(240 5% 46%)" }}>Sign up to explore AuRa Connect</p>
             </div>
             <form onSubmit={handleAuth} className="space-y-4">
               <div className="space-y-2">
