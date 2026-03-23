@@ -3,7 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Search, ArrowRight, Sparkles, Loader2, X, MapPin, Briefcase, Building2, Users, Signal } from "lucide-react";
+import { Search, ArrowRight, Sparkles, Loader2, X, MapPin, Briefcase, Building2, Users, Signal, Mail, MessageSquare, Phone, Send, Calendar } from "lucide-react";
+import { toast } from "sonner";
 
 const DUMMY_PATH_TEMPLATES = [
   {
