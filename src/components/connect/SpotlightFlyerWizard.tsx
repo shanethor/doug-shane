@@ -231,28 +231,70 @@ export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId, ini
   const removeBullet = (i: number) => setBullets(bullets.filter((_, idx) => idx !== i));
   const updateBullet = (i: number, val: string) => { const u = [...bullets]; u[i] = val; setBullets(u); };
 
+  const buildDemoPrompt = (extra?: string) => {
+    const parts = [`Create a professional vertical marketing flyer for ${brandName || "a business"}.`];
+    parts.push(`Use brand colors: ${brandColors.join(" and ")}.`);
+    parts.push(`Headline: "${title}".`);
+    if (!isEvergreen && dateTime) parts.push(`Date/Time: ${dateTime}.`);
+    if (location) parts.push(`Location: ${location}.`);
+    const cleanBullets = bullets.filter(b => b.trim());
+    if (cleanBullets.length > 0) parts.push(`Bullet points:\n${cleanBullets.map(b => `• ${b}`).join("\n")}`);
+    if (cta) parts.push(`Call to action: "${cta}".`);
+    parts.push(`Design style: clean, professional, suitable for print and social media.`);
+    if (disclaimer) parts.push(`Disclaimer: "${disclaimer}".`);
+    if (extra) parts.push(`Additional instructions: ${extra}`);
+    return parts.join("\n");
+  };
+
+  const generateDemoImage = async (prompt: string) => {
+    const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-3.1-flash-image-preview",
+        messages: [{ role: "user", content: prompt }],
+        modalities: ["image", "text"],
+      }),
+    });
+    const data = await resp.json();
+    const imageUrl = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+    if (!imageUrl) throw new Error("Image generation failed — no image returned");
+    return imageUrl;
+  };
+
   const handleGenerate = async () => {
     const cleanBullets = bullets.filter(b => b.trim());
     if (cleanBullets.length === 0) { toast.error("Add at least one bullet point"); return; }
     if (!cta.trim()) { toast.error("Add a call to action"); return; }
     setLoading(true);
     try {
-      await supabase.functions.invoke("spotlight-flyer", {
-        body: { action: "update_details", flyer_id: flyerId, bullets: cleanBullets, cta: cta.trim(), disclaimer: disclaimer.trim() },
-      });
-      const { data: promptData, error: promptErr } = await supabase.functions.invoke("spotlight-flyer", {
-        body: { action: "build_prompt", flyer_id: flyerId },
-      });
-      if (promptErr) throw promptErr;
-      if (promptData?.error) throw new Error(promptData.error);
-      setStep(4);
-      setGenerating(true);
-      const { data: genData, error: genErr } = await supabase.functions.invoke("spotlight-flyer", {
-        body: { action: "generate", flyer_id: flyerId },
-      });
-      if (genErr) throw genErr;
-      if (genData?.error) throw new Error(genData.error);
-      setResultImageUrl(genData.image_url);
+      if (demoMode) {
+        setStep(4);
+        setGenerating(true);
+        const prompt = buildDemoPrompt();
+        const imageUrl = await generateDemoImage(prompt);
+        setResultImageUrl(imageUrl);
+      } else {
+        await supabase.functions.invoke("spotlight-flyer", {
+          body: { action: "update_details", flyer_id: flyerId, bullets: cleanBullets, cta: cta.trim(), disclaimer: disclaimer.trim() },
+        });
+        const { data: promptData, error: promptErr } = await supabase.functions.invoke("spotlight-flyer", {
+          body: { action: "build_prompt", flyer_id: flyerId },
+        });
+        if (promptErr) throw promptErr;
+        if (promptData?.error) throw new Error(promptData.error);
+        setStep(4);
+        setGenerating(true);
+        const { data: genData, error: genErr } = await supabase.functions.invoke("spotlight-flyer", {
+          body: { action: "generate", flyer_id: flyerId },
+        });
+        if (genErr) throw genErr;
+        if (genData?.error) throw new Error(genData.error);
+        setResultImageUrl(genData.image_url);
+      }
     } catch (err: any) {
       toast.error(err.message || "Generation failed");
       if (step === 4) setStep(3);
@@ -265,14 +307,22 @@ export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId, ini
   const handleRegenerate = async () => {
     setGenerating(true);
     try {
-      const { data, error } = await supabase.functions.invoke("spotlight-flyer", {
-        body: { action: "generate", flyer_id: flyerId, extra_instructions: tweakText.trim() || undefined },
-      });
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-      setResultImageUrl(data.image_url);
-      setTweakText("");
-      toast.success("Graphic regenerated");
+      if (demoMode) {
+        const prompt = buildDemoPrompt(tweakText.trim() || undefined);
+        const imageUrl = await generateDemoImage(prompt);
+        setResultImageUrl(imageUrl);
+        setTweakText("");
+        toast.success("Graphic regenerated");
+      } else {
+        const { data, error } = await supabase.functions.invoke("spotlight-flyer", {
+          body: { action: "generate", flyer_id: flyerId, extra_instructions: tweakText.trim() || undefined },
+        });
+        if (error) throw error;
+        if (data?.error) throw new Error(data.error);
+        setResultImageUrl(data.image_url);
+        setTweakText("");
+        toast.success("Graphic regenerated");
+      }
     } catch (err: any) {
       toast.error(err.message || "Regeneration failed");
     } finally {
