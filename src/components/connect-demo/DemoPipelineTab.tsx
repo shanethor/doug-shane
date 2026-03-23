@@ -50,36 +50,13 @@ const PIPELINE_CONFIGS: Record<string, { label: string; stages: StageConfig[] }>
   ]},
 };
 
-// Industry-specific sale detail fields
-const WON_FIELDS: Record<string, { key: string; label: string; type: "text" | "number" | "date" | "select"; options?: string[] }[]> = {
-  insurance: [
-    { key: "premium", label: "Annual Premium", type: "number" },
-    { key: "effective_date", label: "Policy Effective Date", type: "date" },
-    { key: "carrier", label: "Carrier", type: "text" },
-    { key: "coverage_type", label: "Coverage Type", type: "select", options: ["Commercial Package", "General Liability", "Workers Comp", "Auto", "Umbrella", "Professional Liability", "Cyber", "Property", "BOP"] },
-    { key: "payment_plan", label: "Payment Plan", type: "select", options: ["Paid in Full", "Monthly", "Quarterly", "Semi-Annual", "Financed"] },
-  ],
-  real_estate: [
-    { key: "sale_price", label: "Sale Price", type: "number" },
-    { key: "close_date", label: "Close Date", type: "date" },
-    { key: "commission_pct", label: "Commission %", type: "number" },
-    { key: "property_type", label: "Property Type", type: "select", options: ["Single Family", "Condo", "Multi-Family", "Commercial", "Land", "Industrial"] },
-    { key: "financing", label: "Financing", type: "select", options: ["Conventional", "FHA", "VA", "Cash", "Seller Financing"] },
-  ],
-  consulting: [
-    { key: "contract_value", label: "Contract Value", type: "number" },
-    { key: "start_date", label: "Start Date", type: "date" },
-    { key: "duration", label: "Engagement Duration", type: "select", options: ["1 Month", "3 Months", "6 Months", "12 Months", "Ongoing"] },
-    { key: "service_type", label: "Service Type", type: "select", options: ["Strategy", "Implementation", "Advisory", "Training", "Audit"] },
-    { key: "billing", label: "Billing Model", type: "select", options: ["Fixed Fee", "Hourly", "Retainer", "Milestone-Based"] },
-  ],
-  generic: [
-    { key: "deal_value", label: "Deal Value", type: "number" },
-    { key: "close_date", label: "Close Date", type: "date" },
-    { key: "deal_type", label: "Deal Type", type: "select", options: ["New Business", "Upsell", "Renewal", "Expansion"] },
-    { key: "contract_length", label: "Contract Length", type: "select", options: ["Monthly", "Quarterly", "Annual", "Multi-Year"] },
-  ],
-};
+// Default sale detail fields — Revenue + Commission
+const WON_FIELDS: { key: string; label: string; type: "text" | "number" | "date" | "select"; options?: string[] }[] = [
+  { key: "revenue", label: "Revenue", type: "number" },
+  { key: "commission", label: "Commission", type: "number" },
+  { key: "close_date", label: "Close Date", type: "date" },
+  { key: "notes", label: "Notes", type: "text" },
+];
 
 type DemoLead = {
   id: string; name: string; contact: string; stage: string; value: number; source: string;
