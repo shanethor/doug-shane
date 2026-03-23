@@ -812,6 +812,15 @@ export default function DemoConnectTab() {
         </Card>
       )}
 
+      {result && (
+        <ConnectOutreachPopup
+          type={outreachType}
+          onClose={() => setOutreachType(null)}
+          connection={result.connection}
+          target={result.target}
+        />
+      )}
+
       {!searching && !result && hasSearched && (
         <div className="text-center py-12 text-sm" style={{ color: "hsl(240 5% 46%)" }}>No results found. Try another name.</div>
       )}
