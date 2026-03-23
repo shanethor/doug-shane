@@ -165,6 +165,7 @@ export default function ConnectDemoAuth() {
       <div className="w-full max-w-md space-y-6 relative z-10">
 
         {step === "auth" && (
+          <>
           <div className="rounded-xl border p-6 space-y-6 animate-scale-in" style={{ background: "hsl(240 8% 7%)", borderColor: "hsl(240 6% 14%)" }}>
             <div>
               <h2 className="text-lg font-semibold text-white">Create your account</h2>
