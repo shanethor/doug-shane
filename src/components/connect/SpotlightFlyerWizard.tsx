@@ -131,6 +131,15 @@ export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId, ini
     if (!rawPrompt.trim()) { toast.error("Describe what you need"); return; }
     setLoading(true);
     try {
+      if (demoMode) {
+        // Demo mode: skip edge function, proceed locally
+        const detectedType = flyerType || "event";
+        setFlyerId(`demo-${Date.now()}`);
+        setFlyerType(detectedType);
+        setStep(2);
+        setLoading(false);
+        return;
+      }
       const { data, error } = await supabase.functions.invoke("spotlight-flyer", {
         body: { action: "create_draft", raw_prompt: rawPrompt.trim(), type: flyerType || undefined, brand_id: selectedBrandId || undefined },
       });
