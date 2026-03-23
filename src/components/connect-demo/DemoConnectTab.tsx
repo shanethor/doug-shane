@@ -381,9 +381,11 @@ function NetworkGraph({ onNodeClick }: { onNodeClick: (profile: ReturnType<typeo
         }
       }
 
+      const isFirstNodeReveal = !sessionStorage.getItem("network-graph-visited") || !introComplete;
+      const opacityStep = isFirstNodeReveal ? 0.025 : 0.06;
       for (const i of visibleSet) {
         if (revealedSet.has(i)) {
-          nodeOpacity[i] = Math.min(1, nodeOpacity[i] + 0.06);
+          nodeOpacity[i] = Math.min(1, nodeOpacity[i] + opacityStep);
         }
       }
 
