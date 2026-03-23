@@ -86,3 +86,6 @@ verify_jwt = false
 
 [functions.booking]
 verify_jwt = false
+
+[functions.spotlight-flyer]
+verify_jwt = false
