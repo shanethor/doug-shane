@@ -261,7 +261,7 @@ export default function DemoEmailTab() {
     const name = selectedThread.participants.find(p => p !== "You") || "Contact";
     switch (label) {
       case "Smart Reply": handleAiDraft(selectedThread); break;
-      case "Auto-Summarize": toast.success(`Summarized thread with ${name}: 3 key points extracted — pipeline review, scheduling, next steps.`); break;
+      case "Auto-Summarize": setShowSummary(true); break;
       case "Compliance Check": toast.success(`Compliance scan complete for "${selectedThread.subject}" — no issues detected.`); break;
       case "Sentiment Analysis": toast.success(`Sentiment for ${name}: Positive (87%) — professional and eager to proceed.`); break;
       case "Follow-Up Reminder": toast.success(`Follow-up reminder set for ${name}'s thread — tomorrow at 9:00 AM.`); break;
