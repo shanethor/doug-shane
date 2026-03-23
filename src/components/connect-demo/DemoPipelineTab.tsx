@@ -584,7 +584,7 @@ export default function DemoPipelineTab() {
     {pendingWonLead && (
       <WonDetailsDialog
         lead={pendingWonLead}
-        industry={industry}
+        
         onSave={handleWonSave}
         onCancel={() => setPendingWonLead(null)}
       />
