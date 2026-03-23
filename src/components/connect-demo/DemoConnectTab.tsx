@@ -785,17 +785,15 @@ export default function DemoConnectTab() {
             <div className="space-y-3">
               <p className="text-xs font-medium uppercase tracking-wider" style={{ color: "hsl(240 5% 46%)" }}>Reach out now</p>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                {[
-                  { icon: Mail, label: "Draft Email", desc: "AI-generated intro" },
-                  { icon: MessageSquare, label: "Send Text", desc: "Quick SMS message" },
-                  { icon: Phone, label: "Phone Call", desc: "Call script ready" },
-                  { icon: Calendar, label: "Schedule Meet", desc: "Book a coffee chat" },
-                ].map((action) => (
+                {([
+                  { icon: Mail, label: "Draft Email", desc: "AI-generated intro", key: "email" as const },
+                  { icon: MessageSquare, label: "Send Text", desc: "Quick SMS message", key: "text" as const },
+                  { icon: Phone, label: "Phone Call", desc: "Call script ready", key: "call" as const },
+                  { icon: Calendar, label: "Schedule Meet", desc: "Book a coffee chat", key: "meet" as const },
+                ]).map((action) => (
                   <button
                     key={action.label}
-                    onClick={() => {
-                      toast.success(`${action.label} initiated`, { description: `Preparing ${action.label.toLowerCase()} to reach ${result.connection} about ${result.target}…` });
-                    }}
+                    onClick={() => setOutreachType(action.key)}
                     className="flex flex-col items-center gap-1.5 p-3 rounded-xl text-center transition-all hover:scale-[1.04] active:scale-95"
                     style={{ background: "hsl(140 12% 42% / 0.08)", border: "1px solid hsl(140 12% 42% / 0.2)" }}
                   >
