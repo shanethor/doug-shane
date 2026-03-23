@@ -34,6 +34,7 @@ interface SpotlightFlyerWizardProps {
   brands: BrandPackage[];
   editFlyerId?: string | null;
   initialType?: string;
+  demoMode?: boolean;
 }
 
 export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId, initialType }: SpotlightFlyerWizardProps) {
