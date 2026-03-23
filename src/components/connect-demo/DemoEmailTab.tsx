@@ -147,6 +147,13 @@ function parseSearch(raw: string, threads: DemoThread[]): DemoThread[] {
   if (q.includes("is:unread")) { results = results.filter(t => t.unread); q = q.replace("is:unread", "").trim(); }
   if (q.includes("is:starred")) { results = results.filter(t => t.starred); q = q.replace("is:starred", "").trim(); }
   if (q.includes("has:attachment")) { results = results.filter(t => t.hasAttachment); q = q.replace("has:attachment", "").trim(); }
+  // Label/tag filtering: is:renewal, is:billing, etc.
+  const labelMatch = q.match(/is:(\S+)/);
+  if (labelMatch) {
+    const tag = labelMatch[1];
+    results = results.filter(t => t.tags.some(tg => tg.toLowerCase().includes(tag)));
+    q = q.replace(/is:\S+/, "").trim();
+  }
   if (q) {
     results = results.filter(t =>
       t.subject.toLowerCase().includes(q) ||
