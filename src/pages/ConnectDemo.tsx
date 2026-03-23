@@ -92,11 +92,87 @@ export default function ConnectDemo() {
     (buildPhase >= phase ? "" : " opacity-0 translate-y-4 pointer-events-none");
 
   return (
-    <div className="min-h-screen flex flex-col w-full overflow-x-hidden" style={{ background: "#08080A", color: "hsl(240 6% 95%)", minHeight: "100dvh" }}>
+    <div className="min-h-screen flex flex-col w-full overflow-x-hidden relative" style={{ background: "#08080A", color: "hsl(240 6% 95%)", minHeight: "100dvh" }}>
+
+      {/* ── Phase 0→1: Cinematic logo intro overlay ── */}
+      {buildPhase < 2 && (
+        <div
+          className="fixed inset-0 z-[200] flex flex-col items-center justify-center"
+          style={{
+            background: "#08080A",
+            opacity: buildPhase >= 1 && buildPhase < 2 ? 1 : 1,
+            transition: "opacity 1s ease-out",
+          }}
+        >
+          {/* Radial glow */}
+          <div className="absolute w-[400px] h-[400px] rounded-full pointer-events-none"
+            style={{
+              background: "radial-gradient(circle, hsl(140 12% 42% / 0.12) 0%, transparent 70%)",
+              opacity: buildPhase >= 1 ? 1 : 0,
+              transition: "opacity 1.5s ease-out",
+            }}
+          />
+          {/* Logo */}
+          <div style={{
+            opacity: buildPhase >= 1 ? 1 : 0,
+            transform: buildPhase >= 1 ? "scale(1)" : "scale(0.6)",
+            transition: "all 1.2s cubic-bezier(0.16, 1, 0.3, 1)",
+          }}>
+            <AuraLogo size={80} />
+          </div>
+          {/* Title */}
+          <h1 className="text-3xl font-bold text-white mt-5" style={{
+            opacity: buildPhase >= 1 ? 1 : 0,
+            transform: buildPhase >= 1 ? "translateY(0)" : "translateY(20px)",
+            transition: "all 1s cubic-bezier(0.16, 1, 0.3, 1) 0.4s",
+          }}>
+            AuRa Connect
+          </h1>
+          <p className="text-sm mt-2" style={{
+            color: "hsl(140 12% 58%)",
+            opacity: buildPhase >= 1 ? 1 : 0,
+            transform: buildPhase >= 1 ? "translateY(0)" : "translateY(12px)",
+            transition: "all 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.8s",
+          }}>
+            Building your workspace…
+          </p>
+          {/* Subtle loading bar */}
+          <div className="mt-6 w-48 h-0.5 rounded-full overflow-hidden" style={{ background: "hsl(140 12% 42% / 0.15)" }}>
+            <div style={{
+              height: "100%",
+              background: "hsl(140 12% 42%)",
+              width: buildPhase >= 1 ? "100%" : "0%",
+              transition: "width 2s cubic-bezier(0.16, 1, 0.3, 1) 0.6s",
+              borderRadius: "9999px",
+            }} />
+          </div>
+        </div>
+      )}
+
+      {/* ── Fade-out overlay between phase 1→2 ── */}
+      {buildPhase === 2 && (
+        <div className="fixed inset-0 z-[199] pointer-events-none" style={{
+          background: "#08080A",
+          animation: "introFadeOut 1.2s ease-out forwards",
+        }} />
+      )}
+
+      <style>{`
+        @keyframes introFadeOut {
+          0% { opacity: 1; }
+          100% { opacity: 0; }
+        }
+      `}</style>
+
       {/* Header */}
       <header
-        className={transition(1)}
-        style={{ borderBottom: "1px solid hsl(240 6% 14%)", background: "hsl(240 8% 7%)", opacity: buildPhase >= 1 ? 1 : 0, transform: buildPhase >= 1 ? "translateY(0)" : "translateY(-20px)" }}
+        style={{
+          borderBottom: "1px solid hsl(240 6% 14%)",
+          background: "hsl(240 8% 7%)",
+          opacity: buildPhase >= 2 ? 1 : 0,
+          transform: buildPhase >= 2 ? "translateY(0)" : "translateY(-30px)",
+          transition: "all 1.2s cubic-bezier(0.16, 1, 0.3, 1)",
+        }}
       >
         <div className="px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -120,11 +196,11 @@ export default function ConnectDemo() {
       {/* Quote Ticker */}
       <div
         style={{
-          opacity: buildPhase >= 2 ? 1 : 0,
-          transform: buildPhase >= 2 ? "translateY(0)" : "translateY(-10px)",
-          transition: "all 0.6s cubic-bezier(0.16, 1, 0.3, 1)",
+          opacity: buildPhase >= 3 ? 1 : 0,
+          transform: buildPhase >= 3 ? "translateY(0)" : "translateY(-10px)",
+          transition: "all 1s cubic-bezier(0.16, 1, 0.3, 1)",
           overflow: "hidden",
-          maxHeight: buildPhase >= 2 ? "50px" : "0px",
+          maxHeight: buildPhase >= 3 ? "50px" : "0px",
         }}
       >
         <QuoteTicker />
@@ -136,9 +212,9 @@ export default function ConnectDemo() {
           {/* Tab navigation */}
           <div
             style={{
-              opacity: buildPhase >= 3 ? 1 : 0,
-              transform: buildPhase >= 3 ? "translateY(0) scale(1)" : "translateY(12px) scale(0.98)",
-              transition: "all 0.6s cubic-bezier(0.16, 1, 0.3, 1)",
+              opacity: buildPhase >= 4 ? 1 : 0,
+              transform: buildPhase >= 4 ? "translateY(0) scale(1)" : "translateY(16px) scale(0.97)",
+              transition: "all 1s cubic-bezier(0.16, 1, 0.3, 1)",
             }}
           >
             <TabsList className="flex flex-wrap h-auto gap-1 p-1 mb-4" style={{ background: "hsl(240 8% 7%)", border: "1px solid hsl(240 6% 14%)" }}>
@@ -149,9 +225,9 @@ export default function ConnectDemo() {
                   className="flex items-center gap-1.5 data-[state=active]:text-white"
                   style={{
                     color: "hsl(240 5% 46%)",
-                    opacity: buildPhase >= 3 ? 1 : 0,
-                    transform: buildPhase >= 3 ? "translateY(0)" : "translateY(8px)",
-                    transition: `all 0.4s cubic-bezier(0.16, 1, 0.3, 1) ${i * 80}ms`,
+                    opacity: buildPhase >= 4 ? 1 : 0,
+                    transform: buildPhase >= 4 ? "translateY(0)" : "translateY(10px)",
+                    transition: `all 0.6s cubic-bezier(0.16, 1, 0.3, 1) ${i * 120}ms`,
                   }}
                 >
                   <t.icon className="h-4 w-4" /> {t.label}
@@ -163,9 +239,9 @@ export default function ConnectDemo() {
           {/* Tab content */}
           <div
             style={{
-              opacity: buildPhase >= 4 ? 1 : 0,
-              transform: buildPhase >= 4 ? "translateY(0)" : "translateY(16px)",
-              transition: "all 0.8s cubic-bezier(0.16, 1, 0.3, 1)",
+              opacity: buildPhase >= 5 ? 1 : 0,
+              transform: buildPhase >= 5 ? "translateY(0)" : "translateY(20px)",
+              transition: "all 1.2s cubic-bezier(0.16, 1, 0.3, 1)",
             }}
           >
             <TabsContent value="connect" className="mt-0"><DemoConnectTab /></TabsContent>
