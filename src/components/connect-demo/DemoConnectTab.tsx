@@ -381,9 +381,11 @@ function NetworkGraph({ onNodeClick }: { onNodeClick: (profile: ReturnType<typeo
         }
       }
 
+      const isFirstNodeReveal = !sessionStorage.getItem("network-graph-visited") || !introComplete;
+      const opacityStep = isFirstNodeReveal ? 0.025 : 0.06;
       for (const i of visibleSet) {
         if (revealedSet.has(i)) {
-          nodeOpacity[i] = Math.min(1, nodeOpacity[i] + 0.06);
+          nodeOpacity[i] = Math.min(1, nodeOpacity[i] + opacityStep);
         }
       }
 
@@ -688,9 +690,9 @@ export default function DemoConnectTab() {
       {/* Network Graph — fills ALL remaining space */}
       {!searching && !result && (
         <div className="relative flex-1 overflow-hidden mt-2" style={{
-          opacity: connectPhase >= 3 ? 1 : 0,
-          transform: connectPhase >= 3 ? "translateY(0) scale(1)" : "translateY(30px) scale(0.95)",
-          transition: isFirstVisit.current ? "all 5s cubic-bezier(0.16, 1, 0.3, 1)" : "all 0.6s ease-out",
+          opacity: isFirstVisit.current ? 1 : (connectPhase >= 3 ? 1 : 0),
+          transform: isFirstVisit.current ? "none" : (connectPhase >= 3 ? "translateY(0) scale(1)" : "translateY(30px) scale(0.95)"),
+          transition: isFirstVisit.current ? "none" : "all 0.6s ease-out",
         }}>
           <NetworkGraph onNodeClick={handleNodeClick} />
           <div className="absolute bottom-4 left-0 right-0 text-center z-10">
