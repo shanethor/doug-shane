@@ -3,7 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Search, ArrowRight, Sparkles, Loader2, X, MapPin, Briefcase, Building2, Users, Signal } from "lucide-react";
+import { Search, ArrowRight, Sparkles, Loader2, X, MapPin, Briefcase, Building2, Users, Signal, Mail, MessageSquare, Phone, Send, Calendar } from "lucide-react";
+import { toast } from "sonner";
 
 const DUMMY_PATH_TEMPLATES = [
   {
@@ -779,9 +780,33 @@ export default function DemoConnectTab() {
               <p className="text-sm leading-relaxed" style={{ color: "hsl(240 5% 60%)" }}>{result.path}</p>
             </div>
 
-            <div className="flex items-center gap-2 p-3 rounded-lg" style={{ background: "hsl(140 12% 42% / 0.06)", border: "1px solid hsl(140 12% 42% / 0.15)" }}>
-              <ArrowRight className="h-4 w-4 shrink-0" style={{ color: "hsl(140 12% 58%)" }} />
-              <p className="text-sm font-medium" style={{ color: "hsl(140 12% 58%)" }}>{result.action}</p>
+            <div className="space-y-3">
+              <p className="text-xs font-medium uppercase tracking-wider" style={{ color: "hsl(240 5% 46%)" }}>Reach out now</p>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {[
+                  { icon: Mail, label: "Draft Email", desc: "AI-generated intro" },
+                  { icon: MessageSquare, label: "Send Text", desc: "Quick SMS message" },
+                  { icon: Phone, label: "Phone Call", desc: "Call script ready" },
+                  { icon: Calendar, label: "Schedule Meet", desc: "Book a coffee chat" },
+                ].map((action) => (
+                  <button
+                    key={action.label}
+                    onClick={() => {
+                      toast.success(`${action.label} initiated`, { description: `Preparing ${action.label.toLowerCase()} to reach ${result.connection} about ${result.target}…` });
+                    }}
+                    className="flex flex-col items-center gap-1.5 p-3 rounded-xl text-center transition-all hover:scale-[1.04] active:scale-95"
+                    style={{ background: "hsl(140 12% 42% / 0.08)", border: "1px solid hsl(140 12% 42% / 0.2)" }}
+                  >
+                    <action.icon className="h-5 w-5" style={{ color: "hsl(140 12% 58%)" }} />
+                    <span className="text-xs font-semibold text-white">{action.label}</span>
+                    <span className="text-[10px] leading-tight" style={{ color: "hsl(240 5% 50%)" }}>{action.desc}</span>
+                  </button>
+                ))}
+              </div>
+              <div className="flex items-center gap-2 p-2.5 rounded-lg" style={{ background: "hsl(140 12% 42% / 0.06)", border: "1px solid hsl(140 12% 42% / 0.12)" }}>
+                <Send className="h-3.5 w-3.5 shrink-0" style={{ color: "hsl(140 12% 50%)" }} />
+                <p className="text-xs" style={{ color: "hsl(140 12% 58%)" }}>{result.action}</p>
+              </div>
             </div>
           </CardContent>
         </Card>
