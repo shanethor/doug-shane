@@ -165,13 +165,14 @@ export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId, ini
   const handleSaveDetails = async () => {
     if (!title.trim()) { toast.error("Title is required"); return; }
     const needsDateTime = ["event", "announcement"].includes(flyerType);
+    const effectiveEvergreen = needsDateTime ? isEvergreen : true;
     if (needsDateTime && !isEvergreen && !dateTime.trim()) { toast.error("Set a date/time or mark as evergreen"); return; }
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("spotlight-flyer", {
         body: {
           action: "update_details", flyer_id: flyerId,
-          title: title.trim(), date_time: isEvergreen ? null : dateTime.trim(), evergreen: isEvergreen,
+          title: title.trim(), date_time: effectiveEvergreen ? null : dateTime.trim(), evergreen: effectiveEvergreen,
           location: location.trim(), brand_name: brandName.trim(), brand_colors: brandColors.filter(c => c),
           logo_url: logoUrl.trim(), calendar_event_id: selectedEventId, type: flyerType,
         },
