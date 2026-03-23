@@ -142,7 +142,7 @@ export default function ConnectDemo() {
               height: "100%",
               background: "hsl(140 12% 42%)",
               width: buildPhase >= 1 ? "100%" : "0%",
-              transition: "width 2s cubic-bezier(0.16, 1, 0.3, 1) 0.6s",
+              transition: "width 4.2s cubic-bezier(0.16, 1, 0.3, 1) 0.6s",
               borderRadius: "9999px",
             }} />
           </div>

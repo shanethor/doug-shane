@@ -629,9 +629,12 @@ export default function DemoConnectTab() {
       return;
     }
     sessionStorage.setItem("connect-tab-visited", "true");
-    const t1 = setTimeout(() => setConnectPhase(1), 400);   // headline
-    const t2 = setTimeout(() => setConnectPhase(2), 1400);  // search bar
-    const t3 = setTimeout(() => setConnectPhase(3), 3000);  // network graph (slow)
+    // Delay connect-tab animations until after the page build finishes (~10.5s)
+    const pageEntryDelay = sessionStorage.getItem("connect-demo-entered") ? 0 : 0;
+    // The content phase (5) fires at 10.5s, add stagger after that
+    const t1 = setTimeout(() => setConnectPhase(1), 800);   // headline
+    const t2 = setTimeout(() => setConnectPhase(2), 2200);  // search bar
+    const t3 = setTimeout(() => setConnectPhase(3), 5000);  // network graph (very slow)
     return () => [t1, t2, t3].forEach(clearTimeout);
   }, []);
 
