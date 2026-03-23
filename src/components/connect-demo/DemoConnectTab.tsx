@@ -1,9 +1,9 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Search, ArrowRight, Sparkles, Loader2 } from "lucide-react";
+import { Search, ArrowRight, Sparkles, Loader2, X, MapPin, Briefcase, Building2, Users, Signal } from "lucide-react";
 
 const DUMMY_PATH_TEMPLATES = [
   {
@@ -142,10 +142,33 @@ function buildGraph() {
 
 const GRAPH = buildGraph();
 
-function NetworkGraph() {
+// Mock profile data generator
+function generateProfile(name: string, tier: 0 | 1 | 2 | 3) {
+  const industries = ["Insurance","Real Estate","Finance","Tech","Healthcare","Consulting","Legal","Marketing"];
+  const companies = ["Apex Partners","BlueSky Corp","Meridian Group","NovaTech","Summit LLC","Horizon Inc","Atlas Financial","Pinnacle Consulting"];
+  const titles = ["CEO","VP of Sales","Managing Director","Senior Partner","Account Executive","Regional Manager","Director of Operations","Founder"];
+  const locations = ["Austin, TX","Dallas, TX","Houston, TX","San Antonio, TX","Denver, CO","Phoenix, AZ","Nashville, TN","Atlanta, GA"];
+  const hash = name.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
+  const mutuals = tier === 1 ? 8 + (hash % 15) : tier === 2 ? 3 + (hash % 8) : 1 + (hash % 4);
+  return {
+    name,
+    title: titles[hash % titles.length],
+    company: companies[(hash * 3) % companies.length],
+    industry: industries[(hash * 7) % industries.length],
+    location: locations[(hash * 11) % locations.length],
+    mutualConnections: mutuals,
+    connectionStrength: tier === 1 ? "Strong" : tier === 2 ? "Moderate" : "Weak",
+    tier,
+  };
+}
+
+function NetworkGraph({ onNodeClick }: { onNodeClick: (profile: ReturnType<typeof generateProfile>, pos: { x: number; y: number }) => void }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const animRef = useRef<number>(0);
+  const hoveredNodeRef = useRef<number | null>(null);
+  const toPixelRef = useRef<((gx: number, gy: number) => [number, number]) | null>(null);
+  const wRef = useRef(0);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -163,7 +186,6 @@ function NetworkGraph() {
     let visibleSet = new Set<number>();
     let visibleEdges: number[] = [];
 
-    // Node reveal system — nodes appear one-by-one on first load
     let revealedSet = new Set<number>();
     let revealOrder: number[] = [];
     let revealIdx = 0;
@@ -196,10 +218,8 @@ function NetworkGraph() {
       }
       visibleSet.add(0);
 
-      // Build reveal order: BFS from center outward for intro
       if (revealOrder.length === 0) {
         revealOrder = sorted.filter(s => visibleSet.has(s.i)).map(s => s.i);
-        // Always start with "You" node
         revealOrder = [0, ...revealOrder.filter(i => i !== 0)];
         revealedSet = new Set<number>();
       }
@@ -217,6 +237,7 @@ function NetworkGraph() {
       const rect = container!.getBoundingClientRect();
       w = rect.width;
       h = rect.height;
+      wRef.current = w;
       canvas!.width = w * dpr;
       canvas!.height = h * dpr;
       canvas!.style.width = w + "px";
@@ -233,6 +254,7 @@ function NetworkGraph() {
       const offX = (gy % 2) * cellW * 0.5;
       return [padX + gx * cellW + offX, padY + gy * cellH];
     }
+    toPixelRef.current = toPixel;
 
     function startTrace() {
       if (!introComplete) return;
@@ -267,27 +289,76 @@ function NetworkGraph() {
       traceProgress = 0;
     }
 
+    // Hit detection
+    function findNodeAt(mx: number, my: number): number | null {
+      const hitRadius = w >= 1200 ? 28 : w >= 600 ? 22 : 18;
+      let closest: number | null = null;
+      let closestDist = hitRadius;
+      for (const i of visibleSet) {
+        if (!revealedSet.has(i) || i === 0) continue;
+        const [px, py] = toPixel(nodes[i].gx, nodes[i].gy);
+        // Hit test on label area (below the node shape)
+        const fontSize = w >= 1200 ? 9 : w >= 600 ? 8 : 7;
+        const labelY = py + (nodes[i].tier === 1 ? 18 : nodes[i].tier === 2 ? 14 : 12);
+        const labelW = nodes[i].label.length * fontSize * 0.55;
+        if (mx >= px - labelW && mx <= px + labelW && my >= py - 10 && my <= labelY + 6) {
+          const d = Math.hypot(mx - px, my - labelY);
+          if (d < closestDist) { closestDist = d; closest = i; }
+        }
+      }
+      return closest;
+    }
+
+    function handleMouseMove(e: MouseEvent) {
+      const rect = canvas!.getBoundingClientRect();
+      const mx = e.clientX - rect.left;
+      const my = e.clientY - rect.top;
+      const hit = findNodeAt(mx, my);
+      hoveredNodeRef.current = hit;
+      canvas!.style.cursor = hit !== null ? "pointer" : "default";
+    }
+
+    function handleClick(e: MouseEvent) {
+      const rect = canvas!.getBoundingClientRect();
+      const mx = e.clientX - rect.left;
+      const my = e.clientY - rect.top;
+      const hit = findNodeAt(mx, my);
+      if (hit !== null && hit !== 0) {
+        const node = nodes[hit];
+        const [px, py] = toPixel(node.gx, node.gy);
+        const containerRect = container!.getBoundingClientRect();
+        onNodeClick(
+          generateProfile(node.label, node.tier),
+          { x: containerRect.left + px, y: containerRect.top + py }
+        );
+      }
+    }
+
+    canvas.addEventListener("mousemove", handleMouseMove);
+    canvas.addEventListener("click", handleClick);
+    canvas.addEventListener("mouseleave", () => { hoveredNodeRef.current = null; canvas!.style.cursor = "default"; });
+
     resize();
 
-    // Node opacity map for smooth fade-in
     const nodeOpacity = new Float32Array(nodes.length);
 
     const sage = [138, 154, 140];
     const softWhite = [245, 245, 240];
+
+    // Hover scale animation per node
+    const hoverScale = new Float32Array(nodes.length);
 
     function draw() {
       if (!ctx) return;
       frame++;
       ctx.clearRect(0, 0, w, h);
 
-      // Reveal nodes progressively during intro — 3 nodes per frame for speed
       if (!introComplete && revealOrder.length > 0) {
         const revealPerFrame = Math.max(3, Math.ceil(revealOrder.length / 90));
         for (let r = 0; r < revealPerFrame && revealIdx < revealOrder.length; r++) {
           const ni = revealOrder[revealIdx];
           revealedSet.add(ni);
           revealIdx++;
-          // Fire edges connected to newly revealed node
           for (const ei of adj[ni]) {
             const [a, b] = edges[ei];
             if (revealedSet.has(a) && revealedSet.has(b)) {
@@ -301,14 +372,19 @@ function NetworkGraph() {
         }
       }
 
-      // Fade in node opacity
       for (const i of visibleSet) {
         if (revealedSet.has(i)) {
           nodeOpacity[i] = Math.min(1, nodeOpacity[i] + 0.06);
         }
       }
 
-      // Normal trace + ambient pulses (only after intro)
+      // Animate hover scale
+      const hovered = hoveredNodeRef.current;
+      for (const i of visibleSet) {
+        const target = i === hovered ? 1 : 0;
+        hoverScale[i] += (target - hoverScale[i]) * 0.15;
+      }
+
       if (introComplete) {
         if (frame % 8 === 0 && traceProgress < traceEdges.length) {
           edgePulse[traceEdges[traceProgress]] = 1;
@@ -322,7 +398,6 @@ function NetworkGraph() {
         }
       }
 
-      // Draw edges — only between revealed nodes
       for (const ei of visibleEdges) {
         const [a, b] = edges[ei];
         if (!revealedSet.has(a) || !revealedSet.has(b)) continue;
@@ -354,8 +429,7 @@ function NetworkGraph() {
         if (edgePulse[ei] < 0.005) edgePulse[ei] = 0;
       }
 
-      // Draw only revealed nodes with fade-in opacity
-      const fontSize = w >= 1200 ? 9 : w >= 600 ? 8 : 7;
+      const baseFontSize = w >= 1200 ? 9 : w >= 600 ? 8 : 7;
       for (const i of visibleSet) {
         if (!revealedSet.has(i)) continue;
         const op = nodeOpacity[i];
@@ -365,6 +439,8 @@ function NetworkGraph() {
         const [px, py] = toPixel(n.gx, n.gy);
         const c = n.tier === 0 ? softWhite : sage;
         const breathe = 1 + Math.sin(frame * 0.018 + i * 0.7) * 0.12;
+        const hs = hoverScale[i];
+        const isHovered = hs > 0.1;
 
         if (n.tier === 0) {
           const rw = 18 * breathe, rh = 12 * breathe;
@@ -386,49 +462,69 @@ function NetworkGraph() {
           ctx.fillStyle = `rgba(255,255,255,${0.95 * op})`;
           ctx.textAlign = "center";
           ctx.fillText("You", px, py + 4);
-        } else if (n.tier === 1) {
-          const s = 6 * breathe;
-          ctx.beginPath();
-          ctx.roundRect(px - s * 1.5, py - s, s * 3, s * 2, 3);
-          ctx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},${0.15 * op})`;
-          ctx.fill();
-          ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},${0.45 * op})`;
-          ctx.lineWidth = 1;
-          ctx.stroke();
-          ctx.font = `${fontSize}px system-ui, sans-serif`;
-          ctx.fillStyle = `rgba(255,255,255,${0.5 * op})`;
-          ctx.textAlign = "center";
-          ctx.fillText(n.label, px, py + s + 12);
-        } else if (n.tier === 2) {
-          const s = 3.5 * breathe;
-          ctx.beginPath();
-          ctx.moveTo(px, py - s);
-          ctx.lineTo(px + s, py);
-          ctx.lineTo(px, py + s);
-          ctx.lineTo(px - s, py);
-          ctx.closePath();
-          ctx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},${0.12 * op})`;
-          ctx.fill();
-          ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},${0.25 * op})`;
-          ctx.lineWidth = 0.7;
-          ctx.stroke();
-          ctx.font = `${fontSize}px system-ui, sans-serif`;
-          ctx.fillStyle = `rgba(255,255,255,${0.35 * op})`;
-          ctx.textAlign = "center";
-          ctx.fillText(n.label, px, py + s + 11);
         } else {
-          const s = 2.5 * breathe;
-          ctx.beginPath();
-          ctx.arc(px, py, s, 0, Math.PI * 2);
-          ctx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},${0.1 * op})`;
-          ctx.fill();
-          ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},${0.2 * op})`;
-          ctx.lineWidth = 0.5;
-          ctx.stroke();
-          ctx.font = `${fontSize}px system-ui, sans-serif`;
-          ctx.fillStyle = `rgba(255,255,255,${0.22 * op})`;
-          ctx.textAlign = "center";
-          ctx.fillText(n.label, px, py + s + 10);
+          // Compute enlarged font for hover
+          const fontSize = baseFontSize + hs * 4;
+          const labelAlpha = n.tier === 1 ? 0.5 : n.tier === 2 ? 0.35 : 0.22;
+          const finalAlpha = (labelAlpha + hs * (1 - labelAlpha)) * op;
+          const fontWeight = isHovered ? "bold" : "normal";
+
+          if (n.tier === 1) {
+            const s = 6 * breathe * (1 + hs * 0.3);
+            ctx.beginPath();
+            ctx.roundRect(px - s * 1.5, py - s, s * 3, s * 2, 3);
+            ctx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},${(0.15 + hs * 0.15) * op})`;
+            ctx.fill();
+            ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},${(0.45 + hs * 0.4) * op})`;
+            ctx.lineWidth = 1 + hs * 0.5;
+            ctx.stroke();
+            ctx.font = `${fontWeight} ${fontSize}px system-ui, sans-serif`;
+            ctx.fillStyle = `rgba(255,255,255,${finalAlpha})`;
+            ctx.textAlign = "center";
+            ctx.fillText(n.label, px, py + s + 12 + hs * 2);
+          } else if (n.tier === 2) {
+            const s = 3.5 * breathe * (1 + hs * 0.3);
+            ctx.beginPath();
+            ctx.moveTo(px, py - s);
+            ctx.lineTo(px + s, py);
+            ctx.lineTo(px, py + s);
+            ctx.lineTo(px - s, py);
+            ctx.closePath();
+            ctx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},${(0.12 + hs * 0.15) * op})`;
+            ctx.fill();
+            ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},${(0.25 + hs * 0.4) * op})`;
+            ctx.lineWidth = 0.7 + hs * 0.5;
+            ctx.stroke();
+            ctx.font = `${fontWeight} ${fontSize}px system-ui, sans-serif`;
+            ctx.fillStyle = `rgba(255,255,255,${finalAlpha})`;
+            ctx.textAlign = "center";
+            ctx.fillText(n.label, px, py + s + 11 + hs * 2);
+          } else {
+            const s = 2.5 * breathe * (1 + hs * 0.3);
+            ctx.beginPath();
+            ctx.arc(px, py, s, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},${(0.1 + hs * 0.15) * op})`;
+            ctx.fill();
+            ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},${(0.2 + hs * 0.4) * op})`;
+            ctx.lineWidth = 0.5 + hs * 0.5;
+            ctx.stroke();
+            ctx.font = `${fontWeight} ${fontSize}px system-ui, sans-serif`;
+            ctx.fillStyle = `rgba(255,255,255,${finalAlpha})`;
+            ctx.textAlign = "center";
+            ctx.fillText(n.label, px, py + s + 10 + hs * 2);
+          }
+
+          // Glow effect on hover
+          if (hs > 0.05) {
+            const glowR = 20 + hs * 10;
+            const grad = ctx.createRadialGradient(px, py, 0, px, py, glowR);
+            grad.addColorStop(0, `rgba(${sage[0]},${sage[1]},${sage[2]},${0.2 * hs * op})`);
+            grad.addColorStop(1, `rgba(${sage[0]},${sage[1]},${sage[2]},0)`);
+            ctx.beginPath();
+            ctx.arc(px, py, glowR, 0, Math.PI * 2);
+            ctx.fillStyle = grad;
+            ctx.fill();
+          }
         }
       }
 
@@ -440,14 +536,27 @@ function NetworkGraph() {
     return () => {
       cancelAnimationFrame(animRef.current);
       window.removeEventListener("resize", resize);
+      canvas.removeEventListener("mousemove", handleMouseMove);
+      canvas.removeEventListener("click", handleClick);
     };
-  }, []);
+  }, [onNodeClick]);
 
   return (
     <div ref={containerRef} className="absolute inset-0">
-      <canvas ref={canvasRef} className="pointer-events-none" />
+      <canvas ref={canvasRef} />
     </div>
   );
+}
+
+interface ProfileData {
+  name: string;
+  title: string;
+  company: string;
+  industry: string;
+  location: string;
+  mutualConnections: number;
+  connectionStrength: string;
+  tier: 0 | 1 | 2 | 3;
 }
 
 export default function DemoConnectTab() {
@@ -455,6 +564,8 @@ export default function DemoConnectTab() {
   const [result, setResult] = useState<PathResult | null>(null);
   const [searching, setSearching] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
+  const [profilePopup, setProfilePopup] = useState<{ profile: ProfileData; pos: { x: number; y: number } } | null>(null);
+  const popupRef = useRef<HTMLDivElement>(null);
 
   const handleSearch = () => {
     if (!searchName.trim()) return;
@@ -474,6 +585,36 @@ export default function DemoConnectTab() {
       setSearching(false);
     }, 1200);
   };
+
+  const handleNodeClick = useCallback((profile: ProfileData, pos: { x: number; y: number }) => {
+    setProfilePopup({ profile, pos });
+  }, []);
+
+  // Close popup on outside click
+  useEffect(() => {
+    if (!profilePopup) return;
+    const handler = (e: MouseEvent) => {
+      if (popupRef.current && !popupRef.current.contains(e.target as Node)) {
+        setProfilePopup(null);
+      }
+    };
+    setTimeout(() => document.addEventListener("click", handler), 10);
+    return () => document.removeEventListener("click", handler);
+  }, [profilePopup]);
+
+  // Compute popup position to stay in viewport
+  const popupStyle = profilePopup ? (() => {
+    const pw = 280, ph = 260;
+    let x = profilePopup.pos.x - pw / 2;
+    let y = profilePopup.pos.y - ph - 20;
+    if (y < 10) y = profilePopup.pos.y + 20;
+    if (x < 10) x = 10;
+    if (x + pw > window.innerWidth - 10) x = window.innerWidth - pw - 10;
+    return { left: x, top: y, width: pw };
+  })() : null;
+
+  const strengthColor = (s: string) =>
+    s === "Strong" ? "hsl(140 50% 50%)" : s === "Moderate" ? "hsl(45 80% 55%)" : "hsl(0 0% 55%)";
 
   return (
     <div className="flex flex-col" style={{ animation: "smoothFadeSlide 0.6s cubic-bezier(0.16,1,0.3,1) both", height: "calc(100dvh - 140px)" }}>
@@ -510,12 +651,92 @@ export default function DemoConnectTab() {
       {/* Network Graph — fills ALL remaining space */}
       {!searching && !result && (
         <div className="relative flex-1 overflow-hidden mt-2">
-          <NetworkGraph />
+          <NetworkGraph onNodeClick={handleNodeClick} />
           <div className="absolute bottom-4 left-0 right-0 text-center z-10">
             <span className="text-xs px-3 py-1 rounded-full" style={{ background: "hsl(240 8% 9% / 0.8)", color: "hsl(240 5% 50%)", border: "1px solid hsl(240 6% 14%)" }}>
-              Live network map — search a name to trace a path
+              Live network map — click any name to view profile
             </span>
           </div>
+
+          {/* Profile popup */}
+          {profilePopup && popupStyle && (
+            <div
+              ref={popupRef}
+              className="fixed z-50 rounded-xl p-4 space-y-3 animate-fade-in shadow-2xl"
+              style={{
+                left: popupStyle.left,
+                top: popupStyle.top,
+                width: popupStyle.width,
+                background: "hsl(240 8% 8%)",
+                border: "1px solid hsl(140 12% 42% / 0.3)",
+                backdropFilter: "blur(12px)",
+              }}
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full flex items-center justify-center text-xs font-bold" style={{ background: "hsl(140 12% 42% / 0.2)", color: "hsl(140 12% 65%)" }}>
+                    {profilePopup.profile.name.split(" ").map(n => n[0]).join("")}
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-white">{profilePopup.profile.name}</p>
+                    <p className="text-[11px]" style={{ color: "hsl(240 5% 55%)" }}>{profilePopup.profile.title}</p>
+                  </div>
+                </div>
+                <button onClick={() => setProfilePopup(null)} className="p-0.5 rounded hover:bg-white/10">
+                  <X className="h-3.5 w-3.5" style={{ color: "hsl(240 5% 46%)" }} />
+                </button>
+              </div>
+
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-2 text-xs" style={{ color: "hsl(240 5% 60%)" }}>
+                  <Building2 className="h-3.5 w-3.5 shrink-0" style={{ color: "hsl(140 12% 50%)" }} />
+                  {profilePopup.profile.company}
+                </div>
+                <div className="flex items-center gap-2 text-xs" style={{ color: "hsl(240 5% 60%)" }}>
+                  <Briefcase className="h-3.5 w-3.5 shrink-0" style={{ color: "hsl(140 12% 50%)" }} />
+                  {profilePopup.profile.industry}
+                </div>
+                <div className="flex items-center gap-2 text-xs" style={{ color: "hsl(240 5% 60%)" }}>
+                  <MapPin className="h-3.5 w-3.5 shrink-0" style={{ color: "hsl(140 12% 50%)" }} />
+                  {profilePopup.profile.location}
+                </div>
+                <div className="flex items-center gap-2 text-xs" style={{ color: "hsl(240 5% 60%)" }}>
+                  <Users className="h-3.5 w-3.5 shrink-0" style={{ color: "hsl(140 12% 50%)" }} />
+                  {profilePopup.profile.mutualConnections} mutual connections
+                </div>
+                <div className="flex items-center gap-2 text-xs">
+                  <Signal className="h-3.5 w-3.5 shrink-0" style={{ color: strengthColor(profilePopup.profile.connectionStrength) }} />
+                  <span style={{ color: strengthColor(profilePopup.profile.connectionStrength) }}>
+                    {profilePopup.profile.connectionStrength} connection
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex gap-2 pt-1">
+                <Button
+                  size="sm"
+                  className="flex-1 text-xs h-8"
+                  style={{ background: "hsl(140 12% 42%)", color: "white" }}
+                  onClick={() => {
+                    setSearchName(profilePopup.profile.name);
+                    setProfilePopup(null);
+                    setTimeout(handleSearch, 100);
+                  }}
+                >
+                  Find Path
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="flex-1 text-xs h-8"
+                  style={{ borderColor: "hsl(240 6% 20%)", color: "hsl(240 5% 70%)" }}
+                  onClick={() => setProfilePopup(null)}
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
