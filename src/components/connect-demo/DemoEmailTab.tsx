@@ -9,7 +9,7 @@ import {
   Mail, MailOpen, Search, Sparkles, Send, Paperclip, Reply, ReplyAll, Forward,
   ArrowLeft, CheckCheck, Clock, X, Plus, Link2, User, Wand2,
   FileText, Shield, AlertTriangle, TrendingUp, Zap, Star, Inbox,
-  SendHorizonal, FilePenLine, Tag, ChevronDown, ChevronUp, Trash2,
+  SendHorizonal, FilePenLine, Tag, ChevronDown, ChevronUp, Trash2, Copy,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -186,6 +186,13 @@ export default function DemoEmailTab() {
   const [focusedIndex, setFocusedIndex] = useState(0);
   const listRef = useRef<HTMLDivElement>(null);
 
+  // Inline reply state
+  const [replyTo, setReplyTo] = useState<{ msgId: string; mode: "reply" | "replyAll" | "forward" } | null>(null);
+  const [replyBody, setReplyBody] = useState("");
+
+  // Summary popup
+  const [showSummary, setShowSummary] = useState(false);
+
   // Compose state
   const [compTo, setCompTo] = useState("");
   const [compCc, setCompCc] = useState("");
@@ -254,7 +261,7 @@ export default function DemoEmailTab() {
     const name = selectedThread.participants.find(p => p !== "You") || "Contact";
     switch (label) {
       case "Smart Reply": handleAiDraft(selectedThread); break;
-      case "Auto-Summarize": toast.success(`Summarized thread with ${name}: 3 key points extracted — pipeline review, scheduling, next steps.`); break;
+      case "Auto-Summarize": setShowSummary(true); break;
       case "Compliance Check": toast.success(`Compliance scan complete for "${selectedThread.subject}" — no issues detected.`); break;
       case "Sentiment Analysis": toast.success(`Sentiment for ${name}: Positive (87%) — professional and eager to proceed.`); break;
       case "Follow-Up Reminder": toast.success(`Follow-up reminder set for ${name}'s thread — tomorrow at 9:00 AM.`); break;
@@ -400,16 +407,57 @@ export default function DemoEmailTab() {
                     {msg.body}
                   </div>
                   <div className="flex gap-2 mt-3 pt-2 border-t" style={{ borderColor: "hsl(240 6% 14%)" }}>
-                    <Button size="sm" variant="ghost" className="text-xs h-7 gap-1" style={{ color: "hsl(240 5% 70%)" }}>
+                    <Button size="sm" variant="ghost" className="text-xs h-7 gap-1" style={{ color: "hsl(240 5% 70%)" }} onClick={() => { setReplyTo({ msgId: msg.id, mode: "reply" }); setReplyBody(""); }}>
                       <Reply className="h-3 w-3" /> Reply
                     </Button>
-                    <Button size="sm" variant="ghost" className="text-xs h-7 gap-1" style={{ color: "hsl(240 5% 70%)" }}>
+                    <Button size="sm" variant="ghost" className="text-xs h-7 gap-1" style={{ color: "hsl(240 5% 70%)" }} onClick={() => { setReplyTo({ msgId: msg.id, mode: "replyAll" }); setReplyBody(""); }}>
                       <ReplyAll className="h-3 w-3" /> Reply All
                     </Button>
-                    <Button size="sm" variant="ghost" className="text-xs h-7 gap-1" style={{ color: "hsl(240 5% 70%)" }}>
+                    <Button size="sm" variant="ghost" className="text-xs h-7 gap-1" style={{ color: "hsl(240 5% 70%)" }} onClick={() => { setReplyTo({ msgId: msg.id, mode: "forward" }); setReplyBody(""); }}>
                       <Forward className="h-3 w-3" /> Forward
                     </Button>
+                    <Button size="sm" variant="ghost" className="text-xs h-7 gap-1" style={{ color: "hsl(240 5% 70%)" }} onClick={() => toast.info("Select files to attach (demo)")}>
+                      <Paperclip className="h-3 w-3" /> Attach
+                    </Button>
                   </div>
+
+                  {/* Inline reply composer */}
+                  {replyTo?.msgId === msg.id && (
+                    <div className="mt-3 rounded-lg p-3 space-y-2 animate-fade-in" style={{ background: "hsl(240 8% 7%)", border: "1px solid hsl(240 6% 16%)" }}>
+                      <div className="text-[10px] font-medium" style={{ color: "hsl(240 5% 50%)" }}>
+                        {replyTo.mode === "reply" && `Reply to ${msg.from}`}
+                        {replyTo.mode === "replyAll" && `Reply All (${selectedThread.participants.join(", ")})`}
+                        {replyTo.mode === "forward" && "Forward"}
+                      </div>
+                      {replyTo.mode === "forward" && (
+                        <Input placeholder="Forward to email…" className="text-xs h-8" style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 14%)", color: "white" }} />
+                      )}
+                      <Textarea
+                        placeholder="Write your reply…"
+                        value={replyBody}
+                        onChange={e => setReplyBody(e.target.value)}
+                        className="min-h-[80px] text-sm resize-none"
+                        style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 14%)", color: "white" }}
+                        autoFocus
+                      />
+                      <div className="flex items-center justify-between">
+                        <div className="flex gap-2">
+                          <Button size="sm" className="text-xs h-7 gap-1" style={{ background: "hsl(140 12% 42%)" }} onClick={() => { toast.success("Reply sent (demo)"); setReplyTo(null); setReplyBody(""); }}>
+                            <Send className="h-3 w-3" /> Send
+                          </Button>
+                          <Button size="sm" variant="outline" className="text-xs h-7 gap-1" onClick={() => toast.info("Select files to attach (demo)")}>
+                            <Paperclip className="h-3 w-3" /> Attach
+                          </Button>
+                          <Button size="sm" variant="outline" className="text-xs h-7 gap-1" onClick={() => handleAiDraft(selectedThread)}>
+                            <Sparkles className="h-3 w-3" /> AI Draft
+                          </Button>
+                        </div>
+                        <Button size="sm" variant="ghost" className="text-xs h-7" style={{ color: "hsl(240 5% 46%)" }} onClick={() => setReplyTo(null)}>
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </Card>
@@ -420,10 +468,10 @@ export default function DemoEmailTab() {
       {/* Quick reply at bottom */}
       <div className="flex gap-2 items-end">
         <div className="flex-1 rounded-lg overflow-hidden" style={{ border: "1px solid hsl(240 6% 14%)" }}>
-          <Textarea placeholder="Reply…" className="min-h-[60px] text-sm border-0 resize-none" style={{ background: "hsl(240 8% 7%)", color: "white" }} />
+          <Textarea placeholder="Reply…" value={replyBody} onChange={e => setReplyBody(e.target.value)} className="min-h-[60px] text-sm border-0 resize-none" style={{ background: "hsl(240 8% 7%)", color: "white" }} />
         </div>
         <div className="flex flex-col gap-1">
-          <Button size="sm" className="text-xs h-8 gap-1" style={{ background: "hsl(140 12% 42%)" }} onClick={() => toast.success("Reply sent (demo)")}>
+          <Button size="sm" className="text-xs h-8 gap-1" style={{ background: "hsl(140 12% 42%)" }} onClick={() => { toast.success("Reply sent (demo)"); setReplyBody(""); }}>
             <Send className="h-3 w-3" /> Send
           </Button>
           <Button size="sm" variant="ghost" className="text-xs h-7 gap-1" onClick={() => handleAiDraft(selectedThread)}>
@@ -432,6 +480,7 @@ export default function DemoEmailTab() {
         </div>
       </div>
 
+      {/* AI Draft panel — with Send, Edit Draft, Regenerate */}
       {showAiDraft && (
         <div className="rounded-lg p-4 space-y-2 animate-fade-in" style={{ background: "hsl(140 12% 42% / 0.06)", border: "1px solid hsl(140 12% 42% / 0.2)" }}>
           <div className="flex items-center gap-2">
@@ -441,11 +490,70 @@ export default function DemoEmailTab() {
           </div>
           <pre className="text-sm whitespace-pre-wrap" style={{ color: "hsl(240 5% 80%)" }}>{aiDraft}</pre>
           {!aiDraftLoading && aiDraft && (
-            <div className="flex gap-2 pt-1">
-              <Button size="sm" className="text-xs h-7" style={{ background: "hsl(140 12% 42%)" }} onClick={() => toast.success("Draft copied to reply")}>Use Draft</Button>
-              <Button size="sm" variant="outline" className="text-xs h-7" onClick={() => toast.info("Regenerating…")}>Regenerate</Button>
+            <div className="flex gap-2 pt-2 flex-wrap">
+              <Button size="sm" className="text-xs h-8 gap-1" style={{ background: "hsl(140 12% 42%)" }} onClick={() => { toast.success("Reply sent with AI draft (demo)"); setShowAiDraft(false); setReplyBody(""); }}>
+                <Send className="h-3 w-3" /> Send
+              </Button>
+              <Button size="sm" variant="outline" className="text-xs h-8 gap-1" onClick={() => { setReplyBody(aiDraft); setShowAiDraft(false); toast.info("Draft loaded into reply — edit and send when ready"); }}>
+                <FilePenLine className="h-3 w-3" /> Edit Draft
+              </Button>
+              <Button size="sm" variant="outline" className="text-xs h-8 gap-1" onClick={() => handleAiDraft(selectedThread)}>
+                <Sparkles className="h-3 w-3" /> Regenerate
+              </Button>
+              <Button size="sm" variant="ghost" className="text-xs h-7" style={{ color: "hsl(240 5% 46%)" }} onClick={() => setShowAiDraft(false)}>
+                Dismiss
+              </Button>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Summary popup */}
+      {showSummary && (
+        <div className="rounded-lg p-4 space-y-3 animate-fade-in" style={{ background: "hsl(240 8% 9%)", border: "1px solid hsl(140 12% 42% / 0.25)" }}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <FileText className="h-4 w-4" style={{ color: "hsl(140 12% 58%)" }} />
+              <span className="text-xs font-semibold" style={{ color: "hsl(140 12% 58%)" }}>Thread Summary</span>
+            </div>
+            <button onClick={() => setShowSummary(false)}><X className="h-3.5 w-3.5" style={{ color: "hsl(240 5% 46%)" }} /></button>
+          </div>
+          <div className="space-y-2">
+            <div className="flex items-start gap-2">
+              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded" style={{ background: "hsl(140 12% 42% / 0.15)", color: "hsl(140 12% 58%)" }}>1</span>
+              <p className="text-xs" style={{ color: "hsl(240 5% 75%)" }}>
+                <strong className="text-white">Topic:</strong> {selectedThread.subject}
+              </p>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded" style={{ background: "hsl(140 12% 42% / 0.15)", color: "hsl(140 12% 58%)" }}>2</span>
+              <p className="text-xs" style={{ color: "hsl(240 5% 75%)" }}>
+                <strong className="text-white">Key Points:</strong> {selectedThread.messages.length > 1
+                  ? "Discussion progressed through initial contact, agreement on details, and scheduling next steps."
+                  : "Initial outreach covering main topic with request for follow-up."}
+              </p>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded" style={{ background: "hsl(140 12% 42% / 0.15)", color: "hsl(140 12% 58%)" }}>3</span>
+              <p className="text-xs" style={{ color: "hsl(240 5% 75%)" }}>
+                <strong className="text-white">Action Items:</strong> Schedule a meeting, review attached documents, respond with availability.
+              </p>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded" style={{ background: "hsl(140 12% 42% / 0.15)", color: "hsl(140 12% 58%)" }}>4</span>
+              <p className="text-xs" style={{ color: "hsl(240 5% 75%)" }}>
+                <strong className="text-white">Sentiment:</strong> Positive and collaborative. {selectedThread.participants.filter(p => p !== "You").join(", ")} {selectedThread.messages.length > 1 ? "is" : "appears"} engaged and ready to proceed.
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-2 pt-1 border-t" style={{ borderColor: "hsl(240 6% 14%)" }}>
+            <Button size="sm" variant="outline" className="text-xs h-7 gap-1" onClick={() => { navigator.clipboard.writeText("Summary copied"); toast.success("Summary copied to clipboard"); }}>
+              <Copy className="h-3 w-3" /> Copy
+            </Button>
+            <Button size="sm" variant="ghost" className="text-xs h-7" style={{ color: "hsl(240 5% 46%)" }} onClick={() => setShowSummary(false)}>
+              Close
+            </Button>
+          </div>
         </div>
       )}
     </div>
