@@ -166,7 +166,11 @@ export default function ConnectDemoAuth() {
 
         {step === "auth" && (
           <>
-          <div className="rounded-xl border p-6 space-y-6 animate-scale-in" style={{ background: "hsl(240 8% 7%)", borderColor: "hsl(240 6% 14%)" }}>
+           <div className="rounded-xl border p-6 space-y-6 animate-scale-in" style={{ background: "hsl(240 8% 7%)", borderColor: "hsl(240 6% 14%)" }}>
+            <div className="text-center space-y-2">
+              <div className="mx-auto flex items-center justify-center"><AuraLogo size={48} /></div>
+              <h1 className="text-xl font-bold text-white">AuRa Connect</h1>
+            </div>
             <div>
               <h2 className="text-lg font-semibold text-white">Create your account</h2>
               <p className="text-sm" style={{ color: "hsl(240 5% 46%)" }}>Sign up to explore AuRa Connect</p>
@@ -228,7 +232,12 @@ export default function ConnectDemoAuth() {
         )}
 
         {step === "subscribe" && (
+          <>
           <div className="rounded-xl border p-6 space-y-6 animate-scale-in" style={{ background: "hsl(240 8% 7%)", borderColor: "hsl(240 6% 14%)" }}>
+            <div className="text-center space-y-2">
+              <div className="mx-auto flex items-center justify-center"><AuraLogo size={48} /></div>
+              <h1 className="text-xl font-bold text-white">AuRa Connect</h1>
+            </div>
             <div>
               <h2 className="text-lg font-semibold text-white">Choose your plan</h2>
             </div>
@@ -264,8 +273,9 @@ export default function ConnectDemoAuth() {
               Subscribe <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
             <p className="text-xs text-center" style={{ color: "hsl(240 5% 46%)" }}>Demo mode — no payment required</p>
-            <p className="text-xs text-center font-medium mt-2" style={{ color: "hsl(140 12% 58%)" }}>Intelligence runs on AuRa</p>
           </div>
+          <p className="text-xs text-center font-medium mt-3" style={{ color: "hsl(140 12% 58%)" }}>Intelligence runs on AuRa</p>
+          </>
         )}
 
         {step === "welcome" && (
