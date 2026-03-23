@@ -235,6 +235,7 @@ export default function DemoEmailTab() {
   const [folder, setFolder] = useState<Folder>("inbox");
   const [accountFilter, setAccountFilter] = useState<string>("all");
   const [showAccounts, setShowAccounts] = useState(false);
+  const [smartBannerDismissed, setSmartBannerDismissed] = useState(false);
   const [showClientLookup, setShowClientLookup] = useState(false);
   const [clientSearch, setClientSearch] = useState("");
   const [selectedClient, setSelectedClient] = useState<string | null>(null);
