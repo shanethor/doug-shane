@@ -112,14 +112,48 @@ serve(async (req) => {
 
   try {
     const authHeader = req.headers.get("Authorization");
+    const body = await req.json();
+    const { action } = body;
+
+    if (action === "demo_generate") {
+      const prompt = String(body.prompt || "").trim();
+      if (!prompt) throw new Error("prompt required");
+
+      const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY()}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-3.1-flash-image-preview",
+          messages: [{ role: "user", content: prompt }],
+          modalities: ["image", "text"],
+        }),
+      });
+
+      if (!aiResp.ok) {
+        if (aiResp.status === 429) throw new Error("Rate limit exceeded. Please try again in a moment.");
+        if (aiResp.status === 402) throw new Error("AI credits exhausted. Please add funds to continue.");
+        const errorText = await aiResp.text();
+        console.error("[spotlight-flyer] demo_generate failed", aiResp.status, errorText);
+        throw new Error("Image generation failed");
+      }
+
+      const aiData = await aiResp.json();
+      const imageUrl = aiData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+      if (!imageUrl) throw new Error("No image was generated");
+
+      return new Response(JSON.stringify({ image_url: imageUrl }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     if (!authHeader) throw new Error("No authorization header");
     const token = authHeader.replace("Bearer ", "");
     const { data: userData, error: userError } = await supabase.auth.getUser(token);
     if (userError || !userData.user) throw new Error("Not authenticated");
     const userId = userData.user.id;
-
-    const body = await req.json();
-    const { action } = body;
 
     // ─── BRANDING: list_brands ───
     if (action === "list_brands") {
