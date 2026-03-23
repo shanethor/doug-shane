@@ -163,15 +163,15 @@ function WonCelebration({ amount, onDone }: { amount: number; onDone: () => void
 
 /* ── Won Details Dialog ── */
 function WonDetailsDialog({
-  lead, industry, onSave, onCancel,
+  lead, onSave, onCancel,
 }: {
-  lead: DemoLead; industry: string; onSave: (details: Record<string, string>, finalValue: number) => void; onCancel: () => void;
+  lead: DemoLead; onSave: (details: Record<string, string>, finalValue: number) => void; onCancel: () => void;
 }) {
-  const fields = WON_FIELDS[industry] || WON_FIELDS.generic;
+  const fields = WON_FIELDS;
   const [form, setForm] = useState<Record<string, string>>(() => {
     const init: Record<string, string> = {};
     fields.forEach(f => {
-      if (f.type === "number" && (f.key.includes("premium") || f.key.includes("value") || f.key.includes("price"))) {
+      if (f.key === "revenue") {
         init[f.key] = String(lead.value);
       } else {
         init[f.key] = "";
@@ -180,8 +180,7 @@ function WonDetailsDialog({
     return init;
   });
 
-  const valueField = fields.find(f => f.type === "number" && (f.key.includes("premium") || f.key.includes("value") || f.key.includes("price")));
-  const finalValue = valueField ? (Number(form[valueField.key]) || lead.value) : lead.value;
+  const finalValue = Number(form.revenue) || lead.value;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: "hsl(0 0% 0% / 0.65)" }} onClick={onCancel}>
