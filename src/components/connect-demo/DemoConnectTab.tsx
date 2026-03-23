@@ -619,11 +619,31 @@ export default function DemoConnectTab() {
   const strengthColor = (s: string) =>
     s === "Strong" ? "hsl(140 50% 50%)" : s === "Moderate" ? "hsl(45 80% 55%)" : "hsl(0 0% 55%)";
 
+  // First-time slow reveal
+  const [connectPhase, setConnectPhase] = useState(0);
+  const isFirstVisit = useRef(!sessionStorage.getItem("connect-tab-visited"));
+
+  useEffect(() => {
+    if (!isFirstVisit.current) {
+      setConnectPhase(3);
+      return;
+    }
+    sessionStorage.setItem("connect-tab-visited", "true");
+    const t1 = setTimeout(() => setConnectPhase(1), 400);   // headline
+    const t2 = setTimeout(() => setConnectPhase(2), 1400);  // search bar
+    const t3 = setTimeout(() => setConnectPhase(3), 3000);  // network graph (slow)
+    return () => [t1, t2, t3].forEach(clearTimeout);
+  }, []);
+
   return (
     <div className="flex flex-col" style={{ animation: "smoothFadeSlide 0.6s cubic-bezier(0.16,1,0.3,1) both", height: "calc(100dvh - 140px)" }}>
       {/* Hero + Search overlaid on top */}
       <div className="relative z-10 flex flex-col items-center text-center pt-6 pb-2 space-y-5">
-        <div className="space-y-2">
+        <div className="space-y-2" style={{
+          opacity: connectPhase >= 1 ? 1 : 0,
+          transform: connectPhase >= 1 ? "translateY(0)" : "translateY(20px)",
+          transition: "all 1.2s cubic-bezier(0.16, 1, 0.3, 1)",
+        }}>
           <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-white">
             Find the fastest path to{" "}
             <span style={{ color: "hsl(140 12% 58%)" }}>anyone</span>
@@ -633,7 +653,11 @@ export default function DemoConnectTab() {
           </p>
         </div>
 
-        <div className="flex gap-3 w-full max-w-xl">
+        <div className="flex gap-3 w-full max-w-xl" style={{
+          opacity: connectPhase >= 2 ? 1 : 0,
+          transform: connectPhase >= 2 ? "translateY(0) scale(1)" : "translateY(16px) scale(0.97)",
+          transition: "all 1s cubic-bezier(0.16, 1, 0.3, 1)",
+        }}>
           <div className="relative flex-1">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5" style={{ color: "hsl(240 5% 46%)" }} />
             <Input
@@ -653,7 +677,11 @@ export default function DemoConnectTab() {
 
       {/* Network Graph — fills ALL remaining space */}
       {!searching && !result && (
-        <div className="relative flex-1 overflow-hidden mt-2">
+        <div className="relative flex-1 overflow-hidden mt-2" style={{
+          opacity: connectPhase >= 3 ? 1 : 0,
+          transform: connectPhase >= 3 ? "translateY(0) scale(1)" : "translateY(30px) scale(0.95)",
+          transition: isFirstVisit.current ? "all 3s cubic-bezier(0.16, 1, 0.3, 1)" : "all 0.6s ease-out",
+        }}>
           <NetworkGraph onNodeClick={handleNodeClick} />
           <div className="absolute bottom-4 left-0 right-0 text-center z-10">
             <span className="text-xs px-3 py-1 rounded-full" style={{ background: "hsl(240 8% 9% / 0.8)", color: "hsl(240 5% 50%)", border: "1px solid hsl(240 6% 14%)" }}>
