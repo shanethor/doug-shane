@@ -167,9 +167,15 @@ export default function ConnectDemoAuth() {
         {step === "auth" && (
           <>
            <div className="rounded-xl border p-6 space-y-6 animate-scale-in" style={{ background: "hsl(240 8% 7%)", borderColor: "hsl(240 6% 14%)" }}>
-            <div className="text-center space-y-2">
+            <div className="text-center space-y-3">
               <div className="mx-auto flex items-center justify-center"><AuraLogo size={48} /></div>
               <h1 className="text-xl font-bold text-white">AuRa Connect</h1>
+              <p className="text-sm font-medium" style={{ color: "hsl(140 12% 58%)" }}>
+                You already know the right people. You just don't know how to get there.
+              </p>
+              <p className="text-sm font-semibold italic sage-shimmer">
+                Let us show you the way in.
+              </p>
             </div>
             <form onSubmit={handleAuth} className="space-y-4">
               <div className="space-y-2">
@@ -223,31 +229,22 @@ export default function ConnectDemoAuth() {
               </Button>
             </form>
           </div>
-          <div className="mt-8 space-y-2 text-center">
-            <p className="text-base md:text-lg font-medium" style={{ color: "hsl(140 12% 58%)" }}>
-              You already know the right people. You just don't know how to get there.
-            </p>
-            <p
-              className="text-base md:text-lg font-semibold italic"
-              style={{
-                color: "hsl(140 12% 58%)",
-                opacity: 0,
-                animation: "sageFadeType 2s cubic-bezier(0.16,1,0.3,1) 1.2s forwards",
-              }}
-            >
-              Let us show you the way in.
-            </p>
-          </div>
-          <p className="text-xl text-center font-semibold mt-6" style={{ color: "hsl(140 12% 58%)" }}>Intelligence runs on AuRa</p>
+          <p className="text-xl text-center font-semibold mt-10" style={{ color: "hsl(140 12% 58%)" }}>Intelligence runs on AuRa</p>
           </>
         )}
 
         {step === "subscribe" && (
           <>
           <div className="rounded-xl border p-6 space-y-6 animate-scale-in" style={{ background: "hsl(240 8% 7%)", borderColor: "hsl(240 6% 14%)" }}>
-            <div className="text-center space-y-2">
+            <div className="text-center space-y-3">
               <div className="mx-auto flex items-center justify-center"><AuraLogo size={48} /></div>
               <h1 className="text-xl font-bold text-white">AuRa Connect</h1>
+              <p className="text-sm font-medium" style={{ color: "hsl(140 12% 58%)" }}>
+                You already know the right people. You just don't know how to get there.
+              </p>
+              <p className="text-sm font-semibold italic sage-shimmer">
+                Let us show you the way in.
+              </p>
             </div>
             <div>
               <h2 className="text-lg font-semibold text-center" style={{ color: "hsl(240 5% 56%)" }}>Choose your plan</h2>
@@ -285,15 +282,7 @@ export default function ConnectDemoAuth() {
             </Button>
             <p className="text-xs text-center" style={{ color: "hsl(240 5% 46%)" }}>Demo mode — no payment required</p>
           </div>
-          <div className="mt-8 space-y-2 text-center">
-            <p className="text-base md:text-lg font-medium" style={{ color: "hsl(140 12% 58%)" }}>
-              You already know the right people. You just don't know how to get there.
-            </p>
-            <p className="text-base md:text-lg font-semibold italic" style={{ color: "hsl(140 12% 58%)", opacity: 0, animation: "sageFadeType 2s cubic-bezier(0.16,1,0.3,1) 1.2s forwards" }}>
-              Let us show you the way in.
-            </p>
-          </div>
-          <p className="text-xl text-center font-semibold mt-6" style={{ color: "hsl(140 12% 58%)" }}>Intelligence runs on AuRa</p>
+          <p className="text-xl text-center font-semibold mt-10" style={{ color: "hsl(140 12% 58%)" }}>Intelligence runs on AuRa</p>
           </>
         )}
 
@@ -326,6 +315,12 @@ export default function ConnectDemoAuth() {
               >
                 Welcome to AuRa Connect
               </h2>
+              <p className="text-sm font-medium mb-1" style={{ color: "hsl(140 12% 58%)", transitionDuration: "600ms", opacity: buildPhase >= 2 ? 1 : 0 }}>
+                You already know the right people. You just don't know how to get there.
+              </p>
+              <p className="text-sm font-semibold italic sage-shimmer mb-3">
+                Let us show you the way in.
+              </p>
 
               {/* Phase 3: Subtitle */}
               <p
@@ -392,15 +387,7 @@ export default function ConnectDemoAuth() {
                 </button>
               </div>
             </div>
-            <div className="mt-8 space-y-2 text-center">
-              <p className="text-base md:text-lg font-medium" style={{ color: "hsl(140 12% 58%)" }}>
-                You already know the right people. You just don't know how to get there.
-              </p>
-              <p className="text-base md:text-lg font-semibold italic" style={{ color: "hsl(140 12% 58%)", opacity: 0, animation: "sageFadeType 2s cubic-bezier(0.16,1,0.3,1) 1.2s forwards" }}>
-                Let us show you the way in.
-              </p>
-            </div>
-            <p className="text-xl text-center font-semibold mt-6" style={{ color: "hsl(140 12% 58%)" }}>Intelligence runs on AuRa</p>
+            <p className="text-xl text-center font-semibold mt-10" style={{ color: "hsl(140 12% 58%)" }}>Intelligence runs on AuRa</p>
           </div>
         )}
       </div>
