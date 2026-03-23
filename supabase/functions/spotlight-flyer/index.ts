@@ -11,6 +11,193 @@ const LOVABLE_API_KEY = () => Deno.env.get("LOVABLE_API_KEY") || "";
 const SUPABASE_URL = () => Deno.env.get("SUPABASE_URL") || "";
 const SUPABASE_SERVICE_KEY = () => Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
 
+function normalizeFlyerType(rawValue?: string): string {
+  const value = String(rawValue || "").toLowerCase().trim();
+  if (["event", "social", "announcement", "educational", "promotion", "custom"].includes(value)) return value;
+  if (["webinar", "virtual", "meeting", "zoom"].includes(value)) return "event";
+  if (["promo", "promotion", "discount", "sale", "offer"].includes(value)) return "promotion";
+  if (["education", "guide", "tips", "training", "infographic"].includes(value)) return "educational";
+  if (["announce", "announcement", "launch", "update", "hiring", "job", "careers"].includes(value)) return "announcement";
+  if (["linkedin", "instagram", "facebook", "social", "post"].includes(value)) return "social";
+  return "event";
+}
+
+function buildDefaultCta(type: string): string {
+  const normalized = normalizeFlyerType(type);
+  const ctaMap: Record<string, string> = {
+    event: "RSVP today to reserve your seat.",
+    social: "Like, share, and follow for more.",
+    promotion: "Call today or book online.",
+    educational: "Learn more today.",
+    announcement: "Stay tuned for more updates.",
+    custom: "Contact us today.",
+  };
+
+  return ctaMap[normalized] || ctaMap.custom;
+}
+
+function inferTitleFromText(input: string, fallbackType?: string): string {
+  const cleaned = String(input || "")
+    .replace(/\s+/g, " ")
+    .replace(/^create\s+(an?|the)\s+/i, "")
+    .replace(/^i need\s+(an?|the)?\s*/i, "")
+    .trim();
+
+  if (!cleaned) {
+    const labels: Record<string, string> = {
+      event: "Event Flyer",
+      social: "Social Post",
+      announcement: "Announcement",
+      educational: "Educational Graphic",
+      promotion: "Promotion",
+      custom: "Custom Graphic",
+    };
+    return labels[normalizeFlyerType(fallbackType)] || "Graphic";
+  }
+
+  const sentence = cleaned.split(/[.!?\n]/)[0]?.trim() || cleaned;
+  return sentence.length > 72 ? `${sentence.slice(0, 69).trim()}…` : sentence;
+}
+
+function fallbackBulletsFromText(input: string): string[] {
+  return String(input || "")
+    .split(/\n|[.!?•]/g)
+    .map((part) => part.replace(/\s+/g, " ").trim())
+    .filter((part) => part.length >= 8)
+    .slice(0, 4);
+}
+
+async function persistGeneratedImage(supabase: ReturnType<typeof createClient>, imageUrl: string, folder: string) {
+  if (!imageUrl.startsWith("data:image/")) return imageUrl;
+
+  const match = imageUrl.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/);
+  if (!match) throw new Error("Generated image payload was invalid");
+
+  const [, contentType, base64Data] = match;
+  const extension = contentType.includes("jpeg") ? "jpg" : contentType.includes("webp") ? "webp" : "png";
+  const binary = atob(base64Data);
+  const bytes = new Uint8Array(binary.length);
+
+  for (let i = 0; i < binary.length; i += 1) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+
+  const path = `${folder}/${crypto.randomUUID()}.${extension}`;
+  const { error: uploadError } = await supabase.storage.from("agency-assets").upload(path, bytes, {
+    contentType,
+    upsert: false,
+  });
+
+  if (uploadError) throw uploadError;
+
+  const { data } = supabase.storage.from("agency-assets").getPublicUrl(path);
+  return data.publicUrl;
+}
+
+async function enrichDemoInput(body: Record<string, unknown>) {
+  const rawPrompt = String(body.raw_prompt || "").trim();
+  const description = String(body.description || "").trim();
+  const seedText = [rawPrompt, description].filter(Boolean).join("\n\n");
+  const requestedType = normalizeFlyerType(String(body.type || "") || detectFlyerType(rawPrompt));
+  const fallbackTitle = String(body.title || "").trim() || inferTitleFromText(seedText, requestedType);
+  const fallbackBullets = Array.isArray(body.bullets)
+    ? body.bullets.map((item) => String(item || "").trim()).filter(Boolean).slice(0, 6)
+    : fallbackBulletsFromText(seedText);
+  const fallback = {
+    flyer_type: requestedType,
+    title: fallbackTitle,
+    description: description || rawPrompt,
+    date_time: body.date_time ? String(body.date_time) : null,
+    location: body.location ? String(body.location) : null,
+    bullets: fallbackBullets,
+    cta: String(body.cta || "").trim() || buildDefaultCta(requestedType),
+    evergreen: typeof body.evergreen === "boolean" ? body.evergreen : false,
+  };
+
+  if (!seedText || !LOVABLE_API_KEY()) return fallback;
+
+  try {
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${LOVABLE_API_KEY()}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-3-flash-preview",
+        messages: [
+          {
+            role: "system",
+            content: "Extract flyer planning details from the user's request. Preserve the user's wording, keep titles concise, only include fields grounded in the text, and map flyer_type to one of: event, social, announcement, educational, promotion, custom.",
+          },
+          {
+            role: "user",
+            content: JSON.stringify({
+              raw_prompt: rawPrompt,
+              title: body.title || null,
+              description: description || null,
+              date_time: body.date_time || null,
+              location: body.location || null,
+              evergreen: body.evergreen ?? null,
+              cta: body.cta || null,
+              requested_type: requestedType,
+            }),
+          },
+        ],
+        tools: [{
+          type: "function",
+          function: {
+            name: "extract_flyer_fields",
+            description: "Extract flyer details for a marketing graphic wizard.",
+            parameters: {
+              type: "object",
+              properties: {
+                flyer_type: { type: "string", enum: ["event", "social", "announcement", "educational", "promotion", "custom"] },
+                title: { type: "string" },
+                description: { type: "string" },
+                date_time: { type: ["string", "null"] },
+                location: { type: ["string", "null"] },
+                bullets: { type: "array", items: { type: "string" } },
+                cta: { type: ["string", "null"] },
+                evergreen: { type: "boolean" },
+              },
+              required: ["flyer_type", "title", "description", "bullets", "cta", "evergreen"],
+              additionalProperties: false,
+            },
+          },
+        }],
+        tool_choice: { type: "function", function: { name: "extract_flyer_fields" } },
+      }),
+    });
+
+    if (!response.ok) return fallback;
+
+    const data = await response.json();
+    const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
+    if (!toolCall?.function?.arguments) return fallback;
+
+    const args = JSON.parse(toolCall.function.arguments);
+    const normalizedType = normalizeFlyerType(args.flyer_type || requestedType);
+    const bullets = Array.isArray(args.bullets)
+      ? args.bullets.map((item: unknown) => String(item || "").trim()).filter(Boolean).slice(0, 6)
+      : fallbackBullets;
+
+    return {
+      flyer_type: normalizedType,
+      title: String(body.title || "").trim() || String(args.title || "").trim() || fallbackTitle,
+      description: description || String(args.description || "").trim() || rawPrompt,
+      date_time: body.date_time ? String(body.date_time) : args.date_time || null,
+      location: body.location ? String(body.location) : args.location || null,
+      bullets: bullets.length > 0 ? bullets : fallbackBullets,
+      cta: String(body.cta || "").trim() || String(args.cta || "").trim() || buildDefaultCta(normalizedType),
+      evergreen: typeof body.evergreen === "boolean" ? body.evergreen : !!args.evergreen,
+    };
+  } catch (error) {
+    console.error("[spotlight-flyer] demo enrichment failed", error);
+    return fallback;
+  }
+}
+
 function buildStructuredPrompt(flyer: any): string {
   const parts: string[] = [];
   const styleMap: Record<string, string> = {
@@ -94,10 +281,10 @@ async function summarizeToBullets(description: string): Promise<string[]> {
 
 async function detectFlyerType(rawPrompt: string): Promise<string> {
   const lower = rawPrompt.toLowerCase();
-  if (lower.includes("webinar") || lower.includes("zoom") || lower.includes("virtual")) return "webinar";
-  if (lower.includes("promo") || lower.includes("special") || lower.includes("discount") || lower.includes("sale")) return "promo";
-  if (lower.includes("hiring") || lower.includes("job") || lower.includes("careers")) return "hiring";
-  if (lower.includes("announcement") || lower.includes("announce")) return "announcement";
+  if (lower.includes("linkedin") || lower.includes("instagram") || lower.includes("facebook") || lower.includes("social post")) return "social";
+  if (lower.includes("promo") || lower.includes("special") || lower.includes("discount") || lower.includes("sale")) return "promotion";
+  if (lower.includes("guide") || lower.includes("tips") || lower.includes("educational") || lower.includes("learn")) return "educational";
+  if (lower.includes("hiring") || lower.includes("job") || lower.includes("careers") || lower.includes("announcement") || lower.includes("announce")) return "announcement";
   return "event";
 }
 
@@ -114,6 +301,13 @@ serve(async (req) => {
     const authHeader = req.headers.get("Authorization");
     const body = await req.json();
     const { action } = body;
+
+      if (action === "demo_enrich") {
+        const enrichment = await enrichDemoInput(body);
+        return new Response(JSON.stringify({ enrichment }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
 
     if (action === "demo_generate") {
       const prompt = String(body.prompt || "").trim();
@@ -141,10 +335,12 @@ serve(async (req) => {
       }
 
       const aiData = await aiResp.json();
-      const imageUrl = aiData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+        const imageUrl = aiData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
       if (!imageUrl) throw new Error("No image was generated");
 
-      return new Response(JSON.stringify({ image_url: imageUrl }), {
+        const persistedImageUrl = await persistGeneratedImage(supabase, imageUrl, "generated-flyers/demo");
+
+        return new Response(JSON.stringify({ image_url: persistedImageUrl }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -393,13 +589,15 @@ serve(async (req) => {
           throw new Error("No image was generated");
         }
 
+        const persistedImageUrl = await persistGeneratedImage(supabase, imageUrl, `generated-flyers/${userId}`);
+
         await supabase.from("marketing_flyers").update({
-          result_image_url: imageUrl,
+          result_image_url: persistedImageUrl,
           result_metadata: { model: "google/gemini-3-pro-image-preview", generated_at: new Date().toISOString() },
           status: "ready",
         }).eq("id", flyer_id);
 
-        return new Response(JSON.stringify({ image_url: imageUrl, status: "ready" }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+        return new Response(JSON.stringify({ image_url: persistedImageUrl, status: "ready" }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
       } catch (genErr: any) {
         await supabase.from("marketing_flyers").update({ status: "error" }).eq("id", flyer_id);
         throw genErr;
