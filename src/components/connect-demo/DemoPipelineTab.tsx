@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,7 @@ import {
   Tooltip, TooltipContent, TooltipProvider, TooltipTrigger,
 } from "@/components/ui/tooltip";
 import {
-  Building2, DollarSign, RefreshCw, Users, Info, CalendarDays, Plus,
+  Building2, DollarSign, Users, Info, Plus, Phone, Mail, MapPin, Calendar, X, GripVertical,
 } from "lucide-react";
 
 interface StageConfig { key: string; label: string; color: string; }
@@ -48,28 +48,109 @@ const PIPELINE_CONFIGS: Record<string, { label: string; stages: StageConfig[] }>
   ]},
 };
 
-type DemoLead = { id: string; name: string; contact: string; stage: string; value: number; source: string; lossReason?: string; renewalDate?: string; };
+type DemoLead = {
+  id: string; name: string; contact: string; stage: string; value: number; source: string;
+  lossReason?: string; renewalDate?: string;
+  phone?: string; email?: string; location?: string; industry?: string; notes?: string;
+};
 
 const DEMO_LEADS: DemoLead[] = [
-  { id: "1", name: "Greenfield Industries", contact: "Sarah Mitchell", stage: "prospect", value: 15000, source: "Referral" },
-  { id: "2", name: "Apex Technologies", contact: "James Park", stage: "prospect", value: 22000, source: "Website" },
-  { id: "3", name: "Blue Ridge Capital", contact: "Jessica Torres", stage: "prospect", value: 11000, source: "LinkedIn" },
-  { id: "4", name: "Coastal Development Co", contact: "Robert Nguyen", stage: "quoting", value: 35000, source: "Cold outreach" },
-  { id: "5", name: "Prime Advisors Group", contact: "David Kowalski", stage: "quoting", value: 18500, source: "Referral" },
-  { id: "6", name: "TechVentures Inc", contact: "Marcus Chen", stage: "quoting", value: 14000, source: "Partner" },
-  { id: "7", name: "Sunrise Properties", contact: "Linda Park", stage: "presenting", value: 27000, source: "Networking" },
-  { id: "8", name: "Westfield Manufacturing", contact: "Tom Bradley", stage: "presenting", value: 15000, source: "Referral" },
-  { id: "9", name: "Nova Health Systems", contact: "Priya Sharma", stage: "bound", value: 42000, source: "Referral" },
-  { id: "10", name: "Bright Future Foundation", contact: "Amanda Foster", stage: "bound", value: 8500, source: "Event" },
-  { id: "11", name: "Alpine Group", contact: "James Whitfield", stage: "bound", value: 31000, source: "Website" },
-  { id: "12", name: "Pacific Rim Trading", contact: "Kevin Tanaka", stage: "bound", value: 19500, source: "Cold outreach" },
-  { id: "13", name: "Redwood Consulting", contact: "Elena Volkov", stage: "bound", value: 24000, source: "LinkedIn" },
-  { id: "14", name: "Metro Solutions", contact: "Carlos Rivera", stage: "lost", value: 20000, source: "Referral", lossReason: "Went with competitor" },
-  { id: "15", name: "Harbor View LLC", contact: "Michelle Chang", stage: "lost", value: 16000, source: "Website", lossReason: "Budget constraints" },
-  { id: "16", name: "Summit Partners", contact: "Andrew Blake", stage: "lost", value: 12000, source: "Partner", lossReason: "Timing not right" },
+  { id: "1", name: "Greenfield Industries", contact: "Sarah Mitchell", stage: "prospect", value: 15000, source: "Referral", phone: "(555) 234-8901", email: "s.mitchell@greenfield.com", location: "Austin, TX", industry: "Agriculture", notes: "Looking for full commercial package" },
+  { id: "2", name: "Apex Technologies", contact: "James Park", stage: "prospect", value: 22000, source: "Website", phone: "(555) 345-6789", email: "j.park@apextech.io", location: "San Jose, CA", industry: "Technology", notes: "Interested in cyber liability" },
+  { id: "3", name: "Blue Ridge Capital", contact: "Jessica Torres", stage: "prospect", value: 11000, source: "LinkedIn", phone: "(555) 456-1234", email: "jtorres@blueridge.com", location: "Charlotte, NC", industry: "Financial Services" },
+  { id: "4", name: "Coastal Development Co", contact: "Robert Nguyen", stage: "quoting", value: 35000, source: "Cold outreach", phone: "(555) 567-2345", email: "rnguyen@coastal-dev.com", location: "Miami, FL", industry: "Real Estate", notes: "Multi-property portfolio" },
+  { id: "5", name: "Prime Advisors Group", contact: "David Kowalski", stage: "quoting", value: 18500, source: "Referral", phone: "(555) 678-3456", email: "d.kowalski@primeadv.com", location: "Chicago, IL", industry: "Consulting" },
+  { id: "6", name: "TechVentures Inc", contact: "Marcus Chen", stage: "quoting", value: 14000, source: "Partner", phone: "(555) 789-4567", email: "m.chen@techventures.com", location: "Seattle, WA", industry: "Technology" },
+  { id: "7", name: "Sunrise Properties", contact: "Linda Park", stage: "presenting", value: 27000, source: "Networking", phone: "(555) 890-5678", email: "linda@sunriseprop.com", location: "Phoenix, AZ", industry: "Real Estate" },
+  { id: "8", name: "Westfield Manufacturing", contact: "Tom Bradley", stage: "presenting", value: 15000, source: "Referral", phone: "(555) 901-6789", email: "tbradley@westfield.com", location: "Detroit, MI", industry: "Manufacturing" },
+  { id: "9", name: "Nova Health Systems", contact: "Priya Sharma", stage: "bound", value: 42000, source: "Referral", phone: "(555) 012-7890", email: "p.sharma@novahealth.com", location: "Denver, CO", industry: "Healthcare" },
+  { id: "10", name: "Bright Future Foundation", contact: "Amanda Foster", stage: "bound", value: 8500, source: "Event", phone: "(555) 123-8901", email: "afoster@brightfuture.org", location: "Portland, OR", industry: "Non-Profit" },
+  { id: "11", name: "Alpine Group", contact: "James Whitfield", stage: "bound", value: 31000, source: "Website", phone: "(555) 234-9012", email: "j.whitfield@alpine.com", location: "Salt Lake City, UT", industry: "Construction" },
+  { id: "12", name: "Pacific Rim Trading", contact: "Kevin Tanaka", stage: "bound", value: 19500, source: "Cold outreach", phone: "(555) 345-0123", email: "ktanaka@pacrim.com", location: "Los Angeles, CA", industry: "Import/Export" },
+  { id: "13", name: "Redwood Consulting", contact: "Elena Volkov", stage: "bound", value: 24000, source: "LinkedIn", phone: "(555) 456-1235", email: "evolkov@redwood.com", location: "San Francisco, CA", industry: "Consulting" },
+  { id: "14", name: "Metro Solutions", contact: "Carlos Rivera", stage: "lost", value: 20000, source: "Referral", lossReason: "Went with competitor", phone: "(555) 567-2346", email: "c.rivera@metro.com", location: "Dallas, TX", industry: "IT Services" },
+  { id: "15", name: "Harbor View LLC", contact: "Michelle Chang", stage: "lost", value: 16000, source: "Website", lossReason: "Budget constraints", phone: "(555) 678-3457", email: "mchang@harborview.com", location: "Boston, MA", industry: "Hospitality" },
+  { id: "16", name: "Summit Partners", contact: "Andrew Blake", stage: "lost", value: 12000, source: "Partner", lossReason: "Timing not right", phone: "(555) 789-4568", email: "ablake@summit.com", location: "New York, NY", industry: "Finance" },
 ];
 
 const COLUMN_LIMIT = 5;
+
+/* ── Client Info Sheet ── */
+function ClientInfoSheet({ lead, onClose, allStages, onMoveStage }: { lead: DemoLead; onClose: () => void; allStages: StageConfig[]; onMoveStage: (id: string, stage: string) => void }) {
+  const stageLabel = allStages.find(s => s.key === lead.stage)?.label || lead.stage;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: "hsl(0 0% 0% / 0.6)" }} onClick={onClose}>
+      <div className="w-full max-w-md rounded-xl p-5 space-y-4 animate-scale-in" style={{ background: "hsl(240 8% 9%)", border: "1px solid hsl(240 6% 16%)" }} onClick={e => e.stopPropagation()}>
+        <div className="flex items-start justify-between">
+          <div>
+            <h3 className="text-sm font-semibold text-white">{lead.name}</h3>
+            <p className="text-xs mt-0.5" style={{ color: "hsl(240 5% 46%)" }}>{lead.contact}</p>
+          </div>
+          <button onClick={onClose} className="p-1 rounded hover:bg-white/5"><X className="h-4 w-4" style={{ color: "hsl(240 5% 46%)" }} /></button>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          {lead.phone && (
+            <div className="flex items-center gap-2 text-xs" style={{ color: "hsl(240 5% 70%)" }}>
+              <Phone className="h-3 w-3 shrink-0" style={{ color: "hsl(140 12% 58%)" }} /> {lead.phone}
+            </div>
+          )}
+          {lead.email && (
+            <div className="flex items-center gap-2 text-xs truncate" style={{ color: "hsl(240 5% 70%)" }}>
+              <Mail className="h-3 w-3 shrink-0" style={{ color: "hsl(140 12% 58%)" }} /> <span className="truncate">{lead.email}</span>
+            </div>
+          )}
+          {lead.location && (
+            <div className="flex items-center gap-2 text-xs" style={{ color: "hsl(240 5% 70%)" }}>
+              <MapPin className="h-3 w-3 shrink-0" style={{ color: "hsl(140 12% 58%)" }} /> {lead.location}
+            </div>
+          )}
+          {lead.industry && (
+            <div className="flex items-center gap-2 text-xs" style={{ color: "hsl(240 5% 70%)" }}>
+              <Building2 className="h-3 w-3 shrink-0" style={{ color: "hsl(140 12% 58%)" }} /> {lead.industry}
+            </div>
+          )}
+        </div>
+
+        <div className="flex items-center gap-3 pt-1" style={{ borderTop: "1px solid hsl(240 6% 14%)" }}>
+          <div className="flex-1">
+            <span className="text-[10px] uppercase tracking-wider" style={{ color: "hsl(240 5% 46%)" }}>Value</span>
+            <p className="text-sm font-semibold" style={{ color: "hsl(152 69% 45%)" }}>${lead.value.toLocaleString()}</p>
+          </div>
+          <div className="flex-1">
+            <span className="text-[10px] uppercase tracking-wider" style={{ color: "hsl(240 5% 46%)" }}>Stage</span>
+            <Select value={lead.stage} onValueChange={v => onMoveStage(lead.id, v)}>
+              <SelectTrigger className="h-7 text-xs mt-0.5" style={{ background: "hsl(240 8% 7%)", borderColor: "hsl(240 6% 14%)", color: "white" }}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {allStages.map(s => <SelectItem key={s.key} value={s.key} className="text-xs">{s.label}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex-1">
+            <span className="text-[10px] uppercase tracking-wider" style={{ color: "hsl(240 5% 46%)" }}>Source</span>
+            <p className="text-xs text-white mt-1">{lead.source}</p>
+          </div>
+        </div>
+
+        {lead.notes && (
+          <div className="pt-1" style={{ borderTop: "1px solid hsl(240 6% 14%)" }}>
+            <span className="text-[10px] uppercase tracking-wider" style={{ color: "hsl(240 5% 46%)" }}>Notes</span>
+            <p className="text-xs mt-1" style={{ color: "hsl(240 5% 70%)" }}>{lead.notes}</p>
+          </div>
+        )}
+
+        {lead.lossReason && (
+          <div className="pt-1" style={{ borderTop: "1px solid hsl(240 6% 14%)" }}>
+            <span className="text-[10px] uppercase tracking-wider text-red-400">Loss Reason</span>
+            <p className="text-xs mt-1" style={{ color: "hsl(240 5% 70%)" }}>{lead.lossReason}</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export default function DemoPipelineTab() {
   const demoIndustry = sessionStorage.getItem("connect-demo-industry") || "";
@@ -83,8 +164,12 @@ export default function DemoPipelineTab() {
     return DEMO_LEADS;
   });
   const [expandedColumns, setExpandedColumns] = useState<Record<string, boolean>>({});
+  const [selectedLead, setSelectedLead] = useState<DemoLead | null>(null);
 
-  // Persist leads to sessionStorage so they sync across tabs
+  // Drag state
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [dragOverStage, setDragOverStage] = useState<string | null>(null);
+
   useEffect(() => {
     sessionStorage.setItem("connect-demo-leads", JSON.stringify(leads));
   }, [leads]);
@@ -97,8 +182,35 @@ export default function DemoPipelineTab() {
   const lostLeads = leads.filter(l => l.stage === "lost");
   const activeLeads = leads.filter(l => l.stage !== "lost");
 
-  const moveStage = (leadId: string, newStage: string) => {
+  const moveStage = useCallback((leadId: string, newStage: string) => {
     setLeads(prev => prev.map(l => l.id === leadId ? { ...l, stage: newStage } : l));
+  }, []);
+
+  const handleDragStart = (e: React.DragEvent, leadId: string) => {
+    setDragId(leadId);
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", leadId);
+  };
+
+  const handleDragOver = (e: React.DragEvent, stageKey: string) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    setDragOverStage(stageKey);
+  };
+
+  const handleDragLeave = () => setDragOverStage(null);
+
+  const handleDrop = (e: React.DragEvent, stageKey: string) => {
+    e.preventDefault();
+    const leadId = e.dataTransfer.getData("text/plain") || dragId;
+    if (leadId) moveStage(leadId, stageKey);
+    setDragId(null);
+    setDragOverStage(null);
+  };
+
+  const handleDragEnd = () => {
+    setDragId(null);
+    setDragOverStage(null);
   };
 
   return (
@@ -110,7 +222,7 @@ export default function DemoPipelineTab() {
             <Building2 className="h-4 w-4" style={{ color: "hsl(140 12% 58%)" }} />
             {config.label} Pipeline
           </h3>
-          <p className="text-xs" style={{ color: "hsl(240 5% 46%)" }}>Demo pipeline with sample data</p>
+          <p className="text-xs" style={{ color: "hsl(240 5% 46%)" }}>Drag leads between stages · Click to view details</p>
         </div>
         <div className="flex items-center gap-2">
           <Select value={industry} onValueChange={setIndustry}>
@@ -136,8 +248,19 @@ export default function DemoPipelineTab() {
           const totalValue = stageLeads.reduce((sum, l) => sum + l.value, 0);
           const expanded = expandedColumns[stage.key];
           const visibleLeads = expanded ? stageLeads : stageLeads.slice(0, COLUMN_LIMIT);
+          const isOver = dragOverStage === stage.key;
           return (
-            <div key={stage.key} className="space-y-2 animate-fade-in" style={{ animationDelay: `${colIdx * 100}ms` }}>
+            <div
+              key={stage.key}
+              className="space-y-2 animate-fade-in rounded-lg transition-colors duration-150"
+              style={{
+                animationDelay: `${colIdx * 100}ms`,
+                ...(isOver ? { background: "hsl(140 12% 42% / 0.06)", outline: "1.5px dashed hsl(140 12% 42% / 0.4)", outlineOffset: "-1px", borderRadius: "0.5rem" } : {}),
+              }}
+              onDragOver={e => handleDragOver(e, stage.key)}
+              onDragLeave={handleDragLeave}
+              onDrop={e => handleDrop(e, stage.key)}
+            >
               <div className={`rounded-lg px-3 py-2 border ${stage.color}`}>
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-semibold">{stage.label}</span>
@@ -147,26 +270,33 @@ export default function DemoPipelineTab() {
               </div>
               <div className="space-y-2 min-h-[80px]">
                 {visibleLeads.map((lead, cardIdx) => (
-                  <Card key={lead.id} className="group animate-fade-in" style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 14%)", animationDelay: `${colIdx * 100 + cardIdx * 60 + 150}ms` }}>
+                  <Card
+                    key={lead.id}
+                    draggable
+                    onDragStart={e => handleDragStart(e, lead.id)}
+                    onDragEnd={handleDragEnd}
+                    onClick={() => setSelectedLead(lead)}
+                    className={`group animate-fade-in cursor-grab active:cursor-grabbing transition-all duration-150 ${dragId === lead.id ? "opacity-40 scale-95" : "hover:scale-[1.02]"}`}
+                    style={{
+                      background: "hsl(240 8% 9%)",
+                      borderColor: dragId === lead.id ? "hsl(140 12% 42% / 0.5)" : "hsl(240 6% 14%)",
+                      animationDelay: `${colIdx * 100 + cardIdx * 60 + 150}ms`,
+                    }}
+                  >
                     <CardContent className="p-3 space-y-1.5">
-                      <p className="text-xs font-medium text-white truncate">{lead.name}</p>
+                      <div className="flex items-center gap-1.5">
+                        <GripVertical className="h-3 w-3 shrink-0 opacity-0 group-hover:opacity-40 transition-opacity" style={{ color: "hsl(240 5% 46%)" }} />
+                        <p className="text-xs font-medium text-white truncate flex-1">{lead.name}</p>
+                      </div>
                       <p className="text-[10px] truncate" style={{ color: "hsl(240 5% 46%)" }}>{lead.contact}</p>
-                      <Badge variant="outline" className="text-[9px] h-4" style={{ borderColor: "hsl(240 6% 20%)", color: "hsl(240 5% 50%)" }}>{lead.source}</Badge>
-                      {lead.value > 0 && (
-                        <p className="text-[10px] font-medium flex items-center gap-1" style={{ color: "hsl(152 69% 45%)" }}>
-                          <DollarSign className="h-2.5 w-2.5" /> {lead.value.toLocaleString()}
-                        </p>
-                      )}
-                      <Select value={lead.stage} onValueChange={(v) => moveStage(lead.id, v)}>
-                        <SelectTrigger className="h-6 text-[10px] mt-1" style={{ background: "hsl(240 8% 7%)", borderColor: "hsl(240 6% 14%)", color: "white" }}>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {allStages.map(s => (
-                            <SelectItem key={s.key} value={s.key} className="text-xs">{s.label}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <div className="flex items-center justify-between">
+                        <Badge variant="outline" className="text-[9px] h-4" style={{ borderColor: "hsl(240 6% 20%)", color: "hsl(240 5% 50%)" }}>{lead.source}</Badge>
+                        {lead.value > 0 && (
+                          <p className="text-[10px] font-medium flex items-center gap-0.5" style={{ color: "hsl(152 69% 45%)" }}>
+                            <DollarSign className="h-2.5 w-2.5" /> {lead.value.toLocaleString()}
+                          </p>
+                        )}
+                      </div>
                     </CardContent>
                   </Card>
                 ))}
@@ -186,9 +316,15 @@ export default function DemoPipelineTab() {
         })}
       </div>
 
-      {/* Lost Section */}
+      {/* Lost Section — drop target */}
       {lostStageConfig && (
-        <div className="rounded-lg border-2 border-dashed p-3" style={{ borderColor: "hsl(240 6% 18%)" }}>
+        <div
+          className="rounded-lg border-2 border-dashed p-3 transition-colors duration-150"
+          style={{ borderColor: dragOverStage === "lost" ? "hsl(0 60% 50% / 0.5)" : "hsl(240 6% 18%)", background: dragOverStage === "lost" ? "hsl(0 60% 50% / 0.05)" : "transparent" }}
+          onDragOver={e => handleDragOver(e, "lost")}
+          onDragLeave={handleDragLeave}
+          onDrop={e => handleDrop(e, "lost")}
+        >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Badge variant="outline" className={`text-[10px] uppercase tracking-wider ${lostStageConfig.color}`}>
@@ -200,12 +336,12 @@ export default function DemoPipelineTab() {
                   <Info className="h-3 w-3 cursor-help" style={{ color: "hsl(240 5% 30%)" }} />
                 </TooltipTrigger>
                 <TooltipContent side="top" className="max-w-[200px] text-xs">
-                  Leads that went in another direction.
+                  Drag leads here to mark as lost.
                 </TooltipContent>
               </Tooltip>
             </div>
             <div className="flex items-center gap-2">
-              <p className="text-xs" style={{ color: "hsl(240 5% 46%)" }}>Move leads here to mark as lost</p>
+              <p className="text-xs" style={{ color: "hsl(240 5% 46%)" }}>Drop leads here to mark as lost</p>
               {lostLeads.length > 0 && (
                 <Dialog>
                   <DialogTrigger asChild>
@@ -213,17 +349,17 @@ export default function DemoPipelineTab() {
                       <Users className="h-3 w-3" /> View All Lost ({lostLeads.length})
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="max-w-lg max-h-[70vh] overflow-y-auto">
+                  <DialogContent className="max-w-lg max-h-[70vh] overflow-y-auto" style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 16%)" }}>
                     <DialogHeader>
-                      <DialogTitle>Lost Clients ({lostLeads.length})</DialogTitle>
+                      <DialogTitle className="text-white">Lost Clients ({lostLeads.length})</DialogTitle>
                     </DialogHeader>
                     <div className="space-y-2 mt-2">
                       {lostLeads.map((lead) => (
-                        <Card key={lead.id} className="hover:bg-[hsl(240_8%_11%)] transition-colors cursor-pointer">
+                        <Card key={lead.id} className="cursor-pointer transition-colors" style={{ background: "hsl(240 6% 7%)", borderColor: "hsl(240 6% 14%)" }} onClick={() => setSelectedLead(lead)}>
                           <CardContent className="p-2 px-3 flex items-center gap-2">
-                            <span className="text-sm font-medium">{lead.name}</span>
+                            <span className="text-sm font-medium text-white">{lead.name}</span>
                             {lead.lossReason && (
-                              <span className="text-[10px] text-muted-foreground ml-auto">{lead.lossReason}</span>
+                              <span className="text-[10px] ml-auto" style={{ color: "hsl(240 5% 46%)" }}>{lead.lossReason}</span>
                             )}
                           </CardContent>
                         </Card>
@@ -237,6 +373,16 @@ export default function DemoPipelineTab() {
         </div>
       )}
     </div>
+
+    {/* Client Info overlay */}
+    {selectedLead && (
+      <ClientInfoSheet
+        lead={selectedLead}
+        onClose={() => setSelectedLead(null)}
+        allStages={allStages}
+        onMoveStage={(id, stage) => { moveStage(id, stage); setSelectedLead(prev => prev ? { ...prev, stage } : null); }}
+      />
+    )}
     </TooltipProvider>
   );
 }
