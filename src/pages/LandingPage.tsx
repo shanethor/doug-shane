@@ -186,7 +186,7 @@ export default function LandingPage() {
         @keyframes tabFill { 0% { width: 0; } 100% { width: 100%; } }
       `}</style>
 
-      <Starfield />
+      <ParticleNetwork />
 
       <div className="relative z-[1]">
         {/* ═══ NAV ═══ */}
