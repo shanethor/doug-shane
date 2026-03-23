@@ -61,54 +61,119 @@ const TABS = [
 
 export default function ConnectDemo() {
   const [activeTab, setActiveTab] = useState("connect");
+  const [buildPhase, setBuildPhase] = useState(0);
+  // 0=nothing, 1=header, 2=ticker, 3=tabs, 4=content
 
   useEffect(() => {
     const demoAuth = sessionStorage.getItem("connect-demo-auth");
     if (!demoAuth) {
       window.location.href = "/connectdemo/auth";
+      return;
     }
+
+    const hasEntered = sessionStorage.getItem("connect-demo-entered");
+    if (hasEntered) {
+      setBuildPhase(4);
+      return;
+    }
+
+    sessionStorage.setItem("connect-demo-entered", "true");
+    const t1 = setTimeout(() => setBuildPhase(1), 200);
+    const t2 = setTimeout(() => setBuildPhase(2), 700);
+    const t3 = setTimeout(() => setBuildPhase(3), 1200);
+    const t4 = setTimeout(() => setBuildPhase(4), 1800);
+    return () => [t1, t2, t3, t4].forEach(clearTimeout);
   }, []);
+
+  const transition = (phase: number, extra = "") =>
+    `transition-all duration-700 ${extra}`.trim() +
+    (buildPhase >= phase ? "" : " opacity-0 translate-y-4 pointer-events-none");
 
   return (
     <div className="min-h-screen flex flex-col w-full overflow-x-hidden" style={{ background: "#08080A", color: "hsl(240 6% 95%)", minHeight: "100dvh" }}>
       {/* Header */}
-      <header className="px-4 py-3 flex items-center justify-between" style={{ borderBottom: "1px solid hsl(240 6% 14%)", background: "hsl(240 8% 7%)" }}>
-        <div className="flex items-center gap-3">
-          <AuraLogo size={32} />
-          <h1 className="text-lg font-bold text-white">AuRa Connect</h1>
+      <header
+        className={transition(1)}
+        style={{ borderBottom: "1px solid hsl(240 6% 14%)", background: "hsl(240 8% 7%)", opacity: buildPhase >= 1 ? 1 : 0, transform: buildPhase >= 1 ? "translateY(0)" : "translateY(-20px)" }}
+      >
+        <div className="px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <AuraLogo size={32} />
+            <h1 className="text-lg font-bold text-white">AuRa Connect</h1>
+          </div>
+          <button
+            className="text-xs hover:text-white transition-colors"
+            style={{ color: "hsl(240 5% 46%)" }}
+            onClick={() => {
+              sessionStorage.removeItem("connect-demo-auth");
+              sessionStorage.removeItem("connect-demo-entered");
+              window.location.href = "/connectdemo/auth";
+            }}
+          >
+            Sign out
+          </button>
         </div>
-        <button
-          className="text-xs hover:text-white transition-colors"
-          style={{ color: "hsl(240 5% 46%)" }}
-          onClick={() => {
-            sessionStorage.removeItem("connect-demo-auth");
-            window.location.href = "/connectdemo/auth";
-          }}
-        >
-          Sign out
-        </button>
       </header>
 
-      <QuoteTicker />
+      {/* Quote Ticker */}
+      <div
+        style={{
+          opacity: buildPhase >= 2 ? 1 : 0,
+          transform: buildPhase >= 2 ? "translateY(0)" : "translateY(-10px)",
+          transition: "all 0.6s cubic-bezier(0.16, 1, 0.3, 1)",
+          overflow: "hidden",
+          maxHeight: buildPhase >= 2 ? "50px" : "0px",
+        }}
+      >
+        <QuoteTicker />
+      </div>
 
       {/* Main content */}
       <div className="flex-1 w-full px-2 sm:px-4 lg:px-6 py-4">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="flex flex-wrap h-auto gap-1 p-1 mb-4" style={{ background: "hsl(240 8% 7%)", border: "1px solid hsl(240 6% 14%)" }}>
-            {TABS.map(t => (
-              <TabsTrigger key={t.value} value={t.value} className="flex items-center gap-1.5 data-[state=active]:text-white" style={{ color: "hsl(240 5% 46%)" }}>
-                <t.icon className="h-4 w-4" /> {t.label}
-              </TabsTrigger>
-            ))}
-          </TabsList>
+          {/* Tab navigation */}
+          <div
+            style={{
+              opacity: buildPhase >= 3 ? 1 : 0,
+              transform: buildPhase >= 3 ? "translateY(0) scale(1)" : "translateY(12px) scale(0.98)",
+              transition: "all 0.6s cubic-bezier(0.16, 1, 0.3, 1)",
+            }}
+          >
+            <TabsList className="flex flex-wrap h-auto gap-1 p-1 mb-4" style={{ background: "hsl(240 8% 7%)", border: "1px solid hsl(240 6% 14%)" }}>
+              {TABS.map((t, i) => (
+                <TabsTrigger
+                  key={t.value}
+                  value={t.value}
+                  className="flex items-center gap-1.5 data-[state=active]:text-white"
+                  style={{
+                    color: "hsl(240 5% 46%)",
+                    opacity: buildPhase >= 3 ? 1 : 0,
+                    transform: buildPhase >= 3 ? "translateY(0)" : "translateY(8px)",
+                    transition: `all 0.4s cubic-bezier(0.16, 1, 0.3, 1) ${i * 80}ms`,
+                  }}
+                >
+                  <t.icon className="h-4 w-4" /> {t.label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </div>
 
-          <TabsContent value="connect" className="mt-0"><DemoConnectTab /></TabsContent>
-          <TabsContent value="pipeline" className="mt-0"><DemoPipelineTab /></TabsContent>
-          <TabsContent value="email" className="mt-0"><DemoEmailTab /></TabsContent>
-          <TabsContent value="calendar" className="mt-0"><DemoCalendarTab /></TabsContent>
-          <TabsContent value="outreach" className="mt-0"><DemoOutreachTab /></TabsContent>
-          <TabsContent value="spotlight" className="mt-0"><DemoSpotlightTab /></TabsContent>
-          <TabsContent value="assistant" className="mt-0"><DemoAssistantTab onNavigate={setActiveTab} /></TabsContent>
+          {/* Tab content */}
+          <div
+            style={{
+              opacity: buildPhase >= 4 ? 1 : 0,
+              transform: buildPhase >= 4 ? "translateY(0)" : "translateY(16px)",
+              transition: "all 0.8s cubic-bezier(0.16, 1, 0.3, 1)",
+            }}
+          >
+            <TabsContent value="connect" className="mt-0"><DemoConnectTab /></TabsContent>
+            <TabsContent value="pipeline" className="mt-0"><DemoPipelineTab /></TabsContent>
+            <TabsContent value="email" className="mt-0"><DemoEmailTab /></TabsContent>
+            <TabsContent value="calendar" className="mt-0"><DemoCalendarTab /></TabsContent>
+            <TabsContent value="outreach" className="mt-0"><DemoOutreachTab /></TabsContent>
+            <TabsContent value="spotlight" className="mt-0"><DemoSpotlightTab /></TabsContent>
+            <TabsContent value="assistant" className="mt-0"><DemoAssistantTab onNavigate={setActiveTab} /></TabsContent>
+          </div>
         </Tabs>
       </div>
     </div>
