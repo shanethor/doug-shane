@@ -247,20 +247,22 @@ export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId, ini
   };
 
   const generateDemoImage = async (prompt: string) => {
-    const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-        "Content-Type": "application/json",
+    const { data, error } = await supabase.functions.invoke("spotlight-flyer", {
+      body: {
+        action: "demo_generate",
+        prompt,
       },
-      body: JSON.stringify({
-        model: "google/gemini-3.1-flash-image-preview",
-        messages: [{ role: "user", content: prompt }],
-        modalities: ["image", "text"],
-      }),
     });
-    const data = await resp.json();
-    const imageUrl = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+
+    if (error) {
+      throw new Error(error.message || "Failed to reach image generator");
+    }
+
+    if (data?.error) {
+      throw new Error(data.error);
+    }
+
+    const imageUrl = data?.image_url;
     if (!imageUrl) throw new Error("Image generation failed — no image returned");
     return imageUrl;
   };
