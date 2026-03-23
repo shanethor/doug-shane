@@ -37,7 +37,7 @@ interface SpotlightFlyerWizardProps {
   demoMode?: boolean;
 }
 
-export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId, initialType }: SpotlightFlyerWizardProps) {
+export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId, initialType, demoMode }: SpotlightFlyerWizardProps) {
   const [step, setStep] = useState(editFlyerId ? 0 : 1);
   const [loading, setLoading] = useState(false);
 
