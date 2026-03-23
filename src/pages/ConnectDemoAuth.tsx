@@ -223,7 +223,7 @@ export default function ConnectDemoAuth() {
               </Button>
             </form>
           </div>
-          <p className="text-xl text-center font-semibold mt-6" style={{ color: "hsl(140 12% 58%)" }}>Intelligence runs on AuRa</p>
+          <p className="text-xl text-center font-semibold mt-10" style={{ color: "hsl(140 12% 58%)" }}>Intelligence runs on AuRa</p>
           </>
         )}
 
@@ -235,7 +235,7 @@ export default function ConnectDemoAuth() {
               <h1 className="text-xl font-bold text-white">AuRa Connect</h1>
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-white text-center">Choose your plan</h2>
+              <h2 className="text-lg font-semibold text-center" style={{ color: "hsl(240 5% 56%)" }}>Choose your plan</h2>
             </div>
             <div className="rounded-lg border-2 p-4 space-y-3" style={{ borderColor: "hsl(140 12% 42%)", background: "hsl(140 12% 42% / 0.05)" }}>
               <div className="flex items-center justify-between">
@@ -270,7 +270,7 @@ export default function ConnectDemoAuth() {
             </Button>
             <p className="text-xs text-center" style={{ color: "hsl(240 5% 46%)" }}>Demo mode — no payment required</p>
           </div>
-          <p className="text-xl text-center font-semibold mt-6" style={{ color: "hsl(140 12% 58%)" }}>Intelligence runs on AuRa</p>
+          <p className="text-xl text-center font-semibold mt-10" style={{ color: "hsl(140 12% 58%)" }}>Intelligence runs on AuRa</p>
           </>
         )}
 
@@ -369,7 +369,7 @@ export default function ConnectDemoAuth() {
                 </button>
               </div>
             </div>
-            <p className="text-xl text-center font-semibold mt-6" style={{ color: "hsl(140 12% 58%)" }}>Intelligence runs on AuRa</p>
+            <p className="text-xl text-center font-semibold mt-10" style={{ color: "hsl(140 12% 58%)" }}>Intelligence runs on AuRa</p>
           </div>
         )}
       </div>
