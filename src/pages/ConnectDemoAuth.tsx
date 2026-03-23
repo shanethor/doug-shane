@@ -251,9 +251,16 @@ export default function ConnectDemoAuth() {
         {step === "subscribe" && (
           <>
           <div className="rounded-xl border p-6 space-y-6 animate-scale-in" style={{ background: "hsl(240 8% 7%)", borderColor: "hsl(240 6% 14%)" }}>
-            <div className="text-center space-y-2">
+            <div className="text-center space-y-3">
               <div className="mx-auto flex items-center justify-center"><AuraLogo size={48} /></div>
               <h1 className="text-xl font-bold text-white">AuRa Connect</h1>
+              <p className="text-sm font-medium" style={{ color: "hsl(140 12% 58%)" }}>
+                You already know the right people. You just don't know how to get there.
+              </p>
+              <p className="text-sm font-semibold italic sage-shimmer">
+                Let us show you the way in.
+              </p>
+            </div>
             </div>
             <div>
               <h2 className="text-lg font-semibold text-center" style={{ color: "hsl(240 5% 56%)" }}>Choose your plan</h2>
