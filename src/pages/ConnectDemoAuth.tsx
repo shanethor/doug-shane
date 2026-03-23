@@ -171,10 +171,6 @@ export default function ConnectDemoAuth() {
               <div className="mx-auto flex items-center justify-center"><AuraLogo size={48} /></div>
               <h1 className="text-xl font-bold text-white">AuRa Connect</h1>
             </div>
-            <div className="text-center">
-              <h2 className="text-lg font-semibold text-white">Create your account</h2>
-              <p className="text-sm" style={{ color: "hsl(240 5% 46%)" }}>Sign up to explore AuRa Connect</p>
-            </div>
             <form onSubmit={handleAuth} className="space-y-4">
               <div className="space-y-2">
                 <Label className="text-white/80">Name</Label>
