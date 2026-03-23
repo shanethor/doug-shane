@@ -185,6 +185,7 @@ export default function ConnectDemo() {
             onClick={() => {
               sessionStorage.removeItem("connect-demo-auth");
               sessionStorage.removeItem("connect-demo-entered");
+              sessionStorage.removeItem("connect-tab-visited");
               window.location.href = "/connectdemo/auth";
             }}
           >
