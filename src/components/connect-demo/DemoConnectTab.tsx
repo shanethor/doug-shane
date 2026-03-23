@@ -548,11 +548,24 @@ function NetworkGraph({ onNodeClick }: { onNodeClick: (profile: ReturnType<typeo
   );
 }
 
+interface ProfileData {
+  name: string;
+  title: string;
+  company: string;
+  industry: string;
+  location: string;
+  mutualConnections: number;
+  connectionStrength: string;
+  tier: 0 | 1 | 2 | 3;
+}
+
 export default function DemoConnectTab() {
   const [searchName, setSearchName] = useState("");
   const [result, setResult] = useState<PathResult | null>(null);
   const [searching, setSearching] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
+  const [profilePopup, setProfilePopup] = useState<{ profile: ProfileData; pos: { x: number; y: number } } | null>(null);
+  const popupRef = useRef<HTMLDivElement>(null);
 
   const handleSearch = () => {
     if (!searchName.trim()) return;
@@ -572,6 +585,36 @@ export default function DemoConnectTab() {
       setSearching(false);
     }, 1200);
   };
+
+  const handleNodeClick = useCallback((profile: ProfileData, pos: { x: number; y: number }) => {
+    setProfilePopup({ profile, pos });
+  }, []);
+
+  // Close popup on outside click
+  useEffect(() => {
+    if (!profilePopup) return;
+    const handler = (e: MouseEvent) => {
+      if (popupRef.current && !popupRef.current.contains(e.target as Node)) {
+        setProfilePopup(null);
+      }
+    };
+    setTimeout(() => document.addEventListener("click", handler), 10);
+    return () => document.removeEventListener("click", handler);
+  }, [profilePopup]);
+
+  // Compute popup position to stay in viewport
+  const popupStyle = profilePopup ? (() => {
+    const pw = 280, ph = 260;
+    let x = profilePopup.pos.x - pw / 2;
+    let y = profilePopup.pos.y - ph - 20;
+    if (y < 10) y = profilePopup.pos.y + 20;
+    if (x < 10) x = 10;
+    if (x + pw > window.innerWidth - 10) x = window.innerWidth - pw - 10;
+    return { left: x, top: y, width: pw };
+  })() : null;
+
+  const strengthColor = (s: string) =>
+    s === "Strong" ? "hsl(140 50% 50%)" : s === "Moderate" ? "hsl(45 80% 55%)" : "hsl(0 0% 55%)";
 
   return (
     <div className="flex flex-col" style={{ animation: "smoothFadeSlide 0.6s cubic-bezier(0.16,1,0.3,1) both", height: "calc(100dvh - 140px)" }}>
@@ -608,12 +651,92 @@ export default function DemoConnectTab() {
       {/* Network Graph — fills ALL remaining space */}
       {!searching && !result && (
         <div className="relative flex-1 overflow-hidden mt-2">
-          <NetworkGraph />
+          <NetworkGraph onNodeClick={handleNodeClick} />
           <div className="absolute bottom-4 left-0 right-0 text-center z-10">
             <span className="text-xs px-3 py-1 rounded-full" style={{ background: "hsl(240 8% 9% / 0.8)", color: "hsl(240 5% 50%)", border: "1px solid hsl(240 6% 14%)" }}>
-              Live network map — search a name to trace a path
+              Live network map — click any name to view profile
             </span>
           </div>
+
+          {/* Profile popup */}
+          {profilePopup && popupStyle && (
+            <div
+              ref={popupRef}
+              className="fixed z-50 rounded-xl p-4 space-y-3 animate-fade-in shadow-2xl"
+              style={{
+                left: popupStyle.left,
+                top: popupStyle.top,
+                width: popupStyle.width,
+                background: "hsl(240 8% 8%)",
+                border: "1px solid hsl(140 12% 42% / 0.3)",
+                backdropFilter: "blur(12px)",
+              }}
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full flex items-center justify-center text-xs font-bold" style={{ background: "hsl(140 12% 42% / 0.2)", color: "hsl(140 12% 65%)" }}>
+                    {profilePopup.profile.name.split(" ").map(n => n[0]).join("")}
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-white">{profilePopup.profile.name}</p>
+                    <p className="text-[11px]" style={{ color: "hsl(240 5% 55%)" }}>{profilePopup.profile.title}</p>
+                  </div>
+                </div>
+                <button onClick={() => setProfilePopup(null)} className="p-0.5 rounded hover:bg-white/10">
+                  <X className="h-3.5 w-3.5" style={{ color: "hsl(240 5% 46%)" }} />
+                </button>
+              </div>
+
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-2 text-xs" style={{ color: "hsl(240 5% 60%)" }}>
+                  <Building2 className="h-3.5 w-3.5 shrink-0" style={{ color: "hsl(140 12% 50%)" }} />
+                  {profilePopup.profile.company}
+                </div>
+                <div className="flex items-center gap-2 text-xs" style={{ color: "hsl(240 5% 60%)" }}>
+                  <Briefcase className="h-3.5 w-3.5 shrink-0" style={{ color: "hsl(140 12% 50%)" }} />
+                  {profilePopup.profile.industry}
+                </div>
+                <div className="flex items-center gap-2 text-xs" style={{ color: "hsl(240 5% 60%)" }}>
+                  <MapPin className="h-3.5 w-3.5 shrink-0" style={{ color: "hsl(140 12% 50%)" }} />
+                  {profilePopup.profile.location}
+                </div>
+                <div className="flex items-center gap-2 text-xs" style={{ color: "hsl(240 5% 60%)" }}>
+                  <Users className="h-3.5 w-3.5 shrink-0" style={{ color: "hsl(140 12% 50%)" }} />
+                  {profilePopup.profile.mutualConnections} mutual connections
+                </div>
+                <div className="flex items-center gap-2 text-xs">
+                  <Signal className="h-3.5 w-3.5 shrink-0" style={{ color: strengthColor(profilePopup.profile.connectionStrength) }} />
+                  <span style={{ color: strengthColor(profilePopup.profile.connectionStrength) }}>
+                    {profilePopup.profile.connectionStrength} connection
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex gap-2 pt-1">
+                <Button
+                  size="sm"
+                  className="flex-1 text-xs h-8"
+                  style={{ background: "hsl(140 12% 42%)", color: "white" }}
+                  onClick={() => {
+                    setSearchName(profilePopup.profile.name);
+                    setProfilePopup(null);
+                    setTimeout(handleSearch, 100);
+                  }}
+                >
+                  Find Path
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="flex-1 text-xs h-8"
+                  style={{ borderColor: "hsl(240 6% 20%)", color: "hsl(240 5% 70%)" }}
+                  onClick={() => setProfilePopup(null)}
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
