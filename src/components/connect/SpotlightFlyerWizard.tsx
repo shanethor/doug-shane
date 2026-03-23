@@ -29,6 +29,63 @@ const FLYER_TYPES = [
 const darkInput: React.CSSProperties = { background: "hsl(240 6% 7%)", borderColor: "hsl(240 6% 16%)", color: "#F5F5F0" };
 const darkTextarea: React.CSSProperties = { ...darkInput };
 
+type DemoEnrichmentResult = {
+  flyer_type?: string;
+  title?: string;
+  description?: string;
+  date_time?: string | null;
+  location?: string | null;
+  bullets?: string[];
+  cta?: string | null;
+  evergreen?: boolean | null;
+};
+
+const normalizeFlyerType = (value?: string) => {
+  const normalized = (value || "").toLowerCase().trim();
+  if (["event", "social", "announcement", "educational", "promotion", "custom"].includes(normalized)) return normalized;
+  if (["promo", "promotion", "discount", "sale"].includes(normalized)) return "promotion";
+  if (["webinar", "virtual", "meeting"].includes(normalized)) return "event";
+  if (["education", "guide", "tips"].includes(normalized)) return "educational";
+  return "event";
+};
+
+const defaultCtaForType = (value?: string) => {
+  const type = normalizeFlyerType(value);
+  const ctaMap: Record<string, string> = {
+    event: "RSVP today to reserve your seat.",
+    social: "Like, share, and follow for more.",
+    promotion: "Call today or book online.",
+    educational: "Learn more today.",
+    announcement: "Stay tuned for more updates.",
+    custom: "Contact us today.",
+  };
+
+  return ctaMap[type] || ctaMap.custom;
+};
+
+const inferTitleFromText = (text: string, fallbackType?: string) => {
+  const cleaned = text
+    .replace(/\s+/g, " ")
+    .replace(/^create\s+(an?|the)\s+/i, "")
+    .replace(/^i need\s+(an?|the)?\s*/i, "")
+    .trim();
+
+  if (!cleaned) return `${FLYER_TYPES.find((item) => item.value === normalizeFlyerType(fallbackType))?.label || "Graphic"}`;
+
+  const firstSentence = cleaned.split(/[.!?\n]/)[0]?.trim() || cleaned;
+  const shortened = firstSentence.length > 72 ? `${firstSentence.slice(0, 69).trim()}…` : firstSentence;
+  return shortened.replace(/^for\s+/i, "");
+};
+
+const fallbackBulletsFromText = (text: string) => {
+  const pieces = text
+    .split(/\n|[.!?•]/g)
+    .map((part) => part.replace(/\s+/g, " ").trim())
+    .filter((part) => part.length >= 8);
+
+  return pieces.slice(0, 4);
+};
+
 interface SpotlightFlyerWizardProps {
   onClose: () => void;
   brands: BrandPackage[];
@@ -75,6 +132,53 @@ export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId, ini
 
   // Sync initialType
   useEffect(() => { if (initialType) setFlyerType(initialType); }, [initialType]);
+
+  const getResolvedBullets = () => {
+    const cleanBullets = bullets.map((bullet) => bullet.trim()).filter(Boolean);
+    if (cleanBullets.length > 0) return cleanBullets;
+
+    const fallbackSource = description.trim() || rawPrompt.trim();
+    return fallbackBulletsFromText(fallbackSource);
+  };
+
+  const requestDemoEnrichment = async (payload: Record<string, unknown>) => {
+    const { data, error } = await supabase.functions.invoke("spotlight-flyer", {
+      body: {
+        action: "demo_enrich",
+        ...payload,
+      },
+    });
+
+    if (error) {
+      throw new Error(error.message || "Could not enrich the flyer draft");
+    }
+
+    if (data?.error) {
+      throw new Error(data.error);
+    }
+
+    return (data?.enrichment || null) as DemoEnrichmentResult | null;
+  };
+
+  const hydrateFromEnrichment = (enrichment: DemoEnrichmentResult | null | undefined) => {
+    if (!enrichment) return;
+
+    const nextType = normalizeFlyerType(enrichment.flyer_type || flyerType || initialType || "event");
+    if (!flyerType) setFlyerType(nextType);
+
+    if (enrichment.title && !title.trim()) setTitle(enrichment.title);
+    if (enrichment.description && !description.trim()) setDescription(enrichment.description);
+    if (enrichment.date_time && !dateTime.trim()) setDateTime(enrichment.date_time);
+    if (enrichment.location && !location.trim()) setLocation(enrichment.location);
+    if (typeof enrichment.evergreen === "boolean") setIsEvergreen(enrichment.evergreen);
+
+    const enrichedBullets = (enrichment.bullets || []).map((bullet) => bullet.trim()).filter(Boolean);
+    if (enrichedBullets.length > 0 && !bullets.some((bullet) => bullet.trim())) {
+      setBullets(enrichedBullets);
+    }
+
+    if (enrichment.cta && !cta.trim()) setCta(enrichment.cta);
+  };
 
   // Load existing flyer for editing
   useEffect(() => {
@@ -132,10 +236,25 @@ export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId, ini
     setLoading(true);
     try {
       if (demoMode) {
-        // Demo mode: skip edge function, proceed locally
-        const detectedType = flyerType || "event";
+        const detectedType = normalizeFlyerType(flyerType || initialType || "event");
         setFlyerId(`demo-${Date.now()}`);
         setFlyerType(detectedType);
+        setDescription((current) => current || rawPrompt.trim());
+        setTitle((current) => current || inferTitleFromText(rawPrompt, detectedType));
+        setCta((current) => current || defaultCtaForType(detectedType));
+
+        try {
+          const enrichment = await requestDemoEnrichment({
+            raw_prompt: rawPrompt.trim(),
+            type: detectedType,
+            brand_name: brandName || undefined,
+            brand_colors: brandColors.filter(Boolean),
+          });
+          hydrateFromEnrichment(enrichment);
+        } catch {
+          // Keep the demo moving with local fallbacks if enrichment is unavailable.
+        }
+
         setStep(2);
         setLoading(false);
         return;
@@ -180,15 +299,31 @@ export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId, ini
     setLoading(true);
     try {
       if (demoMode) {
-        // Demo mode: skip edge function
-        if (!cta) {
-          const ctaMap: Record<string, string> = {
-            event: "RSVP today to reserve your seat.", social: "Like, share, and follow for more.",
-            promotion: "Call today or book online.", educational: "Learn more today.",
-            announcement: "Stay tuned for more updates.", custom: "Contact us today.",
-          };
-          setCta(ctaMap[flyerType] || "Contact us today.");
+        const detectedType = normalizeFlyerType(flyerType || initialType || "event");
+        const fallbackSource = description.trim() || rawPrompt.trim();
+
+        try {
+          const enrichment = await requestDemoEnrichment({
+            raw_prompt: rawPrompt.trim(),
+            type: detectedType,
+            title: title.trim(),
+            description: fallbackSource,
+            date_time: effectiveEvergreen ? null : dateTime.trim(),
+            evergreen: effectiveEvergreen,
+            location: location.trim() || null,
+            cta: cta.trim() || null,
+            bullets: getResolvedBullets(),
+            brand_name: brandName.trim() || null,
+            brand_colors: brandColors.filter(Boolean),
+          });
+          hydrateFromEnrichment(enrichment);
+        } catch {
+          // Fall through to local defaults if AI enrichment is unavailable.
         }
+
+        const nextBullets = getResolvedBullets();
+        if (nextBullets.length > 0) setBullets(nextBullets);
+        if (!cta.trim()) setCta(defaultCtaForType(detectedType));
         setStep(3);
         setLoading(false);
         return;
@@ -234,12 +369,14 @@ export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId, ini
   const buildDemoPrompt = (extra?: string) => {
     const parts = [`Create a professional vertical marketing flyer for ${brandName || "a business"}.`];
     parts.push(`Use brand colors: ${brandColors.join(" and ")}.`);
-    parts.push(`Headline: "${title}".`);
+    parts.push(`Headline: "${title || inferTitleFromText(rawPrompt, flyerType)}".`);
+    if (rawPrompt.trim()) parts.push(`Original request: "${rawPrompt.trim()}".`);
+    if (description.trim()) parts.push(`Supporting details: "${description.trim()}".`);
     if (!isEvergreen && dateTime) parts.push(`Date/Time: ${dateTime}.`);
     if (location) parts.push(`Location: ${location}.`);
-    const cleanBullets = bullets.filter(b => b.trim());
+    const cleanBullets = getResolvedBullets();
     if (cleanBullets.length > 0) parts.push(`Bullet points:\n${cleanBullets.map(b => `• ${b}`).join("\n")}`);
-    if (cta) parts.push(`Call to action: "${cta}".`);
+    if (cta || flyerType) parts.push(`Call to action: "${cta || defaultCtaForType(flyerType)}".`);
     parts.push(`Design style: clean, professional, suitable for print and social media.`);
     if (disclaimer) parts.push(`Disclaimer: "${disclaimer}".`);
     if (extra) parts.push(`Additional instructions: ${extra}`);
@@ -268,12 +405,16 @@ export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId, ini
   };
 
   const handleGenerate = async () => {
-    const cleanBullets = bullets.filter(b => b.trim());
-    if (cleanBullets.length === 0) { toast.error("Add at least one bullet point"); return; }
-    if (!cta.trim()) { toast.error("Add a call to action"); return; }
+    const cleanBullets = demoMode ? getResolvedBullets() : bullets.filter(b => b.trim());
+    if (!demoMode && cleanBullets.length === 0) { toast.error("Add at least one bullet point"); return; }
+    if (demoMode && cleanBullets.length === 0 && !rawPrompt.trim() && !description.trim()) { toast.error("Add at least a short description"); return; }
+    if (!demoMode && !cta.trim()) { toast.error("Add a call to action"); return; }
     setLoading(true);
     try {
       if (demoMode) {
+        if (cleanBullets.length > 0 && !bullets.some((bullet) => bullet.trim())) setBullets(cleanBullets);
+        if (!title.trim()) setTitle(inferTitleFromText(rawPrompt || description, flyerType));
+        if (!cta.trim()) setCta(defaultCtaForType(flyerType));
         setStep(4);
         setGenerating(true);
         const prompt = buildDemoPrompt();
@@ -341,8 +482,8 @@ export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId, ini
   };
 
   const handleCopyCaption = () => {
-    const cleanBullets = bullets.filter(b => b.trim());
-    const caption = [title, !isEvergreen && dateTime ? `📅 ${dateTime}` : "", location ? `📍 ${location}` : "", "", ...cleanBullets.map(b => `• ${b}`), "", `👉 ${cta}`].filter(Boolean).join("\n");
+    const cleanBullets = getResolvedBullets();
+    const caption = [title || inferTitleFromText(rawPrompt || description, flyerType), !isEvergreen && dateTime ? `📅 ${dateTime}` : "", location ? `📍 ${location}` : "", "", ...cleanBullets.map(b => `• ${b}`), "", `👉 ${cta || defaultCtaForType(flyerType)}`].filter(Boolean).join("\n");
     navigator.clipboard.writeText(caption);
     toast.success("Caption copied to clipboard");
   };
