@@ -246,7 +246,6 @@ export default function ConnectDemoAuth() {
                 Let us show you the way in.
               </p>
             </div>
-            </div>
             <div>
               <h2 className="text-lg font-semibold text-center" style={{ color: "hsl(240 5% 56%)" }}>Choose your plan</h2>
             </div>
