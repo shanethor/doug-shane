@@ -777,7 +777,7 @@ export default function DemoEmailTab() {
           {FOLDERS.map(f => (
             <button
               key={f.key}
-              onClick={() => { setFolder(f.key); setSelectedThreadId(null); setSelectedClient(null); }}
+              onClick={() => { setFolder(f.key); setSelectedThreadId(null); setSelectedClient(null); setSearchQuery(""); }}
               className={`flex items-center gap-2 text-sm px-3 py-2.5 rounded-md transition-colors w-full text-left ${folder === f.key ? "bg-white/10 text-white" : ""}`}
               style={folder !== f.key ? { color: "hsl(240 5% 60%)" } : {}}
             >
