@@ -92,7 +92,7 @@ export default function ConnectDemo() {
     (buildPhase >= phase ? "" : " opacity-0 translate-y-4 pointer-events-none");
 
   return (
-    <div className="min-h-screen flex flex-col w-full overflow-x-hidden relative" style={{ background: "#08080A", color: "hsl(240 6% 95%)", minHeight: "100dvh" }}>
+    <div className="demo-dark min-h-screen flex flex-col w-full overflow-x-hidden relative" style={{ background: "#08080A", color: "hsl(240 6% 95%)", minHeight: "100dvh" }}>
 
       {/* ── Phase 0→1: Cinematic logo intro overlay ── */}
       {buildPhase < 2 && (
