@@ -566,6 +566,7 @@ export default function DemoConnectTab() {
   const [result, setResult] = useState<PathResult | null>(null);
   const [searching, setSearching] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
+  const [outreachType, setOutreachType] = useState<"email" | "text" | "call" | "meet" | null>(null);
   const [profilePopup, setProfilePopup] = useState<{ profile: ProfileData; pos: { x: number; y: number } } | null>(null);
   const popupRef = useRef<HTMLDivElement>(null);
 
