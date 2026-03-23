@@ -570,7 +570,7 @@ interface ProfileData {
   tier: 0 | 1 | 2 | 3;
 }
 
-export default function DemoConnectTab() {
+export default function DemoConnectTab({ contentReady = true }: { contentReady?: boolean }) {
   const [searchName, setSearchName] = useState("");
   const [result, setResult] = useState<PathResult | null>(null);
   const [searching, setSearching] = useState(false);
@@ -602,7 +602,6 @@ export default function DemoConnectTab() {
     setProfilePopup({ profile, pos });
   }, []);
 
-  // Close popup on outside click
   useEffect(() => {
     if (!profilePopup) return;
     const handler = (e: MouseEvent) => {
@@ -614,7 +613,6 @@ export default function DemoConnectTab() {
     return () => document.removeEventListener("click", handler);
   }, [profilePopup]);
 
-  // Compute popup position to stay in viewport
   const popupStyle = profilePopup ? (() => {
     const pw = 280, ph = 260;
     let x = profilePopup.pos.x - pw / 2;
@@ -628,28 +626,28 @@ export default function DemoConnectTab() {
   const strengthColor = (s: string) =>
     s === "Strong" ? "hsl(140 50% 50%)" : s === "Moderate" ? "hsl(45 80% 55%)" : "hsl(0 0% 55%)";
 
-  // First-time slow reveal
   const [connectPhase, setConnectPhase] = useState(0);
   const isFirstVisit = useRef(!sessionStorage.getItem("connect-tab-visited"));
+  const graphActive = contentReady && (!isFirstVisit.current || connectPhase >= 3);
 
   useEffect(() => {
+    if (!contentReady) return;
+
     if (!isFirstVisit.current) {
       setConnectPhase(3);
       return;
     }
+
     sessionStorage.setItem("connect-tab-visited", "true");
-    // Delay connect-tab animations until after the page build finishes (~10.5s)
-    const pageEntryDelay = sessionStorage.getItem("connect-demo-entered") ? 0 : 0;
-    // The content phase (5) fires at 10.5s, add stagger after that
-    const t1 = setTimeout(() => setConnectPhase(1), 800);   // headline
-    const t2 = setTimeout(() => setConnectPhase(2), 2200);  // search bar
-    const t3 = setTimeout(() => setConnectPhase(3), 5000);  // network graph (very slow)
+    const t1 = setTimeout(() => setConnectPhase(1), 250);
+    const t2 = setTimeout(() => setConnectPhase(2), 1450);
+    const t3 = setTimeout(() => setConnectPhase(3), 3200);
+
     return () => [t1, t2, t3].forEach(clearTimeout);
-  }, []);
+  }, [contentReady]);
 
   return (
     <div className="flex flex-col" style={{ animation: "smoothFadeSlide 0.6s cubic-bezier(0.16,1,0.3,1) both", height: "calc(100dvh - 140px)" }}>
-      {/* Hero + Search overlaid on top */}
       <div className="relative z-10 flex flex-col items-center text-center pt-6 pb-2 space-y-5">
         <div className="space-y-2" style={{
           opacity: connectPhase >= 1 ? 1 : 0,
@@ -687,14 +685,13 @@ export default function DemoConnectTab() {
         </div>
       </div>
 
-      {/* Network Graph — fills ALL remaining space */}
       {!searching && !result && (
         <div className="relative flex-1 overflow-hidden mt-2" style={{
-          opacity: isFirstVisit.current ? 1 : (connectPhase >= 3 ? 1 : 0),
-          transform: isFirstVisit.current ? "none" : (connectPhase >= 3 ? "translateY(0) scale(1)" : "translateY(30px) scale(0.95)"),
-          transition: isFirstVisit.current ? "none" : "all 0.6s ease-out",
+          opacity: connectPhase >= 3 ? 1 : 0,
+          transform: connectPhase >= 3 ? "translateY(0) scale(1)" : "translateY(30px) scale(0.95)",
+          transition: isFirstVisit.current ? "all 1.8s cubic-bezier(0.16, 1, 0.3, 1)" : "all 0.6s ease-out",
         }}>
-          <NetworkGraph onNodeClick={handleNodeClick} />
+          {graphActive && <NetworkGraph onNodeClick={handleNodeClick} />}
           <div className="absolute bottom-4 left-0 right-0 text-center z-10">
             <span className="text-xs px-3 py-1 rounded-full" style={{ background: "hsl(240 8% 9% / 0.8)", color: "hsl(240 5% 50%)", border: "1px solid hsl(240 6% 14%)" }}>
               Live network map — click any name to view profile
