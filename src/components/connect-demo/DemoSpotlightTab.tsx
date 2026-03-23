@@ -112,6 +112,7 @@ export default function DemoSpotlightTab() {
             brands={realBrands.length > 0 ? realBrands : SAMPLE_BRANDS}
             editFlyerId={editFlyerId}
             initialType={selectedType}
+            demoMode
           />
         </CardContent>
       </Card>

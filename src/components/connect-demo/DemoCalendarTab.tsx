@@ -151,7 +151,7 @@ export default function DemoCalendarTab() {
   };
 
   const copyLink = (slug: string) => {
-    navigator.clipboard.writeText(`https://aura-connect.app/book/${slug}`);
+    navigator.clipboard.writeText(`${window.location.origin}/book/${slug}`);
     setCopiedSlug(slug);
     toast.success("Booking link copied!");
     setTimeout(() => setCopiedSlug(null), 2000);
