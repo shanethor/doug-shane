@@ -356,20 +356,27 @@ function NetworkGraph({ onNodeClick }: { onNodeClick: (profile: ReturnType<typeo
       ctx.clearRect(0, 0, w, h);
 
       if (!introComplete && revealOrder.length > 0) {
-        const revealPerFrame = Math.max(3, Math.ceil(revealOrder.length / 90));
-        for (let r = 0; r < revealPerFrame && revealIdx < revealOrder.length; r++) {
-          const ni = revealOrder[revealIdx];
-          revealedSet.add(ni);
-          revealIdx++;
-          for (const ei of adj[ni]) {
-            const [a, b] = edges[ei];
-            if (revealedSet.has(a) && revealedSet.has(b)) {
-              edgePulse[ei] = 0.8;
+        // First visit: reveal one node every 3 frames (~20 nodes/sec at 60fps)
+        // Return visit: reveal fast in batches
+        const isFirst = !sessionStorage.getItem("network-graph-visited");
+        const revealInterval = isFirst ? 3 : 1;
+        const revealPerFrame = isFirst ? 1 : Math.max(3, Math.ceil(revealOrder.length / 90));
+        if (frame % revealInterval === 0) {
+          for (let r = 0; r < revealPerFrame && revealIdx < revealOrder.length; r++) {
+            const ni = revealOrder[revealIdx];
+            revealedSet.add(ni);
+            revealIdx++;
+            for (const ei of adj[ni]) {
+              const [a, b] = edges[ei];
+              if (revealedSet.has(a) && revealedSet.has(b)) {
+                edgePulse[ei] = 0.8;
+              }
             }
           }
         }
         if (revealIdx >= revealOrder.length) {
           introComplete = true;
+          sessionStorage.setItem("network-graph-visited", "true");
           startTrace();
         }
       }

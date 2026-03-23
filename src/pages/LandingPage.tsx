@@ -217,7 +217,7 @@ export default function LandingPage() {
             style={{ background: "radial-gradient(circle, hsl(140 12% 42% / 0.06) 0%, transparent 70%)" }} />
 
           <div className="relative z-[2] text-center px-8">
-            <div className="mx-auto mb-8">
+            <div className="flex justify-center mb-8">
               <AuraLogoLarge size={90} />
             </div>
             <h1
