@@ -134,7 +134,7 @@ export default function ConnectDemo() {
             transform: buildPhase >= 1 ? "translateY(0)" : "translateY(12px)",
             transition: "all 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.8s",
           }}>
-            Building your workspace…
+            Building your network…
           </p>
           {/* Subtle loading bar */}
           <div className="mt-6 w-48 h-0.5 rounded-full overflow-hidden" style={{ background: "hsl(140 12% 42% / 0.15)" }}>
