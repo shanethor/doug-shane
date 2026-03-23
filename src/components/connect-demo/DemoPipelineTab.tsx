@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/tooltip";
 import { Switch } from "@/components/ui/switch";
 import {
-  Building2, DollarSign, Users, Info, Plus, Phone, Mail, MapPin, Calendar, X, GripVertical, Trophy, Sparkles, Home, Briefcase, Shield,
+  Building2, DollarSign, Users, Info, Plus, Phone, Mail, MapPin, Calendar, X, GripVertical, Trophy, Sparkles, Home, Briefcase, Shield, Star, Check,
 } from "lucide-react";
 
 interface StageConfig { key: string; label: string; color: string; }
@@ -188,24 +188,57 @@ type DemoLead = {
   extraInfo?: Record<string, string>;
 };
 
-const DEMO_LEADS: DemoLead[] = [
-  { id: "1", name: "Greenfield Industries", contact: "Sarah Mitchell", stage: "prospect", value: 15000, source: "Referral", phone: "(555) 234-8901", email: "s.mitchell@greenfield.com", location: "Austin, TX", industry: "Agriculture", notes: "Looking for full commercial package", extraInfo: { current_carrier: "Hartford", renewal_date: "2025-09-15", current_premium: "$12,400", company_size: "50-100", buyer_seller: "Buyer", price_range: "$500K-$1M", pain_point: "Manual processes", budget_range: "$50K-$100K" } },
-  { id: "2", name: "Apex Technologies", contact: "James Park", stage: "prospect", value: 22000, source: "Website", phone: "(555) 345-6789", email: "j.park@apextech.io", location: "San Jose, CA", industry: "Technology", notes: "Interested in cyber liability", extraInfo: { current_carrier: "Chubb", renewal_date: "2025-11-01", current_premium: "$18,200", company_size: "200+", pain_point: "Scaling challenges", budget_range: "$100K+", decision_horizon: "Q3 2025" } },
-  { id: "3", name: "Blue Ridge Capital", contact: "Jessica Torres", stage: "prospect", value: 11000, source: "LinkedIn", phone: "(555) 456-1234", email: "jtorres@blueridge.com", location: "Charlotte, NC", industry: "Financial Services", extraInfo: { current_carrier: "Travelers", renewal_date: "2025-08-01", current_premium: "$9,500", company_size: "10-50", contact_role: "CFO", price_range: "$1M-$2M" } },
-  { id: "4", name: "Coastal Development Co", contact: "Robert Nguyen", stage: "quoting", value: 35000, source: "Cold outreach", phone: "(555) 567-2345", email: "rnguyen@coastal-dev.com", location: "Miami, FL", industry: "Real Estate", notes: "Multi-property portfolio", extraInfo: { property_type_info: "Commercial", buyer_seller: "Seller", price_range: "$2M-$5M", current_carrier: "Liberty Mutual", renewal_date: "2025-07-15" } },
-  { id: "5", name: "Prime Advisors Group", contact: "David Kowalski", stage: "quoting", value: 18500, source: "Referral", phone: "(555) 678-3456", email: "d.kowalski@primeadv.com", location: "Chicago, IL", industry: "Consulting", extraInfo: { pain_point: "Client retention", budget_range: "$25K-$50K", decision_horizon: "60 days", company_size: "10-50" } },
-  { id: "6", name: "TechVentures Inc", contact: "Marcus Chen", stage: "quoting", value: 14000, source: "Partner", phone: "(555) 789-4567", email: "m.chen@techventures.com", location: "Seattle, WA", industry: "Technology", extraInfo: { current_carrier: "AIG", renewal_date: "2025-10-01", current_premium: "$11,800", company_size: "100-200" } },
-  { id: "7", name: "Sunrise Properties", contact: "Linda Park", stage: "presenting", value: 27000, source: "Networking", phone: "(555) 890-5678", email: "linda@sunriseprop.com", location: "Phoenix, AZ", industry: "Real Estate", extraInfo: { property_type_info: "Residential", buyer_seller: "Buyer", price_range: "$800K-$1.2M" } },
-  { id: "8", name: "Westfield Manufacturing", contact: "Tom Bradley", stage: "presenting", value: 15000, source: "Referral", phone: "(555) 901-6789", email: "tbradley@westfield.com", location: "Detroit, MI", industry: "Manufacturing", extraInfo: { current_carrier: "Zurich", renewal_date: "2025-12-01", current_premium: "$14,000", company_size: "200+", contact_role: "VP Operations" } },
-  { id: "9", name: "Nova Health Systems", contact: "Priya Sharma", stage: "bound", value: 42000, source: "Referral", phone: "(555) 012-7890", email: "p.sharma@novahealth.com", location: "Denver, CO", industry: "Healthcare", wonDetails: { annual_premium: "42000", commission_pct: "12", est_commission: "5040", line_of_business: "Commercial P&C", close_date: "2025-03-01", deal_value: "42000" } },
-  { id: "10", name: "Bright Future Foundation", contact: "Amanda Foster", stage: "bound", value: 8500, source: "Event", phone: "(555) 123-8901", email: "afoster@brightfuture.org", location: "Portland, OR", industry: "Non-Profit", wonDetails: { deal_value: "8500", close_date: "2025-02-15" } },
-  { id: "11", name: "Alpine Group", contact: "James Whitfield", stage: "bound", value: 31000, source: "Website", phone: "(555) 234-9012", email: "j.whitfield@alpine.com", location: "Salt Lake City, UT", industry: "Construction", wonDetails: { deal_value: "31000", annual_premium: "31000", commission_pct: "15", est_commission: "4650", close_date: "2025-01-20" } },
-  { id: "12", name: "Pacific Rim Trading", contact: "Kevin Tanaka", stage: "bound", value: 19500, source: "Cold outreach", phone: "(555) 345-0123", email: "ktanaka@pacrim.com", location: "Los Angeles, CA", industry: "Import/Export", wonDetails: { deal_value: "19500", close_date: "2025-02-28" } },
-  { id: "13", name: "Redwood Consulting", contact: "Elena Volkov", stage: "bound", value: 24000, source: "LinkedIn", phone: "(555) 456-1235", email: "evolkov@redwood.com", location: "San Francisco, CA", industry: "Consulting", wonDetails: { engagement_type: "Retainer", monthly_fee: "4000", term_months: "6", contract_value: "24000", close_date: "2025-03-10" } },
-  { id: "14", name: "Metro Solutions", contact: "Carlos Rivera", stage: "lost", value: 20000, source: "Referral", lossReason: "Went with competitor", phone: "(555) 567-2346", email: "c.rivera@metro.com", location: "Dallas, TX", industry: "IT Services" },
-  { id: "15", name: "Harbor View LLC", contact: "Michelle Chang", stage: "lost", value: 16000, source: "Website", lossReason: "Budget constraints", phone: "(555) 678-3457", email: "mchang@harborview.com", location: "Boston, MA", industry: "Hospitality" },
-  { id: "16", name: "Summit Partners", contact: "Andrew Blake", stage: "lost", value: 12000, source: "Partner", lossReason: "Timing not right", phone: "(555) 789-4568", email: "ablake@summit.com", location: "New York, NY", industry: "Finance" },
-];
+const DEMO_LEADS_BY_TYPE: Record<string, DemoLead[]> = {
+  generic: [
+    { id: "g1", name: "Pinnacle Solutions", contact: "Rachel Kim", stage: "prospect", value: 48000, source: "Referral", phone: "(555) 111-2233", email: "r.kim@pinnacle.com", location: "Austin, TX", industry: "SaaS", notes: "Enterprise license deal", extraInfo: { company_size: "200+", contact_role: "VP Sales" } },
+    { id: "g2", name: "Meridian Supply Co", contact: "Tom Hayes", stage: "prospect", value: 22000, source: "Website", phone: "(555) 222-3344", email: "t.hayes@meridian.com", location: "Denver, CO", industry: "Wholesale", extraInfo: { company_size: "50-100", contact_role: "Owner" } },
+    { id: "g3", name: "Vertex Marketing", contact: "Alicia Grant", stage: "prospect", value: 15000, source: "LinkedIn", phone: "(555) 333-4455", email: "a.grant@vertex.io", location: "NYC, NY", industry: "Marketing", extraInfo: { company_size: "10-50", contact_role: "CMO" } },
+    { id: "g4", name: "CloudBridge IT", contact: "Derek Olsen", stage: "quoting", value: 65000, source: "Partner", phone: "(555) 444-5566", email: "d.olsen@cloudbridge.com", location: "Seattle, WA", industry: "IT Services", notes: "3-year managed services contract", extraInfo: { company_size: "100-200", contact_role: "CTO" } },
+    { id: "g5", name: "GreenLeaf Organics", contact: "Maria Santos", stage: "quoting", value: 18000, source: "Trade Show", phone: "(555) 555-6677", email: "m.santos@greenleaf.co", location: "Portland, OR", industry: "Food & Bev", extraInfo: { company_size: "10-50", contact_role: "Founder" } },
+    { id: "g6", name: "Atlas Freight", contact: "Jim Barker", stage: "presenting", value: 34000, source: "Cold outreach", phone: "(555) 666-7788", email: "j.barker@atlasfreight.com", location: "Dallas, TX", industry: "Logistics", extraInfo: { company_size: "200+", contact_role: "Operations Dir" } },
+    { id: "g7", name: "NovaTech Labs", contact: "Susan Choi", stage: "presenting", value: 27500, source: "Referral", phone: "(555) 777-8899", email: "s.choi@novatech.io", location: "San Jose, CA", industry: "Biotech", extraInfo: { company_size: "50-100", contact_role: "CEO" } },
+    { id: "g8", name: "Ironclad Security", contact: "Mark Phillips", stage: "bound", value: 55000, source: "Partner", phone: "(555) 888-9900", email: "m.phillips@ironclad.com", location: "Chicago, IL", industry: "Cybersecurity", wonDetails: { deal_value: "55000", acv: "55000", close_date: "2025-02-10" } },
+    { id: "g9", name: "Brightwave Media", contact: "Laura Tran", stage: "bound", value: 19000, source: "Website", phone: "(555) 999-0011", email: "l.tran@brightwave.com", location: "LA, CA", industry: "Media", wonDetails: { deal_value: "19000", close_date: "2025-03-05" } },
+    { id: "g10", name: "Cascade Corp", contact: "Brian Walsh", stage: "lost", value: 30000, source: "Referral", lossReason: "Chose in-house solution", phone: "(555) 000-1122", email: "b.walsh@cascade.com", location: "Boston, MA", industry: "Manufacturing" },
+  ],
+  insurance: [
+    { id: "i1", name: "Downtown Deli Group", contact: "Angela Rossi", stage: "prospect", value: 8500, source: "Referral", phone: "(555) 201-1001", email: "a.rossi@downtowndeli.com", location: "Philadelphia, PA", industry: "Restaurant", notes: "BOP + Workers Comp", extraInfo: { current_carrier: "Hartford", renewal_date: "2025-09-15", current_premium: "$7,200" } },
+    { id: "i2", name: "Summit Contractors LLC", contact: "Ray Briggs", stage: "prospect", value: 24000, source: "Website", phone: "(555) 201-2002", email: "r.briggs@summitllc.com", location: "Denver, CO", industry: "Construction", notes: "GL + Commercial Auto fleet", extraInfo: { current_carrier: "Zurich", renewal_date: "2025-11-01", current_premium: "$21,000" } },
+    { id: "i3", name: "Lakeside Medical Group", contact: "Dr. Anita Patel", stage: "prospect", value: 18000, source: "LinkedIn", phone: "(555) 201-3003", email: "a.patel@lakesidemed.com", location: "Minneapolis, MN", industry: "Healthcare", extraInfo: { current_carrier: "CNA", renewal_date: "2025-08-01", current_premium: "$15,800" } },
+    { id: "i4", name: "Pacific Auto Body", contact: "Tony Vasquez", stage: "quoting", value: 12000, source: "Cold outreach", phone: "(555) 201-4004", email: "t.vasquez@pacificauto.com", location: "San Diego, CA", industry: "Auto Services", notes: "Garage keepers + GL", extraInfo: { current_carrier: "Progressive Commercial", renewal_date: "2025-07-15", current_premium: "$10,400" } },
+    { id: "i5", name: "Precision Manufacturing", contact: "Karen Liu", stage: "quoting", value: 45000, source: "Referral", phone: "(555) 201-5005", email: "k.liu@precisionmfg.com", location: "Detroit, MI", industry: "Manufacturing", notes: "Large WC account", extraInfo: { current_carrier: "Liberty Mutual", renewal_date: "2025-10-01", current_premium: "$42,000" } },
+    { id: "i6", name: "Harbor Point Marina", contact: "Steve Langley", stage: "presenting", value: 16500, source: "Networking", phone: "(555) 201-6006", email: "s.langley@harborpoint.com", location: "Annapolis, MD", industry: "Marine", extraInfo: { current_carrier: "Markel", renewal_date: "2025-12-01", current_premium: "$14,200" } },
+    { id: "i7", name: "Metro Fitness Centers", contact: "Jennifer Walsh", stage: "presenting", value: 22000, source: "Partner", phone: "(555) 201-7007", email: "j.walsh@metrofitness.com", location: "Atlanta, GA", industry: "Fitness", extraInfo: { current_carrier: "Employers", renewal_date: "2025-06-15", current_premium: "$19,500" } },
+    { id: "i8", name: "Valley Farms Cooperative", contact: "Dale Henderson", stage: "bound", value: 32000, source: "Referral", phone: "(555) 201-8008", email: "d.henderson@valleyfarms.org", location: "Fresno, CA", industry: "Agriculture", wonDetails: { annual_premium: "32000", commission_pct: "15", est_commission: "4800", line_of_business: "Commercial P&C", close_date: "2025-02-20" } },
+    { id: "i9", name: "Brightside Daycare", contact: "Lisa Monroe", stage: "bound", value: 6800, source: "Website", phone: "(555) 201-9009", email: "l.monroe@brightside.com", location: "Charlotte, NC", industry: "Childcare", wonDetails: { annual_premium: "6800", commission_pct: "12", est_commission: "816", line_of_business: "Commercial P&C", close_date: "2025-03-01" } },
+    { id: "i10", name: "Eastside Plumbing", contact: "Frank Torres", stage: "lost", value: 9500, source: "Cold outreach", lossReason: "Price — stayed with current carrier", phone: "(555) 201-0010", email: "f.torres@eastsideplumb.com", location: "Phoenix, AZ", industry: "Trades" },
+    { id: "i11", name: "Crestview Apartments", contact: "Diane Park", stage: "lost", value: 28000, source: "Referral", lossReason: "Went with a larger brokerage", phone: "(555) 201-0011", email: "d.park@crestview.com", location: "Houston, TX", industry: "Real Estate" },
+  ],
+  consulting: [
+    { id: "c1", name: "Orion Retail Group", contact: "Natasha Bell", stage: "prospect", value: 36000, source: "Referral", phone: "(555) 301-1001", email: "n.bell@orionretail.com", location: "NYC, NY", industry: "Retail", notes: "Digital transformation project", extraInfo: { pain_point: "Legacy POS systems", budget_range: "$50K-$100K", decision_horizon: "Q2 2025" } },
+    { id: "c2", name: "Helix Biotech", contact: "Dr. Alan Reeves", stage: "prospect", value: 72000, source: "Conference", phone: "(555) 301-2002", email: "a.reeves@helixbio.com", location: "Boston, MA", industry: "Biotech", notes: "Regulatory compliance audit", extraInfo: { pain_point: "FDA compliance gaps", budget_range: "$100K+", decision_horizon: "30 days" } },
+    { id: "c3", name: "UrbanEdge Properties", contact: "Samantha Cole", stage: "prospect", value: 24000, source: "LinkedIn", phone: "(555) 301-3003", email: "s.cole@urbanedge.com", location: "Chicago, IL", industry: "Real Estate Dev", extraInfo: { pain_point: "Project management", budget_range: "$25K-$50K", decision_horizon: "60 days" } },
+    { id: "c4", name: "Catalyst Financial", contact: "Marcus Webb", stage: "quoting", value: 48000, source: "Partner", phone: "(555) 301-4004", email: "m.webb@catalystfin.com", location: "Charlotte, NC", industry: "Financial Services", notes: "6-month strategy retainer", extraInfo: { pain_point: "Growth strategy", budget_range: "$50K-$100K", decision_horizon: "45 days" } },
+    { id: "c5", name: "Solaris Energy", contact: "Priya Mehta", stage: "quoting", value: 90000, source: "Referral", phone: "(555) 301-5005", email: "p.mehta@solaris.com", location: "Austin, TX", industry: "Energy", notes: "Operational efficiency project", extraInfo: { pain_point: "Scaling operations", budget_range: "$100K+", decision_horizon: "Q3 2025" } },
+    { id: "c6", name: "Riverdale School District", contact: "Janet O'Brien", stage: "presenting", value: 30000, source: "RFP", phone: "(555) 301-6006", email: "j.obrien@riverdalek12.org", location: "Portland, OR", industry: "Education", extraInfo: { pain_point: "Budget optimization", budget_range: "$25K-$50K", decision_horizon: "Board approval Q2" } },
+    { id: "c7", name: "TrueNorth Logistics", contact: "Kevin Sharp", stage: "bound", value: 60000, source: "Referral", phone: "(555) 301-7007", email: "k.sharp@truenorth.com", location: "Memphis, TN", industry: "Logistics", wonDetails: { engagement_type: "Retainer", monthly_fee: "10000", term_months: "6", contract_value: "60000", close_date: "2025-01-15" } },
+    { id: "c8", name: "Apex Health Partners", contact: "Dr. Ronda James", stage: "bound", value: 45000, source: "Conference", phone: "(555) 301-8008", email: "r.james@apexhp.com", location: "Denver, CO", industry: "Healthcare", wonDetails: { engagement_type: "Project", project_fee: "45000", contract_value: "45000", close_date: "2025-02-28" } },
+    { id: "c9", name: "FreshStart Marketing", contact: "Leo Grant", stage: "lost", value: 18000, source: "LinkedIn", lossReason: "Budget cut — project postponed", phone: "(555) 301-9009", email: "l.grant@freshstart.io", location: "LA, CA", industry: "Marketing" },
+  ],
+  real_estate: [
+    { id: "r1", name: "742 Oakwood Drive", contact: "Michael & Sarah Chen", stage: "prospect", value: 485000, source: "Open House", phone: "(555) 401-1001", email: "chen.family@email.com", location: "Scottsdale, AZ", industry: "Residential", notes: "First-time buyers, pre-approved $500K", extraInfo: { buyer_seller: "Buyer", property_type_info: "Single Family", price_range: "$450K-$525K" } },
+    { id: "r2", name: "1200 Commerce Blvd – Unit 4B", contact: "Westgate Holdings LLC", stage: "prospect", value: 1250000, source: "Referral", phone: "(555) 401-2002", email: "acquisitions@westgate.com", location: "Tampa, FL", industry: "Commercial", notes: "Office condo acquisition", extraInfo: { buyer_seller: "Buyer", property_type_info: "Commercial", price_range: "$1M-$1.5M" } },
+    { id: "r3", name: "89 Maple Lane", contact: "Dorothy Freeman", stage: "prospect", value: 340000, source: "Yard Sign", phone: "(555) 401-3003", email: "d.freeman@email.com", location: "Raleigh, NC", industry: "Residential", notes: "Downsizing — listing her home", extraInfo: { buyer_seller: "Seller", property_type_info: "Single Family", price_range: "$320K-$360K" } },
+    { id: "r4", name: "The Pines at Lakewood – Lot 12", contact: "Evergreen Builders Inc", stage: "quoting", value: 175000, source: "Builder Network", phone: "(555) 401-4004", email: "info@evergreenbuilders.com", location: "Boise, ID", industry: "Land", notes: "Vacant lot for new build", extraInfo: { buyer_seller: "Buyer", property_type_info: "Land", price_range: "$150K-$200K" } },
+    { id: "r5", name: "3310 Harbor View Condos #7", contact: "James & Tina Moretti", stage: "quoting", value: 620000, source: "Website Lead", phone: "(555) 401-5005", email: "moretti.jt@email.com", location: "San Diego, CA", industry: "Residential", notes: "Relocating from NJ", extraInfo: { buyer_seller: "Buyer", property_type_info: "Condo", price_range: "$575K-$650K" } },
+    { id: "r6", name: "1455 Industrial Pkwy", contact: "Titan Warehousing", stage: "presenting", value: 2800000, source: "Commercial MLS", phone: "(555) 401-6006", email: "deals@titanwh.com", location: "Memphis, TN", industry: "Commercial", notes: "Distribution center, cash buyer", extraInfo: { buyer_seller: "Buyer", property_type_info: "Industrial", price_range: "$2.5M-$3M" } },
+    { id: "r7", name: "220 Sunset Ridge", contact: "Patricia Holloway", stage: "presenting", value: 890000, source: "Referral", phone: "(555) 401-7007", email: "p.holloway@email.com", location: "Austin, TX", industry: "Residential", notes: "Luxury listing", extraInfo: { buyer_seller: "Seller", property_type_info: "Single Family", price_range: "$850K-$925K" } },
+    { id: "r8", name: "505 Birch Street Duplex", contact: "Robert & Amy Tran", stage: "bound", value: 415000, source: "Open House", phone: "(555) 401-8008", email: "tran.ra@email.com", location: "Portland, OR", industry: "Multi-Family", wonDetails: { property_type: "Multi-Family", address: "505 Birch Street", sale_price: "415000", total_commission_pct: "5.5", your_side_pct: "2.75", gross_commission: "22825", your_commission: "11413", close_date: "2025-02-14" } },
+    { id: "r9", name: "1800 Vine Street Retail", contact: "Cornerstone Capital", stage: "bound", value: 1650000, source: "Referral", phone: "(555) 401-9009", email: "invest@cornerstone.com", location: "Nashville, TN", industry: "Commercial", wonDetails: { property_type: "Commercial", address: "1800 Vine Street", sale_price: "1650000", total_commission_pct: "4.0", your_side_pct: "2.0", gross_commission: "66000", your_commission: "33000", close_date: "2025-03-10" } },
+    { id: "r10", name: "67 Elm Court", contact: "Steven Pace", stage: "lost", value: 295000, source: "Website Lead", lossReason: "Buyer backed out after inspection", phone: "(555) 401-0010", email: "s.pace@email.com", location: "Boise, ID", industry: "Residential" },
+    { id: "r11", name: "400 River Road Parcel", contact: "GreenField Dev Group", stage: "lost", value: 550000, source: "Cold outreach", lossReason: "Zoning issue — deal fell through", phone: "(555) 401-0011", email: "info@greenfielddev.com", location: "Jacksonville, FL", industry: "Land" },
+  ],
+};
 
 const COLUMN_LIMIT = 5;
 
@@ -518,11 +551,24 @@ export default function DemoPipelineTab() {
   const initialIndustry = lower.includes("real estate") ? "real_estate" : lower.includes("consult") ? "consulting" : lower.includes("insurance") ? "insurance" : "generic";
 
   const [industry, setIndustry] = useState(initialIndustry);
-  const [leads, setLeads] = useState<DemoLead[]>(() => {
-    const stored = sessionStorage.getItem("connect-demo-leads");
+  const [defaultIndustry, setDefaultIndustry] = useState(() => sessionStorage.getItem("connect-demo-default-pipeline") || initialIndustry);
+
+  // Per-industry leads stored separately
+  const [leadsByType, setLeadsByType] = useState<Record<string, DemoLead[]>>(() => {
+    const stored = sessionStorage.getItem("connect-demo-leads-by-type");
     if (stored) { try { return JSON.parse(stored); } catch {} }
-    return DEMO_LEADS;
+    return { ...DEMO_LEADS_BY_TYPE };
   });
+
+  const leads = leadsByType[industry] || DEMO_LEADS_BY_TYPE[industry] || DEMO_LEADS_BY_TYPE.generic;
+  const setLeads = useCallback((updater: DemoLead[] | ((prev: DemoLead[]) => DemoLead[])) => {
+    setLeadsByType(prev => {
+      const current = prev[industry] || DEMO_LEADS_BY_TYPE[industry] || [];
+      const next = typeof updater === "function" ? updater(current) : updater;
+      return { ...prev, [industry]: next };
+    });
+  }, [industry]);
+
   const [expandedColumns, setExpandedColumns] = useState<Record<string, boolean>>({});
   const [selectedLead, setSelectedLead] = useState<DemoLead | null>(null);
 
@@ -533,8 +579,13 @@ export default function DemoPipelineTab() {
   const [celebration, setCelebration] = useState<{ amount: number; label: string } | null>(null);
 
   useEffect(() => {
-    sessionStorage.setItem("connect-demo-leads", JSON.stringify(leads));
-  }, [leads]);
+    sessionStorage.setItem("connect-demo-leads-by-type", JSON.stringify(leadsByType));
+  }, [leadsByType]);
+
+  const handleSetDefault = () => {
+    setDefaultIndustry(industry);
+    sessionStorage.setItem("connect-demo-default-pipeline", industry);
+  };
 
   const config = PIPELINE_CONFIGS[industry];
   const allStages = config.stages;
@@ -596,16 +647,37 @@ export default function DemoPipelineTab() {
           <p className="text-xs" style={{ color: "hsl(240 5% 46%)" }}>Drag leads between stages · Click to view details</p>
         </div>
         <div className="flex items-center gap-2">
-          <Select value={industry} onValueChange={setIndustry}>
-            <SelectTrigger className="h-8 w-[160px] text-xs" style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 14%)", color: "white" }}>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {Object.entries(PIPELINE_CONFIGS).map(([key, cfg]) => (
-                <SelectItem key={key} value={key} className="text-xs">{cfg.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="relative">
+            <Select value={industry} onValueChange={setIndustry}>
+              <SelectTrigger className="h-8 w-[160px] text-xs" style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 14%)", color: "white" }}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(PIPELINE_CONFIGS).map(([key, cfg]) => (
+                  <SelectItem key={key} value={key} className="text-xs">
+                    <span className="flex items-center gap-1.5">
+                      {cfg.label}
+                      {key === defaultIndustry && <Star className="h-3 w-3 fill-current" style={{ color: "hsl(45 93% 58%)" }} />}
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          {industry !== defaultIndustry ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="outline" size="sm" onClick={handleSetDefault} className="gap-1 h-8 text-xs px-2" style={{ borderColor: "hsl(240 6% 18%)", color: "hsl(240 5% 70%)" }}>
+                  <Star className="h-3 w-3" /> Set Default
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="text-xs">New leads from other areas will use this pipeline type</TooltipContent>
+            </Tooltip>
+          ) : (
+            <Badge className="text-[9px] h-6 gap-1" style={{ background: "hsl(45 93% 58% / 0.12)", color: "hsl(45 93% 58%)", border: "1px solid hsl(45 93% 58% / 0.25)" }}>
+              <Check className="h-3 w-3" /> Default
+            </Badge>
+          )}
           <Button size="sm" className="gap-1.5 h-8 text-xs" style={{ background: "hsl(140 12% 42%)" }}>
             <Plus className="h-3.5 w-3.5" /> Add Lead
           </Button>
