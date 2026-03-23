@@ -814,17 +814,23 @@ export default function DemoEmailTab() {
                 />
               </div>
             )}
-            {customLabels.map(label => (
-              <button
-                key={label}
-                onClick={() => { setSearchQuery(`is:${label}`); setSelectedThreadId(null); }}
-                className="flex items-center gap-2 text-sm px-3 py-2 rounded-md hover:bg-white/5 w-full text-left"
-                style={{ color: "hsl(240 5% 56%)" }}
-              >
-                <Tag className="h-3.5 w-3.5" style={{ color: "hsl(140 12% 50%)" }} />
-                {label}
-              </button>
-            ))}
+            {customLabels.map(label => {
+              const isActive = searchQuery === `is:${label}`;
+              return (
+                <button
+                  key={label}
+                  onClick={() => {
+                    if (isActive) { setSearchQuery(""); } else { setSearchQuery(`is:${label}`); }
+                    setSelectedThreadId(null); setFolder("inbox");
+                  }}
+                  className={`flex items-center gap-2 text-sm px-3 py-2 rounded-md hover:bg-white/5 w-full text-left transition-colors ${isActive ? "bg-white/10 text-white" : ""}`}
+                  style={!isActive ? { color: "hsl(240 5% 56%)" } : {}}
+                >
+                  <Tag className="h-3.5 w-3.5" style={{ color: "hsl(140 12% 50%)" }} />
+                  {label}
+                </button>
+              );
+            })}
           </div>
         </div>
 
