@@ -307,7 +307,7 @@ export default function ConnectDemoAuth() {
               {/* Phase 3: Subtitle */}
               <p
                 className="mb-4 transition-all duration-500"
-                style={{ color: "hsl(240 5% 46%)", opacity: buildPhase >= 3 ? 1 : 0, transform: buildPhase >= 3 ? "translateY(0)" : "translateY(10px)" }}
+                style={{ color: "hsl(140 12% 42%)", opacity: buildPhase >= 3 ? 1 : 0, transform: buildPhase >= 3 ? "translateY(0)" : "translateY(10px)" }}
               >
                 Your relationship intelligence suite
               </p>
