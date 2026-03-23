@@ -223,7 +223,22 @@ export default function ConnectDemoAuth() {
               </Button>
             </form>
           </div>
-          <p className="text-xl text-center font-semibold mt-10" style={{ color: "hsl(140 12% 58%)" }}>Intelligence runs on AuRa</p>
+          <div className="mt-8 space-y-2 text-center">
+            <p className="text-base md:text-lg font-medium" style={{ color: "hsl(140 12% 58%)" }}>
+              You already know the right people. You just don't know how to get there.
+            </p>
+            <p
+              className="text-base md:text-lg font-semibold italic"
+              style={{
+                color: "hsl(140 12% 58%)",
+                opacity: 0,
+                animation: "sageFadeType 2s cubic-bezier(0.16,1,0.3,1) 1.2s forwards",
+              }}
+            >
+              Let us show you the way in.
+            </p>
+          </div>
+          <p className="text-xl text-center font-semibold mt-6" style={{ color: "hsl(140 12% 58%)" }}>Intelligence runs on AuRa</p>
           </>
         )}
 
@@ -270,7 +285,15 @@ export default function ConnectDemoAuth() {
             </Button>
             <p className="text-xs text-center" style={{ color: "hsl(240 5% 46%)" }}>Demo mode — no payment required</p>
           </div>
-          <p className="text-xl text-center font-semibold mt-10" style={{ color: "hsl(140 12% 58%)" }}>Intelligence runs on AuRa</p>
+          <div className="mt-8 space-y-2 text-center">
+            <p className="text-base md:text-lg font-medium" style={{ color: "hsl(140 12% 58%)" }}>
+              You already know the right people. You just don't know how to get there.
+            </p>
+            <p className="text-base md:text-lg font-semibold italic" style={{ color: "hsl(140 12% 58%)", opacity: 0, animation: "sageFadeType 2s cubic-bezier(0.16,1,0.3,1) 1.2s forwards" }}>
+              Let us show you the way in.
+            </p>
+          </div>
+          <p className="text-xl text-center font-semibold mt-6" style={{ color: "hsl(140 12% 58%)" }}>Intelligence runs on AuRa</p>
           </>
         )}
 
@@ -369,7 +392,15 @@ export default function ConnectDemoAuth() {
                 </button>
               </div>
             </div>
-            <p className="text-xl text-center font-semibold mt-10" style={{ color: "hsl(140 12% 58%)" }}>Intelligence runs on AuRa</p>
+            <div className="mt-8 space-y-2 text-center">
+              <p className="text-base md:text-lg font-medium" style={{ color: "hsl(140 12% 58%)" }}>
+                You already know the right people. You just don't know how to get there.
+              </p>
+              <p className="text-base md:text-lg font-semibold italic" style={{ color: "hsl(140 12% 58%)", opacity: 0, animation: "sageFadeType 2s cubic-bezier(0.16,1,0.3,1) 1.2s forwards" }}>
+                Let us show you the way in.
+              </p>
+            </div>
+            <p className="text-xl text-center font-semibold mt-6" style={{ color: "hsl(140 12% 58%)" }}>Intelligence runs on AuRa</p>
           </div>
         )}
       </div>
