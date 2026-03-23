@@ -647,16 +647,37 @@ export default function DemoPipelineTab() {
           <p className="text-xs" style={{ color: "hsl(240 5% 46%)" }}>Drag leads between stages · Click to view details</p>
         </div>
         <div className="flex items-center gap-2">
-          <Select value={industry} onValueChange={setIndustry}>
-            <SelectTrigger className="h-8 w-[160px] text-xs" style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 14%)", color: "white" }}>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {Object.entries(PIPELINE_CONFIGS).map(([key, cfg]) => (
-                <SelectItem key={key} value={key} className="text-xs">{cfg.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="relative">
+            <Select value={industry} onValueChange={setIndustry}>
+              <SelectTrigger className="h-8 w-[160px] text-xs" style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 14%)", color: "white" }}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(PIPELINE_CONFIGS).map(([key, cfg]) => (
+                  <SelectItem key={key} value={key} className="text-xs">
+                    <span className="flex items-center gap-1.5">
+                      {cfg.label}
+                      {key === defaultIndustry && <Star className="h-3 w-3 fill-current" style={{ color: "hsl(45 93% 58%)" }} />}
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          {industry !== defaultIndustry ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="outline" size="sm" onClick={handleSetDefault} className="gap-1 h-8 text-xs px-2" style={{ borderColor: "hsl(240 6% 18%)", color: "hsl(240 5% 70%)" }}>
+                  <Star className="h-3 w-3" /> Set Default
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="text-xs">New leads from other areas will use this pipeline type</TooltipContent>
+            </Tooltip>
+          ) : (
+            <Badge className="text-[9px] h-6 gap-1" style={{ background: "hsl(45 93% 58% / 0.12)", color: "hsl(45 93% 58%)", border: "1px solid hsl(45 93% 58% / 0.25)" }}>
+              <Check className="h-3 w-3" /> Default
+            </Badge>
+          )}
           <Button size="sm" className="gap-1.5 h-8 text-xs" style={{ background: "hsl(140 12% 42%)" }}>
             <Plus className="h-3.5 w-3.5" /> Add Lead
           </Button>
