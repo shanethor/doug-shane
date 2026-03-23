@@ -163,13 +163,6 @@ export default function ConnectDemoAuth() {
         style={{ background: "radial-gradient(circle, hsl(140 12% 42% / 0.08) 0%, transparent 70%)" }} />
 
       <div className="w-full max-w-md space-y-6 relative z-10">
-        {/* Logo */}
-        <div className="text-center space-y-2 animate-fade-in">
-          <div className="mx-auto flex items-center justify-center">
-            <AuraLogo size={56} />
-          </div>
-          <h1 className="text-2xl font-bold text-white">AuRa Connect</h1>
-        </div>
 
         {step === "auth" && (
           <div className="rounded-xl border p-6 space-y-6 animate-scale-in" style={{ background: "hsl(240 8% 7%)", borderColor: "hsl(240 6% 14%)" }}>
