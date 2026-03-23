@@ -163,15 +163,9 @@ export default function ConnectDemoAuth() {
         style={{ background: "radial-gradient(circle, hsl(140 12% 42% / 0.08) 0%, transparent 70%)" }} />
 
       <div className="w-full max-w-md space-y-6 relative z-10">
-        {/* Logo */}
-        <div className="text-center space-y-2 animate-fade-in">
-          <div className="mx-auto flex items-center justify-center">
-            <AuraLogo size={56} />
-          </div>
-          <h1 className="text-2xl font-bold text-white">AuRa Connect</h1>
-        </div>
 
         {step === "auth" && (
+          <>
           <div className="rounded-xl border p-6 space-y-6 animate-scale-in" style={{ background: "hsl(240 8% 7%)", borderColor: "hsl(240 6% 14%)" }}>
             <div>
               <h2 className="text-lg font-semibold text-white">Create your account</h2>
@@ -229,6 +223,8 @@ export default function ConnectDemoAuth() {
               </Button>
             </form>
           </div>
+          <p className="text-xs text-center font-medium" style={{ color: "hsl(140 12% 58%)" }}>Intelligence runs on AuRa</p>
+          </>
         )}
 
         {step === "subscribe" && (
@@ -307,7 +303,7 @@ export default function ConnectDemoAuth() {
                 className="mb-4 transition-all duration-500"
                 style={{ color: "hsl(240 5% 46%)", opacity: buildPhase >= 3 ? 1 : 0, transform: buildPhase >= 3 ? "translateY(0)" : "translateY(10px)" }}
               >
-                Your workspace is ready. Here's what's inside:
+                Your relationship intelligence suite
               </p>
 
               {/* Divider line draws in */}
@@ -337,22 +333,37 @@ export default function ConnectDemoAuth() {
                 ))}
               </div>
 
-              {/* Phase 5: Button */}
-              <Button
-                size="lg"
-                className="text-white font-semibold hover:brightness-110 transition-all"
-                style={{
-                  background: "hsl(140 12% 42%)",
-                  opacity: buildPhase >= 5 ? 1 : 0,
-                  transform: buildPhase >= 5 ? "translateY(0) scale(1)" : "translateY(10px) scale(0.95)",
-                  transitionDuration: "500ms",
-                  pointerEvents: buildPhase >= 5 ? "auto" : "none",
-                }}
-                onClick={handleEnter}
-              >
-                Enter AuRa Connect <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
+              {/* Phase 5: Buttons */}
+              <div className="space-y-3" style={{
+                opacity: buildPhase >= 5 ? 1 : 0,
+                transform: buildPhase >= 5 ? "translateY(0) scale(1)" : "translateY(10px) scale(0.95)",
+                transitionDuration: "500ms",
+                transitionProperty: "opacity, transform",
+                pointerEvents: buildPhase >= 5 ? "auto" : "none",
+              }}>
+                <Button
+                  size="lg"
+                  className="w-full text-white font-semibold hover:brightness-110 transition-all"
+                  style={{ background: "hsl(140 12% 42%)" }}
+                  onClick={handleEnter}
+                >
+                  Enter AuRa Connect <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+                <button
+                  className="w-full py-2.5 rounded-lg text-xs font-medium transition-all border"
+                  style={{
+                    background: "hsl(140 12% 42% / 0.08)",
+                    borderColor: "hsl(140 12% 42% / 0.15)",
+                    color: "hsl(140 12% 58% / 0.6)",
+                    cursor: "default",
+                  }}
+                  disabled
+                >
+                  Connect all accounts · coming soon
+                </button>
+              </div>
             </div>
+            <p className="text-xs text-center font-medium mt-3" style={{ color: "hsl(140 12% 58%)" }}>Intelligence runs on AuRa</p>
           </div>
         )}
       </div>

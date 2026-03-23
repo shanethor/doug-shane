@@ -1,61 +1,61 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import auraALogo from "@/assets/aura-a-logo.png";
+
 import { Link } from "react-router-dom";
 
-/* ═══ Starfield Canvas ═══ */
-function Starfield() {
+/* ═══ Particle Network Canvas (from ConnectDemo) ═══ */
+function ParticleNetwork() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d")!;
-    let stars: { x: number; y: number; r: number; a: number; speed: number; phase: number }[] = [];
-    const COUNT = 200;
-    let frame = 0;
+    const c = canvasRef.current;
+    if (!c) return;
+    const ctx = c.getContext("2d")!;
     let raf: number;
-
-    function resize() {
-      canvas.width = window.innerWidth;
-      canvas.height = document.documentElement.scrollHeight;
-      stars = Array.from({ length: COUNT }, () => ({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        r: Math.random() * 1.2 + 0.3,
-        a: Math.random() * 0.5 + 0.1,
-        speed: Math.random() * 0.3 + 0.05,
-        phase: Math.random() * Math.PI * 2,
-      }));
+    const particles: { x: number; y: number; vx: number; vy: number; r: number; a: number }[] = [];
+    function resize() { c.width = window.innerWidth; c.height = window.innerHeight; }
+    resize();
+    for (let i = 0; i < 60; i++) {
+      particles.push({
+        x: Math.random() * c.width, y: Math.random() * c.height,
+        vx: (Math.random() - 0.5) * 0.3, vy: (Math.random() - 0.5) * 0.3,
+        r: Math.random() * 1.5 + 0.5, a: Math.random() * 0.4 + 0.1,
+      });
     }
-
     function draw() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      frame += 0.01;
-      for (const s of stars) {
-        const flicker = Math.sin(frame * s.speed * 10 + s.phase) * 0.15 + s.a;
-        ctx.beginPath();
-        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(255,255,255,${Math.max(0, flicker)})`;
-        ctx.fill();
+      ctx.clearRect(0, 0, c.width, c.height);
+      for (const p of particles) {
+        p.x += p.vx; p.y += p.vy;
+        if (p.x < 0) p.x = c.width; if (p.x > c.width) p.x = 0;
+        if (p.y < 0) p.y = c.height; if (p.y > c.height) p.y = 0;
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(138, 154, 140, ${p.a})`; ctx.fill();
+      }
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          const dx = particles[i].x - particles[j].x, dy = particles[i].y - particles[j].y;
+          const d = Math.sqrt(dx * dx + dy * dy);
+          if (d < 120) {
+            ctx.beginPath(); ctx.moveTo(particles[i].x, particles[i].y); ctx.lineTo(particles[j].x, particles[j].y);
+            ctx.strokeStyle = `rgba(138, 154, 140, ${0.06 * (1 - d / 120)})`; ctx.stroke();
+          }
+        }
       }
       raf = requestAnimationFrame(draw);
     }
-
-    resize();
     draw();
     window.addEventListener("resize", resize);
-    return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener("resize", resize);
-    };
+    return () => { cancelAnimationFrame(raf); window.removeEventListener("resize", resize); };
   }, []);
-
-  return (
-    <div className="fixed inset-0 z-0 pointer-events-none">
-      <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />
-    </div>
-  );
+  return <canvas ref={canvasRef} className="fixed inset-0 z-0 pointer-events-none" />;
 }
+
+/* ═══ AuRa Logo SVG (sage green) ═══ */
+const AuraLogoLarge = ({ size = 80 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 100 100" fill="none">
+    <rect width="100" height="100" rx="22" fill="hsl(140 12% 42%)" />
+    <path d="M50 18L74 82H62.5L58 70H42L37.5 82H26L50 18Z" fill="#08080A" />
+    <rect x="39" y="62" width="22" height="5.5" rx="2.75" fill="hsl(140 12% 42%)" />
+  </svg>
+);
 
 /* ═══ AURA Logo SVG ═══ */
 const AuraLogoSVG = ({ size = 24 }: { size?: number }) => (
@@ -186,7 +186,7 @@ export default function LandingPage() {
         @keyframes tabFill { 0% { width: 0; } 100% { width: 100%; } }
       `}</style>
 
-      <Starfield />
+      <ParticleNetwork />
 
       <div className="relative z-[1]">
         {/* ═══ NAV ═══ */}
@@ -211,42 +211,25 @@ export default function LandingPage() {
         </div>
 
         {/* ═══ HERO ═══ */}
-        <section className="relative min-h-screen flex items-start justify-center pt-[32vh] max-sm:pt-[26vh]">
-          {/* BG Image — eager-loaded with high priority for fast paint */}
-          <div className="absolute top-0 left-0 right-0 h-[140%] overflow-hidden pointer-events-none">
-            <picture>
-              <source media="(orientation: portrait)" srcSet="/images/bg-portrait.png" />
-              <source media="(orientation: landscape)" srcSet="/images/bg-wide.png" />
-              <img
-                src="/images/bg-wide.png"
-                alt=""
-                fetchPriority="high"
-                decoding="async"
-                className="absolute inset-0 w-full h-full object-cover"
-              />
-            </picture>
-            <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(8,8,10,0.25) 0%, rgba(8,8,10,0.15) 25%, rgba(8,8,10,0.4) 50%, rgba(8,8,10,0.85) 65%, #08080A 78%)" }} />
-            <div className="absolute inset-0 bg-[linear-gradient(90deg,#08080A_0%,transparent_8%,transparent_92%,#08080A_100%)]" />
-          </div>
+        <section className="relative min-h-screen flex items-center justify-center">
+          {/* Radial glow */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[min(700px,100vw)] h-[min(700px,100vh)] rounded-full pointer-events-none"
+            style={{ background: "radial-gradient(circle, hsl(140 12% 42% / 0.06) 0%, transparent 70%)" }} />
 
-          {/* Hero content — logo sits at mountain peak */}
           <div className="relative z-[2] text-center px-8">
+            <div className="mx-auto mb-8">
+              <AuraLogoLarge size={90} />
+            </div>
             <h1
-              className="text-[clamp(40px,6vw,80px)] max-sm:text-4xl font-bold leading-[1] tracking-[-0.04em] text-white mb-4"
-              style={{ textShadow: "0 4px 24px rgba(0,0,0,0.55), 0 1px 6px rgba(0,0,0,0.35)" }}
+              className="text-[clamp(56px,8vw,120px)] max-sm:text-5xl font-bold leading-[1] tracking-[0.06em] text-white mb-6"
+              style={{ textShadow: "0 4px 24px rgba(0,0,0,0.55)" }}
             >
-              Intelligence Runs on
+              AuRa
             </h1>
-            <span
-              className="inline-block tracking-[0.12em] max-sm:tracking-[0.08em] text-[clamp(52px,8vw,110px)] font-bold bg-gradient-to-br from-[#F0F0F4] via-[#C0C0C8] via-[40%] to-[#C8C8D0] bg-clip-text text-transparent"
-              style={{ textShadow: "0 0 80px rgba(255,255,255,0.15), 0 0 30px rgba(255,255,255,0.08)" }}
-            >
-              AURA
-            </span>
-            <p className="text-[17px] font-medium text-[#E4E4E7] max-w-[520px] mx-auto mt-6 leading-[1.65]">
+            <p className="text-[17px] font-medium max-w-[520px] mx-auto leading-[1.65]" style={{ color: "hsl(140 12% 58%)" }}>
               One platform powering <span className="text-[#0A8A8F] font-medium">insurance</span>,{" "}
               <span className="text-[#D4884A] font-medium">property</span>, and{" "}
-              <span className="text-[#D4B85C] font-medium">consulting</span>. AI-native infrastructure for the professionals who protect, build, and grow.
+              <span className="text-[#D4B85C] font-medium">consulting</span>. Intelligence for the professionals who protect, build, and grow.
             </p>
           </div>
         </section>
