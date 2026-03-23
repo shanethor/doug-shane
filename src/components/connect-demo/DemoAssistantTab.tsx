@@ -199,8 +199,8 @@ export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: st
 
   return (
     <div
-      className="flex flex-col h-full relative"
-      style={{ minHeight: "calc(100vh - 160px)" }}
+      className="flex flex-col relative"
+      style={{ minHeight: "60vh" }}
       onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
       onDragLeave={() => setDragOver(false)}
       onDrop={handleDrop}
