@@ -498,10 +498,10 @@ export default function DemoConnectTab() {
               onKeyDown={(e) => e.key === "Enter" && handleSearch()}
               placeholder="Search a name... e.g. Douglas Wenz"
               className="pl-12 h-12 text-base rounded-xl"
-              style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(140 12% 42% / 0.25)", color: "white", fontSize: "1rem" }}
+              style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(140 12% 42% / 0.5)", color: "white", fontSize: "1rem", boxShadow: "0 0 12px hsl(140 12% 42% / 0.3), 0 0 24px hsl(140 12% 42% / 0.15), inset 0 0 8px hsl(140 12% 42% / 0.05)" }}
             />
           </div>
-          <Button onClick={handleSearch} disabled={!searchName.trim() || searching} className="h-12 px-6 rounded-xl text-base font-semibold" style={{ background: "hsl(140 12% 42%)", color: "white" }}>
+          <Button onClick={handleSearch} disabled={!searchName.trim() || searching} className="h-12 px-6 rounded-xl text-base font-semibold" style={{ background: "hsl(140 12% 42%)", color: "white", boxShadow: "0 0 16px hsl(140 12% 42% / 0.5), 0 0 32px hsl(140 12% 42% / 0.25)" }}>
             {searching ? <Loader2 className="h-5 w-5 animate-spin" /> : "Find Path"}
           </Button>
         </div>
