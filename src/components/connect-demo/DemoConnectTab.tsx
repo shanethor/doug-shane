@@ -629,9 +629,12 @@ export default function DemoConnectTab() {
       return;
     }
     sessionStorage.setItem("connect-tab-visited", "true");
-    const t1 = setTimeout(() => setConnectPhase(1), 400);   // headline
-    const t2 = setTimeout(() => setConnectPhase(2), 1400);  // search bar
-    const t3 = setTimeout(() => setConnectPhase(3), 3000);  // network graph (slow)
+    // Delay connect-tab animations until after the page build finishes (~10.5s)
+    const pageEntryDelay = sessionStorage.getItem("connect-demo-entered") ? 0 : 0;
+    // The content phase (5) fires at 10.5s, add stagger after that
+    const t1 = setTimeout(() => setConnectPhase(1), 800);   // headline
+    const t2 = setTimeout(() => setConnectPhase(2), 2200);  // search bar
+    const t3 = setTimeout(() => setConnectPhase(3), 5000);  // network graph (very slow)
     return () => [t1, t2, t3].forEach(clearTimeout);
   }, []);
 
@@ -680,7 +683,7 @@ export default function DemoConnectTab() {
         <div className="relative flex-1 overflow-hidden mt-2" style={{
           opacity: connectPhase >= 3 ? 1 : 0,
           transform: connectPhase >= 3 ? "translateY(0) scale(1)" : "translateY(30px) scale(0.95)",
-          transition: isFirstVisit.current ? "all 3s cubic-bezier(0.16, 1, 0.3, 1)" : "all 0.6s ease-out",
+          transition: isFirstVisit.current ? "all 5s cubic-bezier(0.16, 1, 0.3, 1)" : "all 0.6s ease-out",
         }}>
           <NetworkGraph onNodeClick={handleNodeClick} />
           <div className="absolute bottom-4 left-0 right-0 text-center z-10">
