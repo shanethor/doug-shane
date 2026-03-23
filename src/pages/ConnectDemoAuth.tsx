@@ -239,7 +239,7 @@ export default function ConnectDemoAuth() {
               <h1 className="text-xl font-bold text-white">AuRa Connect</h1>
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-white">Choose your plan</h2>
+              <h2 className="text-lg font-semibold text-white text-center">Choose your plan</h2>
             </div>
             <div className="rounded-lg border-2 p-4 space-y-3" style={{ borderColor: "hsl(140 12% 42%)", background: "hsl(140 12% 42% / 0.05)" }}>
               <div className="flex items-center justify-between">
