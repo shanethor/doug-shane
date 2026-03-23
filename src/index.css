@@ -390,36 +390,23 @@
 }
 
 /* ── Demo dark overrides ── */
-/* Force dark styling for outline buttons, tabs, selects inside the demo */
-.demo-dark button[data-variant="outline"],
-.demo-dark [class*="variant-outline"],
-.demo-dark .demo-dark-btn {
-  background: transparent !important;
-  border-color: hsl(240 6% 20%) !important;
-  color: hsl(240 5% 70%) !important;
-}
-.demo-dark button[data-variant="outline"]:hover,
-.demo-dark .demo-dark-btn:hover {
-  background: hsl(240 6% 12%) !important;
-  color: hsl(240 5% 85%) !important;
-}
-
-/* TabsTrigger inside demo */
-.demo-dark [role="tablist"] {
-  background: hsl(240 8% 7%) !important;
-  border: 1px solid hsl(240 6% 14%) !important;
-}
-.demo-dark [role="tab"] {
-  color: hsl(240 5% 46%) !important;
-}
-.demo-dark [role="tab"][data-state="active"] {
-  background: hsl(140 12% 42% / 0.15) !important;
-  color: white !important;
-}
-
-/* Select triggers inside demo */
-.demo-dark button[role="combobox"] {
-  background: hsl(240 8% 9%) !important;
-  border-color: hsl(240 6% 14%) !important;
-  color: white !important;
+/* Override CSS variables inside the demo to force dark theme */
+.demo-dark {
+  --background: 240 10% 4%;
+  --foreground: 240 6% 95%;
+  --card: 240 8% 7%;
+  --card-foreground: 240 6% 95%;
+  --popover: 240 8% 7%;
+  --popover-foreground: 240 6% 95%;
+  --primary: 140 12% 42%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 240 6% 12%;
+  --secondary-foreground: 240 6% 90%;
+  --muted: 240 6% 12%;
+  --muted-foreground: 240 5% 46%;
+  --accent: 140 12% 28%;
+  --accent-foreground: 0 0% 100%;
+  --border: 240 6% 14%;
+  --input: 240 6% 14%;
+  --ring: 140 12% 42%;
 }
