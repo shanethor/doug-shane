@@ -683,7 +683,7 @@ export default function DemoConnectTab() {
         <div className="relative flex-1 overflow-hidden mt-2" style={{
           opacity: connectPhase >= 3 ? 1 : 0,
           transform: connectPhase >= 3 ? "translateY(0) scale(1)" : "translateY(30px) scale(0.95)",
-          transition: isFirstVisit.current ? "all 3s cubic-bezier(0.16, 1, 0.3, 1)" : "all 0.6s ease-out",
+          transition: isFirstVisit.current ? "all 5s cubic-bezier(0.16, 1, 0.3, 1)" : "all 0.6s ease-out",
         }}>
           <NetworkGraph onNodeClick={handleNodeClick} />
           <div className="absolute bottom-4 left-0 right-0 text-center z-10">
