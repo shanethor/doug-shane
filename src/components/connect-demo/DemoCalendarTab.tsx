@@ -454,7 +454,7 @@ export default function DemoCalendarTab() {
                 <div>
                   <p className="text-sm font-medium text-white">{b.title}</p>
                   <p className="text-[11px]" style={{ color: "hsl(240 5% 46%)" }}>{b.duration} min · {b.bookings} bookings</p>
-                  <p className="text-[10px] font-mono mt-0.5" style={{ color: "hsl(140 12% 58%)" }}>aura-connect.app/book/{b.slug}</p>
+                  <p className="text-[10px] font-mono mt-0.5" style={{ color: "hsl(140 12% 58%)" }}>book/{b.slug}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <Badge className="text-[9px]" style={b.active ? { background: "hsl(142 71% 25%)", color: "white" } : { background: "hsl(240 5% 20%)", color: "hsl(240 5% 50%)" }}>
