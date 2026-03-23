@@ -369,7 +369,7 @@ export default function ConnectDemoAuth() {
                 </button>
               </div>
             </div>
-            <p className="text-xs text-center font-medium mt-3" style={{ color: "hsl(140 12% 58%)" }}>Intelligence runs on AuRa</p>
+            <p className="text-sm text-center font-semibold mt-4" style={{ color: "hsl(140 12% 58%)" }}>Intelligence runs on AuRa</p>
           </div>
         )}
       </div>
