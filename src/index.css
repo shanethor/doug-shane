@@ -388,3 +388,38 @@
 .animate-marquee {
   animation: marquee 60s linear infinite;
 }
+
+/* ── Demo dark overrides ── */
+/* Force dark styling for outline buttons, tabs, selects inside the demo */
+.demo-dark button[data-variant="outline"],
+.demo-dark [class*="variant-outline"],
+.demo-dark .demo-dark-btn {
+  background: transparent !important;
+  border-color: hsl(240 6% 20%) !important;
+  color: hsl(240 5% 70%) !important;
+}
+.demo-dark button[data-variant="outline"]:hover,
+.demo-dark .demo-dark-btn:hover {
+  background: hsl(240 6% 12%) !important;
+  color: hsl(240 5% 85%) !important;
+}
+
+/* TabsTrigger inside demo */
+.demo-dark [role="tablist"] {
+  background: hsl(240 8% 7%) !important;
+  border: 1px solid hsl(240 6% 14%) !important;
+}
+.demo-dark [role="tab"] {
+  color: hsl(240 5% 46%) !important;
+}
+.demo-dark [role="tab"][data-state="active"] {
+  background: hsl(140 12% 42% / 0.15) !important;
+  color: white !important;
+}
+
+/* Select triggers inside demo */
+.demo-dark button[role="combobox"] {
+  background: hsl(240 8% 9%) !important;
+  border-color: hsl(240 6% 14%) !important;
+  color: white !important;
+}
