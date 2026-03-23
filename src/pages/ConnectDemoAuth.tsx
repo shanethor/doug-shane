@@ -222,6 +222,7 @@ export default function ConnectDemoAuth() {
               </Button>
             </form>
           </div>
+          <p className="text-xs text-center font-medium" style={{ color: "hsl(140 12% 58%)" }}>Intelligence runs on AuRa</p>
         )}
 
         {step === "subscribe" && (
