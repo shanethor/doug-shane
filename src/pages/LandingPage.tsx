@@ -2,60 +2,60 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import auraALogo from "@/assets/aura-a-logo.png";
 import { Link } from "react-router-dom";
 
-/* ═══ Starfield Canvas ═══ */
-function Starfield() {
+/* ═══ Particle Network Canvas (from ConnectDemo) ═══ */
+function ParticleNetwork() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d")!;
-    let stars: { x: number; y: number; r: number; a: number; speed: number; phase: number }[] = [];
-    const COUNT = 200;
-    let frame = 0;
+    const c = canvasRef.current;
+    if (!c) return;
+    const ctx = c.getContext("2d")!;
     let raf: number;
-
-    function resize() {
-      canvas.width = window.innerWidth;
-      canvas.height = document.documentElement.scrollHeight;
-      stars = Array.from({ length: COUNT }, () => ({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        r: Math.random() * 1.2 + 0.3,
-        a: Math.random() * 0.5 + 0.1,
-        speed: Math.random() * 0.3 + 0.05,
-        phase: Math.random() * Math.PI * 2,
-      }));
+    const particles: { x: number; y: number; vx: number; vy: number; r: number; a: number }[] = [];
+    function resize() { c.width = window.innerWidth; c.height = window.innerHeight; }
+    resize();
+    for (let i = 0; i < 60; i++) {
+      particles.push({
+        x: Math.random() * c.width, y: Math.random() * c.height,
+        vx: (Math.random() - 0.5) * 0.3, vy: (Math.random() - 0.5) * 0.3,
+        r: Math.random() * 1.5 + 0.5, a: Math.random() * 0.4 + 0.1,
+      });
     }
-
     function draw() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      frame += 0.01;
-      for (const s of stars) {
-        const flicker = Math.sin(frame * s.speed * 10 + s.phase) * 0.15 + s.a;
-        ctx.beginPath();
-        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(255,255,255,${Math.max(0, flicker)})`;
-        ctx.fill();
+      ctx.clearRect(0, 0, c.width, c.height);
+      for (const p of particles) {
+        p.x += p.vx; p.y += p.vy;
+        if (p.x < 0) p.x = c.width; if (p.x > c.width) p.x = 0;
+        if (p.y < 0) p.y = c.height; if (p.y > c.height) p.y = 0;
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(138, 154, 140, ${p.a})`; ctx.fill();
+      }
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          const dx = particles[i].x - particles[j].x, dy = particles[i].y - particles[j].y;
+          const d = Math.sqrt(dx * dx + dy * dy);
+          if (d < 120) {
+            ctx.beginPath(); ctx.moveTo(particles[i].x, particles[i].y); ctx.lineTo(particles[j].x, particles[j].y);
+            ctx.strokeStyle = `rgba(138, 154, 140, ${0.06 * (1 - d / 120)})`; ctx.stroke();
+          }
+        }
       }
       raf = requestAnimationFrame(draw);
     }
-
-    resize();
     draw();
     window.addEventListener("resize", resize);
-    return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener("resize", resize);
-    };
+    return () => { cancelAnimationFrame(raf); window.removeEventListener("resize", resize); };
   }, []);
-
-  return (
-    <div className="fixed inset-0 z-0 pointer-events-none">
-      <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />
-    </div>
-  );
+  return <canvas ref={canvasRef} className="fixed inset-0 z-0 pointer-events-none" />;
 }
+
+/* ═══ AuRa Logo SVG (sage green) ═══ */
+const AuraLogoLarge = ({ size = 80 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 100 100" fill="none">
+    <rect width="100" height="100" rx="22" fill="hsl(140 12% 42%)" />
+    <path d="M50 18L74 82H62.5L58 70H42L37.5 82H26L50 18Z" fill="#08080A" />
+    <rect x="39" y="62" width="22" height="5.5" rx="2.75" fill="hsl(140 12% 42%)" />
+  </svg>
+);
 
 /* ═══ AURA Logo SVG ═══ */
 const AuraLogoSVG = ({ size = 24 }: { size?: number }) => (
