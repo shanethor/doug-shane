@@ -186,6 +186,7 @@ export default function ConnectDemo() {
               sessionStorage.removeItem("connect-demo-auth");
               sessionStorage.removeItem("connect-demo-entered");
               sessionStorage.removeItem("connect-tab-visited");
+              sessionStorage.removeItem("network-graph-visited");
               window.location.href = "/connectdemo/auth";
             }}
           >
