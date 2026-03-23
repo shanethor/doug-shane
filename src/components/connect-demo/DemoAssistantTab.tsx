@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Send, Sparkles, FileUp, Users, Mail, BarChart3, Globe, Loader2, Paperclip, X } from "lucide-react";
+import { Send, Sparkles, FileUp, Users, Mail, BarChart3, Globe, Loader2, Paperclip, X, Network } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { toast } from "sonner";
 
@@ -12,7 +12,7 @@ const SUGGESTIONS = [
   { icon: Users, label: "Manage my pipeline", message: "Show me my current pipeline status and suggest next steps." },
   { icon: BarChart3, label: "Check my analytics", message: "Show me my performance analytics for this month." },
   { icon: Globe, label: "Research a company", message: "Can you look up information about a company?" },
-  { icon: Sparkles, label: "Create a task", message: "Create a follow-up task for next week." },
+  { icon: Network, label: "Find a connection", message: "Can you help me find a warm introduction to someone?" },
 ];
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/connect-assistant`;
@@ -82,6 +82,53 @@ async function streamChat({
     if (e.name === "AbortError") { onDone(); return; }
     onError(e.message || "Stream failed");
   }
+}
+
+/* ── Typewriter component for streaming text ── */
+function StreamingMessage({ content, isStreaming }: { content: string; isStreaming: boolean }) {
+  return (
+    <div className="space-y-2">
+      <div className="prose prose-sm prose-invert max-w-none
+        [&_p]:my-2 [&_p]:leading-relaxed [&_p]:text-[hsl(240_5%_80%)]
+        [&_ul]:my-2 [&_li]:my-1 [&_li]:text-[hsl(240_5%_78%)]
+        [&_strong]:text-white [&_strong]:font-semibold
+        [&_h1]:text-lg [&_h1]:font-bold [&_h1]:text-white [&_h1]:mt-3 [&_h1]:mb-2
+        [&_h2]:text-base [&_h2]:font-semibold [&_h2]:text-white [&_h2]:mt-3 [&_h2]:mb-1.5
+        [&_h3]:text-sm [&_h3]:font-semibold [&_h3]:text-white [&_h3]:mt-2 [&_h3]:mb-1
+        [&_table]:text-xs [&_table]:border-collapse [&_th]:text-left [&_th]:py-1.5 [&_th]:px-2 [&_th]:font-semibold [&_th]:text-white [&_th]:border-b [&_th]:border-[hsl(240_6%_20%)]
+        [&_td]:py-1.5 [&_td]:px-2 [&_td]:text-[hsl(240_5%_72%)] [&_td]:border-b [&_td]:border-[hsl(240_6%_14%)]
+        [&_blockquote]:border-l-2 [&_blockquote]:border-[hsl(140_12%_42%)] [&_blockquote]:pl-3 [&_blockquote]:italic [&_blockquote]:text-[hsl(240_5%_65%)]
+        [&_code]:text-[hsl(140_12%_62%)] [&_code]:bg-[hsl(240_6%_12%)] [&_code]:px-1 [&_code]:py-0.5 [&_code]:rounded [&_code]:text-xs
+        ">
+        <ReactMarkdown
+          components={{
+            a: ({ href, children }) => {
+              const text = String(children);
+              // Action buttons
+              if (text.startsWith("[") || text.includes("Create") || text.includes("Draft") || text.includes("View") || text.includes("Add to") || text.includes("Review") || text.includes("Find Path")) {
+                return (
+                  <button
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:brightness-110 mr-1.5 mt-1"
+                    style={{ background: "hsl(140 12% 42%)", color: "white" }}
+                    onClick={() => toast.info(`${text.replace(/[\[\]]/g, "")} — coming soon in full version`)}
+                  >
+                    <Sparkles className="h-3 w-3" />
+                    {text.replace(/[\[\]]/g, "")}
+                  </button>
+                );
+              }
+              return <a href={href} className="text-[hsl(140_12%_62%)] underline underline-offset-2 hover:text-[hsl(140_12%_72%)]">{children}</a>;
+            },
+          }}
+        >
+          {content}
+        </ReactMarkdown>
+      </div>
+      {isStreaming && (
+        <span className="inline-block w-1.5 h-4 rounded-sm animate-pulse" style={{ background: "hsl(140 12% 58%)" }} />
+      )}
+    </div>
+  );
 }
 
 export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: string) => void }) {
@@ -160,11 +207,11 @@ export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: st
     >
       {/* Drag overlay */}
       {dragOver && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center rounded-xl bg-primary/10 border-2 border-dashed border-primary backdrop-blur-sm">
+        <div className="absolute inset-0 z-50 flex items-center justify-center rounded-xl" style={{ background: "hsl(140 12% 42% / 0.08)", border: "2px dashed hsl(140 12% 42%)", backdropFilter: "blur(4px)" }}>
           <div className="text-center space-y-2">
-            <FileUp className="h-10 w-10 text-primary mx-auto" />
-            <p className="text-lg font-semibold text-primary">Drop files to attach</p>
-            <p className="text-xs text-muted-foreground">PDF, images, or documents</p>
+            <FileUp className="h-10 w-10 mx-auto" style={{ color: "hsl(140 12% 58%)" }} />
+            <p className="text-lg font-semibold" style={{ color: "hsl(140 12% 58%)" }}>Drop files to attach</p>
+            <p className="text-xs" style={{ color: "hsl(240 5% 46%)" }}>PDF, images, or documents</p>
           </div>
         </div>
       )}
@@ -182,10 +229,14 @@ export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: st
       />
 
       {!hasMessages ? (
-        /* ── Empty state: centered input at top with suggestions ── */
+        /* ── Empty state ── */
         <div className="flex-1 flex flex-col items-center justify-start pt-[8vh] px-4 animate-fade-in">
-          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-6 text-center" style={{ background: "linear-gradient(135deg, hsl(140 12% 58%), hsl(140 12% 42%), hsl(240 5% 80%))", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-            How can Sage help you today?
+          <div className="flex items-center gap-2 mb-3">
+            <Sparkles className="h-5 w-5" style={{ color: "hsl(140 12% 58%)" }} />
+            <span className="text-xs font-medium uppercase tracking-widest" style={{ color: "hsl(140 12% 50%)" }}>Sage Assistant</span>
+          </div>
+          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-6 text-center" style={{ background: "linear-gradient(135deg, hsl(140 12% 62%), hsl(140 12% 45%), hsl(240 5% 80%))", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+            How can I help you today?
           </h1>
 
           {/* Chat input card */}
@@ -193,16 +244,19 @@ export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: st
             {attachedFiles.length > 0 && (
               <div className="mb-2 flex flex-wrap gap-2">
                 {attachedFiles.map((f, i) => (
-                  <div key={i} className="flex items-center gap-1.5 rounded-md border border-[hsl(240_6%_14%)] px-2.5 py-1.5 text-xs">
-                    <Paperclip className="h-3 w-3 text-muted-foreground" />
+                  <div key={i} className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs" style={{ border: "1px solid hsl(240 6% 14%)", color: "hsl(240 5% 70%)" }}>
+                    <Paperclip className="h-3 w-3" style={{ color: "hsl(240 5% 46%)" }} />
                     <span className="max-w-[120px] truncate">{f.name}</span>
-                    <button onClick={() => removeFile(i)} className="text-muted-foreground hover:text-foreground"><X className="h-3 w-3" /></button>
+                    <button onClick={() => removeFile(i)}><X className="h-3 w-3" style={{ color: "hsl(240 5% 46%)" }} /></button>
                   </div>
                 ))}
               </div>
             )}
-            <div className="flex items-end gap-2 rounded-xl p-4 focus-within:ring-2" style={{ background: "hsl(240 8% 9%)", border: "1px solid hsl(240 6% 14%)", boxShadow: "0 8px 32px -8px hsl(140 12% 42% / 0.08)" }}>
-              <Button variant="ghost" size="icon" className="shrink-0 h-9 w-9 text-muted-foreground hover:text-foreground" onClick={() => fileInputRef.current?.click()}>
+            <div
+              className="flex items-end gap-2 rounded-xl p-4 transition-shadow focus-within:shadow-[0_0_24px_-4px_hsl(140_12%_42%_/_0.25)]"
+              style={{ background: "hsl(240 8% 9%)", border: "1px solid hsl(240 6% 14%)", boxShadow: "0 8px 32px -8px hsl(140 12% 42% / 0.08)" }}
+            >
+              <Button variant="ghost" size="icon" className="shrink-0 h-9 w-9" style={{ color: "hsl(240 5% 46%)" }} onClick={() => fileInputRef.current?.click()}>
                 <Paperclip className="h-4 w-4" />
               </Button>
               <textarea
@@ -211,7 +265,8 @@ export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: st
                 onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(input); } }}
                 placeholder="Ask Sage anything..."
                 rows={3}
-                className="flex-1 resize-none bg-transparent border-0 outline-none text-sm min-h-[72px] max-h-48 py-2 text-white placeholder:text-[hsl(240_5%_46%)]"
+                className="flex-1 resize-none bg-transparent border-0 outline-none text-sm min-h-[72px] max-h-48 py-2"
+                style={{ color: "white" }}
               />
               <Button size="icon" onClick={() => send(input)} disabled={!input.trim()} className="shrink-0 h-9 w-9" style={{ background: "hsl(140 12% 42%)", color: "white" }}>
                 <Send className="h-4 w-4" />
@@ -219,13 +274,12 @@ export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: st
             </div>
           </div>
 
-          {/* Suggestions grid */}
           <div className="w-full max-w-2xl grid grid-cols-2 sm:grid-cols-3 gap-2">
             {SUGGESTIONS.map((s) => (
               <button
                 key={s.label}
                 onClick={() => send(s.message)}
-                className="flex items-center gap-2 p-3 rounded-lg text-left text-xs transition-colors hover:bg-[hsl(240_8%_11%)]"
+                className="flex items-center gap-2 p-3 rounded-lg text-left text-xs transition-all hover:bg-[hsl(240_8%_12%)] hover:border-[hsl(140_12%_42%_/_0.2)]"
                 style={{ border: "1px solid hsl(240 6% 14%)", color: "hsl(240 5% 70%)" }}
               >
                 <s.icon className="h-4 w-4 shrink-0" style={{ color: "hsl(140 12% 58%)" }} />
@@ -237,75 +291,70 @@ export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: st
       ) : (
         /* ── Conversation mode ── */
         <>
-          <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-            {messages.map((msg, i) => (
-              <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-                <div className={`max-w-[80%] rounded-xl px-4 py-3 text-sm ${
-                  msg.role === "user"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-[hsl(240_8%_9%)] text-white border border-[hsl(240_6%_14%)]"
-                }`}>
-                  {msg.role === "assistant" ? (
-                    <div className="prose prose-sm prose-invert max-w-none [&_p]:my-1 [&_ul]:my-1 [&_li]:my-0.5">
-                      <ReactMarkdown
-                        components={{
-                          a: ({ href, children, ...props }) => {
-                            // Detect internal action links like [✨ Create New Opportunity]
-                            const text = String(children);
-                            if (text.includes("Create New Opportunity") || text.includes("Create Opportunity")) {
-                              return (
-                                <button
-                                  onClick={() => onNavigate?.("pipeline")}
-                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors mt-1"
-                                  style={{ background: "hsl(140 12% 42%)", color: "white" }}
-                                >
-                                  <Sparkles className="h-3.5 w-3.5" />
-                                  {text.replace(/[\[\]]/g, "")}
-                                </button>
-                              );
-                            }
-                            return <a href={href} {...props} className="text-primary underline">{children}</a>;
-                          },
-                        }}
-                      >
-                        {msg.content}
-                      </ReactMarkdown>
+          <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-6 space-y-5">
+            {messages.map((msg, i) => {
+              const isUser = msg.role === "user";
+              const isLastAssistant = msg.role === "assistant" && i === messages.length - 1;
+              return (
+                <div key={i} className={`flex ${isUser ? "justify-end" : "justify-start"} animate-fade-in`}>
+                  {!isUser && (
+                    <div className="h-7 w-7 rounded-full flex items-center justify-center shrink-0 mr-2.5 mt-1" style={{ background: "hsl(140 12% 42% / 0.15)" }}>
+                      <Sparkles className="h-3.5 w-3.5" style={{ color: "hsl(140 12% 58%)" }} />
                     </div>
-                  ) : (
-                    <span className="whitespace-pre-wrap">{msg.content}</span>
                   )}
+                  <div className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm ${
+                    isUser
+                      ? ""
+                      : ""
+                  }`} style={isUser
+                    ? { background: "hsl(140 12% 42%)", color: "white" }
+                    : { background: "hsl(240 8% 9%)", border: "1px solid hsl(240 6% 14%)" }
+                  }>
+                    {isUser ? (
+                      <span className="whitespace-pre-wrap">{msg.content}</span>
+                    ) : (
+                      <StreamingMessage content={msg.content} isStreaming={loading && isLastAssistant} />
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
 
             {loading && messages[messages.length - 1]?.role === "user" && (
-              <div className="flex justify-start">
-                <div className="rounded-xl px-4 py-3 text-sm bg-[hsl(240_8%_9%)] border border-[hsl(240_6%_14%)]">
-                  <span className="flex gap-1">
-                    <span className="w-2 h-2 rounded-full bg-foreground/30 animate-bounce" style={{ animationDelay: "0ms" }} />
-                    <span className="w-2 h-2 rounded-full bg-foreground/30 animate-bounce" style={{ animationDelay: "150ms" }} />
-                    <span className="w-2 h-2 rounded-full bg-foreground/30 animate-bounce" style={{ animationDelay: "300ms" }} />
+              <div className="flex justify-start animate-fade-in">
+                <div className="h-7 w-7 rounded-full flex items-center justify-center shrink-0 mr-2.5 mt-1" style={{ background: "hsl(140 12% 42% / 0.15)" }}>
+                  <Sparkles className="h-3.5 w-3.5" style={{ color: "hsl(140 12% 58%)" }} />
+                </div>
+                <div className="rounded-2xl px-4 py-3 text-sm" style={{ background: "hsl(240 8% 9%)", border: "1px solid hsl(240 6% 14%)" }}>
+                  <span className="flex gap-1.5 items-center">
+                    <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: "hsl(140 12% 58%)", animationDelay: "0ms" }} />
+                    <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: "hsl(140 12% 58%)", animationDelay: "150ms" }} />
+                    <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: "hsl(140 12% 58%)", animationDelay: "300ms" }} />
+                    <span className="text-xs ml-2" style={{ color: "hsl(240 5% 40%)" }}>Sage is thinking…</span>
                   </span>
                 </div>
               </div>
             )}
           </div>
 
-          {/* Bottom input in conversation mode */}
+          {/* Bottom input */}
           <div className="p-4">
             {attachedFiles.length > 0 && (
               <div className="mb-2 flex flex-wrap gap-2 max-w-2xl mx-auto">
                 {attachedFiles.map((f, i) => (
-                  <div key={i} className="flex items-center gap-1.5 rounded-md border border-[hsl(240_6%_14%)] px-2.5 py-1.5 text-xs">
-                    <Paperclip className="h-3 w-3 text-muted-foreground" />
+                  <div key={i} className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs" style={{ border: "1px solid hsl(240 6% 14%)", color: "hsl(240 5% 70%)" }}>
+                    <Paperclip className="h-3 w-3" style={{ color: "hsl(240 5% 46%)" }} />
                     <span className="max-w-[120px] truncate">{f.name}</span>
-                    <button onClick={() => removeFile(i)} className="text-muted-foreground hover:text-foreground"><X className="h-3 w-3" /></button>
+                    <button onClick={() => removeFile(i)}><X className="h-3 w-3" style={{ color: "hsl(240 5% 46%)" }} /></button>
                   </div>
                 ))}
               </div>
             )}
-            <div className="flex items-end gap-2 rounded-xl border border-[hsl(240_6%_14%)] bg-[hsl(240_8%_9%)] p-4 aura-glow-shadow focus-within:ring-2 focus-within:ring-ring max-w-2xl mx-auto">
-              <Button variant="ghost" size="icon" className="shrink-0 h-9 w-9 text-muted-foreground hover:text-foreground" onClick={() => fileInputRef.current?.click()}>
+            <div
+              className="flex items-end gap-2 rounded-xl p-4 max-w-2xl mx-auto transition-shadow focus-within:shadow-[0_0_24px_-4px_hsl(140_12%_42%_/_0.25)]"
+              style={{ background: "hsl(240 8% 9%)", border: "1px solid hsl(240 6% 14%)" }}
+            >
+              <Button variant="ghost" size="icon" className="shrink-0 h-9 w-9" style={{ color: "hsl(240 5% 46%)" }} onClick={() => fileInputRef.current?.click()}>
                 <Paperclip className="h-4 w-4" />
               </Button>
               <textarea
@@ -314,14 +363,15 @@ export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: st
                 onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(input); } }}
                 placeholder="Ask Sage anything..."
                 rows={2}
-                className="flex-1 resize-none bg-transparent border-0 outline-none text-sm placeholder:text-muted-foreground min-h-[48px] max-h-36 py-2"
+                className="flex-1 resize-none bg-transparent border-0 outline-none text-sm min-h-[48px] max-h-36 py-2"
+                style={{ color: "white" }}
               />
               {loading ? (
-                <Button size="icon" variant="ghost" onClick={stop} className="shrink-0 h-9 w-9 text-muted-foreground hover:text-foreground">
+                <Button size="icon" variant="ghost" onClick={stop} className="shrink-0 h-9 w-9" style={{ color: "hsl(240 5% 46%)" }}>
                   <Loader2 className="h-4 w-4 animate-spin" />
                 </Button>
               ) : (
-                <Button size="icon" onClick={() => send(input)} disabled={!input.trim()} className="shrink-0 h-9 w-9 bg-primary text-primary-foreground hover:bg-primary/90">
+                <Button size="icon" onClick={() => send(input)} disabled={!input.trim()} className="shrink-0 h-9 w-9" style={{ background: "hsl(140 12% 42%)", color: "white" }}>
                   <Send className="h-4 w-4" />
                 </Button>
               )}
