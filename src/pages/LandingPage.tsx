@@ -211,42 +211,25 @@ export default function LandingPage() {
         </div>
 
         {/* ═══ HERO ═══ */}
-        <section className="relative min-h-screen flex items-start justify-center pt-[32vh] max-sm:pt-[26vh]">
-          {/* BG Image — eager-loaded with high priority for fast paint */}
-          <div className="absolute top-0 left-0 right-0 h-[140%] overflow-hidden pointer-events-none">
-            <picture>
-              <source media="(orientation: portrait)" srcSet="/images/bg-portrait.png" />
-              <source media="(orientation: landscape)" srcSet="/images/bg-wide.png" />
-              <img
-                src="/images/bg-wide.png"
-                alt=""
-                fetchPriority="high"
-                decoding="async"
-                className="absolute inset-0 w-full h-full object-cover"
-              />
-            </picture>
-            <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, rgba(8,8,10,0.25) 0%, rgba(8,8,10,0.15) 25%, rgba(8,8,10,0.4) 50%, rgba(8,8,10,0.85) 65%, #08080A 78%)" }} />
-            <div className="absolute inset-0 bg-[linear-gradient(90deg,#08080A_0%,transparent_8%,transparent_92%,#08080A_100%)]" />
-          </div>
+        <section className="relative min-h-screen flex items-center justify-center">
+          {/* Radial glow */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[min(700px,100vw)] h-[min(700px,100vh)] rounded-full pointer-events-none"
+            style={{ background: "radial-gradient(circle, hsl(140 12% 42% / 0.06) 0%, transparent 70%)" }} />
 
-          {/* Hero content — logo sits at mountain peak */}
           <div className="relative z-[2] text-center px-8">
+            <div className="mx-auto mb-8">
+              <AuraLogoLarge size={90} />
+            </div>
             <h1
-              className="text-[clamp(40px,6vw,80px)] max-sm:text-4xl font-bold leading-[1] tracking-[-0.04em] text-white mb-4"
-              style={{ textShadow: "0 4px 24px rgba(0,0,0,0.55), 0 1px 6px rgba(0,0,0,0.35)" }}
+              className="text-[clamp(56px,8vw,120px)] max-sm:text-5xl font-bold leading-[1] tracking-[0.06em] text-white mb-6"
+              style={{ textShadow: "0 4px 24px rgba(0,0,0,0.55)" }}
             >
-              Intelligence Runs on
+              AuRa
             </h1>
-            <span
-              className="inline-block tracking-[0.12em] max-sm:tracking-[0.08em] text-[clamp(52px,8vw,110px)] font-bold bg-gradient-to-br from-[#F0F0F4] via-[#C0C0C8] via-[40%] to-[#C8C8D0] bg-clip-text text-transparent"
-              style={{ textShadow: "0 0 80px rgba(255,255,255,0.15), 0 0 30px rgba(255,255,255,0.08)" }}
-            >
-              AURA
-            </span>
-            <p className="text-[17px] font-medium text-[#E4E4E7] max-w-[520px] mx-auto mt-6 leading-[1.65]">
+            <p className="text-[17px] font-medium max-w-[520px] mx-auto leading-[1.65]" style={{ color: "hsl(140 12% 58%)" }}>
               One platform powering <span className="text-[#0A8A8F] font-medium">insurance</span>,{" "}
               <span className="text-[#D4884A] font-medium">property</span>, and{" "}
-              <span className="text-[#D4B85C] font-medium">consulting</span>. AI-native infrastructure for the professionals who protect, build, and grow.
+              <span className="text-[#D4B85C] font-medium">consulting</span>. Intelligence for the professionals who protect, build, and grow.
             </p>
           </div>
         </section>
