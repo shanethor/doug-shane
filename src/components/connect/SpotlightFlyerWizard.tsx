@@ -407,28 +407,49 @@ export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId, ini
             </div>
           )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="space-y-1 sm:col-span-2">
-              <label className="text-[9px] font-medium uppercase tracking-wider flex items-center gap-1" style={{ color: "hsl(240 5% 50%)" }}><Type className="h-2.5 w-2.5" /> Title *</label>
-              <Input value={title} onChange={e => setTitle(e.target.value)} placeholder="Event or campaign title" maxLength={200} style={darkInput} />
-            </div>
-            <div className="space-y-1">
-              <label className="text-[9px] font-medium uppercase tracking-wider flex items-center gap-1" style={{ color: "hsl(240 5% 50%)" }}><Clock className="h-2.5 w-2.5" /> Date & Time</label>
-              <Input value={dateTime} onChange={e => setDateTime(e.target.value)} placeholder="March 21, 2026 at 5:30 PM" disabled={isEvergreen} style={darkInput} />
-              <div className="flex items-center gap-2 mt-1">
-                <Switch checked={isEvergreen} onCheckedChange={setIsEvergreen} id="evergreen" />
-                <label htmlFor="evergreen" className="text-[9px] cursor-pointer" style={{ color: "hsl(240 5% 50%)" }}>Evergreen (no date)</label>
+          {(() => {
+            const needsDateTime = ["event", "announcement"].includes(flyerType);
+            const needsLocation = ["event"].includes(flyerType);
+            const descPlaceholders: Record<string, string> = {
+              event: "Key talking points, event agenda, speakers...",
+              social: "What message do you want to share? Key points for the post...",
+              promotion: "Offer details, discount info, what you're promoting...",
+              educational: "Topic details, key facts, tips to highlight...",
+              announcement: "What's the news? Key details to share...",
+              custom: "Describe what you need on the graphic...",
+            };
+
+            return (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1 sm:col-span-2">
+                  <label className="text-[9px] font-medium uppercase tracking-wider flex items-center gap-1" style={{ color: "hsl(240 5% 50%)" }}><Type className="h-2.5 w-2.5" /> Title *</label>
+                  <Input value={title} onChange={e => setTitle(e.target.value)} placeholder={flyerType === "promotion" ? "Offer or campaign name" : flyerType === "social" ? "Post headline" : "Event or campaign title"} maxLength={200} style={darkInput} />
+                </div>
+                {needsDateTime && (
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-medium uppercase tracking-wider flex items-center gap-1" style={{ color: "hsl(240 5% 50%)" }}><Clock className="h-2.5 w-2.5" /> Date & Time</label>
+                    <Input value={dateTime} onChange={e => setDateTime(e.target.value)} placeholder="March 21, 2026 at 5:30 PM" disabled={isEvergreen} style={darkInput} />
+                    <div className="flex items-center gap-2 mt-1">
+                      <Switch checked={isEvergreen} onCheckedChange={setIsEvergreen} id="evergreen" />
+                      <label htmlFor="evergreen" className="text-[9px] cursor-pointer" style={{ color: "hsl(240 5% 50%)" }}>Evergreen (no date)</label>
+                    </div>
+                  </div>
+                )}
+                {needsLocation && (
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-medium uppercase tracking-wider flex items-center gap-1" style={{ color: "hsl(240 5% 50%)" }}><MapPin className="h-2.5 w-2.5" /> Location</label>
+                    <Input value={location} onChange={e => setLocation(e.target.value)} placeholder="123 Main St or Online" style={darkInput} />
+                  </div>
+                )}
+                <div className={`space-y-1 ${needsDateTime && needsLocation ? "sm:col-span-2" : "sm:col-span-2"}`}>
+                  <label className="text-[9px] font-medium uppercase tracking-wider flex items-center gap-1" style={{ color: "hsl(240 5% 50%)" }}>
+                    <FileText className="h-2.5 w-2.5" /> {flyerType === "promotion" ? "Offer Details (we'll turn into bullets)" : "Description (we'll turn into bullets)"}
+                  </label>
+                  <Textarea value={description} onChange={e => setDescription(e.target.value)} placeholder={descPlaceholders[flyerType] || descPlaceholders.custom} className="min-h-[70px]" maxLength={5000} style={darkTextarea} />
+                </div>
               </div>
-            </div>
-            <div className="space-y-1">
-              <label className="text-[9px] font-medium uppercase tracking-wider flex items-center gap-1" style={{ color: "hsl(240 5% 50%)" }}><MapPin className="h-2.5 w-2.5" /> Location</label>
-              <Input value={location} onChange={e => setLocation(e.target.value)} placeholder="123 Main St or Online" style={darkInput} />
-            </div>
-            <div className="space-y-1 sm:col-span-2">
-              <label className="text-[9px] font-medium uppercase tracking-wider flex items-center gap-1" style={{ color: "hsl(240 5% 50%)" }}><FileText className="h-2.5 w-2.5" /> Description (we'll turn into bullets)</label>
-              <Textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="Key talking points, offer details, or event agenda..." className="min-h-[70px]" maxLength={5000} style={darkTextarea} />
-            </div>
-          </div>
+            );
+          })()}
 
           <Separator style={{ background: "hsl(240 6% 14%)" }} />
 
