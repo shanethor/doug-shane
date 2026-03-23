@@ -9,7 +9,7 @@ import {
   Mail, MailOpen, Search, Sparkles, Send, Paperclip, Reply, ReplyAll, Forward,
   ArrowLeft, CheckCheck, Clock, X, Plus, Link2, User, Wand2,
   FileText, Shield, AlertTriangle, TrendingUp, Zap, Star, Inbox,
-  SendHorizonal, FilePenLine, Tag, ChevronDown, ChevronUp, Trash2,
+  SendHorizonal, FilePenLine, Tag, ChevronDown, ChevronUp, Trash2, Copy,
 } from "lucide-react";
 import { toast } from "sonner";
 
