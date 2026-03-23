@@ -273,8 +273,9 @@ export default function ConnectDemoAuth() {
               Subscribe <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
             <p className="text-xs text-center" style={{ color: "hsl(240 5% 46%)" }}>Demo mode — no payment required</p>
-            <p className="text-xs text-center font-medium mt-2" style={{ color: "hsl(140 12% 58%)" }}>Intelligence runs on AuRa</p>
           </div>
+          <p className="text-xs text-center font-medium mt-3" style={{ color: "hsl(140 12% 58%)" }}>Intelligence runs on AuRa</p>
+          </>
         )}
 
         {step === "welcome" && (
