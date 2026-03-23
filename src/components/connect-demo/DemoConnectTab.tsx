@@ -661,6 +661,21 @@ export default function DemoConnectTab({ contentReady = true }: { contentReady?:
           <p className="text-sm md:text-base max-w-lg mx-auto" style={{ color: "hsl(240 5% 50%)" }}>
             AuRa Connect traverses millions of business connections to find the warmest intro path for you.
           </p>
+          <div className="mt-3 space-y-1">
+            <p className="text-base md:text-lg font-medium" style={{ color: "hsl(140 12% 58%)" }}>
+              You already know the right people. You just don't know how to get there.
+            </p>
+            <p
+              className="text-base md:text-lg font-semibold italic"
+              style={{
+                color: "hsl(140 12% 58%)",
+                opacity: 0,
+                animation: "sageFadeType 2s cubic-bezier(0.16,1,0.3,1) 1.2s forwards",
+              }}
+            >
+              Let us show you the way in.
+            </p>
+          </div>
         </div>
 
         <div className="flex gap-3 w-full max-w-xl" style={{
