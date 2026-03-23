@@ -331,22 +331,37 @@ export default function ConnectDemoAuth() {
                 ))}
               </div>
 
-              {/* Phase 5: Button */}
-              <Button
-                size="lg"
-                className="text-white font-semibold hover:brightness-110 transition-all"
-                style={{
-                  background: "hsl(140 12% 42%)",
-                  opacity: buildPhase >= 5 ? 1 : 0,
-                  transform: buildPhase >= 5 ? "translateY(0) scale(1)" : "translateY(10px) scale(0.95)",
-                  transitionDuration: "500ms",
-                  pointerEvents: buildPhase >= 5 ? "auto" : "none",
-                }}
-                onClick={handleEnter}
-              >
-                Enter AuRa Connect <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
+              {/* Phase 5: Buttons */}
+              <div className="space-y-3" style={{
+                opacity: buildPhase >= 5 ? 1 : 0,
+                transform: buildPhase >= 5 ? "translateY(0) scale(1)" : "translateY(10px) scale(0.95)",
+                transitionDuration: "500ms",
+                transitionProperty: "opacity, transform",
+                pointerEvents: buildPhase >= 5 ? "auto" : "none",
+              }}>
+                <Button
+                  size="lg"
+                  className="w-full text-white font-semibold hover:brightness-110 transition-all"
+                  style={{ background: "hsl(140 12% 42%)" }}
+                  onClick={handleEnter}
+                >
+                  Enter AuRa Connect <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+                <button
+                  className="w-full py-2.5 rounded-lg text-xs font-medium transition-all border"
+                  style={{
+                    background: "hsl(140 12% 42% / 0.08)",
+                    borderColor: "hsl(140 12% 42% / 0.15)",
+                    color: "hsl(140 12% 58% / 0.6)",
+                    cursor: "default",
+                  }}
+                  disabled
+                >
+                  Connect all accounts · coming soon
+                </button>
+              </div>
             </div>
+            <p className="text-xs text-center font-medium mt-3" style={{ color: "hsl(140 12% 58%)" }}>Intelligence runs on AuRa</p>
           </div>
         )}
       </div>
