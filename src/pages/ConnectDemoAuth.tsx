@@ -241,12 +241,28 @@ export default function ConnectDemoAuth() {
                 <span className="font-semibold text-white">AuRa Connect Pro</span>
                 <span className="text-lg font-bold" style={{ color: "hsl(140 12% 58%)" }}>$250/mo</span>
               </div>
-              <ul className="text-sm space-y-1" style={{ color: "hsl(240 5% 46%)" }}>
-                <li>✓ Smart Pipeline</li>
-                <li>✓ Email & Calendar Integration</li>
-                <li>✓ Create — Marketing & Social Content</li>
-                <li>✓ Sage Assistant</li>
-              </ul>
+              <div className="space-y-3">
+                <div>
+                  <p className="text-sm font-medium text-white">✓ Smart Pipeline</p>
+                  <p className="text-xs ml-4" style={{ color: "hsl(240 5% 46%)" }}>Know who to call next and why.</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-white">✓ Network Intelligence</p>
+                  <p className="text-xs ml-4" style={{ color: "hsl(240 5% 46%)" }}>See the path in through your network.</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-white">✓ Email + Calendar</p>
+                  <p className="text-xs ml-4" style={{ color: "hsl(240 5% 46%)" }}>All relationships in one place. Work and personal.</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-white">✓ Create</p>
+                  <p className="text-xs ml-4" style={{ color: "hsl(240 5% 46%)" }}>Content and materials that represent you right.</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-white">✓ Sage</p>
+                  <p className="text-xs ml-4" style={{ color: "hsl(240 5% 46%)" }}>Rewrite, research, and guide your next move.</p>
+                </div>
+              </div>
             </div>
             <Button className="w-full text-white font-semibold hover:brightness-110 transition-all" style={{ background: "hsl(140 12% 42%)" }} onClick={handleSubscribe}>
               Subscribe <ArrowRight className="ml-2 h-4 w-4" />
