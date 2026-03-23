@@ -186,6 +186,13 @@ export default function DemoEmailTab() {
   const [focusedIndex, setFocusedIndex] = useState(0);
   const listRef = useRef<HTMLDivElement>(null);
 
+  // Inline reply state
+  const [replyTo, setReplyTo] = useState<{ msgId: string; mode: "reply" | "replyAll" | "forward" } | null>(null);
+  const [replyBody, setReplyBody] = useState("");
+
+  // Summary popup
+  const [showSummary, setShowSummary] = useState(false);
+
   // Compose state
   const [compTo, setCompTo] = useState("");
   const [compCc, setCompCc] = useState("");
