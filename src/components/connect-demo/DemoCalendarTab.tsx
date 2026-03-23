@@ -207,7 +207,7 @@ export default function DemoCalendarTab() {
         ))}
       </div>
       {/* Time grid */}
-      <div className="relative overflow-y-auto" style={{ maxHeight: "560px" }}>
+      <div className="relative">
         {HOURS.map(hour => (
           <div key={hour} className="grid grid-cols-[56px_repeat(7,1fr)]" style={{ height: "52px" }}>
             <div className="text-[10px] text-right pr-2 pt-0.5" style={{ color: "hsl(240 5% 36%)" }}>{fmtTime(hour, 0)}</div>

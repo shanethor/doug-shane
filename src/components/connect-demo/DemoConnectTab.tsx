@@ -647,7 +647,7 @@ export default function DemoConnectTab({ contentReady = true }: { contentReady?:
   }, [contentReady]);
 
   return (
-    <div className="flex flex-col" style={{ animation: "smoothFadeSlide 0.6s cubic-bezier(0.16,1,0.3,1) both", height: "calc(100dvh - 140px)" }}>
+    <div className="flex flex-col" style={{ animation: "smoothFadeSlide 0.6s cubic-bezier(0.16,1,0.3,1) both" }}>
       <div className="relative z-10 flex flex-col items-center text-center pt-6 pb-2 space-y-5">
         <div className="space-y-2" style={{
           opacity: connectPhase >= 1 ? 1 : 0,
