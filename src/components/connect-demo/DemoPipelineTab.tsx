@@ -551,11 +551,24 @@ export default function DemoPipelineTab() {
   const initialIndustry = lower.includes("real estate") ? "real_estate" : lower.includes("consult") ? "consulting" : lower.includes("insurance") ? "insurance" : "generic";
 
   const [industry, setIndustry] = useState(initialIndustry);
-  const [leads, setLeads] = useState<DemoLead[]>(() => {
-    const stored = sessionStorage.getItem("connect-demo-leads");
+  const [defaultIndustry, setDefaultIndustry] = useState(() => sessionStorage.getItem("connect-demo-default-pipeline") || initialIndustry);
+
+  // Per-industry leads stored separately
+  const [leadsByType, setLeadsByType] = useState<Record<string, DemoLead[]>>(() => {
+    const stored = sessionStorage.getItem("connect-demo-leads-by-type");
     if (stored) { try { return JSON.parse(stored); } catch {} }
-    return DEMO_LEADS;
+    return { ...DEMO_LEADS_BY_TYPE };
   });
+
+  const leads = leadsByType[industry] || DEMO_LEADS_BY_TYPE[industry] || DEMO_LEADS_BY_TYPE.generic;
+  const setLeads = useCallback((updater: DemoLead[] | ((prev: DemoLead[]) => DemoLead[])) => {
+    setLeadsByType(prev => {
+      const current = prev[industry] || DEMO_LEADS_BY_TYPE[industry] || [];
+      const next = typeof updater === "function" ? updater(current) : updater;
+      return { ...prev, [industry]: next };
+    });
+  }, [industry]);
+
   const [expandedColumns, setExpandedColumns] = useState<Record<string, boolean>>({});
   const [selectedLead, setSelectedLead] = useState<DemoLead | null>(null);
 
@@ -566,8 +579,13 @@ export default function DemoPipelineTab() {
   const [celebration, setCelebration] = useState<{ amount: number; label: string } | null>(null);
 
   useEffect(() => {
-    sessionStorage.setItem("connect-demo-leads", JSON.stringify(leads));
-  }, [leads]);
+    sessionStorage.setItem("connect-demo-leads-by-type", JSON.stringify(leadsByType));
+  }, [leadsByType]);
+
+  const handleSetDefault = () => {
+    setDefaultIndustry(industry);
+    sessionStorage.setItem("connect-demo-default-pipeline", industry);
+  };
 
   const config = PIPELINE_CONFIGS[industry];
   const allStages = config.stages;
