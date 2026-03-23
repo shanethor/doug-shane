@@ -147,6 +147,13 @@ function parseSearch(raw: string, threads: DemoThread[]): DemoThread[] {
   if (q.includes("is:unread")) { results = results.filter(t => t.unread); q = q.replace("is:unread", "").trim(); }
   if (q.includes("is:starred")) { results = results.filter(t => t.starred); q = q.replace("is:starred", "").trim(); }
   if (q.includes("has:attachment")) { results = results.filter(t => t.hasAttachment); q = q.replace("has:attachment", "").trim(); }
+  // Label/tag filtering: is:renewal, is:billing, etc.
+  const labelMatch = q.match(/is:(\S+)/);
+  if (labelMatch) {
+    const tag = labelMatch[1];
+    results = results.filter(t => t.tags.some(tg => tg.toLowerCase().includes(tag)));
+    q = q.replace(/is:\S+/, "").trim();
+  }
   if (q) {
     results = results.filter(t =>
       t.subject.toLowerCase().includes(q) ||
@@ -770,7 +777,7 @@ export default function DemoEmailTab() {
           {FOLDERS.map(f => (
             <button
               key={f.key}
-              onClick={() => { setFolder(f.key); setSelectedThreadId(null); setSelectedClient(null); }}
+              onClick={() => { setFolder(f.key); setSelectedThreadId(null); setSelectedClient(null); setSearchQuery(""); }}
               className={`flex items-center gap-2 text-sm px-3 py-2.5 rounded-md transition-colors w-full text-left ${folder === f.key ? "bg-white/10 text-white" : ""}`}
               style={folder !== f.key ? { color: "hsl(240 5% 60%)" } : {}}
             >
@@ -807,17 +814,23 @@ export default function DemoEmailTab() {
                 />
               </div>
             )}
-            {customLabels.map(label => (
-              <button
-                key={label}
-                onClick={() => { setSearchQuery(`is:${label}`); setSelectedThreadId(null); }}
-                className="flex items-center gap-2 text-sm px-3 py-2 rounded-md hover:bg-white/5 w-full text-left"
-                style={{ color: "hsl(240 5% 56%)" }}
-              >
-                <Tag className="h-3.5 w-3.5" style={{ color: "hsl(140 12% 50%)" }} />
-                {label}
-              </button>
-            ))}
+            {customLabels.map(label => {
+              const isActive = searchQuery === `is:${label}`;
+              return (
+                <button
+                  key={label}
+                  onClick={() => {
+                    if (isActive) { setSearchQuery(""); } else { setSearchQuery(`is:${label}`); }
+                    setSelectedThreadId(null); setFolder("inbox");
+                  }}
+                  className={`flex items-center gap-2 text-sm px-3 py-2 rounded-md hover:bg-white/5 w-full text-left transition-colors ${isActive ? "bg-white/10 text-white" : ""}`}
+                  style={!isActive ? { color: "hsl(240 5% 56%)" } : {}}
+                >
+                  <Tag className="h-3.5 w-3.5" style={{ color: "hsl(140 12% 50%)" }} />
+                  {label}
+                </button>
+              );
+            })}
           </div>
         </div>
 
