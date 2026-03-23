@@ -62,7 +62,7 @@ const TABS = [
 export default function ConnectDemo() {
   const [activeTab, setActiveTab] = useState("connect");
   const [buildPhase, setBuildPhase] = useState(0);
-  // 0=nothing, 1=header, 2=ticker, 3=tabs, 4=content
+  // 0=black screen, 1=logo pulse, 2=header, 3=ticker, 4=tabs, 5=content
 
   useEffect(() => {
     const demoAuth = sessionStorage.getItem("connect-demo-auth");
@@ -73,16 +73,18 @@ export default function ConnectDemo() {
 
     const hasEntered = sessionStorage.getItem("connect-demo-entered");
     if (hasEntered) {
-      setBuildPhase(4);
+      setBuildPhase(5);
       return;
     }
 
     sessionStorage.setItem("connect-demo-entered", "true");
-    const t1 = setTimeout(() => setBuildPhase(1), 200);
-    const t2 = setTimeout(() => setBuildPhase(2), 700);
-    const t3 = setTimeout(() => setBuildPhase(3), 1200);
-    const t4 = setTimeout(() => setBuildPhase(4), 1800);
-    return () => [t1, t2, t3, t4].forEach(clearTimeout);
+    // Phase 0: black screen with centered logo
+    const t0 = setTimeout(() => setBuildPhase(1), 600);    // logo fades in
+    const t1 = setTimeout(() => setBuildPhase(2), 2800);   // header slides down
+    const t2 = setTimeout(() => setBuildPhase(3), 4000);   // ticker reveals
+    const t3 = setTimeout(() => setBuildPhase(4), 5200);   // tabs stagger in
+    const t4 = setTimeout(() => setBuildPhase(5), 6800);   // content fades up
+    return () => [t0, t1, t2, t3, t4].forEach(clearTimeout);
   }, []);
 
   const transition = (phase: number, extra = "") =>
