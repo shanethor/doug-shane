@@ -2,6 +2,8 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -12,7 +14,7 @@ import {
   Tooltip, TooltipContent, TooltipProvider, TooltipTrigger,
 } from "@/components/ui/tooltip";
 import {
-  Building2, DollarSign, Users, Info, Plus, Phone, Mail, MapPin, Calendar, X, GripVertical,
+  Building2, DollarSign, Users, Info, Plus, Phone, Mail, MapPin, Calendar, X, GripVertical, Trophy, Sparkles,
 } from "lucide-react";
 
 interface StageConfig { key: string; label: string; color: string; }
@@ -48,10 +50,42 @@ const PIPELINE_CONFIGS: Record<string, { label: string; stages: StageConfig[] }>
   ]},
 };
 
+// Industry-specific sale detail fields
+const WON_FIELDS: Record<string, { key: string; label: string; type: "text" | "number" | "date" | "select"; options?: string[] }[]> = {
+  insurance: [
+    { key: "premium", label: "Annual Premium", type: "number" },
+    { key: "effective_date", label: "Policy Effective Date", type: "date" },
+    { key: "carrier", label: "Carrier", type: "text" },
+    { key: "coverage_type", label: "Coverage Type", type: "select", options: ["Commercial Package", "General Liability", "Workers Comp", "Auto", "Umbrella", "Professional Liability", "Cyber", "Property", "BOP"] },
+    { key: "payment_plan", label: "Payment Plan", type: "select", options: ["Paid in Full", "Monthly", "Quarterly", "Semi-Annual", "Financed"] },
+  ],
+  real_estate: [
+    { key: "sale_price", label: "Sale Price", type: "number" },
+    { key: "close_date", label: "Close Date", type: "date" },
+    { key: "commission_pct", label: "Commission %", type: "number" },
+    { key: "property_type", label: "Property Type", type: "select", options: ["Single Family", "Condo", "Multi-Family", "Commercial", "Land", "Industrial"] },
+    { key: "financing", label: "Financing", type: "select", options: ["Conventional", "FHA", "VA", "Cash", "Seller Financing"] },
+  ],
+  consulting: [
+    { key: "contract_value", label: "Contract Value", type: "number" },
+    { key: "start_date", label: "Start Date", type: "date" },
+    { key: "duration", label: "Engagement Duration", type: "select", options: ["1 Month", "3 Months", "6 Months", "12 Months", "Ongoing"] },
+    { key: "service_type", label: "Service Type", type: "select", options: ["Strategy", "Implementation", "Advisory", "Training", "Audit"] },
+    { key: "billing", label: "Billing Model", type: "select", options: ["Fixed Fee", "Hourly", "Retainer", "Milestone-Based"] },
+  ],
+  generic: [
+    { key: "deal_value", label: "Deal Value", type: "number" },
+    { key: "close_date", label: "Close Date", type: "date" },
+    { key: "deal_type", label: "Deal Type", type: "select", options: ["New Business", "Upsell", "Renewal", "Expansion"] },
+    { key: "contract_length", label: "Contract Length", type: "select", options: ["Monthly", "Quarterly", "Annual", "Multi-Year"] },
+  ],
+};
+
 type DemoLead = {
   id: string; name: string; contact: string; stage: string; value: number; source: string;
   lossReason?: string; renewalDate?: string;
   phone?: string; email?: string; location?: string; industry?: string; notes?: string;
+  wonDetails?: Record<string, string>;
 };
 
 const DEMO_LEADS: DemoLead[] = [
@@ -75,9 +109,168 @@ const DEMO_LEADS: DemoLead[] = [
 
 const COLUMN_LIMIT = 5;
 
+/* ── Won Celebration Overlay ── */
+function WonCelebration({ amount, onDone }: { amount: number; onDone: () => void }) {
+  const [countUp, setCountUp] = useState(0);
+  const [visible, setVisible] = useState(true);
+
+  useEffect(() => {
+    const duration = 1800;
+    const steps = 40;
+    const increment = amount / steps;
+    let step = 0;
+    const interval = setInterval(() => {
+      step++;
+      setCountUp(Math.min(Math.round(increment * step), amount));
+      if (step >= steps) clearInterval(interval);
+    }, duration / steps);
+
+    const timeout = setTimeout(() => {
+      setVisible(false);
+      setTimeout(onDone, 400);
+    }, 3200);
+
+    return () => { clearInterval(interval); clearTimeout(timeout); };
+  }, [amount, onDone]);
+
+  return (
+    <div
+      className={`fixed inset-0 z-[60] flex items-center justify-center transition-opacity duration-400 ${visible ? "opacity-100" : "opacity-0"}`}
+      style={{ background: "hsl(0 0% 0% / 0.7)", backdropFilter: "blur(8px)" }}
+    >
+      <div className="text-center space-y-4 animate-scale-in">
+        {/* Sparkle ring */}
+        <div className="relative mx-auto w-24 h-24">
+          <div className="absolute inset-0 rounded-full animate-ping" style={{ background: "hsl(140 12% 42% / 0.15)" }} />
+          <div className="absolute inset-2 rounded-full animate-pulse" style={{ background: "hsl(140 12% 42% / 0.1)", border: "2px solid hsl(140 12% 42% / 0.4)" }} />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Trophy className="h-10 w-10" style={{ color: "hsl(45 93% 58%)", filter: "drop-shadow(0 0 12px hsl(45 93% 58% / 0.6))" }} />
+          </div>
+        </div>
+
+        <div>
+          <p className="text-lg font-bold text-white flex items-center justify-center gap-2">
+            <Sparkles className="h-5 w-5" style={{ color: "hsl(45 93% 58%)" }} />
+            Deal Won!
+            <Sparkles className="h-5 w-5" style={{ color: "hsl(45 93% 58%)" }} />
+          </p>
+          <p
+            className="text-4xl font-black mt-2 tabular-nums"
+            style={{ color: "hsl(140 12% 58%)", textShadow: "0 0 30px hsl(140 12% 42% / 0.5)" }}
+          >
+            ${countUp.toLocaleString()}
+          </p>
+          <p className="text-xs mt-2" style={{ color: "hsl(240 5% 50%)" }}>Added to production</p>
+        </div>
+
+        {/* Floating particles */}
+        {Array.from({ length: 8 }).map((_, i) => (
+          <div
+            key={i}
+            className="absolute rounded-full"
+            style={{
+              width: 4 + Math.random() * 4,
+              height: 4 + Math.random() * 4,
+              background: i % 2 === 0 ? "hsl(45 93% 58%)" : "hsl(140 12% 58%)",
+              left: `${20 + Math.random() * 60}%`,
+              top: `${20 + Math.random() * 60}%`,
+              animation: `wonParticle ${1.5 + Math.random()}s ease-out ${Math.random() * 0.5}s both`,
+              opacity: 0.8,
+            }}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ── Won Details Dialog ── */
+function WonDetailsDialog({
+  lead, industry, onSave, onCancel,
+}: {
+  lead: DemoLead; industry: string; onSave: (details: Record<string, string>, finalValue: number) => void; onCancel: () => void;
+}) {
+  const fields = WON_FIELDS[industry] || WON_FIELDS.generic;
+  const [form, setForm] = useState<Record<string, string>>(() => {
+    const init: Record<string, string> = {};
+    fields.forEach(f => {
+      if (f.type === "number" && (f.key.includes("premium") || f.key.includes("value") || f.key.includes("price"))) {
+        init[f.key] = String(lead.value);
+      } else {
+        init[f.key] = "";
+      }
+    });
+    return init;
+  });
+
+  const valueField = fields.find(f => f.type === "number" && (f.key.includes("premium") || f.key.includes("value") || f.key.includes("price")));
+  const finalValue = valueField ? (Number(form[valueField.key]) || lead.value) : lead.value;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: "hsl(0 0% 0% / 0.65)" }} onClick={onCancel}>
+      <div
+        className="w-full max-w-md rounded-xl p-5 space-y-4 animate-scale-in"
+        style={{ background: "hsl(240 8% 9%)", border: "1px solid hsl(140 12% 42% / 0.3)" }}
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-lg flex items-center justify-center" style={{ background: "hsl(140 12% 42% / 0.15)" }}>
+            <Trophy className="h-5 w-5" style={{ color: "hsl(140 12% 58%)" }} />
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold text-white">Close Deal — {lead.name}</h3>
+            <p className="text-xs" style={{ color: "hsl(240 5% 46%)" }}>Enter sale details to finalize</p>
+          </div>
+        </div>
+
+        <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-1">
+          {fields.map(field => (
+            <div key={field.key} className="space-y-1">
+              <Label className="text-xs" style={{ color: "hsl(240 5% 70%)" }}>{field.label}</Label>
+              {field.type === "select" ? (
+                <Select value={form[field.key]} onValueChange={v => setForm(p => ({ ...p, [field.key]: v }))}>
+                  <SelectTrigger className="h-9 text-xs" style={{ background: "hsl(240 8% 7%)", borderColor: "hsl(240 6% 16%)", color: "white" }}>
+                    <SelectValue placeholder={`Select ${field.label.toLowerCase()}`} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {field.options?.map(o => <SelectItem key={o} value={o} className="text-xs">{o}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Input
+                  type={field.type === "number" ? "number" : field.type === "date" ? "date" : "text"}
+                  value={form[field.key]}
+                  onChange={e => setForm(p => ({ ...p, [field.key]: e.target.value }))}
+                  className="h-9 text-xs"
+                  style={{ background: "hsl(240 8% 7%)", borderColor: "hsl(240 6% 16%)", color: "white" }}
+                  placeholder={field.label}
+                />
+              )}
+            </div>
+          ))}
+        </div>
+
+        <div className="flex items-center justify-between pt-2" style={{ borderTop: "1px solid hsl(240 6% 14%)" }}>
+          <div>
+            <span className="text-[10px] uppercase tracking-wider" style={{ color: "hsl(240 5% 46%)" }}>Deal Value</span>
+            <p className="text-lg font-bold" style={{ color: "hsl(152 69% 45%)" }}>${finalValue.toLocaleString()}</p>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={onCancel} className="text-xs h-8" style={{ borderColor: "hsl(240 6% 18%)", color: "hsl(240 5% 70%)" }}>
+              Cancel
+            </Button>
+            <Button size="sm" onClick={() => onSave(form, finalValue)} className="text-xs h-8 gap-1.5" style={{ background: "hsl(140 12% 42%)" }}>
+              <Trophy className="h-3.5 w-3.5" /> Close Deal
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ── Client Info Sheet ── */
 function ClientInfoSheet({ lead, onClose, allStages, onMoveStage }: { lead: DemoLead; onClose: () => void; allStages: StageConfig[]; onMoveStage: (id: string, stage: string) => void }) {
-  const stageLabel = allStages.find(s => s.key === lead.stage)?.label || lead.stage;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: "hsl(0 0% 0% / 0.6)" }} onClick={onClose}>
       <div className="w-full max-w-md rounded-xl p-5 space-y-4 animate-scale-in" style={{ background: "hsl(240 8% 9%)", border: "1px solid hsl(240 6% 16%)" }} onClick={e => e.stopPropagation()}>
@@ -141,6 +334,20 @@ function ClientInfoSheet({ lead, onClose, allStages, onMoveStage }: { lead: Demo
           </div>
         )}
 
+        {lead.wonDetails && (
+          <div className="pt-1 space-y-1" style={{ borderTop: "1px solid hsl(240 6% 14%)" }}>
+            <span className="text-[10px] uppercase tracking-wider" style={{ color: "hsl(140 12% 58%)" }}>Sale Details</span>
+            <div className="grid grid-cols-2 gap-2">
+              {Object.entries(lead.wonDetails).filter(([, v]) => v).map(([k, v]) => (
+                <div key={k} className="text-xs" style={{ color: "hsl(240 5% 70%)" }}>
+                  <span className="capitalize" style={{ color: "hsl(240 5% 46%)" }}>{k.replace(/_/g, " ")}: </span>
+                  {k.includes("premium") || k.includes("value") || k.includes("price") ? `$${Number(v).toLocaleString()}` : v}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {lead.lossReason && (
           <div className="pt-1" style={{ borderTop: "1px solid hsl(240 6% 14%)" }}>
             <span className="text-[10px] uppercase tracking-wider text-red-400">Loss Reason</span>
@@ -170,6 +377,10 @@ export default function DemoPipelineTab() {
   const [dragId, setDragId] = useState<string | null>(null);
   const [dragOverStage, setDragOverStage] = useState<string | null>(null);
 
+  // Won flow state
+  const [pendingWonLead, setPendingWonLead] = useState<DemoLead | null>(null);
+  const [celebration, setCelebration] = useState<{ amount: number } | null>(null);
+
   useEffect(() => {
     sessionStorage.setItem("connect-demo-leads", JSON.stringify(leads));
   }, [leads]);
@@ -183,8 +394,26 @@ export default function DemoPipelineTab() {
   const activeLeads = leads.filter(l => l.stage !== "lost");
 
   const moveStage = useCallback((leadId: string, newStage: string) => {
+    if (newStage === "bound") {
+      const lead = leads.find(l => l.id === leadId);
+      if (lead && lead.stage !== "bound") {
+        setPendingWonLead(lead);
+        return; // Don't move yet — wait for details dialog
+      }
+    }
     setLeads(prev => prev.map(l => l.id === leadId ? { ...l, stage: newStage } : l));
-  }, []);
+  }, [leads]);
+
+  const handleWonSave = useCallback((details: Record<string, string>, finalValue: number) => {
+    if (!pendingWonLead) return;
+    setLeads(prev => prev.map(l =>
+      l.id === pendingWonLead.id
+        ? { ...l, stage: "bound", value: finalValue, wonDetails: details }
+        : l
+    ));
+    setPendingWonLead(null);
+    setCelebration({ amount: finalValue });
+  }, [pendingWonLead]);
 
   const handleDragStart = (e: React.DragEvent, leadId: string) => {
     setDragId(leadId);
@@ -287,6 +516,7 @@ export default function DemoPipelineTab() {
                       <div className="flex items-center gap-1.5">
                         <GripVertical className="h-3 w-3 shrink-0 opacity-0 group-hover:opacity-40 transition-opacity" style={{ color: "hsl(240 5% 46%)" }} />
                         <p className="text-xs font-medium text-white truncate flex-1">{lead.name}</p>
+                        {lead.wonDetails && <Trophy className="h-3 w-3 shrink-0" style={{ color: "hsl(45 93% 58%)" }} />}
                       </div>
                       <p className="text-[10px] truncate" style={{ color: "hsl(240 5% 46%)" }}>{lead.contact}</p>
                       <div className="flex items-center justify-between">
@@ -374,8 +604,23 @@ export default function DemoPipelineTab() {
       )}
     </div>
 
+    {/* Won Details Dialog */}
+    {pendingWonLead && (
+      <WonDetailsDialog
+        lead={pendingWonLead}
+        industry={industry}
+        onSave={handleWonSave}
+        onCancel={() => setPendingWonLead(null)}
+      />
+    )}
+
+    {/* Won Celebration */}
+    {celebration && (
+      <WonCelebration amount={celebration.amount} onDone={() => setCelebration(null)} />
+    )}
+
     {/* Client Info overlay */}
-    {selectedLead && (
+    {selectedLead && !pendingWonLead && (
       <ClientInfoSheet
         lead={selectedLead}
         onClose={() => setSelectedLead(null)}
