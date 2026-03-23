@@ -246,7 +246,7 @@ export default function ConnectDemo() {
               transition: "all 1.2s cubic-bezier(0.16, 1, 0.3, 1)",
             }}
           >
-            <TabsContent value="connect" className="mt-0"><DemoConnectTab /></TabsContent>
+            <TabsContent value="connect" className="mt-0"><DemoConnectTab contentReady={buildPhase >= 5} /></TabsContent>
             <TabsContent value="pipeline" className="mt-0"><DemoPipelineTab /></TabsContent>
             <TabsContent value="email" className="mt-0"><DemoEmailTab /></TabsContent>
             <TabsContent value="calendar" className="mt-0"><DemoCalendarTab /></TabsContent>
