@@ -863,21 +863,32 @@ export default function DemoEmailTab() {
 
           {conversationView ? conversationView : (
             <>
-              {/* Smart Features Bar — larger on desktop, small on mobile */}
-              <div className="grid grid-cols-3 lg:grid-cols-6 gap-1.5">
-                {SMART_FEATURES.map((f, i) => (
-                  <button
-                    key={i}
-                    onClick={() => handleSmartFeature(f.label)}
-                    className="p-1.5 lg:p-3 rounded-md text-left transition-all hover:scale-[1.02] hover:bg-white/5"
-                    style={{ background: "hsl(240 8% 9%)", border: "1px solid hsl(240 6% 14%)" }}
-                  >
-                    <f.icon className="h-3.5 w-3.5 lg:h-4 lg:w-4 mb-0.5" style={{ color: "hsl(140 12% 58%)" }} />
-                    <p className="text-[10px] lg:text-xs font-medium text-white leading-tight">{f.label}</p>
-                    <p className="text-[9px] lg:text-[11px] leading-tight hidden lg:block" style={{ color: "hsl(240 5% 40%)" }}>{f.desc}</p>
-                  </button>
-                ))}
-              </div>
+               {/* Smart Features Banner + Bar */}
+               {!smartBannerDismissed && (
+                 <div className="relative p-3 rounded-lg animate-fade-in" style={{ background: "linear-gradient(135deg, hsl(140 12% 42% / 0.12), hsl(140 20% 30% / 0.08))", border: "1px solid hsl(140 12% 42% / 0.3)" }}>
+                   <button onClick={() => setSmartBannerDismissed(true)} className="absolute top-2 right-2 p-1 rounded-full hover:bg-white/10 transition-colors">
+                     <X className="h-3.5 w-3.5" style={{ color: "hsl(240 5% 50%)" }} />
+                   </button>
+                   <div className="flex items-center gap-2 mb-2">
+                     <Sparkles className="h-4 w-4" style={{ color: "hsl(140 12% 58%)" }} />
+                     <p className="text-sm font-medium text-white">Use some of our Smart Email Features to better Connect with Clients.</p>
+                   </div>
+                   <div className="grid grid-cols-3 lg:grid-cols-6 gap-1.5">
+                     {SMART_FEATURES.map((f, i) => (
+                       <button
+                         key={i}
+                         onClick={() => handleSmartFeature(f.label)}
+                         className="p-1.5 lg:p-3 rounded-md text-left transition-all hover:scale-[1.02] hover:bg-white/5"
+                         style={{ background: "hsl(240 8% 9% / 0.6)", border: "1px solid hsl(240 6% 14%)" }}
+                       >
+                         <f.icon className="h-3.5 w-3.5 lg:h-4 lg:w-4 mb-0.5" style={{ color: "hsl(140 12% 58%)" }} />
+                         <p className="text-[10px] lg:text-xs font-medium text-white leading-tight">{f.label}</p>
+                         <p className="text-[9px] lg:text-[11px] leading-tight hidden lg:block" style={{ color: "hsl(240 5% 40%)" }}>{f.desc}</p>
+                       </button>
+                     ))}
+                   </div>
+                 </div>
+               )}
 
               {/* Filters row */}
               <div className="flex items-center gap-2 flex-wrap">
