@@ -169,7 +169,6 @@ export default function ConnectDemoAuth() {
             <AuraLogo size={56} />
           </div>
           <h1 className="text-2xl font-bold text-white">AuRa Connect</h1>
-          <p className="text-sm" style={{ color: "hsl(140 12% 58%)" }}>Your relationship intelligence suite</p>
         </div>
 
         {step === "auth" && (
