@@ -80,10 +80,10 @@ export default function ConnectDemo() {
     sessionStorage.setItem("connect-demo-entered", "true");
     // Phase 0: black screen with centered logo
     const t0 = setTimeout(() => setBuildPhase(1), 600);    // logo fades in
-    const t1 = setTimeout(() => setBuildPhase(2), 2800);   // header slides down
-    const t2 = setTimeout(() => setBuildPhase(3), 4000);   // ticker reveals
-    const t3 = setTimeout(() => setBuildPhase(4), 5200);   // tabs stagger in
-    const t4 = setTimeout(() => setBuildPhase(5), 6800);   // content fades up
+    const t1 = setTimeout(() => setBuildPhase(2), 5600);   // header slides down (~5s intro)
+    const t2 = setTimeout(() => setBuildPhase(3), 7200);   // ticker reveals
+    const t3 = setTimeout(() => setBuildPhase(4), 8800);   // tabs stagger in
+    const t4 = setTimeout(() => setBuildPhase(5), 10500);  // content fades up
     return () => [t0, t1, t2, t3, t4].forEach(clearTimeout);
   }, []);
 
