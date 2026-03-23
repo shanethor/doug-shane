@@ -179,6 +179,20 @@ export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId, ini
     if (needsDateTime && !isEvergreen && !dateTime.trim()) { toast.error("Set a date/time or mark as evergreen"); return; }
     setLoading(true);
     try {
+      if (demoMode) {
+        // Demo mode: skip edge function
+        if (!cta) {
+          const ctaMap: Record<string, string> = {
+            event: "RSVP today to reserve your seat.", social: "Like, share, and follow for more.",
+            promotion: "Call today or book online.", educational: "Learn more today.",
+            announcement: "Stay tuned for more updates.", custom: "Contact us today.",
+          };
+          setCta(ctaMap[flyerType] || "Contact us today.");
+        }
+        setStep(3);
+        setLoading(false);
+        return;
+      }
       const { data, error } = await supabase.functions.invoke("spotlight-flyer", {
         body: {
           action: "update_details", flyer_id: flyerId,
