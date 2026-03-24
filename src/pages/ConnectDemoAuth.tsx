@@ -975,6 +975,39 @@ export default function ConnectDemoAuth() {
               <p className="text-xl text-center font-semibold mt-10" style={{ color: "hsl(140 12% 58%)" }}>Intelligence runs on AuRa</p>
             </div>
           )}
+
+          {step === "building" && (
+            <div className="flex flex-col items-center justify-center space-y-8 py-16">
+              <style>{`
+                @keyframes buildPulse { 0%,100% { opacity:0.6; transform:scale(1); } 50% { opacity:1; transform:scale(1.08); } }
+                @keyframes buildGlow { 0%,100% { box-shadow: 0 0 20px hsl(140 12% 42% / 0.15); } 50% { box-shadow: 0 0 50px hsl(140 12% 42% / 0.35); } }
+                .build-logo { animation: buildPulse 2s ease-in-out infinite, buildGlow 2s ease-in-out infinite; }
+                @keyframes msgFade { 0% { opacity:0; transform:translateY(8px); } 30% { opacity:1; transform:translateY(0); } 100% { opacity:1; transform:translateY(0); } }
+                .build-msg { animation: msgFade 0.5s ease-out; }
+              `}</style>
+              <div className="build-logo rounded-2xl">
+                <AuraLogo size={72} />
+              </div>
+              <div className="text-center space-y-3">
+                <h2 className="text-xl font-bold text-white">Building your network…</h2>
+                <p key={buildMsgIdx} className="build-msg text-sm" style={{ color: "hsl(140 12% 58%)" }}>
+                  {buildMessages[buildMsgIdx]}
+                </p>
+              </div>
+              <div className="w-64 space-y-2">
+                <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "hsl(140 12% 42% / 0.12)" }}>
+                  <div
+                    className="h-full rounded-full transition-all duration-100 ease-linear"
+                    style={{
+                      width: `${buildProgress}%`,
+                      background: "linear-gradient(90deg, hsl(140 12% 42%), hsl(140 12% 58%))",
+                    }}
+                  />
+                </div>
+                <p className="text-[10px] text-center" style={{ color: "hsl(240 5% 40%)" }}>{Math.round(buildProgress)}%</p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
