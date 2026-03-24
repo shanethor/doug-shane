@@ -235,7 +235,7 @@ function TaglineNodes() {
             ctx.beginPath();
             ctx.moveTo(ax, ay);
             ctx.lineTo(bx, by);
-            ctx.strokeStyle = `hsla(140, 12%, 55%, ${0.12 * (1 - d / 100)})`;
+            ctx.strokeStyle = `hsla(140, 12%, 55%, ${0.12 * (1 - d / 140)})`;
             ctx.lineWidth = 0.8;
             ctx.stroke();
           }
