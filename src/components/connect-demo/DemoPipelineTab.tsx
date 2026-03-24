@@ -399,13 +399,22 @@ function WonDetailsDialog({
 
         <div className="flex items-center justify-between pt-2" style={{ borderTop: "1px solid hsl(240 6% 14%)" }}>
           <div>
-            <span className="text-[10px] uppercase tracking-wider" style={{ color: "hsl(240 5% 46%)" }}>{getValueLabel(industry)}</span>
-            <p className="text-lg font-bold" style={{ color: "hsl(152 69% 45%)" }}>${primaryVal.toLocaleString()}</p>
-            {industry === "insurance" && computed.est_commission && (
-              <p className="text-[10px]" style={{ color: "hsl(140 12% 58%)" }}>Commission: ${Number(computed.est_commission).toLocaleString()}</p>
-            )}
-            {industry === "real_estate" && computed.your_commission && (
-              <p className="text-[10px]" style={{ color: "hsl(140 12% 58%)" }}>Your Commission: ${Number(computed.your_commission).toLocaleString()}</p>
+            {(industry === "insurance" || industry === "real_estate") ? (
+              <>
+                <span className="text-[10px] uppercase tracking-wider" style={{ color: "hsl(240 5% 46%)" }}>Commission</span>
+                <p className="text-lg font-bold" style={{ color: "hsl(152 69% 45%)" }}>
+                  ${(industry === "insurance"
+                    ? Number(computed.est_commission || 0)
+                    : Number(computed.your_commission || 0)
+                  ).toLocaleString()}
+                </p>
+                <p className="text-[10px]" style={{ color: "hsl(240 5% 50%)" }}>{getValueLabel(industry)}: ${primaryVal.toLocaleString()}</p>
+              </>
+            ) : (
+              <>
+                <span className="text-[10px] uppercase tracking-wider" style={{ color: "hsl(240 5% 46%)" }}>{getValueLabel(industry)}</span>
+                <p className="text-lg font-bold" style={{ color: "hsl(152 69% 45%)" }}>${primaryVal.toLocaleString()}</p>
+              </>
             )}
           </div>
           <div className="flex gap-2">

@@ -768,7 +768,17 @@ export default function DemoEmailTab() {
 
   /* ─────────── Main Render ─────────── */
   return (
-    <div className="animate-fade-in">
+    <div className="space-y-0">
+      <style>{`
+        .email-stagger > * { opacity: 0; animation: emailFadeIn 0.6s cubic-bezier(0.16,1,0.3,1) both; }
+        .email-stagger > *:nth-child(1) { animation-delay: 0.05s; }
+        .email-stagger > *:nth-child(2) { animation-delay: 0.15s; }
+        .email-stagger > *:nth-child(3) { animation-delay: 0.25s; }
+        .email-stagger > *:nth-child(4) { animation-delay: 0.35s; }
+        .email-stagger > *:nth-child(5) { animation-delay: 0.45s; }
+        @keyframes emailFadeIn { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+      `}</style>
+      <div className="email-stagger">
       <div className="flex gap-0 lg:gap-4">
         {/* ── Sidebar (desktop) ── */}
         <div className="hidden lg:flex flex-col w-48 shrink-0 space-y-1 pt-1">
