@@ -3,7 +3,8 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowRight, Zap, Shield, BarChart3, Mail, Users, Sparkles as SparklesIcon, Search, Check, Lock, Loader2 } from "lucide-react";
+import { ArrowRight, Zap, Shield, BarChart3, Mail, Users, Sparkles as SparklesIcon, Search, Check, Lock, Loader2, LayoutGrid } from "lucide-react";
+import { setEmailLayout, type EmailLayout } from "@/components/connect-demo/email-views/useEmailEngine";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 import { getAuthHeaders } from "@/lib/auth-fetch";
@@ -286,7 +287,7 @@ const INDUSTRIES = [
   "Telecommunications", "Transportation", "Travel & Tourism", "Venture Capital",
   "Veterinary", "Video Production", "Warehousing", "Wealth Management", "Wholesale", "Other",
 ];
-type Step = "auth" | "subscribe" | "welcome";
+type Step = "auth" | "subscribe" | "welcome" | "email_layout";
 
 const ACCOUNT_OPTIONS: { id: string; label: string; desc: string; color: string; icon: string; oauthProvider?: string; status: "ready" | "coming_soon" }[] = [
   { id: "google", label: "Google", desc: "Gmail, Contacts, Calendar", color: "#4285F4", icon: "G", oauthProvider: "gmail", status: "ready" },
@@ -378,7 +379,8 @@ export default function ConnectDemoAuth() {
 
     // If we have saved connected accounts but are on auth step, check if we should be on welcome
     const savedStep = sessionStorage.getItem("connect-demo-step");
-    if (savedStep === "welcome") setStep("welcome");
+    if (savedStep === "email_layout") setStep("email_layout");
+    else if (savedStep === "welcome") setStep("welcome");
     else if (savedStep === "subscribe") setStep("subscribe");
   }, [searchParams]);
 
@@ -530,12 +532,17 @@ export default function ConnectDemoAuth() {
   };
   const handleSubscribe = () => goToStep("welcome");
   const handleEnter = async () => {
+    // Go to email layout picker before entering
+    goToStep("email_layout");
+  };
+
+  const handleFinalEnter = async (selectedLayout: EmailLayout = "aura") => {
+    setEmailLayout(selectedLayout);
     sessionStorage.setItem("connect-demo-auth", "true");
     sessionStorage.setItem("connect-demo-name", name || email.split("@")[0]);
     sessionStorage.setItem("connect-demo-industry", industry);
-    // Trigger network build in background if accounts connected
     if (connectedCount > 0) {
-      handleBuildNetwork(); // fire-and-forget
+      handleBuildNetwork();
     }
     navigate("/connectdemo");
   };
@@ -867,6 +874,66 @@ export default function ConnectDemoAuth() {
                     </p>
                   )}
                 </div>
+              </div>
+              <p className="text-xl text-center font-semibold mt-10" style={{ color: "hsl(140 12% 58%)" }}>Intelligence runs on AuRa</p>
+            </div>
+          )}
+
+          {step === "email_layout" && (
+            <div className="space-y-6">
+              <div
+                className="rounded-xl border p-6 space-y-6"
+                style={{
+                  background: "hsl(240 8% 7%)",
+                  borderColor: "hsl(140 12% 42% / 0.3)",
+                  transition: "opacity 0.6s cubic-bezier(0.16,1,0.3,1), transform 0.6s cubic-bezier(0.16,1,0.3,1)",
+                  opacity: cardVisible ? 1 : 0,
+                  transform: cardVisible ? "scale(1)" : "scale(0.7)",
+                }}
+              >
+                {renderHeader()}
+                <div className="text-center space-y-1">
+                  <h2 className="text-lg font-semibold text-white">Choose your Email View</h2>
+                  <p className="text-xs" style={{ color: "hsl(240 5% 46%)" }}>You can change this later in Settings → Email View</p>
+                </div>
+
+                <div className="space-y-3">
+                  {([
+                    { id: "gmail" as EmailLayout, label: "Gmail View", desc: "Feels like Gmail: compact list, conversation threads, left labels.", icon: "G", color: "#4285F4" },
+                    { id: "outlook" as EmailLayout, label: "Outlook View", desc: "Feels like Outlook: folders on the left, list in the middle, preview on the right.", icon: "O", color: "#0078D4" },
+                    { id: "aura" as EmailLayout, label: "AuRa View", desc: "Recommended: optimized for AURA's AI and sales tools.", icon: "A", color: "hsl(140 12% 42%)", recommended: true },
+                  ] as const).map(view => (
+                    <button
+                      key={view.id}
+                      onClick={() => handleFinalEnter(view.id)}
+                      className="w-full text-left p-4 rounded-lg transition-all hover:scale-[1.01] relative"
+                      style={{
+                        background: "hsl(240 8% 9%)",
+                        border: `1px solid ${"recommended" in view && view.recommended ? "hsl(140 12% 42% / 0.5)" : "hsl(240 6% 18%)"}`,
+                      }}
+                    >
+                      {"recommended" in view && view.recommended && (
+                        <span className="absolute -top-2 right-3 text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: "hsl(140 12% 42%)", color: "white" }}>
+                          Recommended
+                        </span>
+                      )}
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg flex items-center justify-center text-sm font-bold shrink-0" style={{ background: typeof view.color === "string" && view.color.startsWith("#") ? view.color : view.color, color: "white" }}>
+                          {view.icon}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-white">{view.label}</p>
+                          <p className="text-xs mt-0.5" style={{ color: "hsl(240 5% 50%)" }}>{view.desc}</p>
+                        </div>
+                        <ArrowRight className="h-4 w-4 shrink-0" style={{ color: "hsl(240 5% 40%)" }} />
+                      </div>
+                    </button>
+                  ))}
+                </div>
+
+                <Button variant="ghost" className="w-full text-xs" style={{ color: "hsl(240 5% 46%)" }} onClick={() => handleFinalEnter("aura")}>
+                  Skip — use AuRa View
+                </Button>
               </div>
               <p className="text-xl text-center font-semibold mt-10" style={{ color: "hsl(140 12% 58%)" }}>Intelligence runs on AuRa</p>
             </div>
