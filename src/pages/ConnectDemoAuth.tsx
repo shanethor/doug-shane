@@ -363,20 +363,24 @@ export default function ConnectDemoAuth() {
     navigate("/connectdemo");
   };
 
-  /* ── shared header (logo + tagline) ── */
-  const renderHeader = () => (
+  /* ── shared header (logo only for pages 2+3) ── */
+  const renderHeader = (showTagline = false) => (
     <div className="text-center space-y-3">
       <div className="mx-auto flex items-center justify-center"><AuraLogo size={48} /></div>
       <h1 className="text-xl font-bold text-white">AuRa Connect</h1>
-      <p className="text-sm font-medium" style={{ color: "hsl(140 12% 58%)" }}>
-        You already know the right people. You just don't know how to get there.
-      </p>
-      <div className="relative py-2">
-        <TaglineNodes />
-        <p className="text-sm font-semibold italic sage-shimmer relative z-10">
-          Let us show you the way in.
-        </p>
-      </div>
+      {showTagline && (
+        <>
+          <p className="text-sm font-medium" style={{ color: "hsl(140 12% 58%)" }}>
+            You already know the right people. You just don't know how to get there.
+          </p>
+          <div className="relative py-4" style={{ minHeight: 56 }}>
+            <TaglineNodes />
+            <p className="text-sm font-semibold italic sage-shimmer relative z-10">
+              Let us show you the way in.
+            </p>
+          </div>
+        </>
+      )}
     </div>
   );
 
