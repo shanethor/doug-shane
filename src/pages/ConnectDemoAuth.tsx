@@ -878,6 +878,66 @@ export default function ConnectDemoAuth() {
               <p className="text-xl text-center font-semibold mt-10" style={{ color: "hsl(140 12% 58%)" }}>Intelligence runs on AuRa</p>
             </div>
           )}
+
+          {step === "email_layout" && (
+            <div className="space-y-6">
+              <div
+                className="rounded-xl border p-6 space-y-6"
+                style={{
+                  background: "hsl(240 8% 7%)",
+                  borderColor: "hsl(140 12% 42% / 0.3)",
+                  transition: "opacity 0.6s cubic-bezier(0.16,1,0.3,1), transform 0.6s cubic-bezier(0.16,1,0.3,1)",
+                  opacity: cardVisible ? 1 : 0,
+                  transform: cardVisible ? "scale(1)" : "scale(0.7)",
+                }}
+              >
+                {renderHeader()}
+                <div className="text-center space-y-1">
+                  <h2 className="text-lg font-semibold text-white">Choose your Email View</h2>
+                  <p className="text-xs" style={{ color: "hsl(240 5% 46%)" }}>You can change this later in Settings → Email View</p>
+                </div>
+
+                <div className="space-y-3">
+                  {([
+                    { id: "gmail" as EmailLayout, label: "Gmail View", desc: "Feels like Gmail: compact list, conversation threads, left labels.", icon: "G", color: "#4285F4" },
+                    { id: "outlook" as EmailLayout, label: "Outlook View", desc: "Feels like Outlook: folders on the left, list in the middle, preview on the right.", icon: "O", color: "#0078D4" },
+                    { id: "aura" as EmailLayout, label: "AuRa View", desc: "Recommended: optimized for AURA's AI and sales tools.", icon: "A", color: "hsl(140 12% 42%)", recommended: true },
+                  ] as const).map(view => (
+                    <button
+                      key={view.id}
+                      onClick={() => handleFinalEnter(view.id)}
+                      className="w-full text-left p-4 rounded-lg transition-all hover:scale-[1.01] relative"
+                      style={{
+                        background: "hsl(240 8% 9%)",
+                        border: `1px solid ${"recommended" in view && view.recommended ? "hsl(140 12% 42% / 0.5)" : "hsl(240 6% 18%)"}`,
+                      }}
+                    >
+                      {"recommended" in view && view.recommended && (
+                        <span className="absolute -top-2 right-3 text-[9px] font-bold px-2 py-0.5 rounded-full" style={{ background: "hsl(140 12% 42%)", color: "white" }}>
+                          Recommended
+                        </span>
+                      )}
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg flex items-center justify-center text-sm font-bold shrink-0" style={{ background: typeof view.color === "string" && view.color.startsWith("#") ? view.color : view.color, color: "white" }}>
+                          {view.icon}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-white">{view.label}</p>
+                          <p className="text-xs mt-0.5" style={{ color: "hsl(240 5% 50%)" }}>{view.desc}</p>
+                        </div>
+                        <ArrowRight className="h-4 w-4 shrink-0" style={{ color: "hsl(240 5% 40%)" }} />
+                      </div>
+                    </button>
+                  ))}
+                </div>
+
+                <Button variant="ghost" className="w-full text-xs" style={{ color: "hsl(240 5% 46%)" }} onClick={() => handleFinalEnter("aura")}>
+                  Skip — use AuRa View
+                </Button>
+              </div>
+              <p className="text-xl text-center font-semibold mt-10" style={{ color: "hsl(140 12% 58%)" }}>Intelligence runs on AuRa</p>
+            </div>
+          )}
         </div>
       </div>
     </div>
