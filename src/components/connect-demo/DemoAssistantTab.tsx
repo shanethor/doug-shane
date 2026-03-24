@@ -205,6 +205,7 @@ export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: st
       onDragLeave={() => setDragOver(false)}
       onDrop={handleDrop}
     >
+      <style>{`@keyframes sageFadeIn { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }`}</style>
       {/* Drag overlay */}
       {dragOver && (
         <div className="absolute inset-0 z-50 flex items-center justify-center rounded-xl" style={{ background: "hsl(140 12% 42% / 0.08)", border: "2px dashed hsl(140 12% 42%)", backdropFilter: "blur(4px)" }}>
