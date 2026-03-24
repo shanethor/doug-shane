@@ -275,7 +275,7 @@ export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: st
             </div>
           </div>
 
-          <div className="w-full max-w-2xl grid grid-cols-2 sm:grid-cols-3 gap-2">
+          <div className="w-full max-w-2xl grid grid-cols-2 sm:grid-cols-3 gap-2" style={{ animation: "sageFadeIn 0.6s cubic-bezier(0.16,1,0.3,1) 0.35s both" }}>
             {SUGGESTIONS.map((s) => (
               <button
                 key={s.label}
