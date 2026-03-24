@@ -139,26 +139,23 @@ export default function EmailViewAura({ engine, ai }: { engine: Engine; ai: AI }
                   );
                 })}
               </div>
-              {/* AI summary at top */}
-              <div className="rounded-lg p-3" style={{ background: "hsl(140 12% 42% / 0.06)", border: "1px solid hsl(140 12% 42% / 0.2)" }}>
-                <div className="flex items-center gap-2 mb-2">
-                  <Sparkles className="h-4 w-4" style={{ color: "hsl(140 12% 58%)" }} />
-                  <span className="text-xs font-semibold" style={{ color: "hsl(140 12% 58%)" }}>AI Summary</span>
-                </div>
-                <p className="text-xs" style={{ color: "hsl(240 5% 70%)" }}>
-                  {selectedThread.messages.length > 1
-                    ? `Active thread with ${selectedThread.participants.filter(p => p !== "You").join(", ")}. ${selectedThread.messages.length} messages exchanged. Discussion moving toward next steps.`
-                    : `Initial message from ${selectedThread.participants.filter(p => p !== "You").join(", ")}. Awaiting your response.`}
-                </p>
-                {/* One-click actions */}
-                <div className="flex gap-1.5 mt-2 flex-wrap">
-                  {["Confirm meeting", "Ask for details", "Create opportunity"].map(a => (
-                    <Button key={a} size="sm" variant="outline" className="text-[10px] h-6 px-2" style={{ borderColor: "hsl(140 12% 42% / 0.3)", color: "hsl(140 12% 58%)" }} onClick={() => toast.success(`${a} (demo)`)}>
-                      {a}
-                    </Button>
-                  ))}
-                </div>
+              {/* AI action buttons */}
+              <div className="flex gap-2 flex-wrap">
+                <Button size="sm" variant="outline" className="text-[10px] h-6 px-2 gap-1" style={{ borderColor: "hsl(140 12% 42% / 0.3)", color: "hsl(140 12% 58%)" }} onClick={() => ai.summarize(selectedThread)} disabled={ai.summaryLoading}>
+                  <Sparkles className={`h-3 w-3 ${ai.summaryLoading ? "animate-spin" : ""}`} /> {ai.summaryLoading ? "Summarizing…" : "Summarize"}
+                </Button>
+                <Button size="sm" variant="outline" className="text-[10px] h-6 px-2 gap-1" style={{ borderColor: "hsl(140 12% 42% / 0.3)", color: "hsl(140 12% 58%)" }} onClick={() => ai.aiReply(selectedThread)} disabled={ai.replyLoading}>
+                  <Sparkles className={`h-3 w-3 ${ai.replyLoading ? "animate-spin" : ""}`} /> {ai.replyLoading ? "Drafting…" : "AI Reply"}
+                </Button>
+                <Button size="sm" variant="outline" className="text-[10px] h-6 px-2 gap-1" style={{ borderColor: "hsl(140 12% 42% / 0.3)", color: "hsl(140 12% 58%)" }} onClick={() => ai.aiDraft(selectedThread)} disabled={ai.draftLoading}>
+                  <Sparkles className={`h-3 w-3 ${ai.draftLoading ? "animate-spin" : ""}`} /> {ai.draftLoading ? "Drafting…" : "AI Draft"}
+                </Button>
+                <Button size="sm" variant="outline" className="text-[10px] h-6 px-2 gap-1" style={{ borderColor: "hsl(140 12% 42% / 0.3)", color: "hsl(140 12% 58%)" }} onClick={() => ai.addToPipeline(selectedThread)}>
+                  Add to Pipeline
+                </Button>
               </div>
+              {/* AI results panel */}
+              <AIResultPanel ai={ai} onUseReply={(text) => setReplyBody(text)} />
               <h3 className="text-base font-semibold text-white">{selectedThread.subject}</h3>
               {/* Messages */}
               <div className="space-y-2">
