@@ -10,6 +10,7 @@ import {
   ArrowLeft, CheckCheck, Clock, X, Plus, Link2, User, Wand2,
   FileText, Shield, AlertTriangle, TrendingUp, Zap, Star, Inbox,
   SendHorizonal, FilePenLine, Tag, ChevronDown, ChevronUp, Trash2, Copy,
+  Users, Target, Phone, MapPin, Building2, Activity,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -116,6 +117,79 @@ const CLIENT_CONTACTS = [
   { name: "Linda Park", email: "linda@sunriseproperties.com", emailCount: 8 },
   { name: "James Whitfield", email: "james@alpinegroup.com", emailCount: 5 },
 ];
+
+/* ─── Connect Contact Matching (Superhuman-style) ─── */
+interface ConnectMatch {
+  name: string; email: string; company: string; tier: string;
+  mutualConnections: number; proximity: number; // 0-100
+  pipelineStage?: string; pipelineDeal?: string; dealValue?: number;
+  outreachStatus?: "active" | "overdue" | "scheduled" | "none";
+  lastTouch?: string; nextTouch?: string;
+  phone?: string; location?: string;
+}
+
+const CONNECT_MATCHES: Record<string, ConnectMatch> = {
+  "sarah@greenvalley.com": {
+    name: "Sarah Mitchell", email: "sarah@greenvalley.com", company: "Green Valley Partners",
+    tier: "S", mutualConnections: 12, proximity: 94,
+    pipelineStage: "Proposal", pipelineDeal: "Green Valley — Commercial Package", dealValue: 24000,
+    outreachStatus: "active", lastTouch: "2 days ago", nextTouch: "Tomorrow",
+    phone: "(512) 555-0184", location: "Austin, TX",
+  },
+  "marcus@techventures.io": {
+    name: "Marcus Chen", email: "marcus@techventures.io", company: "Tech Ventures",
+    tier: "A", mutualConnections: 8, proximity: 82,
+    pipelineStage: "Discovery", pipelineDeal: "Tech Ventures — Cyber Liability", dealValue: 18000,
+    outreachStatus: "scheduled", lastTouch: "5 days ago", nextTouch: "Thursday",
+    phone: "(415) 555-0291", location: "San Francisco, CA",
+  },
+  "jess@blueridgecap.com": {
+    name: "Jessica Torres", email: "jess@blueridgecap.com", company: "Blue Ridge Capital",
+    tier: "B", mutualConnections: 4, proximity: 67,
+    outreachStatus: "overdue", lastTouch: "3 weeks ago", nextTouch: "Overdue",
+    phone: "(704) 555-0137", location: "Charlotte, NC",
+  },
+  "david.k@primeadvisors.net": {
+    name: "David Kowalski", email: "david.k@primeadvisors.net", company: "Prime Advisors",
+    tier: "S", mutualConnections: 15, proximity: 91,
+    pipelineStage: "Negotiation", pipelineDeal: "Prime Advisors — Group Benefits", dealValue: 45000,
+    outreachStatus: "active", lastTouch: "Yesterday", nextTouch: "Friday",
+    phone: "(312) 555-0266", location: "Chicago, IL",
+  },
+  "linda@sunriseproperties.com": {
+    name: "Linda Park", email: "linda@sunriseproperties.com", company: "Sunrise Properties",
+    tier: "A", mutualConnections: 6, proximity: 75,
+    pipelineStage: "Quoting", pipelineDeal: "Sunrise Properties — Commercial Auto", dealValue: 12000,
+    outreachStatus: "none", lastTouch: "1 week ago",
+    phone: "(602) 555-0198", location: "Phoenix, AZ",
+  },
+  "james@alpinegroup.com": {
+    name: "James Whitfield", email: "james@alpinegroup.com", company: "Alpine Group",
+    tier: "B", mutualConnections: 3, proximity: 58,
+    outreachStatus: "scheduled", lastTouch: "10 days ago", nextTouch: "Next Monday",
+    location: "Denver, CO",
+  },
+  "tom.b@westfieldmfg.com": {
+    name: "Tom Bradley", email: "tom.b@westfieldmfg.com", company: "Westfield Manufacturing",
+    tier: "C", mutualConnections: 2, proximity: 42,
+    outreachStatus: "none", lastTouch: "1 month ago",
+    location: "Detroit, MI",
+  },
+};
+
+const TIER_COLORS: Record<string, { bg: string; text: string }> = {
+  S: { bg: "hsl(45 80% 25%)", text: "hsl(45 80% 75%)" },
+  A: { bg: "hsl(140 40% 22%)", text: "hsl(140 50% 70%)" },
+  B: { bg: "hsl(200 40% 22%)", text: "hsl(200 50% 70%)" },
+  C: { bg: "hsl(240 10% 22%)", text: "hsl(240 10% 65%)" },
+};
+
+const OUTREACH_COLORS: Record<string, { bg: string; text: string; label: string }> = {
+  active: { bg: "hsl(140 50% 20%)", text: "hsl(140 50% 70%)", label: "Active" },
+  overdue: { bg: "hsl(0 50% 22%)", text: "hsl(0 50% 70%)", label: "Overdue" },
+  scheduled: { bg: "hsl(200 50% 22%)", text: "hsl(200 50% 70%)", label: "Scheduled" },
+  none: { bg: "hsl(240 8% 18%)", text: "hsl(240 5% 55%)", label: "No Cadence" },
+};
 
 const SMART_FEATURES = [
   { icon: Wand2, label: "Smart Reply", desc: "Generate contextual replies based on thread history" },
@@ -603,13 +677,109 @@ export default function DemoEmailTab() {
       {/* Smart Feature Panel — renders inline */}
       {renderFeaturePanel()}
 
-      {/* Insight bar */}
-      <div className="flex items-center gap-3 p-3 rounded-lg" style={{ background: "hsl(140 12% 42% / 0.06)", border: "1px solid hsl(140 12% 42% / 0.15)" }}>
-        <Sparkles className="h-4 w-4 shrink-0" style={{ color: "hsl(140 12% 58%)" }} />
-        <span className="text-sm" style={{ color: "hsl(140 12% 58%)" }}>
-          Insight: This thread relates to an active pipeline deal. Priority: <strong>High</strong>. Sentiment: <strong>Positive</strong>.
-        </span>
-      </div>
+      {/* ── Smart Contact Match + Active Outreach ── */}
+      {(() => {
+        const emailAddrs = selectedThread.messages.map(m => m.from === "You" ? m.toAddr : m.fromAddr);
+        const matches = [...new Set(emailAddrs)].map(addr => CONNECT_MATCHES[addr]).filter(Boolean) as ConnectMatch[];
+        if (matches.length === 0) return (
+          <div className="flex items-center gap-3 p-3 rounded-lg" style={{ background: "hsl(140 12% 42% / 0.06)", border: "1px solid hsl(140 12% 42% / 0.15)" }}>
+            <Sparkles className="h-4 w-4 shrink-0" style={{ color: "hsl(140 12% 58%)" }} />
+            <span className="text-sm" style={{ color: "hsl(140 12% 58%)" }}>
+              No Connect profile matched — <button className="underline" onClick={() => toast.success("Contact added to Connect (demo)")}>Add to network</button>
+            </span>
+          </div>
+        );
+        return matches.map(match => {
+          const tierStyle = TIER_COLORS[match.tier] || TIER_COLORS.C;
+          const outreach = match.outreachStatus ? OUTREACH_COLORS[match.outreachStatus] : OUTREACH_COLORS.none;
+          return (
+            <div key={match.email} className="rounded-lg overflow-hidden" style={{ background: "hsl(240 8% 9%)", border: "1px solid hsl(140 12% 42% / 0.2)" }}>
+              {/* Contact header */}
+              <div className="p-3 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="h-9 w-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0" style={{ background: tierStyle.bg, color: tierStyle.text }}>
+                    {match.tier}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-semibold text-white">{match.name}</span>
+                      <Users className="h-3 w-3" style={{ color: "hsl(140 12% 50%)" }} />
+                      <span className="text-xs" style={{ color: "hsl(140 12% 58%)" }}>{match.mutualConnections} mutual</span>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: `hsl(140 12% 42% / ${Math.round(match.proximity / 100 * 30 + 5)}%)`, color: "hsl(140 12% 58%)" }}>
+                        {match.proximity}% match
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <Building2 className="h-3 w-3" style={{ color: "hsl(240 5% 46%)" }} />
+                      <span className="text-xs" style={{ color: "hsl(240 5% 60%)" }}>{match.company}</span>
+                      {match.location && <>
+                        <MapPin className="h-3 w-3 ml-1" style={{ color: "hsl(240 5% 46%)" }} />
+                        <span className="text-xs" style={{ color: "hsl(240 5% 60%)" }}>{match.location}</span>
+                      </>}
+                    </div>
+                  </div>
+                </div>
+                <Badge className="text-[10px] shrink-0" style={{ background: outreach.bg, color: outreach.text }}>
+                  <Activity className="h-3 w-3 mr-1" />{outreach.label}
+                </Badge>
+              </div>
+
+              {/* Outreach + Pipeline details */}
+              <div className="px-3 pb-3 grid grid-cols-1 lg:grid-cols-2 gap-2">
+                {/* Outreach cadence */}
+                <div className="p-2.5 rounded-md" style={{ background: "hsl(240 6% 7%)" }}>
+                  <p className="text-[10px] uppercase tracking-wider font-semibold mb-1.5" style={{ color: "hsl(240 5% 40%)" }}>Outreach Cadence</p>
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-xs">
+                      <span style={{ color: "hsl(240 5% 55%)" }}>Last Touch</span>
+                      <span className="text-white">{match.lastTouch || "—"}</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span style={{ color: "hsl(240 5% 55%)" }}>Next Touch</span>
+                      <span style={{ color: match.outreachStatus === "overdue" ? "hsl(0 60% 60%)" : "hsl(140 12% 58%)" }}>{match.nextTouch || "—"}</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span style={{ color: "hsl(240 5% 55%)" }}>Tier Cadence</span>
+                      <span className="text-white">{match.tier === "S" ? "Weekly" : match.tier === "A" ? "Bi-weekly" : match.tier === "B" ? "Monthly" : "Quarterly"}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Pipeline card */}
+                {match.pipelineStage ? (
+                  <div className="p-2.5 rounded-md" style={{ background: "hsl(240 6% 7%)" }}>
+                    <p className="text-[10px] uppercase tracking-wider font-semibold mb-1.5" style={{ color: "hsl(240 5% 40%)" }}>Pipeline Deal</p>
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-xs">
+                        <span style={{ color: "hsl(240 5% 55%)" }}>Deal</span>
+                        <span className="text-white truncate ml-2">{match.pipelineDeal}</span>
+                      </div>
+                      <div className="flex justify-between text-xs">
+                        <span style={{ color: "hsl(240 5% 55%)" }}>Stage</span>
+                        <Badge className="text-[9px] h-4" style={{ background: "hsl(140 12% 42% / 0.15)", color: "hsl(140 12% 58%)" }}>{match.pipelineStage}</Badge>
+                      </div>
+                      <div className="flex justify-between text-xs">
+                        <span style={{ color: "hsl(240 5% 55%)" }}>Value</span>
+                        <span style={{ color: "hsl(140 12% 58%)" }}>${match.dealValue?.toLocaleString()}</span>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-2.5 rounded-md flex items-center justify-center" style={{ background: "hsl(240 6% 7%)" }}>
+                    <div className="text-center">
+                      <Target className="h-4 w-4 mx-auto mb-1" style={{ color: "hsl(240 5% 35%)" }} />
+                      <p className="text-[10px]" style={{ color: "hsl(240 5% 40%)" }}>No active pipeline deal</p>
+                      <button className="text-[10px] mt-0.5 underline" style={{ color: "hsl(140 12% 58%)" }} onClick={() => toast.success("Create deal from email (demo)")}>
+                        Create deal →
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        });
+      })()}
 
       {/* Messages — conversation stacked */}
       <div className="space-y-2">
@@ -824,6 +994,7 @@ export default function DemoEmailTab() {
             )}
             {customLabels.map(label => {
               const isActive = searchQuery === `is:${label}`;
+              const labelCount = threads.filter(t => t.tags.some(tg => tg.toLowerCase() === label.toLowerCase())).length;
               return (
                 <button
                   key={label}
@@ -835,7 +1006,12 @@ export default function DemoEmailTab() {
                   style={!isActive ? { color: "hsl(240 5% 56%)" } : {}}
                 >
                   <Tag className="h-3.5 w-3.5" style={{ color: "hsl(140 12% 50%)" }} />
-                  {label}
+                  <span className="flex-1">{label}</span>
+                  {labelCount > 0 && (
+                    <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full" style={{ background: "hsl(140 12% 42% / 0.15)", color: "hsl(140 12% 58%)" }}>
+                      {labelCount}
+                    </span>
+                  )}
                 </button>
               );
             })}
