@@ -287,9 +287,6 @@ type Step = "auth" | "subscribe" | "welcome";
 export default function ConnectDemoAuth() {
   const navigate = useNavigate();
   const [step, setStep] = useState<Step>("auth");
-  const [pendingStep, setPendingStep] = useState<Step | null>(null);
-  const [transitioning, setTransitioning] = useState(false);
-  const [transPhase, setTransPhase] = useState<"collapse" | "expand">("collapse");
   const [cardVisible, setCardVisible] = useState(true);
 
   const [email, setEmail] = useState("");
@@ -331,25 +328,13 @@ export default function ConnectDemoAuth() {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  // Transition logic: collapse old card → swap step → expand new card
   const goToStep = useCallback((next: Step) => {
-    setPendingStep(next);
-    setTransitioning(true);
-    setTransPhase("collapse");
-    setCardVisible(false); // shrink card away
+    setCardVisible(false);
+    setTimeout(() => {
+      setStep(next);
+      setTimeout(() => setCardVisible(true), 50);
+    }, 400);
   }, []);
-
-  const handleBurstDone = useCallback(() => {
-    if (transPhase === "collapse" && pendingStep) {
-      setStep(pendingStep);
-      setPendingStep(null);
-      setTransPhase("expand");
-      // Card stays hidden briefly, then shows as nodes expand outward
-      setTimeout(() => setCardVisible(true), 100);
-    } else {
-      setTransitioning(false);
-    }
-  }, [transPhase, pendingStep]);
 
   const handleAuth = (e: React.FormEvent) => {
     e.preventDefault();
@@ -392,14 +377,6 @@ export default function ConnectDemoAuth() {
         style={{ background: "radial-gradient(circle, hsl(140 12% 42% / 0.08) 0%, transparent 70%)" }} />
 
       <div className="w-full max-w-md relative z-10">
-        {/* Node burst overlay during transitions */}
-        {transitioning && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
-            <div className="w-[400px] h-[400px]">
-              <NodeBurstTransition phase={transPhase} onDone={handleBurstDone} />
-            </div>
-          </div>
-        )}
 
         <div className="space-y-6">
           {step === "auth" && (
@@ -553,12 +530,6 @@ export default function ConnectDemoAuth() {
                   Welcome to AuRa Connect
                 </h2>
 
-                <p
-                  className="mb-4 transition-all duration-500"
-                  style={{ color: "hsl(140 12% 42%)", opacity: buildPhase >= 3 ? 1 : 0, transform: buildPhase >= 3 ? "translateY(0)" : "translateY(10px)" }}
-                >
-                  Your relationship intelligence suite
-                </p>
 
                 <div className="mx-auto mb-4 h-px transition-all duration-700" style={{
                   background: "hsl(140 12% 42% / 0.3)",
