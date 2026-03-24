@@ -189,13 +189,13 @@ function TaglineNodes() {
     }
     resize();
 
-    const NODE_COUNT = 8;
+    const NODE_COUNT = 14;
     const nodes = Array.from({ length: NODE_COUNT }, (_, i) => ({
       angle: (Math.PI * 2 * i) / NODE_COUNT,
-      speed: 0.003 + Math.random() * 0.004,
-      radiusX: 80 + Math.random() * 60,
-      radiusY: 14 + Math.random() * 10,
-      r: 2 + Math.random() * 2,
+      speed: 0.002 + Math.random() * 0.004,
+      radiusX: 120 + Math.random() * 100,
+      radiusY: 18 + Math.random() * 16,
+      r: 2 + Math.random() * 2.5,
       phase: Math.random() * Math.PI * 2,
     }));
 
@@ -231,11 +231,11 @@ function TaglineNodes() {
           const bx = cx + Math.cos(nodes[j].angle + nodes[j].phase) * nodes[j].radiusX;
           const by = cy + Math.sin(nodes[j].angle + nodes[j].phase) * nodes[j].radiusY;
           const d = Math.sqrt((ax - bx) ** 2 + (ay - by) ** 2);
-          if (d < 100) {
+          if (d < 140) {
             ctx.beginPath();
             ctx.moveTo(ax, ay);
             ctx.lineTo(bx, by);
-            ctx.strokeStyle = `hsla(140, 12%, 55%, ${0.12 * (1 - d / 100)})`;
+            ctx.strokeStyle = `hsla(140, 12%, 55%, ${0.12 * (1 - d / 140)})`;
             ctx.lineWidth = 0.8;
             ctx.stroke();
           }
@@ -363,20 +363,24 @@ export default function ConnectDemoAuth() {
     navigate("/connectdemo");
   };
 
-  /* ── shared header (logo + tagline) ── */
-  const renderHeader = () => (
+  /* ── shared header (logo only for pages 2+3) ── */
+  const renderHeader = (showTagline = false) => (
     <div className="text-center space-y-3">
       <div className="mx-auto flex items-center justify-center"><AuraLogo size={48} /></div>
       <h1 className="text-xl font-bold text-white">AuRa Connect</h1>
-      <p className="text-sm font-medium" style={{ color: "hsl(140 12% 58%)" }}>
-        You already know the right people. You just don't know how to get there.
-      </p>
-      <div className="relative py-2">
-        <TaglineNodes />
-        <p className="text-sm font-semibold italic sage-shimmer relative z-10">
-          Let us show you the way in.
-        </p>
-      </div>
+      {showTagline && (
+        <>
+          <p className="text-sm font-medium" style={{ color: "hsl(140 12% 58%)" }}>
+            You already know the right people. You just don't know how to get there.
+          </p>
+          <div className="relative py-4" style={{ minHeight: 56 }}>
+            <TaglineNodes />
+            <p className="text-sm font-semibold italic sage-shimmer relative z-10">
+              Let us show you the way in.
+            </p>
+          </div>
+        </>
+      )}
     </div>
   );
 
@@ -410,7 +414,7 @@ export default function ConnectDemoAuth() {
                   transform: cardVisible ? "scale(1)" : "scale(0.7)",
                 }}
               >
-                {renderHeader()}
+                {renderHeader(true)}
                 <form onSubmit={handleAuth} className="space-y-4">
                   <div className="space-y-2">
                     <Label className="text-white/80">Name</Label>
@@ -548,15 +552,6 @@ export default function ConnectDemoAuth() {
                 >
                   Welcome to AuRa Connect
                 </h2>
-                <p className="text-sm font-medium mb-1" style={{ color: "hsl(140 12% 58%)", transitionDuration: "600ms", opacity: buildPhase >= 2 ? 1 : 0 }}>
-                  You already know the right people. You just don't know how to get there.
-                </p>
-                <div className="relative py-2 mb-3">
-                  <TaglineNodes />
-                  <p className="text-sm font-semibold italic sage-shimmer relative z-10">
-                    Let us show you the way in.
-                  </p>
-                </div>
 
                 <p
                   className="mb-4 transition-all duration-500"
