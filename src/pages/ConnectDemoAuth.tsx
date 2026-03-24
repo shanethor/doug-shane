@@ -1,10 +1,13 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowRight, Zap, Shield, BarChart3, Mail, Users, Sparkles as SparklesIcon, Search, Check, Lock } from "lucide-react";
+import { ArrowRight, Zap, Shield, BarChart3, Mail, Users, Sparkles as SparklesIcon, Search, Check, Lock, Loader2 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import { supabase } from "@/integrations/supabase/client";
+import { getAuthHeaders } from "@/lib/auth-fetch";
+import { toast } from "sonner";
 
 const AuraLogo = ({ size = 56 }: { size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 100 100" fill="none">
@@ -285,18 +288,19 @@ const INDUSTRIES = [
 ];
 type Step = "auth" | "subscribe" | "welcome";
 
-const ACCOUNT_OPTIONS = [
-  { id: "google", label: "Google", desc: "Gmail, Contacts, Calendar", color: "#4285F4", icon: "G" },
-  { id: "outlook", label: "Outlook", desc: "Email, Contacts, Calendar", color: "#0078D4", icon: "O" },
-  { id: "linkedin", label: "LinkedIn", desc: "Contacts, Posting", color: "#0A66C2", icon: "in" },
-  { id: "instagram", label: "Instagram", desc: "Contacts, Posting", color: "#E4405F", icon: "IG" },
-  { id: "facebook", label: "Facebook", desc: "Contacts, Posting", color: "#1877F2", icon: "f" },
-  { id: "slack", label: "Slack", desc: "Messaging, Notifications", color: "#4A154B", icon: "S" },
-  { id: "apple", label: "Apple ID", desc: "Contacts, Calendar", color: "#A2AAAD", icon: "" },
+const ACCOUNT_OPTIONS: { id: string; label: string; desc: string; color: string; icon: string; oauthProvider?: string; status: "ready" | "coming_soon" }[] = [
+  { id: "google", label: "Google", desc: "Gmail, Contacts, Calendar", color: "#4285F4", icon: "G", oauthProvider: "gmail", status: "ready" },
+  { id: "outlook", label: "Outlook", desc: "Email, Contacts, Calendar", color: "#0078D4", icon: "O", oauthProvider: "outlook", status: "ready" },
+  { id: "linkedin", label: "LinkedIn", desc: "Contacts, Posting", color: "#0A66C2", icon: "in", status: "coming_soon" },
+  { id: "instagram", label: "Instagram", desc: "Contacts, Posting", color: "#E4405F", icon: "IG", status: "coming_soon" },
+  { id: "facebook", label: "Facebook", desc: "Contacts, Posting", color: "#1877F2", icon: "f", status: "coming_soon" },
+  { id: "slack", label: "Slack", desc: "Messaging, Notifications", color: "#4A154B", icon: "S", status: "ready" },
+  { id: "apple", label: "Apple ID", desc: "Contacts, Calendar", color: "#A2AAAD", icon: "", status: "coming_soon" },
 ];
 
 export default function ConnectDemoAuth() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [step, setStep] = useState<Step>("auth");
   const [cardVisible, setCardVisible] = useState(true);
 
@@ -308,18 +312,179 @@ export default function ConnectDemoAuth() {
   const industryRef = useRef<HTMLDivElement>(null);
   const [welcomeReady, setWelcomeReady] = useState(false);
   const [buildPhase, setBuildPhase] = useState(0);
-  const [connectedAccounts, setConnectedAccounts] = useState<Set<string>>(new Set());
+  const [connectedAccounts, setConnectedAccounts] = useState<Set<string>>(() => {
+    try {
+      const saved = sessionStorage.getItem("connect-demo-linked");
+      return saved ? new Set(JSON.parse(saved)) : new Set();
+    } catch { return new Set(); }
+  });
+  const [connectingAccount, setConnectingAccount] = useState<string | null>(null);
+  const [syncingNetwork, setSyncingNetwork] = useState(false);
 
-  const toggleAccount = (id: string) => {
-    setConnectedAccounts(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
-      return next;
-    });
+  // Persist connected accounts
+  useEffect(() => {
+    sessionStorage.setItem("connect-demo-linked", JSON.stringify([...connectedAccounts]));
+  }, [connectedAccounts]);
+
+  // Handle OAuth callback return — check if we're returning from an OAuth flow
+  useEffect(() => {
+    const code = searchParams.get("code");
+    const state = searchParams.get("state");
+    const pendingProvider = sessionStorage.getItem("connect-demo-oauth-pending");
+
+    if (code && state && pendingProvider) {
+      // We're returning from OAuth — exchange the code
+      sessionStorage.removeItem("connect-demo-oauth-pending");
+      setStep("welcome");
+      setConnectingAccount(pendingProvider === "gmail" ? "google" : pendingProvider === "outlook" ? "outlook" : pendingProvider);
+
+      (async () => {
+        try {
+          const headers = await getAuthHeaders();
+          const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/email-oauth`, {
+            method: "POST",
+            headers,
+            body: JSON.stringify({
+              action: "exchange_code",
+              provider: state,
+              code,
+              redirect_uri: `${window.location.origin}/connectdemo/auth`,
+            }),
+          });
+          const data = await resp.json();
+          if (!resp.ok) throw new Error(data.error || "Failed to connect");
+
+          const accountId = state === "gmail" ? "google" : "outlook";
+          setConnectedAccounts(prev => new Set([...prev, accountId]));
+          toast.success(`Connected ${data.email} via ${state === "gmail" ? "Google" : "Outlook"}`);
+
+          // Auto-trigger contact sync
+          triggerContactSync(state === "gmail" ? "sync_google" : "sync_outlook", headers);
+        } catch (err: any) {
+          toast.error(err.message || "Connection failed");
+        } finally {
+          setConnectingAccount(null);
+          // Clean URL params
+          window.history.replaceState({}, "", "/connectdemo/auth");
+        }
+      })();
+    }
+
+    // Restore step if returning from OAuth
+    if (pendingProvider && !code) {
+      // User cancelled OAuth
+      sessionStorage.removeItem("connect-demo-oauth-pending");
+    }
+
+    // If we have saved connected accounts but are on auth step, check if we should be on welcome
+    const savedStep = sessionStorage.getItem("connect-demo-step");
+    if (savedStep === "welcome") setStep("welcome");
+    else if (savedStep === "subscribe") setStep("subscribe");
+  }, [searchParams]);
+
+  // Save step to session so OAuth return knows where to go
+  useEffect(() => {
+    sessionStorage.setItem("connect-demo-step", step);
+  }, [step]);
+
+  const triggerContactSync = async (action: string, headers: Record<string, string>) => {
+    try {
+      await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync-contacts`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ action }),
+      });
+    } catch (e) {
+      console.error("Contact sync failed:", e);
+    }
+  };
+
+  const handleAccountConnect = async (acc: typeof ACCOUNT_OPTIONS[0]) => {
+    if (acc.status === "coming_soon") {
+      toast.info(`${acc.label} integration coming soon`);
+      return;
+    }
+
+    // Google / Outlook — real OAuth
+    if (acc.oauthProvider) {
+      setConnectingAccount(acc.id);
+      try {
+        const headers = await getAuthHeaders();
+        const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/email-oauth`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({
+            action: "get_auth_url",
+            provider: acc.oauthProvider,
+            redirect_uri: `${window.location.origin}/connectdemo/auth`,
+          }),
+        });
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data.error || "Failed to get auth URL");
+
+        // Store pending state so we know to resume on return
+        sessionStorage.setItem("connect-demo-oauth-pending", acc.oauthProvider);
+        window.location.href = data.url;
+      } catch (err: any) {
+        toast.error(err.message || `Failed to connect ${acc.label}`);
+        setConnectingAccount(null);
+      }
+      return;
+    }
+
+    // Slack — mark as connected (uses Slack connector already linked)
+    if (acc.id === "slack") {
+      setConnectedAccounts(prev => new Set([...prev, "slack"]));
+      toast.success("Slack connected");
+      return;
+    }
   };
 
   const connectedCount = connectedAccounts.size;
   const unlockThreshold = 5;
+
+  // Start building network after 2+ accounts linked
+  const handleBuildNetwork = async () => {
+    if (connectedCount < 1) return;
+    setSyncingNetwork(true);
+    try {
+      const headers = await getAuthHeaders();
+      // Trigger contact resolver to merge + deduplicate
+      await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/contact-resolver`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ action: "resolve" }),
+      });
+      // Trigger Hunter.io enrichment
+      await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/hunter-enrich`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ action: "bulk_enrich", limit: 15 }),
+      });
+      toast.success("Network intelligence is building — your connections are being enriched");
+    } catch (e) {
+      console.error("Network build error:", e);
+    } finally {
+      setSyncingNetwork(false);
+    }
+  };
+
+  const toggleAccount = (id: string) => {
+    const acc = ACCOUNT_OPTIONS.find(a => a.id === id);
+    if (!acc) return;
+
+    // If already connected, allow disconnect
+    if (connectedAccounts.has(id)) {
+      setConnectedAccounts(prev => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+      return;
+    }
+
+    handleAccountConnect(acc);
+  };
 
   useEffect(() => {
     if (step === "welcome") {
@@ -364,10 +529,14 @@ export default function ConnectDemoAuth() {
     if (email && password && industry) goToStep("subscribe");
   };
   const handleSubscribe = () => goToStep("welcome");
-  const handleEnter = () => {
+  const handleEnter = async () => {
     sessionStorage.setItem("connect-demo-auth", "true");
     sessionStorage.setItem("connect-demo-name", name || email.split("@")[0]);
     sessionStorage.setItem("connect-demo-industry", industry);
+    // Trigger network build in background if accounts connected
+    if (connectedCount > 0) {
+      handleBuildNetwork(); // fire-and-forget
+    }
     navigate("/connectdemo");
   };
 
@@ -626,11 +795,14 @@ export default function ConnectDemoAuth() {
                     <div className="grid grid-cols-2 gap-2">
                       {ACCOUNT_OPTIONS.map(acc => {
                         const connected = connectedAccounts.has(acc.id);
+                        const isConnecting = connectingAccount === acc.id;
+                        const comingSoon = acc.status === "coming_soon";
                         return (
                           <button
                             key={acc.id}
                             onClick={() => toggleAccount(acc.id)}
-                            className="relative flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-left transition-all duration-300"
+                            disabled={isConnecting}
+                            className="relative flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-left transition-all duration-300 disabled:opacity-60"
                             style={{
                               background: connected ? `${acc.color}15` : "hsl(240 6% 10%)",
                               border: `1px solid ${connected ? acc.color + "50" : "hsl(240 6% 18%)"}`,
@@ -643,23 +815,40 @@ export default function ConnectDemoAuth() {
                                 color: connected ? "#fff" : "hsl(240 5% 50%)",
                               }}
                             >
-                              {acc.id === "apple" ? (
+                              {isConnecting ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : acc.id === "apple" ? (
                                 <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
                               ) : acc.icon}
                             </div>
                             <div className="min-w-0 flex-1">
                               <p className="text-[11px] font-semibold text-white truncate">{acc.label}</p>
-                              <p className="text-[9px] truncate" style={{ color: "hsl(240 5% 46%)" }}>{acc.desc}</p>
+                              <p className="text-[9px] truncate" style={{ color: "hsl(240 5% 46%)" }}>
+                                {isConnecting ? "Connecting..." : comingSoon && !connected ? "Coming soon" : acc.desc}
+                              </p>
                             </div>
                             {connected && (
                               <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full flex items-center justify-center" style={{ background: acc.color }}>
                                 <Check className="h-2.5 w-2.5 text-white" />
                               </div>
                             )}
+                            {comingSoon && !connected && (
+                              <div className="absolute top-1.5 right-1.5">
+                                <Lock className="h-3 w-3" style={{ color: "hsl(240 5% 36%)" }} />
+                              </div>
+                            )}
                           </button>
                         );
                       })}
                     </div>
+
+                    {/* Network building indicator */}
+                    {syncingNetwork && (
+                      <div className="flex items-center justify-center gap-2 py-2">
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" style={{ color: "hsl(140 12% 55%)" }} />
+                        <span className="text-[10px] font-medium" style={{ color: "hsl(140 12% 55%)" }}>Building your network intelligence...</span>
+                      </div>
+                    )}
                   </div>
 
                   <Button
