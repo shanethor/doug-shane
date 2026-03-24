@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -73,8 +73,34 @@ export default function DemoSpotlightTab() {
   const [editBrand, setEditBrand] = useState<BrandPackage | null>(null);
   const [selectedType, setSelectedType] = useState<string>("");
 
-  const loadHistory = useCallback(async () => {}, []);
-  const loadBrands = useCallback(async () => {}, []);
+  const loadHistory = useCallback(async () => {
+    try {
+      const { data } = await supabase.from("generated_forms").select("*").order("created_at", { ascending: false }).limit(20);
+      if (data) setRealHistory(data.map(d => ({ id: d.id, title: d.display_name, type: d.form_type, status: "ready", created_at: d.created_at, result_image_url: null })));
+    } catch {}
+  }, []);
+
+  const loadBrands = useCallback(async () => {
+    try {
+      const { data } = await supabase.from("branding_packages").select("*").order("created_at", { ascending: false });
+      if (data && data.length > 0) {
+        setRealBrands(data.map(d => ({
+          id: d.id,
+          name: d.name,
+          brand_name: d.brand_name,
+          is_default: d.is_default,
+          logo_url: d.logo_url,
+          brand_colors: (d.brand_colors as string[]) || ["#8A9A8C", "#F5F5F0"],
+          tagline: d.tagline,
+          disclaimer: d.disclaimer,
+          industry: d.industry,
+          tone: d.tone,
+        })));
+      }
+    } catch {}
+  }, []);
+
+  useEffect(() => { loadBrands(); loadHistory(); }, [loadBrands, loadHistory]);
 
   const allBrands = [...realBrands, ...SAMPLE_BRANDS.filter(sb => !realBrands.some(rb => rb.name === sb.name))];
   const allFlyers = [...realHistory, ...SAMPLE_FLYERS];
