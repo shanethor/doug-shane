@@ -191,20 +191,20 @@ export default function LandingPage() {
       <div className="relative z-[1]">
         {/* ═══ NAV ═══ */}
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] w-[calc(100%-2rem)] max-w-[780px]">
-          <nav className="flex items-center justify-between py-2 pl-5 pr-2 bg-[#101012]/80 backdrop-blur-[24px] border border-white/[0.06] rounded-full">
+          <nav className="flex items-center justify-between py-2 pl-5 pr-2 bg-[#101012]/80 backdrop-blur-[24px] border border-[hsl(140_12%_42%/0.12)] rounded-full">
             <div className="flex items-center gap-6">
               <Link to="/home" className="flex items-center gap-2.5 no-underline">
                 <AuraLogoSVG size={22} />
                 <span className="text-[15px] font-semibold tracking-[0.08em] text-white">AURA</span>
               </Link>
               <div className="hidden md:flex gap-1">
-                <a href="#connect" className="text-[13px] text-[#A1A1AA] no-underline px-3 py-1.5 rounded-full hover:text-white transition-colors">Connect</a>
-                <a href="#concierge" className="text-[13px] text-[#A1A1AA] no-underline px-3 py-1.5 rounded-full hover:text-white transition-colors">Concierge</a>
-                <a href="#branches" className="text-[13px] text-[#A1A1AA] no-underline px-3 py-1.5 rounded-full hover:text-white transition-colors">Platform</a>
-                <a href="#partners" className="text-[13px] text-[#A1A1AA] no-underline px-3 py-1.5 rounded-full hover:text-white transition-colors">Partners</a>
+                <a href="#connect" className="text-[13px] text-[#A1A1AA] no-underline px-3 py-1.5 rounded-full hover:text-[hsl(140_12%_72%)] transition-colors">Connect</a>
+                <a href="#concierge" className="text-[13px] text-[#A1A1AA] no-underline px-3 py-1.5 rounded-full hover:text-[hsl(140_12%_72%)] transition-colors">Concierge</a>
+                <a href="#branches" className="text-[13px] text-[#A1A1AA] no-underline px-3 py-1.5 rounded-full hover:text-[hsl(140_12%_72%)] transition-colors">Platform</a>
+                <a href="#partners" className="text-[13px] text-[#A1A1AA] no-underline px-3 py-1.5 rounded-full hover:text-[hsl(140_12%_72%)] transition-colors">Partners</a>
               </div>
             </div>
-            <Link to="/auth" className="text-[13px] font-medium text-[#08080A] bg-white px-5 py-2 rounded-full hover:opacity-85 transition-opacity whitespace-nowrap no-underline">
+            <Link to="/auth" className="text-[13px] font-medium text-[#08080A] bg-[hsl(140_12%_42%)] px-5 py-2 rounded-full hover:bg-[hsl(140_12%_52%)] transition-colors whitespace-nowrap no-underline">
               Open app
             </Link>
           </nav>
