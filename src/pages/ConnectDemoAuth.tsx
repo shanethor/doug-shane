@@ -231,7 +231,7 @@ function TaglineNodes() {
           const bx = cx + Math.cos(nodes[j].angle + nodes[j].phase) * nodes[j].radiusX;
           const by = cy + Math.sin(nodes[j].angle + nodes[j].phase) * nodes[j].radiusY;
           const d = Math.sqrt((ax - bx) ** 2 + (ay - by) ** 2);
-          if (d < 100) {
+          if (d < 140) {
             ctx.beginPath();
             ctx.moveTo(ax, ay);
             ctx.lineTo(bx, by);
