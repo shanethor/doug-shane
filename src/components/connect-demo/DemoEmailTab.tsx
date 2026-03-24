@@ -10,7 +10,7 @@ import {
   ArrowLeft, CheckCheck, Clock, X, Plus, Link2, User, Wand2,
   FileText, Shield, AlertTriangle, TrendingUp, Zap, Star, Inbox,
   SendHorizonal, FilePenLine, Tag, ChevronDown, ChevronUp, Trash2, Copy,
-  Users, Target, Phone, MapPin, Building2, Activity,
+  Users, Target, Phone, MapPin, Building2, Activity, CalendarPlus, CalendarCheck, ExternalLink,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -332,6 +332,15 @@ export default function DemoEmailTab() {
   // Smart feature panel state
   const [activeFeaturePanel, setActiveFeaturePanel] = useState<string | null>(null);
 
+  // Inline calendar event creation
+  const [showCalendarCreate, setShowCalendarCreate] = useState(false);
+  const [calEventTitle, setCalEventTitle] = useState("");
+  const [calEventDate, setCalEventDate] = useState("");
+  const [calEventTime, setCalEventTime] = useState("14:00");
+  const [calEventDuration, setCalEventDuration] = useState("30");
+  const [calEventGuests, setCalEventGuests] = useState("");
+  const [calEventCreated, setCalEventCreated] = useState<{ title: string; date: string; time: string; link: string } | null>(null);
+
   // Compose state
   const [compTo, setCompTo] = useState("");
   const [compCc, setCompCc] = useState("");
@@ -351,7 +360,18 @@ export default function DemoEmailTab() {
     return true;
   });
 
-  const accountFiltered = folderFiltered.filter(t => accountFilter === "all" || t.account === accountFilter);
+  const accountFiltered = folderFiltered.filter(t => {
+    if (accountFilter === "all") return true;
+    if (accountFilter === "outreach") {
+      // Show threads where any participant has an active outreach status
+      const addrs = t.messages.map(m => m.from === "You" ? m.toAddr : m.fromAddr);
+      return addrs.some(addr => {
+        const match = CONNECT_MATCHES[addr];
+        return match && match.outreachStatus && match.outreachStatus !== "none";
+      });
+    }
+    return t.account === accountFilter;
+  });
 
   const clientFiltered = selectedClient
     ? accountFiltered.filter(t => t.messages.some(m => m.fromAddr === selectedClient || m.toAddr === selectedClient))
@@ -844,6 +864,19 @@ export default function DemoEmailTab() {
                       <Button size="sm" variant="ghost" className="text-sm h-8 gap-1.5" style={{ color: "hsl(140 12% 58%)" }} onClick={() => toast.info("Select files to attach (demo)")}>
                         <Paperclip className="h-3.5 w-3.5" /> Attach
                       </Button>
+                      <Button size="sm" variant="ghost" className="text-sm h-8 gap-1.5" style={{ color: "hsl(140 12% 58%)" }} onClick={() => {
+                        const otherParticipant = selectedThread.participants.find(p => p !== "You") || "";
+                        const otherEmail = msg.from === "You" ? msg.toAddr : msg.fromAddr;
+                        setCalEventTitle(`Meeting with ${otherParticipant}`);
+                        setCalEventGuests(otherEmail);
+                        const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1);
+                        setCalEventDate(tomorrow.toISOString().split("T")[0]);
+                        setCalEventTime("14:00");
+                        setCalEventCreated(null);
+                        setShowCalendarCreate(true);
+                      }}>
+                        <CalendarPlus className="h-3.5 w-3.5" /> Schedule
+                      </Button>
                     </div>
 
                     {/* Inline reply composer */}
@@ -1095,6 +1128,13 @@ export default function DemoEmailTab() {
                     <span className="h-2 w-2 rounded-full" style={{ background: a.color }} /> {a.key}
                   </button>
                 ))}
+                <button
+                  onClick={() => { setAccountFilter("outreach"); setSelectedClient(null); }}
+                  className={`text-sm px-2.5 py-1 rounded-md transition-colors flex items-center gap-1.5 ${accountFilter === "outreach" && !selectedClient ? "bg-white/10 text-white" : ""}`}
+                  style={accountFilter !== "outreach" || selectedClient ? { color: "hsl(240 5% 46%)" } : {}}
+                >
+                  <Activity className="h-3 w-3" style={{ color: "hsl(140 12% 58%)" }} /> Active Outreach
+                </button>
                 {selectedClient && (
                   <Badge variant="outline" className="text-xs gap-1 cursor-pointer" style={{ borderColor: "hsl(140 12% 42% / 0.3)", color: "hsl(140 12% 58%)" }} onClick={() => setSelectedClient(null)}>
                     {CLIENT_CONTACTS.find(c => c.email === selectedClient)?.name} <X className="h-3 w-3" />
@@ -1181,7 +1221,96 @@ export default function DemoEmailTab() {
         </div>
       </div>
 
-      {/* ── Dialogs ── */}
+      {/* ── Inline Calendar Event Creator ── */}
+      <Dialog open={showCalendarCreate} onOpenChange={setShowCalendarCreate}>
+        <DialogContent className="max-w-md" style={{ background: "hsl(240 8% 7%)", borderColor: "hsl(240 6% 14%)" }}>
+          <DialogHeader>
+            <DialogTitle className="text-white flex items-center gap-2">
+              <CalendarPlus className="h-5 w-5" style={{ color: "hsl(140 12% 58%)" }} />
+              {calEventCreated ? "Event Created" : "Schedule from Conversation"}
+            </DialogTitle>
+          </DialogHeader>
+          {calEventCreated ? (
+            <div className="space-y-4 animate-fade-in">
+              <div className="p-4 rounded-lg text-center" style={{ background: "hsl(140 12% 42% / 0.08)", border: "1px solid hsl(140 12% 42% / 0.25)" }}>
+                <CalendarCheck className="h-8 w-8 mx-auto mb-2" style={{ color: "hsl(140 12% 58%)" }} />
+                <p className="text-sm font-semibold text-white">{calEventCreated.title}</p>
+                <p className="text-xs mt-1" style={{ color: "hsl(240 5% 60%)" }}>
+                  {new Date(calEventCreated.date).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })} at {calEventCreated.time}
+                </p>
+                <p className="text-xs mt-1" style={{ color: "hsl(140 12% 58%)" }}>Invite sent to {calEventGuests}</p>
+              </div>
+              <div className="p-3 rounded-lg" style={{ background: "hsl(240 8% 9%)", border: "1px solid hsl(240 6% 14%)" }}>
+                <p className="text-[10px] uppercase tracking-wider font-semibold mb-2" style={{ color: "hsl(240 5% 40%)" }}>Meeting Link</p>
+                <div className="flex items-center gap-2">
+                  <code className="text-xs flex-1 truncate px-2 py-1.5 rounded" style={{ background: "hsl(240 6% 12%)", color: "hsl(140 12% 58%)" }}>
+                    {calEventCreated.link}
+                  </code>
+                  <Button size="sm" variant="outline" className="h-8 text-xs gap-1" onClick={() => { navigator.clipboard.writeText(calEventCreated.link); toast.success("Meeting link copied!"); }}>
+                    <Copy className="h-3 w-3" /> Copy
+                  </Button>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button size="sm" className="flex-1 text-sm h-9 gap-1.5" style={{ background: "hsl(140 12% 42%)" }} onClick={() => {
+                  setReplyBody(prev => prev + `\n\nI've scheduled a meeting: ${calEventCreated.title}\n📅 ${new Date(calEventCreated.date).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })} at ${calEventCreated.time}\n🔗 Join: ${calEventCreated.link}`);
+                  setShowCalendarCreate(false);
+                  toast.success("Meeting details added to your reply");
+                }}>
+                  <Send className="h-3.5 w-3.5" /> Insert into Reply
+                </Button>
+                <Button size="sm" variant="outline" className="text-sm h-9" onClick={() => setShowCalendarCreate(false)}>
+                  Done
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-medium mb-1 block" style={{ color: "hsl(240 5% 55%)" }}>Event Title</label>
+                <Input value={calEventTitle} onChange={e => setCalEventTitle(e.target.value)} className="text-sm h-9" style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 14%)", color: "white" }} />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-medium mb-1 block" style={{ color: "hsl(240 5% 55%)" }}>Date</label>
+                  <Input type="date" value={calEventDate} onChange={e => setCalEventDate(e.target.value)} className="text-sm h-9" style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 14%)", color: "white" }} />
+                </div>
+                <div>
+                  <label className="text-xs font-medium mb-1 block" style={{ color: "hsl(240 5% 55%)" }}>Time</label>
+                  <Input type="time" value={calEventTime} onChange={e => setCalEventTime(e.target.value)} className="text-sm h-9" style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 14%)", color: "white" }} />
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-medium mb-1 block" style={{ color: "hsl(240 5% 55%)" }}>Duration</label>
+                <div className="flex gap-2">
+                  {["15", "30", "45", "60"].map(d => (
+                    <button key={d} onClick={() => setCalEventDuration(d)} className={`text-xs px-3 py-1.5 rounded-md transition-colors ${calEventDuration === d ? "text-white" : ""}`}
+                      style={{ background: calEventDuration === d ? "hsl(140 12% 42%)" : "hsl(240 8% 12%)", color: calEventDuration === d ? "white" : "hsl(240 5% 55%)", border: `1px solid ${calEventDuration === d ? "hsl(140 12% 42%)" : "hsl(240 6% 18%)"}` }}>
+                      {d} min
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-medium mb-1 block" style={{ color: "hsl(240 5% 55%)" }}>Invite Guests</label>
+                <Input value={calEventGuests} onChange={e => setCalEventGuests(e.target.value)} placeholder="email@example.com" className="text-sm h-9" style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 14%)", color: "white" }} />
+              </div>
+              <div className="flex gap-2 pt-2">
+                <Button size="sm" className="flex-1 text-sm h-9 gap-1.5" style={{ background: "hsl(140 12% 42%)" }} onClick={() => {
+                  const meetId = Math.random().toString(36).slice(2, 10);
+                  const link = `${window.location.origin}/meet/${meetId}`;
+                  setCalEventCreated({ title: calEventTitle, date: calEventDate, time: calEventTime, link });
+                  toast.success("Event created & invite sent!");
+                }}>
+                  <CalendarCheck className="h-3.5 w-3.5" /> Create & Send Invite
+                </Button>
+                <Button size="sm" variant="outline" className="text-sm h-9" onClick={() => setShowCalendarCreate(false)}>Cancel</Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={showAccounts} onOpenChange={setShowAccounts}>
         <DialogContent style={{ background: "hsl(240 8% 7%)", borderColor: "hsl(240 6% 14%)" }}>
           <DialogHeader><DialogTitle className="text-white">Connected Inboxes</DialogTitle></DialogHeader>
