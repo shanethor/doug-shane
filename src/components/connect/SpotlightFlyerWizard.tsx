@@ -239,13 +239,36 @@ export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId, ini
         const detectedType = normalizeFlyerType(flyerType || initialType || "event");
         setFlyerId(`demo-${Date.now()}`);
         setFlyerType(detectedType);
-        setDescription((current) => current || rawPrompt.trim());
-        setTitle((current) => current || inferTitleFromText(rawPrompt, detectedType));
-        setCta((current) => current || defaultCtaForType(detectedType));
+
+        // Parse rawPrompt locally for dates, locations, and details
+        const prompt = rawPrompt.trim();
+        if (!description.trim()) setDescription(prompt);
+        if (!title.trim()) setTitle(inferTitleFromText(prompt, detectedType));
+        if (!cta.trim()) setCta(defaultCtaForType(detectedType));
+
+        // Extract date patterns from rawPrompt
+        const dateMatch = prompt.match(/\b(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2}(?:st|nd|rd|th)?,?\s*\d{0,4}/i)
+          || prompt.match(/\b\d{1,2}\/\d{1,2}(?:\/\d{2,4})?\b/)
+          || prompt.match(/\b(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday),?\s+\w+\s+\d{1,2}/i);
+        if (dateMatch && !dateTime.trim()) {
+          const timeMatch = prompt.match(/(?:at|@)\s*(\d{1,2}(?::\d{2})?\s*(?:AM|PM|am|pm)?)/i);
+          setDateTime(dateMatch[0] + (timeMatch ? ` at ${timeMatch[1]}` : ""));
+        }
+
+        // Extract location patterns
+        const locMatch = prompt.match(/(?:at|@|in|venue[:\s]+|location[:\s]+)\s+(?:the\s+)?([A-Z][A-Za-z\s'&]+(?:Center|Hall|Hotel|Room|Building|Office|Park|Club|Restaurant|Bistro|Bar|Church|Library|Arena|Stadium|Plaza|Brewery|Studio))/i)
+          || prompt.match(/(?:at|@)\s+(?:the\s+)?([A-Z][A-Za-z\s'&]{3,30})/);
+        if (locMatch && !location.trim()) setLocation(locMatch[1].trim());
+
+        // Extract bullet-like details
+        const bulletPieces = fallbackBulletsFromText(prompt);
+        if (bulletPieces.length > 0 && !bullets.some(b => b.trim())) {
+          setBullets(bulletPieces.length > 0 ? bulletPieces : [""]);
+        }
 
         try {
           const enrichment = await requestDemoEnrichment({
-            raw_prompt: rawPrompt.trim(),
+            raw_prompt: prompt,
             type: detectedType,
             brand_name: brandName || undefined,
             brand_colors: brandColors.filter(Boolean),
