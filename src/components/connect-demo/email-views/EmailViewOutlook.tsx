@@ -158,7 +158,7 @@ export default function EmailViewOutlook({ engine, ai }: { engine: Engine; ai: A
               <Textarea placeholder="Click here to reply…" value={replyBody} onChange={e => setReplyBody(e.target.value)} className="min-h-[50px] text-sm resize-none mb-2" style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 14%)", color: "white" }} />
               <div className="flex gap-2">
                 <Button size="sm" style={{ background: "hsl(200 60% 50%)" }} onClick={() => { toast.success("Sent (demo)"); setReplyBody(""); }}><SendIcon className="h-3.5 w-3.5 mr-1" /> Send</Button>
-                <Button size="sm" variant="outline" className="gap-1" onClick={() => toast.success("AI draft (demo)")}><Sparkles className="h-3.5 w-3.5" /> AI Draft</Button>
+                <Button size="sm" variant="outline" className="gap-1" onClick={() => selectedThread && ai.aiReply(selectedThread)} disabled={ai.replyLoading}><Sparkles className={`h-3.5 w-3.5 ${ai.replyLoading ? "animate-spin" : ""}`} /> {ai.replyLoading ? "Drafting…" : "AI Draft"}</Button>
               </div>
             </div>
           </div>
