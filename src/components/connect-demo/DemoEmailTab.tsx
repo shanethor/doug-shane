@@ -864,6 +864,19 @@ export default function DemoEmailTab() {
                       <Button size="sm" variant="ghost" className="text-sm h-8 gap-1.5" style={{ color: "hsl(140 12% 58%)" }} onClick={() => toast.info("Select files to attach (demo)")}>
                         <Paperclip className="h-3.5 w-3.5" /> Attach
                       </Button>
+                      <Button size="sm" variant="ghost" className="text-sm h-8 gap-1.5" style={{ color: "hsl(140 12% 58%)" }} onClick={() => {
+                        const otherParticipant = selectedThread.participants.find(p => p !== "You") || "";
+                        const otherEmail = msg.from === "You" ? msg.toAddr : msg.fromAddr;
+                        setCalEventTitle(`Meeting with ${otherParticipant}`);
+                        setCalEventGuests(otherEmail);
+                        const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 1);
+                        setCalEventDate(tomorrow.toISOString().split("T")[0]);
+                        setCalEventTime("14:00");
+                        setCalEventCreated(null);
+                        setShowCalendarCreate(true);
+                      }}>
+                        <CalendarPlus className="h-3.5 w-3.5" /> Schedule
+                      </Button>
                     </div>
 
                     {/* Inline reply composer */}
