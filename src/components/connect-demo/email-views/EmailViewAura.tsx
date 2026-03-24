@@ -13,7 +13,7 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import type { useEmailEngine } from "./useEmailEngine";
-import { SYNCED_ACCOUNTS, CONNECT_MATCHES, TIER_COLORS, OUTREACH_COLORS, CLIENT_CONTACTS } from "./useEmailEngine";
+import { SYNCED_ACCOUNTS, CONNECT_MATCHES, TIER_COLORS, OUTREACH_COLORS, CLIENT_CONTACTS, SMART_FEATURES } from "./useEmailEngine";
 
 type Engine = ReturnType<typeof useEmailEngine>;
 type Folder = "inbox" | "sent" | "starred" | "drafts";
@@ -115,6 +115,24 @@ export default function EmailViewAura({ engine }: { engine: Engine }) {
               <Activity className="h-3 w-3" style={{ color: "hsl(140 12% 58%)" }} /> Outreach
             </button>
           </div>
+
+          {/* AI Smart Tools strip */}
+          {!selectedThread && (
+            <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
+              {SMART_FEATURES.map((f, i) => {
+                const icons = [Sparkles, FileText, Activity, BarChart3, CalendarPlus, Target];
+                const Icon = icons[i] || Sparkles;
+                return (
+                  <button key={f.label} onClick={() => toast.success(`${f.label} (demo)`)}
+                    className="flex flex-col items-center gap-1 rounded-md px-2 py-2 text-center transition-colors hover:bg-white/[0.06]"
+                    style={{ background: "hsl(140 12% 42% / 0.04)", border: "1px solid hsl(140 12% 42% / 0.12)" }}>
+                    <Icon className="h-3.5 w-3.5" style={{ color: "hsl(140 12% 58%)" }} />
+                    <span className="text-[10px] font-medium leading-tight" style={{ color: "hsl(140 12% 65%)" }}>{f.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
 
           {selectedThread ? (
             <div className="space-y-3 animate-fade-in">
