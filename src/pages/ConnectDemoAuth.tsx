@@ -849,7 +849,7 @@ export default function ConnectDemoAuth() {
                         <span className="text-[10px] font-medium" style={{ color: "hsl(140 12% 55%)" }}>Building your network intelligence...</span>
                       </div>
                     )}
-                    </div>
+                  </div>
                   </div>
 
                   <Button
