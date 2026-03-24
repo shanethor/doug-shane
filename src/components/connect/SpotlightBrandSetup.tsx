@@ -7,7 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2, Upload, Palette, Building2, X } from "lucide-react";
+import { Loader2, Upload, Palette, Building2, X, Sparkles, FileImage, CheckCircle2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 export interface BrandPackage {
   id: string;
@@ -49,6 +50,15 @@ const INDUSTRIES = [
   { value: "other", label: "Other" },
 ];
 
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
 export default function SpotlightBrandSetup({ existing, onSave, onCancel }: Props) {
   const [name, setName] = useState(existing?.name || "Default");
   const [brandName, setBrandName] = useState(existing?.brand_name || "");
@@ -60,7 +70,58 @@ export default function SpotlightBrandSetup({ existing, onSave, onCancel }: Prop
   const [tone, setTone] = useState(existing?.tone || "professional");
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
+  const [materialUploading, setMaterialUploading] = useState(false);
+  const [materialAnalyzing, setMaterialAnalyzing] = useState(false);
+  const [materialFiles, setMaterialFiles] = useState<{ name: string; url: string }[]>([]);
+  const [designNotes, setDesignNotes] = useState<string>("");
+  const [fontStyles, setFontStyles] = useState<string[]>([]);
+  const [brandExtracted, setBrandExtracted] = useState(false);
+  const [materialExtracted, setMaterialExtracted] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const materialRef = useRef<HTMLInputElement>(null);
+
+  const analyzeBrandImage = async (base64Url: string, type: "logo" | "material") => {
+    try {
+      const { data, error } = await supabase.functions.invoke("spotlight-flyer", {
+        body: { action: "analyze_brand", image_url: base64Url, image_type: type },
+      });
+      if (error) throw error;
+      const attrs = data?.attributes;
+      if (!attrs) return;
+
+      if (attrs.colors) {
+        const hexColors = attrs.colors
+          .filter((c: string) => /^#[0-9A-Fa-f]{3,8}$/.test(c))
+          .slice(0, 4);
+        if (hexColors.length > 0) setBrandColors(hexColors);
+      }
+      if (type === "logo") {
+        if (attrs.industry) {
+          const matched = INDUSTRIES.find(i => i.value === attrs.industry || i.label.toLowerCase().includes(attrs.industry.toLowerCase()));
+          if (matched) setIndustry(matched.value);
+        }
+        if (attrs.tone) {
+          const matched = TONES.find(t => t.value === attrs.tone || t.label.toLowerCase().includes(attrs.tone.toLowerCase()));
+          if (matched) setTone(matched.value);
+        }
+        setBrandExtracted(true);
+        toast.success("Brand colors, industry & tone extracted from logo");
+      } else {
+        if (attrs.font_styles) setFontStyles(prev => [...new Set([...prev, ...attrs.font_styles])]);
+        if (attrs.design_notes) setDesignNotes(prev => prev ? `${prev}\n${attrs.design_notes}` : attrs.design_notes);
+        if (attrs.tone) {
+          const matched = TONES.find(t => t.value === attrs.tone || t.label.toLowerCase().includes(attrs.tone.toLowerCase()));
+          if (matched) setTone(matched.value);
+        }
+        setMaterialExtracted(true);
+        toast.success("Design theme & fonts extracted from material");
+      }
+    } catch (err: any) {
+      console.error("Brand analysis error:", err);
+      toast.error("Could not analyze image — brand saved without AI extraction");
+    }
+  };
 
   const handleLogoUpload = async (file: File) => {
     if (!file.type.startsWith("image/")) {
@@ -72,6 +133,7 @@ export default function SpotlightBrandSetup({ existing, onSave, onCancel }: Prop
       return;
     }
     setUploading(true);
+    setAnalyzing(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
@@ -80,11 +142,40 @@ export default function SpotlightBrandSetup({ existing, onSave, onCancel }: Prop
       if (error) throw error;
       const { data: urlData } = supabase.storage.from("brand-logos").getPublicUrl(path);
       setLogoUrl(urlData.publicUrl);
-      toast.success("Logo uploaded");
+      toast.success("Logo uploaded — analyzing brand…");
+
+      // Analyze via AI
+      const base64 = await fileToBase64(file);
+      await analyzeBrandImage(base64, "logo");
     } catch (err: any) {
       toast.error(err.message || "Upload failed");
     } finally {
       setUploading(false);
+      setAnalyzing(false);
+    }
+  };
+
+  const handleMaterialUpload = async (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please upload an image file");
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("File must be under 10MB");
+      return;
+    }
+    setMaterialUploading(true);
+    setMaterialAnalyzing(true);
+    try {
+      const base64 = await fileToBase64(file);
+      setMaterialFiles(prev => [...prev, { name: file.name, url: base64.slice(0, 50) }]);
+      toast.info("Analyzing marketing material…");
+      await analyzeBrandImage(base64, "material");
+    } catch (err: any) {
+      toast.error(err.message || "Analysis failed");
+    } finally {
+      setMaterialUploading(false);
+      setMaterialAnalyzing(false);
     }
   };
 
@@ -108,6 +199,9 @@ export default function SpotlightBrandSetup({ existing, onSave, onCancel }: Prop
           industry: industry || null,
           tone,
           is_default: !existing ? true : existing.is_default,
+          // Extra design intelligence persisted for future generation
+          font_styles: fontStyles.length > 0 ? fontStyles : undefined,
+          design_notes: designNotes.trim() || undefined,
         },
       });
       if (error) throw error;
@@ -147,14 +241,17 @@ export default function SpotlightBrandSetup({ existing, onSave, onCancel }: Prop
           <Input value={brandName} onChange={e => setBrandName(e.target.value)} placeholder="Hamilton & Cole LLP" className="h-9" />
         </div>
 
-        {/* Logo upload */}
+        {/* Logo upload with AI extraction */}
         <div className="space-y-1">
-          <Label className="text-xs">Logo</Label>
+          <Label className="text-xs flex items-center gap-1">
+            Logo
+            {brandExtracted && <Badge variant="outline" className="text-[9px] h-4 ml-1 gap-0.5" style={{ borderColor: "hsl(140 50% 40%)", color: "hsl(140 50% 60%)" }}><CheckCircle2 className="h-2.5 w-2.5" /> AI Extracted</Badge>}
+          </Label>
           <div className="flex items-center gap-3">
             {logoUrl ? (
               <div className="relative">
                 <img src={logoUrl} alt="Logo" className="w-14 h-14 object-contain rounded border bg-white p-1" />
-                <button onClick={() => setLogoUrl("")} className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full p-0.5">
+                <button onClick={() => { setLogoUrl(""); setBrandExtracted(false); }} className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full p-0.5">
                   <X className="h-3 w-3" />
                 </button>
               </div>
@@ -165,13 +262,64 @@ export default function SpotlightBrandSetup({ existing, onSave, onCancel }: Prop
             )}
             <div className="flex-1 space-y-1">
               <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handleLogoUpload(f); e.target.value = ""; }} />
-              <Button variant="outline" size="sm" className="h-7 text-xs gap-1" disabled={uploading} onClick={() => fileRef.current?.click()}>
-                {uploading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3" />}
-                Upload Logo
+              <Button variant="outline" size="sm" className="h-7 text-xs gap-1" disabled={uploading || analyzing} onClick={() => fileRef.current?.click()}>
+                {uploading || analyzing ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3" />}
+                {analyzing ? "Analyzing…" : "Upload Logo"}
               </Button>
-              <p className="text-[10px] text-muted-foreground">PNG or SVG, max 5MB</p>
+              <p className="text-[10px] text-muted-foreground">PNG or SVG, max 5MB — AI will extract colors, industry & tone</p>
             </div>
           </div>
+        </div>
+
+        {/* Marketing Materials Upload */}
+        <div className="space-y-1.5">
+          <Label className="text-xs flex items-center gap-1">
+            <FileImage className="h-3 w-3" /> Previous Marketing Materials (optional)
+            {materialExtracted && <Badge variant="outline" className="text-[9px] h-4 ml-1 gap-0.5" style={{ borderColor: "hsl(140 50% 40%)", color: "hsl(140 50% 60%)" }}><CheckCircle2 className="h-2.5 w-2.5" /> Learned</Badge>}
+          </Label>
+          <p className="text-[10px] text-muted-foreground">Upload existing flyers, brochures, or ads so AI can learn your fonts, colors, and design style for better generation.</p>
+          <div className="border border-dashed rounded-lg p-3 text-center cursor-pointer hover:bg-muted/10 transition-colors"
+            onClick={() => materialRef.current?.click()}
+            onDragOver={e => { e.preventDefault(); e.stopPropagation(); }}
+            onDrop={e => { e.preventDefault(); e.stopPropagation(); const f = e.dataTransfer.files?.[0]; if (f) handleMaterialUpload(f); }}
+          >
+            <input ref={materialRef} type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handleMaterialUpload(f); e.target.value = ""; }} />
+            {materialUploading || materialAnalyzing ? (
+              <div className="flex items-center justify-center gap-2 py-2">
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                <span className="text-xs text-muted-foreground">Analyzing design patterns…</span>
+              </div>
+            ) : (
+              <div className="py-2">
+                <Sparkles className="h-5 w-5 mx-auto mb-1 text-muted-foreground" />
+                <p className="text-xs text-muted-foreground">Drop or click to upload a marketing material</p>
+                <p className="text-[10px] text-muted-foreground/60">JPG, PNG — max 10MB</p>
+              </div>
+            )}
+          </div>
+          {materialFiles.length > 0 && (
+            <div className="flex gap-1.5 flex-wrap">
+              {materialFiles.map((f, i) => (
+                <Badge key={i} variant="outline" className="text-[10px] gap-1">
+                  <FileImage className="h-3 w-3" /> {f.name}
+                  <button onClick={() => setMaterialFiles(prev => prev.filter((_, j) => j !== i))}><X className="h-2.5 w-2.5" /></button>
+                </Badge>
+              ))}
+            </div>
+          )}
+          {fontStyles.length > 0 && (
+            <div className="flex gap-1.5 flex-wrap">
+              <span className="text-[10px] text-muted-foreground">Detected fonts:</span>
+              {fontStyles.map((f, i) => (
+                <Badge key={i} variant="secondary" className="text-[10px]">{f}</Badge>
+              ))}
+            </div>
+          )}
+          {designNotes && (
+            <p className="text-[10px] italic text-muted-foreground border-l-2 pl-2" style={{ borderColor: "hsl(140 12% 42%)" }}>
+              {designNotes.slice(0, 200)}{designNotes.length > 200 ? "…" : ""}
+            </p>
+          )}
         </div>
 
         {/* Brand Colors */}
