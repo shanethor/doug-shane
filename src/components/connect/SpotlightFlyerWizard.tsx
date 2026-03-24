@@ -393,14 +393,16 @@ export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId, ini
     const parts = [`Create a professional vertical marketing flyer for ${brandName || "a business"}.`];
     parts.push(`Use brand colors: ${brandColors.join(" and ")}.`);
     parts.push(`Headline: "${title || inferTitleFromText(rawPrompt, flyerType)}".`);
-    if (rawPrompt.trim()) parts.push(`Original request: "${rawPrompt.trim()}".`);
-    if (description.trim()) parts.push(`Supporting details: "${description.trim()}".`);
+    // Use rawPrompt as CONTEXT for the AI to understand the intent — NOT as text to display on the flyer
+    if (rawPrompt.trim()) parts.push(`Context (DO NOT put this text on the flyer, use it only to understand the intent): "${rawPrompt.trim()}".`);
+    if (description.trim()) parts.push(`Use this description to craft polished copy for the flyer (rewrite professionally, do not echo verbatim): "${description.trim()}".`);
     if (!isEvergreen && dateTime) parts.push(`Date/Time: ${dateTime}.`);
     if (location) parts.push(`Location: ${location}.`);
     const cleanBullets = getResolvedBullets();
     if (cleanBullets.length > 0) parts.push(`Bullet points:\n${cleanBullets.map(b => `• ${b}`).join("\n")}`);
     if (cta || flyerType) parts.push(`Call to action: "${cta || defaultCtaForType(flyerType)}".`);
     parts.push(`Design style: clean, professional, suitable for print and social media.`);
+    parts.push(`IMPORTANT: Never include raw user questions, marketing jargon, or prompt text on the flyer. All text on the flyer must be polished, professional copy. The flyer should look like it was designed by a professional agency.`);
     if (disclaimer) parts.push(`Disclaimer: "${disclaimer}".`);
     if (extra) parts.push(`Additional instructions: ${extra}`);
     return parts.join("\n");

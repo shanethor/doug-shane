@@ -233,7 +233,8 @@ function buildStructuredPrompt(flyer: any): string {
   parts.push(
     `Design style: ${style}, suitable for print and social media.`,
     `Use clear hierarchy: large headline, date/time, location, bullet points, and a strong call to action.`,
-    `Include 1–2 subtle background or b-roll images relevant to the topic without showing recognizable faces.`
+    `Include 1–2 subtle background or b-roll images relevant to the topic without showing recognizable faces.`,
+    `IMPORTANT: Never include raw user questions, marketing jargon, instructions, or prompt text on the flyer. All visible text must be polished, professional copy as if designed by a top agency. Do not echo the user's request verbatim.`
   );
 
   if (flyer.disclaimer) parts.push(`Leave a small area at the bottom for disclaimer text: "${flyer.disclaimer}".`);
