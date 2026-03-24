@@ -308,6 +308,18 @@ export default function ConnectDemoAuth() {
   const industryRef = useRef<HTMLDivElement>(null);
   const [welcomeReady, setWelcomeReady] = useState(false);
   const [buildPhase, setBuildPhase] = useState(0);
+  const [connectedAccounts, setConnectedAccounts] = useState<Set<string>>(new Set());
+
+  const toggleAccount = (id: string) => {
+    setConnectedAccounts(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const connectedCount = connectedAccounts.size;
+  const unlockThreshold = 5;
 
   useEffect(() => {
     if (step === "welcome") {
