@@ -300,6 +300,7 @@ const ACCOUNT_OPTIONS: { id: string; label: string; desc: string; color: string;
 
 export default function ConnectDemoAuth() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [step, setStep] = useState<Step>("auth");
   const [cardVisible, setCardVisible] = useState(true);
 
@@ -311,18 +312,179 @@ export default function ConnectDemoAuth() {
   const industryRef = useRef<HTMLDivElement>(null);
   const [welcomeReady, setWelcomeReady] = useState(false);
   const [buildPhase, setBuildPhase] = useState(0);
-  const [connectedAccounts, setConnectedAccounts] = useState<Set<string>>(new Set());
+  const [connectedAccounts, setConnectedAccounts] = useState<Set<string>>(() => {
+    try {
+      const saved = sessionStorage.getItem("connect-demo-linked");
+      return saved ? new Set(JSON.parse(saved)) : new Set();
+    } catch { return new Set(); }
+  });
+  const [connectingAccount, setConnectingAccount] = useState<string | null>(null);
+  const [syncingNetwork, setSyncingNetwork] = useState(false);
 
-  const toggleAccount = (id: string) => {
-    setConnectedAccounts(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
-      return next;
-    });
+  // Persist connected accounts
+  useEffect(() => {
+    sessionStorage.setItem("connect-demo-linked", JSON.stringify([...connectedAccounts]));
+  }, [connectedAccounts]);
+
+  // Handle OAuth callback return — check if we're returning from an OAuth flow
+  useEffect(() => {
+    const code = searchParams.get("code");
+    const state = searchParams.get("state");
+    const pendingProvider = sessionStorage.getItem("connect-demo-oauth-pending");
+
+    if (code && state && pendingProvider) {
+      // We're returning from OAuth — exchange the code
+      sessionStorage.removeItem("connect-demo-oauth-pending");
+      setStep("welcome");
+      setConnectingAccount(pendingProvider === "gmail" ? "google" : pendingProvider === "outlook" ? "outlook" : pendingProvider);
+
+      (async () => {
+        try {
+          const headers = await getAuthHeaders();
+          const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/email-oauth`, {
+            method: "POST",
+            headers,
+            body: JSON.stringify({
+              action: "exchange_code",
+              provider: state,
+              code,
+              redirect_uri: `${window.location.origin}/connectdemo/auth`,
+            }),
+          });
+          const data = await resp.json();
+          if (!resp.ok) throw new Error(data.error || "Failed to connect");
+
+          const accountId = state === "gmail" ? "google" : "outlook";
+          setConnectedAccounts(prev => new Set([...prev, accountId]));
+          toast.success(`Connected ${data.email} via ${state === "gmail" ? "Google" : "Outlook"}`);
+
+          // Auto-trigger contact sync
+          triggerContactSync(state === "gmail" ? "sync_google" : "sync_outlook", headers);
+        } catch (err: any) {
+          toast.error(err.message || "Connection failed");
+        } finally {
+          setConnectingAccount(null);
+          // Clean URL params
+          window.history.replaceState({}, "", "/connectdemo/auth");
+        }
+      })();
+    }
+
+    // Restore step if returning from OAuth
+    if (pendingProvider && !code) {
+      // User cancelled OAuth
+      sessionStorage.removeItem("connect-demo-oauth-pending");
+    }
+
+    // If we have saved connected accounts but are on auth step, check if we should be on welcome
+    const savedStep = sessionStorage.getItem("connect-demo-step");
+    if (savedStep === "welcome") setStep("welcome");
+    else if (savedStep === "subscribe") setStep("subscribe");
+  }, [searchParams]);
+
+  // Save step to session so OAuth return knows where to go
+  useEffect(() => {
+    sessionStorage.setItem("connect-demo-step", step);
+  }, [step]);
+
+  const triggerContactSync = async (action: string, headers: Record<string, string>) => {
+    try {
+      await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync-contacts`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ action }),
+      });
+    } catch (e) {
+      console.error("Contact sync failed:", e);
+    }
+  };
+
+  const handleAccountConnect = async (acc: typeof ACCOUNT_OPTIONS[0]) => {
+    if (acc.status === "coming_soon") {
+      toast.info(`${acc.label} integration coming soon`);
+      return;
+    }
+
+    // Google / Outlook — real OAuth
+    if (acc.oauthProvider) {
+      setConnectingAccount(acc.id);
+      try {
+        const headers = await getAuthHeaders();
+        const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/email-oauth`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({
+            action: "get_auth_url",
+            provider: acc.oauthProvider,
+            redirect_uri: `${window.location.origin}/connectdemo/auth`,
+          }),
+        });
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data.error || "Failed to get auth URL");
+
+        // Store pending state so we know to resume on return
+        sessionStorage.setItem("connect-demo-oauth-pending", acc.oauthProvider);
+        window.location.href = data.url;
+      } catch (err: any) {
+        toast.error(err.message || `Failed to connect ${acc.label}`);
+        setConnectingAccount(null);
+      }
+      return;
+    }
+
+    // Slack — mark as connected (uses Slack connector already linked)
+    if (acc.id === "slack") {
+      setConnectedAccounts(prev => new Set([...prev, "slack"]));
+      toast.success("Slack connected");
+      return;
+    }
   };
 
   const connectedCount = connectedAccounts.size;
   const unlockThreshold = 5;
+
+  // Start building network after 2+ accounts linked
+  const handleBuildNetwork = async () => {
+    if (connectedCount < 1) return;
+    setSyncingNetwork(true);
+    try {
+      const headers = await getAuthHeaders();
+      // Trigger contact resolver to merge + deduplicate
+      await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/contact-resolver`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ action: "resolve" }),
+      });
+      // Trigger Hunter.io enrichment
+      await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/hunter-enrich`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ action: "bulk_enrich", limit: 15 }),
+      });
+      toast.success("Network intelligence is building — your connections are being enriched");
+    } catch (e) {
+      console.error("Network build error:", e);
+    } finally {
+      setSyncingNetwork(false);
+    }
+  };
+
+  const toggleAccount = (id: string) => {
+    const acc = ACCOUNT_OPTIONS.find(a => a.id === id);
+    if (!acc) return;
+
+    // If already connected, allow disconnect
+    if (connectedAccounts.has(id)) {
+      setConnectedAccounts(prev => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+      return;
+    }
+
+    handleAccountConnect(acc);
+  };
 
   useEffect(() => {
     if (step === "welcome") {
