@@ -393,6 +393,7 @@ export type Database = {
           industry: string | null
           is_default: boolean
           logo_url: string | null
+          metadata: Json | null
           name: string
           tagline: string | null
           tone: string | null
@@ -408,6 +409,7 @@ export type Database = {
           industry?: string | null
           is_default?: boolean
           logo_url?: string | null
+          metadata?: Json | null
           name?: string
           tagline?: string | null
           tone?: string | null
@@ -423,6 +425,7 @@ export type Database = {
           industry?: string | null
           is_default?: boolean
           logo_url?: string | null
+          metadata?: Json | null
           name?: string
           tagline?: string | null
           tone?: string | null
