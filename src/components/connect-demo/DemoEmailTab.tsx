@@ -1090,5 +1090,6 @@ export default function DemoEmailTab() {
         </DialogContent>
       </Dialog>
     </div>
+    </div>
   );
 }
