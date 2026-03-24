@@ -377,14 +377,6 @@ export default function ConnectDemoAuth() {
         style={{ background: "radial-gradient(circle, hsl(140 12% 42% / 0.08) 0%, transparent 70%)" }} />
 
       <div className="w-full max-w-md relative z-10">
-        {/* Node burst overlay during transitions */}
-        {transitioning && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
-            <div className="w-[400px] h-[400px]">
-              <NodeBurstTransition phase={transPhase} onDone={handleBurstDone} />
-            </div>
-          </div>
-        )}
 
         <div className="space-y-6">
           {step === "auth" && (
