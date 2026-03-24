@@ -16,6 +16,7 @@ import type { useEmailAI } from "./useEmailAI";
 import { AIResultPanel } from "./AIResultPanel";
 
 type Engine = ReturnType<typeof useEmailEngine>;
+type AI = ReturnType<typeof useEmailAI>;
 type Folder = "inbox" | "sent" | "starred" | "drafts";
 
 const FOLDERS: { key: Folder; label: string; icon: React.ElementType }[] = [
