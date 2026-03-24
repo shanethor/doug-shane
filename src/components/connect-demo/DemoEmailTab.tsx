@@ -677,13 +677,109 @@ export default function DemoEmailTab() {
       {/* Smart Feature Panel — renders inline */}
       {renderFeaturePanel()}
 
-      {/* Insight bar */}
-      <div className="flex items-center gap-3 p-3 rounded-lg" style={{ background: "hsl(140 12% 42% / 0.06)", border: "1px solid hsl(140 12% 42% / 0.15)" }}>
-        <Sparkles className="h-4 w-4 shrink-0" style={{ color: "hsl(140 12% 58%)" }} />
-        <span className="text-sm" style={{ color: "hsl(140 12% 58%)" }}>
-          Insight: This thread relates to an active pipeline deal. Priority: <strong>High</strong>. Sentiment: <strong>Positive</strong>.
-        </span>
-      </div>
+      {/* ── Smart Contact Match + Active Outreach ── */}
+      {(() => {
+        const emailAddrs = selectedThread.messages.map(m => m.from === "You" ? m.toAddr : m.fromAddr);
+        const matches = [...new Set(emailAddrs)].map(addr => CONNECT_MATCHES[addr]).filter(Boolean) as ConnectMatch[];
+        if (matches.length === 0) return (
+          <div className="flex items-center gap-3 p-3 rounded-lg" style={{ background: "hsl(140 12% 42% / 0.06)", border: "1px solid hsl(140 12% 42% / 0.15)" }}>
+            <Sparkles className="h-4 w-4 shrink-0" style={{ color: "hsl(140 12% 58%)" }} />
+            <span className="text-sm" style={{ color: "hsl(140 12% 58%)" }}>
+              No Connect profile matched — <button className="underline" onClick={() => toast.success("Contact added to Connect (demo)")}>Add to network</button>
+            </span>
+          </div>
+        );
+        return matches.map(match => {
+          const tierStyle = TIER_COLORS[match.tier] || TIER_COLORS.C;
+          const outreach = match.outreachStatus ? OUTREACH_COLORS[match.outreachStatus] : OUTREACH_COLORS.none;
+          return (
+            <div key={match.email} className="rounded-lg overflow-hidden" style={{ background: "hsl(240 8% 9%)", border: "1px solid hsl(140 12% 42% / 0.2)" }}>
+              {/* Contact header */}
+              <div className="p-3 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="h-9 w-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0" style={{ background: tierStyle.bg, color: tierStyle.text }}>
+                    {match.tier}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-semibold text-white">{match.name}</span>
+                      <Users className="h-3 w-3" style={{ color: "hsl(140 12% 50%)" }} />
+                      <span className="text-xs" style={{ color: "hsl(140 12% 58%)" }}>{match.mutualConnections} mutual</span>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: `hsl(140 12% 42% / ${Math.round(match.proximity / 100 * 30 + 5)}%)`, color: "hsl(140 12% 58%)" }}>
+                        {match.proximity}% match
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <Building2 className="h-3 w-3" style={{ color: "hsl(240 5% 46%)" }} />
+                      <span className="text-xs" style={{ color: "hsl(240 5% 60%)" }}>{match.company}</span>
+                      {match.location && <>
+                        <MapPin className="h-3 w-3 ml-1" style={{ color: "hsl(240 5% 46%)" }} />
+                        <span className="text-xs" style={{ color: "hsl(240 5% 60%)" }}>{match.location}</span>
+                      </>}
+                    </div>
+                  </div>
+                </div>
+                <Badge className="text-[10px] shrink-0" style={{ background: outreach.bg, color: outreach.text }}>
+                  <Activity className="h-3 w-3 mr-1" />{outreach.label}
+                </Badge>
+              </div>
+
+              {/* Outreach + Pipeline details */}
+              <div className="px-3 pb-3 grid grid-cols-1 lg:grid-cols-2 gap-2">
+                {/* Outreach cadence */}
+                <div className="p-2.5 rounded-md" style={{ background: "hsl(240 6% 7%)" }}>
+                  <p className="text-[10px] uppercase tracking-wider font-semibold mb-1.5" style={{ color: "hsl(240 5% 40%)" }}>Outreach Cadence</p>
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-xs">
+                      <span style={{ color: "hsl(240 5% 55%)" }}>Last Touch</span>
+                      <span className="text-white">{match.lastTouch || "—"}</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span style={{ color: "hsl(240 5% 55%)" }}>Next Touch</span>
+                      <span style={{ color: match.outreachStatus === "overdue" ? "hsl(0 60% 60%)" : "hsl(140 12% 58%)" }}>{match.nextTouch || "—"}</span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span style={{ color: "hsl(240 5% 55%)" }}>Tier Cadence</span>
+                      <span className="text-white">{match.tier === "S" ? "Weekly" : match.tier === "A" ? "Bi-weekly" : match.tier === "B" ? "Monthly" : "Quarterly"}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Pipeline card */}
+                {match.pipelineStage ? (
+                  <div className="p-2.5 rounded-md" style={{ background: "hsl(240 6% 7%)" }}>
+                    <p className="text-[10px] uppercase tracking-wider font-semibold mb-1.5" style={{ color: "hsl(240 5% 40%)" }}>Pipeline Deal</p>
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-xs">
+                        <span style={{ color: "hsl(240 5% 55%)" }}>Deal</span>
+                        <span className="text-white truncate ml-2">{match.pipelineDeal}</span>
+                      </div>
+                      <div className="flex justify-between text-xs">
+                        <span style={{ color: "hsl(240 5% 55%)" }}>Stage</span>
+                        <Badge className="text-[9px] h-4" style={{ background: "hsl(140 12% 42% / 0.15)", color: "hsl(140 12% 58%)" }}>{match.pipelineStage}</Badge>
+                      </div>
+                      <div className="flex justify-between text-xs">
+                        <span style={{ color: "hsl(240 5% 55%)" }}>Value</span>
+                        <span style={{ color: "hsl(140 12% 58%)" }}>${match.dealValue?.toLocaleString()}</span>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-2.5 rounded-md flex items-center justify-center" style={{ background: "hsl(240 6% 7%)" }}>
+                    <div className="text-center">
+                      <Target className="h-4 w-4 mx-auto mb-1" style={{ color: "hsl(240 5% 35%)" }} />
+                      <p className="text-[10px]" style={{ color: "hsl(240 5% 40%)" }}>No active pipeline deal</p>
+                      <button className="text-[10px] mt-0.5 underline" style={{ color: "hsl(140 12% 58%)" }} onClick={() => toast.success("Create deal from email (demo)")}>
+                        Create deal →
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        });
+      })()}
 
       {/* Messages — conversation stacked */}
       <div className="space-y-2">
