@@ -379,7 +379,8 @@ export default function ConnectDemoAuth() {
 
     // If we have saved connected accounts but are on auth step, check if we should be on welcome
     const savedStep = sessionStorage.getItem("connect-demo-step");
-    if (savedStep === "welcome") setStep("welcome");
+    if (savedStep === "email_layout") setStep("email_layout");
+    else if (savedStep === "welcome") setStep("welcome");
     else if (savedStep === "subscribe") setStep("subscribe");
   }, [searchParams]);
 
