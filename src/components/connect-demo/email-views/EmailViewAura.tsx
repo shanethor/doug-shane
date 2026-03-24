@@ -116,23 +116,7 @@ export default function EmailViewAura({ engine }: { engine: Engine }) {
             </button>
           </div>
 
-          {/* AI Smart Tools strip */}
-          {!selectedThread && (
-            <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
-              {SMART_FEATURES.map((f, i) => {
-                const icons = [Sparkles, FileText, Activity, BarChart3, CalendarPlus, Target];
-                const Icon = icons[i] || Sparkles;
-                return (
-                  <button key={f.label} onClick={() => toast.success(`${f.label} (demo)`)}
-                    className="flex flex-col items-center gap-1 rounded-md px-2 py-2 text-center transition-colors hover:bg-white/[0.06]"
-                    style={{ background: "hsl(140 12% 42% / 0.04)", border: "1px solid hsl(140 12% 42% / 0.12)" }}>
-                    <Icon className="h-3.5 w-3.5" style={{ color: "hsl(140 12% 58%)" }} />
-                    <span className="text-[10px] font-medium leading-tight" style={{ color: "hsl(140 12% 65%)" }}>{f.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          )}
+          {/* AI Smart Tools strip removed from inbox — shown in message view below */}
 
           {selectedThread ? (
             <div className="space-y-3 animate-fade-in">
