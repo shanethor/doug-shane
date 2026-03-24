@@ -133,6 +133,12 @@ export default function EmailViewOutlook({ engine, ai }: { engine: Engine; ai: A
     <div className="flex gap-0 h-[calc(100vh-180px)] min-h-[500px]" style={{ border: "1px solid hsl(240 6% 14%)", borderRadius: 8, overflow: "hidden" }}>
       {/* Outlook folder tree — narrow */}
       <div className="hidden lg:flex flex-col w-44 shrink-0 py-2 space-y-0.5" style={{ background: "hsl(240 8% 6%)", borderRight: "1px solid hsl(240 6% 14%)" }}>
+        {/* Compose button */}
+        <button onClick={() => setComposeOpen(true)}
+          className="flex items-center gap-2 mx-2 mb-2 px-3 py-2 rounded text-sm font-semibold transition-colors hover:brightness-110"
+          style={{ background: "hsl(200 60% 50%)", color: "white" }}>
+          <Plus className="h-4 w-4" /> New Message
+        </button>
         {FOLDERS.map(f => (
           <button key={f.key} onClick={() => { setFolder(f.key); clearThread(); }}
             className={`flex items-center gap-2.5 text-sm px-3 py-2 transition-colors w-full text-left ${folder === f.key ? "font-semibold" : ""}`}
