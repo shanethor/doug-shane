@@ -127,6 +127,7 @@ export default function EmailViewOutlook({ engine, ai }: { engine: Engine; ai: A
   } = engine;
 
   const [replyBody, setReplyBody] = useState("");
+  const [composeOpen, setComposeOpen] = useState(false);
 
   return (
     <div className="flex gap-0 h-[calc(100vh-180px)] min-h-[500px]" style={{ border: "1px solid hsl(240 6% 14%)", borderRadius: 8, overflow: "hidden" }}>
