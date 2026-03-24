@@ -332,6 +332,15 @@ export default function DemoEmailTab() {
   // Smart feature panel state
   const [activeFeaturePanel, setActiveFeaturePanel] = useState<string | null>(null);
 
+  // Inline calendar event creation
+  const [showCalendarCreate, setShowCalendarCreate] = useState(false);
+  const [calEventTitle, setCalEventTitle] = useState("");
+  const [calEventDate, setCalEventDate] = useState("");
+  const [calEventTime, setCalEventTime] = useState("14:00");
+  const [calEventDuration, setCalEventDuration] = useState("30");
+  const [calEventGuests, setCalEventGuests] = useState("");
+  const [calEventCreated, setCalEventCreated] = useState<{ title: string; date: string; time: string; link: string } | null>(null);
+
   // Compose state
   const [compTo, setCompTo] = useState("");
   const [compCc, setCompCc] = useState("");
