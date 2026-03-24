@@ -455,7 +455,11 @@ export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId, ini
     if (cleanBullets.length > 0) parts.push(`Bullet points:\n${cleanBullets.map(b => `• ${b}`).join("\n")}`);
     if (cta || flyerType) parts.push(`Call to action: "${cta || defaultCtaForType(flyerType)}".`);
     parts.push(`Design style: clean, professional, suitable for print and social media.`);
-    parts.push(`IMPORTANT: Never include raw user questions, marketing jargon, or prompt text on the flyer. All text on the flyer must be polished, professional copy. The flyer should look like it was designed by a professional agency.`);
+    parts.push(`HARD RULES — NEVER VIOLATE:`);
+    parts.push(`1. For product items, ONLY use real product names if explicitly provided. Never invent product names.`);
+    parts.push(`2. NEVER show hex color codes (#...), color swatches, or color reference notation anywhere on the flyer.`);
+    parts.push(`3. If a company logo or brand imagery is provided, use it accurately and prominently — do not alter or misrepresent it.`);
+    parts.push(`4. Never include raw user questions, marketing jargon, or prompt text on the flyer. All text must be polished, professional copy.`);
     if (disclaimer) parts.push(`Disclaimer: "${disclaimer}".`);
     if (extra) parts.push(`Additional instructions: ${extra}`);
     return parts.join("\n");
