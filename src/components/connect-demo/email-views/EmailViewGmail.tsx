@@ -125,12 +125,20 @@ export default function EmailViewGmail({ engine, ai }: { engine: Engine; ai: AI 
               <h2 className="text-lg font-semibold text-white">{selectedThread.subject}</h2>
               {/* AURA AI toolbar */}
               <div className="flex gap-2 flex-wrap">
-                {["Summarize thread", "Draft reply with AI", "Log to pipeline"].map(a => (
-                  <Button key={a} size="sm" variant="outline" className="text-xs h-7 gap-1.5" style={{ borderColor: "hsl(140 12% 42% / 0.3)", color: "hsl(140 12% 58%)" }} onClick={() => toast.success(`${a} (demo)`)}>
-                    <Sparkles className="h-3 w-3" /> {a}
-                  </Button>
-                ))}
+                <Button size="sm" variant="outline" className="text-xs h-7 gap-1.5" style={{ borderColor: "hsl(140 12% 42% / 0.3)", color: "hsl(140 12% 58%)" }} onClick={() => ai.summarize(selectedThread)} disabled={ai.summaryLoading}>
+                  <Sparkles className={`h-3 w-3 ${ai.summaryLoading ? "animate-spin" : ""}`} /> {ai.summaryLoading ? "Summarizing…" : "Summarize"}
+                </Button>
+                <Button size="sm" variant="outline" className="text-xs h-7 gap-1.5" style={{ borderColor: "hsl(140 12% 42% / 0.3)", color: "hsl(140 12% 58%)" }} onClick={() => ai.aiReply(selectedThread)} disabled={ai.replyLoading}>
+                  <Sparkles className={`h-3 w-3 ${ai.replyLoading ? "animate-spin" : ""}`} /> {ai.replyLoading ? "Drafting…" : "AI Reply"}
+                </Button>
+                <Button size="sm" variant="outline" className="text-xs h-7 gap-1.5" style={{ borderColor: "hsl(140 12% 42% / 0.3)", color: "hsl(140 12% 58%)" }} onClick={() => ai.aiDraft(selectedThread)} disabled={ai.draftLoading}>
+                  <Sparkles className={`h-3 w-3 ${ai.draftLoading ? "animate-spin" : ""}`} /> {ai.draftLoading ? "Drafting…" : "AI Draft"}
+                </Button>
+                <Button size="sm" variant="outline" className="text-xs h-7 gap-1.5" style={{ borderColor: "hsl(140 12% 42% / 0.3)", color: "hsl(140 12% 58%)" }} onClick={() => ai.addToPipeline(selectedThread)}>
+                  Add to Pipeline
+                </Button>
               </div>
+              <AIResultPanel ai={ai} onUseReply={(text) => setReplyBody(text)} />
               {/* Messages */}
               <div className="space-y-2">
                 {selectedThread.messages.map((msg, idx) => (
