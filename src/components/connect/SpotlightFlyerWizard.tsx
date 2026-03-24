@@ -234,6 +234,42 @@ export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId, ini
     }
   };
 
+  const handleImageUpload = async (file: File, type: "logo" | "material") => {
+    if (!file.type.startsWith("image/")) { toast.error("Please upload an image file"); return; }
+    if (file.size > 5 * 1024 * 1024) { toast.error("File must be under 5MB"); return; }
+    setAnalyzingBrand(true);
+    try {
+      const reader = new FileReader();
+      const base64Url = await new Promise<string>((resolve, reject) => {
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      if (type === "logo") setLogoUrl(base64Url);
+      const { data, error } = await supabase.functions.invoke("spotlight-flyer", {
+        body: { action: "analyze_brand", image_url: base64Url, image_type: type },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      const attrs = data?.attributes;
+      if (attrs) {
+        if (Array.isArray(attrs.colors) && attrs.colors.length > 0) {
+          const hexColors = attrs.colors.filter((c: string) => /^#[0-9A-Fa-f]{3,8}$/.test(c)).slice(0, 3);
+          if (hexColors.length > 0) setBrandColors(hexColors);
+        }
+        if (attrs.industry && type === "logo") {
+          toast.success(`Detected industry: ${attrs.industry}`);
+        }
+        toast.success(`Brand analysis complete — ${type === "logo" ? "colors & tone extracted" : "design attributes captured"}`);
+        if (attrs.design_notes) console.log(`[Brand Analysis] ${type}:`, attrs.design_notes);
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Brand analysis failed");
+    } finally {
+      setAnalyzingBrand(false);
+    }
+  };
+
   const handleCreateDraft = async () => {
     if (!rawPrompt.trim()) { toast.error("Describe what you need"); return; }
     setLoading(true);
