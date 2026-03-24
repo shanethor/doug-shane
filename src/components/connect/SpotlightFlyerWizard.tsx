@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -12,7 +12,7 @@ import {
   Sparkles, Loader2, ArrowLeft, ArrowRight, Download,
   Copy, RefreshCw, Calendar, Image as ImageIcon,
   X, Palette, Type, MapPin, Clock,
-  FileText, Wand2, Eye,
+  FileText, Wand2, Eye, Upload, ScanSearch,
 } from "lucide-react";
 import type { BrandPackage } from "./SpotlightBrandSetup";
 
