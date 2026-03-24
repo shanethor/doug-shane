@@ -566,6 +566,68 @@ export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId, ini
     toast.success("Caption copied to clipboard");
   };
 
+  const handleSageGenerateCaption = async (platform: string) => {
+    setSageGenerating(true);
+    setSageCaption("");
+    try {
+      const cleanBullets = getResolvedBullets();
+      const context = [
+        `Title: ${title}`,
+        `Type: ${flyerType}`,
+        `Industry: Insurance / Professional Services`,
+        brandName ? `Brand: ${brandName}` : "",
+        cleanBullets.length ? `Key points: ${cleanBullets.join("; ")}` : "",
+        cta ? `CTA: ${cta}` : "",
+      ].filter(Boolean).join("\n");
+
+      const platformGuide: Record<string, string> = {
+        facebook: "Write a Facebook post (2-3 sentences max). Conversational, engaging. Include 3-5 relevant hashtags. Use emojis sparingly. End with a clear call to action.",
+        instagram: "Write an Instagram caption (short, punchy). Start with a hook line. Use line breaks for readability. Include 15-20 trending and niche hashtags grouped at the end. Include relevant emojis.",
+        linkedin: "Write a professional LinkedIn post (3-4 sentences). Thought-leadership tone. Include 3-5 professional hashtags. No emojis except ✅ or 📊 sparingly. End with engagement question.",
+      };
+
+      const { data, error } = await supabase.functions.invoke("connect-assistant", {
+        body: {
+          messages: [{
+            role: "user",
+            content: `Generate a ${platform} post for this graphic I just created. Here is the context:\n\n${context}\n\n${platformGuide[platform] || platformGuide.facebook}\n\nReturn ONLY the post text with hashtags. No explanations.`,
+          }],
+        },
+      });
+
+      if (error) throw error;
+
+      // Handle streaming response
+      if (typeof data === "string") {
+        // Parse SSE
+        const lines = data.split("\n");
+        let full = "";
+        for (const line of lines) {
+          if (line.startsWith("data: ") && line !== "data: [DONE]") {
+            try {
+              const parsed = JSON.parse(line.slice(6));
+              full += parsed.choices?.[0]?.delta?.content || "";
+            } catch {}
+          }
+        }
+        setSageCaption(full.trim() || "Check your connection and try again.");
+      } else {
+        setSageCaption(data?.choices?.[0]?.message?.content?.trim() || "Caption generation failed. Edit manually above.");
+      }
+    } catch (err: any) {
+      console.error("Sage caption error:", err);
+      // Fallback caption
+      const fallbackCaptions: Record<string, string> = {
+        facebook: `🔥 ${title}\n\n${getResolvedBullets().slice(0, 2).join(". ")}.\n\n${cta || "Learn more today!"}\n\n#Insurance #BusinessGrowth #RiskManagement #CoverageMatters #${brandName?.replace(/\s+/g, "") || "YourBrand"}`,
+        instagram: `${title} ✨\n\n${getResolvedBullets().slice(0, 2).join("\n")}\n\n👉 ${cta || "Link in bio!"}\n\n.\n.\n.\n#Insurance #InsuranceAgent #BusinessInsurance #RiskManagement #CoverageMatters #InsuranceBroker #CommercialInsurance #SmallBusiness #Entrepreneur #BusinessOwner #InsuranceTips #ProtectYourBusiness #InsuranceAdvisor #ProfessionalServices #${brandName?.replace(/\s+/g, "") || "Brand"}`,
+        linkedin: `${title}\n\n${getResolvedBullets().slice(0, 3).join(". ")}.\n\n${cta || "Reach out to learn more."}\n\nWhat's your biggest challenge with business coverage? 👇\n\n#Insurance #RiskManagement #BusinessStrategy #ProfessionalDevelopment`,
+      };
+      setSageCaption(fallbackCaptions[platform] || fallbackCaptions.facebook);
+    } finally {
+      setSageGenerating(false);
+    }
+  };
+
   const typeLabel = FLYER_TYPES.find(t => t.value === flyerType)?.label || "Graphic";
 
   if (step === 0) {
