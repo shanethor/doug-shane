@@ -360,7 +360,18 @@ export default function DemoEmailTab() {
     return true;
   });
 
-  const accountFiltered = folderFiltered.filter(t => accountFilter === "all" || t.account === accountFilter);
+  const accountFiltered = folderFiltered.filter(t => {
+    if (accountFilter === "all") return true;
+    if (accountFilter === "outreach") {
+      // Show threads where any participant has an active outreach status
+      const addrs = t.messages.map(m => m.from === "You" ? m.toAddr : m.fromAddr);
+      return addrs.some(addr => {
+        const match = CONNECT_MATCHES[addr];
+        return match && match.outreachStatus && match.outreachStatus !== "none";
+      });
+    }
+    return t.account === accountFilter;
+  });
 
   const clientFiltered = selectedClient
     ? accountFiltered.filter(t => t.messages.some(m => m.fromAddr === selectedClient || m.toAddr === selectedClient))
