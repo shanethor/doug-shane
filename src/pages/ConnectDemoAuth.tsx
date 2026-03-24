@@ -414,7 +414,7 @@ export default function ConnectDemoAuth() {
                   transform: cardVisible ? "scale(1)" : "scale(0.7)",
                 }}
               >
-                {renderHeader()}
+                {renderHeader(true)}
                 <form onSubmit={handleAuth} className="space-y-4">
                   <div className="space-y-2">
                     <Label className="text-white/80">Name</Label>
