@@ -272,5 +272,7 @@ export default function EmailViewOutlook({ engine, ai }: { engine: Engine; ai: A
         )}
       </div>
     </div>
+    {composeOpen && <ComposePopout onClose={() => setComposeOpen(false)} />}
+    </>
   );
 }
