@@ -189,13 +189,13 @@ function TaglineNodes() {
     }
     resize();
 
-    const NODE_COUNT = 8;
+    const NODE_COUNT = 14;
     const nodes = Array.from({ length: NODE_COUNT }, (_, i) => ({
       angle: (Math.PI * 2 * i) / NODE_COUNT,
-      speed: 0.003 + Math.random() * 0.004,
-      radiusX: 80 + Math.random() * 60,
-      radiusY: 14 + Math.random() * 10,
-      r: 2 + Math.random() * 2,
+      speed: 0.002 + Math.random() * 0.004,
+      radiusX: 120 + Math.random() * 100,
+      radiusY: 18 + Math.random() * 16,
+      r: 2 + Math.random() * 2.5,
       phase: Math.random() * Math.PI * 2,
     }));
 
