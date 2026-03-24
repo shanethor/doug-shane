@@ -105,6 +105,9 @@ export default function SpotlightBrandSetup({ existing, onSave, onCancel }: Prop
           const matched = TONES.find(t => t.value === attrs.tone || t.label.toLowerCase().includes(attrs.tone.toLowerCase()));
           if (matched) setTone(matched.value);
         }
+        if (attrs.brand_name && !brandName.trim()) {
+          setBrandName(attrs.brand_name);
+        }
         setBrandExtracted(true);
         toast.success("Brand colors, industry & tone extracted from logo");
       } else {
@@ -113,6 +116,13 @@ export default function SpotlightBrandSetup({ existing, onSave, onCancel }: Prop
         if (attrs.tone) {
           const matched = TONES.find(t => t.value === attrs.tone || t.label.toLowerCase().includes(attrs.tone.toLowerCase()));
           if (matched) setTone(matched.value);
+        }
+        if (attrs.industry && !industry) {
+          const matched = INDUSTRIES.find(i => i.value === attrs.industry || i.label.toLowerCase().includes(attrs.industry.toLowerCase()));
+          if (matched) setIndustry(matched.value);
+        }
+        if (attrs.brand_name && !brandName.trim()) {
+          setBrandName(attrs.brand_name);
         }
         setMaterialExtracted(true);
         toast.success("Design theme & fonts extracted from material");
