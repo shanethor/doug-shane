@@ -57,12 +57,12 @@ const AuraLogoLarge = ({ size = 80 }: { size?: number }) => (
   </svg>
 );
 
-/* ═══ AURA Logo SVG ═══ */
+/* ═══ AURA Logo SVG (nav/footer — sage) ═══ */
 const AuraLogoSVG = ({ size = 24 }: { size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 100 100" fill="none">
-    <rect width="100" height="100" rx="22" fill="white" />
+    <rect width="100" height="100" rx="22" fill="hsl(140 12% 42%)" />
     <path d="M50 18L74 82H62.5L58 70H42L37.5 82H26L50 18Z" fill="#08080A" />
-    <rect x="39" y="62" width="22" height="5.5" rx="2.75" fill="white" />
+    <rect x="39" y="62" width="22" height="5.5" rx="2.75" fill="hsl(140 12% 42%)" />
   </svg>
 );
 
@@ -191,20 +191,20 @@ export default function LandingPage() {
       <div className="relative z-[1]">
         {/* ═══ NAV ═══ */}
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[100] w-[calc(100%-2rem)] max-w-[780px]">
-          <nav className="flex items-center justify-between py-2 pl-5 pr-2 bg-[#101012]/80 backdrop-blur-[24px] border border-white/[0.06] rounded-full">
+          <nav className="flex items-center justify-between py-2 pl-5 pr-2 bg-[#101012]/80 backdrop-blur-[24px] border border-[hsl(140_12%_42%/0.12)] rounded-full">
             <div className="flex items-center gap-6">
               <Link to="/home" className="flex items-center gap-2.5 no-underline">
                 <AuraLogoSVG size={22} />
                 <span className="text-[15px] font-semibold tracking-[0.08em] text-white">AURA</span>
               </Link>
               <div className="hidden md:flex gap-1">
-                <a href="#connect" className="text-[13px] text-[#A1A1AA] no-underline px-3 py-1.5 rounded-full hover:text-white transition-colors">Connect</a>
-                <a href="#concierge" className="text-[13px] text-[#A1A1AA] no-underline px-3 py-1.5 rounded-full hover:text-white transition-colors">Concierge</a>
-                <a href="#branches" className="text-[13px] text-[#A1A1AA] no-underline px-3 py-1.5 rounded-full hover:text-white transition-colors">Platform</a>
-                <a href="#partners" className="text-[13px] text-[#A1A1AA] no-underline px-3 py-1.5 rounded-full hover:text-white transition-colors">Partners</a>
+                <a href="#connect" className="text-[13px] text-[#A1A1AA] no-underline px-3 py-1.5 rounded-full hover:text-[hsl(140_12%_72%)] transition-colors">Connect</a>
+                <a href="#concierge" className="text-[13px] text-[#A1A1AA] no-underline px-3 py-1.5 rounded-full hover:text-[hsl(140_12%_72%)] transition-colors">Concierge</a>
+                <a href="#branches" className="text-[13px] text-[#A1A1AA] no-underline px-3 py-1.5 rounded-full hover:text-[hsl(140_12%_72%)] transition-colors">Platform</a>
+                <a href="#partners" className="text-[13px] text-[#A1A1AA] no-underline px-3 py-1.5 rounded-full hover:text-[hsl(140_12%_72%)] transition-colors">Partners</a>
               </div>
             </div>
-            <Link to="/auth" className="text-[13px] font-medium text-[#08080A] bg-white px-5 py-2 rounded-full hover:opacity-85 transition-opacity whitespace-nowrap no-underline">
+            <Link to="/auth" className="text-[13px] font-medium text-[#08080A] bg-[hsl(140_12%_42%)] px-5 py-2 rounded-full hover:bg-[hsl(140_12%_52%)] transition-colors whitespace-nowrap no-underline">
               Open app
             </Link>
           </nav>
@@ -226,52 +226,83 @@ export default function LandingPage() {
             >
               AuRa
             </h1>
-            <p className="text-[17px] font-medium max-w-[520px] mx-auto leading-[1.65]" style={{ color: "hsl(140 12% 58%)" }}>
-              One platform powering <span className="text-[#0A8A8F] font-medium">insurance</span>,{" "}
+            <p className="text-[17px] font-medium max-w-[520px] mx-auto leading-[1.65] mb-8" style={{ color: "hsl(140 12% 58%)" }}>
+              One platform powering <span style={{ color: "hsl(140 12% 72%)" }} className="font-medium">insurance</span>,{" "}
               <span className="text-[#D4884A] font-medium">property</span>, and{" "}
               <span className="text-[#D4B85C] font-medium">consulting</span>. Intelligence for the professionals who protect, build, and grow.
             </p>
+            <p className="text-xl font-semibold tracking-wide" style={{ color: "hsl(140 12% 42%)" }}>Intelligence runs on AuRa</p>
           </div>
         </section>
 
         {/* ═══ AURA CONNECT ═══ */}
         <section className="lp-reveal pt-[120px] max-sm:pt-20 pb-[60px] relative" id="connect" ref={addRevealRef}>
           <div className="max-w-[1200px] mx-auto px-12 max-md:px-8 max-sm:px-5">
-            <div className="border-t border-white/[0.06] pt-14">
+            <div className="border-t border-[hsl(140_12%_42%/0.15)] pt-14">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-16">
                 <div>
-                  <div className="text-[11px] font-semibold tracking-[0.12em] uppercase text-[#60A5FA] mb-4">AURA Connect</div>
+                  <div className="text-[11px] font-semibold tracking-[0.12em] uppercase mb-4" style={{ color: "hsl(140 12% 58%)" }}>AURA Connect</div>
                   <h2 className="text-[clamp(32px,4vw,48px)] font-bold tracking-[-0.04em] leading-[1.05] text-white mb-5">
                     Your network,<br />mapped.
                   </h2>
                   <div className="text-sm text-[#A1A1AA] mb-6"><strong>$250</strong>/month per seat</div>
-                  <p className="text-[15px] text-[#71717A] leading-[1.65] mb-8">
-                    Stitch your email, calendar, social, and financial accounts into a unified relationship graph. Find the warmest path to any prospect — no third-party data. Available across all three AURA branches.
+                  <p className="text-[15px] text-[#71717A] leading-[1.65] mb-6">
+                    Seven integrated modules — relationship intelligence, sales pipeline, AI email, calendar, outreach cadences, brand marketing, and Sage assistant — all powered by your first-party data.
                   </p>
-                  <Link
-                    to="/request-access"
-                    className="inline-flex items-center gap-2 text-sm font-medium text-white bg-[#3B82F6] px-7 py-3 rounded-[10px] hover:bg-[#60A5FA] transition-colors no-underline"
-                  >
-                    Request Access
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
-                      <path d="M5 12h14" /><path d="M12 5l7 7-7 7" />
-                    </svg>
-                  </Link>
+
+                  {/* Module pills */}
+                  <div className="flex flex-wrap gap-2 mb-8">
+                    {[
+                      { label: "Connect", icon: "🔗" },
+                      { label: "Pipeline", icon: "📊" },
+                      { label: "Email", icon: "✉️" },
+                      { label: "Calendar", icon: "📅" },
+                      { label: "Outreach", icon: "📤" },
+                      { label: "Create", icon: "✨" },
+                      { label: "Sage", icon: "💬" },
+                    ].map((m) => (
+                      <span key={m.label} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border" style={{ borderColor: "hsl(140 12% 42% / 0.2)", background: "hsl(140 12% 42% / 0.06)", color: "hsl(140 12% 72%)" }}>
+                        <span>{m.icon}</span>{m.label}
+                      </span>
+                    ))}
+                  </div>
+
+                  <div className="flex items-center gap-4">
+                    <Link
+                      to="/request-access"
+                      className="inline-flex items-center gap-2 text-sm font-medium text-[#08080A] px-7 py-3 rounded-[10px] transition-colors no-underline"
+                      style={{ background: "hsl(140 12% 42%)" }}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = "hsl(140 12% 52%)")}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = "hsl(140 12% 42%)")}
+                    >
+                      Request Access
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                        <path d="M5 12h14" /><path d="M12 5l7 7-7 7" />
+                      </svg>
+                    </Link>
+                    <Link to="/connectdemo/auth" className="text-sm font-medium no-underline transition-colors" style={{ color: "hsl(140 12% 58%)" }}>
+                      Try the demo →
+                    </Link>
+                  </div>
                 </div>
                 <div>
-                  <div className="rounded-[20px] overflow-hidden border border-white/[0.06] aspect-[16/9] relative mb-4">
-                    <img src="/images/connect-bridge.png" alt="AURA Connect — relationship bridge" loading="eager" decoding="async" className="w-full h-full object-cover" />
-                    <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-[#08080A]/60 to-transparent" />
+                  {/* Feature preview cards matching demo modules */}
+                  <div className="rounded-[20px] overflow-hidden border border-[hsl(140_12%_42%/0.12)] aspect-[16/9] relative mb-4" style={{ background: "linear-gradient(135deg, hsl(140 12% 42% / 0.08), hsl(140 12% 20% / 0.04))" }}>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
+                      <AuraLogoLarge size={48} />
+                      <p className="text-lg font-bold text-white mt-4 tracking-tight">Intelligence runs on AuRa</p>
+                      <p className="text-xs mt-2" style={{ color: "hsl(140 12% 58%)" }}>Relationship intelligence • AI email • Sales pipeline • Marketing</p>
+                    </div>
                   </div>
                   <IntegrationTicker />
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {[
-                      { t: "Mutual contacts", d: "Warm intros through shared connections across your team's combined network." },
-                      { t: "Relationship graph", d: "One de-duplicated map across all platforms and accounts." },
-                      { t: "Money-in-motion", d: "Plaid-powered signals for perfectly timed outreach." },
-                      { t: "Privacy-first", d: "First-party data only. Opt-in sharing. No content stored." },
+                      { t: "Relationship graph", d: "Map every connection across email, social, and calendar into one unified network." },
+                      { t: "AI-powered email", d: "Gmail, Outlook, or AuRa view — with smart summarize, AI reply, and pipeline tagging built in." },
+                      { t: "Outreach cadences", d: "Tiered contact strategies with automated follow-ups and connection tracking." },
+                      { t: "Create & post", d: "AI brand studio with logo extraction, social resizing, and Sage-powered captions." },
                     ].map((f) => (
-                      <div key={f.t} className="p-4 bg-[#101012] border border-white/[0.06] rounded-xl">
+                      <div key={f.t} className="p-4 border rounded-xl" style={{ background: "hsl(140 12% 42% / 0.04)", borderColor: "hsl(140 12% 42% / 0.1)" }}>
                         <div className="text-[13px] font-semibold text-white mb-1">{f.t}</div>
                         <div className="text-[12px] text-[#71717A] leading-[1.55]">{f.d}</div>
                       </div>
