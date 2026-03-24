@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowRight, Zap, Shield, BarChart3, Mail, Users, Sparkles as SparklesIcon, Search } from "lucide-react";
+import { ArrowRight, Zap, Shield, BarChart3, Mail, Users, Sparkles as SparklesIcon, Search, Check, Lock } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 
 const AuraLogo = ({ size = 56 }: { size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 100 100" fill="none">
@@ -284,6 +285,16 @@ const INDUSTRIES = [
 ];
 type Step = "auth" | "subscribe" | "welcome";
 
+const ACCOUNT_OPTIONS = [
+  { id: "google", label: "Google", desc: "Gmail, Contacts, Calendar", color: "#4285F4", icon: "G" },
+  { id: "outlook", label: "Outlook", desc: "Email, Contacts, Calendar", color: "#0078D4", icon: "O" },
+  { id: "linkedin", label: "LinkedIn", desc: "Contacts, Posting", color: "#0A66C2", icon: "in" },
+  { id: "instagram", label: "Instagram", desc: "Contacts, Posting", color: "#E4405F", icon: "IG" },
+  { id: "facebook", label: "Facebook", desc: "Contacts, Posting", color: "#1877F2", icon: "f" },
+  { id: "slack", label: "Slack", desc: "Messaging, Notifications", color: "#4A154B", icon: "S" },
+  { id: "apple", label: "Apple ID", desc: "Contacts, Calendar", color: "#A2AAAD", icon: "" },
+];
+
 export default function ConnectDemoAuth() {
   const navigate = useNavigate();
   const [step, setStep] = useState<Step>("auth");
@@ -297,6 +308,18 @@ export default function ConnectDemoAuth() {
   const industryRef = useRef<HTMLDivElement>(null);
   const [welcomeReady, setWelcomeReady] = useState(false);
   const [buildPhase, setBuildPhase] = useState(0);
+  const [connectedAccounts, setConnectedAccounts] = useState<Set<string>>(new Set());
+
+  const toggleAccount = (id: string) => {
+    setConnectedAccounts(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const connectedCount = connectedAccounts.size;
+  const unlockThreshold = 5;
 
   useEffect(() => {
     if (step === "welcome") {
@@ -558,33 +581,102 @@ export default function ConnectDemoAuth() {
                   ))}
                 </div>
 
-                <div className="space-y-3" style={{
+                <div className="space-y-4" style={{
                   opacity: buildPhase >= 5 ? 1 : 0,
                   transform: buildPhase >= 5 ? "translateY(0) scale(1)" : "translateY(10px) scale(0.95)",
                   transitionDuration: "500ms",
                   transitionProperty: "opacity, transform",
                   pointerEvents: buildPhase >= 5 ? "auto" : "none",
                 }}>
+                  {/* Account linking section */}
+                  <div className="space-y-3">
+                    <div className="text-center space-y-1">
+                      <p className="text-xs font-semibold text-white">Connect your accounts</p>
+                      <p className="text-[10px]" style={{ color: "hsl(240 5% 46%)" }}>
+                        Optional — connect 5+ to unlock full network intelligence
+                      </p>
+                    </div>
+
+                    {/* Progress bar */}
+                    <div className="space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-medium" style={{ color: connectedCount >= unlockThreshold ? "hsl(140 12% 58%)" : "hsl(240 5% 50%)" }}>
+                          {connectedCount}/{unlockThreshold} connected
+                        </span>
+                        {connectedCount >= unlockThreshold && (
+                          <span className="text-[10px] font-semibold flex items-center gap-1" style={{ color: "hsl(140 12% 58%)" }}>
+                            <Check className="h-3 w-3" /> Full access unlocked
+                          </span>
+                        )}
+                      </div>
+                      <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "hsl(240 6% 14%)" }}>
+                        <div
+                          className="h-full rounded-full transition-all duration-500"
+                          style={{
+                            width: `${Math.min((connectedCount / unlockThreshold) * 100, 100)}%`,
+                            background: connectedCount >= unlockThreshold
+                              ? "hsl(140 12% 50%)"
+                              : "linear-gradient(90deg, hsl(140 12% 42%), hsl(140 12% 55%))",
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Account grid */}
+                    <div className="grid grid-cols-2 gap-2">
+                      {ACCOUNT_OPTIONS.map(acc => {
+                        const connected = connectedAccounts.has(acc.id);
+                        return (
+                          <button
+                            key={acc.id}
+                            onClick={() => toggleAccount(acc.id)}
+                            className="relative flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-left transition-all duration-300"
+                            style={{
+                              background: connected ? `${acc.color}15` : "hsl(240 6% 10%)",
+                              border: `1px solid ${connected ? acc.color + "50" : "hsl(240 6% 18%)"}`,
+                            }}
+                          >
+                            <div
+                              className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold shrink-0 transition-all"
+                              style={{
+                                background: connected ? acc.color : "hsl(240 6% 16%)",
+                                color: connected ? "#fff" : "hsl(240 5% 50%)",
+                              }}
+                            >
+                              {acc.id === "apple" ? (
+                                <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+                              ) : acc.icon}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-[11px] font-semibold text-white truncate">{acc.label}</p>
+                              <p className="text-[9px] truncate" style={{ color: "hsl(240 5% 46%)" }}>{acc.desc}</p>
+                            </div>
+                            {connected && (
+                              <div className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full flex items-center justify-center" style={{ background: acc.color }}>
+                                <Check className="h-2.5 w-2.5 text-white" />
+                              </div>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
                   <Button
                     size="lg"
                     className="w-full text-white font-semibold hover:brightness-110 transition-all"
                     style={{ background: "hsl(140 12% 42%)" }}
                     onClick={handleEnter}
                   >
-                    Enter AuRa Connect <ArrowRight className="ml-2 h-4 w-4" />
+                    {connectedCount === 0 ? "Skip & Enter AuRa Connect" : `Enter AuRa Connect (${connectedCount} linked)`}
+                    <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
-                  <button
-                    className="w-full py-2.5 rounded-lg text-xs font-medium transition-all border"
-                    style={{
-                      background: "hsl(140 12% 42% / 0.08)",
-                      borderColor: "hsl(140 12% 42% / 0.15)",
-                      color: "hsl(140 12% 58% / 0.6)",
-                      cursor: "default",
-                    }}
-                    disabled
-                  >
-                    Connect all accounts · coming soon
-                  </button>
+
+                  {connectedCount > 0 && connectedCount < unlockThreshold && (
+                    <p className="text-[10px] text-center" style={{ color: "hsl(240 5% 46%)" }}>
+                      Connect {unlockThreshold - connectedCount} more for full functionality
+                    </p>
+                  )}
                 </div>
               </div>
               <p className="text-xl text-center font-semibold mt-10" style={{ color: "hsl(140 12% 58%)" }}>Intelligence runs on AuRa</p>
