@@ -12,8 +12,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { toast } from "sonner";
 import type { useEmailEngine } from "./useEmailEngine";
 import { SYNCED_ACCOUNTS, CONNECT_MATCHES, TIER_COLORS } from "./useEmailEngine";
+import type { useEmailAI } from "./useEmailAI";
+import { AIResultPanel } from "./AIResultPanel";
 
 type Engine = ReturnType<typeof useEmailEngine>;
+type AI = ReturnType<typeof useEmailAI>;
 type Folder = "inbox" | "sent" | "starred" | "drafts";
 
 const FOLDERS: { key: Folder; label: string; icon: React.ElementType }[] = [
@@ -23,7 +26,7 @@ const FOLDERS: { key: Folder; label: string; icon: React.ElementType }[] = [
   { key: "drafts", label: "Drafts", icon: FilePenLine },
 ];
 
-export default function EmailViewOutlook({ engine }: { engine: Engine }) {
+export default function EmailViewOutlook({ engine, ai }: { engine: Engine; ai: AI }) {
   const {
     filtered, selectedThread, unreadCount, searchQuery, setSearchQuery,
     folder, setFolder, selectThread, clearThread, toggleStar, markAllRead,
@@ -110,10 +113,21 @@ export default function EmailViewOutlook({ engine }: { engine: Engine }) {
               <Button size="sm" variant="ghost" className="text-xs h-7 gap-1" style={{ color: "hsl(240 5% 70%)" }}><Forward className="h-3 w-3" /> Forward</Button>
               <div className="flex-1" />
               {/* AURA AI bar */}
-              <Button size="sm" variant="outline" className="text-xs h-7 gap-1" style={{ borderColor: "hsl(140 12% 42% / 0.3)", color: "hsl(140 12% 58%)" }} onClick={() => toast.success("Summarize (demo)")}><Sparkles className="h-3 w-3" /> Summarize</Button>
-              <Button size="sm" variant="outline" className="text-xs h-7 gap-1" style={{ borderColor: "hsl(140 12% 42% / 0.3)", color: "hsl(140 12% 58%)" }} onClick={() => toast.success("AI reply (demo)")}><Sparkles className="h-3 w-3" /> AI Reply</Button>
-              <Button size="sm" variant="outline" className="text-xs h-7 gap-1" style={{ borderColor: "hsl(140 12% 42% / 0.3)", color: "hsl(140 12% 58%)" }} onClick={() => toast.success("Added to pipeline (demo)")}>Add to Pipeline</Button>
+              <Button size="sm" variant="outline" className="text-xs h-7 gap-1" style={{ borderColor: "hsl(140 12% 42% / 0.3)", color: "hsl(140 12% 58%)" }} onClick={() => ai.summarize(selectedThread)} disabled={ai.summaryLoading}>
+                <Sparkles className={`h-3 w-3 ${ai.summaryLoading ? "animate-spin" : ""}`} /> {ai.summaryLoading ? "…" : "Summarize"}
+              </Button>
+              <Button size="sm" variant="outline" className="text-xs h-7 gap-1" style={{ borderColor: "hsl(140 12% 42% / 0.3)", color: "hsl(140 12% 58%)" }} onClick={() => ai.aiReply(selectedThread)} disabled={ai.replyLoading}>
+                <Sparkles className={`h-3 w-3 ${ai.replyLoading ? "animate-spin" : ""}`} /> {ai.replyLoading ? "…" : "AI Reply"}
+              </Button>
+              <Button size="sm" variant="outline" className="text-xs h-7 gap-1" style={{ borderColor: "hsl(140 12% 42% / 0.3)", color: "hsl(140 12% 58%)" }} onClick={() => ai.aiDraft(selectedThread)} disabled={ai.draftLoading}>
+                <Sparkles className={`h-3 w-3 ${ai.draftLoading ? "animate-spin" : ""}`} /> {ai.draftLoading ? "…" : "AI Draft"}
+              </Button>
+              <Button size="sm" variant="outline" className="text-xs h-7 gap-1" style={{ borderColor: "hsl(140 12% 42% / 0.3)", color: "hsl(140 12% 58%)" }} onClick={() => ai.addToPipeline(selectedThread)}>
+                Add to Pipeline
+              </Button>
             </div>
+            {/* AI results */}
+            <div className="px-5 pt-2"><AIResultPanel ai={ai} onUseReply={(text) => setReplyBody(text)} /></div>
 
             {/* Subject */}
             <div className="px-5 py-4">
@@ -144,7 +158,7 @@ export default function EmailViewOutlook({ engine }: { engine: Engine }) {
               <Textarea placeholder="Click here to reply…" value={replyBody} onChange={e => setReplyBody(e.target.value)} className="min-h-[50px] text-sm resize-none mb-2" style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 14%)", color: "white" }} />
               <div className="flex gap-2">
                 <Button size="sm" style={{ background: "hsl(200 60% 50%)" }} onClick={() => { toast.success("Sent (demo)"); setReplyBody(""); }}><SendIcon className="h-3.5 w-3.5 mr-1" /> Send</Button>
-                <Button size="sm" variant="outline" className="gap-1" onClick={() => toast.success("AI draft (demo)")}><Sparkles className="h-3.5 w-3.5" /> AI Draft</Button>
+                <Button size="sm" variant="outline" className="gap-1" onClick={() => selectedThread && ai.aiReply(selectedThread)} disabled={ai.replyLoading}><Sparkles className={`h-3.5 w-3.5 ${ai.replyLoading ? "animate-spin" : ""}`} /> {ai.replyLoading ? "Drafting…" : "AI Draft"}</Button>
               </div>
             </div>
           </div>

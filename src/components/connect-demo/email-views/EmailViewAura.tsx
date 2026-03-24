@@ -14,8 +14,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { toast } from "sonner";
 import type { useEmailEngine } from "./useEmailEngine";
 import { SYNCED_ACCOUNTS, CONNECT_MATCHES, TIER_COLORS, OUTREACH_COLORS, CLIENT_CONTACTS, SMART_FEATURES } from "./useEmailEngine";
+import type { useEmailAI } from "./useEmailAI";
+import { AIResultPanel } from "./AIResultPanel";
 
 type Engine = ReturnType<typeof useEmailEngine>;
+type AI = ReturnType<typeof useEmailAI>;
 type Folder = "inbox" | "sent" | "starred" | "drafts";
 
 const FOLDERS: { key: Folder; label: string; icon: React.ElementType }[] = [
@@ -25,7 +28,7 @@ const FOLDERS: { key: Folder; label: string; icon: React.ElementType }[] = [
   { key: "drafts", label: "Drafts", icon: FilePenLine },
 ];
 
-export default function EmailViewAura({ engine }: { engine: Engine }) {
+export default function EmailViewAura({ engine, ai }: { engine: Engine; ai: AI }) {
   const {
     filtered, selectedThread, unreadCount, searchQuery, setSearchQuery,
     folder, setFolder, accountFilter, setAccountFilter,
@@ -136,26 +139,23 @@ export default function EmailViewAura({ engine }: { engine: Engine }) {
                   );
                 })}
               </div>
-              {/* AI summary at top */}
-              <div className="rounded-lg p-3" style={{ background: "hsl(140 12% 42% / 0.06)", border: "1px solid hsl(140 12% 42% / 0.2)" }}>
-                <div className="flex items-center gap-2 mb-2">
-                  <Sparkles className="h-4 w-4" style={{ color: "hsl(140 12% 58%)" }} />
-                  <span className="text-xs font-semibold" style={{ color: "hsl(140 12% 58%)" }}>AI Summary</span>
-                </div>
-                <p className="text-xs" style={{ color: "hsl(240 5% 70%)" }}>
-                  {selectedThread.messages.length > 1
-                    ? `Active thread with ${selectedThread.participants.filter(p => p !== "You").join(", ")}. ${selectedThread.messages.length} messages exchanged. Discussion moving toward next steps.`
-                    : `Initial message from ${selectedThread.participants.filter(p => p !== "You").join(", ")}. Awaiting your response.`}
-                </p>
-                {/* One-click actions */}
-                <div className="flex gap-1.5 mt-2 flex-wrap">
-                  {["Confirm meeting", "Ask for details", "Create opportunity"].map(a => (
-                    <Button key={a} size="sm" variant="outline" className="text-[10px] h-6 px-2" style={{ borderColor: "hsl(140 12% 42% / 0.3)", color: "hsl(140 12% 58%)" }} onClick={() => toast.success(`${a} (demo)`)}>
-                      {a}
-                    </Button>
-                  ))}
-                </div>
+              {/* AI action buttons */}
+              <div className="flex gap-2 flex-wrap">
+                <Button size="sm" variant="outline" className="text-[10px] h-6 px-2 gap-1" style={{ borderColor: "hsl(140 12% 42% / 0.3)", color: "hsl(140 12% 58%)" }} onClick={() => ai.summarize(selectedThread)} disabled={ai.summaryLoading}>
+                  <Sparkles className={`h-3 w-3 ${ai.summaryLoading ? "animate-spin" : ""}`} /> {ai.summaryLoading ? "Summarizing…" : "Summarize"}
+                </Button>
+                <Button size="sm" variant="outline" className="text-[10px] h-6 px-2 gap-1" style={{ borderColor: "hsl(140 12% 42% / 0.3)", color: "hsl(140 12% 58%)" }} onClick={() => ai.aiReply(selectedThread)} disabled={ai.replyLoading}>
+                  <Sparkles className={`h-3 w-3 ${ai.replyLoading ? "animate-spin" : ""}`} /> {ai.replyLoading ? "Drafting…" : "AI Reply"}
+                </Button>
+                <Button size="sm" variant="outline" className="text-[10px] h-6 px-2 gap-1" style={{ borderColor: "hsl(140 12% 42% / 0.3)", color: "hsl(140 12% 58%)" }} onClick={() => ai.aiDraft(selectedThread)} disabled={ai.draftLoading}>
+                  <Sparkles className={`h-3 w-3 ${ai.draftLoading ? "animate-spin" : ""}`} /> {ai.draftLoading ? "Drafting…" : "AI Draft"}
+                </Button>
+                <Button size="sm" variant="outline" className="text-[10px] h-6 px-2 gap-1" style={{ borderColor: "hsl(140 12% 42% / 0.3)", color: "hsl(140 12% 58%)" }} onClick={() => ai.addToPipeline(selectedThread)}>
+                  Add to Pipeline
+                </Button>
               </div>
+              {/* AI results panel */}
+              <AIResultPanel ai={ai} onUseReply={(text) => setReplyBody(text)} />
               <h3 className="text-base font-semibold text-white">{selectedThread.subject}</h3>
               {/* Messages */}
               <div className="space-y-2">
@@ -177,7 +177,7 @@ export default function EmailViewAura({ engine }: { engine: Engine }) {
                 <Textarea placeholder="Reply…" value={replyBody} onChange={e => setReplyBody(e.target.value)} className="flex-1 min-h-[50px] text-sm resize-none rounded-lg" style={{ background: "hsl(240 8% 7%)", color: "white", border: "1px solid hsl(240 6% 14%)" }} />
                 <div className="flex flex-col gap-1">
                   <Button size="sm" style={{ background: "hsl(140 12% 42%)" }} onClick={() => { toast.success("Sent (demo)"); setReplyBody(""); }}><SendIcon className="h-3.5 w-3.5" /></Button>
-                  <Button size="sm" variant="ghost" onClick={() => toast.success("AI draft (demo)")}><Sparkles className="h-3.5 w-3.5" style={{ color: "hsl(140 12% 58%)" }} /></Button>
+                  <Button size="sm" variant="ghost" onClick={() => selectedThread && ai.aiReply(selectedThread)} disabled={ai.replyLoading}><Sparkles className={`h-3.5 w-3.5 ${ai.replyLoading ? "animate-spin" : ""}`} style={{ color: "hsl(140 12% 58%)" }} /></Button>
                 </div>
               </div>
             </div>

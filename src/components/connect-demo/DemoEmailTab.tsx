@@ -1,9 +1,10 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Mail, CheckCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useEmailEngine, getEmailLayout, setEmailLayout, type EmailLayout } from "./email-views/useEmailEngine";
+import { useEmailAI } from "./email-views/useEmailAI";
 import EmailLayoutSwitcher from "./email-views/EmailLayoutSwitcher";
 import EmailViewGmail from "./email-views/EmailViewGmail";
 import EmailViewOutlook from "./email-views/EmailViewOutlook";
@@ -11,7 +12,11 @@ import EmailViewAura from "./email-views/EmailViewAura";
 
 export default function DemoEmailTab() {
   const engine = useEmailEngine();
+  const ai = useEmailAI();
   const [layout, setLayoutState] = useState<EmailLayout>(getEmailLayout);
+
+  // Reset AI state when thread changes
+  useEffect(() => { ai.reset(); }, [engine.selectedThread?.id]);
 
   const handleLayoutChange = useCallback((l: EmailLayout) => {
     setLayoutState(l);
@@ -44,9 +49,9 @@ export default function DemoEmailTab() {
 
       {/* Render active layout */}
       <div className="email-body">
-        {layout === "gmail" && <EmailViewGmail engine={engine} />}
-        {layout === "outlook" && <EmailViewOutlook engine={engine} />}
-        {layout === "aura" && <EmailViewAura engine={engine} />}
+        {layout === "gmail" && <EmailViewGmail engine={engine} ai={ai} />}
+        {layout === "outlook" && <EmailViewOutlook engine={engine} ai={ai} />}
+        {layout === "aura" && <EmailViewAura engine={engine} ai={ai} />}
       </div>
     </div>
   );
