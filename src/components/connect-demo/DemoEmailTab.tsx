@@ -898,6 +898,7 @@ export default function DemoEmailTab() {
             )}
             {customLabels.map(label => {
               const isActive = searchQuery === `is:${label}`;
+              const labelCount = threads.filter(t => t.tags.some(tg => tg.toLowerCase() === label.toLowerCase())).length;
               return (
                 <button
                   key={label}
@@ -909,7 +910,12 @@ export default function DemoEmailTab() {
                   style={!isActive ? { color: "hsl(240 5% 56%)" } : {}}
                 >
                   <Tag className="h-3.5 w-3.5" style={{ color: "hsl(140 12% 50%)" }} />
-                  {label}
+                  <span className="flex-1">{label}</span>
+                  {labelCount > 0 && (
+                    <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full" style={{ background: "hsl(140 12% 42% / 0.15)", color: "hsl(140 12% 58%)" }}>
+                      {labelCount}
+                    </span>
+                  )}
                 </button>
               );
             })}
