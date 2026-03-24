@@ -177,7 +177,7 @@ export default function EmailViewAura({ engine, ai }: { engine: Engine; ai: AI }
                 <Textarea placeholder="Reply…" value={replyBody} onChange={e => setReplyBody(e.target.value)} className="flex-1 min-h-[50px] text-sm resize-none rounded-lg" style={{ background: "hsl(240 8% 7%)", color: "white", border: "1px solid hsl(240 6% 14%)" }} />
                 <div className="flex flex-col gap-1">
                   <Button size="sm" style={{ background: "hsl(140 12% 42%)" }} onClick={() => { toast.success("Sent (demo)"); setReplyBody(""); }}><SendIcon className="h-3.5 w-3.5" /></Button>
-                  <Button size="sm" variant="ghost" onClick={() => toast.success("AI draft (demo)")}><Sparkles className="h-3.5 w-3.5" style={{ color: "hsl(140 12% 58%)" }} /></Button>
+                  <Button size="sm" variant="ghost" onClick={() => selectedThread && ai.aiReply(selectedThread)} disabled={ai.replyLoading}><Sparkles className={`h-3.5 w-3.5 ${ai.replyLoading ? "animate-spin" : ""}`} style={{ color: "hsl(140 12% 58%)" }} /></Button>
                 </div>
               </div>
             </div>
