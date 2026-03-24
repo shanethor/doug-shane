@@ -126,6 +126,8 @@ export default function EmailViewOutlook({ engine, ai }: { engine: Engine; ai: A
                 Add to Pipeline
               </Button>
             </div>
+            {/* AI results */}
+            <div className="px-5 pt-2"><AIResultPanel ai={ai} onUseReply={(text) => setReplyBody(text)} /></div>
 
             {/* Subject */}
             <div className="px-5 py-4">

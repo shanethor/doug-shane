@@ -28,7 +28,7 @@ const FOLDERS: { key: Folder; label: string; icon: React.ElementType }[] = [
   { key: "drafts", label: "Drafts", icon: FilePenLine },
 ];
 
-export default function EmailViewAura({ engine }: { engine: Engine }) {
+export default function EmailViewAura({ engine, ai }: { engine: Engine; ai: AI }) {
   const {
     filtered, selectedThread, unreadCount, searchQuery, setSearchQuery,
     folder, setFolder, accountFilter, setAccountFilter,
