@@ -758,8 +758,25 @@ export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId, ini
               <Input value={brandName} onChange={e => setBrandName(e.target.value)} placeholder="Hamilton & Cole LLP" style={darkInput} />
             </div>
             <div className="space-y-1">
-              <label className="text-[9px] font-medium uppercase tracking-wider" style={{ color: "hsl(240 5% 50%)" }}>Logo URL (optional)</label>
-              <Input value={logoUrl} onChange={e => setLogoUrl(e.target.value)} placeholder="https://..." style={darkInput} />
+              <label className="text-[9px] font-medium uppercase tracking-wider flex items-center gap-1" style={{ color: "hsl(240 5% 50%)" }}>
+                <Upload className="h-2.5 w-2.5" /> Logo
+              </label>
+              <div className="flex items-center gap-2">
+                {logoUrl && (
+                  <div className="relative shrink-0">
+                    <img src={logoUrl} alt="Logo" className="w-9 h-9 object-contain rounded" style={{ border: "1px solid hsl(240 6% 18%)", background: "hsl(240 6% 12%)" }} />
+                    <button onClick={() => setLogoUrl("")} className="absolute -top-1 -right-1 rounded-full p-0.5" style={{ background: "hsl(0 60% 40%)" }}>
+                      <X className="h-2 w-2 text-white" />
+                    </button>
+                  </div>
+                )}
+                <input ref={logoFileRef} type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handleImageUpload(f, "logo"); e.target.value = ""; }} />
+                <Button variant="ghost" size="sm" className="text-[9px] h-7 gap-1" style={{ color: "hsl(140 12% 58%)", border: "1px solid hsl(240 6% 18%)" }} onClick={() => logoFileRef.current?.click()} disabled={analyzingBrand}>
+                  {analyzingBrand ? <Loader2 className="h-3 w-3 animate-spin" /> : <ScanSearch className="h-3 w-3" />}
+                  {logoUrl ? "Replace" : "Upload & Analyze"}
+                </Button>
+              </div>
+              <p className="text-[8px]" style={{ color: "hsl(240 5% 40%)" }}>AI extracts colors, industry & tone from your logo</p>
             </div>
             <div className="space-y-1 sm:col-span-2">
               <label className="text-[9px] font-medium uppercase tracking-wider" style={{ color: "hsl(240 5% 50%)" }}>Brand Colors</label>
@@ -774,6 +791,17 @@ export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId, ini
                   <Button variant="ghost" size="sm" className="text-[9px] h-6" style={{ color: "hsl(140 12% 58%)" }} onClick={() => setBrandColors([...brandColors, "#555555"])}>+ Add</Button>
                 )}
               </div>
+            </div>
+            <div className="space-y-1 sm:col-span-2">
+              <label className="text-[9px] font-medium uppercase tracking-wider flex items-center gap-1" style={{ color: "hsl(240 5% 50%)" }}>
+                <ImageIcon className="h-2.5 w-2.5" /> Previous Marketing Materials (optional)
+              </label>
+              <input ref={materialFileRef} type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handleImageUpload(f, "material"); e.target.value = ""; }} />
+              <Button variant="ghost" size="sm" className="text-[9px] h-7 gap-1 w-full justify-start" style={{ color: "hsl(240 5% 60%)", border: "1px dashed hsl(240 6% 18%)" }} onClick={() => materialFileRef.current?.click()} disabled={analyzingBrand}>
+                {analyzingBrand ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3" />}
+                Upload a past flyer, brochure, or social post to extract fonts & design style
+              </Button>
+              <p className="text-[8px]" style={{ color: "hsl(240 5% 40%)" }}>AI learns your fonts, additional colors & design theme for better results</p>
             </div>
           </div>
 
