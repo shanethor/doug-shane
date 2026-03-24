@@ -118,6 +118,79 @@ const CLIENT_CONTACTS = [
   { name: "James Whitfield", email: "james@alpinegroup.com", emailCount: 5 },
 ];
 
+/* ─── Connect Contact Matching (Superhuman-style) ─── */
+interface ConnectMatch {
+  name: string; email: string; company: string; tier: string;
+  mutualConnections: number; proximity: number; // 0-100
+  pipelineStage?: string; pipelineDeal?: string; dealValue?: number;
+  outreachStatus?: "active" | "overdue" | "scheduled" | "none";
+  lastTouch?: string; nextTouch?: string;
+  phone?: string; location?: string;
+}
+
+const CONNECT_MATCHES: Record<string, ConnectMatch> = {
+  "sarah@greenvalley.com": {
+    name: "Sarah Mitchell", email: "sarah@greenvalley.com", company: "Green Valley Partners",
+    tier: "S", mutualConnections: 12, proximity: 94,
+    pipelineStage: "Proposal", pipelineDeal: "Green Valley — Commercial Package", dealValue: 24000,
+    outreachStatus: "active", lastTouch: "2 days ago", nextTouch: "Tomorrow",
+    phone: "(512) 555-0184", location: "Austin, TX",
+  },
+  "marcus@techventures.io": {
+    name: "Marcus Chen", email: "marcus@techventures.io", company: "Tech Ventures",
+    tier: "A", mutualConnections: 8, proximity: 82,
+    pipelineStage: "Discovery", pipelineDeal: "Tech Ventures — Cyber Liability", dealValue: 18000,
+    outreachStatus: "scheduled", lastTouch: "5 days ago", nextTouch: "Thursday",
+    phone: "(415) 555-0291", location: "San Francisco, CA",
+  },
+  "jess@blueridgecap.com": {
+    name: "Jessica Torres", email: "jess@blueridgecap.com", company: "Blue Ridge Capital",
+    tier: "B", mutualConnections: 4, proximity: 67,
+    outreachStatus: "overdue", lastTouch: "3 weeks ago", nextTouch: "Overdue",
+    phone: "(704) 555-0137", location: "Charlotte, NC",
+  },
+  "david.k@primeadvisors.net": {
+    name: "David Kowalski", email: "david.k@primeadvisors.net", company: "Prime Advisors",
+    tier: "S", mutualConnections: 15, proximity: 91,
+    pipelineStage: "Negotiation", pipelineDeal: "Prime Advisors — Group Benefits", dealValue: 45000,
+    outreachStatus: "active", lastTouch: "Yesterday", nextTouch: "Friday",
+    phone: "(312) 555-0266", location: "Chicago, IL",
+  },
+  "linda@sunriseproperties.com": {
+    name: "Linda Park", email: "linda@sunriseproperties.com", company: "Sunrise Properties",
+    tier: "A", mutualConnections: 6, proximity: 75,
+    pipelineStage: "Quoting", pipelineDeal: "Sunrise Properties — Commercial Auto", dealValue: 12000,
+    outreachStatus: "none", lastTouch: "1 week ago",
+    phone: "(602) 555-0198", location: "Phoenix, AZ",
+  },
+  "james@alpinegroup.com": {
+    name: "James Whitfield", email: "james@alpinegroup.com", company: "Alpine Group",
+    tier: "B", mutualConnections: 3, proximity: 58,
+    outreachStatus: "scheduled", lastTouch: "10 days ago", nextTouch: "Next Monday",
+    location: "Denver, CO",
+  },
+  "tom.b@westfieldmfg.com": {
+    name: "Tom Bradley", email: "tom.b@westfieldmfg.com", company: "Westfield Manufacturing",
+    tier: "C", mutualConnections: 2, proximity: 42,
+    outreachStatus: "none", lastTouch: "1 month ago",
+    location: "Detroit, MI",
+  },
+};
+
+const TIER_COLORS: Record<string, { bg: string; text: string }> = {
+  S: { bg: "hsl(45 80% 25%)", text: "hsl(45 80% 75%)" },
+  A: { bg: "hsl(140 40% 22%)", text: "hsl(140 50% 70%)" },
+  B: { bg: "hsl(200 40% 22%)", text: "hsl(200 50% 70%)" },
+  C: { bg: "hsl(240 10% 22%)", text: "hsl(240 10% 65%)" },
+};
+
+const OUTREACH_COLORS: Record<string, { bg: string; text: string; label: string }> = {
+  active: { bg: "hsl(140 50% 20%)", text: "hsl(140 50% 70%)", label: "Active" },
+  overdue: { bg: "hsl(0 50% 22%)", text: "hsl(0 50% 70%)", label: "Overdue" },
+  scheduled: { bg: "hsl(200 50% 22%)", text: "hsl(200 50% 70%)", label: "Scheduled" },
+  none: { bg: "hsl(240 8% 18%)", text: "hsl(240 5% 55%)", label: "No Cadence" },
+};
+
 const SMART_FEATURES = [
   { icon: Wand2, label: "Smart Reply", desc: "Generate contextual replies based on thread history" },
   { icon: FileText, label: "Auto-Summarize", desc: "Condense long email threads into key points" },
