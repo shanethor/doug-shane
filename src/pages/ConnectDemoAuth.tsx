@@ -328,25 +328,13 @@ export default function ConnectDemoAuth() {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  // Transition logic: collapse old card → swap step → expand new card
   const goToStep = useCallback((next: Step) => {
-    setPendingStep(next);
-    setTransitioning(true);
-    setTransPhase("collapse");
-    setCardVisible(false); // shrink card away
+    setCardVisible(false);
+    setTimeout(() => {
+      setStep(next);
+      setTimeout(() => setCardVisible(true), 50);
+    }, 400);
   }, []);
-
-  const handleBurstDone = useCallback(() => {
-    if (transPhase === "collapse" && pendingStep) {
-      setStep(pendingStep);
-      setPendingStep(null);
-      setTransPhase("expand");
-      // Card stays hidden briefly, then shows as nodes expand outward
-      setTimeout(() => setCardVisible(true), 100);
-    } else {
-      setTransitioning(false);
-    }
-  }, [transPhase, pendingStep]);
 
   const handleAuth = (e: React.FormEvent) => {
     e.preventDefault();
