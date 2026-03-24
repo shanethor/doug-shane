@@ -614,8 +614,19 @@ export default function DemoPipelineTab() {
         : l
     ));
     setPendingWonLead(null);
-    const celLabel = industry === "insurance" ? "Added to book of business" : industry === "real_estate" ? "Commission earned" : industry === "consulting" ? "Engagement secured" : "Added to production";
-    setCelebration({ amount: finalValue, label: celLabel });
+    // For commission-based industries, show commission as the celebration amount
+    let celAmount = finalValue;
+    let celLabel = "Added to production";
+    if (industry === "insurance") {
+      celAmount = Number(details.est_commission) || Math.round(finalValue * 0.15);
+      celLabel = "Commission Earned";
+    } else if (industry === "real_estate") {
+      celAmount = Number(details.your_commission) || Math.round(finalValue * 0.0275);
+      celLabel = "Commission Earned";
+    } else if (industry === "consulting") {
+      celLabel = "Engagement Secured";
+    }
+    setCelebration({ amount: celAmount, label: celLabel });
   }, [pendingWonLead, industry]);
 
   const handleDragStart = (e: React.DragEvent, leadId: string) => {
