@@ -287,9 +287,6 @@ type Step = "auth" | "subscribe" | "welcome";
 export default function ConnectDemoAuth() {
   const navigate = useNavigate();
   const [step, setStep] = useState<Step>("auth");
-  const [pendingStep, setPendingStep] = useState<Step | null>(null);
-  const [transitioning, setTransitioning] = useState(false);
-  const [transPhase, setTransPhase] = useState<"collapse" | "expand">("collapse");
   const [cardVisible, setCardVisible] = useState(true);
 
   const [email, setEmail] = useState("");
