@@ -95,8 +95,7 @@ const SOCIAL_SIZES = [
   { value: "linkedin", label: "LinkedIn", ratio: "1200×627", icon: Linkedin },
 ];
 
-
-  onClose: () => void;
+interface SpotlightFlyerWizardProps {
   brands: BrandPackage[];
   editFlyerId?: string | null;
   initialType?: string;
