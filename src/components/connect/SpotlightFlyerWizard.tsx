@@ -578,7 +578,6 @@ export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId, ini
       const context = [
         `Title: ${title}`,
         `Type: ${flyerType}`,
-        `Industry: Insurance / Professional Services`,
         brandName ? `Brand: ${brandName}` : "",
         cleanBullets.length ? `Key points: ${cleanBullets.join("; ")}` : "",
         cta ? `CTA: ${cta}` : "",
@@ -590,41 +589,35 @@ export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId, ini
         linkedin: "Write a professional LinkedIn post (3-4 sentences). Thought-leadership tone. Include 3-5 professional hashtags. No emojis except ✅ or 📊 sparingly. End with engagement question.",
       };
 
-      const { data, error } = await supabase.functions.invoke("connect-assistant", {
+      const { data, error } = await supabase.functions.invoke("ai-router", {
         body: {
-          messages: [{
-            role: "user",
-            content: `Generate a ${platform} post for this graphic I just created. Here is the context:\n\n${context}\n\n${platformGuide[platform] || platformGuide.facebook}\n\nReturn ONLY the post text with hashtags. No explanations.`,
-          }],
+          messages: [
+            {
+              role: "system",
+              content: "You are Sage, an expert social media copywriter. Return ONLY the post text with hashtags. No explanations, no markdown formatting, no quotes around the text.",
+            },
+            {
+              role: "user",
+              content: `Generate a ${platform} post for this marketing graphic. Context:\n\n${context}\n\n${platformGuide[platform] || platformGuide.facebook}`,
+            },
+          ],
         },
       });
 
       if (error) throw error;
 
-      // Handle streaming response
-      if (typeof data === "string") {
-        // Parse SSE
-        const lines = data.split("\n");
-        let full = "";
-        for (const line of lines) {
-          if (line.startsWith("data: ") && line !== "data: [DONE]") {
-            try {
-              const parsed = JSON.parse(line.slice(6));
-              full += parsed.choices?.[0]?.delta?.content || "";
-            } catch {}
-          }
-        }
-        setSageCaption(full.trim() || "Check your connection and try again.");
+      const content = data?.choices?.[0]?.message?.content?.trim();
+      if (content) {
+        setSageCaption(content);
       } else {
-        setSageCaption(data?.choices?.[0]?.message?.content?.trim() || "Caption generation failed. Edit manually above.");
+        throw new Error("No content returned");
       }
     } catch (err: any) {
       console.error("Sage caption error:", err);
-      // Fallback caption
       const fallbackCaptions: Record<string, string> = {
-        facebook: `🔥 ${title}\n\n${getResolvedBullets().slice(0, 2).join(". ")}.\n\n${cta || "Learn more today!"}\n\n#Insurance #BusinessGrowth #RiskManagement #CoverageMatters #${brandName?.replace(/\s+/g, "") || "YourBrand"}`,
-        instagram: `${title} ✨\n\n${getResolvedBullets().slice(0, 2).join("\n")}\n\n👉 ${cta || "Link in bio!"}\n\n.\n.\n.\n#Insurance #InsuranceAgent #BusinessInsurance #RiskManagement #CoverageMatters #InsuranceBroker #CommercialInsurance #SmallBusiness #Entrepreneur #BusinessOwner #InsuranceTips #ProtectYourBusiness #InsuranceAdvisor #ProfessionalServices #${brandName?.replace(/\s+/g, "") || "Brand"}`,
-        linkedin: `${title}\n\n${getResolvedBullets().slice(0, 3).join(". ")}.\n\n${cta || "Reach out to learn more."}\n\nWhat's your biggest challenge with business coverage? 👇\n\n#Insurance #RiskManagement #BusinessStrategy #ProfessionalDevelopment`,
+        facebook: `🔥 ${title}\n\n${getResolvedBullets().slice(0, 2).join(". ")}.\n\n${cta || "Learn more today!"}\n\n#BusinessGrowth #Marketing #${brandName?.replace(/\s+/g, "") || "YourBrand"}`,
+        instagram: `${title} ✨\n\n${getResolvedBullets().slice(0, 2).join("\n")}\n\n👉 ${cta || "Link in bio!"}\n\n.\n.\n.\n#Marketing #SmallBusiness #Entrepreneur #BusinessOwner #${brandName?.replace(/\s+/g, "") || "Brand"}`,
+        linkedin: `${title}\n\n${getResolvedBullets().slice(0, 3).join(". ")}.\n\n${cta || "Reach out to learn more."}\n\nWhat are your thoughts? 👇\n\n#BusinessStrategy #ProfessionalDevelopment`,
       };
       setSageCaption(fallbackCaptions[platform] || fallbackCaptions.facebook);
     } finally {
@@ -1113,8 +1106,8 @@ export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId, ini
                       </div>
                     ) : (
                       <>
-                        <div className="rounded-md overflow-hidden" style={{ border: "1px solid hsl(240 6% 14%)" }}>
-                          <img src={resultImageUrl} alt={title} className="w-full h-32 object-cover" />
+                        <div className="rounded-lg overflow-hidden" style={{ border: "1px solid hsl(240 6% 14%)", background: "hsl(240 6% 6%)" }}>
+                          <img src={resultImageUrl} alt={title} className="w-full object-contain max-h-[280px]" />
                         </div>
                         <div className="space-y-1">
                           <label className="text-[9px] font-medium uppercase tracking-wider" style={{ color: "hsl(240 5% 50%)" }}>Caption & Hashtags</label>
