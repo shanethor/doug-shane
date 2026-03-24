@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,7 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Mail, Search, Star, Inbox, Send as SendIcon, FilePenLine, SendHorizonal, Tag,
   Plus, Paperclip, ArrowLeft, X, Sparkles, Reply, ReplyAll, Forward,
-  Archive, Flag, Activity,
+  Archive, Flag, Activity, Minus, Maximize2, Square,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
@@ -14,6 +14,99 @@ import type { useEmailEngine } from "./useEmailEngine";
 import { SYNCED_ACCOUNTS, CONNECT_MATCHES, TIER_COLORS } from "./useEmailEngine";
 import type { useEmailAI } from "./useEmailAI";
 import { AIResultPanel } from "./AIResultPanel";
+
+/* ---------- Outlook-style floating Compose window ---------- */
+function ComposePopout({ onClose }: { onClose: () => void }) {
+  const [to, setTo] = useState("");
+  const [cc, setCc] = useState("");
+  const [subject, setSubject] = useState("");
+  const [body, setBody] = useState("");
+  const [minimized, setMinimized] = useState(false);
+  const [maximized, setMaximized] = useState(false);
+  const [pos, setPos] = useState({ x: 80, y: 60 });
+  const dragRef = useRef<HTMLDivElement>(null);
+  const dragging = useRef(false);
+  const offset = useRef({ x: 0, y: 0 });
+
+  useEffect(() => {
+    const onMove = (e: MouseEvent) => {
+      if (!dragging.current) return;
+      setPos({ x: e.clientX - offset.current.x, y: e.clientY - offset.current.y });
+    };
+    const onUp = () => { dragging.current = false; };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+    return () => { window.removeEventListener("mousemove", onMove); window.removeEventListener("mouseup", onUp); };
+  }, []);
+
+  const startDrag = (e: React.MouseEvent) => {
+    if (maximized) return;
+    dragging.current = true;
+    offset.current = { x: e.clientX - pos.x, y: e.clientY - pos.y };
+  };
+
+  if (minimized) {
+    return (
+      <div className="fixed bottom-0 right-6 z-[9999] flex items-center gap-2 px-4 py-2 rounded-t-lg cursor-pointer shadow-xl"
+        style={{ background: "hsl(200 60% 50%)", color: "white" }}
+        onClick={() => setMinimized(false)}>
+        <FilePenLine className="h-4 w-4" />
+        <span className="text-sm font-medium">{subject || "New Message"}</span>
+      </div>
+    );
+  }
+
+  const sizeClasses = maximized
+    ? "fixed inset-4 z-[9999]"
+    : "fixed z-[9999]";
+
+  return (
+    <div className={sizeClasses}
+      style={maximized ? {} : { left: pos.x, top: pos.y, width: 560, height: 480 }}>
+      <div className="flex flex-col h-full rounded-lg overflow-hidden shadow-2xl"
+        style={{ border: "1px solid hsl(240 6% 20%)", background: "hsl(240 8% 8%)" }}>
+        {/* Title bar */}
+        <div ref={dragRef} onMouseDown={startDrag}
+          className="flex items-center justify-between px-3 py-2 cursor-move select-none shrink-0"
+          style={{ background: "hsl(200 60% 50%)" }}>
+          <span className="text-sm font-semibold text-white">{subject || "New Message"}</span>
+          <div className="flex items-center gap-1">
+            <button onClick={() => setMinimized(true)} className="p-1 rounded hover:bg-white/20 transition-colors"><Minus className="h-3.5 w-3.5 text-white" /></button>
+            <button onClick={() => setMaximized(!maximized)} className="p-1 rounded hover:bg-white/20 transition-colors"><Maximize2 className="h-3.5 w-3.5 text-white" /></button>
+            <button onClick={onClose} className="p-1 rounded hover:bg-red-500/80 transition-colors"><X className="h-3.5 w-3.5 text-white" /></button>
+          </div>
+        </div>
+
+        {/* Form */}
+        <div className="flex flex-col gap-0 flex-1 overflow-hidden">
+          <div className="flex items-center gap-2 px-3 py-1.5" style={{ borderBottom: "1px solid hsl(240 6% 14%)" }}>
+            <span className="text-xs font-medium shrink-0" style={{ color: "hsl(240 5% 50%)", width: 32 }}>To</span>
+            <Input value={to} onChange={e => setTo(e.target.value)} placeholder="Recipients" className="border-0 bg-transparent text-sm h-7 focus-visible:ring-0 px-0" style={{ color: "white" }} />
+          </div>
+          <div className="flex items-center gap-2 px-3 py-1.5" style={{ borderBottom: "1px solid hsl(240 6% 14%)" }}>
+            <span className="text-xs font-medium shrink-0" style={{ color: "hsl(240 5% 50%)", width: 32 }}>Cc</span>
+            <Input value={cc} onChange={e => setCc(e.target.value)} placeholder="" className="border-0 bg-transparent text-sm h-7 focus-visible:ring-0 px-0" style={{ color: "white" }} />
+          </div>
+          <div className="flex items-center gap-2 px-3 py-1.5" style={{ borderBottom: "1px solid hsl(240 6% 14%)" }}>
+            <span className="text-xs font-medium shrink-0" style={{ color: "hsl(240 5% 50%)", width: 32 }}>Subj</span>
+            <Input value={subject} onChange={e => setSubject(e.target.value)} placeholder="Subject" className="border-0 bg-transparent text-sm h-7 focus-visible:ring-0 px-0" style={{ color: "white" }} />
+          </div>
+          <Textarea value={body} onChange={e => setBody(e.target.value)} placeholder="Write your message..." className="flex-1 border-0 rounded-none resize-none text-sm focus-visible:ring-0 px-3 py-2" style={{ background: "transparent", color: "hsl(240 5% 85%)" }} />
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center gap-2 px-3 py-2 shrink-0" style={{ borderTop: "1px solid hsl(240 6% 14%)" }}>
+          <Button size="sm" className="gap-1.5" style={{ background: "hsl(200 60% 50%)" }} onClick={() => { toast.success("Sent (demo)"); onClose(); }}>
+            <SendIcon className="h-3.5 w-3.5" /> Send
+          </Button>
+          <Button size="sm" variant="ghost" className="gap-1" style={{ color: "hsl(240 5% 60%)" }}><Paperclip className="h-3.5 w-3.5" /> Attach</Button>
+          <div className="flex-1" />
+          <Button size="sm" variant="ghost" style={{ color: "hsl(240 5% 45%)" }} onClick={onClose}>Discard</Button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 type Engine = ReturnType<typeof useEmailEngine>;
 type AI = ReturnType<typeof useEmailAI>;
@@ -34,11 +127,19 @@ export default function EmailViewOutlook({ engine, ai }: { engine: Engine; ai: A
   } = engine;
 
   const [replyBody, setReplyBody] = useState("");
+  const [composeOpen, setComposeOpen] = useState(false);
 
   return (
+    <>
     <div className="flex gap-0 h-[calc(100vh-180px)] min-h-[500px]" style={{ border: "1px solid hsl(240 6% 14%)", borderRadius: 8, overflow: "hidden" }}>
       {/* Outlook folder tree — narrow */}
       <div className="hidden lg:flex flex-col w-44 shrink-0 py-2 space-y-0.5" style={{ background: "hsl(240 8% 6%)", borderRight: "1px solid hsl(240 6% 14%)" }}>
+        {/* Compose button */}
+        <button onClick={() => setComposeOpen(true)}
+          className="flex items-center gap-2 mx-2 mb-2 px-3 py-2 rounded text-sm font-semibold transition-colors hover:brightness-110"
+          style={{ background: "hsl(200 60% 50%)", color: "white" }}>
+          <Plus className="h-4 w-4" /> New Message
+        </button>
         {FOLDERS.map(f => (
           <button key={f.key} onClick={() => { setFolder(f.key); clearThread(); }}
             className={`flex items-center gap-2.5 text-sm px-3 py-2 transition-colors w-full text-left ${folder === f.key ? "font-semibold" : ""}`}
@@ -172,5 +273,7 @@ export default function EmailViewOutlook({ engine, ai }: { engine: Engine; ai: A
         )}
       </div>
     </div>
+    {composeOpen && <ComposePopout onClose={() => setComposeOpen(false)} />}
+    </>
   );
 }
