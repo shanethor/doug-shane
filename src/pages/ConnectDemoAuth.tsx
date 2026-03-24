@@ -287,7 +287,7 @@ const INDUSTRIES = [
   "Telecommunications", "Transportation", "Travel & Tourism", "Venture Capital",
   "Veterinary", "Video Production", "Warehousing", "Wealth Management", "Wholesale", "Other",
 ];
-type Step = "auth" | "subscribe" | "welcome" | "email_layout";
+type Step = "auth" | "subscribe" | "welcome" | "email_layout" | "building";
 
 const ACCOUNT_OPTIONS: { id: string; label: string; desc: string; color: string; icon: string; oauthProvider?: string; status: "ready" | "coming_soon" }[] = [
   { id: "google", label: "Google", desc: "Gmail, Contacts, Calendar", color: "#4285F4", icon: "G", oauthProvider: "gmail", status: "ready" },
