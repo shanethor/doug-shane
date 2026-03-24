@@ -431,45 +431,42 @@ serve(async (req) => {
 
     // ─── BRANDING: save_brand ───
     if (action === "save_brand") {
-      const { brand_id, name, brand_name, brand_colors, logo_url, tagline, disclaimer, industry, tone, is_default } = body;
+      const { brand_id, name, brand_name, brand_colors, logo_url, tagline, disclaimer, industry, tone, is_default, font_styles, design_notes } = body;
+
+      // Build metadata with design intelligence
+      const metadata: Record<string, unknown> = {};
+      if (font_styles && Array.isArray(font_styles) && font_styles.length > 0) metadata.font_styles = font_styles;
+      if (design_notes && typeof design_notes === "string") metadata.design_notes = design_notes;
 
       // If setting as default, unset other defaults
       if (is_default) {
         await supabase.from("branding_packages").update({ is_default: false }).eq("user_id", userId);
       }
 
+      const payload = {
+        name: name || "Default",
+        brand_name: brand_name || "",
+        brand_colors: brand_colors || ["#001F3F", "#C9A24B"],
+        logo_url: logo_url || null,
+        tagline: tagline || null,
+        disclaimer: disclaimer || null,
+        industry: industry || null,
+        tone: tone || "professional",
+        is_default: !!is_default,
+        metadata: Object.keys(metadata).length > 0 ? metadata : {},
+      };
+
       if (brand_id) {
         // Update existing
         const { data: existing } = await supabase.from("branding_packages").select("id, user_id").eq("id", brand_id).single();
         if (!existing || existing.user_id !== userId) throw new Error("Brand not found");
 
-        const { data, error } = await supabase.from("branding_packages").update({
-          name: name || "Default",
-          brand_name: brand_name || "",
-          brand_colors: brand_colors || ["#001F3F", "#C9A24B"],
-          logo_url: logo_url || null,
-          tagline: tagline || null,
-          disclaimer: disclaimer || null,
-          industry: industry || null,
-          tone: tone || "professional",
-          is_default: !!is_default,
-        }).eq("id", brand_id).select().single();
+        const { data, error } = await supabase.from("branding_packages").update(payload).eq("id", brand_id).select().single();
         if (error) throw error;
         return new Response(JSON.stringify({ brand: data }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
       } else {
         // Create new
-        const { data, error } = await supabase.from("branding_packages").insert({
-          user_id: userId,
-          name: name || "Default",
-          brand_name: brand_name || "",
-          brand_colors: brand_colors || ["#001F3F", "#C9A24B"],
-          logo_url: logo_url || null,
-          tagline: tagline || null,
-          disclaimer: disclaimer || null,
-          industry: industry || null,
-          tone: tone || "professional",
-          is_default: !!is_default,
-        }).select().single();
+        const { data, error } = await supabase.from("branding_packages").insert({ ...payload, user_id: userId }).select().single();
         if (error) throw error;
         return new Response(JSON.stringify({ brand: data }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
