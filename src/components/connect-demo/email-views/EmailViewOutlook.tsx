@@ -113,9 +113,18 @@ export default function EmailViewOutlook({ engine, ai }: { engine: Engine; ai: A
               <Button size="sm" variant="ghost" className="text-xs h-7 gap-1" style={{ color: "hsl(240 5% 70%)" }}><Forward className="h-3 w-3" /> Forward</Button>
               <div className="flex-1" />
               {/* AURA AI bar */}
-              <Button size="sm" variant="outline" className="text-xs h-7 gap-1" style={{ borderColor: "hsl(140 12% 42% / 0.3)", color: "hsl(140 12% 58%)" }} onClick={() => toast.success("Summarize (demo)")}><Sparkles className="h-3 w-3" /> Summarize</Button>
-              <Button size="sm" variant="outline" className="text-xs h-7 gap-1" style={{ borderColor: "hsl(140 12% 42% / 0.3)", color: "hsl(140 12% 58%)" }} onClick={() => toast.success("AI reply (demo)")}><Sparkles className="h-3 w-3" /> AI Reply</Button>
-              <Button size="sm" variant="outline" className="text-xs h-7 gap-1" style={{ borderColor: "hsl(140 12% 42% / 0.3)", color: "hsl(140 12% 58%)" }} onClick={() => toast.success("Added to pipeline (demo)")}>Add to Pipeline</Button>
+              <Button size="sm" variant="outline" className="text-xs h-7 gap-1" style={{ borderColor: "hsl(140 12% 42% / 0.3)", color: "hsl(140 12% 58%)" }} onClick={() => ai.summarize(selectedThread)} disabled={ai.summaryLoading}>
+                <Sparkles className={`h-3 w-3 ${ai.summaryLoading ? "animate-spin" : ""}`} /> {ai.summaryLoading ? "…" : "Summarize"}
+              </Button>
+              <Button size="sm" variant="outline" className="text-xs h-7 gap-1" style={{ borderColor: "hsl(140 12% 42% / 0.3)", color: "hsl(140 12% 58%)" }} onClick={() => ai.aiReply(selectedThread)} disabled={ai.replyLoading}>
+                <Sparkles className={`h-3 w-3 ${ai.replyLoading ? "animate-spin" : ""}`} /> {ai.replyLoading ? "…" : "AI Reply"}
+              </Button>
+              <Button size="sm" variant="outline" className="text-xs h-7 gap-1" style={{ borderColor: "hsl(140 12% 42% / 0.3)", color: "hsl(140 12% 58%)" }} onClick={() => ai.aiDraft(selectedThread)} disabled={ai.draftLoading}>
+                <Sparkles className={`h-3 w-3 ${ai.draftLoading ? "animate-spin" : ""}`} /> {ai.draftLoading ? "…" : "AI Draft"}
+              </Button>
+              <Button size="sm" variant="outline" className="text-xs h-7 gap-1" style={{ borderColor: "hsl(140 12% 42% / 0.3)", color: "hsl(140 12% 58%)" }} onClick={() => ai.addToPipeline(selectedThread)}>
+                Add to Pipeline
+              </Button>
             </div>
 
             {/* Subject */}
