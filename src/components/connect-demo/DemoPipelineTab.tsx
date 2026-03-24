@@ -729,7 +729,20 @@ export default function DemoPipelineTab() {
                   <span className="text-xs font-semibold">{stage.label}</span>
                   <Badge className="text-[9px] h-5" style={{ background: "hsl(140 12% 42% / 0.15)", color: "hsl(140 12% 58%)", border: "1px solid hsl(140 12% 42% / 0.25)" }}>{stageLeads.length}</Badge>
                 </div>
-                {totalValue > 0 && <p className="text-[10px] mt-0.5 opacity-70">${totalValue.toLocaleString()}</p>}
+                {totalValue > 0 && (
+                  <>
+                    <p className="text-[10px] mt-0.5 opacity-70">${totalValue.toLocaleString()}</p>
+                    {stage.key === "bound" && (industry === "insurance" || industry === "real_estate") && (() => {
+                      const totalComm = stageLeads.reduce((sum, l) => {
+                        if (!l.wonDetails) return sum;
+                        if (industry === "insurance") return sum + (Number(l.wonDetails.est_commission) || 0);
+                        if (industry === "real_estate") return sum + (Number(l.wonDetails.your_commission) || 0);
+                        return sum;
+                      }, 0);
+                      return totalComm > 0 ? <p className="text-[9px] mt-0.5" style={{ color: "hsl(140 12% 58%)" }}>Commission: ${totalComm.toLocaleString()}</p> : null;
+                    })()}
+                  </>
+                )}
               </div>
               <div className="space-y-2 min-h-[80px]">
                 {visibleLeads.map((lead, cardIdx) => {
