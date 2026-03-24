@@ -287,7 +287,18 @@ export default function DemoCalendarTab() {
     : format(currentDate, "MMMM yyyy");
 
   return (
-    <div className="space-y-3 animate-fade-in">
+    <div className="space-y-3">
+      <style>{`
+        .cal-stagger > * { opacity: 0; animation: calFadeIn 0.6s cubic-bezier(0.16,1,0.3,1) both; }
+        .cal-stagger > *:nth-child(1) { animation-delay: 0.05s; }
+        .cal-stagger > *:nth-child(2) { animation-delay: 0.15s; }
+        .cal-stagger > *:nth-child(3) { animation-delay: 0.25s; }
+        .cal-stagger > *:nth-child(4) { animation-delay: 0.35s; }
+        .cal-stagger > *:nth-child(5) { animation-delay: 0.45s; }
+        .cal-stagger > *:nth-child(6) { animation-delay: 0.55s; }
+        @keyframes calFadeIn { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+      `}</style>
+      <div className="space-y-3 cal-stagger">
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-3">
@@ -472,6 +483,7 @@ export default function DemoCalendarTab() {
           </div>
         </DialogContent>
       </Dialog>
+    </div>
     </div>
   );
 }

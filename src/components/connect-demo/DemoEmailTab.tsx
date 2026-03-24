@@ -768,10 +768,17 @@ export default function DemoEmailTab() {
 
   /* ─────────── Main Render ─────────── */
   return (
-    <div className="animate-fade-in">
+    <div>
+      <style>{`
+        @keyframes emailSlideIn { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
+        .email-sidebar { animation: emailSlideIn 0.5s cubic-bezier(0.16,1,0.3,1) 0.05s both; }
+        .email-toolbar { animation: emailSlideIn 0.5s cubic-bezier(0.16,1,0.3,1) 0.15s both; }
+        .email-list { animation: emailSlideIn 0.5s cubic-bezier(0.16,1,0.3,1) 0.28s both; }
+        .email-thread { animation: emailSlideIn 0.5s cubic-bezier(0.16,1,0.3,1) 0.35s both; }
+      `}</style>
       <div className="flex gap-0 lg:gap-4">
         {/* ── Sidebar (desktop) ── */}
-        <div className="hidden lg:flex flex-col w-48 shrink-0 space-y-1 pt-1">
+        <div className="hidden lg:flex flex-col w-48 shrink-0 space-y-1 pt-1 email-sidebar">
           <Button size="sm" className="w-full gap-1.5 text-sm mb-3 justify-start" style={{ background: "hsl(140 12% 42%)" }} onClick={() => setShowCompose(true)}>
             <Plus className="h-4 w-4" /> Compose
           </Button>
@@ -838,7 +845,7 @@ export default function DemoEmailTab() {
         {/* ── Main content ── */}
         <div className="flex-1 min-w-0 space-y-3">
           {/* Header */}
-          <div className="flex items-center justify-between flex-wrap gap-2">
+          <div className="flex items-center justify-between flex-wrap gap-2 email-toolbar">
             <div className="flex items-center gap-3">
               <Mail className="h-5 w-5" style={{ color: "hsl(140 12% 58%)" }} />
               <h2 className="text-lg font-semibold text-white">Email</h2>
