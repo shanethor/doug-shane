@@ -529,10 +529,14 @@ export default function ConnectDemoAuth() {
     if (email && password && industry) goToStep("subscribe");
   };
   const handleSubscribe = () => goToStep("welcome");
-  const handleEnter = () => {
+  const handleEnter = async () => {
     sessionStorage.setItem("connect-demo-auth", "true");
     sessionStorage.setItem("connect-demo-name", name || email.split("@")[0]);
     sessionStorage.setItem("connect-demo-industry", industry);
+    // Trigger network build in background if accounts connected
+    if (connectedCount > 0) {
+      handleBuildNetwork(); // fire-and-forget
+    }
     navigate("/connectdemo");
   };
 
