@@ -288,14 +288,14 @@ const INDUSTRIES = [
 ];
 type Step = "auth" | "subscribe" | "welcome";
 
-const ACCOUNT_OPTIONS = [
-  { id: "google", label: "Google", desc: "Gmail, Contacts, Calendar", color: "#4285F4", icon: "G" },
-  { id: "outlook", label: "Outlook", desc: "Email, Contacts, Calendar", color: "#0078D4", icon: "O" },
-  { id: "linkedin", label: "LinkedIn", desc: "Contacts, Posting", color: "#0A66C2", icon: "in" },
-  { id: "instagram", label: "Instagram", desc: "Contacts, Posting", color: "#E4405F", icon: "IG" },
-  { id: "facebook", label: "Facebook", desc: "Contacts, Posting", color: "#1877F2", icon: "f" },
-  { id: "slack", label: "Slack", desc: "Messaging, Notifications", color: "#4A154B", icon: "S" },
-  { id: "apple", label: "Apple ID", desc: "Contacts, Calendar", color: "#A2AAAD", icon: "" },
+const ACCOUNT_OPTIONS: { id: string; label: string; desc: string; color: string; icon: string; oauthProvider?: string; status: "ready" | "coming_soon" }[] = [
+  { id: "google", label: "Google", desc: "Gmail, Contacts, Calendar", color: "#4285F4", icon: "G", oauthProvider: "gmail", status: "ready" },
+  { id: "outlook", label: "Outlook", desc: "Email, Contacts, Calendar", color: "#0078D4", icon: "O", oauthProvider: "outlook", status: "ready" },
+  { id: "linkedin", label: "LinkedIn", desc: "Contacts, Posting", color: "#0A66C2", icon: "in", status: "coming_soon" },
+  { id: "instagram", label: "Instagram", desc: "Contacts, Posting", color: "#E4405F", icon: "IG", status: "coming_soon" },
+  { id: "facebook", label: "Facebook", desc: "Contacts, Posting", color: "#1877F2", icon: "f", status: "coming_soon" },
+  { id: "slack", label: "Slack", desc: "Messaging, Notifications", color: "#4A154B", icon: "S", status: "ready" },
+  { id: "apple", label: "Apple ID", desc: "Contacts, Calendar", color: "#A2AAAD", icon: "", status: "coming_soon" },
 ];
 
 export default function ConnectDemoAuth() {
