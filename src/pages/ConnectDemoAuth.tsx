@@ -531,12 +531,17 @@ export default function ConnectDemoAuth() {
   };
   const handleSubscribe = () => goToStep("welcome");
   const handleEnter = async () => {
+    // Go to email layout picker before entering
+    goToStep("email_layout");
+  };
+
+  const handleFinalEnter = async (selectedLayout: EmailLayout = "aura") => {
+    setEmailLayout(selectedLayout);
     sessionStorage.setItem("connect-demo-auth", "true");
     sessionStorage.setItem("connect-demo-name", name || email.split("@")[0]);
     sessionStorage.setItem("connect-demo-industry", industry);
-    // Trigger network build in background if accounts connected
     if (connectedCount > 0) {
-      handleBuildNetwork(); // fire-and-forget
+      handleBuildNetwork();
     }
     navigate("/connectdemo");
   };
