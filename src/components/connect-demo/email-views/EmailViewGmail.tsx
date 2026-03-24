@@ -12,6 +12,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { toast } from "sonner";
 import type { useEmailEngine } from "./useEmailEngine";
 import { SYNCED_ACCOUNTS, CLIENT_CONTACTS, CONNECT_MATCHES, TIER_COLORS, OUTREACH_COLORS, SMART_FEATURES } from "./useEmailEngine";
+import type { useEmailAI } from "./useEmailAI";
+import { AIResultPanel } from "./AIResultPanel";
 
 type Engine = ReturnType<typeof useEmailEngine>;
 type Folder = "inbox" | "sent" | "starred" | "drafts";
