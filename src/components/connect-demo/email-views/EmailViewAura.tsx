@@ -13,7 +13,7 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import type { useEmailEngine } from "./useEmailEngine";
-import { SYNCED_ACCOUNTS, CONNECT_MATCHES, TIER_COLORS, OUTREACH_COLORS, CLIENT_CONTACTS } from "./useEmailEngine";
+import { SYNCED_ACCOUNTS, CONNECT_MATCHES, TIER_COLORS, OUTREACH_COLORS, CLIENT_CONTACTS, SMART_FEATURES } from "./useEmailEngine";
 
 type Engine = ReturnType<typeof useEmailEngine>;
 type Folder = "inbox" | "sent" | "starred" | "drafts";
