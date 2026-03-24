@@ -356,6 +356,32 @@ serve(async (req) => {
       });
     }
 
+    // ─── Trigger Hunter.io enrichment for unenriched contacts ───
+    if (action === "enrich") {
+      const { limit: enrichLimit } = body;
+      try {
+        const enrichResp = await fetch(
+          `${Deno.env.get("SUPABASE_URL")}/functions/v1/hunter-enrich`,
+          {
+            method: "POST",
+            headers: {
+              Authorization: authHeader,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ action: "bulk_enrich", limit: enrichLimit || 10 }),
+          }
+        );
+        const enrichResult = await enrichResp.json();
+        return new Response(JSON.stringify(enrichResult), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      } catch (e) {
+        return new Response(JSON.stringify({ error: "Enrichment failed", details: e instanceof Error ? e.message : String(e) }), {
+          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    }
+
     return new Response(JSON.stringify({ error: "Invalid action" }), {
       status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
