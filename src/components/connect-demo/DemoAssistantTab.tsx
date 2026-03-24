@@ -230,12 +230,12 @@ export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: st
 
       {!hasMessages ? (
         /* ── Empty state ── */
-        <div className="flex-1 flex flex-col items-center justify-start pt-[8vh] px-4 animate-fade-in">
-          <div className="flex items-center gap-2 mb-3">
+        <div className="flex-1 flex flex-col items-center justify-start pt-[8vh] px-4">
+          <div className="flex items-center gap-2 mb-3" style={{ animation: "sageFadeIn 0.5s cubic-bezier(0.16,1,0.3,1) 0.05s both" }}>
             <Sparkles className="h-5 w-5" style={{ color: "hsl(140 12% 58%)" }} />
             <span className="text-xs font-medium uppercase tracking-widest" style={{ color: "hsl(140 12% 50%)" }}>Sage Assistant</span>
           </div>
-          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-6 text-center" style={{ background: "linear-gradient(135deg, hsl(140 12% 62%), hsl(140 12% 45%), hsl(240 5% 80%))", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-6 text-center" style={{ background: "linear-gradient(135deg, hsl(140 12% 62%), hsl(140 12% 45%), hsl(240 5% 80%))", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", animation: "sageFadeIn 0.6s cubic-bezier(0.16,1,0.3,1) 0.15s both" }}>
             How can I help you today?
           </h1>
 
