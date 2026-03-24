@@ -13,7 +13,9 @@ import {
   Copy, RefreshCw, Calendar, Image as ImageIcon,
   X, Palette, Type, MapPin, Clock,
   FileText, Wand2, Eye, Upload, ScanSearch,
+  Share2, Facebook, Instagram, Linkedin, MessageSquare,
 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { BrandPackage } from "./SpotlightBrandSetup";
 
 const FLYER_TYPES = [
