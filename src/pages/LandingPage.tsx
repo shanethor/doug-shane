@@ -226,11 +226,12 @@ export default function LandingPage() {
             >
               AuRa
             </h1>
-            <p className="text-[17px] font-medium max-w-[520px] mx-auto leading-[1.65]" style={{ color: "hsl(140 12% 58%)" }}>
-              One platform powering <span className="text-[#0A8A8F] font-medium">insurance</span>,{" "}
+            <p className="text-[17px] font-medium max-w-[520px] mx-auto leading-[1.65] mb-8" style={{ color: "hsl(140 12% 58%)" }}>
+              One platform powering <span style={{ color: "hsl(140 12% 72%)" }} className="font-medium">insurance</span>,{" "}
               <span className="text-[#D4884A] font-medium">property</span>, and{" "}
               <span className="text-[#D4B85C] font-medium">consulting</span>. Intelligence for the professionals who protect, build, and grow.
             </p>
+            <p className="text-xl font-semibold tracking-wide" style={{ color: "hsl(140 12% 42%)" }}>Intelligence runs on AuRa</p>
           </div>
         </section>
 
