@@ -132,6 +132,11 @@ export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId, ini
   const [generating, setGenerating] = useState(false);
   const [tweakText, setTweakText] = useState("");
   const [analyzingBrand, setAnalyzingBrand] = useState(false);
+  const [selectedSize, setSelectedSize] = useState<string>("original");
+  const [showSagePost, setShowSagePost] = useState(false);
+  const [sagePostPlatform, setSagePostPlatform] = useState<string>("");
+  const [sageCaption, setSageCaption] = useState("");
+  const [sageGenerating, setSageGenerating] = useState(false);
   const logoFileRef = useRef<HTMLInputElement>(null);
   const materialFileRef = useRef<HTMLInputElement>(null);
 
