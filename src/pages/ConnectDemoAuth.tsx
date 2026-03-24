@@ -552,15 +552,6 @@ export default function ConnectDemoAuth() {
                 >
                   Welcome to AuRa Connect
                 </h2>
-                <p className="text-sm font-medium mb-1" style={{ color: "hsl(140 12% 58%)", transitionDuration: "600ms", opacity: buildPhase >= 2 ? 1 : 0 }}>
-                  You already know the right people. You just don't know how to get there.
-                </p>
-                <div className="relative py-2 mb-3">
-                  <TaglineNodes />
-                  <p className="text-sm font-semibold italic sage-shimmer relative z-10">
-                    Let us show you the way in.
-                  </p>
-                </div>
 
                 <p
                   className="mb-4 transition-all duration-500"
