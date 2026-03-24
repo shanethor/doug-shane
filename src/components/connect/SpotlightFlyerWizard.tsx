@@ -96,6 +96,7 @@ const SOCIAL_SIZES = [
 ];
 
 interface SpotlightFlyerWizardProps {
+  onClose: () => void;
   brands: BrandPackage[];
   editFlyerId?: string | null;
   initialType?: string;
