@@ -850,7 +850,6 @@ export default function ConnectDemoAuth() {
                       </div>
                     )}
                   </div>
-                  </div>
 
                   <Button
                     size="lg"
