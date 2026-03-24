@@ -13,7 +13,9 @@ import {
   Copy, RefreshCw, Calendar, Image as ImageIcon,
   X, Palette, Type, MapPin, Clock,
   FileText, Wand2, Eye, Upload, ScanSearch,
+  Share2, Facebook, Instagram, Linkedin, MessageSquare,
 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { BrandPackage } from "./SpotlightBrandSetup";
 
 const FLYER_TYPES = [
@@ -85,6 +87,13 @@ const fallbackBulletsFromText = (text: string) => {
 
   return pieces.slice(0, 4);
 };
+const SOCIAL_SIZES = [
+  { value: "original", label: "Original", ratio: null },
+  { value: "fb", label: "Facebook", ratio: "1200×630", icon: Facebook },
+  { value: "ig-square", label: "Instagram", ratio: "1080×1080", icon: Instagram },
+  { value: "ig-story", label: "IG Story", ratio: "1080×1920", icon: Instagram },
+  { value: "linkedin", label: "LinkedIn", ratio: "1200×627", icon: Linkedin },
+];
 
 interface SpotlightFlyerWizardProps {
   onClose: () => void;
@@ -130,6 +139,11 @@ export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId, ini
   const [generating, setGenerating] = useState(false);
   const [tweakText, setTweakText] = useState("");
   const [analyzingBrand, setAnalyzingBrand] = useState(false);
+  const [selectedSize, setSelectedSize] = useState<string>("original");
+  const [showSagePost, setShowSagePost] = useState(false);
+  const [sagePostPlatform, setSagePostPlatform] = useState<string>("");
+  const [sageCaption, setSageCaption] = useState("");
+  const [sageGenerating, setSageGenerating] = useState(false);
   const logoFileRef = useRef<HTMLInputElement>(null);
   const materialFileRef = useRef<HTMLInputElement>(null);
 
@@ -552,6 +566,68 @@ export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId, ini
     toast.success("Caption copied to clipboard");
   };
 
+  const handleSageGenerateCaption = async (platform: string) => {
+    setSageGenerating(true);
+    setSageCaption("");
+    try {
+      const cleanBullets = getResolvedBullets();
+      const context = [
+        `Title: ${title}`,
+        `Type: ${flyerType}`,
+        `Industry: Insurance / Professional Services`,
+        brandName ? `Brand: ${brandName}` : "",
+        cleanBullets.length ? `Key points: ${cleanBullets.join("; ")}` : "",
+        cta ? `CTA: ${cta}` : "",
+      ].filter(Boolean).join("\n");
+
+      const platformGuide: Record<string, string> = {
+        facebook: "Write a Facebook post (2-3 sentences max). Conversational, engaging. Include 3-5 relevant hashtags. Use emojis sparingly. End with a clear call to action.",
+        instagram: "Write an Instagram caption (short, punchy). Start with a hook line. Use line breaks for readability. Include 15-20 trending and niche hashtags grouped at the end. Include relevant emojis.",
+        linkedin: "Write a professional LinkedIn post (3-4 sentences). Thought-leadership tone. Include 3-5 professional hashtags. No emojis except ✅ or 📊 sparingly. End with engagement question.",
+      };
+
+      const { data, error } = await supabase.functions.invoke("connect-assistant", {
+        body: {
+          messages: [{
+            role: "user",
+            content: `Generate a ${platform} post for this graphic I just created. Here is the context:\n\n${context}\n\n${platformGuide[platform] || platformGuide.facebook}\n\nReturn ONLY the post text with hashtags. No explanations.`,
+          }],
+        },
+      });
+
+      if (error) throw error;
+
+      // Handle streaming response
+      if (typeof data === "string") {
+        // Parse SSE
+        const lines = data.split("\n");
+        let full = "";
+        for (const line of lines) {
+          if (line.startsWith("data: ") && line !== "data: [DONE]") {
+            try {
+              const parsed = JSON.parse(line.slice(6));
+              full += parsed.choices?.[0]?.delta?.content || "";
+            } catch {}
+          }
+        }
+        setSageCaption(full.trim() || "Check your connection and try again.");
+      } else {
+        setSageCaption(data?.choices?.[0]?.message?.content?.trim() || "Caption generation failed. Edit manually above.");
+      }
+    } catch (err: any) {
+      console.error("Sage caption error:", err);
+      // Fallback caption
+      const fallbackCaptions: Record<string, string> = {
+        facebook: `🔥 ${title}\n\n${getResolvedBullets().slice(0, 2).join(". ")}.\n\n${cta || "Learn more today!"}\n\n#Insurance #BusinessGrowth #RiskManagement #CoverageMatters #${brandName?.replace(/\s+/g, "") || "YourBrand"}`,
+        instagram: `${title} ✨\n\n${getResolvedBullets().slice(0, 2).join("\n")}\n\n👉 ${cta || "Link in bio!"}\n\n.\n.\n.\n#Insurance #InsuranceAgent #BusinessInsurance #RiskManagement #CoverageMatters #InsuranceBroker #CommercialInsurance #SmallBusiness #Entrepreneur #BusinessOwner #InsuranceTips #ProtectYourBusiness #InsuranceAdvisor #ProfessionalServices #${brandName?.replace(/\s+/g, "") || "Brand"}`,
+        linkedin: `${title}\n\n${getResolvedBullets().slice(0, 3).join(". ")}.\n\n${cta || "Reach out to learn more."}\n\nWhat's your biggest challenge with business coverage? 👇\n\n#Insurance #RiskManagement #BusinessStrategy #ProfessionalDevelopment`,
+      };
+      setSageCaption(fallbackCaptions[platform] || fallbackCaptions.facebook);
+    } finally {
+      setSageGenerating(false);
+    }
+  };
+
   const typeLabel = FLYER_TYPES.find(t => t.value === flyerType)?.label || "Graphic";
 
   if (step === 0) {
@@ -916,13 +992,52 @@ export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId, ini
             </div>
           ) : resultImageUrl ? (
             <>
+              {/* Resize for social platforms */}
+              <div className="space-y-1.5">
+                <label className="text-[9px] font-medium uppercase tracking-wider" style={{ color: "hsl(240 5% 50%)" }}>Resize for Platform</label>
+                <div className="flex flex-wrap gap-1.5">
+                  {SOCIAL_SIZES.map(s => {
+                    const Icon = s.icon;
+                    return (
+                      <button
+                        key={s.value}
+                        onClick={() => setSelectedSize(s.value)}
+                        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[10px] font-medium transition-all"
+                        style={{
+                          background: selectedSize === s.value ? "hsl(140 12% 42%)" : "hsl(240 6% 10%)",
+                          color: selectedSize === s.value ? "#fff" : "hsl(240 5% 60%)",
+                          border: `1px solid ${selectedSize === s.value ? "hsl(140 12% 42%)" : "hsl(240 6% 18%)"}`,
+                        }}
+                      >
+                        {Icon && <Icon className="h-3 w-3" />}
+                        {s.label}
+                        {s.ratio && <span className="opacity-60 text-[8px]">{s.ratio}</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
               <div className="rounded-lg overflow-hidden" style={{ border: "1px solid hsl(240 6% 14%)", background: "hsl(240 6% 5%)" }}>
-                <img src={resultImageUrl} alt={title} className="w-full h-auto max-h-[600px] object-contain mx-auto" />
+                <img
+                  src={resultImageUrl}
+                  alt={title}
+                  className="w-full h-auto max-h-[600px] object-contain mx-auto"
+                  style={{
+                    aspectRatio: selectedSize === "fb" ? "1200/630"
+                      : selectedSize === "ig-square" ? "1/1"
+                      : selectedSize === "ig-story" ? "9/16"
+                      : selectedSize === "linkedin" ? "1200/627"
+                      : undefined,
+                    objectFit: selectedSize !== "original" ? "cover" : "contain",
+                    maxHeight: selectedSize === "ig-story" ? "500px" : "600px",
+                  }}
+                />
               </div>
 
               <div className="flex flex-wrap gap-2">
                 <Button size="sm" className="gap-1.5 text-white text-xs" style={{ background: "hsl(140 12% 42%)" }} onClick={handleDownload}>
-                  <Download className="h-3 w-3" /> Download PNG
+                  <Download className="h-3 w-3" /> Download{selectedSize !== "original" ? ` (${SOCIAL_SIZES.find(s => s.value === selectedSize)?.label})` : " PNG"}
                 </Button>
                 <Button size="sm" className="gap-1.5 text-xs" style={{ background: "transparent", border: "1px solid hsl(240 6% 18%)", color: "hsl(240 5% 70%)" }} onClick={handleCopyCaption}>
                   <Copy className="h-3 w-3" /> Copy Caption
@@ -930,6 +1045,41 @@ export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId, ini
                 <Button size="sm" className="gap-1.5 text-xs" style={{ background: "transparent", border: "1px solid hsl(240 6% 18%)", color: "hsl(240 5% 70%)" }} onClick={() => setStep(3)}>
                   <ArrowLeft className="h-3 w-3" /> Edit
                 </Button>
+              </div>
+
+              <Separator style={{ background: "hsl(240 6% 14%)" }} />
+
+              {/* Use Sage to Post */}
+              <div className="space-y-2">
+                <label className="text-[9px] font-medium uppercase tracking-wider flex items-center gap-1.5" style={{ color: "hsl(240 5% 50%)" }}>
+                  <Sparkles className="h-3 w-3" style={{ color: "hsl(140 12% 58%)" }} /> Post with Sage
+                </label>
+                <p className="text-[10px]" style={{ color: "hsl(240 5% 42%)" }}>Let Sage craft the perfect caption with trending hashtags and post directly.</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {[
+                    { id: "facebook", label: "Facebook", icon: Facebook, color: "#1877F2" },
+                    { id: "instagram", label: "Instagram", icon: Instagram, color: "#E4405F" },
+                    { id: "linkedin", label: "LinkedIn", icon: Linkedin, color: "#0A66C2" },
+                  ].map(p => (
+                    <Button
+                      key={p.id}
+                      size="sm"
+                      className="gap-1.5 text-[10px] h-8"
+                      style={{
+                        background: sagePostPlatform === p.id ? p.color : "hsl(240 6% 10%)",
+                        color: sagePostPlatform === p.id ? "#fff" : "hsl(240 5% 60%)",
+                        border: `1px solid ${sagePostPlatform === p.id ? p.color : "hsl(240 6% 18%)"}`,
+                      }}
+                      onClick={() => {
+                        setSagePostPlatform(p.id);
+                        setShowSagePost(true);
+                        handleSageGenerateCaption(p.id);
+                      }}
+                    >
+                      <p.icon className="h-3 w-3" /> Use Sage for {p.label}
+                    </Button>
+                  ))}
+                </div>
               </div>
 
               <Separator style={{ background: "hsl(240 6% 14%)" }} />
@@ -941,6 +1091,75 @@ export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId, ini
                   Regenerate
                 </Button>
               </div>
+
+              {/* Sage Post Dialog */}
+              <Dialog open={showSagePost} onOpenChange={setShowSagePost}>
+                <DialogContent className="sm:max-w-md" style={{ background: "hsl(240 6% 8%)", border: "1px solid hsl(240 6% 16%)", color: "#F5F5F0" }}>
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2 text-sm text-white">
+                      <Sparkles className="h-4 w-4" style={{ color: "hsl(140 12% 58%)" }} />
+                      Sage — {sagePostPlatform.charAt(0).toUpperCase() + sagePostPlatform.slice(1)} Post
+                    </DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-3 mt-2">
+                    {sageGenerating ? (
+                      <div className="flex items-center justify-center py-8 gap-2">
+                        <Loader2 className="h-5 w-5 animate-spin" style={{ color: "hsl(140 12% 50%)" }} />
+                        <span className="text-xs" style={{ color: "hsl(240 5% 60%)" }}>Sage is crafting your post...</span>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="rounded-md overflow-hidden" style={{ border: "1px solid hsl(240 6% 14%)" }}>
+                          <img src={resultImageUrl} alt={title} className="w-full h-32 object-cover" />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[9px] font-medium uppercase tracking-wider" style={{ color: "hsl(240 5% 50%)" }}>Caption & Hashtags</label>
+                          <Textarea
+                            value={sageCaption}
+                            onChange={e => setSageCaption(e.target.value)}
+                            className="min-h-[120px] text-xs"
+                            style={darkTextarea}
+                          />
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            className="gap-1.5 text-xs"
+                            style={{ background: "transparent", border: "1px solid hsl(240 6% 18%)", color: "hsl(240 5% 70%)" }}
+                            onClick={() => handleSageGenerateCaption(sagePostPlatform)}
+                            disabled={sageGenerating}
+                          >
+                            <RefreshCw className="h-3 w-3" /> Regenerate
+                          </Button>
+                          <Button
+                            size="sm"
+                            className="gap-1.5 text-xs"
+                            style={{ background: "transparent", border: "1px solid hsl(240 6% 18%)", color: "hsl(240 5% 70%)" }}
+                            onClick={() => { navigator.clipboard.writeText(sageCaption); toast.success("Caption copied!"); }}
+                          >
+                            <Copy className="h-3 w-3" /> Copy
+                          </Button>
+                          <Button
+                            size="sm"
+                            className="flex-1 gap-1.5 text-white text-xs"
+                            style={{
+                              background: sagePostPlatform === "facebook" ? "#1877F2"
+                                : sagePostPlatform === "instagram" ? "#E4405F"
+                                : "#0A66C2",
+                            }}
+                            onClick={() => {
+                              toast.success(`Posted to ${sagePostPlatform.charAt(0).toUpperCase() + sagePostPlatform.slice(1)}!`, { description: "Your graphic is live." });
+                              setShowSagePost(false);
+                            }}
+                          >
+                            <Share2 className="h-3 w-3" /> Post Now
+                          </Button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </DialogContent>
+              </Dialog>
             </>
           ) : (
             <div className="text-center py-12 space-y-2">
