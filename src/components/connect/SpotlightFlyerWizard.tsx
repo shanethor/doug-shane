@@ -129,6 +129,9 @@ export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId, ini
   const [resultImageUrl, setResultImageUrl] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
   const [tweakText, setTweakText] = useState("");
+  const [analyzingBrand, setAnalyzingBrand] = useState(false);
+  const logoFileRef = useRef<HTMLInputElement>(null);
+  const materialFileRef = useRef<HTMLInputElement>(null);
 
   // Sync initialType
   useEffect(() => { if (initialType) setFlyerType(initialType); }, [initialType]);
