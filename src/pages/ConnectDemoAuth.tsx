@@ -287,7 +287,7 @@ const INDUSTRIES = [
   "Telecommunications", "Transportation", "Travel & Tourism", "Venture Capital",
   "Veterinary", "Video Production", "Warehousing", "Wealth Management", "Wholesale", "Other",
 ];
-type Step = "auth" | "subscribe" | "welcome" | "email_layout";
+type Step = "auth" | "subscribe" | "welcome" | "email_layout" | "building";
 
 const ACCOUNT_OPTIONS: { id: string; label: string; desc: string; color: string; icon: string; oauthProvider?: string; status: "ready" | "coming_soon" }[] = [
   { id: "google", label: "Google", desc: "Gmail, Contacts, Calendar", color: "#4285F4", icon: "G", oauthProvider: "gmail", status: "ready" },
@@ -536,6 +536,19 @@ export default function ConnectDemoAuth() {
     goToStep("email_layout");
   };
 
+  const [buildProgress, setBuildProgress] = useState(0);
+  const [buildMessages] = useState([
+    "Initializing AuRa engine…",
+    "Mapping your network…",
+    "Scanning connections…",
+    "Analyzing relationship patterns…",
+    "Building intelligence layer…",
+    "Syncing email & calendar…",
+    "Calibrating AI models…",
+    "Almost ready…",
+  ]);
+  const [buildMsgIdx, setBuildMsgIdx] = useState(0);
+
   const handleFinalEnter = async (selectedLayout: EmailLayout = "aura") => {
     setEmailLayout(selectedLayout);
     sessionStorage.setItem("connect-demo-auth", "true");
@@ -544,8 +557,32 @@ export default function ConnectDemoAuth() {
     if (connectedCount > 0) {
       handleBuildNetwork();
     }
-    navigate("/connectdemo");
+    // Show building screen instead of navigating immediately
+    goToStep("building");
   };
+
+  // Building phase timer
+  useEffect(() => {
+    if (step !== "building") return;
+    setBuildProgress(0);
+    setBuildMsgIdx(0);
+    const totalDuration = 5000;
+    const interval = 50;
+    let elapsed = 0;
+    const timer = setInterval(() => {
+      elapsed += interval;
+      const pct = Math.min((elapsed / totalDuration) * 100, 100);
+      setBuildProgress(pct);
+      const msgIdx = Math.min(Math.floor((elapsed / totalDuration) * buildMessages.length), buildMessages.length - 1);
+      setBuildMsgIdx(msgIdx);
+      if (elapsed >= totalDuration) {
+        clearInterval(timer);
+        // Navigate after build completes
+        setTimeout(() => navigate("/connectdemo"), 600);
+      }
+    }, interval);
+    return () => clearInterval(timer);
+  }, [step]);
 
   /* ── shared header (logo only for pages 2+3) ── */
   const renderHeader = (showTagline = false) => (
@@ -936,6 +973,39 @@ export default function ConnectDemoAuth() {
                 </Button>
               </div>
               <p className="text-xl text-center font-semibold mt-10" style={{ color: "hsl(140 12% 58%)" }}>Intelligence runs on AuRa</p>
+            </div>
+          )}
+
+          {step === "building" && (
+            <div className="flex flex-col items-center justify-center space-y-8 py-16">
+              <style>{`
+                @keyframes buildPulse { 0%,100% { opacity:0.6; transform:scale(1); } 50% { opacity:1; transform:scale(1.08); } }
+                @keyframes buildGlow { 0%,100% { box-shadow: 0 0 20px hsl(140 12% 42% / 0.15); } 50% { box-shadow: 0 0 50px hsl(140 12% 42% / 0.35); } }
+                .build-logo { animation: buildPulse 2s ease-in-out infinite, buildGlow 2s ease-in-out infinite; }
+                @keyframes msgFade { 0% { opacity:0; transform:translateY(8px); } 30% { opacity:1; transform:translateY(0); } 100% { opacity:1; transform:translateY(0); } }
+                .build-msg { animation: msgFade 0.5s ease-out; }
+              `}</style>
+              <div className="build-logo rounded-2xl">
+                <AuraLogo size={72} />
+              </div>
+              <div className="text-center space-y-3">
+                <h2 className="text-xl font-bold text-white">Building your network…</h2>
+                <p key={buildMsgIdx} className="build-msg text-sm" style={{ color: "hsl(140 12% 58%)" }}>
+                  {buildMessages[buildMsgIdx]}
+                </p>
+              </div>
+              <div className="w-64 space-y-2">
+                <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "hsl(140 12% 42% / 0.12)" }}>
+                  <div
+                    className="h-full rounded-full transition-all duration-100 ease-linear"
+                    style={{
+                      width: `${buildProgress}%`,
+                      background: "linear-gradient(90deg, hsl(140 12% 42%), hsl(140 12% 58%))",
+                    }}
+                  />
+                </div>
+                <p className="text-[10px] text-center" style={{ color: "hsl(240 5% 40%)" }}>{Math.round(buildProgress)}%</p>
+              </div>
             </div>
           )}
         </div>
