@@ -317,8 +317,8 @@ serve(async (req) => {
       if (!imageUrl) throw new Error("image_url required");
 
       const systemPrompt = imageType === "material"
-        ? `You are a brand design analyst. Analyze this marketing material image and extract design attributes: dominant colors (as hex), secondary colors, font style descriptions (serif/sans-serif/script, weight, feel), overall design tone (professional, bold, playful, luxury, minimal, friendly), and any brand patterns or themes you detect. This data will improve future marketing material generation.`
-        : `You are a brand design analyst. Analyze this logo image and extract: the dominant brand colors (as hex values), the likely industry, and the design tone/style (professional, bold, playful, luxury, minimal, friendly). Infer from visual cues only.`;
+        ? `You are a brand design analyst. Analyze this marketing material image and extract design attributes: dominant colors (as hex), secondary colors, font style descriptions (serif/sans-serif/script, weight, feel), overall design tone (professional, bold, playful, luxury, minimal, friendly), any brand/company name visible, and any brand patterns or themes you detect. This data will improve future marketing material generation.`
+        : `You are a brand design analyst. Analyze this logo image and extract: the dominant brand colors (as hex values), the likely industry, the design tone/style (professional, bold, playful, luxury, minimal, friendly), and any company/brand name text visible in or around the logo. Infer from visual cues only.`;
 
       const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
@@ -331,7 +331,7 @@ serve(async (req) => {
           messages: [
             { role: "system", content: systemPrompt },
             { role: "user", content: [
-              { type: "text", text: imageType === "material" ? "Analyze this marketing material for design attributes." : "Analyze this logo and extract brand attributes." },
+              { type: "text", text: imageType === "material" ? "Analyze this marketing material for design attributes including any company name visible." : "Analyze this logo and extract brand attributes including any company/brand name text." },
               { type: "image_url", image_url: { url: imageUrl } },
             ]},
           ],
@@ -348,6 +348,7 @@ serve(async (req) => {
                   tone: { type: "string", description: "Design tone: professional, bold, playful, luxury, minimal, friendly" },
                   font_styles: { type: "array", items: { type: "string" }, description: "Font style descriptions found" },
                   design_notes: { type: ["string", "null"], description: "Additional design observations" },
+                  brand_name: { type: ["string", "null"], description: "Company or brand name detected in the image, or null if none visible" },
                 },
                 required: ["colors", "tone"],
                 additionalProperties: false,
