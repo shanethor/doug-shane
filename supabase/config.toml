@@ -89,3 +89,6 @@ verify_jwt = false
 
 [functions.spotlight-flyer]
 verify_jwt = false
+
+[functions.hunter-enrich]
+verify_jwt = false
