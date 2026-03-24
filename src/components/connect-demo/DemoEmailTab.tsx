@@ -1104,6 +1104,13 @@ export default function DemoEmailTab() {
                     <span className="h-2 w-2 rounded-full" style={{ background: a.color }} /> {a.key}
                   </button>
                 ))}
+                <button
+                  onClick={() => { setAccountFilter("outreach"); setSelectedClient(null); }}
+                  className={`text-sm px-2.5 py-1 rounded-md transition-colors flex items-center gap-1.5 ${accountFilter === "outreach" && !selectedClient ? "bg-white/10 text-white" : ""}`}
+                  style={accountFilter !== "outreach" || selectedClient ? { color: "hsl(240 5% 46%)" } : {}}
+                >
+                  <Activity className="h-3 w-3" style={{ color: "hsl(140 12% 58%)" }} /> Active Outreach
+                </button>
                 {selectedClient && (
                   <Badge variant="outline" className="text-xs gap-1 cursor-pointer" style={{ borderColor: "hsl(140 12% 42% / 0.3)", color: "hsl(140 12% 58%)" }} onClick={() => setSelectedClient(null)}>
                     {CLIENT_CONTACTS.find(c => c.email === selectedClient)?.name} <X className="h-3 w-3" />
