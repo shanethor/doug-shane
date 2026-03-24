@@ -514,11 +514,15 @@ serve(async (req) => {
       if (brand_id) {
         const { data: brand } = await supabase.from("branding_packages").select("*").eq("id", brand_id).eq("user_id", userId).single();
         if (brand) {
+          const meta = typeof brand.metadata === "object" && brand.metadata ? brand.metadata : {};
           brandData = {
             brand_name: brand.brand_name,
             brand_colors: brand.brand_colors,
             logo_url: brand.logo_url,
             disclaimer: brand.disclaimer,
+            // Include design intelligence for generation prompt
+            ...(meta.font_styles ? { font_styles: meta.font_styles } : {}),
+            ...(meta.design_notes ? { design_notes: meta.design_notes } : {}),
           };
         }
       }
