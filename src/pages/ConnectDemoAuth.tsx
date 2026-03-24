@@ -390,8 +390,8 @@ export default function ConnectDemoAuth() {
       <div className="w-full max-w-md relative z-10">
         {/* Node burst overlay during transitions */}
         {transitioning && (
-          <div className="relative" style={{ height: 0 }}>
-            <div className="absolute inset-x-0 -top-[200px] h-[400px]">
+          <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
+            <div className="w-[400px] h-[400px]">
               <NodeBurstTransition phase={transPhase} onDone={handleBurstDone} />
             </div>
           </div>
