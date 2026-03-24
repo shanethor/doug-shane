@@ -12,8 +12,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { toast } from "sonner";
 import type { useEmailEngine } from "./useEmailEngine";
 import { SYNCED_ACCOUNTS, CONNECT_MATCHES, TIER_COLORS } from "./useEmailEngine";
+import type { useEmailAI } from "./useEmailAI";
+import { AIResultPanel } from "./AIResultPanel";
 
 type Engine = ReturnType<typeof useEmailEngine>;
+type AI = ReturnType<typeof useEmailAI>;
 type Folder = "inbox" | "sent" | "starred" | "drafts";
 
 const FOLDERS: { key: Folder; label: string; icon: React.ElementType }[] = [
