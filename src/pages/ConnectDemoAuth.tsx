@@ -536,6 +536,19 @@ export default function ConnectDemoAuth() {
     goToStep("email_layout");
   };
 
+  const [buildProgress, setBuildProgress] = useState(0);
+  const [buildMessages] = useState([
+    "Initializing AuRa engine…",
+    "Mapping your network…",
+    "Scanning connections…",
+    "Analyzing relationship patterns…",
+    "Building intelligence layer…",
+    "Syncing email & calendar…",
+    "Calibrating AI models…",
+    "Almost ready…",
+  ]);
+  const [buildMsgIdx, setBuildMsgIdx] = useState(0);
+
   const handleFinalEnter = async (selectedLayout: EmailLayout = "aura") => {
     setEmailLayout(selectedLayout);
     sessionStorage.setItem("connect-demo-auth", "true");
@@ -544,8 +557,32 @@ export default function ConnectDemoAuth() {
     if (connectedCount > 0) {
       handleBuildNetwork();
     }
-    navigate("/connectdemo");
+    // Show building screen instead of navigating immediately
+    goToStep("building");
   };
+
+  // Building phase timer
+  useEffect(() => {
+    if (step !== "building") return;
+    setBuildProgress(0);
+    setBuildMsgIdx(0);
+    const totalDuration = 5000;
+    const interval = 50;
+    let elapsed = 0;
+    const timer = setInterval(() => {
+      elapsed += interval;
+      const pct = Math.min((elapsed / totalDuration) * 100, 100);
+      setBuildProgress(pct);
+      const msgIdx = Math.min(Math.floor((elapsed / totalDuration) * buildMessages.length), buildMessages.length - 1);
+      setBuildMsgIdx(msgIdx);
+      if (elapsed >= totalDuration) {
+        clearInterval(timer);
+        // Navigate after build completes
+        setTimeout(() => navigate("/connectdemo"), 600);
+      }
+    }, interval);
+    return () => clearInterval(timer);
+  }, [step]);
 
   /* ── shared header (logo only for pages 2+3) ── */
   const renderHeader = (showTagline = false) => (
