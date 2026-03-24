@@ -1106,8 +1106,8 @@ export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId, ini
                       </div>
                     ) : (
                       <>
-                        <div className="rounded-md overflow-hidden" style={{ border: "1px solid hsl(240 6% 14%)" }}>
-                          <img src={resultImageUrl} alt={title} className="w-full h-32 object-cover" />
+                        <div className="rounded-lg overflow-hidden" style={{ border: "1px solid hsl(240 6% 14%)", background: "hsl(240 6% 6%)" }}>
+                          <img src={resultImageUrl} alt={title} className="w-full object-contain max-h-[280px]" />
                         </div>
                         <div className="space-y-1">
                           <label className="text-[9px] font-medium uppercase tracking-wider" style={{ color: "hsl(240 5% 50%)" }}>Caption & Hashtags</label>
