@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -12,7 +12,7 @@ import {
   Sparkles, Loader2, ArrowLeft, ArrowRight, Download,
   Copy, RefreshCw, Calendar, Image as ImageIcon,
   X, Palette, Type, MapPin, Clock,
-  FileText, Wand2, Eye,
+  FileText, Wand2, Eye, Upload, ScanSearch,
 } from "lucide-react";
 import type { BrandPackage } from "./SpotlightBrandSetup";
 
@@ -129,6 +129,9 @@ export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId, ini
   const [resultImageUrl, setResultImageUrl] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
   const [tweakText, setTweakText] = useState("");
+  const [analyzingBrand, setAnalyzingBrand] = useState(false);
+  const logoFileRef = useRef<HTMLInputElement>(null);
+  const materialFileRef = useRef<HTMLInputElement>(null);
 
   // Sync initialType
   useEffect(() => { if (initialType) setFlyerType(initialType); }, [initialType]);
@@ -228,6 +231,42 @@ export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId, ini
       setBrandColors(brand.brand_colors);
       setLogoUrl(brand.logo_url || "");
       if (brand.disclaimer && !disclaimer) setDisclaimer(brand.disclaimer);
+    }
+  };
+
+  const handleImageUpload = async (file: File, type: "logo" | "material") => {
+    if (!file.type.startsWith("image/")) { toast.error("Please upload an image file"); return; }
+    if (file.size > 5 * 1024 * 1024) { toast.error("File must be under 5MB"); return; }
+    setAnalyzingBrand(true);
+    try {
+      const reader = new FileReader();
+      const base64Url = await new Promise<string>((resolve, reject) => {
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      if (type === "logo") setLogoUrl(base64Url);
+      const { data, error } = await supabase.functions.invoke("spotlight-flyer", {
+        body: { action: "analyze_brand", image_url: base64Url, image_type: type },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      const attrs = data?.attributes;
+      if (attrs) {
+        if (Array.isArray(attrs.colors) && attrs.colors.length > 0) {
+          const hexColors = attrs.colors.filter((c: string) => /^#[0-9A-Fa-f]{3,8}$/.test(c)).slice(0, 3);
+          if (hexColors.length > 0) setBrandColors(hexColors);
+        }
+        if (attrs.industry && type === "logo") {
+          toast.success(`Detected industry: ${attrs.industry}`);
+        }
+        toast.success(`Brand analysis complete — ${type === "logo" ? "colors & tone extracted" : "design attributes captured"}`);
+        if (attrs.design_notes) console.log(`[Brand Analysis] ${type}:`, attrs.design_notes);
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Brand analysis failed");
+    } finally {
+      setAnalyzingBrand(false);
     }
   };
 
@@ -393,14 +432,16 @@ export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId, ini
     const parts = [`Create a professional vertical marketing flyer for ${brandName || "a business"}.`];
     parts.push(`Use brand colors: ${brandColors.join(" and ")}.`);
     parts.push(`Headline: "${title || inferTitleFromText(rawPrompt, flyerType)}".`);
-    if (rawPrompt.trim()) parts.push(`Original request: "${rawPrompt.trim()}".`);
-    if (description.trim()) parts.push(`Supporting details: "${description.trim()}".`);
+    // Use rawPrompt as CONTEXT for the AI to understand the intent — NOT as text to display on the flyer
+    if (rawPrompt.trim()) parts.push(`Context (DO NOT put this text on the flyer, use it only to understand the intent): "${rawPrompt.trim()}".`);
+    if (description.trim()) parts.push(`Use this description to craft polished copy for the flyer (rewrite professionally, do not echo verbatim): "${description.trim()}".`);
     if (!isEvergreen && dateTime) parts.push(`Date/Time: ${dateTime}.`);
     if (location) parts.push(`Location: ${location}.`);
     const cleanBullets = getResolvedBullets();
     if (cleanBullets.length > 0) parts.push(`Bullet points:\n${cleanBullets.map(b => `• ${b}`).join("\n")}`);
     if (cta || flyerType) parts.push(`Call to action: "${cta || defaultCtaForType(flyerType)}".`);
     parts.push(`Design style: clean, professional, suitable for print and social media.`);
+    parts.push(`IMPORTANT: Never include raw user questions, marketing jargon, or prompt text on the flyer. All text on the flyer must be polished, professional copy. The flyer should look like it was designed by a professional agency.`);
     if (disclaimer) parts.push(`Disclaimer: "${disclaimer}".`);
     if (extra) parts.push(`Additional instructions: ${extra}`);
     return parts.join("\n");
@@ -717,8 +758,25 @@ export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId, ini
               <Input value={brandName} onChange={e => setBrandName(e.target.value)} placeholder="Hamilton & Cole LLP" style={darkInput} />
             </div>
             <div className="space-y-1">
-              <label className="text-[9px] font-medium uppercase tracking-wider" style={{ color: "hsl(240 5% 50%)" }}>Logo URL (optional)</label>
-              <Input value={logoUrl} onChange={e => setLogoUrl(e.target.value)} placeholder="https://..." style={darkInput} />
+              <label className="text-[9px] font-medium uppercase tracking-wider flex items-center gap-1" style={{ color: "hsl(240 5% 50%)" }}>
+                <Upload className="h-2.5 w-2.5" /> Logo
+              </label>
+              <div className="flex items-center gap-2">
+                {logoUrl && (
+                  <div className="relative shrink-0">
+                    <img src={logoUrl} alt="Logo" className="w-9 h-9 object-contain rounded" style={{ border: "1px solid hsl(240 6% 18%)", background: "hsl(240 6% 12%)" }} />
+                    <button onClick={() => setLogoUrl("")} className="absolute -top-1 -right-1 rounded-full p-0.5" style={{ background: "hsl(0 60% 40%)" }}>
+                      <X className="h-2 w-2 text-white" />
+                    </button>
+                  </div>
+                )}
+                <input ref={logoFileRef} type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handleImageUpload(f, "logo"); e.target.value = ""; }} />
+                <Button variant="ghost" size="sm" className="text-[9px] h-7 gap-1" style={{ color: "hsl(140 12% 58%)", border: "1px solid hsl(240 6% 18%)" }} onClick={() => logoFileRef.current?.click()} disabled={analyzingBrand}>
+                  {analyzingBrand ? <Loader2 className="h-3 w-3 animate-spin" /> : <ScanSearch className="h-3 w-3" />}
+                  {logoUrl ? "Replace" : "Upload & Analyze"}
+                </Button>
+              </div>
+              <p className="text-[8px]" style={{ color: "hsl(240 5% 40%)" }}>AI extracts colors, industry & tone from your logo</p>
             </div>
             <div className="space-y-1 sm:col-span-2">
               <label className="text-[9px] font-medium uppercase tracking-wider" style={{ color: "hsl(240 5% 50%)" }}>Brand Colors</label>
@@ -733,6 +791,17 @@ export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId, ini
                   <Button variant="ghost" size="sm" className="text-[9px] h-6" style={{ color: "hsl(140 12% 58%)" }} onClick={() => setBrandColors([...brandColors, "#555555"])}>+ Add</Button>
                 )}
               </div>
+            </div>
+            <div className="space-y-1 sm:col-span-2">
+              <label className="text-[9px] font-medium uppercase tracking-wider flex items-center gap-1" style={{ color: "hsl(240 5% 50%)" }}>
+                <ImageIcon className="h-2.5 w-2.5" /> Previous Marketing Materials (optional)
+              </label>
+              <input ref={materialFileRef} type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) handleImageUpload(f, "material"); e.target.value = ""; }} />
+              <Button variant="ghost" size="sm" className="text-[9px] h-7 gap-1 w-full justify-start" style={{ color: "hsl(240 5% 60%)", border: "1px dashed hsl(240 6% 18%)" }} onClick={() => materialFileRef.current?.click()} disabled={analyzingBrand}>
+                {analyzingBrand ? <Loader2 className="h-3 w-3 animate-spin" /> : <Upload className="h-3 w-3" />}
+                Upload a past flyer, brochure, or social post to extract fonts & design style
+              </Button>
+              <p className="text-[8px]" style={{ color: "hsl(240 5% 40%)" }}>AI learns your fonts, additional colors & design theme for better results</p>
             </div>
           </div>
 

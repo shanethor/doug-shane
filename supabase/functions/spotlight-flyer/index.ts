@@ -233,7 +233,8 @@ function buildStructuredPrompt(flyer: any): string {
   parts.push(
     `Design style: ${style}, suitable for print and social media.`,
     `Use clear hierarchy: large headline, date/time, location, bullet points, and a strong call to action.`,
-    `Include 1–2 subtle background or b-roll images relevant to the topic without showing recognizable faces.`
+    `Include 1–2 subtle background or b-roll images relevant to the topic without showing recognizable faces.`,
+    `IMPORTANT: Never include raw user questions, marketing jargon, instructions, or prompt text on the flyer. All visible text must be polished, professional copy as if designed by a top agency. Do not echo the user's request verbatim.`
   );
 
   if (flyer.disclaimer) parts.push(`Leave a small area at the bottom for disclaimer text: "${flyer.disclaimer}".`);
@@ -308,6 +309,70 @@ serve(async (req) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
+
+    // ─── ACTION: analyze_brand ───
+    if (action === "analyze_brand") {
+      const imageUrl = String(body.image_url || "").trim();
+      const imageType = String(body.image_type || "logo").trim(); // "logo" or "material"
+      if (!imageUrl) throw new Error("image_url required");
+
+      const systemPrompt = imageType === "material"
+        ? `You are a brand design analyst. Analyze this marketing material image and extract design attributes: dominant colors (as hex), secondary colors, font style descriptions (serif/sans-serif/script, weight, feel), overall design tone (professional, bold, playful, luxury, minimal, friendly), and any brand patterns or themes you detect. This data will improve future marketing material generation.`
+        : `You are a brand design analyst. Analyze this logo image and extract: the dominant brand colors (as hex values), the likely industry, and the design tone/style (professional, bold, playful, luxury, minimal, friendly). Infer from visual cues only.`;
+
+      const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY()}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-3-flash-preview",
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: [
+              { type: "text", text: imageType === "material" ? "Analyze this marketing material for design attributes." : "Analyze this logo and extract brand attributes." },
+              { type: "image_url", image_url: { url: imageUrl } },
+            ]},
+          ],
+          tools: [{
+            type: "function",
+            function: {
+              name: "extract_brand_attributes",
+              description: "Extract brand visual attributes from an image",
+              parameters: {
+                type: "object",
+                properties: {
+                  colors: { type: "array", items: { type: "string" }, description: "Hex color values detected" },
+                  industry: { type: ["string", "null"], description: "Detected industry or null" },
+                  tone: { type: "string", description: "Design tone: professional, bold, playful, luxury, minimal, friendly" },
+                  font_styles: { type: "array", items: { type: "string" }, description: "Font style descriptions found" },
+                  design_notes: { type: ["string", "null"], description: "Additional design observations" },
+                },
+                required: ["colors", "tone"],
+                additionalProperties: false,
+              },
+            },
+          }],
+          tool_choice: { type: "function", function: { name: "extract_brand_attributes" } },
+        }),
+      });
+
+      if (!aiRes.ok) {
+        if (aiRes.status === 429) throw new Error("Rate limit exceeded. Please try again.");
+        if (aiRes.status === 402) throw new Error("AI credits exhausted.");
+        throw new Error("Brand analysis failed");
+      }
+
+      const aiData = await aiRes.json();
+      const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
+      if (!toolCall?.function?.arguments) throw new Error("No analysis returned");
+      const attributes = JSON.parse(toolCall.function.arguments);
+
+      return new Response(JSON.stringify({ attributes }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     if (action === "demo_generate") {
       const prompt = String(body.prompt || "").trim();
