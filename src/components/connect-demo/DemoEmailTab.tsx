@@ -845,7 +845,7 @@ export default function DemoEmailTab() {
         {/* ── Main content ── */}
         <div className="flex-1 min-w-0 space-y-3">
           {/* Header */}
-          <div className="flex items-center justify-between flex-wrap gap-2">
+          <div className="flex items-center justify-between flex-wrap gap-2 email-toolbar">
             <div className="flex items-center gap-3">
               <Mail className="h-5 w-5" style={{ color: "hsl(140 12% 58%)" }} />
               <h2 className="text-lg font-semibold text-white">Email</h2>
