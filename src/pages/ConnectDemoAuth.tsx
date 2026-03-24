@@ -678,7 +678,6 @@ export default function ConnectDemoAuth() {
                     </p>
                   )}
                 </div>
-                </div>
               </div>
               <p className="text-xl text-center font-semibold mt-10" style={{ color: "hsl(140 12% 58%)" }}>Intelligence runs on AuRa</p>
             </div>
