@@ -686,7 +686,8 @@ export default function DemoConnectTab({ contentReady = true }: { contentReady?:
       </div>
 
       {!searching && !result && (
-        <div className="relative flex-1 overflow-hidden mt-2" style={{
+        <div className="relative mt-2" style={{
+          minHeight: "calc(100dvh - 340px)",
           opacity: connectPhase >= 3 ? 1 : 0,
           transform: connectPhase >= 3 ? "translateY(0) scale(1)" : "translateY(30px) scale(0.95)",
           transition: isFirstVisit.current ? "all 1.8s cubic-bezier(0.16, 1, 0.3, 1)" : "all 0.6s ease-out",
