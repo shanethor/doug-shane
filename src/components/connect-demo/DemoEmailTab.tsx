@@ -778,7 +778,7 @@ export default function DemoEmailTab() {
       `}</style>
       <div className="flex gap-0 lg:gap-4">
         {/* ── Sidebar (desktop) ── */}
-        <div className="hidden lg:flex flex-col w-48 shrink-0 space-y-1 pt-1">
+        <div className="hidden lg:flex flex-col w-48 shrink-0 space-y-1 pt-1 email-sidebar">
           <Button size="sm" className="w-full gap-1.5 text-sm mb-3 justify-start" style={{ background: "hsl(140 12% 42%)" }} onClick={() => setShowCompose(true)}>
             <Plus className="h-4 w-4" /> Compose
           </Button>
