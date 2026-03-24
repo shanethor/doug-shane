@@ -10,7 +10,7 @@ import {
   ArrowLeft, CheckCheck, Clock, X, Plus, Link2, User, Wand2,
   FileText, Shield, AlertTriangle, TrendingUp, Zap, Star, Inbox,
   SendHorizonal, FilePenLine, Tag, ChevronDown, ChevronUp, Trash2, Copy,
-  Users, Target, Phone, MapPin, Building2, Activity,
+  Users, Target, Phone, MapPin, Building2, Activity, CalendarPlus, CalendarCheck, ExternalLink,
 } from "lucide-react";
 import { toast } from "sonner";
 
