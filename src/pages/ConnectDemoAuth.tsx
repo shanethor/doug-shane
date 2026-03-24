@@ -359,7 +359,9 @@ export default function ConnectDemoAuth() {
             You already know the right people. You just don't know how to get there.
           </p>
           <div className="relative py-4" style={{ minHeight: 56 }}>
-            <TaglineNodes />
+            <div className="absolute pointer-events-none" style={{ top: "-40px", bottom: "-80px", left: "-120px", right: "-120px", zIndex: 0 }}>
+              <TaglineNodes />
+            </div>
             <p className="text-sm font-semibold italic sage-shimmer relative z-10">
               Let us show you the way in.
             </p>
