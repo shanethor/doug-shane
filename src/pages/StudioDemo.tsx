@@ -166,7 +166,7 @@ export default function StudioDemo() {
                         <div className="flex items-center gap-2 p-3 rounded-lg bg-emerald-500/[0.06] border border-emerald-500/10">
                           <CalendarDays className="h-4 w-4 text-emerald-400 shrink-0" />
                           <p className="text-emerald-300 text-sm">
-                            <strong>Scheduled completion:</strong> {latestReq.scheduledDate}
+                            <strong>Estimated delivery:</strong> {latestReq.scheduledDate}
                           </p>
                         </div>
                         <p className="text-[#A1A1AA] text-xs">
