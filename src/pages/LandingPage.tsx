@@ -449,17 +449,15 @@ export default function LandingPage() {
                         <path d="M5 12h14" /><path d="M12 5l7 7-7 7" />
                       </svg>
                     </Link>
-                    <a
-                      href="https://calendly.com"
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <Link
+                      to="/book/aura-studio"
                       className="inline-flex items-center gap-2 text-sm font-medium text-white border border-[#F59E0B]/30 px-6 py-3 rounded-[10px] hover:border-[#F59E0B]/60 hover:bg-[#F59E0B]/[0.06] transition-all no-underline"
                     >
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-[#F59E0B]">
                         <rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4" /><path d="M8 2v4" /><path d="M3 10h18" /><path d="M8 14h.01" /><path d="M12 14h.01" /><path d="M16 14h.01" /><path d="M8 18h.01" /><path d="M12 18h.01" />
                       </svg>
                       Schedule a call
-                    </a>
+                    </Link>
                   </div>
                 </div>
 
