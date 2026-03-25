@@ -11,7 +11,7 @@ import {
   Send, Sparkles, MessageSquare, Building2, ChevronDown, ChevronUp,
 } from "lucide-react";
 
-/* ── Fake maintenance request flow ── */
+/* ── Fake build request flow ── */
 type DemoRequest = {
   id: string;
   title: string;
