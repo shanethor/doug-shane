@@ -141,6 +141,30 @@ const partnerCards = [
   { num: "04", title: "AI-powered intelligence", desc: "AURA Connect enriches every referral with relationship data for the warmest possible path." },
 ];
 
+/* ═══ AI Research Stats ═══ */
+const researchStats = [
+  {
+    heading: "Productivity up to 4× faster",
+    text: "PwC's 2025 Global AI Jobs Barometer found that AI‑exposed sectors saw productivity growth jump from 7% to 27%, with roughly three times higher growth in revenue per employee.",
+    source: "PwC",
+  },
+  {
+    heading: "30–45% lower support costs",
+    text: "Case studies of AI customer‑service automation report 30–45% reductions in support costs and 2–3× gains in agent productivity when routine inquiries are automated.",
+    source: "Industry Research",
+  },
+  {
+    heading: "Faster sales motion",
+    text: "BCG's work with AI sales agents shows companies increasing qualified prospects by double‑digit percentages and running parts of the sales process up to eight times faster.",
+    source: "BCG",
+  },
+  {
+    heading: "Up to 40% cost reduction",
+    text: "Early generative‑AI deployments have delivered up to 40% reductions in operating costs when high‑volume, repetitive workflows are automated.",
+    source: "McKinsey / Industry",
+  },
+];
+
 /* ═══ Main Component ═══ */
 export default function LandingPage() {
   const [activeTab, setActiveTab] = useState(0);
@@ -199,7 +223,8 @@ export default function LandingPage() {
               </Link>
               <div className="hidden md:flex gap-1">
                 <a href="#connect" className="text-[13px] text-[#A1A1AA] no-underline px-3 py-1.5 rounded-full hover:text-[hsl(140_12%_72%)] transition-colors">Connect</a>
-                <a href="#concierge" className="text-[13px] text-[#A1A1AA] no-underline px-3 py-1.5 rounded-full hover:text-[hsl(140_12%_72%)] transition-colors">Concierge</a>
+                <a href="#studio" className="text-[13px] text-[#A1A1AA] no-underline px-3 py-1.5 rounded-full hover:text-[hsl(140_12%_72%)] transition-colors">Studio</a>
+                <a href="#research" className="text-[13px] text-[#A1A1AA] no-underline px-3 py-1.5 rounded-full hover:text-[hsl(140_12%_72%)] transition-colors">Why AI</a>
                 <a href="#branches" className="text-[13px] text-[#A1A1AA] no-underline px-3 py-1.5 rounded-full hover:text-[hsl(140_12%_72%)] transition-colors">Platform</a>
                 <a href="#partners" className="text-[13px] text-[#A1A1AA] no-underline px-3 py-1.5 rounded-full hover:text-[hsl(140_12%_72%)] transition-colors">Partners</a>
               </div>
@@ -216,22 +241,41 @@ export default function LandingPage() {
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[min(700px,100vw)] h-[min(700px,100vh)] rounded-full pointer-events-none"
             style={{ background: "radial-gradient(circle, hsl(140 12% 42% / 0.06) 0%, transparent 70%)" }} />
 
-          <div className="relative z-[2] text-center px-8">
+          <div className="relative z-[2] text-center px-8 max-w-[720px]">
             <div className="flex justify-center mb-8">
               <AuraLogoLarge size={90} />
             </div>
             <h1
-              className="text-[clamp(56px,8vw,120px)] max-sm:text-5xl font-bold leading-[1] tracking-[0.06em] text-white mb-6"
+              className="text-[clamp(40px,6vw,72px)] max-sm:text-4xl font-bold leading-[1.1] tracking-[-0.02em] text-white mb-6"
               style={{ textShadow: "0 4px 24px rgba(0,0,0,0.55)" }}
             >
-              AuRa
+              AI‑Native Tools and Agents for Modern Firms
             </h1>
-            <p className="text-[17px] font-medium max-w-[520px] mx-auto leading-[1.65] mb-8" style={{ color: "hsl(140 12% 58%)" }}>
-              One platform powering <span style={{ color: "hsl(140 12% 72%)" }} className="font-medium">insurance</span>,{" "}
-              <span className="text-[#D4884A] font-medium">property</span>, and{" "}
-              <span className="text-[#D4B85C] font-medium">consulting</span>. Intelligence for the professionals who protect, build, and grow.
+            <p className="text-[17px] font-medium max-w-[600px] mx-auto leading-[1.65] mb-8" style={{ color: "hsl(140 12% 58%)" }}>
+              <span style={{ color: "hsl(140 12% 72%)" }} className="font-semibold">AURA CONNECT</span> gives your team an AI‑powered workspace for email, calendar, pipeline, and insurance workflows.{" "}
+              <span className="text-[#F59E0B] font-semibold">Aura Studio</span> builds the custom agents and automations that make it yours.
             </p>
-            <p className="text-xl font-semibold tracking-wide" style={{ color: "hsl(140 12% 42%)" }}>Intelligence runs on AuRa</p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
+              <Link
+                to="/connectdemo/auth"
+                className="inline-flex items-center gap-2 text-sm font-medium text-[#08080A] px-7 py-3 rounded-[10px] transition-colors no-underline"
+                style={{ background: "hsl(140 12% 42%)" }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = "hsl(140 12% 52%)")}
+                onMouseLeave={(e) => (e.currentTarget.style.background = "hsl(140 12% 42%)")}
+              >
+                See AURA CONNECT in action
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                  <path d="M5 12h14" /><path d="M12 5l7 7-7 7" />
+                </svg>
+              </Link>
+              <a
+                href="#studio"
+                className="inline-flex items-center gap-2 text-sm font-medium text-white border border-[#F59E0B]/30 px-7 py-3 rounded-[10px] hover:border-[#F59E0B]/60 hover:bg-[#F59E0B]/[0.06] transition-all no-underline"
+              >
+                Talk to Aura Studio
+              </a>
+            </div>
+            <p className="text-lg font-semibold tracking-wide" style={{ color: "hsl(140 12% 42%)" }}>Intelligence runs on AuRa</p>
           </div>
         </section>
 
@@ -243,11 +287,42 @@ export default function LandingPage() {
                 <div>
                   <div className="text-[11px] font-semibold tracking-[0.12em] uppercase mb-4" style={{ color: "hsl(140 12% 58%)" }}>AURA Connect</div>
                   <h2 className="text-[clamp(32px,4vw,48px)] font-bold tracking-[-0.04em] leading-[1.05] text-white mb-5">
-                    Your network,<br />mapped.
+                    AI Workspace for<br />Producers & Teams
                   </h2>
-                  <div className="text-sm text-[#A1A1AA] mb-6"><strong>$250</strong>/month per seat</div>
-                  <p className="text-[15px] text-[#71717A] leading-[1.65] mb-6">
-                    Seven integrated modules — relationship intelligence, sales pipeline, AI email, calendar, outreach cadences, brand marketing, and Sage assistant — all powered by your first-party data.
+
+                  {/* Pricing block */}
+                  <div className="p-5 border rounded-xl mb-6" style={{ background: "hsl(140 12% 42% / 0.04)", borderColor: "hsl(140 12% 42% / 0.15)" }}>
+                    <div className="text-sm text-[#A1A1AA] mb-1"><strong className="text-white text-lg">$250</strong>/month per account</div>
+                    <div className="text-sm font-medium mb-1" style={{ color: "hsl(140 12% 62%)" }}>Launch offer: $100/month for the first 6 months</div>
+                    <div className="text-[12px] text-[#71717A] leading-[1.55]">Month‑to‑month SaaS · no long‑term contract required.</div>
+                  </div>
+
+                  <p className="text-[15px] text-[#71717A] leading-[1.65] mb-5">
+                    A subscription platform giving insurance agencies and professional‑services firms an AI‑native workspace — intake, document handling, loss‑run &amp; BOR automation, email/calendar, sales pipeline, and marketing tools.
+                  </p>
+
+                  {/* Key features */}
+                  <ul className="space-y-2 mb-6 text-[13px] text-[#A1A1AA]">
+                    <li className="flex items-start gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ background: "hsl(140 12% 52%)" }} />
+                      AI‑augmented intake and ACORD mapping for commercial and personal lines.
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ background: "hsl(140 12% 52%)" }} />
+                      Loss‑run and BOR automation that cuts manual back‑and‑forth.
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ background: "hsl(140 12% 52%)" }} />
+                      Unified inbox for email, calendar, tasks, and pipeline.
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ background: "hsl(140 12% 52%)" }} />
+                      Marketing tools like AI‑generated flyers and event promotion.
+                    </li>
+                  </ul>
+
+                  <p className="text-[12px] text-[#52525B] leading-[1.55] mb-6 border-l-2 pl-3" style={{ borderColor: "hsl(140 12% 42% / 0.3)" }}>
+                    CONNECT is designed to help teams capture the kind of productivity gains studies now show from well‑deployed AI — high single‑digit to low double‑digit improvements in year one.
                   </p>
 
                   {/* Module pills */}
@@ -314,55 +389,69 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ═══ AURA CONCIERGE ═══ */}
-        <section className="lp-reveal pt-[120px] max-sm:pt-20 pb-[60px] relative" id="concierge" ref={addRevealRef}>
+        {/* ═══ AURA STUDIO (formerly Concierge) ═══ */}
+        <section className="lp-reveal pt-[120px] max-sm:pt-20 pb-[60px] relative" id="studio" ref={addRevealRef}>
           <div className="max-w-[1200px] mx-auto px-12 max-md:px-8 max-sm:px-5">
             <div className="border-t border-white/[0.06] pt-14">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-16">
                 {/* Left column */}
                 <div>
-                  <div className="text-[11px] font-semibold tracking-[0.12em] uppercase text-[#F59E0B] mb-4">AURA Concierge</div>
+                  <div className="text-[11px] font-semibold tracking-[0.12em] uppercase text-[#F59E0B] mb-4">Aura Studio</div>
                   <h2 className="text-[clamp(32px,4vw,48px)] font-bold tracking-[-0.04em] leading-[1.05] text-white mb-5">
-                    Your on‑call<br />build team.
+                    Custom Tools &amp; AI Agents,<br />Done for You
                   </h2>
                   <p className="text-[15px] text-[#71717A] leading-[1.65] mb-6">
-                    Systems, tools, and assets that make your business easier to run — and easier to sell.
+                    We design, build, and maintain AI agents and custom tools that plug into AURA CONNECT and your existing systems.
                   </p>
 
                   {/* Pricing callout */}
                   <div className="p-5 bg-[#101012] border border-white/[0.06] rounded-xl mb-6">
-                    <div className="text-[13px] font-semibold text-white mb-2">Pricing</div>
-                    <div className="text-sm text-[#A1A1AA] mb-1"><strong className="text-white">$1,000</strong>/month subscription</div>
-                    <div className="text-sm text-[#F59E0B] font-medium mb-1">Launch offer: first 3 months at $500/month</div>
-                    <div className="text-[12px] text-[#71717A] leading-[1.55]">1‑week free trial · card on file required · first month billed before your first deliverable ships.</div>
+                    <div className="text-sm text-[#A1A1AA] mb-1"><strong className="text-white text-lg">$1,500</strong>/month</div>
+                    <div className="text-sm text-[#F59E0B] font-medium mb-1">3‑month minimum term, then month‑to‑month</div>
+                    <div className="text-[12px] text-[#71717A] leading-[1.55]">No long‑term contract after the initial term.</div>
                   </div>
+
+                  {/* What's included */}
+                  <ul className="space-y-2.5 mb-6 text-[13px] text-[#A1A1AA]">
+                    <li className="flex items-start gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 bg-[#F59E0B]" />
+                      Design and build 1–2 custom tools or AI agents (e.g., intake flows, dashboards, internal copilots) in the first 90 days.
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 bg-[#F59E0B]" />
+                      Integrate AI into your email, calendar, CRM/AMS, and document workflows.
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 bg-[#F59E0B]" />
+                      Ongoing monthly improvements, prompt tuning, and small feature builds.
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 bg-[#F59E0B]" />
+                      Structured handoff and training so your team can operate and extend what we build.
+                    </li>
+                  </ul>
 
                   {/* Who it's for */}
                   <div className="text-[12px] text-[#52525B] leading-[1.55] mb-6 border-l-2 border-[#F59E0B]/30 pl-3">
-                    <span className="text-[#A1A1AA] font-medium">Who it's for:</span> Non‑software businesses doing $500K–$10M+ in revenue, especially owners preparing to grow or sell.
-                  </div>
-
-                  {/* Disclaimer */}
-                  <div className="text-[11px] text-[#52525B] leading-[1.5] mb-8">
-                    <span className="text-[#71717A] font-medium">Disclaimer:</span> AURA Concierge delivers digital assets (websites, dashboards, templates, automations). Physical product shipping is not included. Deliverable timelines vary by scope and complexity. Your 7‑day trial begins at checkout; cancel anytime before it ends to avoid charges.
+                    <span className="text-[#A1A1AA] font-medium">Who it's for:</span> Small and mid‑sized firms that need a product and AI team — without hiring one.
                   </div>
 
                   <Link
                     to="/concierge"
                     className="inline-flex items-center gap-2 text-sm font-medium text-[#08080A] bg-[#F59E0B] px-7 py-3 rounded-[10px] hover:bg-[#FBBF24] transition-colors no-underline"
-                    aria-label="Request Concierge Access"
+                    aria-label="Talk to Aura Studio"
                   >
-                    Request Concierge Access
+                    Talk to Aura Studio
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
                       <path d="M5 12h14" /><path d="M12 5l7 7-7 7" />
                     </svg>
                   </Link>
                 </div>
 
-                {/* Right column — image + feature cards */}
+                {/* Right column — feature cards */}
                 <div>
                   <div className="rounded-[20px] overflow-hidden border border-white/[0.06] aspect-[16/9] relative mb-4">
-                    <img src="/images/concierge-toolkit.png" alt="AURA Concierge — your build toolkit" loading="eager" decoding="async" className="w-full h-full object-cover" />
+                    <img src="/images/concierge-toolkit.png" alt="Aura Studio — custom AI tools" loading="eager" decoding="async" className="w-full h-full object-cover" />
                     <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-[#08080A]/60 to-transparent" />
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -373,8 +462,8 @@ export default function LandingPage() {
                             <rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" />
                           </svg>
                         ),
-                        t: "Custom web tools & landing pages",
-                        d: "Simple websites, landing pages, and quote/intake tools that plug into your existing workflows.",
+                        t: "Custom web tools & dashboards",
+                        d: "Intake flows, quote tools, and internal dashboards that plug into your workflows.",
                       },
                       {
                         icon: (
@@ -382,8 +471,8 @@ export default function LandingPage() {
                             <path d="M3 3v18h18" /><path d="M7 16l4-8 4 5 5-6" />
                           </svg>
                         ),
-                        t: "Marketing dashboards & reporting",
-                        d: "Owner‑ready KPI dashboards pulling from your CRM, ads, and accounting tools.",
+                        t: "AI agent design & integration",
+                        d: "Custom copilots and assistants wired into your CRM, AMS, and communication tools.",
                       },
                       {
                         icon: (
@@ -397,29 +486,11 @@ export default function LandingPage() {
                       {
                         icon: (
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 text-[#F59E0B]">
-                            <path d="M12 20V10" /><path d="M6 20V4" /><path d="M18 20v-6" />
-                          </svg>
-                        ),
-                        t: "Sales systems & coaching assets",
-                        d: "Pipelines, email sequences, call frameworks, and playbooks so your team can execute.",
-                      },
-                      {
-                        icon: (
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 text-[#F59E0B]">
                             <path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83" />
                           </svg>
                         ),
                         t: "Process & automation builds",
                         d: "Intake forms, checklists, and automations that connect the tools you already use.",
-                      },
-                      {
-                        icon: (
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 text-[#F59E0B]">
-                            <circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 2" />
-                          </svg>
-                        ),
-                        t: "Ongoing support & iteration",
-                        d: "Monthly retainer includes revisions, updates, and new builds as your business evolves.",
                       },
                     ].map((f) => (
                       <div key={f.t} className="p-4 bg-[#101012] border border-white/[0.06] rounded-xl">
@@ -435,6 +506,36 @@ export default function LandingPage() {
           </div>
         </section>
 
+        {/* ═══ WHY AI-NATIVE MATTERS — Research Section ═══ */}
+        <section className="lp-reveal pt-[120px] max-sm:pt-20 pb-[60px] relative" id="research" ref={addRevealRef}>
+          <div className="max-w-[1200px] mx-auto px-12 max-md:px-8 max-sm:px-5">
+            <div className="border-t border-white/[0.06] pt-14">
+              <div className="mb-10">
+                <div className="text-[11px] font-semibold tracking-[0.12em] uppercase mb-4" style={{ color: "hsl(140 12% 58%)" }}>The ROI of AI</div>
+                <h2 className="text-[clamp(28px,3.5vw,44px)] font-bold tracking-[-0.035em] leading-[1.1] text-white mb-3">
+                  Why AI‑Native Matters
+                </h2>
+                <p className="text-[15px] text-[#71717A] max-w-[560px] leading-[1.6]">
+                  Teams that embrace AI are already seeing step‑change improvements in productivity and cost. Here's what independent research shows.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+                {researchStats.map((s) => (
+                  <div key={s.heading} className="p-6 rounded-2xl border transition-all hover:border-[hsl(140_12%_42%/0.25)] hover:-translate-y-0.5" style={{ background: "hsl(140 12% 42% / 0.04)", borderColor: "hsl(140 12% 42% / 0.1)" }}>
+                    <div className="text-[10px] font-semibold tracking-[0.1em] uppercase mb-3" style={{ color: "hsl(140 12% 58%)" }}>{s.source}</div>
+                    <div className="text-[15px] font-bold text-white mb-2 leading-tight">{s.heading}</div>
+                    <div className="text-[12px] text-[#71717A] leading-[1.6]">{s.text}</div>
+                  </div>
+                ))}
+              </div>
+
+              <p className="text-[14px] text-[#71717A] leading-[1.65] max-w-[700px]">
+                <span className="font-semibold text-white">AURA CONNECT</span> and <span className="font-semibold text-[#F59E0B]">Aura Studio</span> are built to help small and mid‑sized firms capture these same gains — without hiring an internal AI team.
+              </p>
+            </div>
+          </div>
+        </section>
 
         {/* ═══ BRANCH CAROUSEL ═══ */}
         <section className="lp-reveal pt-[120px] max-sm:pt-20" id="branches" ref={addRevealRef}>
@@ -571,6 +672,7 @@ export default function LandingPage() {
             <div>
               <div className="text-[13px] font-semibold text-white mb-4">Platform</div>
               <a href="#connect" className="block text-[13px] text-[#71717A] py-1 hover:text-white transition-colors no-underline">AURA Connect</a>
+              <a href="#studio" className="block text-[13px] text-[#71717A] py-1 hover:text-white transition-colors no-underline">Aura Studio</a>
               <a href="#branches" className="block text-[13px] text-[#71717A] py-1 hover:text-white transition-colors no-underline">AURA Risk</a>
               <a href="#branches" className="block text-[13px] text-[#71717A] py-1 hover:text-white transition-colors no-underline">AURA Property</a>
               <a href="#branches" className="block text-[13px] text-[#71717A] py-1 hover:text-white transition-colors no-underline">AURA Consulting</a>
