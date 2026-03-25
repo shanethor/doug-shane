@@ -56,6 +56,7 @@ export default function AdminDashboard() {
   
   const [loading, setLoading] = useState(true);
   const [partnerLinks, setPartnerLinks] = useState<any[]>([]);
+  const [bookedMeetings, setBookedMeetings] = useState<any[]>([]);
 
   useEffect(() => {
     if (!user || !isAdmin) return;
