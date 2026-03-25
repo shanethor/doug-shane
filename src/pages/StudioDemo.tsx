@@ -159,10 +159,10 @@ export default function StudioDemo() {
                     <div className="space-y-2">
                       <p className="text-sm font-medium text-white">Aura Studio AI</p>
                       <div className="text-sm text-[#D4D4D8] space-y-2">
-                        <p>
-                          Got it! I've logged <strong className="text-white">"{latestReq.title}"</strong> and
-                          assigned it to your maintenance queue.
-                        </p>
+                         <p>
+                           Got it! I've logged <strong className="text-white">"{latestReq.title}"</strong> and
+                           added it to your build queue. Our team will begin scoping immediately.
+                         </p>
                         <div className="flex items-center gap-2 p-3 rounded-lg bg-emerald-500/[0.06] border border-emerald-500/10">
                           <CalendarDays className="h-4 w-4 text-emerald-400 shrink-0" />
                           <p className="text-emerald-300 text-sm">
