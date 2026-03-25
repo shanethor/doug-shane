@@ -225,8 +225,6 @@ export default function LandingPage() {
                 <a href="#connect" className="text-[13px] text-[#A1A1AA] no-underline px-3 py-1.5 rounded-full hover:text-[hsl(140_12%_72%)] transition-colors">Connect</a>
                 <a href="#studio" className="text-[13px] text-[#A1A1AA] no-underline px-3 py-1.5 rounded-full hover:text-[hsl(140_12%_72%)] transition-colors">Studio</a>
                 <a href="#research" className="text-[13px] text-[#A1A1AA] no-underline px-3 py-1.5 rounded-full hover:text-[hsl(140_12%_72%)] transition-colors">Why AI</a>
-                <a href="#branches" className="text-[13px] text-[#A1A1AA] no-underline px-3 py-1.5 rounded-full hover:text-[hsl(140_12%_72%)] transition-colors">Platform</a>
-                <a href="#partners" className="text-[13px] text-[#A1A1AA] no-underline px-3 py-1.5 rounded-full hover:text-[hsl(140_12%_72%)] transition-colors">Partners</a>
               </div>
             </div>
             <Link to="/auth" className="text-[13px] font-medium text-[#08080A] bg-[hsl(140_12%_42%)] px-5 py-2 rounded-full hover:bg-[hsl(140_12%_52%)] transition-colors whitespace-nowrap no-underline">
@@ -298,26 +296,30 @@ export default function LandingPage() {
                   </div>
 
                   <p className="text-[15px] text-[#71717A] leading-[1.65] mb-5">
-                    A subscription platform giving insurance agencies and professional‑services firms an AI‑native workspace — intake, document handling, loss‑run &amp; BOR automation, email/calendar, sales pipeline, and marketing tools.
+                    An AI‑native workspace that maps your professional network, powers your email and calendar with intelligence, manages your sales pipeline, automates outreach cadences, and creates on‑brand marketing content — all from one platform.
                   </p>
 
                   {/* Key features */}
                   <ul className="space-y-2 mb-6 text-[13px] text-[#A1A1AA]">
                     <li className="flex items-start gap-2">
                       <span className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ background: "hsl(140 12% 52%)" }} />
-                      AI‑augmented intake and ACORD mapping for commercial and personal lines.
+                      Interactive relationship graph mapping every connection across email, social, and calendar.
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ background: "hsl(140 12% 52%)" }} />
-                      Loss‑run and BOR automation that cuts manual back‑and‑forth.
+                      AI‑powered email hub with Gmail, Outlook, and AuRa layouts — smart summarize, AI reply, and pipeline tagging built in.
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ background: "hsl(140 12% 52%)" }} />
-                      Unified inbox for email, calendar, tasks, and pipeline.
+                      Sales pipeline, calendar, and tiered outreach cadences with automated follow‑ups.
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ background: "hsl(140 12% 52%)" }} />
-                      Marketing tools like AI‑generated flyers and event promotion.
+                      AI brand studio for flyers, social graphics, and Sage‑powered captions and posting.
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ background: "hsl(140 12% 52%)" }} />
+                      Sage AI assistant for real‑time coaching, content generation, and workflow guidance.
                     </li>
                   </ul>
 
@@ -436,16 +438,29 @@ export default function LandingPage() {
                     <span className="text-[#A1A1AA] font-medium">Who it's for:</span> Small and mid‑sized firms that need a product and AI team — without hiring one.
                   </div>
 
-                  <Link
-                    to="/concierge"
-                    className="inline-flex items-center gap-2 text-sm font-medium text-[#08080A] bg-[#F59E0B] px-7 py-3 rounded-[10px] hover:bg-[#FBBF24] transition-colors no-underline"
-                    aria-label="Talk to Aura Studio"
-                  >
-                    Talk to Aura Studio
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
-                      <path d="M5 12h14" /><path d="M12 5l7 7-7 7" />
-                    </svg>
-                  </Link>
+                  <div className="flex items-center gap-4">
+                    <Link
+                      to="/concierge"
+                      className="inline-flex items-center gap-2 text-sm font-medium text-[#08080A] bg-[#F59E0B] px-7 py-3 rounded-[10px] hover:bg-[#FBBF24] transition-colors no-underline"
+                      aria-label="Talk to Aura Studio"
+                    >
+                      Talk to Aura Studio
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                        <path d="M5 12h14" /><path d="M12 5l7 7-7 7" />
+                      </svg>
+                    </Link>
+                    <a
+                      href="https://calendly.com"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 text-sm font-medium text-white border border-[#F59E0B]/30 px-6 py-3 rounded-[10px] hover:border-[#F59E0B]/60 hover:bg-[#F59E0B]/[0.06] transition-all no-underline"
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-[#F59E0B]">
+                        <rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4" /><path d="M8 2v4" /><path d="M3 10h18" /><path d="M8 14h.01" /><path d="M12 14h.01" /><path d="M16 14h.01" /><path d="M8 18h.01" /><path d="M12 18h.01" />
+                      </svg>
+                      Schedule a call
+                    </a>
+                  </div>
                 </div>
 
                 {/* Right column — feature cards */}
@@ -537,125 +552,11 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ═══ BRANCH CAROUSEL ═══ */}
-        <section className="lp-reveal pt-[120px] max-sm:pt-20" id="branches" ref={addRevealRef}>
-          <div className="max-w-[1200px] mx-auto px-12 max-md:px-8 max-sm:px-5">
-            <div className="border-t border-white/[0.06] pt-14">
-              <div className="mb-10">
-                <div className="text-[11px] font-semibold tracking-[0.12em] uppercase text-[#71717A] mb-4">AURA Intelligence</div>
-                <h2 className="text-[clamp(28px,3.5vw,44px)] font-bold tracking-[-0.035em] leading-[1.1] text-white">
-                  Three verticals.<br />One AI backbone.
-                </h2>
-                <p className="text-[15px] text-[#71717A] max-w-[500px] mt-3 leading-[1.6]">
-                  Insurance, property, and consulting data interact daily — powering cross-vertical intelligence no single-line platform can match.
-                </p>
-              </div>
+        {/* ═══ BRANCH CAROUSEL — hidden for launch ═══ */}
+        {/* <section className="lp-reveal pt-[120px] max-sm:pt-20" id="branches" ref={addRevealRef}> ... </section> */}
 
-              {/* Tab bar */}
-              <div className="flex bg-[#101012] border border-white/[0.06] rounded-[14px] overflow-hidden mb-12 max-sm:flex-wrap">
-                {branches.map((b, i) => (
-                  <button
-                    key={b.key}
-                    onClick={() => selectTab(i)}
-                    className={`flex-1 max-sm:flex-[1_1_100%] flex items-center justify-center gap-2.5 px-6 py-4 max-sm:px-4 max-sm:py-3 cursor-pointer transition-all text-sm font-medium border-2 border-transparent rounded-[14px] relative ${
-                      activeTab === i
-                        ? "text-white bg-white/[0.06]"
-                        : "text-[#52525B] hover:text-[#A1A1AA] bg-transparent"
-                    }`}
-                    style={activeTab === i ? { borderColor: `${b.color}55`, background: `${b.color}14` } : {}}
-                  >
-                    <BranchLogo color={b.color} size={28} />
-                    <span className="max-sm:hidden">{b.label}</span>
-                    <span className="sm:hidden text-[13px]">{b.label}</span>
-                    {activeTab === i && (
-                      <span
-                        className="absolute bottom-0 left-0 h-0.5 rounded-full opacity-30"
-                        style={{ background: "currentColor", animation: "tabFill 5s linear forwards" }}
-                      />
-                    )}
-                  </button>
-                ))}
-              </div>
-
-              {/* Preload all branch images */}
-              <div className="hidden" aria-hidden="true">
-                {branches.map((b) => (
-                  <link key={b.key} rel="preload" as="image" href={b.image} />
-                ))}
-              </div>
-
-              {/* Panel — all rendered, only active visible */}
-              <div className="relative">
-              {branches.map((b, i) => (
-                <div
-                  key={b.key}
-                  className={`grid grid-cols-1 md:grid-cols-[1fr_1.2fr] gap-12 items-center min-h-[380px] transition-opacity duration-300 ${activeTab === i ? "opacity-100" : "opacity-0 absolute pointer-events-none"}`}
-                  style={activeTab !== i ? { position: "absolute", top: 0, left: 0, right: 0, visibility: "hidden" } : {}}
-                >
-                  <div>
-                    <div className="flex items-center gap-3.5 mb-5">
-                      <BranchLogo color={b.color} size={36} />
-                      <span className="text-lg font-bold tracking-tight text-white">{b.label}</span>
-                    </div>
-                    <h3 className="text-[clamp(24px,3vw,36px)] font-bold tracking-[-0.03em] leading-[1.1] text-white mb-4 whitespace-pre-line">{b.title}</h3>
-                    <p className="text-[15px] text-[#71717A] leading-[1.65] mb-6">{b.desc}</p>
-                    <div className="flex flex-wrap gap-3 gap-y-2.5">
-                      {b.feats.map((f) => (
-                        <span key={f} className="flex items-center gap-2 text-[13px] font-medium text-[#E4E4E7]">
-                          <span className="w-[5px] h-[5px] rounded-full" style={{ background: b.colorBright }} />
-                          {f}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="rounded-[20px] overflow-hidden border border-white/[0.06] aspect-[4/3] relative">
-                    <img src={b.image} alt={b.label} loading="eager" decoding="async" className="w-full h-full object-cover hover:scale-[1.03] transition-transform duration-600" />
-                    <div className="absolute inset-0 pointer-events-none mix-blend-color opacity-45 rounded-[inherit]" style={{ background: b.color }} />
-                  </div>
-                </div>
-              ))}
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ═══ PARTNERS ═══ */}
-        <section className="lp-reveal pt-[120px] max-sm:pt-20" id="partners" ref={addRevealRef}>
-          <div className="max-w-[1200px] mx-auto px-12 max-md:px-8 max-sm:px-5">
-            <div className="border-t border-white/[0.06] pt-14">
-              <div className="mb-12">
-                <div className="text-[11px] font-semibold tracking-[0.12em] uppercase text-[#71717A] mb-4">Partnerships</div>
-                <h2 className="text-[clamp(28px,3.5vw,44px)] font-bold tracking-[-0.035em] leading-[1.1] text-white mb-4">
-                  Built on relationships,<br />not transactions.
-                </h2>
-                <p className="text-[15px] text-[#71717A] leading-[1.65] max-w-[560px]">
-                  Refer clients across insurance, property, and consulting — track every touchpoint from introduction to premium placed.
-                </p>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
-                {partnerCards.map((c) => (
-                  <div key={c.num} className="p-7 max-sm:p-5 bg-[#101012] border border-white/[0.06] rounded-2xl hover:border-white/[0.12] hover:-translate-y-0.5 transition-all">
-                    <div className="text-[11px] font-semibold text-[#52525B] tracking-[0.04em] mb-3.5">{c.num}</div>
-                    <div className="text-[15px] font-semibold text-white mb-2">{c.title}</div>
-                    <div className="text-[13px] text-[#71717A] leading-[1.55]">{c.desc}</div>
-                  </div>
-                ))}
-              </div>
-              <div className="flex items-center gap-6">
-                <Link
-                  to="/become-partner"
-                  className="inline-flex items-center gap-2 text-sm font-medium text-white border border-white/20 px-7 py-3 rounded-[10px] hover:border-white/45 hover:bg-white/[0.04] transition-all no-underline"
-                >
-                  Become a Partner
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-3.5 h-3.5">
-                    <path d="M5 12h14" /><path d="M12 5l7 7-7 7" />
-                  </svg>
-                </Link>
-                <span className="text-[13px] text-[#52525B] italic">Open to individuals and organizations</span>
-              </div>
-            </div>
-          </div>
-        </section>
+        {/* ═══ PARTNERS — hidden for launch ═══ */}
+        {/* <section className="lp-reveal pt-[120px] max-sm:pt-20" id="partners" ref={addRevealRef}> ... </section> */}
 
         {/* ═══ FOOTER ═══ */}
         <footer className="max-w-[1200px] mx-auto pt-[120px] max-sm:pt-16 pb-12 max-sm:pb-6 px-12 max-md:px-8 max-sm:px-5">
@@ -673,15 +574,12 @@ export default function LandingPage() {
               <div className="text-[13px] font-semibold text-white mb-4">Platform</div>
               <a href="#connect" className="block text-[13px] text-[#71717A] py-1 hover:text-white transition-colors no-underline">AURA Connect</a>
               <a href="#studio" className="block text-[13px] text-[#71717A] py-1 hover:text-white transition-colors no-underline">Aura Studio</a>
-              <a href="#branches" className="block text-[13px] text-[#71717A] py-1 hover:text-white transition-colors no-underline">AURA Risk</a>
-              <a href="#branches" className="block text-[13px] text-[#71717A] py-1 hover:text-white transition-colors no-underline">AURA Property</a>
-              <a href="#branches" className="block text-[13px] text-[#71717A] py-1 hover:text-white transition-colors no-underline">AURA Consulting</a>
+              <a href="#research" className="block text-[13px] text-[#71717A] py-1 hover:text-white transition-colors no-underline">Why AI</a>
             </div>
             <div>
               <div className="text-[13px] font-semibold text-white mb-4">Company</div>
               <span className="block text-[13px] text-[#71717A] py-1">About</span>
               <span className="block text-[13px] text-[#71717A] py-1">Careers</span>
-              <a href="#partners" className="block text-[13px] text-[#71717A] py-1 hover:text-white transition-colors no-underline">Partners</a>
               <span className="block text-[13px] text-[#71717A] py-1">Contact</span>
             </div>
             <div>
