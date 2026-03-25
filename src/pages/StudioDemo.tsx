@@ -184,7 +184,7 @@ export default function StudioDemo() {
           {/* Right: Request queue */}
           <div className="lg:col-span-3 space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-[#A1A1AA] uppercase tracking-wide">Request Queue</h2>
+              <h2 className="text-sm font-semibold text-[#A1A1AA] uppercase tracking-wide">Build Queue</h2>
               <Badge variant="outline" className="text-[10px] border-white/[0.08] text-[#A1A1AA]">
                 {requests.length} total
               </Badge>
