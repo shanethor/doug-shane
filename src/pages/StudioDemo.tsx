@@ -246,21 +246,21 @@ export default function StudioDemo() {
               <div className="h-px bg-white/[0.06]" />
               <div className="grid sm:grid-cols-3 gap-5">
                 {[
-                  {
-                    icon: <Send className="h-5 w-5" />,
-                    title: "1. Submit a Request",
-                    desc: "Tenants, clients, or your team submit requests through a branded portal, email, or text. Aura captures everything automatically.",
-                  },
-                  {
-                    icon: <Sparkles className="h-5 w-5" />,
-                    title: "2. AI Triages & Schedules",
-                    desc: "Our AI reads the request, categorizes it, assigns priority, estimates completion, and sends a confirmation — all in seconds.",
-                  },
-                  {
-                    icon: <CheckCircle2 className="h-5 w-5" />,
-                    title: "3. Track & Close",
-                    desc: "Everyone stays in the loop with automated status updates. You get a dashboard showing every request from open to complete.",
-                  },
+                   {
+                     icon: <Send className="h-5 w-5" />,
+                     title: "1. Tell Us What You Need",
+                     desc: "Need a custom CRM? A marketing manager? AI agents for customer service or financial reporting? Submit your request and we handle the rest.",
+                   },
+                   {
+                     icon: <Sparkles className="h-5 w-5" />,
+                     title: "2. We Scope, Design & Build",
+                     desc: "Our team scopes your project, designs the solution, and builds it using AI-powered tools — delivering in days, not months.",
+                   },
+                   {
+                     icon: <CheckCircle2 className="h-5 w-5" />,
+                     title: "3. Launch & Iterate",
+                     desc: "We deploy your tool, train your team, and continue iterating. You get a dedicated dashboard to track every build from kickoff to launch.",
+                   },
                 ].map((step, i) => (
                   <div key={i} className="p-4 rounded-xl bg-[#09090B] border border-white/[0.04] space-y-3">
                     <div className="h-10 w-10 rounded-lg bg-[#F59E0B]/10 flex items-center justify-center text-[#F59E0B]">
