@@ -119,11 +119,11 @@ export default function StudioDemo() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <Label className="text-xs text-[#A1A1AA]">Issue Title *</Label>
+                  <Label className="text-xs text-[#A1A1AA]">What do you need built? *</Label>
                   <Input
                     value={title}
                     onChange={e => setTitle(e.target.value)}
-                    placeholder="e.g. Broken window latch — Unit 2A"
+                    placeholder="e.g. AI agents for financial reporting"
                     className="bg-[#09090B] border-white/[0.08] text-white placeholder:text-[#52525B]"
                   />
                 </div>
