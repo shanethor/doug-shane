@@ -23,13 +23,13 @@ type DemoRequest = {
 
 const DEMO_EXISTING: DemoRequest[] = [
   {
-    id: "req-001", title: "HVAC filter replacement — Unit 4B",
-    description: "Tenant reports reduced airflow. Filters last changed 6 months ago.",
+    id: "req-001", title: "Custom CRM with pipeline tracking",
+    description: "We need a CRM tailored to our sales process with automated follow-ups and deal stages.",
     submittedAt: new Date(Date.now() - 86400000 * 3), scheduledDate: "Mar 28, 2026", status: "scheduled",
   },
   {
-    id: "req-002", title: "Parking lot light out — Section C",
-    description: "Two fixtures not illuminating. Safety concern.",
+    id: "req-002", title: "AI agents for customer service",
+    description: "Integrate AI chatbots to handle tier-1 support tickets and route complex issues to humans.",
     submittedAt: new Date(Date.now() - 86400000 * 7), scheduledDate: "Mar 22, 2026", status: "complete",
   },
 ];
