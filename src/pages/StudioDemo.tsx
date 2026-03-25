@@ -277,11 +277,11 @@ export default function StudioDemo() {
                   <Building2 className="h-4 w-4 text-[#F59E0B]" />
                   <h4 className="text-sm font-semibold text-white">This is just one workflow.</h4>
                 </div>
-                <p className="text-xs text-[#D4D4D8] leading-relaxed">
-                  Aura Studio builds <strong>custom AI tools</strong> for your specific business — CRM automations,
-                  document processing, client intake, compliance tracking, and more. We design, build, and maintain
-                  them so you can focus on growth. Pricing starts at <strong>$1,500/month</strong> with a 3-month minimum.
-                </p>
+                 <p className="text-xs text-[#D4D4D8] leading-relaxed">
+                   Aura Studio builds <strong>custom AI-powered tools</strong> for your business — CRMs, marketing
+                   automation, AI agents for customer service & finance, document processing, and more.
+                   We design, build, and maintain them so you can focus on growth. Pricing starts at <strong>$1,500/month</strong> with a 3-month minimum.
+                 </p>
                 <Link
                   to="/book/aura-studio"
                   className="inline-flex items-center gap-2 text-sm font-medium bg-[#F59E0B] text-[#08080A] px-5 py-2.5 rounded-lg hover:bg-[#FBBF24] transition-colors no-underline"
