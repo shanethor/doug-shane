@@ -59,6 +59,7 @@ import ConnectDemo from "./pages/ConnectDemo";
 import ConnectDemoAuth from "./pages/ConnectDemoAuth";
 import BecomePartner from "./pages/BecomePartner";
 import RequestAccess from "./pages/RequestAccess";
+import StudioDemo from "./pages/StudioDemo";
 import { Navigate } from "react-router-dom";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -176,6 +177,7 @@ const App = () => (
             </Route>
           </Route>
           <Route path="/connectdemo" element={<ConnectDemo />} />
+          <Route path="/studiodemo" element={<StudioDemo />} />
           <Route path="/connectdemo/auth" element={<ConnectDemoAuth />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/terms" element={<TermsOfService />} />
