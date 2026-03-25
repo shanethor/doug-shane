@@ -207,7 +207,7 @@ export default function DemoSpotlightTab() {
 
           {/* Flyer History */}
           <div className="space-y-1.5">
-            {allFlyers.map((f: any, idx: number) => {
+            {(showAllCreations ? allFlyers : allFlyers.slice(0, 5)).map((f: any, idx: number) => {
               const isSample = f._sample || f.id?.startsWith("sample-");
               return (
                 <div
@@ -251,6 +251,16 @@ export default function DemoSpotlightTab() {
               );
             })}
           </div>
+          {allFlyers.length > 5 && (
+            <Button
+              variant="ghost"
+              className="w-full text-[10px] h-7"
+              style={{ color: "hsl(140 12% 58%)" }}
+              onClick={() => setShowAllCreations(!showAllCreations)}
+            >
+              {showAllCreations ? "Show less" : `View all (${allFlyers.length})`}
+            </Button>
+          )}
 
           {/* Brand Packages */}
           <Separator style={{ background: "hsl(240 6% 14%)" }} />
