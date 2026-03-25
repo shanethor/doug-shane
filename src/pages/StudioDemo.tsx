@@ -128,11 +128,11 @@ export default function StudioDemo() {
                   />
                 </div>
                 <div>
-                  <Label className="text-xs text-[#A1A1AA]">Description</Label>
+                  <Label className="text-xs text-[#A1A1AA]">Details</Label>
                   <Textarea
                     value={description}
                     onChange={e => setDescription(e.target.value)}
-                    placeholder="Details about the issue…"
+                    placeholder="Describe your goals, integrations, or pain points…"
                     rows={3}
                     className="bg-[#09090B] border-white/[0.08] text-white placeholder:text-[#52525B]"
                   />
