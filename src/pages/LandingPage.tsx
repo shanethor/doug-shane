@@ -580,7 +580,6 @@ export default function LandingPage() {
               <div className="text-[13px] font-semibold text-white mb-4">Company</div>
               <span className="block text-[13px] text-[#71717A] py-1">About</span>
               <span className="block text-[13px] text-[#71717A] py-1">Careers</span>
-              <a href="#partners" className="block text-[13px] text-[#71717A] py-1 hover:text-white transition-colors no-underline">Partners</a>
               <span className="block text-[13px] text-[#71717A] py-1">Contact</span>
             </div>
             <div>
