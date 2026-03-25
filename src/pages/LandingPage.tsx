@@ -298,26 +298,30 @@ export default function LandingPage() {
                   </div>
 
                   <p className="text-[15px] text-[#71717A] leading-[1.65] mb-5">
-                    A subscription platform giving insurance agencies and professional‑services firms an AI‑native workspace — intake, document handling, loss‑run &amp; BOR automation, email/calendar, sales pipeline, and marketing tools.
+                    An AI‑native workspace that maps your professional network, powers your email and calendar with intelligence, manages your sales pipeline, automates outreach cadences, and creates on‑brand marketing content — all from one platform.
                   </p>
 
                   {/* Key features */}
                   <ul className="space-y-2 mb-6 text-[13px] text-[#A1A1AA]">
                     <li className="flex items-start gap-2">
                       <span className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ background: "hsl(140 12% 52%)" }} />
-                      AI‑augmented intake and ACORD mapping for commercial and personal lines.
+                      Interactive relationship graph mapping every connection across email, social, and calendar.
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ background: "hsl(140 12% 52%)" }} />
-                      Loss‑run and BOR automation that cuts manual back‑and‑forth.
+                      AI‑powered email hub with Gmail, Outlook, and AuRa layouts — smart summarize, AI reply, and pipeline tagging built in.
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ background: "hsl(140 12% 52%)" }} />
-                      Unified inbox for email, calendar, tasks, and pipeline.
+                      Sales pipeline, calendar, and tiered outreach cadences with automated follow‑ups.
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ background: "hsl(140 12% 52%)" }} />
-                      Marketing tools like AI‑generated flyers and event promotion.
+                      AI brand studio for flyers, social graphics, and Sage‑powered captions and posting.
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ background: "hsl(140 12% 52%)" }} />
+                      Sage AI assistant for real‑time coaching, content generation, and workflow guidance.
                     </li>
                   </ul>
 
