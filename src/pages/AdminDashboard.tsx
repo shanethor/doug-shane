@@ -286,6 +286,7 @@ export default function AdminDashboard() {
             <TabsTrigger value="log-access" className="gap-1.5 text-xs"><ScrollText className="h-3.5 w-3.5" />Log Access</TabsTrigger>
             <TabsTrigger value="user-features" className="gap-1.5 text-xs"><Network className="h-3.5 w-3.5" />Features</TabsTrigger>
             <TabsTrigger value="concierge" className="gap-1.5 text-xs"><Sparkles className="h-3.5 w-3.5" />Concierge</TabsTrigger>
+            <TabsTrigger value="bookings" className="gap-1.5 text-xs"><CalendarDays className="h-3.5 w-3.5" />Bookings</TabsTrigger>
           </TabsList>
         </div>
 
