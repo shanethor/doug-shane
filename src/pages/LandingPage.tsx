@@ -225,8 +225,6 @@ export default function LandingPage() {
                 <a href="#connect" className="text-[13px] text-[#A1A1AA] no-underline px-3 py-1.5 rounded-full hover:text-[hsl(140_12%_72%)] transition-colors">Connect</a>
                 <a href="#studio" className="text-[13px] text-[#A1A1AA] no-underline px-3 py-1.5 rounded-full hover:text-[hsl(140_12%_72%)] transition-colors">Studio</a>
                 <a href="#research" className="text-[13px] text-[#A1A1AA] no-underline px-3 py-1.5 rounded-full hover:text-[hsl(140_12%_72%)] transition-colors">Why AI</a>
-                <a href="#branches" className="text-[13px] text-[#A1A1AA] no-underline px-3 py-1.5 rounded-full hover:text-[hsl(140_12%_72%)] transition-colors">Platform</a>
-                <a href="#partners" className="text-[13px] text-[#A1A1AA] no-underline px-3 py-1.5 rounded-full hover:text-[hsl(140_12%_72%)] transition-colors">Partners</a>
               </div>
             </div>
             <Link to="/auth" className="text-[13px] font-medium text-[#08080A] bg-[hsl(140_12%_42%)] px-5 py-2 rounded-full hover:bg-[hsl(140_12%_52%)] transition-colors whitespace-nowrap no-underline">
