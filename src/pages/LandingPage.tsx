@@ -440,16 +440,29 @@ export default function LandingPage() {
                     <span className="text-[#A1A1AA] font-medium">Who it's for:</span> Small and mid‑sized firms that need a product and AI team — without hiring one.
                   </div>
 
-                  <Link
-                    to="/concierge"
-                    className="inline-flex items-center gap-2 text-sm font-medium text-[#08080A] bg-[#F59E0B] px-7 py-3 rounded-[10px] hover:bg-[#FBBF24] transition-colors no-underline"
-                    aria-label="Talk to Aura Studio"
-                  >
-                    Talk to Aura Studio
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
-                      <path d="M5 12h14" /><path d="M12 5l7 7-7 7" />
-                    </svg>
-                  </Link>
+                  <div className="flex items-center gap-4">
+                    <Link
+                      to="/concierge"
+                      className="inline-flex items-center gap-2 text-sm font-medium text-[#08080A] bg-[#F59E0B] px-7 py-3 rounded-[10px] hover:bg-[#FBBF24] transition-colors no-underline"
+                      aria-label="Talk to Aura Studio"
+                    >
+                      Talk to Aura Studio
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                        <path d="M5 12h14" /><path d="M12 5l7 7-7 7" />
+                      </svg>
+                    </Link>
+                    <a
+                      href="https://calendly.com"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 text-sm font-medium text-white border border-[#F59E0B]/30 px-6 py-3 rounded-[10px] hover:border-[#F59E0B]/60 hover:bg-[#F59E0B]/[0.06] transition-all no-underline"
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-[#F59E0B]">
+                        <rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4" /><path d="M8 2v4" /><path d="M3 10h18" /><path d="M8 14h.01" /><path d="M12 14h.01" /><path d="M16 14h.01" /><path d="M8 18h.01" /><path d="M12 18h.01" />
+                      </svg>
+                      Schedule a call
+                    </a>
+                  </div>
                 </div>
 
                 {/* Right column — feature cards */}
