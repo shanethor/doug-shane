@@ -143,7 +143,7 @@ export default function StudioDemo() {
                   className="w-full bg-[#F59E0B] text-[#08080A] hover:bg-[#FBBF24] gap-2"
                 >
                   <Send className="h-4 w-4" />
-                  Submit Request
+                  Submit Build Request
                 </Button>
               </CardContent>
             </Card>
