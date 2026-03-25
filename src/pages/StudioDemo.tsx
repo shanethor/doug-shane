@@ -11,7 +11,7 @@ import {
   Send, Sparkles, MessageSquare, Building2, ChevronDown, ChevronUp,
 } from "lucide-react";
 
-/* ── Fake maintenance request flow ── */
+/* ── Fake build request flow ── */
 type DemoRequest = {
   id: string;
   title: string;
@@ -23,13 +23,13 @@ type DemoRequest = {
 
 const DEMO_EXISTING: DemoRequest[] = [
   {
-    id: "req-001", title: "HVAC filter replacement — Unit 4B",
-    description: "Tenant reports reduced airflow. Filters last changed 6 months ago.",
+    id: "req-001", title: "Custom CRM with pipeline tracking",
+    description: "We need a CRM tailored to our sales process with automated follow-ups and deal stages.",
     submittedAt: new Date(Date.now() - 86400000 * 3), scheduledDate: "Mar 28, 2026", status: "scheduled",
   },
   {
-    id: "req-002", title: "Parking lot light out — Section C",
-    description: "Two fixtures not illuminating. Safety concern.",
+    id: "req-002", title: "AI agents for customer service",
+    description: "Integrate AI chatbots to handle tier-1 support tickets and route complex issues to humans.",
     submittedAt: new Date(Date.now() - 86400000 * 7), scheduledDate: "Mar 22, 2026", status: "complete",
   },
 ];
@@ -102,8 +102,8 @@ export default function StudioDemo() {
             See what Aura Studio builds for you
           </h1>
           <p className="text-[#A1A1AA] max-w-xl mx-auto text-sm">
-            Submit a maintenance request below. Watch how our AI instantly triages, schedules,
-            and communicates — no manual follow-up needed.
+          Submit a build request below. Tell us what you need — a custom CRM, AI agents,
+            marketing automation — and watch Aura scope, schedule, and kick it off instantly.
           </p>
         </div>
 
@@ -114,25 +114,25 @@ export default function StudioDemo() {
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2 text-white">
                   <Wrench className="h-4 w-4 text-[#F59E0B]" />
-                  New Maintenance Request
+                  New Build Request
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <Label className="text-xs text-[#A1A1AA]">Issue Title *</Label>
+                  <Label className="text-xs text-[#A1A1AA]">What do you need built? *</Label>
                   <Input
                     value={title}
                     onChange={e => setTitle(e.target.value)}
-                    placeholder="e.g. Broken window latch — Unit 2A"
+                    placeholder="e.g. AI agents for financial reporting"
                     className="bg-[#09090B] border-white/[0.08] text-white placeholder:text-[#52525B]"
                   />
                 </div>
                 <div>
-                  <Label className="text-xs text-[#A1A1AA]">Description</Label>
+                  <Label className="text-xs text-[#A1A1AA]">Details</Label>
                   <Textarea
                     value={description}
                     onChange={e => setDescription(e.target.value)}
-                    placeholder="Details about the issue…"
+                    placeholder="Describe your goals, integrations, or pain points…"
                     rows={3}
                     className="bg-[#09090B] border-white/[0.08] text-white placeholder:text-[#52525B]"
                   />
@@ -143,7 +143,7 @@ export default function StudioDemo() {
                   className="w-full bg-[#F59E0B] text-[#08080A] hover:bg-[#FBBF24] gap-2"
                 >
                   <Send className="h-4 w-4" />
-                  Submit Request
+                  Submit Build Request
                 </Button>
               </CardContent>
             </Card>
@@ -159,20 +159,20 @@ export default function StudioDemo() {
                     <div className="space-y-2">
                       <p className="text-sm font-medium text-white">Aura Studio AI</p>
                       <div className="text-sm text-[#D4D4D8] space-y-2">
-                        <p>
-                          Got it! I've logged <strong className="text-white">"{latestReq.title}"</strong> and
-                          assigned it to your maintenance queue.
-                        </p>
+                         <p>
+                           Got it! I've logged <strong className="text-white">"{latestReq.title}"</strong> and
+                           added it to your build queue. Our team will begin scoping immediately.
+                         </p>
                         <div className="flex items-center gap-2 p-3 rounded-lg bg-emerald-500/[0.06] border border-emerald-500/10">
                           <CalendarDays className="h-4 w-4 text-emerald-400 shrink-0" />
                           <p className="text-emerald-300 text-sm">
-                            <strong>Scheduled completion:</strong> {latestReq.scheduledDate}
+                            <strong>Estimated delivery:</strong> {latestReq.scheduledDate}
                           </p>
                         </div>
-                        <p className="text-[#A1A1AA] text-xs">
-                          The tenant will receive an automated email with the expected date and a link
-                          to track progress. You'll be notified when it's marked complete.
-                        </p>
+                         <p className="text-[#A1A1AA] text-xs">
+                           You'll receive a project brief and timeline via email. We'll notify you
+                           at every milestone until delivery is complete.
+                         </p>
                       </div>
                     </div>
                   </div>
@@ -184,7 +184,7 @@ export default function StudioDemo() {
           {/* Right: Request queue */}
           <div className="lg:col-span-3 space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-[#A1A1AA] uppercase tracking-wide">Request Queue</h2>
+              <h2 className="text-sm font-semibold text-[#A1A1AA] uppercase tracking-wide">Build Queue</h2>
               <Badge variant="outline" className="text-[10px] border-white/[0.08] text-[#A1A1AA]">
                 {requests.length} total
               </Badge>
@@ -246,21 +246,21 @@ export default function StudioDemo() {
               <div className="h-px bg-white/[0.06]" />
               <div className="grid sm:grid-cols-3 gap-5">
                 {[
-                  {
-                    icon: <Send className="h-5 w-5" />,
-                    title: "1. Submit a Request",
-                    desc: "Tenants, clients, or your team submit requests through a branded portal, email, or text. Aura captures everything automatically.",
-                  },
-                  {
-                    icon: <Sparkles className="h-5 w-5" />,
-                    title: "2. AI Triages & Schedules",
-                    desc: "Our AI reads the request, categorizes it, assigns priority, estimates completion, and sends a confirmation — all in seconds.",
-                  },
-                  {
-                    icon: <CheckCircle2 className="h-5 w-5" />,
-                    title: "3. Track & Close",
-                    desc: "Everyone stays in the loop with automated status updates. You get a dashboard showing every request from open to complete.",
-                  },
+                   {
+                     icon: <Send className="h-5 w-5" />,
+                     title: "1. Tell Us What You Need",
+                     desc: "Need a custom CRM? A marketing manager? AI agents for customer service or financial reporting? Submit your request and we handle the rest.",
+                   },
+                   {
+                     icon: <Sparkles className="h-5 w-5" />,
+                     title: "2. We Scope, Design & Build",
+                     desc: "Our team scopes your project, designs the solution, and builds it using AI-powered tools — delivering in days, not months.",
+                   },
+                   {
+                     icon: <CheckCircle2 className="h-5 w-5" />,
+                     title: "3. Launch & Iterate",
+                     desc: "We deploy your tool, train your team, and continue iterating. You get a dedicated dashboard to track every build from kickoff to launch.",
+                   },
                 ].map((step, i) => (
                   <div key={i} className="p-4 rounded-xl bg-[#09090B] border border-white/[0.04] space-y-3">
                     <div className="h-10 w-10 rounded-lg bg-[#F59E0B]/10 flex items-center justify-center text-[#F59E0B]">
@@ -277,11 +277,11 @@ export default function StudioDemo() {
                   <Building2 className="h-4 w-4 text-[#F59E0B]" />
                   <h4 className="text-sm font-semibold text-white">This is just one workflow.</h4>
                 </div>
-                <p className="text-xs text-[#D4D4D8] leading-relaxed">
-                  Aura Studio builds <strong>custom AI tools</strong> for your specific business — CRM automations,
-                  document processing, client intake, compliance tracking, and more. We design, build, and maintain
-                  them so you can focus on growth. Pricing starts at <strong>$1,500/month</strong> with a 3-month minimum.
-                </p>
+                 <p className="text-xs text-[#D4D4D8] leading-relaxed">
+                   Aura Studio builds <strong>custom AI-powered tools</strong> for your business — CRMs, marketing
+                   automation, AI agents for customer service & finance, document processing, and more.
+                   We design, build, and maintain them so you can focus on growth. Pricing starts at <strong>$1,500/month</strong> with a 3-month minimum.
+                 </p>
                 <Link
                   to="/book/aura-studio"
                   className="inline-flex items-center gap-2 text-sm font-medium bg-[#F59E0B] text-[#08080A] px-5 py-2.5 rounded-lg hover:bg-[#FBBF24] transition-colors no-underline"
