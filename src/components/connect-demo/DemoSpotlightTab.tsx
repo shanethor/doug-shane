@@ -67,6 +67,7 @@ const CONTENT_TYPES = [
 
 export default function DemoSpotlightTab() {
   const [view, setView] = useState<ViewMode>("home");
+  const [showAllCreations, setShowAllCreations] = useState(false);
   const [realHistory, setRealHistory] = useState<any[]>([]);
   const [realBrands, setRealBrands] = useState<BrandPackage[]>([]);
   const [editFlyerId, setEditFlyerId] = useState<string | null>(null);
