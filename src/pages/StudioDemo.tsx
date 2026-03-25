@@ -102,8 +102,8 @@ export default function StudioDemo() {
             See what Aura Studio builds for you
           </h1>
           <p className="text-[#A1A1AA] max-w-xl mx-auto text-sm">
-            Submit a maintenance request below. Watch how our AI instantly triages, schedules,
-            and communicates — no manual follow-up needed.
+          Submit a build request below. Tell us what you need — a custom CRM, AI agents,
+            marketing automation — and watch Aura scope, schedule, and kick it off instantly.
           </p>
         </div>
 
