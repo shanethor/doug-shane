@@ -91,6 +91,11 @@ export default function AdminDashboard() {
     supabase.from("property_partner_links" as any).select("*").then(({ data }) => {
       if (data) setPartnerLinks(data);
     });
+
+    // Fetch all booked meetings (admin view)
+    supabase.from("booked_meetings").select("*, booking_links(title, public_slug)").order("start_time", { ascending: false }).limit(100).then(({ data }) => {
+      if (data) setBookedMeetings(data);
+    });
   }, [user, isAdmin]);
 
   const updateSuggestionStatus = async (id: string, status: string) => {
