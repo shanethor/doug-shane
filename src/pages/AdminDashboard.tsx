@@ -856,6 +856,55 @@ export default function AdminDashboard() {
         <TabsContent value="concierge" className="space-y-6">
           <AdminConciergeQueue profileMap={profileNameMap} />
         </TabsContent>
+
+        {/* ── Bookings ── */}
+        <TabsContent value="bookings" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm flex items-center gap-2"><CalendarDays className="h-4 w-4" />Scheduled Meetings</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-xs text-muted-foreground mb-4">
+                All booked meetings across the platform. To enable the Aura Studio scheduler, create a booking link with slug <code className="bg-muted px-1 rounded text-[11px]">aura-studio</code> in your Settings → Booking Links with 9 AM–5 PM EST availability (Mon–Fri).
+              </p>
+              {bookedMeetings.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-8">No bookings yet.</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b text-left">
+                        <th className="py-2 pr-3 font-medium text-xs text-muted-foreground">Client</th>
+                        <th className="py-2 pr-3 font-medium text-xs text-muted-foreground">Email</th>
+                        <th className="py-2 pr-3 font-medium text-xs text-muted-foreground">Meeting</th>
+                        <th className="py-2 pr-3 font-medium text-xs text-muted-foreground">Date & Time</th>
+                        <th className="py-2 pr-3 font-medium text-xs text-muted-foreground">Status</th>
+                        <th className="py-2 font-medium text-xs text-muted-foreground">Notes</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {bookedMeetings.map((m: any) => (
+                        <tr key={m.id} className="border-b last:border-0">
+                          <td className="py-2.5 pr-3 font-medium">{m.client_name}</td>
+                          <td className="py-2.5 pr-3 text-muted-foreground">{m.client_email}</td>
+                          <td className="py-2.5 pr-3">{(m.booking_links as any)?.title || "—"}</td>
+                          <td className="py-2.5 pr-3 whitespace-nowrap">
+                            {new Date(m.start_time).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}{" "}
+                            <span className="text-muted-foreground">{new Date(m.start_time).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}</span>
+                          </td>
+                          <td className="py-2.5 pr-3">
+                            <Badge variant={m.status === "scheduled" ? "default" : "secondary"} className="text-[10px]">{m.status}</Badge>
+                          </td>
+                          <td className="py-2.5 text-muted-foreground text-xs max-w-[200px] truncate">{m.notes || "—"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
 
       {/* Reject policy dialog */}
