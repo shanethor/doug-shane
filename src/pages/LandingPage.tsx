@@ -440,7 +440,7 @@ export default function LandingPage() {
 
                   <div className="flex items-center gap-4">
                     <Link
-                      to="/concierge"
+                      to="/studiodemo"
                       className="inline-flex items-center gap-2 text-sm font-medium text-[#08080A] bg-[#F59E0B] px-7 py-3 rounded-[10px] hover:bg-[#FBBF24] transition-colors no-underline"
                       aria-label="Talk to Aura Studio"
                     >
