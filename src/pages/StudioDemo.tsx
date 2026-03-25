@@ -169,10 +169,10 @@ export default function StudioDemo() {
                             <strong>Estimated delivery:</strong> {latestReq.scheduledDate}
                           </p>
                         </div>
-                        <p className="text-[#A1A1AA] text-xs">
-                          The tenant will receive an automated email with the expected date and a link
-                          to track progress. You'll be notified when it's marked complete.
-                        </p>
+                         <p className="text-[#A1A1AA] text-xs">
+                           You'll receive a project brief and timeline via email. We'll notify you
+                           at every milestone until delivery is complete.
+                         </p>
                       </div>
                     </div>
                   </div>
