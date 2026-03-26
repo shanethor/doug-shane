@@ -270,6 +270,7 @@ export default function ConnectDemo() {
           </div>
         </Tabs>
       </div>
+      <ConnectUpsellModal open={showUpsell} onClose={() => setShowUpsell(false)} />
     </div>
   );
 }
