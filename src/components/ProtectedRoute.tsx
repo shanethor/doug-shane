@@ -74,7 +74,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAdmin = role === "admin";
 
   // Paths available to paywall-blocked users
-  const freePathPrefixes = ["/connect", "/concierge", "/settings", "/admin", "/request-access"];
+  const freePathPrefixes = ["/insurance/connect", "/insurance/concierge", "/insurance/settings", "/insurance/admin", "/request-access"];
   const isFreePath = freePathPrefixes.some(p => location.pathname.startsWith(p));
 
   // Branch-based routing: property/wealth users need active subscription
