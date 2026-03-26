@@ -8,7 +8,7 @@ import {
   Mail, Search, Star, Inbox, Send as SendIcon, FilePenLine, SendHorizonal, Tag,
   Plus, Paperclip, ArrowLeft, X, Sparkles, Reply, ReplyAll, Forward,
   CheckCheck, Activity, User, Link2, Target, Building2, MapPin, Users,
-  CalendarPlus, FileText, ListTodo, BarChart3,
+  CalendarPlus, FileText, ListTodo, BarChart3, Shield, Bell, TrendingUp,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
@@ -124,35 +124,23 @@ export default function EmailViewAura({ engine, ai }: { engine: Engine; ai: AI }
           {selectedThread ? (
             <div className="space-y-3 animate-fade-in">
               <Button variant="ghost" size="sm" className="gap-1.5 text-xs" onClick={clearThread}><ArrowLeft className="h-3.5 w-3.5" /> Back</Button>
-              {/* AI Smart Tools — top of message view */}
+              {/* AI Smart Tools — top of message view (all functional) */}
               <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
-                {SMART_FEATURES.map((f, i) => {
-                  const icons = [Sparkles, FileText, Activity, BarChart3, CalendarPlus, Target];
-                  const Icon = icons[i] || Sparkles;
-                  return (
-                    <button key={f.label} onClick={() => toast.success(`${f.label} (demo)`)}
-                      className="flex flex-col items-center gap-1 rounded-md px-2 py-2 text-center transition-colors hover:bg-white/[0.06]"
-                      style={{ background: "hsl(140 12% 42% / 0.04)", border: "1px solid hsl(140 12% 42% / 0.12)" }}>
-                      <Icon className="h-3.5 w-3.5" style={{ color: "hsl(140 12% 58%)" }} />
-                      <span className="text-[10px] font-medium leading-tight" style={{ color: "hsl(140 12% 65%)" }}>{f.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-              {/* AI action buttons */}
-              <div className="flex gap-2 flex-wrap">
-                <Button size="sm" variant="outline" className="text-[10px] h-6 px-2 gap-1" style={{ borderColor: "hsl(140 12% 42% / 0.3)", color: "hsl(140 12% 58%)" }} onClick={() => ai.summarize(selectedThread)} disabled={ai.summaryLoading}>
-                  <Sparkles className={`h-3 w-3 ${ai.summaryLoading ? "animate-spin" : ""}`} /> {ai.summaryLoading ? "Summarizing…" : "Summarize"}
-                </Button>
-                <Button size="sm" variant="outline" className="text-[10px] h-6 px-2 gap-1" style={{ borderColor: "hsl(140 12% 42% / 0.3)", color: "hsl(140 12% 58%)" }} onClick={() => ai.aiReply(selectedThread)} disabled={ai.replyLoading}>
-                  <Sparkles className={`h-3 w-3 ${ai.replyLoading ? "animate-spin" : ""}`} /> {ai.replyLoading ? "Drafting…" : "AI Reply"}
-                </Button>
-                <Button size="sm" variant="outline" className="text-[10px] h-6 px-2 gap-1" style={{ borderColor: "hsl(140 12% 42% / 0.3)", color: "hsl(140 12% 58%)" }} onClick={() => ai.aiDraft(selectedThread)} disabled={ai.draftLoading}>
-                  <Sparkles className={`h-3 w-3 ${ai.draftLoading ? "animate-spin" : ""}`} /> {ai.draftLoading ? "Drafting…" : "AI Draft"}
-                </Button>
-                <Button size="sm" variant="outline" className="text-[10px] h-6 px-2 gap-1" style={{ borderColor: "hsl(140 12% 42% / 0.3)", color: "hsl(140 12% 58%)" }} onClick={() => ai.addToPipeline(selectedThread)}>
-                  Add to Pipeline
-                </Button>
+                {([
+                  { label: "Smart Reply", icon: Sparkles, action: () => ai.aiReply(selectedThread), loading: ai.replyLoading },
+                  { label: "Auto-Summarize", icon: FileText, action: () => ai.summarize(selectedThread), loading: ai.summaryLoading },
+                  { label: "Compliance Check", icon: Shield, action: () => ai.complianceCheck(selectedThread), loading: ai.complianceLoading },
+                  { label: "Sentiment Analysis", icon: Activity, action: () => ai.sentimentAnalysis(selectedThread), loading: ai.sentimentLoading },
+                  { label: "Follow-Up Reminder", icon: Bell, action: () => ai.followUpReminder(selectedThread), loading: ai.followUpLoading },
+                  { label: "Add to Pipeline", icon: TrendingUp, action: () => ai.addToPipeline(selectedThread), loading: false },
+                ]).map((f) => (
+                  <button key={f.label} onClick={f.action} disabled={f.loading}
+                    className="flex flex-col items-center gap-1 rounded-md px-2 py-2 text-center transition-colors hover:bg-white/[0.06] disabled:opacity-50"
+                    style={{ background: "hsl(140 12% 42% / 0.04)", border: "1px solid hsl(140 12% 42% / 0.12)" }}>
+                    <f.icon className={`h-3.5 w-3.5 ${f.loading ? "animate-spin" : ""}`} style={{ color: "hsl(140 12% 58%)" }} />
+                    <span className="text-[10px] font-medium leading-tight" style={{ color: "hsl(140 12% 65%)" }}>{f.label}</span>
+                  </button>
+                ))}
               </div>
               {/* AI results panel */}
               <AIResultPanel ai={ai} onUseReply={(text) => setReplyBody(text)} />
@@ -168,7 +156,12 @@ export default function EmailViewAura({ engine, ai }: { engine: Engine; ai: AI }
                       <span className="text-sm font-medium text-white">{msg.from}</span>
                       <span className="text-[10px] ml-auto" style={{ color: "hsl(240 5% 40%)" }}>{msg.date === "Today" ? msg.time : msg.date}</span>
                     </div>
-                    <div className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: "hsl(240 5% 78%)" }}>{msg.body}</div>
+                    <div className="text-sm leading-relaxed" style={{ color: "hsl(240 5% 78%)" }}>
+                      {msg.body.includes("<") && msg.body.includes(">")
+                        ? <iframe srcDoc={`<html><head><style>body{margin:0;padding:8px;font-family:system-ui,sans-serif;font-size:14px;color:#c8c8d0;background:transparent;}</style></head><body>${msg.body}</body></html>`} className="w-full border-0 min-h-[120px]" style={{ background: "transparent" }} sandbox="allow-same-origin" />
+                        : <div className="whitespace-pre-wrap">{msg.body}</div>
+                      }
+                    </div>
                   </div>
                 ))}
               </div>
@@ -234,22 +227,30 @@ export default function EmailViewAura({ engine, ai }: { engine: Engine; ai: AI }
 
         {/* Right context panel — AuRa exclusive */}
         {selectedThread && (
-          <div className="hidden xl:flex flex-col w-64 shrink-0 rounded-lg overflow-hidden" style={{ background: "hsl(240 8% 7%)", border: "1px solid hsl(240 6% 14%)" }}>
+          <div className="hidden xl:flex flex-col w-72 shrink-0 rounded-lg overflow-hidden" style={{ background: "hsl(240 8% 7%)", border: "1px solid hsl(240 6% 14%)" }}>
             <Tabs value={contextTab} onValueChange={setContextTab}>
-              <TabsList className="w-full h-8 rounded-none" style={{ background: "hsl(240 8% 9%)" }}>
-                <TabsTrigger value="summary" className="text-[10px] flex-1 gap-1"><FileText className="h-3 w-3" /> Summary</TabsTrigger>
+              <TabsList className="w-full h-9 rounded-none" style={{ background: "hsl(240 8% 9%)" }}>
+                <TabsTrigger value="summary" className="text-[10px] flex-1 gap-1"><Sparkles className="h-3 w-3" /> Tools</TabsTrigger>
                 <TabsTrigger value="pipeline" className="text-[10px] flex-1 gap-1"><BarChart3 className="h-3 w-3" /> Pipeline</TabsTrigger>
-                <TabsTrigger value="tasks" className="text-[10px] flex-1 gap-1"><ListTodo className="h-3 w-3" /> Tasks</TabsTrigger>
+                <TabsTrigger value="contact" className="text-[10px] flex-1 gap-1"><User className="h-3 w-3" /> Contact</TabsTrigger>
               </TabsList>
               <TabsContent value="summary" className="p-3 space-y-3 m-0">
+                <p className="text-[9px] font-bold uppercase tracking-wider" style={{ color: "hsl(140 12% 50%)" }}>AuRa Connect Tools</p>
                 <p className="text-xs" style={{ color: "hsl(240 5% 65%)" }}>
                   Thread with {selectedThread.participants.filter(p => p !== "You").join(", ")}. {selectedThread.messages.length} message(s).
                 </p>
                 <div className="space-y-2">
                   <p className="text-[10px] font-semibold uppercase" style={{ color: "hsl(240 5% 40%)" }}>Suggested Actions</p>
-                  {["Reply with availability", "Send follow-up", "Create task"].map(a => (
-                    <button key={a} className="w-full text-left text-xs px-2 py-1.5 rounded hover:bg-white/5 transition-colors" style={{ color: "hsl(140 12% 58%)" }} onClick={() => toast.success(`${a} (demo)`)}>
-                      → {a}
+                  {[
+                    { label: "AI Reply", action: () => ai.aiReply(selectedThread) },
+                    { label: "Summarize Thread", action: () => ai.summarize(selectedThread) },
+                    { label: "Send follow-up", action: () => ai.followUpReminder(selectedThread) },
+                    { label: "Check Compliance", action: () => ai.complianceCheck(selectedThread) },
+                    { label: "Analyze Sentiment", action: () => ai.sentimentAnalysis(selectedThread) },
+                    { label: "Add to Pipeline", action: () => ai.addToPipeline(selectedThread) },
+                  ].map(a => (
+                    <button key={a.label} className="w-full text-left text-xs px-2 py-1.5 rounded hover:bg-white/5 transition-colors" style={{ color: "hsl(140 12% 58%)" }} onClick={a.action}>
+                      → {a.label}
                     </button>
                   ))}
                 </div>
@@ -270,9 +271,36 @@ export default function EmailViewAura({ engine, ai }: { engine: Engine; ai: AI }
                   </div>
                 )}
               </TabsContent>
-              <TabsContent value="tasks" className="p-3 space-y-3 m-0">
-                <p className="text-xs" style={{ color: "hsl(240 5% 50%)" }}>No tasks for this thread yet</p>
-                <Button size="sm" variant="outline" className="text-xs w-full gap-1" onClick={() => toast.success("Task created (demo)")}><Plus className="h-3 w-3" /> Add Task</Button>
+              <TabsContent value="contact" className="p-3 space-y-3 m-0">
+                {match ? (
+                  <div className="space-y-2.5">
+                    <div className="flex items-center gap-2">
+                      <div className="h-9 w-9 rounded-full flex items-center justify-center text-xs font-bold" style={{ background: TIER_COLORS[match.tier]?.bg || "hsl(240 8% 18%)", color: TIER_COLORS[match.tier]?.text || "hsl(240 5% 65%)" }}>
+                        {match.name.split(" ").map(w => w[0]).join("").slice(0, 2)}
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-white">{match.name}</p>
+                        <p className="text-[10px]" style={{ color: "hsl(240 5% 50%)" }}>{match.company}</p>
+                      </div>
+                    </div>
+                    <div className="space-y-1.5 text-xs">
+                      {match.location && <div className="flex items-center gap-2" style={{ color: "hsl(240 5% 55%)" }}><MapPin className="h-3 w-3 shrink-0" style={{ color: "hsl(140 12% 50%)" }} />{match.location}</div>}
+                      {match.phone && <div className="flex items-center gap-2" style={{ color: "hsl(240 5% 55%)" }}><Link2 className="h-3 w-3 shrink-0" style={{ color: "hsl(140 12% 50%)" }} />{match.phone}</div>}
+                      <div className="flex items-center gap-2" style={{ color: "hsl(240 5% 55%)" }}><Users className="h-3 w-3 shrink-0" style={{ color: "hsl(140 12% 50%)" }} />{match.mutualConnections} mutual connections</div>
+                      <div className="flex items-center gap-2" style={{ color: "hsl(240 5% 55%)" }}><Target className="h-3 w-3 shrink-0" style={{ color: "hsl(140 12% 50%)" }} />Proximity: {match.proximity}%</div>
+                    </div>
+                    <Badge className="text-[9px]" style={{ background: TIER_COLORS[match.tier]?.bg, color: TIER_COLORS[match.tier]?.text }}>{match.tier}-Tier Contact</Badge>
+                    {match.lastTouch && <p className="text-[10px]" style={{ color: "hsl(240 5% 45%)" }}>Last touch: {match.lastTouch}</p>}
+                  </div>
+                ) : (
+                  <div className="text-center py-4">
+                    <User className="h-6 w-6 mx-auto mb-2" style={{ color: "hsl(240 5% 30%)" }} />
+                    <p className="text-xs" style={{ color: "hsl(240 5% 45%)" }}>Contact not in your network yet</p>
+                    <Button size="sm" variant="outline" className="text-xs mt-2 gap-1" onClick={() => toast.success("Contact saved to network")}>
+                      <Plus className="h-3 w-3" /> Save to Network
+                    </Button>
+                  </div>
+                )}
               </TabsContent>
             </Tabs>
           </div>
