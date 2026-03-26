@@ -10,6 +10,12 @@ export interface EmailAIState {
   draftText: string | null;
   replyLoading: boolean;
   replyText: string | null;
+  complianceLoading: boolean;
+  complianceText: string | null;
+  sentimentLoading: boolean;
+  sentimentText: string | null;
+  followUpLoading: boolean;
+  followUpText: string | null;
 }
 
 function threadToContext(thread: DemoThread): string {
@@ -23,6 +29,9 @@ export function useEmailAI() {
     summaryLoading: false, summaryText: null,
     draftLoading: false, draftText: null,
     replyLoading: false, replyText: null,
+    complianceLoading: false, complianceText: null,
+    sentimentLoading: false, sentimentText: null,
+    followUpLoading: false, followUpText: null,
   });
 
   const reset = useCallback(() => {
@@ -30,6 +39,9 @@ export function useEmailAI() {
       summaryLoading: false, summaryText: null,
       draftLoading: false, draftText: null,
       replyLoading: false, replyText: null,
+      complianceLoading: false, complianceText: null,
+      sentimentLoading: false, sentimentText: null,
+      followUpLoading: false, followUpText: null,
     });
   }, []);
 
@@ -88,5 +100,35 @@ export function useEmailAI() {
     toast.success(`Added "${contact}" to pipeline from: ${thread.subject}`);
   }, []);
 
-  return { ...state, summarize, aiReply, aiDraft, addToPipeline, reset };
+  const complianceCheck = useCallback(async (thread: DemoThread) => {
+    setState((s) => ({ ...s, complianceLoading: true, complianceText: null }));
+    const result = await callAI(
+      "You are a compliance officer for a professional services firm. Review this email thread for any potential compliance issues: regulatory concerns, missing disclaimers, unauthorized promises, data privacy issues, or inappropriate language. If nothing is found, say so. Be brief and specific.",
+      `Review this thread for compliance issues:\n\nSubject: ${thread.subject}\n\n${threadToContext(thread)}`
+    );
+    setState((s) => ({ ...s, complianceLoading: false, complianceText: result }));
+    if (result) toast.success("Compliance check complete");
+  }, [callAI]);
+
+  const sentimentAnalysis = useCallback(async (thread: DemoThread) => {
+    setState((s) => ({ ...s, sentimentLoading: true, sentimentText: null }));
+    const result = await callAI(
+      "You are an emotional intelligence expert. Analyze the sentiment and tone of this email thread. Rate the overall sentiment (Positive/Neutral/Negative), identify the emotional tone of each participant, and flag any tension or urgency. Be concise — 3-4 sentences max.",
+      `Analyze sentiment:\n\nSubject: ${thread.subject}\n\n${threadToContext(thread)}`
+    );
+    setState((s) => ({ ...s, sentimentLoading: false, sentimentText: result }));
+    if (result) toast.success("Sentiment analysis complete");
+  }, [callAI]);
+
+  const followUpReminder = useCallback(async (thread: DemoThread) => {
+    setState((s) => ({ ...s, followUpLoading: true, followUpText: null }));
+    const result = await callAI(
+      "You are a sales assistant. Based on this email thread, suggest when and how to follow up. Include: 1) Recommended follow-up date/timing, 2) What to say, 3) What channel (email, call, text). Keep it to 2-3 bullet points.",
+      `Suggest follow-up for:\n\nSubject: ${thread.subject}\n\n${threadToContext(thread)}`
+    );
+    setState((s) => ({ ...s, followUpLoading: false, followUpText: result }));
+    if (result) toast.success("Follow-up reminder set");
+  }, [callAI]);
+
+  return { ...state, summarize, aiReply, aiDraft, addToPipeline, complianceCheck, sentimentAnalysis, followUpReminder, reset };
 }
