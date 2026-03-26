@@ -67,7 +67,7 @@ export function MobileBottomNav() {
   const hiddenTabs = allowedTabs.filter((t) => hiddenTabIds.has(t.id));
 
   const isActive = (to: string) => location.pathname === to;
-  const moreRoutes = ["/admin", "/settings", ...hiddenTabs.map((t) => t.to)];
+  const moreRoutes = ["/insurance/admin", "/insurance/settings", ...hiddenTabs.map((t) => t.to)];
   const moreActive = moreRoutes.some((p) => location.pathname === p);
 
   return (
@@ -144,10 +144,10 @@ export function MobileBottomNav() {
 
             {hasConnect && (
               <Link
-                to="/connect"
+                to="/insurance/connect"
                 onClick={() => setMoreOpen(false)}
                 className={`flex items-center gap-3 rounded-lg px-3 py-3 text-sm transition-colors ${
-                  isActive("/connect")
+                  isActive("/insurance/connect")
                     ? "bg-primary/10 text-primary font-medium"
                     : "text-foreground hover:bg-muted"
                 }`}
@@ -159,10 +159,10 @@ export function MobileBottomNav() {
 
             {hasConcierge && (
               <Link
-                to="/concierge"
+                to="/insurance/concierge"
                 onClick={() => setMoreOpen(false)}
                 className={`flex items-center gap-3 rounded-lg px-3 py-3 text-sm transition-colors ${
-                  isActive("/concierge")
+                  isActive("/insurance/concierge")
                     ? "bg-primary/10 text-primary font-medium"
                     : "text-foreground hover:bg-muted"
                 }`}
@@ -176,10 +176,10 @@ export function MobileBottomNav() {
 
             {canSeeAdmin && (
               <Link
-                to="/admin"
+                to="/insurance/admin"
                 onClick={() => setMoreOpen(false)}
                 className={`flex items-center gap-3 rounded-lg px-3 py-3 text-sm transition-colors ${
-                  isActive("/admin")
+                  isActive("/insurance/admin")
                     ? "bg-primary/10 text-primary font-medium"
                     : "text-foreground hover:bg-muted"
                 }`}
@@ -189,10 +189,10 @@ export function MobileBottomNav() {
               </Link>
             )}
             <Link
-              to="/settings"
+              to="/insurance/settings"
               onClick={() => setMoreOpen(false)}
               className={`flex items-center gap-3 rounded-lg px-3 py-3 text-sm transition-colors ${
-                isActive("/settings")
+                isActive("/insurance/settings")
                   ? "bg-primary/10 text-primary font-medium"
                   : "text-foreground hover:bg-muted"
               }`}

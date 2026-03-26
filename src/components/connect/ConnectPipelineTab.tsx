@@ -250,7 +250,7 @@ export default function ConnectPipelineTab() {
             <RefreshCw className={`h-3.5 w-3.5 ${loadingLeads ? "animate-spin" : ""}`} />
           </Button>
           <Button size="sm" className="gap-1.5 h-8" asChild>
-            <Link to="/pipeline"><Plus className="h-3.5 w-3.5" /> Add Lead</Link>
+            <Link to="/insurance/pipeline"><Plus className="h-3.5 w-3.5" /> Add Lead</Link>
           </Button>
         </div>
       </div>
@@ -397,7 +397,7 @@ export default function ConnectPipelineTab() {
             <Building2 className="h-8 w-8 text-muted-foreground mx-auto mb-3" />
             <p className="text-sm text-muted-foreground">No leads yet. Add leads from the main Pipeline page.</p>
             <Button size="sm" className="mt-3" asChild>
-              <Link to="/pipeline"><Plus className="h-3.5 w-3.5 mr-1" /> Go to Pipeline</Link>
+              <Link to="/insurance/pipeline"><Plus className="h-3.5 w-3.5 mr-1" /> Go to Pipeline</Link>
             </Button>
           </CardContent>
         </Card>

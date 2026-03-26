@@ -74,7 +74,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const isAdmin = role === "admin";
 
   // Paths available to paywall-blocked users
-  const freePathPrefixes = ["/connect", "/concierge", "/settings", "/admin", "/request-access"];
+  const freePathPrefixes = ["/insurance/connect", "/insurance/concierge", "/insurance/settings", "/insurance/admin", "/request-access"];
   const isFreePath = freePathPrefixes.some(p => location.pathname.startsWith(p));
 
   // Branch-based routing: property/wealth users need active subscription
@@ -87,7 +87,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (isBranchRestricted && subscribed && !isFreePath && !isAdmin) {
-    return <Navigate to="/connect" replace />;
+    return <Navigate to="/insurance/connect" replace />;
   }
 
   // Default paywall: users without agency full_site_access and without an assigned role
@@ -101,7 +101,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
       // The role system assigns roles on admin approval, so having a role = approved for full
       // But if their agency doesn't have full_site_access, restrict them
       // Only restrict if no full_site_access on agency
-      return <Navigate to="/connect" replace />;
+      return <Navigate to="/insurance/connect" replace />;
     }
   }
 
