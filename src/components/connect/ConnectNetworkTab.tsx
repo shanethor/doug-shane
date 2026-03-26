@@ -201,6 +201,7 @@ export default function ConnectNetworkTab() {
   const [search, setSearch] = useState("");
   const [tierFilter, setTierFilter] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<"map" | "list">("map");
 
   useEffect(() => { if (user) loadContacts(); }, [user]);
 
