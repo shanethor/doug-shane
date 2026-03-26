@@ -865,7 +865,7 @@ export default function AdminDashboard() {
             </CardHeader>
             <CardContent>
               <p className="text-xs text-muted-foreground mb-4">
-                All booked meetings across the platform. To enable the Aura Studio scheduler, create a booking link with slug <code className="bg-muted px-1 rounded text-[11px]">aura-studio</code> in your Settings → Booking Links with 9 AM–5 PM EST availability (Mon–Fri).
+                All booked meetings across the platform. To enable the AuRa Studio scheduler, create a booking link with slug <code className="bg-muted px-1 rounded text-[11px]">aura-studio</code> in your Settings → Booking Links with 9 AM–5 PM EST availability (Mon–Fri).
               </p>
               {bookedMeetings.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-8">No bookings yet.</p>

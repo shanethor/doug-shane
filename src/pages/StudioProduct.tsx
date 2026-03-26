@@ -67,7 +67,7 @@ export default function StudioProduct() {
       <div className="max-w-4xl mx-auto px-4 md:px-8 py-8 space-y-8">
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-2xl font-light tracking-tight text-white/90">Aura Studio</h1>
+            <h1 className="text-2xl font-light tracking-tight text-white/90">AuRa Studio</h1>
             <p className="text-sm text-white/40 mt-1">Your AI-native build team — custom tools, dashboards & assets</p>
           </div>
           <Button
