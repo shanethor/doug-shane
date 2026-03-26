@@ -863,7 +863,6 @@ export default function AdminDashboard() {
         <TabsContent value="support" className="space-y-6">
           <AdminSupportTickets profiles={profiles} />
         </TabsContent>
-        </TabsContent>
 
         {/* ── Bookings ── */}
         <TabsContent value="bookings" className="space-y-6">
