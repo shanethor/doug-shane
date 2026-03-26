@@ -47,14 +47,18 @@ interface GraphData {
   links: GraphLink[];
 }
 
-export default function RelationshipMap() {
+interface RelationshipMapProps {
+  contacts?: { id: string; display_name: string | null; primary_email: string | null; primary_phone: string | null; company: string | null; linkedin_url: string | null; }[];
+}
+
+export default function RelationshipMap({ contacts: externalContacts }: RelationshipMapProps = {}) {
   const svgRef = useRef<SVGSVGElement>(null);
   const [data, setData] = useState<GraphData | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
   const zoomRef = useRef<d3.ZoomBehavior<SVGSVGElement, unknown> | null>(null);
 
-  useEffect(() => { loadGraphData(); }, []);
+  useEffect(() => { loadGraphData(); }, [externalContacts]);
 
   async function loadGraphData() {
     setLoading(true);
