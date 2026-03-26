@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Search, ArrowRight, Sparkles, Loader2, X, MapPin, Briefcase, Building2, Users, Signal, Mail, MessageSquare, Phone, Send, Calendar, Brain } from "lucide-react";
 import { toast } from "sonner";
 import { ConnectOutreachPopup } from "./ConnectOutreachPopups";
-import MeetingPrepSection from "@/components/connect/MeetingPrepSection";
+
 
 const DUMMY_PATH_TEMPLATES = [
   {
