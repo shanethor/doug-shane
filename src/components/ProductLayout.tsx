@@ -30,6 +30,87 @@ const ICON_MAP: Record<string, any> = {
   sage: Zap,
 };
 
+function MobileConnectNav({ isActive }: { isActive: (to: string, exact?: boolean) => boolean }) {
+  const { config } = useConnectNavConfig();
+  const [moreOpen, setMoreOpen] = useState(false);
+
+  const visibleTabs = config.visibleTabIds
+    .map(id => ALL_CONNECT_TABS.find(t => t.id === id))
+    .filter(Boolean) as typeof ALL_CONNECT_TABS;
+
+  const hiddenTabs = ALL_CONNECT_TABS.filter(t => !config.visibleTabIds.includes(t.id));
+  const moreActive = hiddenTabs.some(t => isActive(t.to, t.id === "connect")) || moreOpen;
+
+  return (
+    <>
+      <nav className="md:hidden flex items-stretch justify-around border-t border-white/5 bg-[#0c0c0e] safe-area-bottom">
+        {visibleTabs.map(tab => {
+          const Icon = ICON_MAP[tab.id] || Network;
+          return (
+            <Link
+              key={tab.to}
+              to={tab.to}
+              className={`flex flex-col items-center justify-center gap-0.5 py-2 px-1 min-w-[48px] min-h-[52px] transition-colors ${
+                isActive(tab.to, tab.id === "connect") ? "text-white" : "text-white/30"
+              }`}
+            >
+              <Icon className="h-5 w-5" />
+              <span className="text-[10px] font-medium">{tab.label}</span>
+            </Link>
+          );
+        })}
+        {hiddenTabs.length > 0 && (
+          <button
+            onClick={() => setMoreOpen(true)}
+            className={`flex flex-col items-center justify-center gap-0.5 py-2 px-1 min-w-[48px] min-h-[52px] transition-colors ${
+              moreActive ? "text-white" : "text-white/30"
+            }`}
+          >
+            <MoreHorizontal className="h-5 w-5" />
+            <span className="text-[10px] font-medium">More</span>
+          </button>
+        )}
+      </nav>
+      <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
+        <SheetContent side="bottom" className="rounded-t-2xl pb-8 bg-[#0c0c0e] border-white/10 text-white">
+          <SheetHeader className="pb-2">
+            <SheetTitle className="text-left text-base text-white">More</SheetTitle>
+          </SheetHeader>
+          <div className="space-y-1">
+            {hiddenTabs.map(tab => {
+              const Icon = ICON_MAP[tab.id] || Network;
+              return (
+                <Link
+                  key={tab.to}
+                  to={tab.to}
+                  onClick={() => setMoreOpen(false)}
+                  className={`flex items-center gap-3 rounded-lg px-3 py-3 text-sm transition-colors ${
+                    isActive(tab.to, tab.id === "connect")
+                      ? "bg-white/10 text-white font-medium"
+                      : "text-white/60 hover:bg-white/5"
+                  }`}
+                >
+                  <Icon className="h-5 w-5" />
+                  {tab.label}
+                </Link>
+              );
+            })}
+            <div className="border-t border-white/5 my-2" />
+            <Link
+              to="/app/settings"
+              onClick={() => setMoreOpen(false)}
+              className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm text-white/60 hover:bg-white/5"
+            >
+              <Settings className="h-5 w-5" />
+              Settings
+            </Link>
+          </div>
+        </SheetContent>
+      </Sheet>
+    </>
+  );
+}
+
 export function ProductLayout({
   children,
   onStudioClick,
