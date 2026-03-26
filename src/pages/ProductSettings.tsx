@@ -211,30 +211,26 @@ export default function ProductSettings() {
         {/* Network Connections */}
         <div className={sectionStyle} id="network-connections-section">
           <div className="flex items-center gap-3 mb-2">
-            <Network className="h-4 w-4 text-white/30" />
+            <Network className={`h-4 w-4 ${iconMuted}`} />
             <h2 className={headingStyle}>Connected Accounts</h2>
           </div>
-          <p className="text-xs text-white/40">
+          <p className={`text-xs ${textSecondary}`}>
             Connect your accounts to power AuRa Connect's relationship intelligence. More connections = better insights.
           </p>
-          <div className="[&_*]:!text-white/70 [&_.border]:!border-white/10 [&_.bg-muted]:!bg-white/5">
-            <ConnectedAccountsStatus variant="full" />
-          </div>
-          <Separator className="border-white/5" />
-          <div className="[&_*]:!text-white/70">
-            <ProgressiveUnlocks />
-          </div>
-          <Separator className="border-white/5" />
+          <ConnectedAccountsStatus variant="full" />
+          <Separator className={darkMode ? "border-white/5" : "border-border"} />
+          <ProgressiveUnlocks />
+          <Separator className={darkMode ? "border-white/5" : "border-border"} />
           <ConnectRewards />
         </div>
 
         {/* Email Accounts */}
         <div className={sectionStyle} id="email-accounts-section">
           <div className="flex items-center gap-3 mb-2">
-            <Mail className="h-4 w-4 text-white/30" />
+            <Mail className={`h-4 w-4 ${iconMuted}`} />
             <h2 className={headingStyle}>Email Accounts</h2>
           </div>
-          <p className="text-xs text-white/40">
+          <p className={`text-xs ${textSecondary}`}>
             Connect Gmail or Outlook to sync your inbox and send emails from AuRa Connect.
           </p>
 
@@ -243,47 +239,47 @@ export default function ProductSettings() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="h-7 w-7 rounded-md bg-red-500/10 flex items-center justify-center"><Mail className="h-3.5 w-3.5 text-red-400" /></div>
-                <p className="text-sm text-white/70">Gmail</p>
+                <p className={`text-sm ${textPrimary}`}>Gmail</p>
               </div>
-              <Button size="sm" onClick={() => connectEmail("gmail")} disabled={connectingProvider === "gmail"} className="gap-1.5 h-8 text-xs bg-white/5 border border-white/10 text-white/60 hover:bg-white/10">
+              <Button size="sm" onClick={() => connectEmail("gmail")} disabled={connectingProvider === "gmail"} variant="outline" className={`gap-1.5 h-8 text-xs ${darkMode ? "bg-white/5 border-white/10 text-white/60 hover:bg-white/10" : ""}`}>
                 {connectingProvider === "gmail" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Link2 className="h-3.5 w-3.5" />}
                 {gmailConns.length > 0 ? "Add Another" : "Connect"}
               </Button>
             </div>
             {gmailConns.map(conn => (
-              <div key={conn.id} className="flex items-center justify-between rounded-md border border-white/10 p-2.5 pl-9">
-                <p className="text-xs text-white/50 flex items-center gap-1.5 truncate">
+              <div key={conn.id} className={`flex items-center justify-between rounded-md border p-2.5 pl-9 ${darkMode ? "border-white/10" : "border-border"}`}>
+                <p className={`text-xs flex items-center gap-1.5 truncate ${textSecondary}`}>
                   <CheckCircle className="h-3 w-3 text-green-400 shrink-0" />
                   {conn.email_address}
                 </p>
-                <Button variant="ghost" size="sm" onClick={() => disconnectEmail(conn.id, "Gmail")} className="gap-1 h-7 text-xs text-white/30 hover:text-red-400">
+                <Button variant="ghost" size="sm" onClick={() => disconnectEmail(conn.id, "Gmail")} className="gap-1 h-7 text-xs text-destructive/60 hover:text-destructive">
                   <Unlink className="h-3 w-3" />
                 </Button>
               </div>
             ))}
           </div>
 
-          <Separator className="border-white/5" />
+          <Separator className={darkMode ? "border-white/5" : "border-border"} />
 
           {/* Outlook */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="h-7 w-7 rounded-md bg-blue-500/10 flex items-center justify-center"><Mail className="h-3.5 w-3.5 text-blue-400" /></div>
-                <p className="text-sm text-white/70">Outlook / Microsoft 365</p>
+                <p className={`text-sm ${textPrimary}`}>Outlook / Microsoft 365</p>
               </div>
-              <Button size="sm" onClick={() => connectEmail("outlook")} disabled={connectingProvider === "outlook"} className="gap-1.5 h-8 text-xs bg-white/5 border border-white/10 text-white/60 hover:bg-white/10">
+              <Button size="sm" onClick={() => connectEmail("outlook")} disabled={connectingProvider === "outlook"} variant="outline" className={`gap-1.5 h-8 text-xs ${darkMode ? "bg-white/5 border-white/10 text-white/60 hover:bg-white/10" : ""}`}>
                 {connectingProvider === "outlook" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Link2 className="h-3.5 w-3.5" />}
                 {outlookConns.length > 0 ? "Add Another" : "Connect"}
               </Button>
             </div>
             {outlookConns.map(conn => (
-              <div key={conn.id} className="flex items-center justify-between rounded-md border border-white/10 p-2.5 pl-9">
-                <p className="text-xs text-white/50 flex items-center gap-1.5 truncate">
+              <div key={conn.id} className={`flex items-center justify-between rounded-md border p-2.5 pl-9 ${darkMode ? "border-white/10" : "border-border"}`}>
+                <p className={`text-xs flex items-center gap-1.5 truncate ${textSecondary}`}>
                   <CheckCircle className="h-3 w-3 text-green-400 shrink-0" />
                   {conn.email_address}
                 </p>
-                <Button variant="ghost" size="sm" onClick={() => disconnectEmail(conn.id, "Outlook")} className="gap-1 h-7 text-xs text-white/30 hover:text-red-400">
+                <Button variant="ghost" size="sm" onClick={() => disconnectEmail(conn.id, "Outlook")} className="gap-1 h-7 text-xs text-destructive/60 hover:text-destructive">
                   <Unlink className="h-3 w-3" />
                 </Button>
               </div>
@@ -294,18 +290,18 @@ export default function ProductSettings() {
         {/* Calendar Sync */}
         <div className={sectionStyle} id="calendar-sync-section">
           <div className="flex items-center gap-3 mb-2">
-            <span className="text-white/30">📅</span>
+            <span className={iconMuted}>📅</span>
             <h2 className={headingStyle}>Calendar Sync</h2>
           </div>
-          <p className="text-xs text-white/40">
+          <p className={`text-xs ${textSecondary}`}>
             Calendar sync uses your connected email account. You can also use AuRa's native calendar without external sync.
           </p>
-          <div className="flex items-center justify-between rounded-lg border border-white/10 p-3">
+          <div className={`flex items-center justify-between rounded-lg border p-3 ${darkMode ? "border-white/10" : "border-border"}`}>
             <div className="flex items-center gap-3">
               <div className="h-9 w-9 rounded-lg bg-red-500/10 flex items-center justify-center"><Mail className="h-4 w-4 text-red-400" /></div>
               <div>
-                <p className="text-sm text-white/70">Google Calendar</p>
-                <p className="text-xs text-white/40">
+                <p className={`text-sm ${textPrimary}`}>Google Calendar</p>
+                <p className={`text-xs ${textSecondary}`}>
                   {gmailConns.length > 0 ? `${gmailConns.length} account${gmailConns.length > 1 ? "s" : ""} syncing` : "Connect Gmail first"}
                 </p>
               </div>
@@ -313,17 +309,17 @@ export default function ProductSettings() {
             {gmailConns.length > 0 ? (
               <Badge className="text-[10px] bg-green-500/10 text-green-400 border-green-500/20">Connected</Badge>
             ) : (
-              <Button size="sm" variant="outline" onClick={() => document.getElementById("email-accounts-section")?.scrollIntoView({ behavior: "smooth" })} className="gap-1.5 h-9 border-white/10 text-white/50">
+              <Button size="sm" variant="outline" onClick={() => document.getElementById("email-accounts-section")?.scrollIntoView({ behavior: "smooth" })} className="gap-1.5 h-9">
                 <Link2 className="h-3.5 w-3.5" /> Setup
               </Button>
             )}
           </div>
-          <div className="flex items-center justify-between rounded-lg border border-white/10 p-3">
+          <div className={`flex items-center justify-between rounded-lg border p-3 ${darkMode ? "border-white/10" : "border-border"}`}>
             <div className="flex items-center gap-3">
               <div className="h-9 w-9 rounded-lg bg-blue-500/10 flex items-center justify-center"><Mail className="h-4 w-4 text-blue-400" /></div>
               <div>
-                <p className="text-sm text-white/70">Outlook Calendar</p>
-                <p className="text-xs text-white/40">
+                <p className={`text-sm ${textPrimary}`}>Outlook Calendar</p>
+                <p className={`text-xs ${textSecondary}`}>
                   {outlookConns.length > 0 ? `${outlookConns.length} account${outlookConns.length > 1 ? "s" : ""} syncing` : "Connect Outlook first"}
                 </p>
               </div>
@@ -331,14 +327,14 @@ export default function ProductSettings() {
             {outlookConns.length > 0 ? (
               <Badge className="text-[10px] bg-green-500/10 text-green-400 border-green-500/20">Connected</Badge>
             ) : (
-              <Button size="sm" variant="outline" onClick={() => document.getElementById("email-accounts-section")?.scrollIntoView({ behavior: "smooth" })} className="gap-1.5 h-9 border-white/10 text-white/50">
+              <Button size="sm" variant="outline" onClick={() => document.getElementById("email-accounts-section")?.scrollIntoView({ behavior: "smooth" })} className="gap-1.5 h-9">
                 <Link2 className="h-3.5 w-3.5" /> Setup
               </Button>
             )}
           </div>
-          <div className="rounded-md bg-white/[0.03] border border-white/5 p-3">
-            <p className="text-[11px] text-white/30">
-              <strong className="text-white/50">Note:</strong> You can use AuRa's native calendar without connecting an external account. External sync adds your Google/Outlook events alongside AuRa events.
+          <div className={`rounded-md border p-3 ${darkMode ? "bg-white/[0.03] border-white/5" : "bg-muted/30 border-border"}`}>
+            <p className={`text-[11px] ${textSecondary}`}>
+              <strong className={textPrimary}>Note:</strong> You can use AuRa's native calendar without connecting an external account. External sync adds your Google/Outlook events alongside AuRa events.
             </p>
           </div>
         </div>
@@ -346,11 +342,11 @@ export default function ProductSettings() {
         {/* Subscription */}
         <div className={sectionStyle}>
           <div className="flex items-center gap-3 mb-2">
-            <CreditCard className="h-4 w-4 text-white/30" />
+            <CreditCard className={`h-4 w-4 ${iconMuted}`} />
             <h2 className={headingStyle}>Subscription</h2>
           </div>
-          <p className="text-sm text-white/40">Manage your billing, payment method, and subscription plan.</p>
-          <Button onClick={handleManageSubscription} disabled={openingPortal} variant="outline" size="sm" className="gap-2 border-white/10 text-white/60 hover:text-white hover:bg-white/5">
+          <p className={`text-sm ${textSecondary}`}>Manage your billing, payment method, and subscription plan.</p>
+          <Button onClick={handleManageSubscription} disabled={openingPortal} variant="outline" size="sm" className="gap-2">
             {openingPortal ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ExternalLink className="h-3.5 w-3.5" />}
             Manage Subscription
           </Button>
