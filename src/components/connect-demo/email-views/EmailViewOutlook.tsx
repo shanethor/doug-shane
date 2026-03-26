@@ -178,7 +178,8 @@ export default function EmailViewOutlook({ engine, ai }: { engine: Engine; ai: A
             const lastMsg = thread.messages[thread.messages.length - 1];
             const isSelected = selectedThread?.id === thread.id;
             return (
-              <button key={thread.id} onClick={() => selectThread(thread.id)}
+              <div key={thread.id} className="group relative">
+              <button onClick={() => selectThread(thread.id)}
                 className="w-full text-left px-3 py-3 transition-colors hover:bg-white/[0.03]"
                 style={{
                   background: isSelected ? "hsl(200 60% 50% / 0.08)" : thread.unread ? "hsl(140 12% 42% / 0.03)" : undefined,
@@ -198,6 +199,12 @@ export default function EmailViewOutlook({ engine, ai }: { engine: Engine; ai: A
                   {thread.tags.slice(0, 1).map(t => <Badge key={t} variant="outline" className="text-[8px] h-3.5 px-1" style={{ borderColor: "hsl(140 12% 42% / 0.25)", color: "hsl(140 12% 50%)" }}>{t}</Badge>)}
                 </div>
               </button>
+              {/* Hover actions */}
+              <div className="absolute right-2 top-1/2 -translate-y-1/2 hidden group-hover:flex gap-1 z-10">
+                <button className="p-1.5 rounded-md hover:bg-white/10" style={{ background: "hsl(240 8% 9% / 0.9)" }} onClick={() => { selectThread(thread.id); setTimeout(() => ai.aiReply(thread as DemoThread), 100); }} title="AI Reply"><Sparkles className="h-3.5 w-3.5" style={{ color: "hsl(140 12% 58%)" }} /></button>
+                <button className="p-1.5 rounded-md hover:bg-white/10" style={{ background: "hsl(240 8% 9% / 0.9)" }} onClick={() => toast.success("Calendar event created")} title="Create Calendar Event"><CalendarPlus className="h-3.5 w-3.5" style={{ color: "hsl(140 12% 58%)" }} /></button>
+              </div>
+              </div>
             );
           })}
         </div>
@@ -250,6 +257,7 @@ export default function EmailViewOutlook({ engine, ai }: { engine: Engine; ai: A
                     </div>
                   </div>
                   <div className="text-sm leading-relaxed whitespace-pre-wrap pl-12" style={{ color: "hsl(240 5% 78%)" }}>{msg.body}</div>
+                  {/* HTML-rendered version for real emails */}
                 </div>
               ))}
             </div>
