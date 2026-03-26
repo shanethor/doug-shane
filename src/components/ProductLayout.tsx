@@ -43,7 +43,7 @@ function MobileConnectNav({ isActive }: { isActive: (to: string, exact?: boolean
 
   return (
     <>
-      <nav className="md:hidden flex items-stretch justify-around border-t border-white/5 bg-[#0c0c0e] safe-area-bottom">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden flex items-stretch justify-around border-t border-white/5 bg-[#0c0c0e]/95 backdrop-blur-md safe-area-bottom">
         {visibleTabs.map(tab => {
           const Icon = ICON_MAP[tab.id] || Network;
           return (
@@ -269,7 +269,7 @@ export function ProductLayout({
           </Link>
         </header>
 
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-y-auto pb-16 md:pb-0">
           {children}
         </main>
 
