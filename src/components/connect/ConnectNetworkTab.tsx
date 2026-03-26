@@ -336,7 +336,7 @@ export default function ConnectNetworkTab() {
       </div>
 
       {/* Map View */}
-      {viewMode === "map" && <RelationshipMap />}
+      {viewMode === "map" && contacts.length > 0 && <RelationshipMap contacts={contacts} />}
 
       {/* List View */}
       {viewMode === "list" && (

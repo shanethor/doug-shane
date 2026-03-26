@@ -133,6 +133,7 @@ const App = () => (
           <Route path="/terms" element={<TermsOfService />} />
           <Route path="/become-partner" element={<BecomePartner />} />
           <Route path="/request-access" element={<RequestAccess />} />
+          <Route path="/brandkit" element={<BrandKit />} />
           <Route path="/onboard" element={<PostCheckoutOnboard />} />
           <Route path="/pdf-diagnostic" element={<PdfDiagnostic />} />
           <Route path="/intake/:token" element={<IntakeForm />} />
