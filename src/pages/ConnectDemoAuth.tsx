@@ -753,7 +753,7 @@ export default function ConnectDemoAuth() {
                   Subscribe <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
                 <p className="text-xs text-center" style={{ color: "hsl(140 12% 58%)" }}>
-                  💡 Earn up to $65/mo in credits by connecting accounts & contacts
+                  💡 Earn up to $65 in credit by connecting accounts & contacts
                 </p>
                 <p className="text-xs text-center" style={{ color: "hsl(240 5% 46%)" }}>Demo mode — no payment required</p>
               </div>
