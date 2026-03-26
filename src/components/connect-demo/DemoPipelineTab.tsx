@@ -16,7 +16,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import {
   Building2, DollarSign, Users, Info, Plus, Phone, Mail, MapPin, Calendar, X, GripVertical, Trophy, Sparkles, Home, Briefcase, Shield, Star, Check,
-} from "lucide-react";
+import { useRealPipelineData } from "@/hooks/useRealData";
 
 interface StageConfig { key: string; label: string; color: string; }
 
