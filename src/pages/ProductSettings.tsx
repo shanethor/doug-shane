@@ -8,15 +8,17 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import {
   Save, Loader2, User, CreditCard, Moon, Sun, Mail, ExternalLink,
-  Network, Link2, Unlink, CheckCircle, Globe,
+  Network, Link2, Unlink, CheckCircle, Globe, Smartphone,
 } from "lucide-react";
 import { ConnectedAccountsStatus } from "@/components/ConnectedAccountsStatus";
 import { ProgressiveUnlocks } from "@/components/ProgressiveUnlocks";
 import { getAuthHeaders } from "@/lib/auth-fetch";
 import { useSearchParams } from "react-router-dom";
+import { useConnectNavConfig, ALL_CONNECT_TABS } from "@/hooks/useConnectNavConfig";
 
 type EmailConnection = {
   id: string;
@@ -35,6 +37,7 @@ export default function ProductSettings() {
   const [loaded, setLoaded] = useState(false);
   const [darkMode, setDarkMode] = useState(true);
   const [openingPortal, setOpeningPortal] = useState(false);
+  const { config: navConfig, setConfig: setNavConfig } = useConnectNavConfig();
   const [timezone, setTimezone] = useState(Intl.DateTimeFormat().resolvedOptions().timeZone);
 
   // Email connections
@@ -363,6 +366,50 @@ export default function ProductSettings() {
               }}
             />
           </div>
+        </div>
+
+        {/* Mobile Navigation */}
+        <div className={sectionStyle}>
+          <div className="flex items-center gap-3 mb-2">
+            <Smartphone className="h-4 w-4 text-white/30" />
+            <h2 className={headingStyle}>Mobile Navigation</h2>
+          </div>
+          <p className="text-xs text-white/40">
+            Choose which tabs appear in the bottom navigation bar on mobile. Unchecked tabs will be accessible via the "More" menu.
+          </p>
+          <div className="space-y-2">
+            {ALL_CONNECT_TABS.map(tab => {
+              const isChecked = navConfig.visibleTabIds.includes(tab.id);
+              return (
+                <label
+                  key={tab.id}
+                  className="flex items-center gap-3 rounded-lg border border-white/5 p-3 cursor-pointer hover:bg-white/[0.02] transition-colors"
+                >
+                  <Checkbox
+                    checked={isChecked}
+                    onCheckedChange={(checked) => {
+                      const newIds = checked
+                        ? [...navConfig.visibleTabIds, tab.id]
+                        : navConfig.visibleTabIds.filter(id => id !== tab.id);
+                      if (newIds.length < 2) {
+                        toast.error("You must keep at least 2 tabs visible");
+                        return;
+                      }
+                      if (newIds.length > 5) {
+                        toast.error("Maximum 5 tabs in the nav bar");
+                        return;
+                      }
+                      setNavConfig({ visibleTabIds: newIds });
+                      toast.success("Navigation updated");
+                    }}
+                    className="border-white/20 data-[state=checked]:bg-[hsl(140,12%,42%)] data-[state=checked]:border-[hsl(140,12%,42%)]"
+                  />
+                  <span className="text-sm text-white/70">{tab.label}</span>
+                </label>
+              );
+            })}
+          </div>
+          <p className="text-[11px] text-white/20">Minimum 2, maximum 5 tabs. Remaining tabs appear under "More".</p>
         </div>
       </div>
     </ProductLayout>
