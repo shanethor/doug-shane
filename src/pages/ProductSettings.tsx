@@ -357,10 +357,10 @@ export default function ProductSettings() {
           <h2 className={headingStyle}>Preferences</h2>
           <div className="flex items-center justify-between py-2">
             <div className="flex items-center gap-3">
-              {darkMode ? <Moon className="h-4 w-4 text-white/30" /> : <Sun className="h-4 w-4 text-white/30" />}
+              {darkMode ? <Moon className={`h-4 w-4 ${iconMuted}`} /> : <Sun className={`h-4 w-4 ${iconMuted}`} />}
               <div>
-                <p className="text-sm text-white/70">Dark Mode</p>
-                <p className="text-xs text-white/30">Toggle dark/light theme</p>
+                <p className={`text-sm ${textPrimary}`}>Dark Mode</p>
+                <p className={`text-xs ${textSecondary}`}>Toggle dark/light theme</p>
               </div>
             </div>
             <Switch
@@ -377,15 +377,16 @@ export default function ProductSettings() {
           {/* Sage Pop-Up Chat toggle */}
           <div className="flex items-center justify-between py-2">
             <div className="flex items-center gap-3">
-              <span className="text-white/30">⚡</span>
+              <span className={iconMuted}>⚡</span>
               <div>
-                <p className="text-sm text-white/70">Enable Sage Pop Up Chat on All Pages</p>
-                <p className="text-xs text-white/30">Access Sage assistant from any page via a floating button</p>
+                <p className={`text-sm ${textPrimary}`}>Enable Sage Pop Up Chat on All Pages</p>
+                <p className={`text-xs ${textSecondary}`}>Access Sage assistant from any page via a floating button</p>
               </div>
             </div>
             <Switch
-              checked={localStorage.getItem("sage-popup-enabled") !== "false"}
+              checked={sageEnabled}
               onCheckedChange={v => {
+                setSageEnabled(v);
                 localStorage.setItem("sage-popup-enabled", v ? "true" : "false");
                 window.dispatchEvent(new Event("sage-popup-toggle"));
                 toast.success(v ? "Sage popup enabled" : "Sage popup disabled");
@@ -397,10 +398,10 @@ export default function ProductSettings() {
         {/* Mobile Navigation */}
         <div className={sectionStyle}>
           <div className="flex items-center gap-3 mb-2">
-            <Smartphone className="h-4 w-4 text-white/30" />
+            <Smartphone className={`h-4 w-4 ${iconMuted}`} />
             <h2 className={headingStyle}>Mobile Navigation</h2>
           </div>
-          <p className="text-xs text-white/40">
+          <p className={`text-xs ${textSecondary}`}>
             Choose which tabs appear in the bottom navigation bar on mobile. Unchecked tabs will be accessible via the "More" menu.
           </p>
           <div className="space-y-2">
@@ -409,7 +410,7 @@ export default function ProductSettings() {
               return (
                 <label
                   key={tab.id}
-                  className="flex items-center gap-3 rounded-lg border border-white/5 p-3 cursor-pointer hover:bg-white/[0.02] transition-colors"
+                  className={`flex items-center gap-3 rounded-lg border p-3 cursor-pointer transition-colors ${darkMode ? "border-white/5 hover:bg-white/[0.02]" : "border-border hover:bg-muted/30"}`}
                 >
                   <Checkbox
                     checked={isChecked}
@@ -428,14 +429,14 @@ export default function ProductSettings() {
                       setNavConfig({ visibleTabIds: newIds });
                       toast.success("Navigation updated");
                     }}
-                    className="border-white/20 data-[state=checked]:bg-[hsl(140,12%,42%)] data-[state=checked]:border-[hsl(140,12%,42%)]"
+                    className={darkMode ? "border-white/20 data-[state=checked]:bg-[hsl(140,12%,42%)] data-[state=checked]:border-[hsl(140,12%,42%)]" : ""}
                   />
-                  <span className="text-sm text-white/70">{tab.label}</span>
+                  <span className={`text-sm ${textPrimary}`}>{tab.label}</span>
                 </label>
               );
             })}
           </div>
-          <p className="text-[11px] text-white/20">Minimum 2, maximum 5 tabs. Remaining tabs appear under "More".</p>
+          <p className={`text-[11px] ${textSecondary}`}>Minimum 2, maximum 5 tabs. Remaining tabs appear under "More".</p>
         </div>
       </div>
     </ProductLayout>
