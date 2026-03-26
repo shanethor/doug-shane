@@ -954,13 +954,17 @@ export default function ConnectDemoAuth() {
                     style={{ background: "hsl(140 12% 42%)" }}
                     onClick={handleEnter}
                   >
-                    {connectedCount === 0 ? "Skip & Enter AuRa Connect" : `Enter AuRa Connect (${connectedCount} linked)`}
+                    {connectedCount === 0
+                      ? "Skip & Enter AuRa Connect"
+                      : accountSavings > 0
+                        ? `Enter — Saving $${accountSavings}/mo 🎉`
+                        : `Enter AuRa Connect (${connectedCount} linked)`}
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
 
                   {connectedCount > 0 && connectedCount < unlockThreshold && (
                     <p className="text-[10px] text-center" style={{ color: "hsl(240 5% 46%)" }}>
-                      Connect {unlockThreshold - connectedCount} more for full functionality
+                      Connect {unlockThreshold - connectedCount} more to unlock $5/mo credit
                     </p>
                   )}
                 </div>
