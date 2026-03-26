@@ -7,7 +7,7 @@ import { Search, ArrowRight, Sparkles, Loader2, X, MapPin, Briefcase, Building2,
 import { toast } from "sonner";
 import { ConnectOutreachPopup } from "./ConnectOutreachPopups";
 import MeetingPrepSection from "@/components/connect/MeetingPrepSection";
-import RelationshipMap from "@/components/connect/RelationshipMap";
+import ConnectLiveNetworkMap, { type LiveNetworkProfile } from "@/components/connect/ConnectLiveNetworkMap";
 
 const DUMMY_PATH_TEMPLATES = [
   {
@@ -561,24 +561,13 @@ function NetworkGraph({ onNodeClick }: { onNodeClick: (profile: ReturnType<typeo
   );
 }
 
-interface ProfileData {
-  name: string;
-  title: string;
-  company: string;
-  industry: string;
-  location: string;
-  mutualConnections: number;
-  connectionStrength: string;
-  tier: 0 | 1 | 2 | 3;
-}
-
 export default function DemoConnectTab({ contentReady = true }: { contentReady?: boolean }) {
   const [searchName, setSearchName] = useState("");
   const [result, setResult] = useState<PathResult | null>(null);
   const [searching, setSearching] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [outreachType, setOutreachType] = useState<"email" | "text" | "call" | "meet" | null>(null);
-  const [profilePopup, setProfilePopup] = useState<{ profile: ProfileData; pos: { x: number; y: number } } | null>(null);
+  const [profilePopup, setProfilePopup] = useState<{ profile: LiveNetworkProfile; pos: { x: number; y: number } } | null>(null);
   const popupRef = useRef<HTMLDivElement>(null);
 
   const handleSearch = () => {
@@ -600,7 +589,7 @@ export default function DemoConnectTab({ contentReady = true }: { contentReady?:
     }, 1200);
   };
 
-  const handleNodeClick = useCallback((profile: ProfileData, pos: { x: number; y: number }) => {
+  const handleNodeClick = useCallback((profile: LiveNetworkProfile, pos: { x: number; y: number }) => {
     setProfilePopup({ profile, pos });
   }, []);
 
@@ -694,7 +683,7 @@ export default function DemoConnectTab({ contentReady = true }: { contentReady?:
           transform: connectPhase >= 3 ? "translateY(0) scale(1)" : "translateY(30px) scale(0.95)",
           transition: isFirstVisit.current ? "all 1.8s cubic-bezier(0.16, 1, 0.3, 1)" : "all 0.6s ease-out",
         }}>
-          {graphActive && <RelationshipMap />}
+          {graphActive && <ConnectLiveNetworkMap onNodeClick={handleNodeClick} />}
           <div className="absolute bottom-4 left-0 right-0 text-center z-10">
             <span className="text-xs px-3 py-1 rounded-full" style={{ background: "hsl(240 8% 9% / 0.8)", color: "hsl(240 5% 50%)", border: "1px solid hsl(240 6% 14%)" }}>
               Live network map — click any name to view profile
@@ -717,7 +706,7 @@ export default function DemoConnectTab({ contentReady = true }: { contentReady?:
             >
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-full flex items-center justify-center text-xs font-bold" style={{ background: "hsl(140 12% 42% / 0.2)", color: "hsl(140 12% 65%)" }}>
+                   <div className="h-10 w-10 rounded-full flex items-center justify-center text-xs font-bold" style={{ background: profilePopup.profile.type === "company" ? "hsl(var(--warning) / 0.18)" : "hsl(var(--primary) / 0.2)", color: profilePopup.profile.type === "company" ? "hsl(var(--warning))" : "hsl(var(--primary-foreground))" }}>
                     {profilePopup.profile.name.split(" ").map(n => n[0]).join("")}
                   </div>
                   <div>
@@ -732,20 +721,20 @@ export default function DemoConnectTab({ contentReady = true }: { contentReady?:
 
               <div className="space-y-1.5">
                 <div className="flex items-center gap-2 text-xs" style={{ color: "hsl(240 5% 60%)" }}>
-                  <Building2 className="h-3.5 w-3.5 shrink-0" style={{ color: "hsl(140 12% 50%)" }} />
+                  <Building2 className="h-3.5 w-3.5 shrink-0" style={{ color: profilePopup.profile.type === "company" ? "hsl(var(--warning))" : "hsl(var(--primary))" }} />
                   {profilePopup.profile.company}
                 </div>
                 <div className="flex items-center gap-2 text-xs" style={{ color: "hsl(240 5% 60%)" }}>
-                  <Briefcase className="h-3.5 w-3.5 shrink-0" style={{ color: "hsl(140 12% 50%)" }} />
+                  <Briefcase className="h-3.5 w-3.5 shrink-0" style={{ color: profilePopup.profile.type === "company" ? "hsl(var(--warning))" : "hsl(var(--primary))" }} />
                   {profilePopup.profile.industry}
                 </div>
                 <div className="flex items-center gap-2 text-xs" style={{ color: "hsl(240 5% 60%)" }}>
-                  <MapPin className="h-3.5 w-3.5 shrink-0" style={{ color: "hsl(140 12% 50%)" }} />
+                  <MapPin className="h-3.5 w-3.5 shrink-0" style={{ color: profilePopup.profile.type === "company" ? "hsl(var(--warning))" : "hsl(var(--primary))" }} />
                   {profilePopup.profile.location}
                 </div>
                 <div className="flex items-center gap-2 text-xs" style={{ color: "hsl(240 5% 60%)" }}>
-                  <Users className="h-3.5 w-3.5 shrink-0" style={{ color: "hsl(140 12% 50%)" }} />
-                  {profilePopup.profile.mutualConnections} mutual connections
+                  <Users className="h-3.5 w-3.5 shrink-0" style={{ color: profilePopup.profile.type === "company" ? "hsl(var(--warning))" : "hsl(var(--primary))" }} />
+                  {profilePopup.profile.type === "company" ? `${profilePopup.profile.mutualConnections} people linked` : `${profilePopup.profile.mutualConnections} mutual connections`}
                 </div>
                 <div className="flex items-center gap-2 text-xs">
                   <Signal className="h-3.5 w-3.5 shrink-0" style={{ color: strengthColor(profilePopup.profile.connectionStrength) }} />
