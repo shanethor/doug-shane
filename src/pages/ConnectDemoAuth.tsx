@@ -720,7 +720,11 @@ export default function ConnectDemoAuth() {
                 <div className="rounded-lg border-2 p-4 space-y-3" style={{ borderColor: "hsl(140 12% 42%)", background: "hsl(140 12% 42% / 0.05)" }}>
                   <div className="flex items-center justify-between">
                     <span className="font-semibold text-white">AuRa Connect Pro</span>
-                    <span className="text-lg font-bold" style={{ color: "hsl(140 12% 58%)" }}>$250/mo</span>
+                    <div className="text-right">
+                      <span className="text-sm line-through" style={{ color: "hsl(240 5% 40%)" }}>$250/mo</span>
+                      <span className="text-lg font-bold ml-2" style={{ color: "hsl(140 12% 58%)" }}>$100/mo</span>
+                      <p className="text-[10px]" style={{ color: "hsl(140 12% 55%)" }}>Intro rate · first 6 months</p>
+                    </div>
                   </div>
                   <div className="space-y-3">
                     <div>
@@ -749,7 +753,7 @@ export default function ConnectDemoAuth() {
                   Subscribe <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
                 <p className="text-xs text-center" style={{ color: "hsl(140 12% 58%)" }}>
-                  💡 Earn up to $65/mo in credits by connecting accounts & contacts
+                  💡 Earn up to $65 in credit by connecting accounts & contacts
                 </p>
                 <p className="text-xs text-center" style={{ color: "hsl(240 5% 46%)" }}>Demo mode — no payment required</p>
               </div>
@@ -851,7 +855,7 @@ export default function ConnectDemoAuth() {
                           }}
                         >
                           <div className="flex items-center justify-center gap-2">
-                            <span className="text-[10px] font-medium" style={{ color: "hsl(240 5% 50%)" }}>Monthly savings:</span>
+                            <span className="text-[10px] font-medium" style={{ color: "hsl(240 5% 50%)" }}>Credit earned:</span>
                             <span
                               className="text-lg font-bold transition-all duration-300"
                               style={{
@@ -860,20 +864,20 @@ export default function ConnectDemoAuth() {
                             >
                               ${accountSavings}
                             </span>
-                            <span className="text-[10px]" style={{ color: "hsl(240 5% 40%)" }}>/mo off</span>
+                            <span className="text-[10px]" style={{ color: "hsl(240 5% 40%)" }}>one-time</span>
                           </div>
                           {accountSavings > 0 ? (
                             <p className="text-[10px] mt-1" style={{ color: "hsl(140 12% 55%)" }}>
-                              🎉 You've unlocked a ${accountSavings} credit — applied at checkout!
+                              🎉 ${accountSavings} credit unlocked — applied at checkout!
                             </p>
                           ) : connectedCount < 5 ? (
                             <p className="text-[10px] mt-1" style={{ color: "hsl(240 5% 46%)" }}>
-                              Connect {5 - connectedCount} more account{5 - connectedCount > 1 ? "s" : ""} to save $5/mo
+                              Connect {5 - connectedCount} more account{5 - connectedCount > 1 ? "s" : ""} to earn $5 credit
                             </p>
                           ) : null}
                           {accountSavings > 0 && accountSavings < maxAccountSavings && (
                             <p className="text-[9px] mt-0.5" style={{ color: "hsl(240 5% 40%)" }}>
-                              Up to ${maxTotalSavings}/mo possible with all accounts + contacts
+                              Up to ${maxTotalSavings} in credit possible with all accounts + contacts
                             </p>
                           )}
                         </div>
@@ -960,14 +964,14 @@ export default function ConnectDemoAuth() {
                     {connectedCount === 0
                       ? "Skip & Enter AuRa Connect"
                       : accountSavings > 0
-                        ? `Enter — Saving $${accountSavings}/mo 🎉`
+                        ? `Enter — $${accountSavings} credit earned 🎉`
                         : `Enter AuRa Connect (${connectedCount} linked)`}
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
 
                   {connectedCount > 0 && connectedCount < unlockThreshold && (
                     <p className="text-[10px] text-center" style={{ color: "hsl(240 5% 46%)" }}>
-                      Connect {unlockThreshold - connectedCount} more to unlock $5/mo credit
+                      Connect {unlockThreshold - connectedCount} more to unlock $5 credit
                     </p>
                   )}
                 </div>
