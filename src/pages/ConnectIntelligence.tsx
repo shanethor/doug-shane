@@ -8,7 +8,7 @@ import {
   Network, Search, Users, Mail, Settings, Loader2,
   Zap, Shield, BarChart3, Plus, X, RefreshCw,
   ExternalLink, CheckCircle, Wifi, WifiOff, Globe,
-  Linkedin, Facebook, Phone, Database,
+  Linkedin, Facebook, Phone, Database, Edit2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";

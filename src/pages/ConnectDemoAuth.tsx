@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { ArrowRight, Zap, Shield, BarChart3, Mail, Users, Sparkles as SparklesIcon, Search, Check, Lock, Loader2, LayoutGrid } from "lucide-react";
 import { setEmailLayout, type EmailLayout } from "@/components/connect-demo/email-views/useEmailEngine";
 import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { getAuthHeaders } from "@/lib/auth-fetch";
 import { toast } from "sonner";
