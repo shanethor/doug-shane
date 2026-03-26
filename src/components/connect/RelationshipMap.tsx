@@ -80,20 +80,23 @@ export default function RelationshipMap({ contacts: externalContacts }: Relation
       nodes.push({ id: user.id, name: profile?.full_name || "You", type: "producer" });
       nodeIds.add(user.id);
 
-      // Canonical contacts (clients)
-      const { data: contacts } = await supabase
-        .from("canonical_persons")
-        .select("id, display_name, company, primary_email, linkedin_url, primary_phone")
-        .eq("owner_user_id", user.id)
-        .limit(50);
+      // Use external contacts if provided, otherwise fetch from DB
+      const contactList = externalContacts || (await (async () => {
+        const { data: contacts } = await supabase
+          .from("canonical_persons")
+          .select("id, display_name, company, primary_email, linkedin_url, primary_phone")
+          .eq("owner_user_id", user.id)
+          .limit(50);
+        return contacts || [];
+      })());
 
-      for (const c of contacts || []) {
+      for (const c of contactList) {
         if (nodeIds.has(c.id)) continue;
         const name = c.display_name || "Unknown";
         const isCompany = looksLikeCompany(name, c.primary_email || undefined);
         nodes.push({
           id: c.id, name, type: isCompany ? "company" : "client",
-          company: c.company || undefined, email: c.primary_email || undefined,
+          company: (c as any).company || undefined, email: c.primary_email || undefined,
           linkedin: c.linkedin_url || undefined, phone: c.primary_phone || undefined,
         });
         nodeIds.add(c.id);
