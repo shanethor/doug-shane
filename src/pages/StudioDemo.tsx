@@ -53,7 +53,31 @@ export default function StudioDemo() {
   const [submitted, setSubmitted] = useState(false);
   const [latestReq, setLatestReq] = useState<DemoRequest | null>(null);
   const [showHow, setShowHow] = useState(false);
+  const [showUpsell, setShowUpsell] = useState(false);
+  const clickCount = useRef(0);
+  const upsellShown = useRef(!!sessionStorage.getItem("studio-demo-upsell-shown"));
 
+  // Track meaningful interactions
+  const trackInteraction = () => {
+    clickCount.current += 1;
+    if (clickCount.current >= 4 && !upsellShown.current) {
+      upsellShown.current = true;
+      sessionStorage.setItem("studio-demo-upsell-shown", "true");
+      setTimeout(() => setShowUpsell(true), 1000);
+    }
+  };
+
+  // Track clicks on interactive elements
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.closest("button") || target.closest("[role='button']") || target.closest("a")) {
+        trackInteraction();
+      }
+    };
+    document.addEventListener("click", handler);
+    return () => document.removeEventListener("click", handler);
+  }, []);
   const handleSubmit = () => {
     if (!title.trim()) return;
     const scheduled = addBusinessDays(new Date(), 3);
