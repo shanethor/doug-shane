@@ -8,15 +8,17 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import {
   Save, Loader2, User, CreditCard, Moon, Sun, Mail, ExternalLink,
-  Network, Link2, Unlink, CheckCircle, Globe,
+  Network, Link2, Unlink, CheckCircle, Globe, Smartphone,
 } from "lucide-react";
 import { ConnectedAccountsStatus } from "@/components/ConnectedAccountsStatus";
 import { ProgressiveUnlocks } from "@/components/ProgressiveUnlocks";
 import { getAuthHeaders } from "@/lib/auth-fetch";
 import { useSearchParams } from "react-router-dom";
+import { useConnectNavConfig, ALL_CONNECT_TABS } from "@/hooks/useConnectNavConfig";
 
 type EmailConnection = {
   id: string;
