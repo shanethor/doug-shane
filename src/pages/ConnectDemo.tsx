@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import ConnectUpsellModal from "@/components/ConnectUpsellModal";
 import {
   Mail, CalendarDays, LayoutGrid, Sparkles, MessageSquare,
   Network, Send,
@@ -62,7 +63,20 @@ const TABS = [
 export default function ConnectDemo() {
   const [activeTab, setActiveTab] = useState("connect");
   const [buildPhase, setBuildPhase] = useState(0);
+  const [showUpsell, setShowUpsell] = useState(false);
+  const tabSwitchCount = useRef(0);
+  const upsellShown = useRef(!!sessionStorage.getItem("connect-demo-upsell-shown"));
   // 0=black screen, 1=logo pulse, 2=header, 3=ticker, 4=tabs, 5=content
+
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    tabSwitchCount.current += 1;
+    if (tabSwitchCount.current >= 3 && !upsellShown.current) {
+      upsellShown.current = true;
+      sessionStorage.setItem("connect-demo-upsell-shown", "true");
+      setTimeout(() => setShowUpsell(true), 800);
+    }
+  };
 
   useEffect(() => {
     const demoAuth = sessionStorage.getItem("connect-demo-auth");
@@ -210,7 +224,7 @@ export default function ConnectDemo() {
 
       {/* Main content */}
       <div className="flex-1 w-full px-2 sm:px-4 lg:px-6 py-4">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           {/* Tab navigation */}
           <div
             style={{
@@ -256,6 +270,7 @@ export default function ConnectDemo() {
           </div>
         </Tabs>
       </div>
+      <ConnectUpsellModal open={showUpsell} onClose={() => setShowUpsell(false)} />
     </div>
   );
 }
