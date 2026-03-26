@@ -63,8 +63,8 @@ export function ConnectEmptyState({ type }: ConnectEmptyStateProps) {
           </Button>
         </Link>
       )}
-      {cfg.secondaryNote && (
-        <p className="text-xs text-white/30 mt-4">{cfg.secondaryNote}</p>
+      {"secondaryNote" in cfg && (cfg as any).secondaryNote && (
+        <p className="text-xs text-white/30 mt-4">{(cfg as any).secondaryNote}</p>
       )}
     </div>
   );
