@@ -11,6 +11,7 @@ import DemoEmailTab from "@/components/connect-demo/DemoEmailTab";
 import DemoCalendarTab from "@/components/connect-demo/DemoCalendarTab";
 import DemoSpotlightTab from "@/components/connect-demo/DemoSpotlightTab";
 import DemoAssistantTab from "@/components/connect-demo/DemoAssistantTab";
+import ConnectIntelligencePage from "@/pages/ConnectIntelligence";
 import { useNavigate } from "react-router-dom";
 
 // Cinematic intro overlay
