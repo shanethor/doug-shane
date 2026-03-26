@@ -156,6 +156,7 @@ export default function ConnectProduct() {
             transition: "all 1.2s cubic-bezier(0.16, 1, 0.3, 1)",
           }}>
             {page === "connect" && <DemoConnectTab contentReady={introComplete} />}
+            {page === "intelligence" && <ConnectIntelligencePage />}
             {page === "pipeline" && <DemoPipelineTab />}
             {page === "email" && <DemoEmailTab />}
             {page === "calendar" && <DemoCalendarTab />}

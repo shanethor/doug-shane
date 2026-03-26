@@ -9,6 +9,7 @@ import { useState, useEffect } from "react";
 
 const CONNECT_NAV = [
   { to: "/connect", label: "Connect", icon: Network, exact: true },
+  { to: "/connect/intelligence", label: "Intelligence", icon: Brain },
   { to: "/connect/pipeline", label: "Pipeline", icon: BarChart3 },
   { to: "/connect/email", label: "Email", icon: Mail },
   { to: "/connect/calendar", label: "Calendar", icon: Calendar },
