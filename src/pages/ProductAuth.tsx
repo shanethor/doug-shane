@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useSearchParams, Navigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -16,6 +16,42 @@ const FEATURES = [
   { icon: Zap, label: "Sage Assistant" },
 ];
 
+// Users with access to both products default to /connect with switcher
+const DUAL_ACCESS_EMAILS = ["shane@houseofthor.com"];
+
+function useProductRoute(user: any) {
+  const [destination, setDestination] = useState<string | null>(null);
+  const [checking, setChecking] = useState(true);
+
+  const check = useCallback(async () => {
+    if (!user?.email) { setChecking(false); return; }
+
+    // Dual-access users always go to /connect
+    if (DUAL_ACCESS_EMAILS.includes(user.email.toLowerCase())) {
+      setDestination("/connect");
+      setChecking(false);
+      return;
+    }
+
+    // Check subscription to determine which product
+    try {
+      const { data } = await supabase.functions.invoke("check-subscription");
+      if (data?.subscribed) {
+        // Route based on product metadata or default to connect
+        setDestination("/connect");
+      } else {
+        setDestination("/connect");
+      }
+    } catch {
+      setDestination("/connect");
+    }
+    setChecking(false);
+  }, [user]);
+
+  useEffect(() => { check(); }, [check]);
+  return { destination, checking };
+}
+
 export default function ProductAuth() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
@@ -27,14 +63,15 @@ export default function ProductAuth() {
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const { destination, checking: routeChecking } = useProductRoute(user);
 
-  if (loading) return (
+  if (loading || (user && routeChecking)) return (
     <div className="flex min-h-screen items-center justify-center bg-[#08080A]">
       <div className="h-8 w-8 animate-spin rounded-full border-2 border-[hsl(140,12%,50%)] border-t-transparent" />
     </div>
   );
 
-  if (user) return <Navigate to={product === "studio" ? "/studio" : "/connect"} replace />;
+  if (user && destination) return <Navigate to={destination} replace />;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,7 +92,7 @@ export default function ProductAuth() {
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        navigate(product === "studio" ? "/studio" : "/connect", { replace: true });
+        // Re-render will trigger useProductRoute and redirect
       }
     } catch (err: any) {
       toast.error(err.message);
