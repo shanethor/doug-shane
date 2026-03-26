@@ -257,6 +257,15 @@ function EmailIntelligencePage() {
                     </div>
                     <div className="flex gap-1.5 mt-2">
                       <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => saveContact(c.id)}><Plus className="h-3 w-3 mr-1" /> Save</Button>
+                      <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => {
+                        const newName = prompt("Enter name for this contact:", c.display_name || "");
+                        if (newName !== null && newName.trim()) {
+                          supabase.from("email_discovered_contacts" as any).update({ display_name: newName.trim() } as any).eq("id", c.id).then(() => {
+                            setContacts(prev => prev.map(ct => ct.id === c.id ? { ...ct, display_name: newName.trim() } : ct));
+                            toast.success("Name updated");
+                          });
+                        }
+                      }}><Edit2 className="h-3 w-3 mr-1" /> Rename</Button>
                       {c.hunter_linkedin_url && (
                         <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => window.open(c.hunter_linkedin_url!, "_blank")}><ExternalLink className="h-3 w-3 mr-1" /> Profile</Button>
                       )}

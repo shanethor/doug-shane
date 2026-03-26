@@ -542,10 +542,6 @@ export default function ConnectDemoAuth() {
     }, 400);
   }, []);
 
-  const handleAuth = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (email && password && industry) goToStep("subscribe");
-  };
   const handleSubscribe = () => goToStep("welcome");
   const handleEnter = async () => {
     // Go to email layout picker before entering
