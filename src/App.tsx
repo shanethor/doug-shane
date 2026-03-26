@@ -2,8 +2,9 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { ProductProtectedRoute } from "@/components/ProductProtectedRoute";
 import Auth from "./pages/Auth";
 import ResetPassword from "./pages/ResetPassword";
 import UserDashboard from "./pages/UserDashboard";
@@ -60,7 +61,10 @@ import ConnectDemoAuth from "./pages/ConnectDemoAuth";
 import BecomePartner from "./pages/BecomePartner";
 import RequestAccess from "./pages/RequestAccess";
 import StudioDemo from "./pages/StudioDemo";
-import { Navigate } from "react-router-dom";
+import ProductAuth from "./pages/ProductAuth";
+import ConnectProduct from "./pages/ConnectProduct";
+import StudioProduct from "./pages/StudioProduct";
+import ProductSettings from "./pages/ProductSettings";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -92,7 +96,7 @@ function DarkModeSync() {
   return null;
 }
 
-function HomeRoute() {
+function InsuranceHomeRoute() {
   const { isProperty, loading: roleLoading } = useUserRole();
   const { hasConnect, loading: featuresLoading } = useUserFeatures();
 
@@ -105,7 +109,7 @@ function HomeRoute() {
   }
 
   if (isProperty) {
-    return <Navigate to={hasConnect ? "/connect" : "/submit-client"} replace />;
+    return <Navigate to={hasConnect ? "/insurance/connect" : "/insurance/submit-client"} replace />;
   }
 
   return <Chat />;
@@ -119,54 +123,31 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/login" element={<Navigate to="/auth" replace />} />
-          <Route path="/signup" element={<Navigate to="/auth" replace />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
+          {/* ── Public routes ── */}
           <Route path="/" element={<LandingPage />} />
-          <Route path="/email" element={<ProtectedRoute><EmailHub /></ProtectedRoute>} />
-          <Route path="/hub" element={<ProtectedRoute><HomeRoute /></ProtectedRoute>} />
-          <Route path="/command" element={<ProtectedRoute><ProducerHub /></ProtectedRoute>} />
-          <Route path="/pulse" element={<ProtectedRoute><AuraPulse /></ProtectedRoute>} />
-          <Route path="/clients" element={<ProtectedRoute><UserDashboard /></ProtectedRoute>} />
-          <Route path="/submit-plan" element={<ProtectedRoute><SubmitPlan /></ProtectedRoute>} />
-          <Route path="/application/:submissionId" element={<ProtectedRoute><ApplicationReview /></ProtectedRoute>} />
-          <Route path="/acord/:formId/:submissionId" element={<ProtectedRoute><AcordFormPage /></ProtectedRoute>} />
-          <Route path="/acord/:formId" element={<ProtectedRoute><AcordFormPage /></ProtectedRoute>} />
-          <Route path="/templates" element={<ProtectedRoute><TemplateEditor /></ProtectedRoute>} />
-          <Route path="/forms" element={<ProtectedRoute><GeneratedForms /></ProtectedRoute>} />
-          <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
-          <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
-          <Route path="/deck" element={<Deck />} />
           <Route path="/home" element={<LandingPage />} />
+          <Route path="/deck" element={<Deck />} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/terms" element={<TermsOfService />} />
           <Route path="/become-partner" element={<BecomePartner />} />
           <Route path="/request-access" element={<RequestAccess />} />
-          <Route path="/olddeck" element={<ProtectedRoute><OldDeck /></ProtectedRoute>} />
           <Route path="/pdf-diagnostic" element={<PdfDiagnostic />} />
-          <Route path="/form-test" element={<ProtectedRoute><FormTest /></ProtectedRoute>} />
-          <Route path="/pipeline" element={<ProtectedRoute><Pipeline /></ProtectedRoute>} />
-          <Route path="/pipeline/:leadId" element={<ProtectedRoute><LeadDetail /></ProtectedRoute>} />
-          <Route path="/my-dashboard" element={<ProtectedRoute><ProducerDashboard /></ProtectedRoute>} />
-          <Route path="/approvals" element={<Navigate to="/admin" replace />} />
           <Route path="/intake/:token" element={<IntakeForm />} />
+          <Route path="/personal-intake/:token" element={<IntakeForm />} />
           <Route path="/b/:slug" element={<BorrowerPage />} />
           <Route path="/book/:slug" element={<PublicBooking />} />
           <Route path="/tracker" element={<PipelineTracker />} />
           <Route path="/partner/:token" element={<PartnerTracker />} />
-          <Route path="/personal-intake/:token" element={<IntakeForm />} />
           <Route path="/bor-sign/:token" element={<BorSign />} />
-          <Route path="/inbox" element={<Navigate to="/email" replace />} />
-          <Route path="/email-callback" element={<ProtectedRoute><EmailCallback /></ProtectedRoute>} />
-          <Route path="/calendar" element={<Navigate to="/email" replace />} />
-          <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-          <Route path="/connect" element={<ProtectedRoute><AuraConnect /></ProtectedRoute>} />
-          <Route path="/concierge" element={<ProtectedRoute><AuraConcierge /></ProtectedRoute>} />
-          <Route path="/submit-client" element={<ProtectedRoute><ClientSubmission /></ProtectedRoute>} />
-          <Route path="/loss-runs" element={<ProtectedRoute><LossRunDashboard /></ProtectedRoute>} />
-          <Route path="/loss-runs/new" element={<ProtectedRoute><LossRunNew /></ProtectedRoute>} />
-          <Route path="/loss-runs/settings" element={<ProtectedRoute><CarrierDirectory /></ProtectedRoute>} />
-          <Route path="/loss-runs/:id" element={<ProtectedRoute><LossRunDetail /></ProtectedRoute>} />
           <Route path="/loss-runs/:id/sign" element={<LossRunSign />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+
+          {/* ── Demo routes ── */}
+          <Route path="/connectdemo" element={<ConnectDemo />} />
+          <Route path="/connectdemo/auth" element={<ConnectDemoAuth />} />
+          <Route path="/studiodemo" element={<StudioDemo />} />
+
+          {/* ── Beta routes ── */}
           <Route path="/beta">
             <Route index element={<AuraBeta />} />
             <Route element={<BetaLayout />}>
@@ -176,11 +157,82 @@ const App = () => (
               <Route path="video" element={<BetaVideo />} />
             </Route>
           </Route>
-          <Route path="/connectdemo" element={<ConnectDemo />} />
-          <Route path="/studiodemo" element={<StudioDemo />} />
-          <Route path="/connectdemo/auth" element={<ConnectDemoAuth />} />
-          <Route path="/privacy" element={<PrivacyPolicy />} />
-          <Route path="/terms" element={<TermsOfService />} />
+
+          {/* ── Product auth (Connect / Studio) ── */}
+          <Route path="/get-started" element={<ProductAuth />} />
+
+          {/* ── AuRa Connect product ── */}
+          <Route path="/connect" element={<ProductProtectedRoute><ConnectProduct /></ProductProtectedRoute>} />
+          <Route path="/connect/*" element={<ProductProtectedRoute><ConnectProduct /></ProductProtectedRoute>} />
+
+          {/* ── Aura Studio product ── */}
+          <Route path="/studio" element={<ProductProtectedRoute><StudioProduct /></ProductProtectedRoute>} />
+          <Route path="/studio/*" element={<ProductProtectedRoute><StudioProduct /></ProductProtectedRoute>} />
+
+          {/* ── Product settings ── */}
+          <Route path="/app/settings" element={<ProductProtectedRoute><ProductSettings /></ProductProtectedRoute>} />
+
+          {/* ── Insurance auth ── */}
+          <Route path="/auth" element={<Auth />} />
+          <Route path="/login" element={<Navigate to="/auth" replace />} />
+          <Route path="/signup" element={<Navigate to="/auth" replace />} />
+
+          {/* ── Insurance app (all under /insurance) ── */}
+          <Route path="/insurance/hub" element={<ProtectedRoute><InsuranceHomeRoute /></ProtectedRoute>} />
+          <Route path="/insurance/email" element={<ProtectedRoute><EmailHub /></ProtectedRoute>} />
+          <Route path="/insurance/command" element={<ProtectedRoute><ProducerHub /></ProtectedRoute>} />
+          <Route path="/insurance/pulse" element={<ProtectedRoute><AuraPulse /></ProtectedRoute>} />
+          <Route path="/insurance/clients" element={<ProtectedRoute><UserDashboard /></ProtectedRoute>} />
+          <Route path="/insurance/submit-plan" element={<ProtectedRoute><SubmitPlan /></ProtectedRoute>} />
+          <Route path="/insurance/application/:submissionId" element={<ProtectedRoute><ApplicationReview /></ProtectedRoute>} />
+          <Route path="/insurance/acord/:formId/:submissionId" element={<ProtectedRoute><AcordFormPage /></ProtectedRoute>} />
+          <Route path="/insurance/acord/:formId" element={<ProtectedRoute><AcordFormPage /></ProtectedRoute>} />
+          <Route path="/insurance/templates" element={<ProtectedRoute><TemplateEditor /></ProtectedRoute>} />
+          <Route path="/insurance/forms" element={<ProtectedRoute><GeneratedForms /></ProtectedRoute>} />
+          <Route path="/insurance/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+          <Route path="/insurance/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
+          <Route path="/insurance/olddeck" element={<ProtectedRoute><OldDeck /></ProtectedRoute>} />
+          <Route path="/insurance/form-test" element={<ProtectedRoute><FormTest /></ProtectedRoute>} />
+          <Route path="/insurance/pipeline" element={<ProtectedRoute><Pipeline /></ProtectedRoute>} />
+          <Route path="/insurance/pipeline/:leadId" element={<ProtectedRoute><LeadDetail /></ProtectedRoute>} />
+          <Route path="/insurance/my-dashboard" element={<ProtectedRoute><ProducerDashboard /></ProtectedRoute>} />
+          <Route path="/insurance/email-callback" element={<ProtectedRoute><EmailCallback /></ProtectedRoute>} />
+          <Route path="/insurance/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+          <Route path="/insurance/connect" element={<ProtectedRoute><AuraConnect /></ProtectedRoute>} />
+          <Route path="/insurance/concierge" element={<ProtectedRoute><AuraConcierge /></ProtectedRoute>} />
+          <Route path="/insurance/submit-client" element={<ProtectedRoute><ClientSubmission /></ProtectedRoute>} />
+          <Route path="/insurance/loss-runs" element={<ProtectedRoute><LossRunDashboard /></ProtectedRoute>} />
+          <Route path="/insurance/loss-runs/new" element={<ProtectedRoute><LossRunNew /></ProtectedRoute>} />
+          <Route path="/insurance/loss-runs/settings" element={<ProtectedRoute><CarrierDirectory /></ProtectedRoute>} />
+          <Route path="/insurance/loss-runs/:id" element={<ProtectedRoute><LossRunDetail /></ProtectedRoute>} />
+
+          {/* ── Redirects: old insurance paths → /insurance/* ── */}
+          <Route path="/hub" element={<Navigate to="/insurance/hub" replace />} />
+          <Route path="/email" element={<Navigate to="/insurance/email" replace />} />
+          <Route path="/command" element={<Navigate to="/insurance/command" replace />} />
+          <Route path="/pulse" element={<Navigate to="/insurance/pulse" replace />} />
+          <Route path="/clients" element={<Navigate to="/insurance/clients" replace />} />
+          <Route path="/submit-plan" element={<Navigate to="/insurance/submit-plan" replace />} />
+          <Route path="/application/:submissionId" element={<Navigate to="/insurance/hub" replace />} />
+          <Route path="/templates" element={<Navigate to="/insurance/templates" replace />} />
+          <Route path="/forms" element={<Navigate to="/insurance/forms" replace />} />
+          <Route path="/admin" element={<Navigate to="/insurance/admin" replace />} />
+          <Route path="/onboarding" element={<Navigate to="/insurance/onboarding" replace />} />
+          <Route path="/form-test" element={<Navigate to="/insurance/form-test" replace />} />
+          <Route path="/pipeline" element={<Navigate to="/insurance/pipeline" replace />} />
+          <Route path="/pipeline/:leadId" element={<Navigate to="/insurance/pipeline" replace />} />
+          <Route path="/my-dashboard" element={<Navigate to="/insurance/my-dashboard" replace />} />
+          <Route path="/inbox" element={<Navigate to="/insurance/email" replace />} />
+          <Route path="/calendar" element={<Navigate to="/insurance/email" replace />} />
+          <Route path="/settings" element={<Navigate to="/insurance/settings" replace />} />
+          <Route path="/approvals" element={<Navigate to="/insurance/admin" replace />} />
+          <Route path="/concierge" element={<Navigate to="/insurance/concierge" replace />} />
+          <Route path="/submit-client" element={<Navigate to="/insurance/submit-client" replace />} />
+          <Route path="/loss-runs" element={<Navigate to="/insurance/loss-runs" replace />} />
+          <Route path="/acord/:formId/:submissionId" element={<Navigate to="/insurance/hub" replace />} />
+          <Route path="/acord/:formId" element={<Navigate to="/insurance/hub" replace />} />
+          <Route path="/email-callback" element={<Navigate to="/insurance/email-callback" replace />} />
+
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

@@ -80,17 +80,17 @@ export function AppLayout({ children, onLogoClick }: { children: React.ReactNode
                 >
                   <item.icon className="h-3.5 w-3.5" />
                   {item.label}
-                  {item.to === "/email" && emailCount > 0 && (
+                  {item.to === "/insurance/email" && emailCount > 0 && (
                     <span className="absolute -top-1 -right-1 h-4 min-w-[16px] px-1 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center">
                       {emailCount > 99 ? "99+" : emailCount}
                     </span>
                   )}
-                  {item.to === "/pulse" && pulseCount > 0 && (
+                  {item.to === "/insurance/pulse" && pulseCount > 0 && (
                     <span className="absolute -top-1 -right-1 h-4 min-w-[16px] px-1 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center">
                       {pulseCount > 99 ? "99+" : pulseCount}
                     </span>
                   )}
-                  {item.to === "/loss-runs" && lossRunReminderCount > 0 && (
+                  {item.to === "/insurance/loss-runs" && lossRunReminderCount > 0 && (
                     <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-destructive" />
                   )}
                 </Button>
