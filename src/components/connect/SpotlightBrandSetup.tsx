@@ -254,9 +254,12 @@ export default function SpotlightBrandSetup({ existing, onSave, onCancel }: Prop
           industry: industry || null,
           tone,
           is_default: !existing ? true : existing.is_default,
-          // Extra design intelligence persisted for future generation
           font_styles: fontStyles.length > 0 ? fontStyles : undefined,
           design_notes: designNotes.trim() || undefined,
+          website_url: websiteUrl.trim() || null,
+          facebook_url: facebookUrl.trim() || null,
+          instagram_url: instagramUrl.trim() || null,
+          scraped_summary: scrapedData.trim() || undefined,
         },
       });
       if (error) throw error;
