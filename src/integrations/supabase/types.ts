@@ -1114,6 +1114,47 @@ export type Database = {
           },
         ]
       }
+      contact_social_profiles: {
+        Row: {
+          canonical_person_id: string | null
+          created_at: string | null
+          id: string
+          last_synced_at: string | null
+          platform: string
+          profile_url: string | null
+          username: string | null
+          verified: boolean | null
+        }
+        Insert: {
+          canonical_person_id?: string | null
+          created_at?: string | null
+          id?: string
+          last_synced_at?: string | null
+          platform: string
+          profile_url?: string | null
+          username?: string | null
+          verified?: boolean | null
+        }
+        Update: {
+          canonical_person_id?: string | null
+          created_at?: string | null
+          id?: string
+          last_synced_at?: string | null
+          platform?: string
+          profile_url?: string | null
+          username?: string | null
+          verified?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contact_social_profiles_canonical_person_id_fkey"
+            columns: ["canonical_person_id"]
+            isOneToOne: false
+            referencedRelation: "canonical_persons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       custom_form_templates: {
         Row: {
           created_at: string
@@ -1343,6 +1384,98 @@ export type Database = {
         }
         Relationships: []
       }
+      email_discovered_contacts: {
+        Row: {
+          created_at: string | null
+          display_name: string | null
+          domain: string | null
+          email_address: string
+          email_frequency: number | null
+          enrichment_data: Json | null
+          enrichment_status: string
+          first_name: string | null
+          first_seen_at: string | null
+          hunter_company: string | null
+          hunter_confidence: number | null
+          hunter_linkedin_url: string | null
+          hunter_phone: string | null
+          hunter_position: string | null
+          hunter_twitter_url: string | null
+          hunter_verified: boolean | null
+          id: string
+          last_name: string | null
+          last_seen_at: string | null
+          linked_canonical_id: string | null
+          matches_ideal_profile: boolean | null
+          prospect_score: number | null
+          seen_in_threads_with: Json | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          display_name?: string | null
+          domain?: string | null
+          email_address: string
+          email_frequency?: number | null
+          enrichment_data?: Json | null
+          enrichment_status?: string
+          first_name?: string | null
+          first_seen_at?: string | null
+          hunter_company?: string | null
+          hunter_confidence?: number | null
+          hunter_linkedin_url?: string | null
+          hunter_phone?: string | null
+          hunter_position?: string | null
+          hunter_twitter_url?: string | null
+          hunter_verified?: boolean | null
+          id?: string
+          last_name?: string | null
+          last_seen_at?: string | null
+          linked_canonical_id?: string | null
+          matches_ideal_profile?: boolean | null
+          prospect_score?: number | null
+          seen_in_threads_with?: Json | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          display_name?: string | null
+          domain?: string | null
+          email_address?: string
+          email_frequency?: number | null
+          enrichment_data?: Json | null
+          enrichment_status?: string
+          first_name?: string | null
+          first_seen_at?: string | null
+          hunter_company?: string | null
+          hunter_confidence?: number | null
+          hunter_linkedin_url?: string | null
+          hunter_phone?: string | null
+          hunter_position?: string | null
+          hunter_twitter_url?: string | null
+          hunter_verified?: boolean | null
+          id?: string
+          last_name?: string | null
+          last_seen_at?: string | null
+          linked_canonical_id?: string | null
+          matches_ideal_profile?: boolean | null
+          prospect_score?: number | null
+          seen_in_threads_with?: Json | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_discovered_contacts_linked_canonical_id_fkey"
+            columns: ["linked_canonical_id"]
+            isOneToOne: false
+            referencedRelation: "canonical_persons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_drafts: {
         Row: {
           body_html: string
@@ -1524,6 +1657,60 @@ export type Database = {
           },
         ]
       }
+      enrichment_api_logs: {
+        Row: {
+          created_at: string | null
+          credits_consumed: number | null
+          email_discovered_contact_id: string | null
+          endpoint: string | null
+          error_message: string | null
+          feeder_list_id: string | null
+          id: string
+          provider: string
+          response_status: number | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          credits_consumed?: number | null
+          email_discovered_contact_id?: string | null
+          endpoint?: string | null
+          error_message?: string | null
+          feeder_list_id?: string | null
+          id?: string
+          provider: string
+          response_status?: number | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          credits_consumed?: number | null
+          email_discovered_contact_id?: string | null
+          endpoint?: string | null
+          error_message?: string | null
+          feeder_list_id?: string | null
+          id?: string
+          provider?: string
+          response_status?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "enrichment_api_logs_email_discovered_contact_id_fkey"
+            columns: ["email_discovered_contact_id"]
+            isOneToOne: false
+            referencedRelation: "email_discovered_contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enrichment_api_logs_feeder_list_id_fkey"
+            columns: ["feeder_list_id"]
+            isOneToOne: false
+            referencedRelation: "feeder_lists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       external_calendars: {
         Row: {
           access_token: string
@@ -1639,6 +1826,133 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      feeder_list_prospects: {
+        Row: {
+          avatar_url: string | null
+          company: string | null
+          connection_type: string | null
+          created_at: string | null
+          email: string | null
+          enrichment_data: Json | null
+          facebook_url: string | null
+          feeder_list_id: string
+          first_name: string | null
+          id: string
+          instagram_url: string | null
+          is_mutual_with_producer: boolean | null
+          last_name: string | null
+          life_event_signals: Json | null
+          linkedin_url: string | null
+          location: string | null
+          name: string
+          occupation: string | null
+          phone: string | null
+          prospect_score: number | null
+          relationship_to_client: string | null
+          status: string
+          suggested_talking_point: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          company?: string | null
+          connection_type?: string | null
+          created_at?: string | null
+          email?: string | null
+          enrichment_data?: Json | null
+          facebook_url?: string | null
+          feeder_list_id: string
+          first_name?: string | null
+          id?: string
+          instagram_url?: string | null
+          is_mutual_with_producer?: boolean | null
+          last_name?: string | null
+          life_event_signals?: Json | null
+          linkedin_url?: string | null
+          location?: string | null
+          name: string
+          occupation?: string | null
+          phone?: string | null
+          prospect_score?: number | null
+          relationship_to_client?: string | null
+          status?: string
+          suggested_talking_point?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          company?: string | null
+          connection_type?: string | null
+          created_at?: string | null
+          email?: string | null
+          enrichment_data?: Json | null
+          facebook_url?: string | null
+          feeder_list_id?: string
+          first_name?: string | null
+          id?: string
+          instagram_url?: string | null
+          is_mutual_with_producer?: boolean | null
+          last_name?: string | null
+          life_event_signals?: Json | null
+          linkedin_url?: string | null
+          location?: string | null
+          name?: string
+          occupation?: string | null
+          phone?: string | null
+          prospect_score?: number | null
+          relationship_to_client?: string | null
+          status?: string
+          suggested_talking_point?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feeder_list_prospects_feeder_list_id_fkey"
+            columns: ["feeder_list_id"]
+            isOneToOne: false
+            referencedRelation: "feeder_lists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      feeder_lists: {
+        Row: {
+          client_canonical_id: string | null
+          client_name: string | null
+          generated_at: string | null
+          id: string
+          meeting_date: string | null
+          producer_id: string
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          client_canonical_id?: string | null
+          client_name?: string | null
+          generated_at?: string | null
+          id?: string
+          meeting_date?: string | null
+          producer_id: string
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          client_canonical_id?: string | null
+          client_name?: string | null
+          generated_at?: string | null
+          id?: string
+          meeting_date?: string | null
+          producer_id?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feeder_lists_client_canonical_id_fkey"
+            columns: ["client_canonical_id"]
+            isOneToOne: false
+            referencedRelation: "canonical_persons"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       field_overrides: {
         Row: {
@@ -2853,6 +3167,57 @@ export type Database = {
         }
         Relationships: []
       }
+      prospect_profiles: {
+        Row: {
+          age_range_max: number | null
+          age_range_min: number | null
+          connection_depth: number | null
+          created_at: string | null
+          exclude_existing_contacts: boolean | null
+          id: string
+          income_bracket: string | null
+          industry_preferences: string[] | null
+          is_default: boolean | null
+          life_event_triggers: Json | null
+          location_radius_miles: number | null
+          name: string
+          producer_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          age_range_max?: number | null
+          age_range_min?: number | null
+          connection_depth?: number | null
+          created_at?: string | null
+          exclude_existing_contacts?: boolean | null
+          id?: string
+          income_bracket?: string | null
+          industry_preferences?: string[] | null
+          is_default?: boolean | null
+          life_event_triggers?: Json | null
+          location_radius_miles?: number | null
+          name?: string
+          producer_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          age_range_max?: number | null
+          age_range_min?: number | null
+          connection_depth?: number | null
+          created_at?: string | null
+          exclude_existing_contacts?: boolean | null
+          id?: string
+          income_bracket?: string | null
+          industry_preferences?: string[] | null
+          is_default?: boolean | null
+          life_event_triggers?: Json | null
+          location_radius_miles?: number | null
+          name?: string
+          producer_id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       quote_documents: {
         Row: {
           created_at: string
@@ -3295,6 +3660,45 @@ export type Database = {
           id?: string
           user_id?: string
           verified?: boolean
+        }
+        Relationships: []
+      }
+      user_consent_records: {
+        Row: {
+          accepted: boolean
+          accepted_at: string | null
+          consent_type: string
+          consent_version: string
+          created_at: string | null
+          id: string
+          ip_address: string | null
+          revoked_at: string | null
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          accepted: boolean
+          accepted_at?: string | null
+          consent_type: string
+          consent_version?: string
+          created_at?: string | null
+          id?: string
+          ip_address?: string | null
+          revoked_at?: string | null
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          accepted?: boolean
+          accepted_at?: string | null
+          consent_type?: string
+          consent_version?: string
+          created_at?: string | null
+          id?: string
+          ip_address?: string | null
+          revoked_at?: string | null
+          user_agent?: string | null
+          user_id?: string
         }
         Relationships: []
       }
