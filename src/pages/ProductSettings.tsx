@@ -367,6 +367,50 @@ export default function ProductSettings() {
             />
           </div>
         </div>
+
+        {/* Mobile Navigation */}
+        <div className={sectionStyle}>
+          <div className="flex items-center gap-3 mb-2">
+            <Smartphone className="h-4 w-4 text-white/30" />
+            <h2 className={headingStyle}>Mobile Navigation</h2>
+          </div>
+          <p className="text-xs text-white/40">
+            Choose which tabs appear in the bottom navigation bar on mobile. Unchecked tabs will be accessible via the "More" menu.
+          </p>
+          <div className="space-y-2">
+            {ALL_CONNECT_TABS.map(tab => {
+              const isChecked = navConfig.visibleTabIds.includes(tab.id);
+              return (
+                <label
+                  key={tab.id}
+                  className="flex items-center gap-3 rounded-lg border border-white/5 p-3 cursor-pointer hover:bg-white/[0.02] transition-colors"
+                >
+                  <Checkbox
+                    checked={isChecked}
+                    onCheckedChange={(checked) => {
+                      const newIds = checked
+                        ? [...navConfig.visibleTabIds, tab.id]
+                        : navConfig.visibleTabIds.filter(id => id !== tab.id);
+                      if (newIds.length < 2) {
+                        toast.error("You must keep at least 2 tabs visible");
+                        return;
+                      }
+                      if (newIds.length > 5) {
+                        toast.error("Maximum 5 tabs in the nav bar");
+                        return;
+                      }
+                      setNavConfig({ visibleTabIds: newIds });
+                      toast.success("Navigation updated");
+                    }}
+                    className="border-white/20 data-[state=checked]:bg-[hsl(140,12%,42%)] data-[state=checked]:border-[hsl(140,12%,42%)]"
+                  />
+                  <span className="text-sm text-white/70">{tab.label}</span>
+                </label>
+              );
+            })}
+          </div>
+          <p className="text-[11px] text-white/20">Minimum 2, maximum 5 tabs. Remaining tabs appear under "More".</p>
+        </div>
       </div>
     </ProductLayout>
   );
