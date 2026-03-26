@@ -188,11 +188,11 @@ export default function BrandKit() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {PRODUCTS.map(p => (
               <Card key={p.name} className="overflow-hidden">
-                <div className="h-3" style={{ background: "hsl(140 12% 42%)" }} />
+                <div className="h-3" style={{ background: p.name === "AuRa Studio" ? "hsl(25 95% 53%)" : "hsl(140 12% 42%)" }} />
                 <CardContent className="pt-5 space-y-3">
                   <div>
                     <h3 className="text-lg font-bold">{p.name}</h3>
-                    <p className="text-sm italic" style={{ color: "hsl(140 12% 55%)" }}>{p.tagline}</p>
+                    <p className="text-sm italic" style={{ color: p.name === "AuRa Studio" ? "hsl(25 95% 53%)" : "hsl(140 12% 55%)" }}>{p.tagline}</p>
                   </div>
                   <p className="text-sm text-muted-foreground">{p.description}</p>
                   <Button variant="outline" size="sm" className="text-xs" onClick={() => window.open(p.route, "_blank")}>
