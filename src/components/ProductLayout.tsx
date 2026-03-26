@@ -193,20 +193,7 @@ export function ProductLayout({
         </main>
 
         {/* Mobile bottom nav */}
-        <nav className="md:hidden flex items-stretch justify-around border-t border-white/5 bg-[#0c0c0e] safe-area-bottom">
-          {CONNECT_NAV.slice(0, 5).map((item) => (
-            <Link
-              key={item.to}
-              to={item.to}
-              className={`flex flex-col items-center justify-center gap-0.5 py-2 px-1 min-w-[56px] min-h-[52px] transition-colors ${
-                isActive(item.to, item.exact) ? "text-white" : "text-white/30"
-              }`}
-            >
-              <item.icon className="h-5 w-5" />
-              <span className="text-[10px] font-medium">{item.label}</span>
-            </Link>
-          ))}
-        </nav>
+        <MobileConnectNav isActive={isActive} />
       </div>
     </div>
   );
