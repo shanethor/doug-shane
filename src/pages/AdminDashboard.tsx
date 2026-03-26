@@ -22,6 +22,7 @@ import AdminPartnerReferrals from "@/components/AdminPartnerReferrals";
 import AdminAgencySection from "@/components/AdminAgencySection";
 import AdminPartnerRequests from "@/components/AdminPartnerRequests2";
 import AdminConciergeQueue from "@/components/AdminConciergeQueue";
+import AdminSupportTickets from "@/components/AdminSupportTickets";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
 import { toast } from "sonner";
@@ -286,6 +287,7 @@ export default function AdminDashboard() {
             <TabsTrigger value="log-access" className="gap-1.5 text-xs"><ScrollText className="h-3.5 w-3.5" />Log Access</TabsTrigger>
             <TabsTrigger value="user-features" className="gap-1.5 text-xs"><Network className="h-3.5 w-3.5" />Features</TabsTrigger>
             <TabsTrigger value="concierge" className="gap-1.5 text-xs"><Sparkles className="h-3.5 w-3.5" />Concierge</TabsTrigger>
+            <TabsTrigger value="support" className="gap-1.5 text-xs"><Lightbulb className="h-3.5 w-3.5" />Support</TabsTrigger>
             <TabsTrigger value="bookings" className="gap-1.5 text-xs"><CalendarDays className="h-3.5 w-3.5" />Bookings</TabsTrigger>
           </TabsList>
         </div>
@@ -855,6 +857,11 @@ export default function AdminDashboard() {
         {/* ── Concierge Queue ── */}
         <TabsContent value="concierge" className="space-y-6">
           <AdminConciergeQueue profileMap={profileNameMap} />
+        </TabsContent>
+
+        {/* ── Support Tickets ── */}
+        <TabsContent value="support" className="space-y-6">
+          <AdminSupportTickets profiles={profiles} />
         </TabsContent>
 
         {/* ── Bookings ── */}

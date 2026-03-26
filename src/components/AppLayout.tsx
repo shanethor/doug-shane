@@ -12,6 +12,7 @@ import { useTrainingMode } from "@/hooks/useTrainingMode";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { NavScoreboard } from "@/components/NavScoreboard";
 import { AILogPanel } from "@/components/AILogPanel";
+import { SageFloatingChat } from "@/components/SageFloatingChat";
 import { useEffect } from "react";
 
 export function AppLayout({ children, onLogoClick }: { children: React.ReactNode; onLogoClick?: () => void }) {
@@ -138,6 +139,7 @@ export function AppLayout({ children, onLogoClick }: { children: React.ReactNode
       {/* Mobile bottom tab bar */}
       <MobileBottomNav />
       <AILogPanel />
+      <SageFloatingChat />
     </div>
   );
 }
