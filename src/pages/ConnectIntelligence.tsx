@@ -234,7 +234,7 @@ function EmailIntelligencePage() {
         </Card>
       ) : (
         <div className="grid gap-2">
-          {filtered.map(c => (
+          {displayList.map(c => (
             <Card key={c.id} className="border-border/50">
               <CardContent className="py-3 px-4">
                 <div className="flex items-start gap-3">
