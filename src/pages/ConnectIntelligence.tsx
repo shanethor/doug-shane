@@ -148,9 +148,38 @@ function EmailIntelligencePage() {
   }
 
   async function saveContact(id: string) {
-    await supabase.from("email_discovered_contacts" as any).update({ status: "saved_to_contacts" }).eq("id", id);
-    setContacts(prev => prev.map(c => c.id === id ? { ...c, status: "saved_to_contacts" } : c));
-    toast.success("Saved to contacts");
+    const contact = contacts.find(c => c.id === id);
+    if (!contact) return;
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { toast.error("Not authenticated"); return; }
+
+      // Create canonical_persons record
+      const { error: insertErr } = await supabase.from("canonical_persons").insert({
+        owner_user_id: user.id,
+        display_name: contact.display_name || `${contact.first_name || ""} ${contact.last_name || ""}`.trim() || null,
+        primary_email: contact.email_address,
+        company: contact.hunter_company || null,
+        title: contact.hunter_position || null,
+        linkedin_url: contact.hunter_linkedin_url || null,
+        primary_phone: contact.hunter_phone || null,
+        tier: (contact.prospect_score || 0) >= 80 ? "A" : (contact.prospect_score || 0) >= 60 ? "B" : "C",
+        metadata: {
+          source: "email_discovery",
+          prospect_score: contact.prospect_score,
+          hunter_verified: contact.hunter_verified,
+          email_frequency: contact.email_frequency,
+        },
+      });
+      if (insertErr) throw insertErr;
+
+      // Update discovered contact status and link
+      await supabase.from("email_discovered_contacts" as any).update({ status: "saved_to_contacts" }).eq("id", id);
+      setContacts(prev => prev.map(c => c.id === id ? { ...c, status: "saved_to_contacts" } : c));
+      toast.success("Saved to contacts");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to save contact");
+    }
   }
 
   const filtered = contacts.filter(c => {
