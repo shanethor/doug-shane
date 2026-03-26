@@ -9,12 +9,30 @@ import { supabase } from "@/integrations/supabase/client";
 interface GraphNode {
   id: string;
   name: string;
-  type: "producer" | "client" | "prospect" | "contact";
+  type: "producer" | "client" | "prospect" | "contact" | "company";
   company?: string;
   score?: number;
   email?: string;
   linkedin?: string;
   phone?: string;
+}
+
+// Heuristic: detect if a name looks like a company/business rather than a person
+function looksLikeCompany(name: string, email?: string): boolean {
+  if (!name) return false;
+  const lower = name.toLowerCase();
+  // Common business suffixes/keywords
+  const bizPatterns = [
+    /\b(inc|llc|ltd|corp|co|team|group|systems?|solutions?|services?|agency|airlines?|media|labs?|studio|foundation|association|club)\b/i,
+    /\b(newsletter|updates?|digest|weekly|daily|finds|deals|alerts?)\b/i,
+    /@/,  // email addresses used as names
+  ];
+  if (bizPatterns.some(p => p.test(lower))) return true;
+  // noreply / no-reply / apps- style emails
+  if (email && /^(noreply|no-reply|apps-|info@|support@|hello@|team@|admin@|sales@|marketing@)/i.test(email)) return true;
+  // Names with no space likely aren't real people (single word like "ESPN", "Adobe")
+  if (!name.includes(" ") && name.length > 2 && /^[A-Z]/.test(name)) return true;
+  return false;
 }
 
 interface GraphLink {
