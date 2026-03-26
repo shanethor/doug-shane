@@ -199,8 +199,9 @@ function EmailIntelligencePage() {
   );
 }
 
-// ─── Connection Manager ───
+// ─── Connection Manager with Direct Linking ───
 function ConnectionManagerPage() {
+  const { user } = useAuth();
   const [connections, setConnections] = useState<ConnectedAccount[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -216,6 +217,12 @@ function ConnectionManagerPage() {
     setLoading(false);
   }
 
+  function startOAuth(provider: string) {
+    const base = import.meta.env.VITE_SUPABASE_URL;
+    const redirect = `${window.location.origin}/email/callback`;
+    window.location.href = `${base}/functions/v1/email-oauth?action=authorize&provider=${provider}&redirect_uri=${encodeURIComponent(redirect)}`;
+  }
+
   const providerIcon = (provider: string) => {
     if (provider.includes("google") || provider.includes("gmail")) return <Mail className="h-4 w-4 text-red-400" />;
     if (provider.includes("microsoft") || provider.includes("outlook")) return <Mail className="h-4 w-4 text-blue-400" />;
@@ -224,73 +231,106 @@ function ConnectionManagerPage() {
     return <Globe className="h-4 w-4 text-muted-foreground" />;
   };
 
+  const LINKABLE_SOURCES = [
+    { provider: "google", label: "Gmail / Google", desc: "Email, Contacts, Calendar", icon: <Mail className="h-5 w-5 text-red-400" />, action: () => startOAuth("google") },
+    { provider: "microsoft", label: "Outlook / Microsoft", desc: "Email, Contacts, Calendar", icon: <Mail className="h-5 w-5 text-blue-400" />, action: () => startOAuth("microsoft") },
+    { provider: "linkedin", label: "LinkedIn", desc: "Professional network contacts", icon: <Linkedin className="h-5 w-5 text-blue-500" />, action: null },
+    { provider: "facebook", label: "Facebook", desc: "Social connections & pages", icon: <Facebook className="h-5 w-5 text-blue-600" />, action: null },
+    { provider: "phone", label: "Phone / Apple Contacts", desc: "Import contacts from your phone or iCloud", icon: <Phone className="h-5 w-5 text-green-400" />, action: null },
+  ];
+
+  const connectedProviders = new Set(connections.filter(c => c.is_active).map(c => c.provider));
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div>
         <h2 className="text-lg font-bold flex items-center gap-2">
           <Database className="h-5 w-5 text-primary" />
-          Connection Manager
+          Data Sources
         </h2>
-        <p className="text-xs text-muted-foreground">Manage all connected accounts powering your network intelligence.</p>
+        <p className="text-xs text-muted-foreground">Link accounts to expand your network intelligence and reach more connections.</p>
       </div>
 
-      {loading ? (
-        <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin" /></div>
-      ) : connections.length === 0 ? (
+      {/* Link New Accounts */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Link an Account</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {LINKABLE_SOURCES.map(source => {
+            const isConnected = connectedProviders.has(source.provider);
+            return (
+              <div key={source.provider} className="flex items-center justify-between py-3 border-b last:border-0">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-lg bg-muted/30 flex items-center justify-center shrink-0">{source.icon}</div>
+                  <div>
+                    <p className="font-medium text-sm">{source.label}</p>
+                    <p className="text-[11px] text-muted-foreground">{source.desc}</p>
+                  </div>
+                </div>
+                {isConnected ? (
+                  <Badge variant="outline" className="text-[10px] text-green-500 border-green-500/30 gap-0.5"><CheckCircle className="h-2.5 w-2.5" /> Connected</Badge>
+                ) : source.action ? (
+                  <Button size="sm" className="h-8 text-xs gap-1" onClick={source.action}>
+                    <Plus className="h-3 w-3" /> Connect
+                  </Button>
+                ) : (
+                  <Badge variant="secondary" className="text-[10px]">Coming Soon</Badge>
+                )}
+              </div>
+            );
+          })}
+        </CardContent>
+      </Card>
+
+      {/* Active Connections */}
+      {connections.length > 0 && (
         <Card>
-          <CardContent className="py-12 text-center">
-            <Wifi className="h-8 w-8 mx-auto text-muted-foreground mb-3" />
-            <p className="font-medium">No accounts connected</p>
-            <p className="text-sm text-muted-foreground mt-1">Connect your email to start discovering contacts and building your network intelligence.</p>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Active Connections</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {connections.map(conn => (
+              <div key={conn.id} className="flex items-center gap-4 py-2 border-b last:border-0">
+                <div className="h-10 w-10 rounded-lg bg-muted/30 flex items-center justify-center shrink-0">
+                  {providerIcon(conn.provider)}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium text-sm">{conn.email_address}</p>
+                    {conn.is_active ? (
+                      <Badge variant="outline" className="text-[10px] text-green-500 border-green-500/30 gap-0.5"><Wifi className="h-2.5 w-2.5" /> Active</Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-[10px] text-destructive border-destructive/30 gap-0.5"><WifiOff className="h-2.5 w-2.5" /> Inactive</Badge>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground capitalize">{conn.provider} · Last synced {new Date(conn.updated_at).toLocaleDateString()}</p>
+                </div>
+              </div>
+            ))}
           </CardContent>
         </Card>
-      ) : (
-        <div className="grid gap-3">
-          {connections.map(conn => (
-            <Card key={conn.id}>
-              <CardContent className="py-4 px-4">
-                <div className="flex items-center gap-4">
-                  <div className="h-10 w-10 rounded-lg bg-muted/30 flex items-center justify-center shrink-0">
-                    {providerIcon(conn.provider)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="font-medium text-sm">{conn.email_address}</p>
-                      {conn.is_active ? (
-                        <Badge variant="outline" className="text-[10px] text-green-500 border-green-500/30 gap-0.5"><Wifi className="h-2.5 w-2.5" /> Active</Badge>
-                      ) : (
-                        <Badge variant="outline" className="text-[10px] text-destructive border-destructive/30 gap-0.5"><WifiOff className="h-2.5 w-2.5" /> Inactive</Badge>
-                      )}
-                    </div>
-                    <p className="text-xs text-muted-foreground capitalize">{conn.provider} · Last synced {new Date(conn.updated_at).toLocaleDateString()}</p>
-                  </div>
-                  <Button variant="outline" size="sm" className="h-7 text-xs">{conn.is_active ? "Disconnect" : "Reconnect"}</Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-
-          {/* Data source status cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-2">
-            {[
-              { label: "People Data Labs", status: "active", icon: Users },
-              { label: "Apollo.io", status: "active", icon: Search },
-              { label: "Hunter.io", status: "active", icon: Mail },
-              { label: "Data365", status: "pending", icon: Globe },
-            ].map(source => (
-              <Card key={source.label}>
-                <CardContent className="py-3 px-3 text-center">
-                  <source.icon className="h-4 w-4 mx-auto text-muted-foreground mb-1" />
-                  <p className="text-[10px] font-medium">{source.label}</p>
-                  <Badge variant={source.status === "active" ? "default" : "secondary"} className="text-[9px] mt-1">
-                    {source.status === "active" ? "✓ Connected" : "⏳ Pending"}
-                  </Badge>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
       )}
+
+      {/* Enrichment API Status */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+        {[
+          { label: "People Data Labs", status: "active", icon: Users },
+          { label: "Apollo.io", status: "active", icon: Search },
+          { label: "Hunter.io", status: "active", icon: Mail },
+          { label: "Data365", status: "pending", icon: Globe },
+        ].map(source => (
+          <Card key={source.label}>
+            <CardContent className="py-3 px-3 text-center">
+              <source.icon className="h-4 w-4 mx-auto text-muted-foreground mb-1" />
+              <p className="text-[10px] font-medium">{source.label}</p>
+              <Badge variant={source.status === "active" ? "default" : "secondary"} className="text-[9px] mt-1">
+                {source.status === "active" ? "✓ Connected" : "⏳ Pending"}
+              </Badge>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
     </div>
   );
 }
