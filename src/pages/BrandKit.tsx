@@ -13,16 +13,15 @@ const AuraLogo = ({ size = 80 }: { size?: number }) => (
 );
 
 const COLORS = [
-  { name: "Sage (Primary)", hsl: "hsl(140, 12%, 42%)", hex: "#5F7A61", usage: "Logo, primary buttons, accents, links" },
+  { name: "Sage (Primary)", hsl: "hsl(140, 12%, 42%)", hex: "#5F7A61", usage: "AuRa Connect logo, primary buttons, accents, links" },
   { name: "Sage Light", hsl: "hsl(140, 12%, 58%)", hex: "#8A9A8C", usage: "Hover states, secondary text, shimmer" },
   { name: "Sage Subtle", hsl: "hsl(140, 12%, 55%)", hex: "#7F9181", usage: "Credit/reward callouts, subtle highlights" },
+  { name: "Studio Orange", hsl: "hsl(25, 95%, 53%)", hex: "#F97316", usage: "AuRa Studio logo, Studio accents, CTA highlights" },
+  { name: "Studio Amber", hsl: "hsl(38, 92%, 50%)", hex: "#F59E0B", usage: "Studio hover states, secondary Studio accents" },
   { name: "Dark Background", hsl: "hsl(240, 10%, 4%)", hex: "#08080A", usage: "App dark mode background" },
   { name: "Card Dark", hsl: "hsl(240, 8%, 7%)", hex: "#101014", usage: "Cards and panels in dark mode" },
   { name: "Border Dark", hsl: "hsl(240, 6%, 14%)", hex: "#212126", usage: "Borders, dividers in dark mode" },
   { name: "Muted Text", hsl: "hsl(240, 5%, 46%)", hex: "#706F77", usage: "Secondary/muted text" },
-  { name: "Light Background", hsl: "hsl(220, 25%, 97%)", hex: "#F5F6FA", usage: "App light mode background" },
-  { name: "Navy Primary (Light)", hsl: "hsl(220, 55%, 22%)", hex: "#1A2D56", usage: "Primary in light mode" },
-  { name: "Teal Primary (Dark)", hsl: "hsl(174, 97%, 22%)", hex: "#026D6F", usage: "Primary in dark mode" },
 ];
 
 const TYPOGRAPHY = [
@@ -189,11 +188,11 @@ export default function BrandKit() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {PRODUCTS.map(p => (
               <Card key={p.name} className="overflow-hidden">
-                <div className="h-3" style={{ background: "hsl(140 12% 42%)" }} />
+                <div className="h-3" style={{ background: p.name === "AuRa Studio" ? "hsl(25 95% 53%)" : "hsl(140 12% 42%)" }} />
                 <CardContent className="pt-5 space-y-3">
                   <div>
                     <h3 className="text-lg font-bold">{p.name}</h3>
-                    <p className="text-sm italic" style={{ color: "hsl(140 12% 55%)" }}>{p.tagline}</p>
+                    <p className="text-sm italic" style={{ color: p.name === "AuRa Studio" ? "hsl(25 95% 53%)" : "hsl(140 12% 55%)" }}>{p.tagline}</p>
                   </div>
                   <p className="text-sm text-muted-foreground">{p.description}</p>
                   <Button variant="outline" size="sm" className="text-xs" onClick={() => window.open(p.route, "_blank")}>
