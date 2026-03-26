@@ -176,6 +176,7 @@ export default function RelationshipMap() {
       client: "#22c55e",
       prospect: "#f59e0b",
       contact: "#8b5cf6",
+      company: "#f97316",
     };
 
     const sizeMap: Record<string, number> = {
@@ -183,6 +184,7 @@ export default function RelationshipMap() {
       client: 14,
       prospect: 12,
       contact: 10,
+      company: 16,
     };
 
     // Force simulation
