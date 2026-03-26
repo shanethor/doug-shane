@@ -21,6 +21,9 @@ export interface BrandPackage {
   industry: string | null;
   tone: string;
   is_default: boolean;
+  website_url?: string | null;
+  facebook_url?: string | null;
+  instagram_url?: string | null;
 }
 
 interface Props {
