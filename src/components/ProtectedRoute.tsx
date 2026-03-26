@@ -101,7 +101,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
       // The role system assigns roles on admin approval, so having a role = approved for full
       // But if their agency doesn't have full_site_access, restrict them
       // Only restrict if no full_site_access on agency
-      return <Navigate to="/connect" replace />;
+      return <Navigate to="/insurance/connect" replace />;
     }
   }
 
