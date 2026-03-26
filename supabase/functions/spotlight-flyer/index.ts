@@ -198,7 +198,7 @@ async function enrichDemoInput(body: Record<string, unknown>) {
   }
 }
 
-function buildStructuredPrompt(flyer: any): string {
+function buildStructuredPrompt(flyer: any, brandMeta?: Record<string, unknown>): string {
   const parts: string[] = [];
   const styleMap: Record<string, string> = {
     event: "clean, professional",
@@ -229,6 +229,18 @@ function buildStructuredPrompt(flyer: any): string {
   }
 
   if (flyer.cta) parts.push(`Call to action: "${flyer.cta}".`);
+
+  // Inject scraped brand intelligence from company URLs
+  const meta = brandMeta || {};
+  if (meta.scraped_summary) {
+    parts.push(`\nBRAND CONTEXT (from company website/social media — use this to inform imagery, style, and copy):\n${String(meta.scraped_summary).slice(0, 800)}`);
+  }
+  if (meta.design_notes) {
+    parts.push(`Design notes from brand analysis: ${String(meta.design_notes).slice(0, 400)}`);
+  }
+  if (Array.isArray(meta.font_styles) && meta.font_styles.length > 0) {
+    parts.push(`Preferred font styles: ${(meta.font_styles as string[]).join(", ")}.`);
+  }
 
   parts.push(
     `Design style: ${style}, suitable for print and social media.`,
