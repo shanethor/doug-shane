@@ -106,8 +106,10 @@ export default function RelationshipMap() {
 
       for (const d of (discovered || []) as any[]) {
         if (nodeIds.has(d.id)) continue;
+        const name = d.display_name || d.email_address;
+        const isCompany = looksLikeCompany(name, d.email_address);
         nodes.push({
-          id: d.id, name: d.display_name || d.email_address, type: "contact",
+          id: d.id, name, type: isCompany ? "company" : "contact",
           company: d.hunter_company || undefined, score: d.prospect_score || undefined,
           email: d.email_address, linkedin: d.hunter_linkedin_url || undefined,
           phone: d.hunter_phone || undefined,
