@@ -159,7 +159,7 @@ export default function ConnectProduct() {
             {page === "intelligence" && <ConnectIntelligencePage />}
             {page === "pipeline" && <DemoPipelineTab />}
             {page === "email" && <DemoEmailTab />}
-            {page === "calendar" && <DemoCalendarTab />}
+            {page === "calendar" && <SmartCalendar />}
             {page === "create" && <DemoSpotlightTab />}
             {page === "sage" && <DemoAssistantTab onNavigate={handleSageNavigate} />}
           </div>
