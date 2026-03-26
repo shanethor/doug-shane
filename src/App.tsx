@@ -65,6 +65,7 @@ import ProductAuth from "./pages/ProductAuth";
 import ConnectProduct from "./pages/ConnectProduct";
 import StudioProduct from "./pages/StudioProduct";
 import ProductSettings from "./pages/ProductSettings";
+import PostCheckoutOnboard from "./pages/PostCheckoutOnboard";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserRole } from "@/hooks/useUserRole";
