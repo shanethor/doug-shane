@@ -720,7 +720,11 @@ export default function ConnectDemoAuth() {
                 <div className="rounded-lg border-2 p-4 space-y-3" style={{ borderColor: "hsl(140 12% 42%)", background: "hsl(140 12% 42% / 0.05)" }}>
                   <div className="flex items-center justify-between">
                     <span className="font-semibold text-white">AuRa Connect Pro</span>
-                    <span className="text-lg font-bold" style={{ color: "hsl(140 12% 58%)" }}>$250/mo</span>
+                    <div className="text-right">
+                      <span className="text-sm line-through" style={{ color: "hsl(240 5% 40%)" }}>$250/mo</span>
+                      <span className="text-lg font-bold ml-2" style={{ color: "hsl(140 12% 58%)" }}>$100/mo</span>
+                      <p className="text-[10px]" style={{ color: "hsl(140 12% 55%)" }}>Intro rate · first 6 months</p>
+                    </div>
                   </div>
                   <div className="space-y-3">
                     <div>
