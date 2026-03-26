@@ -3,9 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Search, ArrowRight, Sparkles, Loader2, X, MapPin, Briefcase, Building2, Users, Signal, Mail, MessageSquare, Phone, Send, Calendar } from "lucide-react";
+import { Search, ArrowRight, Sparkles, Loader2, X, MapPin, Briefcase, Building2, Users, Signal, Mail, MessageSquare, Phone, Send, Calendar, Brain } from "lucide-react";
 import { toast } from "sonner";
 import { ConnectOutreachPopup } from "./ConnectOutreachPopups";
+import MeetingPrepSection from "@/components/connect/MeetingPrepSection";
 
 const DUMMY_PATH_TEMPLATES = [
   {
@@ -862,6 +863,11 @@ export default function DemoConnectTab({ contentReady = true }: { contentReady?:
       {!searching && !result && hasSearched && (
         <div className="text-center py-12 text-sm" style={{ color: "hsl(240 5% 46%)" }}>No results found. Try another name.</div>
       )}
+
+      {/* Meeting Prep — Feeder List Generator embedded in Connect */}
+      <div className="mt-6 px-1">
+        <MeetingPrepSection compact />
+      </div>
     </div>
   );
 }
