@@ -2,7 +2,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import {
   Network, Wrench, Settings, LogOut, LayoutDashboard, BarChart3, Mail,
-  Sparkles, Zap, Calendar, PanelLeftClose, PanelLeft, Lock,
+  Sparkles, Zap, Calendar, PanelLeftClose, PanelLeft, Lock, Brain,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
