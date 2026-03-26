@@ -1,86 +1,173 @@
+import { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { ProductLayout } from "@/components/ProductLayout";
-import { useAuth } from "@/hooks/useAuth";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Users, BarChart3, Mail, Sparkles, Zap, ArrowRight, TrendingUp, Calendar, Network } from "lucide-react";
-import { Link } from "react-router-dom";
+import { useSubscription } from "@/hooks/useSubscription";
+import StudioUpsellModal from "@/components/StudioUpsellModal";
 
-const MODULES = [
-  { icon: Network, label: "Network", desc: "Your relationship intelligence hub", to: "/connect/network", color: "hsl(140,12%,50%)" },
-  { icon: BarChart3, label: "Pipeline", desc: "Manage deals & opportunities", to: "/connect/pipeline", color: "hsl(200,70%,50%)" },
-  { icon: Mail, label: "Email", desc: "AI-powered email management", to: "/connect/email", color: "hsl(260,60%,55%)" },
-  { icon: Calendar, label: "Calendar", desc: "Schedule & meeting management", to: "/connect/calendar", color: "hsl(30,80%,55%)" },
-  { icon: Sparkles, label: "Create", desc: "AI marketing & content studio", to: "/connect/create", color: "hsl(320,60%,55%)" },
-  { icon: Zap, label: "Sage", desc: "Your AI business assistant", to: "/connect/sage", color: "hsl(50,80%,50%)" },
-];
+// Demo tab components (used as production pages)
+import DemoConnectTab from "@/components/connect-demo/DemoConnectTab";
+import DemoPipelineTab from "@/components/connect-demo/DemoPipelineTab";
+import DemoEmailTab from "@/components/connect-demo/DemoEmailTab";
+import DemoCalendarTab from "@/components/connect-demo/DemoCalendarTab";
+import DemoSpotlightTab from "@/components/connect-demo/DemoSpotlightTab";
+import DemoAssistantTab from "@/components/connect-demo/DemoAssistantTab";
+import { useNavigate } from "react-router-dom";
 
-export default function ConnectProduct() {
-  const { user } = useAuth();
-  const firstName = user?.user_metadata?.full_name?.split(" ")[0] || "there";
+// Cinematic intro overlay
+function CinematicIntro({ onComplete }: { onComplete: () => void }) {
+  const [phase, setPhase] = useState(0);
+
+  useEffect(() => {
+    const t0 = setTimeout(() => setPhase(1), 300);
+    const t1 = setTimeout(() => setPhase(2), 4800);
+    const t2 = setTimeout(() => onComplete(), 5800);
+    return () => [t0, t1, t2].forEach(clearTimeout);
+  }, [onComplete]);
+
+  if (phase >= 2) {
+    return (
+      <div className="fixed inset-0 z-[200] pointer-events-none" style={{
+        background: "#08080A",
+        animation: "introFadeOut 1s ease-out forwards",
+      }}>
+        <style>{`@keyframes introFadeOut { 0% { opacity: 1; } 100% { opacity: 0; } }`}</style>
+      </div>
+    );
+  }
 
   return (
-    <ProductLayout product="connect">
-      <div className="max-w-5xl mx-auto px-4 md:px-8 py-8 space-y-8">
-        {/* Welcome header */}
-        <div>
-          <h1 className="text-2xl font-light tracking-tight text-white/90">
-            Welcome back, {firstName}
-          </h1>
-          <p className="text-sm text-white/40 mt-1">Your AuRa Connect dashboard</p>
-        </div>
+    <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center" style={{ background: "#08080A" }}>
+      <div className="absolute w-[400px] h-[400px] rounded-full pointer-events-none" style={{
+        background: "radial-gradient(circle, hsl(140 12% 42% / 0.12) 0%, transparent 70%)",
+        opacity: phase >= 1 ? 1 : 0,
+        transition: "opacity 1.5s ease-out",
+      }} />
+      <div style={{
+        opacity: phase >= 1 ? 1 : 0,
+        transform: phase >= 1 ? "scale(1)" : "scale(0.6)",
+        transition: "all 1.2s cubic-bezier(0.16, 1, 0.3, 1)",
+      }}>
+        <svg width={80} height={80} viewBox="0 0 100 100" fill="none">
+          <rect width="100" height="100" rx="22" fill="hsl(140 12% 42%)" />
+          <path d="M50 18L74 82H62.5L58 70H42L37.5 82H26L50 18Z" fill="#08080A" />
+          <rect x="39" y="62" width="22" height="5.5" rx="2.75" fill="hsl(140 12% 42%)" />
+        </svg>
+      </div>
+      <h1 className="text-3xl font-bold text-white mt-5" style={{
+        opacity: phase >= 1 ? 1 : 0,
+        transform: phase >= 1 ? "translateY(0)" : "translateY(20px)",
+        transition: "all 1s cubic-bezier(0.16, 1, 0.3, 1) 0.4s",
+      }}>AuRa Connect</h1>
+      <p className="text-sm mt-2" style={{
+        color: "hsl(140 12% 58%)",
+        opacity: phase >= 1 ? 1 : 0,
+        transition: "all 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.8s",
+      }}>Building your network…</p>
+      <div className="mt-6 w-48 h-0.5 rounded-full overflow-hidden" style={{ background: "hsl(140 12% 42% / 0.15)" }}>
+        <div style={{
+          height: "100%",
+          background: "hsl(140 12% 42%)",
+          width: phase >= 1 ? "100%" : "0%",
+          transition: "width 3.8s cubic-bezier(0.16, 1, 0.3, 1) 0.5s",
+          borderRadius: "9999px",
+        }} />
+      </div>
+    </div>
+  );
+}
 
-        {/* Quick stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[
-            { label: "Connections", value: "—", icon: Users },
-            { label: "Active Deals", value: "—", icon: TrendingUp },
-            { label: "Unread Emails", value: "—", icon: Mail },
-            { label: "This Week", value: "—", icon: Calendar },
-          ].map((stat) => (
-            <div key={stat.label} className="rounded-xl border border-white/5 bg-white/[0.02] p-4">
-              <div className="flex items-center gap-2 text-white/30 mb-2">
-                <stat.icon className="h-3.5 w-3.5" />
-                <span className="text-xs uppercase tracking-wider">{stat.label}</span>
-              </div>
-              <p className="text-2xl font-light text-white/70">{stat.value}</p>
-            </div>
-          ))}
-        </div>
+// Quote ticker
+const QUOTES = [
+  "Success is not final, failure is not fatal: it is the courage to continue that counts. – Winston Churchill",
+  "The only way to do great work is to love what you do. – Steve Jobs",
+  "Your network is your net worth. – Porter Gale",
+  "Opportunities don't happen, you create them. – Chris Grosser",
+  "Dream big. Start small. Act now. – Robin Sharma",
+];
 
-        {/* Modules grid */}
-        <div>
-          <h2 className="text-sm uppercase tracking-wider text-white/30 mb-4">Your Modules</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {MODULES.map((mod) => (
-              <Link key={mod.label} to={mod.to}>
-                <div className="group rounded-xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.05] p-5 transition-all cursor-pointer">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="p-2.5 rounded-lg" style={{ backgroundColor: `${mod.color}15` }}>
-                      <mod.icon className="h-5 w-5" style={{ color: mod.color }} />
-                    </div>
-                    <ArrowRight className="h-4 w-4 text-white/10 group-hover:text-white/30 transition-colors" />
-                  </div>
-                  <h3 className="text-sm font-medium text-white/80 mb-1">{mod.label}</h3>
-                  <p className="text-xs text-white/30">{mod.desc}</p>
-                </div>
-              </Link>
-            ))}
+function QuoteTicker() {
+  return (
+    <div className="w-full overflow-hidden py-2" style={{ background: "hsl(140 12% 42% / 0.08)", borderBottom: "1px solid hsl(240 6% 14%)" }}>
+      <div className="flex animate-marquee whitespace-nowrap">
+        {[...QUOTES, ...QUOTES].map((q, i) => (
+          <span key={i} className="mx-8 text-sm italic" style={{ color: "hsl(240 5% 46%)" }}>{q}</span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export default function ConnectProduct() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { subscribed } = useSubscription();
+  const [showStudioModal, setShowStudioModal] = useState(false);
+  const [showIntro, setShowIntro] = useState(() => {
+    try { return !sessionStorage.getItem("connect-entered"); } catch { return true; }
+  });
+  const [introComplete, setIntroComplete] = useState(() => {
+    try { return !!sessionStorage.getItem("connect-entered"); } catch { return false; }
+  });
+
+  const handleIntroComplete = () => {
+    sessionStorage.setItem("connect-entered", "true");
+    setShowIntro(false);
+    setIntroComplete(true);
+  };
+
+  // Determine which page to render based on path
+  const path = location.pathname;
+  const getPage = () => {
+    if (path.startsWith("/connect/pipeline")) return "pipeline";
+    if (path.startsWith("/connect/email")) return "email";
+    if (path.startsWith("/connect/calendar")) return "calendar";
+    if (path.startsWith("/connect/create")) return "create";
+    if (path.startsWith("/connect/sage")) return "sage";
+    return "connect";
+  };
+  const page = getPage();
+
+  const handleSageNavigate = (tab: string) => {
+    const routes: Record<string, string> = {
+      connect: "/connect",
+      pipeline: "/connect/pipeline",
+      email: "/connect/email",
+      calendar: "/connect/calendar",
+      spotlight: "/connect/create",
+      assistant: "/connect/sage",
+    };
+    if (routes[tab]) navigate(routes[tab]);
+  };
+
+  return (
+    <>
+      {showIntro && <CinematicIntro onComplete={handleIntroComplete} />}
+      <ProductLayout
+        onStudioClick={() => setShowStudioModal(true)}
+        studioUnlocked={false}
+      >
+        <QuoteTicker />
+        <div className="flex-1 w-full px-2 sm:px-4 lg:px-6 py-4">
+          <div style={{
+            opacity: introComplete ? 1 : 0,
+            transform: introComplete ? "translateY(0)" : "translateY(20px)",
+            transition: "all 1.2s cubic-bezier(0.16, 1, 0.3, 1)",
+          }}>
+            {page === "connect" && <DemoConnectTab contentReady={introComplete} />}
+            {page === "pipeline" && <DemoPipelineTab />}
+            {page === "email" && <DemoEmailTab />}
+            {page === "calendar" && <DemoCalendarTab />}
+            {page === "create" && <DemoSpotlightTab />}
+            {page === "sage" && <DemoAssistantTab onNavigate={handleSageNavigate} />}
           </div>
         </div>
+      </ProductLayout>
 
-        {/* Getting started */}
-        <div className="rounded-xl border border-white/5 bg-gradient-to-r from-[hsl(140,12%,15%)] to-[hsl(140,12%,10%)] p-6">
-          <h3 className="text-sm font-medium text-white/80 mb-2">Getting Started</h3>
-          <p className="text-sm text-white/40 mb-4">
-            Connect your accounts to unlock the full power of AuRa's relationship intelligence.
-          </p>
-          <Link to="/app/settings">
-            <Button size="sm" className="gap-2 bg-[hsl(140,12%,42%)] hover:bg-[hsl(140,12%,48%)] text-white border-0">
-              Connect Accounts <ArrowRight className="h-3.5 w-3.5" />
-            </Button>
-          </Link>
-        </div>
-      </div>
-    </ProductLayout>
+      <StudioUpsellModal
+        open={showStudioModal}
+        onClose={() => setShowStudioModal(false)}
+        isConnectSubscriber={subscribed}
+      />
+    </>
   );
 }

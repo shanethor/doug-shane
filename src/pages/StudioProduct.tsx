@@ -63,7 +63,7 @@ export default function StudioProduct() {
   };
 
   return (
-    <ProductLayout product="studio">
+    <ProductLayout studioUnlocked>
       <div className="max-w-4xl mx-auto px-4 md:px-8 py-8 space-y-8">
         <div className="flex items-start justify-between">
           <div>
