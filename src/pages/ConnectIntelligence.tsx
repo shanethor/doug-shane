@@ -220,7 +220,7 @@ function EmailIntelligencePage() {
 
       {loading ? (
         <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
-      ) : filtered.length === 0 ? (
+      ) : displayList.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">
             <Mail className="h-8 w-8 mx-auto text-muted-foreground mb-3" />
