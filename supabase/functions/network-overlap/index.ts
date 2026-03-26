@@ -1,230 +1,124 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+/**
+ * Computes agency-wide network overlaps across all producers.
+ * Finds contacts that appear in multiple producers' networks.
+ * Admin-only operation.
+ */
+serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) throw new Error("Missing authorization header");
-
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
-    // Get user from JWT
-    const anonClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!);
-    const { data: { user }, error: authError } = await anonClient.auth.getUser(authHeader.replace("Bearer ", ""));
-    if (authError || !user) throw new Error("Unauthorized");
-
-    const { action, partner_email } = await req.json();
-
-    if (action === "find_overlap") {
-      if (!partner_email) throw new Error("partner_email required");
-
-      // 1. Find the partner's user_id from profiles
-      const { data: partnerProfile } = await supabase
-        .from("profiles")
-        .select("user_id, full_name, agency_name")
-        .or(`from_email.eq.${partner_email},intake_email_alias.eq.${partner_email}`)
-        .limit(1)
-        .maybeSingle();
-
-      // Also check auth.users email
-      let partnerId: string | null = partnerProfile?.user_id || null;
-      let partnerName = partnerProfile?.full_name || partner_email;
-      let partnerAgency = partnerProfile?.agency_name || null;
-
-      if (!partnerId) {
-        // Try to find by auth email using admin API
-        const { data: users } = await supabase.auth.admin.listUsers({ perPage: 1000 });
-        const match = users?.users?.find(u => u.email === partner_email);
-        if (match) {
-          partnerId = match.id;
-          // Get their profile
-          const { data: pProfile } = await supabase
-            .from("profiles")
-            .select("full_name, agency_name")
-            .eq("user_id", match.id)
-            .maybeSingle();
-          partnerName = pProfile?.full_name || partner_email;
-          partnerAgency = pProfile?.agency_name || null;
-        }
-      }
-
-      if (!partnerId) {
-        return new Response(JSON.stringify({
-          found: false,
-          message: "No user found with that email on the platform.",
-        }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      }
-
-      if (partnerId === user.id) {
-        return new Response(JSON.stringify({
-          found: false,
-          message: "You can't compare your network with yourself.",
-        }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      }
-
-      // 2. Get canonical_person_ids for the requesting user's contacts
-      const { data: myContacts } = await supabase
-        .from("network_contacts")
-        .select("canonical_person_id, full_name, company, email, source")
-        .eq("user_id", user.id)
-        .not("canonical_person_id", "is", null);
-
-      // 3. Get canonical_person_ids for the partner's contacts
-      const { data: partnerContacts } = await supabase
-        .from("network_contacts")
-        .select("canonical_person_id, full_name, company, email, source")
-        .eq("user_id", partnerId)
-        .not("canonical_person_id", "is", null);
-
-      // 4. Find overlapping canonical_person_ids
-      const myCanonicalIds = new Set((myContacts || []).map(c => c.canonical_person_id));
-      const partnerCanonicalIds = new Set((partnerContacts || []).map(c => c.canonical_person_id));
-
-      const sharedIds = [...myCanonicalIds].filter(id => partnerCanonicalIds.has(id));
-
-      // 5. Also do fuzzy match by email (contacts without canonical_person_id)
-      const { data: myAllContacts } = await supabase
-        .from("network_contacts")
-        .select("full_name, company, email, source")
-        .eq("user_id", user.id);
-
-      const { data: partnerAllContacts } = await supabase
-        .from("network_contacts")
-        .select("full_name, company, email, source")
-        .eq("user_id", partnerId);
-
-      const myEmails = new Map<string, typeof myAllContacts[0]>();
-      (myAllContacts || []).forEach(c => {
-        if (c.email) myEmails.set(c.email.toLowerCase(), c);
-      });
-
-      const emailMatches: Array<{ name: string; company: string; email: string; source_you: string; source_them: string }> = [];
-      const seenEmails = new Set<string>();
-
-      (partnerAllContacts || []).forEach(pc => {
-        if (pc.email) {
-          const key = pc.email.toLowerCase();
-          const myMatch = myEmails.get(key);
-          if (myMatch && !seenEmails.has(key)) {
-            seenEmails.add(key);
-            emailMatches.push({
-              name: myMatch.full_name || pc.full_name || "Unknown",
-              company: myMatch.company || pc.company || "",
-              email: pc.email,
-              source_you: myMatch.source,
-              source_them: pc.source,
-            });
-          }
-        }
-      });
-
-      // 6. Get canonical person details for shared IDs
-      let sharedCanonicalDetails: Array<{ name: string; company: string; email: string }> = [];
-      if (sharedIds.length > 0) {
-        const { data: canonicals } = await supabase
-          .from("canonical_persons")
-          .select("display_name, company, primary_email")
-          .in("id", sharedIds);
-
-        sharedCanonicalDetails = (canonicals || []).map(c => ({
-          name: c.display_name || "Unknown",
-          company: c.company || "",
-          email: c.primary_email || "",
-        }));
-      }
-
-      // Merge and deduplicate
-      const allShared = new Map<string, { name: string; company: string; email: string; context: string }>();
-
-      sharedCanonicalDetails.forEach(c => {
-        const key = (c.email || c.name).toLowerCase();
-        if (!allShared.has(key)) {
-          allShared.set(key, {
-            name: c.name,
-            company: c.company,
-            email: c.email,
-            context: "Matched via unified contact record",
-          });
-        }
-      });
-
-      emailMatches.forEach(c => {
-        const key = c.email.toLowerCase();
-        if (!allShared.has(key)) {
-          allShared.set(key, {
-            name: c.name,
-            company: c.company,
-            email: c.email,
-            context: `You: ${c.source_you} · Them: ${c.source_them}`,
-          });
-        }
-      });
-
-      const shared = [...allShared.values()];
-      const myTotal = (myAllContacts || []).length;
-      const partnerTotal = (partnerAllContacts || []).length;
-
-      // 7. Calculate partnership potential
-      const overlapRatio = myTotal > 0 ? shared.length / myTotal : 0;
-      let potential: "high" | "medium" | "low" = "low";
-      if (shared.length >= 10 || overlapRatio >= 0.15) potential = "high";
-      else if (shared.length >= 4 || overlapRatio >= 0.05) potential = "medium";
-
-      return new Response(JSON.stringify({
-        found: true,
-        partner_name: partnerName,
-        partner_agency: partnerAgency,
-        your_contacts: myTotal,
-        their_contacts: partnerTotal,
-        shared_contacts: shared,
-        overlap_count: shared.length,
-        partnership_potential: potential,
-      }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
-    }
-
-    // List platform users the current user might compare with
-    if (action === "list_partners") {
-      const { data: profiles } = await supabase
-        .from("profiles")
-        .select("user_id, full_name, agency_name, from_email, branch")
-        .neq("user_id", user.id)
-        .not("full_name", "is", null)
-        .order("full_name")
-        .limit(100);
-
-      // Get emails for those users
-      const { data: allUsers } = await supabase.auth.admin.listUsers({ perPage: 1000 });
-      const emailMap = new Map<string, string>();
-      allUsers?.users?.forEach(u => {
-        if (u.email) emailMap.set(u.id, u.email);
-      });
-
-      const partners = (profiles || []).map(p => ({
-        user_id: p.user_id,
-        name: p.full_name,
-        agency: p.agency_name,
-        email: emailMap.get(p.user_id) || p.from_email || "",
-        branch: p.branch,
-      })).filter(p => p.name && p.name !== "User");
-
-      return new Response(JSON.stringify({ partners }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    throw new Error("Unknown action");
-  } catch (err: any) {
-    return new Response(JSON.stringify({ error: err.message }), {
-      status: 400,
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const adminClient = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+
+    // Check admin role
+    const { data: roleCheck } = await adminClient
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id)
+      .eq("role", "admin")
+      .maybeSingle();
+
+    if (!roleCheck) {
+      return new Response(JSON.stringify({ error: "Admin access required" }), {
+        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Gather all contacts across producers
+    const { data: canonicalContacts } = await adminClient
+      .from("canonical_persons")
+      .select("primary_email, display_name, owner_user_id")
+      .not("primary_email", "is", null);
+
+    const { data: discoveredContacts } = await adminClient
+      .from("email_discovered_contacts")
+      .select("email_address, display_name, user_id")
+      .neq("status", "dismissed");
+
+    // Build email → producers map
+    const emailMap = new Map<string, { name: string; producers: Set<string> }>();
+
+    for (const c of (canonicalContacts || [])) {
+      const email = c.primary_email?.toLowerCase();
+      if (!email) continue;
+      if (!emailMap.has(email)) emailMap.set(email, { name: c.display_name || email, producers: new Set() });
+      emailMap.get(email)!.producers.add(c.owner_user_id);
+    }
+
+    for (const c of (discoveredContacts || [])) {
+      const email = c.email_address?.toLowerCase();
+      if (!email) continue;
+      if (!emailMap.has(email)) emailMap.set(email, { name: c.display_name || email, producers: new Set() });
+      emailMap.get(email)!.producers.add(c.user_id);
+    }
+
+    // Filter to overlaps (2+ producers)
+    const overlaps: { email: string; name: string; producers: string[]; count: number }[] = [];
+    for (const [email, data] of emailMap) {
+      if (data.producers.size >= 2) {
+        overlaps.push({
+          email,
+          name: data.name,
+          producers: Array.from(data.producers),
+          count: data.producers.size,
+        });
+      }
+    }
+
+    // Clear old overlaps and insert new
+    await adminClient.from("agency_network_overlaps").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+
+    for (const overlap of overlaps) {
+      await adminClient.from("agency_network_overlaps").insert({
+        contact_email: overlap.email,
+        contact_name: overlap.name,
+        producer_user_ids: overlap.producers,
+        overlap_count: overlap.count,
+        last_computed_at: new Date().toISOString(),
+      });
+    }
+
+    return new Response(JSON.stringify({
+      success: true,
+      total_overlaps: overlaps.length,
+      top_overlaps: overlaps.sort((a, b) => b.count - a.count).slice(0, 20),
+    }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  } catch (err) {
+    console.error("network-overlap error:", err);
+    return new Response(JSON.stringify({ error: String(err) }), {
+      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });
