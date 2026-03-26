@@ -13,8 +13,8 @@ import { useRealEmailData } from "@/hooks/useRealData";
 import { ConnectEmptyState } from "./ConnectEmptyState";
 
 export default function DemoEmailTab() {
-  const { hasEmail, loading: realLoading } = useRealEmailData();
-  const engine = useEmailEngine();
+  const { hasEmail, emails, loading: realLoading } = useRealEmailData();
+  const engine = useEmailEngine(hasEmail === true ? emails : undefined);
   const ai = useEmailAI();
   const [layout, setLayoutState] = useState<EmailLayout>(getEmailLayout);
 
@@ -37,6 +37,17 @@ export default function DemoEmailTab() {
   // No email connected — show empty state
   if (hasEmail === false) {
     return <ConnectEmptyState type="email" />;
+  }
+
+  // Email connected but no emails synced yet
+  if (hasEmail === true && emails.length === 0 && engine.filtered.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 text-center">
+        <Mail className="h-12 w-12 mb-4" style={{ color: "hsl(140 12% 42%)" }} />
+        <h3 className="text-lg font-semibold text-white/90 mb-2">Email Connected</h3>
+        <p className="text-sm text-white/40 max-w-md">Your email account is linked but no messages have been synced yet. Emails will appear here after the next sync cycle.</p>
+      </div>
+    );
   }
 
   return (
