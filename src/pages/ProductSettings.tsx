@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { ConnectedAccountsStatus } from "@/components/ConnectedAccountsStatus";
 import { ProgressiveUnlocks } from "@/components/ProgressiveUnlocks";
+import { ConnectRewards } from "@/components/ConnectRewards";
 import { getAuthHeaders } from "@/lib/auth-fetch";
 import { useSearchParams } from "react-router-dom";
 import { useConnectNavConfig, ALL_CONNECT_TABS } from "@/hooks/useConnectNavConfig";
@@ -215,6 +216,8 @@ export default function ProductSettings() {
           <div className="[&_*]:!text-white/70">
             <ProgressiveUnlocks />
           </div>
+          <Separator className="border-white/5" />
+          <ConnectRewards />
         </div>
 
         {/* Email Accounts */}
