@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useConnectNavConfig, ALL_CONNECT_TABS } from "@/hooks/useConnectNavConfig";
+import { SageFloatingChat } from "@/components/SageFloatingChat";
 
 const CONNECT_NAV = [
   { to: "/connect", label: "Connect", icon: Network, exact: true },
