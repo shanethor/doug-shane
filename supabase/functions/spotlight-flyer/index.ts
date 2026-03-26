@@ -728,7 +728,16 @@ serve(async (req) => {
       if (bullets.length === 0) throw new Error("At least one bullet point is required");
       if (!flyer.cta) throw new Error("Call to action is required");
 
-      const structured = buildStructuredPrompt(flyer);
+      // Load brand metadata for scraped intelligence
+      let brandMeta: Record<string, unknown> = {};
+      if (flyer.brand_name) {
+        const { data: brandPkg } = await supabase.from("branding_packages").select("metadata").eq("user_id", userId).eq("brand_name", flyer.brand_name).limit(1).single();
+        if (brandPkg?.metadata && typeof brandPkg.metadata === "object") {
+          brandMeta = brandPkg.metadata as Record<string, unknown>;
+        }
+      }
+
+      const structured = buildStructuredPrompt(flyer, brandMeta);
 
       const { error: saveErr } = await supabase.from("marketing_flyers").update({ structured_prompt: structured, status: "pending" }).eq("id", flyer_id);
       if (saveErr) throw saveErr;
