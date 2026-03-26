@@ -2,13 +2,14 @@ import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import {
   Network, Wrench, Settings, LogOut, LayoutDashboard, BarChart3, Mail,
-  Sparkles, Zap, Calendar, PanelLeftClose, PanelLeft, Lock,
+  Sparkles, Zap, Calendar, PanelLeftClose, PanelLeft, Lock, Brain,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 
 const CONNECT_NAV = [
   { to: "/connect", label: "Connect", icon: Network, exact: true },
+  { to: "/connect/intelligence", label: "Intelligence", icon: Brain },
   { to: "/connect/pipeline", label: "Pipeline", icon: BarChart3 },
   { to: "/connect/email", label: "Email", icon: Mail },
   { to: "/connect/calendar", label: "Calendar", icon: Calendar },

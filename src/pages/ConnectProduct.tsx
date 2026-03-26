@@ -11,6 +11,7 @@ import DemoEmailTab from "@/components/connect-demo/DemoEmailTab";
 import DemoCalendarTab from "@/components/connect-demo/DemoCalendarTab";
 import DemoSpotlightTab from "@/components/connect-demo/DemoSpotlightTab";
 import DemoAssistantTab from "@/components/connect-demo/DemoAssistantTab";
+import ConnectIntelligencePage from "@/pages/ConnectIntelligence";
 import { useNavigate } from "react-router-dom";
 
 // Cinematic intro overlay
@@ -118,6 +119,7 @@ export default function ConnectProduct() {
   // Determine which page to render based on path
   const path = location.pathname;
   const getPage = () => {
+    if (path.startsWith("/connect/intelligence")) return "intelligence";
     if (path.startsWith("/connect/pipeline")) return "pipeline";
     if (path.startsWith("/connect/email")) return "email";
     if (path.startsWith("/connect/calendar")) return "calendar";
@@ -154,6 +156,7 @@ export default function ConnectProduct() {
             transition: "all 1.2s cubic-bezier(0.16, 1, 0.3, 1)",
           }}>
             {page === "connect" && <DemoConnectTab contentReady={introComplete} />}
+            {page === "intelligence" && <ConnectIntelligencePage />}
             {page === "pipeline" && <DemoPipelineTab />}
             {page === "email" && <DemoEmailTab />}
             {page === "calendar" && <DemoCalendarTab />}
