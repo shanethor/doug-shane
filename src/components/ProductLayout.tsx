@@ -128,7 +128,12 @@ export function ProductLayout({
   });
 
   useEffect(() => {
-    document.documentElement.classList.add("dark");
+    const stored = localStorage.getItem("aura-dark-mode");
+    if (stored === "false") {
+      document.documentElement.classList.remove("dark");
+    } else {
+      document.documentElement.classList.add("dark");
+    }
   }, []);
 
   useEffect(() => {
