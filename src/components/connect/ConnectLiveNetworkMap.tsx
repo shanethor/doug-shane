@@ -134,7 +134,7 @@ function buildRealGraph(contacts: ContactRow[]): GraphData {
       return {
         id: contact.id,
         name: contact.display_name!.trim(),
-        kind: "person",
+        kind: "person" as const,
         tier,
         gx: 0,
         gy: 0,
@@ -168,7 +168,7 @@ function buildRealGraph(contacts: ContactRow[]): GraphData {
       return {
         id: `company:${companyKey}`,
         name: strongestMember.company || companyKey,
-        kind: "company",
+        kind: "company" as const,
         tier,
         gx: 0,
         gy: 0,
@@ -186,7 +186,7 @@ function buildRealGraph(contacts: ContactRow[]): GraphData {
     {
       id: "self",
       name: "You",
-      kind: "self",
+      kind: "self" as const,
       tier: 0,
       gx: 0,
       gy: 0,
