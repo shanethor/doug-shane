@@ -148,9 +148,13 @@ export default function ProductSettings() {
   const gmailConns = emailConnections.filter(c => c.provider === "gmail");
   const outlookConns = emailConnections.filter(c => c.provider === "outlook");
 
-  const sectionStyle = "rounded-xl border border-white/5 bg-white/[0.02] p-6 space-y-5";
-  const headingStyle = "text-sm font-medium text-white/60 uppercase tracking-wider";
-  const inputStyle = "bg-white/5 border-white/10 text-white placeholder:text-white/20";
+  const sectionStyle = `rounded-xl border p-6 space-y-5 ${darkMode ? "border-white/5 bg-white/[0.02]" : "border-border bg-card"}`;
+  const headingStyle = `text-sm font-medium uppercase tracking-wider ${darkMode ? "text-white/60" : "text-muted-foreground"}`;
+  const inputStyle = darkMode ? "bg-white/5 border-white/10 text-white placeholder:text-white/20" : "bg-background border-border text-foreground placeholder:text-muted-foreground";
+  const labelStyle = `text-xs ${darkMode ? "text-white/40" : "text-muted-foreground"}`;
+  const textPrimary = darkMode ? "text-white/70" : "text-foreground";
+  const textSecondary = darkMode ? "text-white/30" : "text-muted-foreground";
+  const iconMuted = darkMode ? "text-white/30" : "text-muted-foreground";
 
   if (!loaded) return (
     <ProductLayout><div className="flex items-center justify-center py-20"><Loader2 className="h-6 w-6 animate-spin text-white/30" /></div></ProductLayout>
