@@ -1,22 +1,50 @@
 import { Link, useSearchParams } from "react-router-dom";
-import { ArrowLeft, CreditCard, Check, Sparkles, Shield } from "lucide-react";
+import { ArrowLeft, CreditCard, Check, Sparkles, Shield, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 
 export default function RequestAccess() {
   const { user } = useAuth();
   const { subscribed, loading: subLoading, startCheckout, isTrialing } = useSubscription();
-  const [selectedBranch, setSelectedBranch] = useState<"property" | "wealth">("property");
   const [checking, setChecking] = useState(false);
+  const [guestEmail, setGuestEmail] = useState("");
   const [searchParams] = useSearchParams();
   const checkoutStatus = searchParams.get("checkout");
+
+  const handleGuestCheckout = async () => {
+    if (!guestEmail) {
+      toast.error("Please enter your email address");
+      return;
+    }
+    setChecking(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("create-public-checkout", {
+        body: { email: guestEmail },
+      });
+      if (error) throw error;
+      if (data?.already_subscribed) {
+        toast.info("You already have an active subscription. Sign in to access your account.");
+        return;
+      }
+      if (data?.url) {
+        window.location.href = data.url;
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Something went wrong");
+    } finally {
+      setChecking(false);
+    }
+  };
 
   const handleSubscribe = async () => {
     if (!user) return;
     setChecking(true);
     try {
-      await startCheckout(selectedBranch);
+      await startCheckout();
     } finally {
       setChecking(false);
     }
@@ -76,7 +104,6 @@ export default function RequestAccess() {
             ))}
           </div>
 
-
           {user ? (
             subscribed ? (
               <div className="text-center">
@@ -92,7 +119,7 @@ export default function RequestAccess() {
                 className="w-full py-3 rounded-xl text-sm font-semibold bg-white text-[#08080A] hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {checking ? (
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#08080A] border-t-transparent" />
+                  <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
                   <>
                     <CreditCard className="w-4 h-4" />
@@ -102,12 +129,34 @@ export default function RequestAccess() {
               </button>
             )
           ) : (
-            <Link
-              to="/auth"
-              className="w-full py-3 rounded-xl text-sm font-semibold bg-white text-[#08080A] hover:opacity-90 transition-opacity flex items-center justify-center gap-2 no-underline"
-            >
-              Sign up to get started →
-            </Link>
+            <div className="space-y-3">
+              <Input
+                type="email"
+                value={guestEmail}
+                onChange={(e) => setGuestEmail(e.target.value)}
+                placeholder="Enter your email to get started"
+                className="h-11 bg-white/5 border-white/10 text-white placeholder:text-white/20"
+                onKeyDown={(e) => e.key === "Enter" && handleGuestCheckout()}
+              />
+              <button
+                onClick={handleGuestCheckout}
+                disabled={checking}
+                className="w-full py-3 rounded-xl text-sm font-semibold bg-white text-[#08080A] hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {checking ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <>
+                    <CreditCard className="w-4 h-4" />
+                    Start 14-day free trial
+                  </>
+                )}
+              </button>
+              <p className="text-xs text-[#52525B] text-center">
+                Already have an account?{" "}
+                <Link to="/get-started" className="text-[#60A5FA] hover:underline">Sign in</Link>
+              </p>
+            </div>
           )}
         </div>
 
