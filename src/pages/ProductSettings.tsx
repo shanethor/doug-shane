@@ -173,17 +173,17 @@ export default function ProductSettings() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label className="text-xs text-white/40">Full Name</Label>
+              <Label className={labelStyle}>Full Name</Label>
               <Input value={fullName} onChange={e => setFullName(e.target.value)} className={inputStyle} />
             </div>
             <div className="space-y-2">
-              <Label className="text-xs text-white/40">Phone</Label>
+              <Label className={labelStyle}>Phone</Label>
               <Input value={phone} onChange={e => setPhone(e.target.value)} placeholder="(555) 123-4567" className={inputStyle} />
             </div>
           </div>
           <div className="space-y-2">
-            <Label className="text-xs text-white/40">Email</Label>
-            <Input value={user?.email || ""} disabled className="bg-white/5 border-white/10 text-white/30" />
+            <Label className={labelStyle}>Email</Label>
+            <Input value={user?.email || ""} disabled className={`${inputStyle} opacity-50`} />
           </div>
           <Button onClick={handleSave} disabled={saving} size="sm" className="gap-2 bg-[hsl(140,12%,42%)] hover:bg-[hsl(140,12%,48%)] text-white border-0">
             {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
@@ -194,16 +194,16 @@ export default function ProductSettings() {
         {/* Timezone */}
         <div className={sectionStyle}>
           <div className="flex items-center gap-3 mb-2">
-            <Globe className="h-4 w-4 text-white/30" />
+            <Globe className={`h-4 w-4 ${iconMuted}`} />
             <h2 className={headingStyle}>Timezone</h2>
           </div>
           <select
             value={timezone}
             onChange={e => setTimezone(e.target.value)}
-            className="w-full md:w-80 h-10 rounded-md bg-white/5 border border-white/10 text-white text-sm px-3"
+            className={`w-full md:w-80 h-10 rounded-md border text-sm px-3 ${darkMode ? "bg-white/5 border-white/10 text-white" : "bg-background border-border text-foreground"}`}
           >
             {["America/New_York","America/Chicago","America/Denver","America/Los_Angeles","America/Anchorage","Pacific/Honolulu","America/Phoenix"].map(tz => (
-              <option key={tz} value={tz}>{tz.replace(/_/g," ").replace("America/","").replace("Pacific/","")}</option>
+              <option key={tz} value={tz} className={darkMode ? "bg-[#111]" : "bg-background"}>{tz.replace(/_/g," ").replace("America/","").replace("Pacific/","")}</option>
             ))}
           </select>
         </div>
