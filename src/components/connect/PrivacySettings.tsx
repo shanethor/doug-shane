@@ -2,10 +2,9 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
 import {
   Shield, Download, Trash2, Eye, Loader2, AlertTriangle,
-  CheckCircle, Clock, Mail, FileText,
+  CheckCircle, Clock, Mail, FileText, Check, X,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -35,6 +34,7 @@ export default function PrivacySettings() {
   const [emailConnected, setEmailConnected] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
   const [submitting, setSubmitting] = useState<string | null>(null);
+  const [togglingConsent, setTogglingConsent] = useState<string | null>(null);
 
   useEffect(() => { if (user) loadData(); }, [user]);
 
@@ -56,15 +56,32 @@ export default function PrivacySettings() {
     setLoading(false);
   }
 
+  async function toggleConsent(consentType: string, currentlyAccepted: boolean) {
+    setTogglingConsent(consentType);
+    try {
+      await supabase.from("user_consent_records" as any).insert({
+        user_id: user!.id,
+        consent_type: consentType,
+        consent_version: "1.0",
+        accepted: !currentlyAccepted,
+        user_agent: navigator.userAgent,
+      } as any);
+      toast.success(!currentlyAccepted ? `${consentType.replace(/_/g, " ")} accepted` : `${consentType.replace(/_/g, " ")} revoked`);
+      loadData();
+    } catch {
+      toast.error("Failed to update consent");
+    } finally {
+      setTogglingConsent(null);
+    }
+  }
+
   async function disconnectEmail() {
     setDisconnecting(true);
     try {
-      // Deactivate email connections
       await supabase.from("email_connections")
         .update({ is_active: false } as any)
         .eq("user_id", user!.id);
 
-      // Record revocation consent
       await supabase.from("user_consent_records" as any).insert({
         user_id: user!.id,
         consent_type: "email_access",
@@ -108,10 +125,10 @@ export default function PrivacySettings() {
   }
 
   const consentTypes = [
-    { key: "data_sharing_agreement", label: "Data Sharing Agreement", icon: Shield },
-    { key: "social_enrichment", label: "Social Enrichment", icon: Eye },
-    { key: "email_access", label: "Email Access (Headers)", icon: Mail },
-    { key: "email_body_parsing", label: "Email Signature Parsing", icon: FileText },
+    { key: "data_sharing_agreement", label: "Data Sharing Agreement", desc: "Allow AuRa to process and share enrichment data with third-party providers.", icon: Shield },
+    { key: "social_enrichment", label: "Social Enrichment", desc: "Enable social media data enrichment for your contacts.", icon: Eye },
+    { key: "email_access", label: "Email Access (Headers)", desc: "Allow read-only access to email headers for contact discovery.", icon: Mail },
+    { key: "email_body_parsing", label: "Email Signature Parsing", desc: "Parse email signatures to extract contact details (opt-in).", icon: FileText },
   ];
 
   if (loading) {
@@ -135,23 +152,44 @@ export default function PrivacySettings() {
           <CardTitle className="text-base">Data Consent Status</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          {consentTypes.map(({ key, label, icon: Icon }) => {
+          {consentTypes.map(({ key, label, desc, icon: Icon }) => {
             const latest = latestConsents.get(key);
             const isActive = latest?.accepted === true;
+            const isToggling = togglingConsent === key;
             return (
-              <div key={key} className="flex items-center justify-between py-2 border-b last:border-0">
-                <div className="flex items-center gap-3">
-                  <Icon className="h-4 w-4 text-muted-foreground" />
-                  <div>
+              <div key={key} className="flex items-center justify-between py-3 border-b last:border-0">
+                <div className="flex items-start gap-3 flex-1 min-w-0">
+                  <Icon className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+                  <div className="min-w-0">
                     <p className="text-sm font-medium">{label}</p>
-                    <p className="text-[11px] text-muted-foreground">
-                      {latest ? `v${latest.consent_version} · ${new Date(latest.created_at).toLocaleDateString()}` : "Not yet accepted"}
-                    </p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">{desc}</p>
+                    {latest && (
+                      <p className="text-[10px] text-muted-foreground mt-1">
+                        v{latest.consent_version} · {new Date(latest.created_at).toLocaleDateString()}
+                      </p>
+                    )}
                   </div>
                 </div>
-                <Badge variant={isActive ? "default" : "secondary"} className="text-[10px]">
-                  {isActive ? "Active" : latest ? "Revoked" : "Pending"}
-                </Badge>
+                <div className="flex items-center gap-2 shrink-0 ml-3">
+                  <Badge variant={isActive ? "default" : "secondary"} className="text-[10px]">
+                    {isActive ? "Active" : latest ? "Revoked" : "Pending"}
+                  </Badge>
+                  <Button
+                    variant={isActive ? "outline" : "default"}
+                    size="sm"
+                    className="h-7 text-xs gap-1"
+                    disabled={isToggling}
+                    onClick={() => toggleConsent(key, isActive)}
+                  >
+                    {isToggling ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : isActive ? (
+                      <><X className="h-3 w-3" /> Revoke</>
+                    ) : (
+                      <><Check className="h-3 w-3" /> Accept</>
+                    )}
+                  </Button>
+                </div>
               </div>
             );
           })}
