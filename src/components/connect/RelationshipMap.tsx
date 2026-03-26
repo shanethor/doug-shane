@@ -47,14 +47,18 @@ interface GraphData {
   links: GraphLink[];
 }
 
-export default function RelationshipMap() {
+interface RelationshipMapProps {
+  contacts?: { id: string; display_name: string | null; primary_email: string | null; primary_phone: string | null; company: string | null; linkedin_url: string | null; }[];
+}
+
+export default function RelationshipMap({ contacts: externalContacts }: RelationshipMapProps = {}) {
   const svgRef = useRef<SVGSVGElement>(null);
   const [data, setData] = useState<GraphData | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
   const zoomRef = useRef<d3.ZoomBehavior<SVGSVGElement, unknown> | null>(null);
 
-  useEffect(() => { loadGraphData(); }, []);
+  useEffect(() => { loadGraphData(); }, [externalContacts]);
 
   async function loadGraphData() {
     setLoading(true);
@@ -76,20 +80,23 @@ export default function RelationshipMap() {
       nodes.push({ id: user.id, name: profile?.full_name || "You", type: "producer" });
       nodeIds.add(user.id);
 
-      // Canonical contacts (clients)
-      const { data: contacts } = await supabase
-        .from("canonical_persons")
-        .select("id, display_name, company, primary_email, linkedin_url, primary_phone")
-        .eq("owner_user_id", user.id)
-        .limit(50);
+      // Use external contacts if provided, otherwise fetch from DB
+      const contactList = externalContacts || (await (async () => {
+        const { data: contacts } = await supabase
+          .from("canonical_persons")
+          .select("id, display_name, company, primary_email, linkedin_url, primary_phone")
+          .eq("owner_user_id", user.id)
+          .limit(50);
+        return contacts || [];
+      })());
 
-      for (const c of contacts || []) {
+      for (const c of contactList) {
         if (nodeIds.has(c.id)) continue;
         const name = c.display_name || "Unknown";
         const isCompany = looksLikeCompany(name, c.primary_email || undefined);
         nodes.push({
           id: c.id, name, type: isCompany ? "company" : "client",
-          company: c.company || undefined, email: c.primary_email || undefined,
+          company: (c as any).company || undefined, email: c.primary_email || undefined,
           linkedin: c.linkedin_url || undefined, phone: c.primary_phone || undefined,
         });
         nodeIds.add(c.id);

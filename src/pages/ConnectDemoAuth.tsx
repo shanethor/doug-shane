@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { ArrowRight, Zap, Shield, BarChart3, Mail, Users, Sparkles as SparklesIcon, Search, Check, Lock, Loader2, LayoutGrid } from "lucide-react";
 import { setEmailLayout, type EmailLayout } from "@/components/connect-demo/email-views/useEmailEngine";
 import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { getAuthHeaders } from "@/lib/auth-fetch";
 import { toast } from "sonner";
@@ -288,6 +289,7 @@ const INDUSTRIES = [
   "Veterinary", "Video Production", "Warehousing", "Wealth Management", "Wholesale", "Other",
 ];
 type Step = "auth" | "subscribe" | "welcome" | "email_layout" | "building";
+const IS_DEMO = true; // Label this flow as demo
 
 const ACCOUNT_OPTIONS: { id: string; label: string; desc: string; color: string; icon: string; oauthProvider?: string; status: "ready" | "coming_soon" }[] = [
   { id: "google", label: "Google", desc: "Gmail, Contacts, Calendar", color: "#4285F4", icon: "G", oauthProvider: "gmail", status: "ready" },
@@ -541,10 +543,6 @@ export default function ConnectDemoAuth() {
     }, 400);
   }, []);
 
-  const handleAuth = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (email && password && industry) goToStep("subscribe");
-  };
   const handleSubscribe = () => goToStep("welcome");
   const handleEnter = async () => {
     // Go to email layout picker before entering
@@ -645,55 +643,31 @@ export default function ConnectDemoAuth() {
                 }}
               >
                 {renderHeader(true)}
-                <form onSubmit={handleAuth} className="space-y-4">
+                {/* DEMO badge */}
+                <div className="flex justify-center">
+                  <Badge className="text-[10px] px-3 py-0.5" style={{ background: "hsl(140 12% 42% / 0.15)", color: "hsl(140 12% 58%)", border: "1px solid hsl(140 12% 42% / 0.3)" }}>
+                    DEMO
+                  </Badge>
+                </div>
+                <form onSubmit={(e) => { e.preventDefault(); if (email && name) goToStep("welcome"); }} className="space-y-4">
                   <div className="space-y-2">
                     <Label className="text-white/80">Name</Label>
-                    <Input placeholder="Your name" value={name} onChange={e => setName(e.target.value)}
+                    <Input placeholder="Your name" required value={name} onChange={e => setName(e.target.value)}
                       className="bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-[hsl(140,12%,42%)] transition-colors" />
-                  </div>
-                  <div className="space-y-2 relative" ref={industryRef}>
-                    <Label className="text-white/80">Industry</Label>
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/30 pointer-events-none" />
-                      <Input
-                        placeholder="Search your industry…"
-                        value={industry}
-                        onChange={e => { setIndustry(e.target.value); setIndustryOpen(true); }}
-                        onFocus={() => setIndustryOpen(true)}
-                        className="bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-[hsl(140,12%,42%)] transition-colors pl-9"
-                      />
-                    </div>
-                    {industryOpen && filteredIndustries.length > 0 && (
-                      <div className="absolute z-50 w-full mt-1 rounded-lg border overflow-hidden max-h-48 overflow-y-auto"
-                        style={{ background: "hsl(240 8% 10%)", borderColor: "hsl(240 6% 18%)" }}>
-                        {filteredIndustries.map(ind => (
-                          <button
-                            key={ind}
-                            type="button"
-                            className="w-full text-left px-3 py-2 text-sm text-white/80 hover:text-white transition-colors"
-                            style={{ background: industry === ind ? "hsl(140 12% 42% / 0.15)" : "transparent" }}
-                            onMouseEnter={e => (e.currentTarget.style.background = "hsl(140 12% 42% / 0.1)")}
-                            onMouseLeave={e => (e.currentTarget.style.background = industry === ind ? "hsl(140 12% 42% / 0.15)" : "transparent")}
-                            onClick={() => { setIndustry(ind); setIndustryOpen(false); }}
-                          >
-                            {ind}
-                          </button>
-                        ))}
-                      </div>
-                    )}
                   </div>
                   <div className="space-y-2">
                     <Label className="text-white/80">Email</Label>
                     <Input type="email" placeholder="you@example.com" required value={email} onChange={e => setEmail(e.target.value)}
                       className="bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-[hsl(140,12%,42%)] transition-colors" />
                   </div>
-                  <div className="space-y-2">
-                    <Label className="text-white/80">Password</Label>
-                    <Input type="password" placeholder="••••••••" required value={password} onChange={e => setPassword(e.target.value)}
-                      className="bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-[hsl(140,12%,42%)] transition-colors" />
-                  </div>
+                  <label className="flex items-start gap-2 cursor-pointer group">
+                    <input type="checkbox" defaultChecked className="mt-1 accent-[hsl(140,12%,42%)]" />
+                    <span className="text-[11px]" style={{ color: "hsl(240 5% 50%)" }}>
+                      I consent to receive product updates and marketing emails from AuRa. You can unsubscribe at any time.
+                    </span>
+                  </label>
                   <Button type="submit" className="w-full text-white font-semibold hover:brightness-110 transition-all" style={{ background: "hsl(140 12% 42%)" }}>
-                    Sign Up <ArrowRight className="ml-2 h-4 w-4" />
+                    Try the Demo <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </form>
               </div>

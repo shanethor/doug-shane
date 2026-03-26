@@ -8,7 +8,7 @@ import {
   Network, Search, Users, Mail, Settings, Loader2,
   Zap, Shield, BarChart3, Plus, X, RefreshCw,
   ExternalLink, CheckCircle, Wifi, WifiOff, Globe,
-  Linkedin, Facebook, Phone, Database,
+  Linkedin, Facebook, Phone, Database, Edit2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -104,9 +104,10 @@ function hasRealName(c: DiscoveredContact): boolean {
 
 function EmailIntelligencePage() {
   const [contacts, setContacts] = useState<DiscoveredContact[]>([]);
+  const [unlabeled, setUnlabeled] = useState<DiscoveredContact[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
-  const [filter, setFilter] = useState<"all" | "high_score" | "verified">("all");
+  const [filter, setFilter] = useState<"all" | "high_score" | "verified" | "unlabeled">("all");
   const [showFiltered, setShowFiltered] = useState(false);
 
   useEffect(() => { loadContacts(); }, []);
@@ -120,9 +121,12 @@ function EmailIntelligencePage() {
       .order("first_seen_at", { ascending: false })
       .limit(200);
     const raw = (data as any as DiscoveredContact[]) || [];
-    // Apply smart filter: remove business/marketing emails, keep people with names
-    const people = raw.filter(c => !isBusinessOrMarketingEmail(c.email_address) && hasRealName(c));
+    // Separate: named people vs email-only (unlabeled)
+    const nonBusiness = raw.filter(c => !isBusinessOrMarketingEmail(c.email_address));
+    const people = nonBusiness.filter(c => hasRealName(c));
+    const emailOnly = nonBusiness.filter(c => !hasRealName(c));
     setContacts(people);
+    setUnlabeled(emailOnly);
     setLoading(false);
   }
 
@@ -182,7 +186,7 @@ function EmailIntelligencePage() {
     }
   }
 
-  const filtered = contacts.filter(c => {
+  const displayList = filter === "unlabeled" ? unlabeled : contacts.filter(c => {
     if (filter === "high_score") return (c.prospect_score || 0) >= 70;
     if (filter === "verified") return c.hunter_verified === true;
     return true;
@@ -206,17 +210,17 @@ function EmailIntelligencePage() {
         </div>
       </div>
 
-      <div className="flex gap-2">
-        {(["all", "high_score", "verified"] as const).map(f => (
+      <div className="flex gap-2 flex-wrap">
+        {(["all", "high_score", "verified", "unlabeled"] as const).map(f => (
           <Button key={f} variant={filter === f ? "default" : "outline"} size="sm" onClick={() => setFilter(f)} className="text-xs">
-            {f === "all" ? "All" : f === "high_score" ? "Score 70+" : "Verified ✓"}
+            {f === "all" ? "All" : f === "high_score" ? "Score 70+" : f === "verified" ? "Verified ✓" : `Unlabeled (${unlabeled.length})`}
           </Button>
         ))}
       </div>
 
       {loading ? (
         <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
-      ) : filtered.length === 0 ? (
+      ) : displayList.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">
             <Mail className="h-8 w-8 mx-auto text-muted-foreground mb-3" />
@@ -230,7 +234,7 @@ function EmailIntelligencePage() {
         </Card>
       ) : (
         <div className="grid gap-2">
-          {filtered.map(c => (
+          {displayList.map(c => (
             <Card key={c.id} className="border-border/50">
               <CardContent className="py-3 px-4">
                 <div className="flex items-start gap-3">
@@ -257,6 +261,15 @@ function EmailIntelligencePage() {
                     </div>
                     <div className="flex gap-1.5 mt-2">
                       <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => saveContact(c.id)}><Plus className="h-3 w-3 mr-1" /> Save</Button>
+                      <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => {
+                        const newName = prompt("Enter name for this contact:", c.display_name || "");
+                        if (newName !== null && newName.trim()) {
+                          supabase.from("email_discovered_contacts" as any).update({ display_name: newName.trim() } as any).eq("id", c.id).then(() => {
+                            setContacts(prev => prev.map(ct => ct.id === c.id ? { ...ct, display_name: newName.trim() } : ct));
+                            toast.success("Name updated");
+                          });
+                        }
+                      }}><Edit2 className="h-3 w-3 mr-1" /> Rename</Button>
                       {c.hunter_linkedin_url && (
                         <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => window.open(c.hunter_linkedin_url!, "_blank")}><ExternalLink className="h-3 w-3 mr-1" /> Profile</Button>
                       )}

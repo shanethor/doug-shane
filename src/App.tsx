@@ -56,6 +56,7 @@ import AuraConnect from "./pages/AuraConnect";
 import AuraConcierge from "./pages/AuraConcierge";
 import ClientSubmission from "./pages/ClientSubmission";
 import LandingPage from "./pages/LandingPage";
+import BrandKit from "./pages/BrandKit";
 import ConnectDemo from "./pages/ConnectDemo";
 import ConnectDemoAuth from "./pages/ConnectDemoAuth";
 import BecomePartner from "./pages/BecomePartner";
@@ -132,6 +133,7 @@ const App = () => (
           <Route path="/terms" element={<TermsOfService />} />
           <Route path="/become-partner" element={<BecomePartner />} />
           <Route path="/request-access" element={<RequestAccess />} />
+          <Route path="/brandkit" element={<BrandKit />} />
           <Route path="/onboard" element={<PostCheckoutOnboard />} />
           <Route path="/pdf-diagnostic" element={<PdfDiagnostic />} />
           <Route path="/intake/:token" element={<IntakeForm />} />
