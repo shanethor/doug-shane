@@ -186,7 +186,7 @@ function EmailIntelligencePage() {
     }
   }
 
-  const filtered = contacts.filter(c => {
+  const displayList = filter === "unlabeled" ? unlabeled : contacts.filter(c => {
     if (filter === "high_score") return (c.prospect_score || 0) >= 70;
     if (filter === "verified") return c.hunter_verified === true;
     return true;
@@ -210,10 +210,10 @@ function EmailIntelligencePage() {
         </div>
       </div>
 
-      <div className="flex gap-2">
-        {(["all", "high_score", "verified"] as const).map(f => (
+      <div className="flex gap-2 flex-wrap">
+        {(["all", "high_score", "verified", "unlabeled"] as const).map(f => (
           <Button key={f} variant={filter === f ? "default" : "outline"} size="sm" onClick={() => setFilter(f)} className="text-xs">
-            {f === "all" ? "All" : f === "high_score" ? "Score 70+" : "Verified ✓"}
+            {f === "all" ? "All" : f === "high_score" ? "Score 70+" : f === "verified" ? "Verified ✓" : `Unlabeled (${unlabeled.length})`}
           </Button>
         ))}
       </div>
