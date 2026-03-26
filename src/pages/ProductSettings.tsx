@@ -369,6 +369,25 @@ export default function ProductSettings() {
               }}
             />
           </div>
+
+          {/* Sage Pop-Up Chat toggle */}
+          <div className="flex items-center justify-between py-2">
+            <div className="flex items-center gap-3">
+              <span className="text-white/30">⚡</span>
+              <div>
+                <p className="text-sm text-white/70">Enable Sage Pop Up Chat on All Pages</p>
+                <p className="text-xs text-white/30">Access Sage assistant from any page via a floating button</p>
+              </div>
+            </div>
+            <Switch
+              checked={localStorage.getItem("sage-popup-enabled") !== "false"}
+              onCheckedChange={v => {
+                localStorage.setItem("sage-popup-enabled", v ? "true" : "false");
+                window.dispatchEvent(new Event("sage-popup-toggle"));
+                toast.success(v ? "Sage popup enabled" : "Sage popup disabled");
+              }}
+            />
+          </div>
         </div>
 
         {/* Mobile Navigation */}

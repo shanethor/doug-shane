@@ -277,6 +277,9 @@ export function ProductLayout({
         {/* Mobile bottom nav */}
         <MobileConnectNav isActive={isActive} />
       </div>
+
+      {/* Sage floating chat */}
+      <SageFloatingChat />
     </div>
   );
 }
