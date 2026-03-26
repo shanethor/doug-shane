@@ -339,6 +339,7 @@ export default function StudioDemo() {
           </div>
         </div>
       </div>
+      <StudioUpsellModal open={showUpsell} onClose={() => setShowUpsell(false)} />
     </div>
   );
 }
