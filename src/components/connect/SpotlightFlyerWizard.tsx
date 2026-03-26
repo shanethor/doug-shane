@@ -454,6 +454,22 @@ export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId, ini
     const cleanBullets = getResolvedBullets();
     if (cleanBullets.length > 0) parts.push(`Bullet points:\n${cleanBullets.map(b => `• ${b}`).join("\n")}`);
     if (cta || flyerType) parts.push(`Call to action: "${cta || defaultCtaForType(flyerType)}".`);
+
+    // Inject brand metadata (scraped company URLs intelligence)
+    const selectedBrand = brands.find(b => b.id === selectedBrandId);
+    if (selectedBrand) {
+      const meta = (selectedBrand as any).metadata as Record<string, unknown> | undefined;
+      if (meta?.scraped_summary) {
+        parts.push(`\nBRAND CONTEXT (from company website/social media — use to inform imagery, style, and copy):\n${String(meta.scraped_summary).slice(0, 800)}`);
+      }
+      if (meta?.design_notes) {
+        parts.push(`Design notes: ${String(meta.design_notes).slice(0, 400)}`);
+      }
+      if (Array.isArray(meta?.font_styles) && (meta.font_styles as string[]).length > 0) {
+        parts.push(`Preferred fonts: ${(meta.font_styles as string[]).join(", ")}.`);
+      }
+    }
+
     parts.push(`Design style: clean, professional, suitable for print and social media.`);
     parts.push(`HARD RULES — NEVER VIOLATE:`);
     parts.push(`1. For product items, ONLY use real product names if explicitly provided. Never invent product names.`);

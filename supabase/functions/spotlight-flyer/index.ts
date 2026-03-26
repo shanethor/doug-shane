@@ -198,7 +198,7 @@ async function enrichDemoInput(body: Record<string, unknown>) {
   }
 }
 
-function buildStructuredPrompt(flyer: any): string {
+function buildStructuredPrompt(flyer: any, brandMeta?: Record<string, unknown>): string {
   const parts: string[] = [];
   const styleMap: Record<string, string> = {
     event: "clean, professional",
@@ -229,6 +229,18 @@ function buildStructuredPrompt(flyer: any): string {
   }
 
   if (flyer.cta) parts.push(`Call to action: "${flyer.cta}".`);
+
+  // Inject scraped brand intelligence from company URLs
+  const meta = brandMeta || {};
+  if (meta.scraped_summary) {
+    parts.push(`\nBRAND CONTEXT (from company website/social media — use this to inform imagery, style, and copy):\n${String(meta.scraped_summary).slice(0, 800)}`);
+  }
+  if (meta.design_notes) {
+    parts.push(`Design notes from brand analysis: ${String(meta.design_notes).slice(0, 400)}`);
+  }
+  if (Array.isArray(meta.font_styles) && meta.font_styles.length > 0) {
+    parts.push(`Preferred font styles: ${(meta.font_styles as string[]).join(", ")}.`);
+  }
 
   parts.push(
     `Design style: ${style}, suitable for print and social media.`,
@@ -421,6 +433,103 @@ serve(async (req) => {
     if (userError || !userData.user) throw new Error("Not authenticated");
     const userId = userData.user.id;
 
+    // ─── ACTION: scrape_brand_urls ───
+    if (action === "scrape_brand_urls") {
+      const urls: string[] = Array.isArray(body.urls) ? body.urls.filter((u: string) => u.trim()) : [];
+      if (urls.length === 0) throw new Error("At least one URL is required");
+
+      const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY") || "";
+      const scrapeResults: string[] = [];
+
+      for (const url of urls.slice(0, 3)) {
+        try {
+          let formattedUrl = url.trim();
+          if (!formattedUrl.startsWith("http://") && !formattedUrl.startsWith("https://")) {
+            formattedUrl = `https://${formattedUrl}`;
+          }
+
+          if (FIRECRAWL_API_KEY) {
+            const scrapeResp = await fetch("https://api.firecrawl.dev/v1/scrape", {
+              method: "POST",
+              headers: { Authorization: `Bearer ${FIRECRAWL_API_KEY}`, "Content-Type": "application/json" },
+              body: JSON.stringify({ url: formattedUrl, formats: ["markdown", "branding"], onlyMainContent: true }),
+            });
+            if (scrapeResp.ok) {
+              const scrapeData = await scrapeResp.json();
+              const markdown = scrapeData.data?.markdown || scrapeData.markdown || "";
+              const branding = scrapeData.data?.branding || scrapeData.branding || null;
+              if (branding) {
+                scrapeResults.push(`[BRANDING from ${formattedUrl}]: ${JSON.stringify(branding)}`);
+              }
+              if (markdown) {
+                scrapeResults.push(`[CONTENT from ${formattedUrl}]: ${markdown.slice(0, 2000)}`);
+              }
+            }
+          } else {
+            // Fallback: just note the URL for later reference
+            scrapeResults.push(`[URL]: ${formattedUrl} (Firecrawl not configured — URL saved for reference)`);
+          }
+        } catch (err) {
+          console.error(`[spotlight-flyer] scrape error for ${url}:`, err);
+          scrapeResults.push(`[URL]: ${url} (scrape failed)`);
+        }
+      }
+
+      // Send scraped content to AI for brand extraction
+      const scrapedContent = scrapeResults.join("\n\n");
+      let result: Record<string, unknown> = { scraped_summary: scrapedContent.slice(0, 1000) };
+
+      if (LOVABLE_API_KEY() && scrapedContent.length > 10) {
+        try {
+          const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+            method: "POST",
+            headers: { Authorization: `Bearer ${LOVABLE_API_KEY()}`, "Content-Type": "application/json" },
+            body: JSON.stringify({
+              model: "google/gemini-3-flash-preview",
+              messages: [
+                { role: "system", content: "Extract brand identity from scraped website/social content. Return structured brand attributes. Focus on visual identity, messaging, services, and imagery described." },
+                { role: "user", content: scrapedContent.slice(0, 8000) },
+              ],
+              tools: [{
+                type: "function",
+                function: {
+                  name: "extract_brand_from_web",
+                  description: "Extract brand attributes from scraped web content",
+                  parameters: {
+                    type: "object",
+                    properties: {
+                      brand_name: { type: ["string", "null"] },
+                      colors: { type: "array", items: { type: "string" }, description: "Hex color values" },
+                      industry: { type: ["string", "null"] },
+                      tone: { type: "string", description: "professional, bold, playful, luxury, minimal, friendly" },
+                      tagline: { type: ["string", "null"] },
+                      services: { type: "array", items: { type: "string" }, description: "Key services or offerings" },
+                      design_notes: { type: ["string", "null"], description: "Design patterns, imagery themes, visual style notes for future flyer generation" },
+                      scraped_summary: { type: "string", description: "Concise summary of brand identity, services, and imagery for use in generation prompts" },
+                    },
+                    required: ["colors", "tone", "scraped_summary"],
+                    additionalProperties: false,
+                  },
+                },
+              }],
+              tool_choice: { type: "function", function: { name: "extract_brand_from_web" } },
+            }),
+          });
+          if (aiRes.ok) {
+            const aiData = await aiRes.json();
+            const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
+            if (toolCall?.function?.arguments) {
+              result = { ...result, ...JSON.parse(toolCall.function.arguments) };
+            }
+          }
+        } catch (err) {
+          console.error("[spotlight-flyer] AI extraction from scraped content failed:", err);
+        }
+      }
+
+      return new Response(JSON.stringify({ result }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     // ─── BRANDING: list_brands ───
     if (action === "list_brands") {
       const { data, error } = await supabase
@@ -435,12 +544,16 @@ serve(async (req) => {
 
     // ─── BRANDING: save_brand ───
     if (action === "save_brand") {
-      const { brand_id, name, brand_name, brand_colors, logo_url, tagline, disclaimer, industry, tone, is_default, font_styles, design_notes } = body;
+      const { brand_id, name, brand_name, brand_colors, logo_url, tagline, disclaimer, industry, tone, is_default, font_styles, design_notes, website_url, facebook_url, instagram_url, scraped_summary } = body;
 
       // Build metadata with design intelligence
       const metadata: Record<string, unknown> = {};
       if (font_styles && Array.isArray(font_styles) && font_styles.length > 0) metadata.font_styles = font_styles;
       if (design_notes && typeof design_notes === "string") metadata.design_notes = design_notes;
+      if (website_url) metadata.website_url = website_url;
+      if (facebook_url) metadata.facebook_url = facebook_url;
+      if (instagram_url) metadata.instagram_url = instagram_url;
+      if (scraped_summary) metadata.scraped_summary = scraped_summary;
 
       // If setting as default, unset other defaults
       if (is_default) {
@@ -615,7 +728,16 @@ serve(async (req) => {
       if (bullets.length === 0) throw new Error("At least one bullet point is required");
       if (!flyer.cta) throw new Error("Call to action is required");
 
-      const structured = buildStructuredPrompt(flyer);
+      // Load brand metadata for scraped intelligence
+      let brandMeta: Record<string, unknown> = {};
+      if (flyer.brand_name) {
+        const { data: brandPkg } = await supabase.from("branding_packages").select("metadata").eq("user_id", userId).eq("brand_name", flyer.brand_name).limit(1).single();
+        if (brandPkg?.metadata && typeof brandPkg.metadata === "object") {
+          brandMeta = brandPkg.metadata as Record<string, unknown>;
+        }
+      }
+
+      const structured = buildStructuredPrompt(flyer, brandMeta);
 
       const { error: saveErr } = await supabase.from("marketing_flyers").update({ structured_prompt: structured, status: "pending" }).eq("id", flyer_id);
       if (saveErr) throw saveErr;

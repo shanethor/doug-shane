@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2, Upload, Palette, Building2, X, Sparkles, FileImage, CheckCircle2 } from "lucide-react";
+import { Loader2, Upload, Palette, Building2, X, Sparkles, FileImage, CheckCircle2, ScanSearch } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 export interface BrandPackage {
@@ -21,6 +21,9 @@ export interface BrandPackage {
   industry: string | null;
   tone: string;
   is_default: boolean;
+  website_url?: string | null;
+  facebook_url?: string | null;
+  instagram_url?: string | null;
 }
 
 interface Props {
@@ -68,6 +71,11 @@ export default function SpotlightBrandSetup({ existing, onSave, onCancel }: Prop
   const [disclaimer, setDisclaimer] = useState(existing?.disclaimer || "");
   const [industry, setIndustry] = useState(existing?.industry || "");
   const [tone, setTone] = useState(existing?.tone || "professional");
+  const [websiteUrl, setWebsiteUrl] = useState(existing?.website_url || "");
+  const [facebookUrl, setFacebookUrl] = useState(existing?.facebook_url || "");
+  const [instagramUrl, setInstagramUrl] = useState(existing?.instagram_url || "");
+  const [scrapingUrls, setScrapingUrls] = useState(false);
+  const [scrapedData, setScrapedData] = useState<string>("");
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
@@ -80,6 +88,43 @@ export default function SpotlightBrandSetup({ existing, onSave, onCancel }: Prop
   const [materialExtracted, setMaterialExtracted] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const materialRef = useRef<HTMLInputElement>(null);
+
+  const scrapeCompanyUrls = async () => {
+    const urls = [websiteUrl, facebookUrl, instagramUrl].filter(u => u.trim());
+    if (urls.length === 0) return;
+    setScrapingUrls(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("spotlight-flyer", {
+        body: { action: "scrape_brand_urls", urls, brand_name: brandName.trim() || undefined },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      const result = data?.result;
+      if (result) {
+        if (result.colors?.length > 0) {
+          const hexColors = result.colors.filter((c: string) => /^#[0-9A-Fa-f]{3,8}$/.test(c)).slice(0, 4);
+          if (hexColors.length > 0) setBrandColors(hexColors);
+        }
+        if (result.industry) {
+          const matched = INDUSTRIES.find(i => i.value === result.industry || i.label.toLowerCase().includes(result.industry.toLowerCase()));
+          if (matched) setIndustry(matched.value);
+        }
+        if (result.tone) {
+          const matched = TONES.find(t => t.value === result.tone || t.label.toLowerCase().includes(result.tone.toLowerCase()));
+          if (matched) setTone(matched.value);
+        }
+        if (result.brand_name && !brandName.trim()) setBrandName(result.brand_name);
+        if (result.tagline && !tagline.trim()) setTagline(result.tagline);
+        if (result.scraped_summary) setScrapedData(result.scraped_summary);
+        if (result.design_notes) setDesignNotes(prev => prev ? `${prev}\n${result.design_notes}` : result.design_notes);
+        toast.success("Brand intelligence extracted from company URLs");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Failed to scrape URLs");
+    } finally {
+      setScrapingUrls(false);
+    }
+  };
 
   const analyzeBrandImage = async (base64Url: string, type: "logo" | "material") => {
     try {
@@ -209,9 +254,12 @@ export default function SpotlightBrandSetup({ existing, onSave, onCancel }: Prop
           industry: industry || null,
           tone,
           is_default: !existing ? true : existing.is_default,
-          // Extra design intelligence persisted for future generation
           font_styles: fontStyles.length > 0 ? fontStyles : undefined,
           design_notes: designNotes.trim() || undefined,
+          website_url: websiteUrl.trim() || null,
+          facebook_url: facebookUrl.trim() || null,
+          instagram_url: instagramUrl.trim() || null,
+          scraped_summary: scrapedData.trim() || undefined,
         },
       });
       if (error) throw error;
@@ -390,6 +438,39 @@ export default function SpotlightBrandSetup({ existing, onSave, onCancel }: Prop
         <div className="space-y-1">
           <Label className="text-xs">Tagline (optional)</Label>
           <Input value={tagline} onChange={e => setTagline(e.target.value)} placeholder="Protecting what matters most" className="h-9" maxLength={150} />
+        </div>
+
+        {/* Company URLs */}
+        <div className="space-y-2">
+          <Label className="text-xs flex items-center gap-1">
+            <ScanSearch className="h-3 w-3" /> Company Online Presence (optional)
+          </Label>
+          <p className="text-[10px] text-muted-foreground">Add your website and social profiles so AI can pull real imagery, copy style, and brand elements for flyers.</p>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] text-muted-foreground w-16 shrink-0">Website</span>
+              <Input value={websiteUrl} onChange={e => setWebsiteUrl(e.target.value)} placeholder="https://yourcompany.com" className="h-8 text-xs" />
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] text-muted-foreground w-16 shrink-0">Facebook</span>
+              <Input value={facebookUrl} onChange={e => setFacebookUrl(e.target.value)} placeholder="https://facebook.com/yourpage" className="h-8 text-xs" />
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] text-muted-foreground w-16 shrink-0">Instagram</span>
+              <Input value={instagramUrl} onChange={e => setInstagramUrl(e.target.value)} placeholder="https://instagram.com/yourhandle" className="h-8 text-xs" />
+            </div>
+          </div>
+          {(websiteUrl.trim() || facebookUrl.trim() || instagramUrl.trim()) && (
+            <Button variant="outline" size="sm" className="h-7 text-xs gap-1" disabled={scrapingUrls} onClick={scrapeCompanyUrls}>
+              {scrapingUrls ? <Loader2 className="h-3 w-3 animate-spin" /> : <ScanSearch className="h-3 w-3" />}
+              {scrapingUrls ? "Scanning…" : "Scan URLs for Brand Intelligence"}
+            </Button>
+          )}
+          {scrapedData && (
+            <p className="text-[10px] italic text-muted-foreground border-l-2 pl-2" style={{ borderColor: "hsl(200 60% 50%)" }}>
+              {scrapedData.slice(0, 300)}{scrapedData.length > 300 ? "…" : ""}
+            </p>
+          )}
         </div>
 
         {/* Default Disclaimer */}
