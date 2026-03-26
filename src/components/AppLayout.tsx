@@ -36,21 +36,21 @@ export function AppLayout({ children, onLogoClick }: { children: React.ReactNode
   const isBranchRestricted = branch === "property" || branch === "wealth";
 
   const navItems = isBranchRestricted ? [
-    ...(hasConnect ? [{ to: "/connect", label: "Connect", icon: Network, key: "connect" }] : []),
-    ...(hasConcierge ? [{ to: "/concierge", label: "Concierge", icon: Sparkles, key: "concierge" }] : []),
-    ...(canSeeAdmin ? [{ to: "/admin", label: "Admin", icon: ShieldCheck, key: "admin" }] : []),
-    { to: "/settings", label: "Settings", icon: Settings, key: "settings" },
+    ...(hasConnect ? [{ to: "/insurance/connect", label: "Connect", icon: Network, key: "connect" }] : []),
+    ...(hasConcierge ? [{ to: "/insurance/concierge", label: "Concierge", icon: Sparkles, key: "concierge" }] : []),
+    ...(canSeeAdmin ? [{ to: "/insurance/admin", label: "Admin", icon: ShieldCheck, key: "admin" }] : []),
+    { to: "/insurance/settings", label: "Settings", icon: Settings, key: "settings" },
   ] : [
-    ...(canSeeChat ? [{ to: "/hub", label: "AURA", icon: MessageCircle, key: "aura" }] : []),
-    ...(canSeeEmail ? [{ to: "/email", label: "Email", icon: Mail, key: "email" }] : []),
-    ...(canSeePulse ? [{ to: "/pulse", label: "Pulse", icon: HeartPulse, key: "pulse" }] : []),
-    ...(canSeeProducerHub ? [{ to: "/command", label: "Command Center", icon: GitBranch, key: "command" }] : []),
-    ...(canSeeLossRuns ? [{ to: "/loss-runs", label: "Loss Runs", icon: FileSearch, key: "lossruns" }] : []),
-    ...(hasConnect ? [{ to: "/connect", label: "Connect", icon: Network, key: "connect" }] : []),
-    ...(hasConcierge ? [{ to: "/concierge", label: "Concierge", icon: Sparkles, key: "concierge" }] : []),
-    ...(canSeeClientSubmission ? [{ to: "/submit-client", label: "Submit Client", icon: UserPlus, key: "submit" }] : []),
-    ...(canSeeAdmin ? [{ to: "/admin", label: "Admin", icon: ShieldCheck, key: "admin" }] : []),
-    { to: "/settings", label: "Settings", icon: Settings, key: "settings" },
+    ...(canSeeChat ? [{ to: "/insurance/hub", label: "AURA", icon: MessageCircle, key: "aura" }] : []),
+    ...(canSeeEmail ? [{ to: "/insurance/email", label: "Email", icon: Mail, key: "email" }] : []),
+    ...(canSeePulse ? [{ to: "/insurance/pulse", label: "Pulse", icon: HeartPulse, key: "pulse" }] : []),
+    ...(canSeeProducerHub ? [{ to: "/insurance/command", label: "Command Center", icon: GitBranch, key: "command" }] : []),
+    ...(canSeeLossRuns ? [{ to: "/insurance/loss-runs", label: "Loss Runs", icon: FileSearch, key: "lossruns" }] : []),
+    ...(hasConnect ? [{ to: "/insurance/connect", label: "Connect", icon: Network, key: "connect" }] : []),
+    ...(hasConcierge ? [{ to: "/insurance/concierge", label: "Concierge", icon: Sparkles, key: "concierge" }] : []),
+    ...(canSeeClientSubmission ? [{ to: "/insurance/submit-client", label: "Submit Client", icon: UserPlus, key: "submit" }] : []),
+    ...(canSeeAdmin ? [{ to: "/insurance/admin", label: "Admin", icon: ShieldCheck, key: "admin" }] : []),
+    { to: "/insurance/settings", label: "Settings", icon: Settings, key: "settings" },
   ];
 
   return (
