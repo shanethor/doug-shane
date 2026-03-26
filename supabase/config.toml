@@ -92,3 +92,12 @@ verify_jwt = false
 
 [functions.hunter-enrich]
 verify_jwt = false
+
+[functions.parse-email-signatures]
+verify_jwt = false
+
+[functions.pre-meeting-feeder]
+verify_jwt = false
+
+[functions.draft-intro-email]
+verify_jwt = false
