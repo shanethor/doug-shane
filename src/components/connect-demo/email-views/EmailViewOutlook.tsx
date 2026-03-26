@@ -7,11 +7,12 @@ import {
   Mail, Search, Star, Inbox, Send as SendIcon, FilePenLine, SendHorizonal, Tag,
   Plus, Paperclip, ArrowLeft, X, Sparkles, Reply, ReplyAll, Forward,
   Archive, Flag, Activity, Minus, Maximize2, Square,
+  CalendarPlus, Shield, Bell, TrendingUp, FileText,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import type { useEmailEngine } from "./useEmailEngine";
-import { SYNCED_ACCOUNTS, CONNECT_MATCHES, TIER_COLORS } from "./useEmailEngine";
+import { SYNCED_ACCOUNTS, CONNECT_MATCHES, TIER_COLORS, type DemoThread } from "./useEmailEngine";
 import type { useEmailAI } from "./useEmailAI";
 import { AIResultPanel } from "./AIResultPanel";
 
