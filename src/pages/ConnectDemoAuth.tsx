@@ -445,6 +445,21 @@ export default function ConnectDemoAuth() {
   const connectedCount = connectedAccounts.size;
   const unlockThreshold = 5;
 
+  // Live savings calculation based on reward tiers
+  const accountSavings = useMemo(() => {
+    const totalAvailable = ACCOUNT_OPTIONS.length;
+    let credit = 0;
+    if (connectedCount >= totalAvailable) credit = 15; // All accounts
+    else if (connectedCount >= 10) credit = 10;
+    else if (connectedCount >= 5) credit = 5;
+    return credit;
+  }, [connectedCount]);
+
+  // Potential max savings (accounts + contacts combined)
+  const maxAccountSavings = 15;
+  const maxContactSavings = 50;
+  const maxTotalSavings = maxAccountSavings + maxContactSavings; // $65 total possible
+
   // Start building network after 2+ accounts linked
   const handleBuildNetwork = async () => {
     if (connectedCount < 1) return;
@@ -733,6 +748,9 @@ export default function ConnectDemoAuth() {
                 <Button className="w-full text-white font-semibold hover:brightness-110 transition-all" style={{ background: "hsl(140 12% 42%)" }} onClick={handleSubscribe}>
                   Subscribe <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
+                <p className="text-xs text-center" style={{ color: "hsl(140 12% 58%)" }}>
+                  💡 Earn up to $65/mo in credits by connecting accounts & contacts
+                </p>
                 <p className="text-xs text-center" style={{ color: "hsl(240 5% 46%)" }}>Demo mode — no payment required</p>
               </div>
               <p className="text-xl text-center font-semibold mt-10" style={{ color: "hsl(140 12% 58%)" }}>Intelligence runs on AuRa</p>
@@ -822,6 +840,44 @@ export default function ConnectDemoAuth() {
                           </span>
                         )}
                       </div>
+
+                      {/* Live savings indicator */}
+                      {connectedCount > 0 && (
+                        <div
+                          className="rounded-lg p-3 text-center transition-all duration-500"
+                          style={{
+                            background: accountSavings > 0 ? "hsl(140 12% 42% / 0.1)" : "hsl(240 6% 10%)",
+                            border: `1px solid ${accountSavings > 0 ? "hsl(140 12% 42% / 0.3)" : "hsl(240 6% 18%)"}`,
+                          }}
+                        >
+                          <div className="flex items-center justify-center gap-2">
+                            <span className="text-[10px] font-medium" style={{ color: "hsl(240 5% 50%)" }}>Monthly savings:</span>
+                            <span
+                              className="text-lg font-bold transition-all duration-300"
+                              style={{
+                                color: accountSavings > 0 ? "hsl(140 12% 58%)" : "hsl(240 5% 40%)",
+                              }}
+                            >
+                              ${accountSavings}
+                            </span>
+                            <span className="text-[10px]" style={{ color: "hsl(240 5% 40%)" }}>/mo off</span>
+                          </div>
+                          {accountSavings > 0 ? (
+                            <p className="text-[10px] mt-1" style={{ color: "hsl(140 12% 55%)" }}>
+                              🎉 You've unlocked a ${accountSavings} credit — applied at checkout!
+                            </p>
+                          ) : connectedCount < 5 ? (
+                            <p className="text-[10px] mt-1" style={{ color: "hsl(240 5% 46%)" }}>
+                              Connect {5 - connectedCount} more account{5 - connectedCount > 1 ? "s" : ""} to save $5/mo
+                            </p>
+                          ) : null}
+                          {accountSavings > 0 && accountSavings < maxAccountSavings && (
+                            <p className="text-[9px] mt-0.5" style={{ color: "hsl(240 5% 40%)" }}>
+                              Up to ${maxTotalSavings}/mo possible with all accounts + contacts
+                            </p>
+                          )}
+                        </div>
+                      )}
                       <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "hsl(240 6% 14%)" }}>
                         <div
                           className="h-full rounded-full transition-all duration-500"
@@ -901,13 +957,17 @@ export default function ConnectDemoAuth() {
                     style={{ background: "hsl(140 12% 42%)" }}
                     onClick={handleEnter}
                   >
-                    {connectedCount === 0 ? "Skip & Enter AuRa Connect" : `Enter AuRa Connect (${connectedCount} linked)`}
+                    {connectedCount === 0
+                      ? "Skip & Enter AuRa Connect"
+                      : accountSavings > 0
+                        ? `Enter — Saving $${accountSavings}/mo 🎉`
+                        : `Enter AuRa Connect (${connectedCount} linked)`}
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
 
                   {connectedCount > 0 && connectedCount < unlockThreshold && (
                     <p className="text-[10px] text-center" style={{ color: "hsl(240 5% 46%)" }}>
-                      Connect {unlockThreshold - connectedCount} more for full functionality
+                      Connect {unlockThreshold - connectedCount} more to unlock $5/mo credit
                     </p>
                   )}
                 </div>
