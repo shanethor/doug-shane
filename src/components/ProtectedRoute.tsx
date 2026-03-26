@@ -87,7 +87,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (isBranchRestricted && subscribed && !isFreePath && !isAdmin) {
-    return <Navigate to="/connect" replace />;
+    return <Navigate to="/insurance/connect" replace />;
   }
 
   // Default paywall: users without agency full_site_access and without an assigned role
