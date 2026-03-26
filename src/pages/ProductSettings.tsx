@@ -216,6 +216,8 @@ export default function ProductSettings() {
           <div className="[&_*]:!text-white/70">
             <ProgressiveUnlocks />
           </div>
+          <Separator className="border-white/5" />
+          <ConnectRewards />
         </div>
 
         {/* Email Accounts */}
