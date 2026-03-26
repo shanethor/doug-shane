@@ -855,7 +855,7 @@ export default function ConnectDemoAuth() {
                           }}
                         >
                           <div className="flex items-center justify-center gap-2">
-                            <span className="text-[10px] font-medium" style={{ color: "hsl(240 5% 50%)" }}>Monthly savings:</span>
+                            <span className="text-[10px] font-medium" style={{ color: "hsl(240 5% 50%)" }}>Credit earned:</span>
                             <span
                               className="text-lg font-bold transition-all duration-300"
                               style={{
@@ -864,20 +864,20 @@ export default function ConnectDemoAuth() {
                             >
                               ${accountSavings}
                             </span>
-                            <span className="text-[10px]" style={{ color: "hsl(240 5% 40%)" }}>/mo off</span>
+                            <span className="text-[10px]" style={{ color: "hsl(240 5% 40%)" }}>one-time</span>
                           </div>
                           {accountSavings > 0 ? (
                             <p className="text-[10px] mt-1" style={{ color: "hsl(140 12% 55%)" }}>
-                              🎉 You've unlocked a ${accountSavings} credit — applied at checkout!
+                              🎉 ${accountSavings} credit unlocked — applied at checkout!
                             </p>
                           ) : connectedCount < 5 ? (
                             <p className="text-[10px] mt-1" style={{ color: "hsl(240 5% 46%)" }}>
-                              Connect {5 - connectedCount} more account{5 - connectedCount > 1 ? "s" : ""} to save $5/mo
+                              Connect {5 - connectedCount} more account{5 - connectedCount > 1 ? "s" : ""} to earn $5 credit
                             </p>
                           ) : null}
                           {accountSavings > 0 && accountSavings < maxAccountSavings && (
                             <p className="text-[9px] mt-0.5" style={{ color: "hsl(240 5% 40%)" }}>
-                              Up to ${maxTotalSavings}/mo possible with all accounts + contacts
+                              Up to ${maxTotalSavings} in credit possible with all accounts + contacts
                             </p>
                           )}
                         </div>
