@@ -104,9 +104,10 @@ function hasRealName(c: DiscoveredContact): boolean {
 
 function EmailIntelligencePage() {
   const [contacts, setContacts] = useState<DiscoveredContact[]>([]);
+  const [unlabeled, setUnlabeled] = useState<DiscoveredContact[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
-  const [filter, setFilter] = useState<"all" | "high_score" | "verified">("all");
+  const [filter, setFilter] = useState<"all" | "high_score" | "verified" | "unlabeled">("all");
   const [showFiltered, setShowFiltered] = useState(false);
 
   useEffect(() => { loadContacts(); }, []);
@@ -120,9 +121,12 @@ function EmailIntelligencePage() {
       .order("first_seen_at", { ascending: false })
       .limit(200);
     const raw = (data as any as DiscoveredContact[]) || [];
-    // Apply smart filter: remove business/marketing emails, keep people with names
-    const people = raw.filter(c => !isBusinessOrMarketingEmail(c.email_address) && hasRealName(c));
+    // Separate: named people vs email-only (unlabeled)
+    const nonBusiness = raw.filter(c => !isBusinessOrMarketingEmail(c.email_address));
+    const people = nonBusiness.filter(c => hasRealName(c));
+    const emailOnly = nonBusiness.filter(c => !hasRealName(c));
     setContacts(people);
+    setUnlabeled(emailOnly);
     setLoading(false);
   }
 
