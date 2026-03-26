@@ -224,7 +224,7 @@ export default function ConnectDemo() {
 
       {/* Main content */}
       <div className="flex-1 w-full px-2 sm:px-4 lg:px-6 py-4">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
           {/* Tab navigation */}
           <div
             style={{
