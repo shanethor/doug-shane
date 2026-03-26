@@ -67,7 +67,7 @@ export function MobileBottomNav() {
   const hiddenTabs = allowedTabs.filter((t) => hiddenTabIds.has(t.id));
 
   const isActive = (to: string) => location.pathname === to;
-  const moreRoutes = ["/admin", "/settings", ...hiddenTabs.map((t) => t.to)];
+  const moreRoutes = ["/insurance/admin", "/insurance/settings", ...hiddenTabs.map((t) => t.to)];
   const moreActive = moreRoutes.some((p) => location.pathname === p);
 
   return (
