@@ -864,10 +864,6 @@ export default function DemoConnectTab({ contentReady = true }: { contentReady?:
         <div className="text-center py-12 text-sm" style={{ color: "hsl(240 5% 46%)" }}>No results found. Try another name.</div>
       )}
 
-      {/* Meeting Prep — Feeder List Generator embedded in Connect */}
-      <div className="mt-6 px-1">
-        <MeetingPrepSection compact />
-      </div>
     </div>
   );
 }
