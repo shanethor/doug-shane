@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import ConnectUpsellModal from "@/components/ConnectUpsellModal";
 import {
   Mail, CalendarDays, LayoutGrid, Sparkles, MessageSquare,
   Network, Send,
