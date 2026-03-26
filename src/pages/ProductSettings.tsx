@@ -37,6 +37,7 @@ export default function ProductSettings() {
   const [loaded, setLoaded] = useState(false);
   const [darkMode, setDarkMode] = useState(true);
   const [openingPortal, setOpeningPortal] = useState(false);
+  const { config: navConfig, setConfig: setNavConfig } = useConnectNavConfig();
   const [timezone, setTimezone] = useState(Intl.DateTimeFormat().resolvedOptions().timeZone);
 
   // Email connections
