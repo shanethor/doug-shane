@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Copy, CheckCheck, Sparkles, X } from "lucide-react";
+import { Copy, CheckCheck, Sparkles, X, Shield, Activity, Bell } from "lucide-react";
 import { toast } from "sonner";
 import type { useEmailAI } from "./useEmailAI";
 
@@ -64,6 +64,42 @@ export function AIResultPanel({ ai, onUseReply }: { ai: AI; onUseReply?: (text: 
             </div>
           </div>
           <p className="text-xs leading-relaxed whitespace-pre-wrap" style={{ color: "hsl(240 5% 75%)" }}>{ai.draftText}</p>
+        </div>
+      )}
+      {ai.complianceText && (
+        <div className="rounded-lg p-3" style={{ background: "hsl(45 80% 50% / 0.06)", border: "1px solid hsl(45 80% 50% / 0.2)" }}>
+          <div className="flex items-center justify-between mb-1.5">
+            <div className="flex items-center gap-1.5">
+              <Shield className="h-3.5 w-3.5" style={{ color: "hsl(45 80% 60%)" }} />
+              <span className="text-xs font-semibold" style={{ color: "hsl(45 80% 60%)" }}>Compliance Check</span>
+            </div>
+            <button onClick={() => copyText(ai.complianceText!)} className="p-1 rounded hover:bg-white/10"><Copy className="h-3 w-3" style={{ color: "hsl(240 5% 50%)" }} /></button>
+          </div>
+          <p className="text-xs leading-relaxed whitespace-pre-wrap" style={{ color: "hsl(240 5% 75%)" }}>{ai.complianceText}</p>
+        </div>
+      )}
+      {ai.sentimentText && (
+        <div className="rounded-lg p-3" style={{ background: "hsl(300 50% 45% / 0.06)", border: "1px solid hsl(300 50% 45% / 0.2)" }}>
+          <div className="flex items-center justify-between mb-1.5">
+            <div className="flex items-center gap-1.5">
+              <Activity className="h-3.5 w-3.5" style={{ color: "hsl(300 50% 60%)" }} />
+              <span className="text-xs font-semibold" style={{ color: "hsl(300 50% 60%)" }}>Sentiment Analysis</span>
+            </div>
+            <button onClick={() => copyText(ai.sentimentText!)} className="p-1 rounded hover:bg-white/10"><Copy className="h-3 w-3" style={{ color: "hsl(240 5% 50%)" }} /></button>
+          </div>
+          <p className="text-xs leading-relaxed whitespace-pre-wrap" style={{ color: "hsl(240 5% 75%)" }}>{ai.sentimentText}</p>
+        </div>
+      )}
+      {ai.followUpText && (
+        <div className="rounded-lg p-3" style={{ background: "hsl(170 50% 40% / 0.06)", border: "1px solid hsl(170 50% 40% / 0.2)" }}>
+          <div className="flex items-center justify-between mb-1.5">
+            <div className="flex items-center gap-1.5">
+              <Bell className="h-3.5 w-3.5" style={{ color: "hsl(170 50% 55%)" }} />
+              <span className="text-xs font-semibold" style={{ color: "hsl(170 50% 55%)" }}>Follow-Up Reminder</span>
+            </div>
+            <button onClick={() => copyText(ai.followUpText!)} className="p-1 rounded hover:bg-white/10"><Copy className="h-3 w-3" style={{ color: "hsl(240 5% 50%)" }} /></button>
+          </div>
+          <p className="text-xs leading-relaxed whitespace-pre-wrap" style={{ color: "hsl(240 5% 75%)" }}>{ai.followUpText}</p>
         </div>
       )}
     </div>

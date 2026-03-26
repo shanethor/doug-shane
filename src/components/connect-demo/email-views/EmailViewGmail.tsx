@@ -7,11 +7,12 @@ import {
   Mail, Search, Star, Inbox, Send as SendIcon, FilePenLine, SendHorizonal, Tag,
   Plus, Paperclip, ArrowLeft, X, Sparkles, Reply, ReplyAll, Forward,
   ChevronDown, ChevronUp, Activity, User, Link2, CheckCheck,
+  CalendarPlus, Shield, Bell, TrendingUp, FileText,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import type { useEmailEngine } from "./useEmailEngine";
-import { SYNCED_ACCOUNTS, CLIENT_CONTACTS, CONNECT_MATCHES, TIER_COLORS, OUTREACH_COLORS, SMART_FEATURES } from "./useEmailEngine";
+import { SYNCED_ACCOUNTS, CLIENT_CONTACTS, CONNECT_MATCHES, TIER_COLORS, OUTREACH_COLORS, SMART_FEATURES, type DemoThread } from "./useEmailEngine";
 import type { useEmailAI } from "./useEmailAI";
 import { AIResultPanel } from "./AIResultPanel";
 
@@ -123,20 +124,23 @@ export default function EmailViewGmail({ engine, ai }: { engine: Engine; ai: AI 
                 <Button variant="ghost" size="sm" className="gap-1.5 text-sm" onClick={clearThread}><ArrowLeft className="h-4 w-4" /> Back to Inbox</Button>
               </div>
               <h2 className="text-lg font-semibold text-white">{selectedThread.subject}</h2>
-              {/* AURA AI toolbar */}
-              <div className="flex gap-2 flex-wrap">
-                <Button size="sm" variant="outline" className="text-xs h-7 gap-1.5" style={{ borderColor: "hsl(140 12% 42% / 0.3)", color: "hsl(140 12% 58%)" }} onClick={() => ai.summarize(selectedThread)} disabled={ai.summaryLoading}>
-                  <Sparkles className={`h-3 w-3 ${ai.summaryLoading ? "animate-spin" : ""}`} /> {ai.summaryLoading ? "Summarizing…" : "Summarize"}
-                </Button>
-                <Button size="sm" variant="outline" className="text-xs h-7 gap-1.5" style={{ borderColor: "hsl(140 12% 42% / 0.3)", color: "hsl(140 12% 58%)" }} onClick={() => ai.aiReply(selectedThread)} disabled={ai.replyLoading}>
-                  <Sparkles className={`h-3 w-3 ${ai.replyLoading ? "animate-spin" : ""}`} /> {ai.replyLoading ? "Drafting…" : "AI Reply"}
-                </Button>
-                <Button size="sm" variant="outline" className="text-xs h-7 gap-1.5" style={{ borderColor: "hsl(140 12% 42% / 0.3)", color: "hsl(140 12% 58%)" }} onClick={() => ai.aiDraft(selectedThread)} disabled={ai.draftLoading}>
-                  <Sparkles className={`h-3 w-3 ${ai.draftLoading ? "animate-spin" : ""}`} /> {ai.draftLoading ? "Drafting…" : "AI Draft"}
-                </Button>
-                <Button size="sm" variant="outline" className="text-xs h-7 gap-1.5" style={{ borderColor: "hsl(140 12% 42% / 0.3)", color: "hsl(140 12% 58%)" }} onClick={() => ai.addToPipeline(selectedThread)}>
-                  Add to Pipeline
-                </Button>
+              {/* Smart tools grid */}
+              <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
+                {([
+                  { label: "Smart Reply", icon: Sparkles, action: () => ai.aiReply(selectedThread), loading: ai.replyLoading },
+                  { label: "Auto-Summarize", icon: FileText, action: () => ai.summarize(selectedThread), loading: ai.summaryLoading },
+                  { label: "Compliance Check", icon: Shield, action: () => ai.complianceCheck(selectedThread), loading: ai.complianceLoading },
+                  { label: "Sentiment Analysis", icon: Activity, action: () => ai.sentimentAnalysis(selectedThread), loading: ai.sentimentLoading },
+                  { label: "Follow-Up Reminder", icon: Bell, action: () => ai.followUpReminder(selectedThread), loading: ai.followUpLoading },
+                  { label: "Add to Pipeline", icon: TrendingUp, action: () => ai.addToPipeline(selectedThread), loading: false },
+                ]).map((f) => (
+                  <button key={f.label} onClick={f.action} disabled={f.loading}
+                    className="flex flex-col items-center gap-1 rounded-md px-2 py-2 text-center transition-colors hover:bg-white/[0.06] disabled:opacity-50"
+                    style={{ background: "hsl(140 12% 42% / 0.04)", border: "1px solid hsl(140 12% 42% / 0.12)" }}>
+                    <f.icon className={`h-3.5 w-3.5 ${f.loading ? "animate-spin" : ""}`} style={{ color: "hsl(140 12% 58%)" }} />
+                    <span className="text-[10px] font-medium leading-tight" style={{ color: "hsl(140 12% 65%)" }}>{f.label}</span>
+                  </button>
+                ))}
               </div>
               <AIResultPanel ai={ai} onUseReply={(text) => setReplyBody(text)} />
               {/* Messages */}
@@ -155,7 +159,12 @@ export default function EmailViewGmail({ engine, ai }: { engine: Engine; ai: AI 
                       </div>
                       <span className="text-xs" style={{ color: "hsl(240 5% 40%)" }}>{msg.date === "Today" ? msg.time : msg.date}</span>
                     </div>
-                    <div className="px-3 pb-3 text-sm leading-relaxed whitespace-pre-wrap" style={{ color: "hsl(240 5% 78%)" }}>{msg.body}</div>
+                    <div className="px-3 pb-3 text-sm leading-relaxed" style={{ color: "hsl(240 5% 78%)" }}>
+                      {msg.body.includes("<") && msg.body.includes(">")
+                        ? <iframe srcDoc={`<html><head><style>body{margin:0;padding:8px;font-family:system-ui,sans-serif;font-size:14px;color:#c8c8d0;background:transparent;}</style></head><body>${msg.body}</body></html>`} className="w-full border-0 min-h-[120px]" style={{ background: "transparent" }} sandbox="allow-same-origin" />
+                        : <div className="whitespace-pre-wrap">{msg.body}</div>
+                      }
+                    </div>
                     {idx === selectedThread.messages.length - 1 && (
                       <div className="flex gap-2 px-3 pb-3 flex-wrap">
                         <Button size="sm" variant="ghost" className="text-xs h-7 gap-1" style={{ color: "hsl(240 5% 70%)" }} onClick={() => toast.info("Reply (demo)")}><Reply className="h-3 w-3" /> Reply</Button>
@@ -179,7 +188,8 @@ export default function EmailViewGmail({ engine, ai }: { engine: Engine; ai: AI 
                 const lastMsg = thread.messages[thread.messages.length - 1];
                 const snippet = lastMsg.from === "You" ? `You: ${lastMsg.body.slice(0, 60)}` : lastMsg.body.slice(0, 60);
                 return (
-                  <button key={thread.id} onClick={() => selectThread(thread.id)}
+                  <div key={thread.id} className="group relative">
+                  <button onClick={() => selectThread(thread.id)}
                     className="w-full text-left px-3 py-2.5 flex items-center gap-2.5 transition-colors hover:bg-white/[0.04]"
                     style={{ background: thread.unread ? "hsl(140 12% 42% / 0.04)" : undefined, borderBottom: idx < filtered.length - 1 ? "1px solid hsl(240 6% 12%)" : undefined }}
                   >
@@ -199,6 +209,12 @@ export default function EmailViewGmail({ engine, ai }: { engine: Engine; ai: AI 
                       <span className="text-xs" style={{ color: thread.unread ? "hsl(140 12% 58%)" : "hsl(240 5% 40%)" }}>{lastMsg.date === "Today" ? lastMsg.time : lastMsg.date}</span>
                     </div>
                   </button>
+                  {/* Hover actions */}
+                  <div className="absolute right-2 top-1/2 -translate-y-1/2 hidden group-hover:flex gap-1 z-10">
+                    <button className="p-1.5 rounded-md hover:bg-white/10" style={{ background: "hsl(240 8% 9% / 0.9)" }} onClick={() => { selectThread(thread.id); setTimeout(() => ai.aiReply(thread as DemoThread), 100); }} title="AI Reply"><Sparkles className="h-3.5 w-3.5" style={{ color: "hsl(140 12% 58%)" }} /></button>
+                    <button className="p-1.5 rounded-md hover:bg-white/10" style={{ background: "hsl(240 8% 9% / 0.9)" }} onClick={() => toast.success("Calendar event created")} title="Create Calendar Event"><CalendarPlus className="h-3.5 w-3.5" style={{ color: "hsl(140 12% 58%)" }} /></button>
+                  </div>
+                  </div>
                 );
               })}
             </div>

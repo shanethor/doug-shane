@@ -148,7 +148,7 @@ export const SMART_FEATURES = [
   { label: "Compliance Check", desc: "Flag compliance issues" },
   { label: "Sentiment Analysis", desc: "Gauge client tone" },
   { label: "Follow-Up Reminder", desc: "Auto-set reminders" },
-  { label: "Priority Scoring", desc: "Rank by impact" },
+  { label: "Add to Pipeline", desc: "Track as a deal" },
 ];
 
 /* ─── Search parser ─── */
