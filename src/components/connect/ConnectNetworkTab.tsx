@@ -315,7 +315,32 @@ export default function ConnectNetworkTab() {
           </h2>
           <p className="text-xs text-muted-foreground">{contacts.length} contacts · Real data from your synced accounts</p>
         </div>
+        <div className="flex gap-1 border rounded-lg p-0.5">
+          <Button
+            variant={viewMode === "map" ? "default" : "ghost"}
+            size="sm"
+            className="h-7 text-xs gap-1"
+            onClick={() => setViewMode("map")}
+          >
+            <Network className="h-3.5 w-3.5" /> Map
+          </Button>
+          <Button
+            variant={viewMode === "list" ? "default" : "ghost"}
+            size="sm"
+            className="h-7 text-xs gap-1"
+            onClick={() => setViewMode("list")}
+          >
+            <List className="h-3.5 w-3.5" /> List
+          </Button>
+        </div>
       </div>
+
+      {/* Map View */}
+      {viewMode === "map" && <RelationshipMap />}
+
+      {/* List View */}
+      {viewMode === "list" && (
+        <>
 
       {/* Stats bar */}
       <div className="grid grid-cols-4 gap-2">
