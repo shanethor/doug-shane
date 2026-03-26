@@ -837,6 +837,44 @@ export default function ConnectDemoAuth() {
                           </span>
                         )}
                       </div>
+
+                      {/* Live savings indicator */}
+                      {connectedCount > 0 && (
+                        <div
+                          className="rounded-lg p-3 text-center transition-all duration-500"
+                          style={{
+                            background: accountSavings > 0 ? "hsl(140 12% 42% / 0.1)" : "hsl(240 6% 10%)",
+                            border: `1px solid ${accountSavings > 0 ? "hsl(140 12% 42% / 0.3)" : "hsl(240 6% 18%)"}`,
+                          }}
+                        >
+                          <div className="flex items-center justify-center gap-2">
+                            <span className="text-[10px] font-medium" style={{ color: "hsl(240 5% 50%)" }}>Monthly savings:</span>
+                            <span
+                              className="text-lg font-bold transition-all duration-300"
+                              style={{
+                                color: accountSavings > 0 ? "hsl(140 12% 58%)" : "hsl(240 5% 40%)",
+                              }}
+                            >
+                              ${accountSavings}
+                            </span>
+                            <span className="text-[10px]" style={{ color: "hsl(240 5% 40%)" }}>/mo off</span>
+                          </div>
+                          {accountSavings > 0 ? (
+                            <p className="text-[10px] mt-1" style={{ color: "hsl(140 12% 55%)" }}>
+                              🎉 You've unlocked a ${accountSavings} credit — applied at checkout!
+                            </p>
+                          ) : connectedCount < 5 ? (
+                            <p className="text-[10px] mt-1" style={{ color: "hsl(240 5% 46%)" }}>
+                              Connect {5 - connectedCount} more account{5 - connectedCount > 1 ? "s" : ""} to save $5/mo
+                            </p>
+                          ) : null}
+                          {accountSavings > 0 && accountSavings < maxAccountSavings && (
+                            <p className="text-[9px] mt-0.5" style={{ color: "hsl(240 5% 40%)" }}>
+                              Up to ${maxTotalSavings}/mo possible with all accounts + contacts
+                            </p>
+                          )}
+                        </div>
+                      )}
                       <div className="h-1.5 rounded-full overflow-hidden" style={{ background: "hsl(240 6% 14%)" }}>
                         <div
                           className="h-full rounded-full transition-all duration-500"
