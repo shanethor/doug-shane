@@ -440,6 +440,39 @@ export default function SpotlightBrandSetup({ existing, onSave, onCancel }: Prop
           <Input value={tagline} onChange={e => setTagline(e.target.value)} placeholder="Protecting what matters most" className="h-9" maxLength={150} />
         </div>
 
+        {/* Company URLs */}
+        <div className="space-y-2">
+          <Label className="text-xs flex items-center gap-1">
+            <ScanSearch className="h-3 w-3" /> Company Online Presence (optional)
+          </Label>
+          <p className="text-[10px] text-muted-foreground">Add your website and social profiles so AI can pull real imagery, copy style, and brand elements for flyers.</p>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] text-muted-foreground w-16 shrink-0">Website</span>
+              <Input value={websiteUrl} onChange={e => setWebsiteUrl(e.target.value)} placeholder="https://yourcompany.com" className="h-8 text-xs" />
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] text-muted-foreground w-16 shrink-0">Facebook</span>
+              <Input value={facebookUrl} onChange={e => setFacebookUrl(e.target.value)} placeholder="https://facebook.com/yourpage" className="h-8 text-xs" />
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] text-muted-foreground w-16 shrink-0">Instagram</span>
+              <Input value={instagramUrl} onChange={e => setInstagramUrl(e.target.value)} placeholder="https://instagram.com/yourhandle" className="h-8 text-xs" />
+            </div>
+          </div>
+          {(websiteUrl.trim() || facebookUrl.trim() || instagramUrl.trim()) && (
+            <Button variant="outline" size="sm" className="h-7 text-xs gap-1" disabled={scrapingUrls} onClick={scrapeCompanyUrls}>
+              {scrapingUrls ? <Loader2 className="h-3 w-3 animate-spin" /> : <ScanSearch className="h-3 w-3" />}
+              {scrapingUrls ? "Scanning…" : "Scan URLs for Brand Intelligence"}
+            </Button>
+          )}
+          {scrapedData && (
+            <p className="text-[10px] italic text-muted-foreground border-l-2 pl-2" style={{ borderColor: "hsl(200 60% 50%)" }}>
+              {scrapedData.slice(0, 300)}{scrapedData.length > 300 ? "…" : ""}
+            </p>
+          )}
+        </div>
+
         {/* Default Disclaimer */}
         <div className="space-y-1">
           <Label className="text-xs">Default Disclaimer / Footer (optional)</Label>
