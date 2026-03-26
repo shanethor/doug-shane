@@ -76,29 +76,6 @@ export default function RequestAccess() {
             ))}
           </div>
 
-          {/* Branch selector */}
-          {user && (
-            <div className="mb-5">
-              <p className="text-xs text-[#52525B] uppercase tracking-wider mb-2">Select your branch</p>
-              <div className="grid grid-cols-2 gap-2">
-                {(["property", "wealth"] as const).map((b) => (
-                  <button
-                    key={b}
-                    onClick={() => setSelectedBranch(b)}
-                    className={`px-4 py-2.5 rounded-lg text-sm font-medium border transition-all ${
-                      selectedBranch === b
-                        ? b === "property"
-                          ? "border-[#B87333] bg-[#B87333]/10 text-[#B87333]"
-                          : "border-[#C9A84C] bg-[#C9A84C]/10 text-[#C9A84C]"
-                        : "border-[#27272A] text-[#71717A] hover:border-[#3F3F46]"
-                    }`}
-                  >
-                    {b === "property" ? "Property" : "Consulting"}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
 
           {user ? (
             subscribed ? (
