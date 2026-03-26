@@ -428,6 +428,8 @@ export default function ConnectNetworkTab() {
           )}
         </div>
       </div>
+      </>
+      )}
     </div>
   );
 }
