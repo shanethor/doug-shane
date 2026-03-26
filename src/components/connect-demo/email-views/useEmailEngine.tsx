@@ -177,9 +177,47 @@ export function setEmailLayout(layout: EmailLayout) {
   sessionStorage.setItem("connect-demo-email-layout", layout);
 }
 
+/* ─── Map synced emails to threads ─── */
+function mapSyncedToThreads(syncedEmails: any[]): DemoThread[] {
+  return syncedEmails.map((email, i) => ({
+    id: email.id || `synced-${i}`,
+    subject: email.subject || "(no subject)",
+    participants: [email.from_address || "Unknown"],
+    unread: !email.is_read,
+    starred: false,
+    tags: [],
+    account: "work",
+    hasAttachment: false,
+    messages: [{
+      id: `msg-${email.id || i}`,
+      from: email.from_name || email.from_address || "Unknown",
+      fromAddr: email.from_address || "",
+      to: "You",
+      toAddr: email.to_addresses?.[0] || "",
+      body: email.body_text || email.body_html || email.snippet || "",
+      time: email.received_at ? new Date(email.received_at).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) : "",
+      date: email.received_at ? (isToday(email.received_at) ? "Today" : new Date(email.received_at).toLocaleDateString()) : "",
+    }],
+  }));
+}
+
+function isToday(dateStr: string): boolean {
+  const d = new Date(dateStr);
+  const today = new Date();
+  return d.toDateString() === today.toDateString();
+}
+
 /* ─── Shared Email Hook ─── */
-export function useEmailEngine() {
-  const [threads, setThreads] = useState<DemoThread[]>(THREADS);
+export function useEmailEngine(realEmails?: any[]) {
+  const initialThreads = realEmails && realEmails.length > 0 ? mapSyncedToThreads(realEmails) : THREADS;
+  const [threads, setThreads] = useState<DemoThread[]>(initialThreads);
+
+  // Update threads when realEmails changes
+  useEffect(() => {
+    if (realEmails && realEmails.length > 0) {
+      setThreads(mapSyncedToThreads(realEmails));
+    }
+  }, [realEmails]);
   const [selectedThreadId, setSelectedThreadId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [folder, setFolder] = useState<Folder>("inbox");
