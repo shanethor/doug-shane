@@ -7,6 +7,7 @@ import { Search, ArrowRight, Sparkles, Loader2, X, MapPin, Briefcase, Building2,
 import { toast } from "sonner";
 import { ConnectOutreachPopup } from "./ConnectOutreachPopups";
 import MeetingPrepSection from "@/components/connect/MeetingPrepSection";
+import RelationshipMap from "@/components/connect/RelationshipMap";
 
 const DUMMY_PATH_TEMPLATES = [
   {
@@ -693,7 +694,7 @@ export default function DemoConnectTab({ contentReady = true }: { contentReady?:
           transform: connectPhase >= 3 ? "translateY(0) scale(1)" : "translateY(30px) scale(0.95)",
           transition: isFirstVisit.current ? "all 1.8s cubic-bezier(0.16, 1, 0.3, 1)" : "all 0.6s ease-out",
         }}>
-          {graphActive && <NetworkGraph onNodeClick={handleNodeClick} />}
+          {graphActive && <RelationshipMap />}
           <div className="absolute bottom-4 left-0 right-0 text-center z-10">
             <span className="text-xs px-3 py-1 rounded-full" style={{ background: "hsl(240 8% 9% / 0.8)", color: "hsl(240 5% 50%)", border: "1px solid hsl(240 6% 14%)" }}>
               Live network map — click any name to view profile
