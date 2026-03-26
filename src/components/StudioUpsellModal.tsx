@@ -59,7 +59,7 @@ export default function StudioUpsellModal({
             <div className="p-2 rounded-lg bg-orange-500/10">
               <Wrench className="h-5 w-5 text-orange-400" />
             </div>
-            Aura Studio
+            AuRa Studio
           </DialogTitle>
         </DialogHeader>
 

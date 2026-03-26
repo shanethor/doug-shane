@@ -167,7 +167,7 @@ const App = () => (
           <Route path="/connect" element={<ProductProtectedRoute><ConnectProduct /></ProductProtectedRoute>} />
           <Route path="/connect/*" element={<ProductProtectedRoute><ConnectProduct /></ProductProtectedRoute>} />
 
-          {/* ── Aura Studio product ── */}
+          {/* ── AuRa Studio product ── */}
           <Route path="/studio" element={<ProductProtectedRoute><StudioProduct /></ProductProtectedRoute>} />
           <Route path="/studio/*" element={<ProductProtectedRoute><StudioProduct /></ProductProtectedRoute>} />
 
