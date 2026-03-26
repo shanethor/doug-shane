@@ -7,6 +7,7 @@ import { Search, ArrowRight, Sparkles, Loader2, X, MapPin, Briefcase, Building2,
 import { toast } from "sonner";
 import { ConnectOutreachPopup } from "./ConnectOutreachPopups";
 import MeetingPrepSection from "@/components/connect/MeetingPrepSection";
+import RelationshipMap from "@/components/connect/RelationshipMap";
 
 const DUMMY_PATH_TEMPLATES = [
   {
