@@ -163,12 +163,12 @@ export default function ProductSettings() {
   return (
     <ProductLayout>
       <div className="max-w-2xl mx-auto px-4 md:px-8 py-8 space-y-8">
-        <h1 className="text-2xl font-light tracking-tight text-white/90">Settings</h1>
+        <h1 className={`text-2xl font-light tracking-tight ${darkMode ? "text-white/90" : "text-foreground"}`}>Settings</h1>
 
         {/* Profile */}
         <div className={sectionStyle}>
           <div className="flex items-center gap-3 mb-2">
-            <User className="h-4 w-4 text-white/30" />
+            <User className={`h-4 w-4 ${iconMuted}`} />
             <h2 className={headingStyle}>Profile</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
