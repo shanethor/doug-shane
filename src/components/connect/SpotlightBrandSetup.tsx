@@ -71,6 +71,11 @@ export default function SpotlightBrandSetup({ existing, onSave, onCancel }: Prop
   const [disclaimer, setDisclaimer] = useState(existing?.disclaimer || "");
   const [industry, setIndustry] = useState(existing?.industry || "");
   const [tone, setTone] = useState(existing?.tone || "professional");
+  const [websiteUrl, setWebsiteUrl] = useState(existing?.website_url || "");
+  const [facebookUrl, setFacebookUrl] = useState(existing?.facebook_url || "");
+  const [instagramUrl, setInstagramUrl] = useState(existing?.instagram_url || "");
+  const [scrapingUrls, setScrapingUrls] = useState(false);
+  const [scrapedData, setScrapedData] = useState<string>("");
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
@@ -83,6 +88,43 @@ export default function SpotlightBrandSetup({ existing, onSave, onCancel }: Prop
   const [materialExtracted, setMaterialExtracted] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const materialRef = useRef<HTMLInputElement>(null);
+
+  const scrapeCompanyUrls = async () => {
+    const urls = [websiteUrl, facebookUrl, instagramUrl].filter(u => u.trim());
+    if (urls.length === 0) return;
+    setScrapingUrls(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("spotlight-flyer", {
+        body: { action: "scrape_brand_urls", urls, brand_name: brandName.trim() || undefined },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      const result = data?.result;
+      if (result) {
+        if (result.colors?.length > 0) {
+          const hexColors = result.colors.filter((c: string) => /^#[0-9A-Fa-f]{3,8}$/.test(c)).slice(0, 4);
+          if (hexColors.length > 0) setBrandColors(hexColors);
+        }
+        if (result.industry) {
+          const matched = INDUSTRIES.find(i => i.value === result.industry || i.label.toLowerCase().includes(result.industry.toLowerCase()));
+          if (matched) setIndustry(matched.value);
+        }
+        if (result.tone) {
+          const matched = TONES.find(t => t.value === result.tone || t.label.toLowerCase().includes(result.tone.toLowerCase()));
+          if (matched) setTone(matched.value);
+        }
+        if (result.brand_name && !brandName.trim()) setBrandName(result.brand_name);
+        if (result.tagline && !tagline.trim()) setTagline(result.tagline);
+        if (result.scraped_summary) setScrapedData(result.scraped_summary);
+        if (result.design_notes) setDesignNotes(prev => prev ? `${prev}\n${result.design_notes}` : result.design_notes);
+        toast.success("Brand intelligence extracted from company URLs");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Failed to scrape URLs");
+    } finally {
+      setScrapingUrls(false);
+    }
+  };
 
   const analyzeBrandImage = async (base64Url: string, type: "logo" | "material") => {
     try {
