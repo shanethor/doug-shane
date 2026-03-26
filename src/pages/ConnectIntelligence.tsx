@@ -423,10 +423,9 @@ export default function ConnectIntelligencePage() {
       </div>
 
       <Tabs value={tab} onValueChange={setTab}>
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="inbox" className="text-xs"><Mail className="h-3.5 w-3.5 mr-1 hidden sm:inline" /> Inbox</TabsTrigger>
           <TabsTrigger value="connections" className="text-xs"><Database className="h-3.5 w-3.5 mr-1 hidden sm:inline" /> Sources</TabsTrigger>
-          <TabsTrigger value="map" className="text-xs"><Users className="h-3.5 w-3.5 mr-1 hidden sm:inline" /> Map</TabsTrigger>
           <TabsTrigger value="analytics" className="text-xs"><BarChart3 className="h-3.5 w-3.5 mr-1 hidden sm:inline" /> Analytics</TabsTrigger>
           <TabsTrigger value="settings" className="text-xs"><Settings className="h-3.5 w-3.5 mr-1 hidden sm:inline" /> Prospect</TabsTrigger>
           <TabsTrigger value="privacy" className="text-xs"><Shield className="h-3.5 w-3.5 mr-1 hidden sm:inline" /> Privacy</TabsTrigger>
@@ -434,7 +433,6 @@ export default function ConnectIntelligencePage() {
 
         <TabsContent value="inbox"><EmailIntelligencePage /></TabsContent>
         <TabsContent value="connections"><ConnectionManagerPage /></TabsContent>
-        <TabsContent value="map"><RelationshipMap /></TabsContent>
         <TabsContent value="analytics"><FeederListAnalytics /></TabsContent>
         <TabsContent value="settings"><ProspectSettingsPage /></TabsContent>
         <TabsContent value="privacy"><PrivacySettings /></TabsContent>
