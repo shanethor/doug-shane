@@ -964,7 +964,7 @@ export default function ConnectDemoAuth() {
                     {connectedCount === 0
                       ? "Skip & Enter AuRa Connect"
                       : accountSavings > 0
-                        ? `Enter — Saving $${accountSavings}/mo 🎉`
+                        ? `Enter — $${accountSavings} credit earned 🎉`
                         : `Enter AuRa Connect (${connectedCount} linked)`}
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
