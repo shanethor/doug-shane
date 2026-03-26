@@ -63,7 +63,20 @@ const TABS = [
 export default function ConnectDemo() {
   const [activeTab, setActiveTab] = useState("connect");
   const [buildPhase, setBuildPhase] = useState(0);
+  const [showUpsell, setShowUpsell] = useState(false);
+  const tabSwitchCount = useRef(0);
+  const upsellShown = useRef(!!sessionStorage.getItem("connect-demo-upsell-shown"));
   // 0=black screen, 1=logo pulse, 2=header, 3=ticker, 4=tabs, 5=content
+
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    tabSwitchCount.current += 1;
+    if (tabSwitchCount.current >= 3 && !upsellShown.current) {
+      upsellShown.current = true;
+      sessionStorage.setItem("connect-demo-upsell-shown", "true");
+      setTimeout(() => setShowUpsell(true), 800);
+    }
+  };
 
   useEffect(() => {
     const demoAuth = sessionStorage.getItem("connect-demo-auth");
