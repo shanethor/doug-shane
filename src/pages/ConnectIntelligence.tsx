@@ -61,11 +61,53 @@ interface ConnectedAccount {
 }
 
 // ─── Email Intelligence ───
+// Smart filter: exclude business/marketing/noreply emails, keep real people
+const BUSINESS_EMAIL_PREFIXES = [
+  "noreply", "no-reply", "no_reply", "donotreply", "do-not-reply",
+  "info@", "support@", "help@", "admin@", "sales@", "marketing@",
+  "billing@", "team@", "hello@", "contact@", "newsletter@",
+  "notifications@", "updates@", "mailer-daemon", "postmaster@",
+  "abuse@", "security@", "feedback@", "service@", "customerservice@",
+  "accounts@", "orders@", "receipts@", "invoice@", "payments@",
+  "unsubscribe@", "subscribe@", "bounces@", "alerts@", "system@",
+  "automated@", "auto@", "bot@", "daemon@", "webmaster@",
+  "news@", "press@", "media@", "pr@", "hr@", "careers@", "jobs@",
+  "compliance@", "legal@", "privacy@", "office@",
+];
+const BUSINESS_EMAIL_DOMAINS = [
+  "mailchimp.com", "sendgrid.net", "amazonses.com", "mailgun.org",
+  "constantcontact.com", "hubspot.com", "salesforce.com", "zendesk.com",
+  "intercom.io", "freshdesk.com", "notifications.google.com",
+  "facebookmail.com", "linkedin.com", "indeed.com", "glassdoor.com",
+  "noreply.github.com", "stripe.com", "paypal.com", "intuit.com",
+];
+
+function isBusinessOrMarketingEmail(email: string): boolean {
+  const lower = email.toLowerCase();
+  const localPart = lower.split("@")[0];
+  const domain = lower.split("@")[1] || "";
+  if (BUSINESS_EMAIL_PREFIXES.some(p => localPart.startsWith(p.replace("@", "")))) return true;
+  if (BUSINESS_EMAIL_DOMAINS.some(d => domain === d || domain.endsWith("." + d))) return true;
+  // Generic patterns: all-numeric local parts, very long auto-generated addresses
+  if (/^\d+$/.test(localPart)) return true;
+  if (/^[a-f0-9]{20,}$/.test(localPart)) return true; // hash-based addresses
+  return false;
+}
+
+function hasRealName(c: DiscoveredContact): boolean {
+  const name = c.display_name || `${c.first_name || ""} ${c.last_name || ""}`.trim();
+  if (!name || name.length < 2) return false;
+  // Filter out names that are just email addresses
+  if (name.includes("@")) return false;
+  return true;
+}
+
 function EmailIntelligencePage() {
   const [contacts, setContacts] = useState<DiscoveredContact[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [filter, setFilter] = useState<"all" | "high_score" | "verified">("all");
+  const [showFiltered, setShowFiltered] = useState(false);
 
   useEffect(() => { loadContacts(); }, []);
 
@@ -76,8 +118,11 @@ function EmailIntelligencePage() {
       .select("*")
       .neq("status", "dismissed")
       .order("first_seen_at", { ascending: false })
-      .limit(100);
-    setContacts((data as any as DiscoveredContact[]) || []);
+      .limit(200);
+    const raw = (data as any as DiscoveredContact[]) || [];
+    // Apply smart filter: remove business/marketing emails, keep people with names
+    const people = raw.filter(c => !isBusinessOrMarketingEmail(c.email_address) && hasRealName(c));
+    setContacts(people);
     setLoading(false);
   }
 
