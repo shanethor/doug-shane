@@ -3,9 +3,12 @@ import { useAuth } from "@/hooks/useAuth";
 import {
   Network, Wrench, Settings, LogOut, LayoutDashboard, BarChart3, Mail,
   Sparkles, Zap, Calendar, PanelLeftClose, PanelLeft, Lock, Brain,
+  MoreHorizontal,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { useConnectNavConfig, ALL_CONNECT_TABS } from "@/hooks/useConnectNavConfig";
 
 const CONNECT_NAV = [
   { to: "/connect", label: "Connect", icon: Network, exact: true },
@@ -16,6 +19,16 @@ const CONNECT_NAV = [
   { to: "/connect/create", label: "Create", icon: Sparkles },
   { to: "/connect/sage", label: "Sage", icon: Zap },
 ];
+
+const ICON_MAP: Record<string, any> = {
+  connect: Network,
+  intelligence: Brain,
+  pipeline: BarChart3,
+  email: Mail,
+  calendar: Calendar,
+  create: Sparkles,
+  sage: Zap,
+};
 
 export function ProductLayout({
   children,
