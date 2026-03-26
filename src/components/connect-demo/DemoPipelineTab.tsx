@@ -17,6 +17,7 @@ import { Switch } from "@/components/ui/switch";
 import {
   Building2, DollarSign, Users, Info, Plus, Phone, Mail, MapPin, Calendar, X, GripVertical, Trophy, Sparkles, Home, Briefcase, Shield, Star, Check,
 } from "lucide-react";
+import { useRealPipelineData } from "@/hooks/useRealData";
 
 interface StageConfig { key: string; label: string; color: string; }
 
@@ -555,6 +556,7 @@ function ClientInfoSheet({ lead, industry, onClose, allStages, onMoveStage }: { 
 }
 
 export default function DemoPipelineTab() {
+  const { leads: realLeads, hasLeads: hasRealLeads, loading: realLoading } = useRealPipelineData();
   const demoIndustry = sessionStorage.getItem("connect-demo-industry") || "";
   const lower = demoIndustry.toLowerCase();
   const initialIndustry = lower.includes("real estate") ? "real_estate" : lower.includes("consult") ? "consulting" : lower.includes("insurance") ? "insurance" : "generic";
@@ -562,8 +564,24 @@ export default function DemoPipelineTab() {
   const [industry, setIndustry] = useState(initialIndustry);
   const [defaultIndustry, setDefaultIndustry] = useState(() => sessionStorage.getItem("connect-demo-default-pipeline") || initialIndustry);
 
+  // Convert real leads to DemoLead format when available
+  const realDemoLeads: DemoLead[] = hasRealLeads ? realLeads.map((l: any) => ({
+    id: l.id,
+    name: l.account_name || "Unnamed",
+    contact: l.contact_name || "",
+    stage: l.stage || "prospect",
+    value: l.premium || l.revenue || 0,
+    source: l.lead_source || "Manual",
+    phone: l.phone || "",
+    email: l.email || "",
+    location: l.state || "",
+    industry: l.business_type || "",
+    notes: l.notes || "",
+  })) : [];
+
   // Per-industry leads stored separately
   const [leadsByType, setLeadsByType] = useState<Record<string, DemoLead[]>>(() => {
+    if (hasRealLeads && realDemoLeads.length > 0) return { [industry]: realDemoLeads };
     const stored = sessionStorage.getItem("connect-demo-leads-by-type");
     if (stored) { try { return JSON.parse(stored); } catch {} }
     return { ...DEMO_LEADS_BY_TYPE };

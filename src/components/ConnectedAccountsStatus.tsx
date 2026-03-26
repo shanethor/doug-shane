@@ -166,6 +166,18 @@ export function useConnectedAccounts() {
         canDisconnect: !!phone,
       },
       {
+        id: "apple_contacts",
+        label: "Apple Contacts / iCloud",
+        icon: <Globe className="h-4 w-4" />,
+        level: "Recommended",
+        connected: !!networkConns["apple_contacts"],
+        detail: networkConns["apple_contacts"] ? `${networkConns["apple_contacts"].contact_count} contacts synced` : undefined,
+        contactCount: networkConns["apple_contacts"]?.contact_count,
+        lastSync: networkConns["apple_contacts"]?.last_sync_at,
+        canConnect: true,
+        canDisconnect: !!networkConns["apple_contacts"],
+      },
+      {
         id: "social",
         label: "Instagram / Facebook / X",
         icon: <Instagram className="h-4 w-4" />,
