@@ -8,7 +8,7 @@ import StudioUpsellModal from "@/components/StudioUpsellModal";
 import DemoConnectTab from "@/components/connect-demo/DemoConnectTab";
 import DemoPipelineTab from "@/components/connect-demo/DemoPipelineTab";
 import DemoEmailTab from "@/components/connect-demo/DemoEmailTab";
-import DemoCalendarTab from "@/components/connect-demo/DemoCalendarTab";
+import SmartCalendar from "@/components/connect/SmartCalendar";
 import DemoSpotlightTab from "@/components/connect-demo/DemoSpotlightTab";
 import DemoAssistantTab from "@/components/connect-demo/DemoAssistantTab";
 import ConnectIntelligencePage from "@/pages/ConnectIntelligence";
