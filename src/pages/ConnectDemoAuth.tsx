@@ -971,7 +971,7 @@ export default function ConnectDemoAuth() {
 
                   {connectedCount > 0 && connectedCount < unlockThreshold && (
                     <p className="text-[10px] text-center" style={{ color: "hsl(240 5% 46%)" }}>
-                      Connect {unlockThreshold - connectedCount} more to unlock $5/mo credit
+                      Connect {unlockThreshold - connectedCount} more to unlock $5 credit
                     </p>
                   )}
                 </div>
