@@ -445,6 +445,21 @@ export default function ConnectDemoAuth() {
   const connectedCount = connectedAccounts.size;
   const unlockThreshold = 5;
 
+  // Live savings calculation based on reward tiers
+  const accountSavings = useMemo(() => {
+    const totalAvailable = ACCOUNT_OPTIONS.length;
+    let credit = 0;
+    if (connectedCount >= totalAvailable) credit = 15; // All accounts
+    else if (connectedCount >= 10) credit = 10;
+    else if (connectedCount >= 5) credit = 5;
+    return credit;
+  }, [connectedCount]);
+
+  // Potential max savings (accounts + contacts combined)
+  const maxAccountSavings = 15;
+  const maxContactSavings = 50;
+  const maxTotalSavings = maxAccountSavings + maxContactSavings; // $65 total possible
+
   // Start building network after 2+ accounts linked
   const handleBuildNetwork = async () => {
     if (connectedCount < 1) return;
