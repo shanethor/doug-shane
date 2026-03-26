@@ -56,6 +56,7 @@ import AuraConnect from "./pages/AuraConnect";
 import AuraConcierge from "./pages/AuraConcierge";
 import ClientSubmission from "./pages/ClientSubmission";
 import LandingPage from "./pages/LandingPage";
+import BrandKit from "./pages/BrandKit";
 import ConnectDemo from "./pages/ConnectDemo";
 import ConnectDemoAuth from "./pages/ConnectDemoAuth";
 import BecomePartner from "./pages/BecomePartner";
