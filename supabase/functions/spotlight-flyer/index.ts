@@ -435,12 +435,16 @@ serve(async (req) => {
 
     // ─── BRANDING: save_brand ───
     if (action === "save_brand") {
-      const { brand_id, name, brand_name, brand_colors, logo_url, tagline, disclaimer, industry, tone, is_default, font_styles, design_notes } = body;
+      const { brand_id, name, brand_name, brand_colors, logo_url, tagline, disclaimer, industry, tone, is_default, font_styles, design_notes, website_url, facebook_url, instagram_url, scraped_summary } = body;
 
       // Build metadata with design intelligence
       const metadata: Record<string, unknown> = {};
       if (font_styles && Array.isArray(font_styles) && font_styles.length > 0) metadata.font_styles = font_styles;
       if (design_notes && typeof design_notes === "string") metadata.design_notes = design_notes;
+      if (website_url) metadata.website_url = website_url;
+      if (facebook_url) metadata.facebook_url = facebook_url;
+      if (instagram_url) metadata.instagram_url = instagram_url;
+      if (scraped_summary) metadata.scraped_summary = scraped_summary;
 
       // If setting as default, unset other defaults
       if (is_default) {
