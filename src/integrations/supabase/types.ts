@@ -144,6 +144,36 @@ export type Database = {
         }
         Relationships: []
       }
+      agency_network_overlaps: {
+        Row: {
+          contact_email: string
+          contact_name: string | null
+          created_at: string
+          id: string
+          last_computed_at: string
+          overlap_count: number
+          producer_user_ids: string[]
+        }
+        Insert: {
+          contact_email: string
+          contact_name?: string | null
+          created_at?: string
+          id?: string
+          last_computed_at?: string
+          overlap_count?: number
+          producer_user_ids?: string[]
+        }
+        Update: {
+          contact_email?: string
+          contact_name?: string | null
+          created_at?: string
+          id?: string
+          last_computed_at?: string
+          overlap_count?: number
+          producer_user_ids?: string[]
+        }
+        Relationships: []
+      }
       ai_error_logs: {
         Row: {
           created_at: string
@@ -1018,6 +1048,36 @@ export type Database = {
         }
         Relationships: []
       }
+      consent_versions: {
+        Row: {
+          body_text: string
+          consent_type: string
+          created_at: string
+          effective_date: string
+          id: string
+          title: string
+          version: string
+        }
+        Insert: {
+          body_text: string
+          consent_type: string
+          created_at?: string
+          effective_date?: string
+          id?: string
+          title: string
+          version: string
+        }
+        Update: {
+          body_text?: string
+          consent_type?: string
+          created_at?: string
+          effective_date?: string
+          id?: string
+          title?: string
+          version?: string
+        }
+        Relationships: []
+      }
       contact_merge_queue: {
         Row: {
           confidence: number | null
@@ -1536,6 +1596,68 @@ export type Database = {
           },
         ]
       }
+      email_signature_contacts: {
+        Row: {
+          confidence: number | null
+          created_at: string
+          extracted_address: string | null
+          extracted_company: string | null
+          extracted_email: string | null
+          extracted_linkedin: string | null
+          extracted_name: string | null
+          extracted_phone: string | null
+          extracted_title: string | null
+          extracted_website: string | null
+          id: string
+          linked_canonical_id: string | null
+          source_email_id: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          confidence?: number | null
+          created_at?: string
+          extracted_address?: string | null
+          extracted_company?: string | null
+          extracted_email?: string | null
+          extracted_linkedin?: string | null
+          extracted_name?: string | null
+          extracted_phone?: string | null
+          extracted_title?: string | null
+          extracted_website?: string | null
+          id?: string
+          linked_canonical_id?: string | null
+          source_email_id?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          confidence?: number | null
+          created_at?: string
+          extracted_address?: string | null
+          extracted_company?: string | null
+          extracted_email?: string | null
+          extracted_linkedin?: string | null
+          extracted_name?: string | null
+          extracted_phone?: string | null
+          extracted_title?: string | null
+          extracted_website?: string | null
+          id?: string
+          linked_canonical_id?: string | null
+          source_email_id?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_signature_contacts_linked_canonical_id_fkey"
+            columns: ["linked_canonical_id"]
+            isOneToOne: false
+            referencedRelation: "canonical_persons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       engine_activity: {
         Row: {
           activity_type: string
@@ -1830,8 +1952,11 @@ export type Database = {
       feeder_list_prospects: {
         Row: {
           avatar_url: string | null
+          client_converted_at: string | null
           company: string | null
           connection_type: string | null
+          converted_to_client: boolean | null
+          converted_to_meeting: boolean | null
           created_at: string | null
           email: string | null
           enrichment_data: Json | null
@@ -1840,11 +1965,14 @@ export type Database = {
           first_name: string | null
           id: string
           instagram_url: string | null
+          intro_email_sent: boolean | null
+          intro_email_sent_at: string | null
           is_mutual_with_producer: boolean | null
           last_name: string | null
           life_event_signals: Json | null
           linkedin_url: string | null
           location: string | null
+          meeting_date: string | null
           name: string
           occupation: string | null
           phone: string | null
@@ -1855,8 +1983,11 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          client_converted_at?: string | null
           company?: string | null
           connection_type?: string | null
+          converted_to_client?: boolean | null
+          converted_to_meeting?: boolean | null
           created_at?: string | null
           email?: string | null
           enrichment_data?: Json | null
@@ -1865,11 +1996,14 @@ export type Database = {
           first_name?: string | null
           id?: string
           instagram_url?: string | null
+          intro_email_sent?: boolean | null
+          intro_email_sent_at?: string | null
           is_mutual_with_producer?: boolean | null
           last_name?: string | null
           life_event_signals?: Json | null
           linkedin_url?: string | null
           location?: string | null
+          meeting_date?: string | null
           name: string
           occupation?: string | null
           phone?: string | null
@@ -1880,8 +2014,11 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          client_converted_at?: string | null
           company?: string | null
           connection_type?: string | null
+          converted_to_client?: boolean | null
+          converted_to_meeting?: boolean | null
           created_at?: string | null
           email?: string | null
           enrichment_data?: Json | null
@@ -1890,11 +2027,14 @@ export type Database = {
           first_name?: string | null
           id?: string
           instagram_url?: string | null
+          intro_email_sent?: boolean | null
+          intro_email_sent_at?: string | null
           is_mutual_with_producer?: boolean | null
           last_name?: string | null
           life_event_signals?: Json | null
           linkedin_url?: string | null
           location?: string | null
+          meeting_date?: string | null
           name?: string
           occupation?: string | null
           phone?: string | null
@@ -1915,8 +2055,12 @@ export type Database = {
       }
       feeder_lists: {
         Row: {
+          auto_triggered: boolean | null
+          calendar_event_id: string | null
           client_canonical_id: string | null
           client_name: string | null
+          emailed_at: string | null
+          emailed_to_producer: boolean | null
           generated_at: string | null
           id: string
           meeting_date: string | null
@@ -1925,8 +2069,12 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          auto_triggered?: boolean | null
+          calendar_event_id?: string | null
           client_canonical_id?: string | null
           client_name?: string | null
+          emailed_at?: string | null
+          emailed_to_producer?: boolean | null
           generated_at?: string | null
           id?: string
           meeting_date?: string | null
@@ -1935,8 +2083,12 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          auto_triggered?: boolean | null
+          calendar_event_id?: string | null
           client_canonical_id?: string | null
           client_name?: string | null
+          emailed_at?: string | null
+          emailed_to_producer?: boolean | null
           generated_at?: string | null
           id?: string
           meeting_date?: string | null
@@ -2166,6 +2318,50 @@ export type Database = {
             columns: ["intake_link_id"]
             isOneToOne: false
             referencedRelation: "intake_links"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      intro_email_drafts: {
+        Row: {
+          body_html: string
+          created_at: string
+          id: string
+          prospect_id: string | null
+          sent_at: string | null
+          status: string
+          subject: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          body_html?: string
+          created_at?: string
+          id?: string
+          prospect_id?: string | null
+          sent_at?: string | null
+          status?: string
+          subject?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          body_html?: string
+          created_at?: string
+          id?: string
+          prospect_id?: string | null
+          sent_at?: string | null
+          status?: string
+          subject?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intro_email_drafts_prospect_id_fkey"
+            columns: ["prospect_id"]
+            isOneToOne: false
+            referencedRelation: "feeder_list_prospects"
             referencedColumns: ["id"]
           },
         ]
@@ -3039,6 +3235,42 @@ export type Database = {
           },
         ]
       }
+      privacy_requests: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          request_type: string
+          requested_at: string
+          response_data: Json | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          request_type: string
+          requested_at?: string
+          response_data?: Json | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          request_type?: string
+          requested_at?: string
+          response_data?: Json | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       producer_goals: {
         Row: {
           annual_premium_goal: number
@@ -3669,6 +3901,7 @@ export type Database = {
           accepted_at: string | null
           consent_type: string
           consent_version: string
+          consent_version_id: string | null
           created_at: string | null
           id: string
           ip_address: string | null
@@ -3681,6 +3914,7 @@ export type Database = {
           accepted_at?: string | null
           consent_type: string
           consent_version?: string
+          consent_version_id?: string | null
           created_at?: string | null
           id?: string
           ip_address?: string | null
@@ -3693,6 +3927,7 @@ export type Database = {
           accepted_at?: string | null
           consent_type?: string
           consent_version?: string
+          consent_version_id?: string | null
           created_at?: string | null
           id?: string
           ip_address?: string | null
@@ -3700,7 +3935,15 @@ export type Database = {
           user_agent?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_consent_records_consent_version_id_fkey"
+            columns: ["consent_version_id"]
+            isOneToOne: false
+            referencedRelation: "consent_versions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_features: {
         Row: {
