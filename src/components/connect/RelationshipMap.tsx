@@ -310,13 +310,14 @@ export default function RelationshipMap() {
       {/* Legend */}
       <div className="flex flex-wrap gap-4 text-xs">
         {[
-          { color: "hsl(var(--primary))", label: "You" },
-          { color: "#22c55e", label: "Clients" },
-          { color: "#f59e0b", label: "Prospects" },
-          { color: "#8b5cf6", label: "Discovered" },
-        ].map(({ color, label }) => (
+          { color: "hsl(var(--primary))", label: "You", shape: "circle" },
+          { color: "#22c55e", label: "Clients", shape: "circle" },
+          { color: "#f97316", label: "Companies", shape: "square" },
+          { color: "#f59e0b", label: "Prospects", shape: "circle" },
+          { color: "#8b5cf6", label: "Discovered", shape: "circle" },
+        ].map(({ color, label, shape }) => (
           <div key={label} className="flex items-center gap-1.5">
-            <div className="h-3 w-3 rounded-full" style={{ backgroundColor: color }} />
+            <div className={`h-3 w-3 ${shape === "square" ? "rounded-sm" : "rounded-full"}`} style={{ backgroundColor: color }} />
             <span className="text-muted-foreground">{label}</span>
           </div>
         ))}
