@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Search, ArrowRight, Sparkles, Loader2, X, MapPin, Briefcase, Building2, Users, Signal, Mail, MessageSquare, Phone, Send, Calendar, Brain } from "lucide-react";
 import { toast } from "sonner";
 import { ConnectOutreachPopup } from "./ConnectOutreachPopups";
-import MeetingPrepSection from "@/components/connect/MeetingPrepSection";
+
 
 const DUMMY_PATH_TEMPLATES = [
   {
@@ -656,218 +656,14 @@ export default function DemoConnectTab({ contentReady = true }: { contentReady?:
           transition: "all 1.2s cubic-bezier(0.16, 1, 0.3, 1)",
         }}>
           <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-white">
-            Find the fastest path to{" "}
-            <span style={{ color: "hsl(140 12% 58%)" }}>anyone</span>
+            Your Network
           </h2>
           <p className="text-sm md:text-base max-w-lg mx-auto" style={{ color: "hsl(240 5% 50%)" }}>
-            AuRa Connect traverses millions of business connections to find the warmest intro path for you.
+            Connect your accounts to build your relationship intelligence graph.
           </p>
         </div>
-
-        <div className="flex gap-3 w-full max-w-xl" style={{
-          opacity: connectPhase >= 2 ? 1 : 0,
-          transform: connectPhase >= 2 ? "translateY(0) scale(1)" : "translateY(16px) scale(0.97)",
-          transition: "all 1s cubic-bezier(0.16, 1, 0.3, 1)",
-        }}>
-          <div className="relative flex-1">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5" style={{ color: "hsl(240 5% 46%)" }} />
-            <Input
-              value={searchName}
-              onChange={(e) => setSearchName(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-              placeholder="Search a name... e.g. Douglas Wenz"
-              className="pl-12 h-12 text-base rounded-xl animate-[glowPulse_2.5s_ease-in-out_infinite]"
-              style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(140 12% 42% / 0.5)", color: "white", fontSize: "1rem" }}
-            />
-          </div>
-          <Button onClick={handleSearch} disabled={!searchName.trim() || searching} className="h-12 px-6 rounded-xl text-base font-semibold animate-[glowPulseBtn_2.5s_ease-in-out_infinite]" style={{ background: "hsl(140 12% 42%)", color: "white" }}>
-            {searching ? <Loader2 className="h-5 w-5 animate-spin" /> : "Find Path"}
-          </Button>
-        </div>
       </div>
 
-      {!searching && !result && (
-        <div className="relative mt-2" style={{
-          minHeight: "calc(100dvh - 340px)",
-          opacity: connectPhase >= 3 ? 1 : 0,
-          transform: connectPhase >= 3 ? "translateY(0) scale(1)" : "translateY(30px) scale(0.95)",
-          transition: isFirstVisit.current ? "all 1.8s cubic-bezier(0.16, 1, 0.3, 1)" : "all 0.6s ease-out",
-        }}>
-          {graphActive && <NetworkGraph onNodeClick={handleNodeClick} />}
-          <div className="absolute bottom-4 left-0 right-0 text-center z-10">
-            <span className="text-xs px-3 py-1 rounded-full" style={{ background: "hsl(240 8% 9% / 0.8)", color: "hsl(240 5% 50%)", border: "1px solid hsl(240 6% 14%)" }}>
-              Live network map — click any name to view profile
-            </span>
-          </div>
-
-          {/* Profile popup */}
-          {profilePopup && popupStyle && (
-            <div
-              ref={popupRef}
-              className="fixed z-50 rounded-xl p-4 space-y-3 animate-fade-in shadow-2xl"
-              style={{
-                left: popupStyle.left,
-                top: popupStyle.top,
-                width: popupStyle.width,
-                background: "hsl(240 8% 8%)",
-                border: "1px solid hsl(140 12% 42% / 0.3)",
-                backdropFilter: "blur(12px)",
-              }}
-            >
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-full flex items-center justify-center text-xs font-bold" style={{ background: "hsl(140 12% 42% / 0.2)", color: "hsl(140 12% 65%)" }}>
-                    {profilePopup.profile.name.split(" ").map(n => n[0]).join("")}
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-white">{profilePopup.profile.name}</p>
-                    <p className="text-[11px]" style={{ color: "hsl(240 5% 55%)" }}>{profilePopup.profile.title}</p>
-                  </div>
-                </div>
-                <button onClick={() => setProfilePopup(null)} className="p-0.5 rounded hover:bg-white/10">
-                  <X className="h-3.5 w-3.5" style={{ color: "hsl(240 5% 46%)" }} />
-                </button>
-              </div>
-
-              <div className="space-y-1.5">
-                <div className="flex items-center gap-2 text-xs" style={{ color: "hsl(240 5% 60%)" }}>
-                  <Building2 className="h-3.5 w-3.5 shrink-0" style={{ color: "hsl(140 12% 50%)" }} />
-                  {profilePopup.profile.company}
-                </div>
-                <div className="flex items-center gap-2 text-xs" style={{ color: "hsl(240 5% 60%)" }}>
-                  <Briefcase className="h-3.5 w-3.5 shrink-0" style={{ color: "hsl(140 12% 50%)" }} />
-                  {profilePopup.profile.industry}
-                </div>
-                <div className="flex items-center gap-2 text-xs" style={{ color: "hsl(240 5% 60%)" }}>
-                  <MapPin className="h-3.5 w-3.5 shrink-0" style={{ color: "hsl(140 12% 50%)" }} />
-                  {profilePopup.profile.location}
-                </div>
-                <div className="flex items-center gap-2 text-xs" style={{ color: "hsl(240 5% 60%)" }}>
-                  <Users className="h-3.5 w-3.5 shrink-0" style={{ color: "hsl(140 12% 50%)" }} />
-                  {profilePopup.profile.mutualConnections} mutual connections
-                </div>
-                <div className="flex items-center gap-2 text-xs">
-                  <Signal className="h-3.5 w-3.5 shrink-0" style={{ color: strengthColor(profilePopup.profile.connectionStrength) }} />
-                  <span style={{ color: strengthColor(profilePopup.profile.connectionStrength) }}>
-                    {profilePopup.profile.connectionStrength} connection
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex gap-2 pt-1">
-                <Button
-                  size="sm"
-                  className="flex-1 text-xs h-8"
-                  style={{ background: "hsl(140 12% 42%)", color: "white" }}
-                  onClick={() => {
-                    setSearchName(profilePopup.profile.name);
-                    setProfilePopup(null);
-                    setTimeout(handleSearch, 100);
-                  }}
-                >
-                  Find Path
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="flex-1 text-xs h-8"
-                  style={{ borderColor: "hsl(240 6% 20%)", color: "hsl(240 5% 70%)" }}
-                  onClick={() => setProfilePopup(null)}
-                >
-                  Close
-                </Button>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Searching */}
-      {searching && (
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center space-y-3">
-            <Loader2 className="h-10 w-10 animate-spin mx-auto" style={{ color: "hsl(140 12% 58%)" }} />
-            <p className="text-sm" style={{ color: "hsl(240 5% 46%)" }}>Scanning your network for paths to {searchName}…</p>
-          </div>
-        </div>
-      )}
-
-      {/* Result */}
-      {!searching && result && (
-        <Card className="max-w-2xl mx-auto mt-4" style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 14%)", animation: "smoothFadeSlide 0.5s cubic-bezier(0.16,1,0.3,1) both" }}>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Sparkles className="h-5 w-5" style={{ color: "hsl(140 12% 58%)" }} />
-              <span className="text-white">Path to {result.target}</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center gap-3 text-xs" style={{ color: "hsl(240 5% 46%)" }}>
-              <Badge variant="outline" style={{ color: "hsl(140 12% 58%)", borderColor: "hsl(140 12% 42% / 0.3)" }}>
-                {result.confidence}% confidence
-              </Badge>
-              <span>via <span className="font-medium text-white">{result.connection}</span></span>
-            </div>
-
-            <div className="flex items-center justify-center gap-2 p-4 rounded-lg" style={{ background: "hsl(240 6% 7%)" }}>
-              <div className="flex items-center justify-center h-10 w-10 rounded-full text-xs font-bold" style={{ background: "hsl(45 93% 47% / 0.15)", color: "hsl(45 93% 47%)" }}>You</div>
-              <ArrowRight className="h-5 w-5 shrink-0" style={{ color: "hsl(140 12% 58%)" }} />
-              <div className="flex items-center justify-center h-10 px-4 rounded-full text-xs font-bold" style={{ background: "hsl(140 12% 42% / 0.15)", color: "hsl(140 12% 58%)" }}>{result.connection}</div>
-              <ArrowRight className="h-5 w-5 shrink-0" style={{ color: "hsl(140 12% 58%)" }} />
-              <div className="flex items-center justify-center h-10 px-4 rounded-full text-xs font-bold" style={{ background: "hsl(140 12% 42% / 0.15)", color: "hsl(140 12% 58%)" }}>{result.target}</div>
-            </div>
-
-            <div className="p-3 rounded-lg" style={{ background: "hsl(240 6% 7%)", border: "1px solid hsl(240 6% 14%)" }}>
-              <p className="text-sm leading-relaxed" style={{ color: "hsl(240 5% 60%)" }}>{result.path}</p>
-            </div>
-
-            <div className="space-y-3">
-              <p className="text-xs font-medium uppercase tracking-wider" style={{ color: "hsl(240 5% 46%)" }}>Reach out now</p>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                {([
-                  { icon: Mail, label: "Draft Email", desc: "AI-generated intro", key: "email" as const },
-                  { icon: MessageSquare, label: "Send Text", desc: "Quick SMS message", key: "text" as const },
-                  { icon: Phone, label: "Phone Call", desc: "Call script ready", key: "call" as const },
-                  { icon: Calendar, label: "Schedule Meet", desc: "Book a coffee chat", key: "meet" as const },
-                ]).map((action) => (
-                  <button
-                    key={action.label}
-                    onClick={() => setOutreachType(action.key)}
-                    className="flex flex-col items-center gap-1.5 p-3 rounded-xl text-center transition-all hover:scale-[1.04] active:scale-95"
-                    style={{ background: "hsl(140 12% 42% / 0.08)", border: "1px solid hsl(140 12% 42% / 0.2)" }}
-                  >
-                    <action.icon className="h-5 w-5" style={{ color: "hsl(140 12% 58%)" }} />
-                    <span className="text-xs font-semibold text-white">{action.label}</span>
-                    <span className="text-[10px] leading-tight" style={{ color: "hsl(240 5% 50%)" }}>{action.desc}</span>
-                  </button>
-                ))}
-              </div>
-              <div className="flex items-center gap-2 p-2.5 rounded-lg" style={{ background: "hsl(140 12% 42% / 0.06)", border: "1px solid hsl(140 12% 42% / 0.12)" }}>
-                <Send className="h-3.5 w-3.5 shrink-0" style={{ color: "hsl(140 12% 50%)" }} />
-                <p className="text-xs" style={{ color: "hsl(140 12% 58%)" }}>{result.action}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {result && (
-        <ConnectOutreachPopup
-          type={outreachType}
-          onClose={() => setOutreachType(null)}
-          connection={result.connection}
-          target={result.target}
-        />
-      )}
-
-      {!searching && !result && hasSearched && (
-        <div className="text-center py-12 text-sm" style={{ color: "hsl(240 5% 46%)" }}>No results found. Try another name.</div>
-      )}
-
-      {/* Meeting Prep — Feeder List Generator embedded in Connect */}
-      <div className="mt-6 px-1">
-        <MeetingPrepSection compact />
-      </div>
     </div>
   );
 }
