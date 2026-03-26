@@ -227,10 +227,18 @@ export default function RelationshipMap() {
         })
       );
 
-    // Node circles
-    node.append("circle")
+    // Node shapes: circles for people, rounded rects for companies
+    node.filter((d) => d.type !== "company").append("circle")
       .attr("r", (d) => sizeMap[d.type] || 10)
       .attr("fill", (d) => colorMap[d.type] || "#666")
+      .attr("stroke", "hsl(var(--background))")
+      .attr("stroke-width", 2);
+
+    node.filter((d) => d.type === "company").append("rect")
+      .attr("width", 28).attr("height", 28)
+      .attr("x", -14).attr("y", -14)
+      .attr("rx", 4)
+      .attr("fill", colorMap.company)
       .attr("stroke", "hsl(var(--background))")
       .attr("stroke-width", 2);
 
