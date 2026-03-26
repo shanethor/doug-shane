@@ -36,7 +36,11 @@ export default function ProductSettings() {
   const [phone, setPhone] = useState("");
   const [saving, setSaving] = useState(false);
   const [loaded, setLoaded] = useState(false);
-  const [darkMode, setDarkMode] = useState(true);
+  const [darkMode, setDarkMode] = useState(() => {
+    const stored = localStorage.getItem("aura-dark-mode");
+    return stored !== null ? stored === "true" : true;
+  });
+  const [sageEnabled, setSageEnabled] = useState(() => localStorage.getItem("sage-popup-enabled") !== "false");
   const [openingPortal, setOpeningPortal] = useState(false);
   const { config: navConfig, setConfig: setNavConfig } = useConnectNavConfig();
   const [timezone, setTimezone] = useState(Intl.DateTimeFormat().resolvedOptions().timeZone);
