@@ -592,7 +592,7 @@ export default function ConnectLiveNetworkMap({ onNodeClick }: ConnectLiveNetwor
         const pulse = edgePulse[edgeIndex];
         const alpha = Math.min(nodeOpacity[a], nodeOpacity[b]);
         const isCompanyEdge = nodes[a].kind === "company" || nodes[b].kind === "company";
-        const edgeColor = isCompanyEdge ? `hsl(var(--warning) / ${0.08 + pulse * 0.35 * alpha})` : `hsl(var(--primary) / ${0.08 + pulse * 0.5 * alpha})`;
+        const edgeColor = isCompanyEdge ? rgba(warn, 0.08 + pulse * 0.35 * alpha) : rgba(pri, 0.08 + pulse * 0.5 * alpha);
 
         ctx.beginPath();
         ctx.moveTo(ax, ay);
@@ -605,7 +605,7 @@ export default function ConnectLiveNetworkMap({ onNodeClick }: ConnectLiveNetwor
           const t = 1 - pulse;
           ctx.beginPath();
           ctx.arc(ax + (bx - ax) * t, ay + (by - ay) * t, isCompanyEdge ? 2.2 : 2.8, 0, Math.PI * 2);
-          ctx.fillStyle = isCompanyEdge ? `hsl(var(--warning) / ${pulse * 0.9 * alpha})` : `hsl(var(--primary) / ${pulse * 0.95 * alpha})`;
+          ctx.fillStyle = isCompanyEdge ? rgba(warn, pulse * 0.9 * alpha) : rgba(pri, pulse * 0.95 * alpha);
           ctx.fill();
         }
 
