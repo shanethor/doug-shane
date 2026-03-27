@@ -275,9 +275,58 @@ export default function ConnectPipelineTab() {
           <Button size="sm" variant="outline" className="gap-1.5 h-8" onClick={fetchLeads} disabled={loadingLeads}>
             <RefreshCw className={`h-3.5 w-3.5 ${loadingLeads ? "animate-spin" : ""}`} />
           </Button>
-          <Button size="sm" className="gap-1.5 h-8" asChild>
-            <Link to="/insurance/pipeline"><Plus className="h-3.5 w-3.5" /> Add Lead</Link>
-          </Button>
+          <Dialog open={addLeadOpen} onOpenChange={setAddLeadOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm" className="gap-1.5 h-8"><Plus className="h-3.5 w-3.5" /> Add Lead</Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Add New Lead</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-3 py-2">
+                <div>
+                  <Label className="text-xs">Account / Company Name *</Label>
+                  <Input value={newLead.account_name} onChange={e => setNewLead(p => ({...p, account_name: e.target.value}))} placeholder="Acme Corp" className="mt-1" />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-xs">Contact Name</Label>
+                    <Input value={newLead.contact_name} onChange={e => setNewLead(p => ({...p, contact_name: e.target.value}))} placeholder="John Smith" className="mt-1" />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Email</Label>
+                    <Input value={newLead.email} onChange={e => setNewLead(p => ({...p, email: e.target.value}))} placeholder="john@acme.com" className="mt-1" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-xs">Est. Premium / Value</Label>
+                    <Input type="number" value={newLead.target_premium} onChange={e => setNewLead(p => ({...p, target_premium: e.target.value}))} placeholder="10000" className="mt-1" />
+                  </div>
+                  <div>
+                    <Label className="text-xs">Lead Source</Label>
+                    <Input value={newLead.lead_source} onChange={e => setNewLead(p => ({...p, lead_source: e.target.value}))} placeholder="Referral" className="mt-1" />
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-xs">Stage</Label>
+                  <Select value={newLead.stage} onValueChange={v => setNewLead(p => ({...p, stage: v}))}>
+                    <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {allStages.map(s => <SelectItem key={s.key} value={s.key} className="text-xs">{s.label}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setAddLeadOpen(false)}>Cancel</Button>
+                <Button onClick={handleAddLead} disabled={addingLead || !newLead.account_name.trim()}>
+                  {addingLead ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Plus className="h-4 w-4 mr-1" />}
+                  Add Lead
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
