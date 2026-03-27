@@ -193,7 +193,7 @@ export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: st
 
   const handleAction = useCallback((action: string) => {
     const lower = action.toLowerCase();
-    if (lower.includes("view pipeline") || lower.includes("manage pipeline")) {
+    if (lower.includes("view pipeline") || lower.includes("manage pipeline") || lower.includes("pipeline")) {
       navigate("/connect/pipeline");
     } else if (lower.includes("view calendar") || lower.includes("schedule")) {
       navigate("/connect/calendar");
@@ -201,8 +201,13 @@ export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: st
       navigate("/connect/email");
     } else if (lower.includes("draft") || lower.includes("send email")) {
       navigate("/connect/email");
-    } else if (lower.includes("view network") || lower.includes("find connection")) {
+    } else if (lower.includes("marketing") || lower.includes("flyer") || lower.includes("gentea") || lower.includes("create a")) {
+      navigate("/connect/create");
+      toast.success("Opening Marketing Center...");
+    } else if (lower.includes("view network") || lower.includes("find connection") || lower.includes("contact")) {
       navigate("/connect");
+    } else if (lower.includes("intelligence")) {
+      navigate("/connect/intelligence");
     } else {
       toast.info(`${action} — navigating...`);
     }
