@@ -8,7 +8,8 @@ import {
   Network, Search, Users, Mail, Settings, Loader2,
   Zap, Shield, BarChart3, Plus, X, RefreshCw,
   ExternalLink, CheckCircle, Wifi, WifiOff, Globe,
-  Linkedin, Facebook, Phone, Database,
+  Linkedin, Facebook, Phone, Database, Building2,
+  Filter, ArrowUpFromLine, Eye, EyeOff,
 } from "lucide-react";
 import { toast } from "sonner";
 import InlineContactEditor from "@/components/connect/InlineContactEditor";
@@ -38,6 +39,14 @@ interface DiscoveredContact {
   enrichment_status: string;
   status: string;
   first_seen_at: string;
+  contact_type?: string;
+  contact_score?: number;
+  filtered?: boolean;
+  profile_photo_url?: string | null;
+  location?: string | null;
+  twitter_url?: string | null;
+  enrichment_source?: string | null;
+  employment_history?: any[] | null;
 }
 
 interface ProspectProfile {
@@ -61,8 +70,7 @@ interface ConnectedAccount {
   updated_at: string;
 }
 
-// ─── Email Intelligence ───
-// Smart filter: exclude business/marketing/noreply emails, keep real people
+// ─── Spam / Classification Helpers ───
 const BUSINESS_EMAIL_PREFIXES = [
   "noreply", "no-reply", "no_reply", "donotreply", "do-not-reply",
   "info@", "support@", "help@", "admin@", "sales@", "marketing@",
@@ -74,85 +82,133 @@ const BUSINESS_EMAIL_PREFIXES = [
   "automated@", "auto@", "bot@", "daemon@", "webmaster@",
   "news@", "press@", "media@", "pr@", "hr@", "careers@", "jobs@",
   "compliance@", "legal@", "privacy@", "office@",
-];
-const BUSINESS_EMAIL_DOMAINS = [
-  "mailchimp.com", "sendgrid.net", "amazonses.com", "mailgun.org",
-  "constantcontact.com", "hubspot.com", "salesforce.com", "zendesk.com",
-  "intercom.io", "freshdesk.com", "notifications.google.com",
-  "facebookmail.com", "linkedin.com", "indeed.com", "glassdoor.com",
-  "noreply.github.com", "stripe.com", "paypal.com", "intuit.com",
+  "promo", "promotions",
 ];
 
-function isBusinessOrMarketingEmail(email: string): boolean {
-  const lower = email.toLowerCase();
-  const localPart = lower.split("@")[0];
-  const domain = lower.split("@")[1] || "";
-  if (BUSINESS_EMAIL_PREFIXES.some(p => localPart.startsWith(p.replace("@", "")))) return true;
-  if (BUSINESS_EMAIL_DOMAINS.some(d => domain === d || domain.endsWith("." + d))) return true;
-  if (/^\d+$/.test(localPart)) return true;
-  if (/^[a-f0-9]{20,}$/.test(localPart)) return true;
-  return false;
-}
+const ESP_DOMAINS = [
+  "sendgrid.net", "mailchimp.com", "constantcontact.com", "hubspot.com",
+  "hs-send.com", "hubspotfree.com", "salesforce.com", "marketo.com",
+  "mailgun.org", "amazonses.com", "intercom.io", "zendesk.com",
+  "freshdesk.com", "notifications.google.com", "facebookmail.com",
+  "linkedin.com", "indeed.com", "glassdoor.com", "noreply.github.com",
+  "stripe.com", "paypal.com", "intuit.com",
+  "lhmailer.com", "flyporter.com", "espnmail.com",
+  "communications.yahoo.com", "virginamerica.com",
+  "bluemountain.com", "e.united.com", "news.united.com",
+];
 
-/** Detect if display_name is a company name or URL rather than a person */
-function isCompanyOrUrl(c: { display_name: string | null; first_name: string | null; last_name: string | null; domain: string | null }): boolean {
+const PERSONAL_DOMAINS = [
+  "gmail.com", "yahoo.com", "hotmail.com", "outlook.com", "icloud.com",
+  "att.net", "sbcglobal.net", "hotmail.ca", "sympatico.ca", "aol.com",
+  "protonmail.com", "me.com", "live.com", "msn.com",
+];
+
+function classifyContact(c: DiscoveredContact): { type: "person" | "company" | "filtered"; score: number } {
+  const email = c.email_address.toLowerCase();
+  const localPart = email.split("@")[0];
+  const domain = email.split("@")[1] || "";
+
+  // Auto-filter checks
+  if (BUSINESS_EMAIL_PREFIXES.some(p => localPart.startsWith(p.replace("@", "")))) {
+    return { type: "filtered", score: 0 };
+  }
+  if (ESP_DOMAINS.some(d => domain === d || domain.endsWith("." + d))) {
+    return { type: "filtered", score: 0 };
+  }
+  if (/^\d+$/.test(localPart) || /^[a-f0-9]{20,}$/.test(localPart)) {
+    return { type: "filtered", score: 0 };
+  }
+
+  // Score calculation
+  let score = 50;
   const name = (c.display_name || `${c.first_name || ""} ${c.last_name || ""}`.trim()).toLowerCase();
-  if (!name) return false;
-  // URLs
-  if (/^https?:\/\//.test(name) || /\.(com|net|org|io|co|gov|edu|biz|info)\b/.test(name)) return true;
-  // Company indicators: contains LLC, Inc, Corp, Ltd, &, or is a single word with no spaces (brand names like "Starbucks")
-  if (/\b(llc|inc|corp|ltd|gmbh|co\.|group|agency|insurance|services|solutions)\b/i.test(name)) return true;
-  // Has "&" like "Ford Kia & CARFAX"
-  if (name.includes("&")) return true;
-  // All caps single word > 5 chars (brand acronyms like "CARFAX")
-  const original = c.display_name || `${c.first_name || ""} ${c.last_name || ""}`.trim();
-  if (original && /^[A-Z]{4,}$/.test(original.trim())) return true;
-  return false;
+
+  // Personal domain = person signal
+  if (PERSONAL_DOMAINS.includes(domain)) score += 20;
+
+  // "First Last" name pattern = person
+  const nameParts = name.trim().split(/\s+/);
+  if (nameParts.length === 2 && nameParts[0].length > 1 && nameParts[1].length > 1) score += 20;
+
+  // ESP/subdomain penalty
+  if (ESP_DOMAINS.some(d => domain.endsWith("." + d))) score -= 50;
+
+  // Company keyword penalty
+  if (/\b(llc|inc|corp|ltd|gmbh|co\.|group|agency|insurance|services|solutions|team|service)\b/i.test(name)) score -= 30;
+  if (name.includes("&")) score -= 20;
+
+  // Brand/URL detection
+  const originalName = c.display_name || `${c.first_name || ""} ${c.last_name || ""}`.trim();
+  if (originalName && /^[A-Z]{4,}$/.test(originalName.trim())) score -= 30;
+  if (/^https?:\/\//.test(name) || /\.(com|net|org|io)\b/.test(name)) score -= 40;
+
+  // Hunter confidence boost
+  if (c.hunter_confidence && c.hunter_confidence >= 90) score += 15;
+  else if (c.hunter_confidence && c.hunter_confidence >= 70) score += 5;
+  else if (c.hunter_confidence && c.hunter_confidence < 50) score -= 20;
+
+  // Name presence
+  if (!name || name.length < 2 || name.includes("@")) score -= 20;
+
+  // Classify
+  if (score < 40) return { type: "filtered", score };
+  if (score < 70) return { type: "company", score };
+  return { type: "person", score };
 }
 
-function hasRealName(c: DiscoveredContact): boolean {
-  const name = c.display_name || `${c.first_name || ""} ${c.last_name || ""}`.trim();
-  if (!name || name.length < 2) return false;
-  // Filter out names that are just email addresses
-  if (name.includes("@")) return false;
-  return true;
-}
-
+// ─── Email Intelligence ───
 function EmailIntelligencePage() {
-  const [contacts, setContacts] = useState<DiscoveredContact[]>([]);
-  const [unlabeled, setUnlabeled] = useState<DiscoveredContact[]>([]);
-  const [savedContacts, setSavedContacts] = useState<DiscoveredContact[]>([]);
+  const [allContacts, setAllContacts] = useState<DiscoveredContact[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
-  const [filter, setFilter] = useState<"all" | "high_score" | "verified" | "unlabeled" | "saved">("all");
+  const [inboxTab, setInboxTab] = useState<"people" | "companies" | "saved" | "filtered">("people");
   const [showFiltered, setShowFiltered] = useState(false);
+  const [enrichingId, setEnrichingId] = useState<string | null>(null);
 
   useEffect(() => { loadContacts(); }, []);
 
   async function loadContacts() {
     setLoading(true);
-    // Load active (unsaved, undismissed) contacts
     const { data } = await supabase
       .from("email_discovered_contacts" as any)
       .select("*")
       .not("status", "eq", "dismissed")
       .order("first_seen_at", { ascending: false })
-      .limit(200);
-    const raw = (data as any as DiscoveredContact[]) || [];
-
-    // Separate saved vs active
-    const active = raw.filter(c => c.status !== "saved_to_contacts");
-    const saved = raw.filter(c => c.status === "saved_to_contacts");
-
-    // Separate: named people vs email-only (unlabeled) from active only
-    const nonBusiness = active.filter(c => !isBusinessOrMarketingEmail(c.email_address) && !isCompanyOrUrl(c));
-    const people = nonBusiness.filter(c => hasRealName(c));
-    const emailOnly = nonBusiness.filter(c => !hasRealName(c));
-    setContacts(people);
-    setUnlabeled(emailOnly);
-    setSavedContacts(saved.filter(c => !isBusinessOrMarketingEmail(c.email_address) && !isCompanyOrUrl(c)));
+      .limit(500);
+    setAllContacts((data as any as DiscoveredContact[]) || []);
     setLoading(false);
   }
+
+  // Classify contacts into tabs
+  const saved = allContacts.filter(c => c.status === "saved_to_contacts");
+  const active = allContacts.filter(c => c.status !== "saved_to_contacts");
+
+  const classified = active.map(c => {
+    // Use server-side values if available, otherwise classify client-side
+    if (c.filtered === true || c.contact_type === "filtered") {
+      return { ...c, _type: "filtered" as const, _score: c.contact_score || 0 };
+    }
+    if (c.contact_type === "company") {
+      return { ...c, _type: "company" as const, _score: c.contact_score || 50 };
+    }
+    if (c.contact_type === "person" && c.contact_score) {
+      return { ...c, _type: "person" as const, _score: c.contact_score };
+    }
+    // Client-side classification fallback
+    const { type, score } = classifyContact(c);
+    return { ...c, _type: type, _score: score };
+  });
+
+  const people = classified.filter(c => c._type === "person");
+  const companies = classified.filter(c => c._type === "company");
+  const filtered = classified.filter(c => c._type === "filtered");
+
+  const displayList = inboxTab === "people" ? people
+    : inboxTab === "companies" ? companies
+    : inboxTab === "saved" ? saved
+    : filtered;
+
+  const newThisWeek = people.filter(c => new Date(c.first_seen_at) >= new Date(Date.now() - 7 * 86400000)).length;
 
   async function runSync() {
     setSyncing(true);
@@ -172,17 +228,41 @@ function EmailIntelligencePage() {
 
   async function dismissContact(id: string) {
     await supabase.from("email_discovered_contacts" as any).update({ status: "dismissed" }).eq("id", id);
-    setContacts(prev => prev.filter(c => c.id !== id));
+    setAllContacts(prev => prev.filter(c => c.id !== id));
+  }
+
+  async function rescueContact(id: string) {
+    // Move from filtered back to inbox
+    await supabase.from("email_discovered_contacts" as any).update({ filtered: false, contact_type: "person" } as any).eq("id", id);
+    setAllContacts(prev => prev.map(c => c.id === id ? { ...c, filtered: false, contact_type: "person" } : c));
+    toast.success("Contact rescued to People");
   }
 
   async function saveContact(id: string) {
-    const contact = [...contacts, ...unlabeled].find(c => c.id === id);
+    const contact = allContacts.find(c => c.id === id);
     if (!contact) return;
+
+    // Trigger enrichment on save
+    setEnrichingId(id);
+    try {
+      const headers = await getAuthHeaders();
+      const enrichResp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/enrich-contact`, {
+        method: "POST", headers,
+        body: JSON.stringify({ contact_id: id }),
+      });
+      const enrichResult = await enrichResp.json();
+      if (enrichResult.enriched) {
+        toast.success(`Contact enriched via ${enrichResult.source}`);
+      }
+    } catch (err) {
+      console.error("Enrichment error:", err);
+    }
+
+    // Save to canonical_persons
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { toast.error("Not authenticated"); return; }
 
-      // Create canonical_persons record
       const { error: insertErr } = await supabase.from("canonical_persons").insert({
         owner_user_id: user.id,
         display_name: contact.display_name || `${contact.first_name || ""} ${contact.last_name || ""}`.trim() || null,
@@ -201,36 +281,22 @@ function EmailIntelligencePage() {
       });
       if (insertErr) throw insertErr;
 
-      // Update discovered contact status and link
       await supabase.from("email_discovered_contacts" as any).update({ status: "saved_to_contacts" }).eq("id", id);
-
-      // Move from active lists to saved list
-      const savedContact = { ...contact, status: "saved_to_contacts" };
-      setContacts(prev => prev.filter(c => c.id !== id));
-      setUnlabeled(prev => prev.filter(c => c.id !== id));
-      setSavedContacts(prev => [savedContact, ...prev]);
+      setAllContacts(prev => prev.map(c => c.id === id ? { ...c, status: "saved_to_contacts" } : c));
       toast.success("Saved to contacts");
     } catch (err: any) {
       toast.error(err.message || "Failed to save contact");
+    } finally {
+      setEnrichingId(null);
     }
   }
-
-  const displayList = filter === "unlabeled" ? unlabeled
-    : filter === "saved" ? savedContacts
-    : contacts.filter(c => {
-      if (filter === "high_score") return (c.prospect_score || 0) >= 70;
-      if (filter === "verified") return c.hunter_verified === true;
-      return true;
-    });
-
-  const newThisWeek = contacts.filter(c => new Date(c.first_seen_at) >= new Date(Date.now() - 7 * 86400000)).length;
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-lg font-bold">Inbox Discoveries</h2>
-          <p className="text-xs text-muted-foreground">Contacts found automatically from your email activity.</p>
+          <p className="text-xs text-muted-foreground">Contacts found and classified from your email activity.</p>
         </div>
         <div className="flex gap-2">
           {newThisWeek > 0 && <Badge className="bg-primary">{newThisWeek} new</Badge>}
@@ -241,12 +307,40 @@ function EmailIntelligencePage() {
         </div>
       </div>
 
-      <div className="flex gap-2 flex-wrap">
-        {(["all", "high_score", "verified", "unlabeled", "saved"] as const).map(f => (
-          <Button key={f} variant={filter === f ? "default" : "outline"} size="sm" onClick={() => setFilter(f)} className="text-xs">
-            {f === "all" ? "All" : f === "high_score" ? "Score 70+" : f === "verified" ? "Verified ✓" : f === "unlabeled" ? `Unlabeled (${unlabeled.length})` : `Saved (${savedContacts.length})`}
-          </Button>
-        ))}
+      {/* Tab bar: People / Companies / Saved / Filtered */}
+      <div className="flex gap-1.5 flex-wrap">
+        <Button
+          variant={inboxTab === "people" ? "default" : "outline"}
+          size="sm"
+          onClick={() => setInboxTab("people")}
+          className="text-xs gap-1"
+        >
+          <Users className="h-3 w-3" /> People ({people.length})
+        </Button>
+        <Button
+          variant={inboxTab === "companies" ? "default" : "outline"}
+          size="sm"
+          onClick={() => setInboxTab("companies")}
+          className="text-xs gap-1"
+        >
+          <Building2 className="h-3 w-3" /> Companies ({companies.length})
+        </Button>
+        <Button
+          variant={inboxTab === "saved" ? "default" : "outline"}
+          size="sm"
+          onClick={() => setInboxTab("saved")}
+          className="text-xs gap-1"
+        >
+          <CheckCircle className="h-3 w-3" /> Saved ({saved.length})
+        </Button>
+        <Button
+          variant={inboxTab === "filtered" ? "secondary" : "ghost"}
+          size="sm"
+          onClick={() => setInboxTab("filtered")}
+          className="text-xs gap-1 text-muted-foreground"
+        >
+          <Filter className="h-3 w-3" /> Filtered ({filtered.length})
+        </Button>
       </div>
 
       {loading ? (
@@ -255,25 +349,51 @@ function EmailIntelligencePage() {
         <Card>
           <CardContent className="py-12 text-center">
             <Mail className="h-8 w-8 mx-auto text-muted-foreground mb-3" />
-            <p className="font-medium">No contacts discovered yet</p>
-            <p className="text-sm text-muted-foreground mt-1">Connect your email and run a scan.</p>
-            <Button className="mt-4" onClick={runSync} disabled={syncing}>
-              {syncing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Zap className="h-4 w-4 mr-2" />}
-              Run First Scan
-            </Button>
+            <p className="font-medium">
+              {inboxTab === "people" ? "No people discovered yet" :
+               inboxTab === "companies" ? "No company contacts found" :
+               inboxTab === "saved" ? "No saved contacts" :
+               "No filtered contacts"}
+            </p>
+            <p className="text-sm text-muted-foreground mt-1">
+              {inboxTab === "people" ? "Connect your email and run a scan to discover contacts." :
+               inboxTab === "companies" ? "Business contacts will appear here after scanning." :
+               inboxTab === "saved" ? "Contacts you save will appear here." :
+               "Spam and automated senders are filtered here."}
+            </p>
+            {inboxTab === "people" && (
+              <Button className="mt-4" onClick={runSync} disabled={syncing}>
+                {syncing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Zap className="h-4 w-4 mr-2" />}
+                Run First Scan
+              </Button>
+            )}
           </CardContent>
         </Card>
       ) : (
         <div className="grid gap-2">
-           {displayList.map(c => (
+          {displayList.map(c => (
             <Card key={c.id} className="border-border/50">
               <CardContent className="py-3 px-4">
-                {filter === "saved" ? (
+                {inboxTab === "saved" ? (
                   <div className="flex items-center justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium truncate">{c.display_name || c.email_address}</p>
-                      {c.display_name && <p className="text-xs text-muted-foreground truncate">{c.email_address}</p>}
-                      {c.hunter_company && <p className="text-xs text-muted-foreground">{c.hunter_company}{c.hunter_position ? ` · ${c.hunter_position}` : ""}</p>}
+                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                      {c.profile_photo_url ? (
+                        <img src={c.profile_photo_url} alt="" className="h-9 w-9 rounded-full object-cover shrink-0" />
+                      ) : (
+                        <div className="h-9 w-9 rounded-full bg-accent/10 flex items-center justify-center shrink-0">
+                          <span className="text-sm font-bold">{(c.display_name || c.email_address).charAt(0).toUpperCase()}</span>
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium truncate">{c.display_name || c.email_address}</p>
+                        {c.display_name && <p className="text-xs text-muted-foreground truncate">{c.email_address}</p>}
+                        {c.hunter_company && <p className="text-xs text-muted-foreground">{c.hunter_company}{c.hunter_position ? ` · ${c.hunter_position}` : ""}</p>}
+                        {c.enrichment_source && (
+                          <Badge variant="outline" className="text-[9px] mt-0.5 text-primary border-primary/30">
+                            Enriched ({c.enrichment_source})
+                          </Badge>
+                        )}
+                      </div>
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
                       <Badge variant="outline" className="text-[10px] text-green-500 border-green-500/30">Saved</Badge>
@@ -284,8 +404,7 @@ function EmailIntelligencePage() {
                         title="Remove from saved"
                         onClick={async () => {
                           await supabase.from("email_discovered_contacts" as any).update({ status: "new" }).eq("id", c.id);
-                          setSavedContacts(prev => prev.filter(sc => sc.id !== c.id));
-                          setContacts(prev => [{ ...c, status: "new" }, ...prev]);
+                          setAllContacts(prev => prev.map(sc => sc.id === c.id ? { ...sc, status: "new" } : sc));
                           toast.success("Removed from saved");
                         }}
                       >
@@ -293,12 +412,30 @@ function EmailIntelligencePage() {
                       </Button>
                     </div>
                   </div>
+                ) : inboxTab === "filtered" ? (
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium truncate text-muted-foreground">{c.display_name || c.email_address}</p>
+                      {c.display_name && <p className="text-xs text-muted-foreground/60 truncate">{c.email_address}</p>}
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Badge variant="outline" className="text-[10px] text-muted-foreground/50">Filtered</Badge>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 text-xs gap-1"
+                        onClick={() => rescueContact(c.id)}
+                        title="Rescue to People"
+                      >
+                        <ArrowUpFromLine className="h-3 w-3" /> Rescue
+                      </Button>
+                    </div>
+                  </div>
                 ) : (
                   <InlineContactEditor
                     contact={c}
                     onUpdate={(id, updates) => {
-                      setContacts(prev => prev.map(ct => ct.id === id ? { ...ct, ...updates } : ct));
-                      setUnlabeled(prev => prev.map(ct => ct.id === id ? { ...ct, ...updates } : ct));
+                      setAllContacts(prev => prev.map(ct => ct.id === id ? { ...ct, ...updates } : ct));
                     }}
                     onSave={saveContact}
                     onDismiss={dismissContact}
@@ -365,7 +502,6 @@ function ConnectionManagerPage() {
         <p className="text-xs text-muted-foreground">Link accounts to expand your network intelligence and reach more connections.</p>
       </div>
 
-      {/* Link New Accounts */}
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Link an Account</CardTitle>
@@ -397,7 +533,6 @@ function ConnectionManagerPage() {
         </CardContent>
       </Card>
 
-      {/* Active Connections */}
       {connections.length > 0 && (
         <Card>
           <CardHeader className="pb-3">
@@ -426,7 +561,6 @@ function ConnectionManagerPage() {
         </Card>
       )}
 
-      {/* Enrichment API Status */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
         {[
           { label: "People Data Labs", status: "active", icon: Users },
