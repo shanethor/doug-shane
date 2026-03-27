@@ -573,6 +573,8 @@ export default function DemoConnectTab({ contentReady = true }: { contentReady?:
   const [outreachType, setOutreachType] = useState<"email" | "text" | "call" | "meet" | null>(null);
   const [profilePopup, setProfilePopup] = useState<{ profile: LiveNetworkProfile; pos: { x: number; y: number } } | null>(null);
   const popupRef = useRef<HTMLDivElement>(null);
+  const [showContacts, setShowContacts] = useState(false);
+  const [contactsTab, setContactsTab] = useState<"list" | "merge">("list");
 
   const handleSearch = () => {
     if (!searchName.trim()) return;
