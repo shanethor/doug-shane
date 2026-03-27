@@ -48,6 +48,20 @@ const ESP_AND_BRAND_DOMAINS = [
   "mail.hunter.io", "us-edm.zip.co",
 ];
 
+// SMS/MMS gateway domains — these are phone numbers, not real email contacts
+const SMS_MMS_GATEWAY_DOMAINS = [
+  "mms.att.net", "txt.att.net", "vtext.com", "vzwpix.com",
+  "tmomail.net", "tmobile.net", "msg.fi.google.com",
+  "messaging.sprintpcs.com", "pm.sprint.com", "sms.myboostmobile.com",
+  "mymetropcs.com", "mmst5.tracfone.com", "mypixmessages.com",
+  "cingularme.com", "messaging.nextel.com", "page.nextel.com",
+  "email.uscc.net", "cwemail.com", "rinasms.com",
+  "sms.cricketwireless.net", "mms.cricketwireless.net",
+  "text.republicwireless.com", "msg.koodomobile.com",
+  "pcs.rogers.com", "txt.bellmobility.ca", "fido.ca",
+  "txt.freedommobile.ca", "msg.telus.com",
+];
+
 // Subdomain patterns that indicate transactional/marketing email
 const TRANSACTIONAL_SUBDOMAIN_PATTERNS = [
   /^em\d*\./i,        // em1.turbotax.intuit.com
@@ -70,8 +84,12 @@ const TRANSACTIONAL_SUBDOMAIN_PATTERNS = [
 function isBlocklisted(email: string): boolean {
   if (SENDER_BLOCKLIST.some(pattern => pattern.test(email))) return true;
   const domain = email.split("@")[1]?.toLowerCase() || "";
+  const localPart = email.split("@")[0]?.toLowerCase() || "";
   if (ESP_AND_BRAND_DOMAINS.some(d => domain === d || domain.endsWith("." + d))) return true;
+  if (SMS_MMS_GATEWAY_DOMAINS.some(d => domain === d || domain.endsWith("." + d))) return true;
   if (TRANSACTIONAL_SUBDOMAIN_PATTERNS.some(p => p.test(domain))) return true;
+  // Filter phone-number-as-email patterns (e.g. 9168725925@mms.att.net)
+  if (/^\d{7,}/.test(localPart)) return true;
   return false;
 }
 

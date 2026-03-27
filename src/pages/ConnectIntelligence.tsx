@@ -9,7 +9,7 @@ import {
   Zap, Shield, BarChart3, Plus, X, RefreshCw,
   ExternalLink, CheckCircle, Wifi, WifiOff, Globe,
   Linkedin, Facebook, Phone, Database, Building2,
-  Filter, ArrowUpFromLine, Eye, EyeOff,
+  Filter, ArrowUpFromLine, Eye, EyeOff, List,
 } from "lucide-react";
 import { toast } from "sonner";
 import InlineContactEditor from "@/components/connect/InlineContactEditor";
@@ -101,6 +101,20 @@ const ESP_DOMAINS = [
   "amazon.com", "apple.com",
 ];
 
+// SMS/MMS gateway domains — these are phone numbers, not real email contacts
+const SMS_MMS_GATEWAY_DOMAINS = [
+  "mms.att.net", "txt.att.net", "vtext.com", "vzwpix.com",
+  "tmomail.net", "tmobile.net", "msg.fi.google.com",
+  "messaging.sprintpcs.com", "pm.sprint.com", "sms.myboostmobile.com",
+  "mymetropcs.com", "mmst5.tracfone.com", "mypixmessages.com",
+  "cingularme.com", "messaging.nextel.com", "page.nextel.com",
+  "email.uscc.net", "cwemail.com", "rinasms.com",
+  "sms.cricketwireless.net", "mms.cricketwireless.net",
+  "text.republicwireless.com", "msg.koodomobile.com",
+  "pcs.rogers.com", "txt.bellmobility.ca", "fido.ca",
+  "txt.freedommobile.ca", "msg.telus.com",
+];
+
 // Subdomain patterns for transactional/marketing senders
 const TRANSACTIONAL_SUBDOMAIN_RE = /^(em\d*|mail|edm|us-edm|email|e|news|notify|promo|comms?|campaign|mailer|bounce|sg|mkt)\./i;
 
@@ -115,6 +129,10 @@ function classifyContact(c: DiscoveredContact): { type: "person" | "company" | "
   const localPart = email.split("@")[0];
   const domain = email.split("@")[1] || "";
 
+  // Auto-filter: SMS/MMS gateway domains (phone numbers as emails)
+  if (SMS_MMS_GATEWAY_DOMAINS.some(d => domain === d || domain.endsWith("." + d))) {
+    return { type: "filtered", score: 0 };
+  }
   // Auto-filter: prefix match
   if (BUSINESS_EMAIL_PREFIXES.some(p => localPart === p || localPart.startsWith(p + "-") || localPart.startsWith(p + "."))) {
     return { type: "filtered", score: 0 };
@@ -127,8 +145,12 @@ function classifyContact(c: DiscoveredContact): { type: "person" | "company" | "
   if (TRANSACTIONAL_SUBDOMAIN_RE.test(domain)) {
     return { type: "filtered", score: 0 };
   }
-  // Auto-filter: hash-like local parts
+  // Auto-filter: numeric-only local parts (phone numbers, tracking IDs)
   if (/^\d+$/.test(localPart) || /^[a-f0-9]{20,}$/.test(localPart)) {
+    return { type: "filtered", score: 0 };
+  }
+  // Auto-filter: local part is mostly digits (phone number patterns like 9168725925)
+  if (/^\d{7,}/.test(localPart)) {
     return { type: "filtered", score: 0 };
   }
 
@@ -740,6 +762,119 @@ function ProspectSettingsPage() {
   );
 }
 
+// ─── Map + List View ───
+function MapWithListView() {
+  const [viewMode, setViewMode] = useState<"graph" | "list">("graph");
+  const [search, setSearch] = useState("");
+  const [contacts, setContacts] = useState<any[]>([]);
+  const [loadingList, setLoadingList] = useState(false);
+
+  useEffect(() => {
+    if (viewMode === "list") loadContacts();
+  }, [viewMode]);
+
+  async function loadContacts() {
+    setLoadingList(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { setLoadingList(false); return; }
+    const { data } = await supabase
+      .from("canonical_persons")
+      .select("id, display_name, primary_email, primary_phone, company, title, linkedin_url, tier, updated_at")
+      .eq("owner_user_id", user.id)
+      .order("updated_at", { ascending: false })
+      .limit(500);
+    setContacts(data || []);
+    setLoadingList(false);
+  }
+
+  const filtered = contacts.filter(c => {
+    if (!search) return true;
+    const q = search.toLowerCase();
+    return (c.display_name || "").toLowerCase().includes(q)
+      || (c.primary_email || "").toLowerCase().includes(q)
+      || (c.company || "").toLowerCase().includes(q)
+      || (c.title || "").toLowerCase().includes(q);
+  });
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Button variant={viewMode === "graph" ? "default" : "outline"} size="sm" className="text-xs gap-1" onClick={() => setViewMode("graph")}>
+            <Network className="h-3.5 w-3.5" /> Graph
+          </Button>
+          <Button variant={viewMode === "list" ? "default" : "outline"} size="sm" className="text-xs gap-1" onClick={() => setViewMode("list")}>
+            <Users className="h-3.5 w-3.5" /> List
+          </Button>
+        </div>
+        {viewMode === "list" && (
+          <div className="relative w-64">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <Input placeholder="Search contacts..." value={search} onChange={e => setSearch(e.target.value)} className="pl-8 h-8 text-xs" />
+          </div>
+        )}
+      </div>
+
+      {viewMode === "graph" ? (
+        <RelationshipMap />
+      ) : loadingList ? (
+        <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
+      ) : filtered.length === 0 ? (
+        <Card>
+          <CardContent className="py-12 text-center">
+            <Users className="h-8 w-8 mx-auto text-muted-foreground mb-3" />
+            <p className="font-medium">{search ? "No contacts match your search" : "No saved contacts yet"}</p>
+            <p className="text-sm text-muted-foreground mt-1">Save contacts from the Inbox to see them here.</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-1">
+          <p className="text-xs text-muted-foreground">{filtered.length} contacts</p>
+          {filtered.map(c => (
+            <Card key={c.id} className="border-border/50 hover:border-primary/30 transition-colors">
+              <CardContent className="py-3 px-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                      <span className="text-sm font-bold text-primary">{(c.display_name || "?").charAt(0).toUpperCase()}</span>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-medium truncate">{c.display_name || c.primary_email}</p>
+                        {c.tier && <Badge variant="outline" className="text-[9px]">{c.tier}</Badge>}
+                      </div>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {[c.company, c.title].filter(Boolean).join(" · ") || c.primary_email}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0">
+                    {c.primary_email && (
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => window.open(`mailto:${c.primary_email}`)}>
+                        <Mail className="h-3.5 w-3.5" />
+                      </Button>
+                    )}
+                    {c.primary_phone && (
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => window.open(`tel:${c.primary_phone}`)}>
+                        <Phone className="h-3.5 w-3.5" />
+                      </Button>
+                    )}
+                    {c.linkedin_url && (
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => window.open(c.linkedin_url, "_blank")}>
+                        <Linkedin className="h-3.5 w-3.5" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Main Connect Intelligence Page (Data Hub) ───
 export default function ConnectIntelligencePage() {
   const [tab, setTab] = useState("inbox");
@@ -768,7 +903,7 @@ export default function ConnectIntelligencePage() {
 
         <TabsContent value="inbox"><EmailIntelligencePage /></TabsContent>
         <TabsContent value="connections"><ConnectionManagerPage /></TabsContent>
-        <TabsContent value="map"><RelationshipMap /></TabsContent>
+        <TabsContent value="map"><MapWithListView /></TabsContent>
         <TabsContent value="analytics"><FeederListAnalytics /></TabsContent>
         <TabsContent value="settings"><ProspectSettingsPage /></TabsContent>
         <TabsContent value="privacy"><PrivacySettings /></TabsContent>
