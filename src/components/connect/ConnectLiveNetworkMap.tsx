@@ -496,6 +496,34 @@ export default function ConnectLiveNetworkMap({ onNodeClick }: ConnectLiveNetwor
     };
 
     resize();
+
+    // Resolve CSS variables to RGB for canvas (canvas can't use CSS vars)
+    const resolveColor = (varName: string): [number, number, number] => {
+      const raw = getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+      // raw is like "240 5% 96%" (HSL components) — parse and convert
+      const parts = raw.split(/\s+/);
+      if (parts.length >= 3) {
+        const h = parseFloat(parts[0]);
+        const s = parseFloat(parts[1]) / 100;
+        const l = parseFloat(parts[2]) / 100;
+        // HSL to RGB
+        const a2 = s * Math.min(l, 1 - l);
+        const f = (n: number) => {
+          const k = (n + h / 30) % 12;
+          return l - a2 * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+        };
+        return [Math.round(f(0) * 255), Math.round(f(8) * 255), Math.round(f(4) * 255)];
+      }
+      return [200, 200, 200]; // fallback
+    };
+
+    const fg = resolveColor("--foreground");
+    const pri = resolveColor("--primary");
+    const warn = resolveColor("--warning");
+    const cardC = resolveColor("--card");
+
+    const rgba = (c: [number, number, number], a: number) => `rgba(${c[0]},${c[1]},${c[2]},${a})`;
+
     canvas.addEventListener("mousemove", handleMouseMove);
     canvas.addEventListener("click", handleClick);
     canvas.addEventListener("mouseleave", handleLeave);
@@ -564,7 +592,7 @@ export default function ConnectLiveNetworkMap({ onNodeClick }: ConnectLiveNetwor
         const pulse = edgePulse[edgeIndex];
         const alpha = Math.min(nodeOpacity[a], nodeOpacity[b]);
         const isCompanyEdge = nodes[a].kind === "company" || nodes[b].kind === "company";
-        const edgeColor = isCompanyEdge ? `hsl(var(--warning) / ${0.08 + pulse * 0.35 * alpha})` : `hsl(var(--primary) / ${0.08 + pulse * 0.5 * alpha})`;
+        const edgeColor = isCompanyEdge ? rgba(warn, 0.08 + pulse * 0.35 * alpha) : rgba(pri, 0.08 + pulse * 0.5 * alpha);
 
         ctx.beginPath();
         ctx.moveTo(ax, ay);
@@ -577,7 +605,7 @@ export default function ConnectLiveNetworkMap({ onNodeClick }: ConnectLiveNetwor
           const t = 1 - pulse;
           ctx.beginPath();
           ctx.arc(ax + (bx - ax) * t, ay + (by - ay) * t, isCompanyEdge ? 2.2 : 2.8, 0, Math.PI * 2);
-          ctx.fillStyle = isCompanyEdge ? `hsl(var(--warning) / ${pulse * 0.9 * alpha})` : `hsl(var(--primary) / ${pulse * 0.95 * alpha})`;
+          ctx.fillStyle = isCompanyEdge ? rgba(warn, pulse * 0.9 * alpha) : rgba(pri, pulse * 0.95 * alpha);
           ctx.fill();
         }
 
@@ -600,21 +628,21 @@ export default function ConnectLiveNetworkMap({ onNodeClick }: ConnectLiveNetwor
           const widthRect = 18 * pulse;
           const heightRect = 12 * pulse;
           const glow = ctx.createRadialGradient(px, py, 0, px, py, 30);
-          glow.addColorStop(0, `hsl(var(--foreground) / ${0.18 * opacity})`);
-          glow.addColorStop(1, "hsl(var(--foreground) / 0)");
+          glow.addColorStop(0, rgba(fg, 0.18 * opacity));
+          glow.addColorStop(1, rgba(fg, 0));
           ctx.beginPath();
           ctx.arc(px, py, 30, 0, Math.PI * 2);
           ctx.fillStyle = glow;
           ctx.fill();
 
           drawRoundedRectPath(ctx, px - widthRect, py - heightRect, widthRect * 2, heightRect * 2, 4);
-          ctx.fillStyle = `hsl(var(--card) / ${0.18 * opacity})`;
+          ctx.fillStyle = rgba(cardC, 0.18 * opacity);
           ctx.fill();
-          ctx.strokeStyle = `hsl(var(--foreground) / ${0.78 * opacity})`;
+          ctx.strokeStyle = rgba(fg, 0.78 * opacity);
           ctx.lineWidth = 1.5;
           ctx.stroke();
           ctx.font = "700 11px 'DM Sans', sans-serif";
-          ctx.fillStyle = `hsl(var(--foreground) / ${0.96 * opacity})`;
+          ctx.fillStyle = rgba(fg, 0.96 * opacity);
           ctx.textAlign = "center";
           ctx.fillText("You", px, py + 4);
           continue;
@@ -628,17 +656,17 @@ export default function ConnectLiveNetworkMap({ onNodeClick }: ConnectLiveNetwor
         if (node.kind === "company") {
           const size = 7.5 * pulse * (1 + hover * 0.3);
           drawRoundedRectPath(ctx, px - size * 1.4, py - size, size * 2.8, size * 2, 3.5);
-          ctx.fillStyle = `hsl(var(--warning) / ${0.14 + hover * 0.12})`;
+          ctx.fillStyle = rgba(warn, 0.14 + hover * 0.12);
           ctx.fill();
-          ctx.strokeStyle = `hsl(var(--warning) / ${0.55 + hover * 0.35})`;
+          ctx.strokeStyle = rgba(warn, 0.55 + hover * 0.35);
           ctx.lineWidth = 1 + hover * 0.6;
           ctx.stroke();
         } else if (node.tier === 1) {
           const size = 5.8 * pulse * (1 + hover * 0.25);
           drawRoundedRectPath(ctx, px - size * 1.45, py - size, size * 2.9, size * 2, 3);
-          ctx.fillStyle = `hsl(var(--primary) / ${(0.14 + hover * 0.15) * opacity})`;
+          ctx.fillStyle = rgba(pri, (0.14 + hover * 0.15) * opacity);
           ctx.fill();
-          ctx.strokeStyle = `hsl(var(--primary) / ${(0.5 + hover * 0.35) * opacity})`;
+          ctx.strokeStyle = rgba(pri, (0.5 + hover * 0.35) * opacity);
           ctx.lineWidth = 1 + hover * 0.5;
           ctx.stroke();
         } else if (node.tier === 2) {
@@ -649,18 +677,18 @@ export default function ConnectLiveNetworkMap({ onNodeClick }: ConnectLiveNetwor
           ctx.lineTo(px, py + size);
           ctx.lineTo(px - size, py);
           ctx.closePath();
-          ctx.fillStyle = `hsl(var(--primary) / ${(0.12 + hover * 0.15) * opacity})`;
+          ctx.fillStyle = rgba(pri, (0.12 + hover * 0.15) * opacity);
           ctx.fill();
-          ctx.strokeStyle = `hsl(var(--primary) / ${(0.3 + hover * 0.35) * opacity})`;
+          ctx.strokeStyle = rgba(pri, (0.3 + hover * 0.35) * opacity);
           ctx.lineWidth = 0.8 + hover * 0.5;
           ctx.stroke();
         } else {
           const radius = 2.6 * pulse * (1 + hover * 0.3);
           ctx.beginPath();
           ctx.arc(px, py, radius, 0, Math.PI * 2);
-          ctx.fillStyle = `hsl(var(--primary) / ${(0.1 + hover * 0.16) * opacity})`;
+          ctx.fillStyle = rgba(pri, (0.1 + hover * 0.16) * opacity);
           ctx.fill();
-          ctx.strokeStyle = `hsl(var(--primary) / ${(0.22 + hover * 0.3) * opacity})`;
+          ctx.strokeStyle = rgba(pri, (0.22 + hover * 0.3) * opacity);
           ctx.lineWidth = 0.55 + hover * 0.45;
           ctx.stroke();
         }
@@ -668,8 +696,8 @@ export default function ConnectLiveNetworkMap({ onNodeClick }: ConnectLiveNetwor
         if (hover > 0.05) {
           const glowRadius = node.kind === "company" ? 18 + hover * 12 : 16 + hover * 10;
           const glow = ctx.createRadialGradient(px, py, 0, px, py, glowRadius);
-          glow.addColorStop(0, node.kind === "company" ? `hsl(var(--warning) / ${0.18 * hover * opacity})` : `hsl(var(--primary) / ${0.2 * hover * opacity})`);
-          glow.addColorStop(1, node.kind === "company" ? "hsl(var(--warning) / 0)" : "hsl(var(--primary) / 0)");
+          glow.addColorStop(0, node.kind === "company" ? rgba(warn, 0.18 * hover * opacity) : rgba(pri, 0.2 * hover * opacity));
+          glow.addColorStop(1, node.kind === "company" ? rgba(warn, 0) : rgba(pri, 0));
           ctx.beginPath();
           ctx.arc(px, py, glowRadius, 0, Math.PI * 2);
           ctx.fillStyle = glow;
@@ -677,7 +705,7 @@ export default function ConnectLiveNetworkMap({ onNodeClick }: ConnectLiveNetwor
         }
 
         ctx.font = `${hover > 0.2 ? 700 : 500} ${fontSize}px 'DM Sans', sans-serif`;
-        ctx.fillStyle = `hsl(var(--foreground) / ${finalAlpha})`;
+        ctx.fillStyle = rgba(fg, finalAlpha);
         ctx.textAlign = "center";
         ctx.fillText(node.name, px, labelY);
       }
