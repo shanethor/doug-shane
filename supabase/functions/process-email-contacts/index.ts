@@ -12,16 +12,67 @@ const OUTLOOK_TOKEN_URL = "https://login.microsoftonline.com/common/oauth2/v2.0/
 
 // Blocklist patterns for automated senders
 const SENDER_BLOCKLIST = [
-  /^noreply@/i, /^no-reply@/i, /^notifications?@/i, /^mailer-daemon@/i,
-  /^postmaster@/i, /^support@.*\.com$/i, /^info@/i, /^team@/i,
+  /^noreply@/i, /^no-reply@/i, /^no_reply@/i, /^donotreply@/i, /^do-not-reply@/i,
+  /^notifications?@/i, /^mailer-daemon@/i, /^postmaster@/i,
+  /^support@/i, /^info@/i, /^team@/i, /^hello@/i, /^contact@/i,
+  /^sales@/i, /^marketing@/i, /^billing@/i, /^admin@/i,
+  /^newsletter@/i, /^updates?@/i, /^alerts?@/i, /^system@/i,
+  /^automated@/i, /^auto@/i, /^auto-/i, /^bot@/i, /^daemon@/i,
+  /^webmaster@/i, /^news@/i, /^press@/i, /^media@/i, /^pr@/i,
+  /^hr@/i, /^careers@/i, /^jobs@/i, /^office@/i,
+  /^compliance@/i, /^legal@/i, /^privacy@/i, /^security@/i,
+  /^feedback@/i, /^service@/i, /^customerservice@/i,
+  /^accounts?@/i, /^orders?@/i, /^receipts?@/i, /^invoic/i, /^payments?@/i,
+  /^unsubscribe@/i, /^subscribe@/i, /^bounces?@/i,
+  /^promo/i, /^promotions?@/i, /^deals@/i, /^offers@/i, /^rewards@/i,
+  /^delivery@/i, /^shipping@/i, /^tracking@/i,
   /@github\.com$/i, /@linkedin\.com$/i, /@facebookmail\.com$/i,
   /@docs\.google\.com$/i, /@calendar\.google\.com$/i, /@accounts\.google\.com$/i,
-  /@bounce\./i, /@.*\.noreply\./i, /^alerts?@/i, /^updates?@/i,
+  /@bounce\./i, /@.*\.noreply\./i,
   /@slack\.com$/i, /@trello\.com$/i, /@asana\.com$/i,
+  /@amazon\.com$/i, /@paypal\.com$/i, /@stripe\.com$/i, /@intuit\.com$/i,
+  /@notifications\.google\.com$/i,
+];
+
+// Known marketing / transactional ESP & brand domains
+const ESP_AND_BRAND_DOMAINS = [
+  "sendgrid.net", "mailchimp.com", "constantcontact.com", "hubspot.com",
+  "hs-send.com", "hubspotfree.com", "salesforce.com", "marketo.com",
+  "mailgun.org", "amazonses.com", "intercom.io", "zendesk.com",
+  "freshdesk.com", "notifications.google.com", "facebookmail.com",
+  "linkedin.com", "indeed.com", "glassdoor.com", "noreply.github.com",
+  "stripe.com", "paypal.com", "intuit.com",
+  "lhmailer.com", "flyporter.com", "espnmail.com",
+  "communications.yahoo.com", "virginamerica.com",
+  "bluemountain.com", "e.united.com", "news.united.com",
+  "mail.hunter.io", "us-edm.zip.co",
+];
+
+// Subdomain patterns that indicate transactional/marketing email
+const TRANSACTIONAL_SUBDOMAIN_PATTERNS = [
+  /^em\d*\./i,        // em1.turbotax.intuit.com
+  /^mail\./i,         // mail.hunter.io
+  /^edm\./i,          // edm.company.com
+  /^us-edm\./i,       // us-edm.zip.co
+  /^email\./i,        // email.company.com
+  /^e\./i,            // e.united.com
+  /^news\./i,         // news.company.com
+  /^notify\./i,       // notify.company.com
+  /^promo\./i,        // promo.company.com
+  /^comms?\./i,       // comm.company.com
+  /^campaign\./i,
+  /^mailer\./i,
+  /^bounce\./i,
+  /^sg\./i,           // sendgrid subdomains
+  /^mkt\./i,          // marketing subdomains
 ];
 
 function isBlocklisted(email: string): boolean {
-  return SENDER_BLOCKLIST.some(pattern => pattern.test(email));
+  if (SENDER_BLOCKLIST.some(pattern => pattern.test(email))) return true;
+  const domain = email.split("@")[1]?.toLowerCase() || "";
+  if (ESP_AND_BRAND_DOMAINS.some(d => domain === d || domain.endsWith("." + d))) return true;
+  if (TRANSACTIONAL_SUBDOMAIN_PATTERNS.some(p => p.test(domain))) return true;
+  return false;
 }
 
 function extractDomain(email: string): string {

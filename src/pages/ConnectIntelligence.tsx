@@ -73,16 +73,18 @@ interface ConnectedAccount {
 // ─── Spam / Classification Helpers ───
 const BUSINESS_EMAIL_PREFIXES = [
   "noreply", "no-reply", "no_reply", "donotreply", "do-not-reply",
-  "info@", "support@", "help@", "admin@", "sales@", "marketing@",
-  "billing@", "team@", "hello@", "contact@", "newsletter@",
-  "notifications@", "updates@", "mailer-daemon", "postmaster@",
-  "abuse@", "security@", "feedback@", "service@", "customerservice@",
-  "accounts@", "orders@", "receipts@", "invoice@", "payments@",
-  "unsubscribe@", "subscribe@", "bounces@", "alerts@", "system@",
-  "automated@", "auto@", "bot@", "daemon@", "webmaster@",
-  "news@", "press@", "media@", "pr@", "hr@", "careers@", "jobs@",
-  "compliance@", "legal@", "privacy@", "office@",
-  "promo", "promotions",
+  "info", "support", "help", "admin", "sales", "marketing",
+  "billing", "team", "hello", "contact", "newsletter",
+  "notifications", "updates", "mailer-daemon", "postmaster",
+  "abuse", "security", "feedback", "service", "customerservice",
+  "accounts", "orders", "receipts", "invoice", "payments",
+  "unsubscribe", "subscribe", "bounces", "alerts", "system",
+  "automated", "auto", "auto-confirm", "auto-reply",
+  "bot", "daemon", "webmaster",
+  "news", "press", "media", "pr", "hr", "careers", "jobs",
+  "compliance", "legal", "privacy", "office",
+  "promo", "promotions", "deals", "offers", "rewards",
+  "delivery", "shipping", "tracking",
 ];
 
 const ESP_DOMAINS = [
@@ -95,7 +97,12 @@ const ESP_DOMAINS = [
   "lhmailer.com", "flyporter.com", "espnmail.com",
   "communications.yahoo.com", "virginamerica.com",
   "bluemountain.com", "e.united.com", "news.united.com",
+  "mail.hunter.io", "us-edm.zip.co",
+  "amazon.com", "apple.com",
 ];
+
+// Subdomain patterns for transactional/marketing senders
+const TRANSACTIONAL_SUBDOMAIN_RE = /^(em\d*|mail|edm|us-edm|email|e|news|notify|promo|comms?|campaign|mailer|bounce|sg|mkt)\./i;
 
 const PERSONAL_DOMAINS = [
   "gmail.com", "yahoo.com", "hotmail.com", "outlook.com", "icloud.com",
