@@ -104,10 +104,14 @@ interface SpotlightFlyerWizardProps {
   editFlyerId?: string | null;
   initialType?: string;
   demoMode?: boolean;
+  skipTemplateGallery?: boolean;
 }
 
-export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId, initialType, demoMode }: SpotlightFlyerWizardProps) {
-  const [step, setStep] = useState(editFlyerId ? 0 : 1);
+export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId, initialType, demoMode, skipTemplateGallery }: SpotlightFlyerWizardProps) {
+  // step 0 = loading/edit, "templates" = template gallery, 1-4 = normal steps
+  const [step, setStep] = useState<number | "templates">(
+    editFlyerId ? 0 : (skipTemplateGallery || initialType ? 1 : "templates")
+  );
   const [loading, setLoading] = useState(false);
 
   const defaultBrand = brands.find(b => b.is_default) || brands[0] || null;
