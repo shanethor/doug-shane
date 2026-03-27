@@ -914,6 +914,11 @@ export default function AdminDashboard() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {/* ── Studio ── */}
+        <TabsContent value="studio" className="space-y-6">
+          <AdminStudioQueue profileNameMap={profileNameMap} />
+        </TabsContent>
       </Tabs>
 
       {/* Reject policy dialog */}
