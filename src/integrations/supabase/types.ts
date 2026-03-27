@@ -4130,7 +4130,7 @@ export type Database = {
         | "follow_up"
         | "other"
       document_type: "binder" | "dec" | "invoice" | "other"
-      lead_stage: "prospect" | "quoting" | "presenting" | "lost"
+      lead_stage: "prospect" | "quoting" | "presenting" | "lost" | "bound"
       loss_run_status:
         | "not_requested"
         | "requested"
@@ -4289,7 +4289,7 @@ export const Constants = {
         "other",
       ],
       document_type: ["binder", "dec", "invoice", "other"],
-      lead_stage: ["prospect", "quoting", "presenting", "lost"],
+      lead_stage: ["prospect", "quoting", "presenting", "lost", "bound"],
       loss_run_status: [
         "not_requested",
         "requested",
