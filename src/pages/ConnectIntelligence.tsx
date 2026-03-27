@@ -237,46 +237,15 @@ function EmailIntelligencePage() {
           {displayList.map(c => (
             <Card key={c.id} className="border-border/50">
               <CardContent className="py-3 px-4">
-                <div className="flex items-start gap-3">
-                  <div className="h-9 w-9 rounded-full bg-accent/10 flex items-center justify-center shrink-0">
-                    <span className="text-sm font-bold">{(c.display_name || c.email_address).charAt(0).toUpperCase()}</span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className="font-semibold text-sm">{c.display_name || `${c.first_name || ""} ${c.last_name || ""}`.trim() || c.email_address}</p>
-                      {c.status === "discovered" && <Badge variant="secondary" className="text-[10px]">NEW</Badge>}
-                      {c.prospect_score && <Badge variant="outline" className="text-[10px]">Score: {c.prospect_score}</Badge>}
-                    </div>
-                    <p className="text-xs text-muted-foreground">{c.email_address}</p>
-                    {(c.hunter_position || c.hunter_company) && (
-                      <p className="text-xs text-muted-foreground mt-0.5">{c.hunter_position}{c.hunter_position && c.hunter_company ? ", " : ""}{c.hunter_company}</p>
-                    )}
-                    <div className="flex items-center gap-3 mt-1 text-[11px] text-muted-foreground">
-                      {c.hunter_verified !== null && (
-                        <span className={c.hunter_verified ? "text-green-500" : "text-yellow-500"}>
-                          {c.hunter_verified ? "✓ Verified" : "⚠ Unverified"}
-                        </span>
-                      )}
-                      <span>Seen in {c.email_frequency} thread{c.email_frequency !== 1 ? "s" : ""}</span>
-                    </div>
-                    <div className="flex gap-1.5 mt-2">
-                      <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => saveContact(c.id)}><Plus className="h-3 w-3 mr-1" /> Save</Button>
-                      <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => {
-                        const newName = prompt("Enter name for this contact:", c.display_name || "");
-                        if (newName !== null && newName.trim()) {
-                          supabase.from("email_discovered_contacts" as any).update({ display_name: newName.trim() } as any).eq("id", c.id).then(() => {
-                            setContacts(prev => prev.map(ct => ct.id === c.id ? { ...ct, display_name: newName.trim() } : ct));
-                            toast.success("Name updated");
-                          });
-                        }
-                      }}><Edit2 className="h-3 w-3 mr-1" /> Rename</Button>
-                      {c.hunter_linkedin_url && (
-                        <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => window.open(c.hunter_linkedin_url!, "_blank")}><ExternalLink className="h-3 w-3 mr-1" /> Profile</Button>
-                      )}
-                      <Button variant="ghost" size="sm" className="h-7 text-xs text-muted-foreground" onClick={() => dismissContact(c.id)}><X className="h-3 w-3 mr-1" /> Dismiss</Button>
-                    </div>
-                  </div>
-                </div>
+                <InlineContactEditor
+                  contact={c}
+                  onUpdate={(id, updates) => {
+                    setContacts(prev => prev.map(ct => ct.id === id ? { ...ct, ...updates } : ct));
+                    setUnlabeled(prev => prev.map(ct => ct.id === id ? { ...ct, ...updates } : ct));
+                  }}
+                  onSave={saveContact}
+                  onDismiss={dismissContact}
+                />
               </CardContent>
             </Card>
           ))}
