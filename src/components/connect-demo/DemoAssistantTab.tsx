@@ -184,6 +184,24 @@ export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: st
       }
     }
 
+    // Pipeline move actions
+    const pipelineMoves = content.matchAll(/\[PIPELINE_ACTION:MOVE\|([^|]+)\|([^\]]+)\]/g);
+    for (const match of pipelineMoves) {
+      const [, leadId, newStage] = match;
+      supabase.from("leads").update({ stage: newStage as any }).eq("id", leadId).then(({ error }) => {
+        if (error) toast.error("Failed to move lead");
+        else toast.success(`Lead moved to ${newStage}`);
+      });
+    }
+
+    // Marketing actions
+    const marketingCreates = content.matchAll(/\[MARKETING_ACTION:CREATE\|([^|]+)\|([^|]+)\|([^|]+)\|([^\]]+)\]/g);
+    for (const match of marketingCreates) {
+      const [, assetType, title] = match;
+      toast.success(`Marketing asset "${title}" (${assetType}) queued — view in Connect → Marketing Center`);
+      navigate("/connect/create");
+    }
+
     // Navigate actions
     const navMatches = content.matchAll(/\[NAVIGATE:([^\]]+)\]/g);
     for (const match of navMatches) {
