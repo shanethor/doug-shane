@@ -101,6 +101,80 @@ export default function ProductSettings() {
     } catch {}
   };
 
+  const loadIcloudStatus = async () => {
+    try {
+      const headers = await getAuthHeaders();
+      const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/icloud-sync`, {
+        method: "POST", headers, body: JSON.stringify({ action: "status" }),
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        setIcloudConnection(data.connection);
+      }
+    } catch {} finally { setIcloudLoaded(true); }
+  };
+
+  const connectIcloud = async () => {
+    if (!icloudAppleId || !icloudAppPassword) {
+      toast.error("Enter your Apple ID email and app-specific password");
+      return;
+    }
+    setIcloudConnecting(true);
+    try {
+      const headers = await getAuthHeaders();
+      const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/icloud-sync`, {
+        method: "POST", headers,
+        body: JSON.stringify({ action: "connect", apple_id: icloudAppleId, app_password: icloudAppPassword }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.error || "Connection failed");
+      toast.success("iCloud connected! Starting sync...");
+      setIcloudAppPassword("");
+      await syncIcloud();
+      await loadIcloudStatus();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to connect");
+    } finally { setIcloudConnecting(false); }
+  };
+
+  const syncIcloud = async () => {
+    setIcloudSyncing(true);
+    try {
+      const headers = await getAuthHeaders();
+      const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/icloud-sync`, {
+        method: "POST", headers, body: JSON.stringify({ action: "sync" }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.error || "Sync failed");
+      toast.success(`Synced ${data.imported} contacts from iCloud`);
+      await loadIcloudStatus();
+    } catch (err: any) {
+      toast.error(err.message || "Sync failed");
+    } finally { setIcloudSyncing(false); }
+  };
+
+  const disconnectIcloud = async () => {
+    try {
+      const headers = await getAuthHeaders();
+      await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/icloud-sync`, {
+        method: "POST", headers, body: JSON.stringify({ action: "disconnect" }),
+      });
+      setIcloudConnection(null);
+      toast.success("iCloud disconnected");
+    } catch { toast.error("Failed to disconnect"); }
+  };
+
+  const toggleIcloudAutoSync = async (enabled: boolean) => {
+    try {
+      const headers = await getAuthHeaders();
+      await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/icloud-sync`, {
+        method: "POST", headers, body: JSON.stringify({ action: "toggle_auto_sync", enabled }),
+      });
+      setIcloudConnection((prev: any) => prev ? { ...prev, auto_sync: enabled } : prev);
+      toast.success(enabled ? "Auto-sync enabled" : "Auto-sync disabled");
+    } catch { toast.error("Failed to update"); }
+  };
+
   const connectEmail = async (provider: "gmail" | "outlook") => {
     setConnectingProvider(provider);
     try {
