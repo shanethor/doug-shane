@@ -583,15 +583,25 @@ serve(async (req) => {
         });
       }
 
-      const contacts = allUsers.map((u: any) => ({
-        user_id: userId, source: "teams",
-        external_id: `teams-${u.id}`,
-        full_name: u.displayName || null, email: u.mail || null,
-        phone: u.mobilePhone || null, company: u.companyName || null,
-        title: u.jobTitle || null, linkedin_url: null,
-        location: u.officeLocation || null,
-        metadata: { department: u.department, ms_id: u.id, method: "api" },
-      })).filter((c: any) => c.full_name || c.email);
+      const contacts = allUsers.map((u: any) => {
+        // Handle both /users and /me/people response formats
+        const email = usedFallback
+          ? (u.emailAddresses?.[0]?.address || null)
+          : (u.mail || null);
+        const phone = usedFallback
+          ? (u.phones?.[0]?.number || null)
+          : (u.mobilePhone || null);
+
+        return {
+          user_id: userId, source: "teams",
+          external_id: `teams-${u.id}`,
+          full_name: u.displayName || null, email,
+          phone, company: u.companyName || null,
+          title: u.jobTitle || null, linkedin_url: null,
+          location: u.officeLocation || null,
+          metadata: { department: u.department, ms_id: u.id, method: usedFallback ? "people_api" : "directory_api" },
+        };
+      }).filter((c: any) => c.full_name || c.email);
 
       if (contacts.length > 0) {
         for (let i = 0; i < contacts.length; i += 500) {
