@@ -543,31 +543,6 @@ export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId, ini
     }
   };
 
-  const handleRegenerate = async () => {
-    setGenerating(true);
-    try {
-      if (demoMode) {
-        const prompt = buildDemoPrompt(tweakText.trim() || undefined);
-        const imageUrl = await generateDemoImage(prompt);
-        setResultImageUrl(imageUrl);
-        setTweakText("");
-        toast.success("Graphic regenerated");
-      } else {
-        const { data, error } = await supabase.functions.invoke("spotlight-flyer", {
-          body: { action: "generate", flyer_id: flyerId, extra_instructions: tweakText.trim() || undefined },
-        });
-        if (error) throw error;
-        if (data?.error) throw new Error(data.error);
-        setResultImageUrl(data.image_url);
-        setTweakText("");
-        toast.success("Graphic regenerated");
-      }
-    } catch (err: any) {
-      toast.error(err.message || "Regeneration failed");
-    } finally {
-      setGenerating(false);
-    }
-  };
 
   const handleDownload = () => {
     if (!resultImageUrl) return;
