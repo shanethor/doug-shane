@@ -115,13 +115,19 @@ function classifyContact(c: DiscoveredContact): { type: "person" | "company" | "
   const localPart = email.split("@")[0];
   const domain = email.split("@")[1] || "";
 
-  // Auto-filter checks
-  if (BUSINESS_EMAIL_PREFIXES.some(p => localPart.startsWith(p.replace("@", "")))) {
+  // Auto-filter: prefix match
+  if (BUSINESS_EMAIL_PREFIXES.some(p => localPart === p || localPart.startsWith(p + "-") || localPart.startsWith(p + "."))) {
     return { type: "filtered", score: 0 };
   }
+  // Auto-filter: ESP / brand domain
   if (ESP_DOMAINS.some(d => domain === d || domain.endsWith("." + d))) {
     return { type: "filtered", score: 0 };
   }
+  // Auto-filter: transactional subdomain pattern (em1.*, mail.*, edm.*, etc.)
+  if (TRANSACTIONAL_SUBDOMAIN_RE.test(domain)) {
+    return { type: "filtered", score: 0 };
+  }
+  // Auto-filter: hash-like local parts
   if (/^\d+$/.test(localPart) || /^[a-f0-9]{20,}$/.test(localPart)) {
     return { type: "filtered", score: 0 };
   }
