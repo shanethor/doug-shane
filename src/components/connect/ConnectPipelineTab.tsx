@@ -127,6 +127,30 @@ export default function ConnectPipelineTab() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loadingLeads, setLoadingLeads] = useState(false);
   const [expandedColumns, setExpandedColumns] = useState<Record<string, boolean>>({});
+  const [addLeadOpen, setAddLeadOpen] = useState(false);
+  const [newLead, setNewLead] = useState({ account_name: "", contact_name: "", email: "", phone: "", target_premium: "", lead_source: "", stage: "prospect" });
+  const [addingLead, setAddingLead] = useState(false);
+
+  const handleAddLead = async () => {
+    if (!user || !newLead.account_name.trim()) { toast.error("Account name is required"); return; }
+    setAddingLead(true);
+    const { error } = await supabase.from("leads").insert({
+      account_name: newLead.account_name.trim(),
+      contact_name: newLead.contact_name.trim() || null,
+      email: newLead.email.trim() || null,
+      phone: newLead.phone.trim() || null,
+      target_premium: Number(newLead.target_premium) || null,
+      lead_source: newLead.lead_source.trim() || null,
+      stage: newLead.stage as any,
+      owner_user_id: user.id,
+    });
+    setAddingLead(false);
+    if (error) { toast.error("Failed to add lead"); return; }
+    toast.success(`${newLead.account_name} added to pipeline`);
+    setAddLeadOpen(false);
+    setNewLead({ account_name: "", contact_name: "", email: "", phone: "", target_premium: "", lead_source: "", stage: "prospect" });
+    fetchLeads();
+  };
 
   useEffect(() => {
     if (!user) return;
