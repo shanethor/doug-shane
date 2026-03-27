@@ -682,9 +682,36 @@ export default function DemoConnectTab({ contentReady = true }: { contentReady?:
         </div>
       </div>
 
+      {/* Contact management buttons */}
+      {!searching && !result && (
+        <div className="flex justify-center gap-2 relative z-10" style={{
+          opacity: connectPhase >= 2 ? 1 : 0,
+          transition: "opacity 0.6s ease-out 0.3s",
+        }}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-xs gap-1.5"
+            style={{ borderColor: "hsl(240 6% 20%)", color: "hsl(240 5% 70%)" }}
+            onClick={() => { setShowContacts(true); setContactsTab("list"); }}
+          >
+            <List className="h-3.5 w-3.5" /> View Contacts
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-xs gap-1.5"
+            style={{ borderColor: "hsl(240 6% 20%)", color: "hsl(240 5% 70%)" }}
+            onClick={() => { setShowContacts(true); setContactsTab("merge"); }}
+          >
+            <GitMerge className="h-3.5 w-3.5" /> Merge Duplicates
+          </Button>
+        </div>
+      )}
+
       {!searching && !result && (
         <div className="relative mt-2" style={{
-          minHeight: "calc(100dvh - 340px)",
+          minHeight: "calc(100dvh - 380px)",
           opacity: connectPhase >= 3 ? 1 : 0,
           transform: connectPhase >= 3 ? "translateY(0) scale(1)" : "translateY(30px) scale(0.95)",
           transition: isFirstVisit.current ? "all 1.8s cubic-bezier(0.16, 1, 0.3, 1)" : "all 0.6s ease-out",
