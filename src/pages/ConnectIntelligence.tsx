@@ -9,7 +9,7 @@ import {
   Zap, Shield, BarChart3, Plus, X, RefreshCw,
   ExternalLink, CheckCircle, Wifi, WifiOff, Globe,
   Linkedin, Facebook, Phone, Database, Building2,
-  Filter, ArrowUpFromLine, Eye, EyeOff,
+  Filter, ArrowUpFromLine, Eye, EyeOff, List,
 } from "lucide-react";
 import { toast } from "sonner";
 import InlineContactEditor from "@/components/connect/InlineContactEditor";
