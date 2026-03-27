@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Send, Sparkles, FileUp, Users, Mail, BarChart3, Globe, Loader2, Paperclip, X, Network, PlusCircle, Calendar } from "lucide-react";
+import { Send, Sparkles, FileUp, Users, Mail, BarChart3, Globe, Loader2, Paperclip, X, Network, PlusCircle, Calendar, Palette, Image, Megaphone } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
@@ -10,12 +10,14 @@ import { supabase } from "@/integrations/supabase/client";
 type Msg = { role: "user" | "assistant"; content: string };
 
 const SUGGESTIONS = [
-  { icon: PlusCircle, label: "Submit a new client", message: "I want to add a new lead to my pipeline. Walk me through it." },
+  { icon: PlusCircle, label: "Add a lead", message: "I want to add a new lead to my pipeline. Walk me through it." },
+  { icon: Users, label: "My pipeline", message: "Show me my current pipeline status with real numbers and suggest next steps." },
+  { icon: Image, label: "Create a flyer", message: "I need to create a marketing flyer. Help me set it up with GenTea." },
   { icon: Mail, label: "Draft an email", message: "Help me draft a professional follow-up email. Show me my recent contacts to choose from." },
-  { icon: Users, label: "Manage my pipeline", message: "Show me my current pipeline status with real numbers and suggest next steps." },
-  { icon: BarChart3, label: "Check my analytics", message: "Show me my real performance metrics — pipeline value, lead count, and conversion progress." },
-  { icon: Globe, label: "Research a company", message: "Can you research a company for me? I'll give you the name." },
+  { icon: Megaphone, label: "Marketing ideas", message: "Give me 3 marketing campaign ideas I can execute this week to generate leads." },
   { icon: Network, label: "Find a connection", message: "Who are my strongest connections? Show me my top contacts by tier." },
+  { icon: BarChart3, label: "Check analytics", message: "Show me my real performance metrics — pipeline value, lead count, and conversion progress." },
+  { icon: Globe, label: "Research a company", message: "Can you research a company for me? I'll give you the name." },
 ];
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/connect-assistant`;
