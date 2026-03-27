@@ -99,6 +99,7 @@ function StreamingMessage({ content, isStreaming, onAction }: { content: string;
   const displayContent = content
     .replace(/\[PIPELINE_ACTION:[^\]]+\]/g, "")
     .replace(/\[CALENDAR_ACTION:[^\]]+\]/g, "")
+    .replace(/\[MARKETING_ACTION:[^\]]+\]/g, "")
     .replace(/\[NAVIGATE:[^\]]+\]/g, "");
 
   return (
