@@ -49,14 +49,14 @@ export function useEmailAI() {
     try {
       const { data, error } = await supabase.functions.invoke("ai-router", {
         body: {
-          messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: userPrompt },
-          ],
+          action: "advisorAssist",
+          taskType: "EMAIL_DRAFT",
+          userPrompt: `${systemPrompt}\n\n${userPrompt}`,
         },
       });
       if (error) throw error;
-      const content = data?.choices?.[0]?.message?.content?.trim();
+      // ai-router returns { text, metadata } for advisorAssist
+      const content = data?.text?.trim() || data?.choices?.[0]?.message?.content?.trim();
       return content || null;
     } catch (err: any) {
       console.error("Email AI error:", err);

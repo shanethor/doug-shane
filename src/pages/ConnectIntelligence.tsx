@@ -265,18 +265,45 @@ function EmailIntelligencePage() {
         </Card>
       ) : (
         <div className="grid gap-2">
-          {displayList.map(c => (
+           {displayList.map(c => (
             <Card key={c.id} className="border-border/50">
               <CardContent className="py-3 px-4">
-                <InlineContactEditor
-                  contact={c}
-                  onUpdate={(id, updates) => {
-                    setContacts(prev => prev.map(ct => ct.id === id ? { ...ct, ...updates } : ct));
-                    setUnlabeled(prev => prev.map(ct => ct.id === id ? { ...ct, ...updates } : ct));
-                  }}
-                  onSave={saveContact}
-                  onDismiss={dismissContact}
-                />
+                {filter === "saved" ? (
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-medium truncate">{c.display_name || c.email_address}</p>
+                      {c.display_name && <p className="text-xs text-muted-foreground truncate">{c.email_address}</p>}
+                      {c.hunter_company && <p className="text-xs text-muted-foreground">{c.hunter_company}{c.hunter_position ? ` · ${c.hunter_position}` : ""}</p>}
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Badge variant="outline" className="text-[10px] text-green-500 border-green-500/30">Saved</Badge>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
+                        title="Remove from saved"
+                        onClick={async () => {
+                          await supabase.from("email_discovered_contacts" as any).update({ status: "new" }).eq("id", c.id);
+                          setSavedContacts(prev => prev.filter(sc => sc.id !== c.id));
+                          setContacts(prev => [{ ...c, status: "new" }, ...prev]);
+                          toast.success("Removed from saved");
+                        }}
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <InlineContactEditor
+                    contact={c}
+                    onUpdate={(id, updates) => {
+                      setContacts(prev => prev.map(ct => ct.id === id ? { ...ct, ...updates } : ct));
+                      setUnlabeled(prev => prev.map(ct => ct.id === id ? { ...ct, ...updates } : ct));
+                    }}
+                    onSave={saveContact}
+                    onDismiss={dismissContact}
+                  />
+                )}
               </CardContent>
             </Card>
           ))}
