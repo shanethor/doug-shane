@@ -108,7 +108,7 @@ export default function InlineContactEditor({ contact, onUpdate, onSave, onDismi
       // Check by name within user's own contacts
       const { data: existingByName } = await supabase
         .from("canonical_persons")
-        .select("id, display_name, primary_email")
+        .select("id, display_name, primary_email, company")
         .eq("owner_user_id", user.id)
         .ilike("display_name", finalName)
         .limit(5);
