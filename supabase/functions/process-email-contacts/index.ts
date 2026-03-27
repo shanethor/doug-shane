@@ -84,8 +84,12 @@ const TRANSACTIONAL_SUBDOMAIN_PATTERNS = [
 function isBlocklisted(email: string): boolean {
   if (SENDER_BLOCKLIST.some(pattern => pattern.test(email))) return true;
   const domain = email.split("@")[1]?.toLowerCase() || "";
+  const localPart = email.split("@")[0]?.toLowerCase() || "";
   if (ESP_AND_BRAND_DOMAINS.some(d => domain === d || domain.endsWith("." + d))) return true;
+  if (SMS_MMS_GATEWAY_DOMAINS.some(d => domain === d || domain.endsWith("." + d))) return true;
   if (TRANSACTIONAL_SUBDOMAIN_PATTERNS.some(p => p.test(domain))) return true;
+  // Filter phone-number-as-email patterns (e.g. 9168725925@mms.att.net)
+  if (/^\d{7,}/.test(localPart)) return true;
   return false;
 }
 
