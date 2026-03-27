@@ -20,7 +20,10 @@ export default function ConnectSpotlightTab() {
   const loadHistory = useCallback(async () => {
     try {
       const { data, error } = await supabase.functions.invoke("spotlight-flyer", { body: { action: "list" } });
-      if (!error && data?.flyers) setHistory(data.flyers);
+      if (!error && data?.flyers) {
+        const sorted = [...data.flyers].sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        setHistory(sorted);
+      }
     } catch { /* silent */ }
   }, []);
 
