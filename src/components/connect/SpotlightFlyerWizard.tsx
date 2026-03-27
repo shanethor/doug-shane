@@ -20,6 +20,7 @@ import type { BrandPackage } from "./SpotlightBrandSetup";
 import SpotlightTemplateGallery from "./SpotlightTemplateGallery";
 import SpotlightPostEditor from "./SpotlightPostEditor";
 import type { SpotlightTemplate } from "./spotlight-templates";
+import { SPOTLIGHT_TEMPLATES } from "./spotlight-templates";
 
 const FLYER_TYPES = [
   { value: "event", label: "Event Flyer" },
@@ -145,8 +146,24 @@ export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId, ini
   const logoFileRef = useRef<HTMLInputElement>(null);
   const materialFileRef = useRef<HTMLInputElement>(null);
 
-  // Sync initialType
-  useEffect(() => { if (initialType) setFlyerType(initialType); }, [initialType]);
+  // Sync initialType — also pre-fill from template if initialType matches a template ID
+  useEffect(() => {
+    if (!initialType) return;
+    // Check if initialType is a template ID (e.g. "referral-ask")
+    const matchedTemplate = SPOTLIGHT_TEMPLATES.find(t => t.id === initialType);
+    if (matchedTemplate) {
+      // Pre-fill wizard fields from template
+      setFlyerType(matchedTemplate.contentType);
+      setRawPrompt(matchedTemplate.prompt);
+      if (!title) setTitle(matchedTemplate.title);
+      if (bullets.length === 1 && bullets[0] === "") setBullets(matchedTemplate.bullets);
+      if (!cta) setCta(matchedTemplate.cta);
+      if (!disclaimer && matchedTemplate.disclaimer) setDisclaimer(matchedTemplate.disclaimer);
+    } else {
+      setFlyerType(initialType);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialType]);
 
   const getResolvedBullets = () => {
     const cleanBullets = bullets.map((bullet) => bullet.trim()).filter(Boolean);

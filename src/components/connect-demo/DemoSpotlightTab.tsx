@@ -6,11 +6,26 @@ import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Sparkles, Image as ImageIcon, Palette, Pencil, Plus, Download, Trash2,
-  CalendarDays, Share2, BookOpen, Megaphone, FileImage, LayoutGrid,
 } from "lucide-react";
 import { toast } from "sonner";
 import SpotlightFlyerWizard from "@/components/connect/SpotlightFlyerWizard";
 import SpotlightBrandSetup, { type BrandPackage } from "@/components/connect/SpotlightBrandSetup";
+import { SPOTLIGHT_TEMPLATES } from "@/components/connect/spotlight-templates";
+import newClientWelcomeImg from "@/assets/templates/new-client-welcome.png";
+import renewalReminderImg from "@/assets/templates/renewal-reminder.png";
+import eventInviteImg from "@/assets/templates/event-invite.png";
+import riskTipImg from "@/assets/templates/risk-tip.png";
+import referralAskImg from "@/assets/templates/referral-ask.png";
+import seasonalPromoImg from "@/assets/templates/seasonal-promo.png";
+
+const TEMPLATE_IMAGES: Record<string, string> = {
+  "new-client-welcome": newClientWelcomeImg,
+  "renewal-reminder": renewalReminderImg,
+  "event-invite": eventInviteImg,
+  "risk-tip": riskTipImg,
+  "referral-ask": referralAskImg,
+  "seasonal-promo": seasonalPromoImg,
+};
 
 type ViewMode = "home" | "wizard" | "brand_setup";
 
@@ -56,14 +71,7 @@ const TYPE_COLORS: Record<string, string> = {
   announcement: "border-[hsl(20_50%_50%/0.4)] text-[hsl(20_50%_65%)] bg-[hsl(20_50%_50%/0.1)]",
 };
 
-const CONTENT_TYPES = [
-  { icon: CalendarDays, label: "Event Flyer", desc: "Invitations & event promos", type: "event" },
-  { icon: Share2, label: "Social Post", desc: "Graphics for social media", type: "social" },
-  { icon: Megaphone, label: "Announcement", desc: "News & updates", type: "announcement" },
-  { icon: BookOpen, label: "Educational", desc: "Tips, guides & infographics", type: "educational" },
-  { icon: FileImage, label: "Promotion", desc: "Offers & referral programs", type: "promotion" },
-  { icon: LayoutGrid, label: "Custom", desc: "Describe anything you need", type: "custom" },
-];
+// CONTENT_TYPES removed — replaced by SPOTLIGHT_TEMPLATES visual card grid
 
 export default function DemoSpotlightTab() {
   const [view, setView] = useState<ViewMode>("home");
@@ -76,8 +84,8 @@ export default function DemoSpotlightTab() {
 
   const loadHistory = useCallback(async () => {
     try {
-      const { data } = await supabase.from("generated_forms").select("*").order("created_at", { ascending: false }).limit(20);
-      if (data) setRealHistory(data.map(d => ({ id: d.id, title: d.display_name, type: d.form_type, status: "ready", created_at: d.created_at, result_image_url: null })));
+      const { data } = await supabase.functions.invoke("spotlight-flyer", { body: { action: "list" } });
+      if (data?.flyers) setRealHistory(data.flyers.map((d: any) => ({ id: d.id, title: d.title, type: d.type, status: d.status, created_at: d.created_at, result_image_url: d.result_image_url })));
     } catch {}
   }, []);
 
@@ -107,6 +115,23 @@ export default function DemoSpotlightTab() {
   const allFlyers = [...realHistory, ...SAMPLE_FLYERS];
 
   const handleCreateFlyer = (type?: string) => { setEditFlyerId(null); setSelectedType(type || ""); setView("wizard"); };
+
+  const handleSelectTemplate = (templateId: string) => {
+    const tpl = SPOTLIGHT_TEMPLATES.find(t => t.id === templateId);
+    if (!tpl) return;
+    setEditFlyerId(null);
+    setSelectedType(tpl.id); // pass the template id — wizard will detect and pre-fill
+    setView("wizard");
+  };
+
+  const handleDeleteFlyer = async (flyerId: string) => {
+    if (flyerId.startsWith("sample-")) { toast.info("Sample flyer — create your own to delete it!"); return; }
+    try {
+      await supabase.functions.invoke("spotlight-flyer", { body: { action: "delete_flyer", flyer_id: flyerId } });
+      toast("Flyer deleted");
+      await loadHistory();
+    } catch { toast.error("Could not delete flyer."); }
+  };
 
   const handleEditFlyer = (flyerId: string) => {
     if (flyerId.startsWith("sample-")) { toast.info("This is a sample — create a new one to get started!"); return; }
@@ -165,30 +190,48 @@ export default function DemoSpotlightTab() {
         </CardContent>
       </Card>
 
-      {/* Content Type Grid */}
+      {/* Template Cards — visual preview grid */}
       <Card className="animate-fade-in" style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 14%)", animationDelay: "40ms" }}>
         <CardHeader className="pb-2 pt-3 px-3">
           <CardTitle className="text-[10px] uppercase tracking-wider" style={{ color: "hsl(240 5% 50%)" }}>
-            What do you want to create?
+            Start with a template
           </CardTitle>
         </CardHeader>
-        <CardContent className="px-3 pb-3">
-          <div className="grid grid-cols-3 gap-1.5">
-            {CONTENT_TYPES.map((ct) => (
+        <CardContent className="px-3 pb-3 space-y-3">
+          <div className="grid grid-cols-2 gap-2">
+            {SPOTLIGHT_TEMPLATES.map((tpl) => (
               <button
-                key={ct.type}
-                onClick={() => handleCreateFlyer(ct.type)}
-                className="flex flex-col items-center gap-1 p-2.5 rounded-lg transition-colors text-center"
-                style={{ background: "hsl(240 6% 7%)", border: "1px solid hsl(240 6% 14%)" }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = "hsl(140 12% 42% / 0.4)"; }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = "hsl(240 6% 14%)"; }}
+                key={tpl.id}
+                onClick={() => handleSelectTemplate(tpl.id)}
+                className="group relative rounded-xl overflow-hidden text-left transition-all hover:scale-[1.02] hover:shadow-lg cursor-pointer"
+                style={{ aspectRatio: "4/3", border: "1px solid hsl(240 6% 18%)" }}
               >
-                <ct.icon className="h-4 w-4" style={{ color: "hsl(140 12% 58%)" }} />
-                <span className="text-[10px] font-medium text-white leading-tight">{ct.label}</span>
-                <span className="text-[8px] leading-tight" style={{ color: "hsl(240 5% 46%)" }}>{ct.desc}</span>
+                {TEMPLATE_IMAGES[tpl.id] ? (
+                  <img
+                    src={TEMPLATE_IMAGES[tpl.id]}
+                    alt={tpl.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full" style={{ background: tpl.thumbnailBg }} />
+                )}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                <div className="absolute bottom-0 left-0 right-0 p-2">
+                  <p className="text-[11px] font-bold text-white leading-tight">{tpl.name}</p>
+                  <p className="text-[9px] text-white/65 leading-tight mt-0.5 line-clamp-1">{tpl.tagline}</p>
+                </div>
               </button>
             ))}
           </div>
+          <button
+            onClick={() => handleCreateFlyer()}
+            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs transition-colors"
+            style={{ background: "hsl(240 6% 7%)", border: "1px solid hsl(240 6% 14%)", color: "hsl(240 5% 65%)" }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = "hsl(140 12% 42% / 0.4)"; e.currentTarget.style.color = "white"; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = "hsl(240 6% 14%)"; e.currentTarget.style.color = "hsl(240 5% 65%)"; }}
+          >
+            <Pencil className="h-3.5 w-3.5" /> Start from scratch
+          </button>
         </CardContent>
       </Card>
 
@@ -244,6 +287,11 @@ export default function DemoSpotlightTab() {
                         link.click();
                       }}>
                         <Download className="h-3 w-3" style={{ color: "hsl(240 5% 56%)" }} />
+                      </Button>
+                    )}
+                    {!isSample && (
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDeleteFlyer(f.id)}>
+                        <Trash2 className="h-3 w-3 text-red-400/60" />
                       </Button>
                     )}
                   </div>

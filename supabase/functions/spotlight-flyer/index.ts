@@ -98,7 +98,7 @@ async function enrichDemoInput(body: Record<string, unknown>) {
   const rawPrompt = String(body.raw_prompt || "").trim();
   const description = String(body.description || "").trim();
   const seedText = [rawPrompt, description].filter(Boolean).join("\n\n");
-  const requestedType = normalizeFlyerType(String(body.type || "") || detectFlyerType(rawPrompt));
+  const requestedType = normalizeFlyerType(String(body.type || "") || await detectFlyerType(rawPrompt));
   const fallbackTitle = String(body.title || "").trim() || inferTitleFromText(seedText, requestedType);
   const fallbackBullets = Array.isArray(body.bullets)
     ? body.bullets.map((item) => String(item || "").trim()).filter(Boolean).slice(0, 6)
@@ -203,32 +203,55 @@ function buildStructuredPrompt(flyer: any, brandMeta?: Record<string, unknown>):
   const styleMap: Record<string, string> = {
     event: "clean, professional",
     webinar: "modern, trustworthy, minimal",
-    promo: "bold, attention-grabbing, bright",
+    promotion: "bold, attention-grabbing, high-contrast",
+    promo: "bold, attention-grabbing, high-contrast",
     hiring: "approachable, professional",
     announcement: "elegant, celebratory",
+    social: "modern, visually striking, social-media ready",
+    educational: "authoritative, clean, infographic-style",
   };
-  const style = styleMap[flyer.type] || "professional, clean";
+  const style = styleMap[flyer.type] || "professional, clean, modern";
 
-  parts.push(`Create a ${style} vertical marketing flyer for ${flyer.brand_name || "a business"}.`);
+  const brandName = flyer.brand_name || "an insurance professional";
+  parts.push(
+    `Generate a high-quality, VERTICAL (portrait orientation, 1080x1350px or 4:5 ratio) marketing graphic for ${brandName}, an insurance industry professional.`,
+    `The graphic is intended for digital use: social media posts, email campaigns, and print-ready PDFs.`,
+    `Visual style: ${style}. The design should look like it was produced by a top-tier marketing agency — not AI-generated. No clip art, no generic stock imagery, no fake people.`,
+  );
 
   const colors = Array.isArray(flyer.brand_colors) && flyer.brand_colors.length > 0
-    ? flyer.brand_colors.join(" and ")
-    : "professional tones";
-  parts.push(`Use brand colors: ${colors}.`);
-  if (flyer.logo_url) parts.push(`Include the company logo at the top.`);
+    ? flyer.brand_colors.join(", ")
+    : "deep navy #1a2744 and gold #c9a24b";
+  parts.push(
+    `Brand palette: ${colors}. Use these colors for backgrounds, accents, and UI elements. No hex color codes should appear as visible text anywhere on the image.`,
+  );
 
-  parts.push(`Headline: "${flyer.title}".`);
+  if (flyer.logo_url) parts.push(`Place the company logo prominently near the top center or top-left. Do not alter or distort it.`);
 
-  if (!flyer.evergreen && flyer.date_time) parts.push(`Date/Time: ${flyer.date_time}.`);
-  if (flyer.location) parts.push(`Location: ${flyer.location}.`);
-  if (flyer.type === "webinar") parts.push(`Include a "Live Webinar" tag prominently.`);
+  parts.push(`Main headline (large, bold, center or top-aligned): "${flyer.title}".`);
+
+  if (!flyer.evergreen && flyer.date_time) parts.push(`Date/Time detail: ${flyer.date_time} — render this clearly in a date badge or styled subheading.`);
+  if (flyer.location) parts.push(`Location: ${flyer.location} — include a location pin icon or styled location line.`);
+  if (flyer.type === "webinar") parts.push(`Prominently include a "LIVE WEBINAR" badge or tag.`);
 
   const bullets = Array.isArray(flyer.bullets) ? flyer.bullets : [];
   if (bullets.length > 0) {
-    parts.push(`Turn these points into ${bullets.length} concise bullet points on the flyer:\n${bullets.map((b: string) => `• ${b}`).join("\n")}`);
+    parts.push(
+      `Feature these ${bullets.length} key points as styled bullet points or icon-list items on the flyer. Render each as a short, punchy, polished line:`,
+      bullets.map((b: string, i: number) => `  ${i + 1}. ${b}`).join("\n"),
+    );
   }
 
-  if (flyer.cta) parts.push(`Call to action: "${flyer.cta}".`);
+  if (flyer.cta) {
+    parts.push(`Call-to-action button or banner (make it visually prominent, high-contrast): "${flyer.cta}".`);
+  }
+
+  // Insurance industry context
+  parts.push(
+    `Industry context: This is for the insurance and financial services industry. Use professional imagery: abstract financial/shield/protection motifs, clean geometric shapes, subtle textures, or tasteful stock-style backgrounds WITHOUT recognizable faces or real people.`,
+    `Typography guidance: Use a bold display font for the headline, a clean sans-serif for body copy. Strong typographic hierarchy is essential.`,
+    `Negative space: Leave breathing room around each element — do not overcrowd. Design should feel premium.`,
+  );
 
   // Inject scraped brand intelligence from company URLs
   const meta = brandMeta || {};
@@ -243,17 +266,20 @@ function buildStructuredPrompt(flyer: any, brandMeta?: Record<string, unknown>):
   }
 
   parts.push(
-    `Design style: ${style}, suitable for print and social media.`,
-    `Use clear hierarchy: large headline, date/time, location, bullet points, and a strong call to action.`,
-    `Include 1–2 subtle background or b-roll images relevant to the topic without showing recognizable faces.`,
     `HARD RULES — NEVER VIOLATE:`,
-    `1. For product items, ONLY use real product names if they are explicitly provided. Never invent or fabricate product names.`,
-    `2. NEVER show hex color codes (like #FF5733), color swatches, or any color reference notation anywhere on the flyer.`,
-    `3. If a company logo or brand imagery is provided, use it accurately and prominently — do not alter, recolor, or misrepresent the logo.`,
-    `4. Never include raw user questions, marketing jargon, instructions, or prompt text on the flyer. All visible text must be polished, professional copy as if designed by a top agency.`
+    `1. Output must be VERTICAL / PORTRAIT orientation. Never landscape.`,
+    `2. NEVER show hex color codes (like #FF5733), RGB values, or any color reference notation anywhere on the graphic.`,
+    `3. NEVER include raw prompt text, instructions, or marketing jargon on the graphic. All visible text must be polished, publication-ready copy.`,
+    `4. NEVER show recognizable real people’s faces. Abstract or silhouette-style human shapes are fine.`,
+    `5. NEVER invent product names or company names not explicitly provided.`,
+    `6. If a logo is provided, render it faithfully — do not alter, recolor, or distort it.`,
+    `7. No watermarks, no AI artifacts, no lorem ipsum text.`,
+    `8. NEVER invent or display fake contact information: no fake phone numbers, email addresses, website URLs, or social media handles. If real contact info is not explicitly provided, leave that space blank or use a tasteful placeholder like [Your Contact Info].`,
   );
 
-  if (flyer.disclaimer) parts.push(`Leave a small area at the bottom for disclaimer text: "${flyer.disclaimer}".`);
+  if (flyer.disclaimer) {
+    parts.push(`Include small disclaimer text at the very bottom (8pt equivalent, muted): "${flyer.disclaimer}".`);
+  }
 
   return parts.join("\n");
 }
@@ -402,7 +428,7 @@ serve(async (req) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "google/gemini-3.1-flash-image-preview",
+          model: "google/gemini-3-pro-image-preview",
           messages: [{ role: "user", content: prompt }],
           modalities: ["image", "text"],
         }),
@@ -795,6 +821,29 @@ serve(async (req) => {
         await supabase.from("marketing_flyers").update({ status: "error" }).eq("id", flyer_id);
         throw genErr;
       }
+    }
+
+    // ─── ACTION: delete_flyer ───
+    if (action === "delete_flyer") {
+      const { flyer_id } = body;
+      if (!flyer_id) throw new Error("flyer_id required");
+      // Verify ownership first
+      const { data: existing } = await supabase.from("marketing_flyers").select("id, user_id, result_image_url").eq("id", flyer_id).single();
+      if (!existing || existing.user_id !== userId) throw new Error("Flyer not found or not yours");
+      // Attempt to remove from storage if a generated image exists
+      if (existing.result_image_url) {
+        try {
+          const url = new URL(existing.result_image_url);
+          // Extract path after /object/public/agency-assets/
+          const pathMatch = url.pathname.match(/\/object\/public\/agency-assets\/(.+)/);
+          if (pathMatch) {
+            await supabase.storage.from("agency-assets").remove([pathMatch[1]]);
+          }
+        } catch { /* non-fatal: image cleanup best-effort */ }
+      }
+      const { error } = await supabase.from("marketing_flyers").delete().eq("id", flyer_id).eq("user_id", userId);
+      if (error) throw error;
+      return new Response(JSON.stringify({ ok: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     // ─── ACTION: list ───
