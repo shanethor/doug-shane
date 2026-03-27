@@ -354,8 +354,8 @@ serve(async (req) => {
 
           // Classify contact type and score
           const isPersonalDomain = ["gmail.com","yahoo.com","hotmail.com","outlook.com","icloud.com","att.net","sbcglobal.net","hotmail.ca","aol.com","protonmail.com","me.com","live.com","msn.com"].includes(domain);
-          const espDomains = ["sendgrid.net","mailchimp.com","constantcontact.com","hubspot.com","hs-send.com","salesforce.com","marketo.com","mailgun.org"];
-          const isEsp = espDomains.some(d => domain === d || domain.endsWith("." + d));
+          const isEsp = ESP_AND_BRAND_DOMAINS.some(d => domain === d || domain.endsWith("." + d));
+          const isTransactionalSubdomain = TRANSACTIONAL_SUBDOMAIN_PATTERNS.some(p => p.test(domain));
           const nameWords = displayName.trim().split(/\s+/);
           const isFirstLastPattern = nameWords.length === 2 && nameWords[0].length > 1 && nameWords[1].length > 1;
           const hasCompanyKeyword = /\b(llc|inc|corp|ltd|gmbh|team|service|group|agency)\b/i.test(displayName);
@@ -363,9 +363,13 @@ serve(async (req) => {
           let contactScore = 50;
           if (isPersonalDomain) contactScore += 20;
           if (isFirstLastPattern) contactScore += 20;
-          if (isEsp) contactScore -= 50;
+          if (isEsp || isTransactionalSubdomain) contactScore -= 60;
           if (hasCompanyKeyword) contactScore -= 30;
           if (!displayName || displayName.length < 2) contactScore -= 20;
+
+          // Extra: if local part matches known functional prefixes, heavily penalize
+          const funcPrefixes = ["noreply","no-reply","info","support","hello","contact","team","admin","sales","marketing","billing","newsletter","notifications","updates","alerts","auto","auto-confirm","bot","system","promo","deals","offers","rewards","delivery","shipping","tracking"];
+          if (funcPrefixes.some(p => email.split("@")[0] === p || email.split("@")[0].startsWith(p + "-"))) contactScore -= 40;
 
           const contactType = contactScore >= 70 ? "person" : contactScore >= 40 ? "company" : "filtered";
           const isFiltered = contactScore < 40;
