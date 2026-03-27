@@ -129,6 +129,10 @@ function classifyContact(c: DiscoveredContact): { type: "person" | "company" | "
   const localPart = email.split("@")[0];
   const domain = email.split("@")[1] || "";
 
+  // Auto-filter: SMS/MMS gateway domains (phone numbers as emails)
+  if (SMS_MMS_GATEWAY_DOMAINS.some(d => domain === d || domain.endsWith("." + d))) {
+    return { type: "filtered", score: 0 };
+  }
   // Auto-filter: prefix match
   if (BUSINESS_EMAIL_PREFIXES.some(p => localPart === p || localPart.startsWith(p + "-") || localPart.startsWith(p + "."))) {
     return { type: "filtered", score: 0 };
@@ -141,8 +145,12 @@ function classifyContact(c: DiscoveredContact): { type: "person" | "company" | "
   if (TRANSACTIONAL_SUBDOMAIN_RE.test(domain)) {
     return { type: "filtered", score: 0 };
   }
-  // Auto-filter: hash-like local parts
+  // Auto-filter: numeric-only local parts (phone numbers, tracking IDs)
   if (/^\d+$/.test(localPart) || /^[a-f0-9]{20,}$/.test(localPart)) {
+    return { type: "filtered", score: 0 };
+  }
+  // Auto-filter: local part is mostly digits (phone number patterns like 9168725925)
+  if (/^\d{7,}/.test(localPart)) {
     return { type: "filtered", score: 0 };
   }
 
