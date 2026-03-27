@@ -85,6 +85,7 @@ export default function ProductSettings() {
       setLoaded(true);
     });
     loadEmailConnections();
+    loadIcloudStatus();
   }, [user]);
 
   const loadEmailConnections = async () => {
