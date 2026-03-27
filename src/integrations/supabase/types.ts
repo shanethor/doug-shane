@@ -1409,6 +1409,98 @@ export type Database = {
         }
         Relationships: []
       }
+      design_creations: {
+        Row: {
+          created_at: string
+          design_json: Json
+          height: number
+          id: string
+          template_id: string | null
+          thumbnail_url: string | null
+          title: string
+          updated_at: string
+          user_id: string
+          width: number
+        }
+        Insert: {
+          created_at?: string
+          design_json?: Json
+          height?: number
+          id?: string
+          template_id?: string | null
+          thumbnail_url?: string | null
+          title?: string
+          updated_at?: string
+          user_id: string
+          width?: number
+        }
+        Update: {
+          created_at?: string
+          design_json?: Json
+          height?: number
+          id?: string
+          template_id?: string | null
+          thumbnail_url?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+          width?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "design_creations_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "design_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      design_templates: {
+        Row: {
+          base_height: number
+          base_width: number
+          category: string
+          created_at: string
+          description: string | null
+          design_json: Json
+          id: string
+          is_default: boolean
+          name: string
+          tags: string[] | null
+          thumbnail_url: string | null
+          updated_at: string
+        }
+        Insert: {
+          base_height?: number
+          base_width?: number
+          category?: string
+          created_at?: string
+          description?: string | null
+          design_json?: Json
+          id?: string
+          is_default?: boolean
+          name: string
+          tags?: string[] | null
+          thumbnail_url?: string | null
+          updated_at?: string
+        }
+        Update: {
+          base_height?: number
+          base_width?: number
+          category?: string
+          created_at?: string
+          description?: string | null
+          design_json?: Json
+          id?: string
+          is_default?: boolean
+          name?: string
+          tags?: string[] | null
+          thumbnail_url?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       email_attachments: {
         Row: {
           content_type: string | null
