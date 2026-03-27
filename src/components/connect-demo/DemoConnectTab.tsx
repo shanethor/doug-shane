@@ -3,11 +3,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Search, ArrowRight, Sparkles, Loader2, X, MapPin, Briefcase, Building2, Users, Signal, Mail, MessageSquare, Phone, Send, Calendar, Brain } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Search, ArrowRight, Sparkles, Loader2, X, MapPin, Briefcase, Building2, Users, Signal, Mail, MessageSquare, Phone, Send, Calendar, Brain, List, GitMerge } from "lucide-react";
 import { toast } from "sonner";
 import { ConnectOutreachPopup } from "./ConnectOutreachPopups";
 import MeetingPrepSection from "@/components/connect/MeetingPrepSection";
 import ConnectLiveNetworkMap, { type LiveNetworkProfile } from "@/components/connect/ConnectLiveNetworkMap";
+import ConnectNetworkTab from "@/components/connect/ConnectNetworkTab";
+import ContactMergePanel from "@/components/connect/ContactMergePanel";
 
 const DUMMY_PATH_TEMPLATES = [
   {
@@ -569,6 +573,8 @@ export default function DemoConnectTab({ contentReady = true }: { contentReady?:
   const [outreachType, setOutreachType] = useState<"email" | "text" | "call" | "meet" | null>(null);
   const [profilePopup, setProfilePopup] = useState<{ profile: LiveNetworkProfile; pos: { x: number; y: number } } | null>(null);
   const popupRef = useRef<HTMLDivElement>(null);
+  const [showContacts, setShowContacts] = useState(false);
+  const [contactsTab, setContactsTab] = useState<"list" | "merge">("list");
 
   const handleSearch = () => {
     if (!searchName.trim()) return;
@@ -676,9 +682,36 @@ export default function DemoConnectTab({ contentReady = true }: { contentReady?:
         </div>
       </div>
 
+      {/* Contact management buttons */}
+      {!searching && !result && (
+        <div className="flex justify-center gap-2 relative z-10" style={{
+          opacity: connectPhase >= 2 ? 1 : 0,
+          transition: "opacity 0.6s ease-out 0.3s",
+        }}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-xs gap-1.5"
+            style={{ borderColor: "hsl(240 6% 20%)", color: "hsl(240 5% 70%)" }}
+            onClick={() => { setShowContacts(true); setContactsTab("list"); }}
+          >
+            <List className="h-3.5 w-3.5" /> View Contacts
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-xs gap-1.5"
+            style={{ borderColor: "hsl(240 6% 20%)", color: "hsl(240 5% 70%)" }}
+            onClick={() => { setShowContacts(true); setContactsTab("merge"); }}
+          >
+            <GitMerge className="h-3.5 w-3.5" /> Merge Duplicates
+          </Button>
+        </div>
+      )}
+
       {!searching && !result && (
         <div className="relative mt-2" style={{
-          minHeight: "calc(100dvh - 340px)",
+          minHeight: "calc(100dvh - 380px)",
           opacity: connectPhase >= 3 ? 1 : 0,
           transform: connectPhase >= 3 ? "translateY(0) scale(1)" : "translateY(30px) scale(0.95)",
           transition: isFirstVisit.current ? "all 1.8s cubic-bezier(0.16, 1, 0.3, 1)" : "all 0.6s ease-out",
@@ -854,6 +887,26 @@ export default function DemoConnectTab({ contentReady = true }: { contentReady?:
         <div className="text-center py-12 text-sm" style={{ color: "hsl(240 5% 46%)" }}>No results found. Try another name.</div>
       )}
 
+      {/* Contacts / Merge Dialog */}
+      <Dialog open={showContacts} onOpenChange={setShowContacts}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto" style={{ background: "hsl(240 8% 8%)", borderColor: "hsl(240 6% 14%)" }}>
+          <DialogHeader>
+            <DialogTitle className="text-white">Contact Management</DialogTitle>
+          </DialogHeader>
+          <Tabs value={contactsTab} onValueChange={v => setContactsTab(v as "list" | "merge")}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="list" className="text-xs gap-1"><List className="h-3.5 w-3.5" /> All Contacts</TabsTrigger>
+              <TabsTrigger value="merge" className="text-xs gap-1"><GitMerge className="h-3.5 w-3.5" /> Merge Duplicates</TabsTrigger>
+            </TabsList>
+            <TabsContent value="list">
+              <ConnectNetworkTab />
+            </TabsContent>
+            <TabsContent value="merge">
+              <ContactMergePanel />
+            </TabsContent>
+          </Tabs>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
