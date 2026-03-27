@@ -168,7 +168,7 @@ export default function InlineContactEditor({ contact, onUpdate, onSave, onDismi
           title: fields.position || contact.hunter_position || null,
           linkedin_url: fields.linkedin || contact.hunter_linkedin_url || null,
           primary_phone: fields.phone || contact.hunter_phone || null,
-          tier: (contact.prospect_score || 0) >= 80 ? "A" : (contact.prospect_score || 0) >= 60 ? "B" : "C",
+          tier: (contact.prospect_score || 0) >= 80 ? "a" : (contact.prospect_score || 0) >= 60 ? "b" : "c",
           metadata,
         }).select("id").single();
 
