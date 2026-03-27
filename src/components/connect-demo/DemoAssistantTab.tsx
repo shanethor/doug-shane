@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Send, Sparkles, FileUp, Users, Mail, BarChart3, Globe, Loader2, Paperclip, X, Network, PlusCircle, Calendar } from "lucide-react";
+import { Send, Sparkles, FileUp, Users, Mail, BarChart3, Globe, Loader2, Paperclip, X, Network, PlusCircle, Calendar, Palette, Image, Megaphone } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
@@ -10,12 +10,14 @@ import { supabase } from "@/integrations/supabase/client";
 type Msg = { role: "user" | "assistant"; content: string };
 
 const SUGGESTIONS = [
-  { icon: PlusCircle, label: "Submit a new client", message: "I want to add a new lead to my pipeline. Walk me through it." },
+  { icon: PlusCircle, label: "Add a lead", message: "I want to add a new lead to my pipeline. Walk me through it." },
+  { icon: Users, label: "My pipeline", message: "Show me my current pipeline status with real numbers and suggest next steps." },
+  { icon: Image, label: "Create a flyer", message: "I need to create a marketing flyer. Help me set it up with GenTea." },
   { icon: Mail, label: "Draft an email", message: "Help me draft a professional follow-up email. Show me my recent contacts to choose from." },
-  { icon: Users, label: "Manage my pipeline", message: "Show me my current pipeline status with real numbers and suggest next steps." },
-  { icon: BarChart3, label: "Check my analytics", message: "Show me my real performance metrics — pipeline value, lead count, and conversion progress." },
-  { icon: Globe, label: "Research a company", message: "Can you research a company for me? I'll give you the name." },
+  { icon: Megaphone, label: "Marketing ideas", message: "Give me 3 marketing campaign ideas I can execute this week to generate leads." },
   { icon: Network, label: "Find a connection", message: "Who are my strongest connections? Show me my top contacts by tier." },
+  { icon: BarChart3, label: "Check analytics", message: "Show me my real performance metrics — pipeline value, lead count, and conversion progress." },
+  { icon: Globe, label: "Research a company", message: "Can you research a company for me? I'll give you the name." },
 ];
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/connect-assistant`;
@@ -97,6 +99,7 @@ function StreamingMessage({ content, isStreaming, onAction }: { content: string;
   const displayContent = content
     .replace(/\[PIPELINE_ACTION:[^\]]+\]/g, "")
     .replace(/\[CALENDAR_ACTION:[^\]]+\]/g, "")
+    .replace(/\[MARKETING_ACTION:[^\]]+\]/g, "")
     .replace(/\[NAVIGATE:[^\]]+\]/g, "");
 
   return (
@@ -181,6 +184,24 @@ export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: st
       }
     }
 
+    // Pipeline move actions
+    const pipelineMoves = content.matchAll(/\[PIPELINE_ACTION:MOVE\|([^|]+)\|([^\]]+)\]/g);
+    for (const match of pipelineMoves) {
+      const [, leadId, newStage] = match;
+      supabase.from("leads").update({ stage: newStage as any }).eq("id", leadId).then(({ error }) => {
+        if (error) toast.error("Failed to move lead");
+        else toast.success(`Lead moved to ${newStage}`);
+      });
+    }
+
+    // Marketing actions
+    const marketingCreates = content.matchAll(/\[MARKETING_ACTION:CREATE\|([^|]+)\|([^|]+)\|([^|]+)\|([^\]]+)\]/g);
+    for (const match of marketingCreates) {
+      const [, assetType, title] = match;
+      toast.success(`Marketing asset "${title}" (${assetType}) queued — view in Connect → Marketing Center`);
+      navigate("/connect/create");
+    }
+
     // Navigate actions
     const navMatches = content.matchAll(/\[NAVIGATE:([^\]]+)\]/g);
     for (const match of navMatches) {
@@ -190,7 +211,7 @@ export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: st
 
   const handleAction = useCallback((action: string) => {
     const lower = action.toLowerCase();
-    if (lower.includes("view pipeline") || lower.includes("manage pipeline")) {
+    if (lower.includes("view pipeline") || lower.includes("manage pipeline") || lower.includes("pipeline")) {
       navigate("/connect/pipeline");
     } else if (lower.includes("view calendar") || lower.includes("schedule")) {
       navigate("/connect/calendar");
@@ -198,8 +219,13 @@ export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: st
       navigate("/connect/email");
     } else if (lower.includes("draft") || lower.includes("send email")) {
       navigate("/connect/email");
-    } else if (lower.includes("view network") || lower.includes("find connection")) {
+    } else if (lower.includes("marketing") || lower.includes("flyer") || lower.includes("gentea") || lower.includes("create a")) {
+      navigate("/connect/create");
+      toast.success("Opening Marketing Center...");
+    } else if (lower.includes("view network") || lower.includes("find connection") || lower.includes("contact")) {
       navigate("/connect");
+    } else if (lower.includes("intelligence")) {
+      navigate("/connect/intelligence");
     } else {
       toast.info(`${action} — navigating...`);
     }
@@ -337,7 +363,7 @@ export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: st
             </div>
           </div>
 
-          <div className="w-full max-w-2xl grid grid-cols-2 sm:grid-cols-3 gap-2" style={{ animation: "sageFadeIn 0.6s cubic-bezier(0.16,1,0.3,1) 0.35s both" }}>
+          <div className="w-full max-w-2xl grid grid-cols-2 sm:grid-cols-4 gap-2" style={{ animation: "sageFadeIn 0.6s cubic-bezier(0.16,1,0.3,1) 0.35s both" }}>
             {SUGGESTIONS.map((s) => (
               <button
                 key={s.label}
