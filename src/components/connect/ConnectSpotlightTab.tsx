@@ -14,6 +14,9 @@ import DesignEditor from "./DesignEditor";
 import templateSeasonalPromo from "@/assets/templates/seasonal-promo.png";
 import templateEventInvite from "@/assets/templates/event-invite.png";
 import templateRiskTip from "@/assets/templates/risk-tip.png";
+import templateReferralAsk from "@/assets/templates/referral-ask.png";
+import templateRenewalReminder from "@/assets/templates/renewal-reminder.png";
+import templateNewClientWelcome from "@/assets/templates/new-client-welcome.png";
 
 type ViewMode = "home" | "wizard" | "brand_setup" | "editor";
 
