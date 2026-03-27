@@ -62,7 +62,7 @@ const FEATURED_TEMPLATES: FeaturedTemplate[] = [
     contentType: "announcement",
     icon: UserPlus,
     accentColor: "hsl(140 40% 38%)",
-    preview: null, // awaiting upload
+    preview: templateNewClientWelcome,
     defaultTitle: "Welcome Aboard — We're Proud to Protect You",
     defaultBody: "Proud to protect another client and their family. You can count on us for fast answers and real advocacy. Coverage questions? We are always one call away.",
   },
