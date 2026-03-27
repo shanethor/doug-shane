@@ -300,7 +300,7 @@ export default function DesignEditor({
     }
   }
 
-  function exportImage(format: "png" | "jpg") {
+  function exportImage(format: "png" | "jpeg") {
     const canvas = fabricRef.current;
     if (!canvas) return;
     // Export at full resolution
