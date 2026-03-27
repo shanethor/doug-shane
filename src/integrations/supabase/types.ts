@@ -2174,6 +2174,48 @@ export type Database = {
         }
         Relationships: []
       }
+      icloud_connections: {
+        Row: {
+          app_password_encrypted: string
+          apple_id_email: string
+          auto_sync: boolean
+          contact_count: number | null
+          created_at: string
+          id: string
+          last_sync_at: string | null
+          status: string
+          sync_token: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          app_password_encrypted: string
+          apple_id_email: string
+          auto_sync?: boolean
+          contact_count?: number | null
+          created_at?: string
+          id?: string
+          last_sync_at?: string | null
+          status?: string
+          sync_token?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          app_password_encrypted?: string
+          apple_id_email?: string
+          auto_sync?: boolean
+          contact_count?: number | null
+          created_at?: string
+          id?: string
+          last_sync_at?: string | null
+          status?: string
+          sync_token?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       insurance_applications: {
         Row: {
           created_at: string
