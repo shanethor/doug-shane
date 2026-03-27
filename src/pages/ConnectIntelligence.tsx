@@ -176,7 +176,7 @@ function EmailIntelligencePage() {
   }
 
   async function saveContact(id: string) {
-    const contact = contacts.find(c => c.id === id);
+    const contact = [...contacts, ...unlabeled].find(c => c.id === id);
     if (!contact) return;
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -203,18 +203,25 @@ function EmailIntelligencePage() {
 
       // Update discovered contact status and link
       await supabase.from("email_discovered_contacts" as any).update({ status: "saved_to_contacts" }).eq("id", id);
-      setContacts(prev => prev.map(c => c.id === id ? { ...c, status: "saved_to_contacts" } : c));
+
+      // Move from active lists to saved list
+      const savedContact = { ...contact, status: "saved_to_contacts" };
+      setContacts(prev => prev.filter(c => c.id !== id));
+      setUnlabeled(prev => prev.filter(c => c.id !== id));
+      setSavedContacts(prev => [savedContact, ...prev]);
       toast.success("Saved to contacts");
     } catch (err: any) {
       toast.error(err.message || "Failed to save contact");
     }
   }
 
-  const displayList = filter === "unlabeled" ? unlabeled : contacts.filter(c => {
-    if (filter === "high_score") return (c.prospect_score || 0) >= 70;
-    if (filter === "verified") return c.hunter_verified === true;
-    return true;
-  });
+  const displayList = filter === "unlabeled" ? unlabeled
+    : filter === "saved" ? savedContacts
+    : contacts.filter(c => {
+      if (filter === "high_score") return (c.prospect_score || 0) >= 70;
+      if (filter === "verified") return c.hunter_verified === true;
+      return true;
+    });
 
   const newThisWeek = contacts.filter(c => new Date(c.first_seen_at) >= new Date(Date.now() - 7 * 86400000)).length;
 
