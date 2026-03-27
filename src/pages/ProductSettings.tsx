@@ -12,7 +12,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import {
   Save, Loader2, User, CreditCard, Moon, Sun, Mail, ExternalLink,
-  Network, Link2, Unlink, CheckCircle, Globe, Smartphone,
+  Network, Link2, Unlink, CheckCircle, Globe, Smartphone, Apple, RefreshCw,
 } from "lucide-react";
 import { ConnectedAccountsStatus } from "@/components/ConnectedAccountsStatus";
 import { ProgressiveUnlocks } from "@/components/ProgressiveUnlocks";
@@ -49,6 +49,14 @@ export default function ProductSettings() {
   const [emailConnections, setEmailConnections] = useState<EmailConnection[]>([]);
   const [connectingProvider, setConnectingProvider] = useState<string | null>(null);
 
+  // iCloud state
+  const [icloudAppleId, setIcloudAppleId] = useState("");
+  const [icloudAppPassword, setIcloudAppPassword] = useState("");
+  const [icloudConnecting, setIcloudConnecting] = useState(false);
+  const [icloudSyncing, setIcloudSyncing] = useState(false);
+  const [icloudConnection, setIcloudConnection] = useState<any>(null);
+  const [icloudLoaded, setIcloudLoaded] = useState(false);
+
   // Auto-scroll to section
   useEffect(() => {
     const section = searchParams.get("section");
@@ -77,6 +85,7 @@ export default function ProductSettings() {
       setLoaded(true);
     });
     loadEmailConnections();
+    loadIcloudStatus();
   }, [user]);
 
   const loadEmailConnections = async () => {
@@ -90,6 +99,80 @@ export default function ProductSettings() {
         setEmailConnections(data.connections || []);
       }
     } catch {}
+  };
+
+  const loadIcloudStatus = async () => {
+    try {
+      const headers = await getAuthHeaders();
+      const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/icloud-sync`, {
+        method: "POST", headers, body: JSON.stringify({ action: "status" }),
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        setIcloudConnection(data.connection);
+      }
+    } catch {} finally { setIcloudLoaded(true); }
+  };
+
+  const connectIcloud = async () => {
+    if (!icloudAppleId || !icloudAppPassword) {
+      toast.error("Enter your Apple ID email and app-specific password");
+      return;
+    }
+    setIcloudConnecting(true);
+    try {
+      const headers = await getAuthHeaders();
+      const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/icloud-sync`, {
+        method: "POST", headers,
+        body: JSON.stringify({ action: "connect", apple_id: icloudAppleId, app_password: icloudAppPassword }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.error || "Connection failed");
+      toast.success("iCloud connected! Starting sync...");
+      setIcloudAppPassword("");
+      await syncIcloud();
+      await loadIcloudStatus();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to connect");
+    } finally { setIcloudConnecting(false); }
+  };
+
+  const syncIcloud = async () => {
+    setIcloudSyncing(true);
+    try {
+      const headers = await getAuthHeaders();
+      const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/icloud-sync`, {
+        method: "POST", headers, body: JSON.stringify({ action: "sync" }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.error || "Sync failed");
+      toast.success(`Synced ${data.imported} contacts from iCloud`);
+      await loadIcloudStatus();
+    } catch (err: any) {
+      toast.error(err.message || "Sync failed");
+    } finally { setIcloudSyncing(false); }
+  };
+
+  const disconnectIcloud = async () => {
+    try {
+      const headers = await getAuthHeaders();
+      await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/icloud-sync`, {
+        method: "POST", headers, body: JSON.stringify({ action: "disconnect" }),
+      });
+      setIcloudConnection(null);
+      toast.success("iCloud disconnected");
+    } catch { toast.error("Failed to disconnect"); }
+  };
+
+  const toggleIcloudAutoSync = async (enabled: boolean) => {
+    try {
+      const headers = await getAuthHeaders();
+      await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/icloud-sync`, {
+        method: "POST", headers, body: JSON.stringify({ action: "toggle_auto_sync", enabled }),
+      });
+      setIcloudConnection((prev: any) => prev ? { ...prev, auto_sync: enabled } : prev);
+      toast.success(enabled ? "Auto-sync enabled" : "Auto-sync disabled");
+    } catch { toast.error("Failed to update"); }
   };
 
   const connectEmail = async (provider: "gmail" | "outlook") => {
@@ -337,6 +420,100 @@ export default function ProductSettings() {
               <strong className={textPrimary}>Note:</strong> You can use AuRa's native calendar without connecting an external account. External sync adds your Google/Outlook events alongside AuRa events.
             </p>
           </div>
+        </div>
+
+        {/* Apple / iCloud Contacts */}
+        <div className={sectionStyle} id="icloud-contacts-section">
+          <div className="flex items-center gap-3 mb-2">
+            <Apple className={`h-4 w-4 ${iconMuted}`} />
+            <h2 className={headingStyle}>Apple / iCloud Contacts</h2>
+          </div>
+          <p className={`text-xs ${textSecondary}`}>
+            Securely sync your Apple Contacts into AURA using Apple's CardDAV interface. Changes in iCloud are kept in sync.
+          </p>
+
+          {icloudConnection ? (
+            <div className="space-y-4">
+              <div className={`flex items-center justify-between rounded-lg border p-3 ${darkMode ? "border-white/10" : "border-border"}`}>
+                <div className="flex items-center gap-3">
+                  <div className="h-9 w-9 rounded-lg bg-gray-500/10 flex items-center justify-center">
+                    <Apple className="h-4 w-4 text-gray-400" />
+                  </div>
+                  <div>
+                    <p className={`text-sm flex items-center gap-1.5 ${textPrimary}`}>
+                      <CheckCircle className="h-3 w-3 text-green-400" />
+                      {icloudConnection.apple_id_email}
+                    </p>
+                    <p className={`text-xs ${textSecondary}`}>
+                      {icloudConnection.contact_count || 0} contacts synced
+                      {icloudConnection.last_sync_at && ` · Last sync ${new Date(icloudConnection.last_sync_at).toLocaleDateString()}`}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" onClick={syncIcloud} disabled={icloudSyncing} className={`gap-1.5 h-8 text-xs ${darkMode ? "bg-white/5 border-white/10 text-white/60 hover:bg-white/10" : ""}`}>
+                    {icloudSyncing ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
+                    Sync
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={disconnectIcloud} className="gap-1 h-7 text-xs text-destructive/60 hover:text-destructive">
+                    <Unlink className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+              <div className="flex items-center justify-between py-1">
+                <div>
+                  <p className={`text-sm ${textPrimary}`}>Auto-sync daily</p>
+                  <p className={`text-xs ${textSecondary}`}>Automatically pull new contacts from iCloud every day</p>
+                </div>
+                <Switch
+                  checked={!!icloudConnection.auto_sync}
+                  onCheckedChange={toggleIcloudAutoSync}
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <Label className={labelStyle}>Apple ID Email</Label>
+                <Input
+                  value={icloudAppleId}
+                  onChange={e => setIcloudAppleId(e.target.value)}
+                  placeholder="you@icloud.com"
+                  className={inputStyle}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className={labelStyle}>App-Specific Password</Label>
+                <Input
+                  type="password"
+                  value={icloudAppPassword}
+                  onChange={e => setIcloudAppPassword(e.target.value)}
+                  placeholder="xxxx-xxxx-xxxx-xxxx"
+                  className={inputStyle}
+                />
+                <p className={`text-[11px] ${textSecondary}`}>
+                  Generate one at{" "}
+                  <a
+                    href="https://appleid.apple.com/account/manage"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline hover:text-foreground"
+                  >
+                    appleid.apple.com → Security → App-Specific Passwords
+                  </a>
+                </p>
+              </div>
+              <Button
+                onClick={connectIcloud}
+                disabled={icloudConnecting}
+                size="sm"
+                className="gap-2 bg-[hsl(140,12%,42%)] hover:bg-[hsl(140,12%,48%)] text-white border-0"
+              >
+                {icloudConnecting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Link2 className="h-3.5 w-3.5" />}
+                Connect & Sync Contacts
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Subscription */}

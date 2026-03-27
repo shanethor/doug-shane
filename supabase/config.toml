@@ -101,3 +101,6 @@ verify_jwt = false
 
 [functions.draft-intro-email]
 verify_jwt = false
+
+[functions.icloud-sync]
+verify_jwt = false
