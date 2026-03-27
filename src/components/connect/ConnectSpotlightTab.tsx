@@ -40,7 +40,7 @@ const FEATURED_TEMPLATES: FeaturedTemplate[] = [
     contentType: "social",
     icon: Heart,
     accentColor: "hsl(340 60% 45%)",
-    preview: null, // awaiting upload
+    preview: templateReferralAsk,
     defaultTitle: "Your Referral Means the World",
     defaultBody: "I help individuals, families, and businesses get the right coverage. Quick, no-pressure conversations — I do the heavy lifting. Your referral means the world to my practice.",
   },
