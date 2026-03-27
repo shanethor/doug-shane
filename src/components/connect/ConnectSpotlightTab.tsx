@@ -301,36 +301,83 @@ export default function ConnectSpotlightTab() {
     );
   }
 
+  const handleTemplateCardClick = (template: FeaturedTemplate) => {
+    if (brands.length === 0) {
+      setEditBrand(null);
+      setView("brand_setup");
+      return;
+    }
+    setEditFlyerId(null);
+    setInitialType(template.contentType);
+    setSkipTemplateGallery(true);
+    setView("wizard");
+  };
+
   return (
     <div className="space-y-4 animate-fade-in">
-      {/* AI Flyer Generator */}
+      {/* Featured Templates */}
       <Card className="animate-fade-in" style={{ animationDelay: "80ms" }}>
         <CardHeader className="pb-3">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-warning" />
-            AI Flyer Generator
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-warning" />
+              Templates
+            </CardTitle>
+            <button
+              onClick={() => {
+                setEditFlyerId(null);
+                setInitialType(undefined);
+                setSkipTemplateGallery(false);
+                if (brands.length === 0) { setEditBrand(null); setView("brand_setup"); }
+                else setView("wizard");
+              }}
+              className="text-[10px] text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2"
+            >
+              Start from scratch
+            </button>
+          </div>
           <p className="text-[11px] text-muted-foreground">
-            Describe what you need and AI will generate it. Up to 20/month.
+            Pick a template to customize with AI, or start from scratch.
           </p>
         </CardHeader>
-        <CardContent className="space-y-3">
-          <Button className="w-full gap-2" onClick={handleCreateFlyer}>
-            <Sparkles className="h-4 w-4" /> Generate with AI
-          </Button>
-          <div className="grid grid-cols-3 gap-2">
-            {CONTENT_TYPE_TILES.map(tile => {
-              const Icon = tile.icon;
+        <CardContent>
+          <div className="grid grid-cols-3 gap-3">
+            {FEATURED_TEMPLATES.map(t => {
+              const Icon = t.icon;
               return (
                 <button
-                  key={tile.value}
-                  onClick={() => handleTypeTileClick(tile.value)}
-                  className="group flex flex-col items-center gap-1.5 p-3 rounded-lg transition-all hover:scale-[1.02] cursor-pointer bg-muted/30 border border-border/50 hover:border-border"
+                  key={t.id}
+                  onClick={() => handleTemplateCardClick(t)}
+                  className="group text-left rounded-xl overflow-hidden border border-border/50 hover:border-primary/40 bg-muted/20 hover:bg-muted/40 transition-all hover:shadow-md cursor-pointer"
                 >
-                  <div className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors group-hover:opacity-90" style={{ background: tile.color }}>
-                    <Icon className="h-4 w-4 text-white" />
+                  {/* Preview image */}
+                  <div className="relative">
+                    <AspectRatio ratio={4 / 3}>
+                      {t.preview ? (
+                        <img src={t.preview} alt={t.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center" style={{ background: t.accentColor }}>
+                          <Icon className="h-10 w-10 text-white/60" />
+                        </div>
+                      )}
+                    </AspectRatio>
+                    {/* Hover overlay */}
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <span className="text-xs font-semibold text-white bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/30">
+                        Use Template
+                      </span>
+                    </div>
                   </div>
-                  <span className="text-[10px] font-medium text-muted-foreground group-hover:text-foreground transition-colors">{tile.label}</span>
+                  {/* Footer */}
+                  <div className="p-2.5 flex items-start gap-2">
+                    <div className="w-6 h-6 rounded-md flex items-center justify-center shrink-0 mt-0.5" style={{ background: t.accentColor }}>
+                      <Icon className="h-3 w-3 text-white" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold truncate">{t.name}</p>
+                      <p className="text-[10px] text-muted-foreground leading-tight truncate">{t.description}</p>
+                    </div>
+                  </div>
                 </button>
               );
             })}
