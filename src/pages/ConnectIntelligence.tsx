@@ -121,28 +121,36 @@ function hasRealName(c: DiscoveredContact): boolean {
 function EmailIntelligencePage() {
   const [contacts, setContacts] = useState<DiscoveredContact[]>([]);
   const [unlabeled, setUnlabeled] = useState<DiscoveredContact[]>([]);
+  const [savedContacts, setSavedContacts] = useState<DiscoveredContact[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
-  const [filter, setFilter] = useState<"all" | "high_score" | "verified" | "unlabeled">("all");
+  const [filter, setFilter] = useState<"all" | "high_score" | "verified" | "unlabeled" | "saved">("all");
   const [showFiltered, setShowFiltered] = useState(false);
 
   useEffect(() => { loadContacts(); }, []);
 
   async function loadContacts() {
     setLoading(true);
+    // Load active (unsaved, undismissed) contacts
     const { data } = await supabase
       .from("email_discovered_contacts" as any)
       .select("*")
-      .neq("status", "dismissed")
+      .not("status", "eq", "dismissed")
       .order("first_seen_at", { ascending: false })
       .limit(200);
     const raw = (data as any as DiscoveredContact[]) || [];
-    // Separate: named people vs email-only (unlabeled)
-    const nonBusiness = raw.filter(c => !isBusinessOrMarketingEmail(c.email_address) && !isCompanyOrUrl(c));
+
+    // Separate saved vs active
+    const active = raw.filter(c => c.status !== "saved_to_contacts");
+    const saved = raw.filter(c => c.status === "saved_to_contacts");
+
+    // Separate: named people vs email-only (unlabeled) from active only
+    const nonBusiness = active.filter(c => !isBusinessOrMarketingEmail(c.email_address) && !isCompanyOrUrl(c));
     const people = nonBusiness.filter(c => hasRealName(c));
     const emailOnly = nonBusiness.filter(c => !hasRealName(c));
     setContacts(people);
     setUnlabeled(emailOnly);
+    setSavedContacts(saved.filter(c => !isBusinessOrMarketingEmail(c.email_address) && !isCompanyOrUrl(c)));
     setLoading(false);
   }
 
@@ -168,7 +176,7 @@ function EmailIntelligencePage() {
   }
 
   async function saveContact(id: string) {
-    const contact = contacts.find(c => c.id === id);
+    const contact = [...contacts, ...unlabeled].find(c => c.id === id);
     if (!contact) return;
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -195,18 +203,25 @@ function EmailIntelligencePage() {
 
       // Update discovered contact status and link
       await supabase.from("email_discovered_contacts" as any).update({ status: "saved_to_contacts" }).eq("id", id);
-      setContacts(prev => prev.map(c => c.id === id ? { ...c, status: "saved_to_contacts" } : c));
+
+      // Move from active lists to saved list
+      const savedContact = { ...contact, status: "saved_to_contacts" };
+      setContacts(prev => prev.filter(c => c.id !== id));
+      setUnlabeled(prev => prev.filter(c => c.id !== id));
+      setSavedContacts(prev => [savedContact, ...prev]);
       toast.success("Saved to contacts");
     } catch (err: any) {
       toast.error(err.message || "Failed to save contact");
     }
   }
 
-  const displayList = filter === "unlabeled" ? unlabeled : contacts.filter(c => {
-    if (filter === "high_score") return (c.prospect_score || 0) >= 70;
-    if (filter === "verified") return c.hunter_verified === true;
-    return true;
-  });
+  const displayList = filter === "unlabeled" ? unlabeled
+    : filter === "saved" ? savedContacts
+    : contacts.filter(c => {
+      if (filter === "high_score") return (c.prospect_score || 0) >= 70;
+      if (filter === "verified") return c.hunter_verified === true;
+      return true;
+    });
 
   const newThisWeek = contacts.filter(c => new Date(c.first_seen_at) >= new Date(Date.now() - 7 * 86400000)).length;
 
@@ -227,9 +242,9 @@ function EmailIntelligencePage() {
       </div>
 
       <div className="flex gap-2 flex-wrap">
-        {(["all", "high_score", "verified", "unlabeled"] as const).map(f => (
+        {(["all", "high_score", "verified", "unlabeled", "saved"] as const).map(f => (
           <Button key={f} variant={filter === f ? "default" : "outline"} size="sm" onClick={() => setFilter(f)} className="text-xs">
-            {f === "all" ? "All" : f === "high_score" ? "Score 70+" : f === "verified" ? "Verified ✓" : `Unlabeled (${unlabeled.length})`}
+            {f === "all" ? "All" : f === "high_score" ? "Score 70+" : f === "verified" ? "Verified ✓" : f === "unlabeled" ? `Unlabeled (${unlabeled.length})` : `Saved (${savedContacts.length})`}
           </Button>
         ))}
       </div>

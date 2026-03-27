@@ -539,32 +539,69 @@ serve(async (req) => {
       try { accessToken = await refreshMicrosoftToken(conns[0].refresh_token); }
       catch { return new Response(JSON.stringify({ error: "Microsoft token refresh failed. Reconnect Outlook.", needs_reconnect: true }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }); }
 
-      // Fetch users in org via Graph
+      // Try org directory first (/users), fall back to /me/people if no admin permissions
       let allUsers: any[] = [];
-      let nextLink = "https://graph.microsoft.com/v1.0/users?$top=999&$select=displayName,mail,jobTitle,department,companyName,mobilePhone,officeLocation";
-      while (nextLink && allUsers.length < 5000) {
-        const resp = await fetch(nextLink, { headers: { Authorization: `Bearer ${accessToken}` } });
-        if (!resp.ok) {
-          const errText = await resp.text();
-          console.error("Teams/Graph error:", resp.status, errText);
-          return new Response(JSON.stringify({ error: `Microsoft Graph error: ${resp.status}` }), {
-            status: resp.status === 403 ? 403 : 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
-          });
+      let usedFallback = false;
+
+      // Attempt 1: /users (requires admin consent for User.Read.All or Directory.Read.All)
+      const firstResp = await fetch("https://graph.microsoft.com/v1.0/users?$top=999&$select=displayName,mail,jobTitle,department,companyName,mobilePhone,officeLocation", {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+
+      if (firstResp.ok) {
+        let nextLink: string | null = null;
+        const firstData = await firstResp.json();
+        allUsers = allUsers.concat(firstData.value || []);
+        nextLink = firstData["@odata.nextLink"] || null;
+        while (nextLink && allUsers.length < 5000) {
+          const resp = await fetch(nextLink, { headers: { Authorization: `Bearer ${accessToken}` } });
+          if (!resp.ok) break;
+          const data = await resp.json();
+          allUsers = allUsers.concat(data.value || []);
+          nextLink = data["@odata.nextLink"] || null;
         }
-        const data = await resp.json();
-        allUsers = allUsers.concat(data.value || []);
-        nextLink = data["@odata.nextLink"] || "";
+      } else if (firstResp.status === 403 || firstResp.status === 400) {
+        // Fallback: use /me/people (works with delegated People.Read scope)
+        console.log("Teams /users failed, falling back to /me/people");
+        usedFallback = true;
+        let nextLink: string | null = "https://graph.microsoft.com/v1.0/me/people?$top=1000&$select=displayName,emailAddresses,companyName,jobTitle,department,phones,officeLocation";
+        while (nextLink && allUsers.length < 5000) {
+          const resp = await fetch(nextLink, { headers: { Authorization: `Bearer ${accessToken}` } });
+          if (!resp.ok) {
+            console.error("People API error:", resp.status, await resp.text());
+            break;
+          }
+          const data = await resp.json();
+          allUsers = allUsers.concat(data.value || []);
+          nextLink = data["@odata.nextLink"] || null;
+        }
+      } else {
+        const errText = await firstResp.text();
+        console.error("Teams/Graph error:", firstResp.status, errText);
+        return new Response(JSON.stringify({ error: `Microsoft Graph error: ${firstResp.status}` }), {
+          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
 
-      const contacts = allUsers.map((u: any) => ({
-        user_id: userId, source: "teams",
-        external_id: `teams-${u.id}`,
-        full_name: u.displayName || null, email: u.mail || null,
-        phone: u.mobilePhone || null, company: u.companyName || null,
-        title: u.jobTitle || null, linkedin_url: null,
-        location: u.officeLocation || null,
-        metadata: { department: u.department, ms_id: u.id, method: "api" },
-      })).filter((c: any) => c.full_name || c.email);
+      const contacts = allUsers.map((u: any) => {
+        // Handle both /users and /me/people response formats
+        const email = usedFallback
+          ? (u.emailAddresses?.[0]?.address || null)
+          : (u.mail || null);
+        const phone = usedFallback
+          ? (u.phones?.[0]?.number || null)
+          : (u.mobilePhone || null);
+
+        return {
+          user_id: userId, source: "teams",
+          external_id: `teams-${u.id}`,
+          full_name: u.displayName || null, email,
+          phone, company: u.companyName || null,
+          title: u.jobTitle || null, linkedin_url: null,
+          location: u.officeLocation || null,
+          metadata: { department: u.department, ms_id: u.id, method: usedFallback ? "people_api" : "directory_api" },
+        };
+      }).filter((c: any) => c.full_name || c.email);
 
       if (contacts.length > 0) {
         for (let i = 0; i < contacts.length; i += 500) {
