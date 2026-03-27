@@ -656,17 +656,17 @@ export default function ConnectLiveNetworkMap({ onNodeClick }: ConnectLiveNetwor
         if (node.kind === "company") {
           const size = 7.5 * pulse * (1 + hover * 0.3);
           drawRoundedRectPath(ctx, px - size * 1.4, py - size, size * 2.8, size * 2, 3.5);
-          ctx.fillStyle = `hsl(var(--warning) / ${0.14 + hover * 0.12})`;
+          ctx.fillStyle = rgba(warn, 0.14 + hover * 0.12);
           ctx.fill();
-          ctx.strokeStyle = `hsl(var(--warning) / ${0.55 + hover * 0.35})`;
+          ctx.strokeStyle = rgba(warn, 0.55 + hover * 0.35);
           ctx.lineWidth = 1 + hover * 0.6;
           ctx.stroke();
         } else if (node.tier === 1) {
           const size = 5.8 * pulse * (1 + hover * 0.25);
           drawRoundedRectPath(ctx, px - size * 1.45, py - size, size * 2.9, size * 2, 3);
-          ctx.fillStyle = `hsl(var(--primary) / ${(0.14 + hover * 0.15) * opacity})`;
+          ctx.fillStyle = rgba(pri, (0.14 + hover * 0.15) * opacity);
           ctx.fill();
-          ctx.strokeStyle = `hsl(var(--primary) / ${(0.5 + hover * 0.35) * opacity})`;
+          ctx.strokeStyle = rgba(pri, (0.5 + hover * 0.35) * opacity);
           ctx.lineWidth = 1 + hover * 0.5;
           ctx.stroke();
         } else if (node.tier === 2) {
@@ -677,18 +677,18 @@ export default function ConnectLiveNetworkMap({ onNodeClick }: ConnectLiveNetwor
           ctx.lineTo(px, py + size);
           ctx.lineTo(px - size, py);
           ctx.closePath();
-          ctx.fillStyle = `hsl(var(--primary) / ${(0.12 + hover * 0.15) * opacity})`;
+          ctx.fillStyle = rgba(pri, (0.12 + hover * 0.15) * opacity);
           ctx.fill();
-          ctx.strokeStyle = `hsl(var(--primary) / ${(0.3 + hover * 0.35) * opacity})`;
+          ctx.strokeStyle = rgba(pri, (0.3 + hover * 0.35) * opacity);
           ctx.lineWidth = 0.8 + hover * 0.5;
           ctx.stroke();
         } else {
           const radius = 2.6 * pulse * (1 + hover * 0.3);
           ctx.beginPath();
           ctx.arc(px, py, radius, 0, Math.PI * 2);
-          ctx.fillStyle = `hsl(var(--primary) / ${(0.1 + hover * 0.16) * opacity})`;
+          ctx.fillStyle = rgba(pri, (0.1 + hover * 0.16) * opacity);
           ctx.fill();
-          ctx.strokeStyle = `hsl(var(--primary) / ${(0.22 + hover * 0.3) * opacity})`;
+          ctx.strokeStyle = rgba(pri, (0.22 + hover * 0.3) * opacity);
           ctx.lineWidth = 0.55 + hover * 0.45;
           ctx.stroke();
         }
