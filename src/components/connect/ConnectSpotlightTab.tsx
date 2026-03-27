@@ -14,6 +14,9 @@ import DesignEditor from "./DesignEditor";
 import templateSeasonalPromo from "@/assets/templates/seasonal-promo.png";
 import templateEventInvite from "@/assets/templates/event-invite.png";
 import templateRiskTip from "@/assets/templates/risk-tip.png";
+import templateReferralAsk from "@/assets/templates/referral-ask.png";
+import templateRenewalReminder from "@/assets/templates/renewal-reminder.png";
+import templateNewClientWelcome from "@/assets/templates/new-client-welcome.png";
 
 type ViewMode = "home" | "wizard" | "brand_setup" | "editor";
 
@@ -37,7 +40,7 @@ const FEATURED_TEMPLATES: FeaturedTemplate[] = [
     contentType: "social",
     icon: Heart,
     accentColor: "hsl(340 60% 45%)",
-    preview: null, // awaiting upload
+    preview: templateReferralAsk,
     defaultTitle: "Your Referral Means the World",
     defaultBody: "I help individuals, families, and businesses get the right coverage. Quick, no-pressure conversations — I do the heavy lifting. Your referral means the world to my practice.",
   },
@@ -48,7 +51,7 @@ const FEATURED_TEMPLATES: FeaturedTemplate[] = [
     contentType: "announcement",
     icon: RefreshCw,
     accentColor: "hsl(200 60% 42%)",
-    preview: null, // awaiting upload
+    preview: templateRenewalReminder,
     defaultTitle: "It's Renewal Season — Let's Review Your Coverage",
     defaultBody: "Coverage needs change — annual reviews catch gaps. Rate shopping across carriers to get you the best value. Renewals processed quickly with minimal paperwork.",
   },
@@ -59,7 +62,7 @@ const FEATURED_TEMPLATES: FeaturedTemplate[] = [
     contentType: "announcement",
     icon: UserPlus,
     accentColor: "hsl(140 40% 38%)",
-    preview: null, // awaiting upload
+    preview: templateNewClientWelcome,
     defaultTitle: "Welcome Aboard — We're Proud to Protect You",
     defaultBody: "Proud to protect another client and their family. You can count on us for fast answers and real advocacy. Coverage questions? We are always one call away.",
   },
