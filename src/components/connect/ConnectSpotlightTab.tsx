@@ -51,7 +51,7 @@ const FEATURED_TEMPLATES: FeaturedTemplate[] = [
     contentType: "announcement",
     icon: RefreshCw,
     accentColor: "hsl(200 60% 42%)",
-    preview: null, // awaiting upload
+    preview: templateRenewalReminder,
     defaultTitle: "It's Renewal Season — Let's Review Your Coverage",
     defaultBody: "Coverage needs change — annual reviews catch gaps. Rate shopping across carriers to get you the best value. Renewals processed quickly with minimal paperwork.",
   },
