@@ -1139,6 +1139,54 @@ export type Database = {
           },
         ]
       }
+      contact_relationships: {
+        Row: {
+          confidence: number | null
+          contact_a_id: string | null
+          contact_b_id: string | null
+          created_at: string | null
+          id: string
+          owner_user_id: string
+          source: string
+          thread_id: string | null
+        }
+        Insert: {
+          confidence?: number | null
+          contact_a_id?: string | null
+          contact_b_id?: string | null
+          created_at?: string | null
+          id?: string
+          owner_user_id: string
+          source?: string
+          thread_id?: string | null
+        }
+        Update: {
+          confidence?: number | null
+          contact_a_id?: string | null
+          contact_b_id?: string | null
+          created_at?: string | null
+          id?: string
+          owner_user_id?: string
+          source?: string
+          thread_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contact_relationships_contact_a_id_fkey"
+            columns: ["contact_a_id"]
+            isOneToOne: false
+            referencedRelation: "email_discovered_contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contact_relationships_contact_b_id_fkey"
+            columns: ["contact_b_id"]
+            isOneToOne: false
+            referencedRelation: "email_discovered_contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contact_sharing_settings: {
         Row: {
           canonical_person_id: string
@@ -1446,13 +1494,19 @@ export type Database = {
       }
       email_discovered_contacts: {
         Row: {
+          apollo_data: Json | null
+          contact_score: number | null
+          contact_type: string | null
           created_at: string | null
           display_name: string | null
           domain: string | null
           email_address: string
           email_frequency: number | null
+          employment_history: Json | null
           enrichment_data: Json | null
+          enrichment_source: string | null
           enrichment_status: string
+          filtered: boolean | null
           first_name: string | null
           first_seen_at: string | null
           hunter_company: string | null
@@ -1463,23 +1517,33 @@ export type Database = {
           hunter_twitter_url: string | null
           hunter_verified: boolean | null
           id: string
+          last_enriched_at: string | null
           last_name: string | null
           last_seen_at: string | null
           linked_canonical_id: string | null
+          location: string | null
           matches_ideal_profile: boolean | null
+          profile_photo_url: string | null
           prospect_score: number | null
           seen_in_threads_with: Json | null
           status: string
+          twitter_url: string | null
           user_id: string
         }
         Insert: {
+          apollo_data?: Json | null
+          contact_score?: number | null
+          contact_type?: string | null
           created_at?: string | null
           display_name?: string | null
           domain?: string | null
           email_address: string
           email_frequency?: number | null
+          employment_history?: Json | null
           enrichment_data?: Json | null
+          enrichment_source?: string | null
           enrichment_status?: string
+          filtered?: boolean | null
           first_name?: string | null
           first_seen_at?: string | null
           hunter_company?: string | null
@@ -1490,23 +1554,33 @@ export type Database = {
           hunter_twitter_url?: string | null
           hunter_verified?: boolean | null
           id?: string
+          last_enriched_at?: string | null
           last_name?: string | null
           last_seen_at?: string | null
           linked_canonical_id?: string | null
+          location?: string | null
           matches_ideal_profile?: boolean | null
+          profile_photo_url?: string | null
           prospect_score?: number | null
           seen_in_threads_with?: Json | null
           status?: string
+          twitter_url?: string | null
           user_id: string
         }
         Update: {
+          apollo_data?: Json | null
+          contact_score?: number | null
+          contact_type?: string | null
           created_at?: string | null
           display_name?: string | null
           domain?: string | null
           email_address?: string
           email_frequency?: number | null
+          employment_history?: Json | null
           enrichment_data?: Json | null
+          enrichment_source?: string | null
           enrichment_status?: string
+          filtered?: boolean | null
           first_name?: string | null
           first_seen_at?: string | null
           hunter_company?: string | null
@@ -1517,13 +1591,17 @@ export type Database = {
           hunter_twitter_url?: string | null
           hunter_verified?: boolean | null
           id?: string
+          last_enriched_at?: string | null
           last_name?: string | null
           last_seen_at?: string | null
           linked_canonical_id?: string | null
+          location?: string | null
           matches_ideal_profile?: boolean | null
+          profile_photo_url?: string | null
           prospect_score?: number | null
           seen_in_threads_with?: Json | null
           status?: string
+          twitter_url?: string | null
           user_id?: string
         }
         Relationships: [
