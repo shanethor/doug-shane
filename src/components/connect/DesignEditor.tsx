@@ -368,14 +368,14 @@ export default function DesignEditor({
         <Button variant="outline" size="sm" className="gap-1 text-xs" onClick={saveCreation} disabled={saving}>
           {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />} Save
         </Button>
-        <Select onValueChange={(v) => exportImage(v as "png" | "jpg")}>
+        <Select onValueChange={(v) => exportImage(v as "png" | "jpeg")}>
           <SelectTrigger className="h-8 w-28 text-xs">
             <Download className="h-3 w-3 mr-1" />
             Export
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="png">PNG</SelectItem>
-            <SelectItem value="jpg">JPG</SelectItem>
+            <SelectItem value="jpeg">JPG</SelectItem>
           </SelectContent>
         </Select>
       </div>
