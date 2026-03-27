@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Sparkles, Image as ImageIcon, Palette, Pencil, Trash2, Plus, Heart, RefreshCw, UserPlus, Lightbulb, Calendar, Zap, Loader2, Layout } from "lucide-react";
@@ -10,15 +11,91 @@ import SpotlightFlyerWizard from "./SpotlightFlyerWizard";
 import SpotlightBrandSetup, { type BrandPackage } from "./SpotlightBrandSetup";
 import DesignEditor from "./DesignEditor";
 
+import templateSeasonalPromo from "@/assets/templates/seasonal-promo.png";
+import templateEventInvite from "@/assets/templates/event-invite.png";
+import templateRiskTip from "@/assets/templates/risk-tip.png";
+
 type ViewMode = "home" | "wizard" | "brand_setup" | "editor";
 
-const CONTENT_TYPE_TILES = [
-  { value: "event", label: "Event Flyer", icon: Calendar, color: "hsl(270 45% 45%)" },
-  { value: "social", label: "Social Post", icon: Heart, color: "hsl(340 60% 45%)" },
-  { value: "announcement", label: "Announcement", icon: RefreshCw, color: "hsl(200 60% 42%)" },
-  { value: "educational", label: "Educational", icon: Lightbulb, color: "hsl(45 70% 45%)" },
-  { value: "promotion", label: "Promotion", icon: Zap, color: "hsl(15 70% 48%)" },
-  { value: "custom", label: "Custom", icon: Pencil, color: "hsl(240 10% 45%)" },
+interface FeaturedTemplate {
+  id: string;
+  name: string;
+  description: string;
+  contentType: string;
+  icon: typeof Heart;
+  accentColor: string;
+  preview: string | null;
+  defaultTitle: string;
+  defaultBody: string;
+}
+
+const FEATURED_TEMPLATES: FeaturedTemplate[] = [
+  {
+    id: "referral-ask",
+    name: "Referral Ask",
+    description: "Turn your network into your pipeline",
+    contentType: "social",
+    icon: Heart,
+    accentColor: "hsl(340 60% 45%)",
+    preview: null, // awaiting upload
+    defaultTitle: "Your Referral Means the World",
+    defaultBody: "I help individuals, families, and businesses get the right coverage. Quick, no-pressure conversations — I do the heavy lifting. Your referral means the world to my practice.",
+  },
+  {
+    id: "renewal-reminder",
+    name: "Renewal Reminder",
+    description: "Keep clients before someone else does",
+    contentType: "announcement",
+    icon: RefreshCw,
+    accentColor: "hsl(200 60% 42%)",
+    preview: null, // awaiting upload
+    defaultTitle: "It's Renewal Season — Let's Review Your Coverage",
+    defaultBody: "Coverage needs change — annual reviews catch gaps. Rate shopping across carriers to get you the best value. Renewals processed quickly with minimal paperwork.",
+  },
+  {
+    id: "new-client-welcome",
+    name: "New Client Welcome",
+    description: "Celebrate the relationship from day one",
+    contentType: "announcement",
+    icon: UserPlus,
+    accentColor: "hsl(140 40% 38%)",
+    preview: null, // awaiting upload
+    defaultTitle: "Welcome Aboard — We're Proud to Protect You",
+    defaultBody: "Proud to protect another client and their family. You can count on us for fast answers and real advocacy. Coverage questions? We are always one call away.",
+  },
+  {
+    id: "risk-tip",
+    name: "Risk Tip of the Week",
+    description: "Educate your audience, build authority",
+    contentType: "educational",
+    icon: Lightbulb,
+    accentColor: "hsl(45 70% 45%)",
+    preview: templateRiskTip,
+    defaultTitle: "Risk Tip: Is Your Cyber Coverage Enough?",
+    defaultBody: "Most business owners underestimate their cyber exposure. One data breach can cost more than your annual premium. Cyber liability insurance covers breach response costs.",
+  },
+  {
+    id: "event-invite",
+    name: "Event Invite",
+    description: "Fill your next seminar, lunch, or mixer",
+    contentType: "event",
+    icon: Calendar,
+    accentColor: "hsl(270 45% 45%)",
+    preview: templateEventInvite,
+    defaultTitle: "You're Invited — Business Networking Event",
+    defaultBody: "Connect with local business owners and professionals. Learn actionable strategies to protect your business. Complimentary lunch and refreshments provided.",
+  },
+  {
+    id: "seasonal-promo",
+    name: "Seasonal Promotion",
+    description: "Drive urgency with a timely offer",
+    contentType: "promotion",
+    icon: Zap,
+    accentColor: "hsl(15 70% 48%)",
+    preview: templateSeasonalPromo,
+    defaultTitle: "Limited Time — Lock In Your Rate Today",
+    defaultBody: "Rates are competitive right now — lock yours in before they change. Quick 15-minute review could save you hundreds. New carrier options available for your industry.",
+  },
 ];
 
 interface DesignTemplate {
@@ -224,36 +301,83 @@ export default function ConnectSpotlightTab() {
     );
   }
 
+  const handleTemplateCardClick = (template: FeaturedTemplate) => {
+    if (brands.length === 0) {
+      setEditBrand(null);
+      setView("brand_setup");
+      return;
+    }
+    setEditFlyerId(null);
+    setInitialType(template.contentType);
+    setSkipTemplateGallery(true);
+    setView("wizard");
+  };
+
   return (
     <div className="space-y-4 animate-fade-in">
-      {/* AI Flyer Generator */}
+      {/* Featured Templates */}
       <Card className="animate-fade-in" style={{ animationDelay: "80ms" }}>
         <CardHeader className="pb-3">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <Sparkles className="h-4 w-4 text-warning" />
-            AI Flyer Generator
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-warning" />
+              Templates
+            </CardTitle>
+            <button
+              onClick={() => {
+                setEditFlyerId(null);
+                setInitialType(undefined);
+                setSkipTemplateGallery(false);
+                if (brands.length === 0) { setEditBrand(null); setView("brand_setup"); }
+                else setView("wizard");
+              }}
+              className="text-[10px] text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2"
+            >
+              Start from scratch
+            </button>
+          </div>
           <p className="text-[11px] text-muted-foreground">
-            Describe what you need and AI will generate it. Up to 20/month.
+            Pick a template to customize with AI, or start from scratch.
           </p>
         </CardHeader>
-        <CardContent className="space-y-3">
-          <Button className="w-full gap-2" onClick={handleCreateFlyer}>
-            <Sparkles className="h-4 w-4" /> Generate with AI
-          </Button>
-          <div className="grid grid-cols-3 gap-2">
-            {CONTENT_TYPE_TILES.map(tile => {
-              const Icon = tile.icon;
+        <CardContent>
+          <div className="grid grid-cols-3 gap-3">
+            {FEATURED_TEMPLATES.map(t => {
+              const Icon = t.icon;
               return (
                 <button
-                  key={tile.value}
-                  onClick={() => handleTypeTileClick(tile.value)}
-                  className="group flex flex-col items-center gap-1.5 p-3 rounded-lg transition-all hover:scale-[1.02] cursor-pointer bg-muted/30 border border-border/50 hover:border-border"
+                  key={t.id}
+                  onClick={() => handleTemplateCardClick(t)}
+                  className="group text-left rounded-xl overflow-hidden border border-border/50 hover:border-primary/40 bg-muted/20 hover:bg-muted/40 transition-all hover:shadow-md cursor-pointer"
                 >
-                  <div className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors group-hover:opacity-90" style={{ background: tile.color }}>
-                    <Icon className="h-4 w-4 text-white" />
+                  {/* Preview image */}
+                  <div className="relative">
+                    <AspectRatio ratio={4 / 3}>
+                      {t.preview ? (
+                        <img src={t.preview} alt={t.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center" style={{ background: t.accentColor }}>
+                          <Icon className="h-10 w-10 text-white/60" />
+                        </div>
+                      )}
+                    </AspectRatio>
+                    {/* Hover overlay */}
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <span className="text-xs font-semibold text-white bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/30">
+                        Use Template
+                      </span>
+                    </div>
                   </div>
-                  <span className="text-[10px] font-medium text-muted-foreground group-hover:text-foreground transition-colors">{tile.label}</span>
+                  {/* Footer */}
+                  <div className="p-2.5 flex items-start gap-2">
+                    <div className="w-6 h-6 rounded-md flex items-center justify-center shrink-0 mt-0.5" style={{ background: t.accentColor }}>
+                      <Icon className="h-3 w-3 text-white" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold truncate">{t.name}</p>
+                      <p className="text-[10px] text-muted-foreground leading-tight truncate">{t.description}</p>
+                    </div>
+                  </div>
                 </button>
               );
             })}
@@ -261,53 +385,6 @@ export default function ConnectSpotlightTab() {
         </CardContent>
       </Card>
 
-      {/* Editable Templates */}
-      <Card className="animate-fade-in" style={{ animationDelay: "160ms" }}>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <Layout className="h-4 w-4 text-primary" />
-            Editable Templates
-          </CardTitle>
-          <p className="text-[11px] text-muted-foreground">
-            Pick a template and customize it in the visual editor — Canva-style.
-          </p>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          {loadingTemplates ? (
-            <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
-          ) : templates.length === 0 ? (
-            <p className="text-xs text-muted-foreground text-center py-4">No templates available.</p>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {templates.map(t => (
-                <button
-                  key={t.id}
-                  onClick={() => openTemplateInEditor(t)}
-                  className="group text-left p-3 rounded-lg border border-border/50 hover:border-primary/50 bg-muted/20 hover:bg-muted/40 transition-all"
-                >
-                  <div className="w-full aspect-square rounded bg-muted/50 flex items-center justify-center mb-2 overflow-hidden">
-                    <div className="text-[8px] text-muted-foreground/50 text-center px-2">
-                      {t.base_width}×{t.base_height}
-                    </div>
-                  </div>
-                  <p className="text-xs font-medium truncate">{t.name}</p>
-                  <p className="text-[10px] text-muted-foreground truncate">{t.description || t.category}</p>
-                </button>
-              ))}
-              <button
-                onClick={openBlankEditor}
-                className="group text-left p-3 rounded-lg border border-dashed border-border/50 hover:border-primary/50 bg-muted/10 hover:bg-muted/30 transition-all"
-              >
-                <div className="w-full aspect-square rounded flex items-center justify-center mb-2">
-                  <Plus className="h-6 w-6 text-muted-foreground/40 group-hover:text-primary/60 transition-colors" />
-                </div>
-                <p className="text-xs font-medium text-muted-foreground">Start from Scratch</p>
-                <p className="text-[10px] text-muted-foreground/60">Blank 1080×1080 canvas</p>
-              </button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
 
       {/* Brand Packages */}
       <Card className="animate-fade-in" style={{ animationDelay: "240ms" }}>
@@ -367,11 +444,16 @@ export default function ConnectSpotlightTab() {
       </Card>
 
       {/* Your Creations (Editor-based) */}
-      {creations.length > 0 && (
-        <Card className="animate-fade-in" style={{ animationDelay: "320ms" }}>
-          <CardHeader className="pb-3">
+      <Card className="animate-fade-in" style={{ animationDelay: "320ms" }}>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
             <CardTitle className="text-sm">Your Designs</CardTitle>
-          </CardHeader>
+            <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1" onClick={handleCreateFlyer}>
+              <Plus className="h-3 w-3" /> New Creation
+            </Button>
+          </div>
+        </CardHeader>
+        {creations.length > 0 ? (
           <CardContent className="space-y-2">
             {creations.map(c => (
               <div key={c.id} className="flex items-center gap-3 p-2.5 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
@@ -395,8 +477,16 @@ export default function ConnectSpotlightTab() {
               </div>
             ))}
           </CardContent>
-        </Card>
-      )}
+        ) : (
+          <CardContent>
+            <div className="text-center py-6 rounded-lg bg-muted/20 border border-dashed">
+              <ImageIcon className="h-6 w-6 mx-auto text-muted-foreground/40 mb-1" />
+              <p className="text-xs text-muted-foreground">No designs yet.</p>
+              <p className="text-[10px] text-muted-foreground/60">Pick a template above or create from scratch.</p>
+            </div>
+          </CardContent>
+        )}
+      </Card>
 
       {/* AI-Generated Flyer History */}
       {history.length > 0 && (
