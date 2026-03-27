@@ -89,9 +89,24 @@ function isBusinessOrMarketingEmail(email: string): boolean {
   const domain = lower.split("@")[1] || "";
   if (BUSINESS_EMAIL_PREFIXES.some(p => localPart.startsWith(p.replace("@", "")))) return true;
   if (BUSINESS_EMAIL_DOMAINS.some(d => domain === d || domain.endsWith("." + d))) return true;
-  // Generic patterns: all-numeric local parts, very long auto-generated addresses
   if (/^\d+$/.test(localPart)) return true;
-  if (/^[a-f0-9]{20,}$/.test(localPart)) return true; // hash-based addresses
+  if (/^[a-f0-9]{20,}$/.test(localPart)) return true;
+  return false;
+}
+
+/** Detect if display_name is a company name or URL rather than a person */
+function isCompanyOrUrl(c: { display_name: string | null; first_name: string | null; last_name: string | null; domain: string | null }): boolean {
+  const name = (c.display_name || `${c.first_name || ""} ${c.last_name || ""}`.trim()).toLowerCase();
+  if (!name) return false;
+  // URLs
+  if (/^https?:\/\//.test(name) || /\.(com|net|org|io|co|gov|edu|biz|info)\b/.test(name)) return true;
+  // Company indicators: contains LLC, Inc, Corp, Ltd, &, or is a single word with no spaces (brand names like "Starbucks")
+  if (/\b(llc|inc|corp|ltd|gmbh|co\.|group|agency|insurance|services|solutions)\b/i.test(name)) return true;
+  // Has "&" like "Ford Kia & CARFAX"
+  if (name.includes("&")) return true;
+  // All caps single word > 5 chars (brand acronyms like "CARFAX")
+  const original = c.display_name || `${c.first_name || ""} ${c.last_name || ""}`.trim();
+  if (original && /^[A-Z]{4,}$/.test(original.trim())) return true;
   return false;
 }
 
@@ -123,7 +138,7 @@ function EmailIntelligencePage() {
       .limit(200);
     const raw = (data as any as DiscoveredContact[]) || [];
     // Separate: named people vs email-only (unlabeled)
-    const nonBusiness = raw.filter(c => !isBusinessOrMarketingEmail(c.email_address));
+    const nonBusiness = raw.filter(c => !isBusinessOrMarketingEmail(c.email_address) && !isCompanyOrUrl(c));
     const people = nonBusiness.filter(c => hasRealName(c));
     const emailOnly = nonBusiness.filter(c => !hasRealName(c));
     setContacts(people);
