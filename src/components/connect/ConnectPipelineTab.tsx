@@ -465,7 +465,12 @@ export default function ConnectPipelineTab() {
 
       {/* Lost Section — centered at bottom */}
       {lostStageConfig && (
-        <div className="rounded-lg border-2 border-dashed border-border p-3">
+        <div
+          className={`rounded-lg border-2 border-dashed p-3 transition-all duration-200 ${dropTarget === "lost" ? "border-destructive/50 bg-destructive/5" : "border-border"}`}
+          onDragOver={(e) => handleDragOver(e, "lost")}
+          onDragLeave={handleDragLeave}
+          onDrop={(e) => handleDrop(e, "lost")}
+        >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Badge variant="outline" className={`text-[10px] uppercase tracking-wider ${lostStageConfig.color}`}>
