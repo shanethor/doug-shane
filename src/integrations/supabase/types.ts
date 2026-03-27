@@ -2451,6 +2451,7 @@ export type Database = {
           submission_id: string | null
           target_premium: number | null
           updated_at: string
+          won_details: Json | null
         }
         Insert: {
           account_name: string
@@ -2471,6 +2472,7 @@ export type Database = {
           submission_id?: string | null
           target_premium?: number | null
           updated_at?: string
+          won_details?: Json | null
         }
         Update: {
           account_name?: string
@@ -2491,6 +2493,7 @@ export type Database = {
           submission_id?: string | null
           target_premium?: number | null
           updated_at?: string
+          won_details?: Json | null
         }
         Relationships: [
           {
