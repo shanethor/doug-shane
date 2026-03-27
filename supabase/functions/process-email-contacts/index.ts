@@ -301,6 +301,24 @@ serve(async (req) => {
           const lastName = nameParts.length > 1 ? nameParts.slice(1).join(" ") : null;
           const domain = extractDomain(email);
 
+          // Classify contact type and score
+          const isPersonalDomain = ["gmail.com","yahoo.com","hotmail.com","outlook.com","icloud.com","att.net","sbcglobal.net","hotmail.ca","aol.com","protonmail.com","me.com","live.com","msn.com"].includes(domain);
+          const espDomains = ["sendgrid.net","mailchimp.com","constantcontact.com","hubspot.com","hs-send.com","salesforce.com","marketo.com","mailgun.org"];
+          const isEsp = espDomains.some(d => domain === d || domain.endsWith("." + d));
+          const nameWords = displayName.trim().split(/\s+/);
+          const isFirstLastPattern = nameWords.length === 2 && nameWords[0].length > 1 && nameWords[1].length > 1;
+          const hasCompanyKeyword = /\b(llc|inc|corp|ltd|gmbh|team|service|group|agency)\b/i.test(displayName);
+
+          let contactScore = 50;
+          if (isPersonalDomain) contactScore += 20;
+          if (isFirstLastPattern) contactScore += 20;
+          if (isEsp) contactScore -= 50;
+          if (hasCompanyKeyword) contactScore -= 30;
+          if (!displayName || displayName.length < 2) contactScore -= 20;
+
+          const contactType = contactScore >= 70 ? "person" : contactScore >= 40 ? "company" : "filtered";
+          const isFiltered = contactScore < 40;
+
           const record: any = {
             user_id: userId,
             email_address: email,
@@ -313,6 +331,9 @@ serve(async (req) => {
             last_seen_at: new Date().toISOString(),
             email_frequency: 1,
             status: "discovered",
+            contact_type: contactType,
+            contact_score: contactScore,
+            filtered: isFiltered,
           };
 
           // Hunter.io enrichment
