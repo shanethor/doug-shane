@@ -315,7 +315,7 @@ export default function DesignEditor({
 
     const link = document.createElement("a");
     link.href = dataURL;
-    link.download = `${docTitle || "design"}.${format}`;
+    link.download = `${docTitle || "design"}.${format === "jpeg" ? "jpg" : format}`;
     link.click();
     toast.success(`Exported as ${format.toUpperCase()}`);
   }
