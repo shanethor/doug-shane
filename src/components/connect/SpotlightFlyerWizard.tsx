@@ -139,7 +139,6 @@ export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId, ini
   const [generating, setGenerating] = useState(false);
   const [analyzingBrand, setAnalyzingBrand] = useState(false);
   const [showSagePost, setShowSagePost] = useState(false);
-  const [showSagePost, setShowSagePost] = useState(false);
   const [sagePostPlatform, setSagePostPlatform] = useState<string>("");
   const [sageCaption, setSageCaption] = useState("");
   const [sageGenerating, setSageGenerating] = useState(false);
