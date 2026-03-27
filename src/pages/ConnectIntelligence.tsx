@@ -121,28 +121,36 @@ function hasRealName(c: DiscoveredContact): boolean {
 function EmailIntelligencePage() {
   const [contacts, setContacts] = useState<DiscoveredContact[]>([]);
   const [unlabeled, setUnlabeled] = useState<DiscoveredContact[]>([]);
+  const [savedContacts, setSavedContacts] = useState<DiscoveredContact[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
-  const [filter, setFilter] = useState<"all" | "high_score" | "verified" | "unlabeled">("all");
+  const [filter, setFilter] = useState<"all" | "high_score" | "verified" | "unlabeled" | "saved">("all");
   const [showFiltered, setShowFiltered] = useState(false);
 
   useEffect(() => { loadContacts(); }, []);
 
   async function loadContacts() {
     setLoading(true);
+    // Load active (unsaved, undismissed) contacts
     const { data } = await supabase
       .from("email_discovered_contacts" as any)
       .select("*")
-      .neq("status", "dismissed")
+      .not("status", "eq", "dismissed")
       .order("first_seen_at", { ascending: false })
       .limit(200);
     const raw = (data as any as DiscoveredContact[]) || [];
-    // Separate: named people vs email-only (unlabeled)
-    const nonBusiness = raw.filter(c => !isBusinessOrMarketingEmail(c.email_address) && !isCompanyOrUrl(c));
+
+    // Separate saved vs active
+    const active = raw.filter(c => c.status !== "saved_to_contacts");
+    const saved = raw.filter(c => c.status === "saved_to_contacts");
+
+    // Separate: named people vs email-only (unlabeled) from active only
+    const nonBusiness = active.filter(c => !isBusinessOrMarketingEmail(c.email_address) && !isCompanyOrUrl(c));
     const people = nonBusiness.filter(c => hasRealName(c));
     const emailOnly = nonBusiness.filter(c => !hasRealName(c));
     setContacts(people);
     setUnlabeled(emailOnly);
+    setSavedContacts(saved.filter(c => !isBusinessOrMarketingEmail(c.email_address) && !isCompanyOrUrl(c)));
     setLoading(false);
   }
 
