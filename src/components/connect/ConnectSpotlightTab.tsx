@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Sparkles, Image as ImageIcon, Palette, Pencil, Trash2, Plus, Heart, RefreshCw, UserPlus, Lightbulb, Calendar, Zap, Loader2, Layout } from "lucide-react";
@@ -10,15 +11,91 @@ import SpotlightFlyerWizard from "./SpotlightFlyerWizard";
 import SpotlightBrandSetup, { type BrandPackage } from "./SpotlightBrandSetup";
 import DesignEditor from "./DesignEditor";
 
+import templateSeasonalPromo from "@/assets/templates/seasonal-promo.png";
+import templateEventInvite from "@/assets/templates/event-invite.png";
+import templateRiskTip from "@/assets/templates/risk-tip.png";
+
 type ViewMode = "home" | "wizard" | "brand_setup" | "editor";
 
-const CONTENT_TYPE_TILES = [
-  { value: "event", label: "Event Flyer", icon: Calendar, color: "hsl(270 45% 45%)" },
-  { value: "social", label: "Social Post", icon: Heart, color: "hsl(340 60% 45%)" },
-  { value: "announcement", label: "Announcement", icon: RefreshCw, color: "hsl(200 60% 42%)" },
-  { value: "educational", label: "Educational", icon: Lightbulb, color: "hsl(45 70% 45%)" },
-  { value: "promotion", label: "Promotion", icon: Zap, color: "hsl(15 70% 48%)" },
-  { value: "custom", label: "Custom", icon: Pencil, color: "hsl(240 10% 45%)" },
+interface FeaturedTemplate {
+  id: string;
+  name: string;
+  description: string;
+  contentType: string;
+  icon: typeof Heart;
+  accentColor: string;
+  preview: string | null;
+  defaultTitle: string;
+  defaultBody: string;
+}
+
+const FEATURED_TEMPLATES: FeaturedTemplate[] = [
+  {
+    id: "referral-ask",
+    name: "Referral Ask",
+    description: "Turn your network into your pipeline",
+    contentType: "social",
+    icon: Heart,
+    accentColor: "hsl(340 60% 45%)",
+    preview: null, // awaiting upload
+    defaultTitle: "Your Referral Means the World",
+    defaultBody: "I help individuals, families, and businesses get the right coverage. Quick, no-pressure conversations — I do the heavy lifting. Your referral means the world to my practice.",
+  },
+  {
+    id: "renewal-reminder",
+    name: "Renewal Reminder",
+    description: "Keep clients before someone else does",
+    contentType: "announcement",
+    icon: RefreshCw,
+    accentColor: "hsl(200 60% 42%)",
+    preview: null, // awaiting upload
+    defaultTitle: "It's Renewal Season — Let's Review Your Coverage",
+    defaultBody: "Coverage needs change — annual reviews catch gaps. Rate shopping across carriers to get you the best value. Renewals processed quickly with minimal paperwork.",
+  },
+  {
+    id: "new-client-welcome",
+    name: "New Client Welcome",
+    description: "Celebrate the relationship from day one",
+    contentType: "announcement",
+    icon: UserPlus,
+    accentColor: "hsl(140 40% 38%)",
+    preview: null, // awaiting upload
+    defaultTitle: "Welcome Aboard — We're Proud to Protect You",
+    defaultBody: "Proud to protect another client and their family. You can count on us for fast answers and real advocacy. Coverage questions? We are always one call away.",
+  },
+  {
+    id: "risk-tip",
+    name: "Risk Tip of the Week",
+    description: "Educate your audience, build authority",
+    contentType: "educational",
+    icon: Lightbulb,
+    accentColor: "hsl(45 70% 45%)",
+    preview: templateRiskTip,
+    defaultTitle: "Risk Tip: Is Your Cyber Coverage Enough?",
+    defaultBody: "Most business owners underestimate their cyber exposure. One data breach can cost more than your annual premium. Cyber liability insurance covers breach response costs.",
+  },
+  {
+    id: "event-invite",
+    name: "Event Invite",
+    description: "Fill your next seminar, lunch, or mixer",
+    contentType: "event",
+    icon: Calendar,
+    accentColor: "hsl(270 45% 45%)",
+    preview: templateEventInvite,
+    defaultTitle: "You're Invited — Business Networking Event",
+    defaultBody: "Connect with local business owners and professionals. Learn actionable strategies to protect your business. Complimentary lunch and refreshments provided.",
+  },
+  {
+    id: "seasonal-promo",
+    name: "Seasonal Promotion",
+    description: "Drive urgency with a timely offer",
+    contentType: "promotion",
+    icon: Zap,
+    accentColor: "hsl(15 70% 48%)",
+    preview: templateSeasonalPromo,
+    defaultTitle: "Limited Time — Lock In Your Rate Today",
+    defaultBody: "Rates are competitive right now — lock yours in before they change. Quick 15-minute review could save you hundreds. New carrier options available for your industry.",
+  },
 ];
 
 interface DesignTemplate {
