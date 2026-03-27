@@ -411,10 +411,16 @@ export default function ConnectPipelineTab() {
                     onDragEnd={handleDragEnd}
                   >
                     <CardContent className="p-3 space-y-1.5">
-                      <div className="flex items-start justify-between">
+                      <div className="flex items-start justify-between gap-2">
                         <Link to={`/pipeline/${lead.id}`} className="text-xs font-medium truncate hover:underline" onClick={e => { if (draggedLeadId) e.preventDefault(); }}>
                           {lead.account_name}
                         </Link>
+                        <span className="text-[11px] font-semibold text-emerald-500 whitespace-nowrap flex items-center gap-0.5 shrink-0">
+                          <DollarSign className="h-3 w-3" />
+                          {(lead.target_premium || 0) > 0
+                            ? lead.target_premium!.toLocaleString()
+                            : "—"}
+                        </span>
                       </div>
                       {lead.contact_name && (
                         <p className="text-[10px] text-muted-foreground truncate">
@@ -425,11 +431,6 @@ export default function ConnectPipelineTab() {
                         <Badge variant="outline" className="text-[9px] h-4">
                           {lead.lead_source}
                         </Badge>
-                      )}
-                      {lead.target_premium && lead.target_premium > 0 && (
-                        <p className="text-[10px] font-medium text-emerald-600 flex items-center gap-1">
-                          <DollarSign className="h-2.5 w-2.5" /> {lead.target_premium.toLocaleString()}
-                        </p>
                       )}
                       <Select value={lead.stage} onValueChange={(v) => moveStage(lead.id, v)}>
                         <SelectTrigger className="h-6 text-[10px] mt-1">
