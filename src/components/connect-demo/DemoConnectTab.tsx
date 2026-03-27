@@ -887,6 +887,26 @@ export default function DemoConnectTab({ contentReady = true }: { contentReady?:
         <div className="text-center py-12 text-sm" style={{ color: "hsl(240 5% 46%)" }}>No results found. Try another name.</div>
       )}
 
+      {/* Contacts / Merge Dialog */}
+      <Dialog open={showContacts} onOpenChange={setShowContacts}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto" style={{ background: "hsl(240 8% 8%)", borderColor: "hsl(240 6% 14%)" }}>
+          <DialogHeader>
+            <DialogTitle className="text-white">Contact Management</DialogTitle>
+          </DialogHeader>
+          <Tabs value={contactsTab} onValueChange={v => setContactsTab(v as "list" | "merge")}>
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="list" className="text-xs gap-1"><List className="h-3.5 w-3.5" /> All Contacts</TabsTrigger>
+              <TabsTrigger value="merge" className="text-xs gap-1"><GitMerge className="h-3.5 w-3.5" /> Merge Duplicates</TabsTrigger>
+            </TabsList>
+            <TabsContent value="list">
+              <ConnectNetworkTab />
+            </TabsContent>
+            <TabsContent value="merge">
+              <ContactMergePanel />
+            </TabsContent>
+          </Tabs>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
