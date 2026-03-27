@@ -12,7 +12,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import {
   Save, Loader2, User, CreditCard, Moon, Sun, Mail, ExternalLink,
-  Network, Link2, Unlink, CheckCircle, Globe, Smartphone,
+  Network, Link2, Unlink, CheckCircle, Globe, Smartphone, Apple, RefreshCw,
 } from "lucide-react";
 import { ConnectedAccountsStatus } from "@/components/ConnectedAccountsStatus";
 import { ProgressiveUnlocks } from "@/components/ProgressiveUnlocks";
