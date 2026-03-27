@@ -16,13 +16,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   Users, FileText, CheckCircle, Clock, Bug, Lightbulb,
   BarChart3, DollarSign, AlertTriangle, Eye, TrendingUp,
-  XCircle, Edit3, ShieldCheck, Building2, Plus, Trash2, Handshake, ScrollText, Network, Sparkles, CalendarDays,
+  XCircle, Edit3, ShieldCheck, Building2, Plus, Trash2, Handshake, ScrollText, Network, Sparkles, CalendarDays, Wrench,
 } from "lucide-react";
 import AdminPartnerReferrals from "@/components/AdminPartnerReferrals";
 import AdminAgencySection from "@/components/AdminAgencySection";
 import AdminPartnerRequests from "@/components/AdminPartnerRequests2";
 import AdminConciergeQueue from "@/components/AdminConciergeQueue";
 import AdminSupportTickets from "@/components/AdminSupportTickets";
+import AdminStudioQueue from "@/components/AdminStudioQueue";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
 import { toast } from "sonner";
@@ -289,6 +290,7 @@ export default function AdminDashboard() {
             <TabsTrigger value="concierge" className="gap-1.5 text-xs"><Sparkles className="h-3.5 w-3.5" />Concierge</TabsTrigger>
             <TabsTrigger value="support" className="gap-1.5 text-xs"><Lightbulb className="h-3.5 w-3.5" />Support</TabsTrigger>
             <TabsTrigger value="bookings" className="gap-1.5 text-xs"><CalendarDays className="h-3.5 w-3.5" />Bookings</TabsTrigger>
+            <TabsTrigger value="studio" className="gap-1.5 text-xs"><Wrench className="h-3.5 w-3.5" />Studio</TabsTrigger>
           </TabsList>
         </div>
 
@@ -911,6 +913,11 @@ export default function AdminDashboard() {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* ── Studio ── */}
+        <TabsContent value="studio" className="space-y-6">
+          <AdminStudioQueue profileNameMap={profileNameMap} />
         </TabsContent>
       </Tabs>
 

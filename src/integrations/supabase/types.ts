@@ -3871,6 +3871,51 @@ export type Database = {
         }
         Relationships: []
       }
+      studio_requests: {
+        Row: {
+          admin_notes: string | null
+          created_at: string
+          description: string | null
+          estimated_delivery: string | null
+          id: string
+          priority: string
+          request_type: string
+          scheduled_date: string | null
+          status: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          created_at?: string
+          description?: string | null
+          estimated_delivery?: string | null
+          id?: string
+          priority?: string
+          request_type?: string
+          scheduled_date?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_notes?: string | null
+          created_at?: string
+          description?: string | null
+          estimated_delivery?: string | null
+          id?: string
+          priority?: string
+          request_type?: string
+          scheduled_date?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       support_ticket_messages: {
         Row: {
           created_at: string
