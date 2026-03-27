@@ -138,7 +138,7 @@ function EmailIntelligencePage() {
       .limit(200);
     const raw = (data as any as DiscoveredContact[]) || [];
     // Separate: named people vs email-only (unlabeled)
-    const nonBusiness = raw.filter(c => !isBusinessOrMarketingEmail(c.email_address));
+    const nonBusiness = raw.filter(c => !isBusinessOrMarketingEmail(c.email_address) && !isCompanyOrUrl(c));
     const people = nonBusiness.filter(c => hasRealName(c));
     const emailOnly = nonBusiness.filter(c => !hasRealName(c));
     setContacts(people);
