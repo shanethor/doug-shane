@@ -454,7 +454,6 @@ export default function ConnectSpotlightTab() {
           </div>
         </CardHeader>
         {creations.length > 0 ? (
-          </CardHeader>
           <CardContent className="space-y-2">
             {creations.map(c => (
               <div key={c.id} className="flex items-center gap-3 p-2.5 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
@@ -478,8 +477,16 @@ export default function ConnectSpotlightTab() {
               </div>
             ))}
           </CardContent>
-        </Card>
-      )}
+        ) : (
+          <CardContent>
+            <div className="text-center py-6 rounded-lg bg-muted/20 border border-dashed">
+              <ImageIcon className="h-6 w-6 mx-auto text-muted-foreground/40 mb-1" />
+              <p className="text-xs text-muted-foreground">No designs yet.</p>
+              <p className="text-[10px] text-muted-foreground/60">Pick a template above or create from scratch.</p>
+            </div>
+          </CardContent>
+        )}
+      </Card>
 
       {/* AI-Generated Flyer History */}
       {history.length > 0 && (
