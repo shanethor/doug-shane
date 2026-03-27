@@ -101,6 +101,20 @@ const ESP_DOMAINS = [
   "amazon.com", "apple.com",
 ];
 
+// SMS/MMS gateway domains — these are phone numbers, not real email contacts
+const SMS_MMS_GATEWAY_DOMAINS = [
+  "mms.att.net", "txt.att.net", "vtext.com", "vzwpix.com",
+  "tmomail.net", "tmobile.net", "msg.fi.google.com",
+  "messaging.sprintpcs.com", "pm.sprint.com", "sms.myboostmobile.com",
+  "mymetropcs.com", "mmst5.tracfone.com", "mypixmessages.com",
+  "cingularme.com", "messaging.nextel.com", "page.nextel.com",
+  "email.uscc.net", "cwemail.com", "rinasms.com",
+  "sms.cricketwireless.net", "mms.cricketwireless.net",
+  "text.republicwireless.com", "msg.koodomobile.com",
+  "pcs.rogers.com", "txt.bellmobility.ca", "fido.ca",
+  "txt.freedommobile.ca", "msg.telus.com",
+];
+
 // Subdomain patterns for transactional/marketing senders
 const TRANSACTIONAL_SUBDOMAIN_RE = /^(em\d*|mail|edm|us-edm|email|e|news|notify|promo|comms?|campaign|mailer|bounce|sg|mkt)\./i;
 
