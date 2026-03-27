@@ -628,21 +628,21 @@ export default function ConnectLiveNetworkMap({ onNodeClick }: ConnectLiveNetwor
           const widthRect = 18 * pulse;
           const heightRect = 12 * pulse;
           const glow = ctx.createRadialGradient(px, py, 0, px, py, 30);
-          glow.addColorStop(0, `hsl(var(--foreground) / ${0.18 * opacity})`);
-          glow.addColorStop(1, "hsl(var(--foreground) / 0)");
+          glow.addColorStop(0, rgba(fg, 0.18 * opacity));
+          glow.addColorStop(1, rgba(fg, 0));
           ctx.beginPath();
           ctx.arc(px, py, 30, 0, Math.PI * 2);
           ctx.fillStyle = glow;
           ctx.fill();
 
           drawRoundedRectPath(ctx, px - widthRect, py - heightRect, widthRect * 2, heightRect * 2, 4);
-          ctx.fillStyle = `hsl(var(--card) / ${0.18 * opacity})`;
+          ctx.fillStyle = rgba(cardC, 0.18 * opacity);
           ctx.fill();
-          ctx.strokeStyle = `hsl(var(--foreground) / ${0.78 * opacity})`;
+          ctx.strokeStyle = rgba(fg, 0.78 * opacity);
           ctx.lineWidth = 1.5;
           ctx.stroke();
           ctx.font = "700 11px 'DM Sans', sans-serif";
-          ctx.fillStyle = `hsl(var(--foreground) / ${0.96 * opacity})`;
+          ctx.fillStyle = rgba(fg, 0.96 * opacity);
           ctx.textAlign = "center";
           ctx.fillText("You", px, py + 4);
           continue;
