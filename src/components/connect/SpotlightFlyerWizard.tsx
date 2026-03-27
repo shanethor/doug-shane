@@ -90,13 +90,6 @@ const fallbackBulletsFromText = (text: string) => {
 
   return pieces.slice(0, 4);
 };
-const SOCIAL_SIZES = [
-  { value: "original", label: "Original", ratio: null },
-  { value: "fb", label: "Facebook", ratio: "1200×630", icon: Facebook },
-  { value: "ig-square", label: "Instagram", ratio: "1080×1080", icon: Instagram },
-  { value: "ig-story", label: "IG Story", ratio: "1080×1920", icon: Instagram },
-  { value: "linkedin", label: "LinkedIn", ratio: "1200×627", icon: Linkedin },
-];
 
 interface SpotlightFlyerWizardProps {
   onClose: () => void;
