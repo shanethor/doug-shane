@@ -561,24 +561,57 @@ function ConnectionManagerPage() {
         </Card>
       )}
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-        {[
-          { label: "People Data Labs", status: "active", icon: Users },
-          { label: "Apollo.io", status: "active", icon: Search },
-          { label: "Hunter.io", status: "active", icon: Mail },
-          { label: "Data365", status: "pending", icon: Globe },
-        ].map(source => (
-          <Card key={source.label}>
-            <CardContent className="py-3 px-3 text-center">
-              <source.icon className="h-4 w-4 mx-auto text-muted-foreground mb-1" />
-              <p className="text-[10px] font-medium">{source.label}</p>
-              <Badge variant={source.status === "active" ? "default" : "secondary"} className="text-[9px] mt-1">
-                {source.status === "active" ? "✓ Connected" : "⏳ Pending"}
-              </Badge>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Enrichment Waterfall</CardTitle>
+          <p className="text-[11px] text-muted-foreground">Contacts flow through each layer in order. Only pay when data is found.</p>
+        </CardHeader>
+        <CardContent className="space-y-1">
+          {[
+            { label: "Serper.dev", role: "LinkedIn URL pre-match", status: "active", cost: "~$0.0003/query", icon: Search },
+            { label: "Apollo.io", role: "Primary person enrichment", status: "active", cost: "$79/mo", icon: Users },
+            { label: "People Data Labs", role: "Fallback person enrichment", status: "active", cost: "Pay-as-you-go", icon: Database },
+            { label: "Anymail Finder", role: "Email fallback #1", status: "pending", cost: "Pay-per-find", icon: Mail },
+            { label: "Findymail", role: "Email fallback #2", status: "pending", cost: "Pay-per-find", icon: Mail },
+            { label: "The Org", role: "Org chart & reporting lines", status: "pending", cost: "Free tier", icon: Building2 },
+            { label: "Google News RSS", role: "Company/risk signal monitoring", status: "active", cost: "Free", icon: Globe },
+          ].map((source, i) => (
+            <div key={source.label} className="flex items-center gap-3 py-2 border-b last:border-0">
+              <div className="h-6 w-6 rounded bg-muted/30 flex items-center justify-center text-xs font-bold text-muted-foreground shrink-0">{i + 1}</div>
+              <source.icon className="h-4 w-4 text-muted-foreground shrink-0" />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-medium">{source.label}</p>
+                  <Badge variant={source.status === "active" ? "default" : "secondary"} className="text-[9px]">
+                    {source.status === "active" ? "✓ Active" : "Setup needed"}
+                  </Badge>
+                </div>
+                <p className="text-[10px] text-muted-foreground">{source.role} · {source.cost}</p>
+              </div>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Data Sources (Accounts)</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-1">
+          {[
+            { label: "Data365", status: "pending", icon: Globe, desc: "Social signals" },
+          ].map(source => (
+            <div key={source.label} className="flex items-center gap-3 py-2">
+              <source.icon className="h-4 w-4 text-muted-foreground" />
+              <div className="flex-1">
+                <p className="text-sm font-medium">{source.label}</p>
+                <p className="text-[10px] text-muted-foreground">{source.desc}</p>
+              </div>
+              <Badge variant="secondary" className="text-[9px]">⏳ Pending</Badge>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
     </div>
   );
 }
