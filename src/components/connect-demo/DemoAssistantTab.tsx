@@ -1,28 +1,27 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Send, Sparkles, FileUp, Users, Mail, BarChart3, Globe, Loader2, Paperclip, X, Network } from "lucide-react";
+import { Send, Sparkles, FileUp, Users, Mail, BarChart3, Globe, Loader2, Paperclip, X, Network, PlusCircle, Calendar } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
 const SUGGESTIONS = [
-  { icon: FileUp, label: "Submit a new client", message: "I want to submit a new client." },
-  { icon: Mail, label: "Draft an email", message: "Help me draft a professional follow-up email to a prospect I met yesterday." },
-  { icon: Users, label: "Manage my pipeline", message: "Show me my current pipeline status and suggest next steps." },
-  { icon: BarChart3, label: "Check my analytics", message: "Show me my performance analytics for this month." },
-  { icon: Globe, label: "Research a company", message: "Can you look up information about a company?" },
-  { icon: Network, label: "Find a connection", message: "Can you help me find a warm introduction to someone?" },
+  { icon: PlusCircle, label: "Submit a new client", message: "I want to add a new lead to my pipeline. Walk me through it." },
+  { icon: Mail, label: "Draft an email", message: "Help me draft a professional follow-up email. Show me my recent contacts to choose from." },
+  { icon: Users, label: "Manage my pipeline", message: "Show me my current pipeline status with real numbers and suggest next steps." },
+  { icon: BarChart3, label: "Check my analytics", message: "Show me my real performance metrics — pipeline value, lead count, and conversion progress." },
+  { icon: Globe, label: "Research a company", message: "Can you research a company for me? I'll give you the name." },
+  { icon: Network, label: "Find a connection", message: "Who are my strongest connections? Show me my top contacts by tier." },
 ];
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/connect-assistant`;
 
 async function streamChat({
-  messages,
-  onDelta,
-  onDone,
-  onError,
-  signal,
+  messages, onDelta, onDone, onError, signal,
 }: {
   messages: Msg[];
   onDelta: (t: string) => void;
@@ -31,11 +30,18 @@ async function streamChat({
   signal?: AbortSignal;
 }) {
   try {
+    // Get auth token for real data access
+    let token = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.access_token) token = session.access_token;
+    } catch {}
+
     const resp = await fetch(CHAT_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({ messages }),
       signal,
@@ -43,6 +49,8 @@ async function streamChat({
 
     if (!resp.ok) {
       const err = await resp.json().catch(() => ({ error: "Unknown error" }));
+      if (resp.status === 429) { onError("Rate limit exceeded. Please wait a moment."); return; }
+      if (resp.status === 402) { onError("AI credits exhausted. Please add funds."); return; }
       onError(err.error || `Error ${resp.status}`);
       return;
     }
@@ -84,8 +92,13 @@ async function streamChat({
   }
 }
 
-/* ── Typewriter component for streaming text ── */
-function StreamingMessage({ content, isStreaming }: { content: string; isStreaming: boolean }) {
+function StreamingMessage({ content, isStreaming, onAction }: { content: string; isStreaming: boolean; onAction?: (action: string) => void }) {
+  // Strip action markers from display
+  const displayContent = content
+    .replace(/\[PIPELINE_ACTION:[^\]]+\]/g, "")
+    .replace(/\[CALENDAR_ACTION:[^\]]+\]/g, "")
+    .replace(/\[NAVIGATE:[^\]]+\]/g, "");
+
   return (
     <div className="space-y-2">
       <div className="prose prose-sm prose-invert max-w-none
@@ -104,16 +117,16 @@ function StreamingMessage({ content, isStreaming }: { content: string; isStreami
           components={{
             a: ({ href, children }) => {
               const text = String(children);
-              // Action buttons
-              if (text.startsWith("[") || text.includes("Create") || text.includes("Draft") || text.includes("View") || text.includes("Add to") || text.includes("Review") || text.includes("Find Path")) {
+              if (text.startsWith("[") || text.includes("Create") || text.includes("Draft") || text.includes("View") || text.includes("Add to") || text.includes("Review") || text.includes("Find") || text.includes("Schedule") || text.includes("Send")) {
+                const cleanText = text.replace(/[\[\]]/g, "");
                 return (
                   <button
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:brightness-110 mr-1.5 mt-1"
                     style={{ background: "hsl(140 12% 42%)", color: "white" }}
-                    onClick={() => toast.info(`${text.replace(/[\[\]]/g, "")} — coming soon in full version`)}
+                    onClick={() => onAction?.(cleanText)}
                   >
                     <Sparkles className="h-3 w-3" />
-                    {text.replace(/[\[\]]/g, "")}
+                    {cleanText}
                   </button>
                 );
               }
@@ -121,7 +134,7 @@ function StreamingMessage({ content, isStreaming }: { content: string; isStreami
             },
           }}
         >
-          {content}
+          {displayContent}
         </ReactMarkdown>
       </div>
       {isStreaming && (
@@ -132,6 +145,8 @@ function StreamingMessage({ content, isStreaming }: { content: string; isStreami
 }
 
 export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: string) => void }) {
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -144,6 +159,51 @@ export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: st
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages]);
+
+  // Handle action markers in completed responses
+  const processActionMarkers = useCallback((content: string) => {
+    // Pipeline actions
+    const pipelineAdds = content.matchAll(/\[PIPELINE_ACTION:ADD\|([^|]+)\|([^|]+)\|([^|]+)\|([^\]]+)\]/g);
+    for (const match of pipelineAdds) {
+      const [, name, company, value, stage] = match;
+      if (user) {
+        supabase.from("leads").insert({
+          account_name: name || company,
+          contact_name: name,
+          target_premium: Number(value) || 0,
+          stage: stage as any,
+          owner_user_id: user.id,
+          lead_source: "Sage AI",
+        }).then(({ error }) => {
+          if (error) toast.error("Failed to add lead");
+          else toast.success(`Added ${name} to pipeline`);
+        });
+      }
+    }
+
+    // Navigate actions
+    const navMatches = content.matchAll(/\[NAVIGATE:([^\]]+)\]/g);
+    for (const match of navMatches) {
+      navigate(match[1]);
+    }
+  }, [user, navigate]);
+
+  const handleAction = useCallback((action: string) => {
+    const lower = action.toLowerCase();
+    if (lower.includes("view pipeline") || lower.includes("manage pipeline")) {
+      navigate("/connect/pipeline");
+    } else if (lower.includes("view calendar") || lower.includes("schedule")) {
+      navigate("/connect/calendar");
+    } else if (lower.includes("view email") || lower.includes("check email")) {
+      navigate("/connect/email");
+    } else if (lower.includes("draft") || lower.includes("send email")) {
+      navigate("/connect/email");
+    } else if (lower.includes("view network") || lower.includes("find connection")) {
+      navigate("/connect");
+    } else {
+      toast.info(`${action} — navigating...`);
+    }
+  }, [navigate]);
 
   const send = useCallback((text: string) => {
     if (!text.trim() || loading) return;
@@ -175,11 +235,15 @@ export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: st
     streamChat({
       messages: history.map(m => ({ role: m.role, content: m.content })),
       onDelta: upsert,
-      onDone: () => setLoading(false),
+      onDone: () => {
+        setLoading(false);
+        // Process any action markers
+        if (assistantSoFar) processActionMarkers(assistantSoFar);
+      },
       onError: (err) => { toast.error(err); setLoading(false); },
       signal: ac.signal,
     });
-  }, [messages, loading, attachedFiles]);
+  }, [messages, loading, attachedFiles, processActionMarkers]);
 
   const stop = useCallback(() => {
     abortRef.current?.abort();
@@ -206,7 +270,6 @@ export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: st
       onDrop={handleDrop}
     >
       <style>{`@keyframes sageFadeIn { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }`}</style>
-      {/* Drag overlay */}
       {dragOver && (
         <div className="absolute inset-0 z-50 flex items-center justify-center rounded-xl" style={{ background: "hsl(140 12% 42% / 0.08)", border: "2px dashed hsl(140 12% 42%)", backdropFilter: "blur(4px)" }}>
           <div className="text-center space-y-2">
@@ -230,17 +293,16 @@ export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: st
       />
 
       {!hasMessages ? (
-        /* ── Empty state ── */
         <div className="flex-1 flex flex-col items-center justify-start pt-[8vh] px-4">
           <div className="flex items-center gap-2 mb-3" style={{ animation: "sageFadeIn 0.5s cubic-bezier(0.16,1,0.3,1) 0.05s both" }}>
             <Sparkles className="h-5 w-5" style={{ color: "hsl(140 12% 58%)" }} />
             <span className="text-xs font-medium uppercase tracking-widest" style={{ color: "hsl(140 12% 50%)" }}>Sage Assistant</span>
+            <span className="text-[9px] px-2 py-0.5 rounded-full font-medium" style={{ background: "hsl(140 50% 30% / 0.2)", color: "hsl(140 50% 65%)" }}>LIVE DATA</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-6 text-center" style={{ background: "linear-gradient(135deg, hsl(140 12% 62%), hsl(140 12% 45%), hsl(240 5% 80%))", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", animation: "sageFadeIn 0.6s cubic-bezier(0.16,1,0.3,1) 0.15s both" }}>
             How can I help you today?
           </h1>
 
-          {/* Chat input card */}
           <div className="w-full max-w-2xl mb-8">
             {attachedFiles.length > 0 && (
               <div className="mb-2 flex flex-wrap gap-2">
@@ -264,7 +326,7 @@ export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: st
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(input); } }}
-                placeholder="Ask Sage anything..."
+                placeholder="Ask Sage anything — your real data is connected…"
                 rows={3}
                 className="flex-1 resize-none bg-transparent border-0 outline-none text-sm min-h-[72px] max-h-48 py-2"
                 style={{ color: "white" }}
@@ -290,7 +352,6 @@ export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: st
           </div>
         </div>
       ) : (
-        /* ── Conversation mode ── */
         <>
           <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-6 space-y-5">
             {messages.map((msg, i) => {
@@ -303,18 +364,14 @@ export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: st
                       <Sparkles className="h-3.5 w-3.5" style={{ color: "hsl(140 12% 58%)" }} />
                     </div>
                   )}
-                  <div className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm ${
-                    isUser
-                      ? ""
-                      : ""
-                  }`} style={isUser
+                  <div className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm`} style={isUser
                     ? { background: "hsl(140 12% 42%)", color: "white" }
                     : { background: "hsl(240 8% 9%)", border: "1px solid hsl(240 6% 14%)" }
                   }>
                     {isUser ? (
                       <span className="whitespace-pre-wrap">{msg.content}</span>
                     ) : (
-                      <StreamingMessage content={msg.content} isStreaming={loading && isLastAssistant} />
+                      <StreamingMessage content={msg.content} isStreaming={loading && isLastAssistant} onAction={handleAction} />
                     )}
                   </div>
                 </div>
@@ -331,14 +388,13 @@ export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: st
                     <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: "hsl(140 12% 58%)", animationDelay: "0ms" }} />
                     <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: "hsl(140 12% 58%)", animationDelay: "150ms" }} />
                     <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ background: "hsl(140 12% 58%)", animationDelay: "300ms" }} />
-                    <span className="text-xs ml-2" style={{ color: "hsl(240 5% 40%)" }}>Sage is thinking…</span>
+                    <span className="text-xs ml-2" style={{ color: "hsl(240 5% 40%)" }}>Sage is pulling your real data…</span>
                   </span>
                 </div>
               </div>
             )}
           </div>
 
-          {/* Bottom input */}
           <div className="p-4">
             {attachedFiles.length > 0 && (
               <div className="mb-2 flex flex-wrap gap-2 max-w-2xl mx-auto">

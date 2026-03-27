@@ -262,10 +262,17 @@ export default function EmailViewOutlook({ engine, ai }: { engine: Engine; ai: A
                     </div>
                   </div>
                   <div className="text-sm leading-relaxed pl-12" style={{ color: "hsl(240 5% 78%)" }}>
-                    {msg.body.includes("<") && msg.body.includes(">")
-                      ? <iframe srcDoc={`<html><head><style>body{margin:0;padding:8px;font-family:system-ui,sans-serif;font-size:14px;color:#c8c8d0;background:transparent;}</style></head><body>${msg.body}</body></html>`} className="w-full border-0 min-h-[120px]" style={{ background: "transparent" }} sandbox="allow-same-origin" />
-                      : <div className="whitespace-pre-wrap">{msg.body}</div>
-                    }
+                    {msg.body.includes("<") && msg.body.includes(">") ? (
+                      <iframe
+                        srcDoc={`<!DOCTYPE html><html><head><meta charset="utf-8"><style>body{margin:0;padding:12px;font-family:-apple-system,system-ui,sans-serif;font-size:14px;line-height:1.5;color:#c8c8d0;background:transparent;}a{color:#7c9a82;}img{max-width:100%;height:auto;}</style></head><body>${msg.body}</body></html>`}
+                        className="w-full border-0"
+                        style={{ background: "transparent", minHeight: "150px" }}
+                        sandbox="allow-same-origin"
+                        onLoad={(e) => { const f = e.target as HTMLIFrameElement; if (f.contentDocument?.body) f.style.height = Math.max(150, f.contentDocument.body.scrollHeight + 20) + "px"; }}
+                      />
+                    ) : (
+                      <div className="whitespace-pre-wrap">{msg.body || "(No content)"}</div>
+                    )}
                   </div>
                 </div>
               ))}

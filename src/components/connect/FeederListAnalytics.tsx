@@ -86,7 +86,30 @@ export default function FeederListAnalytics() {
     return <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
   }
 
-  if (!data) return null;
+  if (!data || (data.totalLists === 0 && data.totalProspects === 0)) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-xl font-bold flex items-center gap-2">
+            <BarChart3 className="h-5 w-5 text-primary" /> Feeder List Analytics
+          </h2>
+        </div>
+        <Card className="border-dashed">
+          <CardContent className="py-12 text-center">
+            <Target className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+            <h3 className="text-lg font-semibold mb-2">No Analytics Data Yet</h3>
+            <p className="text-sm text-muted-foreground max-w-md mx-auto mb-4">
+              Create your first Feeder List to start tracking your prospecting funnel. 
+              Feeder Lists help you identify and prioritize prospects before meetings.
+            </p>
+            <p className="text-xs text-muted-foreground mb-4">
+              Go to the <strong>Prospect</strong> tab to configure your Ideal Prospect Profile, then generate Feeder Lists from your upcoming meetings.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const stats = [
     { label: "Feeder Lists", value: data.totalLists, icon: BarChart3, color: "text-primary" },
