@@ -381,8 +381,15 @@ export default function ConnectPipelineTab() {
           const stageLeads = activeLeads.filter(l => l.stage === stage.key);
           const totalValue = stageLeads.reduce((sum, l) => sum + (l.target_premium || 0), 0);
           const visibleLeads = expandedColumns[stage.key] ? stageLeads : stageLeads.slice(0, COLUMN_LIMIT);
+          const isOver = dropTarget === stage.key;
           return (
-            <div key={stage.key} className="space-y-2">
+            <div
+              key={stage.key}
+              className={`space-y-2 rounded-lg transition-all duration-200 ${isOver ? "ring-2 ring-primary/50 bg-primary/5" : ""}`}
+              onDragOver={(e) => handleDragOver(e, stage.key)}
+              onDragLeave={handleDragLeave}
+              onDrop={(e) => handleDrop(e, stage.key)}
+            >
               <div className={`rounded-lg px-3 py-2 border ${stage.color}`}>
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-semibold">{stage.label}</span>
@@ -396,10 +403,16 @@ export default function ConnectPipelineTab() {
               </div>
               <div className="space-y-2 min-h-[80px]">
                 {visibleLeads.map(lead => (
-                  <Card key={lead.id} className="group">
+                  <Card
+                    key={lead.id}
+                    className={`group cursor-grab active:cursor-grabbing transition-all ${draggedLeadId === lead.id ? "opacity-50 scale-95" : "hover:border-primary/30"}`}
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, lead.id)}
+                    onDragEnd={handleDragEnd}
+                  >
                     <CardContent className="p-3 space-y-1.5">
                       <div className="flex items-start justify-between">
-                        <Link to={`/pipeline/${lead.id}`} className="text-xs font-medium truncate hover:underline">
+                        <Link to={`/pipeline/${lead.id}`} className="text-xs font-medium truncate hover:underline" onClick={e => { if (draggedLeadId) e.preventDefault(); }}>
                           {lead.account_name}
                         </Link>
                       </div>
@@ -431,7 +444,6 @@ export default function ConnectPipelineTab() {
                     </CardContent>
                   </Card>
                 ))}
-                {/* Show more / less toggle */}
                 {stageLeads.length > COLUMN_LIMIT && (
                   <button
                     onClick={() => toggleColumnExpand(stage.key)}
