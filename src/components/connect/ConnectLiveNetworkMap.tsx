@@ -496,6 +496,34 @@ export default function ConnectLiveNetworkMap({ onNodeClick }: ConnectLiveNetwor
     };
 
     resize();
+
+    // Resolve CSS variables to RGB for canvas (canvas can't use CSS vars)
+    const resolveColor = (varName: string): [number, number, number] => {
+      const raw = getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+      // raw is like "240 5% 96%" (HSL components) — parse and convert
+      const parts = raw.split(/\s+/);
+      if (parts.length >= 3) {
+        const h = parseFloat(parts[0]);
+        const s = parseFloat(parts[1]) / 100;
+        const l = parseFloat(parts[2]) / 100;
+        // HSL to RGB
+        const a2 = s * Math.min(l, 1 - l);
+        const f = (n: number) => {
+          const k = (n + h / 30) % 12;
+          return l - a2 * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+        };
+        return [Math.round(f(0) * 255), Math.round(f(8) * 255), Math.round(f(4) * 255)];
+      }
+      return [200, 200, 200]; // fallback
+    };
+
+    const fg = resolveColor("--foreground");
+    const pri = resolveColor("--primary");
+    const warn = resolveColor("--warning");
+    const cardC = resolveColor("--card");
+
+    const rgba = (c: [number, number, number], a: number) => `rgba(${c[0]},${c[1]},${c[2]},${a})`;
+
     canvas.addEventListener("mousemove", handleMouseMove);
     canvas.addEventListener("click", handleClick);
     canvas.addEventListener("mouseleave", handleLeave);
