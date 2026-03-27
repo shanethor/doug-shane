@@ -17,6 +17,9 @@ import {
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { BrandPackage } from "./SpotlightBrandSetup";
+import SpotlightTemplateGallery from "./SpotlightTemplateGallery";
+import SpotlightPostEditor from "./SpotlightPostEditor";
+import type { SpotlightTemplate } from "./spotlight-templates";
 
 const FLYER_TYPES = [
   { value: "event", label: "Event Flyer" },
