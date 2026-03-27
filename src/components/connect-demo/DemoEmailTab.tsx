@@ -1,10 +1,11 @@
 import { useState, useCallback, useEffect } from "react";
-import { Mail, CheckCheck, Loader2, PenSquare, X, Send } from "lucide-react";
+import { Mail, CheckCheck, Loader2, PenSquare, X, Send, ChevronDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { useEmailEngine, getEmailLayout, setEmailLayout, type EmailLayout } from "./email-views/useEmailEngine";
 import { useEmailAI } from "./email-views/useEmailAI";
@@ -18,6 +19,13 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { getAuthHeaders } from "@/lib/auth-fetch";
 
+interface LinkedAccount {
+  id: string;
+  provider: string;
+  email_address: string;
+  is_active: boolean;
+}
+
 export default function DemoEmailTab() {
   const { user } = useAuth();
   const { hasEmail, emails, loading: realLoading } = useRealEmailData();
@@ -29,8 +37,29 @@ export default function DemoEmailTab() {
   const [composeSubject, setComposeSubject] = useState("");
   const [composeBody, setComposeBody] = useState("");
   const [sending, setSending] = useState(false);
+  const [linkedAccounts, setLinkedAccounts] = useState<LinkedAccount[]>([]);
+  const [selectedAccountId, setSelectedAccountId] = useState<string>("");
+  const [accountsLoaded, setAccountsLoaded] = useState(false);
 
   useEffect(() => { ai.reset(); }, [engine.selectedThread?.id]);
+
+  // Load linked email accounts
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from("email_connections" as any)
+      .select("id, provider, email_address, is_active")
+      .eq("user_id", user.id)
+      .eq("is_active", true)
+      .then(({ data }) => {
+        const accounts = (data as any as LinkedAccount[]) || [];
+        setLinkedAccounts(accounts);
+        if (accounts.length > 0 && !selectedAccountId) {
+          setSelectedAccountId(accounts[0].id);
+        }
+        setAccountsLoaded(true);
+      });
+  }, [user]);
 
   const handleLayoutChange = useCallback((l: EmailLayout) => {
     setLayoutState(l);
@@ -42,26 +71,37 @@ export default function DemoEmailTab() {
       toast.error("To and Subject are required");
       return;
     }
+    if (!selectedAccountId) {
+      toast.error("Please select a sending account");
+      return;
+    }
     setSending(true);
     try {
       const headers = await getAuthHeaders();
-      const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/compose-email`, {
+      const selectedAccount = linkedAccounts.find(a => a.id === selectedAccountId);
+
+      // Send via the linked email account
+      const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-via-connection`, {
         method: "POST",
         headers,
         body: JSON.stringify({
+          connection_id: selectedAccountId,
           to: composeTo.trim(),
           subject: composeSubject.trim(),
           body: composeBody.trim(),
         }),
       });
-      if (resp.ok) {
-        toast.success("Email sent successfully");
+
+      const result = await resp.json();
+
+      if (resp.ok && result.success) {
+        toast.success(`Email sent from ${selectedAccount?.email_address || "your account"}`);
         setComposeOpen(false);
         setComposeTo("");
         setComposeSubject("");
         setComposeBody("");
       } else {
-        // Save as draft in email_drafts table
+        // Fallback: save as draft
         if (user) {
           await supabase.from("email_drafts").insert({
             user_id: user.id,
@@ -69,14 +109,15 @@ export default function DemoEmailTab() {
             subject: composeSubject.trim(),
             body_html: composeBody.trim(),
             status: "draft",
+            connection_id: selectedAccountId || null,
           });
-          toast.success("Saved as draft — send integration pending");
+          toast.success("Saved as draft — will retry on next sync");
           setComposeOpen(false);
           setComposeTo("");
           setComposeSubject("");
           setComposeBody("");
         } else {
-          toast.error("Failed to send email");
+          toast.error(result.error || "Failed to send email");
         }
       }
     } catch {
@@ -149,6 +190,30 @@ export default function DemoEmailTab() {
             <DialogTitle className="text-white">New Email</DialogTitle>
           </DialogHeader>
           <div className="space-y-3 py-2">
+            {/* Account Selector */}
+            <div>
+              <label className="text-xs text-white/50 mb-1 block">From</label>
+              {linkedAccounts.length > 0 ? (
+                <Select value={selectedAccountId} onValueChange={setSelectedAccountId}>
+                  <SelectTrigger className="text-sm h-9" style={{ background: "hsl(240 8% 7%)", borderColor: "hsl(240 6% 14%)", color: "white" }}>
+                    <SelectValue placeholder="Select sending account" />
+                  </SelectTrigger>
+                  <SelectContent style={{ background: "hsl(240 8% 12%)", borderColor: "hsl(240 6% 18%)" }}>
+                    {linkedAccounts.map(acc => (
+                      <SelectItem key={acc.id} value={acc.id} className="text-sm">
+                        <div className="flex items-center gap-2">
+                          <Mail className="h-3.5 w-3.5" style={{ color: acc.provider === "gmail" ? "#ea4335" : "#0078d4" }} />
+                          <span>{acc.email_address}</span>
+                          <span className="text-white/30 text-[10px] capitalize">({acc.provider})</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <p className="text-xs text-white/40 py-2">No email accounts linked. Connect one in Intelligence → Sources.</p>
+              )}
+            </div>
             <div>
               <Input value={composeTo} onChange={e => setComposeTo(e.target.value)} placeholder="To: email@example.com"
                 className="text-sm" style={{ background: "hsl(240 8% 7%)", borderColor: "hsl(240 6% 14%)", color: "white" }} />
@@ -166,7 +231,7 @@ export default function DemoEmailTab() {
             <Button variant="ghost" size="sm" onClick={() => setComposeOpen(false)} style={{ color: "hsl(240 5% 55%)" }}>
               <X className="h-4 w-4 mr-1" /> Discard
             </Button>
-            <Button size="sm" onClick={handleSendEmail} disabled={sending || !composeTo.trim()}
+            <Button size="sm" onClick={handleSendEmail} disabled={sending || !composeTo.trim() || !selectedAccountId}
               style={{ background: "hsl(140 12% 42%)", color: "white" }}>
               {sending ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Send className="h-4 w-4 mr-1" />}
               Send
