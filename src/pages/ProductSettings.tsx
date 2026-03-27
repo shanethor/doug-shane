@@ -49,6 +49,14 @@ export default function ProductSettings() {
   const [emailConnections, setEmailConnections] = useState<EmailConnection[]>([]);
   const [connectingProvider, setConnectingProvider] = useState<string | null>(null);
 
+  // iCloud state
+  const [icloudAppleId, setIcloudAppleId] = useState("");
+  const [icloudAppPassword, setIcloudAppPassword] = useState("");
+  const [icloudConnecting, setIcloudConnecting] = useState(false);
+  const [icloudSyncing, setIcloudSyncing] = useState(false);
+  const [icloudConnection, setIcloudConnection] = useState<any>(null);
+  const [icloudLoaded, setIcloudLoaded] = useState(false);
+
   // Auto-scroll to section
   useEffect(() => {
     const section = searchParams.get("section");
