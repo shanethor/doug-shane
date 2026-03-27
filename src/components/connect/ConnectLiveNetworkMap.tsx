@@ -696,8 +696,8 @@ export default function ConnectLiveNetworkMap({ onNodeClick }: ConnectLiveNetwor
         if (hover > 0.05) {
           const glowRadius = node.kind === "company" ? 18 + hover * 12 : 16 + hover * 10;
           const glow = ctx.createRadialGradient(px, py, 0, px, py, glowRadius);
-          glow.addColorStop(0, node.kind === "company" ? `hsl(var(--warning) / ${0.18 * hover * opacity})` : `hsl(var(--primary) / ${0.2 * hover * opacity})`);
-          glow.addColorStop(1, node.kind === "company" ? "hsl(var(--warning) / 0)" : "hsl(var(--primary) / 0)");
+          glow.addColorStop(0, node.kind === "company" ? rgba(warn, 0.18 * hover * opacity) : rgba(pri, 0.2 * hover * opacity));
+          glow.addColorStop(1, node.kind === "company" ? rgba(warn, 0) : rgba(pri, 0));
           ctx.beginPath();
           ctx.arc(px, py, glowRadius, 0, Math.PI * 2);
           ctx.fillStyle = glow;
@@ -705,7 +705,7 @@ export default function ConnectLiveNetworkMap({ onNodeClick }: ConnectLiveNetwor
         }
 
         ctx.font = `${hover > 0.2 ? 700 : 500} ${fontSize}px 'DM Sans', sans-serif`;
-        ctx.fillStyle = `hsl(var(--foreground) / ${finalAlpha})`;
+        ctx.fillStyle = rgba(fg, finalAlpha);
         ctx.textAlign = "center";
         ctx.fillText(node.name, px, labelY);
       }
