@@ -242,9 +242,9 @@ function EmailIntelligencePage() {
       </div>
 
       <div className="flex gap-2 flex-wrap">
-        {(["all", "high_score", "verified", "unlabeled"] as const).map(f => (
+        {(["all", "high_score", "verified", "unlabeled", "saved"] as const).map(f => (
           <Button key={f} variant={filter === f ? "default" : "outline"} size="sm" onClick={() => setFilter(f)} className="text-xs">
-            {f === "all" ? "All" : f === "high_score" ? "Score 70+" : f === "verified" ? "Verified ✓" : `Unlabeled (${unlabeled.length})`}
+            {f === "all" ? "All" : f === "high_score" ? "Score 70+" : f === "verified" ? "Verified ✓" : f === "unlabeled" ? `Unlabeled (${unlabeled.length})` : `Saved (${savedContacts.length})`}
           </Button>
         ))}
       </div>
