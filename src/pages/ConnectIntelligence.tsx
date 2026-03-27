@@ -525,7 +525,11 @@ function ConnectionManagerPage() {
     { provider: "phone", label: "Phone / Apple Contacts", desc: "Import contacts from your phone or iCloud", icon: <Phone className="h-5 w-5 text-green-400" />, action: null },
   ];
 
-  const connectedProviders = new Set(connections.filter(c => c.is_active).map(c => c.provider));
+  const connectedProviders = new Set(connections.filter(c => c.is_active).map(c => {
+    if (c.provider === "gmail") return "google";
+    if (c.provider === "outlook") return "microsoft";
+    return c.provider;
+  }));
 
   return (
     <div className="space-y-6">
