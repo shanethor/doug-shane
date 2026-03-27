@@ -17,6 +17,9 @@ import {
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { BrandPackage } from "./SpotlightBrandSetup";
+import SpotlightTemplateGallery from "./SpotlightTemplateGallery";
+import SpotlightPostEditor from "./SpotlightPostEditor";
+import type { SpotlightTemplate } from "./spotlight-templates";
 
 const FLYER_TYPES = [
   { value: "event", label: "Event Flyer" },
@@ -87,13 +90,6 @@ const fallbackBulletsFromText = (text: string) => {
 
   return pieces.slice(0, 4);
 };
-const SOCIAL_SIZES = [
-  { value: "original", label: "Original", ratio: null },
-  { value: "fb", label: "Facebook", ratio: "1200×630", icon: Facebook },
-  { value: "ig-square", label: "Instagram", ratio: "1080×1080", icon: Instagram },
-  { value: "ig-story", label: "IG Story", ratio: "1080×1920", icon: Instagram },
-  { value: "linkedin", label: "LinkedIn", ratio: "1200×627", icon: Linkedin },
-];
 
 interface SpotlightFlyerWizardProps {
   onClose: () => void;
@@ -101,10 +97,14 @@ interface SpotlightFlyerWizardProps {
   editFlyerId?: string | null;
   initialType?: string;
   demoMode?: boolean;
+  skipTemplateGallery?: boolean;
 }
 
-export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId, initialType, demoMode }: SpotlightFlyerWizardProps) {
-  const [step, setStep] = useState(editFlyerId ? 0 : 1);
+export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId, initialType, demoMode, skipTemplateGallery }: SpotlightFlyerWizardProps) {
+  // step 0 = loading/edit, "templates" = template gallery, 1-4 = normal steps
+  const [step, setStep] = useState<number | "templates">(
+    editFlyerId ? 0 : (skipTemplateGallery || initialType ? 1 : "templates")
+  );
   const [loading, setLoading] = useState(false);
 
   const defaultBrand = brands.find(b => b.is_default) || brands[0] || null;
@@ -137,9 +137,7 @@ export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId, ini
   // Step 4
   const [resultImageUrl, setResultImageUrl] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
-  const [tweakText, setTweakText] = useState("");
   const [analyzingBrand, setAnalyzingBrand] = useState(false);
-  const [selectedSize, setSelectedSize] = useState<string>("original");
   const [showSagePost, setShowSagePost] = useState(false);
   const [sagePostPlatform, setSagePostPlatform] = useState<string>("");
   const [sageCaption, setSageCaption] = useState("");
@@ -545,31 +543,6 @@ export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId, ini
     }
   };
 
-  const handleRegenerate = async () => {
-    setGenerating(true);
-    try {
-      if (demoMode) {
-        const prompt = buildDemoPrompt(tweakText.trim() || undefined);
-        const imageUrl = await generateDemoImage(prompt);
-        setResultImageUrl(imageUrl);
-        setTweakText("");
-        toast.success("Graphic regenerated");
-      } else {
-        const { data, error } = await supabase.functions.invoke("spotlight-flyer", {
-          body: { action: "generate", flyer_id: flyerId, extra_instructions: tweakText.trim() || undefined },
-        });
-        if (error) throw error;
-        if (data?.error) throw new Error(data.error);
-        setResultImageUrl(data.image_url);
-        setTweakText("");
-        toast.success("Graphic regenerated");
-      }
-    } catch (err: any) {
-      toast.error(err.message || "Regeneration failed");
-    } finally {
-      setGenerating(false);
-    }
-  };
 
   const handleDownload = () => {
     if (!resultImageUrl) return;
@@ -641,12 +614,61 @@ export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId, ini
     }
   };
 
+  const handleSelectTemplate = (template: SpotlightTemplate) => {
+    setRawPrompt(template.prompt);
+    setFlyerType(template.contentType);
+    setTitle(template.title);
+    setBullets(template.bullets);
+    setCta(template.cta);
+    if (template.disclaimer) setDisclaimer(template.disclaimer);
+    setStep(1);
+  };
+
   const typeLabel = FLYER_TYPES.find(t => t.value === flyerType)?.label || "Graphic";
+  const numericStep = typeof step === "number" ? step : 0;
 
   if (step === 0) {
     return (
       <div className="flex items-center justify-center py-16">
         <Loader2 className="h-8 w-8 animate-spin" style={{ color: "hsl(140 12% 58%)" }} />
+      </div>
+    );
+  }
+
+  if (step === "templates") {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8" style={{ color: "hsl(240 5% 56%)" }}>
+              <X className="h-4 w-4" />
+            </Button>
+            <div>
+              <h2 className="text-base font-bold flex items-center gap-2 text-white">
+                <Sparkles className="h-4 w-4" style={{ color: "hsl(140 12% 58%)" }} />
+                AuRa Create
+              </h2>
+              <p className="text-[10px]" style={{ color: "hsl(240 5% 50%)" }}>Choose a template</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-1.5">
+            {["T", 1, 2, 3, 4].map((s, i) => (
+              <div
+                key={i}
+                className="h-1.5 rounded-full transition-all"
+                style={{
+                  width: s === "T" ? 28 : 14,
+                  background: s === "T" ? "hsl(140 12% 50%)" : "hsl(240 6% 18%)",
+                }}
+              />
+            ))}
+          </div>
+        </div>
+        <Separator style={{ background: "hsl(240 6% 14%)" }} />
+        <SpotlightTemplateGallery
+          onSelectTemplate={handleSelectTemplate}
+          onStartFromScratch={() => setStep(1)}
+        />
       </div>
     );
   }
@@ -675,8 +697,8 @@ export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId, ini
               key={s}
               className="h-1.5 rounded-full transition-all"
               style={{
-                width: s === step ? 28 : 14,
-                background: s === step ? "hsl(140 12% 50%)" : s < step ? "hsl(140 12% 42% / 0.4)" : "hsl(240 6% 18%)",
+                width: s === numericStep ? 28 : 14,
+                background: s === numericStep ? "hsl(140 12% 50%)" : s < numericStep ? "hsl(140 12% 42% / 0.4)" : "hsl(240 6% 18%)",
               }}
             />
           ))}
@@ -989,10 +1011,10 @@ export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId, ini
         </div>
       )}
 
-      {/* ═══ STEP 4: Result ═══ */}
+      {/* ═══ STEP 4: Result (Split-Panel Editor) ═══ */}
       {step === 4 && (
         <div className="space-y-4">
-          {generating ? (
+          {generating && !resultImageUrl ? (
             <div className="flex flex-col items-center justify-center py-16 space-y-4">
               <div className="relative">
                 <Loader2 className="h-10 w-10 animate-spin" style={{ color: "hsl(140 12% 50%)" }} />
@@ -1005,105 +1027,51 @@ export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId, ini
             </div>
           ) : resultImageUrl ? (
             <>
-              {/* Resize for social platforms */}
-              <div className="space-y-1.5">
-                <label className="text-[9px] font-medium uppercase tracking-wider" style={{ color: "hsl(240 5% 50%)" }}>Resize for Platform</label>
-                <div className="flex flex-wrap gap-1.5">
-                  {SOCIAL_SIZES.map(s => {
-                    const Icon = s.icon;
-                    return (
-                      <button
-                        key={s.value}
-                        onClick={() => setSelectedSize(s.value)}
-                        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[10px] font-medium transition-all"
-                        style={{
-                          background: selectedSize === s.value ? "hsl(140 12% 42%)" : "hsl(240 6% 10%)",
-                          color: selectedSize === s.value ? "#fff" : "hsl(240 5% 60%)",
-                          border: `1px solid ${selectedSize === s.value ? "hsl(140 12% 42%)" : "hsl(240 6% 18%)"}`,
-                        }}
-                      >
-                        {Icon && <Icon className="h-3 w-3" />}
-                        {s.label}
-                        {s.ratio && <span className="opacity-60 text-[8px]">{s.ratio}</span>}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div className="rounded-lg overflow-hidden" style={{ border: "1px solid hsl(240 6% 14%)", background: "hsl(240 6% 5%)" }}>
-                <img
-                  src={resultImageUrl}
-                  alt={title}
-                  className="w-full h-auto max-h-[600px] object-contain mx-auto"
-                  style={{
-                    aspectRatio: selectedSize === "fb" ? "1200/630"
-                      : selectedSize === "ig-square" ? "1/1"
-                      : selectedSize === "ig-story" ? "9/16"
-                      : selectedSize === "linkedin" ? "1200/627"
-                      : undefined,
-                    objectFit: selectedSize !== "original" ? "cover" : "contain",
-                    maxHeight: selectedSize === "ig-story" ? "500px" : "600px",
-                  }}
-                />
-              </div>
-
-              <div className="flex flex-wrap gap-2">
-                <Button size="sm" className="gap-1.5 text-white text-xs" style={{ background: "hsl(140 12% 42%)" }} onClick={handleDownload}>
-                  <Download className="h-3 w-3" /> Download{selectedSize !== "original" ? ` (${SOCIAL_SIZES.find(s => s.value === selectedSize)?.label})` : " PNG"}
-                </Button>
-                <Button size="sm" className="gap-1.5 text-xs" style={{ background: "transparent", border: "1px solid hsl(240 6% 18%)", color: "hsl(240 5% 70%)" }} onClick={handleCopyCaption}>
-                  <Copy className="h-3 w-3" /> Copy Caption
-                </Button>
-                <Button size="sm" className="gap-1.5 text-xs" style={{ background: "transparent", border: "1px solid hsl(240 6% 18%)", color: "hsl(240 5% 70%)" }} onClick={() => setStep(3)}>
-                  <ArrowLeft className="h-3 w-3" /> Edit
-                </Button>
-              </div>
-
-              <Separator style={{ background: "hsl(240 6% 14%)" }} />
-
-              {/* Use Sage to Post */}
-              <div className="space-y-2">
-                <label className="text-[9px] font-medium uppercase tracking-wider flex items-center gap-1.5" style={{ color: "hsl(240 5% 50%)" }}>
-                  <Sparkles className="h-3 w-3" style={{ color: "hsl(140 12% 58%)" }} /> Post with Sage
-                </label>
-                <p className="text-[10px]" style={{ color: "hsl(240 5% 42%)" }}>Let Sage craft the perfect caption with trending hashtags and post directly.</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {[
-                    { id: "facebook", label: "Facebook", icon: Facebook, color: "#1877F2" },
-                    { id: "instagram", label: "Instagram", icon: Instagram, color: "#E4405F" },
-                    { id: "linkedin", label: "LinkedIn", icon: Linkedin, color: "#0A66C2" },
-                  ].map(p => (
-                    <Button
-                      key={p.id}
-                      size="sm"
-                      className="gap-1.5 text-[10px] h-8"
-                      style={{
-                        background: sagePostPlatform === p.id ? p.color : "hsl(240 6% 10%)",
-                        color: sagePostPlatform === p.id ? "#fff" : "hsl(240 5% 60%)",
-                        border: `1px solid ${sagePostPlatform === p.id ? p.color : "hsl(240 6% 18%)"}`,
-                      }}
-                      onClick={() => {
-                        setSagePostPlatform(p.id);
-                        setShowSagePost(true);
-                        handleSageGenerateCaption(p.id);
-                      }}
-                    >
-                      <p.icon className="h-3 w-3" /> Use Sage for {p.label}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-
-              <Separator style={{ background: "hsl(240 6% 14%)" }} />
-              <div className="space-y-2">
-                <label className="text-[9px] font-medium uppercase tracking-wider" style={{ color: "hsl(240 5% 50%)" }}>Quick regenerate with tweaks</label>
-                <Textarea value={tweakText} onChange={e => setTweakText(e.target.value)} placeholder="Make the headline larger, use a lighter background..." className="min-h-[50px]" maxLength={500} style={darkTextarea} />
-                <Button size="sm" className="gap-1.5 text-xs text-white" style={{ background: "hsl(240 6% 14%)" }} onClick={handleRegenerate} disabled={generating}>
-                  {generating ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
-                  Regenerate
-                </Button>
-              </div>
+              <SpotlightPostEditor
+                resultImageUrl={resultImageUrl}
+                title={title}
+                bullets={bullets}
+                cta={cta}
+                disclaimer={disclaimer}
+                generating={generating}
+                onTitleChange={setTitle}
+                onBulletsChange={setBullets}
+                onCtaChange={setCta}
+                onDisclaimerChange={setDisclaimer}
+                onRegenerate={async (tweakExtra) => {
+                  setGenerating(true);
+                  try {
+                    if (demoMode) {
+                      const prompt = buildDemoPrompt(tweakExtra);
+                      const imageUrl = await generateDemoImage(prompt);
+                      setResultImageUrl(imageUrl);
+                      toast.success("Graphic regenerated");
+                    } else {
+                      await supabase.functions.invoke("spotlight-flyer", {
+                        body: { action: "update_details", flyer_id: flyerId, title: title.trim(), bullets: bullets.filter(b => b.trim()), cta: cta.trim(), disclaimer: disclaimer.trim() },
+                      });
+                      const { data, error } = await supabase.functions.invoke("spotlight-flyer", {
+                        body: { action: "generate", flyer_id: flyerId, extra_instructions: tweakExtra },
+                      });
+                      if (error) throw error;
+                      if (data?.error) throw new Error(data.error);
+                      setResultImageUrl(data.image_url);
+                      toast.success("Graphic regenerated");
+                    }
+                  } catch (err: any) {
+                    toast.error(err.message || "Regeneration failed. Your edits are saved — try again.");
+                  } finally {
+                    setGenerating(false);
+                  }
+                }}
+                onDownload={handleDownload}
+                onCopyCaption={handleCopyCaption}
+                onSagePost={(platform) => {
+                  setSagePostPlatform(platform);
+                  setShowSagePost(true);
+                  handleSageGenerateCaption(platform);
+                }}
+              />
 
               {/* Sage Post Dialog */}
               <Dialog open={showSagePost} onOpenChange={setShowSagePost}>
@@ -1135,36 +1103,13 @@ export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId, ini
                           />
                         </div>
                         <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            className="gap-1.5 text-xs"
-                            style={{ background: "transparent", border: "1px solid hsl(240 6% 18%)", color: "hsl(240 5% 70%)" }}
-                            onClick={() => handleSageGenerateCaption(sagePostPlatform)}
-                            disabled={sageGenerating}
-                          >
+                          <Button size="sm" className="gap-1.5 text-xs" style={{ background: "transparent", border: "1px solid hsl(240 6% 18%)", color: "hsl(240 5% 70%)" }} onClick={() => handleSageGenerateCaption(sagePostPlatform)} disabled={sageGenerating}>
                             <RefreshCw className="h-3 w-3" /> Regenerate
                           </Button>
-                          <Button
-                            size="sm"
-                            className="gap-1.5 text-xs"
-                            style={{ background: "transparent", border: "1px solid hsl(240 6% 18%)", color: "hsl(240 5% 70%)" }}
-                            onClick={() => { navigator.clipboard.writeText(sageCaption); toast.success("Caption copied!"); }}
-                          >
+                          <Button size="sm" className="gap-1.5 text-xs" style={{ background: "transparent", border: "1px solid hsl(240 6% 18%)", color: "hsl(240 5% 70%)" }} onClick={() => { navigator.clipboard.writeText(sageCaption); toast.success("Caption copied!"); }}>
                             <Copy className="h-3 w-3" /> Copy
                           </Button>
-                          <Button
-                            size="sm"
-                            className="flex-1 gap-1.5 text-white text-xs"
-                            style={{
-                              background: sagePostPlatform === "facebook" ? "#1877F2"
-                                : sagePostPlatform === "instagram" ? "#E4405F"
-                                : "#0A66C2",
-                            }}
-                            onClick={() => {
-                              toast.success(`Posted to ${sagePostPlatform.charAt(0).toUpperCase() + sagePostPlatform.slice(1)}!`, { description: "Your graphic is live." });
-                              setShowSagePost(false);
-                            }}
-                          >
+                          <Button size="sm" className="flex-1 gap-1.5 text-white text-xs" style={{ background: sagePostPlatform === "facebook" ? "#1877F2" : sagePostPlatform === "instagram" ? "#E4405F" : "#0A66C2" }} onClick={() => { toast.success(`Posted to ${sagePostPlatform.charAt(0).toUpperCase() + sagePostPlatform.slice(1)}!`, { description: "Your graphic is live." }); setShowSagePost(false); }}>
                             <Share2 className="h-3 w-3" /> Post Now
                           </Button>
                         </div>

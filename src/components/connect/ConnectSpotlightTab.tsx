@@ -4,11 +4,21 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
-import { Sparkles, Image as ImageIcon, Palette, Pencil, Trash2, Plus } from "lucide-react";
+import { toast } from "sonner";
+import { Sparkles, Image as ImageIcon, Palette, Pencil, Trash2, Plus, Heart, RefreshCw, UserPlus, Lightbulb, Calendar, Zap } from "lucide-react";
 import SpotlightFlyerWizard from "./SpotlightFlyerWizard";
 import SpotlightBrandSetup, { type BrandPackage } from "./SpotlightBrandSetup";
 
 type ViewMode = "home" | "wizard" | "brand_setup";
+
+const CONTENT_TYPE_TILES = [
+  { value: "event", label: "Event Flyer", icon: Calendar, color: "hsl(270 45% 45%)" },
+  { value: "social", label: "Social Post", icon: Heart, color: "hsl(340 60% 45%)" },
+  { value: "announcement", label: "Announcement", icon: RefreshCw, color: "hsl(200 60% 42%)" },
+  { value: "educational", label: "Educational", icon: Lightbulb, color: "hsl(45 70% 45%)" },
+  { value: "promotion", label: "Promotion", icon: Zap, color: "hsl(15 70% 48%)" },
+  { value: "custom", label: "Custom", icon: Pencil, color: "hsl(240 10% 45%)" },
+];
 
 export default function ConnectSpotlightTab() {
   const [view, setView] = useState<ViewMode>("home");
@@ -16,6 +26,8 @@ export default function ConnectSpotlightTab() {
   const [brands, setBrands] = useState<BrandPackage[]>([]);
   const [editFlyerId, setEditFlyerId] = useState<string | null>(null);
   const [editBrand, setEditBrand] = useState<BrandPackage | null>(null);
+  const [initialType, setInitialType] = useState<string | undefined>(undefined);
+  const [skipTemplateGallery, setSkipTemplateGallery] = useState(false);
 
   const loadHistory = useCallback(async () => {
     try {
@@ -37,18 +49,33 @@ export default function ConnectSpotlightTab() {
   useEffect(() => { loadHistory(); loadBrands(); }, [loadHistory, loadBrands]);
 
   const handleCreateFlyer = () => {
-    // If no brands exist, force brand setup first
     if (brands.length === 0) {
       setEditBrand(null);
       setView("brand_setup");
       return;
     }
     setEditFlyerId(null);
+    setInitialType(undefined);
+    setSkipTemplateGallery(false);
+    setView("wizard");
+  };
+
+  const handleTypeTileClick = (type: string) => {
+    if (brands.length === 0) {
+      setEditBrand(null);
+      setView("brand_setup");
+      return;
+    }
+    setEditFlyerId(null);
+    setInitialType(type);
+    setSkipTemplateGallery(true);
     setView("wizard");
   };
 
   const handleEditFlyer = (flyerId: string) => {
     setEditFlyerId(flyerId);
+    setInitialType(undefined);
+    setSkipTemplateGallery(true);
     setView("wizard");
   };
 
@@ -62,7 +89,6 @@ export default function ConnectSpotlightTab() {
 
   const handleBrandSaved = async (brand: BrandPackage) => {
     await loadBrands();
-    // If this was forced by "Create Flyer" with no brands, go to wizard
     if (view === "brand_setup" && !editBrand) {
       setEditFlyerId(null);
       setView("wizard");
@@ -86,9 +112,11 @@ export default function ConnectSpotlightTab() {
       <Card>
         <CardContent className="p-4 sm:p-6">
           <SpotlightFlyerWizard
-            onClose={() => { setView("home"); loadHistory(); }}
+            onClose={() => { setView("home"); loadHistory(); setInitialType(undefined); setSkipTemplateGallery(false); }}
             brands={brands}
             editFlyerId={editFlyerId}
+            initialType={initialType}
+            skipTemplateGallery={skipTemplateGallery}
           />
         </CardContent>
       </Card>
@@ -112,6 +140,29 @@ export default function ConnectSpotlightTab() {
             <Sparkles className="h-4 w-4" />
             Create New Flyer
           </Button>
+
+          {/* Content Type Tiles */}
+          <div className="grid grid-cols-3 gap-2">
+            {CONTENT_TYPE_TILES.map(tile => {
+              const Icon = tile.icon;
+              return (
+                <button
+                  key={tile.value}
+                  onClick={() => handleTypeTileClick(tile.value)}
+                  className="group flex flex-col items-center gap-1.5 p-3 rounded-lg transition-all hover:scale-[1.02] cursor-pointer"
+                  style={{
+                    background: "hsl(240 6% 7%)",
+                    border: "1px solid hsl(240 6% 14%)",
+                  }}
+                >
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors group-hover:opacity-90" style={{ background: tile.color }}>
+                    <Icon className="h-4 w-4 text-white" />
+                  </div>
+                  <span className="text-[10px] font-medium text-muted-foreground group-hover:text-foreground transition-colors">{tile.label}</span>
+                </button>
+              );
+            })}
+          </div>
 
           {/* Brand Packages */}
           <Separator />
@@ -217,6 +268,3 @@ export default function ConnectSpotlightTab() {
     </div>
   );
 }
-
-// Need toast import
-import { toast } from "sonner";
