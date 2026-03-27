@@ -385,53 +385,6 @@ export default function ConnectSpotlightTab() {
         </CardContent>
       </Card>
 
-      {/* Editable Templates */}
-      <Card className="animate-fade-in" style={{ animationDelay: "160ms" }}>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <Layout className="h-4 w-4 text-primary" />
-            Editable Templates
-          </CardTitle>
-          <p className="text-[11px] text-muted-foreground">
-            Pick a template and customize it in the visual editor — Canva-style.
-          </p>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          {loadingTemplates ? (
-            <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
-          ) : templates.length === 0 ? (
-            <p className="text-xs text-muted-foreground text-center py-4">No templates available.</p>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {templates.map(t => (
-                <button
-                  key={t.id}
-                  onClick={() => openTemplateInEditor(t)}
-                  className="group text-left p-3 rounded-lg border border-border/50 hover:border-primary/50 bg-muted/20 hover:bg-muted/40 transition-all"
-                >
-                  <div className="w-full aspect-square rounded bg-muted/50 flex items-center justify-center mb-2 overflow-hidden">
-                    <div className="text-[8px] text-muted-foreground/50 text-center px-2">
-                      {t.base_width}×{t.base_height}
-                    </div>
-                  </div>
-                  <p className="text-xs font-medium truncate">{t.name}</p>
-                  <p className="text-[10px] text-muted-foreground truncate">{t.description || t.category}</p>
-                </button>
-              ))}
-              <button
-                onClick={openBlankEditor}
-                className="group text-left p-3 rounded-lg border border-dashed border-border/50 hover:border-primary/50 bg-muted/10 hover:bg-muted/30 transition-all"
-              >
-                <div className="w-full aspect-square rounded flex items-center justify-center mb-2">
-                  <Plus className="h-6 w-6 text-muted-foreground/40 group-hover:text-primary/60 transition-colors" />
-                </div>
-                <p className="text-xs font-medium text-muted-foreground">Start from Scratch</p>
-                <p className="text-[10px] text-muted-foreground/60">Blank 1080×1080 canvas</p>
-              </button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
 
       {/* Brand Packages */}
       <Card className="animate-fade-in" style={{ animationDelay: "240ms" }}>
