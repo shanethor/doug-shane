@@ -444,10 +444,16 @@ export default function ConnectSpotlightTab() {
       </Card>
 
       {/* Your Creations (Editor-based) */}
-      {creations.length > 0 && (
-        <Card className="animate-fade-in" style={{ animationDelay: "320ms" }}>
-          <CardHeader className="pb-3">
+      <Card className="animate-fade-in" style={{ animationDelay: "320ms" }}>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
             <CardTitle className="text-sm">Your Designs</CardTitle>
+            <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1" onClick={handleCreateFlyer}>
+              <Plus className="h-3 w-3" /> New Creation
+            </Button>
+          </div>
+        </CardHeader>
+        {creations.length > 0 ? (
           </CardHeader>
           <CardContent className="space-y-2">
             {creations.map(c => (
