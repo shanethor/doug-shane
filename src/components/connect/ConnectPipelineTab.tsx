@@ -130,6 +130,51 @@ export default function ConnectPipelineTab() {
   const [addLeadOpen, setAddLeadOpen] = useState(false);
   const [newLead, setNewLead] = useState({ account_name: "", contact_name: "", email: "", phone: "", target_premium: "", lead_source: "", stage: "prospect" });
   const [addingLead, setAddingLead] = useState(false);
+  const [draggedLeadId, setDraggedLeadId] = useState<string | null>(null);
+  const [dropTarget, setDropTarget] = useState<string | null>(null);
+
+  const handleDragStart = (e: React.DragEvent, leadId: string) => {
+    setDraggedLeadId(leadId);
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", leadId);
+    if (e.currentTarget instanceof HTMLElement) {
+      e.currentTarget.style.opacity = "0.5";
+    }
+  };
+
+  const handleDragEnd = (e: React.DragEvent) => {
+    setDraggedLeadId(null);
+    setDropTarget(null);
+    if (e.currentTarget instanceof HTMLElement) {
+      e.currentTarget.style.opacity = "1";
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent, stageKey: string) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    setDropTarget(stageKey);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    // Only clear if leaving the column container itself
+    if (e.currentTarget && !e.currentTarget.contains(e.relatedTarget as Node)) {
+      setDropTarget(null);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent, stageKey: string) => {
+    e.preventDefault();
+    setDropTarget(null);
+    const leadId = e.dataTransfer.getData("text/plain");
+    if (leadId) {
+      const lead = leads.find(l => l.id === leadId);
+      if (lead && lead.stage !== stageKey) {
+        moveStage(leadId, stageKey);
+      }
+    }
+    setDraggedLeadId(null);
+  };
 
   const handleAddLead = async () => {
     if (!user || !newLead.account_name.trim()) { toast.error("Account name is required"); return; }
