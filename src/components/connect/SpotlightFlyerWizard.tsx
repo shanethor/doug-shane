@@ -648,12 +648,61 @@ export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId, ini
     }
   };
 
+  const handleSelectTemplate = (template: SpotlightTemplate) => {
+    setRawPrompt(template.prompt);
+    setFlyerType(template.contentType);
+    setTitle(template.title);
+    setBullets(template.bullets);
+    setCta(template.cta);
+    if (template.disclaimer) setDisclaimer(template.disclaimer);
+    setStep(1);
+  };
+
   const typeLabel = FLYER_TYPES.find(t => t.value === flyerType)?.label || "Graphic";
+  const numericStep = typeof step === "number" ? step : 0;
 
   if (step === 0) {
     return (
       <div className="flex items-center justify-center py-16">
         <Loader2 className="h-8 w-8 animate-spin" style={{ color: "hsl(140 12% 58%)" }} />
+      </div>
+    );
+  }
+
+  if (step === "templates") {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8" style={{ color: "hsl(240 5% 56%)" }}>
+              <X className="h-4 w-4" />
+            </Button>
+            <div>
+              <h2 className="text-base font-bold flex items-center gap-2 text-white">
+                <Sparkles className="h-4 w-4" style={{ color: "hsl(140 12% 58%)" }} />
+                AuRa Create
+              </h2>
+              <p className="text-[10px]" style={{ color: "hsl(240 5% 50%)" }}>Choose a template</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-1.5">
+            {["T", 1, 2, 3, 4].map((s, i) => (
+              <div
+                key={i}
+                className="h-1.5 rounded-full transition-all"
+                style={{
+                  width: s === "T" ? 28 : 14,
+                  background: s === "T" ? "hsl(140 12% 50%)" : "hsl(240 6% 18%)",
+                }}
+              />
+            ))}
+          </div>
+        </div>
+        <Separator style={{ background: "hsl(240 6% 14%)" }} />
+        <SpotlightTemplateGallery
+          onSelectTemplate={handleSelectTemplate}
+          onStartFromScratch={() => setStep(1)}
+        />
       </div>
     );
   }
@@ -682,8 +731,8 @@ export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId, ini
               key={s}
               className="h-1.5 rounded-full transition-all"
               style={{
-                width: s === step ? 28 : 14,
-                background: s === step ? "hsl(140 12% 50%)" : s < step ? "hsl(140 12% 42% / 0.4)" : "hsl(240 6% 18%)",
+                width: s === numericStep ? 28 : 14,
+                background: s === numericStep ? "hsl(140 12% 50%)" : s < numericStep ? "hsl(140 12% 42% / 0.4)" : "hsl(240 6% 18%)",
               }}
             />
           ))}
