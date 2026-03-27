@@ -6,7 +6,7 @@ import StudioUpsellModal from "@/components/StudioUpsellModal";
 
 // Demo tab components (used as production pages)
 import DemoConnectTab from "@/components/connect-demo/DemoConnectTab";
-import DemoPipelineTab from "@/components/connect-demo/DemoPipelineTab";
+import ConnectPipelineTab from "@/components/connect/ConnectPipelineTab";
 import DemoEmailTab from "@/components/connect-demo/DemoEmailTab";
 import SmartCalendar from "@/components/connect/SmartCalendar";
 import DemoSpotlightTab from "@/components/connect-demo/DemoSpotlightTab";
