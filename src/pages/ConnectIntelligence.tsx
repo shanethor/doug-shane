@@ -790,7 +790,7 @@ export default function ConnectIntelligencePage() {
 
         <TabsContent value="inbox"><EmailIntelligencePage /></TabsContent>
         <TabsContent value="connections"><ConnectionManagerPage /></TabsContent>
-        <TabsContent value="map"><RelationshipMap /></TabsContent>
+        <TabsContent value="map"><MapWithListView /></TabsContent>
         <TabsContent value="analytics"><FeederListAnalytics /></TabsContent>
         <TabsContent value="settings"><ProspectSettingsPage /></TabsContent>
         <TabsContent value="privacy"><PrivacySettings /></TabsContent>
