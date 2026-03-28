@@ -445,7 +445,7 @@ function ResultsTable() {
   const handleEnrich = async (lead: EngineLead) => {
     setEnrichingId(lead.id);
     try {
-      const { data, error } = await supabase.functions.invoke("enrich-contact", {
+      const { data, error } = await supabase.functions.invoke("enrich-lead", {
         body: {
           company: lead.company,
           contact_name: lead.contact_name,
