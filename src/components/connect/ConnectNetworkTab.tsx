@@ -110,7 +110,7 @@ function ContactDetailCard({ contact, onUpdate, onClose }: {
             </Button>
           )}
           {contact.linkedin_url && (
-            <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => window.open(contact.linkedin_url!, "_blank")}>
+            <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => window.open(contact.linkedin_url!.startsWith("http") ? contact.linkedin_url! : `https://${contact.linkedin_url}`, "_blank")}>
               <Linkedin className="h-3 w-3" /> LinkedIn
             </Button>
           )}
