@@ -304,7 +304,7 @@ function EmailIntelligencePage() {
         const cleanedName = cleanName(nc.full_name);
         return {
           id: nc.id,
-          email_address: nc.email || "",
+          email_address: cleanVCard(nc.email) || "",
           display_name: cleanedName,
           first_name: cleanedName?.split(" ")[0] || null,
           last_name: cleanedName?.split(" ").slice(1).join(" ") || null,
