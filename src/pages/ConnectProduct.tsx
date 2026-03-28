@@ -134,6 +134,7 @@ export default function ConnectProduct() {
   const handleSageNavigate = (tab: string) => {
     const routes: Record<string, string> = {
       connect: "/connect",
+      leads: "/connect/leads",
       pipeline: "/connect/pipeline",
       email: "/connect/email",
       calendar: "/connect/calendar",
