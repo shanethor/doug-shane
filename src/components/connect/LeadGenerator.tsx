@@ -20,9 +20,12 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import {
   useCompanyProfile, useUpsertCompanyProfile,
-  useGeneratedLeads, useUpdateGeneratedLead, useDeleteGeneratedLead,
   type CompanyProfile,
 } from "@/hooks/useLeadsHub";
+import {
+  useEngineLeads, useUpdateEngineLead, useDeleteEngineLead,
+  type EngineLead,
+} from "@/hooks/useLeadEngine";
 
 const US_STATES = [
   "All States", "Alabama", "Alaska", "Arizona", "Arkansas", "California", "Colorado",
@@ -394,13 +397,16 @@ function FitScoreBadge({ score }: { score: number }) {
 }
 
 function ResultsTable() {
-  const { data: leads, isLoading } = useGeneratedLeads();
-  const updateLead = useUpdateGeneratedLead();
-  const deleteLead = useDeleteGeneratedLead();
+  const { data: leads, isLoading } = useEngineLeads();
+  const updateLead = useUpdateEngineLead();
+  const deleteLead = useDeleteEngineLead();
   const [search, setSearch] = useState("");
 
-  const filtered = (leads || []).filter((l) =>
-    !search || l.company_name.toLowerCase().includes(search.toLowerCase()) || l.location?.toLowerCase().includes(search.toLowerCase())
+  const filtered = (leads || []).filter((l: EngineLead) =>
+    !search ||
+    l.company.toLowerCase().includes(search.toLowerCase()) ||
+    l.state?.toLowerCase().includes(search.toLowerCase()) ||
+    l.industry?.toLowerCase().includes(search.toLowerCase())
   );
 
   if (isLoading) return <Skeleton className="h-40 w-full" />;
@@ -411,7 +417,7 @@ function ResultsTable() {
         <CardContent className="p-8 text-center">
           <Search className="h-8 w-8 text-muted-foreground/30 mx-auto mb-3" />
           <p className="text-sm font-medium mb-1">No generated leads yet</p>
-          <p className="text-xs text-muted-foreground">Set up your company profile and run the generator above</p>
+          <p className="text-xs text-muted-foreground">Set up your company profile and generate leads above</p>
         </CardContent>
       </Card>
     );
@@ -429,9 +435,6 @@ function ResultsTable() {
             <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
             <Input className="pl-7 h-8 text-xs w-[180px]" placeholder="Search…" value={search} onChange={(e) => setSearch(e.target.value)} />
           </div>
-          <Button variant="outline" size="sm" className="text-xs gap-1">
-            <Download className="h-3 w-3" /> Export
-          </Button>
         </div>
       </CardHeader>
       <CardContent className="p-0">
@@ -439,35 +442,34 @@ function ResultsTable() {
           <TableHeader>
             <TableRow>
               <TableHead className="text-xs">Company</TableHead>
-              <TableHead className="text-xs">Location</TableHead>
-              <TableHead className="text-xs">Fit</TableHead>
-              <TableHead className="text-xs">Intent</TableHead>
+              <TableHead className="text-xs">Industry</TableHead>
+              <TableHead className="text-xs">State</TableHead>
+              <TableHead className="text-xs">Est. Premium</TableHead>
+              <TableHead className="text-xs">Score</TableHead>
               <TableHead className="text-xs">Status</TableHead>
               <TableHead className="text-xs text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filtered.map((lead) => (
+            {filtered.map((lead: EngineLead) => (
               <TableRow key={lead.id}>
                 <TableCell className="py-2">
                   <div>
-                    <p className="text-xs font-medium">{lead.company_name}</p>
-                    {lead.website && <p className="text-[10px] text-muted-foreground">{lead.website}</p>}
+                    <p className="text-xs font-medium">{lead.company}</p>
+                    {lead.contact_name && <p className="text-[10px] text-muted-foreground">{lead.contact_name}</p>}
+                    {lead.signal && <p className="text-[9px] text-muted-foreground mt-0.5 max-w-[200px] truncate" title={lead.signal}>{lead.signal}</p>}
                   </div>
                 </TableCell>
-                <TableCell className="text-xs text-muted-foreground py-2">{lead.location || "—"}</TableCell>
-                <TableCell className="py-2"><FitScoreBadge score={lead.fit_score} /></TableCell>
+                <TableCell className="text-xs text-muted-foreground py-2">{lead.industry || "—"}</TableCell>
+                <TableCell className="text-xs text-muted-foreground py-2">{lead.state || "—"}</TableCell>
+                <TableCell className="text-xs py-2">${(lead.est_premium || 0).toLocaleString()}</TableCell>
+                <TableCell className="py-2"><FitScoreBadge score={lead.score || 0} /></TableCell>
                 <TableCell className="py-2">
-                  {lead.intent_score != null ? <FitScoreBadge score={lead.intent_score} /> : <span className="text-[10px] text-muted-foreground">—</span>}
-                </TableCell>
-                <TableCell className="py-2">
-                  <Badge variant={lead.status === "contacted" ? "default" : lead.status === "won" ? "default" : "secondary"} className="text-[10px]">
-                    {lead.status}
-                  </Badge>
+                  <Badge variant="secondary" className="text-[10px]">{lead.status}</Badge>
                 </TableCell>
                 <TableCell className="text-right py-2">
                   <div className="flex items-center gap-1 justify-end">
-                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => toast.info("Company detail view coming soon")}>
+                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => toast.info(lead.signal || "No signal data")}>
                       <Eye className="h-3 w-3" />
                     </Button>
                     <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { updateLead.mutate({ id: lead.id, status: "pipeline" }); toast.success("Added to pipeline"); }}>
@@ -799,7 +801,8 @@ export default function LeadGenerator() {
   const qc = useQueryClient();
   const handleGenerate = (_opts: any) => {
     // Refresh leads table after generation completes
-    setTimeout(() => qc.invalidateQueries({ queryKey: ["generated-leads"] }), 1500);
+    setTimeout(() => qc.invalidateQueries({ queryKey: ["engine-leads"] }), 1500);
+    setTimeout(() => qc.invalidateQueries({ queryKey: ["engine-leads"] }), 4000); // second refresh for slower connections
   };
 
   return (

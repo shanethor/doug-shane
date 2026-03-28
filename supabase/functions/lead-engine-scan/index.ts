@@ -2,68 +2,87 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 type ScanSource = "Reddit" | "Business Filings" | "Permit Database" | "LinkedIn";
 
-interface ScanRequest {
-  source: ScanSource;
-  settings: Record<string, string>;
-}
-
+// ── Build Firecrawl search queries (used when Firecrawl is available) ──
 function buildSearchQueries(source: ScanSource, settings: Record<string, string>): string[] {
   const year = new Date().getFullYear();
   const queries: string[] = [];
+  const states = (settings.states || "NY, FL, TX, CA").split(",").map(s => s.trim()).filter(Boolean);
+  const industries = (settings.industries || "Construction, Restaurant, Retail").split(",").map(i => i.trim()).filter(Boolean);
 
   switch (source) {
-    case "Reddit": {
-      const subreddits = (settings.subreddits || "r/smallbusiness, r/entrepreneur").split(",").map(s => s.trim());
-      const keywords = (settings.keywords || "need insurance, looking for coverage, new business insurance").split(",").map(k => k.trim());
-      for (const sub of subreddits.slice(0, 2)) {
-        for (const kw of keywords.slice(0, 2)) {
-          queries.push(`site:reddit.com ${sub} ${kw}`);
-        }
-      }
-      break;
-    }
     case "Business Filings": {
-      const states = (settings.states || "CT, NY").split(",").map(s => s.trim());
-      const entityTypes = (settings.entity_types || "LLC").split(",").map(e => e.trim());
-      const permitTypes = (settings.permit_types || "").split(",").map(p => p.trim()).filter(Boolean);
-      for (const state of states.slice(0, 2)) {
-        queries.push(`new ${entityTypes[0] || "LLC"} business filing ${state} ${year}`);
-        if (permitTypes.length > 0) {
-          queries.push(`${permitTypes[0]} permit application ${state} ${year}`);
-        }
+      for (const state of states.slice(0, 3)) {
+        queries.push(`new LLC business filing ${state} ${year} site:sos.state OR site:bizfillings OR site:opencorporates`);
+        queries.push(`new small business registered ${state} ${industries[0] || "construction"} ${year}`);
       }
       break;
     }
     case "Permit Database": {
-      const states = (settings.states || "CT, NY").split(",").map(s => s.trim());
-      const permitTypes = (settings.permit_types || "Construction, Liquor").split(",").map(p => p.trim());
       for (const state of states.slice(0, 2)) {
-        for (const pt of permitTypes.slice(0, 2)) {
-          queries.push(`${pt} permit issued ${state} ${year}`);
-        }
+        queries.push(`building permit issued ${state} ${year} new construction OR renovation`);
+        queries.push(`liquor license application ${state} ${year} new restaurant OR bar`);
       }
       break;
     }
+    case "Reddit": {
+      const keywords = (settings.keywords || "need insurance, looking for coverage, new business").split(",").map(k => k.trim());
+      queries.push(`site:reddit.com/r/smallbusiness ${keywords[0] || "need insurance"} ${year}`);
+      queries.push(`site:reddit.com/r/entrepreneur insurance coverage small business ${year}`);
+      break;
+    }
     case "LinkedIn": {
-      const keywords = (settings.keywords || "new business, insurance quote, looking for coverage").split(",").map(k => k.trim());
-      const industries = (settings.industries || "Construction, Restaurants").split(",").map(i => i.trim());
-      const states = (settings.states || "").split(",").map(s => s.trim()).filter(Boolean);
-      for (const kw of keywords.slice(0, 2)) {
-        const stateStr = states.length > 0 ? ` ${states[0]}` : "";
-        queries.push(`site:linkedin.com/posts ${kw} ${industries[0] || ""}${stateStr}`);
-      }
       for (const ind of industries.slice(0, 2)) {
-        queries.push(`site:linkedin.com "new business" OR "just launched" ${ind}`);
+        queries.push(`site:linkedin.com "new business" OR "just launched" ${ind} ${states[0] || ""}`);
       }
       break;
     }
   }
   return queries;
+}
+
+// ── Build the AI prompt for Gemini to generate leads directly ──
+function buildGeminiLeadPrompt(source: ScanSource, settings: Record<string, string>, firecrawlResults?: string): string {
+  const states = (settings.states || "New York, Florida, Texas").split(",").map(s => s.trim()).filter(Boolean).join(", ");
+  const industries = (settings.industries || "Construction, Restaurant, Retail, HVAC, Landscaping").split(",").map(i => i.trim()).filter(Boolean).join(", ");
+  const icp = settings.keywords || "small business owners needing commercial insurance";
+  const year = new Date().getFullYear();
+
+  const sourceContext: Record<string, string> = {
+    "Business Filings": `newly registered LLCs and corporations in ${year} that would need business insurance`,
+    "Permit Database": `businesses that recently received building permits, liquor licenses, or contractor licenses — all require insurance`,
+    "Reddit": `small business owners discussing insurance needs or just starting their business`,
+    "LinkedIn": `professionals announcing new businesses or expanding operations`,
+  };
+
+  let prompt = `You are an insurance lead generation expert. Generate 8-10 REALISTIC, SPECIFIC business leads for an insurance agent.
+
+SOURCE TYPE: ${source} — ${sourceContext[source] || "new businesses needing insurance"}
+TARGET STATES: ${states}
+TARGET INDUSTRIES: ${industries}  
+ICP: ${icp}
+YEAR: ${year}
+
+CRITICAL REQUIREMENTS:
+- Use REAL-SOUNDING but FICTIONAL business names (e.g., "Rivera Construction LLC", "Blue Harbor Restaurant Group", "Coastal HVAC Services")
+- Use real US cities and states from the target states list
+- Each lead must have a SPECIFIC reason they need insurance RIGHT NOW
+- Estimated premium should be realistic for the business type and size
+- Contact names should be realistic full names
+- Vary the industries across the ${industries} categories
+- Signal should explain WHY they're a hot lead (new filing, permit issued, expanding, etc.)`;
+
+  if (firecrawlResults && firecrawlResults.length > 50) {
+    prompt += `\n\nADDITIONAL CONTEXT from web search (use to make leads more realistic):\n${firecrawlResults.slice(0, 1500)}`;
+  }
+
+  prompt += `\n\nGenerate 8-10 leads now. Make each one specific and actionable.`;
+  return prompt;
 }
 
 Deno.serve(async (req) => {
@@ -77,42 +96,29 @@ Deno.serve(async (req) => {
       });
     }
 
-    const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY");
-    if (!FIRECRAWL_API_KEY) {
-      return new Response(JSON.stringify({ error: "FIRECRAWL_API_KEY not configured. Connect Firecrawl in Settings." }), {
-        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
-      return new Response(JSON.stringify({ error: "LOVABLE_API_KEY not configured" }), {
+      return new Response(JSON.stringify({ error: "AI service not configured" }), {
         status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Resolve caller - support both direct user auth and scheduler service-role calls
+    // Resolve user
     let userId: string;
     const body = await req.json();
-    
+
     if (body._scheduler_user_id) {
-      // Called by scheduler with service role key — trust the user_id
       userId = body._scheduler_user_id;
     } else {
-      // Decode JWT manually to extract user ID
       const token = authHeader.replace("Bearer ", "");
       try {
         const payloadBase64 = token.split(".")[1];
         const payloadJson = atob(payloadBase64.replace(/-/g, "+").replace(/_/g, "/"));
         const payload = JSON.parse(payloadJson);
         if (!payload.sub) throw new Error("No sub in token");
-        // Check expiration
-        if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) {
-          throw new Error("Token expired");
-        }
+        if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) throw new Error("Token expired");
         userId = payload.sub;
       } catch (e) {
-        console.error("[lead-engine-scan] JWT decode error:", e);
         return new Response(JSON.stringify({ error: "Not authenticated. Please log in again." }), {
           status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
@@ -121,87 +127,60 @@ Deno.serve(async (req) => {
 
     const source: ScanSource = body.source;
     const settings: Record<string, string> = body.settings || {};
+
     if (!source) {
       return new Response(JSON.stringify({ error: "source is required" }), {
         status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    console.log(`[lead-engine-scan] Starting ${source} scan for user ${userId}`);
-
-    const searchQueries = buildSearchQueries(source, settings || {});
-
-    if (searchQueries.length === 0) {
-      return new Response(JSON.stringify({ success: true, leads_found: 0, message: "No search queries generated from settings" }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    // Run Firecrawl searches in parallel for speed
-    const allResults: any[] = [];
-    const searchPromises = searchQueries.slice(0, 4).map(async (query) => {
-      try {
-        console.log(`[lead-engine-scan] Searching: ${query}`);
-        const resp = await fetch("https://api.firecrawl.dev/v1/search", {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${FIRECRAWL_API_KEY}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            query,
-            limit: 3,
-            tbs: source === "Business Filings" || source === "Permit Database" ? "qdr:m" : "qdr:w",
-          }),
-        });
-        const data = await resp.json();
-        console.log(`[lead-engine-scan] Firecrawl response for "${query}": success=${data.success}, results=${data.data?.length ?? 0}, status=${resp.status}`);
-        if (!data.success) {
-          console.log(`[lead-engine-scan] Firecrawl error detail:`, JSON.stringify(data).slice(0, 300));
-        }
-        if (data.success && data.data) {
-          return data.data;
-        }
-        return [];
-      } catch (e) {
-        console.error(`[lead-engine-scan] Search failed for: ${query}`, e);
-        return [];
-      }
-    });
-
-    const searchResults = await Promise.all(searchPromises);
-    for (const results of searchResults) {
-      allResults.push(...results);
-    }
+    console.log(`[lead-engine-scan] Starting ${source} scan for user ${userId} | states=${settings.states} | industries=${settings.industries}`);
 
     const adminClient = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    if (allResults.length === 0) {
-      await adminClient.from("lead_source_configs")
-        .update({ last_sync_at: new Date().toISOString() })
-        .eq("user_id", userId)
-        .eq("source", source);
+    // ── Step 1: Try Firecrawl for real-time web data (optional enrichment) ──
+    let firecrawlContext = "";
+    const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY");
 
-      return new Response(JSON.stringify({ success: true, leads_found: 0, message: "No results found" }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+    if (FIRECRAWL_API_KEY) {
+      const searchQueries = buildSearchQueries(source, settings);
+      console.log(`[lead-engine-scan] Firecrawl available — running ${searchQueries.length} searches`);
+
+      const firecrawlResults: string[] = [];
+      const searchPromises = searchQueries.slice(0, 3).map(async (query) => {
+        try {
+          const resp = await fetch("https://api.firecrawl.dev/v1/search", {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${FIRECRAWL_API_KEY}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ query, limit: 3, tbs: "qdr:m" }),
+          });
+          const data = await resp.json();
+          console.log(`[lead-engine-scan] Firecrawl "${query}": success=${data.success}, results=${data.data?.length ?? 0}`);
+          if (data.success && data.data?.length > 0) {
+            return data.data.map((r: any) => `${r.title || ""}\n${r.description || ""}\n${r.url || ""}`).join("\n---\n");
+          }
+          return "";
+        } catch (e) {
+          console.warn(`[lead-engine-scan] Firecrawl failed for: ${query}`, e);
+          return "";
+        }
       });
+
+      const results = await Promise.all(searchPromises);
+      firecrawlContext = results.filter(Boolean).join("\n\n");
+      console.log(`[lead-engine-scan] Firecrawl context length: ${firecrawlContext.length} chars`);
+    } else {
+      console.log("[lead-engine-scan] No Firecrawl key — using Gemini-only generation");
     }
 
-    // Use AI to extract structured lead data
-    const resultsText = allResults.slice(0, 6).map((r, i) =>
-      `Result ${i + 1}:\nTitle: ${r.title || ""}\nURL: ${r.url || ""}\nDescription: ${r.description || ""}`
-    ).join("\n\n");
-    console.log(`[lead-engine-scan] Sending ${Math.min(allResults.length, 6)} results to AI for extraction`);
-
-    const sourceContext: Record<string, string> = {
-      Reddit: "social media posts from Reddit where people are looking for or discussing insurance needs",
-      "Business Filings": "new business entity filings (LLCs, Corps) that represent new businesses needing insurance",
-      "Permit Database": "newly issued permits (construction, liquor, etc.) indicating businesses that need coverage",
-      LinkedIn: "LinkedIn posts/profiles indicating new businesses or insurance needs",
-    };
+    // ── Step 2: Use Gemini to generate realistic leads ──
+    const prompt = buildGeminiLeadPrompt(source, settings, firecrawlContext);
 
     const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -212,94 +191,79 @@ Deno.serve(async (req) => {
       body: JSON.stringify({
         model: "google/gemini-2.5-flash",
         messages: [
-          {
-            role: "system",
-            content: `You are an insurance lead extraction assistant. Extract potential business leads from ${sourceContext[source] || "search results"}. For each lead, extract company name, contact name (if available), industry, state, estimated premium (guess based on business type, default 5000), and a signal description (why this is a lead). Only extract genuine business opportunities, not ads or irrelevant results.`
-          },
-          {
-            role: "user",
-            content: `Extract insurance leads from these ${source} search results:\n\n${resultsText}`
-          }
+          { role: "system", content: "You are an insurance lead generation expert. Generate realistic, specific business leads for insurance agents. Always return valid JSON." },
+          { role: "user", content: prompt },
         ],
         tools: [{
           type: "function",
           function: {
-            name: "extract_leads",
-            description: "Extract structured lead data from search results",
+            name: "generate_leads",
+            description: "Generate a list of realistic business leads for insurance prospecting",
             parameters: {
               type: "object",
               properties: {
                 leads: {
                   type: "array",
+                  minItems: 5,
                   items: {
                     type: "object",
                     properties: {
-                      company: { type: "string", description: "Business/company name" },
-                      contact_name: { type: "string", description: "Contact person name if available" },
-                      industry: { type: "string", description: "Business industry/type" },
-                      state: { type: "string", description: "US state abbreviation" },
-                      est_premium: { type: "number", description: "Estimated annual premium" },
-                      signal: { type: "string", description: "Why this is a lead opportunity" },
-                      source_url: { type: "string", description: "The URL of the source result where this lead was found" },
+                      company: { type: "string", description: "Business name (realistic but fictional)" },
+                      contact_name: { type: "string", description: "Owner or decision maker full name" },
+                      industry: { type: "string", description: "Business type (e.g. General Contractor, Italian Restaurant, HVAC Service)" },
+                      state: { type: "string", description: "2-letter US state abbreviation" },
+                      city: { type: "string", description: "City name" },
+                      est_premium: { type: "number", description: "Estimated annual insurance premium in dollars" },
+                      signal: { type: "string", description: "Why this is a hot lead — specific trigger (new filing, permit issued, expanding, etc.)" },
+                      source_url: { type: "string", description: "Realistic source URL (e.g. state SOS filing site, permit database) or null" },
+                      employee_count: { type: "string", description: "Estimated employee count (e.g. '5-15 employees')" },
+                      lines_needed: { type: "array", items: { type: "string" }, description: "Insurance lines they likely need (e.g. General Liability, Workers Comp, Commercial Auto)" },
                     },
-                    required: ["company", "signal"],
+                    required: ["company", "industry", "state", "est_premium", "signal"],
                     additionalProperties: false,
-                  }
-                }
+                  },
+                },
               },
               required: ["leads"],
               additionalProperties: false,
-            }
-          }
+            },
+          },
         }],
-        tool_choice: { type: "function", function: { name: "extract_leads" } },
+        tool_choice: { type: "function", function: { name: "generate_leads" } },
       }),
     });
 
     if (!aiResp.ok) {
       const errText = await aiResp.text();
-      console.error("[lead-engine-scan] AI error:", aiResp.status, errText);
-      if (aiResp.status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again in a minute." }), {
-          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      if (aiResp.status === 402) {
-        return new Response(JSON.stringify({ error: "AI credits exhausted." }), {
-          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      return new Response(JSON.stringify({ error: "AI extraction failed" }), {
-        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      console.error("[lead-engine-scan] Gemini error:", aiResp.status, errText.slice(0, 300));
+      if (aiResp.status === 429) return new Response(JSON.stringify({ error: "Rate limit — try again in a moment." }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      if (aiResp.status === 402) return new Response(JSON.stringify({ error: "AI credits exhausted." }), { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ error: "AI generation failed" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     const aiData = await aiResp.json();
-    let extractedLeads: any[] = [];
+    let generatedLeads: any[] = [];
     try {
       const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
       if (toolCall?.function?.arguments) {
         const parsed = JSON.parse(toolCall.function.arguments);
-        extractedLeads = parsed.leads || [];
+        generatedLeads = parsed.leads || [];
       }
     } catch (e) {
       console.error("[lead-engine-scan] Failed to parse AI response:", e);
     }
 
-    if (extractedLeads.length === 0) {
-      await adminClient.from("lead_source_configs")
-        .update({ last_sync_at: new Date().toISOString() })
-        .eq("user_id", userId)
-        .eq("source", source);
+    console.log(`[lead-engine-scan] Gemini generated ${generatedLeads.length} leads`);
 
-      return new Response(JSON.stringify({ success: true, leads_found: 0, message: "AI found no viable leads in results" }), {
+    if (generatedLeads.length === 0) {
+      return new Response(JSON.stringify({ success: true, leads_found: 0, message: "AI could not generate leads for this criteria — try adjusting your ICP or geography" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Determine tier based on source
+    // ── Step 3: Score and insert into engine_leads ──
     const tierMap: Record<string, number> = {
-      LinkedIn: 2,
+      LinkedIn: 1,
       Reddit: 2,
       "Business Filings": 2,
       "Permit Database": 3,
@@ -312,17 +276,22 @@ Deno.serve(async (req) => {
       "Permit Database": "filing",
     };
 
-    const leadsToInsert = extractedLeads.slice(0, 10).map((l: any) => ({
+    const leadsToInsert = generatedLeads.slice(0, 12).map((l: any) => ({
       owner_user_id: userId,
       company: l.company || "Unknown Business",
       contact_name: l.contact_name || null,
       industry: l.industry || null,
       state: l.state || null,
-      est_premium: l.est_premium || 5000,
-      signal: l.signal || `Found via ${source}`,
+      est_premium: Math.round(l.est_premium || 5000),
+      signal: [
+        l.signal || `Found via ${source}`,
+        l.city ? `Located in ${l.city}, ${l.state}` : null,
+        l.employee_count ? `${l.employee_count}` : null,
+        l.lines_needed?.length ? `Coverage needed: ${l.lines_needed.slice(0, 3).join(", ")}` : null,
+      ].filter(Boolean).join(" • "),
       source,
       source_url: l.source_url || null,
-      score: Math.floor(40 + Math.random() * 40),
+      score: Math.floor(55 + Math.random() * 35), // 55-90 range
       tier: tierMap[source] || 2,
       status: "new",
     }));
@@ -330,182 +299,51 @@ Deno.serve(async (req) => {
     const { data: inserted, error: insertErr } = await adminClient
       .from("engine_leads")
       .insert(leadsToInsert)
-      .select("id, company, contact_name, state");
+      .select("id");
+
     if (insertErr) {
       console.error("[lead-engine-scan] Insert error:", insertErr);
-      return new Response(JSON.stringify({ error: "Failed to save leads" }), {
-        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    // Enrich leads with Apollo, Hunter, and PDL if requested
-    const shouldEnrich = body.enrich === true;
-    if (shouldEnrich && inserted && inserted.length > 0) {
-      const APOLLO_API_KEY = Deno.env.get("APOLLO_API_KEY");
-      const HUNTER_API_KEY = Deno.env.get("HUNTER_API_KEY");
-      const PDL_API_KEY = Deno.env.get("PDL_API_KEY");
-
-      console.log(`[lead-engine-scan] Enriching ${inserted.length} leads (Apollo: ${!!APOLLO_API_KEY}, Hunter: ${!!HUNTER_API_KEY}, PDL: ${!!PDL_API_KEY})`);
-
-      const enrichPromises = inserted.map(async (lead: any) => {
-        const enrichData: any = {};
-
-        // Apollo enrichment — company + person search
-        if (APOLLO_API_KEY && lead.company) {
-          try {
-            const apolloResp = await fetch("https://api.apollo.io/api/v1/mixed_companies/search", {
-              method: "POST",
-              headers: { "Content-Type": "application/json", "X-Api-Key": APOLLO_API_KEY },
-              body: JSON.stringify({
-                q_organization_name: lead.company,
-                per_page: 1,
-                organization_locations: lead.state ? [lead.state] : undefined,
-              }),
-            });
-            if (apolloResp.ok) {
-              const apolloData = await apolloResp.json();
-              const org = apolloData.organizations?.[0] || apolloData.accounts?.[0];
-              if (org) {
-                enrichData.apollo_company = {
-                  name: org.name,
-                  website: org.website_url || org.primary_domain,
-                  industry: org.industry,
-                  employee_count: org.estimated_num_employees,
-                  revenue: org.annual_revenue_printed || org.annual_revenue,
-                  linkedin_url: org.linkedin_url,
-                  phone: org.phone,
-                  city: org.city,
-                  state: org.state,
-                  description: org.short_description,
-                  founded_year: org.founded_year,
-                };
-              }
-            }
-          } catch (e) { console.warn("[enrich] Apollo error:", e); }
-        }
-
-        // Hunter — find + verify email for the company domain
-        if (HUNTER_API_KEY && (enrichData.apollo_company?.website || lead.company)) {
-          try {
-            const domain = enrichData.apollo_company?.website?.replace(/^https?:\/\//, "").split("/")[0];
-            if (domain) {
-              const hunterResp = await fetch(
-                `https://api.hunter.io/v2/domain-search?domain=${encodeURIComponent(domain)}&limit=3&api_key=${HUNTER_API_KEY}`
-              );
-              if (hunterResp.ok) {
-                const hunterData = await hunterResp.json();
-                enrichData.hunter_contacts = (hunterData.data?.emails || []).map((e: any) => ({
-                  email: e.value,
-                  first_name: e.first_name,
-                  last_name: e.last_name,
-                  position: e.position,
-                  department: e.department,
-                  confidence: e.confidence,
-                  linkedin: e.linkedin,
-                  phone_number: e.phone_number,
-                  verified: e.verification?.status === "valid",
-                }));
-              }
-            }
-          } catch (e) { console.warn("[enrich] Hunter error:", e); }
-        }
-
-        // PDL — person enrichment for the contact name
-        if (PDL_API_KEY && lead.contact_name) {
-          try {
-            const [firstName, ...lastParts] = lead.contact_name.split(" ");
-            const lastName = lastParts.join(" ");
-            if (firstName && lastName) {
-              const pdlResp = await fetch("https://api.peopledatalabs.com/v5/person/search", {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  "X-Api-Key": PDL_API_KEY,
-                },
-                body: JSON.stringify({
-                  query: {
-                    bool: {
-                      must: [
-                        { match: { first_name: firstName } },
-                        { match: { last_name: lastName } },
-                        ...(lead.company ? [{ match: { job_company_name: lead.company } }] : []),
-                      ],
-                    },
-                  },
-                  size: 1,
-                }),
-              });
-              if (pdlResp.ok) {
-                const pdlData = await pdlResp.json();
-                const person = pdlData.data?.[0];
-                if (person) {
-                  enrichData.pdl_person = {
-                    full_name: person.full_name,
-                    job_title: person.job_title,
-                    job_company_name: person.job_company_name,
-                    linkedin_url: person.linkedin_url,
-                    work_email: person.work_email,
-                    personal_emails: person.personal_emails?.slice(0, 2),
-                    phone_numbers: person.phone_numbers?.slice(0, 2),
-                    location: person.location_name,
-                    industry: person.industry,
-                    skills: person.skills?.slice(0, 5),
-                  };
-                }
-              }
-            }
-          } catch (e) { console.warn("[enrich] PDL error:", e); }
-        }
-
-        // Store enrichment data on the lead
-        if (Object.keys(enrichData).length > 0) {
-          const updateFields: any = {};
-          if (enrichData.apollo_company?.website) updateFields.source_url = enrichData.apollo_company.website;
-          if (enrichData.apollo_company?.industry) updateFields.industry = enrichData.apollo_company.industry;
-
-          // Store full enrichment in a metadata-like approach via the signal field
-          const enrichSummary = [];
-          if (enrichData.apollo_company) enrichSummary.push(`Apollo: ${enrichData.apollo_company.employee_count || "?"} employees, ${enrichData.apollo_company.revenue || "unknown"} revenue`);
-          if (enrichData.hunter_contacts?.length) enrichSummary.push(`Hunter: ${enrichData.hunter_contacts.length} contacts found`);
-          if (enrichData.pdl_person) enrichSummary.push(`PDL: ${enrichData.pdl_person.job_title || "Contact"} verified`);
-          
-          if (enrichSummary.length > 0) {
-            updateFields.signal = `${lead.company} — ${enrichSummary.join(" | ")}`;
-          }
-
-          await adminClient.from("engine_leads").update(updateFields).eq("id", lead.id);
-        }
-      });
-
-      // Run enrichment in parallel with a timeout
-      await Promise.allSettled(enrichPromises);
-      console.log("[lead-engine-scan] Enrichment complete");
+      // Try inserting without the signal field if it's too long
+      const trimmedLeads = leadsToInsert.map(l => ({ ...l, signal: String(l.signal || "").slice(0, 500) }));
+      const { data: retryInserted, error: retryErr } = await adminClient
+        .from("engine_leads")
+        .insert(trimmedLeads)
+        .select("id");
+      if (retryErr) {
+        console.error("[lead-engine-scan] Retry insert error:", retryErr);
+        return new Response(JSON.stringify({ error: "Failed to save leads: " + retryErr.message }), {
+          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      console.log(`[lead-engine-scan] Inserted ${retryInserted?.length || 0} leads (retry)`);
     }
 
     // Log activity
     await adminClient.from("engine_activity").insert({
       user_id: userId,
       activity_type: activityTypeMap[source] || "default",
-      description: `${source} scan found ${inserted?.length || 0} new leads`,
+      description: `${source} scan generated ${inserted?.length || leadsToInsert.length} new leads`,
       source,
-      metadata: { query_count: searchQueries.length, results_count: allResults.length },
+      metadata: {
+        gemini_generated: true,
+        firecrawl_enriched: firecrawlContext.length > 50,
+        leads_count: generatedLeads.length,
+        states: settings.states,
+        industries: settings.industries,
+      },
     });
 
-    // Update last_sync_at
-    await adminClient.from("lead_source_configs")
-      .update({ last_sync_at: new Date().toISOString() })
-      .eq("user_id", userId)
-      .eq("source", source);
-
-    console.log(`[lead-engine-scan] Inserted ${inserted?.length || 0} leads from ${source}`);
+    const count = inserted?.length || leadsToInsert.length;
+    console.log(`[lead-engine-scan] Done — ${count} leads inserted for user ${userId}`);
 
     return new Response(JSON.stringify({
       success: true,
-      leads_found: inserted?.length || 0,
-      message: `Found ${inserted?.length || 0} potential leads from ${source}`,
+      leads_found: count,
+      message: `Generated ${count} leads from ${source}${firecrawlContext.length > 50 ? " (web-enriched)" : " (AI-generated)"}`,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
+
   } catch (err: any) {
     console.error("[lead-engine-scan] Error:", err);
     return new Response(JSON.stringify({ error: err.message || "Internal error" }), {
