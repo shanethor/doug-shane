@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, lazy, Suspense } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -9,7 +9,9 @@ import { toast } from "sonner";
 import { Sparkles, Image as ImageIcon, Palette, Pencil, Trash2, Plus, Heart, RefreshCw, UserPlus, Lightbulb, Calendar, Zap, Loader2, Layout } from "lucide-react";
 import SpotlightFlyerWizard from "./SpotlightFlyerWizard";
 import SpotlightBrandSetup, { type BrandPackage } from "./SpotlightBrandSetup";
-import DesignEditor from "./DesignEditor";
+
+// Lazy-load fabric-based editor so it doesn't block initial parse
+const DesignEditor = lazy(() => import("./DesignEditor"));
 
 import templateSeasonalPromo from "@/assets/templates/seasonal-promo.jpg";
 import templateEventInvite from "@/assets/templates/event-invite.jpg";
@@ -289,18 +291,20 @@ export default function ConnectSpotlightTab() {
 
   if (view === "editor" && editorProps) {
     return (
-      <DesignEditor
-        creationId={editorProps.creationId}
-        templateId={editorProps.templateId}
-        initialDesignJson={editorProps.designJson}
-        width={editorProps.width}
-        height={editorProps.height}
-        title={editorProps.title}
-        brandColors={defaultBrand?.brand_colors}
-        brandName={defaultBrand?.brand_name}
-        disclaimer={defaultBrand?.disclaimer}
-        onBack={() => { setView("home"); loadCreations(); }}
-      />
+      <Suspense fallback={<div className="flex items-center justify-center h-64"><Loader2 className="h-6 w-6 animate-spin" style={{ color: "hsl(140 12% 58%)" }} /></div>}>
+        <DesignEditor
+          creationId={editorProps.creationId}
+          templateId={editorProps.templateId}
+          initialDesignJson={editorProps.designJson}
+          width={editorProps.width}
+          height={editorProps.height}
+          title={editorProps.title}
+          brandColors={defaultBrand?.brand_colors}
+          brandName={defaultBrand?.brand_name}
+          disclaimer={defaultBrand?.disclaimer}
+          onBack={() => { setView("home"); loadCreations(); }}
+        />
+      </Suspense>
     );
   }
 

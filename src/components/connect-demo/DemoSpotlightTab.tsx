@@ -1,16 +1,17 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, lazy, Suspense } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  Sparkles, Image as ImageIcon, Palette, Pencil, Plus, Download, Trash2, Wand2, LayoutTemplate,
+  Sparkles, Image as ImageIcon, Palette, Pencil, Plus, Download, Trash2, Wand2, LayoutTemplate, Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 import SpotlightFlyerWizard from "@/components/connect/SpotlightFlyerWizard";
 import SpotlightBrandSetup, { type BrandPackage } from "@/components/connect/SpotlightBrandSetup";
-import TemplateEditor from "@/components/connect/TemplateEditor";
+// Lazy-load to avoid blocking Lovable's component scanner
+const TemplateEditor = lazy(() => import("@/components/connect/TemplateEditor"));
 import { SPOTLIGHT_TEMPLATES } from "@/components/connect/spotlight-templates";
 import newClientWelcomeImg from "@/assets/templates/new-client-welcome.jpg";
 import renewalReminderImg from "@/assets/templates/renewal-reminder.jpg";
@@ -143,11 +144,13 @@ export default function DemoSpotlightTab() {
     return (
       <Card style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 14%)" }}>
         <CardContent className="p-0">
-          <TemplateEditor
-            templateId={activeTemplateId}
-            brands={realBrands.length > 0 ? realBrands : SAMPLE_BRANDS}
-            onBack={() => { setView("home"); setHomeTab("templates"); }}
-          />
+          <Suspense fallback={<div className="flex items-center justify-center h-64"><Loader2 className="h-6 w-6 animate-spin" style={{ color: "hsl(140 12% 58%)" }} /></div>}>
+            <TemplateEditor
+              templateId={activeTemplateId}
+              brands={realBrands.length > 0 ? realBrands : SAMPLE_BRANDS}
+              onBack={() => { setView("home"); setHomeTab("templates"); }}
+            />
+          </Suspense>
         </CardContent>
       </Card>
     );
