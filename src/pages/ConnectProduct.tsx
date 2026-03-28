@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { ProductLayout } from "@/components/ProductLayout";
 import { useSubscription } from "@/hooks/useSubscription";
-import StudioUpsellModal from "@/components/StudioUpsellModal";
+import StudioUpsellPage from "@/components/StudioUpsellPage";
 
 // Demo tab components (used as production pages)
 import DemoConnectTab from "@/components/connect-demo/DemoConnectTab";
