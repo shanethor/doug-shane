@@ -1051,7 +1051,7 @@ function MapWithListView() {
                       const confirmed = window.confirm(`Delete ${c.display_name || "this contact"}?`);
                       if (!confirmed) return;
                       const { error } = await supabase.from("canonical_persons").delete().eq("id", c.id);
-                      if (error) { toast.error("Failed to delete contact"); return; }
+                      if (error) { console.error("Delete contact error:", error); toast.error(`Failed to delete: ${error.message}`); return; }
                       setContacts(prev => prev.filter(x => x.id !== c.id));
                       toast.success("Contact deleted");
                     }}>
