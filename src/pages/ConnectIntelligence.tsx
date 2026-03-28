@@ -49,6 +49,9 @@ interface DiscoveredContact {
   twitter_url?: string | null;
   enrichment_source?: string | null;
   employment_history?: any[] | null;
+  classification_type?: string | null;
+  classification_confidence?: number | null;
+  is_filtered?: boolean | null;
 }
 
 interface ProspectProfile {
