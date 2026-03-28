@@ -60,21 +60,36 @@ serve(async (req) => {
 
     const body = await req.json().catch(() => ({}));
     const selectedBranch = body.branch || "property";
+    const product = body.product || "connect";
+    const priceId = body.price_id || "price_1TCnlREISdUzafyhciDRHyxM";
+    const coupon = body.coupon;
+    const successUrl = body.success_url || `${req.headers.get("origin")}/connect?checkout=success`;
+    const cancelUrl = body.cancel_url || `${req.headers.get("origin")}/request-access?checkout=cancelled`;
 
-    const session = await stripe.checkout.sessions.create({
+    const isStudio = product === "studio";
+
+    const sessionParams: any = {
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
-      line_items: [{ price: "price_1TCnlREISdUzafyhciDRHyxM", quantity: 1 }],
+      line_items: [{ price: priceId, quantity: 1 }],
       mode: "subscription",
-      discounts: [{ coupon: "9BtS7KcT" }],
       subscription_data: {
-        metadata: { user_id: user.id, branch: selectedBranch },
-        trial_period_days: 14,
+        metadata: { user_id: user.id, branch: selectedBranch, product },
       },
-      metadata: { user_id: user.id, branch: selectedBranch },
-      success_url: `${req.headers.get("origin")}/connect?checkout=success`,
-      cancel_url: `${req.headers.get("origin")}/request-access?checkout=cancelled`,
-    });
+      metadata: { user_id: user.id, branch: selectedBranch, product },
+      success_url: successUrl,
+      cancel_url: cancelUrl,
+    };
+
+    // Apply discounts: Studio uses passed coupon, Connect uses intro coupon + trial
+    if (isStudio && coupon) {
+      sessionParams.discounts = [{ coupon }];
+    } else if (!isStudio) {
+      sessionParams.discounts = [{ coupon: "9BtS7KcT" }];
+      sessionParams.subscription_data.trial_period_days = 14;
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionParams);
 
     logStep("Checkout session created", { sessionId: session.id });
 
