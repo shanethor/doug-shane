@@ -196,7 +196,8 @@ function EmailIntelligencePage() {
   const [allContacts, setAllContacts] = useState<DiscoveredContact[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
-  const [inboxTab, setInboxTab] = useState<"people" | "companies" | "saved" | "filtered">("people");
+  const [inboxTab, setInboxTab] = useState<"people" | "companies" | "saved_people" | "saved_companies" | "filtered">("people");
+  const [savedEntityFilter, setSavedEntityFilter] = useState<"people" | "companies">("people");
   const [showFiltered, setShowFiltered] = useState(false);
   const [enrichingId, setEnrichingId] = useState<string | null>(null);
 
@@ -216,6 +217,8 @@ function EmailIntelligencePage() {
 
   // Classify contacts into tabs
   const saved = allContacts.filter(c => c.status === "saved_to_contacts");
+  const savedPeople = saved.filter(c => c.contact_type !== "company");
+  const savedCompanies = saved.filter(c => c.contact_type === "company");
   const active = allContacts.filter(c => c.status !== "saved_to_contacts");
 
   const classified = active.map(c => {
@@ -240,7 +243,8 @@ function EmailIntelligencePage() {
 
   const displayList = inboxTab === "people" ? people
     : inboxTab === "companies" ? companies
-    : inboxTab === "saved" ? saved
+    : inboxTab === "saved_people" ? savedPeople
+    : inboxTab === "saved_companies" ? savedCompanies
     : filtered;
 
   const newThisWeek = people.filter(c => new Date(c.first_seen_at) >= new Date(Date.now() - 7 * 86400000)).length;
@@ -273,7 +277,7 @@ function EmailIntelligencePage() {
     toast.success("Contact rescued to People");
   }
 
-  async function saveContact(id: string) {
+  async function saveContact(id: string, entityType: "person" | "company" = "person") {
     const contact = allContacts.find(c => c.id === id);
     if (!contact) return;
 
@@ -306,9 +310,11 @@ function EmailIntelligencePage() {
         title: contact.hunter_position || null,
         linkedin_url: contact.hunter_linkedin_url || null,
         primary_phone: contact.hunter_phone || null,
+        is_business_owner: entityType === "company",
         tier: (contact.prospect_score || 0) >= 80 ? "A" : (contact.prospect_score || 0) >= 60 ? "B" : "C",
         metadata: {
           source: "email_discovery",
+          entity_type: entityType,
           prospect_score: contact.prospect_score,
           hunter_verified: contact.hunter_verified,
           email_frequency: contact.email_frequency,
@@ -316,9 +322,10 @@ function EmailIntelligencePage() {
       });
       if (insertErr) throw insertErr;
 
-      await supabase.from("email_discovered_contacts" as any).update({ status: "saved_to_contacts" }).eq("id", id);
-      setAllContacts(prev => prev.map(c => c.id === id ? { ...c, status: "saved_to_contacts" } : c));
-      toast.success("Saved to contacts");
+      // Also update contact_type on the discovered contact record
+      await supabase.from("email_discovered_contacts" as any).update({ status: "saved_to_contacts", contact_type: entityType } as any).eq("id", id);
+      setAllContacts(prev => prev.map(c => c.id === id ? { ...c, status: "saved_to_contacts", contact_type: entityType } : c));
+      toast.success(entityType === "company" ? "Saved as company" : "Saved as person");
     } catch (err: any) {
       toast.error(err.message || "Failed to save contact");
     } finally {
@@ -342,7 +349,7 @@ function EmailIntelligencePage() {
         </div>
       </div>
 
-      {/* Tab bar: People / Companies / Saved / Filtered */}
+      {/* Tab bar: People / Companies / Saved People / Saved Companies / Filtered */}
       <div className="flex gap-1.5 flex-wrap">
         <Button
           variant={inboxTab === "people" ? "default" : "outline"}
@@ -361,12 +368,20 @@ function EmailIntelligencePage() {
           <Building2 className="h-3 w-3" /> Companies ({companies.length})
         </Button>
         <Button
-          variant={inboxTab === "saved" ? "default" : "outline"}
+          variant={inboxTab === "saved_people" ? "default" : "outline"}
           size="sm"
-          onClick={() => setInboxTab("saved")}
+          onClick={() => setInboxTab("saved_people")}
           className="text-xs gap-1"
         >
-          <CheckCircle className="h-3 w-3" /> Saved ({saved.length})
+          <CheckCircle className="h-3 w-3" /> Saved People ({savedPeople.length})
+        </Button>
+        <Button
+          variant={inboxTab === "saved_companies" ? "default" : "outline"}
+          size="sm"
+          onClick={() => setInboxTab("saved_companies")}
+          className="text-xs gap-1"
+        >
+          <Building2 className="h-3 w-3" /> Saved Companies ({savedCompanies.length})
         </Button>
         <Button
           variant={inboxTab === "filtered" ? "secondary" : "ghost"}
@@ -387,13 +402,15 @@ function EmailIntelligencePage() {
             <p className="font-medium">
               {inboxTab === "people" ? "No people discovered yet" :
                inboxTab === "companies" ? "No company contacts found" :
-               inboxTab === "saved" ? "No saved contacts" :
+               inboxTab === "saved_people" ? "No saved people" :
+               inboxTab === "saved_companies" ? "No saved companies" :
                "No filtered contacts"}
             </p>
             <p className="text-sm text-muted-foreground mt-1">
               {inboxTab === "people" ? "Connect your email and run a scan to discover contacts." :
                inboxTab === "companies" ? "Business contacts will appear here after scanning." :
-               inboxTab === "saved" ? "Contacts you save will appear here." :
+               inboxTab === "saved_people" ? "People you save will appear here." :
+               inboxTab === "saved_companies" ? "Companies you save will appear here." :
                "Spam and automated senders are filtered here."}
             </p>
             {inboxTab === "people" && (
@@ -409,7 +426,7 @@ function EmailIntelligencePage() {
           {displayList.map(c => (
             <Card key={c.id} className="border-border/50">
               <CardContent className="py-3 px-4">
-                {inboxTab === "saved" ? (
+                {(inboxTab === "saved_people" || inboxTab === "saved_companies") ? (
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-3 min-w-0 flex-1">
                       {c.profile_photo_url ? (
@@ -420,7 +437,10 @@ function EmailIntelligencePage() {
                         </div>
                       )}
                       <div className="min-w-0">
-                        <p className="text-sm font-medium truncate">{c.display_name || c.email_address}</p>
+                        <div className="flex items-center gap-1.5">
+                          <p className="text-sm font-medium truncate">{c.display_name || c.email_address}</p>
+                          {inboxTab === "saved_companies" && <Building2 className="h-3 w-3 text-muted-foreground shrink-0" />}
+                        </div>
                         {c.display_name && <p className="text-xs text-muted-foreground truncate">{c.email_address}</p>}
                         {c.hunter_company && <p className="text-xs text-muted-foreground">{c.hunter_company}{c.hunter_position ? ` · ${c.hunter_position}` : ""}</p>}
                         {c.enrichment_source && (
@@ -474,6 +494,7 @@ function EmailIntelligencePage() {
                     }}
                     onSave={saveContact}
                     onDismiss={dismissContact}
+                    defaultEntityType={inboxTab === "companies" ? "company" : inboxTab === "people" ? "person" : undefined}
                   />
                 )}
               </CardContent>

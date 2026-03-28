@@ -3,12 +3,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
-import { getAuthHeaders } from "@/lib/auth-fetch";
 import { toast } from "sonner";
 import {
   Check, X, ChevronDown, ChevronUp, Loader2,
   User, Mail, Building2, Briefcase, Phone,
-  Linkedin, Globe, MapPin, Plus,
+  Linkedin, Globe, MapPin, Plus, Users,
 } from "lucide-react";
 
 interface DiscoveredContact {
@@ -29,16 +28,19 @@ interface DiscoveredContact {
   enrichment_status: string;
   status: string;
   first_seen_at: string;
+  _type?: "person" | "company" | "filtered";
 }
 
 interface Props {
   contact: DiscoveredContact;
   onUpdate: (id: string, updates: Partial<DiscoveredContact>) => void;
-  onSave: (id: string) => void;
+  onSave: (id: string, entityType: "person" | "company") => void;
   onDismiss: (id: string) => void;
+  /** If set, skip the person/company picker and use this value */
+  defaultEntityType?: "person" | "company";
 }
 
-export default function InlineContactEditor({ contact, onUpdate, onSave, onDismiss }: Props) {
+export default function InlineContactEditor({ contact, onUpdate, onSave, onDismiss, defaultEntityType }: Props) {
   const [expanded, setExpanded] = useState(false);
   const [editingName, setEditingName] = useState(false);
   const [nameValue, setNameValue] = useState(
@@ -52,6 +54,7 @@ export default function InlineContactEditor({ contact, onUpdate, onSave, onDismi
   });
   const [saving, setSaving] = useState(false);
   const [sweeping, setSweeping] = useState(false);
+  const [showEntityPicker, setShowEntityPicker] = useState(false);
 
   const displayName = contact.display_name || `${contact.first_name || ""} ${contact.last_name || ""}`.trim() || contact.email_address;
 
@@ -89,108 +92,19 @@ export default function InlineContactEditor({ contact, onUpdate, onSave, onDismi
     }
   }
 
-  async function saveToContactsWithSweep() {
-    setSweeping(true);
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) { toast.error("Not authenticated"); return; }
-
-      const finalName = nameValue.trim() || displayName;
-
-      // Cross-platform sweep: check if this contact already exists globally
-      // Check by email across ALL users' canonical_persons
-      const { data: existingByEmail } = await supabase
-        .from("canonical_persons")
-        .select("id, owner_user_id, display_name, primary_email, company")
-        .eq("primary_email", contact.email_address)
-        .limit(5);
-
-      // Check by name within user's own contacts
-      const { data: existingByName } = await supabase
-        .from("canonical_persons")
-        .select("id, display_name, primary_email, company")
-        .eq("owner_user_id", user.id)
-        .ilike("display_name", finalName)
-        .limit(5);
-
-      const crossUserMatches = (existingByEmail || []).filter(e => e.owner_user_id !== user.id);
-      const ownMatches = [
-        ...(existingByEmail || []).filter(e => e.owner_user_id === user.id),
-        ...(existingByName || []).filter(e =>
-          e.primary_email !== contact.email_address &&
-          (existingByEmail || []).every(ex => ex.id !== e.id)
-        ),
-      ];
-
-      if (ownMatches.length > 0) {
-        // Merge into existing own record
-        const target = ownMatches[0];
-        const updates: any = {};
-        if (!target.primary_email && contact.email_address) updates.primary_email = contact.email_address;
-        if (fields.company && !target.company) updates.company = fields.company;
-
-        if (Object.keys(updates).length > 0) {
-          await supabase
-            .from("canonical_persons")
-            .update(updates)
-            .eq("id", target.id);
-        }
-
-        // Update discovered contact status
-        await supabase
-          .from("email_discovered_contacts" as any)
-          .update({ status: "saved_to_contacts", linked_canonical_id: target.id } as any)
-          .eq("id", contact.id);
-
-        const crossInfo = crossUserMatches.length > 0
-          ? ` Connected to ${crossUserMatches.length} other user(s) on the platform.`
-          : "";
-        toast.success(`Merged with existing contact "${target.display_name}"${crossInfo}`);
-      } else {
-        // Create new canonical person
-        const metadata: any = {
-          source: "email_discovery",
-          prospect_score: contact.prospect_score,
-          hunter_verified: contact.hunter_verified,
-          email_frequency: contact.email_frequency,
-        };
-
-        if (crossUserMatches.length > 0) {
-          metadata.platform_connections = crossUserMatches.length;
-          metadata.connected_user_ids = crossUserMatches.map(m => m.owner_user_id);
-        }
-
-        const { data: newPerson, error: insertErr } = await supabase.from("canonical_persons").insert({
-          owner_user_id: user.id,
-          display_name: finalName,
-          primary_email: contact.email_address,
-          company: fields.company || contact.hunter_company || null,
-          title: fields.position || contact.hunter_position || null,
-          linkedin_url: fields.linkedin || contact.hunter_linkedin_url || null,
-          primary_phone: fields.phone || contact.hunter_phone || null,
-          tier: (contact.prospect_score || 0) >= 80 ? "a" : (contact.prospect_score || 0) >= 60 ? "b" : "c",
-          metadata,
-        }).select("id").single();
-
-        if (insertErr) throw insertErr;
-
-        await supabase
-          .from("email_discovered_contacts" as any)
-          .update({ status: "saved_to_contacts", linked_canonical_id: newPerson?.id } as any)
-          .eq("id", contact.id);
-
-        const crossInfo = crossUserMatches.length > 0
-          ? ` 🔗 Found on ${crossUserMatches.length} other user's network!`
-          : "";
-        toast.success(`Saved "${finalName}" to contacts${crossInfo}`);
-      }
-
-      onUpdate(contact.id, { status: "saved_to_contacts" } as any);
-    } catch (err: any) {
-      toast.error(err.message || "Failed to save contact");
-    } finally {
-      setSweeping(false);
+  function handleSaveClick() {
+    // If we already know the type from the tab context, skip picker
+    if (defaultEntityType) {
+      doSave(defaultEntityType);
+      return;
     }
+    // Otherwise show the entity picker
+    setShowEntityPicker(true);
+  }
+
+  function doSave(entityType: "person" | "company") {
+    setShowEntityPicker(false);
+    onSave(contact.id, entityType);
   }
 
   return (
@@ -249,36 +163,64 @@ export default function InlineContactEditor({ contact, onUpdate, onSave, onDismi
             <span>Seen in {contact.email_frequency} thread{contact.email_frequency !== 1 ? "s" : ""}</span>
           </div>
 
-          {/* Action buttons */}
-          <div className="flex gap-1.5 mt-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 text-xs"
-              onClick={saveToContactsWithSweep}
-              disabled={sweeping || contact.status === "saved_to_contacts"}
-            >
-              {sweeping ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Plus className="h-3 w-3 mr-1" />}
-              {contact.status === "saved_to_contacts" ? "Saved" : "Save"}
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-7 text-xs"
-              onClick={() => setExpanded(!expanded)}
-            >
-              {expanded ? <ChevronUp className="h-3 w-3 mr-1" /> : <ChevronDown className="h-3 w-3 mr-1" />}
-              Edit Details
-            </Button>
-            {contact.hunter_linkedin_url && (
-              <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => window.open(contact.hunter_linkedin_url!, "_blank")}>
-                <Linkedin className="h-3 w-3 mr-1" /> Profile
+          {/* Entity type picker */}
+          {showEntityPicker && (
+            <div className="flex items-center gap-2 mt-2 p-2 rounded-lg border border-primary/30 bg-primary/5 animate-in fade-in-0 slide-in-from-top-1 duration-150">
+              <span className="text-xs text-muted-foreground mr-1">Save as:</span>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 text-xs gap-1 border-primary/30 hover:bg-primary/10"
+                onClick={() => doSave("person")}
+              >
+                <User className="h-3 w-3" /> Person
               </Button>
-            )}
-            <Button variant="ghost" size="sm" className="h-7 text-xs text-muted-foreground" onClick={() => onDismiss(contact.id)}>
-              <X className="h-3 w-3 mr-1" /> Dismiss
-            </Button>
-          </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 text-xs gap-1 border-primary/30 hover:bg-primary/10"
+                onClick={() => doSave("company")}
+              >
+                <Building2 className="h-3 w-3" /> Company
+              </Button>
+              <Button variant="ghost" size="icon" className="h-6 w-6 ml-auto" onClick={() => setShowEntityPicker(false)}>
+                <X className="h-3 w-3" />
+              </Button>
+            </div>
+          )}
+
+          {/* Action buttons */}
+          {!showEntityPicker && (
+            <div className="flex gap-1.5 mt-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 text-xs"
+                onClick={handleSaveClick}
+                disabled={sweeping || contact.status === "saved_to_contacts"}
+              >
+                {sweeping ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Plus className="h-3 w-3 mr-1" />}
+                {contact.status === "saved_to_contacts" ? "Saved" : "Save"}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 text-xs"
+                onClick={() => setExpanded(!expanded)}
+              >
+                {expanded ? <ChevronUp className="h-3 w-3 mr-1" /> : <ChevronDown className="h-3 w-3 mr-1" />}
+                Edit Details
+              </Button>
+              {contact.hunter_linkedin_url && (
+                <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => window.open(contact.hunter_linkedin_url!, "_blank")}>
+                  <Linkedin className="h-3 w-3 mr-1" /> Profile
+                </Button>
+              )}
+              <Button variant="ghost" size="sm" className="h-7 text-xs text-muted-foreground" onClick={() => onDismiss(contact.id)}>
+                <X className="h-3 w-3 mr-1" /> Dismiss
+              </Button>
+            </div>
+          )}
 
           {/* Expanded inline editor */}
           {expanded && (
