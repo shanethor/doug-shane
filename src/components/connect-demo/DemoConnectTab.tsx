@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Search, ArrowRight, Sparkles, Loader2, X, MapPin, Briefcase, Building2, Users, Signal, Mail, MessageSquare, Phone, Send, Calendar, Brain, List, GitMerge } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import { ConnectOutreachPopup } from "./ConnectOutreachPopups";
 import MeetingPrepSection from "@/components/connect/MeetingPrepSection";
 import ConnectLiveNetworkMap, { type LiveNetworkProfile } from "@/components/connect/ConnectLiveNetworkMap";
@@ -52,6 +53,14 @@ interface PathResult {
   path: string;
   action: string;
   confidence: number;
+  // Rich brief fields from connection-brief edge function
+  brief?: {
+    who_they_are?: { name?: string; location?: string; employer?: string; role?: string; summary?: string; affiliations?: string[] };
+    what_changed?: { events?: Array<{ type: string; description: string; date?: string }> };
+    who_can_get_you_there?: Array<{ name: string; relationship: string; confidence: number; reason: string }>;
+    best_path_in?: { person: string; reason: string; confidence: string };
+    recommended_move?: string;
+  };
 }
 
 /* ── Full-page Hex-grid Network Visualization ── */
@@ -576,23 +585,57 @@ export default function DemoConnectTab({ contentReady = true }: { contentReady?:
   const [showContacts, setShowContacts] = useState(false);
   const [contactsTab, setContactsTab] = useState<"list" | "merge">("list");
 
-  const handleSearch = () => {
+  const handleSearch = async () => {
     if (!searchName.trim()) return;
     setSearching(true);
     setHasSearched(true);
     const name = searchName.trim();
-    setTimeout(() => {
-      const idx = name.length % DUMMY_PATH_TEMPLATES.length;
-      const tpl = DUMMY_PATH_TEMPLATES[idx];
+    try {
+      const { data, error } = await supabase.functions.invoke("connection-brief", {
+        body: { name },
+      });
+      if (error) throw new Error(error.message);
+      if (data?.error) throw new Error(data.error);
+
+      const brief = data?.brief;
+      if (!brief) throw new Error("No brief returned");
+
+      // Map the rich brief to PathResult shape
+      const bestPath = brief.best_path_in;
+      const connectors = brief.who_can_get_you_there || [];
+      const topConnector = connectors[0];
+
+      const connection = bestPath?.person || topConnector?.name || "Your Network";
+      const confidence = bestPath?.confidence === "high" ? 85
+        : bestPath?.confidence === "medium" ? 65 : 45;
+
+      // Build a natural-language path description from the brief
+      const whoTheyAre = brief.who_they_are;
+      const events = brief.what_changed?.events || [];
+      const eventSummary = events.length > 0
+        ? `${events[0].description}${events[0].date ? ` (${events[0].date})` : ""}.`
+        : "";
+      const pathDesc = [
+        whoTheyAre?.summary,
+        eventSummary,
+        bestPath?.reason,
+      ].filter(Boolean).join(" ");
+
       setResult({
         target: name,
-        connection: tpl.connection,
-        path: tpl.pathTemplate(name),
-        action: tpl.actionTemplate(name),
-        confidence: tpl.confidence,
+        connection,
+        path: pathDesc || `${name} is reachable through ${connection}.`,
+        action: brief.recommended_move || `Reach out to ${connection} for a warm introduction to ${name}.`,
+        confidence,
+        brief,
       });
+    } catch (err: any) {
+      console.error("connection-brief error:", err);
+      toast.error(err.message || "Could not find a path — try again");
+      setHasSearched(false);
+    } finally {
       setSearching(false);
-    }, 1200);
+    }
   };
 
   const handleNodeClick = useCallback((profile: LiveNetworkProfile, pos: { x: number; y: number }) => {
@@ -825,6 +868,7 @@ export default function DemoConnectTab({ contentReady = true }: { contentReady?:
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* Confidence + path chain */}
             <div className="flex items-center gap-3 text-xs" style={{ color: "hsl(240 5% 46%)" }}>
               <Badge variant="outline" style={{ color: "hsl(140 12% 58%)", borderColor: "hsl(140 12% 42% / 0.3)" }}>
                 {result.confidence}% confidence
@@ -840,16 +884,72 @@ export default function DemoConnectTab({ contentReady = true }: { contentReady?:
               <div className="flex items-center justify-center h-10 px-4 rounded-full text-xs font-bold" style={{ background: "hsl(140 12% 42% / 0.15)", color: "hsl(140 12% 58%)" }}>{result.target}</div>
             </div>
 
-            <div className="p-3 rounded-lg" style={{ background: "hsl(240 6% 7%)", border: "1px solid hsl(240 6% 14%)" }}>
-              <p className="text-sm leading-relaxed" style={{ color: "hsl(240 5% 60%)" }}>{result.path}</p>
+            {/* Who they are + context */}
+            {result.brief?.who_they_are?.summary && (
+              <div className="p-3 rounded-lg space-y-2" style={{ background: "hsl(240 6% 7%)", border: "1px solid hsl(240 6% 14%)" }}>
+                <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: "hsl(240 5% 46%)" }}>About {result.target}</p>
+                <p className="text-sm leading-relaxed" style={{ color: "hsl(240 5% 70%)" }}>{result.brief.who_they_are.summary}</p>
+                <div className="flex flex-wrap gap-1.5 mt-1">
+                  {result.brief.who_they_are.role && (
+                    <Badge variant="secondary" className="text-[10px] gap-1"><Briefcase className="h-2.5 w-2.5" />{result.brief.who_they_are.role}</Badge>
+                  )}
+                  {result.brief.who_they_are.employer && (
+                    <Badge variant="secondary" className="text-[10px] gap-1"><Building2 className="h-2.5 w-2.5" />{result.brief.who_they_are.employer}</Badge>
+                  )}
+                  {result.brief.who_they_are.location && (
+                    <Badge variant="secondary" className="text-[10px] gap-1"><MapPin className="h-2.5 w-2.5" />{result.brief.who_they_are.location}</Badge>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* What Changed signals */}
+            {(result.brief?.what_changed?.events || []).length > 0 && (
+              <div className="p-3 rounded-lg space-y-1.5" style={{ background: "hsl(240 6% 7%)", border: "1px solid hsl(240 6% 14%)" }}>
+                <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "hsl(240 5% 46%)" }}>Why now</p>
+                {result.brief!.what_changed!.events!.slice(0, 2).map((ev, i) => (
+                  <div key={i} className="flex items-start gap-2">
+                    <Sparkles className="h-3 w-3 mt-0.5 shrink-0" style={{ color: "hsl(45 80% 55%)" }} />
+                    <p className="text-xs" style={{ color: "hsl(240 5% 65%)" }}>
+                      <span className="font-medium text-white">{ev.type}</span> — {ev.description}
+                      {ev.date && <span style={{ color: "hsl(240 5% 44%)" }}> ({ev.date})</span>}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Other connectors */}
+            {(result.brief?.who_can_get_you_there || []).length > 1 && (
+              <div className="p-3 rounded-lg" style={{ background: "hsl(240 6% 7%)", border: "1px solid hsl(240 6% 14%)" }}>
+                <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "hsl(240 5% 46%)" }}>Other paths in</p>
+                <div className="space-y-1.5">
+                  {result.brief!.who_can_get_you_there!.slice(1, 3).map((c, i) => (
+                    <div key={i} className="flex items-center justify-between">
+                      <div>
+                        <span className="text-xs font-medium text-white">{c.name}</span>
+                        <span className="text-[10px] ml-2" style={{ color: "hsl(240 5% 50%)" }}>{c.relationship}</span>
+                      </div>
+                      <Badge variant="outline" className="text-[9px]" style={{ color: "hsl(140 12% 58%)" }}>{c.confidence}%</Badge>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Recommended action */}
+            <div className="flex items-start gap-2 p-3 rounded-lg" style={{ background: "hsl(140 12% 42% / 0.08)", border: "1px solid hsl(140 12% 42% / 0.2)" }}>
+              <ArrowRight className="h-4 w-4 mt-0.5 shrink-0" style={{ color: "hsl(140 12% 58%)" }} />
+              <p className="text-sm font-medium" style={{ color: "hsl(140 12% 70%)" }}>{result.action}</p>
             </div>
 
+            {/* Outreach actions */}
             <div className="space-y-3">
-              <p className="text-xs font-medium uppercase tracking-wider" style={{ color: "hsl(240 5% 46%)" }}>Reach out now</p>
+              <p className="text-xs font-medium uppercase tracking-wider" style={{ color: "hsl(240 5% 46%)" }}>Take action</p>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {([
-                  { icon: Mail, label: "Draft Email", desc: "AI-generated intro", key: "email" as const },
-                  { icon: MessageSquare, label: "Send Text", desc: "Quick SMS message", key: "text" as const },
+                  { icon: Mail, label: "Draft Email", desc: "AI intro to connector", key: "email" as const },
+                  { icon: MessageSquare, label: "Send Text", desc: "Quick SMS script", key: "text" as const },
                   { icon: Phone, label: "Phone Call", desc: "Call script ready", key: "call" as const },
                   { icon: Calendar, label: "Schedule Meet", desc: "Book a coffee chat", key: "meet" as const },
                 ]).map((action) => (
@@ -864,10 +964,6 @@ export default function DemoConnectTab({ contentReady = true }: { contentReady?:
                     <span className="text-[10px] leading-tight" style={{ color: "hsl(240 5% 50%)" }}>{action.desc}</span>
                   </button>
                 ))}
-              </div>
-              <div className="flex items-center gap-2 p-2.5 rounded-lg" style={{ background: "hsl(140 12% 42% / 0.06)", border: "1px solid hsl(140 12% 42% / 0.12)" }}>
-                <Send className="h-3.5 w-3.5 shrink-0" style={{ color: "hsl(140 12% 50%)" }} />
-                <p className="text-xs" style={{ color: "hsl(140 12% 58%)" }}>{result.action}</p>
               </div>
             </div>
           </CardContent>
