@@ -10,7 +10,9 @@ import {
   ExternalLink, CheckCircle, Wifi, WifiOff, Globe,
   Linkedin, Facebook, Phone, Database, Building2,
   Filter, ArrowUpFromLine, Eye, EyeOff, List, Trash2,
+  Briefcase, UserX, Bot, HelpCircle, Tag,
 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import InlineContactEditor from "@/components/connect/InlineContactEditor";
 import { supabase } from "@/integrations/supabase/client";
