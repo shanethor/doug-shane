@@ -109,7 +109,10 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [pipelineView, setPipelineView] = useState<"commercial" | "personal">("commercial");
+  const [pipelineView, setPipelineView] = useState<"commercial" | "personal">(() => {
+    const saved = localStorage.getItem("aura_default_pipeline");
+    return saved === "personal" ? "personal" : "commercial";
+  });
   const [addOpen, setAddOpen] = useState(false);
   const [addMode, setAddMode] = useState<"choose" | "manual" | "intake">("choose");
   const [intakeLink, setIntakeLink] = useState<string | null>(null);
@@ -878,27 +881,40 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
               {filtered.length} lead{filtered.length !== 1 ? "s" : ""} — {typeof window !== "undefined" && window.innerWidth < 768 ? "tap to manage" : "drag between stages to manage your pipeline"}.
             </p>
           </div>
-          <div className="flex items-center rounded-lg border bg-muted/50 p-0.5">
-            <button
-              onClick={() => setPipelineView("commercial")}
-              className={`px-3 py-1.5 rounded-md text-xs font-sans font-medium transition-colors ${
-                pipelineView === "commercial"
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Commercial
-            </button>
-            <button
-              onClick={() => setPipelineView("personal")}
-              className={`px-3 py-1.5 rounded-md text-xs font-sans font-medium transition-colors ${
-                pipelineView === "personal"
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Personal
-            </button>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center rounded-lg border bg-muted/50 p-0.5">
+              <button
+                onClick={() => setPipelineView("commercial")}
+                className={`px-3 py-1.5 rounded-md text-xs font-sans font-medium transition-colors ${
+                  pipelineView === "commercial"
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Commercial
+              </button>
+              <button
+                onClick={() => setPipelineView("personal")}
+                className={`px-3 py-1.5 rounded-md text-xs font-sans font-medium transition-colors ${
+                  pipelineView === "personal"
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Personal
+              </button>
+            </div>
+            {localStorage.getItem("aura_default_pipeline") !== pipelineView && (
+              <button
+                onClick={() => {
+                  localStorage.setItem("aura_default_pipeline", pipelineView);
+                  toast.success(`${pipelineView === "commercial" ? "Commercial" : "Personal"} set as default pipeline`);
+                }}
+                className="text-[10px] text-muted-foreground hover:text-primary underline underline-offset-2 transition-colors font-sans"
+              >
+                Set as default
+              </button>
+            )}
           </div>
         </div>
         <div className="flex items-center gap-2">
