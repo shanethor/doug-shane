@@ -908,7 +908,7 @@ function MapWithListView() {
                         <p className="text-sm font-medium truncate">{c.display_name || c.primary_email}</p>
                         {c.tier && <Badge variant="outline" className="text-[9px]">{c.tier}</Badge>}
                         {c.linkedin_url && (
-                          <a href={c.linkedin_url} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} className="text-blue-400 hover:text-blue-300">
+                          <a href={c.linkedin_url.startsWith("http") ? c.linkedin_url : `https://${c.linkedin_url}`} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} className="text-blue-400 hover:text-blue-300">
                             <Linkedin className="h-3.5 w-3.5" />
                           </a>
                         )}
