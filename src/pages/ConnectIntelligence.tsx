@@ -217,6 +217,8 @@ function EmailIntelligencePage() {
 
   // Classify contacts into tabs
   const saved = allContacts.filter(c => c.status === "saved_to_contacts");
+  const savedPeople = saved.filter(c => c.contact_type !== "company");
+  const savedCompanies = saved.filter(c => c.contact_type === "company");
   const active = allContacts.filter(c => c.status !== "saved_to_contacts");
 
   const classified = active.map(c => {
@@ -241,7 +243,8 @@ function EmailIntelligencePage() {
 
   const displayList = inboxTab === "people" ? people
     : inboxTab === "companies" ? companies
-    : inboxTab === "saved" ? saved
+    : inboxTab === "saved_people" ? savedPeople
+    : inboxTab === "saved_companies" ? savedCompanies
     : filtered;
 
   const newThisWeek = people.filter(c => new Date(c.first_seen_at) >= new Date(Date.now() - 7 * 86400000)).length;
