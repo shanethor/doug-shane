@@ -505,23 +505,56 @@ function BusinessDropZone() {
         }
       }
 
-      // Read uploaded text files directly in the browser
+      // Process uploaded documents — read all file types and extract business data via AI
       for (const file of files) {
         if (!file.raw) continue;
         try {
-          if (file.type === "text/plain" || file.type === "text/csv" || file.name.endsWith(".txt") || file.name.endsWith(".csv")) {
+          const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
+          const isText = file.type === "text/plain" || file.type === "text/csv" ||
+            file.name.endsWith(".txt") || file.name.endsWith(".csv");
+
+          if (isText) {
+            // Read plain text directly
             const text = await file.raw.text();
-            if (text.trim()) scrapedData.push({ raw_content: text.slice(0, 1000) });
+            if (text.trim()) scrapedData.push({ raw_content: text.slice(0, 2000) });
           } else {
-            // For PDF/DOCX send to edge function for text extraction
-            const { data: extractData } = await supabase.functions.invoke("extract-document-text", {
-              body: { file_name: file.name, file_type: file.type, file_size: file.size },
+            // For PDF, DOCX, PPTX — read as base64 and send to Gemini vision
+            const base64 = await new Promise<string>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () => {
+                const result = reader.result as string;
+                // Strip the data URL prefix: "data:application/pdf;base64,"
+                resolve(result.split(",")[1] || "");
+              };
+              reader.onerror = reject;
+              reader.readAsDataURL(file.raw!);
             });
-            // If edge function doesn't exist yet, use filename as hint
-            if (extractData?.text) scrapedData.push({ raw_content: extractData.text.slice(0, 1000) });
-            else scrapedData.push({ raw_content: `Document: ${file.name} (${file.type})` });
+
+            if (!base64) continue;
+
+            // Determine MIME type for Gemini
+            const mimeType = isPdf ? "application/pdf" :
+              file.name.endsWith(".docx") ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document" :
+              file.name.endsWith(".pptx") ? "application/vnd.openxmlformats-officedocument.presentationml.presentation" :
+              file.type || "application/octet-stream";
+
+            // Call Gemini directly via the AI gateway to extract business profile data
+            const { data: aiResult, error: aiErr } = await supabase.functions.invoke("spotlight-flyer", {
+              body: {
+                action: "extract_document_profile",
+                file_base64: base64,
+                file_mime: mimeType,
+                file_name: file.name,
+              },
+            });
+
+            if (aiErr) console.warn("Doc extraction error:", aiErr);
+            if (aiResult?.profile) scrapedData.push(aiResult.profile);
+            else if (aiResult?.raw_content) scrapedData.push({ raw_content: aiResult.raw_content });
           }
-        } catch { /* skip */ }
+        } catch (e) {
+          console.warn("File processing failed:", file.name, e);
+        }
       }
 
       // Build profile from scraped data — correct field mapping
@@ -537,15 +570,15 @@ function BusinessDropZone() {
       };
 
       for (const scraped of scrapedData) {
-        // scrape-website returns: applicant_name/company_name, business_category, description_of_operations, state, annual_revenue
+        // Handles both scrape-website fields and extract_document_profile fields
         const name = scraped.applicant_name || scraped.company_name;
         if (name && !merged.company_name) merged.company_name = name;
 
         const industry = scraped.business_category || scraped.industry || scraped.naics_description;
         if (industry && !merged.industry) merged.industry = industry;
 
-        const ops = scraped.description_of_operations || scraped.description || scraped.raw_content;
-        if (ops && !merged.icp_description) merged.icp_description = ops.slice(0, 400);
+        const ops = scraped.description_of_operations || scraped.description || scraped.target_customers || scraped.raw_content;
+        if (ops && !merged.icp_description) merged.icp_description = String(ops).slice(0, 400);
 
         const revenue = scraped.annual_revenue || scraped.revenue_range || scraped.revenue;
         if (revenue && !merged.revenue_range) merged.revenue_range = String(revenue);
@@ -553,6 +586,17 @@ function BusinessDropZone() {
         const state = scraped.state;
         if (state && !(merged.target_geos || []).includes(state)) {
           merged.target_geos = [...(merged.target_geos || []), state];
+        }
+
+        const dealSize = scraped.deal_size || scraped.typical_deal_size;
+        if (dealSize && !merged.typical_deal_size) merged.typical_deal_size = String(dealSize);
+
+        // Extract target buyer titles from key_products_services or target_customers hints
+        if (scraped.target_customers && !merged.target_buyer_titles?.length) {
+          // Try to parse buyer roles from the description
+          const roles = ["CEO", "CFO", "COO", "Owner", "President", "VP", "Director", "Manager"];
+          const mentioned = roles.filter(r => String(scraped.target_customers).includes(r));
+          if (mentioned.length > 0) merged.target_buyer_titles = mentioned;
         }
       }
 

@@ -352,6 +352,100 @@ serve(async (req) => {
         });
       }
 
+      // ─── ACTION: extract_document_profile ───
+      // Reads a base64-encoded PDF/DOCX/PPTX with Gemini vision and extracts
+      // business profile fields for the Lead Generator company profile.
+      if (action === "extract_document_profile") {
+        const fileBase64 = String(body.file_base64 || "").trim();
+        const fileMime = String(body.file_mime || "application/pdf").trim();
+        const fileName = String(body.file_name || "document").trim();
+
+        if (!fileBase64) {
+          return new Response(JSON.stringify({ error: "file_base64 required" }), {
+            status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${LOVABLE_API_KEY()}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "google/gemini-2.5-flash",
+            messages: [
+              {
+                role: "system",
+                content: `You are a business intelligence extraction assistant. Read the attached business document and extract key company profile information that would help identify ideal insurance or B2B sales prospects. Extract every relevant detail you can find.`,
+              },
+              {
+                role: "user",
+                content: [
+                  {
+                    type: "text",
+                    text: `Extract business profile data from this document: ${fileName}. Return structured data about the company.`,
+                  },
+                  {
+                    type: "image_url",
+                    image_url: { url: `data:${fileMime};base64,${fileBase64}` },
+                  },
+                ],
+              },
+            ],
+            tools: [{
+              type: "function",
+              function: {
+                name: "extract_business_profile",
+                description: "Extract structured business profile data from a document",
+                parameters: {
+                  type: "object",
+                  properties: {
+                    company_name: { type: ["string", "null"], description: "Company or business name" },
+                    industry: { type: ["string", "null"], description: "Industry or business category (e.g. Insurance, SaaS, Construction, Restaurant)" },
+                    description_of_operations: { type: ["string", "null"], description: "What the business does — 1-2 sentences" },
+                    state: { type: ["string", "null"], description: "US state abbreviation (e.g. CT, NY, CA)" },
+                    annual_revenue: { type: ["string", "null"], description: "Revenue or revenue range if mentioned" },
+                    employee_count: { type: ["string", "null"], description: "Number of employees if mentioned" },
+                    website: { type: ["string", "null"], description: "Website URL if mentioned" },
+                    target_customers: { type: ["string", "null"], description: "Who the business sells to" },
+                    key_products_services: { type: ["array", "null"], items: { type: "string" }, description: "Main products or services" },
+                    business_stage: { type: ["string", "null"], description: "Stage: startup, growth, established, enterprise" },
+                    deal_size: { type: ["string", "null"], description: "Typical deal or contract size if mentioned" },
+                  },
+                  required: ["company_name", "industry", "description_of_operations"],
+                  additionalProperties: false,
+                },
+              },
+            }],
+            tool_choice: { type: "function", function: { name: "extract_business_profile" } },
+          }),
+        });
+
+        if (!aiRes.ok) {
+          const errText = await aiRes.text();
+          console.error("[spotlight-flyer] extract_document_profile AI error:", aiRes.status, errText.slice(0, 200));
+          return new Response(JSON.stringify({ error: "Document extraction failed", raw_content: fileName }), {
+            status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        const aiData = await aiRes.json();
+        const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
+        if (!toolCall?.function?.arguments) {
+          return new Response(JSON.stringify({ raw_content: `Document: ${fileName}` }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          });
+        }
+
+        const profile = JSON.parse(toolCall.function.arguments);
+        console.log(`[spotlight-flyer] extract_document_profile extracted: company=${profile.company_name}, industry=${profile.industry}`);
+
+        return new Response(JSON.stringify({ profile }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
     // ─── ACTION: analyze_brand ───
     if (action === "analyze_brand") {
       const imageUrl = String(body.image_url || "").trim();
