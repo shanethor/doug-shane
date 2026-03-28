@@ -405,7 +405,9 @@ function GoalsDialog({ open, onOpenChange, userId, currentGoal, onSaved }: {
 export default function ConnectPipelineTab() {
   const { user } = useAuth();
   const { branch } = useUserBranch();
-  const [industry, setIndustry] = useState<string | null>(null);
+  const [industry, setIndustry] = useState<string | null>(() => {
+    return localStorage.getItem("aura_default_connect_pipeline") || null;
+  });
   const [profileIndustry, setProfileIndustry] = useState<string | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [leads, setLeads] = useState<Lead[]>([]);
