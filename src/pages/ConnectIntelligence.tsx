@@ -218,38 +218,56 @@ function EmailIntelligencePage() {
       .from("network_contacts")
       .select("id, full_name, email, phone, company, title, source, location, linkedin_url, imported_at, user_id")
       .order("imported_at", { ascending: false })
-      .limit(500);
+      .limit(1000);
 
     // Get IDs of email contacts already known, to avoid duplicates
-    const emailSet = new Set((emailContacts || []).map((c: any) => c.email_address?.toLowerCase()));
+    const emailSet = new Set((emailContacts || []).map((c: any) => c.email_address?.toLowerCase()).filter(Boolean));
 
-    // Map network contacts into DiscoveredContact shape (only those not already in email_discovered_contacts)
+    // Clean vCard artifacts from names (&#13;, trailing whitespace, etc.)
+    function cleanName(name: string | null): string | null {
+      if (!name) return null;
+      return name
+        .replace(/&#\d+;?/g, "")   // remove HTML entities like &#13;
+        .replace(/\r|\n/g, "")      // remove actual CR/LF
+        .replace(/\s+/g, " ")       // collapse whitespace
+        .trim() || null;
+    }
+
+    // Map network contacts into DiscoveredContact shape — include contacts with OR without email
     const mappedNetwork: DiscoveredContact[] = (networkContacts || [])
-      .filter((nc: any) => nc.email && !emailSet.has(nc.email.toLowerCase()))
-      .map((nc: any) => ({
-        id: nc.id,
-        email_address: nc.email || "",
-        display_name: nc.full_name,
-        first_name: nc.full_name?.split(" ")[0] || null,
-        last_name: nc.full_name?.split(" ").slice(1).join(" ") || null,
-        domain: nc.email ? nc.email.split("@")[1] : null,
-        hunter_verified: null,
-        hunter_confidence: null,
-        hunter_position: nc.title,
-        hunter_company: nc.company,
-        hunter_linkedin_url: nc.linkedin_url,
-        hunter_phone: nc.phone,
-        prospect_score: null,
-        email_frequency: 0,
-        enrichment_status: "synced",
-        status: "active",
-        first_seen_at: nc.imported_at,
-        contact_type: null,
-        contact_score: null,
-        filtered: false,
-        location: nc.location,
-        enrichment_source: nc.source,
-      } as DiscoveredContact));
+      .filter((nc: any) => {
+        // Skip if this email is already in email_discovered_contacts
+        if (nc.email && emailSet.has(nc.email.toLowerCase())) return false;
+        // Must have at least a name, email, or phone
+        return nc.full_name || nc.email || nc.phone;
+      })
+      .map((nc: any) => {
+        const cleanedName = cleanName(nc.full_name);
+        return {
+          id: nc.id,
+          email_address: nc.email || "",
+          display_name: cleanedName,
+          first_name: cleanedName?.split(" ")[0] || null,
+          last_name: cleanedName?.split(" ").slice(1).join(" ") || null,
+          domain: nc.email ? nc.email.split("@")[1] : null,
+          hunter_verified: null,
+          hunter_confidence: null,
+          hunter_position: nc.title,
+          hunter_company: nc.company,
+          hunter_linkedin_url: nc.linkedin_url,
+          hunter_phone: nc.phone,
+          prospect_score: null,
+          email_frequency: 0,
+          enrichment_status: "synced",
+          status: "active",
+          first_seen_at: nc.imported_at,
+          contact_type: null,
+          contact_score: null,
+          filtered: false,
+          location: nc.location,
+          enrichment_source: nc.source,
+        } as DiscoveredContact;
+      });
 
     setAllContacts([...(emailContacts as any as DiscoveredContact[] || []), ...mappedNetwork]);
     setLoading(false);
