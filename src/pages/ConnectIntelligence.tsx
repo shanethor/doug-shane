@@ -338,32 +338,34 @@ function EmailIntelligencePage() {
   const active = allContacts.filter(c => c.status !== "saved_to_contacts");
 
   const classified = active.map(c => {
-    // Use server-side values if available, otherwise classify client-side
-    if (c.filtered === true || c.contact_type === "filtered") {
-      return { ...c, _type: "filtered" as const, _score: c.contact_score || 0 };
-    }
-    if (c.contact_type === "company") {
-      return { ...c, _type: "company" as const, _score: c.contact_score || 50 };
-    }
-    if (c.contact_type === "person" && c.contact_score) {
-      return { ...c, _type: "person" as const, _score: c.contact_score };
-    }
-    // Client-side classification fallback
-    const { type, score } = classifyContact(c);
-    return { ...c, _type: type, _score: score };
+    const { type, score, isFiltered } = classifyContact(c);
+    return { ...c, _type: type, _score: score, _isFiltered: isFiltered };
   });
 
-  const people = classified.filter(c => c._type === "person");
-  const companies = classified.filter(c => c._type === "company");
-  const filtered = classified.filter(c => c._type === "filtered");
+  // Apply low-quality filter
+  const qualityFilter = (c: typeof classified[0]) => {
+    if (!hideLowQuality) return true;
+    if (c._isFiltered) return false;
+    // Hide single interaction + no name + no reply
+    if (c._score < 50 && c.email_frequency <= 1 && !c.display_name) return false;
+    return true;
+  };
 
-  const displayList = inboxTab === "people" ? people
-    : inboxTab === "companies" ? companies
+  const personBusiness = classified.filter(c => c._type === "person_business" && qualityFilter(c));
+  const companies = classified.filter(c => c._type === "company" && qualityFilter(c));
+  const personPersonal = classified.filter(c => c._type === "person_personal");
+  const spamOrSystem = classified.filter(c => c._type === "spam_or_system");
+  const unknown = classified.filter(c => c._type === "unknown");
+
+  const displayList = inboxTab === "person_business" ? personBusiness
+    : inboxTab === "company" ? companies
+    : inboxTab === "person_personal" ? personPersonal
+    : inboxTab === "spam_or_system" ? spamOrSystem
+    : inboxTab === "unknown" ? unknown
     : inboxTab === "saved_people" ? savedPeople
-    : inboxTab === "saved_companies" ? savedCompanies
-    : filtered;
+    : savedCompanies;
 
-  const newThisWeek = people.filter(c => new Date(c.first_seen_at) >= new Date(Date.now() - 7 * 86400000)).length;
+  const newThisWeek = personBusiness.filter(c => new Date(c.first_seen_at) >= new Date(Date.now() - 7 * 86400000)).length;
 
   async function runSync() {
     setSyncing(true);
@@ -381,23 +383,44 @@ function EmailIntelligencePage() {
     finally { setSyncing(false); }
   }
 
+  async function runClassify() {
+    setClassifying(true);
+    try {
+      const headers = await getAuthHeaders();
+      const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/classify-contacts`, {
+        method: "POST", headers, body: JSON.stringify({ force: true }),
+      });
+      const data = await resp.json();
+      if (data.success) {
+        toast.success(`Classified ${data.classified} contacts (${data.filtered} filtered)`);
+        loadContacts();
+      } else toast.error(data.error || "Classification failed");
+    } catch { toast.error("Classification failed"); }
+    finally { setClassifying(false); }
+  }
+
   async function dismissContact(id: string) {
     await supabase.from("email_discovered_contacts" as any).update({ status: "dismissed" }).eq("id", id);
     setAllContacts(prev => prev.filter(c => c.id !== id));
   }
 
-  async function rescueContact(id: string) {
-    // Move from filtered back to inbox
-    await supabase.from("email_discovered_contacts" as any).update({ filtered: false, contact_type: "person" } as any).eq("id", id);
-    setAllContacts(prev => prev.map(c => c.id === id ? { ...c, filtered: false, contact_type: "person" } : c));
-    toast.success("Contact rescued to People");
+  async function reclassifyContact(id: string, newType: ClassificationType) {
+    await supabase.from("email_discovered_contacts" as any).update({
+      classification_type: newType,
+      is_filtered: newType === "spam_or_system" || newType === "person_personal",
+    } as any).eq("id", id);
+    setAllContacts(prev => prev.map(c => c.id === id ? {
+      ...c,
+      classification_type: newType,
+      is_filtered: newType === "spam_or_system" || newType === "person_personal",
+    } : c));
+    toast.success(`Marked as ${newType.replace(/_/g, " ")}`);
   }
 
   async function saveContact(id: string, entityType: "person" | "company" = "person") {
     const contact = allContacts.find(c => c.id === id);
     if (!contact) return;
 
-    // Trigger enrichment on save
     setEnrichingId(id);
     try {
       const headers = await getAuthHeaders();
@@ -413,7 +436,6 @@ function EmailIntelligencePage() {
       console.error("Enrichment error:", err);
     }
 
-    // Save to canonical_persons
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { toast.error("Not authenticated"); return; }
@@ -438,7 +460,6 @@ function EmailIntelligencePage() {
       });
       if (insertErr) throw insertErr;
 
-      // Also update contact_type on the discovered contact record
       await supabase.from("email_discovered_contacts" as any).update({ status: "saved_to_contacts", contact_type: entityType } as any).eq("id", id);
       setAllContacts(prev => prev.map(c => c.id === id ? { ...c, status: "saved_to_contacts", contact_type: entityType } : c));
       toast.success(entityType === "company" ? "Saved as company" : "Saved as person");
@@ -449,6 +470,18 @@ function EmailIntelligencePage() {
     }
   }
 
+  const FILTER_CHIPS: { key: typeof inboxTab; icon: typeof Briefcase; label: string; count: number; variant?: string }[] = [
+    { key: "person_business", icon: Briefcase, label: "Business People", count: personBusiness.length },
+    { key: "company", icon: Building2, label: "Companies", count: companies.length },
+    { key: "person_personal", icon: Users, label: "Personal", count: personPersonal.length },
+    { key: "spam_or_system", icon: Bot, label: "Spam & Automated", count: spamOrSystem.length },
+    { key: "unknown", icon: HelpCircle, label: "Unclassified", count: unknown.length },
+    { key: "saved_people", icon: CheckCircle, label: "Saved People", count: savedPeople.length },
+    { key: "saved_companies", icon: Building2, label: "Saved Companies", count: savedCompanies.length },
+  ];
+
+  const isSpamOrFiltered = inboxTab === "spam_or_system" || inboxTab === "person_personal" || inboxTab === "unknown";
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -458,6 +491,10 @@ function EmailIntelligencePage() {
         </div>
         <div className="flex gap-2">
           {newThisWeek > 0 && <Badge className="bg-primary">{newThisWeek} new</Badge>}
+          <Button variant="outline" size="sm" onClick={runClassify} disabled={classifying}>
+            {classifying ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Tag className="h-3.5 w-3.5 mr-1" />}
+            Classify
+          </Button>
           <Button variant="outline" size="sm" onClick={runSync} disabled={syncing}>
             {syncing ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5 mr-1" />}
             Scan
@@ -465,48 +502,23 @@ function EmailIntelligencePage() {
         </div>
       </div>
 
-      {/* Tab bar: People / Companies / Saved People / Saved Companies / Filtered */}
-      <div className="flex gap-1.5 flex-wrap">
-        <Button
-          variant={inboxTab === "people" ? "default" : "outline"}
-          size="sm"
-          onClick={() => setInboxTab("people")}
-          className="text-xs gap-1"
-        >
-          <Users className="h-3 w-3" /> People ({people.length})
-        </Button>
-        <Button
-          variant={inboxTab === "companies" ? "default" : "outline"}
-          size="sm"
-          onClick={() => setInboxTab("companies")}
-          className="text-xs gap-1"
-        >
-          <Building2 className="h-3 w-3" /> Companies ({companies.length})
-        </Button>
-        <Button
-          variant={inboxTab === "saved_people" ? "default" : "outline"}
-          size="sm"
-          onClick={() => setInboxTab("saved_people")}
-          className="text-xs gap-1"
-        >
-          <CheckCircle className="h-3 w-3" /> Saved People ({savedPeople.length})
-        </Button>
-        <Button
-          variant={inboxTab === "saved_companies" ? "default" : "outline"}
-          size="sm"
-          onClick={() => setInboxTab("saved_companies")}
-          className="text-xs gap-1"
-        >
-          <Building2 className="h-3 w-3" /> Saved Companies ({savedCompanies.length})
-        </Button>
-        <Button
-          variant={inboxTab === "filtered" ? "secondary" : "ghost"}
-          size="sm"
-          onClick={() => setInboxTab("filtered")}
-          className="text-xs gap-1 text-muted-foreground"
-        >
-          <Filter className="h-3 w-3" /> Filtered ({filtered.length})
-        </Button>
+      {/* Filter chips */}
+      <div className="flex gap-1.5 flex-wrap items-center">
+        {FILTER_CHIPS.map(chip => (
+          <Button
+            key={chip.key}
+            variant={inboxTab === chip.key ? "default" : "outline"}
+            size="sm"
+            onClick={() => setInboxTab(chip.key)}
+            className="text-xs gap-1"
+          >
+            <chip.icon className="h-3 w-3" /> {chip.label} ({chip.count})
+          </Button>
+        ))}
+        <div className="ml-auto flex items-center gap-2">
+          <label className="text-[10px] text-muted-foreground whitespace-nowrap">Hide low-quality</label>
+          <Switch checked={hideLowQuality} onCheckedChange={setHideLowQuality} className="scale-75" />
+        </div>
       </div>
 
       {loading ? (
@@ -516,20 +528,19 @@ function EmailIntelligencePage() {
           <CardContent className="py-12 text-center">
             <Mail className="h-8 w-8 mx-auto text-muted-foreground mb-3" />
             <p className="font-medium">
-              {inboxTab === "people" ? "No people discovered yet" :
-               inboxTab === "companies" ? "No company contacts found" :
+              {inboxTab === "person_business" ? "No business people discovered yet" :
+               inboxTab === "company" ? "No company contacts found" :
+               inboxTab === "person_personal" ? "No personal contacts classified" :
+               inboxTab === "spam_or_system" ? "No spam contacts detected" :
+               inboxTab === "unknown" ? "No unclassified contacts" :
                inboxTab === "saved_people" ? "No saved people" :
-               inboxTab === "saved_companies" ? "No saved companies" :
-               "No filtered contacts"}
+               "No saved companies"}
             </p>
             <p className="text-sm text-muted-foreground mt-1">
-              {inboxTab === "people" ? "Connect your email and run a scan to discover contacts." :
-               inboxTab === "companies" ? "Business contacts will appear here after scanning." :
-               inboxTab === "saved_people" ? "People you save will appear here." :
-               inboxTab === "saved_companies" ? "Companies you save will appear here." :
-               "Spam and automated senders are filtered here."}
+              {inboxTab === "person_business" ? "Connect your email and run a scan to discover contacts." :
+               "Run a scan or classify contacts to populate this view."}
             </p>
-            {inboxTab === "people" && (
+            {inboxTab === "person_business" && (
               <Button className="mt-4" onClick={runSync} disabled={syncing}>
                 {syncing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Zap className="h-4 w-4 mr-2" />}
                 Run First Scan
@@ -583,160 +594,57 @@ function EmailIntelligencePage() {
                       </Button>
                     </div>
                   </div>
-                ) : inboxTab === "filtered" ? (
+                ) : isSpamOrFiltered ? (
                   <div className="flex items-center justify-between gap-3">
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium truncate text-muted-foreground">{c.display_name || c.email_address}</p>
                       {c.display_name && <p className="text-xs text-muted-foreground/60 truncate">{c.email_address}</p>}
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
-                      <Badge variant="outline" className="text-[10px] text-muted-foreground/50">Filtered</Badge>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 text-xs gap-1"
-                        onClick={() => rescueContact(c.id)}
-                        title="Rescue to People"
-                      >
-                        <ArrowUpFromLine className="h-3 w-3" /> Rescue
+                      <Badge variant="outline" className="text-[10px] text-muted-foreground/50">
+                        {inboxTab === "spam_or_system" ? "Spam" : inboxTab === "person_personal" ? "Personal" : "Unknown"}
+                      </Badge>
+                      <Button variant="ghost" size="sm" className="h-7 text-[10px] gap-0.5" onClick={() => reclassifyContact(c.id, "person_business")}>
+                        <Briefcase className="h-3 w-3" /> Business
                       </Button>
+                      {inboxTab !== "person_personal" && (
+                        <Button variant="ghost" size="sm" className="h-7 text-[10px] gap-0.5" onClick={() => reclassifyContact(c.id, "person_personal")}>
+                          <Users className="h-3 w-3" /> Personal
+                        </Button>
+                      )}
                     </div>
                   </div>
                 ) : (
-                  <InlineContactEditor
-                    contact={c}
-                    onUpdate={(id, updates) => {
-                      setAllContacts(prev => prev.map(ct => ct.id === id ? { ...ct, ...updates } : ct));
-                    }}
-                    onSave={saveContact}
-                    onDismiss={dismissContact}
-                    defaultEntityType={inboxTab === "companies" ? "company" : inboxTab === "people" ? "person" : undefined}
-                  />
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <InlineContactEditor
+                        contact={c}
+                        onUpdate={(id, updates) => {
+                          setAllContacts(prev => prev.map(ct => ct.id === id ? { ...ct, ...updates } : ct));
+                        }}
+                        onSave={saveContact}
+                        onDismiss={dismissContact}
+                        defaultEntityType={inboxTab === "company" ? "company" : "person"}
+                      />
+                    </div>
+                    {/* Quick reclassify actions */}
+                    <div className="flex items-center gap-0.5 shrink-0">
+                      {inboxTab !== "person_personal" && (
+                        <Button variant="ghost" size="sm" className="h-6 w-6 p-0" title="Mark as Personal" onClick={() => reclassifyContact(c.id, "person_personal")}>
+                          <UserX className="h-3 w-3 text-muted-foreground" />
+                        </Button>
+                      )}
+                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0" title="Mark as Spam" onClick={() => reclassifyContact(c.id, "spam_or_system")}>
+                        <Bot className="h-3 w-3 text-muted-foreground" />
+                      </Button>
+                    </div>
+                  </div>
                 )}
               </CardContent>
             </Card>
           ))}
         </div>
       )}
-    </div>
-  );
-}
-
-// ─── Connection Manager with Direct Linking ───
-function ConnectionManagerPage() {
-  const { user } = useAuth();
-  const [connections, setConnections] = useState<ConnectedAccount[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => { loadConnections(); }, []);
-
-  async function loadConnections() {
-    setLoading(true);
-    const { data } = await supabase
-      .from("email_connections" as any)
-      .select("id, provider, email_address, is_active, updated_at")
-      .order("created_at", { ascending: false });
-    setConnections((data as any as ConnectedAccount[]) || []);
-    setLoading(false);
-  }
-
-  function startOAuth(provider: string) {
-    const base = import.meta.env.VITE_SUPABASE_URL;
-    const redirect = `${window.location.origin}/email/callback`;
-    window.location.href = `${base}/functions/v1/email-oauth?action=authorize&provider=${provider}&redirect_uri=${encodeURIComponent(redirect)}`;
-  }
-
-  const providerIcon = (provider: string) => {
-    if (provider.includes("google") || provider.includes("gmail")) return <Mail className="h-4 w-4 text-red-400" />;
-    if (provider.includes("microsoft") || provider.includes("outlook")) return <Mail className="h-4 w-4 text-blue-400" />;
-    if (provider.includes("linkedin")) return <Linkedin className="h-4 w-4 text-blue-500" />;
-    if (provider.includes("facebook")) return <Facebook className="h-4 w-4 text-blue-600" />;
-    return <Globe className="h-4 w-4 text-muted-foreground" />;
-  };
-
-  const LINKABLE_SOURCES = [
-    { provider: "google", label: "Gmail / Google", desc: "Email, Contacts, Calendar", icon: <Mail className="h-5 w-5 text-red-400" />, action: () => startOAuth("google") },
-    { provider: "microsoft", label: "Outlook / Microsoft", desc: "Email, Contacts, Calendar", icon: <Mail className="h-5 w-5 text-blue-400" />, action: () => startOAuth("microsoft") },
-    { provider: "linkedin", label: "LinkedIn", desc: "Professional network contacts", icon: <Linkedin className="h-5 w-5 text-blue-500" />, action: null },
-    { provider: "facebook", label: "Facebook", desc: "Social connections & pages", icon: <Facebook className="h-5 w-5 text-blue-600" />, action: null },
-    { provider: "phone", label: "Phone / Apple Contacts", desc: "Import contacts from your phone or iCloud", icon: <Phone className="h-5 w-5 text-green-400" />, action: null },
-  ];
-
-  const connectedProviders = new Set(connections.filter(c => c.is_active).map(c => {
-    if (c.provider === "gmail") return "google";
-    if (c.provider === "outlook") return "microsoft";
-    return c.provider;
-  }));
-
-  return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-lg font-bold flex items-center gap-2">
-          <Database className="h-5 w-5 text-primary" />
-          Data Sources
-        </h2>
-        <p className="text-xs text-muted-foreground">Link accounts to expand your network intelligence and reach more connections.</p>
-      </div>
-
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Link an Account</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          {LINKABLE_SOURCES.map(source => {
-            const isConnected = connectedProviders.has(source.provider);
-            return (
-              <div key={source.provider} className="flex items-center justify-between py-3 border-b last:border-0">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-lg bg-muted/30 flex items-center justify-center shrink-0">{source.icon}</div>
-                  <div>
-                    <p className="font-medium text-sm">{source.label}</p>
-                    <p className="text-[11px] text-muted-foreground">{source.desc}</p>
-                  </div>
-                </div>
-                {isConnected ? (
-                  <Badge variant="outline" className="text-[10px] text-green-500 border-green-500/30 gap-0.5"><CheckCircle className="h-2.5 w-2.5" /> Connected</Badge>
-                ) : source.action ? (
-                  <Button size="sm" className="h-8 text-xs gap-1" onClick={source.action}>
-                    <Plus className="h-3 w-3" /> Connect
-                  </Button>
-                ) : (
-                  <Badge variant="secondary" className="text-[10px]">Coming Soon</Badge>
-                )}
-              </div>
-            );
-          })}
-        </CardContent>
-      </Card>
-
-      {connections.length > 0 && (
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base">Active Connections</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {connections.map(conn => (
-              <div key={conn.id} className="flex items-center gap-4 py-2 border-b last:border-0">
-                <div className="h-10 w-10 rounded-lg bg-muted/30 flex items-center justify-center shrink-0">
-                  {providerIcon(conn.provider)}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="font-medium text-sm">{conn.email_address}</p>
-                    {conn.is_active ? (
-                      <Badge variant="outline" className="text-[10px] text-green-500 border-green-500/30 gap-0.5"><Wifi className="h-2.5 w-2.5" /> Active</Badge>
-                    ) : (
-                      <Badge variant="outline" className="text-[10px] text-destructive border-destructive/30 gap-0.5"><WifiOff className="h-2.5 w-2.5" /> Inactive</Badge>
-                    )}
-                  </div>
-                  <p className="text-xs text-muted-foreground capitalize">{conn.provider} · Last synced {new Date(conn.updated_at).toLocaleDateString()}</p>
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      )}
-
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Enrichment Waterfall</CardTitle>
