@@ -13,7 +13,7 @@ import DemoSpotlightTab from "@/components/connect-demo/DemoSpotlightTab";
 import DemoAssistantTab from "@/components/connect-demo/DemoAssistantTab";
 import ConnectIntelligencePage from "@/pages/ConnectIntelligence";
 import ConnectLeads from "@/pages/ConnectLeads";
-import { useNavigate } from "react-router-dom";
+
 
 // Cinematic intro overlay
 function CinematicIntro({ onComplete }: { onComplete: () => void }) {
