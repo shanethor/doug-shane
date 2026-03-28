@@ -59,7 +59,7 @@ function CinematicIntro({ onComplete }: { onComplete: () => void }) {
         opacity: phase >= 1 ? 1 : 0,
         transform: phase >= 1 ? "translateY(0)" : "translateY(20px)",
         transition: "all 1s cubic-bezier(0.16, 1, 0.3, 1) 0.4s",
-      }}>AuRa Connect</h1>
+      }}>AURA Connect</h1>
       <p className="text-sm mt-2" style={{
         color: "hsl(140 12% 58%)",
         opacity: phase >= 1 ? 1 : 0,

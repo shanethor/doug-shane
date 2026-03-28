@@ -53,13 +53,13 @@ export default function ConnectUpsellModal({
             <div className="p-2 rounded-lg" style={{ background: "hsl(140 12% 42% / 0.15)" }}>
               <Network className="h-5 w-5" style={{ color: "hsl(140 12% 58%)" }} />
             </div>
-            AuRa Connect
+            AURA Connect
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-5 pt-2">
           <p className="text-sm text-white/50 leading-relaxed">
-            You already know the right people. Let AuRa Connect show you the way in.
+            You already know the right people. Let AURA Connect show you the way in.
           </p>
 
           <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">

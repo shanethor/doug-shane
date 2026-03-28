@@ -13,10 +13,10 @@ const AuraLogo = ({ size = 80 }: { size?: number }) => (
 );
 
 const COLORS = [
-  { name: "Sage (Primary)", hsl: "hsl(140, 12%, 42%)", hex: "#5F7A61", usage: "AuRa Connect logo, primary buttons, accents, links" },
+  { name: "Sage (Primary)", hsl: "hsl(140, 12%, 42%)", hex: "#5F7A61", usage: "AURA Connect logo, primary buttons, accents, links" },
   { name: "Sage Light", hsl: "hsl(140, 12%, 58%)", hex: "#8A9A8C", usage: "Hover states, secondary text, shimmer" },
   { name: "Sage Subtle", hsl: "hsl(140, 12%, 55%)", hex: "#7F9181", usage: "Credit/reward callouts, subtle highlights" },
-  { name: "Studio Orange", hsl: "hsl(25, 95%, 53%)", hex: "#F97316", usage: "AuRa Studio logo, Studio accents, CTA highlights" },
+  { name: "Studio Orange", hsl: "hsl(25, 95%, 53%)", hex: "#F97316", usage: "AURA Studio logo, Studio accents, CTA highlights" },
   { name: "Studio Amber", hsl: "hsl(38, 92%, 50%)", hex: "#F59E0B", usage: "Studio hover states, secondary Studio accents" },
   { name: "Dark Background", hsl: "hsl(240, 10%, 4%)", hex: "#08080A", usage: "App dark mode background" },
   { name: "Card Dark", hsl: "hsl(240, 8%, 7%)", hex: "#101014", usage: "Cards and panels in dark mode" },
@@ -34,13 +34,13 @@ const TYPOGRAPHY = [
 
 const PRODUCTS = [
   {
-    name: "AuRa Connect",
+    name: "AURA Connect",
     tagline: "Relationship Intelligence Platform",
     description: "Network mapping, email & calendar integration, pipeline management, and AI-powered outreach. Designed for professionals who build relationships.",
     route: "/connect",
   },
   {
-    name: "AuRa Studio",
+    name: "AURA Studio",
     tagline: "Content & Material Creation",
     description: "Branded content, proposals, flyers, and marketing materials powered by AI. Create polished, professional output instantly.",
     route: "/studio",
@@ -81,9 +81,9 @@ export default function BrandKit() {
         <div className="absolute inset-0" style={{ background: "radial-gradient(circle at 50% 50%, hsl(140 12% 42% / 0.1) 0%, transparent 60%)" }} />
         <div className="max-w-5xl mx-auto px-6 py-20 relative z-10 text-center space-y-6">
           <AuraLogo size={96} />
-          <h1 className="text-4xl sm:text-5xl font-extrabold text-white tracking-tight">AuRa Brand Kit</h1>
+          <h1 className="text-4xl sm:text-5xl font-extrabold text-white tracking-tight">AURA Brand Kit</h1>
           <p className="text-lg max-w-xl mx-auto" style={{ color: "hsl(140 12% 58%)" }}>
-            Official branding guidelines, color palette, typography, and visual assets for AuRa products.
+            Official branding guidelines, color palette, typography, and visual assets for AURA products.
           </p>
           <Badge className="text-sm px-4 py-1" style={{ background: "hsl(140 12% 42% / 0.15)", color: "hsl(140 12% 58%)", border: "1px solid hsl(140 12% 42% / 0.3)" }}>
             v1.0 · March 2026
@@ -116,7 +116,7 @@ export default function BrandKit() {
               <CardContent className="flex items-center justify-center py-10 rounded-b-lg" style={{ background: "#08080A" }}>
                 <div className="flex items-center gap-3">
                   <AuraLogo size={48} />
-                  <span className="text-3xl font-extrabold text-white tracking-tight">AuRa</span>
+                  <span className="text-3xl font-extrabold text-white tracking-tight">AURA</span>
                 </div>
               </CardContent>
             </Card>
@@ -124,7 +124,7 @@ export default function BrandKit() {
           <Card className="border-dashed">
             <CardContent className="py-4">
               <p className="text-sm"><strong>Usage rules:</strong> Always maintain clear space equal to the logo height around the mark. The "A" lettermark inside the logo references the brand initial. The sage green square with rounded corners is the primary container. Do not distort, rotate, or recolor.</p>
-              <p className="text-sm mt-2"><strong>Stylization:</strong> Brand name is always written as <strong>AuRa</strong> (capital A, lowercase u, capital R, lowercase a).</p>
+              <p className="text-sm mt-2"><strong>Stylization:</strong> <p className="text-sm mt-2"><strong>Stylization:</strong> Brand name is always written as <strong>AURA</strong> (all caps).</p></p>
             </CardContent>
           </Card>
         </section>
@@ -136,7 +136,7 @@ export default function BrandKit() {
             <h2 className="text-2xl font-bold">Color Palette</h2>
           </div>
           <p className="text-sm text-muted-foreground">
-            AuRa uses a "Sage" palette as its signature color identity. The system supports both light and dark modes with corresponding token swaps. Click any swatch to copy the hex value.
+            AURA uses a "Sage" palette as its signature color identity. The system supports both light and dark modes with corresponding token swaps. Click any swatch to copy the hex value.
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6">
             {COLORS.map(c => <ColorSwatch key={c.name} color={c} />)}
@@ -170,7 +170,7 @@ export default function BrandKit() {
                   </div>
                   <div className="shrink-0">
                     <p style={{ fontFamily: t.family, fontWeight: parseInt(t.weight) || 600, fontSize: "18px" }}>
-                      AuRa Connect
+                      AURA Connect
                     </p>
                   </div>
                 </CardContent>
@@ -188,11 +188,11 @@ export default function BrandKit() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {PRODUCTS.map(p => (
               <Card key={p.name} className="overflow-hidden">
-                <div className="h-3" style={{ background: p.name === "AuRa Studio" ? "hsl(25 95% 53%)" : "hsl(140 12% 42%)" }} />
+                <div className="h-3" style={{ background: p.name === "AURA Studio" ? "hsl(25 95% 53%)" : "hsl(140 12% 42%)" }} />
                 <CardContent className="pt-5 space-y-3">
                   <div>
                     <h3 className="text-lg font-bold">{p.name}</h3>
-                    <p className="text-sm italic" style={{ color: p.name === "AuRa Studio" ? "hsl(25 95% 53%)" : "hsl(140 12% 55%)" }}>{p.tagline}</p>
+                    <p className="text-sm italic" style={{ color: p.name === "AURA Studio" ? "hsl(25 95% 53%)" : "hsl(140 12% 55%)" }}>{p.tagline}</p>
                   </div>
                   <p className="text-sm text-muted-foreground">{p.description}</p>
                   <Button variant="outline" size="sm" className="text-xs" onClick={() => window.open(p.route, "_blank")}>
@@ -238,7 +238,7 @@ export default function BrandKit() {
             <CardContent className="py-5 space-y-3 text-sm text-muted-foreground">
               <p><strong>Primary tagline:</strong> <em>"You already know the right people. You just don't know how to get there."</em></p>
               <p><strong>Secondary tagline:</strong> <em>"Let us show you the way in."</em></p>
-              <p><strong>Closer:</strong> <em>"Intelligence runs on AuRa."</em></p>
+              <p><strong>Closer:</strong> <em>"Intelligence runs on AURA."</em></p>
               <p className="pt-2"><strong>Tone:</strong> Confident but not arrogant. Helpful, never pushy. Professional but approachable. Think: a trusted advisor who's always three steps ahead.</p>
               <p><strong>Avoid:</strong> Overly salesy language, generic AI hype, corporate jargon, exclamation marks in headings.</p>
             </CardContent>
@@ -247,7 +247,7 @@ export default function BrandKit() {
 
         {/* Footer */}
         <div className="text-center py-10 border-t border-border">
-          <p className="text-sm text-muted-foreground">© {new Date().getFullYear()} AuRa · Brand Kit v1.0</p>
+          <p className="text-sm text-muted-foreground">© {new Date().getFullYear()} AURA · Brand Kit v1.0</p>
           <p className="text-xs text-muted-foreground mt-1">Questions? Contact brand@aurarisk.com</p>
         </div>
       </div>

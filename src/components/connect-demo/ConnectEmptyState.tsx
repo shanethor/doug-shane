@@ -10,7 +10,7 @@ const CONFIG = {
   email: {
     icon: Mail,
     title: "Connect your email",
-    description: "Link your Gmail or Outlook account to see your real inbox here. AuRa will sync your emails and provide AI-powered insights.",
+    description: "Link your Gmail or Outlook account to see your real inbox here. AURA will sync your emails and provide AI-powered insights.",
     settingsSection: "email",
     buttonLabel: "Connect Email Account",
   },
@@ -24,7 +24,7 @@ const CONFIG = {
   calendar: {
     icon: Calendar,
     title: "Set up your calendar",
-    description: "You can use AuRa's native calendar right away, or connect Gmail/Outlook to sync your external events alongside AuRa events.",
+    description: "You can use AURA's native calendar right away, or connect Gmail/Outlook to sync your external events alongside AURA events.",
     settingsSection: "calendar",
     buttonLabel: "Connect Calendar",
     secondaryNote: "You can also create events directly using the native calendar below.",

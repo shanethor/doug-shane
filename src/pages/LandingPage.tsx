@@ -48,7 +48,7 @@ function ParticleNetwork() {
   return <canvas ref={canvasRef} className="fixed inset-0 z-0 pointer-events-none" />;
 }
 
-/* ═══ AuRa Logo SVG (sage green) ═══ */
+/* ═══ AURA Logo SVG (sage green) ═══ */
 const AuraLogoLarge = ({ size = 80 }: { size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 100 100" fill="none">
     <rect width="100" height="100" rx="22" fill="hsl(140 12% 42%)" />
@@ -251,7 +251,7 @@ export default function LandingPage() {
             </h1>
             <p className="text-[17px] font-medium max-w-[600px] mx-auto leading-[1.65] mb-8" style={{ color: "hsl(140 12% 58%)" }}>
               <span style={{ color: "hsl(140 12% 72%)" }} className="font-semibold">AURA CONNECT</span> gives your team an AI‑powered workspace for email, calendar, pipeline, and insurance workflows.{" "}
-              <span className="text-[#F59E0B] font-semibold">AuRa Studio</span> builds the custom agents and automations that make it yours.
+              <span className="text-[#F59E0B] font-semibold">AURA Studio</span> builds the custom agents and automations that make it yours.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
               <Link
@@ -270,10 +270,10 @@ export default function LandingPage() {
                 href="#studio"
                 className="inline-flex items-center gap-2 text-sm font-medium text-white border border-[#F59E0B]/30 px-7 py-3 rounded-[10px] hover:border-[#F59E0B]/60 hover:bg-[#F59E0B]/[0.06] transition-all no-underline"
               >
-                Talk to AuRa Studio
+                Talk to AURA Studio
               </a>
             </div>
-            <p className="text-lg font-semibold tracking-wide" style={{ color: "hsl(140 12% 42%)" }}>Intelligence runs on AuRa</p>
+            <p className="text-lg font-semibold tracking-wide" style={{ color: "hsl(140 12% 42%)" }}>Intelligence runs on AURA</p>
           </div>
         </section>
 
@@ -307,7 +307,7 @@ export default function LandingPage() {
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ background: "hsl(140 12% 52%)" }} />
-                      AI‑powered email hub with Gmail, Outlook, and AuRa layouts — smart summarize, AI reply, and pipeline tagging built in.
+                      AI‑powered email hub with Gmail, Outlook, and AURA layouts — smart summarize, AI reply, and pipeline tagging built in.
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ background: "hsl(140 12% 52%)" }} />
@@ -367,7 +367,7 @@ export default function LandingPage() {
                   <div className="rounded-[20px] overflow-hidden border border-[hsl(140_12%_42%/0.12)] aspect-[16/9] relative mb-4" style={{ background: "linear-gradient(135deg, hsl(140 12% 42% / 0.08), hsl(140 12% 20% / 0.04))" }}>
                     <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
                       <AuraLogoLarge size={48} />
-                      <p className="text-lg font-bold text-white mt-4 tracking-tight">Intelligence runs on AuRa</p>
+                      <p className="text-lg font-bold text-white mt-4 tracking-tight">Intelligence runs on AURA</p>
                       <p className="text-xs mt-2" style={{ color: "hsl(140 12% 58%)" }}>Relationship intelligence • AI email • Sales pipeline • Marketing</p>
                     </div>
                   </div>
@@ -375,7 +375,7 @@ export default function LandingPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {[
                       { t: "Relationship graph", d: "Map every connection across email, social, and calendar into one unified network." },
-                      { t: "AI-powered email", d: "Gmail, Outlook, or AuRa view — with smart summarize, AI reply, and pipeline tagging built in." },
+                      { t: "AI-powered email", d: "Gmail, Outlook, or AURA view — with smart summarize, AI reply, and pipeline tagging built in." },
                       { t: "Outreach cadences", d: "Tiered contact strategies with automated follow-ups and connection tracking." },
                       { t: "Create & post", d: "AI brand studio with logo extraction, social resizing, and Sage-powered captions." },
                     ].map((f) => (
@@ -398,7 +398,7 @@ export default function LandingPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-16">
                 {/* Left column */}
                 <div>
-                  <div className="text-[11px] font-semibold tracking-[0.12em] uppercase text-[#F59E0B] mb-4">AuRa Studio</div>
+                  <div className="text-[11px] font-semibold tracking-[0.12em] uppercase text-[#F59E0B] mb-4">AURA Studio</div>
                   <h2 className="text-[clamp(32px,4vw,48px)] font-bold tracking-[-0.04em] leading-[1.05] text-white mb-5">
                     Custom Tools &amp; AI Agents,<br />Done for You
                   </h2>
@@ -442,9 +442,9 @@ export default function LandingPage() {
                     <Link
                       to="/studiodemo"
                       className="inline-flex items-center gap-2 text-sm font-medium text-[#08080A] bg-[#F59E0B] px-7 py-3 rounded-[10px] hover:bg-[#FBBF24] transition-colors no-underline"
-                      aria-label="Talk to AuRa Studio"
+                      aria-label="Talk to AURA Studio"
                     >
-                      Talk to AuRa Studio
+                      Talk to AURA Studio
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
                         <path d="M5 12h14" /><path d="M12 5l7 7-7 7" />
                       </svg>
@@ -464,7 +464,7 @@ export default function LandingPage() {
                 {/* Right column — feature cards */}
                 <div>
                   <div className="rounded-[20px] overflow-hidden border border-white/[0.06] aspect-[16/9] relative mb-4">
-                    <img src="/images/concierge-toolkit.png" alt="AuRa Studio — custom AI tools" loading="eager" decoding="async" className="w-full h-full object-cover" />
+                    <img src="/images/concierge-toolkit.png" alt="AURA Studio — custom AI tools" loading="eager" decoding="async" className="w-full h-full object-cover" />
                     <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-[#08080A]/60 to-transparent" />
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -544,7 +544,7 @@ export default function LandingPage() {
               </div>
 
               <p className="text-[14px] text-[#71717A] leading-[1.65] max-w-[700px]">
-                <span className="font-semibold text-white">AURA CONNECT</span> and <span className="font-semibold text-[#F59E0B]">AuRa Studio</span> are built to help small and mid‑sized firms capture these same gains — without hiring an internal AI team.
+                <span className="font-semibold text-white">AURA CONNECT</span> and <span className="font-semibold text-[#F59E0B]">AURA Studio</span> are built to help small and mid‑sized firms capture these same gains — without hiring an internal AI team.
               </p>
             </div>
           </div>
@@ -571,7 +571,7 @@ export default function LandingPage() {
             <div>
               <div className="text-[13px] font-semibold text-white mb-4">Platform</div>
               <a href="#connect" className="block text-[13px] text-[#71717A] py-1 hover:text-white transition-colors no-underline">AURA Connect</a>
-              <a href="#studio" className="block text-[13px] text-[#71717A] py-1 hover:text-white transition-colors no-underline">AuRa Studio</a>
+              <a href="#studio" className="block text-[13px] text-[#71717A] py-1 hover:text-white transition-colors no-underline">AURA Studio</a>
               <a href="#research" className="block text-[13px] text-[#71717A] py-1 hover:text-white transition-colors no-underline">Why AI</a>
             </div>
             <div>

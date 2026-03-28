@@ -663,7 +663,7 @@ export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId, ini
             <div>
               <h2 className="text-base font-bold flex items-center gap-2 text-white">
                 <Sparkles className="h-4 w-4" style={{ color: "hsl(140 12% 58%)" }} />
-                AuRa Create
+                AURA Create
               </h2>
               <p className="text-[10px]" style={{ color: "hsl(240 5% 50%)" }}>Choose a template</p>
             </div>
@@ -701,7 +701,7 @@ export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId, ini
           <div>
             <h2 className="text-base font-bold flex items-center gap-2 text-white">
               <Sparkles className="h-4 w-4" style={{ color: "hsl(140 12% 58%)" }} />
-              AuRa Create
+              AURA Create
             </h2>
             <p className="text-[10px]" style={{ color: "hsl(240 5% 50%)" }}>
               {editFlyerId ? `Edit ${typeLabel}` : `New ${typeLabel}`}

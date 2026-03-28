@@ -270,7 +270,7 @@ export default function DemoOutreachTab() {
                 <p className="text-sm font-semibold text-white">How Tiers &amp; Cadence Work</p>
               </div>
               <p className="text-xs leading-relaxed" style={{ color: "hsl(240 5% 56%)" }}>
-                Every contact is assigned a tier based on their value to your book of business. The tier determines how often you should reach out — your <span className="font-medium text-white">cadence</span>. AuRa tracks your last touch and counts down to the next one so no relationship goes cold.
+                Every contact is assigned a tier based on their value to your book of business. The tier determines how often you should reach out — your <span className="font-medium text-white">cadence</span>. AURA tracks your last touch and counts down to the next one so no relationship goes cold.
               </p>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {[

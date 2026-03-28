@@ -4,7 +4,7 @@ import type { EmailLayout } from "./useEmailEngine";
 const LAYOUTS: { id: EmailLayout; label: string; icon: React.ElementType }[] = [
   { id: "gmail", label: "Gmail", icon: Mail },
   { id: "outlook", label: "Outlook", icon: LayoutGrid },
-  { id: "aura", label: "AuRa", icon: Sparkles },
+  { id: "aura", label: "AURA", icon: Sparkles },
 ];
 
 export default function EmailLayoutSwitcher({

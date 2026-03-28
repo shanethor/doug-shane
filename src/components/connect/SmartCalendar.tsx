@@ -507,7 +507,7 @@ export default function SmartCalendar() {
             </Button>
             <Button variant={showAssistant ? "default" : "outline"} size="sm" className="gap-1.5 text-xs h-8" onClick={() => setShowAssistant(s => !s)}
               style={showAssistant ? { background: "hsl(140 12% 42%)" } : {}}>
-              <Bot className="h-3 w-3" /> <span className="hidden sm:inline">Aura Assistant</span>
+              <Bot className="h-3 w-3" /> <span className="hidden sm:inline">AURA Assistant</span>
             </Button>
             <Button size="sm" className="gap-1.5 text-xs h-8 text-white" style={{ background: "hsl(140 12% 42%)" }} onClick={() => openQuickAdd(currentDate)}>
               <Plus className="h-3.5 w-3.5" /> New Event

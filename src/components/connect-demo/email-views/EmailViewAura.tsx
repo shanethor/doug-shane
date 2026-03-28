@@ -237,7 +237,7 @@ export default function EmailViewAura({ engine, ai }: { engine: Engine; ai: AI }
           )}
         </div>
 
-        {/* Right context panel — AuRa exclusive */}
+        {/* Right context panel — AURA exclusive */}
         {selectedThread && (
           <div className="hidden xl:flex flex-col w-72 shrink-0 rounded-lg overflow-hidden" style={{ background: "hsl(240 8% 7%)", border: "1px solid hsl(240 6% 14%)" }}>
             <Tabs value={contextTab} onValueChange={setContextTab}>
@@ -247,7 +247,7 @@ export default function EmailViewAura({ engine, ai }: { engine: Engine; ai: AI }
                 <TabsTrigger value="contact" className="text-[10px] flex-1 gap-1"><User className="h-3 w-3" /> Contact</TabsTrigger>
               </TabsList>
               <TabsContent value="summary" className="p-3 space-y-3 m-0">
-                <p className="text-[9px] font-bold uppercase tracking-wider" style={{ color: "hsl(140 12% 50%)" }}>AuRa Connect Tools</p>
+                <p className="text-[9px] font-bold uppercase tracking-wider" style={{ color: "hsl(140 12% 50%)" }}>AURA Connect Tools</p>
                 <p className="text-xs" style={{ color: "hsl(240 5% 65%)" }}>
                   Thread with {selectedThread.participants.filter(p => p !== "You").join(", ")}. {selectedThread.messages.length} message(s).
                 </p>
