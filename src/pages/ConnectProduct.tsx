@@ -12,6 +12,7 @@ import SmartCalendar from "@/components/connect/SmartCalendar";
 import DemoSpotlightTab from "@/components/connect-demo/DemoSpotlightTab";
 import DemoAssistantTab from "@/components/connect-demo/DemoAssistantTab";
 import ConnectIntelligencePage from "@/pages/ConnectIntelligence";
+import ConnectLeads from "@/pages/ConnectLeads";
 import { useNavigate } from "react-router-dom";
 
 // Cinematic intro overlay
@@ -120,6 +121,7 @@ export default function ConnectProduct() {
   const path = location.pathname;
   const getPage = () => {
     if (path.startsWith("/connect/intelligence")) return "intelligence";
+    if (path.startsWith("/connect/leads")) return "leads";
     if (path.startsWith("/connect/pipeline")) return "pipeline";
     if (path.startsWith("/connect/email")) return "email";
     if (path.startsWith("/connect/calendar")) return "calendar";
@@ -132,6 +134,7 @@ export default function ConnectProduct() {
   const handleSageNavigate = (tab: string) => {
     const routes: Record<string, string> = {
       connect: "/connect",
+      leads: "/connect/leads",
       pipeline: "/connect/pipeline",
       email: "/connect/email",
       calendar: "/connect/calendar",
@@ -157,6 +160,7 @@ export default function ConnectProduct() {
           }}>
             {page === "connect" && <DemoConnectTab contentReady={introComplete} />}
             {page === "intelligence" && <ConnectIntelligencePage />}
+            {page === "leads" && <ConnectLeads />}
             {page === "pipeline" && <ConnectPipelineTab />}
             {page === "email" && <DemoEmailTab />}
             {page === "calendar" && <SmartCalendar />}

@@ -783,6 +783,57 @@ export type Database = {
           },
         ]
       }
+      company_profiles: {
+        Row: {
+          company_name: string
+          created_at: string
+          extracted_profile: Json | null
+          icp_description: string | null
+          id: string
+          industry: string | null
+          revenue_range: string | null
+          target_buyer_titles: string[] | null
+          target_geos: string[] | null
+          typical_deal_size: string | null
+          updated_at: string
+          user_id: string
+          vertical_tags: string[] | null
+          website_urls: string[] | null
+        }
+        Insert: {
+          company_name?: string
+          created_at?: string
+          extracted_profile?: Json | null
+          icp_description?: string | null
+          id?: string
+          industry?: string | null
+          revenue_range?: string | null
+          target_buyer_titles?: string[] | null
+          target_geos?: string[] | null
+          typical_deal_size?: string | null
+          updated_at?: string
+          user_id: string
+          vertical_tags?: string[] | null
+          website_urls?: string[] | null
+        }
+        Update: {
+          company_name?: string
+          created_at?: string
+          extracted_profile?: Json | null
+          icp_description?: string | null
+          id?: string
+          industry?: string | null
+          revenue_range?: string | null
+          target_buyer_titles?: string[] | null
+          target_geos?: string[] | null
+          typical_deal_size?: string | null
+          updated_at?: string
+          user_id?: string
+          vertical_tags?: string[] | null
+          website_urls?: string[] | null
+        }
+        Relationships: []
+      }
       concierge_files: {
         Row: {
           created_at: string
@@ -2344,6 +2395,63 @@ export type Database = {
         }
         Relationships: []
       }
+      generated_leads: {
+        Row: {
+          company_name: string
+          contacts: Json | null
+          created_at: string
+          data_quality_score: number | null
+          firmographics: Json | null
+          fit_score: number | null
+          id: string
+          intent_score: number | null
+          location: string | null
+          raw_source_links: string[] | null
+          source: string
+          status: string
+          updated_at: string
+          user_id: string
+          vertical_tags: string[] | null
+          website: string | null
+        }
+        Insert: {
+          company_name: string
+          contacts?: Json | null
+          created_at?: string
+          data_quality_score?: number | null
+          firmographics?: Json | null
+          fit_score?: number | null
+          id?: string
+          intent_score?: number | null
+          location?: string | null
+          raw_source_links?: string[] | null
+          source?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+          vertical_tags?: string[] | null
+          website?: string | null
+        }
+        Update: {
+          company_name?: string
+          contacts?: Json | null
+          created_at?: string
+          data_quality_score?: number | null
+          firmographics?: Json | null
+          fit_score?: number | null
+          id?: string
+          intent_score?: number | null
+          location?: string | null
+          raw_source_links?: string[] | null
+          source?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+          vertical_tags?: string[] | null
+          website?: string | null
+        }
+        Relationships: []
+      }
       icloud_connections: {
         Row: {
           app_password_encrypted: string
@@ -2578,6 +2686,44 @@ export type Database = {
           },
         ]
       }
+      lead_claims: {
+        Row: {
+          claimer_user_id: string
+          created_at: string
+          id: string
+          lead_post_id: string
+          notes: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          claimer_user_id: string
+          created_at?: string
+          id?: string
+          lead_post_id: string
+          notes?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          claimer_user_id?: string
+          created_at?: string
+          id?: string
+          lead_post_id?: string
+          notes?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_claims_lead_post_id_fkey"
+            columns: ["lead_post_id"]
+            isOneToOne: false
+            referencedRelation: "lead_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lead_notes: {
         Row: {
           created_at: string
@@ -2606,6 +2752,98 @@ export type Database = {
             columns: ["lead_id"]
             isOneToOne: false
             referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lead_posts: {
+        Row: {
+          created_at: string
+          description: string
+          elo_max: number | null
+          elo_min: number | null
+          estimated_value: number | null
+          id: string
+          lead_type: string
+          owner_user_id: string
+          preferred_industries: string[] | null
+          preferred_states: string[] | null
+          referral_offer_type: string | null
+          referral_offer_value: number | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string
+          elo_max?: number | null
+          elo_min?: number | null
+          estimated_value?: number | null
+          id?: string
+          lead_type?: string
+          owner_user_id: string
+          preferred_industries?: string[] | null
+          preferred_states?: string[] | null
+          referral_offer_type?: string | null
+          referral_offer_value?: number | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          elo_max?: number | null
+          elo_min?: number | null
+          estimated_value?: number | null
+          id?: string
+          lead_type?: string
+          owner_user_id?: string
+          preferred_industries?: string[] | null
+          preferred_states?: string[] | null
+          referral_offer_type?: string | null
+          referral_offer_value?: number | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      lead_ratings: {
+        Row: {
+          comment: string | null
+          created_at: string
+          id: string
+          lead_claim_id: string
+          rated_user_id: string
+          rater_user_id: string
+          score: number
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          lead_claim_id: string
+          rated_user_id: string
+          rater_user_id: string
+          score: number
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          lead_claim_id?: string
+          rated_user_id?: string
+          rater_user_id?: string
+          score?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lead_ratings_lead_claim_id_fkey"
+            columns: ["lead_claim_id"]
+            isOneToOne: false
+            referencedRelation: "lead_claims"
             referencedColumns: ["id"]
           },
         ]
@@ -4284,6 +4522,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_elo: {
+        Row: {
+          created_at: string
+          deals_completed: number
+          elo_rating: number
+          negative_ratings: number
+          positive_ratings: number
+          reliability_score: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          deals_completed?: number
+          elo_rating?: number
+          negative_ratings?: number
+          positive_ratings?: number
+          reliability_score?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          deals_completed?: number
+          elo_rating?: number
+          negative_ratings?: number
+          positive_ratings?: number
+          reliability_score?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       user_features: {
         Row: {
