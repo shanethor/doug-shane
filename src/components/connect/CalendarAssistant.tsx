@@ -166,7 +166,7 @@ Keep responses concise and actionable. Use markdown formatting.`;
             <Bot className="h-4 w-4 text-white" />
           </div>
           <div>
-            <p className="text-sm font-semibold text-white">Aura Assistant</p>
+            <p className="text-sm font-semibold text-white">AURA Assistant</p>
             <p className="text-[9px]" style={{ color: "hsl(240 5% 46%)" }}>Calendar AI</p>
           </div>
         </div>

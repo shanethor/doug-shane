@@ -422,7 +422,7 @@ export default function Settings() {
         </CardContent>
       </Card>
 
-      {/* What Aura Sees — Data Transparency */}
+      {/* What AURA Sees — Data Transparency */}
       <Card className="mb-4 sm:mb-6">
         <CardContent className="p-4 sm:p-6">
           <WhatAuraSees />

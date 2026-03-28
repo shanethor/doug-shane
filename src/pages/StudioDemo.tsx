@@ -128,7 +128,7 @@ export default function StudioDemo() {
           </h1>
           <p className="text-[#A1A1AA] max-w-xl mx-auto text-sm">
           Submit a build request below. Tell us what you need — a custom CRM, AI agents,
-            marketing automation — and watch Aura scope, schedule, and kick it off instantly.
+            marketing automation — and watch AURA scope, schedule, and kick it off instantly.
           </p>
         </div>
 

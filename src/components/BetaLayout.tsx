@@ -34,7 +34,7 @@ export default function BetaLayout() {
       <div className="bg-primary/10 border-b border-primary/20 px-4 py-1.5 text-center">
         <p className="text-[10px] text-primary font-medium tracking-wide flex items-center justify-center gap-1.5">
           <FlaskConical className="h-3 w-3" />
-          Aura Beta: demo features for Jane Smith and Douglas Wenz only.
+          AURA Beta: demo features for Jane Smith and Douglas Wenz only.
         </p>
       </div>
 

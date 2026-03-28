@@ -136,10 +136,10 @@ export default function AuraPulse() {
                 <HeartPulse className="h-12 w-12 text-primary" />
               </div>
               <h2 className="text-2xl md:text-3xl font-bold tracking-tight mb-4">
-                Aura Pulse
+                AURA Pulse
               </h2>
               <p className="text-muted-foreground max-w-lg mx-auto text-sm md:text-base leading-relaxed mb-6">
-                The communication hub for your agency. Send messages, organize team discussion boards and to-do lists, or hop on a video or voice call — all in one place with Aura Pulse.
+                The communication hub for your agency. Send messages, organize team discussion boards and to-do lists, or hop on a video or voice call — all in one place with AURA Pulse.
               </p>
               <span className="text-xs uppercase tracking-[0.3em] text-muted-foreground font-semibold border border-border rounded-full px-5 py-2">
                 Coming Soon
@@ -171,7 +171,7 @@ export default function AuraPulse() {
                 AI-Powered Concierge
               </h3>
               <p className="text-muted-foreground max-w-lg mx-auto text-sm md:text-base leading-relaxed mb-6">
-                Aura Pulse can also serve as a concierge service for your clients. After hours — or when you&apos;re busy — Pulse can take down customer information with an AI-powered answering machine. This plugs directly into our sales pipeline and management software. Clients can contact you, give basic information, receive an intake form, and fill it out — all while you&apos;re in a meeting or with your family.
+                AURA Pulse can also serve as a concierge service for your clients. After hours — or when you&apos;re busy — Pulse can take down customer information with an AI-powered answering machine. This plugs directly into our sales pipeline and management software. Clients can contact you, give basic information, receive an intake form, and fill it out — all while you&apos;re in a meeting or with your family.
               </p>
             </div>
 
