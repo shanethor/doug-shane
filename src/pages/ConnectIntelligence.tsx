@@ -378,7 +378,7 @@ function EmailIntelligencePage() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-lg font-bold">Inbox Discoveries</h2>
-          <p className="text-xs text-muted-foreground">Contacts found and classified from your email activity.</p>
+          <p className="text-xs text-muted-foreground">Contacts found and classified from your connected accounts.</p>
         </div>
         <div className="flex gap-2">
           {newThisWeek > 0 && <Badge className="bg-primary">{newThisWeek} new</Badge>}
