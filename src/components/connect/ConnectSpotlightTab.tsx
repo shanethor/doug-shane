@@ -11,12 +11,12 @@ import SpotlightFlyerWizard from "./SpotlightFlyerWizard";
 import SpotlightBrandSetup, { type BrandPackage } from "./SpotlightBrandSetup";
 import DesignEditor from "./DesignEditor";
 
-import templateSeasonalPromo from "@/assets/templates/seasonal-promo.png";
-import templateEventInvite from "@/assets/templates/event-invite.png";
-import templateRiskTip from "@/assets/templates/risk-tip.png";
-import templateReferralAsk from "@/assets/templates/referral-ask.png";
-import templateRenewalReminder from "@/assets/templates/renewal-reminder.png";
-import templateNewClientWelcome from "@/assets/templates/new-client-welcome.png";
+import templateSeasonalPromo from "@/assets/templates/seasonal-promo.jpg";
+import templateEventInvite from "@/assets/templates/event-invite.jpg";
+import templateRiskTip from "@/assets/templates/risk-tip.jpg";
+import templateReferralAsk from "@/assets/templates/referral-ask.jpg";
+import templateRenewalReminder from "@/assets/templates/renewal-reminder.jpg";
+import templateNewClientWelcome from "@/assets/templates/new-client-welcome.jpg";
 
 type ViewMode = "home" | "wizard" | "brand_setup" | "editor";
 

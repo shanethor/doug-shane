@@ -12,12 +12,12 @@ import SpotlightFlyerWizard from "@/components/connect/SpotlightFlyerWizard";
 import SpotlightBrandSetup, { type BrandPackage } from "@/components/connect/SpotlightBrandSetup";
 import TemplateEditor from "@/components/connect/TemplateEditor";
 import { SPOTLIGHT_TEMPLATES } from "@/components/connect/spotlight-templates";
-import newClientWelcomeImg from "@/assets/templates/new-client-welcome.png";
-import renewalReminderImg from "@/assets/templates/renewal-reminder.png";
-import eventInviteImg from "@/assets/templates/event-invite.png";
-import riskTipImg from "@/assets/templates/risk-tip.png";
-import referralAskImg from "@/assets/templates/referral-ask.png";
-import seasonalPromoImg from "@/assets/templates/seasonal-promo.png";
+import newClientWelcomeImg from "@/assets/templates/new-client-welcome.jpg";
+import renewalReminderImg from "@/assets/templates/renewal-reminder.jpg";
+import eventInviteImg from "@/assets/templates/event-invite.jpg";
+import riskTipImg from "@/assets/templates/risk-tip.jpg";
+import referralAskImg from "@/assets/templates/referral-ask.jpg";
+import seasonalPromoImg from "@/assets/templates/seasonal-promo.jpg";
 
 const TEMPLATE_IMAGES: Record<string, string> = {
   "new-client-welcome": newClientWelcomeImg,
