@@ -402,13 +402,15 @@ function EmailIntelligencePage() {
             <p className="font-medium">
               {inboxTab === "people" ? "No people discovered yet" :
                inboxTab === "companies" ? "No company contacts found" :
-               inboxTab === "saved" ? "No saved contacts" :
+               inboxTab === "saved_people" ? "No saved people" :
+               inboxTab === "saved_companies" ? "No saved companies" :
                "No filtered contacts"}
             </p>
             <p className="text-sm text-muted-foreground mt-1">
               {inboxTab === "people" ? "Connect your email and run a scan to discover contacts." :
                inboxTab === "companies" ? "Business contacts will appear here after scanning." :
-               inboxTab === "saved" ? "Contacts you save will appear here." :
+               inboxTab === "saved_people" ? "People you save will appear here." :
+               inboxTab === "saved_companies" ? "Companies you save will appear here." :
                "Spam and automated senders are filtered here."}
             </p>
             {inboxTab === "people" && (
@@ -424,7 +426,7 @@ function EmailIntelligencePage() {
           {displayList.map(c => (
             <Card key={c.id} className="border-border/50">
               <CardContent className="py-3 px-4">
-                {inboxTab === "saved" ? (
+                {(inboxTab === "saved_people" || inboxTab === "saved_companies") ? (
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-3 min-w-0 flex-1">
                       {c.profile_photo_url ? (
@@ -435,7 +437,10 @@ function EmailIntelligencePage() {
                         </div>
                       )}
                       <div className="min-w-0">
-                        <p className="text-sm font-medium truncate">{c.display_name || c.email_address}</p>
+                        <div className="flex items-center gap-1.5">
+                          <p className="text-sm font-medium truncate">{c.display_name || c.email_address}</p>
+                          {inboxTab === "saved_companies" && <Building2 className="h-3 w-3 text-muted-foreground shrink-0" />}
+                        </div>
                         {c.display_name && <p className="text-xs text-muted-foreground truncate">{c.email_address}</p>}
                         {c.hunter_company && <p className="text-xs text-muted-foreground">{c.hunter_company}{c.hunter_position ? ` · ${c.hunter_position}` : ""}</p>}
                         {c.enrichment_source && (
@@ -489,6 +494,7 @@ function EmailIntelligencePage() {
                     }}
                     onSave={saveContact}
                     onDismiss={dismissContact}
+                    defaultEntityType={inboxTab === "companies" ? "company" : inboxTab === "people" ? "person" : undefined}
                   />
                 )}
               </CardContent>
