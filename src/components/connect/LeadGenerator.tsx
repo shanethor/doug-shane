@@ -372,7 +372,7 @@ function GenerateControls({ onGenerate }: { onGenerate: (opts: any) => void }) {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-3">
             <div>
               <label className="text-xs font-medium text-muted-foreground mb-1 block">Target Geography</label>
               <Select value={geo} onValueChange={setGeo}>
@@ -383,16 +383,30 @@ function GenerateControls({ onGenerate }: { onGenerate: (opts: any) => void }) {
               </Select>
             </div>
             <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">Focus</label>
-              <Select value={focus} onValueChange={setFocus}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="new_business">New Business Filings</SelectItem>
-                  <SelectItem value="permits">Permit Database</SelectItem>
-                  <SelectItem value="social">Reddit Signals</SelectItem>
-                  <SelectItem value="linkedin">LinkedIn</SelectItem>
-                </SelectContent>
-              </Select>
+              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Focus Sources</label>
+              <div className="grid grid-cols-2 gap-2">
+                {([
+                  { key: "new_business", label: "New Business Filings", icon: FileText },
+                  { key: "permits", label: "Permit Database", icon: Building2 },
+                  { key: "social", label: "Reddit Signals", icon: Users },
+                  { key: "linkedin", label: "LinkedIn", icon: Globe },
+                ] as const).map(({ key, label, icon: Icon }) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => toggleFocus(key)}
+                    className={`flex items-center gap-2 rounded-lg border p-2.5 text-left text-xs font-medium transition-all ${
+                      focuses.includes(key)
+                        ? "border-primary bg-primary/5 text-foreground ring-1 ring-primary/20"
+                        : "border-border text-muted-foreground hover:border-primary/40"
+                    }`}
+                  >
+                    <Icon className={`h-3.5 w-3.5 shrink-0 ${focuses.includes(key) ? "text-primary" : ""}`} />
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <p className="text-[10px] text-muted-foreground mt-1">{focuses.length} source{focuses.length !== 1 ? "s" : ""} selected</p>
             </div>
           </div>
           <Button onClick={handleGenerate} disabled={generating} className="w-full gap-1.5">
