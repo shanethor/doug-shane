@@ -253,9 +253,10 @@ function EmailIntelligencePage() {
   const [allContacts, setAllContacts] = useState<DiscoveredContact[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
-  const [inboxTab, setInboxTab] = useState<"people" | "companies" | "saved_people" | "saved_companies" | "filtered">("people");
+  const [classifying, setClassifying] = useState(false);
+  const [inboxTab, setInboxTab] = useState<"person_business" | "company" | "person_personal" | "spam_or_system" | "unknown" | "saved_people" | "saved_companies">("person_business");
   const [savedEntityFilter, setSavedEntityFilter] = useState<"people" | "companies">("people");
-  const [showFiltered, setShowFiltered] = useState(false);
+  const [hideLowQuality, setHideLowQuality] = useState(true);
   const [enrichingId, setEnrichingId] = useState<string | null>(null);
 
   useEffect(() => { loadContacts(); }, []);
