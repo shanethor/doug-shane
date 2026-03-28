@@ -277,7 +277,7 @@ function EmailIntelligencePage() {
     toast.success("Contact rescued to People");
   }
 
-  async function saveContact(id: string) {
+  async function saveContact(id: string, entityType: "person" | "company" = "person") {
     const contact = allContacts.find(c => c.id === id);
     if (!contact) return;
 
@@ -310,9 +310,11 @@ function EmailIntelligencePage() {
         title: contact.hunter_position || null,
         linkedin_url: contact.hunter_linkedin_url || null,
         primary_phone: contact.hunter_phone || null,
+        is_business_owner: entityType === "company",
         tier: (contact.prospect_score || 0) >= 80 ? "A" : (contact.prospect_score || 0) >= 60 ? "B" : "C",
         metadata: {
           source: "email_discovery",
+          entity_type: entityType,
           prospect_score: contact.prospect_score,
           hunter_verified: contact.hunter_verified,
           email_frequency: contact.email_frequency,
@@ -320,9 +322,10 @@ function EmailIntelligencePage() {
       });
       if (insertErr) throw insertErr;
 
-      await supabase.from("email_discovered_contacts" as any).update({ status: "saved_to_contacts" }).eq("id", id);
-      setAllContacts(prev => prev.map(c => c.id === id ? { ...c, status: "saved_to_contacts" } : c));
-      toast.success("Saved to contacts");
+      // Also update contact_type on the discovered contact record
+      await supabase.from("email_discovered_contacts" as any).update({ status: "saved_to_contacts", contact_type: entityType } as any).eq("id", id);
+      setAllContacts(prev => prev.map(c => c.id === id ? { ...c, status: "saved_to_contacts", contact_type: entityType } : c));
+      toast.success(entityType === "company" ? "Saved as company" : "Saved as person");
     } catch (err: any) {
       toast.error(err.message || "Failed to save contact");
     } finally {
