@@ -9,16 +9,15 @@ import { toast } from "sonner";
 import { Sparkles, Image as ImageIcon, Palette, Pencil, Trash2, Plus, Heart, RefreshCw, UserPlus, Lightbulb, Calendar, Zap, Loader2, Layout } from "lucide-react";
 import SpotlightFlyerWizard from "./SpotlightFlyerWizard";
 import SpotlightBrandSetup, { type BrandPackage } from "./SpotlightBrandSetup";
-
-// Lazy-load fabric-based editor so it doesn't block initial parse
-const DesignEditor = lazy(() => import("./DesignEditor"));
-
 import templateSeasonalPromo from "@/assets/templates/seasonal-promo.jpg";
 import templateEventInvite from "@/assets/templates/event-invite.jpg";
 import templateRiskTip from "@/assets/templates/risk-tip.jpg";
 import templateReferralAsk from "@/assets/templates/referral-ask.jpg";
 import templateRenewalReminder from "@/assets/templates/renewal-reminder.jpg";
 import templateNewClientWelcome from "@/assets/templates/new-client-welcome.jpg";
+
+// Lazy-load fabric-based editor so it doesn't block Lovable HMR
+const DesignEditor = lazy(() => import("./DesignEditor"));
 
 type ViewMode = "home" | "wizard" | "brand_setup" | "editor";
 

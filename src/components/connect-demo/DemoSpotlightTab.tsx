@@ -10,8 +10,6 @@ import {
 import { toast } from "sonner";
 import SpotlightFlyerWizard from "@/components/connect/SpotlightFlyerWizard";
 import SpotlightBrandSetup, { type BrandPackage } from "@/components/connect/SpotlightBrandSetup";
-// Lazy-load to avoid blocking Lovable's component scanner
-const TemplateEditor = lazy(() => import("@/components/connect/TemplateEditor"));
 import { SPOTLIGHT_TEMPLATES } from "@/components/connect/spotlight-templates";
 import newClientWelcomeImg from "@/assets/templates/new-client-welcome.jpg";
 import renewalReminderImg from "@/assets/templates/renewal-reminder.jpg";
@@ -19,6 +17,9 @@ import eventInviteImg from "@/assets/templates/event-invite.jpg";
 import riskTipImg from "@/assets/templates/risk-tip.jpg";
 import referralAskImg from "@/assets/templates/referral-ask.jpg";
 import seasonalPromoImg from "@/assets/templates/seasonal-promo.jpg";
+
+// Lazy-load to prevent Lovable HMR from parsing heavy canvas deps at startup
+const TemplateEditor = lazy(() => import("@/components/connect/TemplateEditor"));
 
 const TEMPLATE_IMAGES: Record<string, string> = {
   "new-client-welcome": newClientWelcomeImg,
