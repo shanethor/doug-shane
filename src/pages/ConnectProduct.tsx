@@ -160,6 +160,7 @@ export default function ConnectProduct() {
           }}>
             {page === "connect" && <DemoConnectTab contentReady={introComplete} />}
             {page === "intelligence" && <ConnectIntelligencePage />}
+            {page === "leads" && <ConnectLeads />}
             {page === "pipeline" && <ConnectPipelineTab />}
             {page === "email" && <DemoEmailTab />}
             {page === "calendar" && <SmartCalendar />}
