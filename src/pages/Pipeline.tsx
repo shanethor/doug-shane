@@ -109,7 +109,10 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [pipelineView, setPipelineView] = useState<"commercial" | "personal">("commercial");
+  const [pipelineView, setPipelineView] = useState<"commercial" | "personal">(() => {
+    const saved = localStorage.getItem("aura_default_pipeline");
+    return saved === "personal" ? "personal" : "commercial";
+  });
   const [addOpen, setAddOpen] = useState(false);
   const [addMode, setAddMode] = useState<"choose" | "manual" | "intake">("choose");
   const [intakeLink, setIntakeLink] = useState<string | null>(null);
