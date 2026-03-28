@@ -213,10 +213,10 @@ const FOCUS_TO_SOURCE: Record<string, string> = {
 };
 
 const LEAD_PACKS = [
-  { leads: 10,  price: 200,  perLead: 20,   savings: null, popular: false },
-  { leads: 25,  price: 475,  perLead: 19,   savings: "5%",  popular: false },
-  { leads: 50,  price: 900,  perLead: 18,   savings: "10%", popular: true },
-  { leads: 100, price: 1500, perLead: 15,   savings: "25%", popular: false },
+  { leads: 10,  price: 200,  originalPrice: 330,  perLead: 20,  popular: false },
+  { leads: 25,  price: 475,  originalPrice: 790,  perLead: 19,  popular: false },
+  { leads: 50,  price: 900,  originalPrice: 1500, perLead: 18,  popular: true },
+  { leads: 100, price: 1500, originalPrice: 2500, perLead: 15,  popular: false },
 ];
 
 function GenerateControls({ onGenerate }: { onGenerate: (opts: any) => void }) {
