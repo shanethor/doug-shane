@@ -440,6 +440,41 @@ function ResultsTable() {
   const deleteLead = useDeleteEngineLead();
   const [search, setSearch] = useState("");
   const [selectedLead, setSelectedLead] = useState<EngineLead | null>(null);
+  const [enrichingId, setEnrichingId] = useState<string | null>(null);
+
+  const handleEnrich = async (lead: EngineLead) => {
+    setEnrichingId(lead.id);
+    try {
+      const { data, error } = await supabase.functions.invoke("enrich-contact", {
+        body: {
+          company: lead.company,
+          contact_name: lead.contact_name,
+          email: lead.email,
+          state: lead.state,
+          industry: lead.industry,
+        },
+      });
+      if (error) throw new Error(error.message);
+      if (data?.error) throw new Error(data.error);
+
+      // Update lead with enriched data
+      const updates: Partial<EngineLead> = {};
+      if (data?.email && !lead.email) updates.email = data.email;
+      if (data?.phone && !lead.phone) updates.phone = data.phone;
+      if (data?.contact_name && !lead.contact_name) updates.contact_name = data.contact_name;
+
+      if (Object.keys(updates).length > 0) {
+        await updateLead.mutateAsync({ id: lead.id, ...updates });
+        toast.success(`Enriched ${lead.company} — found ${Object.keys(updates).join(", ")}`);
+      } else {
+        toast.info("No additional contact info found for this lead");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Enrichment failed");
+    } finally {
+      setEnrichingId(null);
+    }
+  };
 
   const filtered = (leads || []).filter((l: EngineLead) =>
     !search ||
