@@ -689,39 +689,47 @@ export default function ConnectPipelineTab() {
             </SelectContent>
           </Select>
 
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
             <Select value={industry} onValueChange={handleSelectIndustry}>
-              <SelectTrigger className="h-8 w-[160px] text-xs">
-                <div className="flex items-center gap-1.5">
-                  {localStorage.getItem("aura_default_connect_pipeline") === industry && (
-                    <Star className="h-3 w-3 fill-primary text-primary shrink-0" />
-                  )}
-                  <SelectValue />
-                </div>
+              <SelectTrigger className="h-8 w-[180px] text-xs">
+                <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 {Object.entries(PIPELINE_CONFIGS).map(([key, cfg]) => (
                   <SelectItem key={key} value={key} className="text-xs">
                     <span className="flex items-center gap-1.5">
-                      {localStorage.getItem("aura_default_connect_pipeline") === key && (
-                        <Star className="h-3 w-3 fill-primary text-primary" />
-                      )}
                       {cfg.label}
+                      {localStorage.getItem("aura_default_connect_pipeline") === key && (
+                        <Star className="h-3 w-3 fill-current text-yellow-500" />
+                      )}
                     </span>
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            {localStorage.getItem("aura_default_connect_pipeline") !== industry && (
-              <button
-                onClick={() => {
-                  localStorage.setItem("aura_default_connect_pipeline", industry!);
-                  toast.success(`${config?.label} set as default pipeline`);
-                }}
-                className="text-[10px] text-muted-foreground hover:text-primary underline underline-offset-2 transition-colors font-sans whitespace-nowrap"
-              >
-                Set as default
-              </button>
+            {localStorage.getItem("aura_default_connect_pipeline") !== industry ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1 h-8 text-xs px-2"
+                    onClick={() => {
+                      localStorage.setItem("aura_default_connect_pipeline", industry!);
+                      toast.success(`${config?.label} set as default pipeline`);
+                      // force re-render
+                      handleSelectIndustry(industry!);
+                    }}
+                  >
+                    <Star className="h-3 w-3" /> Set Default
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="text-xs">New leads will use this pipeline type</TooltipContent>
+              </Tooltip>
+            ) : (
+              <Badge className="text-[9px] h-6 gap-1 bg-yellow-500/10 text-yellow-500 border border-yellow-500/25">
+                <Check className="h-3 w-3" /> Default
+              </Badge>
             )}
           </div>
           <Button size="sm" variant="outline" className="gap-1.5 h-8" onClick={fetchLeads} disabled={loadingLeads}>
