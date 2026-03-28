@@ -495,6 +495,10 @@ export default function SmartCalendar() {
               <RefreshCw className={`h-3 w-3 ${syncing ? "animate-spin" : ""}`} />
               <span className="hidden sm:inline">{syncing ? "Syncing…" : "Sync"}</span>
             </Button>
+            <Button variant="outline" size="sm" className="gap-1.5 text-xs h-8" onClick={() => window.location.href = "/app/settings?section=calendar"}>
+              <Link2 className="h-3 w-3" />
+              <span className="hidden sm:inline">Reconnect</span>
+            </Button>
             <Button variant="outline" size="sm" className="gap-1.5 text-xs h-8" onClick={() => setShowSearch(s => !s)}>
               <Search className="h-3 w-3" />
             </Button>

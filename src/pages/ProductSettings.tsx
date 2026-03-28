@@ -390,13 +390,20 @@ export default function ProductSettings() {
                 </p>
               </div>
             </div>
-            {gmailConns.length > 0 ? (
-              <Badge className="text-[10px] bg-green-500/10 text-green-400 border-green-500/20">Connected</Badge>
-            ) : (
-              <Button size="sm" variant="outline" onClick={() => document.getElementById("email-accounts-section")?.scrollIntoView({ behavior: "smooth" })} className="gap-1.5 h-9">
-                <Link2 className="h-3.5 w-3.5" /> Setup
-              </Button>
-            )}
+            <div className="flex items-center gap-2">
+              {gmailConns.length > 0 ? (
+                <>
+                  <Badge className="text-[10px] bg-green-500/10 text-green-400 border-green-500/20">Connected</Badge>
+                  <Button size="sm" variant="outline" onClick={() => connectEmail("gmail")} className="gap-1.5 h-8 text-xs">
+                    <RefreshCw className="h-3 w-3" /> Reconnect
+                  </Button>
+                </>
+              ) : (
+                <Button size="sm" variant="outline" onClick={() => document.getElementById("email-accounts-section")?.scrollIntoView({ behavior: "smooth" })} className="gap-1.5 h-9">
+                  <Link2 className="h-3.5 w-3.5" /> Setup
+                </Button>
+              )}
+            </div>
           </div>
           <div className={`flex items-center justify-between rounded-lg border p-3 ${darkMode ? "border-white/10" : "border-border"}`}>
             <div className="flex items-center gap-3">
@@ -408,17 +415,24 @@ export default function ProductSettings() {
                 </p>
               </div>
             </div>
-            {outlookConns.length > 0 ? (
-              <Badge className="text-[10px] bg-green-500/10 text-green-400 border-green-500/20">Connected</Badge>
-            ) : (
-              <Button size="sm" variant="outline" onClick={() => document.getElementById("email-accounts-section")?.scrollIntoView({ behavior: "smooth" })} className="gap-1.5 h-9">
-                <Link2 className="h-3.5 w-3.5" /> Setup
-              </Button>
-            )}
+            <div className="flex items-center gap-2">
+              {outlookConns.length > 0 ? (
+                <>
+                  <Badge className="text-[10px] bg-green-500/10 text-green-400 border-green-500/20">Connected</Badge>
+                  <Button size="sm" variant="outline" onClick={() => connectEmail("outlook")} className="gap-1.5 h-8 text-xs">
+                    <RefreshCw className="h-3 w-3" /> Reconnect
+                  </Button>
+                </>
+              ) : (
+                <Button size="sm" variant="outline" onClick={() => document.getElementById("email-accounts-section")?.scrollIntoView({ behavior: "smooth" })} className="gap-1.5 h-9">
+                  <Link2 className="h-3.5 w-3.5" /> Setup
+                </Button>
+              )}
+            </div>
           </div>
           <div className={`rounded-md border p-3 ${darkMode ? "bg-white/[0.03] border-white/5" : "bg-muted/30 border-border"}`}>
             <p className={`text-[11px] ${textSecondary}`}>
-              <strong className={textPrimary}>Note:</strong> You can use AuRa's native calendar without connecting an external account. External sync adds your Google/Outlook events alongside AuRa events.
+              <strong className={textPrimary}>Note:</strong> You can use AuRa's native calendar without connecting an external account. External sync adds your Google/Outlook events alongside AuRa events. Use <strong>Reconnect</strong> if your sync stops working.
             </p>
           </div>
         </div>
