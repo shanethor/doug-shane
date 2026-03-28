@@ -379,7 +379,7 @@ export default function ConnectNetworkTab() {
               <button
                 key={c.id}
                 onClick={() => setSelectedId(c.id)}
-                className={`w-full text-left p-3 rounded-lg border transition-colors ${
+                className={`group w-full text-left p-3 rounded-lg border transition-colors ${
                   selectedId === c.id ? "border-primary bg-primary/5" : "border-border/50 hover:bg-muted/50"
                 }`}
               >
