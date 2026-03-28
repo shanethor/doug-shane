@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,8 +13,10 @@ import {
   Rocket, Building2, Globe, MapPin, Target, Search, FileText,
   Download, Plus, ArrowUpRight, Eye, Trash2, Zap, Edit2,
   CheckCircle2, AlertCircle, Sparkles, Users, TrendingUp,
+  Upload, Link, File, X, Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import {
   useCompanyProfile, useUpsertCompanyProfile,
   useGeneratedLeads, useUpdateGeneratedLead, useDeleteGeneratedLead,
