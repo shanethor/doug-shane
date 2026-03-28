@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useTimezone } from "@/hooks/useTimezone";
 import { ProductLayout } from "@/components/ProductLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
