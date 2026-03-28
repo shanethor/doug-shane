@@ -10,7 +10,7 @@ import {
   Users, Search, Loader2, Mail, Phone, Linkedin,
   Building2, User, Star, ChevronDown, ChevronUp,
   Globe, MessageSquare, Edit2, Check, X, Plus,
-  Network, List,
+  Network, List, Trash2,
 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import RelationshipMap from "@/components/connect/RelationshipMap";
