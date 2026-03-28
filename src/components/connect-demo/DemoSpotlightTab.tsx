@@ -1,15 +1,16 @@
 import { useState, useCallback, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  Sparkles, Image as ImageIcon, Palette, Pencil, Plus, Download, Trash2,
+  Sparkles, Image as ImageIcon, Palette, Pencil, Plus, Download, Trash2, Wand2, LayoutTemplate,
 } from "lucide-react";
 import { toast } from "sonner";
 import SpotlightFlyerWizard from "@/components/connect/SpotlightFlyerWizard";
 import SpotlightBrandSetup, { type BrandPackage } from "@/components/connect/SpotlightBrandSetup";
+import TemplateEditor from "@/components/connect/TemplateEditor";
 import { SPOTLIGHT_TEMPLATES } from "@/components/connect/spotlight-templates";
 import newClientWelcomeImg from "@/assets/templates/new-client-welcome.png";
 import renewalReminderImg from "@/assets/templates/renewal-reminder.png";
@@ -27,7 +28,8 @@ const TEMPLATE_IMAGES: Record<string, string> = {
   "seasonal-promo": seasonalPromoImg,
 };
 
-type ViewMode = "home" | "wizard" | "brand_setup";
+type ViewMode = "home" | "template_editor" | "generate_wizard" | "brand_setup";
+type HomeTab = "templates" | "generate";
 
 const SAMPLE_BRANDS: BrandPackage[] = [
   {
@@ -60,7 +62,6 @@ const SAMPLE_FLYERS = [
   { id: "sample-flyer-1", title: "Spring Open Enrollment Event", type: "event", status: "ready", created_at: "2026-03-18T10:00:00Z", result_image_url: null, _sample: true },
   { id: "sample-flyer-2", title: "5 Tips for Commercial Coverage", type: "social", status: "ready", created_at: "2026-03-15T14:00:00Z", result_image_url: null, _sample: true },
   { id: "sample-flyer-3", title: "Referral Program Launch", type: "promotion", status: "ready", created_at: "2026-03-12T09:00:00Z", result_image_url: null, _sample: true },
-  { id: "sample-flyer-4", title: "Hurricane Season Prep Guide", type: "educational", status: "draft", created_at: "2026-03-20T16:00:00Z", result_image_url: null, _sample: true },
 ];
 
 const TYPE_COLORS: Record<string, string> = {
@@ -71,10 +72,10 @@ const TYPE_COLORS: Record<string, string> = {
   announcement: "border-[hsl(20_50%_50%/0.4)] text-[hsl(20_50%_65%)] bg-[hsl(20_50%_50%/0.1)]",
 };
 
-// CONTENT_TYPES removed — replaced by SPOTLIGHT_TEMPLATES visual card grid
-
 export default function DemoSpotlightTab() {
   const [view, setView] = useState<ViewMode>("home");
+  const [homeTab, setHomeTab] = useState<HomeTab>("templates");
+  const [activeTemplateId, setActiveTemplateId] = useState<string | null>(null);
   const [showAllCreations, setShowAllCreations] = useState(false);
   const [realHistory, setRealHistory] = useState<any[]>([]);
   const [realBrands, setRealBrands] = useState<BrandPackage[]>([]);
@@ -85,7 +86,10 @@ export default function DemoSpotlightTab() {
   const loadHistory = useCallback(async () => {
     try {
       const { data } = await supabase.functions.invoke("spotlight-flyer", { body: { action: "list" } });
-      if (data?.flyers) setRealHistory(data.flyers.map((d: any) => ({ id: d.id, title: d.title, type: d.type, status: d.status, created_at: d.created_at, result_image_url: d.result_image_url })));
+      if (data?.flyers) setRealHistory(data.flyers.map((d: any) => ({
+        id: d.id, title: d.title, type: d.type, status: d.status,
+        created_at: d.created_at, result_image_url: d.result_image_url,
+      })));
     } catch {}
   }, []);
 
@@ -94,16 +98,9 @@ export default function DemoSpotlightTab() {
       const { data } = await supabase.from("branding_packages").select("*").order("created_at", { ascending: false });
       if (data && data.length > 0) {
         setRealBrands(data.map(d => ({
-          id: d.id,
-          name: d.name,
-          brand_name: d.brand_name,
-          is_default: d.is_default,
-          logo_url: d.logo_url,
-          brand_colors: (d.brand_colors as string[]) || ["#8A9A8C", "#F5F5F0"],
-          tagline: d.tagline,
-          disclaimer: d.disclaimer,
-          industry: d.industry,
-          tone: d.tone,
+          id: d.id, name: d.name, brand_name: d.brand_name, is_default: d.is_default,
+          logo_url: d.logo_url, brand_colors: (d.brand_colors as string[]) || ["#8A9A8C", "#F5F5F0"],
+          tagline: d.tagline, disclaimer: d.disclaimer, industry: d.industry, tone: d.tone,
         })));
       }
     } catch {}
@@ -114,33 +111,12 @@ export default function DemoSpotlightTab() {
   const allBrands = [...realBrands, ...SAMPLE_BRANDS.filter(sb => !realBrands.some(rb => rb.name === sb.name))];
   const allFlyers = [...realHistory, ...SAMPLE_FLYERS];
 
-  const handleCreateFlyer = (type?: string) => { setEditFlyerId(null); setSelectedType(type || ""); setView("wizard"); };
-
-  const handleSelectTemplate = (templateId: string) => {
-    const tpl = SPOTLIGHT_TEMPLATES.find(t => t.id === templateId);
-    if (!tpl) return;
-    setEditFlyerId(null);
-    setSelectedType(tpl.id); // pass the template id — wizard will detect and pre-fill
-    setView("wizard");
-  };
-
   const handleDeleteFlyer = async (flyerId: string) => {
     if (flyerId.startsWith("sample-")) { toast.info("Sample flyer — create your own to delete it!"); return; }
     try {
       await supabase.functions.invoke("spotlight-flyer", { body: { action: "delete_flyer", flyer_id: flyerId } });
-      toast("Flyer deleted");
-      await loadHistory();
+      toast("Flyer deleted"); await loadHistory();
     } catch { toast.error("Could not delete flyer."); }
-  };
-
-  const handleEditFlyer = (flyerId: string) => {
-    if (flyerId.startsWith("sample-")) { toast.info("This is a sample — create a new one to get started!"); return; }
-    setEditFlyerId(flyerId); setView("wizard");
-  };
-
-  const handleBrandSaved = async () => {
-    await loadBrands();
-    if (view === "brand_setup" && !editBrand) { setEditFlyerId(null); setView("wizard"); } else { setView("home"); }
   };
 
   const handleDeleteBrand = async (brandId: string) => {
@@ -148,32 +124,58 @@ export default function DemoSpotlightTab() {
     try {
       await supabase.functions.invoke("spotlight-flyer", { body: { action: "delete_brand", brand_id: brandId } });
       toast("Brand deleted"); await loadBrands();
-    } catch { /* silent */ }
+    } catch {}
   };
 
+  // ── VIEW: Brand setup ──
   if (view === "brand_setup") {
-    return <SpotlightBrandSetup existing={editBrand} onSave={handleBrandSaved} onCancel={() => setView("home")} />;
+    return (
+      <SpotlightBrandSetup
+        existing={editBrand}
+        onSave={async () => { await loadBrands(); setView("home"); }}
+        onCancel={() => setView("home")}
+      />
+    );
   }
 
-  if (view === "wizard") {
+  // ── VIEW: Template editor (Canva-like) ──
+  if (view === "template_editor" && activeTemplateId) {
     return (
       <Card style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 14%)" }}>
-        <CardContent className="p-4 sm:p-6">
-          <SpotlightFlyerWizard
-            onClose={() => { setView("home"); loadHistory(); }}
+        <CardContent className="p-0">
+          <TemplateEditor
+            templateId={activeTemplateId}
             brands={realBrands.length > 0 ? realBrands : SAMPLE_BRANDS}
-            editFlyerId={editFlyerId}
-            initialType={selectedType}
-            demoMode
+            onBack={() => { setView("home"); setHomeTab("templates"); }}
           />
         </CardContent>
       </Card>
     );
   }
 
+  // ── VIEW: AI Generate wizard ──
+  if (view === "generate_wizard") {
+    return (
+      <Card style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 14%)" }}>
+        <CardContent className="p-4 sm:p-6">
+          <SpotlightFlyerWizard
+            onClose={() => { setView("home"); setHomeTab("generate"); loadHistory(); }}
+            brands={realBrands.length > 0 ? realBrands : SAMPLE_BRANDS}
+            editFlyerId={editFlyerId}
+            initialType={selectedType}
+            demoMode
+            skipTemplateGallery
+          />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // ── VIEW: Home ──
   return (
-    <div className="space-y-4">
-      {/* Explainer */}
+    <div className="space-y-3">
+
+      {/* Header explainer */}
       <Card className="animate-fade-in" style={{ background: "hsl(140 12% 42% / 0.06)", borderColor: "hsl(140 12% 42% / 0.2)" }}>
         <CardContent className="p-3">
           <div className="flex items-start gap-2.5">
@@ -183,185 +185,220 @@ export default function DemoSpotlightTab() {
             <div>
               <p className="text-xs font-semibold text-white mb-0.5">Create marketing content to grow your network.</p>
               <p className="text-[10px] leading-relaxed" style={{ color: "hsl(240 5% 56%)" }}>
-                Event flyers, social media graphics, announcements, educational content & more — all on-brand in seconds.
+                Edit ready-made templates instantly, or use AI to generate something completely custom.
               </p>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Template Cards — visual preview grid */}
-      <Card className="animate-fade-in" style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 14%)", animationDelay: "40ms" }}>
-        <CardHeader className="pb-2 pt-3 px-3">
-          <CardTitle className="text-[10px] uppercase tracking-wider" style={{ color: "hsl(240 5% 50%)" }}>
-            Start with a template
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="px-3 pb-3 space-y-3">
-          <div className="grid grid-cols-2 gap-2">
-            {SPOTLIGHT_TEMPLATES.map((tpl) => (
-              <button
-                key={tpl.id}
-                onClick={() => handleSelectTemplate(tpl.id)}
-                className="group relative rounded-xl overflow-hidden text-left transition-all hover:scale-[1.02] hover:shadow-lg cursor-pointer"
-                style={{ aspectRatio: "4/3", border: "1px solid hsl(240 6% 18%)" }}
-              >
-                {TEMPLATE_IMAGES[tpl.id] ? (
-                  <img
-                    src={TEMPLATE_IMAGES[tpl.id]}
-                    alt={tpl.name}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full" style={{ background: tpl.thumbnailBg }} />
-                )}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-                <div className="absolute bottom-0 left-0 right-0 p-2">
-                  <p className="text-[11px] font-bold text-white leading-tight">{tpl.name}</p>
-                  <p className="text-[9px] text-white/65 leading-tight mt-0.5 line-clamp-1">{tpl.tagline}</p>
-                </div>
-              </button>
-            ))}
-          </div>
-          <button
-            onClick={() => handleCreateFlyer()}
-            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-xs transition-colors"
-            style={{ background: "hsl(240 6% 7%)", border: "1px solid hsl(240 6% 14%)", color: "hsl(240 5% 65%)" }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = "hsl(140 12% 42% / 0.4)"; e.currentTarget.style.color = "white"; }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = "hsl(240 6% 14%)"; e.currentTarget.style.color = "hsl(240 5% 65%)"; }}
-          >
-            <Pencil className="h-3.5 w-3.5" /> Start from scratch
-          </button>
-        </CardContent>
-      </Card>
-
-      {/* Your Creations */}
-      <Card className="animate-fade-in" style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 14%)", animationDelay: "80ms" }}>
-        <CardHeader className="pb-2 pt-3 px-3">
-          <CardTitle className="text-xs flex items-center gap-2 text-white">
-            <Sparkles className="h-3.5 w-3.5" style={{ color: "hsl(140 12% 58%)" }} />
-            Your Creations
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="px-3 pb-3 space-y-3">
-          <Button className="w-full gap-2 text-white text-xs h-9" style={{ background: "hsl(140 12% 42%)" }} onClick={() => handleCreateFlyer()}>
-            <Plus className="h-3.5 w-3.5" /> New Creation
-          </Button>
-
-          {/* Flyer History */}
-          <div className="space-y-1.5">
-            {(showAllCreations ? allFlyers : allFlyers.slice(0, 5)).map((f: any, idx: number) => {
-              const isSample = f._sample || f.id?.startsWith("sample-");
-              return (
-                <div
-                  key={f.id}
-                  className="flex items-center gap-2.5 p-2 rounded-lg transition-colors animate-fade-in"
-                  style={{ background: "hsl(240 6% 7%)", border: "1px solid hsl(240 6% 12%)", animationDelay: `${120 + idx * 60}ms` }}
-                >
-                  {f.result_image_url ? (
-                    <img src={f.result_image_url} alt={f.title} className="w-10 h-10 rounded object-cover shrink-0" />
-                  ) : (
-                    <div className="w-10 h-10 rounded flex items-center justify-center shrink-0" style={{ background: "hsl(240 6% 5%)", border: "1px solid hsl(240 6% 14%)" }}>
-                      <ImageIcon className="h-3.5 w-3.5" style={{ color: "hsl(240 5% 40%)" }} />
-                    </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1">
-                      <p className="text-[11px] font-medium truncate text-white">{f.title || "Untitled"}</p>
-                      {isSample && <Badge className="text-[7px] h-3.5 px-1" style={{ background: "transparent", color: "hsl(240 5% 44%)", border: "1px solid hsl(240 6% 18%)" }}>Sample</Badge>}
-                    </div>
-                    <div className="flex items-center gap-1.5 mt-0.5">
-                      <Badge variant="outline" className={`text-[8px] h-4 px-1 ${TYPE_COLORS[f.type] || ""}`}>{f.type}</Badge>
-                      <span className="text-[9px]" style={{ color: "hsl(240 5% 44%)" }}>{new Date(f.created_at).toLocaleDateString()}</span>
-                    </div>
-                  </div>
-                  <div className="flex gap-0.5 shrink-0">
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEditFlyer(f.id)}>
-                      <Pencil className="h-3 w-3" style={{ color: "hsl(240 5% 56%)" }} />
-                    </Button>
-                    {f.result_image_url && (
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {
-                        const link = document.createElement("a");
-                        link.href = f.result_image_url;
-                        link.download = `${f.title || "flyer"}.png`;
-                        link.click();
-                      }}>
-                        <Download className="h-3 w-3" style={{ color: "hsl(240 5% 56%)" }} />
-                      </Button>
-                    )}
-                    {!isSample && (
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDeleteFlyer(f.id)}>
-                        <Trash2 className="h-3 w-3 text-red-400/60" />
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-          {allFlyers.length > 5 && (
-            <Button
-              variant="ghost"
-              className="w-full text-[10px] h-7"
-              style={{ color: "hsl(140 12% 58%)" }}
-              onClick={() => setShowAllCreations(!showAllCreations)}
+      {/* ── MAIN TABS ── */}
+      <Card className="animate-fade-in" style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 14%)", animationDelay: "30ms" }}>
+        {/* Tab bar */}
+        <div className="flex" style={{ borderBottom: "1px solid hsl(240 6% 14%)" }}>
+          {[
+            { id: "templates" as HomeTab, label: "Templates", icon: LayoutTemplate, desc: "Edit & export instantly" },
+            { id: "generate" as HomeTab, label: "Generate", icon: Wand2, desc: "AI-powered custom" },
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setHomeTab(tab.id)}
+              className="flex-1 flex flex-col items-center gap-0.5 py-3 px-2 transition-colors relative"
+              style={{
+                color: homeTab === tab.id ? "white" : "hsl(240 5% 50%)",
+                background: "transparent",
+              }}
             >
-              {showAllCreations ? "Show less" : `View all (${allFlyers.length})`}
-            </Button>
-          )}
+              {homeTab === tab.id && (
+                <div className="absolute bottom-0 left-1/4 right-1/4 h-0.5 rounded-full" style={{ background: "hsl(140 12% 50%)" }} />
+              )}
+              <div className="flex items-center gap-1.5">
+                <tab.icon className="h-3.5 w-3.5" />
+                <span className="text-xs font-semibold">{tab.label}</span>
+              </div>
+              <span className="text-[9px]" style={{ color: "hsl(240 5% 40%)" }}>{tab.desc}</span>
+            </button>
+          ))}
+        </div>
 
-          {/* Brand Packages */}
-          <Separator style={{ background: "hsl(240 6% 14%)" }} />
-          <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <p className="text-[10px] font-medium uppercase tracking-wider flex items-center gap-1" style={{ color: "hsl(240 5% 50%)" }}>
-                <Palette className="h-3 w-3" /> Brand Packages
-              </p>
-              <Button variant="ghost" size="sm" className="h-6 text-[10px] gap-1" style={{ color: "hsl(140 12% 58%)" }} onClick={() => { setEditBrand(null); setView("brand_setup"); }}>
-                <Plus className="h-3 w-3" /> New
+        {/* ── TEMPLATES TAB ── */}
+        {homeTab === "templates" && (
+          <CardContent className="p-3">
+            <div className="grid grid-cols-2 gap-2">
+              {SPOTLIGHT_TEMPLATES.map((tpl) => (
+                <button
+                  key={tpl.id}
+                  onClick={() => { setActiveTemplateId(tpl.id); setView("template_editor"); }}
+                  className="group relative rounded-xl overflow-hidden text-left cursor-pointer"
+                  style={{ aspectRatio: "4/3", border: "1px solid hsl(240 6% 18%)" }}
+                >
+                  {/* Preview image */}
+                  {TEMPLATE_IMAGES[tpl.id] ? (
+                    <img src={TEMPLATE_IMAGES[tpl.id]} alt={tpl.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full" style={{ background: tpl.thumbnailBg }} />
+                  )}
+
+                  {/* Hover overlay */}
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all duration-150 flex items-center justify-center">
+                    <div className="opacity-0 group-hover:opacity-100 transition-opacity px-3 py-1.5 rounded-lg text-[10px] font-semibold text-white" style={{ background: "hsl(140 12% 42%)" }}>
+                      Edit Template
+                    </div>
+                  </div>
+
+                  {/* Name/tagline */}
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/75 via-black/25 to-transparent p-2">
+                    <p className="text-[11px] font-bold text-white leading-tight">{tpl.name}</p>
+                    <p className="text-[9px] text-white/60 leading-tight mt-0.5 line-clamp-1">{tpl.tagline}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            <p className="text-center text-[9px] mt-3" style={{ color: "hsl(240 5% 38%)" }}>
+              Click any template to open the editor — no AI generation needed
+            </p>
+          </CardContent>
+        )}
+
+        {/* ── GENERATE TAB ── */}
+        {homeTab === "generate" && (
+          <CardContent className="p-3 space-y-3">
+            {/* Hero CTA */}
+            <div className="rounded-xl p-4 space-y-3" style={{ background: "hsl(240 6% 7%)", border: "1px solid hsl(240 6% 14%)" }}>
+              <div className="flex items-start gap-3">
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: "hsl(140 12% 42% / 0.15)" }}>
+                  <Wand2 className="h-4 w-4" style={{ color: "hsl(140 12% 58%)" }} />
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-white">AI-Powered Generation</p>
+                  <p className="text-[10px] mt-0.5 leading-relaxed" style={{ color: "hsl(240 5% 52%)" }}>
+                    Describe what you need in plain English — Sage builds it into a polished flyer using your brand colors and logo.
+                  </p>
+                </div>
+              </div>
+              <Button
+                className="w-full gap-2 text-white text-xs h-9"
+                style={{ background: "hsl(140 12% 42%)" }}
+                onClick={() => { setEditFlyerId(null); setSelectedType(""); setView("generate_wizard"); }}
+              >
+                <Sparkles className="h-3.5 w-3.5" /> Start Generating
               </Button>
             </div>
-            <div className="space-y-1">
-              {allBrands.map((b, idx) => {
-                const isSample = b.id.startsWith("sample-");
-                return (
-                  <div
-                    key={b.id}
-                    className="flex items-center gap-2.5 p-2 rounded-lg transition-colors animate-fade-in"
-                    style={{ background: "hsl(240 6% 7%)", border: "1px solid hsl(240 6% 12%)", animationDelay: `${200 + idx * 60}ms` }}
-                  >
-                    <div className="w-7 h-7 rounded flex items-center justify-center shrink-0" style={{ background: b.brand_colors[0] + "18", border: `1px solid ${b.brand_colors[0]}33` }}>
-                      <Palette className="h-3 w-3" style={{ color: b.brand_colors[0] }} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1">
-                        <p className="text-[11px] font-medium truncate text-white">{b.name}</p>
-                        {isSample && <Badge className="text-[7px] h-3.5 px-1" style={{ background: "transparent", color: "hsl(240 5% 44%)", border: "1px solid hsl(240 6% 18%)" }}>Sample</Badge>}
-                      </div>
-                      <div className="flex items-center gap-1 mt-0.5">
-                        <span className="text-[9px] truncate" style={{ color: "hsl(240 5% 46%)" }}>{b.brand_name}</span>
-                        <div className="flex gap-0.5 shrink-0">
-                          {b.brand_colors.slice(0, 3).map((c, i) => <div key={i} className="w-2 h-2 rounded-full" style={{ background: c }} />)}
+
+            {/* Generated flyer history */}
+            <div>
+              <p className="text-[9px] font-semibold uppercase tracking-wider mb-2" style={{ color: "hsl(240 5% 46%)" }}>Your Generated Flyers</p>
+              <div className="space-y-1.5">
+                {(showAllCreations ? allFlyers : allFlyers.slice(0, 5)).map((f: any, idx: number) => {
+                  const isSample = f._sample || f.id?.startsWith("sample-");
+                  return (
+                    <div
+                      key={f.id}
+                      className="flex items-center gap-2.5 p-2 rounded-lg animate-fade-in"
+                      style={{ background: "hsl(240 6% 7%)", border: "1px solid hsl(240 6% 12%)", animationDelay: `${idx * 50}ms` }}
+                    >
+                      {f.result_image_url ? (
+                        <img src={f.result_image_url} alt={f.title} className="w-10 h-10 rounded object-cover shrink-0" />
+                      ) : (
+                        <div className="w-10 h-10 rounded flex items-center justify-center shrink-0" style={{ background: "hsl(240 6% 5%)", border: "1px solid hsl(240 6% 14%)" }}>
+                          <ImageIcon className="h-3.5 w-3.5" style={{ color: "hsl(240 5% 40%)" }} />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1">
+                          <p className="text-[11px] font-medium truncate text-white">{f.title || "Untitled"}</p>
+                          {isSample && <Badge className="text-[7px] h-3.5 px-1" style={{ background: "transparent", color: "hsl(240 5% 44%)", border: "1px solid hsl(240 6% 18%)" }}>Sample</Badge>}
+                        </div>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <Badge variant="outline" className={`text-[8px] h-4 px-1 ${TYPE_COLORS[f.type] || ""}`}>{f.type}</Badge>
+                          <span className="text-[9px]" style={{ color: "hsl(240 5% 44%)" }}>{new Date(f.created_at).toLocaleDateString()}</span>
                         </div>
                       </div>
+                      <div className="flex gap-0.5 shrink-0">
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {
+                          if (isSample) { toast.info("This is a sample — generate your own!"); return; }
+                          setEditFlyerId(f.id); setView("generate_wizard");
+                        }}>
+                          <Pencil className="h-3 w-3" style={{ color: "hsl(240 5% 56%)" }} />
+                        </Button>
+                        {f.result_image_url && (
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {
+                            const link = document.createElement("a");
+                            link.href = f.result_image_url;
+                            link.download = `${f.title || "flyer"}.png`;
+                            link.click();
+                          }}>
+                            <Download className="h-3 w-3" style={{ color: "hsl(240 5% 56%)" }} />
+                          </Button>
+                        )}
+                        {!isSample && (
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleDeleteFlyer(f.id)}>
+                            <Trash2 className="h-3 w-3 text-red-400/60" />
+                          </Button>
+                        )}
+                      </div>
                     </div>
-                    <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => {
-                      if (isSample) { toast.info("Sample brand — create your own!"); return; }
-                      setEditBrand(b); setView("brand_setup");
-                    }}>
-                      <Pencil className="h-3 w-3" style={{ color: "hsl(240 5% 56%)" }} />
-                    </Button>
-                    {!isSample && !b.is_default && (
-                      <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => handleDeleteBrand(b.id)}>
-                        <Trash2 className="h-3 w-3 text-red-400/60" />
-                      </Button>
-                    )}
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
+              {allFlyers.length > 5 && (
+                <Button variant="ghost" className="w-full text-[10px] h-7 mt-1" style={{ color: "hsl(140 12% 58%)" }} onClick={() => setShowAllCreations(!showAllCreations)}>
+                  {showAllCreations ? "Show less" : `View all (${allFlyers.length})`}
+                </Button>
+              )}
             </div>
-          </div>
-        </CardContent>
+
+            {/* Brand packages */}
+            <Separator style={{ background: "hsl(240 6% 14%)" }} />
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-[9px] font-semibold uppercase tracking-wider flex items-center gap-1.5" style={{ color: "hsl(240 5% 46%)" }}>
+                  <Palette className="h-3 w-3" /> Brand Packages
+                </p>
+                <Button variant="ghost" size="sm" className="h-6 text-[10px] gap-1" style={{ color: "hsl(140 12% 58%)" }}
+                  onClick={() => { setEditBrand(null); setView("brand_setup"); }}>
+                  <Plus className="h-3 w-3" /> New
+                </Button>
+              </div>
+              <div className="space-y-1">
+                {allBrands.map((b) => {
+                  const isSample = b.id.startsWith("sample-");
+                  return (
+                    <div key={b.id} className="flex items-center gap-2.5 p-2 rounded-lg" style={{ background: "hsl(240 6% 7%)", border: "1px solid hsl(240 6% 12%)" }}>
+                      <div className="w-7 h-7 rounded flex items-center justify-center shrink-0" style={{ background: b.brand_colors[0] + "18", border: `1px solid ${b.brand_colors[0]}33` }}>
+                        <Palette className="h-3 w-3" style={{ color: b.brand_colors[0] }} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1">
+                          <p className="text-[11px] font-medium truncate text-white">{b.name}</p>
+                          {isSample && <Badge className="text-[7px] h-3.5 px-1" style={{ background: "transparent", color: "hsl(240 5% 44%)", border: "1px solid hsl(240 6% 18%)" }}>Sample</Badge>}
+                        </div>
+                        <div className="flex items-center gap-1 mt-0.5">
+                          <span className="text-[9px] truncate" style={{ color: "hsl(240 5% 46%)" }}>{b.brand_name}</span>
+                          <div className="flex gap-0.5 shrink-0">
+                            {b.brand_colors.slice(0, 3).map((c, i) => <div key={i} className="w-2 h-2 rounded-full" style={{ background: c }} />)}
+                          </div>
+                        </div>
+                      </div>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => {
+                        if (isSample) { toast.info("Sample brand — create your own!"); return; }
+                        setEditBrand(b); setView("brand_setup");
+                      }}>
+                        <Pencil className="h-3 w-3" style={{ color: "hsl(240 5% 56%)" }} />
+                      </Button>
+                      {!isSample && !b.is_default && (
+                        <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => handleDeleteBrand(b.id)}>
+                          <Trash2 className="h-3 w-3 text-red-400/60" />
+                        </Button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </CardContent>
+        )}
       </Card>
     </div>
   );
