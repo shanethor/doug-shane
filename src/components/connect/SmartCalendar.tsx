@@ -246,8 +246,8 @@ export default function SmartCalendar() {
       if (error) { toast.error("Failed to update"); return; }
       toast.success("Event updated");
     } else {
-      // Create new
-      const { error } = await supabase.from("calendar_events").insert({
+      // Create new in local DB
+      const { error, data: inserted } = await supabase.from("calendar_events").insert({
         user_id: user.id,
         title: editEvent.title,
         start_time: startTime.toISOString(),
@@ -259,9 +259,46 @@ export default function SmartCalendar() {
         lead_id: editEvent.lead_id || null,
         provider: "aura",
         status: "scheduled",
-      } as any);
+      } as any).select().single();
       if (error) { toast.error("Failed to create"); return; }
-      toast.success("Event created");
+
+      // Push to connected external calendars (Google/Outlook)
+      try {
+        const { data: calendars } = await supabase
+          .from("external_calendars")
+          .select("provider, is_active")
+          .eq("user_id", user.id)
+          .eq("is_active", true);
+
+        if (calendars?.length) {
+          const { data: { session } } = await supabase.auth.getSession();
+          for (const cal of calendars) {
+            await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/calendar-sync`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${session?.access_token}`,
+                apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+              },
+              body: JSON.stringify({
+                action: "create_event",
+                provider: cal.provider,
+                title: editEvent.title,
+                start: startTime.toISOString(),
+                end: endTime.toISOString(),
+                description: editEvent.description || "",
+                location: editEvent.location || "",
+                attendees: editEvent.attendees || [],
+              }),
+            });
+          }
+          toast.success("Event created & synced to calendar");
+        } else {
+          toast.success("Event created");
+        }
+      } catch {
+        toast.success("Event created (external sync skipped)");
+      }
     }
     setShowEditor(false);
     setEditEvent(null);
