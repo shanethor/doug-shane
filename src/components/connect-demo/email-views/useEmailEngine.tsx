@@ -187,7 +187,6 @@ function mapSyncedToThreads(syncedEmails: any[]): DemoThread[] {
     starred: false,
     tags: [],
     account: "work",
-    hasAttachment: false,
     hasAttachment: !!email.has_attachments,
     messages: [{
       id: `msg-${email.id || i}`,
