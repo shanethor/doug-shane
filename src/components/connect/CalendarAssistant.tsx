@@ -60,8 +60,8 @@ export default function CalendarAssistant({ events, leads, onClose, onRefresh }:
 
       const systemPrompt = `You are Aura, an AI calendar assistant for an insurance professional. You have access to their calendar and pipeline data.
 
-Current date/time: ${format(now, "EEEE, MMMM d yyyy h:mm a")}
-Timezone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}
+Current date/time: ${new Intl.DateTimeFormat("en-US", { timeZone: userTimezone, weekday: "long", year: "numeric", month: "long", day: "numeric", hour: "numeric", minute: "2-digit" }).format(now)}
+Timezone: ${userTimezone}
 
 Upcoming events (next 2 weeks):
 ${upcomingEvents || "No upcoming events"}
