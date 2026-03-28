@@ -304,10 +304,13 @@ serve(async (req) => {
     updates.enrichment_source = sources.join("+") || null;
     updates.enrichment_status = enriched ? "fully_enriched" : "enrichment_failed";
 
-    await adminClient
-      .from("email_discovered_contacts")
-      .update(updates)
-      .eq("id", contact_id);
+    if (contactTable === "email_discovered_contacts") {
+      await adminClient
+        .from("email_discovered_contacts")
+        .update(updates)
+        .eq("id", contact_id);
+    }
+    // For network_contacts, we don't update enrichment fields (different schema)
 
     return new Response(JSON.stringify({
       success: true, enriched, sources,
