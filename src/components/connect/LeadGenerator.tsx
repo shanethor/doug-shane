@@ -517,9 +517,8 @@ function ResultsTable() {
           <TableHeader>
             <TableRow>
               <TableHead className="text-xs">Company</TableHead>
-              <TableHead className="text-xs">Industry</TableHead>
+              <TableHead className="text-xs">Contact</TableHead>
               <TableHead className="text-xs">State</TableHead>
-              <TableHead className="text-xs">Est. Premium</TableHead>
               <TableHead className="text-xs">Score</TableHead>
               <TableHead className="text-xs">Status</TableHead>
               <TableHead className="text-xs text-right">Actions</TableHead>
@@ -534,13 +533,58 @@ function ResultsTable() {
                     onClick={() => setSelectedLead(lead)}
                   >
                     <p className="text-xs font-medium group-hover:text-primary transition-colors">{lead.company}</p>
-                    {lead.contact_name && <p className="text-[10px] text-muted-foreground">{lead.contact_name}</p>}
-                    {lead.signal && <p className="text-[9px] text-muted-foreground mt-0.5 max-w-[200px] truncate" title={lead.signal}>{lead.signal}</p>}
+                    {lead.industry && <p className="text-[10px] text-muted-foreground">{lead.industry}</p>}
+                    {lead.signal && <p className="text-[9px] text-muted-foreground mt-0.5 max-w-[180px] truncate" title={lead.signal}>{lead.signal}</p>}
                   </div>
                 </TableCell>
-                <TableCell className="text-xs text-muted-foreground py-2">{lead.industry || "—"}</TableCell>
+                <TableCell className="py-2">
+                  <div className="space-y-0.5">
+                    {lead.contact_name && (
+                      <p className="text-xs font-medium">{lead.contact_name}</p>
+                    )}
+                    {lead.email ? (
+                      <a href={`mailto:${lead.email}`} className="text-[10px] text-primary hover:underline flex items-center gap-1">
+                        <Mail className="h-3 w-3" />{lead.email}
+                      </a>
+                    ) : null}
+                    {lead.phone ? (
+                      <a href={`tel:${lead.phone}`} className="text-[10px] text-muted-foreground hover:text-foreground flex items-center gap-1">
+                        <Phone className="h-3 w-3" />{lead.phone}
+                      </a>
+                    ) : null}
+                    {!lead.email && !lead.phone && !lead.contact_name && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-6 text-[10px] gap-1"
+                        disabled={enrichingId === lead.id}
+                        onClick={(e) => { e.stopPropagation(); handleEnrich(lead); }}
+                      >
+                        {enrichingId === lead.id ? (
+                          <><RefreshCw className="h-3 w-3 animate-spin" /> Enriching…</>
+                        ) : (
+                          <><Zap className="h-3 w-3" /> Find Contact</>
+                        )}
+                      </Button>
+                    )}
+                    {(lead.contact_name || lead.email || lead.phone) && !lead.email && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-5 text-[9px] gap-0.5 px-1 text-muted-foreground"
+                        disabled={enrichingId === lead.id}
+                        onClick={(e) => { e.stopPropagation(); handleEnrich(lead); }}
+                      >
+                        {enrichingId === lead.id ? (
+                          <RefreshCw className="h-2.5 w-2.5 animate-spin" />
+                        ) : (
+                          <><Zap className="h-2.5 w-2.5" /> Enrich</>
+                        )}
+                      </Button>
+                    )}
+                  </div>
+                </TableCell>
                 <TableCell className="text-xs text-muted-foreground py-2">{lead.state || "—"}</TableCell>
-                <TableCell className="text-xs py-2">${(lead.est_premium || 0).toLocaleString()}</TableCell>
                 <TableCell className="py-2"><FitScoreBadge score={lead.score || 0} /></TableCell>
                 <TableCell className="py-2">
                   <Badge variant="secondary" className="text-[10px]">{lead.status}</Badge>
