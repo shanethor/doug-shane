@@ -274,7 +274,7 @@ function EmailIntelligencePage() {
     // Also load network contacts from synced sources (iCloud, Google, etc.)
     const { data: networkContacts } = await supabase
       .from("network_contacts")
-      .select("id, full_name, email, phone, company, title, source, location, linkedin_url, imported_at, user_id")
+      .select("id, full_name, email, phone, company, title, source, location, linkedin_url, imported_at, user_id, classification_type, classification_confidence, is_filtered")
       .order("imported_at", { ascending: false })
       .limit(1000);
 
