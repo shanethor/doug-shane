@@ -33,7 +33,7 @@ function FakeStudioContent() {
     <div className="space-y-6 p-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">AuRa Studio</h1>
+          <h1 className="text-2xl font-bold">AURA Studio</h1>
           <p className="text-sm text-muted-foreground">Your AI-native build team</p>
         </div>
         <Button className="gap-2 bg-orange-500"><Plus className="h-4 w-4" /> New Request</Button>
@@ -114,7 +114,7 @@ export default function StudioUpsellPage({ isConnectSubscriber = false }: { isCo
               <Wrench className="h-8 w-8 text-orange-400" />
             </div>
             <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
-              Meet <span className="text-orange-400">AuRa Studio</span>
+              Meet <span className="text-orange-400">AURA Studio</span>
             </h1>
             <p className="text-base text-muted-foreground max-w-lg mx-auto leading-relaxed">
               Your AI-native, on-call build team. We design and ship custom software, AI agents,

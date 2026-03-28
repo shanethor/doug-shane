@@ -165,11 +165,11 @@ const App = () => (
           {/* ── Product auth (Connect / Studio) ── */}
           <Route path="/get-started" element={<ProductAuth />} />
 
-          {/* ── AuRa Connect product ── */}
+          {/* ── AURA Connect product ── */}
           <Route path="/connect" element={<ProductProtectedRoute><ConnectProduct /></ProductProtectedRoute>} />
           <Route path="/connect/*" element={<ProductProtectedRoute><ConnectProduct /></ProductProtectedRoute>} />
 
-          {/* ── AuRa Studio product ── */}
+          {/* ── AURA Studio product ── */}
           <Route path="/studio" element={<ProductProtectedRoute><StudioProduct /></ProductProtectedRoute>} />
           <Route path="/studio/*" element={<ProductProtectedRoute><StudioProduct /></ProductProtectedRoute>} />
 

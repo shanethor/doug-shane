@@ -125,7 +125,7 @@ export default function PrivacySettings() {
   }
 
   const consentTypes = [
-    { key: "data_sharing_agreement", label: "Data Sharing Agreement", desc: "Allow AuRa to process and share enrichment data with third-party providers.", icon: Shield },
+    { key: "data_sharing_agreement", label: "Data Sharing Agreement", desc: "Allow AURA to process and share enrichment data with third-party providers.", icon: Shield },
     { key: "social_enrichment", label: "Social Enrichment", desc: "Enable social media data enrichment for your contacts.", icon: Eye },
     { key: "email_access", label: "Email Access (Headers)", desc: "Allow read-only access to email headers for contact discovery.", icon: Mail },
     { key: "email_body_parsing", label: "Email Signature Parsing", desc: "Parse email signatures to extract contact details (opt-in).", icon: FileText },
@@ -295,7 +295,7 @@ export default function PrivacySettings() {
       )}
 
       <p className="text-[11px] text-muted-foreground text-center">
-        AuRa complies with CCPA, GDPR, and applicable privacy laws. Your data is never sold. 
+        AURA complies with CCPA, GDPR, and applicable privacy laws. Your data is never sold. 
         Requests are processed within 30 days. Contact support for urgent matters.
       </p>
     </div>

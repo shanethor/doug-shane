@@ -166,7 +166,7 @@ export default function StudioProduct() {
         {/* Header */}
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-2xl font-light tracking-tight text-white/90">AuRa Studio</h1>
+            <h1 className="text-2xl font-light tracking-tight text-white/90">AURA Studio</h1>
             <p className="text-sm text-white/40 mt-1">
               Your AI-native build team — custom tools, dashboards & assets
             </p>
@@ -287,7 +287,7 @@ export default function StudioProduct() {
                 <MessageSquare className="h-4 w-4 text-orange-400" />
               </div>
               <div>
-                <h3 className="text-base font-semibold text-white">How AuRa Studio Works</h3>
+                <h3 className="text-base font-semibold text-white">How AURA Studio Works</h3>
                 <p className="text-xs text-white/30">End-to-end AI automation, custom-built for your firm</p>
               </div>
             </div>

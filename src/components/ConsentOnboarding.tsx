@@ -192,7 +192,7 @@ export default function ConsentOnboarding({ onComplete }: ConsentOnboardingProps
             </div>
 
             <p className="text-sm text-muted-foreground">
-              AuRa Connect uses data you provide and connect to power intelligent features like the Feeder List Generator, Prospect Discovery, and Email Intelligence.
+              AURA Connect uses data you provide and connect to power intelligent features like the Feeder List Generator, Prospect Discovery, and Email Intelligence.
             </p>
 
             <div className="space-y-3 text-sm">
@@ -217,11 +217,11 @@ export default function ConsentOnboarding({ onComplete }: ConsentOnboardingProps
             <div className="border-t pt-4 space-y-3">
               <label className="flex items-start gap-2 cursor-pointer">
                 <Checkbox checked={consent1} onCheckedChange={(v) => setConsent1(!!v)} className="mt-0.5" />
-                <span className="text-sm">I acknowledge that AuRa will use data I provide and connect to power Connect Intelligence features. I understand my data will not be sold and I can revoke access at any time.</span>
+                <span className="text-sm">I acknowledge that AURA will use data I provide and connect to power Connect Intelligence features. I understand my data will not be sold and I can revoke access at any time.</span>
               </label>
               <label className="flex items-start gap-2 cursor-pointer">
                 <Checkbox checked={consent2} onCheckedChange={(v) => setConsent2(!!v)} className="mt-0.5" />
-                <span className="text-sm">I consent to AuRa sending limited contact data to third-party enrichment providers for the purpose of building prospect profiles within my account.</span>
+                <span className="text-sm">I consent to AURA sending limited contact data to third-party enrichment providers for the purpose of building prospect profiles within my account.</span>
               </label>
             </div>
 

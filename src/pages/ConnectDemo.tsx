@@ -140,7 +140,7 @@ export default function ConnectDemo() {
             transform: buildPhase >= 1 ? "translateY(0)" : "translateY(20px)",
             transition: "all 1s cubic-bezier(0.16, 1, 0.3, 1) 0.4s",
           }}>
-            AuRa Connect
+            AURA Connect
           </h1>
           <p className="text-sm mt-2" style={{
             color: "hsl(140 12% 58%)",
@@ -191,7 +191,7 @@ export default function ConnectDemo() {
         <div className="px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <AuraLogo size={32} />
-            <h1 className="text-lg font-bold text-white">AuRa Connect</h1>
+            <h1 className="text-lg font-bold text-white">AURA Connect</h1>
           </div>
           <button
             className="text-xs hover:text-white transition-colors"

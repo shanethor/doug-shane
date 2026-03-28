@@ -109,7 +109,7 @@ export default function StudioDemo() {
       <header className="border-b border-white/[0.06] px-6 py-4 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2 no-underline text-white">
           <Sparkles className="h-5 w-5 text-[#F59E0B]" />
-          <span className="text-lg font-bold tracking-tight">AuRa Studio</span>
+          <span className="text-lg font-bold tracking-tight">AURA Studio</span>
         </Link>
         <Link
           to="/book/aura-studio"
@@ -124,7 +124,7 @@ export default function StudioDemo() {
         {/* Hero */}
         <div className="text-center space-y-3">
           <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">
-            See what AuRa Studio builds for you
+            See what AURA Studio builds for you
           </h1>
           <p className="text-[#A1A1AA] max-w-xl mx-auto text-sm">
           Submit a build request below. Tell us what you need — a custom CRM, AI agents,
@@ -182,7 +182,7 @@ export default function StudioDemo() {
                       <Sparkles className="h-4 w-4 text-[#F59E0B]" />
                     </div>
                     <div className="space-y-2">
-                      <p className="text-sm font-medium text-white">AuRa Studio AI</p>
+                      <p className="text-sm font-medium text-white">AURA Studio AI</p>
                       <div className="text-sm text-[#D4D4D8] space-y-2">
                          <p>
                            Got it! I've logged <strong className="text-white">"{latestReq.title}"</strong> and
@@ -259,7 +259,7 @@ export default function StudioDemo() {
                 <MessageSquare className="h-4 w-4 text-[#F59E0B]" />
               </div>
               <div>
-                <h3 className="text-base font-semibold text-white">How AuRa Studio Works</h3>
+                <h3 className="text-base font-semibold text-white">How AURA Studio Works</h3>
                 <p className="text-xs text-[#71717A]">End-to-end AI automation, custom-built for your firm</p>
               </div>
             </div>
@@ -303,7 +303,7 @@ export default function StudioDemo() {
                   <h4 className="text-sm font-semibold text-white">This is just one workflow.</h4>
                 </div>
                  <p className="text-xs text-[#D4D4D8] leading-relaxed">
-                   AuRa Studio builds <strong>custom AI-powered tools</strong> for your business — CRMs, marketing
+                   AURA Studio builds <strong>custom AI-powered tools</strong> for your business — CRMs, marketing
                    automation, AI agents for customer service & finance, document processing, and more.
                    We design, build, and maintain them so you can focus on growth. Pricing starts at <strong>$1,500/month</strong> with a 3-month minimum.
                  </p>

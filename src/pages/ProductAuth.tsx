@@ -101,7 +101,7 @@ export default function ProductAuth() {
     }
   };
 
-  const title = product === "studio" ? "AuRa Studio" : "AuRa Connect";
+  const title = product === "studio" ? "AURA Studio" : "AURA Connect";
   const subtitle = product === "studio"
     ? "Your AI-native build team"
     : "Relationship intelligence for professionals";

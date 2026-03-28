@@ -191,7 +191,7 @@ function buildRealGraph(contacts: ContactRow[]): GraphData {
       gx: 0,
       gy: 0,
       title: "Your network",
-      company: "AuRa Connect",
+      company: "AURA Connect",
       location: "Center of graph",
       industry: "Relationship network",
       mutualConnections: people.length,

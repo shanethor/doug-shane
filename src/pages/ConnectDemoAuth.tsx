@@ -551,7 +551,7 @@ export default function ConnectDemoAuth() {
 
   const [buildProgress, setBuildProgress] = useState(0);
   const [buildMessages] = useState([
-    "Initializing AuRa engine…",
+    "Initializing AURA engine…",
     "Mapping your network…",
     "Scanning connections…",
     "Analyzing relationship patterns…",
@@ -601,7 +601,7 @@ export default function ConnectDemoAuth() {
   const renderHeader = (showTagline = false) => (
     <div className="text-center space-y-3">
       <div className="mx-auto flex items-center justify-center"><AuraLogo size={48} /></div>
-      <h1 className="text-xl font-bold text-white">AuRa Connect</h1>
+      <h1 className="text-xl font-bold text-white">AURA Connect</h1>
       {showTagline && (
         <>
           <p className="text-sm font-medium" style={{ color: "hsl(140 12% 58%)" }}>
@@ -663,7 +663,7 @@ export default function ConnectDemoAuth() {
                   <label className="flex items-start gap-2 cursor-pointer group">
                     <input type="checkbox" defaultChecked className="mt-1 accent-[hsl(140,12%,42%)]" />
                     <span className="text-[11px]" style={{ color: "hsl(240 5% 50%)" }}>
-                      I consent to receive product updates and marketing emails from AuRa. You can unsubscribe at any time.
+                      I consent to receive product updates and marketing emails from AURA. You can unsubscribe at any time.
                     </span>
                   </label>
                   <Button type="submit" className="w-full text-white font-semibold hover:brightness-110 transition-all" style={{ background: "hsl(140 12% 42%)" }}>
@@ -671,7 +671,7 @@ export default function ConnectDemoAuth() {
                   </Button>
                 </form>
               </div>
-              <p className="text-xl text-center font-semibold mt-10" style={{ color: "hsl(140 12% 58%)" }}>Intelligence runs on AuRa</p>
+              <p className="text-xl text-center font-semibold mt-10" style={{ color: "hsl(140 12% 58%)" }}>Intelligence runs on AURA</p>
             </>
           )}
 
@@ -693,7 +693,7 @@ export default function ConnectDemoAuth() {
                 </div>
                 <div className="rounded-lg border-2 p-4 space-y-3" style={{ borderColor: "hsl(140 12% 42%)", background: "hsl(140 12% 42% / 0.05)" }}>
                   <div className="flex items-center justify-between">
-                    <span className="font-semibold text-white">AuRa Connect Pro</span>
+                    <span className="font-semibold text-white">AURA Connect Pro</span>
                     <div className="text-right">
                       <span className="text-sm line-through" style={{ color: "hsl(240 5% 40%)" }}>$250/mo</span>
                       <span className="text-lg font-bold ml-2" style={{ color: "hsl(140 12% 58%)" }}>$100/mo</span>
@@ -731,7 +731,7 @@ export default function ConnectDemoAuth() {
                 </p>
                 <p className="text-xs text-center" style={{ color: "hsl(240 5% 46%)" }}>Demo mode — no payment required</p>
               </div>
-              <p className="text-xl text-center font-semibold mt-10" style={{ color: "hsl(140 12% 58%)" }}>Intelligence runs on AuRa</p>
+              <p className="text-xl text-center font-semibold mt-10" style={{ color: "hsl(140 12% 58%)" }}>Intelligence runs on AURA</p>
             </>
           )}
 
@@ -761,7 +761,7 @@ export default function ConnectDemoAuth() {
                   className="text-2xl font-bold text-white mb-2 transition-all"
                   style={{ transitionDuration: "600ms", opacity: buildPhase >= 2 ? 1 : 0, transform: buildPhase >= 2 ? "translateY(0)" : "translateY(15px)" }}
                 >
-                  Welcome to AuRa Connect
+                  Welcome to AURA Connect
                 </h2>
 
 
@@ -936,10 +936,10 @@ export default function ConnectDemoAuth() {
                     onClick={handleEnter}
                   >
                     {connectedCount === 0
-                      ? "Skip & Enter AuRa Connect"
+                      ? "Skip & Enter AURA Connect"
                       : accountSavings > 0
                         ? `Enter — $${accountSavings} credit earned 🎉`
-                        : `Enter AuRa Connect (${connectedCount} linked)`}
+                        : `Enter AURA Connect (${connectedCount} linked)`}
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
 
@@ -950,7 +950,7 @@ export default function ConnectDemoAuth() {
                   )}
                 </div>
               </div>
-              <p className="text-xl text-center font-semibold mt-10" style={{ color: "hsl(140 12% 58%)" }}>Intelligence runs on AuRa</p>
+              <p className="text-xl text-center font-semibold mt-10" style={{ color: "hsl(140 12% 58%)" }}>Intelligence runs on AURA</p>
             </div>
           )}
 
@@ -976,7 +976,7 @@ export default function ConnectDemoAuth() {
                   {([
                     { id: "gmail" as EmailLayout, label: "Gmail View", desc: "Feels like Gmail: compact list, conversation threads, left labels.", icon: "G", color: "#4285F4" },
                     { id: "outlook" as EmailLayout, label: "Outlook View", desc: "Feels like Outlook: folders on the left, list in the middle, preview on the right.", icon: "O", color: "#0078D4" },
-                    { id: "aura" as EmailLayout, label: "AuRa View", desc: "Recommended: optimized for AURA's AI and sales tools.", icon: "A", color: "hsl(140 12% 42%)", recommended: true },
+                    { id: "aura" as EmailLayout, label: "AURA View", desc: "Recommended: optimized for AURA's AI and sales tools.", icon: "A", color: "hsl(140 12% 42%)", recommended: true },
                   ] as const).map(view => (
                     <button
                       key={view.id}
@@ -1007,10 +1007,10 @@ export default function ConnectDemoAuth() {
                 </div>
 
                 <Button variant="ghost" className="w-full text-xs" style={{ color: "hsl(240 5% 46%)" }} onClick={() => handleFinalEnter("aura")}>
-                  Skip — use AuRa View
+                  Skip — use AURA View
                 </Button>
               </div>
-              <p className="text-xl text-center font-semibold mt-10" style={{ color: "hsl(140 12% 58%)" }}>Intelligence runs on AuRa</p>
+              <p className="text-xl text-center font-semibold mt-10" style={{ color: "hsl(140 12% 58%)" }}>Intelligence runs on AURA</p>
             </div>
           )}
 

@@ -299,7 +299,7 @@ export default function ProductSettings() {
             <h2 className={headingStyle}>Connected Accounts</h2>
           </div>
           <p className={`text-xs ${textSecondary}`}>
-            Connect your accounts to power AuRa Connect's relationship intelligence. More connections = better insights.
+            Connect your accounts to power AURA Connect's relationship intelligence. More connections = better insights.
           </p>
           <ConnectedAccountsStatus variant="full" />
           <Separator className={darkMode ? "border-white/5" : "border-border"} />
@@ -315,7 +315,7 @@ export default function ProductSettings() {
             <h2 className={headingStyle}>Email Accounts</h2>
           </div>
           <p className={`text-xs ${textSecondary}`}>
-            Connect Gmail or Outlook to sync your inbox and send emails from AuRa Connect.
+            Connect Gmail or Outlook to sync your inbox and send emails from AURA Connect.
           </p>
 
           {/* Gmail */}
@@ -378,7 +378,7 @@ export default function ProductSettings() {
             <h2 className={headingStyle}>Calendar Sync</h2>
           </div>
           <p className={`text-xs ${textSecondary}`}>
-            Calendar sync uses your connected email account. You can also use AuRa's native calendar without external sync.
+            Calendar sync uses your connected email account. You can also use AURA's native calendar without external sync.
           </p>
           <div className={`flex items-center justify-between rounded-lg border p-3 ${darkMode ? "border-white/10" : "border-border"}`}>
             <div className="flex items-center gap-3">
@@ -432,7 +432,7 @@ export default function ProductSettings() {
           </div>
           <div className={`rounded-md border p-3 ${darkMode ? "bg-white/[0.03] border-white/5" : "bg-muted/30 border-border"}`}>
             <p className={`text-[11px] ${textSecondary}`}>
-              <strong className={textPrimary}>Note:</strong> You can use AuRa's native calendar without connecting an external account. External sync adds your Google/Outlook events alongside AuRa events. Use <strong>Reconnect</strong> if your sync stops working.
+              <strong className={textPrimary}>Note:</strong> You can use AURA's native calendar without connecting an external account. External sync adds your Google/Outlook events alongside AURA events. Use <strong>Reconnect</strong> if your sync stops working.
             </p>
           </div>
         </div>
