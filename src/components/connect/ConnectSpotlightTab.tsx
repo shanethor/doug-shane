@@ -347,7 +347,7 @@ export default function ConnectSpotlightTab() {
           </p>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-3 xl:grid-cols-6 gap-2">
+          <div className="grid grid-cols-6 gap-2">
             {FEATURED_TEMPLATES.map(t => {
               const Icon = t.icon;
               return (
@@ -356,32 +356,27 @@ export default function ConnectSpotlightTab() {
                   onClick={() => handleTemplateCardClick(t)}
                   className="group text-left rounded-lg overflow-hidden border border-border/50 hover:border-primary/40 bg-muted/20 hover:bg-muted/40 transition-all hover:shadow-md cursor-pointer"
                 >
-                  {/* Preview image */}
                   <div className="relative">
-                    <AspectRatio ratio={3 / 2}>
+                    <AspectRatio ratio={4 / 5}>
                       {t.preview ? (
-                        <img src={t.preview} alt={t.name} className="w-full h-full object-cover" />
+                        <img src={t.preview} alt={t.name} className="w-full h-full object-cover object-top" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center" style={{ background: t.accentColor }}>
-                          <Icon className="h-6 w-6 text-white/60" />
+                          <Icon className="h-5 w-5 text-white/60" />
                         </div>
                       )}
                     </AspectRatio>
-                    {/* Hover overlay */}
                     <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <span className="text-[10px] font-semibold text-white bg-white/20 backdrop-blur-sm px-2 py-1 rounded-full border border-white/30">
+                      <span className="text-[9px] font-semibold text-white bg-white/20 backdrop-blur-sm px-2 py-1 rounded-full border border-white/30">
                         Use Template
                       </span>
                     </div>
                   </div>
-                  {/* Footer */}
-                  <div className="p-1.5 flex items-center gap-1.5">
-                    <div className="w-4 h-4 rounded flex items-center justify-center shrink-0" style={{ background: t.accentColor }}>
-                      <Icon className="h-2.5 w-2.5 text-white" />
+                  <div className="p-1.5 flex items-center gap-1">
+                    <div className="w-3.5 h-3.5 rounded flex items-center justify-center shrink-0" style={{ background: t.accentColor }}>
+                      <Icon className="h-2 w-2 text-white" />
                     </div>
-                    <div className="min-w-0">
-                      <p className="text-[10px] font-bold truncate leading-tight">{t.name}</p>
-                    </div>
+                    <p className="text-[9px] font-bold truncate leading-tight">{t.name}</p>
                   </div>
                 </button>
               );
