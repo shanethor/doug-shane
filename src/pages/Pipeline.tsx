@@ -25,7 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Search, CheckCircle, GripVertical, Edit3, Send, PenLine, Copy, Check, ExternalLink, FileText, Trash2, Users, DollarSign, TrendingUp, Share2, BarChart3, Info, CalendarDays } from "lucide-react";
+import { Plus, Search, CheckCircle, GripVertical, Edit3, Send, PenLine, Copy, Check, ExternalLink, FileText, Trash2, Users, DollarSign, TrendingUp, Share2, BarChart3, Info, CalendarDays, Star } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -885,22 +885,28 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
             <div className="flex items-center rounded-lg border bg-muted/50 p-0.5">
               <button
                 onClick={() => setPipelineView("commercial")}
-                className={`px-3 py-1.5 rounded-md text-xs font-sans font-medium transition-colors ${
+                className={`px-3 py-1.5 rounded-md text-xs font-sans font-medium transition-colors flex items-center gap-1 ${
                   pipelineView === "commercial"
                     ? "bg-background text-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
+                {localStorage.getItem("aura_default_pipeline") === "commercial" && (
+                  <Star className="h-3 w-3 fill-primary text-primary" />
+                )}
                 Commercial
               </button>
               <button
                 onClick={() => setPipelineView("personal")}
-                className={`px-3 py-1.5 rounded-md text-xs font-sans font-medium transition-colors ${
+                className={`px-3 py-1.5 rounded-md text-xs font-sans font-medium transition-colors flex items-center gap-1 ${
                   pipelineView === "personal"
                     ? "bg-background text-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
+                {localStorage.getItem("aura_default_pipeline") === "personal" && (
+                  <Star className="h-3 w-3 fill-primary text-primary" />
+                )}
                 Personal
               </button>
             </div>

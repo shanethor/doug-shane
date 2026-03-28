@@ -205,13 +205,53 @@ function EmailIntelligencePage() {
 
   async function loadContacts() {
     setLoading(true);
-    const { data } = await supabase
+    // Load email-discovered contacts
+    const { data: emailContacts } = await supabase
       .from("email_discovered_contacts" as any)
       .select("*")
       .not("status", "eq", "dismissed")
       .order("first_seen_at", { ascending: false })
       .limit(500);
-    setAllContacts((data as any as DiscoveredContact[]) || []);
+
+    // Also load network contacts from synced sources (iCloud, Google, etc.)
+    const { data: networkContacts } = await supabase
+      .from("network_contacts")
+      .select("id, full_name, email, phone, company, title, source, location, linkedin_url, imported_at, user_id")
+      .order("imported_at", { ascending: false })
+      .limit(500);
+
+    // Get IDs of email contacts already known, to avoid duplicates
+    const emailSet = new Set((emailContacts || []).map((c: any) => c.email_address?.toLowerCase()));
+
+    // Map network contacts into DiscoveredContact shape (only those not already in email_discovered_contacts)
+    const mappedNetwork: DiscoveredContact[] = (networkContacts || [])
+      .filter((nc: any) => nc.email && !emailSet.has(nc.email.toLowerCase()))
+      .map((nc: any) => ({
+        id: nc.id,
+        email_address: nc.email || "",
+        display_name: nc.full_name,
+        first_name: nc.full_name?.split(" ")[0] || null,
+        last_name: nc.full_name?.split(" ").slice(1).join(" ") || null,
+        domain: nc.email ? nc.email.split("@")[1] : null,
+        hunter_verified: null,
+        hunter_confidence: null,
+        hunter_position: nc.title,
+        hunter_company: nc.company,
+        hunter_linkedin_url: nc.linkedin_url,
+        hunter_phone: nc.phone,
+        prospect_score: null,
+        email_frequency: 0,
+        enrichment_status: "synced",
+        status: "active",
+        first_seen_at: nc.imported_at,
+        contact_type: null,
+        contact_score: null,
+        filtered: false,
+        location: nc.location,
+        enrichment_source: nc.source,
+      } as DiscoveredContact));
+
+    setAllContacts([...(emailContacts as any as DiscoveredContact[] || []), ...mappedNetwork]);
     setLoading(false);
   }
 
@@ -338,7 +378,7 @@ function EmailIntelligencePage() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-lg font-bold">Inbox Discoveries</h2>
-          <p className="text-xs text-muted-foreground">Contacts found and classified from your email activity.</p>
+          <p className="text-xs text-muted-foreground">Contacts found and classified from your connected accounts.</p>
         </div>
         <div className="flex gap-2">
           {newThisWeek > 0 && <Badge className="bg-primary">{newThisWeek} new</Badge>}
@@ -868,7 +908,7 @@ function MapWithListView() {
                         <p className="text-sm font-medium truncate">{c.display_name || c.primary_email}</p>
                         {c.tier && <Badge variant="outline" className="text-[9px]">{c.tier}</Badge>}
                         {c.linkedin_url && (
-                          <a href={c.linkedin_url} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} className="text-blue-400 hover:text-blue-300">
+                          <a href={c.linkedin_url.startsWith("http") ? c.linkedin_url : `https://${c.linkedin_url}`} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} className="text-blue-400 hover:text-blue-300">
                             <Linkedin className="h-3.5 w-3.5" />
                           </a>
                         )}
