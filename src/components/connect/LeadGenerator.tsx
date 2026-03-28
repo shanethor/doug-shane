@@ -310,12 +310,15 @@ function GenerateControls({ onGenerate }: { onGenerate: (opts: any) => void }) {
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-semibold">{pack.leads} Leads</span>
                     {pack.popular && <Badge className="text-[9px] px-1.5 py-0">Most Popular</Badge>}
-                    {pack.savings && <Badge variant="secondary" className="text-[9px] px-1.5 py-0 text-emerald-600">Save {pack.savings}</Badge>}
+                    <Badge variant="secondary" className="text-[9px] px-1.5 py-0 text-emerald-600">40% Off</Badge>
                   </div>
                   <span className="text-[10px] text-muted-foreground">${pack.perLead}/lead • Full enrichment</span>
                 </div>
               </div>
-              <span className="text-sm font-bold">${pack.price.toLocaleString()}</span>
+              <div className="text-right">
+                <span className="text-[11px] text-muted-foreground line-through">${pack.originalPrice.toLocaleString()}</span>
+                <span className="text-sm font-bold ml-1.5">${pack.price.toLocaleString()}</span>
+              </div>
             </button>
           ))}
           <Button
