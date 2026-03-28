@@ -205,13 +205,53 @@ function EmailIntelligencePage() {
 
   async function loadContacts() {
     setLoading(true);
-    const { data } = await supabase
+    // Load email-discovered contacts
+    const { data: emailContacts } = await supabase
       .from("email_discovered_contacts" as any)
       .select("*")
       .not("status", "eq", "dismissed")
       .order("first_seen_at", { ascending: false })
       .limit(500);
-    setAllContacts((data as any as DiscoveredContact[]) || []);
+
+    // Also load network contacts from synced sources (iCloud, Google, etc.)
+    const { data: networkContacts } = await supabase
+      .from("network_contacts")
+      .select("id, full_name, email, phone, company, title, source, location, linkedin_url, imported_at, user_id")
+      .order("imported_at", { ascending: false })
+      .limit(500);
+
+    // Get IDs of email contacts already known, to avoid duplicates
+    const emailSet = new Set((emailContacts || []).map((c: any) => c.email_address?.toLowerCase()));
+
+    // Map network contacts into DiscoveredContact shape (only those not already in email_discovered_contacts)
+    const mappedNetwork: DiscoveredContact[] = (networkContacts || [])
+      .filter((nc: any) => nc.email && !emailSet.has(nc.email.toLowerCase()))
+      .map((nc: any) => ({
+        id: nc.id,
+        email_address: nc.email || "",
+        display_name: nc.full_name,
+        first_name: nc.full_name?.split(" ")[0] || null,
+        last_name: nc.full_name?.split(" ").slice(1).join(" ") || null,
+        domain: nc.email ? nc.email.split("@")[1] : null,
+        hunter_verified: null,
+        hunter_confidence: null,
+        hunter_position: nc.title,
+        hunter_company: nc.company,
+        hunter_linkedin_url: nc.linkedin_url,
+        hunter_phone: nc.phone,
+        prospect_score: null,
+        email_frequency: 0,
+        enrichment_status: "synced",
+        status: "active",
+        first_seen_at: nc.imported_at,
+        contact_type: null,
+        contact_score: null,
+        filtered: false,
+        location: nc.location,
+        enrichment_source: nc.source,
+      } as DiscoveredContact));
+
+    setAllContacts([...(emailContacts as any as DiscoveredContact[] || []), ...mappedNetwork]);
     setLoading(false);
   }
 
