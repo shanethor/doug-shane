@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { ProductLayout } from "@/components/ProductLayout";
 import { useSubscription } from "@/hooks/useSubscription";
-import StudioUpsellModal from "@/components/StudioUpsellModal";
+import StudioUpsellPage from "@/components/StudioUpsellPage";
 
 // Demo tab components (used as production pages)
 import DemoConnectTab from "@/components/connect-demo/DemoConnectTab";
@@ -13,7 +13,7 @@ import DemoSpotlightTab from "@/components/connect-demo/DemoSpotlightTab";
 import DemoAssistantTab from "@/components/connect-demo/DemoAssistantTab";
 import ConnectIntelligencePage from "@/pages/ConnectIntelligence";
 import ConnectLeads from "@/pages/ConnectLeads";
-import { useNavigate } from "react-router-dom";
+
 
 // Cinematic intro overlay
 function CinematicIntro({ onComplete }: { onComplete: () => void }) {
@@ -103,7 +103,6 @@ export default function ConnectProduct() {
   const location = useLocation();
   const navigate = useNavigate();
   const { subscribed } = useSubscription();
-  const [showStudioModal, setShowStudioModal] = useState(false);
   const [showIntro, setShowIntro] = useState(() => {
     try { return !sessionStorage.getItem("connect-entered"); } catch { return true; }
   });
@@ -127,6 +126,7 @@ export default function ConnectProduct() {
     if (path.startsWith("/connect/calendar")) return "calendar";
     if (path.startsWith("/connect/create")) return "create";
     if (path.startsWith("/connect/sage")) return "sage";
+    if (path.startsWith("/connect/studio")) return "studio";
     return "connect";
   };
   const page = getPage();
@@ -148,7 +148,7 @@ export default function ConnectProduct() {
     <>
       {showIntro && <CinematicIntro onComplete={handleIntroComplete} />}
       <ProductLayout
-        onStudioClick={() => setShowStudioModal(true)}
+        onStudioClick={() => navigate("/connect/studio")}
         studioUnlocked={false}
       >
         <QuoteTicker />
@@ -166,15 +166,10 @@ export default function ConnectProduct() {
             {page === "calendar" && <SmartCalendar />}
             {page === "create" && <DemoSpotlightTab />}
             {page === "sage" && <DemoAssistantTab onNavigate={handleSageNavigate} />}
+            {page === "studio" && <StudioUpsellPage isConnectSubscriber={subscribed} />}
           </div>
         </div>
       </ProductLayout>
-
-      <StudioUpsellModal
-        open={showStudioModal}
-        onClose={() => setShowStudioModal(false)}
-        isConnectSubscriber={subscribed}
-      />
     </>
   );
 }
