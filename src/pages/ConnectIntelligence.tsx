@@ -446,10 +446,18 @@ function EmailIntelligencePage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { toast.error("Not authenticated"); return; }
 
+      // Clean name: if it looks like CSV data (3+ commas), take first segment only
+      let rawName = contact.display_name || `${contact.first_name || ""} ${contact.last_name || ""}`.trim() || null;
+      if (rawName && (rawName.match(/,/g) || []).length >= 3) {
+        rawName = rawName.split(",")[0].trim();
+      }
+      if (rawName) rawName = rawName.replace(/&#\d+;?/g, "").replace(/\s+/g, " ").trim() || null;
+      const cleanEmail = (contact.email_address || "").replace(/&#\d+;?/g, "").trim();
+
       const { error: insertErr } = await supabase.from("canonical_persons").insert({
         owner_user_id: user.id,
-        display_name: contact.display_name || `${contact.first_name || ""} ${contact.last_name || ""}`.trim() || null,
-        primary_email: contact.email_address,
+        display_name: rawName,
+        primary_email: cleanEmail || null,
         company: contact.hunter_company || null,
         title: contact.hunter_position || null,
         linkedin_url: contact.hunter_linkedin_url || null,
