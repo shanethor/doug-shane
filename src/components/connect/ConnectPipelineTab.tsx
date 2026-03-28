@@ -19,7 +19,7 @@ import {
 import { Progress } from "@/components/ui/progress";
 import {
   Plus, Building2, DollarSign, Loader2, RefreshCw, Users, Info, CalendarDays,
-  GripVertical, Trophy, Sparkles, Target, TrendingUp, Settings2, Star,
+  GripVertical, Trophy, Sparkles, Target, TrendingUp, Settings2, Star, Check,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
