@@ -349,7 +349,7 @@ function EmailIntelligencePage() {
         </div>
       </div>
 
-      {/* Tab bar: People / Companies / Saved / Filtered */}
+      {/* Tab bar: People / Companies / Saved People / Saved Companies / Filtered */}
       <div className="flex gap-1.5 flex-wrap">
         <Button
           variant={inboxTab === "people" ? "default" : "outline"}
@@ -368,12 +368,20 @@ function EmailIntelligencePage() {
           <Building2 className="h-3 w-3" /> Companies ({companies.length})
         </Button>
         <Button
-          variant={inboxTab === "saved" ? "default" : "outline"}
+          variant={inboxTab === "saved_people" ? "default" : "outline"}
           size="sm"
-          onClick={() => setInboxTab("saved")}
+          onClick={() => setInboxTab("saved_people")}
           className="text-xs gap-1"
         >
-          <CheckCircle className="h-3 w-3" /> Saved ({saved.length})
+          <CheckCircle className="h-3 w-3" /> Saved People ({savedPeople.length})
+        </Button>
+        <Button
+          variant={inboxTab === "saved_companies" ? "default" : "outline"}
+          size="sm"
+          onClick={() => setInboxTab("saved_companies")}
+          className="text-xs gap-1"
+        >
+          <Building2 className="h-3 w-3" /> Saved Companies ({savedCompanies.length})
         </Button>
         <Button
           variant={inboxTab === "filtered" ? "secondary" : "ghost"}
