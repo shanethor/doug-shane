@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useTimezone } from "@/hooks/useTimezone";
 import { ProductLayout } from "@/components/ProductLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,7 +44,7 @@ export default function ProductSettings() {
   const [sageEnabled, setSageEnabled] = useState(() => localStorage.getItem("sage-popup-enabled") !== "false");
   const [openingPortal, setOpeningPortal] = useState(false);
   const { config: navConfig, setConfig: setNavConfig } = useConnectNavConfig();
-  const [timezone, setTimezone] = useState(Intl.DateTimeFormat().resolvedOptions().timeZone);
+  const { timezone, setTimezone } = useTimezone();
 
   // Email connections
   const [emailConnections, setEmailConnections] = useState<EmailConnection[]>([]);
@@ -80,7 +81,7 @@ export default function ProductSettings() {
         const dbDark = !!(data as any).dark_mode;
         setDarkMode(dbDark);
         document.documentElement.classList.toggle("dark", dbDark);
-        if ((data as any).timezone) setTimezone((data as any).timezone);
+        // timezone is handled by useTimezone hook
       }
       setLoaded(true);
     });
@@ -210,7 +211,7 @@ export default function ProductSettings() {
     if (!user) return;
     setSaving(true);
     const { error } = await supabase.from("profiles").update({
-      full_name: fullName, phone, timezone,
+      full_name: fullName, phone,
     } as any).eq("user_id", user.id);
     setSaving(false);
     if (error) toast.error("Failed to save");

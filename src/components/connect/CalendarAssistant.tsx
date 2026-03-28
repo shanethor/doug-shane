@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useTimezone } from "@/hooks/useTimezone";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -27,6 +28,7 @@ const SUGGESTIONS = [
 ];
 
 export default function CalendarAssistant({ events, leads, onClose, onRefresh }: Props) {
+  const { timezone: userTimezone } = useTimezone();
   const { user } = useAuth();
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
@@ -59,8 +61,8 @@ export default function CalendarAssistant({ events, leads, onClose, onRefresh }:
 
       const systemPrompt = `You are Aura, an AI calendar assistant for an insurance professional. You have access to their calendar and pipeline data.
 
-Current date/time: ${format(now, "EEEE, MMMM d yyyy h:mm a")}
-Timezone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}
+Current date/time: ${new Intl.DateTimeFormat("en-US", { timeZone: userTimezone, weekday: "long", year: "numeric", month: "long", day: "numeric", hour: "numeric", minute: "2-digit" }).format(now)}
+Timezone: ${userTimezone}
 
 Upcoming events (next 2 weeks):
 ${upcomingEvents || "No upcoming events"}
