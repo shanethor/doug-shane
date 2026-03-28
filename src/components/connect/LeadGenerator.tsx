@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import LeadOutreachPanel from "./LeadOutreachPanel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -401,6 +402,7 @@ function ResultsTable() {
   const updateLead = useUpdateEngineLead();
   const deleteLead = useDeleteEngineLead();
   const [search, setSearch] = useState("");
+  const [selectedLead, setSelectedLead] = useState<EngineLead | null>(null);
 
   const filtered = (leads || []).filter((l: EngineLead) =>
     !search ||
@@ -424,6 +426,7 @@ function ResultsTable() {
   }
 
   return (
+    <>
     <Card>
       <CardHeader className="pb-3 flex-row items-center justify-between">
         <CardTitle className="text-sm flex items-center gap-2">
@@ -454,8 +457,11 @@ function ResultsTable() {
             {filtered.map((lead: EngineLead) => (
               <TableRow key={lead.id}>
                 <TableCell className="py-2">
-                  <div>
-                    <p className="text-xs font-medium">{lead.company}</p>
+                  <div
+                    className="cursor-pointer group"
+                    onClick={() => setSelectedLead(lead)}
+                  >
+                    <p className="text-xs font-medium group-hover:text-primary transition-colors">{lead.company}</p>
                     {lead.contact_name && <p className="text-[10px] text-muted-foreground">{lead.contact_name}</p>}
                     {lead.signal && <p className="text-[9px] text-muted-foreground mt-0.5 max-w-[200px] truncate" title={lead.signal}>{lead.signal}</p>}
                   </div>
@@ -469,7 +475,7 @@ function ResultsTable() {
                 </TableCell>
                 <TableCell className="text-right py-2">
                   <div className="flex items-center gap-1 justify-end">
-                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => toast.info(lead.signal || "No signal data")}>
+                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setSelectedLead(lead)}>
                       <Eye className="h-3 w-3" />
                     </Button>
                     <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { updateLead.mutate({ id: lead.id, status: "pipeline" }); toast.success("Added to pipeline"); }}>
@@ -486,6 +492,15 @@ function ResultsTable() {
         </Table>
       </CardContent>
     </Card>
+
+    {/* Lead outreach panel */}
+    {selectedLead && (
+      <LeadOutreachPanel
+        lead={selectedLead}
+        onClose={() => setSelectedLead(null)}
+      />
+    )}
+    </>
   );
 }
 
