@@ -15,7 +15,7 @@ import {
   Rocket, Building2, Globe, MapPin, Target, Search, FileText,
   Download, Plus, ArrowUpRight, Eye, Trash2, Zap, Edit2,
   CheckCircle2, AlertCircle, Sparkles, Users, TrendingUp,
-  Upload, Link, File, X, Loader2,
+  Upload, Link, File, X, Loader2, Mail, Phone, RefreshCw,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
