@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Slider } from "@/components/ui/slider";
+
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
   Rocket, Building2, Globe, MapPin, Target, Search, FileText,
@@ -212,11 +212,19 @@ const FOCUS_TO_SOURCE: Record<string, string> = {
   permits: "Permit Database",
 };
 
+const LEAD_PACKS = [
+  { leads: 10,  price: 200,  perLead: 20,   savings: null, popular: false },
+  { leads: 25,  price: 475,  perLead: 19,   savings: "5%",  popular: false },
+  { leads: 50,  price: 900,  perLead: 18,   savings: "10%", popular: true },
+  { leads: 100, price: 1500, perLead: 15,   savings: "25%", popular: false },
+];
+
 function GenerateControls({ onGenerate }: { onGenerate: (opts: any) => void }) {
   const [geo, setGeo] = useState("All States");
-  const [volume, setVolume] = useState([50]);
   const [focus, setFocus] = useState("new_business");
+  const [selectedPack, setSelectedPack] = useState(50);
   const [generating, setGenerating] = useState(false);
+  const [purchasing, setPurchasing] = useState(false);
   const { data: profile } = useCompanyProfile();
 
   const handleGenerate = async () => {
@@ -235,14 +243,14 @@ function GenerateControls({ onGenerate }: { onGenerate: (opts: any) => void }) {
         entity_types: "LLC, Corp",
       };
       const { data, error } = await supabase.functions.invoke("lead-engine-scan", {
-        body: { source, settings },
+        body: { source, settings, enrich: true },
       });
       if (error) throw new Error(error.message);
       if (data?.error) throw new Error(data.error);
       const count = data?.leads_found ?? 0;
-      onGenerate({ geo, volume: volume[0], focus, leads_found: count });
+      onGenerate({ geo, volume: selectedPack, focus, leads_found: count });
       if (count > 0) {
-        toast.success(`Found ${count} new leads from ${source}`);
+        toast.success(`Found ${count} new enriched leads from ${source}`);
       } else {
         toast.info(data?.message || "No leads found this scan — try a different focus or geography");
       }
@@ -253,58 +261,122 @@ function GenerateControls({ onGenerate }: { onGenerate: (opts: any) => void }) {
     }
   };
 
+  const handlePurchase = async () => {
+    setPurchasing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("create-lead-checkout", {
+        body: { pack: selectedPack },
+      });
+      if (error) throw new Error(error.message);
+      if (data?.url) {
+        window.open(data.url, "_blank");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Failed to start checkout");
+    } finally {
+      setPurchasing(false);
+    }
+  };
+
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-sm flex items-center gap-2">
-          <Rocket className="h-4 w-4 text-primary" />
-          Generate Leads
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="text-xs font-medium text-muted-foreground mb-1 block">Target Geography</label>
-            <Select value={geo} onValueChange={setGeo}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent className="max-h-60">
-                {US_STATES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-              </SelectContent>
-            </Select>
+    <div className="space-y-4">
+      {/* Pricing tiers */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <Rocket className="h-4 w-4 text-primary" />
+            Lead Packages
+          </CardTitle>
+          <p className="text-[10px] text-muted-foreground">Enriched leads with full company & contact profiles via Apollo, Hunter & PDL</p>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {LEAD_PACKS.map((pack) => (
+            <button
+              key={pack.leads}
+              onClick={() => setSelectedPack(pack.leads)}
+              className={`w-full flex items-center justify-between rounded-lg border p-3 text-left transition-all ${
+                selectedPack === pack.leads
+                  ? "border-primary bg-primary/5 ring-1 ring-primary/20"
+                  : "border-border hover:border-primary/40 hover:bg-muted/30"
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <div className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold ${
+                  selectedPack === pack.leads ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                }`}>
+                  {pack.leads}
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold">{pack.leads} Leads</span>
+                    {pack.popular && <Badge className="text-[9px] px-1.5 py-0">Most Popular</Badge>}
+                    {pack.savings && <Badge variant="secondary" className="text-[9px] px-1.5 py-0 text-emerald-600">Save {pack.savings}</Badge>}
+                  </div>
+                  <span className="text-[10px] text-muted-foreground">${pack.perLead}/lead • Full enrichment</span>
+                </div>
+              </div>
+              <span className="text-sm font-bold">${pack.price.toLocaleString()}</span>
+            </button>
+          ))}
+          <Button
+            onClick={handlePurchase}
+            disabled={purchasing}
+            className="w-full gap-1.5 mt-2"
+          >
+            {purchasing ? (
+              <><Loader2 className="h-4 w-4 animate-spin" /> Opening checkout…</>
+            ) : (
+              <>Purchase {selectedPack} Leads — ${LEAD_PACKS.find(p => p.leads === selectedPack)?.price.toLocaleString()}</>
+            )}
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Generate controls */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <Target className="h-4 w-4 text-primary" />
+            Targeting
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Target Geography</label>
+              <Select value={geo} onValueChange={setGeo}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent className="max-h-60">
+                  {US_STATES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">Focus</label>
+              <Select value={focus} onValueChange={setFocus}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="new_business">New Business Filings</SelectItem>
+                  <SelectItem value="permits">Permit Database</SelectItem>
+                  <SelectItem value="social">Reddit Signals</SelectItem>
+                  <SelectItem value="linkedin">LinkedIn</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-          <div>
-            <label className="text-xs font-medium text-muted-foreground mb-1 block">Focus</label>
-            <Select value={focus} onValueChange={setFocus}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="new_business">New Business Filings</SelectItem>
-                <SelectItem value="permits">Permit Database</SelectItem>
-                <SelectItem value="social">Reddit Signals</SelectItem>
-                <SelectItem value="linkedin">LinkedIn</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-        <div>
-          <label className="text-xs font-medium text-muted-foreground mb-2 block">Volume: {volume[0]} leads</label>
-          <Slider value={volume} onValueChange={setVolume} min={10} max={250} step={10} />
-          <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
-            <span>10</span><span>250</span>
-          </div>
-        </div>
-        <Button onClick={handleGenerate} disabled={generating} className="w-full gap-1.5">
-          {generating ? (
-            <><Sparkles className="h-4 w-4 animate-pulse" /> Generating leads…</>
-          ) : (
-            <><Zap className="h-4 w-4" /> Generate Leads</>
-          )}
-        </Button>
-        <p className="text-[10px] text-muted-foreground text-center">
-          Data sourced from public web directories, business registries, and licensed data partners.
-          Users are responsible for complying with applicable email/telemarketing laws.
-        </p>
-      </CardContent>
-    </Card>
+          <Button onClick={handleGenerate} disabled={generating} className="w-full gap-1.5">
+            {generating ? (
+              <><Sparkles className="h-4 w-4 animate-pulse" /> Generating enriched leads…</>
+            ) : (
+              <><Zap className="h-4 w-4" /> Generate Leads</>
+            )}
+          </Button>
+          <p className="text-[10px] text-muted-foreground text-center">
+            Each lead is enriched with company data, contacts, social profiles, and verified emails via Apollo, Hunter & PDL.
+          </p>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
 

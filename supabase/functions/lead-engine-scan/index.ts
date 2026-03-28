@@ -330,12 +330,156 @@ Deno.serve(async (req) => {
     const { data: inserted, error: insertErr } = await adminClient
       .from("engine_leads")
       .insert(leadsToInsert)
-      .select("id");
+      .select("id, company, contact_name, state");
     if (insertErr) {
       console.error("[lead-engine-scan] Insert error:", insertErr);
       return new Response(JSON.stringify({ error: "Failed to save leads" }), {
         status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    // Enrich leads with Apollo, Hunter, and PDL if requested
+    const shouldEnrich = body.enrich === true;
+    if (shouldEnrich && inserted && inserted.length > 0) {
+      const APOLLO_API_KEY = Deno.env.get("APOLLO_API_KEY");
+      const HUNTER_API_KEY = Deno.env.get("HUNTER_API_KEY");
+      const PDL_API_KEY = Deno.env.get("PDL_API_KEY");
+
+      console.log(`[lead-engine-scan] Enriching ${inserted.length} leads (Apollo: ${!!APOLLO_API_KEY}, Hunter: ${!!HUNTER_API_KEY}, PDL: ${!!PDL_API_KEY})`);
+
+      const enrichPromises = inserted.map(async (lead: any) => {
+        const enrichData: any = {};
+
+        // Apollo enrichment — company + person search
+        if (APOLLO_API_KEY && lead.company) {
+          try {
+            const apolloResp = await fetch("https://api.apollo.io/api/v1/mixed_companies/search", {
+              method: "POST",
+              headers: { "Content-Type": "application/json", "X-Api-Key": APOLLO_API_KEY },
+              body: JSON.stringify({
+                q_organization_name: lead.company,
+                per_page: 1,
+                organization_locations: lead.state ? [lead.state] : undefined,
+              }),
+            });
+            if (apolloResp.ok) {
+              const apolloData = await apolloResp.json();
+              const org = apolloData.organizations?.[0] || apolloData.accounts?.[0];
+              if (org) {
+                enrichData.apollo_company = {
+                  name: org.name,
+                  website: org.website_url || org.primary_domain,
+                  industry: org.industry,
+                  employee_count: org.estimated_num_employees,
+                  revenue: org.annual_revenue_printed || org.annual_revenue,
+                  linkedin_url: org.linkedin_url,
+                  phone: org.phone,
+                  city: org.city,
+                  state: org.state,
+                  description: org.short_description,
+                  founded_year: org.founded_year,
+                };
+              }
+            }
+          } catch (e) { console.warn("[enrich] Apollo error:", e); }
+        }
+
+        // Hunter — find + verify email for the company domain
+        if (HUNTER_API_KEY && (enrichData.apollo_company?.website || lead.company)) {
+          try {
+            const domain = enrichData.apollo_company?.website?.replace(/^https?:\/\//, "").split("/")[0];
+            if (domain) {
+              const hunterResp = await fetch(
+                `https://api.hunter.io/v2/domain-search?domain=${encodeURIComponent(domain)}&limit=3&api_key=${HUNTER_API_KEY}`
+              );
+              if (hunterResp.ok) {
+                const hunterData = await hunterResp.json();
+                enrichData.hunter_contacts = (hunterData.data?.emails || []).map((e: any) => ({
+                  email: e.value,
+                  first_name: e.first_name,
+                  last_name: e.last_name,
+                  position: e.position,
+                  department: e.department,
+                  confidence: e.confidence,
+                  linkedin: e.linkedin,
+                  phone_number: e.phone_number,
+                  verified: e.verification?.status === "valid",
+                }));
+              }
+            }
+          } catch (e) { console.warn("[enrich] Hunter error:", e); }
+        }
+
+        // PDL — person enrichment for the contact name
+        if (PDL_API_KEY && lead.contact_name) {
+          try {
+            const [firstName, ...lastParts] = lead.contact_name.split(" ");
+            const lastName = lastParts.join(" ");
+            if (firstName && lastName) {
+              const pdlResp = await fetch("https://api.peopledatalabs.com/v5/person/search", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  "X-Api-Key": PDL_API_KEY,
+                },
+                body: JSON.stringify({
+                  query: {
+                    bool: {
+                      must: [
+                        { match: { first_name: firstName } },
+                        { match: { last_name: lastName } },
+                        ...(lead.company ? [{ match: { job_company_name: lead.company } }] : []),
+                      ],
+                    },
+                  },
+                  size: 1,
+                }),
+              });
+              if (pdlResp.ok) {
+                const pdlData = await pdlResp.json();
+                const person = pdlData.data?.[0];
+                if (person) {
+                  enrichData.pdl_person = {
+                    full_name: person.full_name,
+                    job_title: person.job_title,
+                    job_company_name: person.job_company_name,
+                    linkedin_url: person.linkedin_url,
+                    work_email: person.work_email,
+                    personal_emails: person.personal_emails?.slice(0, 2),
+                    phone_numbers: person.phone_numbers?.slice(0, 2),
+                    location: person.location_name,
+                    industry: person.industry,
+                    skills: person.skills?.slice(0, 5),
+                  };
+                }
+              }
+            }
+          } catch (e) { console.warn("[enrich] PDL error:", e); }
+        }
+
+        // Store enrichment data on the lead
+        if (Object.keys(enrichData).length > 0) {
+          const updateFields: any = {};
+          if (enrichData.apollo_company?.website) updateFields.source_url = enrichData.apollo_company.website;
+          if (enrichData.apollo_company?.industry) updateFields.industry = enrichData.apollo_company.industry;
+
+          // Store full enrichment in a metadata-like approach via the signal field
+          const enrichSummary = [];
+          if (enrichData.apollo_company) enrichSummary.push(`Apollo: ${enrichData.apollo_company.employee_count || "?"} employees, ${enrichData.apollo_company.revenue || "unknown"} revenue`);
+          if (enrichData.hunter_contacts?.length) enrichSummary.push(`Hunter: ${enrichData.hunter_contacts.length} contacts found`);
+          if (enrichData.pdl_person) enrichSummary.push(`PDL: ${enrichData.pdl_person.job_title || "Contact"} verified`);
+          
+          if (enrichSummary.length > 0) {
+            updateFields.signal = `${lead.company} — ${enrichSummary.join(" | ")}`;
+          }
+
+          await adminClient.from("engine_leads").update(updateFields).eq("id", lead.id);
+        }
+      });
+
+      // Run enrichment in parallel with a timeout
+      await Promise.allSettled(enrichPromises);
+      console.log("[lead-engine-scan] Enrichment complete");
     }
 
     // Log activity
