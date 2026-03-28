@@ -376,7 +376,13 @@ export default function ConnectLiveNetworkMap({ onNodeClick }: ConnectLiveNetwor
       const cellW = Math.max((width - padX * 2) / Math.max(cols - 1, 1), 18);
       const cellH = Math.max((height - padY * 2) / Math.max(rows - 1, 1), 18);
       const offX = (gy % 2) * cellW * 0.5;
-      return [padX + gx * cellW + offX, padY + gy * cellH];
+      // Raw position of the center node (self)
+      const selfRawX = padX + nodes[0].gx * cellW + (nodes[0].gy % 2) * cellW * 0.5;
+      const selfRawY = padY + nodes[0].gy * cellH;
+      // Shift so the "You" node is always at the exact canvas center
+      const shiftX = width / 2 - selfRawX;
+      const shiftY = height / 2 - selfRawY;
+      return [padX + gx * cellW + offX + shiftX, padY + gy * cellH + shiftY];
     };
 
     const startTrace = () => {
