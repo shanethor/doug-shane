@@ -213,10 +213,10 @@ const FOCUS_TO_SOURCE: Record<string, string> = {
 };
 
 const LEAD_PACKS = [
-  { leads: 10,  price: 200,  perLead: 20,   savings: null, popular: false },
-  { leads: 25,  price: 475,  perLead: 19,   savings: "5%",  popular: false },
-  { leads: 50,  price: 900,  perLead: 18,   savings: "10%", popular: true },
-  { leads: 100, price: 1500, perLead: 15,   savings: "25%", popular: false },
+  { leads: 10,  price: 200,  originalPrice: 330,  perLead: 20,  popular: false },
+  { leads: 25,  price: 475,  originalPrice: 790,  perLead: 19,  popular: false },
+  { leads: 50,  price: 900,  originalPrice: 1500, perLead: 18,  popular: true },
+  { leads: 100, price: 1500, originalPrice: 2500, perLead: 15,  popular: false },
 ];
 
 function GenerateControls({ onGenerate }: { onGenerate: (opts: any) => void }) {
@@ -288,6 +288,7 @@ function GenerateControls({ onGenerate }: { onGenerate: (opts: any) => void }) {
             Lead Packages
           </CardTitle>
           <p className="text-[10px] text-muted-foreground">Enriched leads with full company & contact profiles via Apollo, Hunter & PDL</p>
+          <Badge variant="outline" className="text-[9px] mt-1 text-emerald-600 border-emerald-600/30">🎉 Connect Member — 40% discount applied</Badge>
         </CardHeader>
         <CardContent className="space-y-2">
           {LEAD_PACKS.map((pack) => (
@@ -310,12 +311,15 @@ function GenerateControls({ onGenerate }: { onGenerate: (opts: any) => void }) {
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-semibold">{pack.leads} Leads</span>
                     {pack.popular && <Badge className="text-[9px] px-1.5 py-0">Most Popular</Badge>}
-                    {pack.savings && <Badge variant="secondary" className="text-[9px] px-1.5 py-0 text-emerald-600">Save {pack.savings}</Badge>}
+                    <Badge variant="secondary" className="text-[9px] px-1.5 py-0 text-emerald-600">40% Off</Badge>
                   </div>
                   <span className="text-[10px] text-muted-foreground">${pack.perLead}/lead • Full enrichment</span>
                 </div>
               </div>
-              <span className="text-sm font-bold">${pack.price.toLocaleString()}</span>
+              <div className="text-right">
+                <span className="text-[11px] text-muted-foreground line-through">${pack.originalPrice.toLocaleString()}</span>
+                <span className="text-sm font-bold ml-1.5">${pack.price.toLocaleString()}</span>
+              </div>
             </button>
           ))}
           <Button
