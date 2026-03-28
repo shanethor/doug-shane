@@ -404,8 +404,9 @@ function EmailIntelligencePage() {
   }
 
   async function dismissContact(id: string) {
-    await supabase.from("email_discovered_contacts" as any).update({ status: "dismissed" }).eq("id", id);
+    await supabase.from("email_discovered_contacts" as any).update({ status: "dismissed", is_filtered: true, filtered: true } as any).eq("id", id);
     setAllContacts(prev => prev.filter(c => c.id !== id));
+    toast.success("Contact dismissed — they won't appear again");
   }
 
   async function reclassifyContact(id: string, newType: ClassificationType) {
