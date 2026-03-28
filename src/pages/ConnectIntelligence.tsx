@@ -125,7 +125,18 @@ const PERSONAL_DOMAINS = [
 ];
 
 function classifyContact(c: DiscoveredContact): { type: "person" | "company" | "filtered"; score: number } {
-  const email = c.email_address.toLowerCase();
+  const email = (c.email_address || "").toLowerCase();
+  if (!email || !email.includes("@")) {
+    // No email — classify by name only
+    const name = (c.display_name || `${c.first_name || ""} ${c.last_name || ""}`.trim()).toLowerCase();
+    if (!name || name.length < 2) return { type: "filtered", score: 0 };
+    if (/\b(llc|inc|corp|ltd|gmbh|co\.|group|agency|insurance|services|solutions|team|service)\b/i.test(name)) {
+      return { type: "company", score: 50 };
+    }
+    const parts = name.split(/\s+/);
+    if (parts.length >= 2 && parts[0].length > 1 && parts[1].length > 1) return { type: "person", score: 75 };
+    return { type: "person", score: 60 };
+  }
   const localPart = email.split("@")[0];
   const domain = email.split("@")[1] || "";
 
