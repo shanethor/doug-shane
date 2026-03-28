@@ -281,15 +281,16 @@ function EmailIntelligencePage() {
     // Get IDs of email contacts already known, to avoid duplicates
     const emailSet = new Set((emailContacts || []).map((c: any) => c.email_address?.toLowerCase()).filter(Boolean));
 
-    // Clean vCard artifacts from names (&#13;, trailing whitespace, etc.)
-    function cleanName(name: string | null): string | null {
-      if (!name) return null;
-      return name
+    // Clean vCard artifacts from names and emails (&#13;, trailing whitespace, etc.)
+    function cleanVCard(value: string | null): string | null {
+      if (!value) return null;
+      return value
         .replace(/&#\d+;?/g, "")   // remove HTML entities like &#13;
         .replace(/\r|\n/g, "")      // remove actual CR/LF
         .replace(/\s+/g, " ")       // collapse whitespace
         .trim() || null;
     }
+    const cleanName = cleanVCard;
 
     // Map network contacts into DiscoveredContact shape — include contacts with OR without email
     const mappedNetwork: DiscoveredContact[] = (networkContacts || [])
@@ -303,7 +304,7 @@ function EmailIntelligencePage() {
         const cleanedName = cleanName(nc.full_name);
         return {
           id: nc.id,
-          email_address: nc.email || "",
+          email_address: cleanVCard(nc.email) || "",
           display_name: cleanedName,
           first_name: cleanedName?.split(" ")[0] || null,
           last_name: cleanedName?.split(" ").slice(1).join(" ") || null,
