@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -204,18 +205,52 @@ function CompanyProfilePanel() {
   );
 }
 
+const FOCUS_TO_SOURCE: Record<string, string> = {
+  new_business: "Business Filings",
+  social: "Reddit",
+  linkedin: "LinkedIn",
+  permits: "Permit Database",
+};
+
 function GenerateControls({ onGenerate }: { onGenerate: (opts: any) => void }) {
   const [geo, setGeo] = useState("All States");
   const [volume, setVolume] = useState([50]);
   const [focus, setFocus] = useState("new_business");
   const [generating, setGenerating] = useState(false);
+  const { data: profile } = useCompanyProfile();
 
   const handleGenerate = async () => {
+    if (!profile?.icp_description && !profile?.industry) {
+      toast.error("Set up your company profile first so AURA knows what leads to find");
+      return;
+    }
     setGenerating(true);
-    // Simulate generation (in production this would call an edge function)
-    await new Promise((r) => setTimeout(r, 2500));
-    onGenerate({ geo, volume: volume[0], focus });
-    setGenerating(false);
+    try {
+      const source = FOCUS_TO_SOURCE[focus] || "Business Filings";
+      const states = geo === "All States" ? [] : [geo];
+      const settings: Record<string, string> = {
+        states: states.join(", ") || "NY, CA, TX, FL",
+        industries: profile?.industry || "Construction, Restaurant, Retail",
+        keywords: profile?.icp_description?.slice(0, 100) || "new business insurance",
+        entity_types: "LLC, Corp",
+      };
+      const { data, error } = await supabase.functions.invoke("lead-engine-scan", {
+        body: { source, settings },
+      });
+      if (error) throw new Error(error.message);
+      if (data?.error) throw new Error(data.error);
+      const count = data?.leads_found ?? 0;
+      onGenerate({ geo, volume: volume[0], focus, leads_found: count });
+      if (count > 0) {
+        toast.success(`Found ${count} new leads from ${source}`);
+      } else {
+        toast.info(data?.message || "No leads found this scan — try a different focus or geography");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Lead generation failed");
+    } finally {
+      setGenerating(false);
+    }
   };
 
   return (
@@ -242,9 +277,10 @@ function GenerateControls({ onGenerate }: { onGenerate: (opts: any) => void }) {
             <Select value={focus} onValueChange={setFocus}>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="new_business">New Business</SelectItem>
-                <SelectItem value="expansion">Expansion</SelectItem>
-                <SelectItem value="partners">Partners</SelectItem>
+                <SelectItem value="new_business">New Business Filings</SelectItem>
+                <SelectItem value="permits">Permit Database</SelectItem>
+                <SelectItem value="social">Reddit Signals</SelectItem>
+                <SelectItem value="linkedin">LinkedIn</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -377,7 +413,7 @@ function ResultsTable() {
 
 function BusinessDropZone() {
   const [dragOver, setDragOver] = useState(false);
-  const [files, setFiles] = useState<{ name: string; type: string; size: number }[]>([]);
+  const [files, setFiles] = useState<{ name: string; type: string; size: number; raw?: File }[]>([]);
   const [urlInput, setUrlInput] = useState("");
   const [urls, setUrls] = useState<string[]>([]);
   const [processing, setProcessing] = useState(false);
@@ -402,7 +438,7 @@ function BusinessDropZone() {
     const arr = Array.from(incoming);
     setFiles((prev) => [
       ...prev,
-      ...arr.map((f) => ({ name: f.name, type: f.type, size: f.size })),
+      ...arr.map((f) => ({ name: f.name, type: f.type, size: f.size, raw: f })),
     ]);
     toast.success(`${arr.length} file(s) added`);
   }, []);
@@ -448,20 +484,47 @@ function BusinessDropZone() {
     }
     setProcessing(true);
     try {
-      // Scrape websites for business data
       const scrapedData: any[] = [];
+
+      // Scrape websites for business data
       for (const url of urls) {
         try {
-          const { data } = await supabase.functions.invoke("scrape-website", {
+          const { data, error } = await supabase.functions.invoke("scrape-website", {
             body: { url },
           });
-          if (data?.extracted) scrapedData.push(data.extracted);
-        } catch {
-          // continue on error
+          if (error) console.warn("Scrape error for", url, error);
+          // scrape-website returns { extracted_data: {...}, scraped_content: "..." }
+          if (data?.extracted_data && Object.keys(data.extracted_data).length > 0) {
+            scrapedData.push(data.extracted_data);
+          } else if (data?.scraped_content) {
+            // Fallback: use raw scraped content as ICP description
+            scrapedData.push({ raw_content: data.scraped_content.slice(0, 500) });
+          }
+        } catch (e) {
+          console.warn("Scrape failed for", url, e);
         }
       }
 
-      // Build profile from scraped data
+      // Read uploaded text files directly in the browser
+      for (const file of files) {
+        if (!file.raw) continue;
+        try {
+          if (file.type === "text/plain" || file.type === "text/csv" || file.name.endsWith(".txt") || file.name.endsWith(".csv")) {
+            const text = await file.raw.text();
+            if (text.trim()) scrapedData.push({ raw_content: text.slice(0, 1000) });
+          } else {
+            // For PDF/DOCX send to edge function for text extraction
+            const { data: extractData } = await supabase.functions.invoke("extract-document-text", {
+              body: { file_name: file.name, file_type: file.type, file_size: file.size },
+            });
+            // If edge function doesn't exist yet, use filename as hint
+            if (extractData?.text) scrapedData.push({ raw_content: extractData.text.slice(0, 1000) });
+            else scrapedData.push({ raw_content: `Document: ${file.name} (${file.type})` });
+          }
+        } catch { /* skip */ }
+      }
+
+      // Build profile from scraped data — correct field mapping
       const merged: Partial<CompanyProfile> = {
         company_name: profile?.company_name || "",
         industry: profile?.industry || "",
@@ -474,14 +537,36 @@ function BusinessDropZone() {
       };
 
       for (const scraped of scrapedData) {
-        if (scraped.company_name && !merged.company_name) merged.company_name = scraped.company_name;
-        if (scraped.industry && !merged.industry) merged.industry = scraped.industry;
-        if (scraped.description && !merged.icp_description) merged.icp_description = scraped.description;
-        if (scraped.revenue && !merged.revenue_range) merged.revenue_range = scraped.revenue;
+        // scrape-website returns: applicant_name/company_name, business_category, description_of_operations, state, annual_revenue
+        const name = scraped.applicant_name || scraped.company_name;
+        if (name && !merged.company_name) merged.company_name = name;
+
+        const industry = scraped.business_category || scraped.industry || scraped.naics_description;
+        if (industry && !merged.industry) merged.industry = industry;
+
+        const ops = scraped.description_of_operations || scraped.description || scraped.raw_content;
+        if (ops && !merged.icp_description) merged.icp_description = ops.slice(0, 400);
+
+        const revenue = scraped.annual_revenue || scraped.revenue_range || scraped.revenue;
+        if (revenue && !merged.revenue_range) merged.revenue_range = String(revenue);
+
+        const state = scraped.state;
+        if (state && !(merged.target_geos || []).includes(state)) {
+          merged.target_geos = [...(merged.target_geos || []), state];
+        }
       }
 
       await upsert.mutateAsync(merged as any);
-      toast.success(`Profile updated with data from ${urls.length} website(s) and ${files.length} document(s)`);
+
+      const populated = Object.entries(merged)
+        .filter(([k, v]) => k !== "website_urls" && v && (Array.isArray(v) ? v.length > 0 : String(v).trim()))
+        .length;
+
+      if (populated > 1) {
+        toast.success(`Profile built from ${urls.length} website(s) — ${populated} fields populated`);
+      } else {
+        toast.info("Website scraped but limited data found. Try filling in your profile manually or add more sources.");
+      }
       setFiles([]);
       setUrls([]);
     } catch (err: any) {
@@ -591,8 +676,10 @@ function BusinessDropZone() {
 }
 
 export default function LeadGenerator() {
-  const handleGenerate = (opts: any) => {
-    toast.success(`Lead generation started — targeting ${opts.volume} leads in ${opts.geo}`);
+  const qc = useQueryClient();
+  const handleGenerate = (_opts: any) => {
+    // Refresh leads table after generation completes
+    setTimeout(() => qc.invalidateQueries({ queryKey: ["generated-leads"] }), 1500);
   };
 
   return (
