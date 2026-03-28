@@ -211,7 +211,7 @@ export default function ProductSettings() {
     if (!user) return;
     setSaving(true);
     const { error } = await supabase.from("profiles").update({
-      full_name: fullName, phone, timezone,
+      full_name: fullName, phone,
     } as any).eq("user_id", user.id);
     setSaving(false);
     if (error) toast.error("Failed to save");
