@@ -225,11 +225,21 @@ const LEAD_PACKS = [
 
 function GenerateControls({ onGenerate }: { onGenerate: (opts: any) => void }) {
   const [geo, setGeo] = useState("All States");
-  const [focus, setFocus] = useState("new_business");
+  const [focuses, setFocuses] = useState<string[]>(["new_business"]);
   const [selectedPack, setSelectedPack] = useState(50);
   const [generating, setGenerating] = useState(false);
   const [purchasing, setPurchasing] = useState(false);
   const { data: profile } = useCompanyProfile();
+
+  const toggleFocus = (key: string) => {
+    setFocuses(prev => {
+      if (prev.includes(key)) {
+        if (prev.length === 1) return prev; // must have at least one
+        return prev.filter(f => f !== key);
+      }
+      return [...prev, key];
+    });
+  };
 
   const handleGenerate = async () => {
     if (!profile?.icp_description && !profile?.industry) {
@@ -238,7 +248,6 @@ function GenerateControls({ onGenerate }: { onGenerate: (opts: any) => void }) {
     }
     setGenerating(true);
     try {
-      const source = FOCUS_TO_SOURCE[focus] || "Business Filings";
       const states = geo === "All States" ? [] : [geo];
       const settings: Record<string, string> = {
         states: states.join(", ") || "NY, CA, TX, FL",
@@ -246,17 +255,31 @@ function GenerateControls({ onGenerate }: { onGenerate: (opts: any) => void }) {
         keywords: profile?.icp_description?.slice(0, 100) || "new business insurance",
         entity_types: "LLC, Corp",
       };
-      const { data, error } = await supabase.functions.invoke("lead-engine-scan", {
-        body: { source, settings, enrich: true },
-      });
-      if (error) throw new Error(error.message);
-      if (data?.error) throw new Error(data.error);
-      const count = data?.leads_found ?? 0;
-      onGenerate({ geo, volume: selectedPack, focus, leads_found: count });
-      if (count > 0) {
-        toast.success(`Found ${count} new enriched leads from ${source}`);
+
+      let totalFound = 0;
+      const sourceNames: string[] = [];
+
+      // Scan each selected focus source
+      for (const focusKey of focuses) {
+        const source = FOCUS_TO_SOURCE[focusKey] || "Business Filings";
+        sourceNames.push(source);
+        try {
+          const { data, error } = await supabase.functions.invoke("lead-engine-scan", {
+            body: { source, settings, enrich: true },
+          });
+          if (error) console.warn(`Scan error for ${source}:`, error.message);
+          const count = data?.leads_found ?? 0;
+          totalFound += count;
+        } catch (err: any) {
+          console.warn(`Failed scanning ${source}:`, err.message);
+        }
+      }
+
+      onGenerate({ geo, volume: selectedPack, focuses, leads_found: totalFound });
+      if (totalFound > 0) {
+        toast.success(`Found ${totalFound} new leads across ${sourceNames.join(", ")}`);
       } else {
-        toast.info(data?.message || "No leads found this scan — try a different focus or geography");
+        toast.info("No leads found this scan — try different focuses or geography");
       }
     } catch (err: any) {
       toast.error(err.message || "Lead generation failed");
