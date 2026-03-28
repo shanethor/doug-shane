@@ -72,6 +72,22 @@ interface ConnectedAccount {
   updated_at: string;
 }
 
+// ─── Classification Types ───
+type ClassificationType = "person_business" | "person_personal" | "company" | "spam_or_system" | "unknown";
+
+const FAMILY_NAMES = new Set([
+  "mom", "dad", "mama", "papa", "honey", "babe", "baby", "wifey", "hubby",
+  "sis", "bro", "brother", "sister", "grandma", "grandpa", "nana", "granny",
+  "auntie", "uncle", "cousin", "sweetheart", "darling", "love",
+]);
+
+const SPAM_SYSTEM_NAMES = new Set([
+  "do not reply", "donotreply", "no reply", "noreply", "no-reply",
+  "notification", "notifications", "support team", "customer service",
+  "mailer-daemon", "postmaster", "system", "automated", "auto-reply",
+  "newsletter", "unsubscribe", "marketing", "promotions", "deals",
+]);
+
 // ─── Spam / Classification Helpers ───
 const BUSINESS_EMAIL_PREFIXES = [
   "noreply", "no-reply", "no_reply", "donotreply", "do-not-reply",
@@ -126,82 +142,107 @@ const PERSONAL_DOMAINS = [
   "protonmail.com", "me.com", "live.com", "msn.com",
 ];
 
-function classifyContact(c: DiscoveredContact): { type: "person" | "company" | "filtered"; score: number } {
+function classifyContact(c: DiscoveredContact): { type: ClassificationType; score: number; isFiltered: boolean } {
   const email = (c.email_address || "").toLowerCase();
+  const name = (c.display_name || `${c.first_name || ""} ${c.last_name || ""}`.trim()).toLowerCase().trim();
+
+  // Use server-side classification if available
+  if (c.classification_type && c.classification_type !== "unknown") {
+    return {
+      type: c.classification_type as ClassificationType,
+      score: (c.classification_confidence || 0.5) * 100,
+      isFiltered: c.is_filtered ?? false,
+    };
+  }
+
   if (!email || !email.includes("@")) {
     // No email — classify by name only
-    const name = (c.display_name || `${c.first_name || ""} ${c.last_name || ""}`.trim()).toLowerCase();
-    if (!name || name.length < 2) return { type: "filtered", score: 0 };
+    if (!name || name.length < 2) return { type: "unknown", score: 0, isFiltered: true };
+    const nameParts = name.split(/\s+/).filter(Boolean);
+    if (nameParts.length === 1 && FAMILY_NAMES.has(nameParts[0])) {
+      return { type: "person_personal", score: 90, isFiltered: true };
+    }
+    if (SPAM_SYSTEM_NAMES.has(name)) {
+      return { type: "spam_or_system", score: 90, isFiltered: true };
+    }
     if (/\b(llc|inc|corp|ltd|gmbh|co\.|group|agency|insurance|services|solutions|team|service)\b/i.test(name)) {
-      return { type: "company", score: 50 };
+      return { type: "company", score: 50, isFiltered: false };
     }
     const parts = name.split(/\s+/);
-    if (parts.length >= 2 && parts[0].length > 1 && parts[1].length > 1) return { type: "person", score: 75 };
-    return { type: "person", score: 60 };
+    if (parts.length >= 2 && parts[0].length > 1 && parts[1].length > 1) return { type: "person_business", score: 60, isFiltered: false };
+    return { type: "unknown", score: 30, isFiltered: false };
   }
+
   const localPart = email.split("@")[0];
   const domain = email.split("@")[1] || "";
 
-  // Auto-filter: SMS/MMS gateway domains (phone numbers as emails)
+  // Auto-filter: SMS/MMS gateway domains
   if (SMS_MMS_GATEWAY_DOMAINS.some(d => domain === d || domain.endsWith("." + d))) {
-    return { type: "filtered", score: 0 };
+    return { type: "spam_or_system", score: 0, isFiltered: true };
   }
-  // Auto-filter: prefix match
+  // Auto-filter: spam prefixes
   if (BUSINESS_EMAIL_PREFIXES.some(p => localPart === p || localPart.startsWith(p + "-") || localPart.startsWith(p + ".") || localPart.startsWith(p + "+"))) {
-    return { type: "filtered", score: 0 };
+    return { type: "spam_or_system", score: 0, isFiltered: true };
   }
   // Auto-filter: ESP / brand domain
   if (ESP_DOMAINS.some(d => domain === d || domain.endsWith("." + d))) {
-    return { type: "filtered", score: 0 };
+    return { type: "spam_or_system", score: 0, isFiltered: true };
   }
-  // Auto-filter: transactional subdomain pattern (em1.*, mail.*, edm.*, etc.)
+  // Auto-filter: transactional subdomain pattern
   if (TRANSACTIONAL_SUBDOMAIN_RE.test(domain)) {
-    return { type: "filtered", score: 0 };
+    return { type: "spam_or_system", score: 0, isFiltered: true };
   }
-  // Auto-filter: numeric-only local parts (phone numbers, tracking IDs)
-  if (/^\d+$/.test(localPart) || /^[a-f0-9]{20,}$/.test(localPart)) {
-    return { type: "filtered", score: 0 };
-  }
-  // Auto-filter: local part is mostly digits (phone number patterns like 9168725925)
-  if (/^\d{7,}/.test(localPart)) {
-    return { type: "filtered", score: 0 };
+  // Auto-filter: numeric-only local parts
+  if (/^\d+$/.test(localPart) || /^[a-f0-9]{20,}$/.test(localPart) || /^\d{7,}/.test(localPart)) {
+    return { type: "spam_or_system", score: 0, isFiltered: true };
   }
 
-  // Score calculation
-  let score = 50;
-  const name = (c.display_name || `${c.first_name || ""} ${c.last_name || ""}`.trim()).toLowerCase();
+  // Name-based checks
+  if (SPAM_SYSTEM_NAMES.has(name)) {
+    return { type: "spam_or_system", score: 90, isFiltered: true };
+  }
+  const nameParts = name.split(/\s+/).filter(Boolean);
+  if (nameParts.length === 1 && FAMILY_NAMES.has(nameParts[0])) {
+    return { type: "person_personal", score: 90, isFiltered: true };
+  }
+  // Single short token with no useful info
+  if (nameParts.length === 1 && nameParts[0].length <= 3 && !c.hunter_company) {
+    return { type: "unknown", score: 20, isFiltered: true };
+  }
 
-  // Personal domain = person signal
-  if (PERSONAL_DOMAINS.includes(domain)) score += 20;
+  // Company keyword detection
+  if (/\b(llc|inc|corp|ltd|gmbh|co\.|group|agency|insurance|services|solutions|team|service)\b/i.test(name)) {
+    return { type: "company", score: 70, isFiltered: false };
+  }
 
-  // "First Last" name pattern = person
-  const nameParts = name.trim().split(/\s+/);
-  if (nameParts.length === 2 && nameParts[0].length > 1 && nameParts[1].length > 1) score += 20;
+  // Person classification
+  const isPersonalDomain = PERSONAL_DOMAINS.includes(domain);
+  const hasFirstLast = nameParts.length >= 2 && nameParts[0].length > 1 && nameParts[1].length > 1;
 
-  // ESP/subdomain penalty
-  if (ESP_DOMAINS.some(d => domain.endsWith("." + d))) score -= 50;
-
-  // Company keyword penalty
-  if (/\b(llc|inc|corp|ltd|gmbh|co\.|group|agency|insurance|services|solutions|team|service)\b/i.test(name)) score -= 30;
-  if (name.includes("&")) score -= 20;
+  if (hasFirstLast && !isPersonalDomain) {
+    return { type: "person_business", score: 85, isFiltered: false };
+  }
+  if (hasFirstLast && isPersonalDomain) {
+    return { type: "person_personal", score: 60, isFiltered: false };
+  }
+  if (hasFirstLast) {
+    return { type: "person_business", score: 60, isFiltered: false };
+  }
 
   // Brand/URL detection
   const originalName = c.display_name || `${c.first_name || ""} ${c.last_name || ""}`.trim();
-  if (originalName && /^[A-Z]{4,}$/.test(originalName.trim())) score -= 30;
-  if (/^https?:\/\//.test(name) || /\.(com|net|org|io)\b/.test(name)) score -= 40;
+  if (originalName && /^[A-Z]{4,}$/.test(originalName.trim())) {
+    return { type: "company", score: 40, isFiltered: false };
+  }
+  if (/^https?:\/\//.test(name) || /\.(com|net|org|io)\b/.test(name)) {
+    return { type: "company", score: 40, isFiltered: false };
+  }
 
-  // Hunter confidence boost
-  if (c.hunter_confidence && c.hunter_confidence >= 90) score += 15;
-  else if (c.hunter_confidence && c.hunter_confidence >= 70) score += 5;
-  else if (c.hunter_confidence && c.hunter_confidence < 50) score -= 20;
+  if (!name || name.length < 2 || name.includes("@")) {
+    return { type: "unknown", score: 20, isFiltered: true };
+  }
 
-  // Name presence
-  if (!name || name.length < 2 || name.includes("@")) score -= 20;
-
-  // Classify
-  if (score < 40) return { type: "filtered", score };
-  if (score < 70) return { type: "company", score };
-  return { type: "person", score };
+  return { type: "unknown", score: 40, isFiltered: false };
 }
 
 // ─── Email Intelligence ───
