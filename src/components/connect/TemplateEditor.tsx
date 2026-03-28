@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -10,6 +10,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { SPOTLIGHT_TEMPLATES } from "./spotlight-templates";
 import type { BrandPackage } from "./SpotlightBrandSetup";
+import type { TemplateCanvasData, TemplateCanvasProps } from "./template-types";
 
 // Layouts
 import ReferralAskLayout from "./template-layouts/ReferralAskLayout";
@@ -19,23 +20,8 @@ import RiskTipLayout from "./template-layouts/RiskTipLayout";
 import EventInviteLayout from "./template-layouts/EventInviteLayout";
 import SeasonalPromoLayout from "./template-layouts/SeasonalPromoLayout";
 
-export interface TemplateCanvasData {
-  title: string;
-  bullets: string[];
-  cta: string;
-  disclaimer: string;
-  brandName: string;
-  logoUrl: string;
-  colors: string[];
-  dateTime?: string;
-  location?: string;
-}
-
-export interface TemplateCanvasProps {
-  data: TemplateCanvasData;
-  onFieldClick: (field: string) => void;
-  activeField: string | null;
-}
+// Re-export for consumers that imported from here directly
+export type { TemplateCanvasData, TemplateCanvasProps } from "./template-types";
 
 const LAYOUT_MAP: Record<string, React.ComponentType<TemplateCanvasProps>> = {
   "referral-ask": ReferralAskLayout,

@@ -1,4 +1,4 @@
-import type { TemplateCanvasProps } from "../TemplateEditor";
+import type { TemplateCanvasProps } from "../template-types";
 
 export default function EventInviteLayout({ data, onFieldClick, activeField }: TemplateCanvasProps) {
   const purple = data.colors[0] || "#3d1a6e";

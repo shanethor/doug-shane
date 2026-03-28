@@ -1,4 +1,4 @@
-import type { TemplateCanvasProps } from "../TemplateEditor";
+import type { TemplateCanvasProps } from "../template-types";
 
 export default function RenewalReminderLayout({ data, onFieldClick, activeField }: TemplateCanvasProps) {
   const navy = data.colors[0] || "#1a3a5c";

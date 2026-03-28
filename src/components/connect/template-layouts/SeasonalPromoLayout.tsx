@@ -1,4 +1,4 @@
-import type { TemplateCanvasProps } from "../TemplateEditor";
+import type { TemplateCanvasProps } from "../template-types";
 
 export default function SeasonalPromoLayout({ data, onFieldClick, activeField }: TemplateCanvasProps) {
   const dark = data.colors[0] || "#1a1a1a";

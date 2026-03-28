@@ -1,4 +1,4 @@
-import type { TemplateCanvasProps } from "../TemplateEditor";
+import type { TemplateCanvasProps } from "../template-types";
 
 export default function ReferralAskLayout({ data, onFieldClick, activeField }: TemplateCanvasProps) {
   const [c1, c2] = [data.colors[0] || "#8A9A8C", data.colors[1] || "#5a6a5c"];

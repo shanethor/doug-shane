@@ -1,4 +1,4 @@
-import type { TemplateCanvasProps } from "../TemplateEditor";
+import type { TemplateCanvasProps } from "../template-types";
 
 export default function RiskTipLayout({ data, onFieldClick, activeField }: TemplateCanvasProps) {
   const navy = data.colors[0] || "#0f1f3d";

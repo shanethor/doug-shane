@@ -1,4 +1,4 @@
-import type { TemplateCanvasProps } from "../TemplateEditor";
+import type { TemplateCanvasProps } from "../template-types";
 
 export default function NewClientWelcomeLayout({ data, onFieldClick, activeField }: TemplateCanvasProps) {
   const green = data.colors[0] || "#2d6a4f";
