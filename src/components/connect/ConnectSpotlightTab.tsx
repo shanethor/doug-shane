@@ -347,41 +347,40 @@ export default function ConnectSpotlightTab() {
           </p>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-3 xl:grid-cols-6 gap-2">
             {FEATURED_TEMPLATES.map(t => {
               const Icon = t.icon;
               return (
                 <button
                   key={t.id}
                   onClick={() => handleTemplateCardClick(t)}
-                  className="group text-left rounded-xl overflow-hidden border border-border/50 hover:border-primary/40 bg-muted/20 hover:bg-muted/40 transition-all hover:shadow-md cursor-pointer"
+                  className="group text-left rounded-lg overflow-hidden border border-border/50 hover:border-primary/40 bg-muted/20 hover:bg-muted/40 transition-all hover:shadow-md cursor-pointer"
                 >
                   {/* Preview image */}
                   <div className="relative">
-                    <AspectRatio ratio={4 / 3}>
+                    <AspectRatio ratio={3 / 2}>
                       {t.preview ? (
                         <img src={t.preview} alt={t.name} className="w-full h-full object-cover" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center" style={{ background: t.accentColor }}>
-                          <Icon className="h-10 w-10 text-white/60" />
+                          <Icon className="h-6 w-6 text-white/60" />
                         </div>
                       )}
                     </AspectRatio>
                     {/* Hover overlay */}
                     <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <span className="text-xs font-semibold text-white bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/30">
+                      <span className="text-[10px] font-semibold text-white bg-white/20 backdrop-blur-sm px-2 py-1 rounded-full border border-white/30">
                         Use Template
                       </span>
                     </div>
                   </div>
                   {/* Footer */}
-                  <div className="p-2.5 flex items-start gap-2">
-                    <div className="w-6 h-6 rounded-md flex items-center justify-center shrink-0 mt-0.5" style={{ background: t.accentColor }}>
-                      <Icon className="h-3 w-3 text-white" />
+                  <div className="p-1.5 flex items-center gap-1.5">
+                    <div className="w-4 h-4 rounded flex items-center justify-center shrink-0" style={{ background: t.accentColor }}>
+                      <Icon className="h-2.5 w-2.5 text-white" />
                     </div>
                     <div className="min-w-0">
-                      <p className="text-xs font-bold truncate">{t.name}</p>
-                      <p className="text-[10px] text-muted-foreground leading-tight truncate">{t.description}</p>
+                      <p className="text-[10px] font-bold truncate leading-tight">{t.name}</p>
                     </div>
                   </div>
                 </button>
