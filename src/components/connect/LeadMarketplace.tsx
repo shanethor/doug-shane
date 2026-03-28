@@ -118,6 +118,12 @@ function PostLeadModal({ open, onClose }: { open: boolean; onClose: () => void }
             </div>
           </div>
         </div>
+        <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 space-y-1.5">
+          <p className="text-xs font-semibold text-primary">How the Marketplace Works</p>
+          <p className="text-[11px] text-muted-foreground leading-relaxed">
+            High quality leads means more high quality opportunities for you. You are able to request a referral fee if the deal closes — we will enforce this. As part of our platform management and Elo system, AURA will take a small fee from each side of the deal: the user who pulls the lead will be charged a <span className="font-semibold text-foreground">$10 fee immediately</span>. Once your commission is closed you will be charged a <span className="font-semibold text-foreground">$5 fee</span>. Remember — if you post bad deals your rating will go down, which means fewer leads will be accepted in the future!
+          </p>
+        </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancel</Button>
           <Button onClick={handleSubmit} disabled={createPost.isPending}>
