@@ -20,7 +20,7 @@ interface Props {
 
 export default function SpotlightTemplateGallery({ onSelectTemplate, onStartFromScratch }: Props) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <div className="text-center space-y-1">
         <h3 className="text-sm font-semibold text-white flex items-center justify-center gap-2">
           <Sparkles className="h-4 w-4" style={{ color: "hsl(140 12% 58%)" }} />
@@ -31,27 +31,30 @@ export default function SpotlightTemplateGallery({ onSelectTemplate, onStartFrom
         </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div
+        className="grid justify-center gap-2"
+        style={{ gridTemplateColumns: "repeat(auto-fit, minmax(104px, 124px))" }}
+      >
         {SPOTLIGHT_TEMPLATES.map((t) => {
           const Icon = t.icon;
           return (
             <button
               key={t.id}
               onClick={() => onSelectTemplate(t)}
-              className="group relative rounded-xl p-4 text-left transition-all hover:scale-[1.02] hover:shadow-lg cursor-pointer"
+              className="group relative rounded-lg p-2.5 text-left transition-all hover:-translate-y-0.5 hover:shadow-lg cursor-pointer"
               style={{
                 background: t.thumbnailBg,
                 border: "1px solid transparent",
               }}
             >
-              <div className="absolute inset-0 rounded-xl bg-black/20 group-hover:bg-black/10 transition-colors" />
-              <div className="relative space-y-2">
-                <Icon className="h-6 w-6 text-white/90" />
+              <div className="absolute inset-0 rounded-lg bg-black/20 group-hover:bg-black/10 transition-colors" />
+              <div className="relative space-y-1.5">
+                <Icon className="h-5 w-5 text-white/90" />
                 <div>
-                  <p className="text-xs font-bold text-white">{t.name}</p>
-                  <p className="text-[10px] text-white/70 mt-0.5 leading-tight">{t.tagline}</p>
+                  <p className="text-[11px] font-bold text-white leading-tight">{t.name}</p>
+                  <p className="text-[9px] text-white/70 mt-0.5 leading-tight">{t.tagline}</p>
                 </div>
-                <Badge className="text-[8px] bg-white/20 text-white border-white/20 hover:bg-white/30">
+                <Badge className="text-[7px] bg-white/20 text-white border-white/20 hover:bg-white/30 px-1.5 py-0">
                   {FLYER_TYPE_LABELS[t.contentType] || t.contentType}
                 </Badge>
               </div>
@@ -64,7 +67,7 @@ export default function SpotlightTemplateGallery({ onSelectTemplate, onStartFrom
 
       <Button
         variant="outline"
-        className="w-full gap-2 text-xs h-10"
+        className="w-full gap-2 text-xs h-9"
         style={{ borderColor: "hsl(240 6% 18%)", color: "hsl(240 5% 70%)", background: "transparent" }}
         onClick={onStartFromScratch}
       >
