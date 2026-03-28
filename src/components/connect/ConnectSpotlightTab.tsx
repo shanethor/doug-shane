@@ -347,7 +347,7 @@ export default function ConnectSpotlightTab() {
           </p>
         </CardHeader>
         <CardContent className="px-4 pb-4">
-          <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))" }}>
+          <div className="grid gap-2" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(90px, 1fr))" }}>
             {FEATURED_TEMPLATES.map(t => {
               const Icon = t.icon;
               return (
