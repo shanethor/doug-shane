@@ -134,7 +134,7 @@ function classifyContact(c: DiscoveredContact): { type: "person" | "company" | "
     return { type: "filtered", score: 0 };
   }
   // Auto-filter: prefix match
-  if (BUSINESS_EMAIL_PREFIXES.some(p => localPart === p || localPart.startsWith(p + "-") || localPart.startsWith(p + "."))) {
+  if (BUSINESS_EMAIL_PREFIXES.some(p => localPart === p || localPart.startsWith(p + "-") || localPart.startsWith(p + ".") || localPart.startsWith(p + "+"))) {
     return { type: "filtered", score: 0 };
   }
   // Auto-filter: ESP / brand domain
