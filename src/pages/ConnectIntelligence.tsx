@@ -311,7 +311,7 @@ function EmailIntelligencePage() {
         linkedin_url: contact.hunter_linkedin_url || null,
         primary_phone: contact.hunter_phone || null,
         is_business_owner: entityType === "company",
-        tier: (contact.prospect_score || 0) >= 80 ? "A" : (contact.prospect_score || 0) >= 60 ? "B" : "C",
+        tier: (contact.prospect_score || 0) >= 80 ? "a" : (contact.prospect_score || 0) >= 60 ? "b" : "c",
         metadata: {
           source: "email_discovery",
           entity_type: entityType,
