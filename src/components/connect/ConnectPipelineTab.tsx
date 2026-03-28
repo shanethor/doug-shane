@@ -687,16 +687,41 @@ export default function ConnectPipelineTab() {
             </SelectContent>
           </Select>
 
-          <Select value={industry} onValueChange={handleSelectIndustry}>
-            <SelectTrigger className="h-8 w-[160px] text-xs">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {Object.entries(PIPELINE_CONFIGS).map(([key, cfg]) => (
-                <SelectItem key={key} value={key} className="text-xs">{cfg.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex items-center gap-1.5">
+            <Select value={industry} onValueChange={handleSelectIndustry}>
+              <SelectTrigger className="h-8 w-[160px] text-xs">
+                <div className="flex items-center gap-1.5">
+                  {localStorage.getItem("aura_default_connect_pipeline") === industry && (
+                    <Star className="h-3 w-3 fill-primary text-primary shrink-0" />
+                  )}
+                  <SelectValue />
+                </div>
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(PIPELINE_CONFIGS).map(([key, cfg]) => (
+                  <SelectItem key={key} value={key} className="text-xs">
+                    <span className="flex items-center gap-1.5">
+                      {localStorage.getItem("aura_default_connect_pipeline") === key && (
+                        <Star className="h-3 w-3 fill-primary text-primary" />
+                      )}
+                      {cfg.label}
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {localStorage.getItem("aura_default_connect_pipeline") !== industry && (
+              <button
+                onClick={() => {
+                  localStorage.setItem("aura_default_connect_pipeline", industry!);
+                  toast.success(`${config?.label} set as default pipeline`);
+                }}
+                className="text-[10px] text-muted-foreground hover:text-primary underline underline-offset-2 transition-colors font-sans whitespace-nowrap"
+              >
+                Set as default
+              </button>
+            )}
+          </div>
           <Button size="sm" variant="outline" className="gap-1.5 h-8" onClick={fetchLeads} disabled={loadingLeads}>
             <RefreshCw className={`h-3.5 w-3.5 ${loadingLeads ? "animate-spin" : ""}`} />
           </Button>
