@@ -10,7 +10,7 @@ import {
   Users, Search, Loader2, Mail, Phone, Linkedin,
   Building2, User, Star, ChevronDown, ChevronUp,
   Globe, MessageSquare, Edit2, Check, X, Plus,
-  Network, List,
+  Network, List, Trash2,
 } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import RelationshipMap from "@/components/connect/RelationshipMap";
@@ -379,7 +379,7 @@ export default function ConnectNetworkTab() {
               <button
                 key={c.id}
                 onClick={() => setSelectedId(c.id)}
-                className={`w-full text-left p-3 rounded-lg border transition-colors ${
+                className={`group w-full text-left p-3 rounded-lg border transition-colors ${
                   selectedId === c.id ? "border-primary bg-primary/5" : "border-border/50 hover:bg-muted/50"
                 }`}
               >
@@ -399,6 +399,18 @@ export default function ConnectNetworkTab() {
                       <p className="text-[10px] text-primary mt-0.5">{mutuals} mutual connection{mutuals !== 1 ? "s" : ""}</p>
                     )}
                   </div>
+                  <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive/60 hover:text-destructive shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" onClick={async (e) => {
+                    e.stopPropagation();
+                    const confirmed = window.confirm(`Delete ${c.display_name || "this contact"}?`);
+                    if (!confirmed) return;
+                    const { error } = await supabase.from("canonical_persons").delete().eq("id", c.id);
+                    if (error) { toast.error("Failed to delete contact"); return; }
+                    setContacts(prev => prev.filter(x => x.id !== c.id));
+                    if (selectedId === c.id) setSelectedId(null);
+                    toast.success("Contact deleted");
+                  }}>
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
                 </div>
               </button>
             );

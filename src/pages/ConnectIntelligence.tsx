@@ -9,7 +9,7 @@ import {
   Zap, Shield, BarChart3, Plus, X, RefreshCw,
   ExternalLink, CheckCircle, Wifi, WifiOff, Globe,
   Linkedin, Facebook, Phone, Database, Building2,
-  Filter, ArrowUpFromLine, Eye, EyeOff, List,
+  Filter, ArrowUpFromLine, Eye, EyeOff, List, Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 import InlineContactEditor from "@/components/connect/InlineContactEditor";
@@ -853,7 +853,7 @@ function MapWithListView() {
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-1">
+        <div className="max-w-3xl mx-auto space-y-1">
           <p className="text-xs text-muted-foreground">{filtered.length} contacts</p>
           {filtered.map(c => (
             <Card key={c.id} className="border-border/50 hover:border-primary/30 transition-colors">
@@ -867,6 +867,11 @@ function MapWithListView() {
                       <div className="flex items-center gap-2">
                         <p className="text-sm font-medium truncate">{c.display_name || c.primary_email}</p>
                         {c.tier && <Badge variant="outline" className="text-[9px]">{c.tier}</Badge>}
+                        {c.linkedin_url && (
+                          <a href={c.linkedin_url} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} className="text-blue-400 hover:text-blue-300">
+                            <Linkedin className="h-3.5 w-3.5" />
+                          </a>
+                        )}
                       </div>
                       <p className="text-xs text-muted-foreground truncate">
                         {[c.company, c.title].filter(Boolean).join(" · ") || c.primary_email}
@@ -875,7 +880,9 @@ function MapWithListView() {
                   </div>
                   <div className="flex items-center gap-1 shrink-0">
                     {c.primary_email && (
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => window.open(`mailto:${c.primary_email}`)}>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {
+                        window.location.href = `/connect?tab=email&compose=${encodeURIComponent(c.primary_email)}`;
+                      }}>
                         <Mail className="h-3.5 w-3.5" />
                       </Button>
                     )}
@@ -884,11 +891,17 @@ function MapWithListView() {
                         <Phone className="h-3.5 w-3.5" />
                       </Button>
                     )}
-                    {c.linkedin_url && (
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => window.open(c.linkedin_url, "_blank")}>
-                        <Linkedin className="h-3.5 w-3.5" />
-                      </Button>
-                    )}
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive/60 hover:text-destructive" onClick={async (e) => {
+                      e.stopPropagation();
+                      const confirmed = window.confirm(`Delete ${c.display_name || "this contact"}?`);
+                      if (!confirmed) return;
+                      const { error } = await supabase.from("canonical_persons").delete().eq("id", c.id);
+                      if (error) { toast.error("Failed to delete contact"); return; }
+                      setContacts(prev => prev.filter(x => x.id !== c.id));
+                      toast.success("Contact deleted");
+                    }}>
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
                   </div>
                 </div>
               </CardContent>
