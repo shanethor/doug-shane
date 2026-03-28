@@ -124,7 +124,7 @@ export default function BrandKit() {
           <Card className="border-dashed">
             <CardContent className="py-4">
               <p className="text-sm"><strong>Usage rules:</strong> Always maintain clear space equal to the logo height around the mark. The "A" lettermark inside the logo references the brand initial. The sage green square with rounded corners is the primary container. Do not distort, rotate, or recolor.</p>
-              <p className="text-sm mt-2"><strong>Stylization:</strong> Brand name is always written as <strong>AURA</strong> (capital A, lowercase u, capital R, lowercase a).</p>
+              <p className="text-sm mt-2"><strong>Stylization:</strong> <p className="text-sm mt-2"><strong>Stylization:</strong> Brand name is always written as <strong>AURA</strong> (all caps).</p></p>
             </CardContent>
           </Card>
         </section>
