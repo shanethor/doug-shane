@@ -43,7 +43,7 @@ export default function ProductSettings() {
   const [sageEnabled, setSageEnabled] = useState(() => localStorage.getItem("sage-popup-enabled") !== "false");
   const [openingPortal, setOpeningPortal] = useState(false);
   const { config: navConfig, setConfig: setNavConfig } = useConnectNavConfig();
-  const [timezone, setTimezone] = useState(Intl.DateTimeFormat().resolvedOptions().timeZone);
+  const { timezone, setTimezone } = useTimezone();
 
   // Email connections
   const [emailConnections, setEmailConnections] = useState<EmailConnection[]>([]);

@@ -28,6 +28,7 @@ const SUGGESTIONS = [
 ];
 
 export default function CalendarAssistant({ events, leads, onClose, onRefresh }: Props) {
+  const { timezone: userTimezone } = useTimezone();
   const { user } = useAuth();
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
