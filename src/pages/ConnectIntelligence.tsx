@@ -643,6 +643,8 @@ function EmailIntelligencePage() {
               </CardContent>
             </Card>
           ))}
+        </div>
+      )}
     </div>
   );
 }
