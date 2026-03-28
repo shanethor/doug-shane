@@ -81,7 +81,7 @@ export default function ProductSettings() {
         const dbDark = !!(data as any).dark_mode;
         setDarkMode(dbDark);
         document.documentElement.classList.toggle("dark", dbDark);
-        if ((data as any).timezone) setTimezone((data as any).timezone);
+        // timezone is handled by useTimezone hook
       }
       setLoaded(true);
     });
