@@ -92,7 +92,13 @@ export default function RelationshipMap({ contacts: externalContacts }: Relation
 
       for (const c of contactList) {
         if (nodeIds.has(c.id)) continue;
-        const name = c.display_name || "Unknown";
+        // Clean CSV-like names: if name has 3+ commas, take only the first segment
+        let name = c.display_name || "Unknown";
+        if ((name.match(/,/g) || []).length >= 3) {
+          name = name.split(",")[0].trim();
+        }
+        // Also strip HTML entities
+        name = name.replace(/&#\d+;?/g, "").replace(/\s+/g, " ").trim() || "Unknown";
         const isCompany = looksLikeCompany(name, c.primary_email || undefined);
         nodes.push({
           id: c.id, name, type: isCompany ? "company" : "client",

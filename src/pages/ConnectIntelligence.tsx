@@ -432,9 +432,11 @@ function EmailIntelligencePage() {
         method: "POST", headers,
         body: JSON.stringify({ contact_id: id }),
       });
-      const enrichResult = await enrichResp.json();
-      if (enrichResult.enriched) {
-        toast.success(`Contact enriched via ${enrichResult.source}`);
+      if (enrichResp.ok) {
+        const enrichResult = await enrichResp.json();
+        if (enrichResult.enriched) {
+          toast.success(`Contact enriched via ${enrichResult.sources?.join(", ") || "AI"}`);
+        }
       }
     } catch (err) {
       console.error("Enrichment error:", err);
