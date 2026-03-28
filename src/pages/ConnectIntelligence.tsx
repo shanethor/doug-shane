@@ -629,11 +629,9 @@ function EmailIntelligencePage() {
                     </div>
                     {/* Quick reclassify actions */}
                     <div className="flex items-center gap-0.5 shrink-0">
-                      {inboxTab !== "person_personal" && (
-                        <Button variant="ghost" size="sm" className="h-6 w-6 p-0" title="Mark as Personal" onClick={() => reclassifyContact(c.id, "person_personal")}>
-                          <UserX className="h-3 w-3 text-muted-foreground" />
-                        </Button>
-                      )}
+                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0" title="Mark as Personal" onClick={() => reclassifyContact(c.id, "person_personal")}>
+                        <UserX className="h-3 w-3 text-muted-foreground" />
+                      </Button>
                       <Button variant="ghost" size="sm" className="h-6 w-6 p-0" title="Mark as Spam" onClick={() => reclassifyContact(c.id, "spam_or_system")}>
                         <Bot className="h-3 w-3 text-muted-foreground" />
                       </Button>
