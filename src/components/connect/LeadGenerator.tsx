@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,8 +13,10 @@ import {
   Rocket, Building2, Globe, MapPin, Target, Search, FileText,
   Download, Plus, ArrowUpRight, Eye, Trash2, Zap, Edit2,
   CheckCircle2, AlertCircle, Sparkles, Users, TrendingUp,
+  Upload, Link, File, X, Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import {
   useCompanyProfile, useUpsertCompanyProfile,
   useGeneratedLeads, useUpdateGeneratedLead, useDeleteGeneratedLead,
@@ -373,21 +375,238 @@ function ResultsTable() {
   );
 }
 
+function BusinessDropZone() {
+  const [dragOver, setDragOver] = useState(false);
+  const [files, setFiles] = useState<{ name: string; type: string; size: number }[]>([]);
+  const [urlInput, setUrlInput] = useState("");
+  const [urls, setUrls] = useState<string[]>([]);
+  const [processing, setProcessing] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const upsert = useUpsertCompanyProfile();
+  const { data: profile } = useCompanyProfile();
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    e.dataTransfer.dropEffect = "copy";
+    setDragOver(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOver(false);
+  }, []);
+
+  const addFiles = useCallback((incoming: FileList | File[]) => {
+    const arr = Array.from(incoming);
+    setFiles((prev) => [
+      ...prev,
+      ...arr.map((f) => ({ name: f.name, type: f.type, size: f.size })),
+    ]);
+    toast.success(`${arr.length} file(s) added`);
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOver(false);
+
+    // Check for dropped URLs (text/uri-list or text/plain)
+    const droppedText = e.dataTransfer.getData("text/plain") || e.dataTransfer.getData("text/uri-list");
+    if (droppedText && /^https?:\/\//i.test(droppedText.trim())) {
+      const url = droppedText.trim();
+      if (!urls.includes(url)) {
+        setUrls((prev) => [...prev, url]);
+        toast.success("Website URL added");
+      }
+      return;
+    }
+
+    if (e.dataTransfer.files.length > 0) {
+      addFiles(e.dataTransfer.files);
+    }
+  }, [urls, addFiles]);
+
+  const addUrl = () => {
+    const trimmed = urlInput.trim();
+    if (!trimmed) return;
+    const url = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+    if (!urls.includes(url)) {
+      setUrls((prev) => [...prev, url]);
+    }
+    setUrlInput("");
+  };
+
+  const removeFile = (idx: number) => setFiles((prev) => prev.filter((_, i) => i !== idx));
+  const removeUrl = (idx: number) => setUrls((prev) => prev.filter((_, i) => i !== idx));
+
+  const handleProcess = async () => {
+    if (files.length === 0 && urls.length === 0) {
+      toast.error("Add at least one document or website URL");
+      return;
+    }
+    setProcessing(true);
+    try {
+      // Scrape websites for business data
+      const scrapedData: any[] = [];
+      for (const url of urls) {
+        try {
+          const { data } = await supabase.functions.invoke("scrape-website", {
+            body: { url },
+          });
+          if (data?.extracted) scrapedData.push(data.extracted);
+        } catch {
+          // continue on error
+        }
+      }
+
+      // Build profile from scraped data
+      const merged: Partial<CompanyProfile> = {
+        company_name: profile?.company_name || "",
+        industry: profile?.industry || "",
+        icp_description: profile?.icp_description || "",
+        target_geos: profile?.target_geos || [],
+        typical_deal_size: profile?.typical_deal_size || "",
+        revenue_range: profile?.revenue_range || "",
+        target_buyer_titles: profile?.target_buyer_titles || [],
+        website_urls: [...(profile?.website_urls || []), ...urls.filter((u) => !(profile?.website_urls || []).includes(u))],
+      };
+
+      for (const scraped of scrapedData) {
+        if (scraped.company_name && !merged.company_name) merged.company_name = scraped.company_name;
+        if (scraped.industry && !merged.industry) merged.industry = scraped.industry;
+        if (scraped.description && !merged.icp_description) merged.icp_description = scraped.description;
+        if (scraped.revenue && !merged.revenue_range) merged.revenue_range = scraped.revenue;
+      }
+
+      await upsert.mutateAsync(merged as any);
+      toast.success(`Profile updated with data from ${urls.length} website(s) and ${files.length} document(s)`);
+      setFiles([]);
+      setUrls([]);
+    } catch (err: any) {
+      toast.error(err.message || "Processing failed");
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const formatSize = (bytes: number) => {
+    if (bytes < 1024) return `${bytes}B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)}KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)}MB`;
+  };
+
+  const hasItems = files.length > 0 || urls.length > 0;
+
+  return (
+    <Card className="border-dashed">
+      <CardContent className="p-0">
+        {/* Drop zone */}
+        <div
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          className={`rounded-t-lg p-6 text-center transition-colors cursor-pointer ${
+            dragOver
+              ? "border-b-2 border-primary bg-primary/5"
+              : "border-b border-border/50 bg-muted/20 hover:bg-muted/30"
+          }`}
+          onClick={() => fileRef.current?.click()}
+        >
+          <Upload className={`h-8 w-8 mx-auto mb-2 ${dragOver ? "text-primary" : "text-muted-foreground/40"}`} />
+          <p className="text-sm font-medium mb-1">
+            {dragOver ? "Drop files or URLs here…" : "Drop business documents & website URLs"}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            PDFs, pitch decks, business plans, or drag a website link directly
+          </p>
+          <input
+            ref={fileRef}
+            type="file"
+            className="hidden"
+            multiple
+            accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.csv"
+            onChange={(e) => {
+              if (e.target.files) addFiles(e.target.files);
+              e.target.value = "";
+            }}
+          />
+        </div>
+
+        {/* URL input */}
+        <div className="px-4 py-3 flex gap-2 items-center border-b border-border/50">
+          <Globe className="h-4 w-4 text-muted-foreground shrink-0" />
+          <Input
+            value={urlInput}
+            onChange={(e) => setUrlInput(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && addUrl()}
+            placeholder="Paste a website URL and press Enter…"
+            className="h-8 text-xs flex-1"
+          />
+          <Button variant="outline" size="sm" className="text-xs shrink-0" onClick={addUrl}>
+            <Plus className="h-3 w-3 mr-1" /> Add
+          </Button>
+        </div>
+
+        {/* Queued items */}
+        {hasItems && (
+          <div className="px-4 py-3 space-y-2">
+            {files.map((f, i) => (
+              <div key={`f-${i}`} className="flex items-center gap-2 text-xs bg-muted/30 rounded px-2 py-1.5">
+                <File className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                <span className="truncate flex-1 font-medium">{f.name}</span>
+                <span className="text-muted-foreground text-[10px] shrink-0">{formatSize(f.size)}</span>
+                <button onClick={() => removeFile(i)} className="text-muted-foreground hover:text-destructive">
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            ))}
+            {urls.map((u, i) => (
+              <div key={`u-${i}`} className="flex items-center gap-2 text-xs bg-primary/5 rounded px-2 py-1.5">
+                <Link className="h-3.5 w-3.5 text-primary shrink-0" />
+                <span className="truncate flex-1 text-primary">{u}</span>
+                <button onClick={() => removeUrl(i)} className="text-muted-foreground hover:text-destructive">
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            ))}
+            <Button
+              onClick={handleProcess}
+              disabled={processing}
+              className="w-full gap-1.5 mt-2"
+              size="sm"
+            >
+              {processing ? (
+                <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Extracting business data…</>
+              ) : (
+                <><Sparkles className="h-3.5 w-3.5" /> Extract & Build Profile ({files.length + urls.length} source{files.length + urls.length !== 1 ? "s" : ""})</>
+              )}
+            </Button>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function LeadGenerator() {
   const handleGenerate = (opts: any) => {
     toast.success(`Lead generation started — targeting ${opts.volume} leads in ${opts.geo}`);
-    // In production, this would call an edge function that scrapes/enriches
   };
 
   return (
     <div className="space-y-6">
+      {/* Drop zone hero */}
+      <BusinessDropZone />
+
       <div className="rounded-lg border bg-muted/30 p-4">
         <div className="flex items-start gap-3">
           <Sparkles className="h-5 w-5 text-primary mt-0.5 shrink-0" />
           <div>
             <p className="text-sm font-medium">AI-Powered Lead Generation</p>
             <p className="text-xs text-muted-foreground">
-              Upload your company info and AURA searches public web sources, business registries, and data providers to build a live lead list tailored to your ICP.
+              Drop your business documents and website URLs above — AURA extracts your company data, builds your ICP, and sources leads from public web directories and data providers.
             </p>
           </div>
         </div>
