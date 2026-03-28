@@ -288,6 +288,7 @@ function GenerateControls({ onGenerate }: { onGenerate: (opts: any) => void }) {
             Lead Packages
           </CardTitle>
           <p className="text-[10px] text-muted-foreground">Enriched leads with full company & contact profiles via Apollo, Hunter & PDL</p>
+          <Badge variant="outline" className="text-[9px] mt-1 text-emerald-600 border-emerald-600/30">🎉 Connect Member — 40% discount applied</Badge>
         </CardHeader>
         <CardContent className="space-y-2">
           {LEAD_PACKS.map((pack) => (
