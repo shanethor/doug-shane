@@ -324,6 +324,9 @@ function EmailIntelligencePage() {
           filtered: false,
           location: nc.location,
           enrichment_source: nc.source,
+          classification_type: nc.classification_type || null,
+          classification_confidence: nc.classification_confidence || null,
+          is_filtered: nc.is_filtered || false,
         } as DiscoveredContact;
       });
 
