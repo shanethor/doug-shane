@@ -432,9 +432,11 @@ function EmailIntelligencePage() {
         method: "POST", headers,
         body: JSON.stringify({ contact_id: id }),
       });
-      const enrichResult = await enrichResp.json();
-      if (enrichResult.enriched) {
-        toast.success(`Contact enriched via ${enrichResult.source}`);
+      if (enrichResp.ok) {
+        const enrichResult = await enrichResp.json();
+        if (enrichResult.enriched) {
+          toast.success(`Contact enriched via ${enrichResult.sources?.join(", ") || "AI"}`);
+        }
       }
     } catch (err) {
       console.error("Enrichment error:", err);
@@ -444,10 +446,18 @@ function EmailIntelligencePage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { toast.error("Not authenticated"); return; }
 
+      // Clean name: if it looks like CSV data (3+ commas), take first segment only
+      let rawName = contact.display_name || `${contact.first_name || ""} ${contact.last_name || ""}`.trim() || null;
+      if (rawName && (rawName.match(/,/g) || []).length >= 3) {
+        rawName = rawName.split(",")[0].trim();
+      }
+      if (rawName) rawName = rawName.replace(/&#\d+;?/g, "").replace(/\s+/g, " ").trim() || null;
+      const cleanEmail = (contact.email_address || "").replace(/&#\d+;?/g, "").trim();
+
       const { error: insertErr } = await supabase.from("canonical_persons").insert({
         owner_user_id: user.id,
-        display_name: contact.display_name || `${contact.first_name || ""} ${contact.last_name || ""}`.trim() || null,
-        primary_email: contact.email_address,
+        display_name: rawName,
+        primary_email: cleanEmail || null,
         company: contact.hunter_company || null,
         title: contact.hunter_position || null,
         linkedin_url: contact.hunter_linkedin_url || null,
@@ -1041,7 +1051,7 @@ function MapWithListView() {
                       const confirmed = window.confirm(`Delete ${c.display_name || "this contact"}?`);
                       if (!confirmed) return;
                       const { error } = await supabase.from("canonical_persons").delete().eq("id", c.id);
-                      if (error) { toast.error("Failed to delete contact"); return; }
+                      if (error) { console.error("Delete contact error:", error); toast.error(`Failed to delete: ${error.message}`); return; }
                       setContacts(prev => prev.filter(x => x.id !== c.id));
                       toast.success("Contact deleted");
                     }}>

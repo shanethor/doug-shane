@@ -204,12 +204,38 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    const { data: contact } = await adminClient
+    // Try email_discovered_contacts first, then network_contacts
+    let contact: any = null;
+    let contactTable = "email_discovered_contacts";
+
+    const { data: emailContact } = await adminClient
       .from("email_discovered_contacts")
       .select("*")
       .eq("id", contact_id)
       .eq("user_id", user.id)
-      .single();
+      .maybeSingle();
+
+    if (emailContact) {
+      contact = emailContact;
+    } else {
+      // Fallback: check network_contacts
+      const { data: netContact } = await adminClient
+        .from("network_contacts")
+        .select("id, full_name, email, phone, company, title, linkedin_url")
+        .eq("id", contact_id)
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (netContact) {
+        contactTable = "network_contacts";
+        contact = {
+          email_address: netContact.email || "",
+          display_name: netContact.full_name || "",
+          domain: netContact.email ? netContact.email.split("@")[1] : "",
+          hunter_company: netContact.company || null,
+        };
+      }
+    }
 
     if (!contact) {
       return new Response(JSON.stringify({ error: "Contact not found" }), {
@@ -278,10 +304,13 @@ serve(async (req) => {
     updates.enrichment_source = sources.join("+") || null;
     updates.enrichment_status = enriched ? "fully_enriched" : "enrichment_failed";
 
-    await adminClient
-      .from("email_discovered_contacts")
-      .update(updates)
-      .eq("id", contact_id);
+    if (contactTable === "email_discovered_contacts") {
+      await adminClient
+        .from("email_discovered_contacts")
+        .update(updates)
+        .eq("id", contact_id);
+    }
+    // For network_contacts, we don't update enrichment fields (different schema)
 
     return new Response(JSON.stringify({
       success: true, enriched, sources,
