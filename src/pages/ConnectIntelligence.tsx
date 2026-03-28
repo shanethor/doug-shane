@@ -10,7 +10,9 @@ import {
   ExternalLink, CheckCircle, Wifi, WifiOff, Globe,
   Linkedin, Facebook, Phone, Database, Building2,
   Filter, ArrowUpFromLine, Eye, EyeOff, List, Trash2,
+  Briefcase, UserX, Bot, HelpCircle, Tag,
 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import InlineContactEditor from "@/components/connect/InlineContactEditor";
 import { supabase } from "@/integrations/supabase/client";
@@ -47,6 +49,9 @@ interface DiscoveredContact {
   twitter_url?: string | null;
   enrichment_source?: string | null;
   employment_history?: any[] | null;
+  classification_type?: string | null;
+  classification_confidence?: number | null;
+  is_filtered?: boolean | null;
 }
 
 interface ProspectProfile {
@@ -69,6 +74,22 @@ interface ConnectedAccount {
   is_active: boolean;
   updated_at: string;
 }
+
+// ─── Classification Types ───
+type ClassificationType = "person_business" | "person_personal" | "company" | "spam_or_system" | "unknown";
+
+const FAMILY_NAMES = new Set([
+  "mom", "dad", "mama", "papa", "honey", "babe", "baby", "wifey", "hubby",
+  "sis", "bro", "brother", "sister", "grandma", "grandpa", "nana", "granny",
+  "auntie", "uncle", "cousin", "sweetheart", "darling", "love",
+]);
+
+const SPAM_SYSTEM_NAMES = new Set([
+  "do not reply", "donotreply", "no reply", "noreply", "no-reply",
+  "notification", "notifications", "support team", "customer service",
+  "mailer-daemon", "postmaster", "system", "automated", "auto-reply",
+  "newsletter", "unsubscribe", "marketing", "promotions", "deals",
+]);
 
 // ─── Spam / Classification Helpers ───
 const BUSINESS_EMAIL_PREFIXES = [
@@ -124,82 +145,107 @@ const PERSONAL_DOMAINS = [
   "protonmail.com", "me.com", "live.com", "msn.com",
 ];
 
-function classifyContact(c: DiscoveredContact): { type: "person" | "company" | "filtered"; score: number } {
+function classifyContact(c: DiscoveredContact): { type: ClassificationType; score: number; isFiltered: boolean } {
   const email = (c.email_address || "").toLowerCase();
+  const name = (c.display_name || `${c.first_name || ""} ${c.last_name || ""}`.trim()).toLowerCase().trim();
+
+  // Use server-side classification if available
+  if (c.classification_type && c.classification_type !== "unknown") {
+    return {
+      type: c.classification_type as ClassificationType,
+      score: (c.classification_confidence || 0.5) * 100,
+      isFiltered: c.is_filtered ?? false,
+    };
+  }
+
   if (!email || !email.includes("@")) {
     // No email — classify by name only
-    const name = (c.display_name || `${c.first_name || ""} ${c.last_name || ""}`.trim()).toLowerCase();
-    if (!name || name.length < 2) return { type: "filtered", score: 0 };
+    if (!name || name.length < 2) return { type: "unknown", score: 0, isFiltered: true };
+    const nameParts = name.split(/\s+/).filter(Boolean);
+    if (nameParts.length === 1 && FAMILY_NAMES.has(nameParts[0])) {
+      return { type: "person_personal", score: 90, isFiltered: true };
+    }
+    if (SPAM_SYSTEM_NAMES.has(name)) {
+      return { type: "spam_or_system", score: 90, isFiltered: true };
+    }
     if (/\b(llc|inc|corp|ltd|gmbh|co\.|group|agency|insurance|services|solutions|team|service)\b/i.test(name)) {
-      return { type: "company", score: 50 };
+      return { type: "company", score: 50, isFiltered: false };
     }
     const parts = name.split(/\s+/);
-    if (parts.length >= 2 && parts[0].length > 1 && parts[1].length > 1) return { type: "person", score: 75 };
-    return { type: "person", score: 60 };
+    if (parts.length >= 2 && parts[0].length > 1 && parts[1].length > 1) return { type: "person_business", score: 60, isFiltered: false };
+    return { type: "unknown", score: 30, isFiltered: false };
   }
+
   const localPart = email.split("@")[0];
   const domain = email.split("@")[1] || "";
 
-  // Auto-filter: SMS/MMS gateway domains (phone numbers as emails)
+  // Auto-filter: SMS/MMS gateway domains
   if (SMS_MMS_GATEWAY_DOMAINS.some(d => domain === d || domain.endsWith("." + d))) {
-    return { type: "filtered", score: 0 };
+    return { type: "spam_or_system", score: 0, isFiltered: true };
   }
-  // Auto-filter: prefix match
+  // Auto-filter: spam prefixes
   if (BUSINESS_EMAIL_PREFIXES.some(p => localPart === p || localPart.startsWith(p + "-") || localPart.startsWith(p + ".") || localPart.startsWith(p + "+"))) {
-    return { type: "filtered", score: 0 };
+    return { type: "spam_or_system", score: 0, isFiltered: true };
   }
   // Auto-filter: ESP / brand domain
   if (ESP_DOMAINS.some(d => domain === d || domain.endsWith("." + d))) {
-    return { type: "filtered", score: 0 };
+    return { type: "spam_or_system", score: 0, isFiltered: true };
   }
-  // Auto-filter: transactional subdomain pattern (em1.*, mail.*, edm.*, etc.)
+  // Auto-filter: transactional subdomain pattern
   if (TRANSACTIONAL_SUBDOMAIN_RE.test(domain)) {
-    return { type: "filtered", score: 0 };
+    return { type: "spam_or_system", score: 0, isFiltered: true };
   }
-  // Auto-filter: numeric-only local parts (phone numbers, tracking IDs)
-  if (/^\d+$/.test(localPart) || /^[a-f0-9]{20,}$/.test(localPart)) {
-    return { type: "filtered", score: 0 };
-  }
-  // Auto-filter: local part is mostly digits (phone number patterns like 9168725925)
-  if (/^\d{7,}/.test(localPart)) {
-    return { type: "filtered", score: 0 };
+  // Auto-filter: numeric-only local parts
+  if (/^\d+$/.test(localPart) || /^[a-f0-9]{20,}$/.test(localPart) || /^\d{7,}/.test(localPart)) {
+    return { type: "spam_or_system", score: 0, isFiltered: true };
   }
 
-  // Score calculation
-  let score = 50;
-  const name = (c.display_name || `${c.first_name || ""} ${c.last_name || ""}`.trim()).toLowerCase();
+  // Name-based checks
+  if (SPAM_SYSTEM_NAMES.has(name)) {
+    return { type: "spam_or_system", score: 90, isFiltered: true };
+  }
+  const nameParts = name.split(/\s+/).filter(Boolean);
+  if (nameParts.length === 1 && FAMILY_NAMES.has(nameParts[0])) {
+    return { type: "person_personal", score: 90, isFiltered: true };
+  }
+  // Single short token with no useful info
+  if (nameParts.length === 1 && nameParts[0].length <= 3 && !c.hunter_company) {
+    return { type: "unknown", score: 20, isFiltered: true };
+  }
 
-  // Personal domain = person signal
-  if (PERSONAL_DOMAINS.includes(domain)) score += 20;
+  // Company keyword detection
+  if (/\b(llc|inc|corp|ltd|gmbh|co\.|group|agency|insurance|services|solutions|team|service)\b/i.test(name)) {
+    return { type: "company", score: 70, isFiltered: false };
+  }
 
-  // "First Last" name pattern = person
-  const nameParts = name.trim().split(/\s+/);
-  if (nameParts.length === 2 && nameParts[0].length > 1 && nameParts[1].length > 1) score += 20;
+  // Person classification
+  const isPersonalDomain = PERSONAL_DOMAINS.includes(domain);
+  const hasFirstLast = nameParts.length >= 2 && nameParts[0].length > 1 && nameParts[1].length > 1;
 
-  // ESP/subdomain penalty
-  if (ESP_DOMAINS.some(d => domain.endsWith("." + d))) score -= 50;
-
-  // Company keyword penalty
-  if (/\b(llc|inc|corp|ltd|gmbh|co\.|group|agency|insurance|services|solutions|team|service)\b/i.test(name)) score -= 30;
-  if (name.includes("&")) score -= 20;
+  if (hasFirstLast && !isPersonalDomain) {
+    return { type: "person_business", score: 85, isFiltered: false };
+  }
+  if (hasFirstLast && isPersonalDomain) {
+    return { type: "person_personal", score: 60, isFiltered: false };
+  }
+  if (hasFirstLast) {
+    return { type: "person_business", score: 60, isFiltered: false };
+  }
 
   // Brand/URL detection
   const originalName = c.display_name || `${c.first_name || ""} ${c.last_name || ""}`.trim();
-  if (originalName && /^[A-Z]{4,}$/.test(originalName.trim())) score -= 30;
-  if (/^https?:\/\//.test(name) || /\.(com|net|org|io)\b/.test(name)) score -= 40;
+  if (originalName && /^[A-Z]{4,}$/.test(originalName.trim())) {
+    return { type: "company", score: 40, isFiltered: false };
+  }
+  if (/^https?:\/\//.test(name) || /\.(com|net|org|io)\b/.test(name)) {
+    return { type: "company", score: 40, isFiltered: false };
+  }
 
-  // Hunter confidence boost
-  if (c.hunter_confidence && c.hunter_confidence >= 90) score += 15;
-  else if (c.hunter_confidence && c.hunter_confidence >= 70) score += 5;
-  else if (c.hunter_confidence && c.hunter_confidence < 50) score -= 20;
+  if (!name || name.length < 2 || name.includes("@")) {
+    return { type: "unknown", score: 20, isFiltered: true };
+  }
 
-  // Name presence
-  if (!name || name.length < 2 || name.includes("@")) score -= 20;
-
-  // Classify
-  if (score < 40) return { type: "filtered", score };
-  if (score < 70) return { type: "company", score };
-  return { type: "person", score };
+  return { type: "unknown", score: 40, isFiltered: false };
 }
 
 // ─── Email Intelligence ───
@@ -207,9 +253,10 @@ function EmailIntelligencePage() {
   const [allContacts, setAllContacts] = useState<DiscoveredContact[]>([]);
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
-  const [inboxTab, setInboxTab] = useState<"people" | "companies" | "saved_people" | "saved_companies" | "filtered">("people");
+  const [classifying, setClassifying] = useState(false);
+  const [inboxTab, setInboxTab] = useState<"person_business" | "company" | "person_personal" | "spam_or_system" | "unknown" | "saved_people" | "saved_companies">("person_business");
   const [savedEntityFilter, setSavedEntityFilter] = useState<"people" | "companies">("people");
-  const [showFiltered, setShowFiltered] = useState(false);
+  const [hideLowQuality, setHideLowQuality] = useState(true);
   const [enrichingId, setEnrichingId] = useState<string | null>(null);
 
   useEffect(() => { loadContacts(); }, []);
@@ -227,7 +274,7 @@ function EmailIntelligencePage() {
     // Also load network contacts from synced sources (iCloud, Google, etc.)
     const { data: networkContacts } = await supabase
       .from("network_contacts")
-      .select("id, full_name, email, phone, company, title, source, location, linkedin_url, imported_at, user_id")
+      .select("id, full_name, email, phone, company, title, source, location, linkedin_url, imported_at, user_id, classification_type, classification_confidence, is_filtered")
       .order("imported_at", { ascending: false })
       .limit(1000);
 
@@ -277,6 +324,9 @@ function EmailIntelligencePage() {
           filtered: false,
           location: nc.location,
           enrichment_source: nc.source,
+          classification_type: nc.classification_type || null,
+          classification_confidence: nc.classification_confidence || null,
+          is_filtered: nc.is_filtered || false,
         } as DiscoveredContact;
       });
 
@@ -291,32 +341,34 @@ function EmailIntelligencePage() {
   const active = allContacts.filter(c => c.status !== "saved_to_contacts");
 
   const classified = active.map(c => {
-    // Use server-side values if available, otherwise classify client-side
-    if (c.filtered === true || c.contact_type === "filtered") {
-      return { ...c, _type: "filtered" as const, _score: c.contact_score || 0 };
-    }
-    if (c.contact_type === "company") {
-      return { ...c, _type: "company" as const, _score: c.contact_score || 50 };
-    }
-    if (c.contact_type === "person" && c.contact_score) {
-      return { ...c, _type: "person" as const, _score: c.contact_score };
-    }
-    // Client-side classification fallback
-    const { type, score } = classifyContact(c);
-    return { ...c, _type: type, _score: score };
+    const { type, score, isFiltered } = classifyContact(c);
+    return { ...c, _type: type, _score: score, _isFiltered: isFiltered };
   });
 
-  const people = classified.filter(c => c._type === "person");
-  const companies = classified.filter(c => c._type === "company");
-  const filtered = classified.filter(c => c._type === "filtered");
+  // Apply low-quality filter
+  const qualityFilter = (c: typeof classified[0]) => {
+    if (!hideLowQuality) return true;
+    if (c._isFiltered) return false;
+    // Hide single interaction + no name + no reply
+    if (c._score < 50 && c.email_frequency <= 1 && !c.display_name) return false;
+    return true;
+  };
 
-  const displayList = inboxTab === "people" ? people
-    : inboxTab === "companies" ? companies
+  const personBusiness = classified.filter(c => c._type === "person_business" && qualityFilter(c));
+  const companies = classified.filter(c => c._type === "company" && qualityFilter(c));
+  const personPersonal = classified.filter(c => c._type === "person_personal");
+  const spamOrSystem = classified.filter(c => c._type === "spam_or_system");
+  const unknown = classified.filter(c => c._type === "unknown");
+
+  const displayList = inboxTab === "person_business" ? personBusiness
+    : inboxTab === "company" ? companies
+    : inboxTab === "person_personal" ? personPersonal
+    : inboxTab === "spam_or_system" ? spamOrSystem
+    : inboxTab === "unknown" ? unknown
     : inboxTab === "saved_people" ? savedPeople
-    : inboxTab === "saved_companies" ? savedCompanies
-    : filtered;
+    : savedCompanies;
 
-  const newThisWeek = people.filter(c => new Date(c.first_seen_at) >= new Date(Date.now() - 7 * 86400000)).length;
+  const newThisWeek = personBusiness.filter(c => new Date(c.first_seen_at) >= new Date(Date.now() - 7 * 86400000)).length;
 
   async function runSync() {
     setSyncing(true);
@@ -334,23 +386,44 @@ function EmailIntelligencePage() {
     finally { setSyncing(false); }
   }
 
+  async function runClassify() {
+    setClassifying(true);
+    try {
+      const headers = await getAuthHeaders();
+      const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/classify-contacts`, {
+        method: "POST", headers, body: JSON.stringify({ force: true }),
+      });
+      const data = await resp.json();
+      if (data.success) {
+        toast.success(`Classified ${data.classified} contacts (${data.filtered} filtered)`);
+        loadContacts();
+      } else toast.error(data.error || "Classification failed");
+    } catch { toast.error("Classification failed"); }
+    finally { setClassifying(false); }
+  }
+
   async function dismissContact(id: string) {
     await supabase.from("email_discovered_contacts" as any).update({ status: "dismissed" }).eq("id", id);
     setAllContacts(prev => prev.filter(c => c.id !== id));
   }
 
-  async function rescueContact(id: string) {
-    // Move from filtered back to inbox
-    await supabase.from("email_discovered_contacts" as any).update({ filtered: false, contact_type: "person" } as any).eq("id", id);
-    setAllContacts(prev => prev.map(c => c.id === id ? { ...c, filtered: false, contact_type: "person" } : c));
-    toast.success("Contact rescued to People");
+  async function reclassifyContact(id: string, newType: ClassificationType) {
+    await supabase.from("email_discovered_contacts" as any).update({
+      classification_type: newType,
+      is_filtered: newType === "spam_or_system" || newType === "person_personal",
+    } as any).eq("id", id);
+    setAllContacts(prev => prev.map(c => c.id === id ? {
+      ...c,
+      classification_type: newType,
+      is_filtered: newType === "spam_or_system" || newType === "person_personal",
+    } : c));
+    toast.success(`Marked as ${newType.replace(/_/g, " ")}`);
   }
 
   async function saveContact(id: string, entityType: "person" | "company" = "person") {
     const contact = allContacts.find(c => c.id === id);
     if (!contact) return;
 
-    // Trigger enrichment on save
     setEnrichingId(id);
     try {
       const headers = await getAuthHeaders();
@@ -366,7 +439,6 @@ function EmailIntelligencePage() {
       console.error("Enrichment error:", err);
     }
 
-    // Save to canonical_persons
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { toast.error("Not authenticated"); return; }
@@ -391,7 +463,6 @@ function EmailIntelligencePage() {
       });
       if (insertErr) throw insertErr;
 
-      // Also update contact_type on the discovered contact record
       await supabase.from("email_discovered_contacts" as any).update({ status: "saved_to_contacts", contact_type: entityType } as any).eq("id", id);
       setAllContacts(prev => prev.map(c => c.id === id ? { ...c, status: "saved_to_contacts", contact_type: entityType } : c));
       toast.success(entityType === "company" ? "Saved as company" : "Saved as person");
@@ -402,6 +473,18 @@ function EmailIntelligencePage() {
     }
   }
 
+  const FILTER_CHIPS: { key: typeof inboxTab; icon: typeof Briefcase; label: string; count: number; variant?: string }[] = [
+    { key: "person_business", icon: Briefcase, label: "Business People", count: personBusiness.length },
+    { key: "company", icon: Building2, label: "Companies", count: companies.length },
+    { key: "person_personal", icon: Users, label: "Personal", count: personPersonal.length },
+    { key: "spam_or_system", icon: Bot, label: "Spam & Automated", count: spamOrSystem.length },
+    { key: "unknown", icon: HelpCircle, label: "Unclassified", count: unknown.length },
+    { key: "saved_people", icon: CheckCircle, label: "Saved People", count: savedPeople.length },
+    { key: "saved_companies", icon: Building2, label: "Saved Companies", count: savedCompanies.length },
+  ];
+
+  const isSpamOrFiltered = inboxTab === "spam_or_system" || inboxTab === "person_personal" || inboxTab === "unknown";
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -411,6 +494,10 @@ function EmailIntelligencePage() {
         </div>
         <div className="flex gap-2">
           {newThisWeek > 0 && <Badge className="bg-primary">{newThisWeek} new</Badge>}
+          <Button variant="outline" size="sm" onClick={runClassify} disabled={classifying}>
+            {classifying ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <Tag className="h-3.5 w-3.5 mr-1" />}
+            Classify
+          </Button>
           <Button variant="outline" size="sm" onClick={runSync} disabled={syncing}>
             {syncing ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5 mr-1" />}
             Scan
@@ -418,48 +505,23 @@ function EmailIntelligencePage() {
         </div>
       </div>
 
-      {/* Tab bar: People / Companies / Saved People / Saved Companies / Filtered */}
-      <div className="flex gap-1.5 flex-wrap">
-        <Button
-          variant={inboxTab === "people" ? "default" : "outline"}
-          size="sm"
-          onClick={() => setInboxTab("people")}
-          className="text-xs gap-1"
-        >
-          <Users className="h-3 w-3" /> People ({people.length})
-        </Button>
-        <Button
-          variant={inboxTab === "companies" ? "default" : "outline"}
-          size="sm"
-          onClick={() => setInboxTab("companies")}
-          className="text-xs gap-1"
-        >
-          <Building2 className="h-3 w-3" /> Companies ({companies.length})
-        </Button>
-        <Button
-          variant={inboxTab === "saved_people" ? "default" : "outline"}
-          size="sm"
-          onClick={() => setInboxTab("saved_people")}
-          className="text-xs gap-1"
-        >
-          <CheckCircle className="h-3 w-3" /> Saved People ({savedPeople.length})
-        </Button>
-        <Button
-          variant={inboxTab === "saved_companies" ? "default" : "outline"}
-          size="sm"
-          onClick={() => setInboxTab("saved_companies")}
-          className="text-xs gap-1"
-        >
-          <Building2 className="h-3 w-3" /> Saved Companies ({savedCompanies.length})
-        </Button>
-        <Button
-          variant={inboxTab === "filtered" ? "secondary" : "ghost"}
-          size="sm"
-          onClick={() => setInboxTab("filtered")}
-          className="text-xs gap-1 text-muted-foreground"
-        >
-          <Filter className="h-3 w-3" /> Filtered ({filtered.length})
-        </Button>
+      {/* Filter chips */}
+      <div className="flex gap-1.5 flex-wrap items-center">
+        {FILTER_CHIPS.map(chip => (
+          <Button
+            key={chip.key}
+            variant={inboxTab === chip.key ? "default" : "outline"}
+            size="sm"
+            onClick={() => setInboxTab(chip.key)}
+            className="text-xs gap-1"
+          >
+            <chip.icon className="h-3 w-3" /> {chip.label} ({chip.count})
+          </Button>
+        ))}
+        <div className="ml-auto flex items-center gap-2">
+          <label className="text-[10px] text-muted-foreground whitespace-nowrap">Hide low-quality</label>
+          <Switch checked={hideLowQuality} onCheckedChange={setHideLowQuality} className="scale-75" />
+        </div>
       </div>
 
       {loading ? (
@@ -469,20 +531,19 @@ function EmailIntelligencePage() {
           <CardContent className="py-12 text-center">
             <Mail className="h-8 w-8 mx-auto text-muted-foreground mb-3" />
             <p className="font-medium">
-              {inboxTab === "people" ? "No people discovered yet" :
-               inboxTab === "companies" ? "No company contacts found" :
+              {inboxTab === "person_business" ? "No business people discovered yet" :
+               inboxTab === "company" ? "No company contacts found" :
+               inboxTab === "person_personal" ? "No personal contacts classified" :
+               inboxTab === "spam_or_system" ? "No spam contacts detected" :
+               inboxTab === "unknown" ? "No unclassified contacts" :
                inboxTab === "saved_people" ? "No saved people" :
-               inboxTab === "saved_companies" ? "No saved companies" :
-               "No filtered contacts"}
+               "No saved companies"}
             </p>
             <p className="text-sm text-muted-foreground mt-1">
-              {inboxTab === "people" ? "Connect your email and run a scan to discover contacts." :
-               inboxTab === "companies" ? "Business contacts will appear here after scanning." :
-               inboxTab === "saved_people" ? "People you save will appear here." :
-               inboxTab === "saved_companies" ? "Companies you save will appear here." :
-               "Spam and automated senders are filtered here."}
+              {inboxTab === "person_business" ? "Connect your email and run a scan to discover contacts." :
+               "Run a scan or classify contacts to populate this view."}
             </p>
-            {inboxTab === "people" && (
+            {inboxTab === "person_business" && (
               <Button className="mt-4" onClick={runSync} disabled={syncing}>
                 {syncing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Zap className="h-4 w-4 mr-2" />}
                 Run First Scan
@@ -536,35 +597,49 @@ function EmailIntelligencePage() {
                       </Button>
                     </div>
                   </div>
-                ) : inboxTab === "filtered" ? (
+                ) : isSpamOrFiltered ? (
                   <div className="flex items-center justify-between gap-3">
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium truncate text-muted-foreground">{c.display_name || c.email_address}</p>
                       {c.display_name && <p className="text-xs text-muted-foreground/60 truncate">{c.email_address}</p>}
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
-                      <Badge variant="outline" className="text-[10px] text-muted-foreground/50">Filtered</Badge>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 text-xs gap-1"
-                        onClick={() => rescueContact(c.id)}
-                        title="Rescue to People"
-                      >
-                        <ArrowUpFromLine className="h-3 w-3" /> Rescue
+                      <Badge variant="outline" className="text-[10px] text-muted-foreground/50">
+                        {inboxTab === "spam_or_system" ? "Spam" : inboxTab === "person_personal" ? "Personal" : "Unknown"}
+                      </Badge>
+                      <Button variant="ghost" size="sm" className="h-7 text-[10px] gap-0.5" onClick={() => reclassifyContact(c.id, "person_business")}>
+                        <Briefcase className="h-3 w-3" /> Business
                       </Button>
+                      {inboxTab !== "person_personal" && (
+                        <Button variant="ghost" size="sm" className="h-7 text-[10px] gap-0.5" onClick={() => reclassifyContact(c.id, "person_personal")}>
+                          <Users className="h-3 w-3" /> Personal
+                        </Button>
+                      )}
                     </div>
                   </div>
                 ) : (
-                  <InlineContactEditor
-                    contact={c}
-                    onUpdate={(id, updates) => {
-                      setAllContacts(prev => prev.map(ct => ct.id === id ? { ...ct, ...updates } : ct));
-                    }}
-                    onSave={saveContact}
-                    onDismiss={dismissContact}
-                    defaultEntityType={inboxTab === "companies" ? "company" : inboxTab === "people" ? "person" : undefined}
-                  />
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <InlineContactEditor
+                        contact={c}
+                        onUpdate={(id, updates) => {
+                          setAllContacts(prev => prev.map(ct => ct.id === id ? { ...ct, ...updates } : ct));
+                        }}
+                        onSave={saveContact}
+                        onDismiss={dismissContact}
+                        defaultEntityType={inboxTab === "company" ? "company" : "person"}
+                      />
+                    </div>
+                    {/* Quick reclassify actions */}
+                    <div className="flex items-center gap-0.5 shrink-0">
+                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0" title="Mark as Personal" onClick={() => reclassifyContact(c.id, "person_personal")}>
+                        <UserX className="h-3 w-3 text-muted-foreground" />
+                      </Button>
+                      <Button variant="ghost" size="sm" className="h-6 w-6 p-0" title="Mark as Spam" onClick={() => reclassifyContact(c.id, "spam_or_system")}>
+                        <Bot className="h-3 w-3 text-muted-foreground" />
+                      </Button>
+                    </div>
+                  </div>
                 )}
               </CardContent>
             </Card>

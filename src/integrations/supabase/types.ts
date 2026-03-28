@@ -1638,6 +1638,8 @@ export type Database = {
       email_discovered_contacts: {
         Row: {
           apollo_data: Json | null
+          classification_confidence: number | null
+          classification_type: string | null
           contact_score: number | null
           contact_type: string | null
           created_at: string | null
@@ -1660,6 +1662,7 @@ export type Database = {
           hunter_twitter_url: string | null
           hunter_verified: boolean | null
           id: string
+          is_filtered: boolean | null
           last_enriched_at: string | null
           last_name: string | null
           last_seen_at: string | null
@@ -1675,6 +1678,8 @@ export type Database = {
         }
         Insert: {
           apollo_data?: Json | null
+          classification_confidence?: number | null
+          classification_type?: string | null
           contact_score?: number | null
           contact_type?: string | null
           created_at?: string | null
@@ -1697,6 +1702,7 @@ export type Database = {
           hunter_twitter_url?: string | null
           hunter_verified?: boolean | null
           id?: string
+          is_filtered?: boolean | null
           last_enriched_at?: string | null
           last_name?: string | null
           last_seen_at?: string | null
@@ -1712,6 +1718,8 @@ export type Database = {
         }
         Update: {
           apollo_data?: Json | null
+          classification_confidence?: number | null
+          classification_type?: string | null
           contact_score?: number | null
           contact_type?: string | null
           created_at?: string | null
@@ -1734,6 +1742,7 @@ export type Database = {
           hunter_twitter_url?: string | null
           hunter_verified?: boolean | null
           id?: string
+          is_filtered?: boolean | null
           last_enriched_at?: string | null
           last_name?: string | null
           last_seen_at?: string | null
@@ -3325,12 +3334,15 @@ export type Database = {
       network_contacts: {
         Row: {
           canonical_person_id: string | null
+          classification_confidence: number | null
+          classification_type: string | null
           company: string | null
           email: string | null
           external_id: string | null
           full_name: string | null
           id: string
           imported_at: string
+          is_filtered: boolean | null
           linkedin_url: string | null
           location: string | null
           metadata: Json | null
@@ -3343,12 +3355,15 @@ export type Database = {
         }
         Insert: {
           canonical_person_id?: string | null
+          classification_confidence?: number | null
+          classification_type?: string | null
           company?: string | null
           email?: string | null
           external_id?: string | null
           full_name?: string | null
           id?: string
           imported_at?: string
+          is_filtered?: boolean | null
           linkedin_url?: string | null
           location?: string | null
           metadata?: Json | null
@@ -3361,12 +3376,15 @@ export type Database = {
         }
         Update: {
           canonical_person_id?: string | null
+          classification_confidence?: number | null
+          classification_type?: string | null
           company?: string | null
           email?: string | null
           external_id?: string | null
           full_name?: string | null
           id?: string
           imported_at?: string
+          is_filtered?: boolean | null
           linkedin_url?: string | null
           location?: string | null
           metadata?: Json | null
@@ -4660,6 +4678,12 @@ export type Database = {
         | "claim_review"
         | "follow_up"
         | "other"
+      contact_classification_type:
+        | "person_business"
+        | "person_personal"
+        | "company"
+        | "spam_or_system"
+        | "unknown"
       document_type: "binder" | "dec" | "invoice" | "other"
       lead_stage: "prospect" | "quoting" | "presenting" | "lost" | "bound"
       loss_run_status:
@@ -4818,6 +4842,13 @@ export const Constants = {
         "claim_review",
         "follow_up",
         "other",
+      ],
+      contact_classification_type: [
+        "person_business",
+        "person_personal",
+        "company",
+        "spam_or_system",
+        "unknown",
       ],
       document_type: ["binder", "dec", "invoice", "other"],
       lead_stage: ["prospect", "quoting", "presenting", "lost", "bound"],
