@@ -15,7 +15,7 @@ import {
   Rocket, Building2, Globe, MapPin, Target, Search, FileText,
   Download, Plus, ArrowUpRight, Eye, Trash2, Zap, Edit2,
   CheckCircle2, AlertCircle, Sparkles, Users, TrendingUp,
-  Upload, Link, File, X, Loader2,
+  Upload, Link, File, X, Loader2, Mail, Phone, RefreshCw,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -225,11 +225,21 @@ const LEAD_PACKS = [
 
 function GenerateControls({ onGenerate }: { onGenerate: (opts: any) => void }) {
   const [geo, setGeo] = useState("All States");
-  const [focus, setFocus] = useState("new_business");
+  const [focuses, setFocuses] = useState<string[]>(["new_business"]);
   const [selectedPack, setSelectedPack] = useState(50);
   const [generating, setGenerating] = useState(false);
   const [purchasing, setPurchasing] = useState(false);
   const { data: profile } = useCompanyProfile();
+
+  const toggleFocus = (key: string) => {
+    setFocuses(prev => {
+      if (prev.includes(key)) {
+        if (prev.length === 1) return prev; // must have at least one
+        return prev.filter(f => f !== key);
+      }
+      return [...prev, key];
+    });
+  };
 
   const handleGenerate = async () => {
     if (!profile?.icp_description && !profile?.industry) {
@@ -238,7 +248,6 @@ function GenerateControls({ onGenerate }: { onGenerate: (opts: any) => void }) {
     }
     setGenerating(true);
     try {
-      const source = FOCUS_TO_SOURCE[focus] || "Business Filings";
       const states = geo === "All States" ? [] : [geo];
       const settings: Record<string, string> = {
         states: states.join(", ") || "NY, CA, TX, FL",
@@ -246,17 +255,31 @@ function GenerateControls({ onGenerate }: { onGenerate: (opts: any) => void }) {
         keywords: profile?.icp_description?.slice(0, 100) || "new business insurance",
         entity_types: "LLC, Corp",
       };
-      const { data, error } = await supabase.functions.invoke("lead-engine-scan", {
-        body: { source, settings, enrich: true },
-      });
-      if (error) throw new Error(error.message);
-      if (data?.error) throw new Error(data.error);
-      const count = data?.leads_found ?? 0;
-      onGenerate({ geo, volume: selectedPack, focus, leads_found: count });
-      if (count > 0) {
-        toast.success(`Found ${count} new enriched leads from ${source}`);
+
+      let totalFound = 0;
+      const sourceNames: string[] = [];
+
+      // Scan each selected focus source
+      for (const focusKey of focuses) {
+        const source = FOCUS_TO_SOURCE[focusKey] || "Business Filings";
+        sourceNames.push(source);
+        try {
+          const { data, error } = await supabase.functions.invoke("lead-engine-scan", {
+            body: { source, settings, enrich: true },
+          });
+          if (error) console.warn(`Scan error for ${source}:`, error.message);
+          const count = data?.leads_found ?? 0;
+          totalFound += count;
+        } catch (err: any) {
+          console.warn(`Failed scanning ${source}:`, err.message);
+        }
+      }
+
+      onGenerate({ geo, volume: selectedPack, focuses, leads_found: totalFound });
+      if (totalFound > 0) {
+        toast.success(`Found ${totalFound} new leads across ${sourceNames.join(", ")}`);
       } else {
-        toast.info(data?.message || "No leads found this scan — try a different focus or geography");
+        toast.info("No leads found this scan — try different focuses or geography");
       }
     } catch (err: any) {
       toast.error(err.message || "Lead generation failed");
@@ -349,7 +372,7 @@ function GenerateControls({ onGenerate }: { onGenerate: (opts: any) => void }) {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-3">
             <div>
               <label className="text-xs font-medium text-muted-foreground mb-1 block">Target Geography</label>
               <Select value={geo} onValueChange={setGeo}>
@@ -360,16 +383,30 @@ function GenerateControls({ onGenerate }: { onGenerate: (opts: any) => void }) {
               </Select>
             </div>
             <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">Focus</label>
-              <Select value={focus} onValueChange={setFocus}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="new_business">New Business Filings</SelectItem>
-                  <SelectItem value="permits">Permit Database</SelectItem>
-                  <SelectItem value="social">Reddit Signals</SelectItem>
-                  <SelectItem value="linkedin">LinkedIn</SelectItem>
-                </SelectContent>
-              </Select>
+              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Focus Sources</label>
+              <div className="grid grid-cols-2 gap-2">
+                {([
+                  { key: "new_business", label: "New Business Filings", icon: FileText },
+                  { key: "permits", label: "Permit Database", icon: Building2 },
+                  { key: "social", label: "Reddit Signals", icon: Users },
+                  { key: "linkedin", label: "LinkedIn", icon: Globe },
+                ] as const).map(({ key, label, icon: Icon }) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => toggleFocus(key)}
+                    className={`flex items-center gap-2 rounded-lg border p-2.5 text-left text-xs font-medium transition-all ${
+                      focuses.includes(key)
+                        ? "border-primary bg-primary/5 text-foreground ring-1 ring-primary/20"
+                        : "border-border text-muted-foreground hover:border-primary/40"
+                    }`}
+                  >
+                    <Icon className={`h-3.5 w-3.5 shrink-0 ${focuses.includes(key) ? "text-primary" : ""}`} />
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <p className="text-[10px] text-muted-foreground mt-1">{focuses.length} source{focuses.length !== 1 ? "s" : ""} selected</p>
             </div>
           </div>
           <Button onClick={handleGenerate} disabled={generating} className="w-full gap-1.5">
@@ -403,6 +440,41 @@ function ResultsTable() {
   const deleteLead = useDeleteEngineLead();
   const [search, setSearch] = useState("");
   const [selectedLead, setSelectedLead] = useState<EngineLead | null>(null);
+  const [enrichingId, setEnrichingId] = useState<string | null>(null);
+
+  const handleEnrich = async (lead: EngineLead) => {
+    setEnrichingId(lead.id);
+    try {
+      const { data, error } = await supabase.functions.invoke("enrich-lead", {
+        body: {
+          company: lead.company,
+          contact_name: lead.contact_name,
+          email: lead.email,
+          state: lead.state,
+          industry: lead.industry,
+        },
+      });
+      if (error) throw new Error(error.message);
+      if (data?.error) throw new Error(data.error);
+
+      // Update lead with enriched data
+      const updates: Partial<EngineLead> = {};
+      if (data?.email && !lead.email) updates.email = data.email;
+      if (data?.phone && !lead.phone) updates.phone = data.phone;
+      if (data?.contact_name && !lead.contact_name) updates.contact_name = data.contact_name;
+
+      if (Object.keys(updates).length > 0) {
+        await updateLead.mutateAsync({ id: lead.id, ...updates });
+        toast.success(`Enriched ${lead.company} — found ${Object.keys(updates).join(", ")}`);
+      } else {
+        toast.info("No additional contact info found for this lead");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Enrichment failed");
+    } finally {
+      setEnrichingId(null);
+    }
+  };
 
   const filtered = (leads || []).filter((l: EngineLead) =>
     !search ||
@@ -445,9 +517,8 @@ function ResultsTable() {
           <TableHeader>
             <TableRow>
               <TableHead className="text-xs">Company</TableHead>
-              <TableHead className="text-xs">Industry</TableHead>
+              <TableHead className="text-xs">Contact</TableHead>
               <TableHead className="text-xs">State</TableHead>
-              <TableHead className="text-xs">Est. Premium</TableHead>
               <TableHead className="text-xs">Score</TableHead>
               <TableHead className="text-xs">Status</TableHead>
               <TableHead className="text-xs text-right">Actions</TableHead>
@@ -462,13 +533,58 @@ function ResultsTable() {
                     onClick={() => setSelectedLead(lead)}
                   >
                     <p className="text-xs font-medium group-hover:text-primary transition-colors">{lead.company}</p>
-                    {lead.contact_name && <p className="text-[10px] text-muted-foreground">{lead.contact_name}</p>}
-                    {lead.signal && <p className="text-[9px] text-muted-foreground mt-0.5 max-w-[200px] truncate" title={lead.signal}>{lead.signal}</p>}
+                    {lead.industry && <p className="text-[10px] text-muted-foreground">{lead.industry}</p>}
+                    {lead.signal && <p className="text-[9px] text-muted-foreground mt-0.5 max-w-[180px] truncate" title={lead.signal}>{lead.signal}</p>}
                   </div>
                 </TableCell>
-                <TableCell className="text-xs text-muted-foreground py-2">{lead.industry || "—"}</TableCell>
+                <TableCell className="py-2">
+                  <div className="space-y-0.5">
+                    {lead.contact_name && (
+                      <p className="text-xs font-medium">{lead.contact_name}</p>
+                    )}
+                    {lead.email ? (
+                      <a href={`mailto:${lead.email}`} className="text-[10px] text-primary hover:underline flex items-center gap-1">
+                        <Mail className="h-3 w-3" />{lead.email}
+                      </a>
+                    ) : null}
+                    {lead.phone ? (
+                      <a href={`tel:${lead.phone}`} className="text-[10px] text-muted-foreground hover:text-foreground flex items-center gap-1">
+                        <Phone className="h-3 w-3" />{lead.phone}
+                      </a>
+                    ) : null}
+                    {!lead.email && !lead.phone && !lead.contact_name && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-6 text-[10px] gap-1"
+                        disabled={enrichingId === lead.id}
+                        onClick={(e) => { e.stopPropagation(); handleEnrich(lead); }}
+                      >
+                        {enrichingId === lead.id ? (
+                          <><RefreshCw className="h-3 w-3 animate-spin" /> Enriching…</>
+                        ) : (
+                          <><Zap className="h-3 w-3" /> Find Contact</>
+                        )}
+                      </Button>
+                    )}
+                    {(lead.contact_name || lead.email || lead.phone) && !lead.email && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-5 text-[9px] gap-0.5 px-1 text-muted-foreground"
+                        disabled={enrichingId === lead.id}
+                        onClick={(e) => { e.stopPropagation(); handleEnrich(lead); }}
+                      >
+                        {enrichingId === lead.id ? (
+                          <RefreshCw className="h-2.5 w-2.5 animate-spin" />
+                        ) : (
+                          <><Zap className="h-2.5 w-2.5" /> Enrich</>
+                        )}
+                      </Button>
+                    )}
+                  </div>
+                </TableCell>
                 <TableCell className="text-xs text-muted-foreground py-2">{lead.state || "—"}</TableCell>
-                <TableCell className="text-xs py-2">${(lead.est_premium || 0).toLocaleString()}</TableCell>
                 <TableCell className="py-2"><FitScoreBadge score={lead.score || 0} /></TableCell>
                 <TableCell className="py-2">
                   <Badge variant="secondary" className="text-[10px]">{lead.status}</Badge>

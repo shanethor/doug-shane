@@ -47,6 +47,27 @@ export function LeadCard({ lead, onAction, onDelete, onEdit, compact }: LeadCard
               <Badge variant="outline" className="text-[9px]">{lead.status}</Badge>
             </div>
             <div className="flex items-center gap-2 mt-1 flex-wrap">
+              {lead.contact_name && (
+                <span className="text-[11px] font-medium text-foreground">{lead.contact_name}</span>
+              )}
+              {lead.email && (
+                <>
+                  {lead.contact_name && <span className="text-[11px] text-muted-foreground">·</span>}
+                  <a href={`mailto:${lead.email}`} className="text-[11px] text-primary hover:underline flex items-center gap-0.5" onClick={e => e.stopPropagation()}>
+                    <Mail className="h-3 w-3" />{lead.email}
+                  </a>
+                </>
+              )}
+              {lead.phone && (
+                <>
+                  <span className="text-[11px] text-muted-foreground">·</span>
+                  <a href={`tel:${lead.phone}`} className="text-[11px] text-muted-foreground hover:text-foreground flex items-center gap-0.5" onClick={e => e.stopPropagation()}>
+                    <Phone className="h-3 w-3" />{lead.phone}
+                  </a>
+                </>
+              )}
+            </div>
+            <div className="flex items-center gap-2 mt-0.5 flex-wrap">
               {lead.state && (
                 <span className="text-[11px] text-muted-foreground flex items-center gap-1">
                   <MapPin className="h-3 w-3" />{lead.state}
@@ -54,7 +75,7 @@ export function LeadCard({ lead, onAction, onDelete, onEdit, compact }: LeadCard
               )}
               {lead.industry && (
                 <>
-                  <span className="text-[11px] text-muted-foreground">·</span>
+                  {lead.state && <span className="text-[11px] text-muted-foreground">·</span>}
                   <span className="text-[11px] text-muted-foreground">{lead.industry}</span>
                 </>
               )}
@@ -64,12 +85,6 @@ export function LeadCard({ lead, onAction, onDelete, onEdit, compact }: LeadCard
                   <span className="text-[11px] text-muted-foreground flex items-center gap-1">
                     <DollarSign className="h-3 w-3" />${(lead.est_premium / 1000).toFixed(0)}K est.
                   </span>
-                </>
-              )}
-              {lead.contact_name && (
-                <>
-                  <span className="text-[11px] text-muted-foreground">·</span>
-                  <span className="text-[11px] text-muted-foreground">{lead.contact_name}</span>
                 </>
               )}
             </div>
