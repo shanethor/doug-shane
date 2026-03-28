@@ -346,8 +346,8 @@ export default function ConnectSpotlightTab() {
             Pick a template to customize with AI, or start from scratch.
           </p>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+        <CardContent className="px-6 pb-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 max-w-5xl mx-auto">
             {FEATURED_TEMPLATES.map(t => {
               const Icon = t.icon;
               return (
