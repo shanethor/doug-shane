@@ -347,7 +347,7 @@ export default function ConnectSpotlightTab() {
           </p>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-6 gap-2">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
             {FEATURED_TEMPLATES.map(t => {
               const Icon = t.icon;
               return (
