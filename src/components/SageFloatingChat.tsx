@@ -6,9 +6,9 @@ import ReactMarkdown from "react-markdown";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { executeCalendarActions as runCalendarActions, extractCalendarActions } from "@/lib/calendar-action-utils";
 
 type Msg = { role: "user" | "assistant"; content: string };
-type FloatingCalendarAction = { title: string; date: string; startTime: string; durationMinutes: number };
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/connect-assistant`;
 
@@ -17,38 +17,6 @@ function stripActionMarkers(text: string) {
     .replace(/\[CALENDAR_ACTION:[^\]]+\]/g, "")
     .replace(/\[NAVIGATE:[^\]]+\]/g, "")
     .trim();
-}
-
-function parseCalendarActions(text: string): FloatingCalendarAction[] {
-  const actions: FloatingCalendarAction[] = [];
-
-  const pipeRegex = /\[CALENDAR_ACTION:CREATE\|([^|\]]+)\|(\d{4}-\d{2}-\d{2})\|(\d{2}:\d{2})\|(\d+)\]/gi;
-  let pipeMatch: RegExpExecArray | null;
-  while ((pipeMatch = pipeRegex.exec(text)) !== null) {
-    actions.push({
-      title: pipeMatch[1].trim(),
-      date: pipeMatch[2],
-      startTime: pipeMatch[3],
-      durationMinutes: Number(pipeMatch[4]) || 30,
-    });
-  }
-
-  const colonRegex = /\[CALENDAR_ACTION:create:([^:]+):(\d{4}-\d{2}-\d{2}):(\d{2}:\d{2}):(\d{2}:\d{2}):([^:]*):([^\]]*)\]/g;
-  let colonMatch: RegExpExecArray | null;
-  while ((colonMatch = colonRegex.exec(text)) !== null) {
-    const [endHour, endMinute] = colonMatch[4].split(":").map(Number);
-    const [startHour, startMinute] = colonMatch[3].split(":").map(Number);
-    const durationMinutes = Math.max(15, (endHour * 60 + endMinute) - (startHour * 60 + startMinute));
-
-    actions.push({
-      title: colonMatch[1].trim(),
-      date: colonMatch[2],
-      startTime: colonMatch[3],
-      durationMinutes,
-    });
-  }
-
-  return actions;
 }
 
 async function streamChat({
@@ -131,62 +99,20 @@ export function SageFloatingChat() {
   const executeCalendarActions = useCallback(async (assistantText: string) => {
     if (!user) return;
 
-    const actions = parseCalendarActions(assistantText);
+    const actions = extractCalendarActions(assistantText);
     if (!actions.length) return;
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const accessToken = session?.access_token;
-      const { data: calendars } = await supabase
-        .from("external_calendars")
-        .select("provider")
-        .eq("user_id", user.id)
-        .eq("is_active", true);
-
-      let createdCount = 0;
-
-      for (const action of actions) {
-        const start = new Date(`${action.date}T${action.startTime}:00`);
-        if (Number.isNaN(start.getTime())) continue;
-
-        const end = new Date(start.getTime() + action.durationMinutes * 60 * 1000);
-        const { error } = await supabase.from("calendar_events").insert({
-          user_id: user.id,
-          title: action.title,
-          event_type: "other" as any,
-          start_time: start.toISOString(),
-          end_time: end.toISOString(),
-          provider: "aura",
-          status: "scheduled" as any,
-        } as any);
-
-        if (error) throw error;
-        createdCount += 1;
-
-        if (accessToken && calendars?.length) {
-          for (const cal of calendars) {
-            await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/calendar-sync`, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${accessToken}`,
-                apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-              },
-              body: JSON.stringify({
-                action: "create_event",
-                provider: cal.provider,
-                title: action.title,
-                start: start.toISOString(),
-                end: end.toISOString(),
-              }),
-            });
-          }
-        }
-      }
+      const { createdCount, externalFailures } = await runCalendarActions({ actions, userId: user.id });
 
       if (createdCount > 0) {
-        window.dispatchEvent(new CustomEvent("aura-calendar-refresh"));
         toast.success(createdCount === 1 ? "Calendar event created" : `${createdCount} calendar events created`);
+        if (externalFailures.length > 0) {
+          const needsReconnect = externalFailures.some((failure) => /expired|reconnect|unauthorized|no .* calendar connected/i.test(failure));
+          toast.error(needsReconnect
+            ? "Event saved in AURA, but your connected calendar needs reconnect to sync externally."
+            : "Event saved in AURA, but external calendar sync failed.");
+        }
       }
     } catch (error: any) {
       console.error("Sage calendar action failed:", error);
