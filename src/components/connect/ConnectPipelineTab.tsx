@@ -523,24 +523,26 @@ export default function ConnectPipelineTab() {
   const activeStages = allStages.filter(s => s.key !== "lost");
   const lostStageConfig = allStages.find(s => s.key === "lost");
 
-  // Filter leads by time period
-  const filteredLeads = useMemo(() => {
-    if (timePeriod === "all") return leads;
+  // Time period cutoff helper
+  const periodCutoff = useMemo(() => {
+    if (timePeriod === "all") return null;
     const now = new Date();
-    let cutoff: Date;
-    if (timePeriod === "month") cutoff = new Date(now.getFullYear(), now.getMonth(), 1);
-    else if (timePeriod === "quarter") cutoff = new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1);
-    else cutoff = new Date(now.getFullYear(), 0, 1);
-    return leads.filter(l => new Date(l.created_at) >= cutoff);
-  }, [leads, timePeriod]);
+    if (timePeriod === "month") return new Date(now.getFullYear(), now.getMonth(), 1);
+    if (timePeriod === "quarter") return new Date(now.getFullYear(), Math.floor(now.getMonth() / 3) * 3, 1);
+    return new Date(now.getFullYear(), 0, 1);
+  }, [timePeriod]);
 
-  const lostLeads = filteredLeads.filter(l => l.stage === "lost");
-  const activeLeads = filteredLeads.filter(l => l.stage !== "lost");
+  // Kanban always shows ALL leads — time filter only affects metrics
+  const lostLeads = leads.filter(l => l.stage === "lost");
+  const activeLeads = leads.filter(l => l.stage !== "lost");
 
-  // Pipeline totals
+  // Pipeline totals — won/commission metrics filtered by time period (using updated_at for when deal was closed)
   const pipelineTotals = useMemo(() => {
     const totalPipeline = activeLeads.reduce((s, l) => s + (l.target_premium || 0), 0);
-    const wonLeads = filteredLeads.filter(l => l.stage === "bound");
+    const allWonLeads = leads.filter(l => l.stage === "bound");
+    const wonLeads = periodCutoff
+      ? allWonLeads.filter(l => new Date(l.updated_at) >= periodCutoff)
+      : allWonLeads;
     const totalWon = wonLeads.reduce((s, l) => {
       const wd = l.won_details;
       if (wd) {
@@ -553,8 +555,8 @@ export default function ConnectPipelineTab() {
       if (!wd) return s;
       return s + (Number(wd.est_commission) || Number(wd.your_commission) || 0);
     }, 0);
-    return { totalPipeline, totalWon, totalCommission, wonCount: wonLeads.length, totalLeads: filteredLeads.length };
-  }, [filteredLeads, activeLeads]);
+    return { totalPipeline, totalWon, totalCommission, wonCount: wonLeads.length, totalLeads: leads.length };
+  }, [leads, activeLeads, periodCutoff]);
 
   const toggleColumnExpand = (stage: string) => {
     setExpandedColumns(prev => ({ ...prev, [stage]: !prev[stage] }));
