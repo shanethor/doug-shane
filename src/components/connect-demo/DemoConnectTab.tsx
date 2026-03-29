@@ -790,20 +790,20 @@ export default function DemoConnectTab({ contentReady = true }: { contentReady?:
               </div>
 
               <div className="space-y-1.5">
-                <div className="flex items-center gap-2 text-xs" style={{ color: "hsl(240 5% 60%)" }}>
-                  <Building2 className="h-3.5 w-3.5 shrink-0" style={{ color: profilePopup.profile.type === "company" ? "hsl(var(--warning))" : "hsl(var(--primary))" }} />
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Building2 className="h-3.5 w-3.5 shrink-0 text-primary" />
                   {profilePopup.profile.company}
                 </div>
-                <div className="flex items-center gap-2 text-xs" style={{ color: "hsl(240 5% 60%)" }}>
-                  <Briefcase className="h-3.5 w-3.5 shrink-0" style={{ color: profilePopup.profile.type === "company" ? "hsl(var(--warning))" : "hsl(var(--primary))" }} />
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Briefcase className="h-3.5 w-3.5 shrink-0 text-primary" />
                   {profilePopup.profile.industry}
                 </div>
-                <div className="flex items-center gap-2 text-xs" style={{ color: "hsl(240 5% 60%)" }}>
-                  <MapPin className="h-3.5 w-3.5 shrink-0" style={{ color: profilePopup.profile.type === "company" ? "hsl(var(--warning))" : "hsl(var(--primary))" }} />
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <MapPin className="h-3.5 w-3.5 shrink-0 text-primary" />
                   {profilePopup.profile.location}
                 </div>
-                <div className="flex items-center gap-2 text-xs" style={{ color: "hsl(240 5% 60%)" }}>
-                  <Users className="h-3.5 w-3.5 shrink-0" style={{ color: profilePopup.profile.type === "company" ? "hsl(var(--warning))" : "hsl(var(--primary))" }} />
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Users className="h-3.5 w-3.5 shrink-0 text-primary" />
                   {profilePopup.profile.type === "company" ? `${profilePopup.profile.mutualConnections} people linked` : `${profilePopup.profile.mutualConnections} mutual connections`}
                 </div>
                 <div className="flex items-center gap-2 text-xs">
