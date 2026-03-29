@@ -5,6 +5,7 @@ import { getAuthHeaders } from "@/lib/auth-fetch";
 /* ─────────── Types ─────────── */
 export interface DemoMessage {
   id: string; from: string; fromAddr: string; to: string; toAddr: string;
+  cc?: string[];
   body: string; time: string; date: string;
 }
 export interface DemoThread {
