@@ -44,7 +44,7 @@ function MobileConnectNav({ isActive }: { isActive: (to: string, exact?: boolean
 
   return (
     <>
-      <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden flex items-stretch justify-around border-t border-white/5 bg-[#0c0c0e]/95 backdrop-blur-md safe-area-bottom">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden flex items-stretch justify-around border-t border-sidebar-border bg-sidebar/95 backdrop-blur-md safe-area-bottom">
         {visibleTabs.map(tab => {
           const Icon = ICON_MAP[tab.id] || Network;
           return (
@@ -52,7 +52,7 @@ function MobileConnectNav({ isActive }: { isActive: (to: string, exact?: boolean
               key={tab.to}
               to={tab.to}
               className={`flex flex-col items-center justify-center gap-0.5 py-2 px-1 min-w-[48px] min-h-[52px] transition-colors ${
-                isActive(tab.to, tab.id === "connect") ? "text-white" : "text-white/30"
+                isActive(tab.to, tab.id === "connect") ? "text-sidebar-foreground" : "text-sidebar-foreground/30"
               }`}
             >
               <Icon className="h-5 w-5" />
@@ -64,7 +64,7 @@ function MobileConnectNav({ isActive }: { isActive: (to: string, exact?: boolean
           <button
             onClick={() => setMoreOpen(true)}
             className={`flex flex-col items-center justify-center gap-0.5 py-2 px-1 min-w-[48px] min-h-[52px] transition-colors ${
-              moreActive ? "text-white" : "text-white/30"
+              moreActive ? "text-sidebar-foreground" : "text-sidebar-foreground/30"
             }`}
           >
             <MoreHorizontal className="h-5 w-5" />
@@ -73,9 +73,9 @@ function MobileConnectNav({ isActive }: { isActive: (to: string, exact?: boolean
         )}
       </nav>
       <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
-        <SheetContent side="bottom" className="rounded-t-2xl pb-8 bg-[#0c0c0e] border-white/10 text-white">
+        <SheetContent side="bottom" className="rounded-t-2xl pb-8 bg-sidebar border-sidebar-border text-sidebar-foreground">
           <SheetHeader className="pb-2">
-            <SheetTitle className="text-left text-base text-white">More</SheetTitle>
+            <SheetTitle className="text-left text-base text-sidebar-foreground">More</SheetTitle>
           </SheetHeader>
           <div className="space-y-1">
             {hiddenTabs.map(tab => {
@@ -87,8 +87,8 @@ function MobileConnectNav({ isActive }: { isActive: (to: string, exact?: boolean
                   onClick={() => setMoreOpen(false)}
                   className={`flex items-center gap-3 rounded-lg px-3 py-3 text-sm transition-colors ${
                     isActive(tab.to, tab.id === "connect")
-                      ? "bg-white/10 text-white font-medium"
-                      : "text-white/60 hover:bg-white/5"
+                      ? "bg-sidebar-accent text-sidebar-foreground font-medium"
+                      : "text-sidebar-foreground/60 hover:bg-sidebar-accent/50"
                   }`}
                 >
                   <Icon className="h-5 w-5" />
@@ -96,11 +96,11 @@ function MobileConnectNav({ isActive }: { isActive: (to: string, exact?: boolean
                 </Link>
               );
             })}
-            <div className="border-t border-white/5 my-2" />
+            <div className="border-t border-sidebar-border my-2" />
             <Link
               to="/app/settings"
               onClick={() => setMoreOpen(false)}
-              className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm text-white/60 hover:bg-white/5"
+              className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm text-sidebar-foreground/60 hover:bg-sidebar-accent/50"
             >
               <Settings className="h-5 w-5" />
               Settings
@@ -149,12 +149,12 @@ export function ProductLayout({
     <div className="flex h-screen bg-background text-foreground overflow-hidden">
       {/* Sidebar */}
       <aside
-        className={`hidden md:flex flex-col border-r border-border bg-[hsl(240_8%_5%)] dark:bg-[#0c0c0e] transition-all duration-200 ${
+        className={`hidden md:flex flex-col border-r border-border bg-sidebar transition-all duration-200 ${
           collapsed ? "w-[52px]" : "w-56"
         }`}
       >
         {/* Logo */}
-        <div className={`flex items-center gap-2 py-4 border-b border-white/5 ${collapsed ? "px-3 justify-center" : "px-5"}`}>
+        <div className={`flex items-center gap-2 py-4 border-b border-sidebar-border ${collapsed ? "px-3 justify-center" : "px-5"}`}>
           <svg width={collapsed ? 24 : 28} height={collapsed ? 24 : 28} viewBox="0 0 100 100" fill="none">
             <rect width="100" height="100" rx="22" fill="hsl(140 12% 42%)" />
             <path d="M50 18L74 82H62.5L58 70H42L37.5 82H26L50 18Z" fill="#08080A" />
@@ -163,7 +163,7 @@ export function ProductLayout({
           {!collapsed && (
             <div className="flex items-baseline gap-1.5">
               <span className="text-lg font-bold tracking-tight">AURA</span>
-              <span className="text-[10px] text-white/40 tracking-widest uppercase">Connect</span>
+              <span className="text-[10px] text-sidebar-foreground/40 tracking-widest uppercase">Connect</span>
             </div>
           )}
         </div>
@@ -181,8 +181,8 @@ export function ProductLayout({
                   collapsed ? "justify-center px-0 py-2.5" : "px-3 py-2.5"
                 } ${
                   active
-                    ? "bg-white/10 text-white font-medium"
-                    : "text-white/40 hover:text-white/70 hover:bg-white/5"
+                    ? "bg-sidebar-accent text-sidebar-foreground font-medium"
+                    : "text-sidebar-foreground/40 hover:text-sidebar-foreground/70 hover:bg-sidebar-accent/50"
                 }`}
               >
                 <item.icon className="h-4 w-4 shrink-0" />
@@ -199,8 +199,8 @@ export function ProductLayout({
               collapsed ? "justify-center px-0 py-2.5" : "px-3 py-2.5"
             } ${
               studioUnlocked
-                ? "text-orange-400/80 hover:text-orange-300 hover:bg-white/5"
-                : "text-white/20 hover:text-white/40 hover:bg-white/5"
+                ? "text-orange-400/80 hover:text-orange-300 hover:bg-sidebar-accent/50"
+                : "text-sidebar-foreground/20 hover:text-sidebar-foreground/40 hover:bg-sidebar-accent/50"
             }`}
           >
             {studioUnlocked ? (
@@ -222,10 +222,10 @@ export function ProductLayout({
         </nav>
 
         {/* Bottom */}
-        <div className={`border-t border-white/5 py-3 space-y-1 ${collapsed ? "px-1" : "px-3"}`}>
+        <div className={`border-t border-sidebar-border py-3 space-y-1 ${collapsed ? "px-1" : "px-3"}`}>
           <button
             onClick={() => setCollapsed(!collapsed)}
-            className={`w-full flex items-center gap-3 rounded-lg text-sm text-white/30 hover:text-white/60 hover:bg-white/5 transition-colors ${
+            className={`w-full flex items-center gap-3 rounded-lg text-sm text-sidebar-foreground/30 hover:text-sidebar-foreground/60 hover:bg-sidebar-accent/50 transition-colors ${
               collapsed ? "justify-center px-0 py-2.5" : "px-3 py-2.5"
             }`}
           >
@@ -238,8 +238,8 @@ export function ProductLayout({
               collapsed ? "justify-center px-0 py-2.5" : "px-3 py-2.5"
             } ${
               location.pathname === "/app/settings"
-                ? "bg-white/10 text-white font-medium"
-                : "text-white/40 hover:text-white/70 hover:bg-white/5"
+                ? "bg-sidebar-accent text-sidebar-foreground font-medium"
+                : "text-sidebar-foreground/40 hover:text-sidebar-foreground/70 hover:bg-sidebar-accent/50"
             }`}
           >
             <Settings className="h-4 w-4 shrink-0" />
@@ -247,7 +247,7 @@ export function ProductLayout({
           </Link>
           <button
             onClick={signOut}
-            className={`w-full flex items-center gap-3 rounded-lg text-sm text-white/30 hover:text-red-400 hover:bg-white/5 transition-colors ${
+            className={`w-full flex items-center gap-3 rounded-lg text-sm text-sidebar-foreground/30 hover:text-red-400 hover:bg-sidebar-accent/50 transition-colors ${
               collapsed ? "justify-center px-0 py-2.5" : "px-3 py-2.5"
             }`}
           >
@@ -259,7 +259,7 @@ export function ProductLayout({
 
       {/* Mobile header */}
       <div className="flex flex-1 flex-col overflow-hidden">
-        <header className="md:hidden flex items-center justify-between px-4 py-3 border-b border-white/5 bg-[#0c0c0e]">
+        <header className="md:hidden flex items-center justify-between px-4 py-3 border-b border-sidebar-border bg-sidebar">
           <div className="flex items-center gap-2">
             <svg width={24} height={24} viewBox="0 0 100 100" fill="none">
               <rect width="100" height="100" rx="22" fill="hsl(140 12% 42%)" />
@@ -269,7 +269,7 @@ export function ProductLayout({
             <span className="text-lg font-bold tracking-tight">AURA</span>
           </div>
           <Link to="/app/settings">
-            <Button variant="ghost" size="icon" className="text-white/40 hover:text-white">
+            <Button variant="ghost" size="icon" className="text-sidebar-foreground/40 hover:text-sidebar-foreground">
               <Settings className="h-4 w-4" />
             </Button>
           </Link>
