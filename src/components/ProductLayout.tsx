@@ -1,5 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useUserBranch } from "@/hooks/useUserBranch";
 import {
   Network, Wrench, Settings, LogOut, LayoutDashboard, BarChart3, Mail,
   Sparkles, Zap, Calendar, PanelLeftClose, PanelLeft, Lock, Brain,
