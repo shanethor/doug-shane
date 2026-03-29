@@ -123,6 +123,7 @@ export function ProductLayout({
   studioUnlocked?: boolean;
 }) {
   const { signOut } = useAuth();
+  const { branch } = useUserBranch();
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(() => {
     try { return localStorage.getItem("sidebar-collapsed") === "true"; } catch { return false; }
@@ -136,6 +137,14 @@ export function ProductLayout({
       document.documentElement.classList.add("dark");
     }
   }, []);
+
+  // Apply branch theme class to <html> (mirrors AppLayout behavior)
+  useEffect(() => {
+    const html = document.documentElement;
+    html.classList.remove("theme-risk", "theme-property", "theme-wealth");
+    if (branch) html.classList.add(`theme-${branch}`);
+    return () => { html.classList.remove("theme-risk", "theme-property", "theme-wealth"); };
+  }, [branch]);
 
   useEffect(() => {
     localStorage.setItem("sidebar-collapsed", String(collapsed));
