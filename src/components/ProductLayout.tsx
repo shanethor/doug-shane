@@ -269,7 +269,7 @@ export function ProductLayout({
             <span className="text-lg font-bold tracking-tight">AURA</span>
           </div>
           <Link to="/app/settings">
-            <Button variant="ghost" size="icon" className="text-white/40 hover:text-white">
+            <Button variant="ghost" size="icon" className="text-sidebar-foreground/40 hover:text-sidebar-foreground">
               <Settings className="h-4 w-4" />
             </Button>
           </Link>
