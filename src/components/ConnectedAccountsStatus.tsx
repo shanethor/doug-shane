@@ -1443,7 +1443,7 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
                 </Button>
               </>
             )}
-            {!a.connected && a.canConnect && (
+            {!a.connected && a.canConnect && !COMING_SOON_SOURCES.has(a.id) && (
               <Button
                 size="sm"
                 className="h-7 text-xs gap-1"
@@ -1463,9 +1463,11 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
                  a.id === "linkedin" ? "Upload CSV" :
                  a.id === "phone" ? "Import" :
                  a.id === "social" ? "Import Profiles" :
-                 GENERIC_SOURCES.includes(a.id) ? "Import" :
                  "Connect"}
               </Button>
+            )}
+            {!a.connected && COMING_SOON_SOURCES.has(a.id) && (
+              <Badge variant="outline" className="text-[10px] text-muted-foreground">Coming Soon</Badge>
             )}
             {!a.connected && !a.canConnect && a.id === "contacts" && (
               <Badge variant="outline" className="text-[10px] opacity-50">Requires Gmail</Badge>
