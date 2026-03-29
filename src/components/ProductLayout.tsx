@@ -154,7 +154,7 @@ export function ProductLayout({
         }`}
       >
         {/* Logo */}
-        <div className={`flex items-center gap-2 py-4 border-b border-white/5 ${collapsed ? "px-3 justify-center" : "px-5"}`}>
+        <div className={`flex items-center gap-2 py-4 border-b border-sidebar-border ${collapsed ? "px-3 justify-center" : "px-5"}`}>
           <svg width={collapsed ? 24 : 28} height={collapsed ? 24 : 28} viewBox="0 0 100 100" fill="none">
             <rect width="100" height="100" rx="22" fill="hsl(140 12% 42%)" />
             <path d="M50 18L74 82H62.5L58 70H42L37.5 82H26L50 18Z" fill="#08080A" />
