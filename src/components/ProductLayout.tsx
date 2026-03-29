@@ -163,7 +163,7 @@ export function ProductLayout({
           {!collapsed && (
             <div className="flex items-baseline gap-1.5">
               <span className="text-lg font-bold tracking-tight">AURA</span>
-              <span className="text-[10px] text-white/40 tracking-widest uppercase">Connect</span>
+              <span className="text-[10px] text-sidebar-foreground/40 tracking-widest uppercase">Connect</span>
             </div>
           )}
         </div>
