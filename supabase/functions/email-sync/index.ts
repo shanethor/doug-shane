@@ -374,6 +374,7 @@ serve(async (req) => {
             from_name: m.from?.emailAddress?.name || null,
             to_addresses: (m.toRecipients || []).map((r: any) => r.emailAddress?.address),
             subject: m.subject || "",
+            body_html: m.body?.content || null,
             body_preview: m.bodyPreview || "",
             is_read: m.isRead ?? false,
             received_at: m.receivedDateTime,
