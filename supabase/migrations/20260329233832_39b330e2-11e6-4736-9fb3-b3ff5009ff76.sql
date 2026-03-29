@@ -1,0 +1,1 @@
+ALTER TABLE public.synced_emails ADD COLUMN IF NOT EXISTS cc_addresses text[] DEFAULT '{}';
