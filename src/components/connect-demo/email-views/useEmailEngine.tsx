@@ -200,6 +200,7 @@ function mapSyncedToThreads(syncedEmails: any[]): DemoThread[] {
       fromAddr: email.from_address || "",
       to: "You",
       toAddr: email.to_addresses?.[0] || "",
+      cc: email.cc_addresses?.length ? email.cc_addresses : undefined,
       body: email.body_html || email.body_preview || "",
       time: email.received_at ? new Date(email.received_at).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) : "",
       date: email.received_at ? (isToday(email.received_at) ? "Today" : new Date(email.received_at).toLocaleDateString()) : "",
