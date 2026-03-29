@@ -538,15 +538,14 @@ export default function SmartCalendar() {
         {/* Next Up */}
         {nextUpEvents.length > 0 && !showBooking && (
           <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-            <span className="text-[10px] font-semibold text-white/40 uppercase tracking-wider shrink-0 self-center">Next up</span>
+            <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider shrink-0 self-center">Next up</span>
             {nextUpEvents.map(ev => (
-              <button key={ev.id} className="shrink-0 flex items-center gap-2 px-3 py-1.5 rounded-lg text-left hover:bg-white/[0.04] transition-colors"
-                style={{ background: "hsl(240 8% 8%)", border: "1px solid hsl(240 6% 14%)" }}
+              <button key={ev.id} className="shrink-0 flex items-center gap-2 px-3 py-1.5 rounded-lg text-left hover:bg-muted/40 transition-colors border border-border bg-card"
                 onClick={() => setSelectedEvent(ev)}>
                 <div className="h-2 w-2 rounded-full shrink-0" style={{ background: ev.color }} />
                 <div>
-                  <p className="text-[11px] font-medium text-white truncate max-w-[140px]">{ev.title}</p>
-                  <p className="text-[9px]" style={{ color: "hsl(240 5% 46%)" }}>
+                  <p className="text-[11px] font-medium text-foreground truncate max-w-[140px]">{ev.title}</p>
+                  <p className="text-[9px] text-muted-foreground">
                     {isSameDay(ev.date, new Date()) ? "Today" : format(ev.date, "EEE")} · {fmtTime(ev.startHour, ev.startMin)}
                   </p>
                 </div>
