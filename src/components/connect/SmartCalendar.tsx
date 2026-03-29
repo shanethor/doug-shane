@@ -406,26 +406,25 @@ export default function SmartCalendar() {
     <div>
       <div className="grid grid-cols-7 mb-1">
         {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(d => (
-          <p key={d} className="text-center text-[10px] py-1" style={{ color: "hsl(240 5% 46%)" }}>{d}</p>
+          <p key={d} className="text-center text-[10px] py-1 text-muted-foreground">{d}</p>
         ))}
       </div>
-      <div className="grid grid-cols-7 gap-px rounded-lg overflow-hidden" style={{ background: "hsl(240 6% 10%)" }}>
+      <div className="grid grid-cols-7 gap-px rounded-lg overflow-hidden bg-border">
         {monthDays.map(day => {
           const inMonth = isSameMonth(day, currentDate);
           const dayEvts = eventsFor(day);
           return (
-            <div key={day.toISOString()} className="min-h-[80px] p-1 cursor-pointer hover:bg-white/[0.03] transition-colors"
-              style={{ background: isDateToday(day) ? "hsl(140 12% 42% / 0.08)" : "hsl(240 8% 7%)" }}
+            <div key={day.toISOString()} className={`min-h-[80px] p-1 cursor-pointer hover:bg-muted/40 transition-colors ${isDateToday(day) ? "bg-primary/5" : "bg-card"}`}
               onClick={() => { setCurrentDate(day); setView("day"); }}>
-              <p className={`text-[10px] font-medium mb-0.5 ${isDateToday(day) ? "text-white" : ""}`} style={!isDateToday(day) ? { color: inMonth ? "hsl(240 5% 60%)" : "hsl(240 5% 25%)" } : {}}>
+              <p className={`text-[10px] font-medium mb-0.5 ${isDateToday(day) ? "text-foreground" : inMonth ? "text-muted-foreground" : "text-muted-foreground/40"}`}>
                 {format(day, "d")}
               </p>
               {dayEvts.slice(0, 3).map(ev => (
-                <div key={ev.id} className="text-[8px] rounded px-1 py-0.5 mb-0.5 truncate text-white" style={{ background: ev.color + "33" }}>
+                <div key={ev.id} className="text-[8px] rounded px-1 py-0.5 mb-0.5 truncate text-foreground" style={{ background: ev.color + "33" }}>
                   {ev.title.length > 16 ? ev.title.slice(0, 16) + "…" : ev.title}
                 </div>
               ))}
-              {dayEvts.length > 3 && <p className="text-[8px]" style={{ color: "hsl(240 5% 46%)" }}>+{dayEvts.length - 3} more</p>}
+              {dayEvts.length > 3 && <p className="text-[8px] text-muted-foreground">+{dayEvts.length - 3} more</p>}
             </div>
           );
         })}
