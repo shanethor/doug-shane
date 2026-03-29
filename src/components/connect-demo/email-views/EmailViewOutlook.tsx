@@ -258,12 +258,21 @@ export default function EmailViewOutlook({ engine, ai }: { engine: Engine; ai: A
               {selectedThread.messages.map(msg => (
                 <div key={msg.id} className="pb-4" style={{ borderBottom: "1px solid hsl(240 6% 12%)" }}>
                   <div className="flex items-center gap-3 mb-2">
-                    <div className="h-9 w-9 rounded-full flex items-center justify-center text-xs font-semibold text-white" style={{ background: msg.from === "You" ? "hsl(140 12% 42%)" : "hsl(200 60% 45%)" }}>
+                    <div className="h-9 w-9 rounded-full flex items-center justify-center text-xs font-semibold text-white shrink-0" style={{ background: msg.from === "You" ? "hsl(140 12% 42%)" : "hsl(200 60% 45%)" }}>
                       {msg.from === "You" ? "Y" : msg.from.split(" ").map(w => w[0]).join("").slice(0, 2)}
                     </div>
-                    <div>
-                      <p className="text-sm font-medium text-white">{msg.from}</p>
-                      <p className="text-xs" style={{ color: "hsl(240 5% 40%)" }}>To: {msg.to} • {msg.date === "Today" ? msg.time : msg.date}</p>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <p className="text-sm font-medium text-white">{msg.from}</p>
+                        <span className="text-xs" style={{ color: "hsl(240 5% 40%)" }}>&lt;{msg.fromAddr}&gt;</span>
+                      </div>
+                      <div className="flex items-center gap-1 text-xs flex-wrap" style={{ color: "hsl(240 5% 40%)" }}>
+                        <span>To: {msg.to} &lt;{msg.toAddr}&gt;</span>
+                        {msg.cc && msg.cc.length > 0 && (
+                          <span className="ml-1">• Cc: {msg.cc.join(", ")}</span>
+                        )}
+                        <span className="ml-1">• {msg.date === "Today" ? msg.time : msg.date}</span>
+                      </div>
                     </div>
                   </div>
                   <div className="text-sm leading-relaxed pl-12" style={{ color: "hsl(240 5% 78%)" }}>

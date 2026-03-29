@@ -157,12 +157,20 @@ export default function EmailViewGmail({ engine, ai }: { engine: Engine; ai: AI 
                         <div className="h-8 w-8 rounded-full flex items-center justify-center text-xs font-semibold text-white" style={{ background: msg.from === "You" ? "hsl(140 12% 42%)" : "hsl(262 83% 45%)" }}>
                           {msg.from === "You" ? "Y" : msg.from.split(" ").map(w => w[0]).join("").slice(0, 2)}
                         </div>
-                        <div>
-                          <span className="text-sm font-medium text-white">{msg.from}</span>
-                          <span className="text-xs ml-2" style={{ color: "hsl(240 5% 40%)" }}>&lt;{msg.fromAddr}&gt;</span>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="text-sm font-medium text-white">{msg.from}</span>
+                            <span className="text-xs" style={{ color: "hsl(240 5% 40%)" }}>&lt;{msg.fromAddr}&gt;</span>
+                          </div>
+                          <div className="flex items-center gap-1 text-xs flex-wrap" style={{ color: "hsl(240 5% 40%)" }}>
+                            <span>To: {msg.to} &lt;{msg.toAddr}&gt;</span>
+                            {msg.cc && msg.cc.length > 0 && (
+                              <span className="ml-1">• Cc: {msg.cc.join(", ")}</span>
+                            )}
+                          </div>
                         </div>
                       </div>
-                      <span className="text-xs" style={{ color: "hsl(240 5% 40%)" }}>{msg.date === "Today" ? msg.time : msg.date}</span>
+                      <span className="text-xs shrink-0" style={{ color: "hsl(240 5% 40%)" }}>{msg.date === "Today" ? msg.time : msg.date}</span>
                     </div>
                     <div className="px-3 pb-3 text-sm leading-relaxed" style={{ color: "hsl(240 5% 78%)" }}>
                       {msg.body.includes("<") && msg.body.includes(">") ? (
