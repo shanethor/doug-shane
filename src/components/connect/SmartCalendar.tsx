@@ -522,9 +522,9 @@ export default function SmartCalendar() {
         {/* Search */}
         {showSearch && (
           <div className="relative animate-fade-in">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5" style={{ color: "hsl(240 5% 46%)" }} />
-            <Input placeholder="Search events…" value={search} onChange={e => setSearch(e.target.value)} className="pl-9 text-sm h-9" style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 14%)", color: "white" }} autoFocus />
-            {search && <button className="absolute right-3 top-1/2 -translate-y-1/2" onClick={() => setSearch("")}><X className="h-3.5 w-3.5" style={{ color: "hsl(240 5% 46%)" }} /></button>}
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <Input placeholder="Search events…" value={search} onChange={e => setSearch(e.target.value)} className="pl-9 text-sm h-9" autoFocus />
+            {search && <button className="absolute right-3 top-1/2 -translate-y-1/2" onClick={() => setSearch("")}><X className="h-3.5 w-3.5 text-muted-foreground" /></button>}
           </div>
         )}
 
