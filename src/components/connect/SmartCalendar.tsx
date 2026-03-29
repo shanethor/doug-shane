@@ -435,16 +435,16 @@ export default function SmartCalendar() {
   /* ─── Editor Dialog ─── */
   const renderEditorDialog = () => (
     <Dialog open={showEditor} onOpenChange={setShowEditor}>
-      <DialogContent className="sm:max-w-md" style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 16%)" }}>
-        <DialogHeader><DialogTitle className="text-white">{editEvent?.id ? "Edit Event" : "New Event"}</DialogTitle></DialogHeader>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader><DialogTitle>{editEvent?.id ? "Edit Event" : "New Event"}</DialogTitle></DialogHeader>
         {editEvent && (
           <div className="space-y-3">
-            <div><Label className="text-xs text-white/60">Title</Label><Input value={editEvent.title || ""} onChange={e => setEditEvent(p => ({ ...p!, title: e.target.value }))} className="mt-1" style={{ background: "hsl(240 8% 12%)", borderColor: "hsl(240 6% 20%)", color: "white" }} /></div>
+            <div><Label className="text-xs">Title</Label><Input value={editEvent.title || ""} onChange={e => setEditEvent(p => ({ ...p!, title: e.target.value }))} className="mt-1" /></div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label className="text-xs text-white/60">Type</Label>
+                <Label className="text-xs">Type</Label>
                 <Select value={editEvent.event_type || "other"} onValueChange={v => setEditEvent(p => ({ ...p!, event_type: v, color: EVENT_COLORS[v] || EVENT_COLORS.other }))}>
-                  <SelectTrigger className="mt-1" style={{ background: "hsl(240 8% 12%)", borderColor: "hsl(240 6% 20%)", color: "white" }}><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="presentation">Presentation</SelectItem>
                     <SelectItem value="coverage_review">Coverage Review</SelectItem>
@@ -455,9 +455,9 @@ export default function SmartCalendar() {
                 </Select>
               </div>
               <div>
-                <Label className="text-xs text-white/60">Link to Client</Label>
+                <Label className="text-xs">Link to Client</Label>
                 <Select value={editEvent.lead_id || "none"} onValueChange={v => setEditEvent(p => ({ ...p!, lead_id: v === "none" ? null : v }))}>
-                  <SelectTrigger className="mt-1" style={{ background: "hsl(240 8% 12%)", borderColor: "hsl(240 6% 20%)", color: "white" }}><SelectValue placeholder="None" /></SelectTrigger>
+                  <SelectTrigger className="mt-1"><SelectValue placeholder="None" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">None</SelectItem>
                     {leads.map(l => <SelectItem key={l.id} value={l.id}>{l.account_name}</SelectItem>)}
@@ -466,15 +466,15 @@ export default function SmartCalendar() {
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div><Label className="text-xs text-white/60">Start</Label><Input type="time" value={`${String(editEvent.startHour || 0).padStart(2, "0")}:${String(editEvent.startMin || 0).padStart(2, "0")}`} onChange={e => { const [h, m] = e.target.value.split(":").map(Number); setEditEvent(p => ({ ...p!, startHour: h, startMin: m })); }} className="mt-1" style={{ background: "hsl(240 8% 12%)", borderColor: "hsl(240 6% 20%)", color: "white" }} /></div>
-              <div><Label className="text-xs text-white/60">End</Label><Input type="time" value={`${String(editEvent.endHour || 0).padStart(2, "0")}:${String(editEvent.endMin || 0).padStart(2, "0")}`} onChange={e => { const [h, m] = e.target.value.split(":").map(Number); setEditEvent(p => ({ ...p!, endHour: h, endMin: m })); }} className="mt-1" style={{ background: "hsl(240 8% 12%)", borderColor: "hsl(240 6% 20%)", color: "white" }} /></div>
+              <div><Label className="text-xs">Start</Label><Input type="time" value={`${String(editEvent.startHour || 0).padStart(2, "0")}:${String(editEvent.startMin || 0).padStart(2, "0")}`} onChange={e => { const [h, m] = e.target.value.split(":").map(Number); setEditEvent(p => ({ ...p!, startHour: h, startMin: m })); }} className="mt-1" /></div>
+              <div><Label className="text-xs">End</Label><Input type="time" value={`${String(editEvent.endHour || 0).padStart(2, "0")}:${String(editEvent.endMin || 0).padStart(2, "0")}`} onChange={e => { const [h, m] = e.target.value.split(":").map(Number); setEditEvent(p => ({ ...p!, endHour: h, endMin: m })); }} className="mt-1" /></div>
             </div>
-            <div><Label className="text-xs text-white/60">Location</Label><Input value={editEvent.location || ""} onChange={e => setEditEvent(p => ({ ...p!, location: e.target.value }))} className="mt-1" style={{ background: "hsl(240 8% 12%)", borderColor: "hsl(240 6% 20%)", color: "white" }} /></div>
-            <div><Label className="text-xs text-white/60">Attendees (comma-separated)</Label><Input value={(editEvent.attendees || []).join(", ")} onChange={e => setEditEvent(p => ({ ...p!, attendees: e.target.value.split(",").map(s => s.trim()).filter(Boolean) }))} className="mt-1" style={{ background: "hsl(240 8% 12%)", borderColor: "hsl(240 6% 20%)", color: "white" }} /></div>
-            <div><Label className="text-xs text-white/60">Notes</Label><Textarea value={editEvent.description || ""} onChange={e => setEditEvent(p => ({ ...p!, description: e.target.value }))} className="mt-1 min-h-[60px]" style={{ background: "hsl(240 8% 12%)", borderColor: "hsl(240 6% 20%)", color: "white" }} /></div>
+            <div><Label className="text-xs">Location</Label><Input value={editEvent.location || ""} onChange={e => setEditEvent(p => ({ ...p!, location: e.target.value }))} className="mt-1" /></div>
+            <div><Label className="text-xs">Attendees (comma-separated)</Label><Input value={(editEvent.attendees || []).join(", ")} onChange={e => setEditEvent(p => ({ ...p!, attendees: e.target.value.split(",").map(s => s.trim()).filter(Boolean) }))} className="mt-1" /></div>
+            <div><Label className="text-xs">Notes</Label><Textarea value={editEvent.description || ""} onChange={e => setEditEvent(p => ({ ...p!, description: e.target.value }))} className="mt-1 min-h-[60px]" /></div>
             <div className="flex gap-2 pt-2">
-              <Button className="flex-1 text-white" style={{ background: "hsl(140 12% 42%)" }} onClick={saveEvent}>Save</Button>
-              <Button variant="outline" onClick={() => setShowEditor(false)} style={{ borderColor: "hsl(240 6% 20%)", color: "hsl(240 5% 70%)" }}>Cancel</Button>
+              <Button className="flex-1" onClick={saveEvent}>Save</Button>
+              <Button variant="outline" onClick={() => setShowEditor(false)}>Cancel</Button>
             </div>
           </div>
         )}
