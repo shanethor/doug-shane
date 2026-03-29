@@ -1186,6 +1186,7 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
   };
 
    const GENERIC_SOURCES = ["slack", "teams", "eventbrite", "meetup", "alignable", "strava", "peloton", "nextdoor", "snapchat", "clubhouse", "x_twitter", "meta"];
+   const COMING_SOON_SOURCES = new Set(["slack", "teams", "eventbrite", "meetup", "alignable", "strava", "peloton", "nextdoor", "snapchat", "clubhouse", "x_twitter", "meta"]);
 
   // ─── Live API Sync for supported sources ───
   const handleApiSync = async (source: string) => {
