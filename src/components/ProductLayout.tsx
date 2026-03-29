@@ -149,7 +149,7 @@ export function ProductLayout({
     <div className="flex h-screen bg-background text-foreground overflow-hidden">
       {/* Sidebar */}
       <aside
-        className={`hidden md:flex flex-col border-r border-border bg-[hsl(240_8%_5%)] dark:bg-[#0c0c0e] transition-all duration-200 ${
+        className={`hidden md:flex flex-col border-r border-border bg-sidebar transition-all duration-200 ${
           collapsed ? "w-[52px]" : "w-56"
         }`}
       >
