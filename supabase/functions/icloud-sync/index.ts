@@ -145,29 +145,37 @@ async function fetchAllVCards(addressBookPath: string, appleId: string, appPassw
 
 /** Parse a vCard string into a contact object */
 function parseVCard(vcard: string): Record<string, any> {
+  // Unfold continued lines (RFC 6350: line starting with space/tab is continuation)
+  const unfolded = vcard.replace(/\r\n[ \t]/g, "").replace(/\r/g, "");
+  const lines = unfolded.split("\n").map(l => l.trim()).filter(Boolean);
+
   const get = (field: string): string | null => {
-    // Handle folded lines and various field formats
-    const regex = new RegExp(`^${field}[;:](.*)$`, "im");
-    const match = vcard.match(regex);
-    if (!match) return null;
-    let val = match[1];
-    // Strip type params for simple fields
-    if (val.includes(":")) val = val.split(":").pop()!;
-    return val.trim() || null;
+    for (const line of lines) {
+      // Match field name at start, followed by ; (params) or : (value)
+      const upper = line.toUpperCase();
+      if (upper.startsWith(field.toUpperCase() + ";") || upper.startsWith(field.toUpperCase() + ":")) {
+        // Value is everything after the LAST colon for simple fields, but for TEL/EMAIL
+        // we want the value portion after parameters
+        const colonIdx = line.indexOf(":");
+        if (colonIdx === -1) continue;
+        const val = line.substring(colonIdx + 1).trim();
+        return val || null;
+      }
+    }
+    return null;
   };
 
   const getAll = (field: string): string[] => {
     const results: string[] = [];
-    const regex = new RegExp(`^${field}[;:](.*)$`, "gim");
-    let m: RegExpExecArray | null;
-    while ((m = regex.exec(vcard)) !== null) {
-      let val = m[1];
-      if (field === "TEL" || field === "EMAIL") {
-        // Extract value after any type params
-        const colonIdx = val.lastIndexOf(":");
-        if (colonIdx > -1) val = val.substring(colonIdx + 1);
+    const fieldUpper = field.toUpperCase();
+    for (const line of lines) {
+      const upper = line.toUpperCase();
+      if (upper.startsWith(fieldUpper + ";") || upper.startsWith(fieldUpper + ":")) {
+        const colonIdx = line.indexOf(":");
+        if (colonIdx === -1) continue;
+        const val = line.substring(colonIdx + 1).trim();
+        if (val) results.push(val);
       }
-      if (val.trim()) results.push(val.trim());
     }
     return results;
   };
@@ -181,20 +189,17 @@ function parseVCard(vcard: string): Record<string, any> {
   const uid = get("UID");
 
   // Parse N field: LastName;FirstName;MiddleName;Prefix;Suffix
-  const nMatch = vcard.match(/^N[;:](.*)$/im);
   let parsedName = fn;
-  if (nMatch && !fn) {
-    const parts = nMatch[1].split(";");
+  const nVal = get("N");
+  if (nVal && !fn) {
+    const parts = nVal.split(";");
     parsedName = [parts[1], parts[0]].filter(Boolean).join(" ").trim() || null;
   }
 
   // Parse ADR
-  const adrMatch = vcard.match(/^ADR[;:](.*)$/im);
   let location: string | null = null;
-  if (adrMatch) {
-    const raw = adrMatch[1];
-    const colonIdx = raw.lastIndexOf(":");
-    const adrVal = colonIdx > -1 ? raw.substring(colonIdx + 1) : raw;
+  const adrVal = get("ADR");
+  if (adrVal) {
     const parts = adrVal.split(";").filter(Boolean);
     location = parts.join(", ") || null;
   }
@@ -203,18 +208,21 @@ function parseVCard(vcard: string): Record<string, any> {
   const urls = getAll("URL");
   const linkedinUrl = urls.find(u => u.toLowerCase().includes("linkedin")) || null;
 
+  // Clean phone numbers — strip tel: URI prefix
+  const cleanPhones = phones.map(p => p.replace(/^tel:/i, "").trim()).filter(Boolean);
+
   return {
-    full_name: fn || parsedName,
+    full_name: (fn || parsedName || "").replace(/\r/g, "").trim() || null,
     email: emails[0] || null,
-    phone: phones[0] || null,
+    phone: cleanPhones[0] || null,
     company: org?.replace(/;/g, " ").trim() || null,
     title: title || null,
     linkedin_url: linkedinUrl,
     location,
-    uid: uid || null,
+    uid: uid?.replace(/\r/g, "").trim() || null,
     note: note || null,
     all_emails: emails,
-    all_phones: phones,
+    all_phones: cleanPhones,
   };
 }
 
