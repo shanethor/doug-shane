@@ -370,10 +370,10 @@ export default function SmartCalendar() {
         <div />
         {weekDays.map(day => (
           <div key={day.toISOString()} className="text-center">
-            <p className="text-[10px]" style={{ color: "hsl(240 5% 46%)" }}>{format(day, "EEE")}</p>
-            <p className={`text-sm font-semibold ${isDateToday(day) ? "text-white" : ""}`} style={!isDateToday(day) ? { color: "hsl(240 5% 60%)" } : {}}>
+            <p className="text-[10px] text-muted-foreground">{format(day, "EEE")}</p>
+            <p className={`text-sm font-semibold ${isDateToday(day) ? "text-foreground" : "text-muted-foreground"}`}>
               {isDateToday(day) ? (
-                <span className="inline-flex h-7 w-7 items-center justify-center rounded-full" style={{ background: "hsl(140 12% 42%)" }}>{format(day, "d")}</span>
+                <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground">{format(day, "d")}</span>
               ) : format(day, "d")}
             </p>
           </div>
@@ -382,14 +382,14 @@ export default function SmartCalendar() {
       <div className="relative">
         {HOURS.map(hour => (
           <div key={hour} className="grid grid-cols-[56px_repeat(7,1fr)]" style={{ height: "52px" }}>
-            <div className="text-[10px] text-right pr-2 pt-0.5" style={{ color: "hsl(240 5% 36%)" }}>{fmtTime(hour, 0)}</div>
+            <div className="text-[10px] text-right pr-2 pt-0.5 text-muted-foreground">{fmtTime(hour, 0)}</div>
             {weekDays.map(day => {
               const dayEvts = eventsFor(day).filter(e => e.startHour === hour);
               return (
-                <div key={day.toISOString()} className="relative cursor-pointer hover:bg-white/[0.02] transition-colors" style={{ borderBottom: "1px solid hsl(240 6% 10%)", borderRight: "1px solid hsl(240 6% 10%)" }} onClick={() => openQuickAdd(day, hour)}>
+                <div key={day.toISOString()} className="relative cursor-pointer hover:bg-muted/30 transition-colors border-b border-r border-border" onClick={() => openQuickAdd(day, hour)}>
                   {dayEvts.map(ev => (
                     <div key={ev.id} className="absolute inset-x-0.5 rounded px-1 py-0.5 cursor-pointer hover:brightness-110 z-10 overflow-hidden" style={{ background: ev.color + "33", borderLeft: `2px solid ${ev.color}`, top: `${ev.startMin * (52 / 60)}px`, minHeight: "18px" }} onClick={e => { e.stopPropagation(); setSelectedEvent(ev); }}>
-                      <p className="text-[9px] font-medium text-white truncate">{ev.title}</p>
+                      <p className="text-[9px] font-medium text-foreground truncate">{ev.title}</p>
                     </div>
                   ))}
                 </div>
