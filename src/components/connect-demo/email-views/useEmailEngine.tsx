@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { toast } from "sonner";
+import { getAuthHeaders } from "@/lib/auth-fetch";
 
 /* ─────────── Types ─────────── */
 export interface DemoMessage {
@@ -10,6 +11,8 @@ export interface DemoThread {
   id: string; subject: string; participants: string[]; messages: DemoMessage[];
   unread: boolean; starred: boolean; tags: string[]; account: string;
   hasAttachment?: boolean;
+  sourceEmailId?: string;
+  needsHydration?: boolean;
 }
 
 export type Folder = "inbox" | "sent" | "starred" | "drafts";
@@ -188,6 +191,8 @@ function mapSyncedToThreads(syncedEmails: any[]): DemoThread[] {
     tags: [],
     account: "work",
     hasAttachment: !!email.has_attachments,
+    sourceEmailId: email.id || undefined,
+    needsHydration: !email.body_html,
     messages: [{
       id: `msg-${email.id || i}`,
       from: email.from_name || email.from_address || "Unknown",
@@ -211,6 +216,8 @@ function isToday(dateStr: string): boolean {
 export function useEmailEngine(realEmails?: any[]) {
   const initialThreads = realEmails && realEmails.length > 0 ? mapSyncedToThreads(realEmails) : THREADS;
   const [threads, setThreads] = useState<DemoThread[]>(initialThreads);
+  const [hydratingThreadId, setHydratingThreadId] = useState<string | null>(null);
+  const hydratingIdsRef = useRef(new Set<string>());
 
   // Update threads when realEmails changes
   useEffect(() => {
@@ -276,10 +283,59 @@ export function useEmailEngine(realEmails?: any[]) {
     toast.success("Label created");
   }, []);
 
+  const hydrateThreadBody = useCallback(async (thread: DemoThread) => {
+    if (!thread.sourceEmailId || !thread.needsHydration || hydratingIdsRef.current.has(thread.id)) {
+      return;
+    }
+
+    hydratingIdsRef.current.add(thread.id);
+    setHydratingThreadId(thread.id);
+
+    try {
+      const headers = await getAuthHeaders();
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/email-sync`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ action: "fetch-body", email_id: thread.sourceEmailId }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch full body");
+      }
+
+      const result = await response.json();
+      const fullBody = typeof result?.body_html === "string" ? result.body_html.trim() : "";
+
+      if (!fullBody) {
+        return;
+      }
+
+      setThreads(prev => prev.map(item => {
+        if (item.id !== thread.id) return item;
+        return {
+          ...item,
+          needsHydration: false,
+          messages: item.messages.map((message, index) => index === 0 ? { ...message, body: fullBody } : message),
+        };
+      }));
+    } catch (error) {
+      console.error("Failed to hydrate email body", error);
+      toast.error("Could not load the full email");
+    } finally {
+      hydratingIdsRef.current.delete(thread.id);
+      setHydratingThreadId(current => current === thread.id ? null : current);
+    }
+  }, []);
+
   const selectThread = useCallback((threadId: string) => {
     setSelectedThreadId(threadId);
     markRead(threadId);
-  }, [markRead]);
+
+    const thread = threads.find(item => item.id === threadId);
+    if (thread?.sourceEmailId && thread.needsHydration) {
+      void hydrateThreadBody(thread);
+    }
+  }, [hydrateThreadBody, markRead, threads]);
 
   const clearThread = useCallback(() => setSelectedThreadId(null), []);
 
@@ -291,6 +347,7 @@ export function useEmailEngine(realEmails?: any[]) {
     selectedClient, setSelectedClient,
     customLabels, addLabel,
     toggleStar, markRead, markAllRead, toggleLabel,
+    hydratingThreadId,
     selectThread, clearThread,
   };
 }
