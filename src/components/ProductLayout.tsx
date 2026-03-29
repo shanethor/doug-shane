@@ -73,9 +73,9 @@ function MobileConnectNav({ isActive }: { isActive: (to: string, exact?: boolean
         )}
       </nav>
       <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
-        <SheetContent side="bottom" className="rounded-t-2xl pb-8 bg-[#0c0c0e] border-white/10 text-white">
+        <SheetContent side="bottom" className="rounded-t-2xl pb-8 bg-sidebar border-sidebar-border text-sidebar-foreground">
           <SheetHeader className="pb-2">
-            <SheetTitle className="text-left text-base text-white">More</SheetTitle>
+            <SheetTitle className="text-left text-base text-sidebar-foreground">More</SheetTitle>
           </SheetHeader>
           <div className="space-y-1">
             {hiddenTabs.map(tab => {
