@@ -1384,10 +1384,8 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
                 <p className="text-xs text-muted-foreground">Use Contact Picker or upload CSV/vCard</p>
               ) : a.id === "outlook_contacts" ? (
                 <p className="text-xs text-muted-foreground">Sync contacts from Outlook/Office 365</p>
-              ) : GENERIC_SOURCES.includes(a.id) && SOURCE_IMPORT_META[a.id]?.hasApi ? (
-                <p className="text-xs text-muted-foreground">API sync + manual import available</p>
-              ) : GENERIC_SOURCES.includes(a.id) ? (
-                <p className="text-xs text-muted-foreground">Upload CSV or paste contacts</p>
+              ) : GENERIC_SOURCES.includes(a.id) && COMING_SOON_SOURCES.has(a.id) ? (
+                <p className="text-xs text-muted-foreground">Coming soon — direct integration in development</p>
               ) : (
                 <p className="text-xs text-muted-foreground">Not connected</p>
               )}
