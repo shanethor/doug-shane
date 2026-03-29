@@ -33,7 +33,7 @@ export default function EmailViewAura({ engine, ai }: { engine: Engine; ai: AI }
     filtered, selectedThread, unreadCount, searchQuery, setSearchQuery,
     folder, setFolder, accountFilter, setAccountFilter,
     selectedClient, setSelectedClient, customLabels, addLabel,
-    toggleStar, selectThread, clearThread, markAllRead,
+    toggleStar, selectThread, clearThread, markAllRead, hydratingThreadId,
   } = engine;
 
   const [showLabelInput, setShowLabelInput] = useState(false);
@@ -145,6 +145,11 @@ export default function EmailViewAura({ engine, ai }: { engine: Engine; ai: AI }
               {/* AI results panel */}
               <AIResultPanel ai={ai} onUseReply={(text) => setReplyBody(text)} />
               <h3 className="text-base font-semibold text-white">{selectedThread.subject}</h3>
+              {hydratingThreadId === selectedThread.id && (
+                <div className="rounded-lg px-3 py-2 text-xs" style={{ background: "hsl(var(--muted) / 0.35)", border: "1px solid hsl(var(--border))", color: "hsl(var(--muted-foreground))" }}>
+                  Loading full email…
+                </div>
+              )}
               {/* Messages */}
               <div className="space-y-2">
                 {selectedThread.messages.map((msg, idx) => (

@@ -32,7 +32,7 @@ export default function EmailViewGmail({ engine, ai }: { engine: Engine; ai: AI 
     filtered, selectedThread, unreadCount, searchQuery, setSearchQuery,
     folder, setFolder, accountFilter, setAccountFilter,
     selectedClient, setSelectedClient, customLabels, addLabel,
-    toggleStar, selectThread, clearThread, markAllRead,
+    toggleStar, selectThread, clearThread, markAllRead, hydratingThreadId,
   } = engine;
 
   const [showCompose, setShowCompose] = useState(false);
@@ -124,6 +124,11 @@ export default function EmailViewGmail({ engine, ai }: { engine: Engine; ai: AI 
                 <Button variant="ghost" size="sm" className="gap-1.5 text-sm" onClick={clearThread}><ArrowLeft className="h-4 w-4" /> Back to Inbox</Button>
               </div>
               <h2 className="text-lg font-semibold text-white">{selectedThread.subject}</h2>
+              {hydratingThreadId === selectedThread.id && (
+                <div className="rounded-lg px-3 py-2 text-xs" style={{ background: "hsl(var(--muted) / 0.35)", border: "1px solid hsl(var(--border))", color: "hsl(var(--muted-foreground))" }}>
+                  Loading full email…
+                </div>
+              )}
               {/* Smart tools grid */}
               <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
                 {([

@@ -124,7 +124,7 @@ export default function EmailViewOutlook({ engine, ai }: { engine: Engine; ai: A
   const {
     filtered, selectedThread, unreadCount, searchQuery, setSearchQuery,
     folder, setFolder, selectThread, clearThread, toggleStar, markAllRead,
-    customLabels,
+    customLabels, hydratingThreadId,
   } = engine;
 
   const [replyBody, setReplyBody] = useState("");
@@ -245,6 +245,11 @@ export default function EmailViewOutlook({ engine, ai }: { engine: Engine; ai: A
             {/* Subject */}
             <div className="px-5 py-4">
               <h2 className="text-lg font-semibold text-white mb-1">{selectedThread.subject}</h2>
+              {hydratingThreadId === selectedThread.id && (
+                <div className="rounded-lg px-3 py-2 text-xs mb-3" style={{ background: "hsl(var(--muted) / 0.35)", border: "1px solid hsl(var(--border))", color: "hsl(var(--muted-foreground))" }}>
+                  Loading full email…
+                </div>
+              )}
               <div className="flex gap-1.5">{selectedThread.tags.map(t => <Badge key={t} variant="outline" className="text-xs" style={{ borderColor: "hsl(140 12% 42% / 0.3)", color: "hsl(140 12% 58%)" }}>{t}</Badge>)}</div>
             </div>
 
