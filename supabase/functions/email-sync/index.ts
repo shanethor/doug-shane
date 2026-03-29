@@ -1378,14 +1378,44 @@ Return ONLY valid JSON. No markdown fences, no explanation.`;
       let htmlBody: string | null = null;
 
       if (conn.provider === "gmail") {
-        // Fetch full message
+        const decodeBase64Url = (value?: string | null) => {
+          if (!value) return "";
+          const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
+          const padded = normalized + "=".repeat((4 - (normalized.length % 4)) % 4);
+          const binary = atob(padded);
+          const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+          return new TextDecoder().decode(bytes);
+        };
+
+        const escapeHtml = (value: string) => value
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;");
+
+        const extractBodyByMimeType = (part: any, mimeType: string): string | null => {
+          if (!part) return null;
+          if (part.mimeType === mimeType && part.body?.data) {
+            const decoded = decodeBase64Url(part.body.data).trim();
+            return decoded || null;
+          }
+          if (Array.isArray(part.parts)) {
+            for (const child of part.parts) {
+              const match = extractBodyByMimeType(child, mimeType);
+              if (match) return match;
+            }
+          }
+          return null;
+        };
+
         const msgResp = await fetch(
           `https://gmail.googleapis.com/gmail/v1/users/me/messages/${emailRow.external_id}?format=full`,
           { headers: { Authorization: `Bearer ${accessToken}` } }
         );
         if (msgResp.ok) {
           const msg = await msgResp.json();
-          htmlBody = extractGmailHtmlBody(msg.payload);
+          const html = extractBodyByMimeType(msg.payload, "text/html");
+          const text = extractBodyByMimeType(msg.payload, "text/plain");
+          htmlBody = html || (text ? `<pre style="white-space:pre-wrap;font-family:ui-sans-serif,system-ui,sans-serif;">${escapeHtml(text)}</pre>` : null) || emailRow.body_preview || null;
         }
       } else if (conn.provider === "outlook") {
         const msgResp = await fetch(
@@ -1394,7 +1424,7 @@ Return ONLY valid JSON. No markdown fences, no explanation.`;
         );
         if (msgResp.ok) {
           const msg = await msgResp.json();
-          htmlBody = msg.body?.content || null;
+          htmlBody = msg.body?.content || emailRow.body_preview || null;
         }
       }
 
