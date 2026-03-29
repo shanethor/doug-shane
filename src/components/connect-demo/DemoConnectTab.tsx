@@ -734,7 +734,6 @@ export default function DemoConnectTab({ contentReady = true }: { contentReady?:
             variant="outline"
             size="sm"
             className="text-xs gap-1.5"
-            style={{ borderColor: "hsl(240 6% 20%)", color: "hsl(240 5% 70%)" }}
             onClick={() => { setShowContacts(true); setContactsTab("list"); }}
           >
             <List className="h-3.5 w-3.5" /> View Contacts
@@ -743,7 +742,6 @@ export default function DemoConnectTab({ contentReady = true }: { contentReady?:
             variant="outline"
             size="sm"
             className="text-xs gap-1.5"
-            style={{ borderColor: "hsl(240 6% 20%)", color: "hsl(240 5% 70%)" }}
             onClick={() => { setShowContacts(true); setContactsTab("merge"); }}
           >
             <GitMerge className="h-3.5 w-3.5" /> Merge Duplicates
