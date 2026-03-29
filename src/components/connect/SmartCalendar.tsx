@@ -564,17 +564,16 @@ export default function SmartCalendar() {
           </div>
           <div className="flex items-center gap-2">
             <Select value={filterType} onValueChange={setFilterType}>
-              <SelectTrigger className="h-7 w-[120px] text-[10px]" style={{ background: "transparent", borderColor: "hsl(240 6% 16%)", color: "hsl(240 5% 60%)" }}>
+              <SelectTrigger className="h-7 w-[120px] text-[10px]">
                 <Filter className="h-3 w-3 mr-1" /><SelectValue />
               </SelectTrigger>
               <SelectContent>
                 {FILTER_OPTIONS.map(f => <SelectItem key={f.value} value={f.value}>{f.label}</SelectItem>)}
               </SelectContent>
             </Select>
-            <div className="flex rounded-md overflow-hidden border" style={{ borderColor: "hsl(240 6% 14%)" }}>
+            <div className="flex rounded-md overflow-hidden border border-border">
               {(["day", "week", "month"] as ViewMode[]).map(v => (
-                <button key={v} className={`px-3 py-1 text-xs capitalize transition-colors ${view === v ? "text-white" : ""}`}
-                  style={{ background: view === v ? "hsl(140 12% 42%)" : "transparent", color: view !== v ? "hsl(240 5% 50%)" : undefined }}
+                <button key={v} className={`px-3 py-1 text-xs capitalize transition-colors ${view === v ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted/40"}`}
                   onClick={() => setView(v)}>{v}</button>
               ))}
             </div>
