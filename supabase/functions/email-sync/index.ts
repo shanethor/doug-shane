@@ -336,6 +336,7 @@ serve(async (req) => {
             from_address: fromMatch ? fromMatch[2] : fromRaw,
             from_name: fromMatch ? fromMatch[1].replace(/"/g, "").trim() : null,
             to_addresses: getHeader("To").split(",").map((e: string) => e.trim().replace(/.*<([^>]+)>.*/, "$1")),
+            cc_addresses: getHeader("Cc") ? getHeader("Cc").split(",").map((e: string) => e.trim().replace(/.*<([^>]+)>.*/, "$1")).filter(Boolean) : [],
             subject: getHeader("Subject"),
             body_html: htmlBody || null,
             body_preview: msg.snippet || "",
