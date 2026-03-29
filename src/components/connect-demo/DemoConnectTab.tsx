@@ -767,14 +767,11 @@ export default function DemoConnectTab({ contentReady = true }: { contentReady?:
           {profilePopup && popupStyle && (
             <div
               ref={popupRef}
-              className="fixed z-50 rounded-xl p-4 space-y-3 animate-fade-in shadow-2xl"
+              className="fixed z-50 rounded-xl p-4 space-y-3 animate-fade-in shadow-2xl bg-popover border border-primary/30 backdrop-blur-xl"
               style={{
                 left: popupStyle.left,
                 top: popupStyle.top,
                 width: popupStyle.width,
-                background: "hsl(240 8% 8%)",
-                border: "1px solid hsl(140 12% 42% / 0.3)",
-                backdropFilter: "blur(12px)",
               }}
             >
               <div className="flex items-start justify-between">
@@ -783,12 +780,12 @@ export default function DemoConnectTab({ contentReady = true }: { contentReady?:
                     {profilePopup.profile.name.split(" ").map(n => n[0]).join("")}
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-white">{profilePopup.profile.name}</p>
-                    <p className="text-[11px]" style={{ color: "hsl(240 5% 55%)" }}>{profilePopup.profile.title}</p>
+                    <p className="text-sm font-semibold text-foreground">{profilePopup.profile.name}</p>
+                    <p className="text-[11px] text-muted-foreground">{profilePopup.profile.title}</p>
                   </div>
                 </div>
-                <button onClick={() => setProfilePopup(null)} className="p-0.5 rounded hover:bg-white/10">
-                  <X className="h-3.5 w-3.5" style={{ color: "hsl(240 5% 46%)" }} />
+                <button onClick={() => setProfilePopup(null)} className="p-0.5 rounded hover:bg-muted">
+                  <X className="h-3.5 w-3.5 text-muted-foreground" />
                 </button>
               </div>
 
