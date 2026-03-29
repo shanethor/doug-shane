@@ -844,8 +844,8 @@ export default function DemoConnectTab({ contentReady = true }: { contentReady?:
       {searching && (
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center space-y-3">
-            <Loader2 className="h-10 w-10 animate-spin mx-auto" style={{ color: "hsl(140 12% 58%)" }} />
-            <p className="text-sm" style={{ color: "hsl(240 5% 46%)" }}>Scanning your network for paths to {searchName}…</p>
+            <Loader2 className="h-10 w-10 animate-spin mx-auto text-primary" />
+            <p className="text-sm text-muted-foreground">Scanning your network for paths to {searchName}…</p>
           </div>
         </div>
       )}
