@@ -157,17 +157,24 @@ export default function EmailViewAura({ engine, ai }: { engine: Engine; ai: AI }
                       <span className="text-[10px] ml-auto" style={{ color: "hsl(240 5% 40%)" }}>{msg.date === "Today" ? msg.time : msg.date}</span>
                     </div>
                     <div className="text-sm leading-relaxed" style={{ color: "hsl(240 5% 78%)" }}>
-                      {msg.body.includes("<") && msg.body.includes(">") ? (
+                      {msg.body && (msg.body.includes("<") && msg.body.includes(">")) ? (
                         <iframe
-                          srcDoc={`<!DOCTYPE html><html><head><meta charset="utf-8"><style>body{margin:0;padding:12px;font-family:-apple-system,system-ui,sans-serif;font-size:14px;line-height:1.5;color:#c8c8d0;background:transparent;}a{color:#7c9a82;}img{max-width:100%;height:auto;}table{border-collapse:collapse;max-width:100%;}td,th{padding:4px 8px;}</style></head><body>${msg.body}</body></html>`}
+                          srcDoc={`<!DOCTYPE html><html><head><meta charset="utf-8"><style>body{margin:0;padding:12px;font-family:-apple-system,system-ui,sans-serif;font-size:14px;line-height:1.6;color:#c8c8d0;background:transparent;word-break:break-word;overflow-wrap:break-word;}a{color:#7c9a82;}img{max-width:100%;height:auto;}table{border-collapse:collapse;max-width:100%;}td,th{padding:4px 8px;}pre{white-space:pre-wrap;font-family:inherit;}</style></head><body>${msg.body}</body></html>`}
                           className="w-full border-0"
-                          style={{ background: "transparent", minHeight: "150px", height: "auto" }}
+                          style={{ background: "transparent", minHeight: "200px" }}
                           sandbox="allow-same-origin"
                           onLoad={(e) => {
                             const iframe = e.target as HTMLIFrameElement;
-                            if (iframe.contentDocument?.body) {
-                              iframe.style.height = Math.max(150, iframe.contentDocument.body.scrollHeight + 20) + "px";
-                            }
+                            const tryResize = () => {
+                              if (iframe.contentDocument?.body) {
+                                const h = iframe.contentDocument.body.scrollHeight;
+                                iframe.style.height = Math.max(200, h + 40) + "px";
+                              }
+                            };
+                            tryResize();
+                            // Retry after images load
+                            setTimeout(tryResize, 500);
+                            setTimeout(tryResize, 1500);
                           }}
                         />
                       ) : (
