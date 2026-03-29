@@ -145,6 +145,12 @@ export default function SmartCalendar() {
 
   useEffect(() => { loadData(); }, [loadData]);
 
+  useEffect(() => {
+    const handleRefresh = () => { void loadData(); };
+    window.addEventListener("aura-calendar-refresh", handleRefresh);
+    return () => window.removeEventListener("aura-calendar-refresh", handleRefresh);
+  }, [loadData]);
+
   // Filtered events
   const filteredEvents = useMemo(() => {
     let evts = events;

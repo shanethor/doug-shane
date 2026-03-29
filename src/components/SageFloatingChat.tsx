@@ -8,8 +8,48 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
 type Msg = { role: "user" | "assistant"; content: string };
+type FloatingCalendarAction = { title: string; date: string; startTime: string; durationMinutes: number };
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/connect-assistant`;
+
+function stripActionMarkers(text: string) {
+  return text
+    .replace(/\[CALENDAR_ACTION:[^\]]+\]/g, "")
+    .replace(/\[NAVIGATE:[^\]]+\]/g, "")
+    .trim();
+}
+
+function parseCalendarActions(text: string): FloatingCalendarAction[] {
+  const actions: FloatingCalendarAction[] = [];
+
+  const pipeRegex = /\[CALENDAR_ACTION:CREATE\|([^|\]]+)\|(\d{4}-\d{2}-\d{2})\|(\d{2}:\d{2})\|(\d+)\]/gi;
+  let pipeMatch: RegExpExecArray | null;
+  while ((pipeMatch = pipeRegex.exec(text)) !== null) {
+    actions.push({
+      title: pipeMatch[1].trim(),
+      date: pipeMatch[2],
+      startTime: pipeMatch[3],
+      durationMinutes: Number(pipeMatch[4]) || 30,
+    });
+  }
+
+  const colonRegex = /\[CALENDAR_ACTION:create:([^:]+):(\d{4}-\d{2}-\d{2}):(\d{2}:\d{2}):(\d{2}:\d{2}):([^:]*):([^\]]*)\]/g;
+  let colonMatch: RegExpExecArray | null;
+  while ((colonMatch = colonRegex.exec(text)) !== null) {
+    const [endHour, endMinute] = colonMatch[4].split(":").map(Number);
+    const [startHour, startMinute] = colonMatch[3].split(":").map(Number);
+    const durationMinutes = Math.max(15, (endHour * 60 + endMinute) - (startHour * 60 + startMinute));
+
+    actions.push({
+      title: colonMatch[1].trim(),
+      date: colonMatch[2],
+      startTime: colonMatch[3],
+      durationMinutes,
+    });
+  }
+
+  return actions;
+}
 
 async function streamChat({
   messages, onDelta, onDone, onError, signal,
@@ -17,9 +57,16 @@ async function streamChat({
   messages: Msg[]; onDelta: (t: string) => void; onDone: () => void; onError: (e: string) => void; signal?: AbortSignal;
 }) {
   try {
+    const { data: { session } } = await supabase.auth.getSession();
+    const authToken = session?.access_token || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
     const resp = await fetch(CHAT_URL, {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${authToken}`,
+        apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+      },
       body: JSON.stringify({ messages }),
       signal,
     });
@@ -81,6 +128,72 @@ export function SageFloatingChat() {
     });
   }, [user, view]);
 
+  const executeCalendarActions = useCallback(async (assistantText: string) => {
+    if (!user) return;
+
+    const actions = parseCalendarActions(assistantText);
+    if (!actions.length) return;
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const accessToken = session?.access_token;
+      const { data: calendars } = await supabase
+        .from("external_calendars")
+        .select("provider")
+        .eq("user_id", user.id)
+        .eq("is_active", true);
+
+      let createdCount = 0;
+
+      for (const action of actions) {
+        const start = new Date(`${action.date}T${action.startTime}:00`);
+        if (Number.isNaN(start.getTime())) continue;
+
+        const end = new Date(start.getTime() + action.durationMinutes * 60 * 1000);
+        const { error } = await supabase.from("calendar_events").insert({
+          user_id: user.id,
+          title: action.title,
+          event_type: "other" as any,
+          start_time: start.toISOString(),
+          end_time: end.toISOString(),
+          provider: "aura",
+          status: "scheduled" as any,
+        } as any);
+
+        if (error) throw error;
+        createdCount += 1;
+
+        if (accessToken && calendars?.length) {
+          for (const cal of calendars) {
+            await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/calendar-sync`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${accessToken}`,
+                apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+              },
+              body: JSON.stringify({
+                action: "create_event",
+                provider: cal.provider,
+                title: action.title,
+                start: start.toISOString(),
+                end: end.toISOString(),
+              }),
+            });
+          }
+        }
+      }
+
+      if (createdCount > 0) {
+        window.dispatchEvent(new CustomEvent("aura-calendar-refresh"));
+        toast.success(createdCount === 1 ? "Calendar event created" : `${createdCount} calendar events created`);
+      }
+    } catch (error: any) {
+      console.error("Sage calendar action failed:", error);
+      toast.error(error?.message || "Failed to create calendar event");
+    }
+  }, [user]);
+
   const send = useCallback(async () => {
     if (!input.trim() || streaming) return;
     const userMsg: Msg = { role: "user", content: input.trim() };
@@ -95,11 +208,17 @@ export function SageFloatingChat() {
     await streamChat({
       messages: newMsgs,
       onDelta: (t) => { full += t; setStreamContent(full); },
-      onDone: () => { setMessages((prev) => [...prev, { role: "assistant", content: full }]); setStreamContent(""); setStreaming(false); },
+      onDone: () => {
+        const cleaned = stripActionMarkers(full);
+        setMessages((prev) => [...prev, { role: "assistant", content: cleaned || "Done." }]);
+        setStreamContent("");
+        setStreaming(false);
+        void executeCalendarActions(full);
+      },
       onError: (e) => { toast.error(e); setStreaming(false); },
       signal: ctrl.signal,
     });
-  }, [input, messages, streaming]);
+  }, [executeCalendarActions, input, messages, streaming]);
 
   const submitTicket = async () => {
     if (!user || !ticketTitle.trim()) return;
@@ -198,7 +317,7 @@ export function SageFloatingChat() {
                   }>
                   {m.role === "assistant" ? (
                     <div className="prose prose-sm prose-invert max-w-none [&_p]:my-1 [&_p]:text-xs [&_p]:leading-relaxed [&_li]:text-xs [&_strong]:text-white [&_code]:text-[10px] [&_code]:bg-white/5 [&_code]:px-1 [&_code]:rounded">
-                      <ReactMarkdown>{m.content}</ReactMarkdown>
+                      <ReactMarkdown>{stripActionMarkers(m.content)}</ReactMarkdown>
                     </div>
                   ) : m.content}
                 </div>
@@ -208,7 +327,7 @@ export function SageFloatingChat() {
               <div className="flex justify-start">
                 <div className="max-w-[85%] rounded-lg px-3 py-2 text-xs" style={{ background: "hsl(240 8% 12%)", color: "hsl(240 5% 80%)" }}>
                   <div className="prose prose-sm prose-invert max-w-none [&_p]:my-1 [&_p]:text-xs [&_p]:leading-relaxed [&_li]:text-xs [&_strong]:text-white">
-                    <ReactMarkdown>{streamContent}</ReactMarkdown>
+                    <ReactMarkdown>{stripActionMarkers(streamContent)}</ReactMarkdown>
                   </div>
                 </div>
               </div>
