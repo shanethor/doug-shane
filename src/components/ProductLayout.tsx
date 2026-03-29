@@ -52,7 +52,7 @@ function MobileConnectNav({ isActive }: { isActive: (to: string, exact?: boolean
               key={tab.to}
               to={tab.to}
               className={`flex flex-col items-center justify-center gap-0.5 py-2 px-1 min-w-[48px] min-h-[52px] transition-colors ${
-                isActive(tab.to, tab.id === "connect") ? "text-white" : "text-white/30"
+                isActive(tab.to, tab.id === "connect") ? "text-sidebar-foreground" : "text-sidebar-foreground/30"
               }`}
             >
               <Icon className="h-5 w-5" />
