@@ -4256,6 +4256,7 @@ export type Database = {
         Row: {
           body_html: string | null
           body_preview: string | null
+          cc_addresses: string[] | null
           client_id: string | null
           client_link_source: string | null
           connection_id: string
@@ -4275,6 +4276,7 @@ export type Database = {
         Insert: {
           body_html?: string | null
           body_preview?: string | null
+          cc_addresses?: string[] | null
           client_id?: string | null
           client_link_source?: string | null
           connection_id: string
@@ -4294,6 +4296,7 @@ export type Database = {
         Update: {
           body_html?: string | null
           body_preview?: string | null
+          cc_addresses?: string[] | null
           client_id?: string | null
           client_link_source?: string | null
           connection_id?: string
