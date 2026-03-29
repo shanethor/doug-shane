@@ -343,9 +343,9 @@ export default function SmartCalendar() {
   const dayView = (
     <div className="relative" style={{ minHeight: `${HOURS.length * 60}px` }}>
       {HOURS.map(hour => (
-        <div key={hour} className="flex h-[60px]" style={{ borderBottom: "1px solid hsl(240 6% 12%)" }}>
-          <div className="w-14 shrink-0 text-[10px] text-right pr-2 pt-1" style={{ color: "hsl(240 5% 40%)" }}>{fmtTime(hour, 0)}</div>
-          <div className="flex-1 relative cursor-pointer hover:bg-white/[0.02] transition-colors" onClick={() => openQuickAdd(currentDate, hour)} />
+        <div key={hour} className="flex h-[60px] border-b border-border">
+          <div className="w-14 shrink-0 text-[10px] text-right pr-2 pt-1 text-muted-foreground">{fmtTime(hour, 0)}</div>
+          <div className="flex-1 relative cursor-pointer hover:bg-muted/30 transition-colors" onClick={() => openQuickAdd(currentDate, hour)} />
         </div>
       ))}
       {eventsFor(currentDate).map(ev => {
@@ -355,8 +355,8 @@ export default function SmartCalendar() {
           <div key={ev.id} className="absolute left-14 right-2 rounded-md px-2 py-1 cursor-pointer hover:brightness-110 transition-all overflow-hidden"
             style={{ top: `${top}px`, height: `${height}px`, background: ev.color + "33", borderLeft: `3px solid ${ev.color}` }}
             onClick={() => setSelectedEvent(ev)}>
-            <p className="text-[11px] font-medium text-white truncate">{ev.title}</p>
-            <p className="text-[9px]" style={{ color: "hsl(240 5% 60%)" }}>{fmtTime(ev.startHour, ev.startMin)} – {fmtTime(ev.endHour, ev.endMin)}</p>
+            <p className="text-[11px] font-medium text-foreground truncate">{ev.title}</p>
+            <p className="text-[9px] text-muted-foreground">{fmtTime(ev.startHour, ev.startMin)} – {fmtTime(ev.endHour, ev.endMin)}</p>
           </div>
         );
       })}
