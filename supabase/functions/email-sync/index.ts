@@ -326,6 +326,9 @@ serve(async (req) => {
             attachmentsByExtId[msgId] = atts;
           }
 
+          // Extract full HTML body from MIME payload
+          const htmlBody = extractGmailHtmlBody(msg.payload);
+
           emails.push({
             user_id: userId,
             connection_id: conn.id,
@@ -334,6 +337,7 @@ serve(async (req) => {
             from_name: fromMatch ? fromMatch[1].replace(/"/g, "").trim() : null,
             to_addresses: getHeader("To").split(",").map((e: string) => e.trim().replace(/.*<([^>]+)>.*/, "$1")),
             subject: getHeader("Subject"),
+            body_html: htmlBody || null,
             body_preview: msg.snippet || "",
             is_read: !msg.labelIds?.includes("UNREAD"),
             received_at: new Date(parseInt(msg.internalDate)).toISOString(),
