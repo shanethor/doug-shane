@@ -530,7 +530,7 @@ export default function SmartCalendar() {
 
         {/* Booking Links Panel */}
         {showBooking && (
-          <div className="rounded-xl p-4 animate-fade-in" style={{ background: "hsl(240 8% 7%)", border: "1px solid hsl(240 6% 14%)" }}>
+          <div className="rounded-xl p-4 animate-fade-in border border-border bg-card">
             <BookingLinksManager />
           </div>
         )}
