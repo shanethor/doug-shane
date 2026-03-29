@@ -87,8 +87,8 @@ function MobileConnectNav({ isActive }: { isActive: (to: string, exact?: boolean
                   onClick={() => setMoreOpen(false)}
                   className={`flex items-center gap-3 rounded-lg px-3 py-3 text-sm transition-colors ${
                     isActive(tab.to, tab.id === "connect")
-                      ? "bg-white/10 text-white font-medium"
-                      : "text-white/60 hover:bg-white/5"
+                      ? "bg-sidebar-accent text-sidebar-foreground font-medium"
+                      : "text-sidebar-foreground/60 hover:bg-sidebar-accent/50"
                   }`}
                 >
                   <Icon className="h-5 w-5" />
