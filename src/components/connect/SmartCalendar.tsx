@@ -581,7 +581,7 @@ export default function SmartCalendar() {
         </div>
 
         {/* Calendar grid */}
-        <div className="rounded-xl overflow-hidden" style={{ border: "1px solid hsl(240 6% 12%)", background: "hsl(240 8% 6%)" }}>
+        <div className="rounded-xl overflow-hidden border border-border bg-card">
           {view === "day" && dayView}
           {view === "week" && weekView}
           {view === "month" && monthView}
