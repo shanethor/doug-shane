@@ -64,7 +64,7 @@ function MobileConnectNav({ isActive }: { isActive: (to: string, exact?: boolean
           <button
             onClick={() => setMoreOpen(true)}
             className={`flex flex-col items-center justify-center gap-0.5 py-2 px-1 min-w-[48px] min-h-[52px] transition-colors ${
-              moreActive ? "text-white" : "text-white/30"
+              moreActive ? "text-sidebar-foreground" : "text-sidebar-foreground/30"
             }`}
           >
             <MoreHorizontal className="h-5 w-5" />
