@@ -96,11 +96,11 @@ function MobileConnectNav({ isActive }: { isActive: (to: string, exact?: boolean
                 </Link>
               );
             })}
-            <div className="border-t border-white/5 my-2" />
+            <div className="border-t border-sidebar-border my-2" />
             <Link
               to="/app/settings"
               onClick={() => setMoreOpen(false)}
-              className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm text-white/60 hover:bg-white/5"
+              className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm text-sidebar-foreground/60 hover:bg-sidebar-accent/50"
             >
               <Settings className="h-5 w-5" />
               Settings
