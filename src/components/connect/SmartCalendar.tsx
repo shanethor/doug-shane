@@ -489,10 +489,10 @@ export default function SmartCalendar() {
         {/* Header */}
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div className="flex items-center gap-3">
-            <CalendarDays className="h-5 w-5" style={{ color: "hsl(140 12% 58%)" }} />
-            <h2 className="text-lg font-semibold text-white">Calendar</h2>
+            <CalendarDays className="h-5 w-5 text-primary" />
+            <h2 className="text-lg font-semibold">Calendar</h2>
             {todayCount > 0 && (
-              <Badge style={{ background: "hsl(140 12% 42%)", color: "white" }} className="text-[10px]">{todayCount} today</Badge>
+              <Badge className="text-[10px] bg-primary text-primary-foreground">{todayCount} today</Badge>
             )}
           </div>
           <div className="flex items-center gap-2 flex-wrap">
