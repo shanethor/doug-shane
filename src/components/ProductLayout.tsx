@@ -181,8 +181,8 @@ export function ProductLayout({
                   collapsed ? "justify-center px-0 py-2.5" : "px-3 py-2.5"
                 } ${
                   active
-                    ? "bg-white/10 text-white font-medium"
-                    : "text-white/40 hover:text-white/70 hover:bg-white/5"
+                    ? "bg-sidebar-accent text-sidebar-foreground font-medium"
+                    : "text-sidebar-foreground/40 hover:text-sidebar-foreground/70 hover:bg-sidebar-accent/50"
                 }`}
               >
                 <item.icon className="h-4 w-4 shrink-0" />
