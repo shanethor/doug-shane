@@ -334,7 +334,7 @@ export default function SmartCalendar() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-6 w-6 animate-spin" style={{ color: "hsl(140 12% 58%)" }} />
+        <Loader2 className="h-6 w-6 animate-spin text-primary" />
       </div>
     );
   }
