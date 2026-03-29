@@ -694,11 +694,11 @@ export default function DemoConnectTab({ contentReady = true }: { contentReady?:
           transform: connectPhase >= 1 ? "translateY(0)" : "translateY(20px)",
           transition: "all 1.2s cubic-bezier(0.16, 1, 0.3, 1)",
         }}>
-          <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-white">
+          <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">
             Find the fastest path to{" "}
-            <span style={{ color: "hsl(140 12% 58%)" }}>anyone</span>
+            <span className="text-primary">anyone</span>
           </h2>
-          <p className="text-sm md:text-base max-w-lg mx-auto" style={{ color: "hsl(240 5% 50%)" }}>
+          <p className="text-sm md:text-base max-w-lg mx-auto text-muted-foreground">
             AURA Connect traverses millions of business connections to find the warmest intro path for you.
           </p>
         </div>
@@ -709,17 +709,16 @@ export default function DemoConnectTab({ contentReady = true }: { contentReady?:
           transition: "all 1s cubic-bezier(0.16, 1, 0.3, 1)",
         }}>
           <div className="relative flex-1">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5" style={{ color: "hsl(240 5% 46%)" }} />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             <Input
               value={searchName}
               onChange={(e) => setSearchName(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSearch()}
               placeholder="Search a name... e.g. Douglas Wenz"
-              className="pl-12 h-12 text-base rounded-xl animate-[glowPulse_2.5s_ease-in-out_infinite]"
-              style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(140 12% 42% / 0.5)", color: "white", fontSize: "1rem" }}
+              className="pl-12 h-12 text-base rounded-xl border-primary/50 animate-[glowPulse_2.5s_ease-in-out_infinite]"
             />
           </div>
-          <Button onClick={handleSearch} disabled={!searchName.trim() || searching} className="h-12 px-6 rounded-xl text-base font-semibold animate-[glowPulseBtn_2.5s_ease-in-out_infinite]" style={{ background: "hsl(140 12% 42%)", color: "white" }}>
+          <Button onClick={handleSearch} disabled={!searchName.trim() || searching} className="h-12 px-6 rounded-xl text-base font-semibold animate-[glowPulseBtn_2.5s_ease-in-out_infinite]">
             {searching ? <Loader2 className="h-5 w-5 animate-spin" /> : "Find Path"}
           </Button>
         </div>
