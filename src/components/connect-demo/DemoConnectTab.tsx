@@ -758,7 +758,7 @@ export default function DemoConnectTab({ contentReady = true }: { contentReady?:
         }}>
           {graphActive && <ConnectLiveNetworkMap onNodeClick={handleNodeClick} />}
           <div className="absolute bottom-4 left-0 right-0 text-center z-10">
-            <span className="text-xs px-3 py-1 rounded-full" style={{ background: "hsl(240 8% 9% / 0.8)", color: "hsl(240 5% 50%)", border: "1px solid hsl(240 6% 14%)" }}>
+            <span className="text-xs px-3 py-1 rounded-full bg-card/80 text-muted-foreground border border-border">
               Live network map — click any name to view profile
             </span>
           </div>
