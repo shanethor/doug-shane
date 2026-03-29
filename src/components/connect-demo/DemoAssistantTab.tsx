@@ -6,6 +6,7 @@ import ReactMarkdown from "react-markdown";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { executeCalendarActions, extractCalendarActions } from "@/lib/calendar-action-utils";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
@@ -164,7 +165,7 @@ export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: st
   }, [messages]);
 
   // Handle action markers in completed responses
-  const processActionMarkers = useCallback((content: string) => {
+  const processActionMarkers = useCallback(async (content: string) => {
     // Pipeline actions
     const pipelineAdds = content.matchAll(/\[PIPELINE_ACTION:ADD\|([^|]+)\|([^|]+)\|([^|]+)\|([^\]]+)\]/g);
     for (const match of pipelineAdds) {
@@ -200,6 +201,33 @@ export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: st
       const [, assetType, title] = match;
       toast.success(`Marketing asset "${title}" (${assetType}) queued — view in Connect → Marketing Center`);
       navigate("/connect/create");
+    }
+
+    // Calendar actions
+    if (user) {
+      const calendarActions = extractCalendarActions(content);
+      if (calendarActions.length > 0) {
+        try {
+          const { createdCount, externalFailures } = await executeCalendarActions({
+            actions: calendarActions,
+            userId: user.id,
+          });
+
+          if (createdCount > 0) {
+            toast.success(createdCount === 1 ? "Event added to calendar" : `${createdCount} events added to calendar`);
+          }
+
+          if (externalFailures.length > 0) {
+            const needsReconnect = externalFailures.some((failure) => /expired|reconnect|unauthorized|no .* calendar connected/i.test(failure));
+            toast.error(needsReconnect
+              ? "Event saved in AURA, but your connected calendar needs reconnect to sync externally."
+              : "Event saved in AURA, but external calendar sync failed.");
+          }
+        } catch (error) {
+          console.error("Demo Sage calendar action failed:", error);
+          toast.error("Failed to create calendar event");
+        }
+      }
     }
 
     // Navigate actions
@@ -264,7 +292,7 @@ export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: st
       onDone: () => {
         setLoading(false);
         // Process any action markers
-        if (assistantSoFar) processActionMarkers(assistantSoFar);
+        if (assistantSoFar) void processActionMarkers(assistantSoFar);
       },
       onError: (err) => { toast.error(err); setLoading(false); },
       signal: ac.signal,
