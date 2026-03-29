@@ -349,7 +349,7 @@ serve(async (req) => {
       } else if (conn.provider === "outlook") {
         // Fetch last 50 emails from Microsoft Graph
         const mailResp = await fetch(
-          "https://graph.microsoft.com/v1.0/me/messages?$top=50&$select=id,from,toRecipients,subject,bodyPreview,isRead,receivedDateTime,hasAttachments&$orderby=receivedDateTime desc",
+          "https://graph.microsoft.com/v1.0/me/messages?$top=50&$select=id,from,toRecipients,subject,body,bodyPreview,isRead,receivedDateTime,hasAttachments&$orderby=receivedDateTime desc",
           { headers: { Authorization: `Bearer ${accessToken}` } }
         );
         const mailData = await mailResp.json();
