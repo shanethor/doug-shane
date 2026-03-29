@@ -560,7 +560,7 @@ export default function SmartCalendar() {
             <Button variant="outline" size="sm" className="text-xs h-7 px-2" onClick={goToday}>Today</Button>
             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={goPrev}><ChevronLeft className="h-4 w-4" /></Button>
             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={goNext}><ChevronRight className="h-4 w-4" /></Button>
-            <span className="text-sm font-medium text-white ml-1">{headingText}</span>
+            <span className="text-sm font-medium ml-1">{headingText}</span>
           </div>
           <div className="flex items-center gap-2">
             <Select value={filterType} onValueChange={setFilterType}>
