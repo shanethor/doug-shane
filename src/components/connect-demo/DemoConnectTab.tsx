@@ -818,7 +818,6 @@ export default function DemoConnectTab({ contentReady = true }: { contentReady?:
                 <Button
                   size="sm"
                   className="flex-1 text-xs h-8"
-                  style={{ background: "hsl(140 12% 42%)", color: "white" }}
                   onClick={() => {
                     setSearchName(profilePopup.profile.name);
                     setProfilePopup(null);
@@ -831,7 +830,6 @@ export default function DemoConnectTab({ contentReady = true }: { contentReady?:
                   size="sm"
                   variant="outline"
                   className="flex-1 text-xs h-8"
-                  style={{ borderColor: "hsl(240 6% 20%)", color: "hsl(240 5% 70%)" }}
                   onClick={() => setProfilePopup(null)}
                 >
                   Close
