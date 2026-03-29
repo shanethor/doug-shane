@@ -259,7 +259,7 @@ export function ProductLayout({
 
       {/* Mobile header */}
       <div className="flex flex-1 flex-col overflow-hidden">
-        <header className="md:hidden flex items-center justify-between px-4 py-3 border-b border-white/5 bg-[#0c0c0e]">
+        <header className="md:hidden flex items-center justify-between px-4 py-3 border-b border-sidebar-border bg-sidebar">
           <div className="flex items-center gap-2">
             <svg width={24} height={24} viewBox="0 0 100 100" fill="none">
               <rect width="100" height="100" rx="22" fill="hsl(140 12% 42%)" />
