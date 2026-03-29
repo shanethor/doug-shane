@@ -199,8 +199,8 @@ export function ProductLayout({
               collapsed ? "justify-center px-0 py-2.5" : "px-3 py-2.5"
             } ${
               studioUnlocked
-                ? "text-orange-400/80 hover:text-orange-300 hover:bg-white/5"
-                : "text-white/20 hover:text-white/40 hover:bg-white/5"
+                ? "text-orange-400/80 hover:text-orange-300 hover:bg-sidebar-accent/50"
+                : "text-sidebar-foreground/20 hover:text-sidebar-foreground/40 hover:bg-sidebar-accent/50"
             }`}
           >
             {studioUnlocked ? (
