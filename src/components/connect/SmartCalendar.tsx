@@ -617,15 +617,15 @@ export default function SmartCalendar() {
       {/* Mobile event detail dialog */}
       {selectedEvent && (
         <Dialog open={!!selectedEvent} onOpenChange={() => setSelectedEvent(null)}>
-          <DialogContent className="sm:max-w-sm lg:hidden" style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 16%)" }}>
-            <DialogHeader><DialogTitle className="text-white">{selectedEvent.title}</DialogTitle></DialogHeader>
+          <DialogContent className="sm:max-w-sm lg:hidden">
+            <DialogHeader><DialogTitle>{selectedEvent.title}</DialogTitle></DialogHeader>
             <div className="space-y-2 text-sm">
-              <p className="flex items-center gap-2 text-white/60"><Clock className="h-3.5 w-3.5" />{format(selectedEvent.date, "EEE, MMM d")} · {fmtTime(selectedEvent.startHour, selectedEvent.startMin)} – {fmtTime(selectedEvent.endHour, selectedEvent.endMin)}</p>
-              {selectedEvent.location && <p className="flex items-center gap-2 text-white/60"><MapPin className="h-3.5 w-3.5" />{selectedEvent.location}</p>}
-              {selectedEvent.description && <p className="text-white/50 text-xs mt-2">{selectedEvent.description}</p>}
-              {selectedEvent.attendees.length > 0 && <div className="flex items-center gap-2 text-white/60"><Users className="h-3.5 w-3.5" /><span>{selectedEvent.attendees.join(", ")}</span></div>}
+              <p className="flex items-center gap-2 text-muted-foreground"><Clock className="h-3.5 w-3.5" />{format(selectedEvent.date, "EEE, MMM d")} · {fmtTime(selectedEvent.startHour, selectedEvent.startMin)} – {fmtTime(selectedEvent.endHour, selectedEvent.endMin)}</p>
+              {selectedEvent.location && <p className="flex items-center gap-2 text-muted-foreground"><MapPin className="h-3.5 w-3.5" />{selectedEvent.location}</p>}
+              {selectedEvent.description && <p className="text-muted-foreground text-xs mt-2">{selectedEvent.description}</p>}
+              {selectedEvent.attendees.length > 0 && <div className="flex items-center gap-2 text-muted-foreground"><Users className="h-3.5 w-3.5" /><span>{selectedEvent.attendees.join(", ")}</span></div>}
               <div className="flex gap-2 pt-3 flex-wrap">
-                <Button variant="outline" size="sm" className="text-xs gap-1" style={{ borderColor: "hsl(240 6% 20%)", color: "hsl(240 5% 70%)" }} onClick={() => { setEditEvent({ ...selectedEvent }); setSelectedEvent(null); setShowEditor(true); }}>
+                <Button variant="outline" size="sm" className="text-xs gap-1" onClick={() => { setEditEvent({ ...selectedEvent }); setSelectedEvent(null); setShowEditor(true); }}>
                   <Pencil className="h-3 w-3" /> Edit
                 </Button>
                 <Button variant="outline" size="sm" className="text-xs gap-1 text-destructive border-destructive/30" onClick={() => deleteEvent(selectedEvent.id)}>
