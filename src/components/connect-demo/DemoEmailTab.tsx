@@ -1,18 +1,20 @@
 import { useState, useCallback, useEffect } from "react";
-import { Mail, CheckCheck, Loader2, PenSquare, X, Send, ChevronDown, RefreshCw } from "lucide-react";
+import { Mail, CheckCheck, Loader2, PenSquare, X, Send, ChevronDown, RefreshCw, CalendarDays, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { useEmailEngine, getEmailLayout, setEmailLayout, type EmailLayout } from "./email-views/useEmailEngine";
 import { useEmailAI } from "./email-views/useEmailAI";
-import EmailLayoutSwitcher from "./email-views/EmailLayoutSwitcher";
 import EmailViewGmail from "./email-views/EmailViewGmail";
 import EmailViewOutlook from "./email-views/EmailViewOutlook";
 import EmailViewAura from "./email-views/EmailViewAura";
+import { ClientEmailFolders } from "@/components/ClientEmailFolders";
+import SmartCalendar from "@/components/connect/SmartCalendar";
 import { useRealEmailData } from "@/hooks/useRealData";
 import { ConnectEmptyState } from "./ConnectEmptyState";
 import { useAuth } from "@/hooks/useAuth";
@@ -33,6 +35,8 @@ export default function DemoEmailTab() {
   const ai = useEmailAI();
   const [layout, setLayoutState] = useState<EmailLayout>(getEmailLayout);
   const [composeOpen, setComposeOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("email");
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [composeTo, setComposeTo] = useState("");
   const [composeSubject, setComposeSubject] = useState("");
   const [composeBody, setComposeBody] = useState("");
@@ -186,32 +190,61 @@ export default function DemoEmailTab() {
         .email-body { animation: emailSlideIn 0.5s cubic-bezier(0.16,1,0.3,1) 0.2s both; }
       `}</style>
 
-      <div className="flex items-center justify-between flex-wrap gap-2 mb-3 email-header">
-        <div className="flex items-center gap-3">
-          <Mail className="h-5 w-5" style={{ color: "hsl(140 12% 58%)" }} />
-          <h2 className="text-lg font-semibold text-white">Email</h2>
-          <Badge className="text-xs" style={{ background: "hsl(140 12% 42%)", color: "white" }}>{engine.unreadCount} new</Badge>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button size="sm" className="gap-1.5 text-xs h-7" variant="outline" style={{ borderColor: "hsl(240 6% 20%)", color: "hsl(240 5% 70%)" }} onClick={handleManualSync} disabled={syncing || linkedAccounts.length === 0}>
-            <RefreshCw className={`h-3.5 w-3.5 ${syncing ? "animate-spin" : ""}`} />
-            {syncing ? "Syncing…" : "Sync"}
-          </Button>
-          <Button size="sm" className="gap-1.5 text-xs h-7" style={{ background: "hsl(140 12% 42%)", color: "white" }} onClick={() => setComposeOpen(true)}>
-            <PenSquare className="h-3.5 w-3.5" /> Compose
-          </Button>
-          <EmailLayoutSwitcher current={layout} onChange={handleLayoutChange} />
-          <Button variant="outline" size="sm" className="text-xs h-7" style={{ borderColor: "hsl(240 6% 20%)", color: "hsl(240 5% 70%)" }} onClick={engine.markAllRead}>
-            <CheckCheck className="h-3.5 w-3.5" />
-          </Button>
-        </div>
-      </div>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="email-header">
+        <TabsList className="mb-3 h-8" style={{ background: "hsl(240 8% 9%)", border: "1px solid hsl(240 6% 14%)" }}>
+          <TabsTrigger value="email" className="gap-1.5 text-xs px-3" style={{ color: activeTab === "email" ? "white" : "hsl(240 5% 50%)" }}>
+            <Mail className="h-3 w-3" /> Email
+          </TabsTrigger>
+          <TabsTrigger value="calendar" className="gap-1.5 text-xs px-3" style={{ color: activeTab === "calendar" ? "white" : "hsl(240 5% 50%)" }}>
+            <CalendarDays className="h-3 w-3" /> Calendar
+          </TabsTrigger>
+          <TabsTrigger value="clients" className="gap-1.5 text-xs px-3" style={{ color: activeTab === "clients" ? "white" : "hsl(240 5% 50%)" }}>
+            <Users className="h-3 w-3" /> Clients
+          </TabsTrigger>
+        </TabsList>
 
-      <div className="email-body">
-        {layout === "gmail" && <EmailViewGmail engine={engine} ai={ai} />}
-        {layout === "outlook" && <EmailViewOutlook engine={engine} ai={ai} />}
-        {layout === "aura" && <EmailViewAura engine={engine} ai={ai} linkedAccounts={linkedAccounts} />}
-      </div>
+        <TabsContent value="email">
+          <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
+            <div className="flex items-center gap-3">
+              <Mail className="h-5 w-5" style={{ color: "hsl(140 12% 58%)" }} />
+              <h2 className="text-lg font-semibold text-white">Email</h2>
+              <Badge className="text-xs" style={{ background: "hsl(140 12% 42%)", color: "white" }}>{engine.unreadCount} new</Badge>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button size="sm" className="gap-1.5 text-xs h-7" variant="outline" style={{ borderColor: "hsl(240 6% 20%)", color: "hsl(240 5% 70%)" }} onClick={handleManualSync} disabled={syncing || linkedAccounts.length === 0}>
+                <RefreshCw className={`h-3.5 w-3.5 ${syncing ? "animate-spin" : ""}`} />
+                {syncing ? "Syncing…" : "Sync Mail"}
+              </Button>
+              <Button variant="outline" size="sm" className="text-xs h-7" style={{ borderColor: "hsl(240 6% 20%)", color: "hsl(240 5% 70%)" }} onClick={engine.markAllRead}>
+                <CheckCheck className="h-3.5 w-3.5 mr-1" /> Mark all read
+              </Button>
+              <Button size="sm" className="gap-1.5 text-xs h-7" style={{ background: "hsl(140 12% 42%)", color: "white" }} onClick={() => setComposeOpen(true)}>
+                <PenSquare className="h-3.5 w-3.5" /> Compose
+              </Button>
+            </div>
+          </div>
+
+          <div className="email-body">
+            {layout === "gmail" && <EmailViewGmail engine={engine} ai={ai} />}
+            {layout === "outlook" && <EmailViewOutlook engine={engine} ai={ai} />}
+            {layout === "aura" && <EmailViewAura engine={engine} ai={ai} linkedAccounts={linkedAccounts} />}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="calendar">
+          <SmartCalendar />
+        </TabsContent>
+
+        <TabsContent value="clients">
+          <ClientEmailFolders
+            onSelectClient={(clientId) => {
+              setSelectedClientId(clientId);
+              if (clientId) setActiveTab("email");
+            }}
+            selectedClientId={selectedClientId}
+          />
+        </TabsContent>
+      </Tabs>
 
       {/* Compose Email Dialog */}
       <Dialog open={composeOpen} onOpenChange={setComposeOpen}>

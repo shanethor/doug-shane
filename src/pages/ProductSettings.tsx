@@ -554,6 +554,44 @@ export default function ProductSettings() {
         {/* Preferences */}
         <div className={sectionStyle}>
           <h2 className={headingStyle}>Preferences</h2>
+
+          {/* Email Layout */}
+          <div className="space-y-2 py-2">
+            <div className="flex items-center gap-3">
+              <Mail className={`h-4 w-4 ${iconMuted}`} />
+              <div>
+                <p className={`text-sm ${textPrimary}`}>Email Layout</p>
+                <p className={`text-xs ${textSecondary}`}>Choose your default email view style</p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              {([
+                { id: "aura", label: "AURA", desc: "Full-featured with pipeline context" },
+                { id: "gmail", label: "Gmail", desc: "Familiar Gmail-style layout" },
+                { id: "outlook", label: "Outlook", desc: "Microsoft Outlook-style layout" },
+              ]).map(opt => {
+                const currentLayout = (sessionStorage.getItem("connect-demo-email-layout") || "aura");
+                const isActive = currentLayout === opt.id;
+                return (
+                  <button key={opt.id} onClick={() => {
+                    sessionStorage.setItem("connect-demo-email-layout", opt.id);
+                    toast.success(`Email layout set to ${opt.label}`);
+                  }}
+                    className={`flex-1 rounded-lg border p-3 text-left transition-colors ${isActive ? "" : "hover:bg-white/[0.02]"}`}
+                    style={{
+                      borderColor: isActive ? "hsl(140 12% 42%)" : darkMode ? "hsl(0 0% 100% / 0.05)" : "hsl(var(--border))",
+                      background: isActive ? "hsl(140 12% 42% / 0.1)" : "transparent",
+                    }}
+                  >
+                    <p className={`text-sm font-medium ${isActive ? "text-[hsl(140,12%,58%)]" : textPrimary}`}>{opt.label}</p>
+                    <p className={`text-[10px] mt-0.5 ${textSecondary}`}>{opt.desc}</p>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <Separator className={darkMode ? "border-white/5" : "border-border"} />
           <div className="flex items-center justify-between py-2">
             <div className="flex items-center gap-3">
               {darkMode ? <Moon className={`h-4 w-4 ${iconMuted}`} /> : <Sun className={`h-4 w-4 ${iconMuted}`} />}
