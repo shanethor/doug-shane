@@ -52,7 +52,8 @@ export function IntelligenceDiscountBanner() {
       <div>
         <p className="text-sm font-medium">Unlock reduced pricing</p>
         <p className="text-xs text-muted-foreground leading-relaxed">
-          Connect accounts and add contacts to unlock up to <strong className="text-primary">$100/mo off</strong> your subscription. 
+          Connect accounts and add contacts to unlock up to <strong className="text-primary">$100/mo off</strong> your subscription.
+          Introductory rate: <strong>$149.99/mo</strong> for 3 months, then <strong>$249.99/mo</strong>.
           The more complete your contact profiles (name, email, phone, LinkedIn), the bigger your discount.
         </p>
       </div>
@@ -66,7 +67,10 @@ export function IntelligencePricingSection() {
   const [multiProfileCount, setMultiProfileCount] = useState(0);
   const [singleProfileCount, setSingleProfileCount] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [marketplaceCharges] = useState(0); // placeholder for marketplace add-ons
+  const [marketplaceCharges] = useState(0);
+  // TODO: detect intro vs standard pricing from Stripe subscription
+  const [isIntroPricing] = useState(true); // first 3 months
+  const basePricing = isIntroPricing ? 149.99 : 249.99;
 
   const loadContactStats = useCallback(async () => {
     if (!user) return;
@@ -101,7 +105,6 @@ export function IntelligencePricingSection() {
     : INTELLIGENCE_LEVELS[0];
 
   const currentDiscount = currentLevel?.discount || 0;
-  const basePricing = 100; // $100/mo base
 
   // Progress toward next level
   let nextProgress = 0;
@@ -131,8 +134,10 @@ export function IntelligencePricingSection() {
         {/* Pricing breakdown */}
         <div className="space-y-2 text-sm">
           <div className="flex justify-between">
-            <span className="text-muted-foreground">Base subscription</span>
-            <span>${basePricing}.00</span>
+            <span className="text-muted-foreground">
+              Base subscription {isIntroPricing && <Badge variant="outline" className="text-[9px] ml-1 border-primary/30 text-primary">Intro rate</Badge>}
+            </span>
+            <span>${basePricing.toFixed(2)}</span>
           </div>
           {currentDiscount > 0 && (
             <div className="flex justify-between text-primary">
@@ -149,13 +154,16 @@ export function IntelligencePricingSection() {
                 <ShoppingCart className="h-3 w-3" />
                 Marketplace add-ons
               </span>
-              <span>+${marketplaceCharges}.00</span>
+              <span>+${marketplaceCharges.toFixed(2)}</span>
             </div>
           )}
           <div className="border-t pt-2 flex justify-between font-semibold">
             <span>Estimated next month</span>
-            <span>${basePricing - currentDiscount + marketplaceCharges}.00/mo</span>
+            <span>${(basePricing - currentDiscount + marketplaceCharges).toFixed(2)}/mo</span>
           </div>
+          {isIntroPricing && (
+            <p className="text-[10px] text-muted-foreground">Introductory rate for first 3 months. Standard rate: $249.99/mo</p>
+          )}
         </div>
 
         {/* Intelligence levels */}
