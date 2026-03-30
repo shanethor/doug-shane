@@ -129,6 +129,7 @@ export default function SmartCalendar() {
   const loadData = useCallback(async () => {
     if (!user) return;
     setLoading(true);
+    const minDelay = new Promise(r => setTimeout(r, 600));
     const [evRes, ldRes] = await Promise.all([
       supabase.from("calendar_events").select("*").eq("user_id", user.id)
         .gte("start_time", subMonths(new Date(), 1).toISOString())
@@ -136,6 +137,7 @@ export default function SmartCalendar() {
         .order("start_time", { ascending: true }),
       supabase.from("leads").select("id, account_name, stage, contact_name, contact_email, estimated_premium")
         .eq("owner_user_id", user.id).order("account_name"),
+      minDelay,
     ]);
     const raw = (evRes.data as any[]) || [];
     setRawEvents(raw);

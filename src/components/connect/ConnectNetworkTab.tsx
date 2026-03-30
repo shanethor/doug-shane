@@ -210,14 +210,18 @@ export default function ConnectNetworkTab() {
     if (!user) return;
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from("canonical_persons")
-        .select("*")
-        .eq("owner_user_id", user.id)
-        .order("updated_at", { ascending: false })
-        .limit(500);
-      if (error) throw error;
-      setContacts((data as Contact[]) || []);
+      const minDelay = new Promise(r => setTimeout(r, 600));
+      const [result] = await Promise.all([
+        supabase
+          .from("canonical_persons")
+          .select("*")
+          .eq("owner_user_id", user.id)
+          .order("updated_at", { ascending: false })
+          .limit(500),
+        minDelay,
+      ]);
+      if (result.error) throw result.error;
+      setContacts((result.data as Contact[]) || []);
     } catch (err) {
       console.error("Failed to load contacts:", err);
     } finally {
