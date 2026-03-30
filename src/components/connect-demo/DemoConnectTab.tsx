@@ -878,9 +878,9 @@ export default function DemoConnectTab({ contentReady = true }: { contentReady?:
 
             {/* Who they are + context */}
             {result.brief?.who_they_are?.summary && (
-              <div className="p-3 rounded-lg space-y-2" style={{ background: "hsl(240 6% 7%)", border: "1px solid hsl(240 6% 14%)" }}>
-                <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: "hsl(240 5% 46%)" }}>About {result.target}</p>
-                <p className="text-sm leading-relaxed" style={{ color: "hsl(240 5% 70%)" }}>{result.brief.who_they_are.summary}</p>
+              <div className="p-3 rounded-lg space-y-2 bg-muted/50 border border-border">
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">About {result.target}</p>
+                <p className="text-sm leading-relaxed text-foreground/70">{result.brief.who_they_are.summary}</p>
                 <div className="flex flex-wrap gap-1.5 mt-1">
                   {result.brief.who_they_are.role && (
                     <Badge variant="secondary" className="text-[10px] gap-1"><Briefcase className="h-2.5 w-2.5" />{result.brief.who_they_are.role}</Badge>
