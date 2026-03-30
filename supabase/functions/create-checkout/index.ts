@@ -7,6 +7,10 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// AURA Connect pricing: $149.99/mo intro for 3 months, then $249.99/mo
+const CONNECT_INTRO_PRICE = "price_1TGZwGEISdUzafyh9twp4k8J";  // $149.99/mo
+const CONNECT_STANDARD_PRICE = "price_1TGZwaEISdUzafyhLYBp9tyZ"; // $249.99/mo
+
 const logStep = (step: string, details?: any) => {
   const d = details ? ` - ${JSON.stringify(details)}` : "";
   console.log(`[CREATE-CHECKOUT] ${step}${d}`);
@@ -61,12 +65,16 @@ serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const selectedBranch = body.branch || "property";
     const product = body.product || "connect";
-    const priceId = body.price_id || "price_1TCnlREISdUzafyhciDRHyxM";
     const coupon = body.coupon;
     const successUrl = body.success_url || `${req.headers.get("origin")}/connect?checkout=success`;
     const cancelUrl = body.cancel_url || `${req.headers.get("origin")}/request-access?checkout=cancelled`;
 
     const isStudio = product === "studio";
+
+    // Determine price: Connect uses intro pricing, Studio uses its own price
+    const priceId = isStudio
+      ? (body.price_id || "price_1TF5I1EISdUzafyhMrDOU8II")
+      : CONNECT_INTRO_PRICE;
 
     const sessionParams: any = {
       customer: customerId,
@@ -74,24 +82,28 @@ serve(async (req) => {
       line_items: [{ price: priceId, quantity: 1 }],
       mode: "subscription",
       subscription_data: {
-        metadata: { user_id: user.id, branch: selectedBranch, product },
+        metadata: {
+          user_id: user.id,
+          branch: selectedBranch,
+          product,
+          ...(isStudio ? {} : { pricing_phase: "intro" }),
+        },
       },
       metadata: { user_id: user.id, branch: selectedBranch, product },
       success_url: successUrl,
       cancel_url: cancelUrl,
     };
 
-    // Apply discounts: Studio uses passed coupon, Connect uses intro coupon + trial
+    // Apply discounts: Studio uses passed coupon, Connect uses trial
     if (isStudio && coupon) {
       sessionParams.discounts = [{ coupon }];
     } else if (!isStudio) {
-      sessionParams.discounts = [{ coupon: "9BtS7KcT" }];
       sessionParams.subscription_data.trial_period_days = 14;
     }
 
     const session = await stripe.checkout.sessions.create(sessionParams);
 
-    logStep("Checkout session created", { sessionId: session.id });
+    logStep("Checkout session created", { sessionId: session.id, priceId });
 
     return new Response(JSON.stringify({ url: session.url }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

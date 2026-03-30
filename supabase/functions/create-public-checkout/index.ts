@@ -6,6 +6,10 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// AURA Connect pricing: $149.99/mo intro for 3 months, then $249.99/mo
+const CONNECT_INTRO_PRICE = "price_1TGZwGEISdUzafyh9twp4k8J";  // $149.99/mo
+const CONNECT_STANDARD_PRICE = "price_1TGZwaEISdUzafyhLYBp9tyZ"; // $249.99/mo
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -38,15 +42,15 @@ serve(async (req) => {
 
     const origin = req.headers.get("origin") || "http://localhost:3000";
 
+    // Use subscription_schedule for intro→standard pricing phase
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_email: customerId ? undefined : email,
-      line_items: [{ price: "price_1TCnlREISdUzafyhciDRHyxM", quantity: 1 }],
+      line_items: [{ price: CONNECT_INTRO_PRICE, quantity: 1 }],
       mode: "subscription",
-      discounts: [{ coupon: "9BtS7KcT" }],
       subscription_data: {
         trial_period_days: 14,
-        metadata: { signup_email: email },
+        metadata: { signup_email: email, pricing_phase: "intro" },
       },
       metadata: { signup_email: email },
       success_url: `${origin}/onboard?session_id={CHECKOUT_SESSION_ID}`,
