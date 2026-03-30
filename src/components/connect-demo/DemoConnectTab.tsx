@@ -868,12 +868,12 @@ export default function DemoConnectTab({ contentReady = true }: { contentReady?:
               <span>via <span className="font-medium text-foreground">{result.connection}</span></span>
             </div>
 
-            <div className="flex items-center justify-center gap-2 p-4 rounded-lg" style={{ background: "hsl(240 6% 7%)" }}>
-              <div className="flex items-center justify-center h-10 w-10 rounded-full text-xs font-bold" style={{ background: "hsl(45 93% 47% / 0.15)", color: "hsl(45 93% 47%)" }}>You</div>
-              <ArrowRight className="h-5 w-5 shrink-0" style={{ color: "hsl(140 12% 58%)" }} />
-              <div className="flex items-center justify-center h-10 px-4 rounded-full text-xs font-bold" style={{ background: "hsl(140 12% 42% / 0.15)", color: "hsl(140 12% 58%)" }}>{result.connection}</div>
-              <ArrowRight className="h-5 w-5 shrink-0" style={{ color: "hsl(140 12% 58%)" }} />
-              <div className="flex items-center justify-center h-10 px-4 rounded-full text-xs font-bold" style={{ background: "hsl(140 12% 42% / 0.15)", color: "hsl(140 12% 58%)" }}>{result.target}</div>
+            <div className="flex items-center justify-center gap-2 p-4 rounded-lg bg-muted/50">
+              <div className="flex items-center justify-center h-10 w-10 rounded-full text-xs font-bold bg-amber-500/15 text-amber-500">You</div>
+              <ArrowRight className="h-5 w-5 shrink-0 text-primary" />
+              <div className="flex items-center justify-center h-10 px-4 rounded-full text-xs font-bold bg-primary/15 text-primary">{result.connection}</div>
+              <ArrowRight className="h-5 w-5 shrink-0 text-primary" />
+              <div className="flex items-center justify-center h-10 px-4 rounded-full text-xs font-bold bg-primary/15 text-primary">{result.target}</div>
             </div>
 
             {/* Who they are + context */}
