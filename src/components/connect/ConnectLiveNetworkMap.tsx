@@ -52,6 +52,7 @@ export interface LiveNetworkProfile {
   industry: string;
   location: string;
   mutualConnections: number;
+  mutualConnectionNames?: string[];
   connectionStrength: string;
   tier: 0 | 1 | 2 | 3;
   type: "person" | "company";
