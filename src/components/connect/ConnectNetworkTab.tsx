@@ -140,10 +140,52 @@ function ContactDetailCard({ contact, onUpdate, onClose, onSelectContact }: {
           <div className="space-y-1">
             <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Mutual Connections ({mutualCount})</p>
             <div className="flex flex-wrap gap-1.5">
-              {mutualNames.slice(0, 5).map((name: string, i: number) => (
-                <Badge key={i} variant="outline" className="text-[10px]">{name}</Badge>
+              {mutualNames.slice(0, 8).map((name: string, i: number) => (
+                <Badge
+                  key={i}
+                  variant="outline"
+                  className="text-[10px] cursor-pointer hover:bg-primary/10 hover:border-primary/30 transition-colors"
+                  onClick={() => onSelectContact?.(name)}
+                >
+                  {name}
+                </Badge>
               ))}
-              {mutualCount > 5 && <Badge variant="secondary" className="text-[10px]">+{mutualCount - 5} more</Badge>}
+              {mutualCount > 8 && <Badge variant="secondary" className="text-[10px]">+{mutualCount - 8} more</Badge>}
+            </div>
+          </div>
+        )}
+
+        {/* Social profiles */}
+        {(contact.linkedin_url || contact.primary_phone || contact.primary_email || contact.location) && (
+          <div className="space-y-1">
+            <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Profile Details</p>
+            <div className="space-y-1 text-xs text-muted-foreground">
+              {contact.primary_email && (
+                <div className="flex items-center gap-2">
+                  <Mail className="h-3 w-3 text-primary shrink-0" />
+                  <span className="truncate">{contact.primary_email}</span>
+                </div>
+              )}
+              {contact.primary_phone && (
+                <div className="flex items-center gap-2">
+                  <Phone className="h-3 w-3 text-primary shrink-0" />
+                  <span>{contact.primary_phone}</span>
+                </div>
+              )}
+              {contact.linkedin_url && (
+                <div className="flex items-center gap-2">
+                  <Linkedin className="h-3 w-3 text-primary shrink-0" />
+                  <a href={contact.linkedin_url.startsWith("http") ? contact.linkedin_url : `https://${contact.linkedin_url}`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline truncate">
+                    LinkedIn Profile
+                  </a>
+                </div>
+              )}
+              {contact.location && (
+                <div className="flex items-center gap-2">
+                  <Globe className="h-3 w-3 text-primary shrink-0" />
+                  <span>{contact.location}</span>
+                </div>
+              )}
             </div>
           </div>
         )}
