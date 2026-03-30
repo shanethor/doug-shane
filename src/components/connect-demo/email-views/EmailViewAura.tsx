@@ -124,24 +124,97 @@ export default function EmailViewAura({ engine, ai, linkedAccounts = [], lastSyn
 
         {/* Center — threaded message list with sales info */}
         <div className="flex-1 min-w-0 space-y-2">
-          {/* Filters */}
+          {/* Quick filter tabs */}
           <div className="flex items-center gap-2 flex-wrap">
-            <div className="relative flex-1 max-w-xs">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5" style={{ color: "hsl(240 5% 46%)" }} />
-              <Input placeholder="Search…" value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-                className="pl-9 text-xs h-8" style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 14%)", color: "white" }} />
+            <div className="flex items-center rounded-lg overflow-hidden" style={{ border: "1px solid hsl(240 6% 14%)" }}>
+              {[
+                { key: "all", label: "All" },
+                { key: "unread", label: `Unread (${unreadCount})` },
+                { key: "sent", label: "Sent" },
+              ].map(tab => {
+                const isActive = (tab.key === "all" && folder === "inbox" && !searchQuery.includes("is:unread"))
+                  || (tab.key === "unread" && (folder === "inbox" && searchQuery.includes("is:unread")))
+                  || (tab.key === "sent" && folder === "sent");
+                return (
+                  <button key={tab.key} onClick={() => {
+                    if (tab.key === "all") { setFolder("inbox"); setSearchQuery(sq => sq.replace(/is:unread\s*/g, "").trim()); }
+                    else if (tab.key === "unread") { setFolder("inbox"); setSearchQuery(sq => sq.includes("is:unread") ? sq : (sq + " is:unread").trim()); }
+                    else { setFolder("sent"); setSearchQuery(sq => sq.replace(/is:unread\s*/g, "").trim()); }
+                    clearThread();
+                  }}
+                    className={`text-xs px-3 py-1.5 transition-colors ${isActive ? "text-white font-semibold" : ""}`}
+                    style={{ background: isActive ? "hsl(140 12% 42% / 0.2)" : "transparent", color: isActive ? "hsl(140 12% 70%)" : "hsl(240 5% 50%)" }}
+                  >
+                    {tab.label}
+                  </button>
+                );
+              })}
             </div>
-            <button onClick={() => setAccountFilter("all")} className={`text-xs px-2 py-1 rounded-md ${accountFilter === "all" ? "bg-white/10 text-white" : ""}`} style={accountFilter !== "all" ? { color: "hsl(240 5% 46%)" } : {}}>All</button>
-            {SYNCED_ACCOUNTS.filter(a => a.synced).map(a => (
-              <button key={a.key} onClick={() => setAccountFilter(a.key)}
-                className={`text-xs px-2 py-1 rounded-md flex items-center gap-1 ${accountFilter === a.key ? "bg-white/10 text-white" : ""}`}
-                style={accountFilter !== a.key ? { color: "hsl(240 5% 46%)" } : {}}>
-                <span className="h-1.5 w-1.5 rounded-full" style={{ background: a.color }} /> {a.key}
+          </div>
+
+          {/* Search */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5" style={{ color: "hsl(240 5% 46%)" }} />
+            <Input placeholder="Search emails by subject, sender, or content…" value={searchQuery.replace(/is:unread\s*/g, "").trim()} onChange={e => {
+              const base = e.target.value;
+              const keepUnread = searchQuery.includes("is:unread");
+              setSearchQuery(keepUnread ? (base + " is:unread").trim() : base);
+            }}
+              className="pl-9 text-xs h-8" style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 14%)", color: "white" }} />
+          </div>
+
+          {/* Account chips */}
+          <div className="flex items-center gap-1.5 flex-wrap text-xs">
+            <span style={{ color: "hsl(240 5% 40%)" }}>Inbox:</span>
+            <button onClick={() => setAccountFilter("all")}
+              className={`px-2.5 py-1 rounded-full transition-colors ${accountFilter === "all" ? "text-white font-semibold" : ""}`}
+              style={{ background: accountFilter === "all" ? "hsl(140 12% 42%)" : "hsl(240 6% 14%)", color: accountFilter === "all" ? "white" : "hsl(240 5% 60%)" }}>
+              All Accounts
+            </button>
+            {linkedAccounts.length > 0 ? linkedAccounts.map(acc => {
+              const isActive = accountFilter === acc.id;
+              const provColor = acc.provider === "gmail" ? "hsl(4 90% 58%)" : "hsl(207 90% 54%)";
+              return (
+                <button key={acc.id} onClick={() => setAccountFilter(isActive ? "all" : acc.id)}
+                  className={`px-2.5 py-1 rounded-full transition-colors flex items-center gap-1.5 ${isActive ? "text-white font-semibold" : ""}`}
+                  style={{ background: isActive ? "hsl(240 6% 20%)" : "hsl(240 6% 14%)", color: isActive ? "white" : "hsl(240 5% 60%)" }}>
+                  <Mail className="h-3 w-3" style={{ color: provColor }} />
+                  {acc.provider === "gmail" ? "Gmail" : "Outlook"} ({acc.email_address.split("@")[0]})
+                </button>
+              );
+            }) : SYNCED_ACCOUNTS.filter(a => a.synced).map(a => (
+              <button key={a.key} onClick={() => setAccountFilter(accountFilter === a.key ? "all" : a.key)}
+                className={`px-2.5 py-1 rounded-full transition-colors flex items-center gap-1.5 ${accountFilter === a.key ? "text-white font-semibold" : ""}`}
+                style={{ background: accountFilter === a.key ? "hsl(240 6% 20%)" : "hsl(240 6% 14%)", color: accountFilter === a.key ? "white" : "hsl(240 5% 60%)" }}>
+                <span className="h-1.5 w-1.5 rounded-full" style={{ background: a.color }} /> {a.label.split(" — ")[1] || a.key}
               </button>
             ))}
-            <button onClick={() => setAccountFilter("outreach")} className={`text-xs px-2 py-1 rounded-md flex items-center gap-1 ${accountFilter === "outreach" ? "bg-white/10 text-white" : ""}`}
-              style={accountFilter !== "outreach" ? { color: "hsl(240 5% 46%)" } : {}}>
-              <Activity className="h-3 w-3" style={{ color: "hsl(140 12% 58%)" }} /> Outreach
+          </div>
+
+          {/* Tag filter chips */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {TAG_CHIPS.map(chip => {
+              const active = activeTags.includes(chip.tag);
+              return (
+                <button key={chip.tag} onClick={() => setActiveTags(prev => active ? prev.filter(t => t !== chip.tag) : [...prev, chip.tag])}
+                  className="text-[11px] px-2.5 py-1 rounded-full transition-colors"
+                  style={{
+                    background: active ? "hsl(140 12% 42%)" : "hsl(240 6% 14%)",
+                    color: active ? "white" : "hsl(240 5% 60%)",
+                    border: `1px solid ${active ? "hsl(140 12% 50%)" : "hsl(240 6% 18%)"}`,
+                  }}>
+                  {chip.label}
+                </button>
+              );
+            })}
+            <button onClick={() => setHideNonBiz(v => !v)}
+              className="text-[11px] px-2.5 py-1 rounded-full transition-colors"
+              style={{
+                background: hideNonBiz ? "hsl(140 12% 42%)" : "hsl(240 6% 14%)",
+                color: hideNonBiz ? "white" : "hsl(240 5% 60%)",
+                border: `1px solid ${hideNonBiz ? "hsl(140 12% 50%)" : "hsl(240 6% 18%)"}`,
+              }}>
+              Hide non-business
             </button>
           </div>
 
