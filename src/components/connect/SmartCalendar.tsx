@@ -481,6 +481,55 @@ export default function SmartCalendar() {
             <div><Label className="text-xs">Location</Label><Input value={editEvent.location || ""} onChange={e => setEditEvent(p => ({ ...p!, location: e.target.value }))} className="mt-1" /></div>
             <div><Label className="text-xs">Attendees (comma-separated)</Label><Input value={(editEvent.attendees || []).join(", ")} onChange={e => setEditEvent(p => ({ ...p!, attendees: e.target.value.split(",").map(s => s.trim()).filter(Boolean) }))} className="mt-1" /></div>
             <div><Label className="text-xs">Notes</Label><Textarea value={editEvent.description || ""} onChange={e => setEditEvent(p => ({ ...p!, description: e.target.value }))} className="mt-1 min-h-[60px]" /></div>
+            {/* Calendar picker — only show for new events when external calendars exist */}
+            {!editEvent.id && externalCalendars.length > 0 && (
+              <div className="space-y-2">
+                <Label className="text-xs">Sync to Calendar</Label>
+                <div className="space-y-1.5">
+                  {externalCalendars.map(cal => {
+                    const isSelected = ((editEvent as any).targetCalendars || []).includes(cal.id);
+                    return (
+                      <label key={cal.id} className="flex items-center gap-2 text-xs cursor-pointer rounded-md border px-3 py-2 transition-colors hover:bg-muted/40"
+                        style={{ borderColor: isSelected ? "hsl(var(--primary))" : undefined }}>
+                        <input type="checkbox" checked={isSelected} className="rounded" onChange={() => {
+                          setEditEvent(p => {
+                            const current = (p as any)?.targetCalendars || [];
+                            const next = isSelected ? current.filter((id: string) => id !== cal.id) : [...current, cal.id];
+                            return { ...p!, targetCalendars: next };
+                          });
+                        }} />
+                        <span className="capitalize font-medium">{cal.provider}</span>
+                        <span className="text-muted-foreground">({cal.email_address})</span>
+                      </label>
+                    );
+                  })}
+                </div>
+                <div className="flex items-center gap-2">
+                  <button className="text-[10px] text-primary hover:underline" onClick={() => {
+                    const currentTargets = (editEvent as any)?.targetCalendars || [];
+                    if (currentTargets.length === 1) {
+                      localStorage.setItem("aura-default-calendar", currentTargets[0]);
+                      setDefaultCalendarId(currentTargets[0]);
+                      const cal = externalCalendars.find(c => c.id === currentTargets[0]);
+                      toast.success(`Default calendar set to ${cal?.email_address || cal?.provider}`);
+                    } else {
+                      toast.info("Select exactly one calendar to set as default");
+                    }
+                  }}>
+                    Set selected as default
+                  </button>
+                  {defaultCalendarId && (
+                    <button className="text-[10px] text-muted-foreground hover:underline" onClick={() => {
+                      localStorage.removeItem("aura-default-calendar");
+                      setDefaultCalendarId("");
+                      toast.success("Default calendar cleared");
+                    }}>
+                      Clear default
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
             <div className="flex gap-2 pt-2">
               <Button className="flex-1" onClick={saveEvent}>Save</Button>
               <Button variant="outline" onClick={() => setShowEditor(false)}>Cancel</Button>
