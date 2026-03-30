@@ -180,6 +180,7 @@ function buildRealGraph(contacts: ContactRow[]): GraphData {
         location: strongestMember.location || "Company tie",
         industry: "Company node",
         mutualConnections,
+        mutualConnectionNames: members.map(m => m.display_name?.trim() || "Unknown").slice(0, 10),
         connectionStrength: strengthFromTier(tier),
         sourceContactIds: members.map((member) => member.id),
       };

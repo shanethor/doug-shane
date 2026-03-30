@@ -166,6 +166,16 @@ export function IntelligencePricingSection() {
           )}
         </div>
 
+        {/* Monthly reset info */}
+        <div className="rounded-md border border-primary/10 bg-primary/[0.03] p-3 space-y-1.5">
+          <p className="text-xs font-medium text-foreground flex items-center gap-1.5">
+            <Zap className="h-3.5 w-3.5 text-primary" /> How Intelligence Discounts Work
+          </p>
+          <p className="text-[11px] text-muted-foreground leading-relaxed">
+            Discounts reset at the end of each month. Add contacts with linked profiles (email, phone, LinkedIn) throughout the month to earn discounts applied to the <strong>following month's</strong> bill. The more complete your contact profiles, the bigger your discount.
+          </p>
+        </div>
+
         {/* Intelligence levels */}
         <Collapsible>
           <CollapsibleTrigger className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors w-full">

@@ -23,12 +23,6 @@ const ACCOUNT_REWARDS: RewardTier[] = [
   { id: "acct_all", label: "All Accounts", description: "Connect every available account", credit: "$15", type: "accounts", threshold: 99 }, // 99 = sentinel for "all"
 ];
 
-const CONTACT_REWARDS: RewardTier[] = [
-  { id: "cont_100", label: "100 Contacts", description: "Import 100+ contacts", credit: "$5", type: "contacts", threshold: 100 },
-  { id: "cont_250", label: "250 Contacts", description: "Import 250+ contacts", credit: "$10", type: "contacts", threshold: 250 },
-  { id: "cont_500", label: "500 Contacts", description: "Import 500+ contacts", credit: "$15", type: "contacts", threshold: 500 },
-  { id: "cont_1000", label: "1,000 Contacts", description: "Import 1,000+ contacts", credit: "$50", type: "contacts", threshold: 1000 },
-];
 
 export function ConnectRewards() {
   const { user } = useAuth();
@@ -146,40 +140,43 @@ export function ConnectRewards() {
         })}
       </div>
 
-      {/* Contact Rewards */}
+      {/* Intelligence Discount Levels */}
       <div className="space-y-1.5">
         <p className="text-[11px] text-white/30 uppercase tracking-wider font-medium flex items-center gap-1.5">
-          <Users className="h-3 w-3" /> Contact Rewards
-          <Badge variant="outline" className="text-[9px] ml-auto border-white/10 text-white/30">{contactCount.toLocaleString()} imported</Badge>
+          <Users className="h-3 w-3" /> Intelligence Discounts
+          <Badge variant="outline" className="text-[9px] ml-auto border-white/10 text-white/30">{contactCount.toLocaleString()} contacts</Badge>
         </p>
-        {CONTACT_REWARDS.map(r => {
-          const unlocked = isUnlocked(r);
-          const claimed = isClaimed(r.id);
+        <p className="text-[10px] text-white/30 leading-relaxed">
+          Earn monthly subscription discounts by maintaining quality contact profiles. Resets monthly — keep adding contacts to maintain your discount.
+        </p>
+        {[
+          { level: 1, discount: "$10/mo", multi: 25, single: 100 },
+          { level: 2, discount: "$25/mo", multi: 50, single: 200 },
+          { level: 3, discount: "$50/mo", multi: 100, single: 350 },
+          { level: 4, discount: "$100/mo", multi: 200, single: 500 },
+        ].map(l => {
+          const unlocked = contactCount >= l.single; // simplified check
           return (
-            <div key={r.id} className={`flex items-center justify-between rounded-lg border p-3 transition-all ${
-              claimed ? "border-green-500/20 bg-green-500/5" :
-              unlocked ? "border-primary/30 bg-primary/5" :
-              "border-white/5 bg-white/[0.02] opacity-60"
+            <div key={l.level} className={`flex items-center justify-between rounded-lg border p-3 transition-all ${
+              unlocked ? "border-primary/30 bg-primary/5" : "border-white/5 bg-white/[0.02] opacity-60"
             }`}>
               <div className="flex items-center gap-3">
                 <div className={`h-8 w-8 rounded-lg flex items-center justify-center ${
-                  claimed ? "bg-green-500/10 text-green-400" : unlocked ? "bg-primary/10 text-primary" : "bg-white/5 text-white/20"
+                  unlocked ? "bg-primary/10 text-primary" : "bg-white/5 text-white/20"
                 }`}>
-                  {claimed ? <CheckCircle className="h-4 w-4" /> : <Users className="h-4 w-4" />}
+                  <span className="text-xs font-bold">L{l.level}</span>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-white/70">{r.label}</p>
-                  <p className="text-[11px] text-white/30">{r.description}</p>
+                  <p className="text-sm font-medium text-white/70">Level {l.level} Intelligence</p>
+                  <p className="text-[11px] text-white/30">{l.multi} multi-profile or {l.single} single-profile contacts</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <Badge variant="outline" className="text-xs border-white/10 text-white/50">{r.credit}</Badge>
-                {claimed ? (
-                  <Badge className="text-[10px] bg-green-500/10 text-green-400 border-green-500/20">Claimed</Badge>
-                ) : unlocked ? (
-                  <Button size="sm" className="h-7 text-xs bg-primary/20 text-primary hover:bg-primary/30 border-0" onClick={() => claimReward(r)} disabled={claiming === r.id}>
-                    {claiming === r.id ? <Loader2 className="h-3 w-3 animate-spin" /> : "Claim"}
-                  </Button>
+                <Badge variant="outline" className={`text-xs ${unlocked ? "border-primary/30 text-primary" : "border-white/10 text-white/50"}`}>
+                  -{l.discount}
+                </Badge>
+                {unlocked ? (
+                  <Badge className="text-[10px] bg-primary/10 text-primary border-primary/20">Active</Badge>
                 ) : (
                   <Badge variant="outline" className="text-[10px] border-white/10 text-white/20">Locked</Badge>
                 )}
