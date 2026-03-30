@@ -232,7 +232,7 @@ export default function DemoEmailTab() {
         </TabsContent>
 
         <TabsContent value="calendar">
-          <SmartCalendar embedded />
+          <SmartCalendar />
         </TabsContent>
 
         <TabsContent value="clients">
