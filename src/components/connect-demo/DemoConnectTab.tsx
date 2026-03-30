@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, ArrowRight, Sparkles, Loader2, X, MapPin, Briefcase, Building2, Users, Signal, Mail, MessageSquare, Phone, Send, Calendar, Brain, List, GitMerge } from "lucide-react";
+import { Search, ArrowRight, Sparkles, Loader2, X, MapPin, Briefcase, Building2, Users, Signal, Mail, MessageSquare, Phone, Send, Calendar, Brain, List, GitMerge, Linkedin, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { ConnectOutreachPopup } from "./ConnectOutreachPopups";
