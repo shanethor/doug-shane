@@ -9,7 +9,7 @@ import {
   CheckCircle, Circle, Settings, Network, Loader2,
   Upload, RefreshCw, Unlink, AlertTriangle, Plus, ClipboardPaste,
   ChevronDown, ChevronUp, MessageSquare, Gamepad2, Dumbbell, MapPin,
-  Camera, Headphones, Globe, Hash,
+  Camera, Headphones, Globe, Hash, Zap,
 } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
@@ -405,6 +405,7 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
   const [activeSource, setActiveSource] = useState<string>("");
   const [sourceContacts, setSourceContacts] = useState("");
   const sourceFileRef = useRef<HTMLInputElement>(null);
+  const [comingSoonOpen, setComingSoonOpen] = useState(false);
 
   const fetchGmailAccounts = useCallback(async (): Promise<{id: string; email: string}[]> => {
     try {
@@ -1334,11 +1335,14 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
     );
   }
 
+  const activeAccounts = accounts.filter(a => !COMING_SOON_SOURCES.has(a.id));
+  const comingSoonAccounts = accounts.filter(a => COMING_SOON_SOURCES.has(a.id));
+
   // ─── Full Variant for Settings ───
   return (
     <div className="space-y-3">
       {hiddenInputs}
-      {accounts.map((a) => (
+      {activeAccounts.map((a) => (
         <div
           key={a.id}
           className="flex items-center justify-between rounded-lg border p-3 sm:p-4 min-h-[56px]"
@@ -1481,6 +1485,40 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
           </div>
         </div>
       ))}
+
+      {/* Coming Soon — collapsible section */}
+      {comingSoonAccounts.length > 0 && (
+        <div className="rounded-lg border">
+          <button
+            onClick={() => setComingSoonOpen(o => !o)}
+            className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-muted-foreground hover:bg-muted/30 transition-colors"
+          >
+            <span className="flex items-center gap-2">
+              <Zap className="h-4 w-4" />
+              Coming Soon ({comingSoonAccounts.length})
+            </span>
+            {comingSoonOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </button>
+          {comingSoonOpen && (
+            <div className="border-t space-y-0">
+              {comingSoonAccounts.map((a) => (
+                <div key={a.id} className="flex items-center justify-between px-4 py-3 border-b last:border-b-0">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="h-9 w-9 rounded-lg flex items-center justify-center shrink-0 bg-muted text-muted-foreground">
+                      {a.icon}
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium">{a.label}</p>
+                      <p className="text-xs text-muted-foreground">Direct integration in development</p>
+                    </div>
+                  </div>
+                  <Badge variant="outline" className="text-[10px] text-muted-foreground">Coming Soon</Badge>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Import instructions */}
       <div className="rounded-md bg-muted/50 p-3 space-y-1.5">

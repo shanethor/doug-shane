@@ -110,6 +110,10 @@ export default function SmartCalendar() {
   const [rawEvents, setRawEvents] = useState<any[]>([]);
   const [events, setEvents] = useState<CalEvent[]>([]);
   const [leads, setLeads] = useState<any[]>([]);
+  const [externalCalendars, setExternalCalendars] = useState<{id: string; provider: string; email_address: string}[]>([]);
+  const [defaultCalendarId, setDefaultCalendarId] = useState<string>(() => {
+    try { return localStorage.getItem("aura-default-calendar") || ""; } catch { return ""; }
+  });
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [view, setView] = useState<ViewMode>("week");
@@ -118,7 +122,7 @@ export default function SmartCalendar() {
   const [showSearch, setShowSearch] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalEvent | null>(null);
   const [showEditor, setShowEditor] = useState(false);
-  const [editEvent, setEditEvent] = useState<Partial<CalEvent> | null>(null);
+  const [editEvent, setEditEvent] = useState<Partial<CalEvent> & { targetCalendars?: string[] } | null>(null);
   const [showAssistant, setShowAssistant] = useState(false);
   const [showBooking, setShowBooking] = useState(false);
   const [filterType, setFilterType] = useState("all");
@@ -128,18 +132,21 @@ export default function SmartCalendar() {
   const loadData = useCallback(async () => {
     if (!user) return;
     setLoading(true);
-    const [evRes, ldRes] = await Promise.all([
+    const [evRes, ldRes, calRes] = await Promise.all([
       supabase.from("calendar_events").select("*").eq("user_id", user.id)
         .gte("start_time", subMonths(new Date(), 1).toISOString())
         .lte("start_time", addMonths(new Date(), 6).toISOString())
         .order("start_time", { ascending: true }),
       supabase.from("leads").select("id, account_name, stage, contact_name, contact_email, estimated_premium")
         .eq("owner_user_id", user.id).order("account_name"),
+      supabase.from("external_calendars").select("id, provider, email_address")
+        .eq("user_id", user.id).eq("is_active", true),
     ]);
     const raw = (evRes.data as any[]) || [];
     setRawEvents(raw);
     setEvents(mapRealEvents(raw));
     setLeads((ldRes.data as any[]) || []);
+    setExternalCalendars((calRes.data as any[]) || []);
     setLoading(false);
   }, [user]);
 
@@ -221,9 +228,14 @@ export default function SmartCalendar() {
   const eventsFor = (date: Date) => filteredEvents.filter(e => isSameDay(e.date, date));
 
   const openQuickAdd = (date: Date, hour?: number) => {
+    // Pre-select calendars: use default if set, otherwise all
+    const defaultTargets = defaultCalendarId && externalCalendars.some(c => c.id === defaultCalendarId)
+      ? [defaultCalendarId]
+      : externalCalendars.map(c => c.id);
     setEditEvent({
       id: "", title: "", date, startHour: hour ?? 9, startMin: 0, endHour: (hour ?? 9) + 1, endMin: 0,
       location: "", description: "", attendees: [], allDay: false, color: EVENT_COLORS.other, external: false, event_type: "other",
+      targetCalendars: defaultTargets,
     });
     setShowEditor(true);
   };
@@ -268,17 +280,14 @@ export default function SmartCalendar() {
       } as any).select().single();
       if (error) { toast.error("Failed to create"); return; }
 
-      // Push to connected external calendars (Google/Outlook)
+      // Push to selected external calendars (Google/Outlook)
       try {
-        const { data: calendars } = await supabase
-          .from("external_calendars")
-          .select("provider, is_active")
-          .eq("user_id", user.id)
-          .eq("is_active", true);
+        const selectedIds = (editEvent as any).targetCalendars || [];
+        const calendarsToSync = externalCalendars.filter(c => selectedIds.includes(c.id));
 
-        if (calendars?.length) {
+        if (calendarsToSync.length) {
           const { data: { session } } = await supabase.auth.getSession();
-          for (const cal of calendars) {
+          for (const cal of calendarsToSync) {
             await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/calendar-sync`, {
               method: "POST",
               headers: {
@@ -472,6 +481,55 @@ export default function SmartCalendar() {
             <div><Label className="text-xs">Location</Label><Input value={editEvent.location || ""} onChange={e => setEditEvent(p => ({ ...p!, location: e.target.value }))} className="mt-1" /></div>
             <div><Label className="text-xs">Attendees (comma-separated)</Label><Input value={(editEvent.attendees || []).join(", ")} onChange={e => setEditEvent(p => ({ ...p!, attendees: e.target.value.split(",").map(s => s.trim()).filter(Boolean) }))} className="mt-1" /></div>
             <div><Label className="text-xs">Notes</Label><Textarea value={editEvent.description || ""} onChange={e => setEditEvent(p => ({ ...p!, description: e.target.value }))} className="mt-1 min-h-[60px]" /></div>
+            {/* Calendar picker — only show for new events when external calendars exist */}
+            {!editEvent.id && externalCalendars.length > 0 && (
+              <div className="space-y-2">
+                <Label className="text-xs">Sync to Calendar</Label>
+                <div className="space-y-1.5">
+                  {externalCalendars.map(cal => {
+                    const isSelected = ((editEvent as any).targetCalendars || []).includes(cal.id);
+                    return (
+                      <label key={cal.id} className="flex items-center gap-2 text-xs cursor-pointer rounded-md border px-3 py-2 transition-colors hover:bg-muted/40"
+                        style={{ borderColor: isSelected ? "hsl(var(--primary))" : undefined }}>
+                        <input type="checkbox" checked={isSelected} className="rounded" onChange={() => {
+                          setEditEvent(p => {
+                            const current = (p as any)?.targetCalendars || [];
+                            const next = isSelected ? current.filter((id: string) => id !== cal.id) : [...current, cal.id];
+                            return { ...p!, targetCalendars: next };
+                          });
+                        }} />
+                        <span className="capitalize font-medium">{cal.provider}</span>
+                        <span className="text-muted-foreground">({cal.email_address})</span>
+                      </label>
+                    );
+                  })}
+                </div>
+                <div className="flex items-center gap-2">
+                  <button className="text-[10px] text-primary hover:underline" onClick={() => {
+                    const currentTargets = (editEvent as any)?.targetCalendars || [];
+                    if (currentTargets.length === 1) {
+                      localStorage.setItem("aura-default-calendar", currentTargets[0]);
+                      setDefaultCalendarId(currentTargets[0]);
+                      const cal = externalCalendars.find(c => c.id === currentTargets[0]);
+                      toast.success(`Default calendar set to ${cal?.email_address || cal?.provider}`);
+                    } else {
+                      toast.info("Select exactly one calendar to set as default");
+                    }
+                  }}>
+                    Set selected as default
+                  </button>
+                  {defaultCalendarId && (
+                    <button className="text-[10px] text-muted-foreground hover:underline" onClick={() => {
+                      localStorage.removeItem("aura-default-calendar");
+                      setDefaultCalendarId("");
+                      toast.success("Default calendar cleared");
+                    }}>
+                      Clear default
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
             <div className="flex gap-2 pt-2">
               <Button className="flex-1" onClick={saveEvent}>Save</Button>
               <Button variant="outline" onClick={() => setShowEditor(false)}>Cancel</Button>
