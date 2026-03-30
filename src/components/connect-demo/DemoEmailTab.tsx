@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
-import { Mail, CheckCheck, Loader2, PenSquare, X, Send, ChevronDown } from "lucide-react";
+import { Mail, CheckCheck, Loader2, PenSquare, X, Send, ChevronDown, RefreshCw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
