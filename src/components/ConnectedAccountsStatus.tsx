@@ -1334,9 +1334,8 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
     );
   }
 
-  const [comingSoonOpen, setComingSoonOpen] = useState(false);
-
   const activeAccounts = accounts.filter(a => !COMING_SOON_SOURCES.has(a.id));
+  const comingSoonAccounts = accounts.filter(a => COMING_SOON_SOURCES.has(a.id));
   const comingSoonAccounts = accounts.filter(a => COMING_SOON_SOURCES.has(a.id));
 
   // ─── Full Variant for Settings ───
