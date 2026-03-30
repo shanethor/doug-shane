@@ -975,9 +975,9 @@ export default function DemoConnectTab({ contentReady = true }: { contentReady?:
 
       {/* Contacts / Merge Dialog */}
       <Dialog open={showContacts} onOpenChange={setShowContacts}>
-        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto" style={{ background: "hsl(240 8% 8%)", borderColor: "hsl(240 6% 14%)" }}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-white">Contact Management</DialogTitle>
+            <DialogTitle>Contact Management</DialogTitle>
           </DialogHeader>
           <Tabs value={contactsTab} onValueChange={v => setContactsTab(v as "list" | "merge")}>
             <TabsList className="grid w-full grid-cols-2">
