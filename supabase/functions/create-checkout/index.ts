@@ -118,7 +118,7 @@ serve(async (req) => {
         {
           items: [{ price: CONNECT_INTRO_PRICE, quantity: 1 }],
           iterations: 3, // 3 months at intro price
-          trial_end: now + (14 * 24 * 60 * 60), // 14-day trial
+          trial_end: now + (3 * 24 * 60 * 60), // 3-day trial
           metadata: { pricing_phase: "intro", user_id: user.id, branch: selectedBranch },
         },
         {
