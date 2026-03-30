@@ -67,7 +67,10 @@ export function IntelligencePricingSection() {
   const [multiProfileCount, setMultiProfileCount] = useState(0);
   const [singleProfileCount, setSingleProfileCount] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [marketplaceCharges] = useState(0); // placeholder for marketplace add-ons
+  const [marketplaceCharges] = useState(0);
+  // TODO: detect intro vs standard pricing from Stripe subscription
+  const [isIntroPricing] = useState(true); // first 3 months
+  const basePricing = isIntroPricing ? 149.99 : 249.99;
 
   const loadContactStats = useCallback(async () => {
     if (!user) return;
