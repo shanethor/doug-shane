@@ -9,6 +9,7 @@ import {
   Plus, Paperclip, ArrowLeft, X, Sparkles, Reply, ReplyAll, Forward,
   CheckCheck, Activity, User, Link2, Target, Building2, MapPin, Users,
   CalendarPlus, FileText, ListTodo, BarChart3, Shield, Bell, TrendingUp,
+  Filter,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
@@ -23,12 +24,37 @@ type Folder = "inbox" | "sent" | "starred" | "drafts";
 
 const FOLDERS: { key: Folder; label: string; icon: React.ElementType }[] = [
   { key: "inbox", label: "Inbox", icon: Inbox },
-  { key: "sent", label: "Sent", icon: SendHorizonal },
+  { key: "sent", label: "Sent", icon: SendIcon },
   { key: "starred", label: "Starred", icon: Star },
   { key: "drafts", label: "Drafts", icon: FilePenLine },
 ];
 
-export default function EmailViewAura({ engine, ai }: { engine: Engine; ai: AI }) {
+const TAG_CHIPS = [
+  { label: "COIs", tag: "coi_request" },
+  { label: "Claims", tag: "claim" },
+  { label: "Cancellations", tag: "cancellation_notice" },
+  { label: "Audits", tag: "audit" },
+  { label: "Renewals", tag: "renewal" },
+  { label: "Billing", tag: "billing" },
+  { label: "Endorsements", tag: "endorsement" },
+  { label: "Service Requests", tag: "service_request" },
+] as const;
+
+interface LinkedAccount {
+  id: string;
+  provider: string;
+  email_address: string;
+  is_active: boolean;
+}
+
+interface AuraProps {
+  engine: Engine;
+  ai: AI;
+  linkedAccounts?: LinkedAccount[];
+  lastSyncedAt?: Date | null;
+}
+
+export default function EmailViewAura({ engine, ai, linkedAccounts = [], lastSyncedAt }: AuraProps) {
   const {
     filtered, selectedThread, unreadCount, searchQuery, setSearchQuery,
     folder, setFolder, accountFilter, setAccountFilter,
