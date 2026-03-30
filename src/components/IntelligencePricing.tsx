@@ -52,7 +52,8 @@ export function IntelligenceDiscountBanner() {
       <div>
         <p className="text-sm font-medium">Unlock reduced pricing</p>
         <p className="text-xs text-muted-foreground leading-relaxed">
-          Connect accounts and add contacts to unlock up to <strong className="text-primary">$100/mo off</strong> your subscription. 
+          Connect accounts and add contacts to unlock up to <strong className="text-primary">$100/mo off</strong> your subscription.
+          Introductory rate: <strong>$149.99/mo</strong> for 3 months, then <strong>$249.99/mo</strong>.
           The more complete your contact profiles (name, email, phone, LinkedIn), the bigger your discount.
         </p>
       </div>
