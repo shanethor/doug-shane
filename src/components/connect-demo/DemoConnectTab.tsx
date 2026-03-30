@@ -804,7 +804,9 @@ export default function DemoConnectTab({ contentReady = true }: { contentReady?:
                 </div>
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <Users className="h-3.5 w-3.5 shrink-0 text-primary" />
-                  {profilePopup.profile.type === "company" ? `${profilePopup.profile.mutualConnections} people linked` : `${profilePopup.profile.mutualConnections} mutual connections`}
+                  {profilePopup.profile.type === "company"
+                    ? `${profilePopup.profile.mutualConnections} people linked${profilePopup.profile.mutualConnectionNames?.length ? " — names shown below" : ""}`
+                    : `${profilePopup.profile.mutualConnections} mutual connections${profilePopup.profile.mutualConnectionNames?.length ? " — tap a name below" : ""}`}
                 </div>
                 <div className="flex items-center gap-2 text-xs">
                   <Signal className="h-3.5 w-3.5 shrink-0" style={{ color: strengthColor(profilePopup.profile.connectionStrength) }} />
