@@ -8,6 +8,7 @@ import {
   Shield, Mail, Users, Target, ArrowRight, Loader2,
   Lock, CheckCircle, Sparkles,
 } from "lucide-react";
+import { IntelligenceDiscountBanner } from "@/components/IntelligencePricing";
 import { supabase } from "@/integrations/supabase/client";
 import { getAuthHeaders } from "@/lib/auth-fetch";
 import { toast } from "sonner";
