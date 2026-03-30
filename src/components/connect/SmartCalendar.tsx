@@ -14,6 +14,7 @@ import {
   FileText, GitBranch, Send, MessageSquare, ChevronDown, ChevronUp,
   ExternalLink, RefreshCw, Filter, Zap, Bell,
 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   format, addDays, startOfWeek, addWeeks, startOfMonth, endOfMonth,
   eachDayOfInterval, isSameMonth, isSameDay, subWeeks, subMonths,
