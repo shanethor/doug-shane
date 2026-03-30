@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from "react";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -47,20 +46,18 @@ export default function ConnectHealthTab() {
     if (!user) return;
     setLoading(true);
     try {
-      const minDelay = new Promise(r => setTimeout(r, 600));
-      const [result] = await Promise.all([
-        supabase
-          .from("relationship_health_checks")
-          .select("*")
-          .eq("user_id", user.id)
-          .order("checked_at", { ascending: false })
-          .limit(50),
-        minDelay,
-      ]);
-      if (result.error) throw result.error;
+      // Get the latest check per contact
+      const { data, error } = await supabase
+        .from("relationship_health_checks")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("checked_at", { ascending: false })
+        .limit(50);
+      if (error) throw error;
 
+      // Deduplicate - show latest per contact
       const seen = new Set<string>();
-      const unique = (result.data || []).filter(c => {
+      const unique = (data || []).filter(c => {
         const key = c.contact_name.toLowerCase();
         if (seen.has(key)) return false;
         seen.add(key);
@@ -213,17 +210,8 @@ export default function ConnectHealthTab() {
 
       {/* Health Check List */}
       {loading ? (
-        <div className="space-y-3 animate-page-fade">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="rounded-lg border bg-card p-3 flex items-center gap-3">
-              <Skeleton className="h-10 w-10 rounded-full shrink-0" />
-              <div className="flex-1 space-y-1">
-                <Skeleton className="h-4 w-32" />
-                <Skeleton className="h-3 w-48" />
-              </div>
-              <Skeleton className="h-8 w-20 rounded-md" />
-            </div>
-          ))}
+        <div className="flex items-center justify-center py-16">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       ) : checks.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center space-y-3">
