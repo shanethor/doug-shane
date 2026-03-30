@@ -105,7 +105,6 @@ export function IntelligencePricingSection() {
     : INTELLIGENCE_LEVELS[0];
 
   const currentDiscount = currentLevel?.discount || 0;
-  const basePricing = 100; // $100/mo base
 
   // Progress toward next level
   let nextProgress = 0;
