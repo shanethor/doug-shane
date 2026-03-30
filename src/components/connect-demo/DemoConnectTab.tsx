@@ -814,6 +814,52 @@ export default function DemoConnectTab({ contentReady = true }: { contentReady?:
                 </div>
               </div>
 
+              {/* Social / Contact links */}
+              {(profilePopup.profile.email || profilePopup.profile.phone || profilePopup.profile.linkedin) && (
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {profilePopup.profile.email && (
+                    <Button variant="outline" size="sm" className="h-6 text-[10px] gap-1 px-2" onClick={() => window.open(`mailto:${profilePopup.profile.email}`)}>
+                      <Mail className="h-2.5 w-2.5" /> {profilePopup.profile.email}
+                    </Button>
+                  )}
+                  {profilePopup.profile.phone && (
+                    <Button variant="outline" size="sm" className="h-6 text-[10px] gap-1 px-2" onClick={() => window.open(`tel:${profilePopup.profile.phone}`)}>
+                      <Phone className="h-2.5 w-2.5" /> {profilePopup.profile.phone}
+                    </Button>
+                  )}
+                  {profilePopup.profile.linkedin && (
+                    <Button variant="outline" size="sm" className="h-6 text-[10px] gap-1 px-2" onClick={() => window.open(profilePopup.profile.linkedin!.startsWith("http") ? profilePopup.profile.linkedin! : `https://${profilePopup.profile.linkedin}`, "_blank")}>
+                      <Linkedin className="h-2.5 w-2.5" /> LinkedIn
+                    </Button>
+                  )}
+                </div>
+              )}
+
+              {/* Mutual connections - clickable */}
+              {profilePopup.profile.mutualConnectionNames && profilePopup.profile.mutualConnectionNames.length > 0 && (
+                <div className="space-y-1 pt-1">
+                  <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Mutual Connections</p>
+                  <div className="flex flex-wrap gap-1">
+                    {profilePopup.profile.mutualConnectionNames.slice(0, 8).map((name, i) => (
+                      <Badge
+                        key={i}
+                        variant="outline"
+                        className="text-[10px] cursor-pointer hover:bg-primary/10 hover:border-primary/30 transition-colors"
+                        onClick={() => {
+                          setSearchName(name);
+                          setProfilePopup(null);
+                        }}
+                      >
+                        {name}
+                      </Badge>
+                    ))}
+                    {profilePopup.profile.mutualConnectionNames.length > 8 && (
+                      <Badge variant="secondary" className="text-[10px]">+{profilePopup.profile.mutualConnectionNames.length - 8} more</Badge>
+                    )}
+                  </div>
+                </div>
+              )}
+
               <div className="flex gap-2 pt-1">
                 <Button
                   size="sm"
