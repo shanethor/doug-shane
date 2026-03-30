@@ -132,18 +132,21 @@ export default function SmartCalendar() {
   const loadData = useCallback(async () => {
     if (!user) return;
     setLoading(true);
-    const [evRes, ldRes] = await Promise.all([
+    const [evRes, ldRes, calRes] = await Promise.all([
       supabase.from("calendar_events").select("*").eq("user_id", user.id)
         .gte("start_time", subMonths(new Date(), 1).toISOString())
         .lte("start_time", addMonths(new Date(), 6).toISOString())
         .order("start_time", { ascending: true }),
       supabase.from("leads").select("id, account_name, stage, contact_name, contact_email, estimated_premium")
         .eq("owner_user_id", user.id).order("account_name"),
+      supabase.from("external_calendars").select("id, provider, email_address")
+        .eq("user_id", user.id).eq("is_active", true),
     ]);
     const raw = (evRes.data as any[]) || [];
     setRawEvents(raw);
     setEvents(mapRealEvents(raw));
     setLeads((ldRes.data as any[]) || []);
+    setExternalCalendars((calRes.data as any[]) || []);
     setLoading(false);
   }, [user]);
 
