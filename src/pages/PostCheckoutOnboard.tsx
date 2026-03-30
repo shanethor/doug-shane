@@ -49,6 +49,11 @@ export default function PostCheckoutOnboard() {
     e.preventDefault();
     setSubmitting(true);
     try {
+      if (!selectedIndustry) {
+        toast.error("Please select your industry");
+        setSubmitting(false);
+        return;
+      }
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -58,6 +63,16 @@ export default function PostCheckoutOnboard() {
         },
       });
       if (error) throw error;
+
+      // Save industry to profile
+      if (data.user) {
+        setTimeout(async () => {
+          await supabase
+            .from("profiles")
+            .update({ industry: selectedIndustry })
+            .eq("user_id", data.user!.id);
+        }, 1000);
+      }
 
       // Send 2FA verification code
       setSending2fa(true);
