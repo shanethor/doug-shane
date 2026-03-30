@@ -21,6 +21,7 @@ import { useAuth } from "@/hooks/useAuth";
 import PrivacySettings from "@/components/connect/PrivacySettings";
 import FeederListAnalytics from "@/components/connect/FeederListAnalytics";
 import RelationshipMap from "@/components/connect/RelationshipMap";
+import { IntelligenceDiscountBanner } from "@/components/IntelligencePricing";
 
 // ─── Types ───
 interface DiscoveredContact {
