@@ -472,6 +472,13 @@ export default function ConnectNetworkTab() {
               contact={selectedContact}
               onUpdate={handleUpdate}
               onClose={() => setSelectedId(null)}
+              onSelectContact={(name) => {
+                const match = contacts.find(c => 
+                  (c.display_name || "").toLowerCase() === name.toLowerCase()
+                );
+                if (match) setSelectedId(match.id);
+                else toast.info(`"${name}" not found in your contacts`);
+              }}
             />
           ) : (
             <Card className="border-dashed">
