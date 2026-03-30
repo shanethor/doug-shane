@@ -208,20 +208,22 @@ function parseVCard(vcard: string): Record<string, any> {
   const urls = getAll("URL");
   const linkedinUrl = urls.find(u => u.toLowerCase().includes("linkedin")) || null;
 
-  // Clean phone numbers — strip tel: URI prefix
-  const cleanPhones = phones.map(p => p.replace(/^tel:/i, "").trim()).filter(Boolean);
+  // Clean phone numbers — strip tel: URI prefix and carriage return artifacts
+  const cleanValue = (v: string) => v.replace(/&#\d+;?/g, "").replace(/\r|\n/g, "").trim();
+  const cleanPhones = phones.map(p => cleanValue(p.replace(/^tel:/i, ""))).filter(Boolean);
+  const cleanEmails = emails.map(e => cleanValue(e)).filter(Boolean);
 
   return {
-    full_name: (fn || parsedName || "").replace(/\r/g, "").trim() || null,
-    email: emails[0] || null,
+    full_name: cleanValue(fn || parsedName || "") || null,
+    email: cleanEmails[0] || null,
     phone: cleanPhones[0] || null,
-    company: org?.replace(/;/g, " ").trim() || null,
-    title: title || null,
-    linkedin_url: linkedinUrl,
+    company: org ? cleanValue(org.replace(/;/g, " ")) : null,
+    title: title ? cleanValue(title) : null,
+    linkedin_url: linkedinUrl ? cleanValue(linkedinUrl) : null,
     location,
-    uid: uid?.replace(/\r/g, "").trim() || null,
-    note: note || null,
-    all_emails: emails,
+    uid: uid ? cleanValue(uid) : null,
+    note: note ? cleanValue(note) : null,
+    all_emails: cleanEmails,
     all_phones: cleanPhones,
   };
 }
