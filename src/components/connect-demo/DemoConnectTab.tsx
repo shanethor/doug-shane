@@ -970,7 +970,7 @@ export default function DemoConnectTab({ contentReady = true }: { contentReady?:
       )}
 
       {!searching && !result && hasSearched && (
-        <div className="text-center py-12 text-sm" style={{ color: "hsl(240 5% 46%)" }}>No results found. Try another name.</div>
+        <div className="text-center py-12 text-sm text-muted-foreground">No results found. Try another name.</div>
       )}
 
       {/* Contacts / Merge Dialog */}
