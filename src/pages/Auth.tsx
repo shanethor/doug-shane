@@ -736,11 +736,11 @@ export default function Auth() {
                   >
                     <option value="">Select your industry...</option>
                     <option value="insurance">Insurance</option>
-                    <option value="mortgage">Mortgage / Property</option>
-                    <option value="wealth">Wealth Management</option>
+                    <option value="mortgage">Mortgage</option>
                     <option value="real_estate">Real Estate</option>
+                    <option value="property">Property</option>
                     <option value="consulting">Consulting / Professional Services</option>
-                    <option value="generic">Other</option>
+                    <option value="general">General Business</option>
                   </select>
                 </div>
               </>

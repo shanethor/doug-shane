@@ -23,6 +23,7 @@ export default function PostCheckoutOnboard() {
   const [loadingEmail, setLoadingEmail] = useState(true);
   const [code2fa, setCode2fa] = useState("");
   const [sending2fa, setSending2fa] = useState(false);
+  const [selectedIndustry, setSelectedIndustry] = useState("");
 
   // Fetch email from Stripe session
   useEffect(() => {
@@ -48,6 +49,11 @@ export default function PostCheckoutOnboard() {
     e.preventDefault();
     setSubmitting(true);
     try {
+      if (!selectedIndustry) {
+        toast.error("Please select your industry");
+        setSubmitting(false);
+        return;
+      }
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -57,6 +63,16 @@ export default function PostCheckoutOnboard() {
         },
       });
       if (error) throw error;
+
+      // Save industry to profile
+      if (data.user) {
+        setTimeout(async () => {
+          await supabase
+            .from("profiles")
+            .update({ industry: selectedIndustry })
+            .eq("user_id", data.user!.id);
+        }, 1000);
+      }
 
       // Send 2FA verification code
       setSending2fa(true);
@@ -170,6 +186,23 @@ export default function PostCheckoutOnboard() {
                 minLength={8}
                 className="h-11 bg-white/5 border-white/10 text-white placeholder:text-white/20"
               />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs uppercase tracking-wider text-white/50">Industry *</Label>
+              <select
+                value={selectedIndustry}
+                onChange={(e) => setSelectedIndustry(e.target.value)}
+                required
+                className="flex h-11 w-full rounded-md border bg-white/5 border-white/10 text-white px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[hsl(140,12%,42%)]"
+              >
+                <option value="" className="bg-[#08080A]">Select your industry...</option>
+                <option value="insurance" className="bg-[#08080A]">Insurance</option>
+                <option value="mortgage" className="bg-[#08080A]">Mortgage</option>
+                <option value="real_estate" className="bg-[#08080A]">Real Estate</option>
+                <option value="property" className="bg-[#08080A]">Property</option>
+                <option value="consulting" className="bg-[#08080A]">Consulting / Professional Services</option>
+                <option value="general" className="bg-[#08080A]">General Business</option>
+              </select>
             </div>
             <Button
               type="submit"
