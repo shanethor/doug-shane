@@ -930,14 +930,13 @@ export default function DemoConnectTab({ contentReady = true }: { contentReady?:
             )}
 
             {/* Recommended action */}
-            <div className="flex items-start gap-2 p-3 rounded-lg" style={{ background: "hsl(140 12% 42% / 0.08)", border: "1px solid hsl(140 12% 42% / 0.2)" }}>
-              <ArrowRight className="h-4 w-4 mt-0.5 shrink-0" style={{ color: "hsl(140 12% 58%)" }} />
-              <p className="text-sm font-medium" style={{ color: "hsl(140 12% 70%)" }}>{result.action}</p>
+            <div className="flex items-start gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20">
+              <ArrowRight className="h-4 w-4 mt-0.5 shrink-0 text-primary" />
+              <p className="text-sm font-medium text-primary">{result.action}</p>
             </div>
 
-            {/* Outreach actions */}
             <div className="space-y-3">
-              <p className="text-xs font-medium uppercase tracking-wider" style={{ color: "hsl(240 5% 46%)" }}>Take action</p>
+              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Take action</p>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {([
                   { icon: Mail, label: "Draft Email", desc: "AI intro to connector", key: "email" as const },
@@ -948,12 +947,11 @@ export default function DemoConnectTab({ contentReady = true }: { contentReady?:
                   <button
                     key={action.label}
                     onClick={() => setOutreachType(action.key)}
-                    className="flex flex-col items-center gap-1.5 p-3 rounded-xl text-center transition-all hover:scale-[1.04] active:scale-95"
-                    style={{ background: "hsl(140 12% 42% / 0.08)", border: "1px solid hsl(140 12% 42% / 0.2)" }}
+                    className="flex flex-col items-center gap-1.5 p-3 rounded-xl text-center transition-all hover:scale-[1.04] active:scale-95 bg-primary/5 border border-primary/20"
                   >
-                    <action.icon className="h-5 w-5" style={{ color: "hsl(140 12% 58%)" }} />
-                    <span className="text-xs font-semibold text-white">{action.label}</span>
-                    <span className="text-[10px] leading-tight" style={{ color: "hsl(240 5% 50%)" }}>{action.desc}</span>
+                    <action.icon className="h-5 w-5 text-primary" />
+                    <span className="text-xs font-semibold text-foreground">{action.label}</span>
+                    <span className="text-[10px] leading-tight text-muted-foreground">{action.desc}</span>
                   </button>
                 ))}
               </div>
