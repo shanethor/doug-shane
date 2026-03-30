@@ -280,17 +280,14 @@ export default function SmartCalendar() {
       } as any).select().single();
       if (error) { toast.error("Failed to create"); return; }
 
-      // Push to connected external calendars (Google/Outlook)
+      // Push to selected external calendars (Google/Outlook)
       try {
-        const { data: calendars } = await supabase
-          .from("external_calendars")
-          .select("provider, is_active")
-          .eq("user_id", user.id)
-          .eq("is_active", true);
+        const selectedIds = (editEvent as any).targetCalendars || [];
+        const calendarsToSync = externalCalendars.filter(c => selectedIds.includes(c.id));
 
-        if (calendars?.length) {
+        if (calendarsToSync.length) {
           const { data: { session } } = await supabase.auth.getSession();
-          for (const cal of calendars) {
+          for (const cal of calendarsToSync) {
             await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/calendar-sync`, {
               method: "POST",
               headers: {
