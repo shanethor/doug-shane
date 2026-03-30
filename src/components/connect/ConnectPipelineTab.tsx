@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserBranch } from "@/hooks/useUserBranch";
 import { supabase } from "@/integrations/supabase/client";
@@ -622,8 +623,45 @@ export default function ConnectPipelineTab() {
 
   if (loadingProfile) {
     return (
-      <div className="flex items-center justify-center py-16">
-        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+      <div className="space-y-4 animate-page-fade">
+        {/* Stats row skeleton */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Card key={i}><CardContent className="p-3 space-y-2">
+              <Skeleton className="h-3 w-16" />
+              <Skeleton className="h-6 w-20" />
+            </CardContent></Card>
+          ))}
+        </div>
+        {/* Header skeleton */}
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-8 w-40" />
+          <div className="flex gap-2">
+            <Skeleton className="h-9 w-24 rounded-md" />
+            <Skeleton className="h-9 w-32 rounded-md" />
+          </div>
+        </div>
+        {/* Kanban columns skeleton */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, col) => (
+            <div key={col} className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Skeleton className="h-5 w-20" />
+                <Skeleton className="h-5 w-6 rounded-full" />
+              </div>
+              {Array.from({ length: col === 0 ? 3 : 2 }).map((_, row) => (
+                <div key={row} className="rounded-lg border bg-card p-3 space-y-2">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-3 w-2/3" />
+                  <div className="flex gap-2">
+                    <Skeleton className="h-5 w-14 rounded-full" />
+                    <Skeleton className="h-5 w-10 rounded-full" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
       </div>
     );
   }

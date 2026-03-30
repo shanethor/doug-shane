@@ -14,6 +14,7 @@ import {
   FileText, GitBranch, Send, MessageSquare, ChevronDown, ChevronUp,
   ExternalLink, RefreshCw, Filter, Zap, Bell,
 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   format, addDays, startOfWeek, addWeeks, startOfMonth, endOfMonth,
   eachDayOfInterval, isSameMonth, isSameDay, subWeeks, subMonths,
@@ -333,8 +334,36 @@ export default function SmartCalendar() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+      <div className="space-y-4 animate-page-fade">
+        {/* Header skeleton */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Skeleton className="h-8 w-8 rounded-md" />
+            <Skeleton className="h-6 w-48" />
+            <Skeleton className="h-8 w-8 rounded-md" />
+          </div>
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-8 w-20 rounded-md" />
+            <Skeleton className="h-8 w-20 rounded-md" />
+            <Skeleton className="h-8 w-20 rounded-md" />
+            <Skeleton className="h-9 w-28 rounded-md" />
+          </div>
+        </div>
+        {/* Day header row */}
+        <div className="grid grid-cols-7 gap-2">
+          {Array.from({ length: 7 }).map((_, i) => (
+            <Skeleton key={i} className="h-8 rounded-md" />
+          ))}
+        </div>
+        {/* Time grid skeleton */}
+        <div className="space-y-1">
+          {Array.from({ length: 10 }).map((_, i) => (
+            <div key={i} className="flex gap-2 items-center">
+              <Skeleton className="h-4 w-12 shrink-0" />
+              <Skeleton className="h-12 w-full rounded-md" />
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
