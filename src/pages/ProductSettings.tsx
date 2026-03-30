@@ -18,6 +18,7 @@ import {
 import { ConnectedAccountsStatus } from "@/components/ConnectedAccountsStatus";
 import { ProgressiveUnlocks } from "@/components/ProgressiveUnlocks";
 import { ConnectRewards } from "@/components/ConnectRewards";
+import { IntelligenceDiscountBanner, IntelligencePricingSection } from "@/components/IntelligencePricing";
 import { getAuthHeaders } from "@/lib/auth-fetch";
 import { useSearchParams } from "react-router-dom";
 import { useConnectNavConfig, ALL_CONNECT_TABS } from "@/hooks/useConnectNavConfig";
