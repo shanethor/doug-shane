@@ -33,6 +33,7 @@ interface GraphNode {
   linkedin?: string;
   industry?: string;
   mutualConnections: number;
+  mutualConnectionNames?: string[];
   connectionStrength: string;
   sourceContactIds?: string[];
 }
@@ -52,6 +53,7 @@ export interface LiveNetworkProfile {
   industry: string;
   location: string;
   mutualConnections: number;
+  mutualConnectionNames?: string[];
   connectionStrength: string;
   tier: 0 | 1 | 2 | 3;
   type: "person" | "company";
@@ -146,6 +148,7 @@ function buildRealGraph(contacts: ContactRow[]): GraphData {
         linkedin: contact.linkedin_url || undefined,
         industry: String(contact.metadata?.industry || contact.metadata?.source || "Relationship network"),
         mutualConnections,
+        mutualConnectionNames: Array.isArray(contact.metadata?.mutual_connections) ? contact.metadata.mutual_connections : [],
         connectionStrength: strengthFromTier(tier),
         sourceContactIds: [contact.id],
       };
@@ -485,6 +488,7 @@ export default function ConnectLiveNetworkMap({ onNodeClick }: ConnectLiveNetwor
           industry: node.industry || "Relationship network",
           location: node.location || "Location unavailable",
           mutualConnections: node.mutualConnections,
+          mutualConnectionNames: node.mutualConnectionNames || [],
           connectionStrength: node.connectionStrength,
           tier: node.tier,
           type: node.kind === "company" ? "company" : "person",
