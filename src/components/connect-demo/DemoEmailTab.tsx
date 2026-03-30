@@ -35,6 +35,8 @@ export default function DemoEmailTab() {
   const ai = useEmailAI();
   const [layout, setLayoutState] = useState<EmailLayout>(getEmailLayout);
   const [composeOpen, setComposeOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("email");
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null);
   const [composeTo, setComposeTo] = useState("");
   const [composeSubject, setComposeSubject] = useState("");
   const [composeBody, setComposeBody] = useState("");
