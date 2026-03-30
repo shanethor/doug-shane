@@ -124,24 +124,6 @@ export default function EmailViewAura({ engine, ai }: { engine: Engine; ai: AI }
           {selectedThread ? (
             <div className="space-y-3 animate-fade-in">
               <Button variant="ghost" size="sm" className="gap-1.5 text-xs" onClick={clearThread}><ArrowLeft className="h-3.5 w-3.5" /> Back</Button>
-              {/* AI Smart Tools — top of message view (all functional) */}
-              <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
-                {([
-                  { label: "Smart Reply", icon: Sparkles, action: () => ai.aiReply(selectedThread), loading: ai.replyLoading },
-                  { label: "Auto-Summarize", icon: FileText, action: () => ai.summarize(selectedThread), loading: ai.summaryLoading },
-                  { label: "Compliance Check", icon: Shield, action: () => ai.complianceCheck(selectedThread), loading: ai.complianceLoading },
-                  { label: "Sentiment Analysis", icon: Activity, action: () => ai.sentimentAnalysis(selectedThread), loading: ai.sentimentLoading },
-                  { label: "Follow-Up Reminder", icon: Bell, action: () => ai.followUpReminder(selectedThread), loading: ai.followUpLoading },
-                  { label: "Add to Pipeline", icon: TrendingUp, action: () => ai.addToPipeline(selectedThread), loading: false },
-                ]).map((f) => (
-                  <button key={f.label} onClick={f.action} disabled={f.loading}
-                    className="flex flex-col items-center gap-1 rounded-md px-2 py-2 text-center transition-colors hover:bg-white/[0.06] disabled:opacity-50"
-                    style={{ background: "hsl(140 12% 42% / 0.04)", border: "1px solid hsl(140 12% 42% / 0.12)" }}>
-                    <f.icon className={`h-3.5 w-3.5 ${f.loading ? "animate-spin" : ""}`} style={{ color: "hsl(140 12% 58%)" }} />
-                    <span className="text-[10px] font-medium leading-tight" style={{ color: "hsl(140 12% 65%)" }}>{f.label}</span>
-                  </button>
-                ))}
-              </div>
               {/* AI results panel */}
               <AIResultPanel ai={ai} onUseReply={(text) => setReplyBody(text)} />
               <h3 className="text-base font-semibold text-white">{selectedThread.subject}</h3>
