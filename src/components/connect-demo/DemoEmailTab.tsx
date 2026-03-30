@@ -193,6 +193,10 @@ export default function DemoEmailTab() {
           <Badge className="text-xs" style={{ background: "hsl(140 12% 42%)", color: "white" }}>{engine.unreadCount} new</Badge>
         </div>
         <div className="flex items-center gap-2">
+          <Button size="sm" className="gap-1.5 text-xs h-7" variant="outline" style={{ borderColor: "hsl(240 6% 20%)", color: "hsl(240 5% 70%)" }} onClick={handleManualSync} disabled={syncing || linkedAccounts.length === 0}>
+            <RefreshCw className={`h-3.5 w-3.5 ${syncing ? "animate-spin" : ""}`} />
+            {syncing ? "Syncing…" : "Sync"}
+          </Button>
           <Button size="sm" className="gap-1.5 text-xs h-7" style={{ background: "hsl(140 12% 42%)", color: "white" }} onClick={() => setComposeOpen(true)}>
             <PenSquare className="h-3.5 w-3.5" /> Compose
           </Button>
