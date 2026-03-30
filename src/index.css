@@ -431,14 +431,14 @@
   --popover: 240 8% 7%;
   --popover-foreground: 240 6% 95%;
   --primary: 140 12% 42%;
-  --primary-foreground: 0 0% 100%;
-  --secondary: 240 6% 12%;
-  --secondary-foreground: 240 6% 90%;
-  --muted: 240 6% 12%;
-  --muted-foreground: 240 5% 46%;
-  --accent: 140 12% 28%;
-  --accent-foreground: 0 0% 100%;
-  --border: 240 6% 14%;
-  --input: 240 6% 14%;
-  --ring: 140 12% 42%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 240 6% 12%;
+    --secondary-foreground: 240 6% 90%;
+    --muted: 240 6% 12%;
+    --muted-foreground: 240 5% 46%;
+    --accent: 140 12% 28%;
+    --accent-foreground: 0 0% 100%;
+    --border: 240 6% 14%;
+    --input: 240 6% 14%;
+    --ring: 140 12% 42%;
 }
