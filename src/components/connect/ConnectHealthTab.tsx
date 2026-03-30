@@ -210,8 +210,17 @@ export default function ConnectHealthTab() {
 
       {/* Health Check List */}
       {loading ? (
-        <div className="flex items-center justify-center py-16">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <div className="space-y-3 animate-page-fade">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="rounded-lg border bg-card p-3 flex items-center gap-3">
+              <Skeleton className="h-10 w-10 rounded-full shrink-0" />
+              <div className="flex-1 space-y-1">
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-3 w-48" />
+              </div>
+              <Skeleton className="h-8 w-20 rounded-md" />
+            </div>
+          ))}
         </div>
       ) : checks.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center space-y-3">
