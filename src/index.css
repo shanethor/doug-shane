@@ -129,9 +129,9 @@
 
   /* ── Branch theme overrides (light mode) ── */
   .theme-risk:not(.dark) {
-    --primary: 174 60% 25%;
-    --accent: 174 50% 40%;
-    --ring: 174 60% 25%;
+    --primary: 140 12% 42%;
+    --accent: 140 12% 55%;
+    --ring: 140 12% 42%;
   }
 
   .theme-property:not(.dark) {
