@@ -47,18 +47,20 @@ export default function ConnectHealthTab() {
     if (!user) return;
     setLoading(true);
     try {
-      // Get the latest check per contact
-      const { data, error } = await supabase
-        .from("relationship_health_checks")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("checked_at", { ascending: false })
-        .limit(50);
-      if (error) throw error;
+      const minDelay = new Promise(r => setTimeout(r, 600));
+      const [result] = await Promise.all([
+        supabase
+          .from("relationship_health_checks")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("checked_at", { ascending: false })
+          .limit(50),
+        minDelay,
+      ]);
+      if (result.error) throw result.error;
 
-      // Deduplicate - show latest per contact
       const seen = new Set<string>();
-      const unique = (data || []).filter(c => {
+      const unique = (result.data || []).filter(c => {
         const key = c.contact_name.toLowerCase();
         if (seen.has(key)) return false;
         seen.add(key);

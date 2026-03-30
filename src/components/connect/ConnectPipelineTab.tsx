@@ -494,7 +494,11 @@ export default function ConnectPipelineTab() {
 
   useEffect(() => {
     if (!user) return;
-    supabase.from("profiles").select("industry").eq("user_id", user.id).single().then(({ data }) => {
+    const minDelay = new Promise(r => setTimeout(r, 600));
+    Promise.all([
+      supabase.from("profiles").select("industry").eq("user_id", user.id).single(),
+      minDelay,
+    ]).then(([{ data }]) => {
       setProfileIndustry(data?.industry || null);
       setLoadingProfile(false);
     });

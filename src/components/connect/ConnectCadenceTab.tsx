@@ -306,13 +306,17 @@ export default function ConnectCadenceTab() {
     if (!user) return;
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from("touch_cadence_contacts")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("next_touch_at", { ascending: true });
-      if (error) throw error;
-      setContacts((data as CadenceContact[]) || []);
+      const minDelay = new Promise(r => setTimeout(r, 600));
+      const [result] = await Promise.all([
+        supabase
+          .from("touch_cadence_contacts")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("next_touch_at", { ascending: true }),
+        minDelay,
+      ]);
+      if (result.error) throw result.error;
+      setContacts((result.data as CadenceContact[]) || []);
     } catch {
       toast.error("Failed to load cadence contacts");
     } finally {
