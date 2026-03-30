@@ -852,11 +852,11 @@ export default function DemoConnectTab({ contentReady = true }: { contentReady?:
 
       {/* Result */}
       {!searching && result && (
-        <Card className="max-w-2xl mx-auto mt-4" style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 14%)", animation: "smoothFadeSlide 0.5s cubic-bezier(0.16,1,0.3,1) both" }}>
+        <Card className="max-w-2xl mx-auto mt-4 border-border" style={{ animation: "smoothFadeSlide 0.5s cubic-bezier(0.16,1,0.3,1) both" }}>
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
-              <Sparkles className="h-5 w-5" style={{ color: "hsl(140 12% 58%)" }} />
-              <span className="text-white">Path to {result.target}</span>
+              <Sparkles className="h-5 w-5 text-primary" />
+              <span>Path to {result.target}</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
