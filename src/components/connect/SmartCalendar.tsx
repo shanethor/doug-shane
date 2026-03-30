@@ -228,9 +228,14 @@ export default function SmartCalendar() {
   const eventsFor = (date: Date) => filteredEvents.filter(e => isSameDay(e.date, date));
 
   const openQuickAdd = (date: Date, hour?: number) => {
+    // Pre-select calendars: use default if set, otherwise all
+    const defaultTargets = defaultCalendarId && externalCalendars.some(c => c.id === defaultCalendarId)
+      ? [defaultCalendarId]
+      : externalCalendars.map(c => c.id);
     setEditEvent({
       id: "", title: "", date, startHour: hour ?? 9, startMin: 0, endHour: (hour ?? 9) + 1, endMin: 0,
       location: "", description: "", attendees: [], allDay: false, color: EVENT_COLORS.other, external: false, event_type: "other",
+      targetCalendars: defaultTargets,
     });
     setShowEditor(true);
   };
