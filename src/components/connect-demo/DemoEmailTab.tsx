@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
-import { Mail, CheckCheck, Loader2, PenSquare, X, Send, ChevronDown } from "lucide-react";
+import { Mail, CheckCheck, Loader2, PenSquare, X, Send, ChevronDown, RefreshCw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,6 +40,32 @@ export default function DemoEmailTab() {
   const [linkedAccounts, setLinkedAccounts] = useState<LinkedAccount[]>([]);
   const [selectedAccountId, setSelectedAccountId] = useState<string>("");
   const [accountsLoaded, setAccountsLoaded] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+
+  const handleManualSync = useCallback(async () => {
+    if (!user || linkedAccounts.length === 0) return;
+    setSyncing(true);
+    try {
+      const headers = await getAuthHeaders();
+      for (const acc of linkedAccounts) {
+        const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/email-sync`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ action: "sync", connection_id: acc.id, provider: acc.provider }),
+        });
+        if (resp.ok) {
+          const data = await resp.json();
+          toast.success(`Synced ${data.synced ?? 0} emails from ${acc.provider === "gmail" ? "Gmail" : "Outlook"}`);
+        }
+      }
+      // Reload the page data after sync
+      window.location.reload();
+    } catch {
+      toast.error("Sync failed — please try again");
+    } finally {
+      setSyncing(false);
+    }
+  }, [user, linkedAccounts]);
 
   useEffect(() => { ai.reset(); }, [engine.selectedThread?.id]);
 
@@ -167,6 +193,10 @@ export default function DemoEmailTab() {
           <Badge className="text-xs" style={{ background: "hsl(140 12% 42%)", color: "white" }}>{engine.unreadCount} new</Badge>
         </div>
         <div className="flex items-center gap-2">
+          <Button size="sm" className="gap-1.5 text-xs h-7" variant="outline" style={{ borderColor: "hsl(240 6% 20%)", color: "hsl(240 5% 70%)" }} onClick={handleManualSync} disabled={syncing || linkedAccounts.length === 0}>
+            <RefreshCw className={`h-3.5 w-3.5 ${syncing ? "animate-spin" : ""}`} />
+            {syncing ? "Syncing…" : "Sync"}
+          </Button>
           <Button size="sm" className="gap-1.5 text-xs h-7" style={{ background: "hsl(140 12% 42%)", color: "white" }} onClick={() => setComposeOpen(true)}>
             <PenSquare className="h-3.5 w-3.5" /> Compose
           </Button>
