@@ -913,16 +913,16 @@ export default function DemoConnectTab({ contentReady = true }: { contentReady?:
 
             {/* Other connectors */}
             {(result.brief?.who_can_get_you_there || []).length > 1 && (
-              <div className="p-3 rounded-lg" style={{ background: "hsl(240 6% 7%)", border: "1px solid hsl(240 6% 14%)" }}>
-                <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "hsl(240 5% 46%)" }}>Other paths in</p>
+              <div className="p-3 rounded-lg bg-muted/50 border border-border">
+                <p className="text-xs font-semibold uppercase tracking-wider mb-2 text-muted-foreground">Other paths in</p>
                 <div className="space-y-1.5">
                   {result.brief!.who_can_get_you_there!.slice(1, 3).map((c, i) => (
                     <div key={i} className="flex items-center justify-between">
                       <div>
-                        <span className="text-xs font-medium text-white">{c.name}</span>
-                        <span className="text-[10px] ml-2" style={{ color: "hsl(240 5% 50%)" }}>{c.relationship}</span>
+                        <span className="text-xs font-medium text-foreground">{c.name}</span>
+                        <span className="text-[10px] ml-2 text-muted-foreground">{c.relationship}</span>
                       </div>
-                      <Badge variant="outline" className="text-[9px]" style={{ color: "hsl(140 12% 58%)" }}>{c.confidence}%</Badge>
+                      <Badge variant="outline" className="text-[9px] text-primary">{c.confidence}%</Badge>
                     </div>
                   ))}
                 </div>
