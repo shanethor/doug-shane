@@ -134,8 +134,10 @@ export function IntelligencePricingSection() {
         {/* Pricing breakdown */}
         <div className="space-y-2 text-sm">
           <div className="flex justify-between">
-            <span className="text-muted-foreground">Base subscription</span>
-            <span>${basePricing}.00</span>
+            <span className="text-muted-foreground">
+              Base subscription {isIntroPricing && <Badge variant="outline" className="text-[9px] ml-1 border-primary/30 text-primary">Intro rate</Badge>}
+            </span>
+            <span>${basePricing.toFixed(2)}</span>
           </div>
           {currentDiscount > 0 && (
             <div className="flex justify-between text-primary">
@@ -152,13 +154,16 @@ export function IntelligencePricingSection() {
                 <ShoppingCart className="h-3 w-3" />
                 Marketplace add-ons
               </span>
-              <span>+${marketplaceCharges}.00</span>
+              <span>+${marketplaceCharges.toFixed(2)}</span>
             </div>
           )}
           <div className="border-t pt-2 flex justify-between font-semibold">
             <span>Estimated next month</span>
-            <span>${basePricing - currentDiscount + marketplaceCharges}.00/mo</span>
+            <span>${(basePricing - currentDiscount + marketplaceCharges).toFixed(2)}/mo</span>
           </div>
+          {isIntroPricing && (
+            <p className="text-[10px] text-muted-foreground">Introductory rate for first 3 months. Standard rate: $249.99/mo</p>
+          )}
         </div>
 
         {/* Intelligence levels */}
