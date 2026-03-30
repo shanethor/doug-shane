@@ -897,14 +897,14 @@ export default function DemoConnectTab({ contentReady = true }: { contentReady?:
 
             {/* What Changed signals */}
             {(result.brief?.what_changed?.events || []).length > 0 && (
-              <div className="p-3 rounded-lg space-y-1.5" style={{ background: "hsl(240 6% 7%)", border: "1px solid hsl(240 6% 14%)" }}>
-                <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: "hsl(240 5% 46%)" }}>Why now</p>
+              <div className="p-3 rounded-lg space-y-1.5 bg-muted/50 border border-border">
+                <p className="text-xs font-semibold uppercase tracking-wider mb-2 text-muted-foreground">Why now</p>
                 {result.brief!.what_changed!.events!.slice(0, 2).map((ev, i) => (
                   <div key={i} className="flex items-start gap-2">
-                    <Sparkles className="h-3 w-3 mt-0.5 shrink-0" style={{ color: "hsl(45 80% 55%)" }} />
-                    <p className="text-xs" style={{ color: "hsl(240 5% 65%)" }}>
-                      <span className="font-medium text-white">{ev.type}</span> — {ev.description}
-                      {ev.date && <span style={{ color: "hsl(240 5% 44%)" }}> ({ev.date})</span>}
+                    <Sparkles className="h-3 w-3 mt-0.5 shrink-0 text-amber-500" />
+                    <p className="text-xs text-muted-foreground">
+                      <span className="font-medium text-foreground">{ev.type}</span> — {ev.description}
+                      {ev.date && <span className="text-muted-foreground/60"> ({ev.date})</span>}
                     </p>
                   </div>
                 ))}
