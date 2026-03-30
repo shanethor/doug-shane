@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserBranch } from "@/hooks/useUserBranch";
 import { supabase } from "@/integrations/supabase/client";
