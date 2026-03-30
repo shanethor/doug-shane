@@ -2,15 +2,16 @@ import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserBranch } from "@/hooks/useUserBranch";
 import {
-  Network, Wrench, Settings, LogOut, LayoutDashboard, BarChart3, Mail,
+  Network, Wrench, Settings, LogOut, BarChart3, Mail,
   Sparkles, Zap, Calendar, PanelLeftClose, PanelLeft, Lock, Brain,
-  MoreHorizontal,
+  MoreHorizontal, Target, Gift,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useConnectNavConfig, ALL_CONNECT_TABS } from "@/hooks/useConnectNavConfig";
 import { SageFloatingChat } from "@/components/SageFloatingChat";
+import { ConnectRewards } from "@/components/ConnectRewards";
 
 const CONNECT_NAV = [
   { to: "/connect", label: "Connect", icon: Network, exact: true },
@@ -19,6 +20,7 @@ const CONNECT_NAV = [
   { to: "/connect/email", label: "Email", icon: Mail },
   { to: "/connect/calendar", label: "Calendar", icon: Calendar },
   { to: "/connect/create", label: "Create", icon: Sparkles },
+  { to: "/connect/leads", label: "Leads", icon: Target },
   { to: "/connect/sage", label: "Sage", icon: Zap },
 ];
 
@@ -29,6 +31,7 @@ const ICON_MAP: Record<string, any> = {
   email: Mail,
   calendar: Calendar,
   create: Sparkles,
+  leads: Target,
   sage: Zap,
 };
 
@@ -129,15 +132,6 @@ export function ProductLayout({
     try { return localStorage.getItem("sidebar-collapsed") === "true"; } catch { return false; }
   });
 
-  useEffect(() => {
-    const stored = localStorage.getItem("aura-dark-mode");
-    if (stored === "false") {
-      document.documentElement.classList.remove("dark");
-    } else {
-      document.documentElement.classList.add("dark");
-    }
-  }, []);
-
   // Apply branch theme class to <html> (mirrors AppLayout behavior)
   useEffect(() => {
     const html = document.documentElement;
@@ -232,7 +226,7 @@ export function ProductLayout({
         </nav>
 
         {/* Bottom */}
-        <div className={`border-t border-sidebar-border py-3 space-y-1 ${collapsed ? "px-1" : "px-3"}`}>
+        <div className={`border-t border-sidebar-border py-3 space-y-2 ${collapsed ? "px-1" : "px-3"}`}>
           <button
             onClick={() => setCollapsed(!collapsed)}
             className={`w-full flex items-center gap-3 rounded-lg text-sm text-sidebar-foreground/30 hover:text-sidebar-foreground/60 hover:bg-sidebar-accent/50 transition-colors ${
@@ -242,6 +236,21 @@ export function ProductLayout({
             {collapsed ? <PanelLeft className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
             {!collapsed && (collapsed ? "Expand" : "Collapse")}
           </button>
+
+          {collapsed ? (
+            <Link
+              to="/app/settings#network-connections-section"
+              title="Rewards"
+              className="flex items-center justify-center rounded-lg py-2.5 text-sidebar-foreground/40 hover:text-sidebar-foreground/70 hover:bg-sidebar-accent/50 transition-colors"
+            >
+              <Gift className="h-4 w-4" />
+            </Link>
+          ) : (
+            <Link to="/app/settings#network-connections-section" className="block">
+              <ConnectRewards variant="compact" />
+            </Link>
+          )}
+
           <Link
             to="/app/settings"
             className={`flex items-center gap-3 rounded-lg text-sm transition-colors ${

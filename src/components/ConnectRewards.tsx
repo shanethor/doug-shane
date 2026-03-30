@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Gift, CheckCircle, Loader2, Users, Link2 } from "lucide-react";
+import { Gift, CheckCircle, Loader2, Users, Link2, Zap } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useConnectedAccounts } from "@/components/ConnectedAccountsStatus";
@@ -13,21 +12,51 @@ interface RewardTier {
   label: string;
   description: string;
   credit: string;
-  type: "accounts" | "contacts";
   threshold: number;
 }
 
+interface IntelligenceLevel {
+  level: number;
+  discount: string;
+  multiProfileThreshold: number;
+  singleProfileThreshold: number;
+}
+
+interface ConnectRewardsProps {
+  variant?: "full" | "compact";
+}
+
 const ACCOUNT_REWARDS: RewardTier[] = [
-  { id: "acct_5", label: "5+ Accounts", description: "Connect 5 or more accounts", credit: "$5", type: "accounts", threshold: 5 },
-  { id: "acct_10", label: "10+ Accounts", description: "Connect 10 or more accounts", credit: "$10", type: "accounts", threshold: 10 },
-  { id: "acct_all", label: "All Accounts", description: "Connect every available account", credit: "$15", type: "accounts", threshold: 99 }, // 99 = sentinel for "all"
+  { id: "acct_5", label: "5+ Accounts", description: "Connect 5 or more accounts", credit: "$5", threshold: 5 },
+  { id: "acct_10", label: "10+ Accounts", description: "Connect 10 or more accounts", credit: "$10", threshold: 10 },
+  { id: "acct_all", label: "All Accounts", description: "Connect every available account", credit: "$15", threshold: 99 },
 ];
 
+const INTELLIGENCE_LEVELS: IntelligenceLevel[] = [
+  { level: 1, discount: "$10/mo", multiProfileThreshold: 25, singleProfileThreshold: 100 },
+  { level: 2, discount: "$25/mo", multiProfileThreshold: 50, singleProfileThreshold: 200 },
+  { level: 3, discount: "$50/mo", multiProfileThreshold: 100, singleProfileThreshold: 350 },
+  { level: 4, discount: "$100/mo", multiProfileThreshold: 200, singleProfileThreshold: 500 },
+];
 
-export function ConnectRewards() {
+function hasMultipleProfiles(contact: any): boolean {
+  const fields = [contact.primary_email, contact.primary_phone, contact.linkedin_url].filter(Boolean).length;
+  const hasName = !!(contact.display_name && contact.display_name.trim().includes(" "));
+  return hasName && fields >= 2;
+}
+
+function hasSingleProfile(contact: any): boolean {
+  const fields = [contact.primary_email, contact.primary_phone, contact.linkedin_url].filter(Boolean).length;
+  const hasName = !!(contact.display_name && contact.display_name.trim().includes(" "));
+  return hasName && fields >= 1;
+}
+
+export function ConnectRewards({ variant = "full" }: ConnectRewardsProps) {
   const { user } = useAuth();
   const { accounts } = useConnectedAccounts();
   const [contactCount, setContactCount] = useState(0);
+  const [multiProfileCount, setMultiProfileCount] = useState(0);
+  const [singleProfileCount, setSingleProfileCount] = useState(0);
   const [claimedRewards, setClaimedRewards] = useState<string[]>([]);
   const [claiming, setClaiming] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -39,22 +68,32 @@ export function ConnectRewards() {
     if (!user) return;
     setLoading(true);
     try {
-      // Get contact count
-      const { count } = await supabase
+      const { data: contacts } = await supabase
         .from("canonical_persons")
-        .select("id", { count: "exact", head: true })
+        .select("display_name, primary_email, primary_phone, linkedin_url")
         .eq("owner_user_id", user.id);
-      setContactCount(count || 0);
 
-      // Get claimed rewards from profile metadata
+      const contactRows = contacts || [];
+      const multi = contactRows.filter(hasMultipleProfiles).length;
+      const single = contactRows.filter(c => hasSingleProfile(c) && !hasMultipleProfiles(c)).length;
+
+      setContactCount(contactRows.length);
+      setMultiProfileCount(multi);
+      setSingleProfileCount(single + multi);
+
       const { data: profile } = await supabase
         .from("profiles")
         .select("metadata")
         .eq("user_id", user.id)
         .maybeSingle();
+
       const meta = (profile as any)?.metadata || {};
       setClaimedRewards(meta.claimed_rewards || []);
-    } catch {} finally { setLoading(false); }
+    } catch {
+      // ignore
+    } finally {
+      setLoading(false);
+    }
   }, [user]);
 
   useEffect(() => { loadData(); }, [loadData]);
@@ -72,67 +111,94 @@ export function ConnectRewards() {
       toast.success(`${reward.credit} credit applied to your subscription!`);
     } catch (err: any) {
       toast.error(err.message || "Failed to claim reward");
-    } finally { setClaiming(null); }
+    } finally {
+      setClaiming(null);
+    }
   };
 
-  const isUnlocked = (reward: RewardTier) => {
-    if (reward.type === "accounts") {
-      if (reward.threshold === 99) return connectedCount >= totalAccounts && totalAccounts > 0;
-      return connectedCount >= reward.threshold;
-    }
-    return contactCount >= reward.threshold;
+  const isAccountUnlocked = (reward: RewardTier) => {
+    if (reward.threshold === 99) return connectedCount >= totalAccounts && totalAccounts > 0;
+    return connectedCount >= reward.threshold;
   };
 
   const isClaimed = (id: string) => claimedRewards.includes(id);
 
+  const currentLevel = INTELLIGENCE_LEVELS.slice().reverse().find(
+    (level) => multiProfileCount >= level.multiProfileThreshold || singleProfileCount >= level.singleProfileThreshold,
+  );
+
   if (loading) return null;
+
+  if (variant === "compact") {
+    return (
+      <div className="rounded-lg border border-sidebar-border bg-sidebar-accent/40 p-3 space-y-2 transition-colors hover:bg-sidebar-accent/60">
+        <div className="flex items-start gap-3">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-sidebar-primary/10 text-sidebar-primary">
+            <Gift className="h-4 w-4" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-sidebar-foreground/55">Rewards</p>
+            <p className="text-sm font-medium text-sidebar-foreground">Account rewards + Intelligence discounts</p>
+          </div>
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          <Badge variant="outline" className="border-sidebar-border text-sidebar-foreground/70">{connectedCount}/{totalAccounts} accounts</Badge>
+          <Badge variant="outline" className="border-sidebar-border text-sidebar-foreground/70">{contactCount.toLocaleString()} contacts</Badge>
+          <Badge className="border-0 bg-sidebar-primary/10 text-sidebar-primary">
+            {currentLevel ? `Level ${currentLevel.level} active` : "No level yet"}
+          </Badge>
+        </div>
+        <p className="text-[11px] leading-relaxed text-sidebar-foreground/55">
+          Manage one-time account rewards and next-month discounts from synced contacts.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3">
         <Gift className="h-5 w-5 text-primary" />
         <div>
-          <h3 className="text-sm font-semibold text-white/80">Connect Rewards</h3>
-          <p className="text-[11px] text-white/40">Earn subscription credits by connecting accounts & importing contacts</p>
+          <h3 className="text-sm font-semibold text-foreground">Rewards</h3>
+          <p className="text-[11px] text-muted-foreground">One-time account rewards + ongoing Intelligence discounts</p>
         </div>
       </div>
 
-      {/* Account Rewards */}
       <div className="space-y-1.5">
-        <p className="text-[11px] text-white/30 uppercase tracking-wider font-medium flex items-center gap-1.5">
+        <p className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
           <Link2 className="h-3 w-3" /> Account Rewards
-          <Badge variant="outline" className="text-[9px] ml-auto border-white/10 text-white/30">{connectedCount}/{totalAccounts}</Badge>
+          <Badge variant="outline" className="ml-auto text-[9px]">{connectedCount}/{totalAccounts}</Badge>
         </p>
-        {ACCOUNT_REWARDS.map(r => {
-          const unlocked = isUnlocked(r);
-          const claimed = isClaimed(r.id);
+        {ACCOUNT_REWARDS.map((reward) => {
+          const unlocked = isAccountUnlocked(reward);
+          const claimed = isClaimed(reward.id);
           return (
-            <div key={r.id} className={`flex items-center justify-between rounded-lg border p-3 transition-all ${
-              claimed ? "border-green-500/20 bg-green-500/5" :
-              unlocked ? "border-primary/30 bg-primary/5" :
-              "border-white/5 bg-white/[0.02] opacity-60"
-            }`}>
+            <div
+              key={reward.id}
+              className={`flex items-center justify-between rounded-lg border p-3 transition-colors ${
+                claimed ? "border-primary/20 bg-primary/5" : unlocked ? "border-primary/30 bg-primary/5" : "border-border bg-card/40 opacity-70"
+              }`}
+            >
               <div className="flex items-center gap-3">
-                <div className={`h-8 w-8 rounded-lg flex items-center justify-center ${
-                  claimed ? "bg-green-500/10 text-green-400" : unlocked ? "bg-primary/10 text-primary" : "bg-white/5 text-white/20"
-                }`}>
+                <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${claimed || unlocked ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
                   {claimed ? <CheckCircle className="h-4 w-4" /> : <Link2 className="h-4 w-4" />}
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-white/70">{r.label}</p>
-                  <p className="text-[11px] text-white/30">{r.description}</p>
+                  <p className="text-sm font-medium text-foreground">{reward.label}</p>
+                  <p className="text-[11px] text-muted-foreground">{reward.description}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <Badge variant="outline" className="text-xs border-white/10 text-white/50">{r.credit}</Badge>
+                <Badge variant="outline" className="text-xs">{reward.credit}</Badge>
                 {claimed ? (
-                  <Badge className="text-[10px] bg-green-500/10 text-green-400 border-green-500/20">Claimed</Badge>
+                  <Badge className="border-0 bg-primary/10 text-primary">Claimed</Badge>
                 ) : unlocked ? (
-                  <Button size="sm" className="h-7 text-xs bg-primary/20 text-primary hover:bg-primary/30 border-0" onClick={() => claimReward(r)} disabled={claiming === r.id}>
-                    {claiming === r.id ? <Loader2 className="h-3 w-3 animate-spin" /> : "Claim"}
+                  <Button size="sm" className="h-7 text-xs" onClick={() => claimReward(reward)} disabled={claiming === reward.id}>
+                    {claiming === reward.id ? <Loader2 className="h-3 w-3 animate-spin" /> : "Claim"}
                   </Button>
                 ) : (
-                  <Badge variant="outline" className="text-[10px] border-white/10 text-white/20">Locked</Badge>
+                  <Badge variant="outline" className="text-[10px] text-muted-foreground">Locked</Badge>
                 )}
               </div>
             </div>
@@ -140,50 +206,47 @@ export function ConnectRewards() {
         })}
       </div>
 
-      {/* Intelligence Discount Levels */}
       <div className="space-y-1.5">
-        <p className="text-[11px] text-white/30 uppercase tracking-wider font-medium flex items-center gap-1.5">
-          <Users className="h-3 w-3" /> Intelligence Discounts
-          <Badge variant="outline" className="text-[9px] ml-auto border-white/10 text-white/30">{contactCount.toLocaleString()} contacts</Badge>
+        <p className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+          <Zap className="h-3 w-3" /> Intelligence Discount Levels
+          <Badge variant="outline" className="ml-auto text-[9px]">{multiProfileCount} multi / {singleProfileCount} qualifying</Badge>
         </p>
-        <p className="text-[10px] text-white/30 leading-relaxed">
-          Earn monthly subscription discounts by maintaining quality contact profiles. Resets monthly — keep adding contacts to maintain your discount.
+        <p className="text-[11px] leading-relaxed text-muted-foreground">
+          Discounts reset at month-end and apply to the following month when you add qualifying contacts with complete profiles.
         </p>
-        {[
-          { level: 1, discount: "$10/mo", multi: 25, single: 100 },
-          { level: 2, discount: "$25/mo", multi: 50, single: 200 },
-          { level: 3, discount: "$50/mo", multi: 100, single: 350 },
-          { level: 4, discount: "$100/mo", multi: 200, single: 500 },
-        ].map(l => {
-          const unlocked = contactCount >= l.single; // simplified check
+        {INTELLIGENCE_LEVELS.map((level) => {
+          const unlocked = multiProfileCount >= level.multiProfileThreshold || singleProfileCount >= level.singleProfileThreshold;
+          const active = currentLevel?.level === level.level;
           return (
-            <div key={l.level} className={`flex items-center justify-between rounded-lg border p-3 transition-all ${
-              unlocked ? "border-primary/30 bg-primary/5" : "border-white/5 bg-white/[0.02] opacity-60"
-            }`}>
+            <div
+              key={level.level}
+              className={`flex items-center justify-between rounded-lg border p-3 transition-colors ${
+                active ? "border-primary/30 bg-primary/5" : unlocked ? "border-primary/20 bg-primary/[0.03]" : "border-border bg-card/40"
+              }`}
+            >
               <div className="flex items-center gap-3">
-                <div className={`h-8 w-8 rounded-lg flex items-center justify-center ${
-                  unlocked ? "bg-primary/10 text-primary" : "bg-white/5 text-white/20"
-                }`}>
-                  <span className="text-xs font-bold">L{l.level}</span>
+                <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${unlocked ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
+                  <span className="text-xs font-bold">L{level.level}</span>
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-white/70">Level {l.level} Intelligence</p>
-                  <p className="text-[11px] text-white/30">{l.multi} multi-profile or {l.single} single-profile contacts</p>
+                  <p className="text-sm font-medium text-foreground">Level {level.level} Intelligence</p>
+                  <p className="text-[11px] text-muted-foreground">
+                    {level.multiProfileThreshold} multi-profile or {level.singleProfileThreshold} single-profile contacts
+                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <Badge variant="outline" className={`text-xs ${unlocked ? "border-primary/30 text-primary" : "border-white/10 text-white/50"}`}>
-                  -{l.discount}
+                <Badge variant="outline" className="text-xs">-{level.discount}</Badge>
+                <Badge className={`border-0 ${active || unlocked ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>
+                  {active ? "Active" : unlocked ? "Unlocked" : "Locked"}
                 </Badge>
-                {unlocked ? (
-                  <Badge className="text-[10px] bg-primary/10 text-primary border-primary/20">Active</Badge>
-                ) : (
-                  <Badge variant="outline" className="text-[10px] border-white/10 text-white/20">Locked</Badge>
-                )}
               </div>
             </div>
           );
         })}
+        <p className="text-[11px] text-muted-foreground">
+          A profile means first + last name plus email, phone, or LinkedIn; multi-profile requires at least two of those fields.
+        </p>
       </div>
     </div>
   );

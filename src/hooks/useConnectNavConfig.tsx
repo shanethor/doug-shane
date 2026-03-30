@@ -9,11 +9,11 @@ export type ConnectNavTab = {
 export const ALL_CONNECT_TABS: ConnectNavTab[] = [
   { id: "connect", label: "Connect", to: "/connect" },
   { id: "intelligence", label: "Intelligence", to: "/connect/intelligence" },
-  { id: "leads", label: "Leads", to: "/connect/leads" },
   { id: "pipeline", label: "Pipeline", to: "/connect/pipeline" },
   { id: "email", label: "Email", to: "/connect/email" },
   { id: "calendar", label: "Calendar", to: "/connect/calendar" },
   { id: "create", label: "Create", to: "/connect/create" },
+  { id: "leads", label: "Leads", to: "/connect/leads" },
   { id: "sage", label: "Sage", to: "/connect/sage" },
 ];
 

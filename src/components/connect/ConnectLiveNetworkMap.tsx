@@ -127,6 +127,11 @@ function buildRealGraph(contacts: ContactRow[]): GraphData {
     .map((contact) => {
       const companyKey = normalizeName(contact.company);
       const companyPeers = companyKey ? groupedByCompany.get(companyKey) || [] : [];
+      const derivedMutualNames = companyPeers
+        .filter((peer) => peer.id !== contact.id)
+        .map((peer) => peer.display_name?.trim() || "Unknown")
+        .filter(Boolean)
+        .slice(0, 10);
       const mutualConnections = Math.max(
         Number(contact.metadata?.mutual_connections_count || 0),
         Math.max(companyPeers.length - 1, 0),
@@ -148,7 +153,9 @@ function buildRealGraph(contacts: ContactRow[]): GraphData {
         linkedin: contact.linkedin_url || undefined,
         industry: String(contact.metadata?.industry || contact.metadata?.source || "Relationship network"),
         mutualConnections,
-        mutualConnectionNames: Array.isArray(contact.metadata?.mutual_connections) ? contact.metadata.mutual_connections : [],
+        mutualConnectionNames: Array.isArray(contact.metadata?.mutual_connections) && contact.metadata.mutual_connections.length > 0
+          ? contact.metadata.mutual_connections
+          : derivedMutualNames,
         connectionStrength: strengthFromTier(tier),
         sourceContactIds: [contact.id],
       };
