@@ -66,6 +66,8 @@ export default function EmailViewAura({ engine, ai, linkedAccounts = [], lastSyn
   const [newLabel, setNewLabel] = useState("");
   const [replyBody, setReplyBody] = useState("");
   const [contextTab, setContextTab] = useState("summary");
+  const [activeTags, setActiveTags] = useState<string[]>([]);
+  const [hideNonBiz, setHideNonBiz] = useState(false);
 
   // Get match for selected thread
   const getThreadMatch = () => {
