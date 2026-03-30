@@ -405,6 +405,7 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
   const [activeSource, setActiveSource] = useState<string>("");
   const [sourceContacts, setSourceContacts] = useState("");
   const sourceFileRef = useRef<HTMLInputElement>(null);
+  const [comingSoonOpen, setComingSoonOpen] = useState(false);
 
   const fetchGmailAccounts = useCallback(async (): Promise<{id: string; email: string}[]> => {
     try {
