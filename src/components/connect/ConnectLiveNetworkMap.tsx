@@ -148,6 +148,7 @@ function buildRealGraph(contacts: ContactRow[]): GraphData {
         linkedin: contact.linkedin_url || undefined,
         industry: String(contact.metadata?.industry || contact.metadata?.source || "Relationship network"),
         mutualConnections,
+        mutualConnectionNames: Array.isArray(contact.metadata?.mutual_connections) ? contact.metadata.mutual_connections : [],
         connectionStrength: strengthFromTier(tier),
         sourceContactIds: [contact.id],
       };
