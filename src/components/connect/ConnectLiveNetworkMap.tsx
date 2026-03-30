@@ -488,6 +488,7 @@ export default function ConnectLiveNetworkMap({ onNodeClick }: ConnectLiveNetwor
           industry: node.industry || "Relationship network",
           location: node.location || "Location unavailable",
           mutualConnections: node.mutualConnections,
+          mutualConnectionNames: node.mutualConnectionNames || [],
           connectionStrength: node.connectionStrength,
           tier: node.tier,
           type: node.kind === "company" ? "company" : "person",
