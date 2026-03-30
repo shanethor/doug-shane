@@ -82,21 +82,21 @@
 
     --border: 240 6% 14%;
     --input: 240 6% 14%;
-    --ring: 174 97% 22%;
+    --ring: 140 12% 42%;
 
     --aura-navy: 240 6% 90%;
     --aura-steel: 240 5% 58%;
     --aura-silver: 240 4% 40%;
-    --aura-glow: 174 80% 28%;
+    --aura-glow: 140 12% 42%;
 
     --sidebar-background: 240 10% 5%;
     --sidebar-foreground: 240 6% 90%;
-    --sidebar-primary: 174 80% 28%;
+    --sidebar-primary: 140 12% 42%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 240 6% 10%;
     --sidebar-accent-foreground: 240 6% 90%;
     --sidebar-border: 240 6% 12%;
-    --sidebar-ring: 174 80% 28%;
+    --sidebar-ring: 140 12% 42%;
   }
 
   /* ── Branch theme overrides (dark mode) ── */
