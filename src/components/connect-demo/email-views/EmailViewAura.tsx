@@ -259,15 +259,16 @@ export default function EmailViewAura({ engine, ai }: { engine: Engine; ai: AI }
                 <div className="space-y-2">
                   <p className="text-[10px] font-semibold uppercase" style={{ color: "hsl(240 5% 40%)" }}>Suggested Actions</p>
                   {[
-                    { label: "AI Reply", action: () => ai.aiReply(selectedThread) },
-                    { label: "Summarize Thread", action: () => ai.summarize(selectedThread) },
-                    { label: "Send follow-up", action: () => ai.followUpReminder(selectedThread) },
-                    { label: "Check Compliance", action: () => ai.complianceCheck(selectedThread) },
-                    { label: "Analyze Sentiment", action: () => ai.sentimentAnalysis(selectedThread) },
-                    { label: "Add to Pipeline", action: () => ai.addToPipeline(selectedThread) },
+                    { label: "AI Reply", icon: Sparkles, action: () => ai.aiReply(selectedThread), loading: ai.replyLoading },
+                    { label: "Summarize Thread", icon: FileText, action: () => ai.summarize(selectedThread), loading: ai.summaryLoading },
+                    { label: "Send follow-up", icon: Bell, action: () => ai.followUpReminder(selectedThread), loading: ai.followUpLoading },
+                    { label: "Check Compliance", icon: Shield, action: () => ai.complianceCheck(selectedThread), loading: ai.complianceLoading },
+                    { label: "Analyze Sentiment", icon: Activity, action: () => ai.sentimentAnalysis(selectedThread), loading: ai.sentimentLoading },
+                    { label: "Add to Pipeline", icon: TrendingUp, action: () => ai.addToPipeline(selectedThread), loading: false },
                   ].map(a => (
-                    <button key={a.label} className="w-full text-left text-xs px-2 py-1.5 rounded hover:bg-white/5 transition-colors" style={{ color: "hsl(140 12% 58%)" }} onClick={a.action}>
-                      → {a.label}
+                    <button key={a.label} className="w-full text-left text-xs px-2 py-1.5 rounded hover:bg-white/5 transition-colors flex items-center gap-2 disabled:opacity-50" style={{ color: "hsl(140 12% 58%)" }} onClick={a.action} disabled={a.loading}>
+                      <a.icon className={`h-3.5 w-3.5 shrink-0 ${a.loading ? "animate-spin" : ""}`} />
+                      {a.label}
                     </button>
                   ))}
                 </div>
