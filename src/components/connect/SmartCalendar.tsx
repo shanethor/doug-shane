@@ -334,7 +334,7 @@ export default function SmartCalendar() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-6 w-6 animate-spin" style={{ color: "hsl(140 12% 58%)" }} />
+        <Loader2 className="h-6 w-6 animate-spin text-primary" />
       </div>
     );
   }
@@ -343,9 +343,9 @@ export default function SmartCalendar() {
   const dayView = (
     <div className="relative" style={{ minHeight: `${HOURS.length * 60}px` }}>
       {HOURS.map(hour => (
-        <div key={hour} className="flex h-[60px]" style={{ borderBottom: "1px solid hsl(240 6% 12%)" }}>
-          <div className="w-14 shrink-0 text-[10px] text-right pr-2 pt-1" style={{ color: "hsl(240 5% 40%)" }}>{fmtTime(hour, 0)}</div>
-          <div className="flex-1 relative cursor-pointer hover:bg-white/[0.02] transition-colors" onClick={() => openQuickAdd(currentDate, hour)} />
+        <div key={hour} className="flex h-[60px] border-b border-border">
+          <div className="w-14 shrink-0 text-[10px] text-right pr-2 pt-1 text-muted-foreground">{fmtTime(hour, 0)}</div>
+          <div className="flex-1 relative cursor-pointer hover:bg-muted/30 transition-colors" onClick={() => openQuickAdd(currentDate, hour)} />
         </div>
       ))}
       {eventsFor(currentDate).map(ev => {
@@ -355,8 +355,8 @@ export default function SmartCalendar() {
           <div key={ev.id} className="absolute left-14 right-2 rounded-md px-2 py-1 cursor-pointer hover:brightness-110 transition-all overflow-hidden"
             style={{ top: `${top}px`, height: `${height}px`, background: ev.color + "33", borderLeft: `3px solid ${ev.color}` }}
             onClick={() => setSelectedEvent(ev)}>
-            <p className="text-[11px] font-medium text-white truncate">{ev.title}</p>
-            <p className="text-[9px]" style={{ color: "hsl(240 5% 60%)" }}>{fmtTime(ev.startHour, ev.startMin)} – {fmtTime(ev.endHour, ev.endMin)}</p>
+            <p className="text-[11px] font-medium text-foreground truncate">{ev.title}</p>
+            <p className="text-[9px] text-muted-foreground">{fmtTime(ev.startHour, ev.startMin)} – {fmtTime(ev.endHour, ev.endMin)}</p>
           </div>
         );
       })}
@@ -370,10 +370,10 @@ export default function SmartCalendar() {
         <div />
         {weekDays.map(day => (
           <div key={day.toISOString()} className="text-center">
-            <p className="text-[10px]" style={{ color: "hsl(240 5% 46%)" }}>{format(day, "EEE")}</p>
-            <p className={`text-sm font-semibold ${isDateToday(day) ? "text-white" : ""}`} style={!isDateToday(day) ? { color: "hsl(240 5% 60%)" } : {}}>
+            <p className="text-[10px] text-muted-foreground">{format(day, "EEE")}</p>
+            <p className={`text-sm font-semibold ${isDateToday(day) ? "text-foreground" : "text-muted-foreground"}`}>
               {isDateToday(day) ? (
-                <span className="inline-flex h-7 w-7 items-center justify-center rounded-full" style={{ background: "hsl(140 12% 42%)" }}>{format(day, "d")}</span>
+                <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground">{format(day, "d")}</span>
               ) : format(day, "d")}
             </p>
           </div>
@@ -382,14 +382,14 @@ export default function SmartCalendar() {
       <div className="relative">
         {HOURS.map(hour => (
           <div key={hour} className="grid grid-cols-[56px_repeat(7,1fr)]" style={{ height: "52px" }}>
-            <div className="text-[10px] text-right pr-2 pt-0.5" style={{ color: "hsl(240 5% 36%)" }}>{fmtTime(hour, 0)}</div>
+            <div className="text-[10px] text-right pr-2 pt-0.5 text-muted-foreground">{fmtTime(hour, 0)}</div>
             {weekDays.map(day => {
               const dayEvts = eventsFor(day).filter(e => e.startHour === hour);
               return (
-                <div key={day.toISOString()} className="relative cursor-pointer hover:bg-white/[0.02] transition-colors" style={{ borderBottom: "1px solid hsl(240 6% 10%)", borderRight: "1px solid hsl(240 6% 10%)" }} onClick={() => openQuickAdd(day, hour)}>
+                <div key={day.toISOString()} className="relative cursor-pointer hover:bg-muted/30 transition-colors border-b border-r border-border" onClick={() => openQuickAdd(day, hour)}>
                   {dayEvts.map(ev => (
                     <div key={ev.id} className="absolute inset-x-0.5 rounded px-1 py-0.5 cursor-pointer hover:brightness-110 z-10 overflow-hidden" style={{ background: ev.color + "33", borderLeft: `2px solid ${ev.color}`, top: `${ev.startMin * (52 / 60)}px`, minHeight: "18px" }} onClick={e => { e.stopPropagation(); setSelectedEvent(ev); }}>
-                      <p className="text-[9px] font-medium text-white truncate">{ev.title}</p>
+                      <p className="text-[9px] font-medium text-foreground truncate">{ev.title}</p>
                     </div>
                   ))}
                 </div>
@@ -406,26 +406,25 @@ export default function SmartCalendar() {
     <div>
       <div className="grid grid-cols-7 mb-1">
         {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(d => (
-          <p key={d} className="text-center text-[10px] py-1" style={{ color: "hsl(240 5% 46%)" }}>{d}</p>
+          <p key={d} className="text-center text-[10px] py-1 text-muted-foreground">{d}</p>
         ))}
       </div>
-      <div className="grid grid-cols-7 gap-px rounded-lg overflow-hidden" style={{ background: "hsl(240 6% 10%)" }}>
+      <div className="grid grid-cols-7 gap-px rounded-lg overflow-hidden bg-border">
         {monthDays.map(day => {
           const inMonth = isSameMonth(day, currentDate);
           const dayEvts = eventsFor(day);
           return (
-            <div key={day.toISOString()} className="min-h-[80px] p-1 cursor-pointer hover:bg-white/[0.03] transition-colors"
-              style={{ background: isDateToday(day) ? "hsl(140 12% 42% / 0.08)" : "hsl(240 8% 7%)" }}
+            <div key={day.toISOString()} className={`min-h-[80px] p-1 cursor-pointer hover:bg-muted/40 transition-colors ${isDateToday(day) ? "bg-primary/5" : "bg-card"}`}
               onClick={() => { setCurrentDate(day); setView("day"); }}>
-              <p className={`text-[10px] font-medium mb-0.5 ${isDateToday(day) ? "text-white" : ""}`} style={!isDateToday(day) ? { color: inMonth ? "hsl(240 5% 60%)" : "hsl(240 5% 25%)" } : {}}>
+              <p className={`text-[10px] font-medium mb-0.5 ${isDateToday(day) ? "text-foreground" : inMonth ? "text-muted-foreground" : "text-muted-foreground/40"}`}>
                 {format(day, "d")}
               </p>
               {dayEvts.slice(0, 3).map(ev => (
-                <div key={ev.id} className="text-[8px] rounded px-1 py-0.5 mb-0.5 truncate text-white" style={{ background: ev.color + "33" }}>
+                <div key={ev.id} className="text-[8px] rounded px-1 py-0.5 mb-0.5 truncate text-foreground" style={{ background: ev.color + "33" }}>
                   {ev.title.length > 16 ? ev.title.slice(0, 16) + "…" : ev.title}
                 </div>
               ))}
-              {dayEvts.length > 3 && <p className="text-[8px]" style={{ color: "hsl(240 5% 46%)" }}>+{dayEvts.length - 3} more</p>}
+              {dayEvts.length > 3 && <p className="text-[8px] text-muted-foreground">+{dayEvts.length - 3} more</p>}
             </div>
           );
         })}
@@ -436,16 +435,16 @@ export default function SmartCalendar() {
   /* ─── Editor Dialog ─── */
   const renderEditorDialog = () => (
     <Dialog open={showEditor} onOpenChange={setShowEditor}>
-      <DialogContent className="sm:max-w-md" style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 16%)" }}>
-        <DialogHeader><DialogTitle className="text-white">{editEvent?.id ? "Edit Event" : "New Event"}</DialogTitle></DialogHeader>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader><DialogTitle>{editEvent?.id ? "Edit Event" : "New Event"}</DialogTitle></DialogHeader>
         {editEvent && (
           <div className="space-y-3">
-            <div><Label className="text-xs text-white/60">Title</Label><Input value={editEvent.title || ""} onChange={e => setEditEvent(p => ({ ...p!, title: e.target.value }))} className="mt-1" style={{ background: "hsl(240 8% 12%)", borderColor: "hsl(240 6% 20%)", color: "white" }} /></div>
+            <div><Label className="text-xs">Title</Label><Input value={editEvent.title || ""} onChange={e => setEditEvent(p => ({ ...p!, title: e.target.value }))} className="mt-1" /></div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label className="text-xs text-white/60">Type</Label>
+                <Label className="text-xs">Type</Label>
                 <Select value={editEvent.event_type || "other"} onValueChange={v => setEditEvent(p => ({ ...p!, event_type: v, color: EVENT_COLORS[v] || EVENT_COLORS.other }))}>
-                  <SelectTrigger className="mt-1" style={{ background: "hsl(240 8% 12%)", borderColor: "hsl(240 6% 20%)", color: "white" }}><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="presentation">Presentation</SelectItem>
                     <SelectItem value="coverage_review">Coverage Review</SelectItem>
@@ -456,9 +455,9 @@ export default function SmartCalendar() {
                 </Select>
               </div>
               <div>
-                <Label className="text-xs text-white/60">Link to Client</Label>
+                <Label className="text-xs">Link to Client</Label>
                 <Select value={editEvent.lead_id || "none"} onValueChange={v => setEditEvent(p => ({ ...p!, lead_id: v === "none" ? null : v }))}>
-                  <SelectTrigger className="mt-1" style={{ background: "hsl(240 8% 12%)", borderColor: "hsl(240 6% 20%)", color: "white" }}><SelectValue placeholder="None" /></SelectTrigger>
+                  <SelectTrigger className="mt-1"><SelectValue placeholder="None" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">None</SelectItem>
                     {leads.map(l => <SelectItem key={l.id} value={l.id}>{l.account_name}</SelectItem>)}
@@ -467,15 +466,15 @@ export default function SmartCalendar() {
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div><Label className="text-xs text-white/60">Start</Label><Input type="time" value={`${String(editEvent.startHour || 0).padStart(2, "0")}:${String(editEvent.startMin || 0).padStart(2, "0")}`} onChange={e => { const [h, m] = e.target.value.split(":").map(Number); setEditEvent(p => ({ ...p!, startHour: h, startMin: m })); }} className="mt-1" style={{ background: "hsl(240 8% 12%)", borderColor: "hsl(240 6% 20%)", color: "white" }} /></div>
-              <div><Label className="text-xs text-white/60">End</Label><Input type="time" value={`${String(editEvent.endHour || 0).padStart(2, "0")}:${String(editEvent.endMin || 0).padStart(2, "0")}`} onChange={e => { const [h, m] = e.target.value.split(":").map(Number); setEditEvent(p => ({ ...p!, endHour: h, endMin: m })); }} className="mt-1" style={{ background: "hsl(240 8% 12%)", borderColor: "hsl(240 6% 20%)", color: "white" }} /></div>
+              <div><Label className="text-xs">Start</Label><Input type="time" value={`${String(editEvent.startHour || 0).padStart(2, "0")}:${String(editEvent.startMin || 0).padStart(2, "0")}`} onChange={e => { const [h, m] = e.target.value.split(":").map(Number); setEditEvent(p => ({ ...p!, startHour: h, startMin: m })); }} className="mt-1" /></div>
+              <div><Label className="text-xs">End</Label><Input type="time" value={`${String(editEvent.endHour || 0).padStart(2, "0")}:${String(editEvent.endMin || 0).padStart(2, "0")}`} onChange={e => { const [h, m] = e.target.value.split(":").map(Number); setEditEvent(p => ({ ...p!, endHour: h, endMin: m })); }} className="mt-1" /></div>
             </div>
-            <div><Label className="text-xs text-white/60">Location</Label><Input value={editEvent.location || ""} onChange={e => setEditEvent(p => ({ ...p!, location: e.target.value }))} className="mt-1" style={{ background: "hsl(240 8% 12%)", borderColor: "hsl(240 6% 20%)", color: "white" }} /></div>
-            <div><Label className="text-xs text-white/60">Attendees (comma-separated)</Label><Input value={(editEvent.attendees || []).join(", ")} onChange={e => setEditEvent(p => ({ ...p!, attendees: e.target.value.split(",").map(s => s.trim()).filter(Boolean) }))} className="mt-1" style={{ background: "hsl(240 8% 12%)", borderColor: "hsl(240 6% 20%)", color: "white" }} /></div>
-            <div><Label className="text-xs text-white/60">Notes</Label><Textarea value={editEvent.description || ""} onChange={e => setEditEvent(p => ({ ...p!, description: e.target.value }))} className="mt-1 min-h-[60px]" style={{ background: "hsl(240 8% 12%)", borderColor: "hsl(240 6% 20%)", color: "white" }} /></div>
+            <div><Label className="text-xs">Location</Label><Input value={editEvent.location || ""} onChange={e => setEditEvent(p => ({ ...p!, location: e.target.value }))} className="mt-1" /></div>
+            <div><Label className="text-xs">Attendees (comma-separated)</Label><Input value={(editEvent.attendees || []).join(", ")} onChange={e => setEditEvent(p => ({ ...p!, attendees: e.target.value.split(",").map(s => s.trim()).filter(Boolean) }))} className="mt-1" /></div>
+            <div><Label className="text-xs">Notes</Label><Textarea value={editEvent.description || ""} onChange={e => setEditEvent(p => ({ ...p!, description: e.target.value }))} className="mt-1 min-h-[60px]" /></div>
             <div className="flex gap-2 pt-2">
-              <Button className="flex-1 text-white" style={{ background: "hsl(140 12% 42%)" }} onClick={saveEvent}>Save</Button>
-              <Button variant="outline" onClick={() => setShowEditor(false)} style={{ borderColor: "hsl(240 6% 20%)", color: "hsl(240 5% 70%)" }}>Cancel</Button>
+              <Button className="flex-1" onClick={saveEvent}>Save</Button>
+              <Button variant="outline" onClick={() => setShowEditor(false)}>Cancel</Button>
             </div>
           </div>
         )}
@@ -490,10 +489,10 @@ export default function SmartCalendar() {
         {/* Header */}
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div className="flex items-center gap-3">
-            <CalendarDays className="h-5 w-5" style={{ color: "hsl(140 12% 58%)" }} />
-            <h2 className="text-lg font-semibold text-white">Calendar</h2>
+            <CalendarDays className="h-5 w-5 text-primary" />
+            <h2 className="text-lg font-semibold">Calendar</h2>
             {todayCount > 0 && (
-              <Badge style={{ background: "hsl(140 12% 42%)", color: "white" }} className="text-[10px]">{todayCount} today</Badge>
+              <Badge className="text-[10px] bg-primary text-primary-foreground">{todayCount} today</Badge>
             )}
           </div>
           <div className="flex items-center gap-2 flex-wrap">
@@ -511,11 +510,10 @@ export default function SmartCalendar() {
             <Button variant="outline" size="sm" className="gap-1.5 text-xs h-8" onClick={() => setShowBooking(s => !s)}>
               <Link2 className="h-3 w-3" /> <span className="hidden sm:inline">Booking</span>
             </Button>
-            <Button variant={showAssistant ? "default" : "outline"} size="sm" className="gap-1.5 text-xs h-8" onClick={() => setShowAssistant(s => !s)}
-              style={showAssistant ? { background: "hsl(140 12% 42%)" } : {}}>
+            <Button variant={showAssistant ? "default" : "outline"} size="sm" className="gap-1.5 text-xs h-8" onClick={() => setShowAssistant(s => !s)}>
               <Bot className="h-3 w-3" /> <span className="hidden sm:inline">AURA Assistant</span>
             </Button>
-            <Button size="sm" className="gap-1.5 text-xs h-8 text-white" style={{ background: "hsl(140 12% 42%)" }} onClick={() => openQuickAdd(currentDate)}>
+            <Button size="sm" className="gap-1.5 text-xs h-8" onClick={() => openQuickAdd(currentDate)}>
               <Plus className="h-3.5 w-3.5" /> New Event
             </Button>
           </div>
@@ -524,15 +522,15 @@ export default function SmartCalendar() {
         {/* Search */}
         {showSearch && (
           <div className="relative animate-fade-in">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5" style={{ color: "hsl(240 5% 46%)" }} />
-            <Input placeholder="Search events…" value={search} onChange={e => setSearch(e.target.value)} className="pl-9 text-sm h-9" style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 14%)", color: "white" }} autoFocus />
-            {search && <button className="absolute right-3 top-1/2 -translate-y-1/2" onClick={() => setSearch("")}><X className="h-3.5 w-3.5" style={{ color: "hsl(240 5% 46%)" }} /></button>}
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <Input placeholder="Search events…" value={search} onChange={e => setSearch(e.target.value)} className="pl-9 text-sm h-9" autoFocus />
+            {search && <button className="absolute right-3 top-1/2 -translate-y-1/2" onClick={() => setSearch("")}><X className="h-3.5 w-3.5 text-muted-foreground" /></button>}
           </div>
         )}
 
         {/* Booking Links Panel */}
         {showBooking && (
-          <div className="rounded-xl p-4 animate-fade-in" style={{ background: "hsl(240 8% 7%)", border: "1px solid hsl(240 6% 14%)" }}>
+          <div className="rounded-xl p-4 animate-fade-in border border-border bg-card">
             <BookingLinksManager />
           </div>
         )}
@@ -540,15 +538,14 @@ export default function SmartCalendar() {
         {/* Next Up */}
         {nextUpEvents.length > 0 && !showBooking && (
           <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-            <span className="text-[10px] font-semibold text-white/40 uppercase tracking-wider shrink-0 self-center">Next up</span>
+            <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider shrink-0 self-center">Next up</span>
             {nextUpEvents.map(ev => (
-              <button key={ev.id} className="shrink-0 flex items-center gap-2 px-3 py-1.5 rounded-lg text-left hover:bg-white/[0.04] transition-colors"
-                style={{ background: "hsl(240 8% 8%)", border: "1px solid hsl(240 6% 14%)" }}
+              <button key={ev.id} className="shrink-0 flex items-center gap-2 px-3 py-1.5 rounded-lg text-left hover:bg-muted/40 transition-colors border border-border bg-card"
                 onClick={() => setSelectedEvent(ev)}>
                 <div className="h-2 w-2 rounded-full shrink-0" style={{ background: ev.color }} />
                 <div>
-                  <p className="text-[11px] font-medium text-white truncate max-w-[140px]">{ev.title}</p>
-                  <p className="text-[9px]" style={{ color: "hsl(240 5% 46%)" }}>
+                  <p className="text-[11px] font-medium text-foreground truncate max-w-[140px]">{ev.title}</p>
+                  <p className="text-[9px] text-muted-foreground">
                     {isSameDay(ev.date, new Date()) ? "Today" : format(ev.date, "EEE")} · {fmtTime(ev.startHour, ev.startMin)}
                   </p>
                 </div>
@@ -563,21 +560,20 @@ export default function SmartCalendar() {
             <Button variant="outline" size="sm" className="text-xs h-7 px-2" onClick={goToday}>Today</Button>
             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={goPrev}><ChevronLeft className="h-4 w-4" /></Button>
             <Button variant="ghost" size="icon" className="h-7 w-7" onClick={goNext}><ChevronRight className="h-4 w-4" /></Button>
-            <span className="text-sm font-medium text-white ml-1">{headingText}</span>
+            <span className="text-sm font-medium ml-1">{headingText}</span>
           </div>
           <div className="flex items-center gap-2">
             <Select value={filterType} onValueChange={setFilterType}>
-              <SelectTrigger className="h-7 w-[120px] text-[10px]" style={{ background: "transparent", borderColor: "hsl(240 6% 16%)", color: "hsl(240 5% 60%)" }}>
+              <SelectTrigger className="h-7 w-[120px] text-[10px]">
                 <Filter className="h-3 w-3 mr-1" /><SelectValue />
               </SelectTrigger>
               <SelectContent>
                 {FILTER_OPTIONS.map(f => <SelectItem key={f.value} value={f.value}>{f.label}</SelectItem>)}
               </SelectContent>
             </Select>
-            <div className="flex rounded-md overflow-hidden border" style={{ borderColor: "hsl(240 6% 14%)" }}>
+            <div className="flex rounded-md overflow-hidden border border-border">
               {(["day", "week", "month"] as ViewMode[]).map(v => (
-                <button key={v} className={`px-3 py-1 text-xs capitalize transition-colors ${view === v ? "text-white" : ""}`}
-                  style={{ background: view === v ? "hsl(140 12% 42%)" : "transparent", color: view !== v ? "hsl(240 5% 50%)" : undefined }}
+                <button key={v} className={`px-3 py-1 text-xs capitalize transition-colors ${view === v ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted/40"}`}
                   onClick={() => setView(v)}>{v}</button>
               ))}
             </div>
@@ -585,7 +581,7 @@ export default function SmartCalendar() {
         </div>
 
         {/* Calendar grid */}
-        <div className="rounded-xl overflow-hidden" style={{ border: "1px solid hsl(240 6% 12%)", background: "hsl(240 8% 6%)" }}>
+        <div className="rounded-xl overflow-hidden border border-border bg-card">
           {view === "day" && dayView}
           {view === "week" && weekView}
           {view === "month" && monthView}
@@ -621,15 +617,15 @@ export default function SmartCalendar() {
       {/* Mobile event detail dialog */}
       {selectedEvent && (
         <Dialog open={!!selectedEvent} onOpenChange={() => setSelectedEvent(null)}>
-          <DialogContent className="sm:max-w-sm lg:hidden" style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 16%)" }}>
-            <DialogHeader><DialogTitle className="text-white">{selectedEvent.title}</DialogTitle></DialogHeader>
+          <DialogContent className="sm:max-w-sm lg:hidden">
+            <DialogHeader><DialogTitle>{selectedEvent.title}</DialogTitle></DialogHeader>
             <div className="space-y-2 text-sm">
-              <p className="flex items-center gap-2 text-white/60"><Clock className="h-3.5 w-3.5" />{format(selectedEvent.date, "EEE, MMM d")} · {fmtTime(selectedEvent.startHour, selectedEvent.startMin)} – {fmtTime(selectedEvent.endHour, selectedEvent.endMin)}</p>
-              {selectedEvent.location && <p className="flex items-center gap-2 text-white/60"><MapPin className="h-3.5 w-3.5" />{selectedEvent.location}</p>}
-              {selectedEvent.description && <p className="text-white/50 text-xs mt-2">{selectedEvent.description}</p>}
-              {selectedEvent.attendees.length > 0 && <div className="flex items-center gap-2 text-white/60"><Users className="h-3.5 w-3.5" /><span>{selectedEvent.attendees.join(", ")}</span></div>}
+              <p className="flex items-center gap-2 text-muted-foreground"><Clock className="h-3.5 w-3.5" />{format(selectedEvent.date, "EEE, MMM d")} · {fmtTime(selectedEvent.startHour, selectedEvent.startMin)} – {fmtTime(selectedEvent.endHour, selectedEvent.endMin)}</p>
+              {selectedEvent.location && <p className="flex items-center gap-2 text-muted-foreground"><MapPin className="h-3.5 w-3.5" />{selectedEvent.location}</p>}
+              {selectedEvent.description && <p className="text-muted-foreground text-xs mt-2">{selectedEvent.description}</p>}
+              {selectedEvent.attendees.length > 0 && <div className="flex items-center gap-2 text-muted-foreground"><Users className="h-3.5 w-3.5" /><span>{selectedEvent.attendees.join(", ")}</span></div>}
               <div className="flex gap-2 pt-3 flex-wrap">
-                <Button variant="outline" size="sm" className="text-xs gap-1" style={{ borderColor: "hsl(240 6% 20%)", color: "hsl(240 5% 70%)" }} onClick={() => { setEditEvent({ ...selectedEvent }); setSelectedEvent(null); setShowEditor(true); }}>
+                <Button variant="outline" size="sm" className="text-xs gap-1" onClick={() => { setEditEvent({ ...selectedEvent }); setSelectedEvent(null); setShowEditor(true); }}>
                   <Pencil className="h-3 w-3" /> Edit
                 </Button>
                 <Button variant="outline" size="sm" className="text-xs gap-1 text-destructive border-destructive/30" onClick={() => deleteEvent(selectedEvent.id)}>
