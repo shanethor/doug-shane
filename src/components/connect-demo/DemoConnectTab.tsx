@@ -861,11 +861,11 @@ export default function DemoConnectTab({ contentReady = true }: { contentReady?:
           </CardHeader>
           <CardContent className="space-y-4">
             {/* Confidence + path chain */}
-            <div className="flex items-center gap-3 text-xs" style={{ color: "hsl(240 5% 46%)" }}>
-              <Badge variant="outline" style={{ color: "hsl(140 12% 58%)", borderColor: "hsl(140 12% 42% / 0.3)" }}>
+            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+              <Badge variant="outline" className="text-primary border-primary/30">
                 {result.confidence}% confidence
               </Badge>
-              <span>via <span className="font-medium text-white">{result.connection}</span></span>
+              <span>via <span className="font-medium text-foreground">{result.connection}</span></span>
             </div>
 
             <div className="flex items-center justify-center gap-2 p-4 rounded-lg" style={{ background: "hsl(240 6% 7%)" }}>
