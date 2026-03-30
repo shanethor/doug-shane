@@ -162,6 +162,7 @@ export default function ConnectProduct() {
           }}>
             {page === "connect" && <DemoConnectTab contentReady={introComplete} />}
             {page === "intelligence" && <ConnectIntelligencePage />}
+            {page === "rewards" && <ConnectRewardsPage />}
             {page === "leads" && <ConnectLeads />}
             {page === "pipeline" && <ConnectPipelineTab />}
             {page === "email" && <DemoEmailTab />}

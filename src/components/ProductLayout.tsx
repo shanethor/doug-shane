@@ -237,19 +237,20 @@ export function ProductLayout({
             {!collapsed && (collapsed ? "Expand" : "Collapse")}
           </button>
 
-          {collapsed ? (
-            <Link
-              to="/app/settings#network-connections-section"
-              title="Rewards"
-              className="flex items-center justify-center rounded-lg py-2.5 text-sidebar-foreground/40 hover:text-sidebar-foreground/70 hover:bg-sidebar-accent/50 transition-colors"
-            >
-              <Gift className="h-4 w-4" />
-            </Link>
-          ) : (
-            <Link to="/app/settings#network-connections-section" className="block">
-              <ConnectRewards variant="compact" />
-            </Link>
-          )}
+          <Link
+            to="/connect/rewards"
+            title={collapsed ? "Rewards" : undefined}
+            className={`flex items-center gap-3 rounded-lg text-sm transition-colors ${
+              collapsed ? "justify-center px-0 py-2.5" : "px-3 py-2.5"
+            } ${
+              location.pathname === "/connect/rewards"
+                ? "bg-sidebar-accent text-sidebar-foreground font-medium"
+                : "text-sidebar-foreground/40 hover:text-sidebar-foreground/70 hover:bg-sidebar-accent/50"
+            }`}
+          >
+            <Gift className="h-4 w-4 shrink-0" />
+            {!collapsed && "Rewards"}
+          </Link>
 
           <Link
             to="/app/settings"
