@@ -18,6 +18,7 @@ import {
 import { ConnectedAccountsStatus } from "@/components/ConnectedAccountsStatus";
 import { ProgressiveUnlocks } from "@/components/ProgressiveUnlocks";
 import { ConnectRewards } from "@/components/ConnectRewards";
+import { IntelligenceDiscountBanner, IntelligencePricingSection } from "@/components/IntelligencePricing";
 import { getAuthHeaders } from "@/lib/auth-fetch";
 import { useSearchParams } from "react-router-dom";
 import { useConnectNavConfig, ALL_CONNECT_TABS } from "@/hooks/useConnectNavConfig";
@@ -531,13 +532,19 @@ export default function ProductSettings() {
           )}
         </div>
 
+        {/* Monthly Pricing */}
+        <div className={sectionStyle}>
+          <IntelligencePricingSection />
+        </div>
+
         {/* Subscription */}
         <div className={sectionStyle}>
           <div className="flex items-center gap-3 mb-2">
             <CreditCard className={`h-4 w-4 ${iconMuted}`} />
             <h2 className={headingStyle}>Subscription</h2>
           </div>
-          <p className={`text-sm ${textSecondary}`}>Manage your billing, payment method, and subscription plan.</p>
+          <IntelligenceDiscountBanner />
+          <p className={`text-sm ${textSecondary} mt-2`}>Manage your billing, payment method, and subscription plan.</p>
           <Button onClick={handleManageSubscription} disabled={openingPortal} variant="outline" size="sm" className="gap-2">
             {openingPortal ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ExternalLink className="h-3.5 w-3.5" />}
             Manage Subscription

@@ -21,6 +21,7 @@ import { useAuth } from "@/hooks/useAuth";
 import PrivacySettings from "@/components/connect/PrivacySettings";
 import FeederListAnalytics from "@/components/connect/FeederListAnalytics";
 import RelationshipMap from "@/components/connect/RelationshipMap";
+import { IntelligenceDiscountBanner } from "@/components/IntelligencePricing";
 
 // ─── Types ───
 interface DiscoveredContact {
@@ -708,7 +709,7 @@ function ConnectionManagerPage() {
     return c.provider;
   }));
 
-  return (
+   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-lg font-bold flex items-center gap-2">
@@ -717,6 +718,8 @@ function ConnectionManagerPage() {
         </h2>
         <p className="text-xs text-muted-foreground">Link accounts to expand your network intelligence and reach more connections.</p>
       </div>
+
+      <IntelligenceDiscountBanner />
 
       <Card>
         <CardHeader className="pb-3">

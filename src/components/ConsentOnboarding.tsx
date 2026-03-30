@@ -8,6 +8,7 @@ import {
   Shield, Mail, Users, Target, ArrowRight, Loader2,
   Lock, CheckCircle, Sparkles,
 } from "lucide-react";
+import { IntelligenceDiscountBanner } from "@/components/IntelligencePricing";
 import { supabase } from "@/integrations/supabase/client";
 import { getAuthHeaders } from "@/lib/auth-fetch";
 import { toast } from "sonner";
@@ -186,6 +187,7 @@ export default function ConsentOnboarding({ onComplete }: ConsentOnboardingProps
       {step === 1 && (
         <Card>
           <CardContent className="pt-6 space-y-4">
+            <IntelligenceDiscountBanner />
             <div className="flex items-center gap-3 mb-4">
               <Lock className="h-6 w-6 text-primary" />
               <h2 className="text-xl font-bold">Data Intelligence Agreement</h2>
