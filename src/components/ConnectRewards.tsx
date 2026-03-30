@@ -23,12 +23,6 @@ const ACCOUNT_REWARDS: RewardTier[] = [
   { id: "acct_all", label: "All Accounts", description: "Connect every available account", credit: "$15", type: "accounts", threshold: 99 }, // 99 = sentinel for "all"
 ];
 
-const CONTACT_REWARDS: RewardTier[] = [
-  { id: "cont_100", label: "100 Contacts", description: "Import 100+ contacts", credit: "$5", type: "contacts", threshold: 100 },
-  { id: "cont_250", label: "250 Contacts", description: "Import 250+ contacts", credit: "$10", type: "contacts", threshold: 250 },
-  { id: "cont_500", label: "500 Contacts", description: "Import 500+ contacts", credit: "$15", type: "contacts", threshold: 500 },
-  { id: "cont_1000", label: "1,000 Contacts", description: "Import 1,000+ contacts", credit: "$50", type: "contacts", threshold: 1000 },
-];
 
 export function ConnectRewards() {
   const { user } = useAuth();
