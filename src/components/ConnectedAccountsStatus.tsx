@@ -1334,11 +1334,16 @@ export function ConnectedAccountsStatus({ variant = "compact", accounts: account
     );
   }
 
+  const [comingSoonOpen, setComingSoonOpen] = useState(false);
+
+  const activeAccounts = accounts.filter(a => !COMING_SOON_SOURCES.has(a.id));
+  const comingSoonAccounts = accounts.filter(a => COMING_SOON_SOURCES.has(a.id));
+
   // ─── Full Variant for Settings ───
   return (
     <div className="space-y-3">
       {hiddenInputs}
-      {accounts.map((a) => (
+      {activeAccounts.map((a) => (
         <div
           key={a.id}
           className="flex items-center justify-between rounded-lg border p-3 sm:p-4 min-h-[56px]"
