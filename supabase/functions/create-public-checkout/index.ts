@@ -7,8 +7,8 @@ const corsHeaders = {
 };
 
 // AURA Connect pricing: $149.99/mo intro for 3 months, then $249.99/mo
-const CONNECT_INTRO_PRICE = "price_1TGZwGEISdUzafyh9twp4k8J";  // $149.99/mo
-const CONNECT_STANDARD_PRICE = "price_1TGZwaEISdUzafyhLYBp9tyZ"; // $249.99/mo
+const CONNECT_INTRO_PRICE = "price_1TGZwGEISdUzafyh9twp4k8J";
+const CONNECT_STANDARD_PRICE = "price_1TGZwaEISdUzafyhLYBp9tyZ";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -24,40 +24,65 @@ serve(async (req) => {
       apiVersion: "2025-08-27.basil",
     });
 
-    // Check if Stripe customer exists
+    // Find or create Stripe customer
     const customers = await stripe.customers.list({ email, limit: 1 });
-    let customerId: string | undefined;
+    let customerId: string;
     if (customers.data.length > 0) {
       customerId = customers.data[0].id;
 
       // Check if already subscribed
       const subs = await stripe.subscriptions.list({ customer: customerId, status: "active", limit: 1 });
-      if (subs.data.length > 0) {
+      const trialing = await stripe.subscriptions.list({ customer: customerId, status: "trialing", limit: 1 });
+      if (subs.data.length > 0 || trialing.data.length > 0) {
         return new Response(JSON.stringify({ already_subscribed: true }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
           status: 200,
         });
       }
+    } else {
+      const newCustomer = await stripe.customers.create({
+        email,
+        metadata: { signup_source: "public_checkout" },
+      });
+      customerId = newCustomer.id;
     }
 
     const origin = req.headers.get("origin") || "http://localhost:3000";
+    const now = Math.floor(Date.now() / 1000);
 
-    // Use subscription_schedule for intro→standard pricing phase
+    // Create subscription schedule: 14-day trial + 3 months intro, then standard
+    const schedule = await stripe.subscriptionSchedules.create({
+      customer: customerId,
+      start_date: now,
+      end_behavior: "release",
+      metadata: { signup_email: email, product: "connect" },
+      phases: [
+        {
+          items: [{ price: CONNECT_INTRO_PRICE, quantity: 1 }],
+          iterations: 3,
+          trial_end: now + (14 * 24 * 60 * 60),
+          metadata: { pricing_phase: "intro", signup_email: email },
+        },
+        {
+          items: [{ price: CONNECT_STANDARD_PRICE, quantity: 1 }],
+          metadata: { pricing_phase: "standard", signup_email: email },
+        },
+      ],
+    });
+
+    console.log("[create-public-checkout] Schedule created:", schedule.id);
+
+    // For public checkout, we still need to collect payment method
+    // Create a checkout session in setup mode to collect payment details
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
-      customer_email: customerId ? undefined : email,
-      line_items: [{ price: CONNECT_INTRO_PRICE, quantity: 1 }],
-      mode: "subscription",
-      subscription_data: {
-        trial_period_days: 14,
-        metadata: { signup_email: email, pricing_phase: "intro" },
-      },
-      metadata: { signup_email: email },
+      mode: "setup",
+      metadata: { signup_email: email, schedule_id: schedule.id },
       success_url: `${origin}/onboard?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/request-access?checkout=cancelled`,
     });
 
-    return new Response(JSON.stringify({ url: session.url }), {
+    return new Response(JSON.stringify({ url: session.url, schedule_id: schedule.id }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });

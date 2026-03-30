@@ -40,26 +40,34 @@ serve(async (req) => {
       apiVersion: "2025-08-27.basil",
     });
 
+    // Find or create Stripe customer
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
-    let customerId: string | undefined;
+    let customerId: string;
     if (customers.data.length > 0) {
       customerId = customers.data[0].id;
+    } else {
+      const newCustomer = await stripe.customers.create({
+        email: user.email,
+        metadata: { user_id: user.id },
+      });
+      customerId = newCustomer.id;
+      logStep("Created new Stripe customer", { customerId });
     }
 
     // Check if already subscribed
-    if (customerId) {
-      const subs = await stripe.subscriptions.list({ customer: customerId, status: "active", limit: 1 });
-      if (subs.data.length > 0) {
-        logStep("Already subscribed, redirecting to portal");
-        const portal = await stripe.billingPortal.sessions.create({
-          customer: customerId,
-          return_url: `${req.headers.get("origin")}/connect`,
-        });
-        return new Response(JSON.stringify({ url: portal.url }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 200,
-        });
-      }
+    const existingSubs = await stripe.subscriptions.list({ customer: customerId, status: "active", limit: 1 });
+    const existingTrialing = await stripe.subscriptions.list({ customer: customerId, status: "trialing", limit: 1 });
+    
+    if (existingSubs.data.length > 0 || existingTrialing.data.length > 0) {
+      logStep("Already subscribed, redirecting to portal");
+      const portal = await stripe.billingPortal.sessions.create({
+        customer: customerId,
+        return_url: `${req.headers.get("origin")}/connect`,
+      });
+      return new Response(JSON.stringify({ url: portal.url }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
     }
 
     const body = await req.json().catch(() => ({}));
@@ -71,41 +79,68 @@ serve(async (req) => {
 
     const isStudio = product === "studio";
 
-    // Determine price: Connect uses intro pricing, Studio uses its own price
-    const priceId = isStudio
-      ? (body.price_id || "price_1TF5I1EISdUzafyhMrDOU8II")
-      : CONNECT_INTRO_PRICE;
-
-    const sessionParams: any = {
-      customer: customerId,
-      customer_email: customerId ? undefined : user.email,
-      line_items: [{ price: priceId, quantity: 1 }],
-      mode: "subscription",
-      subscription_data: {
-        metadata: {
-          user_id: user.id,
-          branch: selectedBranch,
-          product,
-          ...(isStudio ? {} : { pricing_phase: "intro" }),
+    if (isStudio) {
+      // Studio: simple checkout with its own price
+      const priceId = body.price_id || "price_1TF5I1EISdUzafyhMrDOU8II";
+      const sessionParams: any = {
+        customer: customerId,
+        line_items: [{ price: priceId, quantity: 1 }],
+        mode: "subscription",
+        subscription_data: {
+          metadata: { user_id: user.id, branch: selectedBranch, product },
         },
-      },
-      metadata: { user_id: user.id, branch: selectedBranch, product },
-      success_url: successUrl,
-      cancel_url: cancelUrl,
-    };
-
-    // Apply discounts: Studio uses passed coupon, Connect uses trial
-    if (isStudio && coupon) {
-      sessionParams.discounts = [{ coupon }];
-    } else if (!isStudio) {
-      sessionParams.subscription_data.trial_period_days = 14;
+        metadata: { user_id: user.id, branch: selectedBranch, product },
+        success_url: successUrl,
+        cancel_url: cancelUrl,
+      };
+      if (coupon) {
+        sessionParams.discounts = [{ coupon }];
+      }
+      const session = await stripe.checkout.sessions.create(sessionParams);
+      logStep("Studio checkout session created", { sessionId: session.id });
+      return new Response(JSON.stringify({ url: session.url }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
     }
 
-    const session = await stripe.checkout.sessions.create(sessionParams);
+    // AURA Connect: Use Subscription Schedule for auto price transition
+    // Phase 1: 14-day trial + 3 months at $149.99
+    // Phase 2: $249.99/mo ongoing
+    const now = Math.floor(Date.now() / 1000);
 
-    logStep("Checkout session created", { sessionId: session.id, priceId });
+    const schedule = await stripe.subscriptionSchedules.create({
+      customer: customerId,
+      start_date: now,
+      end_behavior: "release", // subscription continues after schedule ends
+      metadata: { user_id: user.id, branch: selectedBranch, product: "connect" },
+      phases: [
+        {
+          items: [{ price: CONNECT_INTRO_PRICE, quantity: 1 }],
+          iterations: 3, // 3 months at intro price
+          trial_end: now + (14 * 24 * 60 * 60), // 14-day trial
+          metadata: { pricing_phase: "intro", user_id: user.id, branch: selectedBranch },
+        },
+        {
+          items: [{ price: CONNECT_STANDARD_PRICE, quantity: 1 }],
+          metadata: { pricing_phase: "standard", user_id: user.id, branch: selectedBranch },
+        },
+      ],
+    });
 
-    return new Response(JSON.stringify({ url: session.url }), {
+    logStep("Subscription schedule created", {
+      scheduleId: schedule.id,
+      introPrice: CONNECT_INTRO_PRICE,
+      standardPrice: CONNECT_STANDARD_PRICE,
+    });
+
+    // Since subscription schedules create the subscription directly (no checkout page),
+    // we redirect to success URL
+    return new Response(JSON.stringify({
+      url: successUrl,
+      schedule_id: schedule.id,
+      message: "Subscription schedule created with 14-day trial, 3 months intro, then standard pricing",
+    }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
