@@ -285,6 +285,43 @@ serve(async (req) => {
 
     // --- SYNC ---
     if (action === "sync") {
+      // Auto-create external_calendar entries from email_connections that are missing
+      try {
+        const { data: emailConns } = await adminClient
+          .from("email_connections")
+          .select("id, provider, email_address, access_token, refresh_token, token_expires_at")
+          .eq("user_id", userId)
+          .eq("is_active", true);
+
+        const { data: existingCals } = await adminClient
+          .from("external_calendars")
+          .select("email_address, provider")
+          .eq("user_id", userId);
+
+        const existingSet = new Set((existingCals || []).map(c => `${c.provider}:${c.email_address}`));
+
+        for (const ec of (emailConns || [])) {
+          const calProvider = ec.provider === "gmail" ? "google" : ec.provider === "outlook" ? "outlook" : null;
+          if (!calProvider) continue;
+          const key = `${calProvider}:${ec.email_address}`;
+          if (existingSet.has(key)) continue;
+
+          // Create external_calendar entry from email connection tokens
+          await adminClient.from("external_calendars").insert({
+            user_id: userId,
+            provider: calProvider,
+            email_address: ec.email_address,
+            access_token: ec.access_token,
+            refresh_token: ec.refresh_token,
+            token_expires_at: ec.token_expires_at,
+            is_active: true,
+          });
+          console.log(`Auto-created external_calendar for ${ec.email_address} (${calProvider})`);
+        }
+      } catch (e) {
+        console.error("Auto-create external calendars error:", e);
+      }
+
       const { data: connections } = await adminClient
         .from("external_calendars")
         .select("*")
