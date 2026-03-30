@@ -40,10 +40,11 @@ const TIER_CONFIG: Record<string, { label: string; color: string; icon: string }
 };
 
 /* ═══ Contact Detail Card ═══ */
-function ContactDetailCard({ contact, onUpdate, onClose }: {
+function ContactDetailCard({ contact, onUpdate, onClose, onSelectContact }: {
   contact: Contact;
   onUpdate: (id: string, updates: Partial<Contact>) => void;
   onClose: () => void;
+  onSelectContact?: (name: string) => void;
 }) {
   const [editingNotes, setEditingNotes] = useState(false);
   const [notes, setNotes] = useState(contact.metadata?.notes || "");
