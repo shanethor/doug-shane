@@ -9,7 +9,7 @@ import {
   CheckCircle, Circle, Settings, Network, Loader2,
   Upload, RefreshCw, Unlink, AlertTriangle, Plus, ClipboardPaste,
   ChevronDown, ChevronUp, MessageSquare, Gamepad2, Dumbbell, MapPin,
-  Camera, Headphones, Globe, Hash,
+  Camera, Headphones, Globe, Hash, Zap,
 } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
