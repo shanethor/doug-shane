@@ -23,6 +23,7 @@ export default function PostCheckoutOnboard() {
   const [loadingEmail, setLoadingEmail] = useState(true);
   const [code2fa, setCode2fa] = useState("");
   const [sending2fa, setSending2fa] = useState(false);
+  const [selectedIndustry, setSelectedIndustry] = useState("");
 
   // Fetch email from Stripe session
   useEffect(() => {
