@@ -121,6 +121,7 @@ export default function ConnectProduct() {
   const path = location.pathname;
   const getPage = () => {
     if (path.startsWith("/connect/intelligence")) return "intelligence";
+    if (path.startsWith("/connect/rewards")) return "rewards";
     if (path.startsWith("/connect/leads")) return "leads";
     if (path.startsWith("/connect/pipeline")) return "pipeline";
     if (path.startsWith("/connect/email")) return "email";
