@@ -210,7 +210,7 @@ export default function DemoEmailTab() {
       <div className="email-body">
         {layout === "gmail" && <EmailViewGmail engine={engine} ai={ai} />}
         {layout === "outlook" && <EmailViewOutlook engine={engine} ai={ai} />}
-        {layout === "aura" && <EmailViewAura engine={engine} ai={ai} />}
+        {layout === "aura" && <EmailViewAura engine={engine} ai={ai} linkedAccounts={linkedAccounts} />}
       </div>
 
       {/* Compose Email Dialog */}
