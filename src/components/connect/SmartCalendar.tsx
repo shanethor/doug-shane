@@ -110,6 +110,10 @@ export default function SmartCalendar() {
   const [rawEvents, setRawEvents] = useState<any[]>([]);
   const [events, setEvents] = useState<CalEvent[]>([]);
   const [leads, setLeads] = useState<any[]>([]);
+  const [externalCalendars, setExternalCalendars] = useState<{id: string; provider: string; email_address: string}[]>([]);
+  const [defaultCalendarId, setDefaultCalendarId] = useState<string>(() => {
+    try { return localStorage.getItem("aura-default-calendar") || ""; } catch { return ""; }
+  });
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [view, setView] = useState<ViewMode>("week");
@@ -118,7 +122,7 @@ export default function SmartCalendar() {
   const [showSearch, setShowSearch] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalEvent | null>(null);
   const [showEditor, setShowEditor] = useState(false);
-  const [editEvent, setEditEvent] = useState<Partial<CalEvent> | null>(null);
+  const [editEvent, setEditEvent] = useState<Partial<CalEvent> & { targetCalendars?: string[] } | null>(null);
   const [showAssistant, setShowAssistant] = useState(false);
   const [showBooking, setShowBooking] = useState(false);
   const [filterType, setFilterType] = useState("all");
