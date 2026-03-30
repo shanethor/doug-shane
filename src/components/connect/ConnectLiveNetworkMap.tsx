@@ -33,6 +33,7 @@ interface GraphNode {
   linkedin?: string;
   industry?: string;
   mutualConnections: number;
+  mutualConnectionNames?: string[];
   connectionStrength: string;
   sourceContactIds?: string[];
 }
