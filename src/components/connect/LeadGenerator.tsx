@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import LeadOutreachPanel from "./LeadOutreachPanel";
+import SageGameplan from "./SageGameplan";
+import StudioLeadPromo from "./StudioLeadPromo";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
