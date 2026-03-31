@@ -458,6 +458,9 @@ function ResultsTable() {
     {selectedLead && (
       <LeadOutreachPanel lead={selectedLead} onClose={() => setSelectedLead(null)} />
     )}
+    {gameplanLead && (
+      <SageGameplan lead={gameplanLead} onClose={() => setGameplanLead(null)} />
+    )}
     </>
   );
 }
