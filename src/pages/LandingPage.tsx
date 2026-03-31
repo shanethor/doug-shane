@@ -321,6 +321,10 @@ export default function LandingPage() {
                       <span className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ background: "hsl(140 12% 52%)" }} />
                       Sage AI assistant for real‑time coaching, content generation, and workflow guidance.
                     </li>
+                    <li className="flex items-start gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ background: "hsl(140 12% 52%)" }} />
+                      Free targeted leads every month — sourced and matched to your industry automatically.
+                    </li>
                   </ul>
 
                   <p className="text-[12px] text-[#52525B] leading-[1.55] mb-6 border-l-2 pl-3" style={{ borderColor: "hsl(140 12% 42% / 0.3)" }}>
