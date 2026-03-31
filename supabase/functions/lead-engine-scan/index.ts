@@ -159,6 +159,40 @@ function buildSearchQueries(source: ScanSource, settings: Record<string, string>
       }
       break;
     }
+    case "CT Property Transfers": {
+      queries.push(`Connecticut property transfers ${year} new homeowner insurance`);
+      queries.push(`CT real estate sales recorded ${year} site:data.ct.gov`);
+      break;
+    }
+    case "NYC ACRIS": {
+      const boroughs = (settings.boroughs || "Brooklyn, Queens, Manhattan").split(",").map(b => b.trim());
+      for (const borough of boroughs.slice(0, 2)) {
+        queries.push(`NYC ${borough} deed recorded ${year} new property owner`);
+      }
+      queries.push(`NYC ACRIS property transfer ${year} homeowners insurance`);
+      break;
+    }
+    case "MassGIS Parcels": {
+      const towns = (settings.towns || "BOSTON, CAMBRIDGE").split(",").map(t => t.trim());
+      for (const town of towns.slice(0, 2)) {
+        queries.push(`${town} MA property ownership change ${year} home insurance`);
+      }
+      queries.push(`Massachusetts property sales ${year} homeowner insurance market`);
+      break;
+    }
+    case "NJ MOD-IV / Sales": {
+      const njCounties = (settings.counties || "Bergen, Essex, Hudson").split(",").map(c => c.trim());
+      for (const county of njCounties.slice(0, 2)) {
+        queries.push(`${county} County NJ property sales ${year} new homeowner`);
+      }
+      queries.push(`New Jersey real estate transfer ${year} insurance requirement`);
+      break;
+    }
+    case "RI Coastal (FEMA)": {
+      queries.push(`Rhode Island coastal flood zone properties ${year} insurance`);
+      queries.push(`RI FEMA flood zone VE AE Newport South County ${year}`);
+      break;
+    }
   }
   return queries;
 }
