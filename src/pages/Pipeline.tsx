@@ -1310,7 +1310,7 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
                 </div>
                 <DialogFooter>
                   <Button variant="outline" onClick={() => setAddMode("choose")}>Back</Button>
-                  <Button onClick={handleAddLead} disabled={!newLead.account_name.trim()}>
+                  <Button onClick={() => handleAddLead()} disabled={!newLead.account_name.trim()}>
                     Add Lead
                   </Button>
                 </DialogFooter>
