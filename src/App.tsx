@@ -147,6 +147,9 @@ const App = () => (
           <Route path="/loss-runs/:id/sign" element={<LossRunSign />} />
           <Route path="/reset-password" element={<ResetPassword />} />
 
+          {/* ── Lead landing pages ── */}
+          <Route path="/leads/:industry" element={<LeadLanding />} />
+
           {/* ── Demo routes ── */}
           <Route path="/connectdemo" element={<ConnectDemo />} />
           <Route path="/connectdemo/auth" element={<ConnectDemoAuth />} />
