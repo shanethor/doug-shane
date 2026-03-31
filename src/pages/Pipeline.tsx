@@ -1508,7 +1508,7 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
       <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0 scrollbar-hide pb-4">
       <div className={`grid grid-cols-[repeat(4,minmax(240px,1fr))] md:grid-cols-4 gap-3 ${embedded ? "md:min-h-[300px]" : "md:min-h-[60vh]"} min-w-[960px] md:min-w-0`}>
         {columns.map((stage) => (
-          <div key={stage} className="flex flex-col w-full md:w-auto shrink-0 md:shrink">
+          <div key={stage} className="flex flex-col w-full shrink-0">
             <div className="flex items-center gap-2 mb-3">
               <Badge variant="outline" className={`text-[10px] uppercase tracking-wider font-sans ${STAGE_COLORS[stage]}`}>
                 {STAGE_LABELS[stage]}
