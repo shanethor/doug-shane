@@ -226,6 +226,11 @@ function buildGeminiLeadPrompt(source: ScanSource, settings: Record<string, stri
     "FL Citizens Non-Renewal": `Florida Citizens Insurance non-renewed policyholders who MUST find replacement homeowners coverage — the highest-intent insurance leads in the country`,
     "State Socrata Portals": `property assessment and transfer data from state open data portals (IL, WA, CO, DC, OR) — same pattern as CT`,
     "County ArcGIS": `county assessor property data via ArcGIS REST APIs (FL, OH, MN, AZ, NC counties) — transfers, values, year built`,
+    "CT Property Transfers": `Connecticut property transfers from Socrata API — ~500 new sales/week, real-time deed triggers for homeowners insurance`,
+    "NYC ACRIS": `NYC deed recordings from the ACRIS system — 3-table join (Master + Legals + PLUTO) for ~1,500 new deeds/week across all 5 boroughs`,
+    "MassGIS Parcels": `Massachusetts parcel data from MassGIS ArcGIS REST — ownership changes, property values, year built for home insurance leads`,
+    "NJ MOD-IV / Sales": `New Jersey MOD-IV assessment data + quarterly sales records — high-value leads in Bergen, Essex, Hudson counties ($620K+ avg home value)`,
+    "RI Coastal (FEMA)": `Rhode Island coastal properties in FEMA flood zones — Newport, South County, Providence waterfront — flood + homeowners insurance leads`,
   };
 
   let prompt = `You are an insurance lead generation expert. Generate 8-10 REALISTIC, SPECIFIC business leads for an insurance agent.
