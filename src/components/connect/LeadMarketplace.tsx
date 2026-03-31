@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import {
   useLeadPosts, useMyLeadPosts, useCreateLeadPost, useClaimLead,
   useMyElo, useEnsureElo, getEloBadge, type LeadPost,
 } from "@/hooks/useLeadsHub";
