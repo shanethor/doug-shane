@@ -367,8 +367,8 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasStudio }:
               <><Zap className="h-4 w-4" /> Generate Leads</>
             )}
           </Button>
-          <p className="text-[10px] text-muted-foreground text-center">
-            Sourced from 47+ verified public databases including state licensing boards, OSHA, EPA, SAM.gov, SBA, court records, and more. Enriched via Apollo, Hunter & PDL.
+           <p className="text-[10px] text-muted-foreground text-center">
+            Sourced from 60+ verified public databases including state licensing boards, OSHA, EPA, NOAA, NRCA, PHCC, SAM.gov, SBA, court records, and more. Enriched via Apollo, Hunter & PDL.
           </p>
         </CardContent>
       </Card>
