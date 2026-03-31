@@ -161,7 +161,7 @@ export function IntelligencePricingSection() {
             <span>${(basePricing - currentDiscount + marketplaceCharges).toFixed(2)}/mo</span>
           </div>
           {isIntroPricing && (
-            <p className="text-[10px] text-muted-foreground">Introductory rate for first 3 months. Standard rate: $249.99/mo</p>
+            <p className="text-[10px] text-muted-foreground">Early access rate for first 3 months. Standard rate: $249.99/mo</p>
           )}
         </div>
 
