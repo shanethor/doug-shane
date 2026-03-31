@@ -14,6 +14,8 @@ import DemoAssistantTab from "@/components/connect-demo/DemoAssistantTab";
 import ConnectIntelligencePage from "@/pages/ConnectIntelligence";
 import ConnectLeads from "@/pages/ConnectLeads";
 import ConnectRewardsPage from "@/pages/ConnectRewards";
+import { ComingSoonGate } from "@/components/connect/ComingSoonGate";
+import { useEarlyAccessWhitelist } from "@/hooks/useEarlyAccessWhitelist";
 
 
 // Cinematic intro overlay
