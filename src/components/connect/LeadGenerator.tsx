@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useIsMobile } from "@/hooks/use-mobile";
 import LeadOutreachPanel from "./LeadOutreachPanel";
 import SageGameplan from "./SageGameplan";
 import StudioLeadPromo from "./StudioLeadPromo";
