@@ -262,17 +262,20 @@ export default function LandingPage() {
                 onMouseEnter={(e) => (e.currentTarget.style.background = "hsl(140 12% 52%)")}
                 onMouseLeave={(e) => (e.currentTarget.style.background = "hsl(140 12% 42%)")}
               >
-                See AURA CONNECT in action
+                Try our demo
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
                   <path d="M5 12h14" /><path d="M12 5l7 7-7 7" />
                 </svg>
               </Link>
-              <a
-                href="#studio"
-                className="inline-flex items-center gap-2 text-sm font-medium text-white border border-[#F59E0B]/30 px-7 py-3 rounded-[10px] hover:border-[#F59E0B]/60 hover:bg-[#F59E0B]/[0.06] transition-all no-underline"
+              <Link
+                to="/request-access"
+                className="inline-flex items-center gap-2 text-sm font-medium text-white border border-[hsl(140_12%_42%/0.4)] px-7 py-3 rounded-[10px] hover:border-[hsl(140_12%_42%/0.7)] hover:bg-[hsl(140_12%_42%/0.06)] transition-all no-underline"
               >
-                Talk to AURA Studio
-              </a>
+                Create an Account
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                  <path d="M5 12h14" /><path d="M12 5l7 7-7 7" />
+                </svg>
+              </Link>
             </div>
             <p className="text-lg font-semibold tracking-wide" style={{ color: "hsl(140 12% 42%)" }}>Intelligence runs on AURA</p>
           </div>

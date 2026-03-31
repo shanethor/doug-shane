@@ -269,6 +269,7 @@ export default function ConnectDemo() {
             <TabsContent value="outreach" className="mt-0"><DemoOutreachTab /></TabsContent>
             <TabsContent value="spotlight" className="mt-0"><DemoSpotlightTab /></TabsContent>
             <TabsContent value="assistant" className="mt-0"><DemoAssistantTab onNavigate={setActiveTab} /></TabsContent>
+            <TabsContent value="studio" className="mt-0"><StudioUpsellPage isConnectSubscriber={false} /></TabsContent>
           </div>
         </Tabs>
       </div>
