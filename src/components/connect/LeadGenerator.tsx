@@ -84,6 +84,22 @@ const FOCUS_TO_SOURCE: Record<string, string> = {
   buildzoom: "BuildZoom Permits",
   census_bls: "Census CBP / BLS QCEW",
   state_wc: "State WC Employer Databases",
+  // Roofing-specific sources
+  noaa_hail: "NOAA Hail / Storm Reports",
+  roofing_licenses: "Roofing Contractor Licenses",
+  nrca_directory: "NRCA Membership Directory",
+  storm_permits: "Storm Restoration Permits",
+  gaf_certainteed: "GAF / CertainTeed Certified",
+  roofing_wc: "Roofing WC Class 5551/5552",
+  cat_event_filings: "CAT Event New Entity Filings",
+  // Plumbing-specific sources
+  plumbing_licenses: "Plumbing Contractor Licenses",
+  backflow_certs: "Backflow Preventer Certifications",
+  phcc_directory: "PHCC Member Directory",
+  ua_local_unions: "UA Local Union Contractors",
+  med_gas_certs: "Medical Gas Installer Certs",
+  water_sewer_permits: "Water/Sewer Line Permits",
+  plumbing_wc: "Plumbing WC Class 5183",
 };
 
 function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasStudio }: {
@@ -309,6 +325,22 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasStudio }:
                   { key: "social", label: "Reddit Signals", icon: Users },
                   { key: "linkedin", label: "LinkedIn", icon: Globe },
                   { key: "domains", label: "New Domains", icon: Globe },
+                  // Roofing sources
+                  { key: "noaa_hail", label: "NOAA Hail/Storm", icon: Zap },
+                  { key: "roofing_licenses", label: "Roofing Licenses", icon: FileText },
+                  { key: "nrca_directory", label: "NRCA Directory", icon: Users },
+                  { key: "storm_permits", label: "Storm Permits", icon: Building2 },
+                  { key: "gaf_certainteed", label: "GAF/CertainTeed", icon: Target },
+                  { key: "roofing_wc", label: "Roofing WC 5551/5552", icon: FileText },
+                  { key: "cat_event_filings", label: "CAT Event Filings", icon: Zap },
+                  // Plumbing sources
+                  { key: "plumbing_licenses", label: "Plumbing Licenses", icon: FileText },
+                  { key: "backflow_certs", label: "Backflow Certs", icon: Target },
+                  { key: "phcc_directory", label: "PHCC Directory", icon: Users },
+                  { key: "ua_local_unions", label: "UA Local Unions", icon: Users },
+                  { key: "med_gas_certs", label: "Medical Gas Certs", icon: Target },
+                  { key: "water_sewer_permits", label: "Water/Sewer Permits", icon: Building2 },
+                  { key: "plumbing_wc", label: "Plumbing WC 5183", icon: FileText },
                 ] as const).map(({ key, label, icon: Icon }) => (
                   <button
                     key={key}
@@ -335,8 +367,8 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasStudio }:
               <><Zap className="h-4 w-4" /> Generate Leads</>
             )}
           </Button>
-          <p className="text-[10px] text-muted-foreground text-center">
-            Sourced from 47+ verified public databases including state licensing boards, OSHA, EPA, SAM.gov, SBA, court records, and more. Enriched via Apollo, Hunter & PDL.
+           <p className="text-[10px] text-muted-foreground text-center">
+            Sourced from 60+ verified public databases including state licensing boards, OSHA, EPA, NOAA, NRCA, PHCC, SAM.gov, SBA, court records, and more. Enriched via Apollo, Hunter & PDL.
           </p>
         </CardContent>
       </Card>
