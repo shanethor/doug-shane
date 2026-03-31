@@ -391,6 +391,8 @@ function ResultsTable() {
   const deleteLead = useDeleteEngineLead();
   const convertToPipeline = useConvertToPipeline();
   const [search, setSearch] = useState("");
+  const [scoreFilter, setScoreFilter] = useState<string>("all");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [selectedLead, setSelectedLead] = useState<EngineLead | null>(null);
   const [gameplanLead, setGameplanLead] = useState<EngineLead | null>(null);
   const [enrichingId, setEnrichingId] = useState<string | null>(null);
@@ -428,12 +430,53 @@ function ResultsTable() {
     }
   };
 
-  const filtered = (leads || []).filter((l: EngineLead) =>
-    !search ||
-    l.company.toLowerCase().includes(search.toLowerCase()) ||
-    l.state?.toLowerCase().includes(search.toLowerCase()) ||
-    l.industry?.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = (leads || []).filter((l: EngineLead) => {
+    const matchesSearch = !search ||
+      l.company.toLowerCase().includes(search.toLowerCase()) ||
+      l.state?.toLowerCase().includes(search.toLowerCase()) ||
+      l.industry?.toLowerCase().includes(search.toLowerCase());
+    const s = l.score || 0;
+    const matchesScore = scoreFilter === "all" ||
+      (scoreFilter === "hot" && s >= 80) ||
+      (scoreFilter === "warm" && s >= 50 && s < 80) ||
+      (scoreFilter === "cold" && s < 50);
+    return matchesSearch && matchesScore;
+  });
+
+  const allSelected = filtered.length > 0 && filtered.every((l: EngineLead) => selectedIds.has(l.id));
+  const someSelected = filtered.some((l: EngineLead) => selectedIds.has(l.id));
+
+  const toggleAll = () => {
+    if (allSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filtered.map((l: EngineLead) => l.id)));
+    }
+  };
+
+  const toggleOne = (id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const handleBulkConvert = () => {
+    const toConvert = filtered.filter((l: EngineLead) => selectedIds.has(l.id) && l.status !== "converted");
+    toConvert.forEach(lead => {
+      convertToPipeline.mutate(lead);
+    });
+    toast.success(`Importing ${toConvert.length} leads to pipeline`);
+    setSelectedIds(new Set());
+  };
+
+  const handleBulkDelete = () => {
+    const toDelete = filtered.filter((l: EngineLead) => selectedIds.has(l.id));
+    toDelete.forEach(lead => deleteLead.mutate(lead.id));
+    toast.success(`Removed ${toDelete.length} leads`);
+    setSelectedIds(new Set());
+  };
 
   if (isLoading) return <Skeleton className="h-40 w-full" />;
 
@@ -452,22 +495,57 @@ function ResultsTable() {
   return (
     <>
     <Card>
-      <CardHeader className="pb-3 flex-row items-center justify-between">
-        <CardTitle className="text-sm flex items-center gap-2">
-          <TrendingUp className="h-4 w-4 text-primary" />
-          Generated Leads ({filtered.length})
-        </CardTitle>
-        <div className="flex items-center gap-2">
-          <div className="relative">
-            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-            <Input className="pl-7 h-8 text-xs w-[180px]" placeholder="Search…" value={search} onChange={(e) => setSearch(e.target.value)} />
+      <CardHeader className="pb-3 space-y-3">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <TrendingUp className="h-4 w-4 text-primary" />
+            Generated Leads ({filtered.length})
+          </CardTitle>
+          <div className="flex items-center gap-2">
+            <Select value={scoreFilter} onValueChange={setScoreFilter}>
+              <SelectTrigger className="h-8 text-xs w-[130px]">
+                <SelectValue placeholder="All Scores" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Scores</SelectItem>
+                <SelectItem value="hot">🔥 Hot (80+)</SelectItem>
+                <SelectItem value="warm">🟡 Warm (50–79)</SelectItem>
+                <SelectItem value="cold">🧊 Cold (&lt;50)</SelectItem>
+              </SelectContent>
+            </Select>
+            <div className="relative">
+              <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <Input className="pl-7 h-8 text-xs w-[180px]" placeholder="Search…" value={search} onChange={(e) => setSearch(e.target.value)} />
+            </div>
           </div>
         </div>
+        {someSelected && (
+          <div className="flex items-center gap-2 rounded-lg border border-primary/20 bg-primary/5 px-3 py-2">
+            <span className="text-xs font-medium">{selectedIds.size} selected</span>
+            <Button size="sm" className="h-6 text-[10px] gap-1" onClick={handleBulkConvert}>
+              <ArrowUpRight className="h-3 w-3" /> Add to Pipeline
+            </Button>
+            <Button size="sm" variant="destructive" className="h-6 text-[10px] gap-1" onClick={handleBulkDelete}>
+              <Trash2 className="h-3 w-3" /> Remove
+            </Button>
+            <Button size="sm" variant="ghost" className="h-6 text-[10px]" onClick={() => setSelectedIds(new Set())}>
+              Clear
+            </Button>
+          </div>
+        )}
       </CardHeader>
       <CardContent className="p-0">
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-8">
+                <input
+                  type="checkbox"
+                  checked={allSelected}
+                  onChange={toggleAll}
+                  className="h-3.5 w-3.5 rounded border-border accent-primary cursor-pointer"
+                />
+              </TableHead>
               <TableHead className="text-xs">Company</TableHead>
               <TableHead className="text-xs">Contact</TableHead>
               <TableHead className="text-xs">State</TableHead>
@@ -478,7 +556,15 @@ function ResultsTable() {
           </TableHeader>
           <TableBody>
             {filtered.map((lead: EngineLead) => (
-              <TableRow key={lead.id}>
+              <TableRow key={lead.id} className={selectedIds.has(lead.id) ? "bg-primary/5" : ""}>
+                <TableCell className="py-2 w-8">
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.has(lead.id)}
+                    onChange={() => toggleOne(lead.id)}
+                    className="h-3.5 w-3.5 rounded border-border accent-primary cursor-pointer"
+                  />
+                </TableCell>
                 <TableCell className="py-2">
                   <div className="cursor-pointer group" onClick={() => setSelectedLead(lead)}>
                     <p className="text-xs font-medium group-hover:text-primary transition-colors">{lead.company}</p>
