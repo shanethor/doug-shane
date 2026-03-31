@@ -391,6 +391,8 @@ function ResultsTable() {
   const deleteLead = useDeleteEngineLead();
   const convertToPipeline = useConvertToPipeline();
   const [search, setSearch] = useState("");
+  const [scoreFilter, setScoreFilter] = useState<string>("all");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [selectedLead, setSelectedLead] = useState<EngineLead | null>(null);
   const [gameplanLead, setGameplanLead] = useState<EngineLead | null>(null);
   const [enrichingId, setEnrichingId] = useState<string | null>(null);
