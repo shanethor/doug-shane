@@ -5,7 +5,7 @@ import LeadMarketplace from "@/components/connect/LeadMarketplace";
 import LeadGenerator from "@/components/connect/LeadGenerator";
 
 export default function ConnectLeads() {
-  const [tab, setTab] = useState("marketplace");
+  const [tab, setTab] = useState("generator");
 
   return (
     <div className="space-y-4">
