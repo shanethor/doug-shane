@@ -30,7 +30,7 @@ const INDUSTRY_CONFIG: Record<string, {
       "EPA-certified firms requiring specialty coverage",
       "SBA loan recipients needing all insurance lines",
     ],
-    sources: ["State Licensing Boards", "OSHA Enforcement", "Business Filings", "Permit Database", "EPA Databases", "SAM.gov", "SBA Loans", "FMCSA/DOT", "Court Records & Liens", "Trade Associations", "Google Places", "UCC Filings", "FEMA/NOAA Data", "Reddit Signals", "LinkedIn", "New Domain Monitoring"],
+    sources: ["State Licensing Boards", "OSHA Enforcement", "Manufacturer Dealer Networks", "Utility Rebate Lists", "NATE Certifications", "Business Filings", "Permit Database", "BuildZoom", "EPA Databases", "SAM.gov", "SBA Loans", "SMACNA / PHCC", "PACE Programs", "Prevailing Wage Registries", "State WC Databases", "FMCSA/DOT", "Court Records & Liens", "Trade Associations", "Google Places", "UCC Filings", "Census CBP / BLS", "FEMA/NOAA Data", "Reddit Signals", "LinkedIn", "New Domain Monitoring"],
   },
   "real-estate": {
     title: "Real Estate Leads",
