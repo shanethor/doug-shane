@@ -62,6 +62,7 @@ import ConnectDemoAuth from "./pages/ConnectDemoAuth";
 import BecomePartner from "./pages/BecomePartner";
 import RequestAccess from "./pages/RequestAccess";
 import StudioDemo from "./pages/StudioDemo";
+import LeadLanding from "./pages/LeadLanding";
 import ProductAuth from "./pages/ProductAuth";
 import ConnectProduct from "./pages/ConnectProduct";
 import StudioProduct from "./pages/StudioProduct";
@@ -145,6 +146,9 @@ const App = () => (
           <Route path="/bor-sign/:token" element={<BorSign />} />
           <Route path="/loss-runs/:id/sign" element={<LossRunSign />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+
+          {/* ── Lead landing pages ── */}
+          <Route path="/leads/:industry" element={<LeadLanding />} />
 
           {/* ── Demo routes ── */}
           <Route path="/connectdemo" element={<ConnectDemo />} />

@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import LeadOutreachPanel from "./LeadOutreachPanel";
+import SageGameplan from "./SageGameplan";
+import StudioLeadPromo from "./StudioLeadPromo";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -306,6 +308,7 @@ function ResultsTable() {
   const deleteLead = useDeleteEngineLead();
   const [search, setSearch] = useState("");
   const [selectedLead, setSelectedLead] = useState<EngineLead | null>(null);
+  const [gameplanLead, setGameplanLead] = useState<EngineLead | null>(null);
   const [enrichingId, setEnrichingId] = useState<string | null>(null);
 
   const handleEnrich = async (lead: EngineLead) => {
@@ -431,7 +434,10 @@ function ResultsTable() {
                 </TableCell>
                 <TableCell className="text-right py-2">
                   <div className="flex items-center gap-1 justify-end">
-                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setSelectedLead(lead)}>
+                     <Button variant="ghost" size="icon" className="h-6 w-6" title="Sage Gameplan" onClick={() => setGameplanLead(lead)}>
+                       <Target className="h-3 w-3" style={{ color: "hsl(140 12% 55%)" }} />
+                     </Button>
+                     <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setSelectedLead(lead)}>
                       <Eye className="h-3 w-3" />
                     </Button>
                     <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { updateLead.mutate({ id: lead.id, status: "pipeline" }); toast.success("Added to pipeline"); }}>
@@ -451,6 +457,9 @@ function ResultsTable() {
 
     {selectedLead && (
       <LeadOutreachPanel lead={selectedLead} onClose={() => setSelectedLead(null)} />
+    )}
+    {gameplanLead && (
+      <SageGameplan lead={gameplanLead} onClose={() => setGameplanLead(null)} />
     )}
     </>
   );
@@ -504,8 +513,9 @@ export default function LeadGenerator() {
         <div className="lg:col-span-1 space-y-4">
           <GenerateControls onGenerate={handleGenerate} userIndustry={userIndustry} isSubscriber={subscribed} />
         </div>
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-2 space-y-4">
           <ResultsTable />
+          <StudioLeadPromo />
         </div>
       </div>
     </div>
