@@ -3,9 +3,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ConnectUpsellModal from "@/components/ConnectUpsellModal";
 import {
   Mail, CalendarDays, LayoutGrid, Sparkles, MessageSquare,
-  Network, Send,
+  Network, Send, Palette,
 } from "lucide-react";
 import DemoSpotlightTab from "@/components/connect-demo/DemoSpotlightTab";
+import StudioUpsellPage from "@/components/StudioUpsellPage";
 import DemoPipelineTab from "@/components/connect-demo/DemoPipelineTab";
 import DemoEmailTab from "@/components/connect-demo/DemoEmailTab";
 import DemoCalendarTab from "@/components/connect-demo/DemoCalendarTab";
