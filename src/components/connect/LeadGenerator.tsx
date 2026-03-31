@@ -84,6 +84,22 @@ const FOCUS_TO_SOURCE: Record<string, string> = {
   buildzoom: "BuildZoom Permits",
   census_bls: "Census CBP / BLS QCEW",
   state_wc: "State WC Employer Databases",
+  // Roofing-specific sources
+  noaa_hail: "NOAA Hail / Storm Reports",
+  roofing_licenses: "Roofing Contractor Licenses",
+  nrca_directory: "NRCA Membership Directory",
+  storm_permits: "Storm Restoration Permits",
+  gaf_certainteed: "GAF / CertainTeed Certified",
+  roofing_wc: "Roofing WC Class 5551/5552",
+  cat_event_filings: "CAT Event New Entity Filings",
+  // Plumbing-specific sources
+  plumbing_licenses: "Plumbing Contractor Licenses",
+  backflow_certs: "Backflow Preventer Certifications",
+  phcc_directory: "PHCC Member Directory",
+  ua_local_unions: "UA Local Union Contractors",
+  med_gas_certs: "Medical Gas Installer Certs",
+  water_sewer_permits: "Water/Sewer Line Permits",
+  plumbing_wc: "Plumbing WC Class 5183",
 };
 
 function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasStudio }: {
