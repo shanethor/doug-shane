@@ -21,6 +21,7 @@ export function useSubscription() {
     subscriptionEnd: null,
     isTrialing: false,
     branch: null,
+    hasStudio: false,
     loading: true,
     error: null,
   });
