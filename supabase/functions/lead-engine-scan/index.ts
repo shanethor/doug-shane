@@ -185,6 +185,13 @@ function buildGeminiLeadPrompt(source: ScanSource, settings: Record<string, stri
     "Building Permits": `homeowners pulling roof, renovation, or new construction permits who need updated or new insurance coverage`,
     "Tax Delinquency": `tax-delinquent property owners who likely have lapsed insurance — high-urgency reactivation leads`,
     "Google Trends": `areas with rising search interest in insurance-related topics like rate increases, hail damage, or coverage needs`,
+    "ATTOM Data": `recent property sales and ownership transfers from ATTOM's 158M property database — new homeowners needing insurance`,
+    "RentCast": `rental properties and property valuations from RentCast's 140M+ property database — landlord and homeowner insurance leads`,
+    "Regrid Parcels": `parcel ownership data and boundary records from Regrid's 149M parcels — identifying new property owners`,
+    "BatchData": `skip-traced property owner data including absentee owners and pre-foreclosure properties needing insurance`,
+    "FL Citizens Non-Renewal": `Florida Citizens Insurance non-renewed policyholders who MUST find replacement homeowners coverage — the highest-intent insurance leads in the country`,
+    "State Socrata Portals": `property assessment and transfer data from state open data portals (IL, WA, CO, DC, OR) — same pattern as CT`,
+    "County ArcGIS": `county assessor property data via ArcGIS REST APIs (FL, OH, MN, AZ, NC counties) — transfers, values, year built`,
   };
 
   let prompt = `You are an insurance lead generation expert. Generate 8-10 REALISTIC, SPECIFIC business leads for an insurance agent.
