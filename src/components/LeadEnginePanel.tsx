@@ -228,7 +228,12 @@ function ActivityFeed() {
 }
 
 /* ── Monitoring Panel ── */
-const LIVE_SOURCES = ["Reddit", "Business Filings", "Permit Database", "LinkedIn"];
+const LIVE_SOURCES = [
+  "Reddit", "Business Filings", "Permit Database", "LinkedIn",
+  "FEMA Flood Zones", "NOAA Storm Events", "Census / ACS Data", "NHTSA Vehicles",
+  "OpenFEMA NFIP", "HUD Housing Data", "Property Records", "Building Permits",
+  "Tax Delinquency", "Google Trends",
+];
 const COMING_SOON_SOURCES = ["ZoomInfo"];
 
 function MonitoringPanel({ onConfigure }: { onConfigure: (source: string) => void }) {
@@ -242,6 +247,16 @@ function MonitoringPanel({ onConfigure }: { onConfigure: (source: string) => voi
     LinkedIn: 120,
     "Business Filings": 1440,
     "Permit Database": 1440,
+    "FEMA Flood Zones": 1440,
+    "NOAA Storm Events": 720,
+    "Census / ACS Data": 10080,
+    "NHTSA Vehicles": 1440,
+    "OpenFEMA NFIP": 1440,
+    "HUD Housing Data": 10080,
+    "Property Records": 1440,
+    "Building Permits": 1440,
+    "Tax Delinquency": 10080,
+    "Google Trends": 360,
   };
 
   const DEFAULT_SOURCES = [
@@ -249,6 +264,16 @@ function MonitoringPanel({ onConfigure }: { onConfigure: (source: string) => voi
     { source: "Business Filings", detail: "State filings sync" },
     { source: "LinkedIn", detail: "Signal detection via web scraping" },
     { source: "Permit Database", detail: "Construction + Liquor permits" },
+    { source: "FEMA Flood Zones", detail: "Flood zone property enrichment — all 50 states" },
+    { source: "NOAA Storm Events", detail: "Hail, wind, tornado triggers — real-time" },
+    { source: "OpenFEMA NFIP", detail: "NFIP policies, claims & disaster declarations" },
+    { source: "Property Records", detail: "County assessor data — transfers & values" },
+    { source: "Building Permits", detail: "Renovation & new construction triggers" },
+    { source: "Census / ACS Data", detail: "ZIP-level scoring — home values, auto gaps" },
+    { source: "HUD Housing Data", detail: "Vacancy, rental & LIHTC property data" },
+    { source: "NHTSA Vehicles", detail: "Recalls, VIN decode, crash corridors" },
+    { source: "Tax Delinquency", detail: "Delinquent properties — lapsed insurance risk" },
+    { source: "Google Trends", detail: "Insurance intent signal monitoring" },
     { source: "ZoomInfo", detail: "Contact enrichment" },
   ];
 
