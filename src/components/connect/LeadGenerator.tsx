@@ -388,6 +388,7 @@ function FitScoreBadge({ score }: { score: number }) {
 
 function ResultsTable() {
   const isMobile = useIsMobile();
+  const { data: leads, isLoading } = useEngineLeads();
   const updateLead = useUpdateEngineLead();
   const deleteLead = useDeleteEngineLead();
   const convertToPipeline = useConvertToPipeline();
