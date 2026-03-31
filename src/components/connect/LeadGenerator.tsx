@@ -318,7 +318,7 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasStudio }:
             )}
           </Button>
           <p className="text-[10px] text-muted-foreground text-center">
-            Leads are sourced based on your {pricing.label} industry profile and enriched with contacts via Apollo, Hunter & PDL.
+            Sourced from 47+ verified public databases including state licensing boards, OSHA, EPA, SAM.gov, SBA, court records, and more. Enriched via Apollo, Hunter & PDL.
           </p>
         </CardContent>
       </Card>
