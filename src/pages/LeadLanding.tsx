@@ -44,7 +44,7 @@ const INDUSTRY_CONFIG: Record<string, {
       "Investors looking for rental properties",
       "Sellers preparing to list",
     ],
-    sources: ["Property Records", "Mortgage Filings", "Permit Database", "LinkedIn", "Business Filings"],
+    sources: ["Property Records", "Permit Database", "Business Filings", "Court Records & Liens", "SAM.gov", "SBA Loans", "Google Places", "LinkedIn", "New Domain Monitoring"],
   },
   mortgage: {
     title: "Mortgage Leads",
