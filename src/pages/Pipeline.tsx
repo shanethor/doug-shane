@@ -26,7 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Search, CheckCircle, GripVertical, Edit3, Send, PenLine, Copy, Check, ExternalLink, FileText, Trash2, Users, DollarSign, TrendingUp, Share2, BarChart3, Info, CalendarDays, Star, AlertTriangle, Timer, Activity, Percent } from "lucide-react";
+import { Plus, Search, CheckCircle, GripVertical, Edit3, Send, PenLine, Copy, Check, ExternalLink, FileText, Trash2, Users, DollarSign, TrendingUp, Share2, BarChart3, Info, CalendarDays, Star, AlertTriangle, Timer, Activity, Percent, Zap } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -1564,8 +1564,30 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
                   className={`transition-opacity ${draggedLeadId === lead.id ? "opacity-40" : ""}`}
                 >
                   <Link to={`/pipeline/${lead.id}`}>
-                    <Card className="hover-lift cursor-grab active:cursor-grabbing group">
+                    <Card className={`hover-lift cursor-grab active:cursor-grabbing group ${
+                      lead.lead_source === "marketplace_referral" 
+                        ? "border-2 border-violet-500/50 ring-1 ring-violet-500/20" 
+                        : lead.lead_source?.startsWith("Lead Engine") 
+                          ? "border-2 border-primary/50 ring-1 ring-primary/20" 
+                          : ""
+                    }`}>
                       <CardContent className="p-3">
+                        {/* Imported lead source badge */}
+                        {(lead.lead_source === "marketplace_referral" || lead.lead_source?.startsWith("Lead Engine")) && (
+                          <div className="mb-1.5">
+                            <Badge variant="outline" className={`text-[9px] gap-0.5 ${
+                              lead.lead_source === "marketplace_referral" 
+                                ? "border-violet-500/30 text-violet-400 bg-violet-500/10" 
+                                : "border-primary/30 text-primary bg-primary/10"
+                            }`}>
+                              {lead.lead_source === "marketplace_referral" ? (
+                                <><Share2 className="h-2.5 w-2.5" /> Marketplace Referral</>
+                              ) : (
+                                <><Zap className="h-2.5 w-2.5" /> AI Generated Lead</>
+                              )}
+                            </Badge>
+                          </div>
+                        )}
                         <div className="flex items-start justify-between">
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-1.5">
@@ -1620,6 +1642,28 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
                                   Target: {fmt((lead as any).target_premium)}
                                 </span>
                               </div>
+                            )}
+                            {/* Missing details marker for imported leads */}
+                            {(lead.lead_source === "marketplace_referral" || lead.lead_source?.startsWith("Lead Engine")) && (stage as string) !== "lost" && (stage as string) !== "sold" && (
+                              (() => {
+                                const missing: string[] = [];
+                                if (!lead.contact_name) missing.push("Contact");
+                                if (!lead.email) missing.push("Email");
+                                if (!lead.phone) missing.push("Phone");
+                                if (!((lead as any).target_premium > 0)) missing.push("Est. Premium");
+                                if (!lead.state) missing.push("State");
+                                return missing.length > 0 ? (
+                                  <div className="ml-[18px] mt-1.5 rounded border border-amber-500/20 bg-amber-500/5 px-2 py-1">
+                                    <p className="text-[9px] font-semibold text-amber-500 flex items-center gap-1 mb-0.5">
+                                      <AlertTriangle className="h-2.5 w-2.5" />
+                                      Needs additional details
+                                    </p>
+                                    <p className="text-[9px] text-muted-foreground">
+                                      Missing: {missing.join(", ")}
+                                    </p>
+                                  </div>
+                                ) : null;
+                              })()
                             )}
                             {/* Missing deal value indicator */}
                             {!lead.has_approved_policy && (stage as string) !== "lost" && !((lead as any).target_premium > 0) && (

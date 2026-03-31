@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,6 +14,7 @@ import {
   ArrowRight, Clock, User, Handshake, TrendingUp, Filter,
 } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import {
   useLeadPosts, useMyLeadPosts, useCreateLeadPost, useClaimLead,
   useMyElo, useEnsureElo, getEloBadge, type LeadPost,
@@ -195,12 +197,44 @@ export default function LeadMarketplace() {
   const { data: myElo } = useMyElo();
   const ensureElo = useEnsureElo();
   const claimLead = useClaimLead();
+  const navigate = useNavigate();
 
   const handleClaim = async (post: LeadPost) => {
     try {
       await ensureElo.mutateAsync();
       await claimLead.mutateAsync({ lead_post_id: post.id });
-      toast.success(`Requested "${post.title}" — owner will be notified`);
+
+      // Auto-import to pipeline
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: newLead } = await supabase
+          .from("leads")
+          .insert({
+            account_name: post.title,
+            business_type: post.lead_type || null,
+            target_premium: post.estimated_value || null,
+            lead_source: "marketplace_referral",
+            owner_user_id: user.id,
+            stage: "prospect" as any,
+            line_type: "commercial",
+          } as any)
+          .select("id")
+          .single();
+
+        if (newLead) {
+          await supabase.from("audit_log").insert({
+            user_id: user.id,
+            action: "auto_create",
+            object_type: "lead",
+            object_id: newLead.id,
+            metadata: { source: "marketplace_referral", lead_post_id: post.id, title: post.title },
+          });
+        }
+      }
+
+      toast.success(`"${post.title}" claimed & imported to your pipeline!`, {
+        action: { label: "View Pipeline", onClick: () => navigate("/connect/pipeline") },
+      });
     } catch {
       toast.error("Failed to request lead");
     }

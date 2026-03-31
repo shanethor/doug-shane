@@ -20,7 +20,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useSubscription } from "@/hooks/useSubscription";
 import {
-  useEngineLeads, useUpdateEngineLead, useDeleteEngineLead,
+  useEngineLeads, useUpdateEngineLead, useDeleteEngineLead, useConvertToPipeline,
   type EngineLead,
 } from "@/hooks/useLeadEngine";
 
@@ -389,6 +389,7 @@ function ResultsTable() {
   const { data: leads, isLoading } = useEngineLeads();
   const updateLead = useUpdateEngineLead();
   const deleteLead = useDeleteEngineLead();
+  const convertToPipeline = useConvertToPipeline();
   const [search, setSearch] = useState("");
   const [selectedLead, setSelectedLead] = useState<EngineLead | null>(null);
   const [gameplanLead, setGameplanLead] = useState<EngineLead | null>(null);
@@ -523,7 +524,13 @@ function ResultsTable() {
                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setSelectedLead(lead)}>
                       <Eye className="h-3 w-3" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { updateLead.mutate({ id: lead.id, status: "pipeline" }); toast.success("Added to pipeline"); }}>
+                    <Button variant="ghost" size="icon" className="h-6 w-6" disabled={lead.status === "converted"} onClick={(e) => {
+                      e.stopPropagation();
+                      convertToPipeline.mutate(lead, {
+                        onSuccess: () => toast.success(`${lead.company} imported to pipeline!`),
+                        onError: () => toast.error("Failed to import to pipeline"),
+                      });
+                    }}>
                       <ArrowUpRight className="h-3 w-3" />
                     </Button>
                     <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { deleteLead.mutate(lead.id); toast.success("Removed"); }}>
