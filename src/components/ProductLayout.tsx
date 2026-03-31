@@ -198,7 +198,7 @@ export function ProductLayout({
          <nav className={`flex-1 py-4 space-y-1 ${collapsed ? "px-1" : "px-3"}`}>
            {CONNECT_NAV.map((item) => {
              const active = isActive(item.to, item.exact);
-             const pageKey = item.to.replace("/connect/", "") || "connect";
+             const pageKey = item.to === "/connect" ? "connect" : item.to.replace("/connect/", "");
              const gated = isPageGated(pageKey);
              return (
                <Link
