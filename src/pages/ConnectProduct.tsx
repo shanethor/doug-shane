@@ -105,6 +105,7 @@ function QuoteTicker() {
 export default function ConnectProduct() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { isPageGated } = useEarlyAccessWhitelist();
   const { subscribed } = useSubscription();
   const [showIntro, setShowIntro] = useState(() => {
     try { return !sessionStorage.getItem("connect-entered"); } catch { return true; }
@@ -162,15 +163,15 @@ export default function ConnectProduct() {
             transform: introComplete ? "translateY(0)" : "translateY(20px)",
             transition: "all 1.2s cubic-bezier(0.16, 1, 0.3, 1)",
           }}>
-            {page === "connect" && <DemoConnectTab contentReady={introComplete} />}
-            {page === "intelligence" && <ConnectIntelligencePage />}
-            {page === "rewards" && <ConnectRewardsPage />}
+            {page === "connect" && (isPageGated("connect") ? <ComingSoonGate pageName="Connect" /> : <DemoConnectTab contentReady={introComplete} />)}
+            {page === "intelligence" && (isPageGated("intelligence") ? <ComingSoonGate pageName="Intelligence" /> : <ConnectIntelligencePage />)}
+            {page === "rewards" && (isPageGated("rewards") ? <ComingSoonGate pageName="Rewards" /> : <ConnectRewardsPage />)}
             {page === "leads" && <ConnectLeads />}
             {page === "pipeline" && <ConnectPipelineTab />}
-            {page === "email" && <DemoEmailTab />}
-            {page === "calendar" && <SmartCalendar />}
-            {page === "create" && <DemoSpotlightTab />}
-            {page === "sage" && <DemoAssistantTab onNavigate={handleSageNavigate} />}
+            {page === "email" && (isPageGated("email") ? <ComingSoonGate pageName="Email" /> : <DemoEmailTab />)}
+            {page === "calendar" && (isPageGated("calendar") ? <ComingSoonGate pageName="Calendar" /> : <SmartCalendar />)}
+            {page === "create" && (isPageGated("create") ? <ComingSoonGate pageName="Create" /> : <DemoSpotlightTab />)}
+            {page === "sage" && (isPageGated("sage") ? <ComingSoonGate pageName="Sage" /> : <DemoAssistantTab onNavigate={handleSageNavigate} />)}
             {page === "studio" && <StudioUpsellPage isConnectSubscriber={subscribed} />}
           </div>
         </div>

@@ -81,18 +81,18 @@ export default function RequestAccess() {
 
         <h1 className="text-2xl font-bold tracking-tight text-center mb-2">AURA Connect</h1>
         <p className="text-sm text-[#71717A] text-center leading-relaxed max-w-sm mx-auto mb-8">
-          Relationship intelligence for Property &amp; Consulting professionals. 14-day free trial included.
+          Relationship intelligence for Property &amp; Consulting professionals. 3-day free trial included.
         </p>
 
         {/* Pricing card */}
         <div className="border border-[#27272A] rounded-2xl p-6 mb-6 bg-[#0C0C0E]">
           <div className="flex items-baseline justify-center gap-3 mb-1">
             <span className="text-[#52525B] line-through text-lg">$250</span>
-            <span className="text-4xl font-bold text-white">$100</span>
+            <span className="text-4xl font-bold text-white">$99.99</span>
             <span className="text-[#71717A] text-sm">/month</span>
           </div>
           <p className="text-xs text-[#52525B] text-center mb-6">
-            Launch pricing · first 6 months · then $250/mo
+            Early access pricing · first 3 months · then $249.99/mo
           </p>
 
           <div className="space-y-3 mb-6">
@@ -123,7 +123,7 @@ export default function RequestAccess() {
                 ) : (
                   <>
                     <CreditCard className="w-4 h-4" />
-                    Start 14-day free trial
+                    Start 3-day free trial
                   </>
                 )}
               </button>
