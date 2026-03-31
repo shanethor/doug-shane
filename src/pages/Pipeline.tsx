@@ -222,6 +222,21 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
   // Share tracker
   const [trackerCopied, setTrackerCopied] = useState(false);
 
+  // Filters
+  const [ownerFilter, setOwnerFilter] = useState("all");
+  const [stageFilter, setStageFilter] = useState("all");
+  const [dealSizeRange, setDealSizeRange] = useState<[number, number]>([0, 1000000]);
+
+  // Calendar events for next activity
+  const [leadNextActivity, setLeadNextActivity] = useState<Record<string, { type: string; date: string }>>({});
+  const [leadLastContact, setLeadLastContact] = useState<Record<string, string>>({});
+
+  // Duplicate detection
+  const [duplicateWarning, setDuplicateWarning] = useState<{ name: string; id: string } | null>(null);
+  // Inline deal value edit
+  const [inlineEditLeadId, setInlineEditLeadId] = useState<string | null>(null);
+  const [inlineEditValue, setInlineEditValue] = useState("");
+
   const mountedRef = useRef(true);
   useEffect(() => { return () => { mountedRef.current = false; }; }, []);
 
