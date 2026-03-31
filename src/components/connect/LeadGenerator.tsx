@@ -20,7 +20,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useSubscription } from "@/hooks/useSubscription";
 import {
-  useEngineLeads, useUpdateEngineLead, useDeleteEngineLead,
+  useEngineLeads, useUpdateEngineLead, useDeleteEngineLead, useConvertToPipeline,
   type EngineLead,
 } from "@/hooks/useLeadEngine";
 
