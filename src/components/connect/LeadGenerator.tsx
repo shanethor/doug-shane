@@ -389,6 +389,7 @@ function ResultsTable() {
   const { data: leads, isLoading } = useEngineLeads();
   const updateLead = useUpdateEngineLead();
   const deleteLead = useDeleteEngineLead();
+  const convertToPipeline = useConvertToPipeline();
   const [search, setSearch] = useState("");
   const [selectedLead, setSelectedLead] = useState<EngineLead | null>(null);
   const [gameplanLead, setGameplanLead] = useState<EngineLead | null>(null);
