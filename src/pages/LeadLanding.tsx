@@ -100,7 +100,7 @@ const INDUSTRY_CONFIG: Record<string, {
       "Businesses seeking professional services",
       "Companies with compliance needs",
     ],
-    sources: ["Business Filings", "LinkedIn", "Reddit Signals", "Permit Database", "News Signals"],
+    sources: ["Business Filings", "SAM.gov", "SBA Loans", "Permit Database", "Google Places", "LinkedIn", "Reddit Signals", "Trade Associations", "New Domain Monitoring"],
   },
 };
 
