@@ -57,6 +57,7 @@ export default function ProductAuth() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const product = searchParams.get("product") || "connect";
+  const redirectTo = searchParams.get("redirect");
 
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("");
@@ -71,7 +72,7 @@ export default function ProductAuth() {
     </div>
   );
 
-  if (user && destination) return <Navigate to={destination} replace />;
+  if (user && destination) return <Navigate to={redirectTo || destination} replace />;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
