@@ -58,7 +58,7 @@ const INDUSTRY_CONFIG: Record<string, {
       "Investment property financing",
       "Commercial mortgage prospects",
     ],
-    sources: ["Property Records", "Business Filings", "LinkedIn", "Credit Triggers", "Permit Database"],
+    sources: ["Property Records", "Business Filings", "SBA Loans", "Permit Database", "Court Records & Liens", "Google Places", "LinkedIn", "UCC Filings"],
   },
   consulting: {
     title: "Consulting Leads",
