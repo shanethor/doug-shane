@@ -66,13 +66,15 @@ const FOCUS_TO_SOURCE: Record<string, string> = {
   permits: "Permit Database",
 };
 
-function GenerateControls({ onGenerate, userIndustry, isSubscriber }: {
+function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasStudio }: {
   onGenerate: (opts: any) => void;
   userIndustry: string;
   isSubscriber: boolean;
+  hasStudio: boolean;
 }) {
   const pricing = INDUSTRY_PRICING[userIndustry] || INDUSTRY_PRICING.general;
-  const packs = getLeadPacks(pricing.basePrice, isSubscriber);
+  const packs = getLeadPacks(pricing.basePrice, isSubscriber, hasStudio);
+  const freeLeads = getFreeLeads(pricing.freeLeads, hasStudio);
 
   const [geo, setGeo] = useState("All States");
   const [focuses, setFocuses] = useState<string[]>(["new_business"]);
