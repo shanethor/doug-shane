@@ -819,6 +819,17 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
     // Filter by line type for the kanban view
     const lineType = (l as any).line_type || "commercial";
     if (lineType !== pipelineView) return false;
+    // Owner filter
+    if (ownerFilter !== "all" && l.owner_user_id !== ownerFilter) return false;
+    // Stage filter
+    if (stageFilter !== "all") {
+      const effectiveStage = l.has_approved_policy ? "sold" : l.stage;
+      if (effectiveStage !== stageFilter) return false;
+    }
+    // Deal size filter
+    const dealValue = (l as any).target_premium || 0;
+    if (dealValue > 0 && (dealValue < dealSizeRange[0] || (dealSizeRange[1] < 1000000 && dealValue > dealSizeRange[1]))) return false;
+    // Text search
     if (!search) return true;
     const q = search.toLowerCase();
     return (
@@ -827,6 +838,34 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
       (l.business_type || "").toLowerCase().includes(q)
     );
   });
+
+  // Weighted pipeline value
+  const weightedPipelineValue = filtered.reduce((sum, l) => {
+    if (l.has_approved_policy || l.stage === "lost") return sum;
+    const dealVal = (l as any).target_premium || 0;
+    const prob = l.win_probability ?? DEFAULT_STAGE_PROBABILITY[l.stage] ?? 0;
+    return sum + (dealVal * prob / 100);
+  }, 0);
+
+  // Missing deal value count
+  const missingDealValueLeads = filtered.filter(l => !l.has_approved_policy && l.stage !== "lost" && !((l as any).target_premium > 0));
+
+  // Inline update deal value
+  const handleInlineDealUpdate = async (leadId: string) => {
+    const val = parseFloat(inlineEditValue);
+    if (isNaN(val) || val <= 0) { toast.error("Enter a valid amount"); return; }
+    await supabase.from("leads").update({ target_premium: val } as any).eq("id", leadId);
+    toast.success("Deal value updated");
+    setInlineEditLeadId(null);
+    setInlineEditValue("");
+    loadLeads();
+  };
+
+  // Win probability inline update
+  const handleProbabilityUpdate = async (leadId: string, prob: number) => {
+    await supabase.from("leads").update({ win_probability: prob } as any).eq("id", leadId);
+    setLeads(prev => prev.map(l => l.id === leadId ? { ...l, win_probability: prob } : l));
+  };
 
   const columns = [...STAGES.filter(s => s !== "lost"), "sold" as const];
   const lostStage = "lost";
