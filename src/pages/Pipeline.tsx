@@ -76,6 +76,17 @@ type Lead = {
   has_approved_policy?: boolean;
   submission_id?: string | null;
   presenting_details?: any;
+  win_probability?: number | null;
+  stage_changed_at?: string | null;
+  target_premium?: number | null;
+};
+
+const DEFAULT_STAGE_PROBABILITY: Record<string, number> = {
+  prospect: 10,
+  quoting: 30,
+  presenting: 60,
+  sold: 100,
+  lost: 0,
 };
 
 const STAGES = ["prospect", "quoting", "presenting", "lost"] as const;
