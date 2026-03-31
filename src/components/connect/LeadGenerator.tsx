@@ -308,6 +308,7 @@ function ResultsTable() {
   const deleteLead = useDeleteEngineLead();
   const [search, setSearch] = useState("");
   const [selectedLead, setSelectedLead] = useState<EngineLead | null>(null);
+  const [gameplanLead, setGameplanLead] = useState<EngineLead | null>(null);
   const [enrichingId, setEnrichingId] = useState<string | null>(null);
 
   const handleEnrich = async (lead: EngineLead) => {
