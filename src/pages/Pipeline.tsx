@@ -375,6 +375,31 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
       const stale = new Set(activeNonSoldLeadIds.filter((id: string) => !recentIds.has(id)));
       if (mountedRef.current) setStaleLeadIds(stale);
     }
+
+    // Fetch next activity (calendar events) and last contact for all leads
+    const allLeadIds = leadsData.map((l: any) => l.id);
+    if (allLeadIds.length > 0) {
+      const nowIso = new Date().toISOString();
+      const [futureEvents, lastNotes] = await Promise.all([
+        supabase.from("calendar_events").select("lead_id, title, start_time").in("lead_id", allLeadIds).gte("start_time", nowIso).order("start_time", { ascending: true }).limit(500),
+        supabase.from("lead_notes").select("lead_id, created_at").in("lead_id", allLeadIds).order("created_at", { ascending: false }).limit(1000),
+      ]);
+      // Next activity per lead
+      const nextAct: Record<string, { type: string; date: string }> = {};
+      (futureEvents.data ?? []).forEach((ev: any) => {
+        if (!nextAct[ev.lead_id]) {
+          nextAct[ev.lead_id] = { type: ev.title || "Activity", date: ev.start_time };
+        }
+      });
+      if (mountedRef.current) setLeadNextActivity(nextAct);
+
+      // Last contact per lead (most recent note/audit)
+      const lastCtMap: Record<string, string> = {};
+      (lastNotes.data ?? []).forEach((n: any) => {
+        if (!lastCtMap[n.lead_id]) lastCtMap[n.lead_id] = n.created_at;
+      });
+      if (mountedRef.current) setLeadLastContact(lastCtMap);
+    }
   }, [user, isManager, isAdmin]);
 
   const { containerRef: pullRef, PullIndicator } = usePullToRefresh({ onRefresh: loadLeads });
