@@ -72,7 +72,7 @@ export default function ProductAuth() {
     </div>
   );
 
-  if (user && destination) return <Navigate to={destination} replace />;
+  if (user && destination) return <Navigate to={redirectTo || destination} replace />;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
