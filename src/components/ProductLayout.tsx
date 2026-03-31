@@ -1,6 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserBranch } from "@/hooks/useUserBranch";
+import { useEarlyAccessWhitelist } from "@/hooks/useEarlyAccessWhitelist";
 import {
   Network, Wrench, Settings, LogOut, BarChart3, Mail,
   Sparkles, Zap, Calendar, PanelLeftClose, PanelLeft, Lock, Brain,
