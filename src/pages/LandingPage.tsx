@@ -570,7 +570,7 @@ export default function LandingPage() {
 
                   <div className="flex items-center gap-4">
                     <Link
-                      to="/get-started"
+                      to="/get-started?redirect=/connect/leads"
                       className="inline-flex items-center gap-2 text-sm font-medium text-[#08080A] px-7 py-3 rounded-[10px] transition-colors no-underline"
                       style={{ background: "hsl(140 12% 42%)" }}
                       onMouseEnter={(e) => (e.currentTarget.style.background = "hsl(140 12% 52%)")}
