@@ -213,7 +213,7 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasStudio }:
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-semibold">{pack.leads} Leads</span>
                     {pack.popular && <Badge className="text-[9px] px-1.5 py-0">Most Popular</Badge>}
-                    {isSubscriber && <Badge variant="secondary" className="text-[9px] px-1.5 py-0 text-emerald-600">40% Off</Badge>}
+                    {isSubscriber && <Badge variant="secondary" className={`text-[9px] px-1.5 py-0 ${hasStudio ? "text-purple-600" : "text-emerald-600"}`}>{hasStudio ? "60% Off" : "40% Off"}</Badge>}
                   </div>
                   <span className="text-[10px] text-muted-foreground">
                     ${Math.round(pack.price / pack.leads)}/lead • Full enrichment
