@@ -14,7 +14,7 @@ const STUDIO_COUPON_ID = "qj03MTZb";
 
 const FEATURES = [
   { icon: Code2, title: "Custom Software Builds", desc: "Tailored CRM, dashboards, and internal tools built exactly for your workflow." },
-  { icon: Bot, title: "AI Agent Integrations", desc: "Deploy intelligent agents that automate prospecting, follow-ups, and client comms." },
+  { icon: Bot, title: "Custom AI Agent Integrations", desc: "Deploy custom intelligent agents that automate prospecting, follow-ups, and client comms." },
   { icon: Workflow, title: "Process Automation", desc: "Eliminate manual tasks with end-to-end workflow automation across your stack." },
   { icon: BarChart3, title: "Data Analytics Dashboards", desc: "Real-time insights into your book, pipeline performance, and growth metrics." },
   { icon: Palette, title: "Marketing Assets", desc: "On-brand collateral, landing pages, and campaign tools — designed and deployed." },
@@ -23,8 +23,15 @@ const FEATURES = [
 
 const TESTIMONIALS = [
   { quote: "Studio built us a custom quoting tool in 4 days that would have taken months internally.", name: "Regional Agency Principal" },
-  { quote: "The AI agent they deployed handles 60% of our initial lead qualification now.", name: "Commercial Lines Producer" },
+  { quote: "The custom AI agent they deployed handles 60% of our initial lead qualification now.", name: "Commercial Lines Producer" },
   { quote: "Our renewal retention went up 12% after they automated our re-marketing workflow.", name: "Operations Manager" },
+];
+
+const TIME_SAVINGS = [
+  { task: "Cold email outreach", without: "8-12 hrs/week", with: "0 hrs/week", saved: "12 hrs" },
+  { task: "Lead research & enrichment", without: "5-8 hrs/week", with: "0 hrs/week", saved: "8 hrs" },
+  { task: "Follow-up sequences", without: "4-6 hrs/week", with: "< 30 min/week", saved: "5.5 hrs" },
+  { task: "Prospect qualification", without: "3-5 hrs/week", with: "< 15 min/week", saved: "4.5 hrs" },
 ];
 
 // Fake blurred Studio dashboard content
