@@ -13,7 +13,7 @@ import {
   ArrowRight, Clock, User, Handshake, TrendingUp, Filter,
 } from "lucide-react";
 import { toast } from "sonner";
-import {
+import { supabase } from "@/integrations/supabase/client";
   useLeadPosts, useMyLeadPosts, useCreateLeadPost, useClaimLead,
   useMyElo, useEnsureElo, getEloBadge, type LeadPost,
 } from "@/hooks/useLeadsHub";
