@@ -64,6 +64,17 @@ const FOCUS_TO_SOURCE: Record<string, string> = {
   social: "Reddit",
   linkedin: "LinkedIn",
   permits: "Permit Database",
+  licensing: "State Licensing Boards",
+  osha: "OSHA Enforcement",
+  epa: "EPA Databases",
+  court_records: "Court Records & Liens",
+  sam_gov: "SAM.gov / Federal Contracts",
+  sba: "SBA Loan Data",
+  associations: "Trade Associations",
+  google_places: "Google Places",
+  fmcsa: "FMCSA / DOT Records",
+  ucc: "UCC Filings",
+  domains: "New Domain Registrations",
 };
 
 function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasStudio }: {
