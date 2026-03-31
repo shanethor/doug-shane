@@ -8,6 +8,7 @@ interface SubscriptionState {
   subscriptionEnd: string | null;
   isTrialing: boolean;
   branch: string | null;
+  hasStudio: boolean;
   loading: boolean;
   error: string | null;
 }
@@ -20,6 +21,7 @@ export function useSubscription() {
     subscriptionEnd: null,
     isTrialing: false,
     branch: null,
+    hasStudio: false,
     loading: true,
     error: null,
   });
@@ -38,6 +40,7 @@ export function useSubscription() {
         subscriptionEnd: data.subscription_end || null,
         isTrialing: data.is_trialing || false,
         branch: data.branch || null,
+        hasStudio: data.has_studio || false,
         loading: false,
         error: null,
       });

@@ -45,14 +45,18 @@ const INDUSTRY_PRICING: Record<string, { basePrice: number; label: string; freeL
   general: { basePrice: 15, label: "General Business", freeLeads: 10 },
 };
 
-function getLeadPacks(basePrice: number, isSubscriber: boolean) {
-  const discount = isSubscriber ? 0.6 : 1; // 40% off for subscribers
+function getLeadPacks(basePrice: number, isSubscriber: boolean, hasStudio: boolean) {
+  const discount = hasStudio ? 0.4 : isSubscriber ? 0.6 : 1; // 60% off for Studio, 40% off for Connect
   return [
     { leads: 10, price: Math.round(10 * basePrice * discount), originalPrice: 10 * basePrice },
     { leads: 25, price: Math.round(25 * basePrice * discount), originalPrice: 25 * basePrice },
     { leads: 50, price: Math.round(50 * basePrice * discount), originalPrice: 50 * basePrice, popular: true },
     { leads: 100, price: Math.round(100 * basePrice * discount), originalPrice: 100 * basePrice },
   ];
+}
+
+function getFreeLeads(baseFreeLeads: number, hasStudio: boolean) {
+  return hasStudio ? baseFreeLeads * 3 : baseFreeLeads;
 }
 
 const FOCUS_TO_SOURCE: Record<string, string> = {
@@ -62,13 +66,15 @@ const FOCUS_TO_SOURCE: Record<string, string> = {
   permits: "Permit Database",
 };
 
-function GenerateControls({ onGenerate, userIndustry, isSubscriber }: {
+function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasStudio }: {
   onGenerate: (opts: any) => void;
   userIndustry: string;
   isSubscriber: boolean;
+  hasStudio: boolean;
 }) {
   const pricing = INDUSTRY_PRICING[userIndustry] || INDUSTRY_PRICING.general;
-  const packs = getLeadPacks(pricing.basePrice, isSubscriber);
+  const packs = getLeadPacks(pricing.basePrice, isSubscriber, hasStudio);
+  const freeLeads = getFreeLeads(pricing.freeLeads, hasStudio);
 
   const [geo, setGeo] = useState("All States");
   const [focuses, setFocuses] = useState<string[]>(["new_business"]);
@@ -148,14 +154,19 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber }: {
     <div className="space-y-4">
       {/* Free leads banner for subscribers */}
       {isSubscriber && (
-        <Card className="border-emerald-500/30 bg-emerald-500/5">
+        <Card className={hasStudio ? "border-purple-500/30 bg-purple-500/5" : "border-emerald-500/30 bg-emerald-500/5"}>
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-2">
-              <Gift className="h-4 w-4 text-emerald-500" />
-              <span className="text-sm font-semibold text-emerald-600">Free Monthly Leads</span>
+              <Gift className={`h-4 w-4 ${hasStudio ? "text-purple-500" : "text-emerald-500"}`} />
+              <span className={`text-sm font-semibold ${hasStudio ? "text-purple-600" : "text-emerald-600"}`}>
+                {hasStudio ? "Studio Member — 3× Free Monthly Leads" : "Free Monthly Leads"}
+              </span>
             </div>
             <p className="text-xs text-muted-foreground">
-              As a Connect member, you get <span className="font-bold text-foreground">{pricing.freeLeads} free {pricing.label} leads</span> every month. Resets on the 1st.
+              {hasStudio
+                ? <>As a Studio member, you get <span className="font-bold text-foreground">{freeLeads} free {pricing.label} leads</span> every month (3× the standard allotment) plus <span className="font-bold text-foreground">60% off</span> all purchased leads. Resets on the 1st.</>
+                : <>As a Connect member, you get <span className="font-bold text-foreground">{freeLeads} free {pricing.label} leads</span> every month. Resets on the 1st.</>
+              }
             </p>
           </CardContent>
         </Card>
@@ -172,8 +183,8 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber }: {
             Base price: ${pricing.basePrice}/lead • Enriched with full company & contact profiles
           </p>
           {isSubscriber ? (
-            <Badge variant="outline" className="text-[9px] mt-1 text-emerald-600 border-emerald-600/30">
-              🎉 Connect Member — 40% discount applied
+            <Badge variant="outline" className={`text-[9px] mt-1 ${hasStudio ? "text-purple-600 border-purple-600/30" : "text-emerald-600 border-emerald-600/30"}`}>
+              {hasStudio ? "🚀 Studio Member — 60% discount applied" : "🎉 Connect Member — 40% discount applied"}
             </Badge>
           ) : (
             <Badge variant="outline" className="text-[9px] mt-1 text-amber-600 border-amber-600/30">
@@ -202,7 +213,7 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber }: {
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-semibold">{pack.leads} Leads</span>
                     {pack.popular && <Badge className="text-[9px] px-1.5 py-0">Most Popular</Badge>}
-                    {isSubscriber && <Badge variant="secondary" className="text-[9px] px-1.5 py-0 text-emerald-600">40% Off</Badge>}
+                    {isSubscriber && <Badge variant="secondary" className={`text-[9px] px-1.5 py-0 ${hasStudio ? "text-purple-600" : "text-emerald-600"}`}>{hasStudio ? "60% Off" : "40% Off"}</Badge>}
                   </div>
                   <span className="text-[10px] text-muted-foreground">
                     ${Math.round(pack.price / pack.leads)}/lead • Full enrichment
@@ -467,7 +478,7 @@ function ResultsTable() {
 
 export default function LeadGenerator() {
   const qc = useQueryClient();
-  const { subscribed } = useSubscription();
+  const { subscribed, hasStudio } = useSubscription();
   const [userIndustry, setUserIndustry] = useState<string>("general");
   const [loading, setLoading] = useState(true);
 
@@ -511,7 +522,7 @@ export default function LeadGenerator() {
 
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-1 space-y-4">
-          <GenerateControls onGenerate={handleGenerate} userIndustry={userIndustry} isSubscriber={subscribed} />
+          <GenerateControls onGenerate={handleGenerate} userIndustry={userIndustry} isSubscriber={subscribed} hasStudio={hasStudio} />
         </div>
         <div className="lg:col-span-2 space-y-4">
           <ResultsTable />
