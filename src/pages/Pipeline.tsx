@@ -1593,6 +1593,33 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
                                 </span>
                               </div>
                             )}
+                            {/* Missing deal value indicator */}
+                            {!lead.has_approved_policy && stage !== "lost" && !((lead as any).target_premium > 0) && (
+                              <div className="ml-[18px] mt-1">
+                                {inlineEditLeadId === lead.id ? (
+                                  <div className="flex items-center gap-1" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
+                                    <Input
+                                      type="number"
+                                      value={inlineEditValue}
+                                      onChange={(e) => setInlineEditValue(e.target.value)}
+                                      placeholder="$0"
+                                      className="h-6 w-20 text-[10px] px-1.5"
+                                      autoFocus
+                                      onClick={(e) => e.stopPropagation()}
+                                      onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleInlineDealUpdate(lead.id); } }}
+                                    />
+                                    <Button size="sm" className="h-6 text-[10px] px-2" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleInlineDealUpdate(lead.id); }}>Save</Button>
+                                  </div>
+                                ) : (
+                                  <button
+                                    className="text-[10px] text-amber-500 font-sans flex items-center gap-0.5 hover:underline"
+                                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setInlineEditLeadId(lead.id); setInlineEditValue(""); }}
+                                  >
+                                    <DollarSign className="h-2.5 w-2.5" />?  Add value
+                                  </button>
+                                )}
+                              </div>
+                            )}
                             {/* Show presenting premium on presenting cards */}
                             {stage === "presenting" && lead.presenting_details?.lines && (
                               <div className="ml-[18px] mt-1 space-y-0.5">
@@ -1615,6 +1642,66 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
                                     {new Date(leadEffectiveDates[lead.id] + "T00:00:00").toLocaleString("en-US", { month: "short", year: "numeric" })}
                                   </Badge>
                                 )}
+                              </div>
+                            )}
+                            {/* Bottom row: Time in stage + Activity + Win probability */}
+                            {stage !== "sold" && stage !== "lost" && (
+                              <div className="ml-[18px] mt-1.5 flex items-center gap-2 flex-wrap">
+                                {/* Time-in-stage badge */}
+                                {(() => {
+                                  const stageDate = lead.stage_changed_at || lead.updated_at;
+                                  const days = Math.floor((Date.now() - new Date(stageDate).getTime()) / (1000 * 60 * 60 * 24));
+                                  const color = days <= 7 ? "text-emerald-500 bg-emerald-500/10 border-emerald-500/20" : days <= 21 ? "text-amber-500 bg-amber-500/10 border-amber-500/20" : "text-destructive bg-destructive/10 border-destructive/20";
+                                  return (
+                                    <span className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[9px] font-semibold border ${color}`}>
+                                      <Timer className="h-2.5 w-2.5" />
+                                      {days}d
+                                    </span>
+                                  );
+                                })()}
+                                {/* Next activity / Last contact badge */}
+                                {leadNextActivity[lead.id] ? (
+                                  <span className="inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[9px] font-semibold text-primary bg-primary/10 border border-primary/20">
+                                    <CalendarDays className="h-2.5 w-2.5" />
+                                    {formatDistanceToNow(new Date(leadNextActivity[lead.id].date), { addSuffix: false })}
+                                  </span>
+                                ) : leadLastContact[lead.id] ? (
+                                  <span className="inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[9px] text-muted-foreground bg-muted border border-border">
+                                    <Activity className="h-2.5 w-2.5" />
+                                    {formatDistanceToNow(new Date(leadLastContact[lead.id]), { addSuffix: true })}
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[9px] font-semibold text-destructive bg-destructive/10 border border-destructive/20">
+                                    <Activity className="h-2.5 w-2.5" />
+                                    No activity
+                                  </span>
+                                )}
+                                {/* Win probability */}
+                                {(() => {
+                                  const prob = lead.win_probability ?? DEFAULT_STAGE_PROBABILITY[stage] ?? 0;
+                                  return (
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <span
+                                          className="inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[9px] font-semibold text-primary bg-primary/10 border border-primary/20 cursor-pointer"
+                                          onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            const newProb = prompt(`Win probability for ${lead.account_name} (0-100):`, String(prob));
+                                            if (newProb !== null) {
+                                              const val = Math.max(0, Math.min(100, parseInt(newProb) || 0));
+                                              handleProbabilityUpdate(lead.id, val);
+                                            }
+                                          }}
+                                        >
+                                          <Percent className="h-2.5 w-2.5" />
+                                          {prob}%
+                                        </span>
+                                      </TooltipTrigger>
+                                      <TooltipContent side="top" className="text-xs">Win probability — click to edit</TooltipContent>
+                                    </Tooltip>
+                                  );
+                                })()}
                               </div>
                             )}
                           </div>
