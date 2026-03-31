@@ -1643,6 +1643,28 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
                                 </span>
                               </div>
                             )}
+                            {/* Missing details marker for imported leads */}
+                            {(lead.lead_source === "marketplace_referral" || lead.lead_source?.startsWith("Lead Engine")) && (stage as string) !== "lost" && (stage as string) !== "sold" && (
+                              (() => {
+                                const missing: string[] = [];
+                                if (!lead.contact_name) missing.push("Contact");
+                                if (!lead.email) missing.push("Email");
+                                if (!lead.phone) missing.push("Phone");
+                                if (!((lead as any).target_premium > 0)) missing.push("Est. Premium");
+                                if (!lead.state) missing.push("State");
+                                return missing.length > 0 ? (
+                                  <div className="ml-[18px] mt-1.5 rounded border border-amber-500/20 bg-amber-500/5 px-2 py-1">
+                                    <p className="text-[9px] font-semibold text-amber-500 flex items-center gap-1 mb-0.5">
+                                      <AlertTriangle className="h-2.5 w-2.5" />
+                                      Needs additional details
+                                    </p>
+                                    <p className="text-[9px] text-muted-foreground">
+                                      Missing: {missing.join(", ")}
+                                    </p>
+                                  </div>
+                                ) : null;
+                              })()
+                            )}
                             {/* Missing deal value indicator */}
                             {!lead.has_approved_policy && (stage as string) !== "lost" && !((lead as any).target_premium > 0) && (
                               <div className="ml-[18px] mt-1">
