@@ -25,11 +25,12 @@ const INDUSTRY_CONFIG: Record<string, {
     basePrice: 25,
     highlights: [
       "New business filings needing coverage",
-      "Property transactions requiring policies",
-      "Businesses with expiring policies",
-      "Life event triggers (new homes, vehicles, businesses)",
+      "OSHA-cited contractors needing new carriers",
+      "License expirations triggering renewal windows",
+      "EPA-certified firms requiring specialty coverage",
+      "SBA loan recipients needing all insurance lines",
     ],
-    sources: ["Business Filings", "Permit Database", "FEMA/NOAA Data", "Reddit Signals", "LinkedIn"],
+    sources: ["State Licensing Boards", "OSHA Enforcement", "Business Filings", "Permit Database", "EPA Databases", "SAM.gov", "SBA Loans", "FMCSA/DOT", "Court Records & Liens", "Trade Associations", "Google Places", "UCC Filings", "FEMA/NOAA Data", "Reddit Signals", "LinkedIn", "New Domain Monitoring"],
   },
   "real-estate": {
     title: "Real Estate Leads",
