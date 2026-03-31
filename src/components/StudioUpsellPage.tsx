@@ -150,6 +150,29 @@ export default function StudioUpsellPage({ isConnectSubscriber = false }: { isCo
             })}
           </div>
 
+          {/* Time savings comparison */}
+          <div className="rounded-2xl border border-orange-500/20 bg-card/40 backdrop-blur-sm p-5 space-y-4">
+            <h3 className="text-base font-bold text-center">
+              Time Spent on Cold Outreach Per Week
+            </h3>
+            <div className="grid grid-cols-3 gap-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider pb-1 border-b border-border/30">
+              <span>Task</span>
+              <span className="text-center">Without AI Agents</span>
+              <span className="text-center text-orange-400">With AURA Studio</span>
+            </div>
+            {TIME_SAVINGS.map((row, i) => (
+              <div key={i} className="grid grid-cols-3 gap-2 items-center py-1.5 border-b border-border/10 last:border-0">
+                <span className="text-xs text-muted-foreground">{row.task}</span>
+                <span className="text-xs text-center text-red-400/80">{row.without}</span>
+                <span className="text-xs text-center text-orange-400 font-semibold">{row.with}</span>
+              </div>
+            ))}
+            <div className="flex items-center justify-center gap-2 pt-2 border-t border-orange-500/20">
+              <span className="text-sm font-bold text-orange-400">Save 30+ hours per week</span>
+              <span className="text-xs text-muted-foreground">with custom AI agents handling outreach</span>
+            </div>
+          </div>
+
           {/* Social proof */}
           <div className="space-y-3">
             {TESTIMONIALS.map((t, i) => (
