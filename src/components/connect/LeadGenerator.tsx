@@ -75,6 +75,15 @@ const FOCUS_TO_SOURCE: Record<string, string> = {
   fmcsa: "FMCSA / DOT Records",
   ucc: "UCC Filings",
   domains: "New Domain Registrations",
+  mfr_dealers: "Manufacturer Dealer Networks",
+  utility_rebate: "Utility Rebate Contractor Lists",
+  nate_certs: "NATE Certified Contractors",
+  prevailing_wage: "Prevailing Wage Registries",
+  smacna_phcc: "SMACNA / PHCC Directories",
+  pace_programs: "PACE Program Directories",
+  buildzoom: "BuildZoom Permits",
+  census_bls: "Census CBP / BLS QCEW",
+  state_wc: "State WC Employer Databases",
 };
 
 function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasStudio }: {
