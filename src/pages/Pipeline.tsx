@@ -1594,7 +1594,7 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
                               </div>
                             )}
                             {/* Missing deal value indicator */}
-                            {!lead.has_approved_policy && stage !== "lost" && !((lead as any).target_premium > 0) && (
+                            {!lead.has_approved_policy && (stage as string) !== "lost" && !((lead as any).target_premium > 0) && (
                               <div className="ml-[18px] mt-1">
                                 {inlineEditLeadId === lead.id ? (
                                   <div className="flex items-center gap-1" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
