@@ -6,7 +6,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-type ScanSource = "Reddit" | "Business Filings" | "Permit Database" | "LinkedIn" | "FEMA Flood Zones" | "NOAA Storm Events" | "Census / ACS Data" | "NHTSA Vehicles" | "OpenFEMA NFIP" | "HUD Housing Data" | "Property Records" | "Building Permits" | "Tax Delinquency" | "Google Trends" | "ATTOM Data" | "RentCast" | "Regrid Parcels" | "BatchData" | "FL Citizens Non-Renewal" | "State Socrata Portals" | "County ArcGIS";
+type ScanSource = "Reddit" | "Business Filings" | "Permit Database" | "LinkedIn" | "FEMA Flood Zones" | "NOAA Storm Events" | "Census / ACS Data" | "NHTSA Vehicles" | "OpenFEMA NFIP" | "HUD Housing Data" | "Property Records" | "Building Permits" | "Tax Delinquency" | "Google Trends" | "ATTOM Data" | "RentCast" | "Regrid Parcels" | "BatchData" | "FL Citizens Non-Renewal" | "State Socrata Portals" | "County ArcGIS" | "CT Property Transfers" | "NYC ACRIS" | "MassGIS Parcels" | "NJ MOD-IV / Sales" | "RI Coastal (FEMA)";
 
 // ── Build Firecrawl search queries (used when Firecrawl is available) ──
 function buildSearchQueries(source: ScanSource, settings: Record<string, string>): string[] {
@@ -159,6 +159,40 @@ function buildSearchQueries(source: ScanSource, settings: Record<string, string>
       }
       break;
     }
+    case "CT Property Transfers": {
+      queries.push(`Connecticut property transfers ${year} new homeowner insurance`);
+      queries.push(`CT real estate sales recorded ${year} site:data.ct.gov`);
+      break;
+    }
+    case "NYC ACRIS": {
+      const boroughs = (settings.boroughs || "Brooklyn, Queens, Manhattan").split(",").map(b => b.trim());
+      for (const borough of boroughs.slice(0, 2)) {
+        queries.push(`NYC ${borough} deed recorded ${year} new property owner`);
+      }
+      queries.push(`NYC ACRIS property transfer ${year} homeowners insurance`);
+      break;
+    }
+    case "MassGIS Parcels": {
+      const towns = (settings.towns || "BOSTON, CAMBRIDGE").split(",").map(t => t.trim());
+      for (const town of towns.slice(0, 2)) {
+        queries.push(`${town} MA property ownership change ${year} home insurance`);
+      }
+      queries.push(`Massachusetts property sales ${year} homeowner insurance market`);
+      break;
+    }
+    case "NJ MOD-IV / Sales": {
+      const njCounties = (settings.counties || "Bergen, Essex, Hudson").split(",").map(c => c.trim());
+      for (const county of njCounties.slice(0, 2)) {
+        queries.push(`${county} County NJ property sales ${year} new homeowner`);
+      }
+      queries.push(`New Jersey real estate transfer ${year} insurance requirement`);
+      break;
+    }
+    case "RI Coastal (FEMA)": {
+      queries.push(`Rhode Island coastal flood zone properties ${year} insurance`);
+      queries.push(`RI FEMA flood zone VE AE Newport South County ${year}`);
+      break;
+    }
   }
   return queries;
 }
@@ -192,6 +226,11 @@ function buildGeminiLeadPrompt(source: ScanSource, settings: Record<string, stri
     "FL Citizens Non-Renewal": `Florida Citizens Insurance non-renewed policyholders who MUST find replacement homeowners coverage — the highest-intent insurance leads in the country`,
     "State Socrata Portals": `property assessment and transfer data from state open data portals (IL, WA, CO, DC, OR) — same pattern as CT`,
     "County ArcGIS": `county assessor property data via ArcGIS REST APIs (FL, OH, MN, AZ, NC counties) — transfers, values, year built`,
+    "CT Property Transfers": `Connecticut property transfers from Socrata API — ~500 new sales/week, real-time deed triggers for homeowners insurance`,
+    "NYC ACRIS": `NYC deed recordings from the ACRIS system — 3-table join (Master + Legals + PLUTO) for ~1,500 new deeds/week across all 5 boroughs`,
+    "MassGIS Parcels": `Massachusetts parcel data from MassGIS ArcGIS REST — ownership changes, property values, year built for home insurance leads`,
+    "NJ MOD-IV / Sales": `New Jersey MOD-IV assessment data + quarterly sales records — high-value leads in Bergen, Essex, Hudson counties ($620K+ avg home value)`,
+    "RI Coastal (FEMA)": `Rhode Island coastal properties in FEMA flood zones — Newport, South County, Providence waterfront — flood + homeowners insurance leads`,
   };
 
   let prompt = `You are an insurance lead generation expert. Generate 8-10 REALISTIC, SPECIFIC business leads for an insurance agent.
@@ -408,6 +447,11 @@ Deno.serve(async (req) => {
       "ATTOM Data": 1,
       "State Socrata Portals": 1,
       "County ArcGIS": 1,
+      "CT Property Transfers": 1,
+      "NYC ACRIS": 1,
+      "MassGIS Parcels": 1,
+      "NJ MOD-IV / Sales": 1,
+      "RI Coastal (FEMA)": 1,
       Reddit: 2,
       "Business Filings": 2,
       "Permit Database": 2,
@@ -443,7 +487,11 @@ Deno.serve(async (req) => {
       "FL Citizens Non-Renewal": "property",
       "State Socrata Portals": "property",
       "County ArcGIS": "property",
-    };
+      "CT Property Transfers": "property",
+      "NYC ACRIS": "property",
+      "MassGIS Parcels": "property",
+      "NJ MOD-IV / Sales": "property",
+      "RI Coastal (FEMA)": "flood",
     };
 
     const leadsToInsert = generatedLeads.slice(0, 12).map((l: any) => ({

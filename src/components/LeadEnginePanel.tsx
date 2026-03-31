@@ -238,8 +238,9 @@ const LIVE_SOURCES = [
   "Tax Delinquency", "Google Trends",
   "ATTOM Data", "RentCast", "Regrid Parcels", "BatchData",
   "FL Citizens Non-Renewal", "State Socrata Portals", "County ArcGIS",
+  "CT Property Transfers", "NYC ACRIS", "MassGIS Parcels", "NJ MOD-IV / Sales",
 ];
-const COMING_SOON_SOURCES = ["ZoomInfo", "PropStream"];
+const COMING_SOON_SOURCES = ["ZoomInfo", "PropStream", "RI Coastal (FEMA)"];
 
 function MonitoringPanel({ onConfigure }: { onConfigure: (source: string) => void }) {
   const { data: configs, isLoading } = useLeadSourceConfigs();
@@ -269,6 +270,10 @@ function MonitoringPanel({ onConfigure }: { onConfigure: (source: string) => voi
     "FL Citizens Non-Renewal": 10080,
     "State Socrata Portals": 1440,
     "County ArcGIS": 1440,
+    "CT Property Transfers": 1440,
+    "NYC ACRIS": 1440,
+    "MassGIS Parcels": 10080,
+    "NJ MOD-IV / Sales": 10080,
   };
 
   const DEFAULT_SOURCES = [
@@ -293,8 +298,13 @@ function MonitoringPanel({ onConfigure }: { onConfigure: (source: string) => voi
     { source: "FL Citizens Non-Renewal", detail: "Quarterly non-renewal list — highest-intent leads" },
     { source: "State Socrata Portals", detail: "IL, WA, CO, DC, OR — copy CT pattern" },
     { source: "County ArcGIS", detail: "FL, OH, MN, AZ, NC — county assessor REST" },
+    { source: "CT Property Transfers", detail: "Socrata API — ~500 new sales/week, real-time" },
+    { source: "NYC ACRIS", detail: "3-table join: Master + Legals + PLUTO — ~1,500 deeds/wk" },
+    { source: "MassGIS Parcels", detail: "ArcGIS REST — biannual bulk + ownership diff" },
+    { source: "NJ MOD-IV / Sales", detail: "Quarterly assessments + sales Excel files" },
     { source: "PropStream", detail: "160M+ properties — UI export tool ($99/mo)" },
     { source: "ZoomInfo", detail: "Contact enrichment" },
+    { source: "RI Coastal (FEMA)", detail: "RI coastal flood zones — FEMA/NOAA only" },
   ];
 
   const mergedSources = DEFAULT_SOURCES.map((ds) => {

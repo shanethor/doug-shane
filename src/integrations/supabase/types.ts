@@ -1939,6 +1939,8 @@ export type Database = {
           detected_at: string
           email: string | null
           est_premium: number | null
+          flood_insurance_needed: boolean | null
+          flood_zone: string | null
           id: string
           industry: string | null
           lead_id: string | null
@@ -1951,6 +1953,7 @@ export type Database = {
           state: string | null
           status: string
           tier: number
+          trigger_type: string | null
           updated_at: string
         }
         Insert: {
@@ -1962,6 +1965,8 @@ export type Database = {
           detected_at?: string
           email?: string | null
           est_premium?: number | null
+          flood_insurance_needed?: boolean | null
+          flood_zone?: string | null
           id?: string
           industry?: string | null
           lead_id?: string | null
@@ -1974,6 +1979,7 @@ export type Database = {
           state?: string | null
           status?: string
           tier?: number
+          trigger_type?: string | null
           updated_at?: string
         }
         Update: {
@@ -1985,6 +1991,8 @@ export type Database = {
           detected_at?: string
           email?: string | null
           est_premium?: number | null
+          flood_insurance_needed?: boolean | null
+          flood_zone?: string | null
           id?: string
           industry?: string | null
           lead_id?: string | null
@@ -1997,6 +2005,7 @@ export type Database = {
           state?: string | null
           status?: string
           tier?: number
+          trigger_type?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -2732,6 +2741,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      lead_data_sources: {
+        Row: {
+          active: boolean | null
+          api_type: string | null
+          api_url: string
+          auth_env_key: string | null
+          created_at: string | null
+          id: string
+          notes: string | null
+          requires_auth: boolean | null
+          source_name: string
+          state: string
+          updated_at: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          api_type?: string | null
+          api_url: string
+          auth_env_key?: string | null
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          requires_auth?: boolean | null
+          source_name: string
+          state: string
+          updated_at?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          api_type?: string | null
+          api_url?: string
+          auth_env_key?: string | null
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          requires_auth?: boolean | null
+          source_name?: string
+          state?: string
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       lead_notes: {
         Row: {
