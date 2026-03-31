@@ -581,6 +581,56 @@ export function PipelineAnalytics({
         </Card>
       </div>
 
+      {/* Row 2b: Stage Funnel Conversion */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-sans flex items-center gap-2">
+            <TrendingUp className="h-4 w-4" />
+            Stage Conversion Funnel
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="pb-4">
+          <div className="space-y-3">
+            {analytics.funnelData.map((d: any, i: number) => {
+              const maxCount = analytics.funnelData[0]?.count || 1;
+              const widthPct = maxCount > 0 ? Math.max((d.count / maxCount) * 100, 8) : 8;
+              return (
+                <div key={d.stage}>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-medium font-sans">{d.stage}</span>
+                    <span className="text-xs text-muted-foreground font-sans">{d.count} leads</span>
+                  </div>
+                  <div className="w-full bg-muted rounded-full h-6 overflow-hidden">
+                    <div
+                      className="h-full rounded-full flex items-center justify-end pr-2 transition-all"
+                      style={{ width: `${widthPct}%`, background: CHART_COLORS[i % CHART_COLORS.length] }}
+                    >
+                      {d.count > 0 && <span className="text-[10px] font-bold text-white">{d.count}</span>}
+                    </div>
+                  </div>
+                  {analytics.funnelConversions[i] && (
+                    <p className="text-[10px] text-muted-foreground font-sans mt-0.5 text-right">
+                      → {analytics.funnelConversions[i].to}: {(analytics.funnelConversions[i].rate * 100).toFixed(1)}% conversion
+                    </p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          <div className="mt-4 grid grid-cols-3 gap-3">
+            {["Prospect", "Quoting", "Presenting"].map((stage, i) => {
+              const key = stage.toLowerCase();
+              return (
+                <div key={stage} className="text-center rounded-lg bg-muted/50 p-2">
+                  <p className="text-lg font-bold font-sans">{analytics.avgStageDays[key]?.toFixed(1) || "0"}d</p>
+                  <p className="text-[10px] text-muted-foreground font-sans">Avg in {stage}</p>
+                </div>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Row 3: Industry Breakdown Table */}
       <Card>
         <CardHeader className="pb-2">
