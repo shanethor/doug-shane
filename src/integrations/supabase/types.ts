@@ -2957,10 +2957,12 @@ export type Database = {
           phone: string | null
           presenting_details: Json | null
           stage: Database["public"]["Enums"]["lead_stage"]
+          stage_changed_at: string | null
           state: string | null
           submission_id: string | null
           target_premium: number | null
           updated_at: string
+          win_probability: number | null
           won_details: Json | null
         }
         Insert: {
@@ -2978,10 +2980,12 @@ export type Database = {
           phone?: string | null
           presenting_details?: Json | null
           stage?: Database["public"]["Enums"]["lead_stage"]
+          stage_changed_at?: string | null
           state?: string | null
           submission_id?: string | null
           target_premium?: number | null
           updated_at?: string
+          win_probability?: number | null
           won_details?: Json | null
         }
         Update: {
@@ -2999,10 +3003,12 @@ export type Database = {
           phone?: string | null
           presenting_details?: Json | null
           stage?: Database["public"]["Enums"]["lead_stage"]
+          stage_changed_at?: string | null
           state?: string | null
           submission_id?: string | null
           target_premium?: number | null
           updated_at?: string
+          win_probability?: number | null
           won_details?: Json | null
         }
         Relationships: [

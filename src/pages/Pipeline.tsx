@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 import {
   Dialog,
   DialogContent,
@@ -25,7 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Search, CheckCircle, GripVertical, Edit3, Send, PenLine, Copy, Check, ExternalLink, FileText, Trash2, Users, DollarSign, TrendingUp, Share2, BarChart3, Info, CalendarDays, Star } from "lucide-react";
+import { Plus, Search, CheckCircle, GripVertical, Edit3, Send, PenLine, Copy, Check, ExternalLink, FileText, Trash2, Users, DollarSign, TrendingUp, Share2, BarChart3, Info, CalendarDays, Star, AlertTriangle, Timer, Activity, Percent } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -50,9 +51,13 @@ import { generateIntakeLink } from "@/lib/intake-links";
 import { PipelineAnalytics } from "@/components/PipelineAnalytics";
 import { SchedulePresentationDialog } from "@/components/SchedulePresentationDialog";
 import { LeadActionSheet } from "@/components/LeadActionSheet";
+import { PipelineFilters } from "@/components/pipeline/PipelineFilters";
+import { DuplicateLeadWarning } from "@/components/pipeline/DuplicateLeadWarning";
+import { fuzzyMatch } from "@/lib/fuzzy-match";
 import { MoreVertical } from "lucide-react";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { useUserRole } from "@/hooks/useUserRole";
+import { formatDistanceToNow } from "date-fns";
 
 type PresentingLine = {
   line_of_business: string;
@@ -76,6 +81,17 @@ type Lead = {
   has_approved_policy?: boolean;
   submission_id?: string | null;
   presenting_details?: any;
+  win_probability?: number | null;
+  stage_changed_at?: string | null;
+  target_premium?: number | null;
+};
+
+const DEFAULT_STAGE_PROBABILITY: Record<string, number> = {
+  prospect: 10,
+  quoting: 30,
+  presenting: 60,
+  sold: 100,
+  lost: 0,
 };
 
 const STAGES = ["prospect", "quoting", "presenting", "lost"] as const;
@@ -205,6 +221,21 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
 
   // Share tracker
   const [trackerCopied, setTrackerCopied] = useState(false);
+
+  // Filters
+  const [ownerFilter, setOwnerFilter] = useState("all");
+  const [stageFilter, setStageFilter] = useState("all");
+  const [dealSizeRange, setDealSizeRange] = useState<[number, number]>([0, 1000000]);
+
+  // Calendar events for next activity
+  const [leadNextActivity, setLeadNextActivity] = useState<Record<string, { type: string; date: string }>>({});
+  const [leadLastContact, setLeadLastContact] = useState<Record<string, string>>({});
+
+  // Duplicate detection
+  const [duplicateWarning, setDuplicateWarning] = useState<{ name: string; id: string } | null>(null);
+  // Inline deal value edit
+  const [inlineEditLeadId, setInlineEditLeadId] = useState<string | null>(null);
+  const [inlineEditValue, setInlineEditValue] = useState("");
 
   const mountedRef = useRef(true);
   useEffect(() => { return () => { mountedRef.current = false; }; }, []);
@@ -344,6 +375,31 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
       const stale = new Set(activeNonSoldLeadIds.filter((id: string) => !recentIds.has(id)));
       if (mountedRef.current) setStaleLeadIds(stale);
     }
+
+    // Fetch next activity (calendar events) and last contact for all leads
+    const allLeadIds = leadsData.map((l: any) => l.id);
+    if (allLeadIds.length > 0) {
+      const nowIso = new Date().toISOString();
+      const [futureEvents, lastNotes] = await Promise.all([
+        supabase.from("calendar_events").select("lead_id, title, start_time").in("lead_id", allLeadIds).gte("start_time", nowIso).order("start_time", { ascending: true }).limit(500),
+        supabase.from("lead_notes").select("lead_id, created_at").in("lead_id", allLeadIds).order("created_at", { ascending: false }).limit(1000),
+      ]);
+      // Next activity per lead
+      const nextAct: Record<string, { type: string; date: string }> = {};
+      (futureEvents.data ?? []).forEach((ev: any) => {
+        if (!nextAct[ev.lead_id]) {
+          nextAct[ev.lead_id] = { type: ev.title || "Activity", date: ev.start_time };
+        }
+      });
+      if (mountedRef.current) setLeadNextActivity(nextAct);
+
+      // Last contact per lead (most recent note/audit)
+      const lastCtMap: Record<string, string> = {};
+      (lastNotes.data ?? []).forEach((n: any) => {
+        if (!lastCtMap[n.lead_id]) lastCtMap[n.lead_id] = n.created_at;
+      });
+      if (mountedRef.current) setLeadLastContact(lastCtMap);
+    }
   }, [user, isManager, isAdmin]);
 
   const { containerRef: pullRef, PullIndicator } = usePullToRefresh({ onRefresh: loadLeads });
@@ -403,8 +459,28 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
     })();
   }, [user, leads, loadLeads]);
 
-  const handleAddLead = async () => {
+  const checkDuplicates = (name: string): { name: string; id: string } | null => {
+    if (!name.trim()) return null;
+    const matches = fuzzyMatch(name.trim(), leads, (l) => l.account_name, 0.6);
+    if (matches.length > 0) {
+      return { name: matches[0].item.account_name, id: matches[0].item.id };
+    }
+    return null;
+  };
+
+  const handleAddLead = async (skipDuplicateCheck = false) => {
     if (!user || !newLead.account_name.trim()) return;
+
+    // Duplicate check
+    if (!skipDuplicateCheck) {
+      const dup = checkDuplicates(newLead.account_name);
+      if (dup) {
+        setDuplicateWarning(dup);
+        return;
+      }
+    }
+    setDuplicateWarning(null);
+
     const { data: lead, error } = await supabase.from("leads").insert({
       account_name: newLead.account_name.trim(),
       contact_name: newLead.contact_name || null,
@@ -763,6 +839,17 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
     // Filter by line type for the kanban view
     const lineType = (l as any).line_type || "commercial";
     if (lineType !== pipelineView) return false;
+    // Owner filter
+    if (ownerFilter !== "all" && l.owner_user_id !== ownerFilter) return false;
+    // Stage filter
+    if (stageFilter !== "all") {
+      const effectiveStage = l.has_approved_policy ? "sold" : l.stage;
+      if (effectiveStage !== stageFilter) return false;
+    }
+    // Deal size filter
+    const dealValue = (l as any).target_premium || 0;
+    if (dealValue > 0 && (dealValue < dealSizeRange[0] || (dealSizeRange[1] < 1000000 && dealValue > dealSizeRange[1]))) return false;
+    // Text search
     if (!search) return true;
     const q = search.toLowerCase();
     return (
@@ -771,6 +858,34 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
       (l.business_type || "").toLowerCase().includes(q)
     );
   });
+
+  // Weighted pipeline value
+  const weightedPipelineValue = filtered.reduce((sum, l) => {
+    if (l.has_approved_policy || l.stage === "lost") return sum;
+    const dealVal = (l as any).target_premium || 0;
+    const prob = l.win_probability ?? DEFAULT_STAGE_PROBABILITY[l.stage] ?? 0;
+    return sum + (dealVal * prob / 100);
+  }, 0);
+
+  // Missing deal value count
+  const missingDealValueLeads = filtered.filter(l => !l.has_approved_policy && l.stage !== "lost" && !((l as any).target_premium > 0));
+
+  // Inline update deal value
+  const handleInlineDealUpdate = async (leadId: string) => {
+    const val = parseFloat(inlineEditValue);
+    if (isNaN(val) || val <= 0) { toast.error("Enter a valid amount"); return; }
+    await supabase.from("leads").update({ target_premium: val } as any).eq("id", leadId);
+    toast.success("Deal value updated");
+    setInlineEditLeadId(null);
+    setInlineEditValue("");
+    loadLeads();
+  };
+
+  // Win probability inline update
+  const handleProbabilityUpdate = async (leadId: string, prob: number) => {
+    await supabase.from("leads").update({ win_probability: prob } as any).eq("id", leadId);
+    setLeads(prev => prev.map(l => l.id === leadId ? { ...l, win_probability: prob } : l));
+  };
 
   const columns = [...STAGES.filter(s => s !== "lost"), "sold" as const];
   const lostStage = "lost";
@@ -1100,7 +1215,7 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
                 <DialogFooter>
                   <Button variant="outline" onClick={() => setAddMode("choose")}>Back</Button>
                   <Button
-                    onClick={handleAddLead}
+                    onClick={() => handleAddLead()}
                     disabled={!newLead.contact_name.trim() || !newLead.phone.trim() || !newLead.email.trim()}
                   >
                     Add Lead
@@ -1193,9 +1308,17 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
                     placeholder="$0"
                   />
                 </div>
+                {duplicateWarning && (
+                  <DuplicateLeadWarning
+                    duplicateName={duplicateWarning.name}
+                    duplicateId={duplicateWarning.id}
+                    onContinue={() => handleAddLead(true)}
+                    onCancel={() => setDuplicateWarning(null)}
+                  />
+                )}
                 <DialogFooter>
                   <Button variant="outline" onClick={() => setAddMode("choose")}>Back</Button>
-                  <Button onClick={handleAddLead} disabled={!newLead.account_name.trim()}>
+                  <Button onClick={() => handleAddLead()} disabled={!newLead.account_name.trim()}>
                     Add Lead
                   </Button>
                 </DialogFooter>
@@ -1275,6 +1398,97 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
           </DialogContent>
         </Dialog>
         </div>
+      </div>
+
+      {/* Stats Bar: Weighted Pipeline + Goal Progress */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+        <Card>
+          <CardContent className="p-3">
+            <div className="flex items-center gap-2 mb-1">
+              <TrendingUp className="h-3.5 w-3.5 text-primary" />
+              <span className="text-[10px] text-muted-foreground uppercase tracking-wide font-sans">Weighted Pipeline</span>
+            </div>
+            <p className="text-lg font-bold font-sans">{fmt(weightedPipelineValue)}</p>
+            <p className="text-[10px] text-muted-foreground font-sans">Σ (deal × probability)</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-3">
+            <div className="flex items-center gap-2 mb-1">
+              <DollarSign className="h-3.5 w-3.5 text-primary" />
+              <span className="text-[10px] text-muted-foreground uppercase tracking-wide font-sans">Premium Goal</span>
+            </div>
+            {(() => {
+              const goal = 500000;
+              const current = pipelineStats.totalPremiumSold;
+              const pctVal = Math.min((current / goal) * 100, 100);
+              return (
+                <>
+                  <p className="text-lg font-bold font-sans">{fmt(current)} <span className="text-xs font-normal text-muted-foreground">/ {fmt(goal)}</span></p>
+                  <Progress value={pctVal} className="h-2 mt-1" />
+                  <p className="text-[10px] text-muted-foreground font-sans mt-0.5">{pctVal.toFixed(1)}%</p>
+                </>
+              );
+            })()}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-3">
+            <div className="flex items-center gap-2 mb-1">
+              <TrendingUp className="h-3.5 w-3.5 text-primary" />
+              <span className="text-[10px] text-muted-foreground uppercase tracking-wide font-sans">Revenue Goal</span>
+            </div>
+            {(() => {
+              const goal = 60000;
+              const current = pipelineStats.totalRevenueSold;
+              const pctVal = Math.min((current / goal) * 100, 100);
+              return (
+                <>
+                  <p className="text-lg font-bold font-sans">{fmt(current)} <span className="text-xs font-normal text-muted-foreground">/ {fmt(goal)}</span></p>
+                  <Progress value={pctVal} className="h-2 mt-1" />
+                  <p className="text-[10px] text-muted-foreground font-sans mt-0.5">{pctVal.toFixed(1)}%</p>
+                </>
+              );
+            })()}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-3">
+            <div className="flex items-center gap-2 mb-1">
+              <CheckCircle className="h-3.5 w-3.5 text-primary" />
+              <span className="text-[10px] text-muted-foreground uppercase tracking-wide font-sans">Pipeline Health</span>
+            </div>
+            <p className="text-lg font-bold font-sans">{pipelineStats.totalProspects} <span className="text-xs font-normal text-muted-foreground">active</span></p>
+            <p className="text-[10px] text-muted-foreground font-sans">{pipelineStats.soldCount} sold · {pipelineStats.lostCount} lost</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Missing deal value warning */}
+      {missingDealValueLeads.length > 0 && (
+        <div className="mb-4 rounded-lg border border-amber-500/20 bg-amber-500/5 px-4 py-2.5 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4 text-amber-500" />
+            <span className="text-xs font-sans text-muted-foreground">
+              <strong className="text-foreground">{missingDealValueLeads.length} lead{missingDealValueLeads.length !== 1 ? "s" : ""}</strong> missing deal values — this affects your pipeline total
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Filters */}
+      <div className="mb-4">
+        <PipelineFilters
+          ownerFilter={ownerFilter}
+          onOwnerFilterChange={setOwnerFilter}
+          stageFilter={stageFilter}
+          onStageFilterChange={setStageFilter}
+          dealSizeRange={dealSizeRange}
+          onDealSizeRangeChange={setDealSizeRange}
+          ownerNames={ownerNames}
+          currentUserId={user?.id}
+          isManagerOrAdmin={isManager || isAdmin}
+        />
       </div>
 
       {leads.length > 0 && (
@@ -1407,6 +1621,33 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
                                 </span>
                               </div>
                             )}
+                            {/* Missing deal value indicator */}
+                            {!lead.has_approved_policy && (stage as string) !== "lost" && !((lead as any).target_premium > 0) && (
+                              <div className="ml-[18px] mt-1">
+                                {inlineEditLeadId === lead.id ? (
+                                  <div className="flex items-center gap-1" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>
+                                    <Input
+                                      type="number"
+                                      value={inlineEditValue}
+                                      onChange={(e) => setInlineEditValue(e.target.value)}
+                                      placeholder="$0"
+                                      className="h-6 w-20 text-[10px] px-1.5"
+                                      autoFocus
+                                      onClick={(e) => e.stopPropagation()}
+                                      onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleInlineDealUpdate(lead.id); } }}
+                                    />
+                                    <Button size="sm" className="h-6 text-[10px] px-2" onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleInlineDealUpdate(lead.id); }}>Save</Button>
+                                  </div>
+                                ) : (
+                                  <button
+                                    className="text-[10px] text-amber-500 font-sans flex items-center gap-0.5 hover:underline"
+                                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setInlineEditLeadId(lead.id); setInlineEditValue(""); }}
+                                  >
+                                    <DollarSign className="h-2.5 w-2.5" />?  Add value
+                                  </button>
+                                )}
+                              </div>
+                            )}
                             {/* Show presenting premium on presenting cards */}
                             {stage === "presenting" && lead.presenting_details?.lines && (
                               <div className="ml-[18px] mt-1 space-y-0.5">
@@ -1429,6 +1670,66 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
                                     {new Date(leadEffectiveDates[lead.id] + "T00:00:00").toLocaleString("en-US", { month: "short", year: "numeric" })}
                                   </Badge>
                                 )}
+                              </div>
+                            )}
+                            {/* Bottom row: Time in stage + Activity + Win probability */}
+                            {(stage as string) !== "sold" && (stage as string) !== "lost" && (
+                              <div className="ml-[18px] mt-1.5 flex items-center gap-2 flex-wrap">
+                                {/* Time-in-stage badge */}
+                                {(() => {
+                                  const stageDate = lead.stage_changed_at || lead.updated_at;
+                                  const days = Math.floor((Date.now() - new Date(stageDate).getTime()) / (1000 * 60 * 60 * 24));
+                                  const color = days <= 7 ? "text-emerald-500 bg-emerald-500/10 border-emerald-500/20" : days <= 21 ? "text-amber-500 bg-amber-500/10 border-amber-500/20" : "text-destructive bg-destructive/10 border-destructive/20";
+                                  return (
+                                    <span className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[9px] font-semibold border ${color}`}>
+                                      <Timer className="h-2.5 w-2.5" />
+                                      {days}d
+                                    </span>
+                                  );
+                                })()}
+                                {/* Next activity / Last contact badge */}
+                                {leadNextActivity[lead.id] ? (
+                                  <span className="inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[9px] font-semibold text-primary bg-primary/10 border border-primary/20">
+                                    <CalendarDays className="h-2.5 w-2.5" />
+                                    {formatDistanceToNow(new Date(leadNextActivity[lead.id].date), { addSuffix: false })}
+                                  </span>
+                                ) : leadLastContact[lead.id] ? (
+                                  <span className="inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[9px] text-muted-foreground bg-muted border border-border">
+                                    <Activity className="h-2.5 w-2.5" />
+                                    {formatDistanceToNow(new Date(leadLastContact[lead.id]), { addSuffix: true })}
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[9px] font-semibold text-destructive bg-destructive/10 border border-destructive/20">
+                                    <Activity className="h-2.5 w-2.5" />
+                                    No activity
+                                  </span>
+                                )}
+                                {/* Win probability */}
+                                {(() => {
+                                  const prob = lead.win_probability ?? DEFAULT_STAGE_PROBABILITY[stage] ?? 0;
+                                  return (
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <span
+                                          className="inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[9px] font-semibold text-primary bg-primary/10 border border-primary/20 cursor-pointer"
+                                          onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            const newProb = prompt(`Win probability for ${lead.account_name} (0-100):`, String(prob));
+                                            if (newProb !== null) {
+                                              const val = Math.max(0, Math.min(100, parseInt(newProb) || 0));
+                                              handleProbabilityUpdate(lead.id, val);
+                                            }
+                                          }}
+                                        >
+                                          <Percent className="h-2.5 w-2.5" />
+                                          {prob}%
+                                        </span>
+                                      </TooltipTrigger>
+                                      <TooltipContent side="top" className="text-xs">Win probability — click to edit</TooltipContent>
+                                    </Tooltip>
+                                  );
+                                })()}
                               </div>
                             )}
                           </div>
