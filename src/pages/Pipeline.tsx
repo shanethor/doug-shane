@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 import {
   Dialog,
   DialogContent,
@@ -25,7 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Search, CheckCircle, GripVertical, Edit3, Send, PenLine, Copy, Check, ExternalLink, FileText, Trash2, Users, DollarSign, TrendingUp, Share2, BarChart3, Info, CalendarDays, Star } from "lucide-react";
+import { Plus, Search, CheckCircle, GripVertical, Edit3, Send, PenLine, Copy, Check, ExternalLink, FileText, Trash2, Users, DollarSign, TrendingUp, Share2, BarChart3, Info, CalendarDays, Star, AlertTriangle, Timer, Activity, Percent } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -50,9 +51,13 @@ import { generateIntakeLink } from "@/lib/intake-links";
 import { PipelineAnalytics } from "@/components/PipelineAnalytics";
 import { SchedulePresentationDialog } from "@/components/SchedulePresentationDialog";
 import { LeadActionSheet } from "@/components/LeadActionSheet";
+import { PipelineFilters } from "@/components/pipeline/PipelineFilters";
+import { DuplicateLeadWarning } from "@/components/pipeline/DuplicateLeadWarning";
+import { fuzzyMatch } from "@/lib/fuzzy-match";
 import { MoreVertical } from "lucide-react";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { useUserRole } from "@/hooks/useUserRole";
+import { formatDistanceToNow } from "date-fns";
 
 type PresentingLine = {
   line_of_business: string;
