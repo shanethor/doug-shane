@@ -538,6 +538,14 @@ function ResultsTable() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-8">
+                <input
+                  type="checkbox"
+                  checked={allSelected}
+                  onChange={toggleAll}
+                  className="h-3.5 w-3.5 rounded border-border accent-primary cursor-pointer"
+                />
+              </TableHead>
               <TableHead className="text-xs">Company</TableHead>
               <TableHead className="text-xs">Contact</TableHead>
               <TableHead className="text-xs">State</TableHead>
@@ -548,7 +556,15 @@ function ResultsTable() {
           </TableHeader>
           <TableBody>
             {filtered.map((lead: EngineLead) => (
-              <TableRow key={lead.id}>
+              <TableRow key={lead.id} className={selectedIds.has(lead.id) ? "bg-primary/5" : ""}>
+                <TableCell className="py-2 w-8">
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.has(lead.id)}
+                    onChange={() => toggleOne(lead.id)}
+                    className="h-3.5 w-3.5 rounded border-border accent-primary cursor-pointer"
+                  />
+                </TableCell>
                 <TableCell className="py-2">
                   <div className="cursor-pointer group" onClick={() => setSelectedLead(lead)}>
                     <p className="text-xs font-medium group-hover:text-primary transition-colors">{lead.company}</p>
