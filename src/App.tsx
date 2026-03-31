@@ -62,6 +62,7 @@ import ConnectDemoAuth from "./pages/ConnectDemoAuth";
 import BecomePartner from "./pages/BecomePartner";
 import RequestAccess from "./pages/RequestAccess";
 import StudioDemo from "./pages/StudioDemo";
+import LeadLanding from "./pages/LeadLanding";
 import ProductAuth from "./pages/ProductAuth";
 import ConnectProduct from "./pages/ConnectProduct";
 import StudioProduct from "./pages/StudioProduct";
