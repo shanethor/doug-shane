@@ -128,6 +128,16 @@ function buildGeminiLeadPrompt(source: ScanSource, settings: Record<string, stri
     "Permit Database": `businesses that recently received building permits, liquor licenses, or contractor licenses — all require insurance`,
     "Reddit": `small business owners discussing insurance needs or just starting their business`,
     "LinkedIn": `professionals announcing new businesses or expanding operations`,
+    "FEMA Flood Zones": `properties in FEMA flood zones (A, AE, VE) that require mandatory flood insurance by lender mandate`,
+    "NOAA Storm Events": `homeowners in areas recently hit by hail, wind, tornado, or flood events who need insurance reviews or claims`,
+    "Census / ACS Data": `high-value homeowner ZIP codes with owner-occupied properties, auto insurance gaps, and bundling opportunities`,
+    "NHTSA Vehicles": `vehicle owners affected by major recalls or in high-crash corridors who should re-shop auto insurance`,
+    "OpenFEMA NFIP": `homeowners in areas with active FEMA disaster declarations or high flood claims with low policy counts (underinsured)`,
+    "HUD Housing Data": `vacant properties needing landlord insurance, rental property owners, and LIHTC property managers needing commercial coverage`,
+    "Property Records": `recent property transfers — new homeowners who need homeowners insurance before closing`,
+    "Building Permits": `homeowners pulling roof, renovation, or new construction permits who need updated or new insurance coverage`,
+    "Tax Delinquency": `tax-delinquent property owners who likely have lapsed insurance — high-urgency reactivation leads`,
+    "Google Trends": `areas with rising search interest in insurance-related topics like rate increases, hail damage, or coverage needs`,
   };
 
   let prompt = `You are an insurance lead generation expert. Generate 8-10 REALISTIC, SPECIFIC business leads for an insurance agent.
