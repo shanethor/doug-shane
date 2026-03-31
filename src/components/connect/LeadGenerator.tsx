@@ -325,6 +325,22 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasStudio }:
                   { key: "social", label: "Reddit Signals", icon: Users },
                   { key: "linkedin", label: "LinkedIn", icon: Globe },
                   { key: "domains", label: "New Domains", icon: Globe },
+                  // Roofing sources
+                  { key: "noaa_hail", label: "NOAA Hail/Storm", icon: Zap },
+                  { key: "roofing_licenses", label: "Roofing Licenses", icon: FileText },
+                  { key: "nrca_directory", label: "NRCA Directory", icon: Users },
+                  { key: "storm_permits", label: "Storm Permits", icon: Building2 },
+                  { key: "gaf_certainteed", label: "GAF/CertainTeed", icon: Target },
+                  { key: "roofing_wc", label: "Roofing WC 5551/5552", icon: FileText },
+                  { key: "cat_event_filings", label: "CAT Event Filings", icon: Zap },
+                  // Plumbing sources
+                  { key: "plumbing_licenses", label: "Plumbing Licenses", icon: FileText },
+                  { key: "backflow_certs", label: "Backflow Certs", icon: Target },
+                  { key: "phcc_directory", label: "PHCC Directory", icon: Users },
+                  { key: "ua_local_unions", label: "UA Local Unions", icon: Users },
+                  { key: "med_gas_certs", label: "Medical Gas Certs", icon: Target },
+                  { key: "water_sewer_permits", label: "Water/Sewer Permits", icon: Building2 },
+                  { key: "plumbing_wc", label: "Plumbing WC 5183", icon: FileText },
                 ] as const).map(({ key, label, icon: Icon }) => (
                   <button
                     key={key}
