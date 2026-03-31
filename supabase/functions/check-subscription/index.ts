@@ -92,7 +92,11 @@ serve(async (req) => {
       }
     }
 
-    const subscriptionEnd = new Date(primarySub.current_period_end * 1000).toISOString();
+    let subscriptionEnd: string | null = null;
+    const periodEnd = primarySub.current_period_end;
+    if (periodEnd && typeof periodEnd === "number" && periodEnd > 0) {
+      subscriptionEnd = new Date(periodEnd * 1000).toISOString();
+    }
     const productId = primarySub.items.data[0]?.price?.product;
     const isTrialing = primarySub.status === "trialing";
     const branch = primarySub.metadata?.branch || null;
