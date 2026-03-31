@@ -6,7 +6,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-type ScanSource = "Reddit" | "Business Filings" | "Permit Database" | "LinkedIn";
+type ScanSource = "Reddit" | "Business Filings" | "Permit Database" | "LinkedIn" | "FEMA Flood Zones" | "NOAA Storm Events" | "Census / ACS Data" | "NHTSA Vehicles" | "OpenFEMA NFIP" | "HUD Housing Data" | "Property Records" | "Building Permits" | "Tax Delinquency" | "Google Trends";
 
 // ── Build Firecrawl search queries (used when Firecrawl is available) ──
 function buildSearchQueries(source: ScanSource, settings: Record<string, string>): string[] {
@@ -42,6 +42,76 @@ function buildSearchQueries(source: ScanSource, settings: Record<string, string>
       }
       break;
     }
+    case "FEMA Flood Zones": {
+      for (const state of states.slice(0, 3)) {
+        queries.push(`FEMA flood zone ${state} properties high risk AE VE ${year}`);
+        queries.push(`${state} flood insurance required properties ${year}`);
+      }
+      break;
+    }
+    case "NOAA Storm Events": {
+      const eventTypes = (settings.event_types || "Hail, Wind, Tornado").split(",").map(e => e.trim());
+      for (const state of states.slice(0, 2)) {
+        queries.push(`${eventTypes[0] || "hail"} damage ${state} ${year} property insurance`);
+        queries.push(`severe storm ${state} ${year} home damage claims`);
+      }
+      break;
+    }
+    case "Census / ACS Data": {
+      for (const state of states.slice(0, 2)) {
+        queries.push(`${state} high home value ZIP codes owner occupied ${year}`);
+        queries.push(`${state} homeowners median income insurance market`);
+      }
+      break;
+    }
+    case "NHTSA Vehicles": {
+      queries.push(`NHTSA vehicle recall ${year} major safety auto insurance`);
+      queries.push(`high crash rate corridors auto insurance marketing ${year}`);
+      break;
+    }
+    case "OpenFEMA NFIP": {
+      for (const state of states.slice(0, 2)) {
+        queries.push(`FEMA disaster declaration ${state} ${year} flood insurance`);
+        queries.push(`${state} NFIP flood claims underinsured areas ${year}`);
+      }
+      break;
+    }
+    case "HUD Housing Data": {
+      for (const state of states.slice(0, 2)) {
+        queries.push(`${state} USPS vacant addresses rental property insurance ${year}`);
+        queries.push(`${state} HUD fair market rent landlord insurance ${year}`);
+      }
+      break;
+    }
+    case "Property Records": {
+      for (const state of states.slice(0, 2)) {
+        queries.push(`${state} property transfers ${year} new homeowner insurance`);
+        queries.push(`${state} county assessor sales records ${year}`);
+      }
+      break;
+    }
+    case "Building Permits": {
+      const permitTypes = (settings.permit_types || "Roof, New Construction, Renovation").split(",").map(p => p.trim());
+      for (const state of states.slice(0, 2)) {
+        queries.push(`${permitTypes[0] || "building"} permit issued ${state} ${year} homeowner`);
+        queries.push(`new construction permit ${state} ${year} insurance requirement`);
+      }
+      break;
+    }
+    case "Tax Delinquency": {
+      for (const state of states.slice(0, 2)) {
+        queries.push(`${state} tax delinquent properties ${year} lapsed insurance`);
+        queries.push(`${state} sheriff sale foreclosure ${year} force placed insurance`);
+      }
+      break;
+    }
+    case "Google Trends": {
+      const keywords = (settings.keywords || "insurance went up, need insurance, hail damage").split(",").map(k => k.trim());
+      for (const kw of keywords.slice(0, 3)) {
+        queries.push(`${kw} ${states[0] || ""} ${year}`);
+      }
+      break;
+    }
   }
   return queries;
 }
@@ -58,6 +128,16 @@ function buildGeminiLeadPrompt(source: ScanSource, settings: Record<string, stri
     "Permit Database": `businesses that recently received building permits, liquor licenses, or contractor licenses — all require insurance`,
     "Reddit": `small business owners discussing insurance needs or just starting their business`,
     "LinkedIn": `professionals announcing new businesses or expanding operations`,
+    "FEMA Flood Zones": `properties in FEMA flood zones (A, AE, VE) that require mandatory flood insurance by lender mandate`,
+    "NOAA Storm Events": `homeowners in areas recently hit by hail, wind, tornado, or flood events who need insurance reviews or claims`,
+    "Census / ACS Data": `high-value homeowner ZIP codes with owner-occupied properties, auto insurance gaps, and bundling opportunities`,
+    "NHTSA Vehicles": `vehicle owners affected by major recalls or in high-crash corridors who should re-shop auto insurance`,
+    "OpenFEMA NFIP": `homeowners in areas with active FEMA disaster declarations or high flood claims with low policy counts (underinsured)`,
+    "HUD Housing Data": `vacant properties needing landlord insurance, rental property owners, and LIHTC property managers needing commercial coverage`,
+    "Property Records": `recent property transfers — new homeowners who need homeowners insurance before closing`,
+    "Building Permits": `homeowners pulling roof, renovation, or new construction permits who need updated or new insurance coverage`,
+    "Tax Delinquency": `tax-delinquent property owners who likely have lapsed insurance — high-urgency reactivation leads`,
+    "Google Trends": `areas with rising search interest in insurance-related topics like rate increases, hail damage, or coverage needs`,
   };
 
   let prompt = `You are an insurance lead generation expert. Generate 8-10 REALISTIC, SPECIFIC business leads for an insurance agent.
@@ -264,9 +344,19 @@ Deno.serve(async (req) => {
     // ── Step 3: Score and insert into engine_leads ──
     const tierMap: Record<string, number> = {
       LinkedIn: 1,
+      "FEMA Flood Zones": 1,
+      "OpenFEMA NFIP": 1,
+      "NOAA Storm Events": 1,
+      "Property Records": 1,
+      "Building Permits": 1,
+      "Tax Delinquency": 1,
       Reddit: 2,
       "Business Filings": 2,
-      "Permit Database": 3,
+      "Permit Database": 2,
+      "NHTSA Vehicles": 2,
+      "HUD Housing Data": 2,
+      "Census / ACS Data": 3,
+      "Google Trends": 3,
     };
 
     const activityTypeMap: Record<string, string> = {
@@ -274,6 +364,16 @@ Deno.serve(async (req) => {
       Reddit: "reddit",
       "Business Filings": "filing",
       "Permit Database": "filing",
+      "FEMA Flood Zones": "filing",
+      "NOAA Storm Events": "filing",
+      "Census / ACS Data": "filing",
+      "NHTSA Vehicles": "filing",
+      "OpenFEMA NFIP": "filing",
+      "HUD Housing Data": "filing",
+      "Property Records": "filing",
+      "Building Permits": "filing",
+      "Tax Delinquency": "filing",
+      "Google Trends": "filing",
     };
 
     const leadsToInsert = generatedLeads.slice(0, 12).map((l: any) => ({
