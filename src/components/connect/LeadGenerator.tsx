@@ -154,11 +154,11 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasStudio }:
     <div className="space-y-4">
       {/* Free leads banner for subscribers */}
       {isSubscriber && (
-        <Card className={hasStudio ? "border-purple-500/30 bg-purple-500/5" : "border-emerald-500/30 bg-emerald-500/5"}>
+        <Card className={hasStudio ? "border-orange-500/30 bg-orange-500/5" : "border-emerald-500/30 bg-emerald-500/5"}>
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-2">
-              <Gift className={`h-4 w-4 ${hasStudio ? "text-purple-500" : "text-emerald-500"}`} />
-              <span className={`text-sm font-semibold ${hasStudio ? "text-purple-600" : "text-emerald-600"}`}>
+              <Gift className={`h-4 w-4 ${hasStudio ? "text-orange-500" : "text-emerald-500"}`} />
+              <span className={`text-sm font-semibold ${hasStudio ? "text-orange-500" : "text-emerald-600"}`}>
                 {hasStudio ? "Studio Member — 3× Free Monthly Leads" : "Free Monthly Leads"}
               </span>
             </div>
