@@ -123,7 +123,7 @@ export default function RequestAccess() {
                 ) : (
                   <>
                     <CreditCard className="w-4 h-4" />
-                    Start 14-day free trial
+                    Start 3-day free trial
                   </>
                 )}
               </button>
