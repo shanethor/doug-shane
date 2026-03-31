@@ -276,10 +276,21 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasStudio }:
               <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Focus Sources</label>
               <div className="grid grid-cols-2 gap-2">
                 {([
-                  { key: "new_business", label: "New Business Filings", icon: FileText },
+                  { key: "new_business", label: "Business Filings", icon: FileText },
+                  { key: "licensing", label: "State Licensing", icon: FileText },
                   { key: "permits", label: "Permit Database", icon: Building2 },
+                  { key: "osha", label: "OSHA Enforcement", icon: Target },
+                  { key: "epa", label: "EPA Databases", icon: Globe },
+                  { key: "court_records", label: "Court Records", icon: FileText },
+                  { key: "sam_gov", label: "SAM.gov / Fed Contracts", icon: Building2 },
+                  { key: "sba", label: "SBA Loan Data", icon: TrendingUp },
+                  { key: "associations", label: "Trade Associations", icon: Users },
+                  { key: "google_places", label: "Google Places", icon: MapPin },
+                  { key: "fmcsa", label: "FMCSA / DOT", icon: Rocket },
+                  { key: "ucc", label: "UCC Filings", icon: FileText },
                   { key: "social", label: "Reddit Signals", icon: Users },
                   { key: "linkedin", label: "LinkedIn", icon: Globe },
+                  { key: "domains", label: "New Domains", icon: Globe },
                 ] as const).map(({ key, label, icon: Icon }) => (
                   <button
                     key={key}
