@@ -112,6 +112,53 @@ function buildSearchQueries(source: ScanSource, settings: Record<string, string>
       }
       break;
     }
+    case "ATTOM Data": {
+      for (const state of states.slice(0, 3)) {
+        queries.push(`${state} recent property sales transfers ${year} new homeowner insurance`);
+        queries.push(`${state} property valuation changes ${year} insurance review`);
+      }
+      break;
+    }
+    case "RentCast": {
+      for (const state of states.slice(0, 2)) {
+        queries.push(`${state} rental property listings ${year} landlord insurance`);
+        queries.push(`${state} property value estimate ${year} homeowner coverage`);
+      }
+      break;
+    }
+    case "Regrid Parcels": {
+      for (const state of states.slice(0, 2)) {
+        queries.push(`${state} parcel ownership transfer ${year} new owner insurance`);
+      }
+      break;
+    }
+    case "BatchData": {
+      for (const state of states.slice(0, 2)) {
+        queries.push(`${state} property owner skip trace ${year} insurance outreach`);
+        queries.push(`${state} absentee owner properties ${year} landlord insurance`);
+      }
+      break;
+    }
+    case "FL Citizens Non-Renewal": {
+      queries.push(`Florida Citizens Insurance non-renewal list ${year} homeowners shopping`);
+      queries.push(`Citizens Property Insurance depopulation ${year} FL replacement coverage`);
+      queries.push(`Florida homeowners insurance crisis ${year} FAIR plan alternative`);
+      break;
+    }
+    case "State Socrata Portals": {
+      for (const state of states.slice(0, 3)) {
+        queries.push(`${state} open data property assessment ${year} Socrata`);
+        queries.push(`${state} property transfers sales data ${year}`);
+      }
+      break;
+    }
+    case "County ArcGIS": {
+      const counties = (settings.counties || "Miami-Dade, Franklin, Hennepin").split(",").map(c => c.trim());
+      for (const county of counties.slice(0, 3)) {
+        queries.push(`${county} county assessor property data ${year} ArcGIS`);
+      }
+      break;
+    }
   }
   return queries;
 }
