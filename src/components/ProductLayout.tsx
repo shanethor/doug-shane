@@ -35,7 +35,7 @@ const ICON_MAP: Record<string, any> = {
   sage: Zap,
 };
 
-function MobileConnectNav({ isActive }: { isActive: (to: string, exact?: boolean) => boolean }) {
+function MobileConnectNav({ isActive, signOut }: { isActive: (to: string, exact?: boolean) => boolean; signOut: () => void }) {
   const { config } = useConnectNavConfig();
   const [moreOpen, setMoreOpen] = useState(false);
 
