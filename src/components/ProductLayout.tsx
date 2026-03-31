@@ -35,7 +35,7 @@ const ICON_MAP: Record<string, any> = {
   sage: Zap,
 };
 
-function MobileConnectNav({ isActive }: { isActive: (to: string, exact?: boolean) => boolean }) {
+function MobileConnectNav({ isActive, signOut }: { isActive: (to: string, exact?: boolean) => boolean; signOut: () => void }) {
   const { config } = useConnectNavConfig();
   const [moreOpen, setMoreOpen] = useState(false);
 
@@ -102,6 +102,18 @@ function MobileConnectNav({ isActive }: { isActive: (to: string, exact?: boolean
             })}
             <div className="border-t border-sidebar-border my-2" />
             <Link
+              to="/connect/rewards"
+              onClick={() => setMoreOpen(false)}
+              className={`flex items-center gap-3 rounded-lg px-3 py-3 text-sm transition-colors ${
+                isActive("/connect/rewards")
+                  ? "bg-sidebar-accent text-sidebar-foreground font-medium"
+                  : "text-sidebar-foreground/60 hover:bg-sidebar-accent/50"
+              }`}
+            >
+              <Gift className="h-5 w-5" />
+              Rewards
+            </Link>
+            <Link
               to="/app/settings"
               onClick={() => setMoreOpen(false)}
               className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm text-sidebar-foreground/60 hover:bg-sidebar-accent/50"
@@ -109,6 +121,14 @@ function MobileConnectNav({ isActive }: { isActive: (to: string, exact?: boolean
               <Settings className="h-5 w-5" />
               Settings
             </Link>
+            <div className="border-t border-sidebar-border my-2" />
+            <button
+              onClick={() => { setMoreOpen(false); signOut(); }}
+              className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm text-red-400 hover:bg-red-500/10 transition-colors w-full"
+            >
+              <LogOut className="h-5 w-5" />
+              Sign Out
+            </button>
           </div>
         </SheetContent>
       </Sheet>
@@ -300,7 +320,7 @@ export function ProductLayout({
         </main>
 
         {/* Mobile bottom nav */}
-        <MobileConnectNav isActive={isActive} />
+        <MobileConnectNav isActive={isActive} signOut={signOut} />
       </div>
 
       {/* Sage floating chat */}
