@@ -1817,16 +1817,16 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
       </div>
       </div>
 
-      {/* Lost row — drop zone only, no client cards by default */}
+      {/* Lost row — drop zone */}
       <div
-        className={`mt-4 rounded-lg border-2 border-dashed p-3 transition-colors ${
+        className={`mt-4 rounded-lg border-2 border-dashed p-2 sm:p-3 transition-colors ${
           dragOverStage === lostStage ? "border-destructive bg-destructive/5" : "border-border"
         }`}
         onDragOver={(e) => handleDragOver(e, lostStage)}
         onDragLeave={handleDragLeave}
         onDrop={(e) => handleDrop(e, lostStage)}
       >
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-2">
           <div className="flex items-center gap-2">
             <Badge variant="outline" className={`text-[10px] uppercase tracking-wider font-sans ${STAGE_COLORS[lostStage]}`}>
               {STAGE_LABELS[lostStage]}
@@ -1842,13 +1842,14 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
             </Tooltip>
           </div>
           <div className="flex items-center gap-2">
-            <p className="text-xs text-muted-foreground font-sans">Drop leads here to mark as lost</p>
+            <p className="text-xs text-muted-foreground font-sans hidden sm:block">Drop leads here to mark as lost</p>
             {(grouped[lostStage] || []).length > 0 && (
               <Dialog>
                 <DialogTrigger asChild>
                   <Button variant="outline" size="sm" className="gap-1.5 text-xs h-7">
                     <Users className="h-3 w-3" />
-                    View All Lost Clients
+                    <span className="hidden sm:inline">View All Lost Clients</span>
+                    <span className="sm:hidden">View Lost</span>
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="max-w-lg max-h-[70vh] overflow-y-auto">
@@ -1859,7 +1860,7 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
                     {(grouped[lostStage] || []).map((lead) => (
                       <Link key={lead.id} to={`/pipeline/${lead.id}`}>
                         <Card className="hover-lift cursor-pointer">
-                          <CardContent className="p-2 px-3 flex items-center gap-2">
+                          <CardContent className="p-2 px-3 flex items-center gap-2 flex-wrap">
                             <span className="text-sm font-sans font-medium">{lead.account_name}</span>
                             {(isManager || isAdmin) && ownerNames[lead.owner_user_id] && lead.owner_user_id !== user?.id && (
                               <Badge variant="outline" className="text-[9px] gap-0.5 font-sans text-primary/70">
