@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Settings, Linkedin, Search, MessageSquare, FileText, Building2, CloudRain, Cloud, BarChart3, Car, ShieldAlert, Home, Landmark, HardHat, Receipt, TrendingUp } from "lucide-react";
+import { Settings, Linkedin, Search, MessageSquare, FileText, Building2, CloudRain, Cloud, BarChart3, Car, ShieldAlert, Home, Landmark, HardHat, Receipt, TrendingUp, Database, MapPin, ShoppingBag, Globe, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { useUpsertSourceConfig, type LeadSourceConfig } from "@/hooks/useLeadEngine";
 
