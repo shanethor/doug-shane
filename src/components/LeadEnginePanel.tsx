@@ -270,6 +270,10 @@ function MonitoringPanel({ onConfigure }: { onConfigure: (source: string) => voi
     "FL Citizens Non-Renewal": 10080,
     "State Socrata Portals": 1440,
     "County ArcGIS": 1440,
+    "CT Property Transfers": 1440,
+    "NYC ACRIS": 1440,
+    "MassGIS Parcels": 10080,
+    "NJ MOD-IV / Sales": 10080,
   };
 
   const DEFAULT_SOURCES = [
