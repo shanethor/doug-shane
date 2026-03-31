@@ -8,6 +8,7 @@ interface SubscriptionState {
   subscriptionEnd: string | null;
   isTrialing: boolean;
   branch: string | null;
+  hasStudio: boolean;
   loading: boolean;
   error: string | null;
 }
