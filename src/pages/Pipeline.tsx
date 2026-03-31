@@ -459,8 +459,28 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
     })();
   }, [user, leads, loadLeads]);
 
-  const handleAddLead = async () => {
+  const checkDuplicates = (name: string): { name: string; id: string } | null => {
+    if (!name.trim()) return null;
+    const matches = fuzzyMatch(name.trim(), leads, (l) => l.account_name, 0.6);
+    if (matches.length > 0) {
+      return { name: matches[0].item.account_name, id: matches[0].item.id };
+    }
+    return null;
+  };
+
+  const handleAddLead = async (skipDuplicateCheck = false) => {
     if (!user || !newLead.account_name.trim()) return;
+
+    // Duplicate check
+    if (!skipDuplicateCheck) {
+      const dup = checkDuplicates(newLead.account_name);
+      if (dup) {
+        setDuplicateWarning(dup);
+        return;
+      }
+    }
+    setDuplicateWarning(null);
+
     const { data: lead, error } = await supabase.from("leads").insert({
       account_name: newLead.account_name.trim(),
       contact_name: newLead.contact_name || null,
