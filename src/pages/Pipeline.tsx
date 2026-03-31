@@ -1308,6 +1308,14 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
                     placeholder="$0"
                   />
                 </div>
+                {duplicateWarning && (
+                  <DuplicateLeadWarning
+                    duplicateName={duplicateWarning.name}
+                    duplicateId={duplicateWarning.id}
+                    onContinue={() => handleAddLead(true)}
+                    onCancel={() => setDuplicateWarning(null)}
+                  />
+                )}
                 <DialogFooter>
                   <Button variant="outline" onClick={() => setAddMode("choose")}>Back</Button>
                   <Button onClick={() => handleAddLead()} disabled={!newLead.account_name.trim()}>
