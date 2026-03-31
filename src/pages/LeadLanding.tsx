@@ -86,7 +86,7 @@ const INDUSTRY_CONFIG: Record<string, {
       "Landlords expanding portfolios",
       "Commercial property transitions",
     ],
-    sources: ["Property Records", "Permit Database", "Business Filings", "LinkedIn", "Court Records"],
+    sources: ["Property Records", "Permit Database", "Business Filings", "Court Records & Liens", "UCC Filings", "Google Places", "LinkedIn"],
   },
   general: {
     title: "Business Leads",
