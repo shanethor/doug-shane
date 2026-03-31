@@ -1645,7 +1645,7 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
                               </div>
                             )}
                             {/* Bottom row: Time in stage + Activity + Win probability */}
-                            {stage !== "sold" && stage !== "lost" && (
+                            {(stage as string) !== "sold" && (stage as string) !== "lost" && (
                               <div className="ml-[18px] mt-1.5 flex items-center gap-2 flex-wrap">
                                 {/* Time-in-stage badge */}
                                 {(() => {
