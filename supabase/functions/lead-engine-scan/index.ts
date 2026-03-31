@@ -42,6 +42,76 @@ function buildSearchQueries(source: ScanSource, settings: Record<string, string>
       }
       break;
     }
+    case "FEMA Flood Zones": {
+      for (const state of states.slice(0, 3)) {
+        queries.push(`FEMA flood zone ${state} properties high risk AE VE ${year}`);
+        queries.push(`${state} flood insurance required properties ${year}`);
+      }
+      break;
+    }
+    case "NOAA Storm Events": {
+      const eventTypes = (settings.event_types || "Hail, Wind, Tornado").split(",").map(e => e.trim());
+      for (const state of states.slice(0, 2)) {
+        queries.push(`${eventTypes[0] || "hail"} damage ${state} ${year} property insurance`);
+        queries.push(`severe storm ${state} ${year} home damage claims`);
+      }
+      break;
+    }
+    case "Census / ACS Data": {
+      for (const state of states.slice(0, 2)) {
+        queries.push(`${state} high home value ZIP codes owner occupied ${year}`);
+        queries.push(`${state} homeowners median income insurance market`);
+      }
+      break;
+    }
+    case "NHTSA Vehicles": {
+      queries.push(`NHTSA vehicle recall ${year} major safety auto insurance`);
+      queries.push(`high crash rate corridors auto insurance marketing ${year}`);
+      break;
+    }
+    case "OpenFEMA NFIP": {
+      for (const state of states.slice(0, 2)) {
+        queries.push(`FEMA disaster declaration ${state} ${year} flood insurance`);
+        queries.push(`${state} NFIP flood claims underinsured areas ${year}`);
+      }
+      break;
+    }
+    case "HUD Housing Data": {
+      for (const state of states.slice(0, 2)) {
+        queries.push(`${state} USPS vacant addresses rental property insurance ${year}`);
+        queries.push(`${state} HUD fair market rent landlord insurance ${year}`);
+      }
+      break;
+    }
+    case "Property Records": {
+      for (const state of states.slice(0, 2)) {
+        queries.push(`${state} property transfers ${year} new homeowner insurance`);
+        queries.push(`${state} county assessor sales records ${year}`);
+      }
+      break;
+    }
+    case "Building Permits": {
+      const permitTypes = (settings.permit_types || "Roof, New Construction, Renovation").split(",").map(p => p.trim());
+      for (const state of states.slice(0, 2)) {
+        queries.push(`${permitTypes[0] || "building"} permit issued ${state} ${year} homeowner`);
+        queries.push(`new construction permit ${state} ${year} insurance requirement`);
+      }
+      break;
+    }
+    case "Tax Delinquency": {
+      for (const state of states.slice(0, 2)) {
+        queries.push(`${state} tax delinquent properties ${year} lapsed insurance`);
+        queries.push(`${state} sheriff sale foreclosure ${year} force placed insurance`);
+      }
+      break;
+    }
+    case "Google Trends": {
+      const keywords = (settings.keywords || "insurance went up, need insurance, hail damage").split(",").map(k => k.trim());
+      for (const kw of keywords.slice(0, 3)) {
+        queries.push(`${kw} ${states[0] || ""} ${year}`);
+      }
+      break;
+    }
   }
   return queries;
 }
