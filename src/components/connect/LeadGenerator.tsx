@@ -45,14 +45,18 @@ const INDUSTRY_PRICING: Record<string, { basePrice: number; label: string; freeL
   general: { basePrice: 15, label: "General Business", freeLeads: 10 },
 };
 
-function getLeadPacks(basePrice: number, isSubscriber: boolean) {
-  const discount = isSubscriber ? 0.6 : 1; // 40% off for subscribers
+function getLeadPacks(basePrice: number, isSubscriber: boolean, hasStudio: boolean) {
+  const discount = hasStudio ? 0.4 : isSubscriber ? 0.6 : 1; // 60% off for Studio, 40% off for Connect
   return [
     { leads: 10, price: Math.round(10 * basePrice * discount), originalPrice: 10 * basePrice },
     { leads: 25, price: Math.round(25 * basePrice * discount), originalPrice: 25 * basePrice },
     { leads: 50, price: Math.round(50 * basePrice * discount), originalPrice: 50 * basePrice, popular: true },
     { leads: 100, price: Math.round(100 * basePrice * discount), originalPrice: 100 * basePrice },
   ];
+}
+
+function getFreeLeads(baseFreeLeads: number, hasStudio: boolean) {
+  return hasStudio ? baseFreeLeads * 3 : baseFreeLeads;
 }
 
 const FOCUS_TO_SOURCE: Record<string, string> = {
