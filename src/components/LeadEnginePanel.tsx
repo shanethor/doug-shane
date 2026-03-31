@@ -50,6 +50,9 @@ const ACTIVITY_ICON_MAP: Record<string, { icon: React.ElementType; color: string
   call: { icon: Phone, color: "text-primary" },
   conversion: { icon: ArrowUpRight, color: "text-emerald-500" },
   created: { icon: Plus, color: "text-primary" },
+  flood: { icon: Globe, color: "text-blue-500" },
+  storm: { icon: Globe, color: "text-slate-500" },
+  property: { icon: Building2, color: "text-teal-500" },
   default: { icon: MessageSquare, color: "text-primary" },
 };
 
