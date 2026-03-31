@@ -951,7 +951,7 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
           </div>
         </div>
         {/* Kanban columns skeleton */}
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 overflow-x-auto">
           {Array.from({ length: 5 }).map((_, col) => (
             <div key={col} className="space-y-3">
               <div className="flex items-center justify-between mb-2">
@@ -988,12 +988,12 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
       <div ref={pullRef} className={embedded ? "" : "overflow-y-auto"}>
       <PullIndicator />
 
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-6">
+      <div className="flex flex-col gap-3 mb-6">
         <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
           <div>
             <h1 className="text-2xl sm:text-4xl hidden md:block">Pipeline</h1>
-            <p className="text-muted-foreground font-sans text-xs sm:text-sm mt-1">
-              {filtered.length} lead{filtered.length !== 1 ? "s" : ""} — {typeof window !== "undefined" && window.innerWidth < 768 ? "tap to manage" : "drag between stages to manage your pipeline"}.
+            <p className="text-muted-foreground font-sans text-xs mt-1">
+              {filtered.length} lead{filtered.length !== 1 ? "s" : ""} — {typeof window !== "undefined" && window.innerWidth < 768 ? "swipe columns • long-press for actions" : "drag between stages to manage your pipeline"}.
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -1505,10 +1505,10 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
 
       {/* Kanban Board with drag-and-drop */}
       <TooltipProvider delayDuration={200}>
-      <div className="md:overflow-x-auto md:-mx-0 md:px-0 scrollbar-hide">
-      <div className={`flex flex-col md:grid md:grid-cols-4 gap-4 md:gap-3 ${embedded ? "md:min-h-[300px]" : "md:min-h-[60vh]"} md:min-w-0`}>
+      <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0 scrollbar-hide pb-4">
+      <div className={`grid grid-cols-[repeat(4,minmax(240px,1fr))] md:grid-cols-4 gap-3 ${embedded ? "md:min-h-[300px]" : "md:min-h-[60vh]"} min-w-[960px] md:min-w-0`}>
         {columns.map((stage) => (
-          <div key={stage} className="flex flex-col w-full md:w-auto shrink-0 md:shrink">
+          <div key={stage} className="flex flex-col w-full shrink-0">
             <div className="flex items-center gap-2 mb-3">
               <Badge variant="outline" className={`text-[10px] uppercase tracking-wider font-sans ${STAGE_COLORS[stage]}`}>
                 {STAGE_LABELS[stage]}
@@ -1817,16 +1817,16 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
       </div>
       </div>
 
-      {/* Lost row — drop zone only, no client cards by default */}
+      {/* Lost row — drop zone */}
       <div
-        className={`mt-4 rounded-lg border-2 border-dashed p-3 transition-colors ${
+        className={`mt-4 rounded-lg border-2 border-dashed p-2 sm:p-3 transition-colors ${
           dragOverStage === lostStage ? "border-destructive bg-destructive/5" : "border-border"
         }`}
         onDragOver={(e) => handleDragOver(e, lostStage)}
         onDragLeave={handleDragLeave}
         onDrop={(e) => handleDrop(e, lostStage)}
       >
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-2">
           <div className="flex items-center gap-2">
             <Badge variant="outline" className={`text-[10px] uppercase tracking-wider font-sans ${STAGE_COLORS[lostStage]}`}>
               {STAGE_LABELS[lostStage]}
@@ -1842,13 +1842,14 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
             </Tooltip>
           </div>
           <div className="flex items-center gap-2">
-            <p className="text-xs text-muted-foreground font-sans">Drop leads here to mark as lost</p>
+            <p className="text-xs text-muted-foreground font-sans hidden sm:block">Drop leads here to mark as lost</p>
             {(grouped[lostStage] || []).length > 0 && (
               <Dialog>
                 <DialogTrigger asChild>
                   <Button variant="outline" size="sm" className="gap-1.5 text-xs h-7">
                     <Users className="h-3 w-3" />
-                    View All Lost Clients
+                    <span className="hidden sm:inline">View All Lost Clients</span>
+                    <span className="sm:hidden">View Lost</span>
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="max-w-lg max-h-[70vh] overflow-y-auto">
@@ -1859,7 +1860,7 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
                     {(grouped[lostStage] || []).map((lead) => (
                       <Link key={lead.id} to={`/pipeline/${lead.id}`}>
                         <Card className="hover-lift cursor-pointer">
-                          <CardContent className="p-2 px-3 flex items-center gap-2">
+                          <CardContent className="p-2 px-3 flex items-center gap-2 flex-wrap">
                             <span className="text-sm font-sans font-medium">{lead.account_name}</span>
                             {(isManager || isAdmin) && ownerNames[lead.owner_user_id] && lead.owner_user_id !== user?.id && (
                               <Badge variant="outline" className="text-[9px] gap-0.5 font-sans text-primary/70">
