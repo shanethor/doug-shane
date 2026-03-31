@@ -58,39 +58,46 @@ serve(async (req) => {
     const subscriptions = await stripe.subscriptions.list({
       customer: customerId,
       status: "active",
-      limit: 1,
+      limit: 10,
     });
 
     // Also check trialing
-    let hasSub = subscriptions.data.length > 0;
-    let sub = subscriptions.data[0];
+    let allSubs = [...subscriptions.data];
+    const trialing = await stripe.subscriptions.list({
+      customer: customerId,
+      status: "trialing",
+      limit: 10,
+    });
+    allSubs = [...allSubs, ...trialing.data];
 
-    if (!hasSub) {
-      const trialing = await stripe.subscriptions.list({
-        customer: customerId,
-        status: "trialing",
-        limit: 1,
-      });
-      if (trialing.data.length > 0) {
-        hasSub = true;
-        sub = trialing.data[0];
-      }
-    }
-
-    if (!hasSub) {
+    if (allSubs.length === 0) {
       logStep("No active subscription");
-      return new Response(JSON.stringify({ subscribed: false }), {
+      return new Response(JSON.stringify({ subscribed: false, has_studio: false }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
       });
     }
 
-    const subscriptionEnd = new Date(sub.current_period_end * 1000).toISOString();
-    const productId = sub.items.data[0]?.price?.product;
-    const isTrialing = sub.status === "trialing";
-    const branch = sub.metadata?.branch || null;
+    // Find primary (Connect) sub and Studio sub
+    const STUDIO_PRICE_ID = "price_1TF5I1EISdUzafyhMrDOU8II";
+    let primarySub = allSubs[0];
+    let hasStudio = false;
 
-    logStep("Active subscription found", { subscriptionEnd, productId, isTrialing, branch });
+    for (const s of allSubs) {
+      const priceId = s.items.data[0]?.price?.id;
+      if (priceId === STUDIO_PRICE_ID) {
+        hasStudio = true;
+      } else {
+        primarySub = s;
+      }
+    }
+
+    const subscriptionEnd = new Date(primarySub.current_period_end * 1000).toISOString();
+    const productId = primarySub.items.data[0]?.price?.product;
+    const isTrialing = primarySub.status === "trialing";
+    const branch = primarySub.metadata?.branch || null;
+
+    logStep("Subscription found", { subscriptionEnd, productId, isTrialing, branch, hasStudio });
 
     return new Response(JSON.stringify({
       subscribed: true,
@@ -98,6 +105,7 @@ serve(async (req) => {
       subscription_end: subscriptionEnd,
       is_trialing: isTrialing,
       branch,
+      has_studio: hasStudio,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,

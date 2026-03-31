@@ -40,6 +40,7 @@ export function useSubscription() {
         subscriptionEnd: data.subscription_end || null,
         isTrialing: data.is_trialing || false,
         branch: data.branch || null,
+        hasStudio: data.has_studio || false,
         loading: false,
         error: null,
       });
