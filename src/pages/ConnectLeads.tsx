@@ -16,21 +16,21 @@ export default function ConnectLeads() {
 
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList>
-          <TabsTrigger value="marketplace" className="gap-1.5">
-            <Handshake className="h-4 w-4" />
-            Marketplace
-          </TabsTrigger>
           <TabsTrigger value="generator" className="gap-1.5">
             <Rocket className="h-4 w-4" />
             Lead Generator
           </TabsTrigger>
+          <TabsTrigger value="marketplace" className="gap-1.5">
+            <Handshake className="h-4 w-4" />
+            Marketplace
+          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="marketplace" className="mt-4">
-          <LeadMarketplace />
-        </TabsContent>
         <TabsContent value="generator" className="mt-4">
           <LeadGenerator />
+        </TabsContent>
+        <TabsContent value="marketplace" className="mt-4">
+          <LeadMarketplace />
         </TabsContent>
       </Tabs>
     </div>
