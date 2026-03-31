@@ -72,7 +72,7 @@ const INDUSTRY_CONFIG: Record<string, {
       "Businesses seeking technology consulting",
       "Organizations planning restructuring",
     ],
-    sources: ["Business Filings", "LinkedIn", "Reddit Signals", "Job Postings", "News Signals"],
+    sources: ["Business Filings", "SAM.gov", "SBA Loans", "LinkedIn", "Reddit Signals", "Google Places", "New Domain Monitoring", "Trade Associations"],
   },
   property: {
     title: "Property Management Leads",
