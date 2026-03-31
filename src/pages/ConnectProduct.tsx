@@ -105,6 +105,7 @@ function QuoteTicker() {
 export default function ConnectProduct() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { isPageGated } = useEarlyAccessWhitelist();
   const { subscribed } = useSubscription();
   const [showIntro, setShowIntro] = useState(() => {
     try { return !sessionStorage.getItem("connect-entered"); } catch { return true; }

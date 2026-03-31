@@ -6,8 +6,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// AURA Connect pricing: $149.99/mo intro for 3 months, then $249.99/mo
-const CONNECT_INTRO_PRICE = "price_1TGZwGEISdUzafyh9twp4k8J";
+// AURA Connect pricing: $99.99/mo early access for 3 months, then $249.99/mo
+const CONNECT_INTRO_PRICE = "price_1TGt0aEISdUzafyhzRsBV7al";
 const CONNECT_STANDARD_PRICE = "price_1TGZwaEISdUzafyhLYBp9tyZ";
 
 serve(async (req) => {
