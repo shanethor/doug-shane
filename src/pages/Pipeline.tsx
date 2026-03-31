@@ -1372,6 +1372,97 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
         </div>
       </div>
 
+      {/* Stats Bar: Weighted Pipeline + Goal Progress */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+        <Card>
+          <CardContent className="p-3">
+            <div className="flex items-center gap-2 mb-1">
+              <TrendingUp className="h-3.5 w-3.5 text-primary" />
+              <span className="text-[10px] text-muted-foreground uppercase tracking-wide font-sans">Weighted Pipeline</span>
+            </div>
+            <p className="text-lg font-bold font-sans">{fmt(weightedPipelineValue)}</p>
+            <p className="text-[10px] text-muted-foreground font-sans">Σ (deal × probability)</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-3">
+            <div className="flex items-center gap-2 mb-1">
+              <DollarSign className="h-3.5 w-3.5 text-primary" />
+              <span className="text-[10px] text-muted-foreground uppercase tracking-wide font-sans">Premium Goal</span>
+            </div>
+            {(() => {
+              const goal = 500000;
+              const current = pipelineStats.totalPremiumSold;
+              const pctVal = Math.min((current / goal) * 100, 100);
+              return (
+                <>
+                  <p className="text-lg font-bold font-sans">{fmt(current)} <span className="text-xs font-normal text-muted-foreground">/ {fmt(goal)}</span></p>
+                  <Progress value={pctVal} className="h-2 mt-1" />
+                  <p className="text-[10px] text-muted-foreground font-sans mt-0.5">{pctVal.toFixed(1)}%</p>
+                </>
+              );
+            })()}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-3">
+            <div className="flex items-center gap-2 mb-1">
+              <TrendingUp className="h-3.5 w-3.5 text-primary" />
+              <span className="text-[10px] text-muted-foreground uppercase tracking-wide font-sans">Revenue Goal</span>
+            </div>
+            {(() => {
+              const goal = 60000;
+              const current = pipelineStats.totalRevenueSold;
+              const pctVal = Math.min((current / goal) * 100, 100);
+              return (
+                <>
+                  <p className="text-lg font-bold font-sans">{fmt(current)} <span className="text-xs font-normal text-muted-foreground">/ {fmt(goal)}</span></p>
+                  <Progress value={pctVal} className="h-2 mt-1" />
+                  <p className="text-[10px] text-muted-foreground font-sans mt-0.5">{pctVal.toFixed(1)}%</p>
+                </>
+              );
+            })()}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-3">
+            <div className="flex items-center gap-2 mb-1">
+              <CheckCircle className="h-3.5 w-3.5 text-primary" />
+              <span className="text-[10px] text-muted-foreground uppercase tracking-wide font-sans">Pipeline Health</span>
+            </div>
+            <p className="text-lg font-bold font-sans">{pipelineStats.totalProspects} <span className="text-xs font-normal text-muted-foreground">active</span></p>
+            <p className="text-[10px] text-muted-foreground font-sans">{pipelineStats.soldCount} sold · {pipelineStats.lostCount} lost</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Missing deal value warning */}
+      {missingDealValueLeads.length > 0 && (
+        <div className="mb-4 rounded-lg border border-amber-500/20 bg-amber-500/5 px-4 py-2.5 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4 text-amber-500" />
+            <span className="text-xs font-sans text-muted-foreground">
+              <strong className="text-foreground">{missingDealValueLeads.length} lead{missingDealValueLeads.length !== 1 ? "s" : ""}</strong> missing deal values — this affects your pipeline total
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Filters */}
+      <div className="mb-4">
+        <PipelineFilters
+          ownerFilter={ownerFilter}
+          onOwnerFilterChange={setOwnerFilter}
+          stageFilter={stageFilter}
+          onStageFilterChange={setStageFilter}
+          dealSizeRange={dealSizeRange}
+          onDealSizeRangeChange={setDealSizeRange}
+          ownerNames={ownerNames}
+          currentUserId={user?.id}
+          isManagerOrAdmin={isManager || isAdmin}
+        />
+      </div>
+
       {leads.length > 0 && (
         <div className="relative mb-6">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
