@@ -57,6 +57,7 @@ export default function ProductAuth() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const product = searchParams.get("product") || "connect";
+  const redirectTo = searchParams.get("redirect");
 
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState("");
