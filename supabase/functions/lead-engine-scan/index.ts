@@ -344,9 +344,19 @@ Deno.serve(async (req) => {
     // ── Step 3: Score and insert into engine_leads ──
     const tierMap: Record<string, number> = {
       LinkedIn: 1,
+      "FEMA Flood Zones": 1,
+      "OpenFEMA NFIP": 1,
+      "NOAA Storm Events": 1,
+      "Property Records": 1,
+      "Building Permits": 1,
+      "Tax Delinquency": 1,
       Reddit: 2,
       "Business Filings": 2,
-      "Permit Database": 3,
+      "Permit Database": 2,
+      "NHTSA Vehicles": 2,
+      "HUD Housing Data": 2,
+      "Census / ACS Data": 3,
+      "Google Trends": 3,
     };
 
     const activityTypeMap: Record<string, string> = {
@@ -354,6 +364,16 @@ Deno.serve(async (req) => {
       Reddit: "reddit",
       "Business Filings": "filing",
       "Permit Database": "filing",
+      "FEMA Flood Zones": "filing",
+      "NOAA Storm Events": "filing",
+      "Census / ACS Data": "filing",
+      "NHTSA Vehicles": "filing",
+      "OpenFEMA NFIP": "filing",
+      "HUD Housing Data": "filing",
+      "Property Records": "filing",
+      "Building Permits": "filing",
+      "Tax Delinquency": "filing",
+      "Google Trends": "filing",
     };
 
     const leadsToInsert = generatedLeads.slice(0, 12).map((l: any) => ({
