@@ -6,7 +6,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-type ScanSource = "Reddit" | "Business Filings" | "Permit Database" | "LinkedIn" | "FEMA Flood Zones" | "NOAA Storm Events" | "Census / ACS Data" | "NHTSA Vehicles" | "OpenFEMA NFIP" | "HUD Housing Data" | "Property Records" | "Building Permits" | "Tax Delinquency" | "Google Trends";
+type ScanSource = "Reddit" | "Business Filings" | "Permit Database" | "LinkedIn" | "FEMA Flood Zones" | "NOAA Storm Events" | "Census / ACS Data" | "NHTSA Vehicles" | "OpenFEMA NFIP" | "HUD Housing Data" | "Property Records" | "Building Permits" | "Tax Delinquency" | "Google Trends" | "ATTOM Data" | "RentCast" | "Regrid Parcels" | "BatchData" | "FL Citizens Non-Renewal" | "State Socrata Portals" | "County ArcGIS";
 
 // ── Build Firecrawl search queries (used when Firecrawl is available) ──
 function buildSearchQueries(source: ScanSource, settings: Record<string, string>): string[] {
@@ -112,6 +112,53 @@ function buildSearchQueries(source: ScanSource, settings: Record<string, string>
       }
       break;
     }
+    case "ATTOM Data": {
+      for (const state of states.slice(0, 3)) {
+        queries.push(`${state} recent property sales transfers ${year} new homeowner insurance`);
+        queries.push(`${state} property valuation changes ${year} insurance review`);
+      }
+      break;
+    }
+    case "RentCast": {
+      for (const state of states.slice(0, 2)) {
+        queries.push(`${state} rental property listings ${year} landlord insurance`);
+        queries.push(`${state} property value estimate ${year} homeowner coverage`);
+      }
+      break;
+    }
+    case "Regrid Parcels": {
+      for (const state of states.slice(0, 2)) {
+        queries.push(`${state} parcel ownership transfer ${year} new owner insurance`);
+      }
+      break;
+    }
+    case "BatchData": {
+      for (const state of states.slice(0, 2)) {
+        queries.push(`${state} property owner skip trace ${year} insurance outreach`);
+        queries.push(`${state} absentee owner properties ${year} landlord insurance`);
+      }
+      break;
+    }
+    case "FL Citizens Non-Renewal": {
+      queries.push(`Florida Citizens Insurance non-renewal list ${year} homeowners shopping`);
+      queries.push(`Citizens Property Insurance depopulation ${year} FL replacement coverage`);
+      queries.push(`Florida homeowners insurance crisis ${year} FAIR plan alternative`);
+      break;
+    }
+    case "State Socrata Portals": {
+      for (const state of states.slice(0, 3)) {
+        queries.push(`${state} open data property assessment ${year} Socrata`);
+        queries.push(`${state} property transfers sales data ${year}`);
+      }
+      break;
+    }
+    case "County ArcGIS": {
+      const counties = (settings.counties || "Miami-Dade, Franklin, Hennepin").split(",").map(c => c.trim());
+      for (const county of counties.slice(0, 3)) {
+        queries.push(`${county} county assessor property data ${year} ArcGIS`);
+      }
+      break;
+    }
   }
   return queries;
 }
@@ -138,6 +185,13 @@ function buildGeminiLeadPrompt(source: ScanSource, settings: Record<string, stri
     "Building Permits": `homeowners pulling roof, renovation, or new construction permits who need updated or new insurance coverage`,
     "Tax Delinquency": `tax-delinquent property owners who likely have lapsed insurance — high-urgency reactivation leads`,
     "Google Trends": `areas with rising search interest in insurance-related topics like rate increases, hail damage, or coverage needs`,
+    "ATTOM Data": `recent property sales and ownership transfers from ATTOM's 158M property database — new homeowners needing insurance`,
+    "RentCast": `rental properties and property valuations from RentCast's 140M+ property database — landlord and homeowner insurance leads`,
+    "Regrid Parcels": `parcel ownership data and boundary records from Regrid's 149M parcels — identifying new property owners`,
+    "BatchData": `skip-traced property owner data including absentee owners and pre-foreclosure properties needing insurance`,
+    "FL Citizens Non-Renewal": `Florida Citizens Insurance non-renewed policyholders who MUST find replacement homeowners coverage — the highest-intent insurance leads in the country`,
+    "State Socrata Portals": `property assessment and transfer data from state open data portals (IL, WA, CO, DC, OR) — same pattern as CT`,
+    "County ArcGIS": `county assessor property data via ArcGIS REST APIs (FL, OH, MN, AZ, NC counties) — transfers, values, year built`,
   };
 
   let prompt = `You are an insurance lead generation expert. Generate 8-10 REALISTIC, SPECIFIC business leads for an insurance agent.
@@ -350,13 +404,21 @@ Deno.serve(async (req) => {
       "Property Records": 1,
       "Building Permits": 1,
       "Tax Delinquency": 1,
+      "FL Citizens Non-Renewal": 1,
+      "ATTOM Data": 1,
+      "State Socrata Portals": 1,
+      "County ArcGIS": 1,
       Reddit: 2,
       "Business Filings": 2,
       "Permit Database": 2,
       "NHTSA Vehicles": 2,
       "HUD Housing Data": 2,
+      "RentCast": 2,
+      "Regrid Parcels": 2,
+      "BatchData": 2,
       "Census / ACS Data": 3,
       "Google Trends": 3,
+      "PropStream": 2,
     };
 
     const activityTypeMap: Record<string, string> = {
@@ -364,16 +426,24 @@ Deno.serve(async (req) => {
       Reddit: "reddit",
       "Business Filings": "filing",
       "Permit Database": "filing",
-      "FEMA Flood Zones": "filing",
-      "NOAA Storm Events": "filing",
+      "FEMA Flood Zones": "flood",
+      "NOAA Storm Events": "storm",
       "Census / ACS Data": "filing",
       "NHTSA Vehicles": "filing",
-      "OpenFEMA NFIP": "filing",
-      "HUD Housing Data": "filing",
-      "Property Records": "filing",
-      "Building Permits": "filing",
-      "Tax Delinquency": "filing",
+      "OpenFEMA NFIP": "flood",
+      "HUD Housing Data": "property",
+      "Property Records": "property",
+      "Building Permits": "property",
+      "Tax Delinquency": "property",
       "Google Trends": "filing",
+      "ATTOM Data": "property",
+      "RentCast": "property",
+      "Regrid Parcels": "property",
+      "BatchData": "property",
+      "FL Citizens Non-Renewal": "property",
+      "State Socrata Portals": "property",
+      "County ArcGIS": "property",
+    };
     };
 
     const leadsToInsert = generatedLeads.slice(0, 12).map((l: any) => ({

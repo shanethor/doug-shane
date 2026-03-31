@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Settings, Linkedin, Search, MessageSquare, FileText, Building2, CloudRain, Cloud, BarChart3, Car, ShieldAlert, Home, Landmark, HardHat, Receipt, TrendingUp } from "lucide-react";
+import { Settings, Linkedin, Search, MessageSquare, FileText, Building2, CloudRain, Cloud, BarChart3, Car, ShieldAlert, Home, Landmark, HardHat, Receipt, TrendingUp, Database, MapPin, ShoppingBag, Globe, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { useUpsertSourceConfig, type LeadSourceConfig } from "@/hooks/useLeadEngine";
 
@@ -116,6 +116,65 @@ const SOURCE_META: Record<string, {
     fields: [
       { key: "keywords", label: "Keywords to Monitor", placeholder: "insurance went up, hail damage, need insurance", type: "textarea" },
       { key: "states", label: "Target States", placeholder: "FL, TX, CA" },
+    ],
+  },
+  "ATTOM Data": {
+    icon: Database, color: "text-purple-600", bg: "bg-purple-500/10",
+    fields: [
+      { key: "api_key", label: "ATTOM API Key", placeholder: "Enter ATTOM API key" },
+      { key: "states", label: "Target States", placeholder: "FL, TX, CA, IL, NY" },
+      { key: "property_types", label: "Property Types", placeholder: "SFR, Condo, Multi-family" },
+    ],
+  },
+  "RentCast": {
+    icon: Home, color: "text-orange-600", bg: "bg-orange-500/10",
+    fields: [
+      { key: "api_key", label: "RentCast API Key", placeholder: "Enter RentCast API key" },
+      { key: "states", label: "Target States", placeholder: "FL, TX, CA" },
+      { key: "min_value", label: "Min Property Value ($)", placeholder: "200000" },
+    ],
+  },
+  "Regrid Parcels": {
+    icon: MapPin, color: "text-lime-600", bg: "bg-lime-500/10",
+    fields: [
+      { key: "api_key", label: "Regrid API Key", placeholder: "Enter Regrid API key" },
+      { key: "states", label: "Target States", placeholder: "FL, TX, CA, AZ" },
+    ],
+  },
+  "BatchData": {
+    icon: Database, color: "text-sky-600", bg: "bg-sky-500/10",
+    fields: [
+      { key: "api_key", label: "BatchData API Key", placeholder: "Enter BatchData API key" },
+      { key: "states", label: "Target States", placeholder: "All 50 states" },
+      { key: "data_types", label: "Data Types", placeholder: "Property details, Skip tracing, Ownership" },
+    ],
+  },
+  "PropStream": {
+    icon: ShoppingBag, color: "text-pink-600", bg: "bg-pink-500/10",
+    fields: [
+      { key: "states", label: "Target States", placeholder: "All 50 states — 160M+ properties" },
+      { key: "list_types", label: "List Types", placeholder: "Recent sales, Pre-foreclosure, Absentee owners" },
+    ],
+  },
+  "FL Citizens Non-Renewal": {
+    icon: AlertTriangle, color: "text-red-600", bg: "bg-red-500/10",
+    fields: [
+      { key: "counties", label: "FL Counties", placeholder: "Miami-Dade, Broward, Palm Beach, Hillsborough" },
+      { key: "policy_types", label: "Policy Types", placeholder: "Homeowners, Wind-only" },
+    ],
+  },
+  "State Socrata Portals": {
+    icon: Globe, color: "text-blue-700", bg: "bg-blue-600/10",
+    fields: [
+      { key: "states", label: "States (Socrata)", placeholder: "IL, WA, CO, DC, OR" },
+      { key: "dataset_ids", label: "Dataset IDs (optional)", placeholder: "ww2d-vylh, 5mzw-sjtu" },
+    ],
+  },
+  "County ArcGIS": {
+    icon: MapPin, color: "text-emerald-700", bg: "bg-emerald-600/10",
+    fields: [
+      { key: "states", label: "States", placeholder: "FL, OH, MN, AZ, NC" },
+      { key: "counties", label: "Counties", placeholder: "Miami-Dade, Franklin, Hennepin, Maricopa" },
     ],
   },
   ZoomInfo: {
