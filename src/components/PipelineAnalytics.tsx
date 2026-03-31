@@ -279,6 +279,24 @@ export function PipelineAnalytics({
       .sort((a, b) => b.value - a.value)
       .slice(0, 6);
 
+    // --- Stage Funnel ---
+    const stageCounts: Record<string, number> = { prospect: 0, quoting: 0, presenting: 0, sold: 0 };
+    filteredLeads.forEach((l) => {
+      if (approvedLeadIds.has(l.id)) stageCounts.sold++;
+      else if (stageCounts[l.stage] !== undefined) stageCounts[l.stage]++;
+    });
+    const funnelData = [
+      { stage: "Prospect", count: stageCounts.prospect + stageCounts.quoting + stageCounts.presenting + stageCounts.sold },
+      { stage: "Quoting", count: stageCounts.quoting + stageCounts.presenting + stageCounts.sold },
+      { stage: "Presenting", count: stageCounts.presenting + stageCounts.sold },
+      { stage: "Sold", count: stageCounts.sold },
+    ];
+    const funnelConversions = funnelData.slice(0, -1).map((d, i) => ({
+      from: d.stage,
+      to: funnelData[i + 1].stage,
+      rate: d.count > 0 ? funnelData[i + 1].count / d.count : 0,
+    }));
+
     return {
       closeRate,
       winCount,
@@ -292,6 +310,8 @@ export function PipelineAnalytics({
       avgStageDays,
       industryStats,
       lossReasonData,
+      funnelData,
+      funnelConversions,
     };
   }, [leads, policies, auditLog, period]);
 
