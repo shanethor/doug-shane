@@ -25,11 +25,12 @@ const INDUSTRY_CONFIG: Record<string, {
     basePrice: 25,
     highlights: [
       "New business filings needing coverage",
-      "Property transactions requiring policies",
-      "Businesses with expiring policies",
-      "Life event triggers (new homes, vehicles, businesses)",
+      "OSHA-cited contractors needing new carriers",
+      "License expirations triggering renewal windows",
+      "EPA-certified firms requiring specialty coverage",
+      "SBA loan recipients needing all insurance lines",
     ],
-    sources: ["Business Filings", "Permit Database", "FEMA/NOAA Data", "Reddit Signals", "LinkedIn"],
+    sources: ["State Licensing Boards", "OSHA Enforcement", "Business Filings", "Permit Database", "EPA Databases", "SAM.gov", "SBA Loans", "FMCSA/DOT", "Court Records & Liens", "Trade Associations", "Google Places", "UCC Filings", "FEMA/NOAA Data", "Reddit Signals", "LinkedIn", "New Domain Monitoring"],
   },
   "real-estate": {
     title: "Real Estate Leads",
@@ -43,7 +44,7 @@ const INDUSTRY_CONFIG: Record<string, {
       "Investors looking for rental properties",
       "Sellers preparing to list",
     ],
-    sources: ["Property Records", "Mortgage Filings", "Permit Database", "LinkedIn", "Business Filings"],
+    sources: ["Property Records", "Permit Database", "Business Filings", "Court Records & Liens", "SAM.gov", "SBA Loans", "Google Places", "LinkedIn", "New Domain Monitoring"],
   },
   mortgage: {
     title: "Mortgage Leads",
@@ -57,7 +58,7 @@ const INDUSTRY_CONFIG: Record<string, {
       "Investment property financing",
       "Commercial mortgage prospects",
     ],
-    sources: ["Property Records", "Business Filings", "LinkedIn", "Credit Triggers", "Permit Database"],
+    sources: ["Property Records", "Business Filings", "SBA Loans", "Permit Database", "Court Records & Liens", "Google Places", "LinkedIn", "UCC Filings"],
   },
   consulting: {
     title: "Consulting Leads",
@@ -71,7 +72,7 @@ const INDUSTRY_CONFIG: Record<string, {
       "Businesses seeking technology consulting",
       "Organizations planning restructuring",
     ],
-    sources: ["Business Filings", "LinkedIn", "Reddit Signals", "Job Postings", "News Signals"],
+    sources: ["Business Filings", "SAM.gov", "SBA Loans", "LinkedIn", "Reddit Signals", "Google Places", "New Domain Monitoring", "Trade Associations"],
   },
   property: {
     title: "Property Management Leads",
@@ -85,7 +86,7 @@ const INDUSTRY_CONFIG: Record<string, {
       "Landlords expanding portfolios",
       "Commercial property transitions",
     ],
-    sources: ["Property Records", "Permit Database", "Business Filings", "LinkedIn", "Court Records"],
+    sources: ["Property Records", "Permit Database", "Business Filings", "Court Records & Liens", "UCC Filings", "Google Places", "LinkedIn"],
   },
   general: {
     title: "Business Leads",
@@ -99,7 +100,7 @@ const INDUSTRY_CONFIG: Record<string, {
       "Businesses seeking professional services",
       "Companies with compliance needs",
     ],
-    sources: ["Business Filings", "LinkedIn", "Reddit Signals", "Permit Database", "News Signals"],
+    sources: ["Business Filings", "SAM.gov", "SBA Loans", "Permit Database", "Google Places", "LinkedIn", "Reddit Signals", "Trade Associations", "New Domain Monitoring"],
   },
 };
 
