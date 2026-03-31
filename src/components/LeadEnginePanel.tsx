@@ -238,8 +238,9 @@ const LIVE_SOURCES = [
   "Tax Delinquency", "Google Trends",
   "ATTOM Data", "RentCast", "Regrid Parcels", "BatchData",
   "FL Citizens Non-Renewal", "State Socrata Portals", "County ArcGIS",
+  "CT Property Transfers", "NYC ACRIS", "MassGIS Parcels", "NJ MOD-IV / Sales",
 ];
-const COMING_SOON_SOURCES = ["ZoomInfo", "PropStream"];
+const COMING_SOON_SOURCES = ["ZoomInfo", "PropStream", "RI Coastal (FEMA)"];
 
 function MonitoringPanel({ onConfigure }: { onConfigure: (source: string) => void }) {
   const { data: configs, isLoading } = useLeadSourceConfigs();
