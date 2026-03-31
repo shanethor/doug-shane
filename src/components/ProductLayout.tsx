@@ -320,7 +320,7 @@ export function ProductLayout({
         </main>
 
         {/* Mobile bottom nav */}
-        <MobileConnectNav isActive={isActive} />
+        <MobileConnectNav isActive={isActive} signOut={signOut} />
       </div>
 
       {/* Sage floating chat */}
