@@ -478,7 +478,7 @@ function ResultsTable() {
 
 export default function LeadGenerator() {
   const qc = useQueryClient();
-  const { subscribed } = useSubscription();
+  const { subscribed, hasStudio } = useSubscription();
   const [userIndustry, setUserIndustry] = useState<string>("general");
   const [loading, setLoading] = useState(true);
 
