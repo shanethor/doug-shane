@@ -1,7 +1,10 @@
-import { Lock, Sparkles, BarChart3, Target, Mail, Calendar, Zap, Brain, Network, Wrench, Bot, CheckCircle, Clock } from "lucide-react";
+import { useState } from "react";
+import { Lock, Sparkles, BarChart3, Target, Mail, Calendar, Zap, Brain, Network, Wrench, CheckCircle, Clock, ArrowRight, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 
 const CURRENT_FEATURES = [
   { icon: Target, label: "AI Lead Generation", desc: "Industry-specific leads sourced from 22+ public data providers" },
@@ -18,7 +21,46 @@ const COMING_SOON_FEATURES = [
   { icon: Zap, label: "Sage", desc: "AI-powered sales coach and strategy assistant" },
 ];
 
+const SUBSCRIPTION_PERKS = [
+  "AI-powered lead generation with free monthly leads",
+  "Advanced sales pipeline with stage tracking",
+  "40% discount on all marketplace leads",
+  "Early access to all new features as they launch",
+  "Lock in $99.99/mo for 3 months (then $249.99/mo)",
+];
+
 export function ComingSoonGate({ pageName }: { pageName: string }) {
+  const [loading, setLoading] = useState(false);
+  const { session } = useAuth();
+
+  const handleSubscribe = async () => {
+    setLoading(true);
+    try {
+      if (session) {
+        const { data, error } = await supabase.functions.invoke("create-checkout", {
+          body: { product: "connect" },
+        });
+        if (error) throw error;
+        if (data?.url) window.open(data.url, "_blank");
+      } else {
+        const { data, error } = await supabase.functions.invoke("create-public-checkout", {
+          body: {
+            price_id: "price_1RUXuREISdUzafyhyp9y2MhF",
+            product: "connect",
+            success_url: `${window.location.origin}/post-checkout`,
+            cancel_url: window.location.href,
+          },
+        });
+        if (error) throw error;
+        if (data?.url) window.open(data.url, "_blank");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Failed to start checkout");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4 max-w-3xl mx-auto">
       <div className="w-16 h-16 rounded-2xl bg-orange-500/10 flex items-center justify-center mb-6">
@@ -27,9 +69,42 @@ export function ComingSoonGate({ pageName }: { pageName: string }) {
       <h2 className="text-2xl font-bold mb-2">{pageName}</h2>
       <p className="text-lg text-muted-foreground mb-2">Coming Soon</p>
       <p className="text-sm text-muted-foreground max-w-md mb-8">
-        We're building something amazing. As an early subscriber, you're getting a discounted rate
-        while we finish building out all features.
+        We're building something amazing. Subscribe now at our early access rate
+        and get access to all features as they launch.
       </p>
+
+      {/* Subscribe CTA */}
+      <div className="w-full max-w-md mb-8 rounded-xl border border-orange-500/30 bg-orange-500/5 p-5">
+        <div className="flex items-baseline gap-2 mb-1 justify-center">
+          <span className="text-sm line-through text-muted-foreground/50">$249.99</span>
+          <span className="text-3xl font-bold">$99.99</span>
+          <span className="text-sm text-muted-foreground">/month</span>
+        </div>
+        <p className="text-xs text-muted-foreground mb-4">Early access rate for 3 months · 3-day free trial</p>
+
+        <ul className="space-y-2 text-left mb-5">
+          {SUBSCRIPTION_PERKS.map((p) => (
+            <li key={p} className="flex items-center gap-2 text-xs text-muted-foreground">
+              <CheckCircle className="h-3.5 w-3.5 shrink-0 text-orange-400" />
+              {p}
+            </li>
+          ))}
+        </ul>
+
+        <Button
+          onClick={handleSubscribe}
+          disabled={loading}
+          className="w-full gap-2 h-11 bg-orange-500 hover:bg-orange-600 text-white border-0"
+        >
+          {loading ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <>
+              Subscribe to AURA Connect <ArrowRight className="h-4 w-4" />
+            </>
+          )}
+        </Button>
+      </div>
 
       {/* Current Features */}
       <div className="w-full mb-6">
@@ -89,7 +164,7 @@ export function ComingSoonGate({ pageName }: { pageName: string }) {
 
       <div className="flex items-center gap-2 text-xs text-muted-foreground/60">
         <Sparkles className="h-3.5 w-3.5" />
-        <span>Early access pricing: $99.99/mo</span>
+        <span>Early access pricing locked for 3 months</span>
       </div>
     </div>
   );
