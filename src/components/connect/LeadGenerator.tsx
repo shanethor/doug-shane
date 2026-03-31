@@ -183,8 +183,8 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasStudio }:
             Base price: ${pricing.basePrice}/lead • Enriched with full company & contact profiles
           </p>
           {isSubscriber ? (
-            <Badge variant="outline" className="text-[9px] mt-1 text-emerald-600 border-emerald-600/30">
-              🎉 Connect Member — 40% discount applied
+            <Badge variant="outline" className={`text-[9px] mt-1 ${hasStudio ? "text-purple-600 border-purple-600/30" : "text-emerald-600 border-emerald-600/30"}`}>
+              {hasStudio ? "🚀 Studio Member — 60% discount applied" : "🎉 Connect Member — 40% discount applied"}
             </Badge>
           ) : (
             <Badge variant="outline" className="text-[9px] mt-1 text-amber-600 border-amber-600/30">
