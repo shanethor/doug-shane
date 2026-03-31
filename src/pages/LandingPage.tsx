@@ -524,6 +524,96 @@ export default function LandingPage() {
           </div>
         </section>
 
+        {/* ═══ AURA LEADS ═══ */}
+        <section className="lp-reveal pt-[120px] max-sm:pt-20 pb-[60px] relative" id="leads" ref={addRevealRef}>
+          <div className="max-w-[1200px] mx-auto px-12 max-md:px-8 max-sm:px-5">
+            <div className="border-t border-[hsl(140_12%_42%/0.15)] pt-14">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-16">
+                <div>
+                  <div className="text-[11px] font-semibold tracking-[0.12em] uppercase mb-4" style={{ color: "hsl(140 12% 58%)" }}>AURA Leads</div>
+                  <h2 className="text-[clamp(32px,4vw,48px)] font-bold tracking-[-0.04em] leading-[1.05] text-white mb-5">
+                    Targeted Leads,<br />Any Industry
+                  </h2>
+                  <p className="text-[15px] text-[#71717A] leading-[1.65] mb-6">
+                    AURA sources and delivers qualified leads across every industry we serve — insurance, real estate, mortgage, property, consulting, and general business. Tell us your industry once, and we match you with prospects who are actively looking for what you offer.
+                  </p>
+
+                  <ul className="space-y-2.5 mb-6 text-[13px] text-[#A1A1AA]">
+                    <li className="flex items-start gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ background: "hsl(140 12% 52%)" }} />
+                      Industry‑specific lead sourcing — we scan public filings, social signals, and market data to find prospects in your vertical.
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ background: "hsl(140 12% 52%)" }} />
+                      Leads are enriched with contact details, company info, and intent signals before they reach you.
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ background: "hsl(140 12% 52%)" }} />
+                      Per‑lead pricing tailored to your industry — starting as low as $15 per lead for consulting and general business.
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ background: "hsl(140 12% 52%)" }} />
+                      AURA Connect subscribers get free leads every month and a 40% discount on additional purchases.
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ background: "hsl(140 12% 52%)" }} />
+                      One‑click conversion — push any lead straight into your sales pipeline and start outreach immediately.
+                    </li>
+                  </ul>
+
+                  <div className="text-[12px] text-[#52525B] leading-[1.55] mb-6 border-l-2 pl-3" style={{ borderColor: "hsl(140 12% 42% / 0.3)" }}>
+                    Leads are available to anyone with an AURA account. Subscribe to AURA Connect for free monthly leads and discounted pricing.
+                  </div>
+
+                  <div className="flex items-center gap-4">
+                    <Link
+                      to="/get-started"
+                      className="inline-flex items-center gap-2 text-sm font-medium text-[#08080A] px-7 py-3 rounded-[10px] transition-colors no-underline"
+                      style={{ background: "hsl(140 12% 42%)" }}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = "hsl(140 12% 52%)")}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = "hsl(140 12% 42%)")}
+                    >
+                      Get Started
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
+                        <path d="M5 12h14" /><path d="M12 5l7 7-7 7" />
+                      </svg>
+                    </Link>
+                  </div>
+                </div>
+
+                {/* Right column — industry cards */}
+                <div>
+                  <div className="rounded-[20px] overflow-hidden border border-[hsl(140_12%_42%/0.12)] aspect-[16/9] relative mb-4" style={{ background: "linear-gradient(135deg, hsl(140 12% 42% / 0.08), hsl(140 12% 20% / 0.04))" }}>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-12 h-12 mb-3" style={{ color: "hsl(140 12% 58%)" }}>
+                        <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" /><path d="M11 8v6" /><path d="M8 11h6" />
+                      </svg>
+                      <p className="text-lg font-bold text-white tracking-tight">AI‑Sourced Leads</p>
+                      <p className="text-xs mt-2" style={{ color: "hsl(140 12% 58%)" }}>Every industry • Enriched contacts • Intent signals</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {[
+                      { t: "Insurance", d: "Commercial and personal lines prospects from business filings, permits, and market triggers.", price: "$25/lead" },
+                      { t: "Real Estate & Property", d: "Buyers, sellers, and investors sourced from listing activity, permits, and ownership records.", price: "$100/lead" },
+                      { t: "Mortgage", d: "Pre‑qualified borrower leads from rate‑shopping signals and refinance triggers.", price: "$100/lead" },
+                      { t: "Consulting & General", d: "B2B decision‑makers and business owners matched to your service offering.", price: "$15/lead" },
+                    ].map((f) => (
+                      <div key={f.t} className="p-4 border rounded-xl" style={{ background: "hsl(140 12% 42% / 0.04)", borderColor: "hsl(140 12% 42% / 0.1)" }}>
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="text-[13px] font-semibold text-white">{f.t}</div>
+                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ background: "hsl(140 12% 42% / 0.15)", color: "hsl(140 12% 72%)" }}>{f.price}</span>
+                        </div>
+                        <div className="text-[12px] text-[#71717A] leading-[1.55]">{f.d}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* ═══ WHY AI-NATIVE MATTERS — Research Section ═══ */}
         <section className="lp-reveal pt-[120px] max-sm:pt-20 pb-[60px] relative" id="research" ref={addRevealRef}>
           <div className="max-w-[1200px] mx-auto px-12 max-md:px-8 max-sm:px-5">
