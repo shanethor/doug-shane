@@ -14,7 +14,7 @@ const STUDIO_COUPON_ID = "qj03MTZb";
 
 const FEATURES = [
   { icon: Code2, title: "Custom Software Builds", desc: "Tailored CRM, dashboards, and internal tools built exactly for your workflow." },
-  { icon: Bot, title: "AI Agent Integrations", desc: "Deploy intelligent agents that automate prospecting, follow-ups, and client comms." },
+  { icon: Bot, title: "Custom AI Agent Integrations", desc: "Deploy custom intelligent agents that automate prospecting, follow-ups, and client comms." },
   { icon: Workflow, title: "Process Automation", desc: "Eliminate manual tasks with end-to-end workflow automation across your stack." },
   { icon: BarChart3, title: "Data Analytics Dashboards", desc: "Real-time insights into your book, pipeline performance, and growth metrics." },
   { icon: Palette, title: "Marketing Assets", desc: "On-brand collateral, landing pages, and campaign tools — designed and deployed." },
@@ -23,8 +23,15 @@ const FEATURES = [
 
 const TESTIMONIALS = [
   { quote: "Studio built us a custom quoting tool in 4 days that would have taken months internally.", name: "Regional Agency Principal" },
-  { quote: "The AI agent they deployed handles 60% of our initial lead qualification now.", name: "Commercial Lines Producer" },
+  { quote: "The custom AI agent they deployed handles 60% of our initial lead qualification now.", name: "Commercial Lines Producer" },
   { quote: "Our renewal retention went up 12% after they automated our re-marketing workflow.", name: "Operations Manager" },
+];
+
+const TIME_SAVINGS = [
+  { task: "Cold email outreach", without: "8-12 hrs/week", with: "0 hrs/week", saved: "12 hrs" },
+  { task: "Lead research & enrichment", without: "5-8 hrs/week", with: "0 hrs/week", saved: "8 hrs" },
+  { task: "Follow-up sequences", without: "4-6 hrs/week", with: "< 30 min/week", saved: "5.5 hrs" },
+  { task: "Prospect qualification", without: "3-5 hrs/week", with: "< 15 min/week", saved: "4.5 hrs" },
 ];
 
 // Fake blurred Studio dashboard content
@@ -141,6 +148,29 @@ export default function StudioUpsellPage({ isConnectSubscriber = false }: { isCo
                 </div>
               );
             })}
+          </div>
+
+          {/* Time savings comparison */}
+          <div className="rounded-2xl border border-orange-500/20 bg-card/40 backdrop-blur-sm p-5 space-y-4">
+            <h3 className="text-base font-bold text-center">
+              Time Spent on Cold Outreach Per Week
+            </h3>
+            <div className="grid grid-cols-3 gap-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider pb-1 border-b border-border/30">
+              <span>Task</span>
+              <span className="text-center">Without AI Agents</span>
+              <span className="text-center text-orange-400">With AURA Studio</span>
+            </div>
+            {TIME_SAVINGS.map((row, i) => (
+              <div key={i} className="grid grid-cols-3 gap-2 items-center py-1.5 border-b border-border/10 last:border-0">
+                <span className="text-xs text-muted-foreground">{row.task}</span>
+                <span className="text-xs text-center text-red-400/80">{row.without}</span>
+                <span className="text-xs text-center text-orange-400 font-semibold">{row.with}</span>
+              </div>
+            ))}
+            <div className="flex items-center justify-center gap-2 pt-2 border-t border-orange-500/20">
+              <span className="text-sm font-bold text-orange-400">Save 30+ hours per week</span>
+              <span className="text-xs text-muted-foreground">with custom AI agents handling outreach</span>
+            </div>
           </div>
 
           {/* Social proof */}

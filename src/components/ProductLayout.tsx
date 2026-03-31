@@ -1,6 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserBranch } from "@/hooks/useUserBranch";
+import { useEarlyAccessWhitelist } from "@/hooks/useEarlyAccessWhitelist";
 import {
   Network, Wrench, Settings, LogOut, BarChart3, Mail,
   Sparkles, Zap, Calendar, PanelLeftClose, PanelLeft, Lock, Brain,
@@ -147,6 +148,7 @@ export function ProductLayout({
 }) {
   const { signOut } = useAuth();
   const { branch } = useUserBranch();
+  const { isPageGated } = useEarlyAccessWhitelist();
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(() => {
     try { return localStorage.getItem("sidebar-collapsed") === "true"; } catch { return false; }
@@ -193,27 +195,36 @@ export function ProductLayout({
         </div>
 
         {/* Nav items */}
-        <nav className={`flex-1 py-4 space-y-1 ${collapsed ? "px-1" : "px-3"}`}>
-          {CONNECT_NAV.map((item) => {
-            const active = isActive(item.to, item.exact);
-            return (
-              <Link
-                key={item.to}
-                to={item.to}
-                title={collapsed ? item.label : undefined}
-                className={`flex items-center gap-3 rounded-lg text-sm transition-colors ${
-                  collapsed ? "justify-center px-0 py-2.5" : "px-3 py-2.5"
-                } ${
-                  active
-                    ? "bg-sidebar-accent text-sidebar-foreground font-medium"
-                    : "text-sidebar-foreground/40 hover:text-sidebar-foreground/70 hover:bg-sidebar-accent/50"
-                }`}
-              >
-                <item.icon className="h-4 w-4 shrink-0" />
-                {!collapsed && item.label}
-              </Link>
-            );
-          })}
+         <nav className={`flex-1 py-4 space-y-1 ${collapsed ? "px-1" : "px-3"}`}>
+           {CONNECT_NAV.map((item) => {
+             const active = isActive(item.to, item.exact);
+             const pageKey = item.to.replace("/connect/", "") || "connect";
+             const gated = isPageGated(pageKey);
+             return (
+               <Link
+                 key={item.to}
+                 to={item.to}
+                 title={collapsed ? item.label : undefined}
+                 className={`flex items-center gap-3 rounded-lg text-sm transition-colors ${
+                   collapsed ? "justify-center px-0 py-2.5" : "px-3 py-2.5"
+                 } ${
+                   active
+                     ? "bg-sidebar-accent text-sidebar-foreground font-medium"
+                     : gated
+                       ? "text-sidebar-foreground/20 hover:text-sidebar-foreground/30 hover:bg-sidebar-accent/30"
+                       : "text-sidebar-foreground/40 hover:text-sidebar-foreground/70 hover:bg-sidebar-accent/50"
+                 }`}
+               >
+                 {gated ? <Lock className="h-4 w-4 shrink-0 opacity-40" /> : <item.icon className="h-4 w-4 shrink-0" />}
+                 {!collapsed && (
+                   <span className="flex items-center gap-2">
+                     {item.label}
+                     {gated && <span className="text-[8px] px-1 py-0.5 rounded bg-muted text-muted-foreground">Soon</span>}
+                   </span>
+                 )}
+               </Link>
+             );
+           })}
 
           {/* Studio add-on */}
           <button

@@ -154,11 +154,11 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasStudio }:
     <div className="space-y-4">
       {/* Free leads banner for subscribers */}
       {isSubscriber && (
-        <Card className={hasStudio ? "border-purple-500/30 bg-purple-500/5" : "border-emerald-500/30 bg-emerald-500/5"}>
+        <Card className={hasStudio ? "border-orange-500/30 bg-orange-500/5" : "border-emerald-500/30 bg-emerald-500/5"}>
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-2">
-              <Gift className={`h-4 w-4 ${hasStudio ? "text-purple-500" : "text-emerald-500"}`} />
-              <span className={`text-sm font-semibold ${hasStudio ? "text-purple-600" : "text-emerald-600"}`}>
+              <Gift className={`h-4 w-4 ${hasStudio ? "text-orange-500" : "text-emerald-500"}`} />
+              <span className={`text-sm font-semibold ${hasStudio ? "text-orange-500" : "text-emerald-600"}`}>
                 {hasStudio ? "Studio Member — 3× Free Monthly Leads" : "Free Monthly Leads"}
               </span>
             </div>
@@ -183,9 +183,9 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasStudio }:
             Base price: ${pricing.basePrice}/lead • Enriched with full company & contact profiles
           </p>
           {isSubscriber ? (
-            <Badge variant="outline" className={`text-[9px] mt-1 ${hasStudio ? "text-purple-600 border-purple-600/30" : "text-emerald-600 border-emerald-600/30"}`}>
-              {hasStudio ? "🚀 Studio Member — 60% discount applied" : "🎉 Connect Member — 40% discount applied"}
-            </Badge>
+             <Badge variant="outline" className={`text-[9px] mt-1 ${hasStudio ? "text-orange-500 border-orange-500/30" : "text-emerald-600 border-emerald-600/30"}`}>
+               {hasStudio ? "🚀 Studio Member — 60% discount applied" : "🎉 Connect Member — 40% discount applied"}
+             </Badge>
           ) : (
             <Badge variant="outline" className="text-[9px] mt-1 text-amber-600 border-amber-600/30">
               <Lock className="h-2.5 w-2.5 mr-1" /> Subscribe to Connect for 40% off + free monthly leads
@@ -213,7 +213,7 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasStudio }:
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-semibold">{pack.leads} Leads</span>
                     {pack.popular && <Badge className="text-[9px] px-1.5 py-0">Most Popular</Badge>}
-                    {isSubscriber && <Badge variant="secondary" className={`text-[9px] px-1.5 py-0 ${hasStudio ? "text-purple-600" : "text-emerald-600"}`}>{hasStudio ? "60% Off" : "40% Off"}</Badge>}
+                    {isSubscriber && <Badge variant="secondary" className={`text-[9px] px-1.5 py-0 ${hasStudio ? "text-orange-500" : "text-emerald-600"}`}>{hasStudio ? "60% Off" : "40% Off"}</Badge>}
                   </div>
                   <span className="text-[10px] text-muted-foreground">
                     ${Math.round(pack.price / pack.leads)}/lead • Full enrichment
