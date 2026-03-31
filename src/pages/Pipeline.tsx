@@ -951,7 +951,7 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
           </div>
         </div>
         {/* Kanban columns skeleton */}
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 overflow-x-auto">
           {Array.from({ length: 5 }).map((_, col) => (
             <div key={col} className="space-y-3">
               <div className="flex items-center justify-between mb-2">
