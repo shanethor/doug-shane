@@ -1564,8 +1564,30 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
                   className={`transition-opacity ${draggedLeadId === lead.id ? "opacity-40" : ""}`}
                 >
                   <Link to={`/pipeline/${lead.id}`}>
-                    <Card className="hover-lift cursor-grab active:cursor-grabbing group">
+                    <Card className={`hover-lift cursor-grab active:cursor-grabbing group ${
+                      lead.lead_source === "marketplace_referral" 
+                        ? "border-2 border-violet-500/50 ring-1 ring-violet-500/20" 
+                        : lead.lead_source?.startsWith("Lead Engine") 
+                          ? "border-2 border-primary/50 ring-1 ring-primary/20" 
+                          : ""
+                    }`}>
                       <CardContent className="p-3">
+                        {/* Imported lead source badge */}
+                        {(lead.lead_source === "marketplace_referral" || lead.lead_source?.startsWith("Lead Engine")) && (
+                          <div className="mb-1.5">
+                            <Badge variant="outline" className={`text-[9px] gap-0.5 ${
+                              lead.lead_source === "marketplace_referral" 
+                                ? "border-violet-500/30 text-violet-400 bg-violet-500/10" 
+                                : "border-primary/30 text-primary bg-primary/10"
+                            }`}>
+                              {lead.lead_source === "marketplace_referral" ? (
+                                <><Share2 className="h-2.5 w-2.5" /> Marketplace Referral</>
+                              ) : (
+                                <><Zap className="h-2.5 w-2.5" /> AI Generated Lead</>
+                              )}
+                            </Badge>
+                          </div>
+                        )}
                         <div className="flex items-start justify-between">
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-1.5">
