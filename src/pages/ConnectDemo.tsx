@@ -3,9 +3,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ConnectUpsellModal from "@/components/ConnectUpsellModal";
 import {
   Mail, CalendarDays, LayoutGrid, Sparkles, MessageSquare,
-  Network, Send,
+  Network, Send, Palette,
 } from "lucide-react";
 import DemoSpotlightTab from "@/components/connect-demo/DemoSpotlightTab";
+import StudioUpsellPage from "@/components/StudioUpsellPage";
 import DemoPipelineTab from "@/components/connect-demo/DemoPipelineTab";
 import DemoEmailTab from "@/components/connect-demo/DemoEmailTab";
 import DemoCalendarTab from "@/components/connect-demo/DemoCalendarTab";
@@ -58,6 +59,7 @@ const TABS = [
   { value: "outreach", icon: Send, label: "Outreach" },
   { value: "spotlight", icon: Sparkles, label: "Create" },
   { value: "assistant", icon: MessageSquare, label: "Sage" },
+  { value: "studio", icon: Palette, label: "Studio" },
 ];
 
 export default function ConnectDemo() {
@@ -267,6 +269,7 @@ export default function ConnectDemo() {
             <TabsContent value="outreach" className="mt-0"><DemoOutreachTab /></TabsContent>
             <TabsContent value="spotlight" className="mt-0"><DemoSpotlightTab /></TabsContent>
             <TabsContent value="assistant" className="mt-0"><DemoAssistantTab onNavigate={setActiveTab} /></TabsContent>
+            <TabsContent value="studio" className="mt-0"><StudioUpsellPage isConnectSubscriber={false} /></TabsContent>
           </div>
         </Tabs>
       </div>
