@@ -236,8 +236,10 @@ const LIVE_SOURCES = [
   "FEMA Flood Zones", "NOAA Storm Events", "Census / ACS Data", "NHTSA Vehicles",
   "OpenFEMA NFIP", "HUD Housing Data", "Property Records", "Building Permits",
   "Tax Delinquency", "Google Trends",
+  "ATTOM Data", "RentCast", "Regrid Parcels", "BatchData",
+  "FL Citizens Non-Renewal", "State Socrata Portals", "County ArcGIS",
 ];
-const COMING_SOON_SOURCES = ["ZoomInfo"];
+const COMING_SOON_SOURCES = ["ZoomInfo", "PropStream"];
 
 function MonitoringPanel({ onConfigure }: { onConfigure: (source: string) => void }) {
   const { data: configs, isLoading } = useLeadSourceConfigs();
@@ -260,6 +262,13 @@ function MonitoringPanel({ onConfigure }: { onConfigure: (source: string) => voi
     "Building Permits": 1440,
     "Tax Delinquency": 10080,
     "Google Trends": 360,
+    "ATTOM Data": 1440,
+    "RentCast": 1440,
+    "Regrid Parcels": 1440,
+    "BatchData": 1440,
+    "FL Citizens Non-Renewal": 10080,
+    "State Socrata Portals": 1440,
+    "County ArcGIS": 1440,
   };
 
   const DEFAULT_SOURCES = [
@@ -277,6 +286,14 @@ function MonitoringPanel({ onConfigure }: { onConfigure: (source: string) => voi
     { source: "NHTSA Vehicles", detail: "Recalls, VIN decode, crash corridors" },
     { source: "Tax Delinquency", detail: "Delinquent properties — lapsed insurance risk" },
     { source: "Google Trends", detail: "Insurance intent signal monitoring" },
+    { source: "ATTOM Data", detail: "158M properties — daily sales, ownership, valuations" },
+    { source: "RentCast", detail: "140M+ properties — REST API, $0-$99/mo" },
+    { source: "Regrid Parcels", detail: "149M parcels — boundaries + ownership data" },
+    { source: "BatchData", detail: "155M+ properties — pay-per-call enrichment" },
+    { source: "FL Citizens Non-Renewal", detail: "Quarterly non-renewal list — highest-intent leads" },
+    { source: "State Socrata Portals", detail: "IL, WA, CO, DC, OR — copy CT pattern" },
+    { source: "County ArcGIS", detail: "FL, OH, MN, AZ, NC — county assessor REST" },
+    { source: "PropStream", detail: "160M+ properties — UI export tool ($99/mo)" },
     { source: "ZoomInfo", detail: "Contact enrichment" },
   ];
 
