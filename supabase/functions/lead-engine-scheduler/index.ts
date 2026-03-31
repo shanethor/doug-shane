@@ -7,10 +7,32 @@ const corsHeaders = {
 
 // Per-source scan intervals in minutes
 const SCAN_INTERVALS: Record<string, number> = {
-  Reddit: 60,           // hourly
-  LinkedIn: 120,        // every 2 hours
-  "Business Filings": 1440, // daily
-  "Permit Database": 1440,  // daily
+  Reddit: 60,
+  LinkedIn: 120,
+  "Business Filings": 1440,
+  "Permit Database": 1440,
+  "FEMA Flood Zones": 1440,
+  "NOAA Storm Events": 720,
+  "Census / ACS Data": 10080,
+  "NHTSA Vehicles": 1440,
+  "OpenFEMA NFIP": 1440,
+  "HUD Housing Data": 10080,
+  "Property Records": 1440,
+  "Building Permits": 1440,
+  "Tax Delinquency": 10080,
+  "Google Trends": 360,
+  "ATTOM Data": 1440,
+  "RentCast": 1440,
+  "Regrid Parcels": 1440,
+  "BatchData": 1440,
+  "FL Citizens Non-Renewal": 10080,
+  "State Socrata Portals": 1440,
+  "County ArcGIS": 1440,
+  "CT Property Transfers": 1440,
+  "NYC ACRIS": 1440,
+  "MassGIS Parcels": 10080,
+  "NJ MOD-IV / Sales": 10080,
+  "RI Coastal (FEMA)": 10080,
 };
 
 Deno.serve(async (req) => {

@@ -487,7 +487,11 @@ Deno.serve(async (req) => {
       "FL Citizens Non-Renewal": "property",
       "State Socrata Portals": "property",
       "County ArcGIS": "property",
-    };
+      "CT Property Transfers": "property",
+      "NYC ACRIS": "property",
+      "MassGIS Parcels": "property",
+      "NJ MOD-IV / Sales": "property",
+      "RI Coastal (FEMA)": "flood",
     };
 
     const leadsToInsert = generatedLeads.slice(0, 12).map((l: any) => ({

@@ -177,6 +177,42 @@ const SOURCE_META: Record<string, {
       { key: "counties", label: "Counties", placeholder: "Miami-Dade, Franklin, Hennepin, Maricopa" },
     ],
   },
+  "CT Property Transfers": {
+    icon: Landmark, color: "text-emerald-600", bg: "bg-emerald-500/10",
+    fields: [
+      { key: "min_sale_amount", label: "Min Sale Amount ($)", placeholder: "100000" },
+      { key: "towns", label: "CT Towns (optional)", placeholder: "Hartford, Fairfield, New Haven" },
+    ],
+  },
+  "NYC ACRIS": {
+    icon: Building2, color: "text-blue-700", bg: "bg-blue-600/10",
+    fields: [
+      { key: "boroughs", label: "Boroughs", placeholder: "Manhattan, Brooklyn, Queens, Bronx, Staten Island" },
+      { key: "doc_types", label: "Document Types", placeholder: "DEED, MTGE (Mortgage)" },
+    ],
+  },
+  "MassGIS Parcels": {
+    icon: MapPin, color: "text-violet-600", bg: "bg-violet-500/10",
+    fields: [
+      { key: "towns", label: "MA Towns", placeholder: "BOSTON, CAMBRIDGE, WORCESTER" },
+      { key: "use_codes", label: "Use Codes", placeholder: "1010 (SFR), 1020 (Condo), 1040 (Two-Family)" },
+      { key: "min_value", label: "Min Total Value ($)", placeholder: "300000" },
+    ],
+  },
+  "NJ MOD-IV / Sales": {
+    icon: FileText, color: "text-orange-700", bg: "bg-orange-600/10",
+    fields: [
+      { key: "counties", label: "NJ Counties", placeholder: "Bergen, Essex, Hudson, Morris, Monmouth" },
+      { key: "property_class", label: "Property Class", placeholder: "2 (Residential), 3A (Farm), 4A (Commercial)" },
+    ],
+  },
+  "RI Coastal (FEMA)": {
+    icon: CloudRain, color: "text-cyan-600", bg: "bg-cyan-500/10",
+    fields: [
+      { key: "flood_zones", label: "Flood Zones", placeholder: "A, AE, VE (coastal high hazard)" },
+      { key: "towns", label: "RI Towns", placeholder: "Newport, Westerly, Narragansett, Providence" },
+    ],
+  },
   ZoomInfo: {
     icon: Search, color: "text-primary", bg: "bg-primary/10",
     fields: [
