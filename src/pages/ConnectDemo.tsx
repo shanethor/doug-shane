@@ -59,6 +59,7 @@ const TABS = [
   { value: "outreach", icon: Send, label: "Outreach" },
   { value: "spotlight", icon: Sparkles, label: "Create" },
   { value: "assistant", icon: MessageSquare, label: "Sage" },
+  { value: "studio", icon: Palette, label: "Studio" },
 ];
 
 export default function ConnectDemo() {
