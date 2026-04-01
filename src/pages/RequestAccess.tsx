@@ -45,7 +45,24 @@ export default function RequestAccess() {
   const [industryOpen, setIndustryOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [showUpsell, setShowUpsell] = useState(false);
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
+  const [selectedSpecializations, setSelectedSpecializations] = useState<string[]>([]);
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const industryRef = useRef<HTMLDivElement>(null);
+
+  const industryKey = INDUSTRY_KEY_MAP[industry] || "general";
+  const availableVerticals = useMemo(() => getVerticalsForIndustry(industryKey), [industryKey]);
+  const verticalsByGroup = useMemo(() => {
+    const map: Record<string, Vertical[]> = {};
+    for (const v of availableVerticals) (map[v.group] ??= []).push(v);
+    return map;
+  }, [availableVerticals]);
+
+  // Reset specializations when industry changes
+  useEffect(() => {
+    setSelectedSpecializations(availableVerticals.slice(0, 2).map(v => v.id));
+    setExpandedGroups(new Set());
+  }, [industry]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -65,6 +82,37 @@ export default function RequestAccess() {
     i.toLowerCase().includes(industrySearch.toLowerCase())
   );
 
+  const toggleVertical = (id: string) => {
+    setSelectedSpecializations(prev =>
+      prev.includes(id) ? prev.filter(v => v !== id) : [...prev, id]
+    );
+  };
+
+  const toggleGroup = (group: string) => {
+    setExpandedGroups(prev => {
+      const next = new Set(prev);
+      next.has(group) ? next.delete(group) : next.add(group);
+      return next;
+    });
+  };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim()) { toast.error("Please enter your email"); return; }
+    setSubmitting(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) throw error;
+      toast.success("Password reset email sent! Check your inbox.");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to send reset email");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!industry) {
@@ -73,15 +121,25 @@ export default function RequestAccess() {
     }
     setSubmitting(true);
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           emailRedirectTo: `${window.location.origin}/get-started`,
-          data: { full_name: fullName, product_user: true, industry },
+          data: { full_name: fullName, product_user: true, industry: industryKey },
         },
       });
       if (error) throw error;
+
+      // Save specializations to profile
+      if (data.user) {
+        setTimeout(async () => {
+          await supabase
+            .from("profiles")
+            .update({ industry: industryKey, specializations: selectedSpecializations } as any)
+            .eq("user_id", data.user!.id);
+        }, 1000);
+      }
 
       toast.success("Account created! Check your email for a confirmation link.");
       setShowUpsell(true);
