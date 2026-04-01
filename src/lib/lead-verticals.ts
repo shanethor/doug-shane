@@ -695,7 +695,8 @@ export const INDUSTRY_VERTICAL_GROUPS: Record<string, string[]> = {
 };
 
 /* ── Get verticals for a given industry ── */
-export function getVerticalsForIndustry(industry: string): Vertical[] {
+export function getVerticalsForIndustry(industry: string, showAll = false): Vertical[] {
+  if (showAll) return [...VERTICALS];
   const groups = INDUSTRY_VERTICAL_GROUPS[industry] || INDUSTRY_VERTICAL_GROUPS.general;
   return VERTICALS.filter(v => groups.includes(v.group));
 }
