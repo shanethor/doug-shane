@@ -252,7 +252,7 @@ export default function LandingPage() {
             </h1>
             <p className="text-[17px] font-medium max-w-[600px] mx-auto leading-[1.65] mb-8" style={{ color: "hsl(140 12% 58%)" }}>
               <span style={{ color: "hsl(140 12% 72%)" }} className="font-semibold">AURA CONNECT</span> gives your team an AI‑powered workspace for email, calendar, pipeline, and insurance workflows.{" "}
-              <span className="text-[#F59E0B] font-semibold">AURA Studio</span> builds the custom agents and automations that make it yours.
+              <span className="text-[#F59E0B] font-semibold">AURA AGENT</span> builds the custom agents and automations that make it yours.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
               <Link
