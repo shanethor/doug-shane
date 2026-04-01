@@ -549,7 +549,11 @@ function ResultsTable() {
       (scoreFilter === "hot" && s >= 80) ||
       (scoreFilter === "warm" && s >= 50 && s < 80) ||
       (scoreFilter === "cold" && s < 50);
-    return matchesSearch && matchesScore;
+    const hasContact = !!(l.email || l.phone);
+    const matchesContact = contactFilter === "all" ||
+      (contactFilter === "has_contact" && hasContact) ||
+      (contactFilter === "no_contact" && !hasContact);
+    return matchesSearch && matchesScore && matchesContact;
   });
 
   const allSelected = filtered.length > 0 && filtered.every((l: EngineLead) => selectedIds.has(l.id));
