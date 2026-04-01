@@ -72,15 +72,15 @@ function getFreeLeads(baseFreeLeads: number, hasAgent: boolean) {
   return hasAgent ? baseFreeLeads * 2 : baseFreeLeads;
 }
 
-function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasStudio }: {
+function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasAgent }: {
   onGenerate: (opts: any) => void;
   userIndustry: string;
   isSubscriber: boolean;
-  hasStudio: boolean;
+  hasAgent: boolean;
 }) {
   const pricing = INDUSTRY_PRICING[userIndustry] || INDUSTRY_PRICING.general;
-  const packs = getLeadPacks(pricing.basePrice, isSubscriber, hasStudio);
-  const freeLeads = getFreeLeads(pricing.freeLeads, hasStudio);
+  const packs = getLeadPacks(pricing.basePrice, isSubscriber, hasAgent);
+  const freeLeads = getFreeLeads(pricing.freeLeads, hasAgent);
 
   const availableVerticals = useMemo(() => getVerticalsForIndustry(userIndustry), [userIndustry]);
   const verticalsByGroup = useMemo(() => {
@@ -234,17 +234,17 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasStudio }:
     <div className="space-y-4">
       {/* Free leads banner */}
       {isSubscriber && (
-        <Card className={hasStudio ? "border-orange-500/30 bg-orange-500/5" : "border-emerald-500/30 bg-emerald-500/5"}>
+        <Card className={hasAgent ? "border-orange-500/30 bg-orange-500/5" : "border-emerald-500/30 bg-emerald-500/5"}>
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-2">
-              <Gift className={`h-4 w-4 ${hasStudio ? "text-orange-500" : "text-emerald-500"}`} />
-              <span className={`text-sm font-semibold ${hasStudio ? "text-orange-500" : "text-emerald-600"}`}>
-                {hasStudio ? "Studio Member — 3× Free Monthly Leads" : "Free Monthly Leads"}
+              <Gift className={`h-4 w-4 ${hasAgent ? "text-orange-500" : "text-emerald-500"}`} />
+              <span className={`text-sm font-semibold ${hasAgent ? "text-orange-500" : "text-emerald-600"}`}>
+                {hasAgent ? "Agent Member — 3× Free Monthly Leads" : "Free Monthly Leads"}
               </span>
             </div>
             <p className="text-xs text-muted-foreground">
-              {hasStudio
-                ? <>As a Studio member, you get <span className="font-bold text-foreground">{freeLeads} free {pricing.label} leads</span> every month (3× the standard allotment) plus <span className="font-bold text-foreground">60% off</span> all purchased leads. Resets on the 1st.</>
+              {hasAgent
+                ? <>As a Studio member, you get <span className="font-bold text-foreground">{freeLeads} free {pricing.label} leads</span> every month (2× the standard allotment) plus <span className="font-bold text-foreground">50% off</span> all purchased leads. Resets on the 1st.</>
                 : <>As a Connect member, you get <span className="font-bold text-foreground">{freeLeads} free {pricing.label} leads</span> every month. Resets on the 1st.</>
               }
             </p>
@@ -263,8 +263,8 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasStudio }:
             Base price: ${pricing.basePrice}/lead • Enriched with full company & contact profiles
           </p>
           {isSubscriber ? (
-             <Badge variant="outline" className={`text-[9px] mt-1 ${hasStudio ? "text-orange-500 border-orange-500/30" : "text-emerald-600 border-emerald-600/30"}`}>
-               {hasStudio ? "🚀 Studio Member — 60% discount applied" : "🎉 Connect Member — 40% discount applied"}
+             <Badge variant="outline" className={`text-[9px] mt-1 ${hasAgent ? "text-orange-500 border-orange-500/30" : "text-emerald-600 border-emerald-600/30"}`}>
+               {hasAgent ? "🚀 Agent Member — 50% discount applied" : "🎉 Connect Member — 40% discount applied"}
              </Badge>
           ) : (
             <Badge variant="outline" className="text-[9px] mt-1 text-amber-600 border-amber-600/30">
@@ -293,7 +293,7 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasStudio }:
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-semibold">{pack.leads} Leads</span>
                     {pack.popular && <Badge className="text-[9px] px-1.5 py-0">Most Popular</Badge>}
-                    {isSubscriber && <Badge variant="secondary" className={`text-[9px] px-1.5 py-0 ${hasStudio ? "text-orange-500" : "text-emerald-600"}`}>{hasStudio ? "60% Off" : "40% Off"}</Badge>}
+                    {isSubscriber && <Badge variant="secondary" className={`text-[9px] px-1.5 py-0 ${hasAgent ? "text-orange-500" : "text-emerald-600"}`}>{hasAgent ? "50% Off" : "40% Off"}</Badge>}
                   </div>
                   <span className="text-[10px] text-muted-foreground">
                     ${Math.round(pack.price / pack.leads)}/lead • Full enrichment
@@ -843,10 +843,10 @@ function ResultsTable() {
 
 export default function LeadGenerator() {
   const qc = useQueryClient();
-  const { subscribed, hasStudio } = useSubscription();
+  const { subscribed, hasAgent } = useSubscription();
   const [userIndustry, setUserIndustry] = useState<string>("general");
   const [loading, setLoading] = useState(true);
-  const [showStudioDrip, setShowStudioDrip] = useState(false);
+  const [showAgentDrip, setShowAgentDrip] = useState(false);
   const { data: studioQual } = useStudioQualification();
 
   useEffect(() => {
@@ -866,12 +866,12 @@ export default function LeadGenerator() {
 
   // Drip Studio upsell popup for qualified non-Studio users
   useEffect(() => {
-    if (!studioQual?.qualified || hasStudio) return;
-    const dismissed = sessionStorage.getItem("studio-drip-dismissed");
+    if (!studioQual?.qualified || hasAgent) return;
+    const dismissed = sessionStorage.getItem("agent-drip-dismissed");
     if (dismissed) return;
-    const timer = setTimeout(() => setShowStudioDrip(true), 8000);
+    const timer = setTimeout(() => setShowAgentDrip(true), 8000);
     return () => clearTimeout(timer);
-  }, [studioQual?.qualified, hasStudio]);
+  }, [studioQual?.qualified, hasAgent]);
 
   const handleGenerate = (_opts: any) => {
     setTimeout(() => qc.invalidateQueries({ queryKey: ["engine-leads"] }), 1500);
@@ -881,7 +881,7 @@ export default function LeadGenerator() {
   if (loading) return <Skeleton className="h-40 w-full" />;
 
   const pricing = INDUSTRY_PRICING[userIndustry] || INDUSTRY_PRICING.general;
-  const showPromo = !hasStudio && studioQual?.qualified;
+  const showPromo = !hasAgent && studioQual?.qualified;
 
   return (
     <div className="space-y-6">
@@ -899,20 +899,20 @@ export default function LeadGenerator() {
 
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-1 space-y-4">
-          <GenerateControls onGenerate={handleGenerate} userIndustry={userIndustry} isSubscriber={subscribed} hasStudio={hasStudio} />
+          <GenerateControls onGenerate={handleGenerate} userIndustry={userIndustry} isSubscriber={subscribed} hasAgent={hasAgent} />
         </div>
         <div className="lg:col-span-2 space-y-4">
           <ResultsTable />
-          {showPromo && <StudioLeadPromo />}
+          {showPromo && <AuraAgentLeadPromo />}
         </div>
       </div>
 
-      {showStudioDrip && (
-        <StudioUpsellModal
-          open={showStudioDrip}
+      {showAgentDrip && (
+        <AuraAgentUpsellModal
+          open={showAgentDrip}
           onClose={() => {
-            setShowStudioDrip(false);
-            sessionStorage.setItem("studio-drip-dismissed", "true");
+            setShowAgentDrip(false);
+            sessionStorage.setItem("agent-drip-dismissed", "true");
           }}
           isConnectSubscriber={subscribed}
         />
