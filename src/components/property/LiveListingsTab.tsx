@@ -84,7 +84,7 @@ export default function LiveListingsTab({ activeZip }: { activeZip: string }) {
     append ? setLoadingMore(true) : setLoading(true);
     setError(null);
 
-    try {
+    const doFetch = async (): Promise<Listing[]> => {
       const { data: session } = await supabase.auth.getSession();
       const token = session?.session?.access_token;
       if (!token) throw new Error("Not authenticated");
@@ -105,13 +105,21 @@ export default function LiveListingsTab({ activeZip }: { activeZip: string }) {
       }
 
       const json = await res.json();
-      const results: Listing[] = json.listings || [];
+      return json.listings || [];
+    };
+
+    inflightRequests.set(cacheKey, doFetch());
+
+    try {
+      const results = await inflightRequests.get(cacheKey)!;
+      listingsCache.set(cacheKey, { data: results, ts: Date.now() });
 
       if (results.length < 5) setHasMore(false);
       setListings(prev => append ? [...prev, ...results] : results);
     } catch (e: any) {
       setError(e.message || "Failed to fetch listings");
     } finally {
+      inflightRequests.delete(cacheKey);
       setLoading(false);
       setLoadingMore(false);
     }
