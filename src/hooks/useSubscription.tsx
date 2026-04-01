@@ -23,6 +23,7 @@ export function useSubscription() {
     isTrialing: false,
     branch: null,
     hasStudio: false,
+    hasAgent: false,
     loading: true,
     error: null,
   });
