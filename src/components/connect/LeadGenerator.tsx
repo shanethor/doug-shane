@@ -480,6 +480,8 @@ function ResultsTable() {
   const [gameplanLead, setGameplanLead] = useState<EngineLead | null>(null);
   const [enrichingId, setEnrichingId] = useState<string | null>(null);
 
+  const [enrichingAll, setEnrichingAll] = useState(false);
+
   const handleEnrich = async (lead: EngineLead) => {
     setEnrichingId(lead.id);
     try {
@@ -511,6 +513,30 @@ function ResultsTable() {
     } finally {
       setEnrichingId(null);
     }
+  };
+
+  const handleBulkEnrich = async () => {
+    const unenriched = (leads || []).filter((l: EngineLead) => !l.email && !l.phone);
+    if (unenriched.length === 0) { toast.info("All leads already have contact info"); return; }
+    setEnrichingAll(true);
+    let enriched = 0;
+    for (const lead of unenriched.slice(0, 10)) {
+      try {
+        const { data } = await supabase.functions.invoke("enrich-lead", {
+          body: { company: lead.company, contact_name: lead.contact_name, email: lead.email, state: lead.state, industry: lead.industry },
+        });
+        const updates: Partial<EngineLead> = {};
+        if (data?.email) updates.email = data.email;
+        if (data?.phone) updates.phone = data.phone;
+        if (data?.contact_name && !lead.contact_name) updates.contact_name = data.contact_name;
+        if (Object.keys(updates).length > 0) {
+          await updateLead.mutateAsync({ id: lead.id, ...updates });
+          enriched++;
+        }
+      } catch { /* skip */ }
+    }
+    toast.success(`Enriched ${enriched}/${unenriched.slice(0, 10).length} leads with contact info`);
+    setEnrichingAll(false);
   };
 
   const filtered = (leads || []).filter((l: EngineLead) => {
