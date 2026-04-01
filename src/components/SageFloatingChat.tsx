@@ -70,6 +70,7 @@ type SageView = "chat" | "support" | "ticket-form";
 
 export function SageFloatingChat() {
   const { user } = useAuth();
+  const { getAccessiblePages } = useEarlyAccessWhitelist();
   const [open, setOpen] = useState(false);
   const [minimized, setMinimized] = useState(false);
   const [view, setView] = useState<SageView>("chat");
