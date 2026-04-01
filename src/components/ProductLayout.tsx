@@ -22,6 +22,7 @@ const CONNECT_NAV = [
   { to: "/connect/calendar", label: "Calendar", icon: Calendar },
   { to: "/connect/create", label: "Create", icon: Sparkles },
   { to: "/connect/leads", label: "Leads", icon: Target },
+  { to: "/connect/property", label: "Property", icon: Home },
   { to: "/connect/sage", label: "Sage", icon: Zap },
 ];
 
