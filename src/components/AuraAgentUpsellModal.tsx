@@ -119,17 +119,20 @@ export default function AuraAgentUpsellModal({
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <>
-                  Get Started <ArrowRight className="h-4 w-4" />
+                  Begin Deployment <ArrowRight className="h-4 w-4" />
                 </>
               )}
             </Button>
+            <p className="text-[10px] text-muted-foreground/60 text-center leading-snug">
+              We'll begin groundwork &amp; bot spin-up immediately. A brief onboarding call is required before your agent goes live. Full deployment takes 24–72 hours.
+            </p>
 
             <Link to="/book/aura-agent" onClick={onClose}>
               <Button
                 variant="outline"
                 className="w-full gap-2 border-border text-muted-foreground hover:text-foreground hover:bg-muted/50 h-10"
               >
-                <Calendar className="h-3.5 w-3.5" /> Schedule a call first
+                <Calendar className="h-3.5 w-3.5" /> Schedule a Call
               </Button>
             </Link>
           </div>

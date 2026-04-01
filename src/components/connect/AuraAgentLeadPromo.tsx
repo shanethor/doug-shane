@@ -1,11 +1,16 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Zap, ArrowRight, Bot, Sparkles } from "lucide-react";
+import { Zap, ArrowRight, Bot, Sparkles, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import AuraAgentUpsellModal from "@/components/AuraAgentUpsellModal";
 
 export default function AuraAgentLeadPromo() {
+  const [showModal, setShowModal] = useState(false);
+
   return (
+    <>
     <Card className="border-none overflow-hidden" style={{
       background: "linear-gradient(135deg, hsl(25 80% 10%), hsl(30 60% 6%))",
       border: "1px solid hsl(25 80% 25%)",
@@ -35,13 +40,25 @@ export default function AuraAgentLeadPromo() {
                 <Zap className="h-3 w-3" /> 50% off all purchased leads
               </Badge>
             </div>
-            <Button size="sm" className="gap-1.5 text-xs bg-orange-500 hover:bg-orange-600 text-white"
-              onClick={() => { /* Will be handled by parent modal trigger */ }}>
-              Learn More <ArrowRight className="h-3.5 w-3.5" />
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Link to="/book/aura-agent">
+                <Button size="sm" variant="outline" className="gap-1.5 text-xs border-orange-500/30 text-orange-300 hover:bg-orange-500/10 hover:text-orange-200">
+                  <Calendar className="h-3.5 w-3.5" /> Schedule a Call
+                </Button>
+              </Link>
+              <Button size="sm" className="gap-1.5 text-xs bg-orange-500 hover:bg-orange-600 text-white"
+                onClick={() => setShowModal(true)}>
+                Begin Deployment <ArrowRight className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+            <p className="text-[9px] text-orange-200/40 mt-2 leading-snug">
+              Deployment begins immediately — onboarding call required before go-live. Full agent setup takes 24–72 hours.
+            </p>
           </div>
         </div>
       </CardContent>
     </Card>
+    <AuraAgentUpsellModal open={showModal} onClose={() => setShowModal(false)} />
+    </>
   );
 }
