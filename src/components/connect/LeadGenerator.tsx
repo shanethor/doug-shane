@@ -428,14 +428,26 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasStudio }:
               <p className="text-[10px] text-muted-foreground mt-1">{focuses.length} source{focuses.length !== 1 ? "s" : ""} selected</p>
             </div>
           </div>
-          <Button onClick={handleGenerate} disabled={generating} className="w-full gap-1.5">
-            {generating ? (
-              <><Sparkles className="h-4 w-4 animate-pulse" /> Generating enriched leads…</>
-            ) : (
-              <><Zap className="h-4 w-4" /> Generate Leads</>
-            )}
-          </Button>
-           <p className="text-[10px] text-muted-foreground text-center">
+          {generating ? (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-muted-foreground flex items-center gap-1.5">
+                  <Sparkles className="h-3.5 w-3.5 animate-pulse text-primary" />
+                  {genStep}
+                </span>
+                <span className="font-medium text-foreground">{genProgress}%</span>
+              </div>
+              <Progress value={genProgress} className="h-2" />
+              <p className="text-[10px] text-muted-foreground text-center">
+                Estimated time: ~{Math.max(5, Math.round((100 - genProgress) * 0.4))}s remaining
+              </p>
+            </div>
+          ) : (
+            <Button onClick={handleGenerate} className="w-full gap-1.5">
+              <Zap className="h-4 w-4" /> Generate Leads
+            </Button>
+          )}
+          <p className="text-[10px] text-muted-foreground text-center">
             Sourced from 70+ verified public databases including state licensing boards, OSHA, EPA, NOAA, NRCA, PHCC, SAM.gov, SBA, court records, and more. Enriched via Apollo, Hunter & PDL.
           </p>
         </CardContent>
