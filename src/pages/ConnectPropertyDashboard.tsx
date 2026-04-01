@@ -763,6 +763,25 @@ export default function ConnectPropertyDashboard() {
             </div>
           </div>
         </TabsContent>
+
+        {/* ══ Live Listings ══ */}
+        <TabsContent value="listings" className="mt-4 space-y-4">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-xs text-muted-foreground font-medium">Zip:</span>
+            {TERRITORY.zips.map(z => (
+              <Button
+                key={z}
+                variant={activeZip === z ? "default" : "outline"}
+                size="sm"
+                className="text-xs h-7 px-2.5"
+                onClick={() => setActiveZip(z)}
+              >
+                {z}
+              </Button>
+            ))}
+          </div>
+          <LiveListingsTab activeZip={activeZip} />
+        </TabsContent>
       </Tabs>
 
       {/* ══ Contact Detail Drawer ══ */}
