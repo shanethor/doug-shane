@@ -6,6 +6,7 @@ import ReactMarkdown from "react-markdown";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useEarlyAccessWhitelist } from "@/hooks/useEarlyAccessWhitelist";
 import { executeCalendarActions as runCalendarActions, extractCalendarActions } from "@/lib/calendar-action-utils";
 
 type Msg = { role: "user" | "assistant"; content: string };
@@ -69,6 +70,7 @@ type SageView = "chat" | "support" | "ticket-form";
 
 export function SageFloatingChat() {
   const { user } = useAuth();
+  const { getAccessiblePages } = useEarlyAccessWhitelist();
   const [open, setOpen] = useState(false);
   const [minimized, setMinimized] = useState(false);
   const [view, setView] = useState<SageView>("chat");
@@ -131,8 +133,16 @@ export function SageFloatingChat() {
     const ctrl = new AbortController();
     abortRef.current = ctrl;
     let full = "";
+
+    // Build accessible pages context so Sage only helps with what the user can see
+    const accessiblePages = getAccessiblePages();
+    const scopeContext: Msg = {
+      role: "user",
+      content: `[SYSTEM CONTEXT - DO NOT REPEAT]: The user currently has access to these pages only: ${accessiblePages.join(", ")}. Do NOT help with or reference features on pages the user cannot access. If they ask about a gated feature, let them know it's coming soon.`,
+    };
+
     await streamChat({
-      messages: newMsgs,
+      messages: [scopeContext, ...newMsgs],
       onDelta: (t) => { full += t; setStreamContent(full); },
       onDone: () => {
         const cleaned = stripActionMarkers(full);
@@ -144,7 +154,7 @@ export function SageFloatingChat() {
       onError: (e) => { toast.error(e); setStreaming(false); },
       signal: ctrl.signal,
     });
-  }, [executeCalendarActions, input, messages, streaming]);
+  }, [executeCalendarActions, getAccessiblePages, input, messages, streaming]);
 
   const submitTicket = async () => {
     if (!user || !ticketTitle.trim()) return;
