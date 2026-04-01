@@ -926,11 +926,14 @@ function ResultsTable() {
   );
 }
 
+const MASTER_EMAILS = ["shane@houseofthor.com", "dwenz17@gmail.com"];
+
 export default function LeadGenerator() {
   const qc = useQueryClient();
   const { subscribed, hasAgent } = useSubscription();
   const [userIndustry, setUserIndustry] = useState<string>("general");
   const [userSpecializations, setUserSpecializations] = useState<string[] | null>(null);
+  const [isMaster, setIsMaster] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showAgentDrip, setShowAgentDrip] = useState(false);
   const { data: studioQual } = useStudioQualification();
