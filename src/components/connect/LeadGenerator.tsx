@@ -79,6 +79,7 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasAgent, in
   isSubscriber: boolean;
   hasAgent: boolean;
   initialSpecializations?: string[] | null;
+  showAllVerticals?: boolean;
 }) {
   const pricing = INDUSTRY_PRICING[userIndustry] || INDUSTRY_PRICING.general;
   const packs = getLeadPacks(pricing.basePrice, isSubscriber, hasAgent);
