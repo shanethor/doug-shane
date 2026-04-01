@@ -9,6 +9,7 @@ interface SubscriptionState {
   isTrialing: boolean;
   branch: string | null;
   hasStudio: boolean;
+  hasAgent: boolean;
   loading: boolean;
   error: string | null;
 }
