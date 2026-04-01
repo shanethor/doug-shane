@@ -202,7 +202,7 @@ export default function ConnectPropertyDashboard() {
   return (
     <div className="space-y-4 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 animate-fade-in" style={{ animationDelay: "0ms", animationFillMode: "both" }}>
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-xl font-bold">Good morning</h1>

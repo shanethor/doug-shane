@@ -88,7 +88,7 @@ function DarkModeSync() {
         .eq("user_id", session.user.id)
         .maybeSingle()
         .then(({ data }) => {
-          if (data) {
+          if (data && (data as any).dark_mode !== null && (data as any).dark_mode !== undefined) {
             const dark = !!(data as any).dark_mode;
             document.documentElement.classList.toggle("dark", dark);
             localStorage.setItem("aura-dark-mode", dark ? "true" : "false");
