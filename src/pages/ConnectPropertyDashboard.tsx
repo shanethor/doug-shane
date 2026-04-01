@@ -166,6 +166,7 @@ export default function ConnectPropertyDashboard() {
     featuredListings: false,
   });
   const [territoryExpanded, setTerritoryExpanded] = useState(false);
+  const [activeZip, setActiveZip] = useState(TERRITORY.zips[0]);
 
   const repliesCount = CONTACTS.filter(c => c.stage === "replied").length;
   const newSignals = CONTACTS.filter(c => c.stage === "new").length;
