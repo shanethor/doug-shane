@@ -224,7 +224,6 @@ export default function LandingPage() {
               <div className="hidden md:flex gap-1">
                 <a href="#leads" className="text-[13px] text-[#A1A1AA] no-underline px-3 py-1.5 rounded-full hover:text-[hsl(140_12%_72%)] transition-colors">Leads</a>
                 <a href="#connect" className="text-[13px] text-[#A1A1AA] no-underline px-3 py-1.5 rounded-full hover:text-[hsl(140_12%_72%)] transition-colors">Connect</a>
-                <a href="#studio" className="text-[13px] text-[#A1A1AA] no-underline px-3 py-1.5 rounded-full hover:text-[hsl(140_12%_72%)] transition-colors">Studio</a>
                 <a href="#research" className="text-[13px] text-[#A1A1AA] no-underline px-3 py-1.5 rounded-full hover:text-[hsl(140_12%_72%)] transition-colors">Why AI</a>
               </div>
             </div>
@@ -252,7 +251,7 @@ export default function LandingPage() {
             </h1>
             <p className="text-[17px] font-medium max-w-[600px] mx-auto leading-[1.65] mb-8" style={{ color: "hsl(140 12% 58%)" }}>
               <span style={{ color: "hsl(140 12% 72%)" }} className="font-semibold">AURA CONNECT</span> gives your team an AI‑powered workspace for email, calendar, pipeline, and insurance workflows.{" "}
-              <span className="text-[#F59E0B] font-semibold">AURA Studio</span> builds the custom agents and automations that make it yours.
+              <span className="text-[#F59E0B] font-semibold">AURA AGENT</span> builds the custom agents and automations that make it yours.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-6">
               <Link
@@ -410,8 +409,8 @@ export default function LandingPage() {
 
                   {/* Pricing block */}
                   <div className="p-5 border rounded-xl mb-6" style={{ background: "hsl(140 12% 42% / 0.04)", borderColor: "hsl(140 12% 42% / 0.15)" }}>
-                    <div className="text-sm text-[#A1A1AA] mb-1"><strong className="text-white text-lg">$250</strong>/month per account</div>
-                    <div className="text-sm font-medium mb-1" style={{ color: "hsl(140 12% 62%)" }}>Launch offer: $100/month for the first 6 months</div>
+                    <div className="text-sm text-[#A1A1AA] mb-1"><strong className="text-white text-lg">$249</strong>/month per account</div>
+                    <div className="text-sm font-medium mb-1" style={{ color: "hsl(140 12% 62%)" }}>Launch offer: $99/month during buildout</div>
                     <div className="text-[12px] text-[#71717A] leading-[1.55]">Month‑to‑month SaaS · no long‑term contract required.</div>
                   </div>
 
@@ -515,133 +514,7 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* ═══ AURA STUDIO (formerly Concierge) ═══ */}
-        <section className="lp-reveal pt-[120px] max-sm:pt-20 pb-[60px] relative" id="studio" ref={addRevealRef}>
-          <div className="max-w-[1200px] mx-auto px-12 max-md:px-8 max-sm:px-5">
-            <div className="border-t border-white/[0.06] pt-14">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-16">
-                {/* Left column */}
-                <div>
-                  <div className="text-[11px] font-semibold tracking-[0.12em] uppercase text-[#F59E0B] mb-4">AURA Studio</div>
-                  <h2 className="text-[clamp(32px,4vw,48px)] font-bold tracking-[-0.04em] leading-[1.05] text-white mb-5">
-                    Custom Tools &amp; AI Agents,<br />Done for You
-                  </h2>
-                  <p className="text-[15px] text-[#71717A] leading-[1.65] mb-6">
-                    We design, build, and maintain AI agents and custom tools that plug into AURA CONNECT and your existing systems.
-                  </p>
-
-                  {/* Pricing callout */}
-                  <div className="p-5 bg-[#101012] border border-white/[0.06] rounded-xl mb-6">
-                    <div className="text-sm text-[#A1A1AA] mb-1"><strong className="text-white text-lg">$1,500</strong>/month</div>
-                    <div className="text-sm text-[#F59E0B] font-medium mb-1">3‑month minimum term, then month‑to‑month</div>
-                    <div className="text-[12px] text-[#71717A] leading-[1.55]">No long‑term contract after the initial term.</div>
-                  </div>
-
-                  {/* What's included */}
-                  <ul className="space-y-2.5 mb-6 text-[13px] text-[#A1A1AA]">
-                    <li className="flex items-start gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 bg-[#F59E0B]" />
-                      Design and build 1–2 custom tools or AI agents (e.g., intake flows, dashboards, internal copilots) in the first 90 days.
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 bg-[#F59E0B]" />
-                      Integrate AI into your email, calendar, CRM/AMS, and document workflows.
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 bg-[#F59E0B]" />
-                      Ongoing monthly improvements, prompt tuning, and small feature builds.
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 bg-[#F59E0B]" />
-                      Structured handoff and training so your team can operate and extend what we build.
-                    </li>
-                  </ul>
-
-                  {/* Who it's for */}
-                  <div className="text-[12px] text-[#52525B] leading-[1.55] mb-6 border-l-2 border-[#F59E0B]/30 pl-3">
-                    <span className="text-[#A1A1AA] font-medium">Who it's for:</span> Small and mid‑sized firms that need a product and AI team — without hiring one.
-                  </div>
-
-                  <div className="flex items-center gap-4">
-                    <Link
-                      to="/studiodemo"
-                      className="inline-flex items-center gap-2 text-sm font-medium text-[#08080A] bg-[#F59E0B] px-7 py-3 rounded-[10px] hover:bg-[#FBBF24] transition-colors no-underline"
-                      aria-label="Talk to AURA Studio"
-                    >
-                      Talk to AURA Studio
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4">
-                        <path d="M5 12h14" /><path d="M12 5l7 7-7 7" />
-                      </svg>
-                    </Link>
-                    <Link
-                      to="/book/aura-studio"
-                      className="inline-flex items-center gap-2 text-sm font-medium text-white border border-[#F59E0B]/30 px-6 py-3 rounded-[10px] hover:border-[#F59E0B]/60 hover:bg-[#F59E0B]/[0.06] transition-all no-underline"
-                    >
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 text-[#F59E0B]">
-                        <rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4" /><path d="M8 2v4" /><path d="M3 10h18" /><path d="M8 14h.01" /><path d="M12 14h.01" /><path d="M16 14h.01" /><path d="M8 18h.01" /><path d="M12 18h.01" />
-                      </svg>
-                      Schedule a call
-                    </Link>
-                  </div>
-                </div>
-
-                {/* Right column — feature cards */}
-                <div>
-                  <div className="rounded-[20px] overflow-hidden border border-white/[0.06] aspect-[16/9] relative mb-4">
-                    <img src="/images/concierge-toolkit.png" alt="AURA Studio — custom AI tools" loading="eager" decoding="async" className="w-full h-full object-cover" />
-                    <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-[#08080A]/60 to-transparent" />
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {[
-                      {
-                        icon: (
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 text-[#F59E0B]">
-                            <rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" />
-                          </svg>
-                        ),
-                        t: "Custom web tools & dashboards",
-                        d: "Intake flows, quote tools, and internal dashboards that plug into your workflows.",
-                      },
-                      {
-                        icon: (
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 text-[#F59E0B]">
-                            <path d="M3 3v18h18" /><path d="M7 16l4-8 4 5 5-6" />
-                          </svg>
-                        ),
-                        t: "AI agent design & integration",
-                        d: "Custom copilots and assistants wired into your CRM, AMS, and communication tools.",
-                      },
-                      {
-                        icon: (
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 text-[#F59E0B]">
-                            <path d="M4 4h16v16H4z" /><path d="M9 9h6v6H9z" />
-                          </svg>
-                        ),
-                        t: "Design & template library",
-                        d: "Sales decks, one‑pagers, proposal templates, and social graphics — all on brand.",
-                      },
-                      {
-                        icon: (
-                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 text-[#F59E0B]">
-                            <path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83" />
-                          </svg>
-                        ),
-                        t: "Process & automation builds",
-                        d: "Intake forms, checklists, and automations that connect the tools you already use.",
-                      },
-                    ].map((f) => (
-                      <div key={f.t} className="p-4 bg-[#101012] border border-white/[0.06] rounded-xl">
-                        <div className="mb-2">{f.icon}</div>
-                        <div className="text-[13px] font-semibold text-white mb-1">{f.t}</div>
-                        <div className="text-[12px] text-[#71717A] leading-[1.55]">{f.d}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
+        {/* ═══ AURA STUDIO — hidden for now ═══ */}
 
         {/* ═══ WHY AI-NATIVE MATTERS — Research Section ═══ */}
         <section className="lp-reveal pt-[120px] max-sm:pt-20 pb-[60px] relative" id="research" ref={addRevealRef}>
@@ -668,7 +541,7 @@ export default function LandingPage() {
               </div>
 
               <p className="text-[14px] text-[#71717A] leading-[1.65] max-w-[700px]">
-                <span className="font-semibold text-white">AURA CONNECT</span> and <span className="font-semibold text-[#F59E0B]">AURA Studio</span> are built to help small and mid‑sized firms capture these same gains — without hiring an internal AI team.
+                <span className="font-semibold text-white">AURA CONNECT</span> and <span className="font-semibold text-[#F59E0B]">AURA AGENT</span> are built to help small and mid‑sized firms capture these same gains — without hiring an internal AI team.
               </p>
             </div>
           </div>
@@ -696,7 +569,6 @@ export default function LandingPage() {
               <div className="text-[13px] font-semibold text-white mb-4">Platform</div>
               <a href="#leads" className="block text-[13px] text-[#71717A] py-1 hover:text-white transition-colors no-underline">AURA Leads</a>
               <a href="#connect" className="block text-[13px] text-[#71717A] py-1 hover:text-white transition-colors no-underline">AURA Connect</a>
-              <a href="#studio" className="block text-[13px] text-[#71717A] py-1 hover:text-white transition-colors no-underline">AURA Studio</a>
               <a href="#research" className="block text-[13px] text-[#71717A] py-1 hover:text-white transition-colors no-underline">Why AI</a>
             </div>
             <div>
