@@ -1401,7 +1401,7 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
       </div>
 
       {/* Stats Bar: Weighted Pipeline + Goal Progress */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4 animate-fade-in" style={{ animationDelay: "100ms", animationFillMode: "both" }}>
         <Card>
           <CardContent className="p-3">
             <div className="flex items-center gap-2 mb-1">
