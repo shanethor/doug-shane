@@ -14,6 +14,7 @@ import DemoAssistantTab from "@/components/connect-demo/DemoAssistantTab";
 import ConnectIntelligencePage from "@/pages/ConnectIntelligence";
 import ConnectLeads from "@/pages/ConnectLeads";
 import ConnectRewardsPage from "@/pages/ConnectRewards";
+import ConnectPropertyDashboard from "@/pages/ConnectPropertyDashboard";
 import { ComingSoonGate } from "@/components/connect/ComingSoonGate";
 import { useEarlyAccessWhitelist } from "@/hooks/useEarlyAccessWhitelist";
 
@@ -123,6 +124,7 @@ export default function ConnectProduct() {
   // Determine which page to render based on path
   const path = location.pathname;
   const getPage = () => {
+    if (path.startsWith("/connect/property")) return "property";
     if (path.startsWith("/connect/intelligence")) return "intelligence";
     if (path.startsWith("/connect/rewards")) return "rewards";
     if (path.startsWith("/connect/leads")) return "leads";
@@ -166,6 +168,7 @@ export default function ConnectProduct() {
             {page === "connect" && (isPageGated("connect") ? <ComingSoonGate pageName="Connect" /> : <DemoConnectTab contentReady={introComplete} />)}
             {page === "intelligence" && (isPageGated("intelligence") ? <ComingSoonGate pageName="Intelligence" /> : <ConnectIntelligencePage />)}
             {page === "rewards" && (isPageGated("rewards") ? <ComingSoonGate pageName="Rewards" /> : <ConnectRewardsPage />)}
+            {page === "property" && <ConnectPropertyDashboard />}
             {page === "leads" && <ConnectLeads />}
             {page === "pipeline" && <ConnectPipelineTab />}
             {page === "email" && (isPageGated("email") ? <ComingSoonGate pageName="Email" /> : <DemoEmailTab />)}

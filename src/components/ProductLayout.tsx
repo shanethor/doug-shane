@@ -5,7 +5,7 @@ import { useEarlyAccessWhitelist } from "@/hooks/useEarlyAccessWhitelist";
 import {
   Network, Wrench, Settings, LogOut, BarChart3, Mail,
   Sparkles, Zap, Calendar, PanelLeftClose, PanelLeft, Lock, Brain,
-  MoreHorizontal, Target, Gift,
+  MoreHorizontal, Target, Gift, Home,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
@@ -22,6 +22,7 @@ const CONNECT_NAV = [
   { to: "/connect/calendar", label: "Calendar", icon: Calendar },
   { to: "/connect/create", label: "Create", icon: Sparkles },
   { to: "/connect/leads", label: "Leads", icon: Target },
+  { to: "/connect/property", label: "Property", icon: Home },
   { to: "/connect/sage", label: "Sage", icon: Zap },
 ];
 
@@ -33,6 +34,7 @@ const ICON_MAP: Record<string, any> = {
   calendar: Calendar,
   create: Sparkles,
   leads: Target,
+  property: Home,
   sage: Zap,
 };
 
