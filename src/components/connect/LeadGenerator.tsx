@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
@@ -95,6 +96,8 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasStudio }:
   const [focuses, setFocuses] = useState<string[]>(["new_business"]);
   const [selectedPack, setSelectedPack] = useState(50);
   const [generating, setGenerating] = useState(false);
+  const [genProgress, setGenProgress] = useState(0);
+  const [genStep, setGenStep] = useState("");
   const [purchasing, setPurchasing] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
@@ -142,6 +145,8 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasStudio }:
 
   const handleGenerate = async () => {
     setGenerating(true);
+    setGenProgress(0);
+    setGenStep("Initializing scan…");
     try {
       const states = geo === "All States" ? [] : [geo];
       const settings: Record<string, string> = {
@@ -153,11 +158,22 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasStudio }:
 
       let totalFound = 0;
       const sourceNames: string[] = [];
+      const totalSources = focuses.length;
+      const basePerSource = 70 / totalSources;
 
-      for (const focusKey of focuses) {
+      // Simulate initial ramp
+      setGenProgress(5);
+      setGenStep("Connecting to databases…");
+      await new Promise(r => setTimeout(r, 600));
+      setGenProgress(10);
+
+      for (let i = 0; i < focuses.length; i++) {
+        const focusKey = focuses[i];
         const src = activeSources.find(s => s.key === focusKey);
         const source = src?.label || "Business Filings";
         sourceNames.push(source);
+        setGenStep(`Scanning ${source}…`);
+        setGenProgress(10 + Math.round(basePerSource * i));
         try {
           const { data, error } = await supabase.functions.invoke("lead-engine-scan", {
             body: { source, settings, enrich: true },
@@ -167,7 +183,17 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasStudio }:
         } catch (err: any) {
           console.warn(`Failed scanning ${source}:`, err.message);
         }
+        setGenProgress(10 + Math.round(basePerSource * (i + 1)));
       }
+
+      setGenProgress(80);
+      setGenStep("Enriching contacts…");
+      await new Promise(r => setTimeout(r, 800));
+      setGenProgress(90);
+      setGenStep("Scoring & deduplicating…");
+      await new Promise(r => setTimeout(r, 500));
+      setGenProgress(100);
+      setGenStep("Complete!");
 
       onGenerate({ geo, volume: selectedPack, focuses, leads_found: totalFound });
       if (totalFound > 0) {
@@ -178,7 +204,10 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasStudio }:
     } catch (err: any) {
       toast.error(err.message || "Lead generation failed");
     } finally {
+      await new Promise(r => setTimeout(r, 600));
       setGenerating(false);
+      setGenProgress(0);
+      setGenStep("");
     }
   };
 
@@ -400,14 +429,26 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasStudio }:
               <p className="text-[10px] text-muted-foreground mt-1">{focuses.length} source{focuses.length !== 1 ? "s" : ""} selected</p>
             </div>
           </div>
-          <Button onClick={handleGenerate} disabled={generating} className="w-full gap-1.5">
-            {generating ? (
-              <><Sparkles className="h-4 w-4 animate-pulse" /> Generating enriched leads…</>
-            ) : (
-              <><Zap className="h-4 w-4" /> Generate Leads</>
-            )}
-          </Button>
-           <p className="text-[10px] text-muted-foreground text-center">
+          {generating ? (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-muted-foreground flex items-center gap-1.5">
+                  <Sparkles className="h-3.5 w-3.5 animate-pulse text-primary" />
+                  {genStep}
+                </span>
+                <span className="font-medium text-foreground">{genProgress}%</span>
+              </div>
+              <Progress value={genProgress} className="h-2" />
+              <p className="text-[10px] text-muted-foreground text-center">
+                Estimated time: ~{Math.max(5, Math.round((100 - genProgress) * 0.4))}s remaining
+              </p>
+            </div>
+          ) : (
+            <Button onClick={handleGenerate} className="w-full gap-1.5">
+              <Zap className="h-4 w-4" /> Generate Leads
+            </Button>
+          )}
+          <p className="text-[10px] text-muted-foreground text-center">
             Sourced from 70+ verified public databases including state licensing boards, OSHA, EPA, NOAA, NRCA, PHCC, SAM.gov, SBA, court records, and more. Enriched via Apollo, Hunter & PDL.
           </p>
         </CardContent>
