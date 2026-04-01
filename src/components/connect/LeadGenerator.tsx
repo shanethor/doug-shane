@@ -73,18 +73,19 @@ function getFreeLeads(baseFreeLeads: number, hasAgent: boolean) {
   return hasAgent ? baseFreeLeads * 2 : baseFreeLeads;
 }
 
-function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasAgent, initialSpecializations }: {
+function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasAgent, initialSpecializations, showAllVerticals }: {
   onGenerate: (opts: any) => void;
   userIndustry: string;
   isSubscriber: boolean;
   hasAgent: boolean;
   initialSpecializations?: string[] | null;
+  showAllVerticals?: boolean;
 }) {
   const pricing = INDUSTRY_PRICING[userIndustry] || INDUSTRY_PRICING.general;
   const packs = getLeadPacks(pricing.basePrice, isSubscriber, hasAgent);
   const freeLeads = getFreeLeads(pricing.freeLeads, hasAgent);
 
-  const availableVerticals = useMemo(() => getVerticalsForIndustry(userIndustry), [userIndustry]);
+  const availableVerticals = useMemo(() => getVerticalsForIndustry(userIndustry, showAllVerticals), [userIndustry, showAllVerticals]);
   const verticalsByGroup = useMemo(() => {
     const map: Record<string, Vertical[]> = {};
     for (const v of availableVerticals) {
@@ -925,11 +926,14 @@ function ResultsTable() {
   );
 }
 
+const MASTER_EMAILS = ["shane@houseofthor.com", "dwenz17@gmail.com"];
+
 export default function LeadGenerator() {
   const qc = useQueryClient();
   const { subscribed, hasAgent } = useSubscription();
   const [userIndustry, setUserIndustry] = useState<string>("general");
   const [userSpecializations, setUserSpecializations] = useState<string[] | null>(null);
+  const [isMaster, setIsMaster] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showAgentDrip, setShowAgentDrip] = useState(false);
   const { data: studioQual } = useStudioQualification();
@@ -938,6 +942,7 @@ export default function LeadGenerator() {
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
+        setIsMaster(MASTER_EMAILS.includes(user.email?.toLowerCase() ?? ""));
         const { data: profile } = await supabase
           .from("profiles")
           .select("industry, specializations")
@@ -987,7 +992,7 @@ export default function LeadGenerator() {
 
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-1 space-y-4">
-          <GenerateControls onGenerate={handleGenerate} userIndustry={userIndustry} isSubscriber={subscribed} hasAgent={hasAgent} initialSpecializations={userSpecializations} />
+          <GenerateControls onGenerate={handleGenerate} userIndustry={userIndustry} isSubscriber={subscribed} hasAgent={hasAgent} initialSpecializations={userSpecializations} showAllVerticals={isMaster} />
         </div>
         <div className="lg:col-span-2 space-y-4">
           <ResultsTable />
