@@ -268,7 +268,7 @@ export default function ConnectPropertyDashboard() {
         </Card>
       </div>
 
-      <Tabs value={tab} onValueChange={setTab} className="w-full">
+      <Tabs value={tab} onValueChange={setTab} className="w-full animate-fade-in" style={{ animationDelay: "200ms", animationFillMode: "both" }}>
         <TabsList className="w-full sm:w-auto bg-muted/50 flex-wrap h-auto gap-0.5 p-1">
           <TabsTrigger value="digest" className="text-xs">Digest</TabsTrigger>
           <TabsTrigger value="pipeline" className="text-xs">Pipeline</TabsTrigger>
