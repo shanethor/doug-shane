@@ -200,6 +200,32 @@ export default function ProductAuth() {
             </Button>
           </form>
 
+          {!isSignUp && (
+            <div className="mt-3 text-right">
+              <button
+                type="button"
+                onClick={async () => {
+                  if (!email.trim()) { toast.error("Enter your email first"); return; }
+                  setSubmitting(true);
+                  try {
+                    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                      redirectTo: `${window.location.origin}/reset-password`,
+                    });
+                    if (error) throw error;
+                    toast.success("Password reset email sent! Check your inbox.");
+                  } catch (err: any) {
+                    toast.error(err.message || "Failed to send reset email");
+                  } finally {
+                    setSubmitting(false);
+                  }
+                }}
+                className="text-xs text-white/40 hover:text-white/60 transition-colors underline underline-offset-4"
+              >
+                Forgot password?
+              </button>
+            </div>
+          )}
+
           <div className="mt-6 text-center">
             <button
               onClick={() => setIsSignUp(!isSignUp)}

@@ -72,11 +72,12 @@ function getFreeLeads(baseFreeLeads: number, hasAgent: boolean) {
   return hasAgent ? baseFreeLeads * 2 : baseFreeLeads;
 }
 
-function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasAgent }: {
+function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasAgent, initialSpecializations }: {
   onGenerate: (opts: any) => void;
   userIndustry: string;
   isSubscriber: boolean;
   hasAgent: boolean;
+  initialSpecializations?: string[] | null;
 }) {
   const pricing = INDUSTRY_PRICING[userIndustry] || INDUSTRY_PRICING.general;
   const packs = getLeadPacks(pricing.basePrice, isSubscriber, hasAgent);
@@ -92,9 +93,14 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasAgent }: 
   }, [availableVerticals]);
 
   const [geo, setGeo] = useState("All States");
-  const [selectedVerticals, setSelectedVerticals] = useState<string[]>(() =>
-    availableVerticals.slice(0, 2).map(v => v.id)
-  );
+  const [selectedVerticals, setSelectedVerticals] = useState<string[]>(() => {
+    if (initialSpecializations?.length) {
+      // Filter to only those that are valid for this industry
+      const valid = initialSpecializations.filter(id => availableVerticals.some(v => v.id === id));
+      return valid.length > 0 ? valid : availableVerticals.slice(0, 2).map(v => v.id);
+    }
+    return availableVerticals.slice(0, 2).map(v => v.id);
+  });
   const [focuses, setFocuses] = useState<string[]>(["new_business"]);
   const [selectedPack, setSelectedPack] = useState(50);
   const [generating, setGenerating] = useState(false);
@@ -845,6 +851,7 @@ export default function LeadGenerator() {
   const qc = useQueryClient();
   const { subscribed, hasAgent } = useSubscription();
   const [userIndustry, setUserIndustry] = useState<string>("general");
+  const [userSpecializations, setUserSpecializations] = useState<string[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [showAgentDrip, setShowAgentDrip] = useState(false);
   const { data: studioQual } = useStudioQualification();
@@ -855,10 +862,13 @@ export default function LeadGenerator() {
       if (user) {
         const { data: profile } = await supabase
           .from("profiles")
-          .select("industry")
+          .select("industry, specializations")
           .eq("user_id", user.id)
           .maybeSingle();
         if (profile?.industry) setUserIndustry(profile.industry);
+        if ((profile as any)?.specializations?.length) {
+          setUserSpecializations((profile as any).specializations);
+        }
       }
       setLoading(false);
     })();
@@ -899,7 +909,7 @@ export default function LeadGenerator() {
 
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-1 space-y-4">
-          <GenerateControls onGenerate={handleGenerate} userIndustry={userIndustry} isSubscriber={subscribed} hasAgent={hasAgent} />
+          <GenerateControls onGenerate={handleGenerate} userIndustry={userIndustry} isSubscriber={subscribed} hasAgent={hasAgent} initialSpecializations={userSpecializations} />
         </div>
         <div className="lg:col-span-2 space-y-4">
           <ResultsTable />

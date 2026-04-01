@@ -1,12 +1,14 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, ArrowRight, Check, Loader2, Search, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Loader2, Search, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import ConnectUpsellPopup from "@/components/ConnectUpsellPopup";
+import { getVerticalsForIndustry, type Vertical } from "@/lib/lead-verticals";
 
 const INDUSTRIES = [
   "Insurance", "Mortgage", "Real Estate", "Property", "Consulting", "General Business",
@@ -20,6 +22,18 @@ const INDUSTRIES = [
   "SaaS / Software", "Telecommunications", "Transportation", "Wealth Management", "Other",
 ];
 
+/* Map display industry names to internal keys for lead verticals */
+const INDUSTRY_KEY_MAP: Record<string, string> = {
+  "Insurance": "insurance",
+  "Mortgage": "mortgage",
+  "Real Estate": "real_estate",
+  "Property": "property",
+  "Consulting": "consulting",
+  "General Business": "general",
+  "Financial Planning": "financial_advisor",
+  "Wealth Management": "financial_advisor",
+};
+
 export default function RequestAccess() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -31,7 +45,24 @@ export default function RequestAccess() {
   const [industryOpen, setIndustryOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [showUpsell, setShowUpsell] = useState(false);
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
+  const [selectedSpecializations, setSelectedSpecializations] = useState<string[]>([]);
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const industryRef = useRef<HTMLDivElement>(null);
+
+  const industryKey = INDUSTRY_KEY_MAP[industry] || "general";
+  const availableVerticals = useMemo(() => getVerticalsForIndustry(industryKey), [industryKey]);
+  const verticalsByGroup = useMemo(() => {
+    const map: Record<string, Vertical[]> = {};
+    for (const v of availableVerticals) (map[v.group] ??= []).push(v);
+    return map;
+  }, [availableVerticals]);
+
+  // Reset specializations when industry changes
+  useEffect(() => {
+    setSelectedSpecializations(availableVerticals.slice(0, 2).map(v => v.id));
+    setExpandedGroups(new Set());
+  }, [industry]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -51,6 +82,37 @@ export default function RequestAccess() {
     i.toLowerCase().includes(industrySearch.toLowerCase())
   );
 
+  const toggleVertical = (id: string) => {
+    setSelectedSpecializations(prev =>
+      prev.includes(id) ? prev.filter(v => v !== id) : [...prev, id]
+    );
+  };
+
+  const toggleGroup = (group: string) => {
+    setExpandedGroups(prev => {
+      const next = new Set(prev);
+      next.has(group) ? next.delete(group) : next.add(group);
+      return next;
+    });
+  };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim()) { toast.error("Please enter your email"); return; }
+    setSubmitting(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) throw error;
+      toast.success("Password reset email sent! Check your inbox.");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to send reset email");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!industry) {
@@ -59,15 +121,25 @@ export default function RequestAccess() {
     }
     setSubmitting(true);
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           emailRedirectTo: `${window.location.origin}/get-started`,
-          data: { full_name: fullName, product_user: true, industry },
+          data: { full_name: fullName, product_user: true, industry: industryKey },
         },
       });
       if (error) throw error;
+
+      // Save specializations to profile
+      if (data.user) {
+        setTimeout(async () => {
+          await supabase
+            .from("profiles")
+            .update({ industry: industryKey, specializations: selectedSpecializations } as any)
+            .eq("user_id", data.user!.id);
+        }, 1000);
+      }
 
       toast.success("Account created! Check your email for a confirmation link.");
       setShowUpsell(true);
@@ -77,6 +149,29 @@ export default function RequestAccess() {
       setSubmitting(false);
     }
   };
+
+  if (isForgotPassword) {
+    return (
+      <div className="min-h-screen bg-[#08080A] text-[#FAFAFA] flex items-center justify-center px-4 py-12">
+        <div className="w-full max-w-md">
+          <button onClick={() => setIsForgotPassword(false)} className="flex items-center gap-2 text-sm text-[#A1A1AA] hover:text-white mb-8 transition-colors">
+            <ArrowLeft className="w-4 h-4" /> Back to sign up
+          </button>
+          <h1 className="text-2xl font-bold tracking-tight text-center mb-2">Reset your password</h1>
+          <p className="text-sm text-[#71717A] text-center mb-8">Enter your email and we'll send you a reset link.</p>
+          <form onSubmit={handleForgotPassword} className="space-y-4">
+            <div className="space-y-2">
+              <Label className="text-xs uppercase tracking-wider text-[#71717A]">Email</Label>
+              <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@company.com" required className="h-11 bg-white/5 border-white/10 text-white placeholder:text-white/20" autoFocus />
+            </div>
+            <button type="submit" disabled={submitting} className="w-full py-3 rounded-xl text-sm font-semibold bg-[hsl(140_12%_42%)] text-[#08080A] hover:bg-[hsl(140_12%_52%)] transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+              {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Send reset link"}
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#08080A] text-[#FAFAFA] flex items-center justify-center px-4 py-12">
@@ -177,6 +272,52 @@ export default function RequestAccess() {
             </div>
           </div>
 
+          {/* Specializations - shown after industry selection */}
+          {industry && availableVerticals.length > 0 && (
+            <div className="space-y-2">
+              <Label className="text-xs uppercase tracking-wider text-[#71717A]">Specializations</Label>
+              <p className="text-[10px] text-[#52525B]">Select the verticals you'll be sourcing leads for</p>
+              <div className="rounded-lg border border-white/10 bg-white/[0.02] p-3 space-y-2 max-h-48 overflow-y-auto">
+                {Object.entries(verticalsByGroup).map(([group, verts]) => (
+                  <div key={group}>
+                    <button
+                      type="button"
+                      onClick={() => toggleGroup(group)}
+                      className="w-full flex items-center justify-between py-1 text-xs font-medium text-[#A1A1AA] hover:text-white transition-colors"
+                    >
+                      <span>{group}</span>
+                      <div className="flex items-center gap-1.5">
+                        <Badge variant="secondary" className="text-[9px] px-1.5 py-0 bg-white/5 text-[#71717A]">
+                          {verts.filter(v => selectedSpecializations.includes(v.id)).length}/{verts.length}
+                        </Badge>
+                        {expandedGroups.has(group) ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                      </div>
+                    </button>
+                    {expandedGroups.has(group) && (
+                      <div className="grid grid-cols-2 gap-1.5 pb-2">
+                        {verts.map(v => (
+                          <button
+                            key={v.id}
+                            type="button"
+                            onClick={() => toggleVertical(v.id)}
+                            className={`rounded-md border p-2 text-left text-[11px] font-medium transition-all ${
+                              selectedSpecializations.includes(v.id)
+                                ? "border-[hsl(140_12%_42%)] bg-[hsl(140_12%_42%/0.1)] text-white"
+                                : "border-white/10 text-[#71717A] hover:border-white/20"
+                            }`}
+                          >
+                            {v.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+                <p className="text-[10px] text-[#52525B]">{selectedSpecializations.length} specialization{selectedSpecializations.length !== 1 ? "s" : ""} selected</p>
+              </div>
+            </div>
+          )}
+
           <button
             type="submit"
             disabled={submitting}
@@ -193,11 +334,17 @@ export default function RequestAccess() {
           </button>
         </form>
 
-        <div className="mt-6 text-center">
+        <div className="mt-6 text-center space-y-2">
           <p className="text-xs text-[#52525B]">
             Already have an account?{" "}
             <Link to="/get-started" className="text-[hsl(140_12%_58%)] hover:underline">Sign in</Link>
           </p>
+          <button
+            onClick={() => setIsForgotPassword(true)}
+            className="text-xs text-[#52525B] hover:text-[#71717A] underline underline-offset-4"
+          >
+            Forgot password?
+          </button>
         </div>
 
         <p className="text-xs text-[#3F3F46] text-center mt-6">
