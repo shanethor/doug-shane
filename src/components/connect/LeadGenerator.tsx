@@ -85,7 +85,7 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasAgent, in
   const packs = getLeadPacks(pricing.basePrice, isSubscriber, hasAgent);
   const freeLeads = getFreeLeads(pricing.freeLeads, hasAgent);
 
-  const availableVerticals = useMemo(() => getVerticalsForIndustry(userIndustry), [userIndustry]);
+  const availableVerticals = useMemo(() => getVerticalsForIndustry(userIndustry, showAllVerticals), [userIndustry, showAllVerticals]);
   const verticalsByGroup = useMemo(() => {
     const map: Record<string, Vertical[]> = {};
     for (const v of availableVerticals) {
