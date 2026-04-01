@@ -52,25 +52,36 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Use HasData's dedicated Zillow listing API
     const apiUrl = new URL("https://api.hasdata.com/scrape/zillow/listing");
     apiUrl.searchParams.set("keyword", `${zipCode}`);
     apiUrl.searchParams.set("type", "forSale");
     apiUrl.searchParams.set("page", String(page));
 
-    console.log("Fetching:", apiUrl.toString());
+    // Retry with exponential backoff for rate limits
+    let res: Response | null = null;
+    const maxRetries = 3;
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      console.log(`Attempt ${attempt + 1}: Fetching ${apiUrl.toString()}`);
+      res = await fetch(apiUrl.toString(), {
+        headers: {
+          "x-api-key": apiKey,
+          "Content-Type": "application/json",
+        },
+      });
 
-    const res = await fetch(apiUrl.toString(), {
-      headers: {
-        "x-api-key": apiKey,
-        "Content-Type": "application/json",
-      },
-    });
+      if (res.status === 429 && attempt < maxRetries) {
+        const delay = Math.pow(2, attempt) * 1000 + Math.random() * 500;
+        console.log(`Rate limited (429), waiting ${Math.round(delay)}ms before retry`);
+        await new Promise(r => setTimeout(r, delay));
+        continue;
+      }
+      break;
+    }
 
-    if (!res.ok) {
-      const errText = await res.text();
-      console.error("HasData error:", res.status, errText);
-      return new Response(JSON.stringify({ error: "Upstream API error", status: res.status }), {
+    if (!res || !res.ok) {
+      const errText = res ? await res.text() : "No response";
+      console.error("HasData error:", res?.status, errText);
+      return new Response(JSON.stringify({ error: "Upstream API error", status: res?.status }), {
         status: 502,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -81,7 +92,6 @@ Deno.serve(async (req) => {
     console.log("HasData status:", status);
 
     if (status === "error" || !data.properties) {
-      console.log("HasData error response:", JSON.stringify(data));
       return new Response(JSON.stringify({ listings: [], totalResults: 0 }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -89,7 +99,6 @@ Deno.serve(async (req) => {
 
     const totalResults = data.searchInformation?.totalResults ?? data.properties?.length ?? 0;
 
-    // Map HasData property format to our listing format
     const listings = (data.properties || []).map((p: any) => ({
       zpid: String(p.id || ""),
       price: `$${(p.price || 0).toLocaleString()}`,

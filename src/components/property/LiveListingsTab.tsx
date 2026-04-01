@@ -48,6 +48,11 @@ function getStatusColor(status: string) {
   return STATUS_COLORS["for sale"];
 }
 
+// Simple in-memory cache to avoid redundant API calls
+const listingsCache = new Map<string, { data: Listing[]; ts: number }>();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+const inflightRequests = new Map<string, Promise<Listing[]>>();
+
 export default function LiveListingsTab({ activeZip }: { activeZip: string }) {
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(false);
@@ -57,10 +62,29 @@ export default function LiveListingsTab({ activeZip }: { activeZip: string }) {
   const [hasMore, setHasMore] = useState(true);
 
   const fetchListings = useCallback(async (zip: string, pageNum: number, append = false) => {
+    const cacheKey = `${zip}-${pageNum}`;
+
+    // Return cached data if fresh
+    const cached = listingsCache.get(cacheKey);
+    if (cached && Date.now() - cached.ts < CACHE_TTL) {
+      if (cached.data.length < 5) setHasMore(false);
+      setListings(prev => append ? [...prev, ...cached.data] : cached.data);
+      return;
+    }
+
+    // Deduplicate in-flight requests
+    if (inflightRequests.has(cacheKey)) {
+      try {
+        const results = await inflightRequests.get(cacheKey)!;
+        if (results.length < 5) setHasMore(false);
+        setListings(prev => append ? [...prev, ...results] : results);
+      } catch {}
+      return;
+    }
     append ? setLoadingMore(true) : setLoading(true);
     setError(null);
 
-    try {
+    const doFetch = async (): Promise<Listing[]> => {
       const { data: session } = await supabase.auth.getSession();
       const token = session?.session?.access_token;
       if (!token) throw new Error("Not authenticated");
@@ -81,13 +105,21 @@ export default function LiveListingsTab({ activeZip }: { activeZip: string }) {
       }
 
       const json = await res.json();
-      const results: Listing[] = json.listings || [];
+      return json.listings || [];
+    };
+
+    inflightRequests.set(cacheKey, doFetch());
+
+    try {
+      const results = await inflightRequests.get(cacheKey)!;
+      listingsCache.set(cacheKey, { data: results, ts: Date.now() });
 
       if (results.length < 5) setHasMore(false);
       setListings(prev => append ? [...prev, ...results] : results);
     } catch (e: any) {
       setError(e.message || "Failed to fetch listings");
     } finally {
+      inflightRequests.delete(cacheKey);
       setLoading(false);
       setLoadingMore(false);
     }
