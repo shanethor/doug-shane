@@ -14,6 +14,7 @@ export const ALL_CONNECT_TABS: ConnectNavTab[] = [
   { id: "calendar", label: "Calendar", to: "/connect/calendar" },
   { id: "create", label: "Create", to: "/connect/create" },
   { id: "leads", label: "Leads", to: "/connect/leads" },
+  { id: "property", label: "Property", to: "/connect/property" },
   { id: "sage", label: "Sage", to: "/connect/sage" },
 ];
 
