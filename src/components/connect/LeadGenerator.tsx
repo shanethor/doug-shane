@@ -4,6 +4,8 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import LeadOutreachPanel from "./LeadOutreachPanel";
 import SageGameplan from "./SageGameplan";
 import StudioLeadPromo from "./StudioLeadPromo";
+import StudioUpsellModal from "@/components/StudioUpsellModal";
+import { useStudioQualification } from "@/hooks/useStudioQualification";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
