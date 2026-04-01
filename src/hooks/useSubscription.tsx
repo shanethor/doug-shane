@@ -43,6 +43,7 @@ export function useSubscription() {
         isTrialing: data.is_trialing || false,
         branch: data.branch || null,
         hasStudio: data.has_studio || false,
+        hasAgent: data.has_agent || false,
         loading: false,
         error: null,
       });
