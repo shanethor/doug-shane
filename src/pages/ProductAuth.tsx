@@ -20,50 +20,13 @@ const FEATURES = [
 const MASTER_EMAILS = ["shane@houseofthor.com", "dwenz17@gmail.com"];
 
 function useProductRoute(user: any) {
-  const [destination, setDestination] = useState<string | null>(null);
-  const [checking, setChecking] = useState(false);
+  const email = user?.email?.toLowerCase() ?? "";
+  const destination = MASTER_EMAILS.includes(email) ? "/connect" : null;
 
-  useEffect(() => {
-    let cancelled = false;
-
-    if (!user?.email) {
-      setDestination(null);
-      setChecking(false);
-      return;
-    }
-
-    const email = user.email.toLowerCase();
-
-    if (MASTER_EMAILS.includes(email)) {
-      setDestination("/connect");
-      setChecking(false);
-      return;
-    }
-
-    setChecking(true);
-
-    (async () => {
-      try {
-        const { data } = await supabase.functions.invoke("check-subscription");
-        if (cancelled) return;
-        setDestination(data?.subscribed ? "/insurance/hub" : "/request-access");
-      } catch {
-        if (!cancelled) {
-          setDestination("/request-access");
-        }
-      } finally {
-        if (!cancelled) {
-          setChecking(false);
-        }
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [user?.id, user?.email]);
-
-  return { destination, checking };
+  return {
+    destination,
+    checking: false,
+  };
 }
 
 export default function ProductAuth() {
