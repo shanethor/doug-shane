@@ -622,7 +622,17 @@ function ResultsTable() {
               </div>
             )}
           </div>
-          <div className={`flex items-center gap-2 ${isMobile ? "w-full" : ""}`}>
+          <div className={`flex items-center gap-2 ${isMobile ? "w-full flex-wrap" : ""}`}>
+            <Select value={contactFilter} onValueChange={setContactFilter}>
+              <SelectTrigger className={`h-8 text-xs ${isMobile ? "flex-1" : "w-[150px]"}`}>
+                <SelectValue placeholder="Contact Filter" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="has_contact">📧 Has Contact</SelectItem>
+                <SelectItem value="all">All Leads</SelectItem>
+                <SelectItem value="no_contact">❌ No Contact</SelectItem>
+              </SelectContent>
+            </Select>
             <Select value={scoreFilter} onValueChange={setScoreFilter}>
               <SelectTrigger className={`h-8 text-xs ${isMobile ? "flex-1" : "w-[130px]"}`}>
                 <SelectValue placeholder="All Scores" />
@@ -638,6 +648,11 @@ function ResultsTable() {
               <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
               <Input className={`pl-7 h-8 text-xs ${isMobile ? "w-full" : "w-[180px]"}`} placeholder="Search…" value={search} onChange={(e) => setSearch(e.target.value)} />
             </div>
+            {(leads || []).some((l: EngineLead) => !l.email && !l.phone) && (
+              <Button variant="outline" size="sm" className="h-8 text-xs gap-1 shrink-0" disabled={enrichingAll} onClick={handleBulkEnrich}>
+                {enrichingAll ? <><RefreshCw className="h-3 w-3 animate-spin" /> Enriching…</> : <><Zap className="h-3 w-3" /> Enrich All</>}
+              </Button>
+            )}
           </div>
         </div>
         {someSelected && (
