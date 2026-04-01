@@ -1477,7 +1477,7 @@ export default function Pipeline({ embedded }: { embedded?: boolean } = {}) {
       )}
 
       {/* Filters */}
-      <div className="mb-4">
+      <div className="mb-4 animate-fade-in" style={{ animationDelay: "200ms", animationFillMode: "both" }}>
         <PipelineFilters
           ownerFilter={ownerFilter}
           onOwnerFilterChange={setOwnerFilter}
