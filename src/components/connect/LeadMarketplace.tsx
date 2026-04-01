@@ -259,9 +259,9 @@ export default function LeadMarketplace() {
         <Card>
           <CardContent className="p-4 text-center">
             <div className="flex justify-center mb-1">
-              {myElo ? <EloBadge rating={myElo.elo_rating} /> : <span className="text-sm text-muted-foreground">—</span>}
+              {myElo ? <AuraRatingBadge rating={myElo.elo_rating} /> : <span className="text-sm text-muted-foreground">—</span>}
             </div>
-            <p className="text-[11px] text-muted-foreground">Your Rating</p>
+            <p className="text-[11px] text-muted-foreground">AURA Rating</p>
           </CardContent>
         </Card>
         <Card>

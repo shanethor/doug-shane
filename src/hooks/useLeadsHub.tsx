@@ -315,11 +315,11 @@ export function useDeleteGeneratedLead() {
   });
 }
 
-/* ── Elo helpers ── */
+/* ── AURA Rating helpers (0-100 scale, start at 70) ── */
 export function getEloBadge(rating: number): { label: string; color: string } {
-  if (rating >= 1800) return { label: "Diamond", color: "text-cyan-400" };
-  if (rating >= 1600) return { label: "Platinum", color: "text-violet-400" };
-  if (rating >= 1400) return { label: "Gold", color: "text-amber-400" };
-  if (rating >= 1200) return { label: "Silver", color: "text-slate-300" };
-  return { label: "Bronze", color: "text-orange-400" };
+  if (rating >= 95) return { label: "Elite", color: "text-cyan-400" };
+  if (rating >= 85) return { label: "Trusted", color: "text-violet-400" };
+  if (rating >= 75) return { label: "Proven", color: "text-amber-400" };
+  if (rating >= 60) return { label: "Rising", color: "text-slate-300" };
+  return { label: "New", color: "text-orange-400" };
 }
