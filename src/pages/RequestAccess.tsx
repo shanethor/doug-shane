@@ -22,6 +22,11 @@ const INDUSTRIES = [
   "SaaS / Software", "Telecommunications", "Transportation", "Wealth Management", "Other",
 ];
 
+const MASTER_EMAILS = new Set([
+  "shane@houseofthor.com",
+  "dwenz17@gmail.com",
+]);
+
 /* Map display industry names to internal keys for lead verticals */
 const INDUSTRY_KEY_MAP: Record<string, string> = {
   "Insurance": "insurance",
