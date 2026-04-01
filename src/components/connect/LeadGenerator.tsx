@@ -101,6 +101,17 @@ const FOCUS_TO_SOURCE: Record<string, string> = {
   med_gas_certs: "Medical Gas Installer Certs",
   water_sewer_permits: "Water/Sewer Line Permits",
   plumbing_wc: "Plumbing WC Class 5183",
+  // Trucking / Transportation sources
+  fmcsa_new_authority: "FMCSA New MC Authority",
+  bmc35_cancellations: "BMC-35 Cancellations",
+  csa_basic_scores: "CSA / BASIC Score Deterioration",
+  oos_orders: "Out-of-Service Orders",
+  carrier_safety_ratings: "Carrier Safety Rating Changes",
+  dot_inspections: "DOT Inspection Reports",
+  hazmat_endorsements: "Hazmat Endorsement Filings",
+  ifta_registrations: "IFTA / IRP Registrations",
+  broker_authority: "Freight Broker Authority Filings",
+  cargo_claims: "Cargo Loss / Claim Records",
 };
 
 function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasStudio }: {
