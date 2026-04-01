@@ -68,9 +68,13 @@ export default function ProductAuth() {
 
         toast.success("Account created! Check your email for a confirmation link.");
       } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        // Re-render will trigger useProductRoute and redirect
+
+        const signedInEmail = data.user?.email?.toLowerCase() ?? "";
+        if (!MASTER_EMAILS.includes(signedInEmail)) {
+          navigate("/request-access", { replace: true });
+        }
       }
     } catch (err: any) {
       toast.error(err.message);
