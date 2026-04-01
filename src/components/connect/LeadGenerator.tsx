@@ -474,6 +474,7 @@ function ResultsTable() {
   const convertToPipeline = useConvertToPipeline();
   const [search, setSearch] = useState("");
   const [scoreFilter, setScoreFilter] = useState<string>("all");
+  const [contactFilter, setContactFilter] = useState<string>("has_contact");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [selectedLead, setSelectedLead] = useState<EngineLead | null>(null);
   const [gameplanLead, setGameplanLead] = useState<EngineLead | null>(null);
