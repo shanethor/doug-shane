@@ -40,7 +40,11 @@ Deno.serve(async (req) => {
 
     const roles = (callerRoles ?? []).map((r: any) => r.role);
     const allowed = roles.some((r: string) => ["admin", "advisor", "producer", "manager"].includes(r));
-    if (!allowed) throw new Error("Not authorized");
+    if (!allowed) {
+      return new Response(JSON.stringify([]), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     // Use service role to get full directory
     const adminClient = createClient(
