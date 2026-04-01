@@ -74,15 +74,28 @@ Deno.serve(async (req) => {
 
     const data = await res.json();
     const content = data?.content || "";
+    const status = data?.requestMetadata?.status;
+
+    console.log("HasData response status:", status, "content length:", content.length);
 
     if (!content) {
-      return new Response(JSON.stringify({ listings: [], totalResults: 0 }), {
+      console.log("HasData returned empty content. Keys:", Object.keys(data));
+      return new Response(JSON.stringify({ listings: [], totalResults: 0, debug: { status, keys: Object.keys(data) } }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Check for captcha/blocked page
+    if (content.includes("captcha") || content.includes("Access to this page has been denied")) {
+      console.error("Zillow blocked the request (captcha)");
+      return new Response(JSON.stringify({ listings: [], totalResults: 0, debug: "blocked_by_captcha" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
     // Extract listResults from Zillow's embedded JSON
     const listings = extractListResults(content);
+    console.log("Extracted", listings.length, "listings");
 
     return new Response(JSON.stringify({ listings, totalResults: listings.length }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
