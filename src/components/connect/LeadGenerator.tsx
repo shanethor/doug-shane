@@ -845,6 +845,7 @@ export default function LeadGenerator() {
   const qc = useQueryClient();
   const { subscribed, hasAgent } = useSubscription();
   const [userIndustry, setUserIndustry] = useState<string>("general");
+  const [userSpecializations, setUserSpecializations] = useState<string[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [showAgentDrip, setShowAgentDrip] = useState(false);
   const { data: studioQual } = useStudioQualification();
@@ -855,10 +856,13 @@ export default function LeadGenerator() {
       if (user) {
         const { data: profile } = await supabase
           .from("profiles")
-          .select("industry")
+          .select("industry, specializations")
           .eq("user_id", user.id)
           .maybeSingle();
         if (profile?.industry) setUserIndustry(profile.industry);
+        if ((profile as any)?.specializations?.length) {
+          setUserSpecializations((profile as any).specializations);
+        }
       }
       setLoading(false);
     })();
