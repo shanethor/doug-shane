@@ -224,7 +224,6 @@ export default function LandingPage() {
               <div className="hidden md:flex gap-1">
                 <a href="#leads" className="text-[13px] text-[#A1A1AA] no-underline px-3 py-1.5 rounded-full hover:text-[hsl(140_12%_72%)] transition-colors">Leads</a>
                 <a href="#connect" className="text-[13px] text-[#A1A1AA] no-underline px-3 py-1.5 rounded-full hover:text-[hsl(140_12%_72%)] transition-colors">Connect</a>
-                <a href="#studio" className="text-[13px] text-[#A1A1AA] no-underline px-3 py-1.5 rounded-full hover:text-[hsl(140_12%_72%)] transition-colors">Studio</a>
                 <a href="#research" className="text-[13px] text-[#A1A1AA] no-underline px-3 py-1.5 rounded-full hover:text-[hsl(140_12%_72%)] transition-colors">Why AI</a>
               </div>
             </div>
