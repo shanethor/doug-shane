@@ -24,9 +24,8 @@ Deno.serve(async (req) => {
     { global: { headers: { Authorization: authHeader } } }
   );
 
-  const token = authHeader.replace("Bearer ", "");
-  const { data: claims, error: authErr } = await supabase.auth.getClaims(token);
-  if (authErr || !claims?.claims) {
+  const { data: { user }, error: authErr } = await supabase.auth.getUser();
+  if (authErr || !user) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -55,9 +54,9 @@ Deno.serve(async (req) => {
   try {
     // Use HasData's dedicated Zillow listing API
     const apiUrl = new URL("https://api.hasdata.com/scrape/zillow/listing");
-    apiUrl.searchParams.set("keyword", zipCode);
+    apiUrl.searchParams.set("keyword", `${zipCode}`);
     apiUrl.searchParams.set("type", "forSale");
-    if (page > 1) apiUrl.searchParams.set("page", String(page));
+    apiUrl.searchParams.set("page", String(page));
 
     console.log("Fetching:", apiUrl.toString());
 
