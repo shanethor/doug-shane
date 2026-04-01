@@ -18,6 +18,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Switch } from "@/components/ui/switch";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
+import LiveListingsTab from "@/components/property/LiveListingsTab";
 
 /* ══════════════════════════════════════════════
    MOCK DATA
