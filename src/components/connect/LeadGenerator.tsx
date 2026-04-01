@@ -864,7 +864,7 @@ export default function LeadGenerator() {
     })();
   }, []);
 
-  // Drip Studio upsell popup for qualified non-Studio users
+  // Drip Aura Agent upsell popup for qualified non-Agent users
   useEffect(() => {
     if (!studioQual?.qualified || hasAgent) return;
     const dismissed = sessionStorage.getItem("agent-drip-dismissed");
