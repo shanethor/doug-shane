@@ -844,6 +844,8 @@ export default function LeadGenerator() {
   const { subscribed, hasStudio } = useSubscription();
   const [userIndustry, setUserIndustry] = useState<string>("general");
   const [loading, setLoading] = useState(true);
+  const [showStudioDrip, setShowStudioDrip] = useState(false);
+  const { data: studioQual } = useStudioQualification();
 
   useEffect(() => {
     (async () => {
@@ -860,6 +862,15 @@ export default function LeadGenerator() {
     })();
   }, []);
 
+  // Drip Studio upsell popup for qualified non-Studio users
+  useEffect(() => {
+    if (!studioQual?.qualified || hasStudio) return;
+    const dismissed = sessionStorage.getItem("studio-drip-dismissed");
+    if (dismissed) return;
+    const timer = setTimeout(() => setShowStudioDrip(true), 8000);
+    return () => clearTimeout(timer);
+  }, [studioQual?.qualified, hasStudio]);
+
   const handleGenerate = (_opts: any) => {
     setTimeout(() => qc.invalidateQueries({ queryKey: ["engine-leads"] }), 1500);
     setTimeout(() => qc.invalidateQueries({ queryKey: ["engine-leads"] }), 4000);
@@ -868,6 +879,7 @@ export default function LeadGenerator() {
   if (loading) return <Skeleton className="h-40 w-full" />;
 
   const pricing = INDUSTRY_PRICING[userIndustry] || INDUSTRY_PRICING.general;
+  const showPromo = !hasStudio && studioQual?.qualified;
 
   return (
     <div className="space-y-6">
@@ -889,9 +901,20 @@ export default function LeadGenerator() {
         </div>
         <div className="lg:col-span-2 space-y-4">
           <ResultsTable />
-          <StudioLeadPromo />
+          {showPromo && <StudioLeadPromo />}
         </div>
       </div>
+
+      {showStudioDrip && (
+        <StudioUpsellModal
+          open={showStudioDrip}
+          onClose={() => {
+            setShowStudioDrip(false);
+            sessionStorage.setItem("studio-drip-dismissed", "true");
+          }}
+          isConnectSubscriber={subscribed}
+        />
+      )}
     </div>
   );
 }
