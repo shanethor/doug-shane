@@ -48,6 +48,11 @@ function getStatusColor(status: string) {
   return STATUS_COLORS["for sale"];
 }
 
+// Simple in-memory cache to avoid redundant API calls
+const listingsCache = new Map<string, { data: Listing[]; ts: number }>();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+const inflightRequests = new Map<string, Promise<Listing[]>>();
+
 export default function LiveListingsTab({ activeZip }: { activeZip: string }) {
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(false);
@@ -57,6 +62,25 @@ export default function LiveListingsTab({ activeZip }: { activeZip: string }) {
   const [hasMore, setHasMore] = useState(true);
 
   const fetchListings = useCallback(async (zip: string, pageNum: number, append = false) => {
+    const cacheKey = `${zip}-${pageNum}`;
+
+    // Return cached data if fresh
+    const cached = listingsCache.get(cacheKey);
+    if (cached && Date.now() - cached.ts < CACHE_TTL) {
+      if (cached.data.length < 5) setHasMore(false);
+      setListings(prev => append ? [...prev, ...cached.data] : cached.data);
+      return;
+    }
+
+    // Deduplicate in-flight requests
+    if (inflightRequests.has(cacheKey)) {
+      try {
+        const results = await inflightRequests.get(cacheKey)!;
+        if (results.length < 5) setHasMore(false);
+        setListings(prev => append ? [...prev, ...results] : results);
+      } catch {}
+      return;
+    }
     append ? setLoadingMore(true) : setLoading(true);
     setError(null);
 
