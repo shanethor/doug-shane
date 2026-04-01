@@ -9,6 +9,7 @@ interface SubscriptionState {
   isTrialing: boolean;
   branch: string | null;
   hasStudio: boolean;
+  hasAgent: boolean;
   loading: boolean;
   error: string | null;
 }
@@ -22,6 +23,7 @@ export function useSubscription() {
     isTrialing: false,
     branch: null,
     hasStudio: false,
+    hasAgent: false,
     loading: true,
     error: null,
   });
@@ -41,6 +43,7 @@ export function useSubscription() {
         isTrialing: data.is_trialing || false,
         branch: data.branch || null,
         hasStudio: data.has_studio || false,
+        hasAgent: data.has_agent || false,
         loading: false,
         error: null,
       });
