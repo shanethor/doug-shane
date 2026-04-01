@@ -702,6 +702,17 @@ function ResultsTable() {
                 {enrichingAll ? <><RefreshCw className="h-3 w-3 animate-spin" /> Enriching…</> : <><Zap className="h-3 w-3" /> Enrich All</>}
               </Button>
             )}
+            {/* Export dropdown */}
+            <div className="relative group shrink-0">
+              <Button variant="outline" size="sm" className="h-8 text-xs gap-1">
+                <Download className="h-3 w-3" /> Export
+              </Button>
+              <div className="absolute right-0 top-full mt-1 bg-popover border border-border rounded-lg shadow-lg z-20 hidden group-hover:block min-w-[160px]">
+                <button onClick={() => exportLeads("excel")} className="w-full text-left px-3 py-2 text-xs hover:bg-muted transition-colors rounded-t-lg">📊 Export as CSV</button>
+                <button onClick={() => exportLeads("emails")} className="w-full text-left px-3 py-2 text-xs hover:bg-muted transition-colors">📧 Email list (.txt)</button>
+                <button onClick={() => exportLeads("phones")} className="w-full text-left px-3 py-2 text-xs hover:bg-muted transition-colors rounded-b-lg">📞 Phone list (.csv)</button>
+              </div>
+            </div>
           </div>
         </div>
         {someSelected && (
