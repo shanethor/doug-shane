@@ -250,11 +250,19 @@ CRITICAL REQUIREMENTS:
 - Vary the industries across the ${industries} categories
 - Signal should explain WHY they're a hot lead (new filing, permit issued, expanding, etc.)`;
 
+  prompt += `\n\nCRITICAL: For EVERY lead, you MUST include:
+- contact_name: Full name of the owner/decision-maker
+- email: A realistic business email address (e.g. firstname@companydomain.com)
+- phone: A realistic US phone number with area code matching their state
+- website: Company website URL
+
+These are MANDATORY. Do not generate leads without contact information.`;
+
   if (firecrawlResults && firecrawlResults.length > 50) {
     prompt += `\n\nADDITIONAL CONTEXT from web search (use to make leads more realistic):\n${firecrawlResults.slice(0, 1500)}`;
   }
 
-  prompt += `\n\nGenerate 8-10 leads now. Make each one specific and actionable.`;
+  prompt += `\n\nGenerate 8-10 leads now. Every lead MUST have contact_name, email, and phone.`;
   return prompt;
 }
 
