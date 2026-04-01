@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useSearchParams, Navigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -16,39 +16,47 @@ const FEATURES = [
   { icon: Zap, label: "Sage Assistant" },
 ];
 
-// Users with access to both products default to /connect with switcher
-const DUAL_ACCESS_EMAILS = ["shane@houseofthor.com"];
+// Master emails that can access all product routes
+const MASTER_EMAILS = ["shane@houseofthor.com", "dwenz17@gmail.com"];
 
 function useProductRoute(user: any) {
   const [destination, setDestination] = useState<string | null>(null);
   const [checking, setChecking] = useState(true);
+  const checkedRef = useRef(false);
 
-  const check = useCallback(async () => {
+  useEffect(() => {
     if (!user?.email) { setChecking(false); return; }
+    if (checkedRef.current) return;
+    checkedRef.current = true;
 
-    // Dual-access users always go to /connect
-    if (DUAL_ACCESS_EMAILS.includes(user.email.toLowerCase())) {
+    const email = user.email.toLowerCase();
+
+    // Master emails always go to /connect
+    if (MASTER_EMAILS.includes(email)) {
       setDestination("/connect");
       setChecking(false);
       return;
     }
 
-    // Check subscription to determine which product
-    try {
-      const { data } = await supabase.functions.invoke("check-subscription");
-      if (data?.subscribed) {
-        // Route based on product metadata or default to connect
-        setDestination("/connect");
-      } else {
-        setDestination("/connect");
+    // Non-master users: check subscription, but route to /request-access
+    // since /connect is gated by ProductProtectedRoute (master-only for now)
+    (async () => {
+      try {
+        const { data } = await supabase.functions.invoke("check-subscription");
+        if (data?.subscribed) {
+          // Even subscribed non-master users can't access /connect yet
+          // Route them to a page they CAN access
+          setDestination("/insurance/hub");
+        } else {
+          setDestination("/request-access");
+        }
+      } catch {
+        setDestination("/request-access");
       }
-    } catch {
-      setDestination("/connect");
-    }
-    setChecking(false);
-  }, [user]);
+      setChecking(false);
+    })();
+  }, [user?.id]);
 
-  useEffect(() => { check(); }, [check]);
   return { destination, checking };
 }
 
