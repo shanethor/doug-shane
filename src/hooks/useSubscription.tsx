@@ -28,8 +28,10 @@ export function useSubscription() {
     error: null,
   });
 
+  const sessionToken = session?.access_token;
+
   const checkSubscription = useCallback(async () => {
-    if (!session) {
+    if (!sessionToken) {
       setState(s => ({ ...s, loading: false, subscribed: false }));
       return;
     }
@@ -50,7 +52,7 @@ export function useSubscription() {
     } catch (err: any) {
       setState(s => ({ ...s, loading: false, error: err.message }));
     }
-  }, [session]);
+  }, [sessionToken]);
 
   useEffect(() => {
     checkSubscription();
