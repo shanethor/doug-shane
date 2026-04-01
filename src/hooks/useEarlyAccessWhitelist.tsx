@@ -7,7 +7,7 @@ const WHITELISTED_EMAILS = [
 ];
 
 // Pages that are always accessible (not gated)
-const UNGATED_PAGES = ["pipeline", "leads", "studio"];
+const UNGATED_PAGES = ["pipeline", "leads", "studio", "property"];
 
 export function useEarlyAccessWhitelist() {
   const { user } = useAuth();
@@ -20,5 +20,13 @@ export function useEarlyAccessWhitelist() {
     return true;
   };
 
-  return { isWhitelisted, isPageGated };
+  /** Returns list of page keys the user can actually access */
+  const getAccessiblePages = (): string[] => {
+    if (isWhitelisted) {
+      return ["connect", "intelligence", "pipeline", "email", "calendar", "create", "leads", "property", "sage"];
+    }
+    return UNGATED_PAGES;
+  };
+
+  return { isWhitelisted, isPageGated, getAccessiblePages };
 }
