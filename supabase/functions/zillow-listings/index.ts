@@ -53,14 +53,19 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Use HasData web scraping API to scrape Zillow search results
-    const zillowUrl = `https://www.zillow.com/homes/for_sale/${zipCode}_rb/${page}_p/`;
-    const scraperUrl = new URL("https://api.hasdata.com/scrape/web");
-    scraperUrl.searchParams.set("url", zillowUrl);
-    scraperUrl.searchParams.set("jsRendering", "true");
+    // Use HasData's dedicated Zillow listing API
+    const apiUrl = new URL("https://api.hasdata.com/scrape/zillow/listing");
+    apiUrl.searchParams.set("keyword", zipCode);
+    apiUrl.searchParams.set("type", "forSale");
+    if (page > 1) apiUrl.searchParams.set("page", String(page));
 
-    const res = await fetch(scraperUrl.toString(), {
-      headers: { "x-api-key": apiKey },
+    console.log("Fetching:", apiUrl.toString());
+
+    const res = await fetch(apiUrl.toString(), {
+      headers: {
+        "x-api-key": apiKey,
+        "Content-Type": "application/json",
+      },
     });
 
     if (!res.ok) {
@@ -73,18 +78,47 @@ Deno.serve(async (req) => {
     }
 
     const data = await res.json();
-    const content = data?.content || "";
+    const status = data?.requestMetadata?.status;
+    console.log("HasData status:", status);
 
-    if (!content) {
+    if (status === "error" || !data.properties) {
+      console.log("HasData error response:", JSON.stringify(data));
       return new Response(JSON.stringify({ listings: [], totalResults: 0 }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Extract listResults from Zillow's embedded JSON
-    const listings = extractListResults(content);
+    const totalResults = data.searchInformation?.totalResults ?? data.properties?.length ?? 0;
 
-    return new Response(JSON.stringify({ listings, totalResults: listings.length }), {
+    // Map HasData property format to our listing format
+    const listings = (data.properties || []).map((p: any) => ({
+      zpid: String(p.id || ""),
+      price: `$${(p.price || 0).toLocaleString()}`,
+      unformattedPrice: p.price || 0,
+      address: p.addressRaw || "",
+      addressStreet: p.address?.street || "",
+      addressCity: p.address?.city || "",
+      addressState: p.address?.state || "",
+      addressZipcode: p.address?.zipcode || "",
+      beds: p.beds ?? null,
+      baths: p.baths ?? null,
+      area: p.area ?? null,
+      imgSrc: p.image || (p.photos?.[0]) || null,
+      detailUrl: p.url || "",
+      statusText: p.status?.replace(/_/g, " ")?.replace(/\b\w/g, (c: string) => c.toUpperCase()) || "For Sale",
+      homeType: p.homeType || null,
+      daysOnZillow: p.daysOnZillow ?? null,
+      zestimate: p.zestimate ?? null,
+      brokerName: p.brokerName || null,
+      latitude: p.latitude ?? null,
+      longitude: p.longitude ?? null,
+      lotArea: p.lotAreaValue ? `${p.lotAreaValue} ${p.lotAreaUnits || ""}`.trim() : null,
+      rentZestimate: p.rentZestimate ?? null,
+    }));
+
+    console.log("Returning", listings.length, "listings");
+
+    return new Response(JSON.stringify({ listings, totalResults }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
@@ -95,79 +129,3 @@ Deno.serve(async (req) => {
     });
   }
 });
-
-interface ZillowListing {
-  zpid: string;
-  price: string;
-  unformattedPrice: number;
-  address: string;
-  addressStreet: string;
-  addressCity: string;
-  addressState: string;
-  addressZipcode: string;
-  beds: number | null;
-  baths: number | null;
-  area: number | null;
-  imgSrc: string | null;
-  detailUrl: string;
-  statusText: string;
-  homeType: string | null;
-  daysOnZillow: number | null;
-  zestimate: number | null;
-  brokerName: string | null;
-  latitude: number | null;
-  longitude: number | null;
-}
-
-function extractListResults(html: string): ZillowListing[] {
-  const marker = '"listResults":[';
-  const idx = html.indexOf(marker);
-  if (idx < 0) return [];
-
-  const start = idx + marker.length - 1; // include the [
-  let depth = 0;
-  let end = start;
-
-  for (let i = start; i < Math.min(start + 500000, html.length); i++) {
-    if (html[i] === "[") depth++;
-    else if (html[i] === "]") {
-      depth--;
-      if (depth === 0) {
-        end = i + 1;
-        break;
-      }
-    }
-  }
-
-  try {
-    const raw = JSON.parse(html.slice(start, end));
-    return raw.map((item: any) => {
-      const homeInfo = item?.hdpData?.homeInfo || {};
-      return {
-        zpid: String(item.zpid || ""),
-        price: item.price || "",
-        unformattedPrice: item.unformattedPrice || homeInfo.price || 0,
-        address: item.address || "",
-        addressStreet: item.addressStreet || homeInfo.streetAddress || "",
-        addressCity: item.addressCity || homeInfo.city || "",
-        addressState: item.addressState || homeInfo.state || "",
-        addressZipcode: item.addressZipcode || homeInfo.zipcode || "",
-        beds: item.beds ?? homeInfo.bedrooms ?? null,
-        baths: item.baths ?? homeInfo.bathrooms ?? null,
-        area: item.area ?? homeInfo.livingArea ?? null,
-        imgSrc: item.imgSrc || null,
-        detailUrl: item.detailUrl?.startsWith("http") ? item.detailUrl : item.detailUrl ? `https://www.zillow.com${item.detailUrl}` : "",
-        statusText: item.statusText || "",
-        homeType: homeInfo.homeType || null,
-        daysOnZillow: homeInfo.daysOnZillow ?? null,
-        zestimate: item.zestimate ?? homeInfo.zestimate ?? null,
-        brokerName: item.brokerName || null,
-        latitude: item.latLong?.latitude ?? homeInfo.latitude ?? null,
-        longitude: item.latLong?.longitude ?? homeInfo.longitude ?? null,
-      };
-    });
-  } catch (e) {
-    console.error("Failed to parse listResults:", e);
-    return [];
-  }
-}
