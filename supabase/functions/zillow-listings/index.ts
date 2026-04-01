@@ -55,9 +55,9 @@ Deno.serve(async (req) => {
   try {
     // Use HasData's dedicated Zillow listing API
     const apiUrl = new URL("https://api.hasdata.com/scrape/zillow/listing");
-    apiUrl.searchParams.set("keyword", zipCode);
+    apiUrl.searchParams.set("keyword", `${zipCode}`);
     apiUrl.searchParams.set("type", "forSale");
-    if (page > 1) apiUrl.searchParams.set("page", String(page));
+    apiUrl.searchParams.set("page", String(page));
 
     console.log("Fetching:", apiUrl.toString());
 
