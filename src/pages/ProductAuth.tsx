@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams, Navigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -20,44 +20,13 @@ const FEATURES = [
 const MASTER_EMAILS = ["shane@houseofthor.com", "dwenz17@gmail.com"];
 
 function useProductRoute(user: any) {
-  const [destination, setDestination] = useState<string | null>(null);
-  const [checking, setChecking] = useState(true);
-  const checkedRef = useRef(false);
+  const email = user?.email?.toLowerCase() ?? "";
+  const destination = MASTER_EMAILS.includes(email) ? "/connect" : null;
 
-  useEffect(() => {
-    if (!user?.email) { setChecking(false); return; }
-    if (checkedRef.current) return;
-    checkedRef.current = true;
-
-    const email = user.email.toLowerCase();
-
-    // Master emails always go to /connect
-    if (MASTER_EMAILS.includes(email)) {
-      setDestination("/connect");
-      setChecking(false);
-      return;
-    }
-
-    // Non-master users: check subscription, but route to /request-access
-    // since /connect is gated by ProductProtectedRoute (master-only for now)
-    (async () => {
-      try {
-        const { data } = await supabase.functions.invoke("check-subscription");
-        if (data?.subscribed) {
-          // Even subscribed non-master users can't access /connect yet
-          // Route them to a page they CAN access
-          setDestination("/insurance/hub");
-        } else {
-          setDestination("/request-access");
-        }
-      } catch {
-        setDestination("/request-access");
-      }
-      setChecking(false);
-    })();
-  }, [user?.id]);
-
-  return { destination, checking };
+  return {
+    destination,
+    checking: false,
+  };
 }
 
 export default function ProductAuth() {
@@ -99,9 +68,13 @@ export default function ProductAuth() {
 
         toast.success("Account created! Check your email for a confirmation link.");
       } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        // Re-render will trigger useProductRoute and redirect
+
+        const signedInEmail = data.user?.email?.toLowerCase() ?? "";
+        if (!MASTER_EMAILS.includes(signedInEmail)) {
+          navigate("/request-access", { replace: true });
+        }
       }
     } catch (err: any) {
       toast.error(err.message);

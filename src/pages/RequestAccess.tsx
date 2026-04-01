@@ -22,6 +22,11 @@ const INDUSTRIES = [
   "SaaS / Software", "Telecommunications", "Transportation", "Wealth Management", "Other",
 ];
 
+const MASTER_EMAILS = new Set([
+  "shane@houseofthor.com",
+  "dwenz17@gmail.com",
+]);
+
 /* Map display industry names to internal keys for lead verticals */
 const INDUSTRY_KEY_MAP: Record<string, string> = {
   "Insurance": "insurance",
@@ -73,10 +78,15 @@ export default function RequestAccess() {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  // If user is already logged in, redirect
+  // Only master accounts should be auto-routed into the product.
   useEffect(() => {
-    if (user) navigate("/connect");
-  }, [user, navigate]);
+    if (!user?.email) return;
+
+    const email = user.email.toLowerCase();
+    if (MASTER_EMAILS.has(email)) {
+      navigate("/connect", { replace: true });
+    }
+  }, [user?.email, navigate]);
 
   const filteredIndustries = INDUSTRIES.filter((i) =>
     i.toLowerCase().includes(industrySearch.toLowerCase())
