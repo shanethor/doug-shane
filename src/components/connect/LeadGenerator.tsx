@@ -992,7 +992,7 @@ export default function LeadGenerator() {
 
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-1 space-y-4">
-          <GenerateControls onGenerate={handleGenerate} userIndustry={userIndustry} isSubscriber={subscribed} hasAgent={hasAgent} initialSpecializations={userSpecializations} />
+          <GenerateControls onGenerate={handleGenerate} userIndustry={userIndustry} isSubscriber={subscribed} hasAgent={hasAgent} initialSpecializations={userSpecializations} showAllVerticals={isMaster} />
         </div>
         <div className="lg:col-span-2 space-y-4">
           <ResultsTable />
