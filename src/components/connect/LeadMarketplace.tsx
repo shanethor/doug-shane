@@ -28,11 +28,11 @@ const LEAD_TYPES = [
   { value: "general", label: "General" },
 ];
 
-function EloBadge({ rating }: { rating: number }) {
+function AuraRatingBadge({ rating }: { rating: number }) {
   const badge = getEloBadge(rating);
   return (
     <span className={`inline-flex items-center gap-1 text-[11px] font-bold ${badge.color}`}>
-      <Trophy className="h-3 w-3" />
+      <Shield className="h-3 w-3" />
       {badge.label} ({Math.round(rating)})
     </span>
   );
@@ -123,7 +123,7 @@ function PostLeadModal({ open, onClose }: { open: boolean; onClose: () => void }
         <div className="rounded-lg border border-primary/20 bg-primary/5 p-3 space-y-1.5">
           <p className="text-xs font-semibold text-primary">How the Marketplace Works</p>
           <p className="text-[11px] text-muted-foreground leading-relaxed">
-            High quality leads means more high quality opportunities for you. You are able to request a referral fee if the deal closes — we will enforce this. As part of our platform management and Elo system, AURA will take a small fee from each side of the deal: the user who pulls the lead will be charged a <span className="font-semibold text-foreground">$10 fee</span>, and once your commission closes you will be charged a <span className="font-semibold text-foreground">$5 fee</span>. All fees are billed on your <span className="font-semibold text-foreground">monthly statement</span>, not at the time of action. Remember — if you post bad deals your rating will go down, which means fewer leads will be accepted in the future!
+            High quality leads means more high quality opportunities for you. You are able to request a referral fee if the deal closes — we will enforce this. Every user has an <span className="font-semibold text-foreground">AURA Rating</span> from 0–100 (you start at 70). Close deals successfully and your rating goes up — giving you access to better leads and higher visibility. Post bad deals or ghost on referrals and your rating drops, which means fewer leads will be accepted in the future. <span className="font-semibold text-foreground">Your rating is public</span> so other users can see your track record before working with you.
           </p>
         </div>
         <DialogFooter>
@@ -259,9 +259,9 @@ export default function LeadMarketplace() {
         <Card>
           <CardContent className="p-4 text-center">
             <div className="flex justify-center mb-1">
-              {myElo ? <EloBadge rating={myElo.elo_rating} /> : <span className="text-sm text-muted-foreground">—</span>}
+              {myElo ? <AuraRatingBadge rating={myElo.elo_rating} /> : <span className="text-sm text-muted-foreground">—</span>}
             </div>
-            <p className="text-[11px] text-muted-foreground">Your Rating</p>
+            <p className="text-[11px] text-muted-foreground">AURA Rating</p>
           </CardContent>
         </Card>
         <Card>
