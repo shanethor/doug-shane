@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams, Navigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Loader2, ArrowRight, Zap, Users, BarChart3, Mail, Sparkles } from "lucide-react";
+import { Loader2, ArrowRight, Zap, Users, BarChart3, Mail, Sparkles, Search, Check } from "lucide-react";
 
 const FEATURES = [
   { icon: Users, label: "Network Intelligence" },
@@ -16,17 +16,35 @@ const FEATURES = [
   { icon: Zap, label: "Sage Assistant" },
 ];
 
-// Master emails that can access all product routes
 const MASTER_EMAILS = ["shane@houseofthor.com", "dwenz17@gmail.com"];
+
+const INDUSTRIES = [
+  "Insurance", "Mortgage", "Real Estate", "Property", "Consulting", "General Business",
+  "Accounting", "Advertising & Marketing", "Agriculture", "Architecture", "Automotive",
+  "Banking & Finance", "Biotechnology", "Construction", "Cybersecurity", "E-Commerce",
+  "Education", "Energy & Utilities", "Engineering", "Entertainment", "Environmental Services",
+  "Fashion & Apparel", "Financial Planning", "Fitness & Wellness", "Food & Beverage",
+  "Healthcare", "Hospitality", "Human Resources", "Information Technology", "Law / Legal",
+  "Logistics & Supply Chain", "Manufacturing", "Nonprofit", "Pharmaceuticals",
+  "Professional Services", "Recruiting & Staffing", "Restaurant", "Retail",
+  "SaaS / Software", "Telecommunications", "Transportation", "Wealth Management", "Other",
+];
+
+const INDUSTRY_KEY_MAP: Record<string, string> = {
+  "Insurance": "insurance",
+  "Mortgage": "mortgage",
+  "Real Estate": "real_estate",
+  "Property": "property",
+  "Consulting": "consulting",
+  "General Business": "general",
+  "Financial Planning": "financial_advisor",
+  "Wealth Management": "financial_advisor",
+};
 
 function useProductRoute(user: any) {
   const email = user?.email?.toLowerCase() ?? "";
   const destination = MASTER_EMAILS.includes(email) ? "/connect" : null;
-
-  return {
-    destination,
-    checking: false,
-  };
+  return { destination, checking: false };
 }
 
 export default function ProductAuth() {
@@ -40,8 +58,25 @@ export default function ProductAuth() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
+  const [industry, setIndustry] = useState("");
+  const [industrySearch, setIndustrySearch] = useState("");
+  const [industryOpen, setIndustryOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const industryRef = useRef<HTMLDivElement>(null);
   const { destination, checking: routeChecking } = useProductRoute(user);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (industryRef.current && !industryRef.current.contains(e.target as Node)) setIndustryOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const filteredIndustries = INDUSTRIES.filter((i) =>
+    i.toLowerCase().includes(industrySearch.toLowerCase())
+  );
 
   if (loading || (user && routeChecking)) return (
     <div className="flex min-h-screen items-center justify-center bg-[#08080A]">
@@ -56,15 +91,31 @@ export default function ProductAuth() {
     setSubmitting(true);
     try {
       if (isSignUp) {
-        const { error } = await supabase.auth.signUp({
+        if (!industry) {
+          toast.error("Please select your industry");
+          setSubmitting(false);
+          return;
+        }
+        const industryKey = INDUSTRY_KEY_MAP[industry] || "general";
+        const { data: signUpData, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
             emailRedirectTo: `${window.location.origin}/get-started?product=${product}`,
-            data: { full_name: fullName, product_user: true },
+            data: { full_name: fullName, product_user: true, industry: industryKey },
           },
         });
         if (error) throw error;
+
+        // Save industry to profile
+        if (signUpData.user) {
+          setTimeout(async () => {
+            await supabase
+              .from("profiles")
+              .update({ industry: industryKey } as any)
+              .eq("user_id", signUpData.user!.id);
+          }, 1000);
+        }
 
         toast.success("Account created! Check your email for a confirmation link.");
       } else {
@@ -119,7 +170,7 @@ export default function ProductAuth() {
       </div>
 
       {/* Right panel - auth form */}
-      <div className="flex flex-1 items-center justify-center p-8">
+      <div className="flex flex-1 items-center justify-center p-8 overflow-y-auto">
         <div className="w-full max-w-sm">
           <div className="mb-8 lg:hidden text-center">
             <span className="text-2xl font-bold tracking-tight">AURA</span>
@@ -167,6 +218,52 @@ export default function ProductAuth() {
                 className="h-11 bg-white/5 border-white/10 text-white placeholder:text-white/20"
               />
             </div>
+
+            {/* Industry selector — sign-up only */}
+            {isSignUp && (
+              <div className="space-y-2" ref={industryRef}>
+                <Label className="text-xs uppercase tracking-wider text-white/50">Industry</Label>
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setIndustryOpen(!industryOpen)}
+                    className="w-full h-11 px-3 text-left text-sm bg-white/5 border border-white/10 rounded-md text-white flex items-center justify-between"
+                  >
+                    <span className={industry ? "text-white" : "text-white/20"}>
+                      {industry || "Select your industry"}
+                    </span>
+                    <Search className="w-4 h-4 text-white/30" />
+                  </button>
+                  {industryOpen && (
+                    <div className="absolute z-50 w-full bg-[#18181B] border border-white/10 rounded-lg shadow-xl max-h-60 overflow-hidden bottom-full mb-1">
+                      <div className="p-2 border-b border-white/10">
+                        <Input
+                          value={industrySearch}
+                          onChange={(e) => setIndustrySearch(e.target.value)}
+                          placeholder="Search industries..."
+                          className="h-9 bg-white/5 border-white/10 text-white text-sm placeholder:text-white/20"
+                          autoFocus
+                        />
+                      </div>
+                      <div className="overflow-y-auto max-h-48">
+                        {filteredIndustries.map((ind) => (
+                          <button
+                            key={ind}
+                            type="button"
+                            onClick={() => { setIndustry(ind); setIndustryOpen(false); setIndustrySearch(""); }}
+                            className={`w-full text-left px-3 py-2 text-sm hover:bg-white/5 flex items-center gap-2 ${industry === ind ? "text-[hsl(140_12%_58%)]" : "text-[#A1A1AA]"}`}
+                          >
+                            {industry === ind && <Check className="w-3.5 h-3.5 shrink-0" />}
+                            {ind}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             <Button
               type="submit"
               disabled={submitting}
