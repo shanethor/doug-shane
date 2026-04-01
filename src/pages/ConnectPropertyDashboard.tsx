@@ -225,7 +225,7 @@ export default function ConnectPropertyDashboard() {
       </div>
 
       {/* Top Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 animate-fade-in" style={{ animationDelay: "100ms", animationFillMode: "both" }}>
         <Card className="border-border bg-card">
           <CardContent className="p-3">
             <div className="flex items-center justify-between">
