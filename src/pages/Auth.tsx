@@ -69,9 +69,12 @@ export default function Auth() {
   const [autoChecking, setAutoChecking] = useState(false);
   const autoCheckStarted = useRef(false);
 
-  // Check approval status when user is authenticated
+  // Check approval status when user is authenticated — run once per user
+  const approvalChecked = useRef(false);
   useEffect(() => {
-    if (!user || loading || needs2FA || isPendingApproval) return;
+    if (!user || loading) return;
+    if (approvalChecked.current) return;
+    approvalChecked.current = true;
 
     const checkApproval = async () => {
       const { data: profile } = await supabase
@@ -90,8 +93,14 @@ export default function Auth() {
 
   useEffect(() => {
     if (loginHandled2FA.current || autoCheckStarted.current) return;
+    if (loading || !user) return;
 
-    if (!loading && user && !is2FAVerified() && !needs2FA && !isPendingApproval) {
+    // Wait for approval check to finish before proceeding
+    if (!approvalChecked.current) return;
+
+    if (isPendingApproval) return;
+
+    if (!is2FAVerified() && !needs2FA) {
       if (user.user_metadata?.skip_2fa) {
         set2FAVerified(true);
         navigate("/insurance/hub", { replace: true });
@@ -128,7 +137,7 @@ export default function Auth() {
           toast.error("Could not reach verification service. Please try again.");
         })
         .finally(() => setAutoChecking(false));
-    } else if (!loading && user && is2FAVerified() && !isPendingApproval) {
+    } else if (is2FAVerified()) {
       navigate("/insurance/hub", { replace: true });
     }
   }, [user?.id, loading, isPendingApproval]);
