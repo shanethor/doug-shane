@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useIsMobile } from "@/hooks/use-mobile";
 import LeadOutreachPanel from "./LeadOutreachPanel";
@@ -15,7 +15,7 @@ import {
   Rocket, Building2, Globe, MapPin, Target, Search, FileText,
   Plus, ArrowUpRight, Eye, Trash2, Zap,
   Sparkles, Users, TrendingUp,
-  Loader2, Mail, Phone, RefreshCw, Gift, Lock,
+  Loader2, Mail, Phone, RefreshCw, Gift, Lock, ChevronDown, ChevronUp,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -24,6 +24,15 @@ import {
   useEngineLeads, useUpdateEngineLead, useDeleteEngineLead, useConvertToPipeline,
   type EngineLead,
 } from "@/hooks/useLeadEngine";
+import {
+  VERTICALS, SHARED_SOURCES, getVerticalsForIndustry, getVerticalsByGroup,
+  type LeadSource, type Vertical,
+} from "@/lib/lead-verticals";
+
+const ICON_MAP: Record<LeadSource["icon"], any> = {
+  file: FileText, building: Building2, target: Target, globe: Globe,
+  zap: Zap, users: Users, rocket: Rocket, trending: TrendingUp, map: MapPin,
+};
 
 const US_STATES = [
   "All States", "Alabama", "Alaska", "Arizona", "Arkansas", "California", "Colorado",
@@ -47,7 +56,7 @@ const INDUSTRY_PRICING: Record<string, { basePrice: number; label: string; freeL
 };
 
 function getLeadPacks(basePrice: number, isSubscriber: boolean, hasStudio: boolean) {
-  const discount = hasStudio ? 0.4 : isSubscriber ? 0.6 : 1; // 60% off for Studio, 40% off for Connect
+  const discount = hasStudio ? 0.4 : isSubscriber ? 0.6 : 1;
   return [
     { leads: 10, price: Math.round(10 * basePrice * discount), originalPrice: 10 * basePrice },
     { leads: 25, price: Math.round(25 * basePrice * discount), originalPrice: 25 * basePrice },
@@ -60,60 +69,6 @@ function getFreeLeads(baseFreeLeads: number, hasStudio: boolean) {
   return hasStudio ? baseFreeLeads * 3 : baseFreeLeads;
 }
 
-const FOCUS_TO_SOURCE: Record<string, string> = {
-  new_business: "Business Filings",
-  social: "Reddit",
-  linkedin: "LinkedIn",
-  permits: "Permit Database",
-  licensing: "State Licensing Boards",
-  osha: "OSHA Enforcement",
-  epa: "EPA Databases",
-  court_records: "Court Records & Liens",
-  sam_gov: "SAM.gov / Federal Contracts",
-  sba: "SBA Loan Data",
-  associations: "Trade Associations",
-  google_places: "Google Places",
-  fmcsa: "FMCSA / DOT Records",
-  ucc: "UCC Filings",
-  domains: "New Domain Registrations",
-  mfr_dealers: "Manufacturer Dealer Networks",
-  utility_rebate: "Utility Rebate Contractor Lists",
-  nate_certs: "NATE Certified Contractors",
-  prevailing_wage: "Prevailing Wage Registries",
-  smacna_phcc: "SMACNA / PHCC Directories",
-  pace_programs: "PACE Program Directories",
-  buildzoom: "BuildZoom Permits",
-  census_bls: "Census CBP / BLS QCEW",
-  state_wc: "State WC Employer Databases",
-  // Roofing-specific sources
-  noaa_hail: "NOAA Hail / Storm Reports",
-  roofing_licenses: "Roofing Contractor Licenses",
-  nrca_directory: "NRCA Membership Directory",
-  storm_permits: "Storm Restoration Permits",
-  gaf_certainteed: "GAF / CertainTeed Certified",
-  roofing_wc: "Roofing WC Class 5551/5552",
-  cat_event_filings: "CAT Event New Entity Filings",
-  // Plumbing-specific sources
-  plumbing_licenses: "Plumbing Contractor Licenses",
-  backflow_certs: "Backflow Preventer Certifications",
-  phcc_directory: "PHCC Member Directory",
-  ua_local_unions: "UA Local Union Contractors",
-  med_gas_certs: "Medical Gas Installer Certs",
-  water_sewer_permits: "Water/Sewer Line Permits",
-  plumbing_wc: "Plumbing WC Class 5183",
-  // Trucking / Transportation sources
-  fmcsa_new_authority: "FMCSA New MC Authority",
-  bmc35_cancellations: "BMC-35 Cancellations",
-  csa_basic_scores: "CSA / BASIC Score Deterioration",
-  oos_orders: "Out-of-Service Orders",
-  carrier_safety_ratings: "Carrier Safety Rating Changes",
-  dot_inspections: "DOT Inspection Reports",
-  hazmat_endorsements: "Hazmat Endorsement Filings",
-  ifta_registrations: "IFTA / IRP Registrations",
-  broker_authority: "Freight Broker Authority Filings",
-  cargo_claims: "Cargo Loss / Claim Records",
-};
-
 function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasStudio }: {
   onGenerate: (opts: any) => void;
   userIndustry: string;
@@ -124,11 +79,56 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasStudio }:
   const packs = getLeadPacks(pricing.basePrice, isSubscriber, hasStudio);
   const freeLeads = getFreeLeads(pricing.freeLeads, hasStudio);
 
+  const availableVerticals = useMemo(() => getVerticalsForIndustry(userIndustry), [userIndustry]);
+  const verticalsByGroup = useMemo(() => {
+    const map: Record<string, Vertical[]> = {};
+    for (const v of availableVerticals) {
+      (map[v.group] ??= []).push(v);
+    }
+    return map;
+  }, [availableVerticals]);
+
   const [geo, setGeo] = useState("All States");
+  const [selectedVerticals, setSelectedVerticals] = useState<string[]>(() =>
+    availableVerticals.slice(0, 2).map(v => v.id)
+  );
   const [focuses, setFocuses] = useState<string[]>(["new_business"]);
   const [selectedPack, setSelectedPack] = useState(50);
   const [generating, setGenerating] = useState(false);
   const [purchasing, setPurchasing] = useState(false);
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+
+  // Collect all sources for selected verticals + shared
+  const activeSources = useMemo(() => {
+    const sources = [...SHARED_SOURCES];
+    const seenKeys = new Set(sources.map(s => s.key));
+    for (const vId of selectedVerticals) {
+      const vertical = VERTICALS.find(v => v.id === vId);
+      if (vertical) {
+        for (const src of vertical.sources) {
+          if (!seenKeys.has(src.key)) {
+            seenKeys.add(src.key);
+            sources.push(src);
+          }
+        }
+      }
+    }
+    return sources;
+  }, [selectedVerticals]);
+
+  const toggleVertical = (id: string) => {
+    setSelectedVerticals(prev =>
+      prev.includes(id) ? prev.filter(v => v !== id) : [...prev, id]
+    );
+  };
+
+  const toggleGroup = (group: string) => {
+    setExpandedGroups(prev => {
+      const next = new Set(prev);
+      next.has(group) ? next.delete(group) : next.add(group);
+      return next;
+    });
+  };
 
   const toggleFocus = (key: string) => {
     setFocuses(prev => {
@@ -155,7 +155,8 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasStudio }:
       const sourceNames: string[] = [];
 
       for (const focusKey of focuses) {
-        const source = FOCUS_TO_SOURCE[focusKey] || "Business Filings";
+        const src = activeSources.find(s => s.key === focusKey);
+        const source = src?.label || "Business Filings";
         sourceNames.push(source);
         try {
           const { data, error } = await supabase.functions.invoke("lead-engine-scan", {
@@ -200,7 +201,7 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasStudio }:
 
   return (
     <div className="space-y-4">
-      {/* Free leads banner for subscribers */}
+      {/* Free leads banner */}
       {isSubscriber && (
         <Card className={hasStudio ? "border-orange-500/30 bg-orange-500/5" : "border-emerald-500/30 bg-emerald-500/5"}>
           <CardContent className="p-4">
@@ -290,6 +291,57 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasStudio }:
         </CardContent>
       </Card>
 
+      {/* Specialization multi-select */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <Users className="h-4 w-4 text-primary" />
+            Specializations
+          </CardTitle>
+          <p className="text-[10px] text-muted-foreground">
+            Select your verticals to see industry-specific lead sources
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {Object.entries(verticalsByGroup).map(([group, verts]) => (
+            <div key={group}>
+              <button
+                type="button"
+                onClick={() => toggleGroup(group)}
+                className="w-full flex items-center justify-between py-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <span>{group}</span>
+                <div className="flex items-center gap-1.5">
+                  <Badge variant="secondary" className="text-[9px] px-1.5 py-0">
+                    {verts.filter(v => selectedVerticals.includes(v.id)).length}/{verts.length}
+                  </Badge>
+                  {expandedGroups.has(group) ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                </div>
+              </button>
+              {expandedGroups.has(group) && (
+                <div className="grid grid-cols-2 gap-1.5 pb-2">
+                  {verts.map(v => (
+                    <button
+                      key={v.id}
+                      type="button"
+                      onClick={() => toggleVertical(v.id)}
+                      className={`rounded-md border p-2 text-left text-[11px] font-medium transition-all ${
+                        selectedVerticals.includes(v.id)
+                          ? "border-primary bg-primary/5 text-foreground ring-1 ring-primary/20"
+                          : "border-border text-muted-foreground hover:border-primary/40"
+                      }`}
+                    >
+                      {v.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+          <p className="text-[10px] text-muted-foreground">{selectedVerticals.length} specialization{selectedVerticals.length !== 1 ? "s" : ""} active</p>
+        </CardContent>
+      </Card>
+
       {/* Generate controls */}
       <Card>
         <CardHeader className="pb-3">
@@ -305,80 +357,33 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasStudio }:
               <Select value={geo} onValueChange={setGeo}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent className="max-h-60">
-                  {US_STATES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                  {US_STATES.map((st) => <SelectItem key={st} value={st}>{st}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Focus Sources</label>
-              <div className="grid grid-cols-2 gap-2">
-                {([
-                  { key: "new_business", label: "Business Filings", icon: FileText },
-                  { key: "licensing", label: "State Licensing", icon: FileText },
-                  { key: "permits", label: "Permit Database", icon: Building2 },
-                  { key: "osha", label: "OSHA Enforcement", icon: Target },
-                  { key: "epa", label: "EPA Databases", icon: Globe },
-                  { key: "mfr_dealers", label: "Manufacturer Dealers", icon: Building2 },
-                  { key: "utility_rebate", label: "Utility Rebate Lists", icon: Zap },
-                  { key: "nate_certs", label: "NATE Certified", icon: Target },
-                  { key: "smacna_phcc", label: "SMACNA / PHCC", icon: Users },
-                  { key: "prevailing_wage", label: "Prevailing Wage", icon: FileText },
-                  { key: "pace_programs", label: "PACE Programs", icon: TrendingUp },
-                  { key: "buildzoom", label: "BuildZoom Permits", icon: Building2 },
-                  { key: "court_records", label: "Court Records", icon: FileText },
-                  { key: "sam_gov", label: "SAM.gov / Fed Contracts", icon: Building2 },
-                  { key: "sba", label: "SBA Loan Data", icon: TrendingUp },
-                  { key: "associations", label: "Trade Associations", icon: Users },
-                  { key: "google_places", label: "Google Places", icon: MapPin },
-                  { key: "state_wc", label: "State WC Databases", icon: FileText },
-                  { key: "census_bls", label: "Census / BLS Data", icon: TrendingUp },
-                  { key: "fmcsa", label: "FMCSA / DOT", icon: Rocket },
-                  { key: "ucc", label: "UCC Filings", icon: FileText },
-                  { key: "social", label: "Reddit Signals", icon: Users },
-                  { key: "linkedin", label: "LinkedIn", icon: Globe },
-                  { key: "domains", label: "New Domains", icon: Globe },
-                  // Roofing sources
-                  { key: "noaa_hail", label: "NOAA Hail/Storm", icon: Zap },
-                  { key: "roofing_licenses", label: "Roofing Licenses", icon: FileText },
-                  { key: "nrca_directory", label: "NRCA Directory", icon: Users },
-                  { key: "storm_permits", label: "Storm Permits", icon: Building2 },
-                  { key: "gaf_certainteed", label: "GAF/CertainTeed", icon: Target },
-                  { key: "roofing_wc", label: "Roofing WC 5551/5552", icon: FileText },
-                  { key: "cat_event_filings", label: "CAT Event Filings", icon: Zap },
-                  // Plumbing sources
-                  { key: "plumbing_licenses", label: "Plumbing Licenses", icon: FileText },
-                  { key: "backflow_certs", label: "Backflow Certs", icon: Target },
-                  { key: "phcc_directory", label: "PHCC Directory", icon: Users },
-                  { key: "ua_local_unions", label: "UA Local Unions", icon: Users },
-                  { key: "med_gas_certs", label: "Medical Gas Certs", icon: Target },
-                  { key: "water_sewer_permits", label: "Water/Sewer Permits", icon: Building2 },
-                  { key: "plumbing_wc", label: "Plumbing WC 5183", icon: FileText },
-                  // Trucking / Transportation sources
-                  { key: "fmcsa_new_authority", label: "FMCSA New Authority", icon: Rocket },
-                  { key: "bmc35_cancellations", label: "BMC-35 Cancellations", icon: Target },
-                  { key: "csa_basic_scores", label: "CSA/BASIC Scores", icon: TrendingUp },
-                  { key: "oos_orders", label: "Out-of-Service Orders", icon: Zap },
-                  { key: "carrier_safety_ratings", label: "Carrier Safety Ratings", icon: Target },
-                  { key: "dot_inspections", label: "DOT Inspections", icon: FileText },
-                  { key: "hazmat_endorsements", label: "Hazmat Endorsements", icon: Zap },
-                  { key: "ifta_registrations", label: "IFTA / IRP Registrations", icon: FileText },
-                  { key: "broker_authority", label: "Broker Authority Filings", icon: Building2 },
-                  { key: "cargo_claims", label: "Cargo Claims", icon: FileText },
-                ] as const).map(({ key, label, icon: Icon }) => (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => toggleFocus(key)}
-                    className={`flex items-center gap-2 rounded-lg border p-2.5 text-left text-xs font-medium transition-all ${
-                      focuses.includes(key)
-                        ? "border-primary bg-primary/5 text-foreground ring-1 ring-primary/20"
-                        : "border-border text-muted-foreground hover:border-primary/40"
-                    }`}
-                  >
-                    <Icon className={`h-3.5 w-3.5 shrink-0 ${focuses.includes(key) ? "text-primary" : ""}`} />
-                    {label}
-                  </button>
-                ))}
+              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">
+                Focus Sources ({activeSources.length} available)
+              </label>
+              <div className="grid grid-cols-2 gap-2 max-h-[320px] overflow-y-auto pr-1">
+                {activeSources.map(({ key, label, icon }) => {
+                  const Icon = ICON_MAP[icon] || FileText;
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => toggleFocus(key)}
+                      className={`flex items-center gap-2 rounded-lg border p-2.5 text-left text-xs font-medium transition-all ${
+                        focuses.includes(key)
+                          ? "border-primary bg-primary/5 text-foreground ring-1 ring-primary/20"
+                          : "border-border text-muted-foreground hover:border-primary/40"
+                      }`}
+                    >
+                      <Icon className={`h-3.5 w-3.5 shrink-0 ${focuses.includes(key) ? "text-primary" : ""}`} />
+                      {label}
+                    </button>
+                  );
+                })}
               </div>
               <p className="text-[10px] text-muted-foreground mt-1">{focuses.length} source{focuses.length !== 1 ? "s" : ""} selected</p>
             </div>
