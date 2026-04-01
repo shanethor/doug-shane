@@ -168,6 +168,7 @@ export default function ConnectProduct() {
             {page === "connect" && (isPageGated("connect") ? <ComingSoonGate pageName="Connect" /> : <DemoConnectTab contentReady={introComplete} />)}
             {page === "intelligence" && (isPageGated("intelligence") ? <ComingSoonGate pageName="Intelligence" /> : <ConnectIntelligencePage />)}
             {page === "rewards" && (isPageGated("rewards") ? <ComingSoonGate pageName="Rewards" /> : <ConnectRewardsPage />)}
+            {page === "property" && <ConnectPropertyDashboard />}
             {page === "leads" && <ConnectLeads />}
             {page === "pipeline" && <ConnectPipelineTab />}
             {page === "email" && (isPageGated("email") ? <ComingSoonGate pageName="Email" /> : <DemoEmailTab />)}
