@@ -228,34 +228,7 @@ export function ProductLayout({
              );
            })}
 
-          {/* Studio add-on */}
-          <button
-            onClick={studioUnlocked ? undefined : onStudioClick}
-            title={collapsed ? "AURA Studio" : undefined}
-            className={`w-full flex items-center gap-3 rounded-lg text-sm transition-colors ${
-              collapsed ? "justify-center px-0 py-2.5" : "px-3 py-2.5"
-            } ${
-              studioUnlocked
-                ? "text-orange-400/80 hover:text-orange-300 hover:bg-sidebar-accent/50"
-                : "text-sidebar-foreground/20 hover:text-sidebar-foreground/40 hover:bg-sidebar-accent/50"
-            }`}
-          >
-            {studioUnlocked ? (
-              <Wrench className="h-4 w-4 shrink-0" />
-            ) : (
-              <Lock className="h-4 w-4 shrink-0" />
-            )}
-            {!collapsed && (
-              <span className="flex items-center gap-2">
-                Studio
-                {!studioUnlocked && (
-                  <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-orange-500/10 text-orange-400 border border-orange-500/20">
-                    Add-on
-                  </span>
-                )}
-              </span>
-            )}
-          </button>
+           {/* Studio add-on — hidden from nav, dripped via qualification popups */}
         </nav>
 
         {/* Bottom */}
