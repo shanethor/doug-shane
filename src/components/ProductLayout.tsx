@@ -34,6 +34,7 @@ const ICON_MAP: Record<string, any> = {
   calendar: Calendar,
   create: Sparkles,
   leads: Target,
+  property: Home,
   sage: Zap,
 };
 
