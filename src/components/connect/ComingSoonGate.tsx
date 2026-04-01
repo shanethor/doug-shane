@@ -26,7 +26,7 @@ const SUBSCRIPTION_PERKS = [
   "Advanced sales pipeline with stage tracking",
   "40% discount on all marketplace leads",
   "Early access to all new features as they launch",
-  "Lock in $99.99/mo for 3 months (then $249.99/mo)",
+  "Lock in $99/mo during buildout (then $249/mo)",
 ];
 
 export function ComingSoonGate({ pageName }: { pageName: string }) {
