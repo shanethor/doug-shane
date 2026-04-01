@@ -488,8 +488,48 @@ function ResultsTable() {
   const [selectedLead, setSelectedLead] = useState<EngineLead | null>(null);
   const [gameplanLead, setGameplanLead] = useState<EngineLead | null>(null);
   const [enrichingId, setEnrichingId] = useState<string | null>(null);
-
   const [enrichingAll, setEnrichingAll] = useState(false);
+  const [showAll, setShowAll] = useState(false);
+
+  const exportLeads = (format: "excel" | "emails" | "phones") => {
+    const data = filtered.length ? filtered : (leads || []);
+    if (!data.length) { toast.info("No leads to export"); return; }
+
+    if (format === "emails") {
+      const emails = data.filter((l: EngineLead) => l.email).map((l: EngineLead) => l.email);
+      if (!emails.length) { toast.info("No emails found"); return; }
+      const blob = new Blob([emails.join("\n")], { type: "text/plain" });
+      downloadBlob(blob, "lead-emails.txt");
+      toast.success(`Exported ${emails.length} emails`);
+      return;
+    }
+
+    if (format === "phones") {
+      const phones = data.filter((l: EngineLead) => l.phone).map((l: EngineLead) => `${l.company},${l.contact_name || ""},${l.phone}`);
+      if (!phones.length) { toast.info("No phone numbers found"); return; }
+      const blob = new Blob(["Company,Contact,Phone\n" + phones.join("\n")], { type: "text/csv" });
+      downloadBlob(blob, "lead-phones.csv");
+      toast.success(`Exported ${phones.length} phone numbers`);
+      return;
+    }
+
+    // Excel/CSV export
+    const header = "Company,Contact,Email,Phone,State,Industry,Score,Status,Signal";
+    const rows = data.map((l: EngineLead) =>
+      [l.company, l.contact_name || "", l.email || "", l.phone || "", l.state || "", l.industry || "", l.score || 0, l.status, (l.signal || "").replace(/,/g, ";")]
+        .map(v => `"${v}"`).join(",")
+    );
+    const blob = new Blob([header + "\n" + rows.join("\n")], { type: "text/csv" });
+    downloadBlob(blob, "leads-export.csv");
+    toast.success(`Exported ${data.length} leads`);
+  };
+
+  const downloadBlob = (blob: Blob, filename: string) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = filename; a.click();
+    URL.revokeObjectURL(url);
+  };
 
   const handleEnrich = async (lead: EngineLead) => {
     setEnrichingId(lead.id);
