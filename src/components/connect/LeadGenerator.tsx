@@ -95,6 +95,8 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasStudio }:
   const [focuses, setFocuses] = useState<string[]>(["new_business"]);
   const [selectedPack, setSelectedPack] = useState(50);
   const [generating, setGenerating] = useState(false);
+  const [genProgress, setGenProgress] = useState(0);
+  const [genStep, setGenStep] = useState("");
   const [purchasing, setPurchasing] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
