@@ -72,11 +72,12 @@ function getFreeLeads(baseFreeLeads: number, hasAgent: boolean) {
   return hasAgent ? baseFreeLeads * 2 : baseFreeLeads;
 }
 
-function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasAgent }: {
+function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasAgent, initialSpecializations }: {
   onGenerate: (opts: any) => void;
   userIndustry: string;
   isSubscriber: boolean;
   hasAgent: boolean;
+  initialSpecializations?: string[] | null;
 }) {
   const pricing = INDUSTRY_PRICING[userIndustry] || INDUSTRY_PRICING.general;
   const packs = getLeadPacks(pricing.basePrice, isSubscriber, hasAgent);
@@ -92,9 +93,14 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasAgent }: 
   }, [availableVerticals]);
 
   const [geo, setGeo] = useState("All States");
-  const [selectedVerticals, setSelectedVerticals] = useState<string[]>(() =>
-    availableVerticals.slice(0, 2).map(v => v.id)
-  );
+  const [selectedVerticals, setSelectedVerticals] = useState<string[]>(() => {
+    if (initialSpecializations?.length) {
+      // Filter to only those that are valid for this industry
+      const valid = initialSpecializations.filter(id => availableVerticals.some(v => v.id === id));
+      return valid.length > 0 ? valid : availableVerticals.slice(0, 2).map(v => v.id);
+    }
+    return availableVerticals.slice(0, 2).map(v => v.id);
+  });
   const [focuses, setFocuses] = useState<string[]>(["new_business"]);
   const [selectedPack, setSelectedPack] = useState(50);
   const [generating, setGenerating] = useState(false);
