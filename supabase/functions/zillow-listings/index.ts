@@ -58,6 +58,8 @@ Deno.serve(async (req) => {
     const scraperUrl = new URL("https://api.hasdata.com/scrape/web");
     scraperUrl.searchParams.set("url", zillowUrl);
     scraperUrl.searchParams.set("jsRendering", "true");
+    scraperUrl.searchParams.set("proxyCountry", "US");
+    scraperUrl.searchParams.set("blockResources", "false");
 
     const res = await fetch(scraperUrl.toString(), {
       headers: { "x-api-key": apiKey },
