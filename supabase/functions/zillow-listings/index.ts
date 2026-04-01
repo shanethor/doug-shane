@@ -156,7 +156,7 @@ function extractListResults(html: string): ZillowListing[] {
         baths: item.baths ?? homeInfo.bathrooms ?? null,
         area: item.area ?? homeInfo.livingArea ?? null,
         imgSrc: item.imgSrc || null,
-        detailUrl: item.detailUrl ? `https://www.zillow.com${item.detailUrl}` : "",
+        detailUrl: item.detailUrl?.startsWith("http") ? item.detailUrl : item.detailUrl ? `https://www.zillow.com${item.detailUrl}` : "",
         statusText: item.statusText || "",
         homeType: homeInfo.homeType || null,
         daysOnZillow: homeInfo.daysOnZillow ?? null,
