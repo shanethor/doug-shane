@@ -410,8 +410,8 @@ export default function LandingPage() {
 
                   {/* Pricing block */}
                   <div className="p-5 border rounded-xl mb-6" style={{ background: "hsl(140 12% 42% / 0.04)", borderColor: "hsl(140 12% 42% / 0.15)" }}>
-                    <div className="text-sm text-[#A1A1AA] mb-1"><strong className="text-white text-lg">$250</strong>/month per account</div>
-                    <div className="text-sm font-medium mb-1" style={{ color: "hsl(140 12% 62%)" }}>Launch offer: $100/month for the first 6 months</div>
+                    <div className="text-sm text-[#A1A1AA] mb-1"><strong className="text-white text-lg">$249</strong>/month per account</div>
+                    <div className="text-sm font-medium mb-1" style={{ color: "hsl(140 12% 62%)" }}>Launch offer: $99/month during buildout</div>
                     <div className="text-[12px] text-[#71717A] leading-[1.55]">Month‑to‑month SaaS · no long‑term contract required.</div>
                   </div>
 
