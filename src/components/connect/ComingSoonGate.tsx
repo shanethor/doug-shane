@@ -76,8 +76,8 @@ export function ComingSoonGate({ pageName }: { pageName: string }) {
       {/* Subscribe CTA */}
       <div className="w-full max-w-md mb-8 rounded-xl border border-orange-500/30 bg-orange-500/5 p-5">
         <div className="flex items-baseline gap-2 mb-1 justify-center">
-          <span className="text-sm line-through text-muted-foreground/50">$249.99</span>
-          <span className="text-3xl font-bold">$99.99</span>
+          <span className="text-sm line-through text-muted-foreground/50">$249</span>
+          <span className="text-3xl font-bold">$99</span>
           <span className="text-sm text-muted-foreground">/month</span>
         </div>
         <p className="text-xs text-muted-foreground mb-4">Early access rate for 3 months · 3-day free trial</p>

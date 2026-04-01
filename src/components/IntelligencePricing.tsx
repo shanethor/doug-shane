@@ -69,7 +69,7 @@ export function IntelligencePricingSection() {
   const [marketplaceCharges] = useState(0);
   // TODO: detect intro vs standard pricing from Stripe subscription
   const [isIntroPricing] = useState(true); // first 3 months
-  const basePricing = isIntroPricing ? 99.99 : 249.99;
+  const basePricing = isIntroPricing ? 99 : 249;
 
   const loadContactStats = useCallback(async () => {
     if (!user) return;
