@@ -15,15 +15,15 @@ import { SageFloatingChat } from "@/components/SageFloatingChat";
 
 
 const CONNECT_NAV = [
-  { to: "/connect", label: "Connect", icon: Network, exact: true },
-  { to: "/connect/intelligence", label: "Intelligence", icon: Brain },
-  { to: "/connect/pipeline", label: "Pipeline", icon: BarChart3 },
-  { to: "/connect/email", label: "Email", icon: Mail },
-  { to: "/connect/calendar", label: "Calendar", icon: Calendar },
-  { to: "/connect/create", label: "Create", icon: Sparkles },
-  { to: "/connect/leads", label: "Leads", icon: Target },
-  { to: "/connect/property", label: "Property", icon: Home },
-  { to: "/connect/sage", label: "Sage", icon: Zap },
+  { to: "/connect", label: "Connect", icon: Network, exact: true, premium: false },
+  { to: "/connect/intelligence", label: "Intelligence", icon: Brain, premium: false },
+  { to: "/connect/pipeline", label: "Pipeline", icon: BarChart3, premium: false },
+  { to: "/connect/email", label: "Email", icon: Mail, premium: false },
+  { to: "/connect/calendar", label: "Calendar", icon: Calendar, premium: false },
+  { to: "/connect/create", label: "Create", icon: Sparkles, premium: false },
+  { to: "/connect/leads", label: "Leads", icon: Target, premium: false },
+  { to: "/connect/property", label: "Property", icon: Home, premium: true },
+  { to: "/connect/sage", label: "Sage", icon: Zap, premium: false },
 ];
 
 const ICON_MAP: Record<string, any> = {
