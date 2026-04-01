@@ -51,7 +51,7 @@ export default function AuraAgentUpsellModal({
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="sm:max-w-md bg-[#0c0c0e] border-white/10 text-white">
+      <DialogContent className="sm:max-w-md bg-card border-border text-card-foreground">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-3 text-xl">
             <div className="p-2 rounded-lg bg-orange-500/10">
@@ -62,46 +62,46 @@ export default function AuraAgentUpsellModal({
         </DialogHeader>
 
         <div className="space-y-5 pt-2">
-          <p className="text-sm text-white/50 leading-relaxed">
+          <p className="text-sm text-muted-foreground leading-relaxed">
             Your AI sales agent that manages client outreach and marketing for you.
             Custom-built for your vertical — so you can focus on closing.
           </p>
 
           {/* Pricing */}
-          <div className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
+          <div className="rounded-xl border border-border bg-muted/30 p-4">
             <div className="flex items-baseline gap-2 mb-1">
-              <span className="text-3xl font-bold text-white">$599</span>
-              <span className="text-sm text-white/40">/month</span>
+              <span className="text-3xl font-bold text-foreground">$599</span>
+              <span className="text-sm text-muted-foreground">/month</span>
             </div>
-            <p className="text-xs text-white/30 mb-3">Cancel anytime</p>
+            <p className="text-xs text-muted-foreground/60 mb-3">Cancel anytime</p>
 
             {isConnectSubscriber && (
               <div className="rounded-lg bg-orange-500/10 border border-orange-500/20 p-3 mb-3">
                 <div className="flex items-center gap-2 mb-1">
                   <Zap className="h-4 w-4 text-orange-400" />
-                  <span className="text-sm font-medium text-orange-300">Connect Subscriber Bonus</span>
+                  <span className="text-sm font-medium text-orange-500 dark:text-orange-300">Connect Subscriber Bonus</span>
                 </div>
-                <p className="text-xs text-orange-200/70">
-                  <span className="font-bold text-orange-300">50% off your first month</span> — just $299.50 to get started.
+                <p className="text-xs text-orange-600/80 dark:text-orange-200/70">
+                  <span className="font-bold text-orange-500 dark:text-orange-300">50% off your first month</span> — just $299.50 to get started.
                 </p>
               </div>
             )}
 
             <ul className="space-y-2">
               {FEATURES.map((f) => (
-                <li key={f} className="flex items-center gap-2 text-xs text-white/60">
+                <li key={f} className="flex items-center gap-2 text-xs text-muted-foreground">
                   <CheckCircle className="h-3.5 w-3.5 text-orange-400 shrink-0" />
                   {f}
                 </li>
               ))}
             </ul>
 
-            <div className="mt-3 pt-3 border-t border-white/5 space-y-1.5">
-              <div className="flex items-center gap-2 text-xs text-orange-300">
+            <div className="mt-3 pt-3 border-t border-border/50 space-y-1.5">
+              <div className="flex items-center gap-2 text-xs text-orange-500 dark:text-orange-300">
                 <Zap className="h-3 w-3" />
                 <span className="font-medium">50% off all purchased leads</span>
               </div>
-              <div className="flex items-center gap-2 text-xs text-orange-300">
+              <div className="flex items-center gap-2 text-xs text-orange-500 dark:text-orange-300">
                 <Zap className="h-3 w-3" />
                 <span className="font-medium">2× free leads every month</span>
               </div>
@@ -127,7 +127,7 @@ export default function AuraAgentUpsellModal({
             <Link to="/book/aura-agent" onClick={onClose}>
               <Button
                 variant="outline"
-                className="w-full gap-2 border-white/10 text-white/60 hover:text-white hover:bg-white/5 h-10"
+                className="w-full gap-2 border-border text-muted-foreground hover:text-foreground hover:bg-muted/50 h-10"
               >
                 <Calendar className="h-3.5 w-3.5" /> Schedule a call first
               </Button>

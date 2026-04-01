@@ -19,6 +19,7 @@ import {
   Plus, ArrowUpRight, Eye, Trash2, Zap,
   Sparkles, Users, TrendingUp,
   Loader2, Mail, Phone, RefreshCw, Gift, Lock, ChevronDown, ChevronUp,
+  Download,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -487,8 +488,48 @@ function ResultsTable() {
   const [selectedLead, setSelectedLead] = useState<EngineLead | null>(null);
   const [gameplanLead, setGameplanLead] = useState<EngineLead | null>(null);
   const [enrichingId, setEnrichingId] = useState<string | null>(null);
-
   const [enrichingAll, setEnrichingAll] = useState(false);
+  const [showAll, setShowAll] = useState(false);
+
+  const exportLeads = (format: "excel" | "emails" | "phones") => {
+    const data = filtered.length ? filtered : (leads || []);
+    if (!data.length) { toast.info("No leads to export"); return; }
+
+    if (format === "emails") {
+      const emails = data.filter((l: EngineLead) => l.email).map((l: EngineLead) => l.email);
+      if (!emails.length) { toast.info("No emails found"); return; }
+      const blob = new Blob([emails.join("\n")], { type: "text/plain" });
+      downloadBlob(blob, "lead-emails.txt");
+      toast.success(`Exported ${emails.length} emails`);
+      return;
+    }
+
+    if (format === "phones") {
+      const phones = data.filter((l: EngineLead) => l.phone).map((l: EngineLead) => `${l.company},${l.contact_name || ""},${l.phone}`);
+      if (!phones.length) { toast.info("No phone numbers found"); return; }
+      const blob = new Blob(["Company,Contact,Phone\n" + phones.join("\n")], { type: "text/csv" });
+      downloadBlob(blob, "lead-phones.csv");
+      toast.success(`Exported ${phones.length} phone numbers`);
+      return;
+    }
+
+    // Excel/CSV export
+    const header = "Company,Contact,Email,Phone,State,Industry,Score,Status,Signal";
+    const rows = data.map((l: EngineLead) =>
+      [l.company, l.contact_name || "", l.email || "", l.phone || "", l.state || "", l.industry || "", l.score || 0, l.status, (l.signal || "").replace(/,/g, ";")]
+        .map(v => `"${v}"`).join(",")
+    );
+    const blob = new Blob([header + "\n" + rows.join("\n")], { type: "text/csv" });
+    downloadBlob(blob, "leads-export.csv");
+    toast.success(`Exported ${data.length} leads`);
+  };
+
+  const downloadBlob = (blob: Blob, filename: string) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = filename; a.click();
+    URL.revokeObjectURL(url);
+  };
 
   const handleEnrich = async (lead: EngineLead) => {
     setEnrichingId(lead.id);
@@ -661,6 +702,17 @@ function ResultsTable() {
                 {enrichingAll ? <><RefreshCw className="h-3 w-3 animate-spin" /> Enriching…</> : <><Zap className="h-3 w-3" /> Enrich All</>}
               </Button>
             )}
+            {/* Export dropdown */}
+            <div className="relative group shrink-0">
+              <Button variant="outline" size="sm" className="h-8 text-xs gap-1">
+                <Download className="h-3 w-3" /> Export
+              </Button>
+              <div className="absolute right-0 top-full mt-1 bg-popover border border-border rounded-lg shadow-lg z-20 hidden group-hover:block min-w-[160px]">
+                <button onClick={() => exportLeads("excel")} className="w-full text-left px-3 py-2 text-xs hover:bg-muted transition-colors rounded-t-lg">📊 Export as CSV</button>
+                <button onClick={() => exportLeads("emails")} className="w-full text-left px-3 py-2 text-xs hover:bg-muted transition-colors">📧 Email list (.txt)</button>
+                <button onClick={() => exportLeads("phones")} className="w-full text-left px-3 py-2 text-xs hover:bg-muted transition-colors rounded-b-lg">📞 Phone list (.csv)</button>
+              </div>
+            </div>
           </div>
         </div>
         {someSelected && (
@@ -679,161 +731,187 @@ function ResultsTable() {
         )}
       </CardHeader>
       <CardContent className={isMobile ? "px-3 pb-3" : "p-0"}>
-        {isMobile ? (
-          /* ── Mobile: Card-based layout ── */
-          <div className="space-y-2">
-            {filtered.map((lead: EngineLead) => (
-              <div
-                key={lead.id}
-                className={`rounded-lg border p-3 space-y-2 transition-colors ${selectedIds.has(lead.id) ? "border-primary/40 bg-primary/5" : "border-border"}`}
-              >
-                <div className="flex items-start gap-2">
-                  <input
-                    type="checkbox"
-                    checked={selectedIds.has(lead.id)}
-                    onChange={() => toggleOne(lead.id)}
-                    className="h-4 w-4 rounded border-border accent-primary cursor-pointer mt-0.5 shrink-0"
-                  />
-                  <div className="flex-1 min-w-0" onClick={() => setSelectedLead(lead)}>
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="text-sm font-medium truncate">{lead.company}</p>
-                      <FitScoreBadge score={lead.score || 0} />
+        {(() => {
+          const INITIAL_COUNT = 10;
+          const displayLeads = showAll ? filtered : filtered.slice(0, INITIAL_COUNT);
+          const hiddenCount = filtered.length - INITIAL_COUNT;
+          const showMoreButton = !showAll && hiddenCount > 0 && (
+            <div className="flex justify-center py-3">
+              <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => setShowAll(true)}>
+                <ChevronDown className="h-3 w-3" /> Show {hiddenCount} more lead{hiddenCount !== 1 ? "s" : ""}
+              </Button>
+            </div>
+          );
+          const showLessButton = showAll && filtered.length > INITIAL_COUNT && (
+            <div className="flex justify-center py-3">
+              <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => setShowAll(false)}>
+                <ChevronUp className="h-3 w-3" /> Show less
+              </Button>
+            </div>
+          );
+
+          return isMobile ? (
+            /* ── Mobile: Card-based layout ── */
+            <div className="space-y-2">
+              {displayLeads.map((lead: EngineLead) => (
+                <div
+                  key={lead.id}
+                  className={`rounded-lg border p-3 space-y-2 transition-colors ${selectedIds.has(lead.id) ? "border-primary/40 bg-primary/5" : "border-border"}`}
+                >
+                  <div className="flex items-start gap-2">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(lead.id)}
+                      onChange={() => toggleOne(lead.id)}
+                      className="h-4 w-4 rounded border-border accent-primary cursor-pointer mt-0.5 shrink-0"
+                    />
+                    <div className="flex-1 min-w-0" onClick={() => setSelectedLead(lead)}>
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-sm font-medium truncate">{lead.company}</p>
+                        <FitScoreBadge score={lead.score || 0} />
+                      </div>
+                      {lead.industry && <p className="text-[11px] text-muted-foreground">{lead.industry}</p>}
+                      {lead.state && <p className="text-[10px] text-muted-foreground">{lead.state}</p>}
                     </div>
-                    {lead.industry && <p className="text-[11px] text-muted-foreground">{lead.industry}</p>}
-                    {lead.state && <p className="text-[10px] text-muted-foreground">{lead.state}</p>}
                   </div>
-                </div>
-                {/* Contact info */}
-                <div className="ml-6 space-y-1">
-                  {lead.contact_name && <p className="text-xs font-medium">{lead.contact_name}</p>}
-                  {lead.email && (
-                    <a href={`mailto:${lead.email}`} className="text-[11px] text-primary hover:underline flex items-center gap-1">
-                      <Mail className="h-3 w-3 shrink-0" /><span className="truncate">{lead.email}</span>
-                    </a>
-                  )}
-                  {lead.phone && (
-                    <a href={`tel:${lead.phone}`} className="text-[11px] text-muted-foreground flex items-center gap-1">
-                      <Phone className="h-3 w-3 shrink-0" />{lead.phone}
-                    </a>
-                  )}
-                  {!lead.email && !lead.phone && !lead.contact_name && (
-                    <Button variant="outline" size="sm" className="h-7 text-xs gap-1" disabled={enrichingId === lead.id} onClick={() => handleEnrich(lead)}>
-                      {enrichingId === lead.id ? <><RefreshCw className="h-3 w-3 animate-spin" /> Enriching…</> : <><Zap className="h-3 w-3" /> Find Contact</>}
-                    </Button>
-                  )}
-                </div>
-                {/* Actions row */}
-                <div className="flex items-center justify-between ml-6">
-                  <Badge variant="secondary" className="text-[10px]">{lead.status}</Badge>
-                  <div className="flex items-center gap-1">
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setGameplanLead(lead)}>
-                      <Target className="h-3.5 w-3.5" style={{ color: "hsl(140 12% 55%)" }} />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setSelectedLead(lead)}>
-                      <Eye className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8" disabled={lead.status === "converted"} onClick={() => {
-                      convertToPipeline.mutate(lead, {
-                        onSuccess: () => toast.success(`${lead.company} imported to pipeline!`),
-                        onError: () => toast.error("Failed to import to pipeline"),
-                      });
-                    }}>
-                      <ArrowUpRight className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { deleteLead.mutate(lead.id); toast.success("Removed"); }}>
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          /* ── Desktop: Table layout ── */
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-8">
-                  <input type="checkbox" checked={allSelected} onChange={toggleAll} className="h-3.5 w-3.5 rounded border-border accent-primary cursor-pointer" />
-                </TableHead>
-                <TableHead className="text-xs">Company</TableHead>
-                <TableHead className="text-xs">Contact</TableHead>
-                <TableHead className="text-xs">State</TableHead>
-                <TableHead className="text-xs">Score</TableHead>
-                <TableHead className="text-xs">Status</TableHead>
-                <TableHead className="text-xs text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filtered.map((lead: EngineLead) => (
-                <TableRow key={lead.id} className={selectedIds.has(lead.id) ? "bg-primary/5" : ""}>
-                  <TableCell className="py-2 w-8">
-                    <input type="checkbox" checked={selectedIds.has(lead.id)} onChange={() => toggleOne(lead.id)} className="h-3.5 w-3.5 rounded border-border accent-primary cursor-pointer" />
-                  </TableCell>
-                  <TableCell className="py-2">
-                    <div className="cursor-pointer group" onClick={() => setSelectedLead(lead)}>
-                      <p className="text-xs font-medium group-hover:text-primary transition-colors">{lead.company}</p>
-                      {lead.industry && <p className="text-[10px] text-muted-foreground">{lead.industry}</p>}
-                      {lead.signal && <p className="text-[9px] text-muted-foreground mt-0.5 max-w-[180px] truncate" title={lead.signal}>{lead.signal}</p>}
-                    </div>
-                  </TableCell>
-                  <TableCell className="py-2">
-                    <div className="space-y-0.5">
-                      {lead.contact_name && <p className="text-xs font-medium">{lead.contact_name}</p>}
-                      {lead.email ? (
-                        <a href={`mailto:${lead.email}`} className="text-[10px] text-primary hover:underline flex items-center gap-1">
-                          <Mail className="h-3 w-3" />{lead.email}
-                        </a>
-                      ) : null}
-                      {lead.phone ? (
-                        <a href={`tel:${lead.phone}`} className="text-[10px] text-muted-foreground hover:text-foreground flex items-center gap-1">
-                          <Phone className="h-3 w-3" />{lead.phone}
-                        </a>
-                      ) : null}
-                      {!lead.email && !lead.phone && !lead.contact_name && (
-                        <Button variant="outline" size="sm" className="h-6 text-[10px] gap-1" disabled={enrichingId === lead.id} onClick={(e) => { e.stopPropagation(); handleEnrich(lead); }}>
-                          {enrichingId === lead.id ? <><RefreshCw className="h-3 w-3 animate-spin" /> Enriching…</> : <><Zap className="h-3 w-3" /> Find Contact</>}
-                        </Button>
-                      )}
-                      {(lead.contact_name || lead.email || lead.phone) && !lead.email && (
-                        <Button variant="ghost" size="sm" className="h-5 text-[9px] gap-0.5 px-1 text-muted-foreground" disabled={enrichingId === lead.id} onClick={(e) => { e.stopPropagation(); handleEnrich(lead); }}>
-                          {enrichingId === lead.id ? <RefreshCw className="h-2.5 w-2.5 animate-spin" /> : <><Zap className="h-2.5 w-2.5" /> Enrich</>}
-                        </Button>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-xs text-muted-foreground py-2">{lead.state || "—"}</TableCell>
-                  <TableCell className="py-2"><FitScoreBadge score={lead.score || 0} /></TableCell>
-                  <TableCell className="py-2">
-                    <Badge variant="secondary" className="text-[10px]">{lead.status}</Badge>
-                  </TableCell>
-                  <TableCell className="text-right py-2">
-                    <div className="flex items-center gap-1 justify-end">
-                       <Button variant="ghost" size="icon" className="h-6 w-6" title="Sage Gameplan" onClick={() => setGameplanLead(lead)}>
-                         <Target className="h-3 w-3" style={{ color: "hsl(140 12% 55%)" }} />
-                       </Button>
-                       <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setSelectedLead(lead)}>
-                        <Eye className="h-3 w-3" />
+                  {/* Contact info */}
+                  <div className="ml-6 space-y-1">
+                    {lead.contact_name && <p className="text-xs font-medium">{lead.contact_name}</p>}
+                    {lead.email && (
+                      <a href={`mailto:${lead.email}`} className="text-[11px] text-primary hover:underline flex items-center gap-1">
+                        <Mail className="h-3 w-3 shrink-0" /><span className="truncate">{lead.email}</span>
+                      </a>
+                    )}
+                    {lead.phone && (
+                      <a href={`tel:${lead.phone}`} className="text-[11px] text-muted-foreground flex items-center gap-1">
+                        <Phone className="h-3 w-3 shrink-0" />{lead.phone}
+                      </a>
+                    )}
+                    {!lead.email && !lead.phone && !lead.contact_name && (
+                      <Button variant="outline" size="sm" className="h-7 text-xs gap-1" disabled={enrichingId === lead.id} onClick={() => handleEnrich(lead)}>
+                        {enrichingId === lead.id ? <><RefreshCw className="h-3 w-3 animate-spin" /> Enriching…</> : <><Zap className="h-3 w-3" /> Find Contact</>}
                       </Button>
-                      <Button variant="ghost" size="icon" className="h-6 w-6" disabled={lead.status === "converted"} onClick={(e) => {
-                        e.stopPropagation();
+                    )}
+                  </div>
+                  {/* Actions row */}
+                  <div className="flex items-center justify-between ml-6">
+                    <Badge variant="secondary" className="text-[10px]">{lead.status}</Badge>
+                    <div className="flex items-center gap-1">
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setGameplanLead(lead)}>
+                        <Target className="h-3.5 w-3.5" style={{ color: "hsl(140 12% 55%)" }} />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setSelectedLead(lead)}>
+                        <Eye className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8" disabled={lead.status === "converted"} onClick={() => {
                         convertToPipeline.mutate(lead, {
                           onSuccess: () => toast.success(`${lead.company} imported to pipeline!`),
                           onError: () => toast.error("Failed to import to pipeline"),
                         });
                       }}>
-                        <ArrowUpRight className="h-3 w-3" />
+                        <ArrowUpRight className="h-3.5 w-3.5" />
                       </Button>
-                      <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { deleteLead.mutate(lead.id); toast.success("Removed"); }}>
-                        <Trash2 className="h-3 w-3" />
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => { deleteLead.mutate(lead.id); toast.success("Removed"); }}>
+                        <Trash2 className="h-3.5 w-3.5" />
                       </Button>
                     </div>
-                  </TableCell>
-                </TableRow>
+                  </div>
+                </div>
               ))}
-            </TableBody>
-          </Table>
-        )}
+              {showMoreButton}
+              {showLessButton}
+            </div>
+          ) : (
+            /* ── Desktop: Table layout ── */
+            <>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-8">
+                      <input type="checkbox" checked={allSelected} onChange={toggleAll} className="h-3.5 w-3.5 rounded border-border accent-primary cursor-pointer" />
+                    </TableHead>
+                    <TableHead className="text-xs">Company</TableHead>
+                    <TableHead className="text-xs">Contact</TableHead>
+                    <TableHead className="text-xs">State</TableHead>
+                    <TableHead className="text-xs">Score</TableHead>
+                    <TableHead className="text-xs">Status</TableHead>
+                    <TableHead className="text-xs text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {displayLeads.map((lead: EngineLead) => (
+                    <TableRow key={lead.id} className={selectedIds.has(lead.id) ? "bg-primary/5" : ""}>
+                      <TableCell className="py-2 w-8">
+                        <input type="checkbox" checked={selectedIds.has(lead.id)} onChange={() => toggleOne(lead.id)} className="h-3.5 w-3.5 rounded border-border accent-primary cursor-pointer" />
+                      </TableCell>
+                      <TableCell className="py-2">
+                        <div className="cursor-pointer group" onClick={() => setSelectedLead(lead)}>
+                          <p className="text-xs font-medium group-hover:text-primary transition-colors">{lead.company}</p>
+                          {lead.industry && <p className="text-[10px] text-muted-foreground">{lead.industry}</p>}
+                          {lead.signal && <p className="text-[9px] text-muted-foreground mt-0.5 max-w-[180px] truncate" title={lead.signal}>{lead.signal}</p>}
+                        </div>
+                      </TableCell>
+                      <TableCell className="py-2">
+                        <div className="space-y-0.5">
+                          {lead.contact_name && <p className="text-xs font-medium">{lead.contact_name}</p>}
+                          {lead.email ? (
+                            <a href={`mailto:${lead.email}`} className="text-[10px] text-primary hover:underline flex items-center gap-1">
+                              <Mail className="h-3 w-3" />{lead.email}
+                            </a>
+                          ) : null}
+                          {lead.phone ? (
+                            <a href={`tel:${lead.phone}`} className="text-[10px] text-muted-foreground hover:text-foreground flex items-center gap-1">
+                              <Phone className="h-3 w-3" />{lead.phone}
+                            </a>
+                          ) : null}
+                          {!lead.email && !lead.phone && !lead.contact_name && (
+                            <Button variant="outline" size="sm" className="h-6 text-[10px] gap-1" disabled={enrichingId === lead.id} onClick={(e) => { e.stopPropagation(); handleEnrich(lead); }}>
+                              {enrichingId === lead.id ? <><RefreshCw className="h-3 w-3 animate-spin" /> Enriching…</> : <><Zap className="h-3 w-3" /> Find Contact</>}
+                            </Button>
+                          )}
+                          {(lead.contact_name || lead.email || lead.phone) && !lead.email && (
+                            <Button variant="ghost" size="sm" className="h-5 text-[9px] gap-0.5 px-1 text-muted-foreground" disabled={enrichingId === lead.id} onClick={(e) => { e.stopPropagation(); handleEnrich(lead); }}>
+                              {enrichingId === lead.id ? <RefreshCw className="h-2.5 w-2.5 animate-spin" /> : <><Zap className="h-2.5 w-2.5" /> Enrich</>}
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground py-2">{lead.state || "—"}</TableCell>
+                      <TableCell className="py-2"><FitScoreBadge score={lead.score || 0} /></TableCell>
+                      <TableCell className="py-2">
+                        <Badge variant="secondary" className="text-[10px]">{lead.status}</Badge>
+                      </TableCell>
+                      <TableCell className="text-right py-2">
+                        <div className="flex items-center gap-1 justify-end">
+                           <Button variant="ghost" size="icon" className="h-6 w-6" title="Sage Gameplan" onClick={() => setGameplanLead(lead)}>
+                             <Target className="h-3 w-3" style={{ color: "hsl(140 12% 55%)" }} />
+                           </Button>
+                           <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setSelectedLead(lead)}>
+                            <Eye className="h-3 w-3" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-6 w-6" disabled={lead.status === "converted"} onClick={(e) => {
+                            e.stopPropagation();
+                            convertToPipeline.mutate(lead, {
+                              onSuccess: () => toast.success(`${lead.company} imported to pipeline!`),
+                              onError: () => toast.error("Failed to import to pipeline"),
+                            });
+                          }}>
+                            <ArrowUpRight className="h-3 w-3" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { deleteLead.mutate(lead.id); toast.success("Removed"); }}>
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              {showMoreButton}
+              {showLessButton}
+            </>
+          );
+        })()}
       </CardContent>
     </Card>
 
