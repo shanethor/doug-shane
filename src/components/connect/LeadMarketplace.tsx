@@ -28,11 +28,11 @@ const LEAD_TYPES = [
   { value: "general", label: "General" },
 ];
 
-function EloBadge({ rating }: { rating: number }) {
+function AuraRatingBadge({ rating }: { rating: number }) {
   const badge = getEloBadge(rating);
   return (
     <span className={`inline-flex items-center gap-1 text-[11px] font-bold ${badge.color}`}>
-      <Trophy className="h-3 w-3" />
+      <Shield className="h-3 w-3" />
       {badge.label} ({Math.round(rating)})
     </span>
   );
