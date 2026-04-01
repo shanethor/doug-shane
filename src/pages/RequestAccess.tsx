@@ -254,7 +254,7 @@ export default function RequestAccess() {
                 <Search className="w-4 h-4 text-white/30" />
               </button>
               {industryOpen && (
-                <div className="absolute z-50 w-full mt-1 bg-[#18181B] border border-white/10 rounded-lg shadow-xl max-h-60 overflow-hidden">
+                <div className="absolute z-50 w-full mt-1 bg-[#18181B] border border-white/10 rounded-lg shadow-xl max-h-60 overflow-hidden bottom-full mb-1">
                   <div className="p-2 border-b border-white/10">
                     <Input
                       value={industrySearch}
