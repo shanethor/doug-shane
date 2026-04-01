@@ -144,6 +144,8 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasStudio }:
 
   const handleGenerate = async () => {
     setGenerating(true);
+    setGenProgress(0);
+    setGenStep("Initializing scan…");
     try {
       const states = geo === "All States" ? [] : [geo];
       const settings: Record<string, string> = {
@@ -155,11 +157,22 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasStudio }:
 
       let totalFound = 0;
       const sourceNames: string[] = [];
+      const totalSources = focuses.length;
+      const basePerSource = 70 / totalSources;
 
-      for (const focusKey of focuses) {
+      // Simulate initial ramp
+      setGenProgress(5);
+      setGenStep("Connecting to databases…");
+      await new Promise(r => setTimeout(r, 600));
+      setGenProgress(10);
+
+      for (let i = 0; i < focuses.length; i++) {
+        const focusKey = focuses[i];
         const src = activeSources.find(s => s.key === focusKey);
         const source = src?.label || "Business Filings";
         sourceNames.push(source);
+        setGenStep(`Scanning ${source}…`);
+        setGenProgress(10 + Math.round(basePerSource * i));
         try {
           const { data, error } = await supabase.functions.invoke("lead-engine-scan", {
             body: { source, settings, enrich: true },
@@ -169,7 +182,17 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasStudio }:
         } catch (err: any) {
           console.warn(`Failed scanning ${source}:`, err.message);
         }
+        setGenProgress(10 + Math.round(basePerSource * (i + 1)));
       }
+
+      setGenProgress(80);
+      setGenStep("Enriching contacts…");
+      await new Promise(r => setTimeout(r, 800));
+      setGenProgress(90);
+      setGenStep("Scoring & deduplicating…");
+      await new Promise(r => setTimeout(r, 500));
+      setGenProgress(100);
+      setGenStep("Complete!");
 
       onGenerate({ geo, volume: selectedPack, focuses, leads_found: totalFound });
       if (totalFound > 0) {
@@ -180,7 +203,10 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasStudio }:
     } catch (err: any) {
       toast.error(err.message || "Lead generation failed");
     } finally {
+      await new Promise(r => setTimeout(r, 600));
       setGenerating(false);
+      setGenProgress(0);
+      setGenStep("");
     }
   };
 
