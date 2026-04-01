@@ -67,10 +67,11 @@ export default function Auth() {
   const loginHandled2FA = useRef(false);
 
   const [autoChecking, setAutoChecking] = useState(false);
+  const autoCheckStarted = useRef(false);
 
   // Check approval status when user is authenticated
   useEffect(() => {
-    if (!user || loading) return;
+    if (!user || loading || needs2FA || isPendingApproval) return;
 
     const checkApproval = async () => {
       const { data: profile } = await supabase
@@ -81,25 +82,22 @@ export default function Auth() {
 
       if (profile?.approval_status === "pending") {
         setIsPendingApproval(true);
-        return;
       }
     };
 
-    // Only check if not already in 2FA flow
-    if (!needs2FA && !isPendingApproval) {
-      checkApproval();
-    }
-  }, [user, loading, needs2FA]);
+    checkApproval();
+  }, [user?.id, loading]);
 
   useEffect(() => {
-    if (loginHandled2FA.current) return;
+    if (loginHandled2FA.current || autoCheckStarted.current) return;
 
-    if (!loading && user && !is2FAVerified() && !needs2FA && !autoChecking && !isPendingApproval) {
+    if (!loading && user && !is2FAVerified() && !needs2FA && !isPendingApproval) {
       if (user.user_metadata?.skip_2fa) {
         set2FAVerified(true);
         navigate("/insurance/hub", { replace: true });
         return;
       }
+      autoCheckStarted.current = true;
       setAutoChecking(true);
       const deviceHash = getDeviceHash();
       getAuthHeaders().then(hdrs => fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-2fa`, {
@@ -121,7 +119,6 @@ export default function Auth() {
             setPendingEmail(user.email!);
             setNeeds2FA(true);
           } else {
-            // send_code failed – don't show 2FA form without an active code
             console.error("[2fa-auto] send_code failed:", result.error);
             toast.error("Could not send verification code. Please try logging in again.");
           }
@@ -134,7 +131,7 @@ export default function Auth() {
     } else if (!loading && user && is2FAVerified() && !isPendingApproval) {
       navigate("/insurance/hub", { replace: true });
     }
-  }, [user, loading, isPendingApproval]);
+  }, [user?.id, loading, isPendingApproval]);
 
   if (loading || autoChecking) return (
     <div className="flex min-h-screen items-center justify-center bg-background">
