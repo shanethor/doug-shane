@@ -218,12 +218,13 @@ export function ProductLayout({
                  }`}
                >
                  {gated ? <Lock className="h-4 w-4 shrink-0 opacity-40" /> : <item.icon className="h-4 w-4 shrink-0" />}
-                 {!collapsed && (
-                   <span className="flex items-center gap-2">
-                     {item.label}
-                     {gated && <span className="text-[8px] px-1 py-0.5 rounded bg-muted text-muted-foreground">Soon</span>}
-                   </span>
-                 )}
+                  {!collapsed && (
+                    <span className="flex items-center gap-2">
+                      {item.label}
+                      {gated && <span className="text-[8px] px-1 py-0.5 rounded bg-muted text-muted-foreground">Soon</span>}
+                      {!gated && (item as any).premium && <Crown className="h-3 w-3 text-amber-400" />}
+                    </span>
+                  )}
                </Link>
              );
            })}

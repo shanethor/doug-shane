@@ -6,6 +6,7 @@ import ReactMarkdown from "react-markdown";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useEarlyAccessWhitelist } from "@/hooks/useEarlyAccessWhitelist";
 import { executeCalendarActions as runCalendarActions, extractCalendarActions } from "@/lib/calendar-action-utils";
 
 type Msg = { role: "user" | "assistant"; content: string };
