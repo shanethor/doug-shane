@@ -541,7 +541,7 @@ export default function LandingPage() {
               </div>
 
               <p className="text-[14px] text-[#71717A] leading-[1.65] max-w-[700px]">
-                <span className="font-semibold text-white">AURA CONNECT</span> and <span className="font-semibold text-[#F59E0B]">AURA Studio</span> are built to help small and mid‑sized firms capture these same gains — without hiring an internal AI team.
+                <span className="font-semibold text-white">AURA CONNECT</span> and <span className="font-semibold text-[#F59E0B]">AURA AGENT</span> are built to help small and mid‑sized firms capture these same gains — without hiring an internal AI team.
               </p>
             </div>
           </div>
