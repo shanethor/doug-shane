@@ -101,6 +101,17 @@ const FOCUS_TO_SOURCE: Record<string, string> = {
   med_gas_certs: "Medical Gas Installer Certs",
   water_sewer_permits: "Water/Sewer Line Permits",
   plumbing_wc: "Plumbing WC Class 5183",
+  // Trucking / Transportation sources
+  fmcsa_new_authority: "FMCSA New MC Authority",
+  bmc35_cancellations: "BMC-35 Cancellations",
+  csa_basic_scores: "CSA / BASIC Score Deterioration",
+  oos_orders: "Out-of-Service Orders",
+  carrier_safety_ratings: "Carrier Safety Rating Changes",
+  dot_inspections: "DOT Inspection Reports",
+  hazmat_endorsements: "Hazmat Endorsement Filings",
+  ifta_registrations: "IFTA / IRP Registrations",
+  broker_authority: "Freight Broker Authority Filings",
+  cargo_claims: "Cargo Loss / Claim Records",
 };
 
 function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasStudio }: {
@@ -342,6 +353,17 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasStudio }:
                   { key: "med_gas_certs", label: "Medical Gas Certs", icon: Target },
                   { key: "water_sewer_permits", label: "Water/Sewer Permits", icon: Building2 },
                   { key: "plumbing_wc", label: "Plumbing WC 5183", icon: FileText },
+                  // Trucking / Transportation sources
+                  { key: "fmcsa_new_authority", label: "FMCSA New Authority", icon: Rocket },
+                  { key: "bmc35_cancellations", label: "BMC-35 Cancellations", icon: Target },
+                  { key: "csa_basic_scores", label: "CSA/BASIC Scores", icon: TrendingUp },
+                  { key: "oos_orders", label: "Out-of-Service Orders", icon: Zap },
+                  { key: "carrier_safety_ratings", label: "Carrier Safety Ratings", icon: Target },
+                  { key: "dot_inspections", label: "DOT Inspections", icon: FileText },
+                  { key: "hazmat_endorsements", label: "Hazmat Endorsements", icon: Zap },
+                  { key: "ifta_registrations", label: "IFTA / IRP Registrations", icon: FileText },
+                  { key: "broker_authority", label: "Broker Authority Filings", icon: Building2 },
+                  { key: "cargo_claims", label: "Cargo Claims", icon: FileText },
                 ] as const).map(({ key, label, icon: Icon }) => (
                   <button
                     key={key}
@@ -369,7 +391,7 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasStudio }:
             )}
           </Button>
            <p className="text-[10px] text-muted-foreground text-center">
-            Sourced from 60+ verified public databases including state licensing boards, OSHA, EPA, NOAA, NRCA, PHCC, SAM.gov, SBA, court records, and more. Enriched via Apollo, Hunter & PDL.
+            Sourced from 70+ verified public databases including state licensing boards, OSHA, EPA, NOAA, NRCA, PHCC, SAM.gov, SBA, court records, and more. Enriched via Apollo, Hunter & PDL.
           </p>
         </CardContent>
       </Card>
