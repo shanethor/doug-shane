@@ -21,41 +21,47 @@ const MASTER_EMAILS = ["shane@houseofthor.com", "dwenz17@gmail.com"];
 
 function useProductRoute(user: any) {
   const [destination, setDestination] = useState<string | null>(null);
-  const [checking, setChecking] = useState(true);
-  const checkedRef = useRef(false);
+  const [checking, setChecking] = useState(false);
 
   useEffect(() => {
-    if (!user?.email) { setChecking(false); return; }
-    if (checkedRef.current) return;
-    checkedRef.current = true;
+    let cancelled = false;
+
+    if (!user?.email) {
+      setDestination(null);
+      setChecking(false);
+      return;
+    }
 
     const email = user.email.toLowerCase();
 
-    // Master emails always go to /connect
     if (MASTER_EMAILS.includes(email)) {
       setDestination("/connect");
       setChecking(false);
       return;
     }
 
-    // Non-master users: check subscription, but route to /request-access
-    // since /connect is gated by ProductProtectedRoute (master-only for now)
+    setChecking(true);
+
     (async () => {
       try {
         const { data } = await supabase.functions.invoke("check-subscription");
-        if (data?.subscribed) {
-          // Even subscribed non-master users can't access /connect yet
-          // Route them to a page they CAN access
-          setDestination("/insurance/hub");
-        } else {
+        if (cancelled) return;
+        setDestination(data?.subscribed ? "/insurance/hub" : "/request-access");
+      } catch {
+        if (!cancelled) {
           setDestination("/request-access");
         }
-      } catch {
-        setDestination("/request-access");
+      } finally {
+        if (!cancelled) {
+          setChecking(false);
+        }
       }
-      setChecking(false);
     })();
-  }, [user?.id]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id, user?.email]);
 
   return { destination, checking };
 }
