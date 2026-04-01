@@ -353,6 +353,17 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasStudio }:
                   { key: "med_gas_certs", label: "Medical Gas Certs", icon: Target },
                   { key: "water_sewer_permits", label: "Water/Sewer Permits", icon: Building2 },
                   { key: "plumbing_wc", label: "Plumbing WC 5183", icon: FileText },
+                  // Trucking / Transportation sources
+                  { key: "fmcsa_new_authority", label: "FMCSA New Authority", icon: Rocket },
+                  { key: "bmc35_cancellations", label: "BMC-35 Cancellations", icon: Target },
+                  { key: "csa_basic_scores", label: "CSA/BASIC Scores", icon: TrendingUp },
+                  { key: "oos_orders", label: "Out-of-Service Orders", icon: Zap },
+                  { key: "carrier_safety_ratings", label: "Carrier Safety Ratings", icon: Target },
+                  { key: "dot_inspections", label: "DOT Inspections", icon: FileText },
+                  { key: "hazmat_endorsements", label: "Hazmat Endorsements", icon: Zap },
+                  { key: "ifta_registrations", label: "IFTA / IRP Registrations", icon: FileText },
+                  { key: "broker_authority", label: "Broker Authority Filings", icon: Building2 },
+                  { key: "cargo_claims", label: "Cargo Claims", icon: FileText },
                 ] as const).map(({ key, label, icon: Icon }) => (
                   <button
                     key={key}
