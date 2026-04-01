@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useIsMobile } from "@/hooks/use-mobile";
 import LeadOutreachPanel from "./LeadOutreachPanel";
@@ -15,7 +15,7 @@ import {
   Rocket, Building2, Globe, MapPin, Target, Search, FileText,
   Plus, ArrowUpRight, Eye, Trash2, Zap,
   Sparkles, Users, TrendingUp,
-  Loader2, Mail, Phone, RefreshCw, Gift, Lock,
+  Loader2, Mail, Phone, RefreshCw, Gift, Lock, ChevronDown, ChevronUp,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -24,6 +24,15 @@ import {
   useEngineLeads, useUpdateEngineLead, useDeleteEngineLead, useConvertToPipeline,
   type EngineLead,
 } from "@/hooks/useLeadEngine";
+import {
+  VERTICALS, SHARED_SOURCES, getVerticalsForIndustry, getVerticalsByGroup,
+  type LeadSource, type Vertical,
+} from "@/lib/lead-verticals";
+
+const ICON_MAP: Record<LeadSource["icon"], any> = {
+  file: FileText, building: Building2, target: Target, globe: Globe,
+  zap: Zap, users: Users, rocket: Rocket, trending: TrendingUp, map: MapPin,
+};
 
 const US_STATES = [
   "All States", "Alabama", "Alaska", "Arizona", "Arkansas", "California", "Colorado",
@@ -44,74 +53,6 @@ const INDUSTRY_PRICING: Record<string, { basePrice: number; label: string; freeL
   property: { basePrice: 100, label: "Property", freeLeads: 2 },
   consulting: { basePrice: 15, label: "Consulting / Professional Services", freeLeads: 10 },
   general: { basePrice: 15, label: "General Business", freeLeads: 10 },
-};
-
-function getLeadPacks(basePrice: number, isSubscriber: boolean, hasStudio: boolean) {
-  const discount = hasStudio ? 0.4 : isSubscriber ? 0.6 : 1; // 60% off for Studio, 40% off for Connect
-  return [
-    { leads: 10, price: Math.round(10 * basePrice * discount), originalPrice: 10 * basePrice },
-    { leads: 25, price: Math.round(25 * basePrice * discount), originalPrice: 25 * basePrice },
-    { leads: 50, price: Math.round(50 * basePrice * discount), originalPrice: 50 * basePrice, popular: true },
-    { leads: 100, price: Math.round(100 * basePrice * discount), originalPrice: 100 * basePrice },
-  ];
-}
-
-function getFreeLeads(baseFreeLeads: number, hasStudio: boolean) {
-  return hasStudio ? baseFreeLeads * 3 : baseFreeLeads;
-}
-
-const FOCUS_TO_SOURCE: Record<string, string> = {
-  new_business: "Business Filings",
-  social: "Reddit",
-  linkedin: "LinkedIn",
-  permits: "Permit Database",
-  licensing: "State Licensing Boards",
-  osha: "OSHA Enforcement",
-  epa: "EPA Databases",
-  court_records: "Court Records & Liens",
-  sam_gov: "SAM.gov / Federal Contracts",
-  sba: "SBA Loan Data",
-  associations: "Trade Associations",
-  google_places: "Google Places",
-  fmcsa: "FMCSA / DOT Records",
-  ucc: "UCC Filings",
-  domains: "New Domain Registrations",
-  mfr_dealers: "Manufacturer Dealer Networks",
-  utility_rebate: "Utility Rebate Contractor Lists",
-  nate_certs: "NATE Certified Contractors",
-  prevailing_wage: "Prevailing Wage Registries",
-  smacna_phcc: "SMACNA / PHCC Directories",
-  pace_programs: "PACE Program Directories",
-  buildzoom: "BuildZoom Permits",
-  census_bls: "Census CBP / BLS QCEW",
-  state_wc: "State WC Employer Databases",
-  // Roofing-specific sources
-  noaa_hail: "NOAA Hail / Storm Reports",
-  roofing_licenses: "Roofing Contractor Licenses",
-  nrca_directory: "NRCA Membership Directory",
-  storm_permits: "Storm Restoration Permits",
-  gaf_certainteed: "GAF / CertainTeed Certified",
-  roofing_wc: "Roofing WC Class 5551/5552",
-  cat_event_filings: "CAT Event New Entity Filings",
-  // Plumbing-specific sources
-  plumbing_licenses: "Plumbing Contractor Licenses",
-  backflow_certs: "Backflow Preventer Certifications",
-  phcc_directory: "PHCC Member Directory",
-  ua_local_unions: "UA Local Union Contractors",
-  med_gas_certs: "Medical Gas Installer Certs",
-  water_sewer_permits: "Water/Sewer Line Permits",
-  plumbing_wc: "Plumbing WC Class 5183",
-  // Trucking / Transportation sources
-  fmcsa_new_authority: "FMCSA New MC Authority",
-  bmc35_cancellations: "BMC-35 Cancellations",
-  csa_basic_scores: "CSA / BASIC Score Deterioration",
-  oos_orders: "Out-of-Service Orders",
-  carrier_safety_ratings: "Carrier Safety Rating Changes",
-  dot_inspections: "DOT Inspection Reports",
-  hazmat_endorsements: "Hazmat Endorsement Filings",
-  ifta_registrations: "IFTA / IRP Registrations",
-  broker_authority: "Freight Broker Authority Filings",
-  cargo_claims: "Cargo Loss / Claim Records",
 };
 
 function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasStudio }: {
