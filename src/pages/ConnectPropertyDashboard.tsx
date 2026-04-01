@@ -18,6 +18,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Switch } from "@/components/ui/switch";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
+import LiveListingsTab from "@/components/property/LiveListingsTab";
 
 /* ══════════════════════════════════════════════
    MOCK DATA
@@ -165,6 +166,7 @@ export default function ConnectPropertyDashboard() {
     featuredListings: false,
   });
   const [territoryExpanded, setTerritoryExpanded] = useState(false);
+  const [activeZip, setActiveZip] = useState(TERRITORY.zips[0]);
 
   const repliesCount = CONTACTS.filter(c => c.stage === "replied").length;
   const newSignals = CONTACTS.filter(c => c.stage === "new").length;
@@ -278,6 +280,7 @@ export default function ConnectPropertyDashboard() {
           <TabsTrigger value="report" className="text-xs">Market Report</TabsTrigger>
           <TabsTrigger value="performance" className="text-xs">Performance</TabsTrigger>
           <TabsTrigger value="territory" className="text-xs">Territory</TabsTrigger>
+          <TabsTrigger value="listings" className="text-xs">Live Listings</TabsTrigger>
         </TabsList>
 
         {/* ══ Morning Digest ══ */}
@@ -759,6 +762,25 @@ export default function ConnectPropertyDashboard() {
               ))}
             </div>
           </div>
+        </TabsContent>
+
+        {/* ══ Live Listings ══ */}
+        <TabsContent value="listings" className="mt-4 space-y-4">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-xs text-muted-foreground font-medium">Zip:</span>
+            {TERRITORY.zips.map(z => (
+              <Button
+                key={z}
+                variant={activeZip === z ? "default" : "outline"}
+                size="sm"
+                className="text-xs h-7 px-2.5"
+                onClick={() => setActiveZip(z)}
+              >
+                {z}
+              </Button>
+            ))}
+          </div>
+          <LiveListingsTab activeZip={activeZip} />
         </TabsContent>
       </Tabs>
 
