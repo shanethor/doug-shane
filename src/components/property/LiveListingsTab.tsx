@@ -61,13 +61,6 @@ export default function LiveListingsTab({ activeZip }: { activeZip: string }) {
     setError(null);
 
     try {
-      const { data, error: fnErr } = await supabase.functions.invoke("zillow-listings", {
-        body: null,
-        headers: { "Content-Type": "application/json" },
-      });
-
-      // supabase.functions.invoke doesn't support query params easily,
-      // so we'll use fetch directly
       const { data: session } = await supabase.auth.getSession();
       const token = session?.session?.access_token;
       if (!token) throw new Error("Not authenticated");
