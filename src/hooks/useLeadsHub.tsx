@@ -209,7 +209,7 @@ export function useEnsureElo() {
         .eq("user_id", user.id)
         .maybeSingle();
       if (!existing) {
-        await supabase.from("user_elo").insert({ user_id: user.id } as any);
+        await supabase.from("user_elo").insert({ user_id: user.id, elo_rating: 70 } as any);
       }
       qc.invalidateQueries({ queryKey: ["my-elo"] });
     },
