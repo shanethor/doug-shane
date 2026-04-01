@@ -942,6 +942,7 @@ export default function LeadGenerator() {
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
+        setIsMaster(MASTER_EMAILS.includes(user.email?.toLowerCase() ?? ""));
         const { data: profile } = await supabase
           .from("profiles")
           .select("industry, specializations")
