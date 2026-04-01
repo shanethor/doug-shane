@@ -1,12 +1,14 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, ArrowRight, Check, Loader2, Search, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Loader2, Search, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import ConnectUpsellPopup from "@/components/ConnectUpsellPopup";
+import { getVerticalsForIndustry, type Vertical } from "@/lib/lead-verticals";
 
 const INDUSTRIES = [
   "Insurance", "Mortgage", "Real Estate", "Property", "Consulting", "General Business",
@@ -19,6 +21,18 @@ const INDUSTRIES = [
   "Professional Services", "Recruiting & Staffing", "Restaurant", "Retail",
   "SaaS / Software", "Telecommunications", "Transportation", "Wealth Management", "Other",
 ];
+
+/* Map display industry names to internal keys for lead verticals */
+const INDUSTRY_KEY_MAP: Record<string, string> = {
+  "Insurance": "insurance",
+  "Mortgage": "mortgage",
+  "Real Estate": "real_estate",
+  "Property": "property",
+  "Consulting": "consulting",
+  "General Business": "general",
+  "Financial Planning": "financial_advisor",
+  "Wealth Management": "financial_advisor",
+};
 
 export default function RequestAccess() {
   const { user } = useAuth();
