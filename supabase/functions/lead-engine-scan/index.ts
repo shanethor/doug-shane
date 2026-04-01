@@ -505,10 +505,16 @@ Deno.serve(async (req) => {
       "RI Coastal (FEMA)": "flood",
     };
 
-    const leadsToInsert = generatedLeads.slice(0, 12).map((l: any) => ({
+    // Only keep leads that have at least email or phone
+    const contactableLeads = generatedLeads.filter((l: any) => l.email || l.phone);
+    console.log(`[lead-engine-scan] ${contactableLeads.length}/${generatedLeads.length} leads have contact info`);
+
+    const leadsToInsert = contactableLeads.slice(0, 12).map((l: any) => ({
       owner_user_id: userId,
       company: l.company || "Unknown Business",
       contact_name: l.contact_name || null,
+      email: l.email || null,
+      phone: l.phone || null,
       industry: l.industry || null,
       state: l.state || null,
       est_premium: Math.round(l.est_premium || 5000),
@@ -519,8 +525,8 @@ Deno.serve(async (req) => {
         l.lines_needed?.length ? `Coverage needed: ${l.lines_needed.slice(0, 3).join(", ")}` : null,
       ].filter(Boolean).join(" • "),
       source,
-      source_url: l.source_url || null,
-      score: Math.floor(55 + Math.random() * 35), // 55-90 range
+      source_url: l.website || l.source_url || null,
+      score: Math.floor(55 + Math.random() * 35),
       tier: tierMap[source] || 2,
       status: "new",
     }));
