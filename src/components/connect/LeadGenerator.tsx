@@ -19,6 +19,7 @@ import {
   Plus, ArrowUpRight, Eye, Trash2, Zap,
   Sparkles, Users, TrendingUp,
   Loader2, Mail, Phone, RefreshCw, Gift, Lock, ChevronDown, ChevronUp,
+  Download,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
