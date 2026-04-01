@@ -391,7 +391,7 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasStudio }:
             )}
           </Button>
            <p className="text-[10px] text-muted-foreground text-center">
-            Sourced from 60+ verified public databases including state licensing boards, OSHA, EPA, NOAA, NRCA, PHCC, SAM.gov, SBA, court records, and more. Enriched via Apollo, Hunter & PDL.
+            Sourced from 70+ verified public databases including state licensing boards, OSHA, EPA, NOAA, NRCA, PHCC, SAM.gov, SBA, court records, and more. Enriched via Apollo, Hunter & PDL.
           </p>
         </CardContent>
       </Card>
