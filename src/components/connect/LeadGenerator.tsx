@@ -362,9 +362,21 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasStudio }:
               </Select>
             </div>
             <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">
-                Focus Sources ({activeSources.length} available)
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-xs font-medium text-muted-foreground">
+                  Focus Sources ({activeSources.length} available)
+                </label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const allKeys = activeSources.map(s => s.key);
+                    setFocuses(prev => prev.length === allKeys.length ? [allKeys[0]] : allKeys);
+                  }}
+                  className="text-[10px] font-medium text-primary hover:underline"
+                >
+                  {focuses.length === activeSources.length ? "Deselect all" : "Select all"}
+                </button>
+              </div>
               <div className="grid grid-cols-2 gap-2 max-h-[320px] overflow-y-auto pr-1">
                 {activeSources.map(({ key, label, icon }) => {
                   const Icon = ICON_MAP[icon] || FileText;
