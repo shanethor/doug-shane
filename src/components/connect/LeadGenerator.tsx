@@ -58,8 +58,8 @@ const INDUSTRY_PRICING: Record<string, { basePrice: number; label: string; freeL
   general: { basePrice: 15, label: "General Business", freeLeads: 10 },
 };
 
-function getLeadPacks(basePrice: number, isSubscriber: boolean, hasStudio: boolean) {
-  const discount = hasStudio ? 0.4 : isSubscriber ? 0.6 : 1;
+function getLeadPacks(basePrice: number, isSubscriber: boolean, hasAgent: boolean) {
+  const discount = hasAgent ? 0.5 : isSubscriber ? 0.6 : 1;
   return [
     { leads: 10, price: Math.round(10 * basePrice * discount), originalPrice: 10 * basePrice },
     { leads: 25, price: Math.round(25 * basePrice * discount), originalPrice: 25 * basePrice },
@@ -68,8 +68,8 @@ function getLeadPacks(basePrice: number, isSubscriber: boolean, hasStudio: boole
   ];
 }
 
-function getFreeLeads(baseFreeLeads: number, hasStudio: boolean) {
-  return hasStudio ? baseFreeLeads * 3 : baseFreeLeads;
+function getFreeLeads(baseFreeLeads: number, hasAgent: boolean) {
+  return hasAgent ? baseFreeLeads * 2 : baseFreeLeads;
 }
 
 function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasStudio }: {
