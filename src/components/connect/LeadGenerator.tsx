@@ -474,10 +474,13 @@ function ResultsTable() {
   const convertToPipeline = useConvertToPipeline();
   const [search, setSearch] = useState("");
   const [scoreFilter, setScoreFilter] = useState<string>("all");
+  const [contactFilter, setContactFilter] = useState<string>("has_contact");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [selectedLead, setSelectedLead] = useState<EngineLead | null>(null);
   const [gameplanLead, setGameplanLead] = useState<EngineLead | null>(null);
   const [enrichingId, setEnrichingId] = useState<string | null>(null);
+
+  const [enrichingAll, setEnrichingAll] = useState(false);
 
   const handleEnrich = async (lead: EngineLead) => {
     setEnrichingId(lead.id);
@@ -512,6 +515,30 @@ function ResultsTable() {
     }
   };
 
+  const handleBulkEnrich = async () => {
+    const unenriched = (leads || []).filter((l: EngineLead) => !l.email && !l.phone);
+    if (unenriched.length === 0) { toast.info("All leads already have contact info"); return; }
+    setEnrichingAll(true);
+    let enriched = 0;
+    for (const lead of unenriched.slice(0, 10)) {
+      try {
+        const { data } = await supabase.functions.invoke("enrich-lead", {
+          body: { company: lead.company, contact_name: lead.contact_name, email: lead.email, state: lead.state, industry: lead.industry },
+        });
+        const updates: Partial<EngineLead> = {};
+        if (data?.email) updates.email = data.email;
+        if (data?.phone) updates.phone = data.phone;
+        if (data?.contact_name && !lead.contact_name) updates.contact_name = data.contact_name;
+        if (Object.keys(updates).length > 0) {
+          await updateLead.mutateAsync({ id: lead.id, ...updates });
+          enriched++;
+        }
+      } catch { /* skip */ }
+    }
+    toast.success(`Enriched ${enriched}/${unenriched.slice(0, 10).length} leads with contact info`);
+    setEnrichingAll(false);
+  };
+
   const filtered = (leads || []).filter((l: EngineLead) => {
     const matchesSearch = !search ||
       l.company.toLowerCase().includes(search.toLowerCase()) ||
@@ -522,7 +549,11 @@ function ResultsTable() {
       (scoreFilter === "hot" && s >= 80) ||
       (scoreFilter === "warm" && s >= 50 && s < 80) ||
       (scoreFilter === "cold" && s < 50);
-    return matchesSearch && matchesScore;
+    const hasContact = !!(l.email || l.phone);
+    const matchesContact = contactFilter === "all" ||
+      (contactFilter === "has_contact" && hasContact) ||
+      (contactFilter === "no_contact" && !hasContact);
+    return matchesSearch && matchesScore && matchesContact;
   });
 
   const allSelected = filtered.length > 0 && filtered.every((l: EngineLead) => selectedIds.has(l.id));
@@ -591,7 +622,17 @@ function ResultsTable() {
               </div>
             )}
           </div>
-          <div className={`flex items-center gap-2 ${isMobile ? "w-full" : ""}`}>
+          <div className={`flex items-center gap-2 ${isMobile ? "w-full flex-wrap" : ""}`}>
+            <Select value={contactFilter} onValueChange={setContactFilter}>
+              <SelectTrigger className={`h-8 text-xs ${isMobile ? "flex-1" : "w-[150px]"}`}>
+                <SelectValue placeholder="Contact Filter" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="has_contact">📧 Has Contact</SelectItem>
+                <SelectItem value="all">All Leads</SelectItem>
+                <SelectItem value="no_contact">❌ No Contact</SelectItem>
+              </SelectContent>
+            </Select>
             <Select value={scoreFilter} onValueChange={setScoreFilter}>
               <SelectTrigger className={`h-8 text-xs ${isMobile ? "flex-1" : "w-[130px]"}`}>
                 <SelectValue placeholder="All Scores" />
@@ -607,6 +648,11 @@ function ResultsTable() {
               <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
               <Input className={`pl-7 h-8 text-xs ${isMobile ? "w-full" : "w-[180px]"}`} placeholder="Search…" value={search} onChange={(e) => setSearch(e.target.value)} />
             </div>
+            {(leads || []).some((l: EngineLead) => !l.email && !l.phone) && (
+              <Button variant="outline" size="sm" className="h-8 text-xs gap-1 shrink-0" disabled={enrichingAll} onClick={handleBulkEnrich}>
+                {enrichingAll ? <><RefreshCw className="h-3 w-3 animate-spin" /> Enriching…</> : <><Zap className="h-3 w-3" /> Enrich All</>}
+              </Button>
+            )}
           </div>
         </div>
         {someSelected && (

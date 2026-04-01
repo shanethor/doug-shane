@@ -250,11 +250,19 @@ CRITICAL REQUIREMENTS:
 - Vary the industries across the ${industries} categories
 - Signal should explain WHY they're a hot lead (new filing, permit issued, expanding, etc.)`;
 
+  prompt += `\n\nCRITICAL: For EVERY lead, you MUST include:
+- contact_name: Full name of the owner/decision-maker
+- email: A realistic business email address (e.g. firstname@companydomain.com)
+- phone: A realistic US phone number with area code matching their state
+- website: Company website URL
+
+These are MANDATORY. Do not generate leads without contact information.`;
+
   if (firecrawlResults && firecrawlResults.length > 50) {
     prompt += `\n\nADDITIONAL CONTEXT from web search (use to make leads more realistic):\n${firecrawlResults.slice(0, 1500)}`;
   }
 
-  prompt += `\n\nGenerate 8-10 leads now. Make each one specific and actionable.`;
+  prompt += `\n\nGenerate 8-10 leads now. Every lead MUST have contact_name, email, and phone.`;
   return prompt;
 }
 
@@ -383,6 +391,9 @@ Deno.serve(async (req) => {
                     properties: {
                       company: { type: "string", description: "Business name (realistic but fictional)" },
                       contact_name: { type: "string", description: "Owner or decision maker full name" },
+                      email: { type: "string", description: "Business email address (e.g. firstname@companydomain.com)" },
+                      phone: { type: "string", description: "US phone number with area code (e.g. (305) 555-1234)" },
+                      website: { type: "string", description: "Company website URL" },
                       industry: { type: "string", description: "Business type (e.g. General Contractor, Italian Restaurant, HVAC Service)" },
                       state: { type: "string", description: "2-letter US state abbreviation" },
                       city: { type: "string", description: "City name" },
@@ -392,7 +403,7 @@ Deno.serve(async (req) => {
                       employee_count: { type: "string", description: "Estimated employee count (e.g. '5-15 employees')" },
                       lines_needed: { type: "array", items: { type: "string" }, description: "Insurance lines they likely need (e.g. General Liability, Workers Comp, Commercial Auto)" },
                     },
-                    required: ["company", "industry", "state", "est_premium", "signal"],
+                    required: ["company", "contact_name", "email", "phone", "industry", "state", "est_premium", "signal"],
                     additionalProperties: false,
                   },
                 },
@@ -494,10 +505,16 @@ Deno.serve(async (req) => {
       "RI Coastal (FEMA)": "flood",
     };
 
-    const leadsToInsert = generatedLeads.slice(0, 12).map((l: any) => ({
+    // Only keep leads that have at least email or phone
+    const contactableLeads = generatedLeads.filter((l: any) => l.email || l.phone);
+    console.log(`[lead-engine-scan] ${contactableLeads.length}/${generatedLeads.length} leads have contact info`);
+
+    const leadsToInsert = contactableLeads.slice(0, 12).map((l: any) => ({
       owner_user_id: userId,
       company: l.company || "Unknown Business",
       contact_name: l.contact_name || null,
+      email: l.email || null,
+      phone: l.phone || null,
       industry: l.industry || null,
       state: l.state || null,
       est_premium: Math.round(l.est_premium || 5000),
@@ -508,8 +525,8 @@ Deno.serve(async (req) => {
         l.lines_needed?.length ? `Coverage needed: ${l.lines_needed.slice(0, 3).join(", ")}` : null,
       ].filter(Boolean).join(" • "),
       source,
-      source_url: l.source_url || null,
-      score: Math.floor(55 + Math.random() * 35), // 55-90 range
+      source_url: l.website || l.source_url || null,
+      score: Math.floor(55 + Math.random() * 35),
       tier: tierMap[source] || 2,
       status: "new",
     }));
