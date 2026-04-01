@@ -280,6 +280,7 @@ export default function ConnectPropertyDashboard() {
           <TabsTrigger value="report" className="text-xs">Market Report</TabsTrigger>
           <TabsTrigger value="performance" className="text-xs">Performance</TabsTrigger>
           <TabsTrigger value="territory" className="text-xs">Territory</TabsTrigger>
+          <TabsTrigger value="listings" className="text-xs">Live Listings</TabsTrigger>
         </TabsList>
 
         {/* ══ Morning Digest ══ */}
