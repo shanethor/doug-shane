@@ -202,7 +202,7 @@ export default function ConnectPropertyDashboard() {
   return (
     <div className="space-y-4 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 animate-fade-in" style={{ animationDelay: "0ms", animationFillMode: "both" }}>
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-xl font-bold">Good morning</h1>
@@ -225,7 +225,7 @@ export default function ConnectPropertyDashboard() {
       </div>
 
       {/* Top Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 animate-fade-in" style={{ animationDelay: "100ms", animationFillMode: "both" }}>
         <Card className="border-border bg-card">
           <CardContent className="p-3">
             <div className="flex items-center justify-between">
@@ -268,7 +268,7 @@ export default function ConnectPropertyDashboard() {
         </Card>
       </div>
 
-      <Tabs value={tab} onValueChange={setTab} className="w-full">
+      <Tabs value={tab} onValueChange={setTab} className="w-full animate-fade-in" style={{ animationDelay: "200ms", animationFillMode: "both" }}>
         <TabsList className="w-full sm:w-auto bg-muted/50 flex-wrap h-auto gap-0.5 p-1">
           <TabsTrigger value="digest" className="text-xs">Digest</TabsTrigger>
           <TabsTrigger value="pipeline" className="text-xs">Pipeline</TabsTrigger>
