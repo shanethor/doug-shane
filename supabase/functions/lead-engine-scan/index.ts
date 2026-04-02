@@ -6,7 +6,95 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-type ScanSource = "Reddit" | "Business Filings" | "Permit Database" | "LinkedIn" | "FEMA Flood Zones" | "NOAA Storm Events" | "Census / ACS Data" | "NHTSA Vehicles" | "OpenFEMA NFIP" | "HUD Housing Data" | "Property Records" | "Building Permits" | "Tax Delinquency" | "Google Trends" | "ATTOM Data" | "RentCast" | "Regrid Parcels" | "BatchData" | "FL Citizens Non-Renewal" | "State Socrata Portals" | "County ArcGIS" | "CT Property Transfers" | "NYC ACRIS" | "MassGIS Parcels" | "NJ MOD-IV / Sales" | "RI Coastal (FEMA)";
+type ScanSource = "Reddit" | "Business Filings" | "Permit Database" | "LinkedIn" | "FEMA Flood Zones" | "NOAA Storm Events" | "Census / ACS Data" | "NHTSA Vehicles" | "OpenFEMA NFIP" | "HUD Housing Data" | "Property Records" | "Building Permits" | "Tax Delinquency" | "Google Trends" | "ATTOM Data" | "RentCast" | "Regrid Parcels" | "BatchData" | "FL Citizens Non-Renewal" | "State Socrata Portals" | "County ArcGIS" | "CT Property Transfers" | "NYC ACRIS" | "MassGIS Parcels" | "NJ MOD-IV / Sales" | "RI Coastal (FEMA)" | "Google Maps";
+
+// ── Google Places API (Text Search) ──
+interface PlacesResult {
+  company: string;
+  address: string;
+  phone: string | null;
+  website: string | null;
+  rating: number | null;
+  reviewCount: number | null;
+  city: string | null;
+  state: string | null;
+}
+
+async function searchGooglePlaces(
+  query: string,
+  apiKey: string,
+  locationBias?: string,
+): Promise<PlacesResult[]> {
+  // Use Places API (New) Text Search
+  const url = "https://places.googleapis.com/v1/places:searchText";
+  const body: Record<string, unknown> = {
+    textQuery: query,
+    maxResultCount: 20,
+    languageCode: "en",
+  };
+  if (locationBias) {
+    // locationBias as free-text included in the query itself
+  }
+
+  const resp = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Goog-Api-Key": apiKey,
+      "X-Goog-FieldMask": "places.displayName,places.formattedAddress,places.nationalPhoneNumber,places.websiteUri,places.rating,places.userRatingCount,places.addressComponents",
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!resp.ok) {
+    const errText = await resp.text();
+    console.error(`[google-places] API error ${resp.status}: ${errText.slice(0, 200)}`);
+    return [];
+  }
+
+  const data = await resp.json();
+  const places = data.places || [];
+
+  return places.map((p: any) => {
+    let city: string | null = null;
+    let state: string | null = null;
+    for (const comp of (p.addressComponents || [])) {
+      const types: string[] = comp.types || [];
+      if (types.includes("locality")) city = comp.longText || comp.shortText;
+      if (types.includes("administrative_area_level_1")) state = comp.shortText;
+    }
+    return {
+      company: p.displayName?.text || "Unknown Business",
+      address: p.formattedAddress || "",
+      phone: p.nationalPhoneNumber || null,
+      website: p.websiteUri || null,
+      rating: p.rating || null,
+      reviewCount: p.userRatingCount || null,
+      city,
+      state,
+    };
+  });
+}
+
+function buildGoogleMapsQueries(settings: Record<string, string>): string[] {
+  const states = (settings.states || "TX, FL, CA").split(",").map(s => s.trim()).filter(Boolean);
+  const industries = (settings.industries || "contractor, restaurant, HVAC").split(",").map(i => i.trim()).filter(Boolean);
+  const queries: string[] = [];
+
+  // Build targeted queries: each industry × top states
+  for (const ind of industries.slice(0, 4)) {
+    for (const st of states.slice(0, 3)) {
+      queries.push(`${ind} in ${st}`);
+    }
+  }
+
+  // Add low-review / new business signals
+  if (states[0]) {
+    queries.push(`new business ${states[0]}`);
+  }
+
+  return queries;
+}
 
 // ── Build Firecrawl search queries (used when Firecrawl is available) ──
 function buildSearchQueries(source: ScanSource, settings: Record<string, string>): string[] {
