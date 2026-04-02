@@ -172,8 +172,9 @@ export default function ConnectProduct() {
             transform: introComplete ? "translateY(0)" : "translateY(20px)",
             transition: "all 1.2s cubic-bezier(0.16, 1, 0.3, 1)",
           }}>
+            {page === "dashboard" && <ConnectDashboard />}
             {page === "leads" && <ConnectLeads />}
-            {page !== "leads" && !canAccessFullSite ? (
+            {page !== "leads" && page !== "dashboard" && !canAccessFullSite ? (
               <ComingSoonGate pageName={page.charAt(0).toUpperCase() + page.slice(1)} />
             ) : (
               <>
