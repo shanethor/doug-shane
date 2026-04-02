@@ -3836,6 +3836,7 @@ export type Database = {
           ai_provider: string
           approval_status: string
           branch: string | null
+          connect_vertical: string | null
           created_at: string
           dark_mode: boolean
           form_defaults: Json | null
@@ -3857,6 +3858,7 @@ export type Database = {
           ai_provider?: string
           approval_status?: string
           branch?: string | null
+          connect_vertical?: string | null
           created_at?: string
           dark_mode?: boolean
           form_defaults?: Json | null
@@ -3878,6 +3880,7 @@ export type Database = {
           ai_provider?: string
           approval_status?: string
           branch?: string | null
+          connect_vertical?: string | null
           created_at?: string
           dark_mode?: boolean
           form_defaults?: Json | null

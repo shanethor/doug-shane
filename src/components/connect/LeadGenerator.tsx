@@ -948,7 +948,13 @@ export default function LeadGenerator() {
           .select("industry, specializations")
           .eq("user_id", user.id)
           .maybeSingle();
-        if (profile?.industry) setUserIndustry(profile.industry);
+        // Use connect_vertical first, fall back to industry
+        const connectVertical = (profile as any)?.connect_vertical;
+        if (connectVertical) {
+          setUserIndustry(connectVertical);
+        } else if (profile?.industry) {
+          setUserIndustry(profile.industry);
+        }
         if ((profile as any)?.specializations?.length) {
           setUserSpecializations((profile as any).specializations);
         }

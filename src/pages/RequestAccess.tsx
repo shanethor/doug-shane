@@ -8,36 +8,12 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import ConnectUpsellPopup from "@/components/ConnectUpsellPopup";
-import { getVerticalsForIndustry, type Vertical } from "@/lib/lead-verticals";
-
-const INDUSTRIES = [
-  "Insurance", "Mortgage", "Real Estate", "Property", "Consulting", "General Business",
-  "Accounting", "Advertising & Marketing", "Agriculture", "Architecture", "Automotive",
-  "Banking & Finance", "Biotechnology", "Construction", "Cybersecurity", "E-Commerce",
-  "Education", "Energy & Utilities", "Engineering", "Entertainment", "Environmental Services",
-  "Fashion & Apparel", "Financial Planning", "Fitness & Wellness", "Food & Beverage",
-  "Healthcare", "Hospitality", "Human Resources", "Information Technology", "Law / Legal",
-  "Logistics & Supply Chain", "Manufacturing", "Nonprofit", "Pharmaceuticals",
-  "Professional Services", "Recruiting & Staffing", "Restaurant", "Retail",
-  "SaaS / Software", "Telecommunications", "Transportation", "Wealth Management", "Other",
-];
+import { CONNECT_VERTICALS, type ConnectVerticalConfig } from "@/lib/connect-verticals";
 
 const MASTER_EMAILS = new Set([
   "shane@houseofthor.com",
   "dwenz17@gmail.com",
 ]);
-
-/* Map display industry names to internal keys for lead verticals */
-const INDUSTRY_KEY_MAP: Record<string, string> = {
-  "Insurance": "insurance",
-  "Mortgage": "mortgage",
-  "Real Estate": "real_estate",
-  "Property": "property",
-  "Consulting": "consulting",
-  "General Business": "general",
-  "Financial Planning": "financial_advisor",
-  "Wealth Management": "financial_advisor",
-};
 
 export default function RequestAccess() {
   const { user } = useAuth();
@@ -45,34 +21,35 @@ export default function RequestAccess() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [industry, setIndustry] = useState("");
-  const [industrySearch, setIndustrySearch] = useState("");
-  const [industryOpen, setIndustryOpen] = useState(false);
+  const [selectedVertical, setSelectedVertical] = useState<string>("");
+  const [verticalSearch, setVerticalSearch] = useState("");
+  const [verticalOpen, setVerticalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [showUpsell, setShowUpsell] = useState(false);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
-  const [selectedSpecializations, setSelectedSpecializations] = useState<string[]>([]);
+  const [selectedSubVerticals, setSelectedSubVerticals] = useState<string[]>([]);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
-  const industryRef = useRef<HTMLDivElement>(null);
+  const verticalRef = useRef<HTMLDivElement>(null);
 
-  const industryKey = INDUSTRY_KEY_MAP[industry] || "general";
-  const availableVerticals = useMemo(() => getVerticalsForIndustry(industryKey), [industryKey]);
-  const verticalsByGroup = useMemo(() => {
-    const map: Record<string, Vertical[]> = {};
-    for (const v of availableVerticals) (map[v.group] ??= []).push(v);
-    return map;
-  }, [availableVerticals]);
+  const verticalConfig = useMemo(
+    () => CONNECT_VERTICALS.find(v => v.id === selectedVertical),
+    [selectedVertical]
+  );
 
-  // Reset specializations when industry changes
+  // Reset sub-verticals when vertical changes
   useEffect(() => {
-    setSelectedSpecializations(availableVerticals.slice(0, 2).map(v => v.id));
+    if (verticalConfig) {
+      setSelectedSubVerticals(verticalConfig.subVerticals.slice(0, 2).map(sv => sv.id));
+    } else {
+      setSelectedSubVerticals([]);
+    }
     setExpandedGroups(new Set());
-  }, [industry]);
+  }, [selectedVertical]);
 
   // Close dropdown on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (industryRef.current && !industryRef.current.contains(e.target as Node)) setIndustryOpen(false);
+      if (verticalRef.current && !verticalRef.current.contains(e.target as Node)) setVerticalOpen(false);
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
@@ -88,22 +65,15 @@ export default function RequestAccess() {
     }
   }, [user?.email, navigate]);
 
-  const filteredIndustries = INDUSTRIES.filter((i) =>
-    i.toLowerCase().includes(industrySearch.toLowerCase())
+  const filteredVerticals = CONNECT_VERTICALS.filter((v) =>
+    v.label.toLowerCase().includes(verticalSearch.toLowerCase()) ||
+    v.description.toLowerCase().includes(verticalSearch.toLowerCase())
   );
 
-  const toggleVertical = (id: string) => {
-    setSelectedSpecializations(prev =>
+  const toggleSubVertical = (id: string) => {
+    setSelectedSubVerticals(prev =>
       prev.includes(id) ? prev.filter(v => v !== id) : [...prev, id]
     );
-  };
-
-  const toggleGroup = (group: string) => {
-    setExpandedGroups(prev => {
-      const next = new Set(prev);
-      next.has(group) ? next.delete(group) : next.add(group);
-      return next;
-    });
   };
 
   const handleForgotPassword = async (e: React.FormEvent) => {
@@ -125,8 +95,8 @@ export default function RequestAccess() {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!industry) {
-      toast.error("Please select your industry");
+    if (!selectedVertical) {
+      toast.error("Please select your industry vertical");
       return;
     }
     setSubmitting(true);
@@ -136,17 +106,21 @@ export default function RequestAccess() {
         password,
         options: {
           emailRedirectTo: `${window.location.origin}/get-started`,
-          data: { full_name: fullName, product_user: true, industry: industryKey },
+          data: { full_name: fullName, product_user: true, industry: selectedVertical },
         },
       });
       if (error) throw error;
 
-      // Save specializations to profile
+      // Save vertical and sub-verticals to profile
       if (data.user) {
         setTimeout(async () => {
           await supabase
             .from("profiles")
-            .update({ industry: industryKey, specializations: selectedSpecializations } as any)
+            .update({
+              industry: selectedVertical,
+              connect_vertical: selectedVertical,
+              specializations: selectedSubVerticals,
+            } as any)
             .eq("user_id", data.user!.id);
         }, 1000);
       }
@@ -239,41 +213,44 @@ export default function RequestAccess() {
             />
           </div>
 
-          {/* Industry selector */}
-          <div className="space-y-2" ref={industryRef}>
-            <Label className="text-xs uppercase tracking-wider text-[#71717A]">Industry</Label>
+          {/* Vertical selector */}
+          <div className="space-y-2" ref={verticalRef}>
+            <Label className="text-xs uppercase tracking-wider text-[#71717A]">Industry Vertical</Label>
             <div className="relative">
               <button
                 type="button"
-                onClick={() => setIndustryOpen(!industryOpen)}
+                onClick={() => setVerticalOpen(!verticalOpen)}
                 className="w-full h-11 px-3 text-left text-sm bg-white/5 border border-white/10 rounded-md text-white flex items-center justify-between"
               >
-                <span className={industry ? "text-white" : "text-white/20"}>
-                  {industry || "Select your industry"}
+                <span className={selectedVertical ? "text-white" : "text-white/20"}>
+                  {verticalConfig?.label || "Select your industry vertical"}
                 </span>
                 <Search className="w-4 h-4 text-white/30" />
               </button>
-              {industryOpen && (
-                <div className="absolute z-50 w-full mt-1 bg-[#18181B] border border-white/10 rounded-lg shadow-xl max-h-60 overflow-hidden bottom-full mb-1">
+              {verticalOpen && (
+                <div className="absolute z-50 w-full mt-1 bg-[#18181B] border border-white/10 rounded-lg shadow-xl max-h-72 overflow-hidden bottom-full mb-1">
                   <div className="p-2 border-b border-white/10">
                     <Input
-                      value={industrySearch}
-                      onChange={(e) => setIndustrySearch(e.target.value)}
-                      placeholder="Search industries..."
+                      value={verticalSearch}
+                      onChange={(e) => setVerticalSearch(e.target.value)}
+                      placeholder="Search verticals..."
                       className="h-9 bg-white/5 border-white/10 text-white text-sm placeholder:text-white/20"
                       autoFocus
                     />
                   </div>
-                  <div className="overflow-y-auto max-h-48">
-                    {filteredIndustries.map((ind) => (
+                  <div className="overflow-y-auto max-h-56">
+                    {filteredVerticals.map((v) => (
                       <button
-                        key={ind}
+                        key={v.id}
                         type="button"
-                        onClick={() => { setIndustry(ind); setIndustryOpen(false); setIndustrySearch(""); }}
-                        className={`w-full text-left px-3 py-2 text-sm hover:bg-white/5 flex items-center gap-2 ${industry === ind ? "text-[hsl(140_12%_58%)]" : "text-[#A1A1AA]"}`}
+                        onClick={() => { setSelectedVertical(v.id); setVerticalOpen(false); setVerticalSearch(""); }}
+                        className={`w-full text-left px-3 py-2.5 text-sm hover:bg-white/5 flex flex-col gap-0.5 ${selectedVertical === v.id ? "text-[hsl(140_12%_58%)]" : "text-[#A1A1AA]"}`}
                       >
-                        {industry === ind && <Check className="w-3.5 h-3.5 shrink-0" />}
-                        {ind}
+                        <div className="flex items-center gap-2">
+                          {selectedVertical === v.id && <Check className="w-3.5 h-3.5 shrink-0" />}
+                          <span className="font-medium">{v.label}</span>
+                        </div>
+                        <span className="text-[10px] text-[#52525B] pl-5">{v.description}</span>
                       </button>
                     ))}
                   </div>
@@ -282,48 +259,29 @@ export default function RequestAccess() {
             </div>
           </div>
 
-          {/* Specializations - shown after industry selection */}
-          {industry && availableVerticals.length > 0 && (
+          {/* Sub-verticals — shown after vertical selection */}
+          {verticalConfig && verticalConfig.subVerticals.length > 0 && (
             <div className="space-y-2">
               <Label className="text-xs uppercase tracking-wider text-[#71717A]">Specializations</Label>
-              <p className="text-[10px] text-[#52525B]">Select the verticals you'll be sourcing leads for</p>
+              <p className="text-[10px] text-[#52525B]">Select the sub-verticals you'll focus on</p>
               <div className="rounded-lg border border-white/10 bg-white/[0.02] p-3 space-y-2 max-h-48 overflow-y-auto">
-                {Object.entries(verticalsByGroup).map(([group, verts]) => (
-                  <div key={group}>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {verticalConfig.subVerticals.map(sv => (
                     <button
+                      key={sv.id}
                       type="button"
-                      onClick={() => toggleGroup(group)}
-                      className="w-full flex items-center justify-between py-1 text-xs font-medium text-[#A1A1AA] hover:text-white transition-colors"
+                      onClick={() => toggleSubVertical(sv.id)}
+                      className={`rounded-md border p-2 text-left text-[11px] font-medium transition-all ${
+                        selectedSubVerticals.includes(sv.id)
+                          ? "border-[hsl(140_12%_42%)] bg-[hsl(140_12%_42%/0.1)] text-white"
+                          : "border-white/10 text-[#71717A] hover:border-white/20"
+                      }`}
                     >
-                      <span>{group}</span>
-                      <div className="flex items-center gap-1.5">
-                        <Badge variant="secondary" className="text-[9px] px-1.5 py-0 bg-white/5 text-[#71717A]">
-                          {verts.filter(v => selectedSpecializations.includes(v.id)).length}/{verts.length}
-                        </Badge>
-                        {expandedGroups.has(group) ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-                      </div>
+                      {sv.label}
                     </button>
-                    {expandedGroups.has(group) && (
-                      <div className="grid grid-cols-2 gap-1.5 pb-2">
-                        {verts.map(v => (
-                          <button
-                            key={v.id}
-                            type="button"
-                            onClick={() => toggleVertical(v.id)}
-                            className={`rounded-md border p-2 text-left text-[11px] font-medium transition-all ${
-                              selectedSpecializations.includes(v.id)
-                                ? "border-[hsl(140_12%_42%)] bg-[hsl(140_12%_42%/0.1)] text-white"
-                                : "border-white/10 text-[#71717A] hover:border-white/20"
-                            }`}
-                          >
-                            {v.label}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))}
-                <p className="text-[10px] text-[#52525B]">{selectedSpecializations.length} specialization{selectedSpecializations.length !== 1 ? "s" : ""} selected</p>
+                  ))}
+                </div>
+                <p className="text-[10px] text-[#52525B]">{selectedSubVerticals.length} specialization{selectedSubVerticals.length !== 1 ? "s" : ""} selected</p>
               </div>
             </div>
           )}
