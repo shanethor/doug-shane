@@ -316,6 +316,7 @@ IMPORTANT TERMINOLOGY: Never use 'carrier' alone — always 'motor carrier' (the
     coverageLines: ["D&O", "EPLI", "Fiduciary Liability", "Crime/Fidelity"],
     sageContext: "You are advising a specialty/E&S-focused producer. Key triggers: SEC Reg D filings (startups with investors need D&O), LinkedIn hiring signals (EPLI exposure grows with headcount), IRS Form 990 filings (nonprofits need D&O for board members). Critical: most small businesses don't know GL excludes director liability. Nuclear verdicts in employment cases are increasing.",
     leadSources: ["SEC EDGAR Reg D filings (daily)", "Crunchbase funding data", "ProPublica Nonprofit Explorer (Form 990)", "LinkedIn hiring signals"],
+    pricing: { basePrice: 45, platinumMax: 119, bronzeMin: 14, avgPremium: 20000, volumePerMonth: 280, freeLeadsPerMonth: 2 },
   },
   {
     id: "nonprofit",
