@@ -7,12 +7,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const LEAD_PACKS: Record<string, { price_id: string; leads: number }> = {
-  "10":  { price_id: "price_1TFoIfEISdUzafyhBSXM0ZsV", leads: 10 },
-  "25":  { price_id: "price_1TFoKxEISdUzafyhF3Oj5Bql", leads: 25 },
-  "50":  { price_id: "price_1TFoLFEISdUzafyh8nbp9PwC", leads: 50 },
-  "100": { price_id: "price_1TFoMVEISdUzafyh0JQXinEw", leads: 100 },
-};
+const VALID_PACKS = [10, 25, 50, 100];
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -31,9 +26,12 @@ serve(async (req) => {
     const user = data.user;
     if (!user?.email) throw new Error("User not authenticated");
 
-    const { pack } = await req.json();
-    const selectedPack = LEAD_PACKS[String(pack)];
-    if (!selectedPack) throw new Error("Invalid lead pack selection");
+    const { pack, price, vertical } = await req.json();
+    const packNum = Number(pack);
+    const priceNum = Number(price);
+
+    if (!VALID_PACKS.includes(packNum)) throw new Error("Invalid lead pack selection");
+    if (!priceNum || priceNum < 100 || priceNum > 500000) throw new Error("Invalid price");
 
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
       apiVersion: "2025-08-27.basil",
@@ -48,13 +46,24 @@ serve(async (req) => {
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
-      line_items: [{ price: selectedPack.price_id, quantity: 1 }],
+      line_items: [{
+        price_data: {
+          currency: "usd",
+          product_data: {
+            name: `${packNum} ${vertical || "Commercial"} Leads`,
+            description: `Pack of ${packNum} verified, exclusive leads`,
+          },
+          unit_amount: priceNum, // price in cents from frontend
+        },
+        quantity: 1,
+      }],
       mode: "payment",
-      success_url: `${req.headers.get("origin")}/connect/leads?purchased=${selectedPack.leads}`,
+      success_url: `${req.headers.get("origin")}/connect/leads?purchased=${packNum}`,
       cancel_url: `${req.headers.get("origin")}/connect/leads`,
       metadata: {
         user_id: user.id,
-        lead_count: String(selectedPack.leads),
+        lead_count: String(packNum),
+        vertical: vertical || "general",
       },
     });
 
