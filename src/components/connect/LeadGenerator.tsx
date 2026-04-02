@@ -984,7 +984,7 @@ export default function LeadGenerator() {
 
   if (loading) return <Skeleton className="h-40 w-full" />;
 
-  const pricing = INDUSTRY_PRICING[userIndustry] || INDUSTRY_PRICING.general;
+  const pricing = getVerticalPricing(userIndustry);
   const showPromo = !hasAgent && studioQual?.qualified;
 
   return (
