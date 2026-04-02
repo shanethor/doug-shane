@@ -280,6 +280,7 @@ IMPORTANT TERMINOLOGY: Never use 'carrier' alone — always 'motor carrier' (the
     coverageLines: ["Cyber Liability", "Tech E&O", "Media Liability", "D&O", "EPLI", "Crime/Social Engineering"],
     sageContext: "You are advising a technology-focused producer. Key triggers: HHS breach portal (competitors of breached companies are most receptive), SEC Reg D filings (startups with investors need Cyber + D&O), CISA KEV vulnerability alerts. Critical: GL specifically excludes tech professional services and data breaches. Most SaaS companies discover this after their first claim.",
     leadSources: ["HHS Breach Portal", "SEC EDGAR Reg D filings", "CISA Known Exploited Vulnerabilities", "Crunchbase funding data", "FCC license applications"],
+    pricing: { basePrice: 35, platinumMax: 94, bronzeMin: 14, avgPremium: 15000, volumePerMonth: 670, freeLeadsPerMonth: 3 },
   },
   {
     id: "manufacturing",
