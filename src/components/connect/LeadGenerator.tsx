@@ -168,7 +168,9 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasAgent, in
     setGenProgress(0);
     setGenStep("Initializing scan…");
     try {
-      const states = geo === "All States" ? [] : [geo];
+      const states = geo === "All States" 
+        ? (userStates?.length ? userStates : []) 
+        : [geo];
       const settings: Record<string, string> = {
         states: states.join(", ") || "NY, CA, TX, FL",
         industries: pricing.label,
