@@ -16,6 +16,15 @@ export interface PipelineStageConfig {
   color: string;               // tailwind color token
 }
 
+export interface VerticalLeadPricing {
+  basePrice: number;           // mid-range $/lead (flat fee, no tier multiplier)
+  platinumMax: number;         // highest price at 1.25× for 80-100 score
+  bronzeMin: number;           // lowest price at 0.50× for 10-29 score
+  avgPremium: number;          // average annual premium in this vertical
+  volumePerMonth: number;      // estimated national lead volume/month
+  freeLeadsPerMonth: number;   // free leads for subscribers
+}
+
 export interface ConnectVerticalConfig {
   id: string;
   label: string;
@@ -26,6 +35,19 @@ export interface ConnectVerticalConfig {
   coverageLines: string[];
   sageContext: string;         // injected into Sage system prompt
   leadSources: string[];      // top-level lead source descriptions
+  pricing: VerticalLeadPricing;
+}
+
+/* ── Lead scoring tiers ── */
+export const LEAD_SCORE_TIERS = [
+  { tier: "Platinum", scoreMin: 80, scoreMax: 100, multiplier: 1.25, ttlDays: 30, color: "text-purple-400" },
+  { tier: "Gold",     scoreMin: 55, scoreMax: 79,  multiplier: 1.0,  ttlDays: 60, color: "text-yellow-400" },
+  { tier: "Silver",   scoreMin: 30, scoreMax: 54,  multiplier: 0.75, ttlDays: 90, color: "text-gray-400" },
+  { tier: "Bronze",   scoreMin: 10, scoreMax: 29,  multiplier: 0.50, ttlDays: 120, color: "text-amber-700" },
+] as const;
+
+export function getTierForScore(score: number) {
+  return LEAD_SCORE_TIERS.find(t => score >= t.scoreMin && score <= t.scoreMax) ?? LEAD_SCORE_TIERS[3];
 }
 
 /* ── Pipeline stage presets ── */
