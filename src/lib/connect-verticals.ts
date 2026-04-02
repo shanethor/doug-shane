@@ -261,6 +261,7 @@ IMPORTANT TERMINOLOGY: Never use 'carrier' alone — always 'motor carrier' (the
     coverageLines: ["Professional Liability/E&O", "GL", "Cyber", "EPLI", "D&O (firm principals)", "Crime (staffing)", "WC (staffing)"],
     sageContext: "You are advising a professional services-focused producer. Key triggers: new CPA/PE/RA licenses, state bar admissions, new RIA registrations (SEC EDGAR), new staffing agency registrations. Critical gap: most professionals think GL covers professional mistakes — it does not. E&O pays for claims from the professional service itself. First year of practice is when most E&O claims originate.",
     leadSources: ["State CPA licensing boards", "NCEES PE license registrations", "NCARB architecture licenses", "SEC EDGAR RIA registrations", "State Bar admissions", "State DOL staffing registrations"],
+    pricing: { basePrice: 20, platinumMax: 69, bronzeMin: 11, avgPremium: 6100, volumePerMonth: 435, freeLeadsPerMonth: 5 },
   },
   {
     id: "technology",
