@@ -50,13 +50,13 @@ const CONTRACTOR_STAGES: PipelineStageConfig[] = [
 ];
 
 const TRUCKING_STAGES: PipelineStageConfig[] = [
-  { key: "new_authority", label: "New Authority", color: "blue" },
+  { key: "signal_detected", label: "Signal Detected", color: "cyan" },
   { key: "contacted", label: "Contacted", color: "sky" },
-  { key: "filing_review", label: "Filing Review", color: "amber" },
+  { key: "in_conversation", label: "In Conversation", color: "amber" },
   { key: "quote_sent", label: "Quote Sent", color: "orange" },
   { key: "binding", label: "Binding", color: "purple" },
-  { key: "closed_won", label: "Closed Won", color: "green" },
-  { key: "closed_lost", label: "Closed Lost", color: "red" },
+  { key: "closed_won", label: "Bound", color: "green" },
+  { key: "closed_lost", label: "Lost", color: "red" },
 ];
 
 const REAL_ESTATE_STAGES: PipelineStageConfig[] = [
