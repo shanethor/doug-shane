@@ -411,6 +411,52 @@ export default function RequestAccess() {
             </div>
           )}
 
+          {/* States of Operation */}
+          {selectedVertical && (
+            <div className="space-y-2">
+              <Label className="text-xs uppercase tracking-wider text-[#71717A]">States of Operation</Label>
+              <p className="text-[10px] text-[#52525B]">Select the states where you operate</p>
+              <div className="rounded-lg border border-white/10 bg-white/[0.02] p-3 space-y-2">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-[10px] text-[#71717A]">{selectedStates.length} state{selectedStates.length !== 1 ? "s" : ""} selected</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (selectedStates.length === ALL_US_STATES.length) {
+                        setSelectedStates([]);
+                      } else {
+                        setSelectedStates([...ALL_US_STATES]);
+                      }
+                    }}
+                    className="text-[10px] font-medium text-[hsl(140_12%_58%)] hover:underline"
+                  >
+                    {selectedStates.length === ALL_US_STATES.length ? "Deselect All" : "Select All 50 States"}
+                  </button>
+                </div>
+                <div className="grid grid-cols-3 gap-1 max-h-40 overflow-y-auto pr-1">
+                  {ALL_US_STATES.map(st => (
+                    <button
+                      key={st}
+                      type="button"
+                      onClick={() => {
+                        setSelectedStates(prev =>
+                          prev.includes(st) ? prev.filter(s => s !== st) : [...prev, st]
+                        );
+                      }}
+                      className={`rounded-md border px-2 py-1 text-[10px] font-medium transition-all ${
+                        selectedStates.includes(st)
+                          ? "border-[hsl(140_12%_42%)] bg-[hsl(140_12%_42%/0.1)] text-white"
+                          : "border-white/10 text-[#52525B] hover:border-white/20"
+                      }`}
+                    >
+                      {st}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
           <button
             type="submit"
             disabled={submitting}
