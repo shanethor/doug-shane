@@ -50,13 +50,13 @@ const CONTRACTOR_STAGES: PipelineStageConfig[] = [
 ];
 
 const TRUCKING_STAGES: PipelineStageConfig[] = [
-  { key: "new_authority", label: "New Authority", color: "blue" },
+  { key: "signal_detected", label: "Signal Detected", color: "cyan" },
   { key: "contacted", label: "Contacted", color: "sky" },
-  { key: "filing_review", label: "Filing Review", color: "amber" },
+  { key: "in_conversation", label: "In Conversation", color: "amber" },
   { key: "quote_sent", label: "Quote Sent", color: "orange" },
   { key: "binding", label: "Binding", color: "purple" },
-  { key: "closed_won", label: "Closed Won", color: "green" },
-  { key: "closed_lost", label: "Closed Lost", color: "red" },
+  { key: "closed_won", label: "Bound", color: "green" },
+  { key: "closed_lost", label: "Lost", color: "red" },
 ];
 
 const REAL_ESTATE_STAGES: PipelineStageConfig[] = [
@@ -118,16 +118,50 @@ export const CONNECT_VERTICALS: ConnectVerticalConfig[] = [
     description: "Motor carriers, owner-operators, freight, and fleet operations",
     icon: "Truck",
     subVerticals: [
-      { id: "motor_carrier", label: "Motor Carriers", sources: ["fmcsa", "safer"] },
-      { id: "owner_operator", label: "Owner-Operators", sources: ["fmcsa"] },
-      { id: "freight_broker", label: "Freight Brokers", sources: ["fmcsa"] },
-      { id: "fleet_operations", label: "Fleet Operations", sources: ["fmcsa", "dot"] },
-      { id: "last_mile", label: "Last Mile Delivery", sources: ["fmcsa"] },
+      { id: "motor_carrier", label: "Motor Carriers (For-Hire)", sources: ["fmcsa", "bmc35", "new_authority", "csa_alert"] },
+      { id: "owner_operator", label: "Owner-Operators", sources: ["fmcsa", "bmc35", "new_authority"] },
+      { id: "freight_broker", label: "Freight Brokers", sources: ["fmcsa", "new_authority"] },
+      { id: "fleet_operations", label: "Fleet Operations (6+ Units)", sources: ["fmcsa", "csa_alert", "safety_rating"] },
+      { id: "last_mile", label: "Last Mile / Hot Shot", sources: ["fmcsa", "new_authority"] },
+      { id: "intermodal", label: "Intermodal / Drayage", sources: ["fmcsa", "bmc35"] },
+      { id: "hazmat", label: "Hazmat Carriers", sources: ["fmcsa", "csa_alert", "hazmat_endorsements"] },
+      { id: "tanker", label: "Tanker Operations", sources: ["fmcsa", "bmc35", "csa_alert"] },
+      { id: "refrigerated", label: "Refrigerated / Reefer", sources: ["fmcsa", "bmc35"] },
     ],
     pipelineStages: TRUCKING_STAGES,
-    coverageLines: ["Primary Liability", "Physical Damage", "Cargo", "Bobtail/Non-Trucking", "GL", "WC", "Occupational Accident"],
-    sageContext: "You are advising a trucking/fleet-focused producer. Key triggers: new MC authority activations (90-day filing window), BMC-35 insurance cancellations, declining BASIC/CSA safety scores (rate increase at renewal). Coverage nuances: Primary Liability by cargo type, Bobtail vs Non-Trucking distinction, Occupational Accident for owner-operators.",
-    leadSources: ["FMCSA API (new MC authorities)", "BMC-35 cancellation notices", "SAFER database", "DOT MCMIS inspection records"],
+    coverageLines: ["Primary Auto Liability", "Physical Damage", "Motor Cargo", "Bobtail / Non-Trucking Liability", "GL", "WC", "Occupational Accident", "Trailer Interchange", "Umbrella / Excess"],
+    sageContext: `You are advising a trucking/commercial fleet insurance producer. You have deep knowledge of FMCSA regulations, CSA BASIC scores, and commercial trucking insurance markets.
+
+KEY BUYING SIGNALS (ranked by urgency):
+1. BMC-35 Cancellation — An insurance company filed a cancellation notice with FMCSA. The motor carrier has a 30-day hard deadline before authority is revoked. This is the highest-intent signal. First producer to contact wins. Suppress leads with <10 days remaining.
+2. New MC Authority — FMCSA granted new operating authority. The motor carrier cannot haul freight until a BMC-91 is filed. 21-day urgency window.
+3. CSA BASIC Alert — A safety score crossed into alert territory month-over-month. Insurance companies review these at renewal. The motor carrier may not know yet.
+4. Safety Rating Downgrade — Rating dropped to Conditional or Unsatisfactory. Most standard carriers will non-renew. Needs E&S market specialist.
+
+COVERAGE NUANCES:
+- Primary Auto Liability: Required for all for-hire carriers. Minimum $750K for non-hazmat, $1M for hazmat, $5M for certain cargo classes.
+- Physical Damage: Actual cash value vs stated value. Owner-operators often underinsure.
+- Motor Cargo: Varies by cargo type. Reefer cargo needs spoilage coverage. Hazmat needs pollution liability.
+- Bobtail vs Non-Trucking: Bobtail covers the truck without a trailer. Non-Trucking covers personal use. They are NOT interchangeable — wrong coverage = denied claim.
+- Occupational Accident: For owner-operators who are 1099 and not covered by WC.
+- Trailer Interchange: Required when pulling trailers owned by others under interchange agreement.
+
+FMCSA DATA SOURCES (all free):
+- InsHist daily diff (ID: xkmg-ff2t) — BMC-35 cancellations
+- AuthHist daily diff (ID: sn3k-dnx7) — New MC authority grants
+- Census File daily diff (ID: az4n-8mr2) — Carrier enrichment data
+- SMS Monthly CSV (ai.fmcsa.dot.gov/SMS) — CSA BASIC scores
+- QCMobile API — Full carrier detail, BASIC scores, crash history
+
+IMPORTANT TERMINOLOGY: Never use 'carrier' alone — always 'motor carrier' (the trucking business) or 'insurance company' (the underwriter). They mean completely different things in trucking insurance.`,
+    leadSources: [
+      "FMCSA InsHist API — BMC-35 cancellations (daily, free)",
+      "FMCSA AuthHist API — New MC authority grants (daily, free)",
+      "FMCSA Census File — Carrier enrichment data (daily, free)",
+      "FMCSA SMS Monthly CSV — CSA BASIC score changes (monthly, free)",
+      "QCMobile API — Full carrier detail & BASIC scores (free, Login.gov required)",
+      "Google Places API — Phone/website enrichment (~65-70% hit rate)",
+    ],
   },
   {
     id: "real_estate",

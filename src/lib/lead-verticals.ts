@@ -557,17 +557,52 @@ export const VERTICALS: Vertical[] = [
 
   // ── Trucking / Transportation ──
   {
-    id: "trucking",
-    label: "Trucking / Transportation",
+    id: "trucking_bmc35",
+    label: "BMC-35 Cancellations",
+    group: "Trucking",
+    sources: [
+      s("bmc35_cancellations", "BMC-35 Insurance Cancellations", "target"),
+      s("fmcsa_inshist", "FMCSA InsHist Daily Diff (xkmg-ff2t)", "rocket"),
+      s("google_places_enrich", "Google Places Phone Enrichment", "map"),
+    ],
+  },
+  {
+    id: "trucking_new_authority",
+    label: "New MC Authority",
+    group: "Trucking",
+    sources: [
+      s("fmcsa_new_authority", "FMCSA New MC Authority Grants", "rocket"),
+      s("fmcsa_authhist", "FMCSA AuthHist Daily Diff (sn3k-dnx7)", "rocket"),
+      s("google_places_enrich", "Google Places Phone Enrichment", "map"),
+    ],
+  },
+  {
+    id: "trucking_csa_alert",
+    label: "CSA BASIC Alerts",
+    group: "Trucking",
+    sources: [
+      s("csa_basic_scores", "CSA BASIC Score Changes (Month-over-Month)", "trending"),
+      s("fmcsa_sms_csv", "FMCSA SMS Monthly CSV Download", "file"),
+      s("qcmobile_api", "QCMobile API — Full BASIC Percentiles", "rocket"),
+    ],
+  },
+  {
+    id: "trucking_safety_rating",
+    label: "Safety Rating Downgrades",
+    group: "Trucking",
+    sources: [
+      s("carrier_safety_ratings", "FMCSA Safety Rating Changes", "target"),
+      s("fmcsa_census", "FMCSA Census File Daily Diff (az4n-8mr2)", "rocket"),
+    ],
+  },
+  {
+    id: "trucking_general",
+    label: "General Trucking / Fleet",
     group: "Trucking",
     sources: [
       s("fmcsa", "FMCSA / DOT Records", "rocket"),
-      s("fmcsa_new_authority", "FMCSA New MC Authority", "rocket"),
-      s("bmc35_cancellations", "BMC-35 Cancellations", "target"),
-      s("csa_basic_scores", "CSA / BASIC Scores", "trending"),
-      s("oos_orders", "Out-of-Service Orders", "zap"),
-      s("carrier_safety_ratings", "Carrier Safety Ratings", "target"),
       s("dot_inspections", "DOT Inspection Reports", "file"),
+      s("oos_orders", "Out-of-Service Orders", "zap"),
       s("hazmat_endorsements", "Hazmat Endorsements", "zap"),
       s("ifta_registrations", "IFTA / IRP Registrations", "file"),
       s("broker_authority", "Broker Authority Filings", "building"),
