@@ -34,6 +34,7 @@ export default function RequestAccess() {
   const [otpCode, setOtpCode] = useState("");
   const [verifyingOtp, setVerifyingOtp] = useState(false);
   const [otpToken, setOtpToken] = useState<string | null>(null);
+  const [selectedStates, setSelectedStates] = useState<string[]>([]);
   const verticalRef = useRef<HTMLDivElement>(null);
 
   const verticalConfig = useMemo(
