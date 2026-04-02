@@ -835,9 +835,10 @@ export const VERTICALS: Vertical[] = [
 
 /* ── Map industry to default vertical groups shown ── */
 export const INDUSTRY_VERTICAL_GROUPS: Record<string, string[]> = {
-  insurance: ["Personal Lines", "Commercial Lines", "Contractors", "Commercial Real Estate", "Nonprofit", "Cannabis", "Manufacturing", "Hospitality", "Auto Dealers", "Trucking"],
-  mortgage: ["Personal Lines"],
-  real_estate: ["Personal Lines", "Commercial Real Estate"],
+  insurance: ["Personal Lines", "Commercial Lines", "Contractors", "Commercial Real Estate", "Nonprofit", "Cannabis", "Manufacturing", "Hospitality", "Auto Dealers", "Trucking", "Life Insurance"],
+  life_insurance: ["Life Insurance"],
+  mortgage: ["Personal Lines", "Life Insurance"],
+  real_estate: ["Personal Lines", "Commercial Real Estate", "Life Insurance"],
   property: ["Commercial Real Estate"],
   consulting: ["Commercial Lines", "Manufacturing"],
   general: ["Commercial Lines", "Contractors"],
