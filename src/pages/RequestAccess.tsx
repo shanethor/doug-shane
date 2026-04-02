@@ -8,36 +8,12 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import ConnectUpsellPopup from "@/components/ConnectUpsellPopup";
-import { getVerticalsForIndustry, type Vertical } from "@/lib/lead-verticals";
-
-const INDUSTRIES = [
-  "Insurance", "Mortgage", "Real Estate", "Property", "Consulting", "General Business",
-  "Accounting", "Advertising & Marketing", "Agriculture", "Architecture", "Automotive",
-  "Banking & Finance", "Biotechnology", "Construction", "Cybersecurity", "E-Commerce",
-  "Education", "Energy & Utilities", "Engineering", "Entertainment", "Environmental Services",
-  "Fashion & Apparel", "Financial Planning", "Fitness & Wellness", "Food & Beverage",
-  "Healthcare", "Hospitality", "Human Resources", "Information Technology", "Law / Legal",
-  "Logistics & Supply Chain", "Manufacturing", "Nonprofit", "Pharmaceuticals",
-  "Professional Services", "Recruiting & Staffing", "Restaurant", "Retail",
-  "SaaS / Software", "Telecommunications", "Transportation", "Wealth Management", "Other",
-];
+import { CONNECT_VERTICALS, type ConnectVerticalConfig } from "@/lib/connect-verticals";
 
 const MASTER_EMAILS = new Set([
   "shane@houseofthor.com",
   "dwenz17@gmail.com",
 ]);
-
-/* Map display industry names to internal keys for lead verticals */
-const INDUSTRY_KEY_MAP: Record<string, string> = {
-  "Insurance": "insurance",
-  "Mortgage": "mortgage",
-  "Real Estate": "real_estate",
-  "Property": "property",
-  "Consulting": "consulting",
-  "General Business": "general",
-  "Financial Planning": "financial_advisor",
-  "Wealth Management": "financial_advisor",
-};
 
 export default function RequestAccess() {
   const { user } = useAuth();
@@ -45,29 +21,30 @@ export default function RequestAccess() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [industry, setIndustry] = useState("");
-  const [industrySearch, setIndustrySearch] = useState("");
-  const [industryOpen, setIndustryOpen] = useState(false);
+  const [selectedVertical, setSelectedVertical] = useState<string>("");
+  const [verticalSearch, setVerticalSearch] = useState("");
+  const [verticalOpen, setVerticalOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [showUpsell, setShowUpsell] = useState(false);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
-  const [selectedSpecializations, setSelectedSpecializations] = useState<string[]>([]);
+  const [selectedSubVerticals, setSelectedSubVerticals] = useState<string[]>([]);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
-  const industryRef = useRef<HTMLDivElement>(null);
+  const verticalRef = useRef<HTMLDivElement>(null);
 
-  const industryKey = INDUSTRY_KEY_MAP[industry] || "general";
-  const availableVerticals = useMemo(() => getVerticalsForIndustry(industryKey), [industryKey]);
-  const verticalsByGroup = useMemo(() => {
-    const map: Record<string, Vertical[]> = {};
-    for (const v of availableVerticals) (map[v.group] ??= []).push(v);
-    return map;
-  }, [availableVerticals]);
+  const verticalConfig = useMemo(
+    () => CONNECT_VERTICALS.find(v => v.id === selectedVertical),
+    [selectedVertical]
+  );
 
-  // Reset specializations when industry changes
+  // Reset sub-verticals when vertical changes
   useEffect(() => {
-    setSelectedSpecializations(availableVerticals.slice(0, 2).map(v => v.id));
+    if (verticalConfig) {
+      setSelectedSubVerticals(verticalConfig.subVerticals.slice(0, 2).map(sv => sv.id));
+    } else {
+      setSelectedSubVerticals([]);
+    }
     setExpandedGroups(new Set());
-  }, [industry]);
+  }, [selectedVertical]);
 
   // Close dropdown on outside click
   useEffect(() => {
