@@ -298,6 +298,7 @@ IMPORTANT TERMINOLOGY: Never use 'carrier' alone — always 'motor carrier' (the
     coverageLines: ["GL", "Product Liability", "Property", "WC", "Commercial Auto", "Umbrella", "Pollution/Environmental", "Equipment Breakdown", "Business Income"],
     sageContext: "You are advising a manufacturing-focused producer. Key triggers: OSHA inspections, EPA compliance actions, CPSC recall notices, new plant permits. Coverage gaps: product liability for imports/private-label, pollution liability exclusions in standard GL, equipment breakdown vs standard property coverage.",
     leadSources: ["OSHA inspection records", "EPA enforcement actions", "CPSC recall database", "Socrata building permits", "Secretary of State filings"],
+    pricing: { basePrice: 22, platinumMax: 69, bronzeMin: 6, avgPremium: 10000, volumePerMonth: 810, freeLeadsPerMonth: 4 },
   },
   {
     id: "specialty_es",
