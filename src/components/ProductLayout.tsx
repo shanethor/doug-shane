@@ -15,15 +15,15 @@ import { SageFloatingChat } from "@/components/SageFloatingChat";
 
 
 const CONNECT_NAV = [
-  { to: "/connect", label: "Connect", icon: Network, exact: true, premium: false },
-  { to: "/connect/intelligence", label: "Intelligence", icon: Brain, premium: false },
-  { to: "/connect/pipeline", label: "Pipeline", icon: BarChart3, premium: false },
-  { to: "/connect/email", label: "Email", icon: Mail, premium: false },
-  { to: "/connect/calendar", label: "Calendar", icon: Calendar, premium: false },
-  { to: "/connect/create", label: "Create", icon: Sparkles, premium: false },
-  { to: "/connect/leads", label: "Leads", icon: Target, premium: false },
-  { to: "/connect/property", label: "Property", icon: Home, premium: true },
-  { to: "/connect/sage", label: "Sage", icon: Zap, premium: false },
+  { to: "/connect", label: "Connect", icon: Network, exact: true, premium: false, beta: false },
+  { to: "/connect/intelligence", label: "Intelligence", icon: Brain, premium: false, beta: false },
+  { to: "/connect/pipeline", label: "Pipeline", icon: BarChart3, premium: false, beta: false },
+  { to: "/connect/email", label: "Email", icon: Mail, premium: false, beta: false },
+  { to: "/connect/calendar", label: "Calendar", icon: Calendar, premium: false, beta: false },
+  { to: "/connect/create", label: "Create", icon: Sparkles, premium: false, beta: true },
+  { to: "/connect/leads", label: "Leads", icon: Target, premium: false, beta: false },
+  { to: "/connect/property", label: "Property", icon: Home, premium: true, beta: false },
+  { to: "/connect/sage", label: "Sage", icon: Zap, premium: false, beta: false },
 ];
 
 const ICON_MAP: Record<string, any> = {
@@ -63,7 +63,10 @@ function MobileConnectNav({ isActive, signOut }: { isActive: (to: string, exact?
               }`}
             >
               <Icon className="h-5 w-5" />
-              <span className="text-[10px] font-medium">{tab.label}</span>
+              <span className="text-[10px] font-medium">
+                {tab.label}
+                {tab.id === "create" && <span className="text-[7px] text-primary ml-0.5">β</span>}
+              </span>
             </Link>
           );
         })}
@@ -223,10 +226,11 @@ export function ProductLayout({
                >
                  {gated ? <Lock className="h-4 w-4 shrink-0 opacity-40" /> : <item.icon className="h-4 w-4 shrink-0" />}
                   {!collapsed && (
-                    <span className="flex items-center gap-2">
-                      {item.label}
-                      {gated && <span className="text-[8px] px-1 py-0.5 rounded bg-muted text-muted-foreground">Soon</span>}
-                      {!gated && (item as any).premium && <Crown className="h-3 w-3 text-amber-400" />}
+                     <span className="flex items-center gap-2">
+                       {item.label}
+                       {gated && <span className="text-[8px] px-1 py-0.5 rounded bg-muted text-muted-foreground">Soon</span>}
+                       {!gated && item.beta && <span className="text-[8px] px-1 py-0.5 rounded bg-primary/20 text-primary font-semibold">Beta</span>}
+                       {!gated && item.premium && <Crown className="h-3 w-3 text-amber-400" />}
                     </span>
                   )}
                </Link>
