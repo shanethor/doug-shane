@@ -55,6 +55,7 @@ const INDUSTRY_PRICING: Record<string, { basePrice: number; label: string; freeL
   mortgage: { basePrice: 100, label: "Mortgage", freeLeads: 2 },
   real_estate: { basePrice: 100, label: "Real Estate", freeLeads: 2 },
   property: { basePrice: 100, label: "Property", freeLeads: 2 },
+  trucking: { basePrice: 45, label: "Trucking / Commercial Fleet", freeLeads: 3 },
   consulting: { basePrice: 15, label: "Consulting / Professional Services", freeLeads: 10 },
   general: { basePrice: 15, label: "General Business", freeLeads: 10 },
 };
