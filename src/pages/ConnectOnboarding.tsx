@@ -36,14 +36,13 @@ export default function ConnectOnboarding() {
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [theme, setTheme] = useState<"dark" | "light">("dark");
-  const [animateIn, setAnimateIn] = useState(true);
+  
   const [selectedVertical, setSelectedVertical] = useState<string>("");
   const [selectedSubVerticals, setSelectedSubVerticals] = useState<string[]>([]);
   const [selectedStates, setSelectedStates] = useState<string[]>([]);
   const [verticalSearch, setVerticalSearch] = useState("");
   const [saving, setSaving] = useState(false);
 
-  // Load existing profile data
   useEffect(() => {
     if (!user?.id) return;
     supabase
@@ -59,11 +58,6 @@ export default function ConnectOnboarding() {
       });
   }, [user?.id]);
 
-  useEffect(() => {
-    setAnimateIn(true);
-    const t = setTimeout(() => setAnimateIn(false), 600);
-    return () => clearTimeout(t);
-  }, [step]);
 
   const verticalConfig = useMemo(
     () => CONNECT_VERTICALS.find(v => v.id === selectedVertical),
@@ -111,10 +105,6 @@ export default function ConnectOnboarding() {
     }
   };
 
-  const fadeClass = animateIn
-    ? "opacity-0 translate-y-4"
-    : "opacity-100 translate-y-0";
-
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
       {/* Progress bar */}
@@ -140,7 +130,8 @@ export default function ConnectOnboarding() {
       {/* Content */}
       <div className="flex-1 flex items-center justify-center px-4 py-8">
         <div
-          className={`w-full max-w-lg transition-all duration-500 ease-out ${fadeClass}`}
+          key={step}
+          className="w-full max-w-lg animate-fade-in"
         >
           {step === 0 && <WelcomeStep />}
           {step === 1 && <ThemeStep theme={theme} onThemeChange={handleThemeChange} />}
