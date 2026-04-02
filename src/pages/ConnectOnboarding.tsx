@@ -70,7 +70,22 @@ export default function ConnectOnboarding() {
     [selectedVertical]
   );
 
-  const goNext = () => step < STEPS.length - 1 && setStep(step + 1);
+  const [industryRequest, setIndustryRequest] = useState("");
+  const [requestSubmitted, setRequestSubmitted] = useState(false);
+  const [showRequestInput, setShowRequestInput] = useState(false);
+
+  const goNext = () => {
+    // Enforce required steps
+    if (step === 2 && !selectedVertical && !requestSubmitted) {
+      toast.error("Please select an industry or request one to continue.");
+      return;
+    }
+    if (step === 3 && selectedStates.length === 0) {
+      toast.error("Please select at least one state to continue.");
+      return;
+    }
+    step < STEPS.length - 1 && setStep(step + 1);
+  };
   const goBack = () => step > 0 && setStep(step - 1);
 
   const handleThemeChange = (isDark: boolean) => {
@@ -144,11 +159,31 @@ export default function ConnectOnboarding() {
           {step === 2 && (
             <IndustryStep
               selectedVertical={selectedVertical}
-              setSelectedVertical={setSelectedVertical}
+              setSelectedVertical={(v) => { setSelectedVertical(v); setShowRequestInput(false); setRequestSubmitted(false); }}
               selectedSubVerticals={selectedSubVerticals}
               setSelectedSubVerticals={setSelectedSubVerticals}
               verticalSearch={verticalSearch}
               setVerticalSearch={setVerticalSearch}
+              showRequestInput={showRequestInput}
+              setShowRequestInput={setShowRequestInput}
+              industryRequest={industryRequest}
+              setIndustryRequest={setIndustryRequest}
+              requestSubmitted={requestSubmitted}
+              onSubmitRequest={async () => {
+                if (!industryRequest.trim()) return;
+                try {
+                  await supabase.from("industry_requests" as any).insert({
+                    user_id: user?.id,
+                    email: user?.email || "",
+                    full_name: user?.user_metadata?.full_name || "",
+                    requested_industry: industryRequest.trim(),
+                  } as any);
+                  setRequestSubmitted(true);
+                  toast.success("Request submitted! We'll notify you when your vertical is ready.");
+                } catch {
+                  toast.error("Failed to submit request.");
+                }
+              }}
             />
           )}
           {step === 3 && (
@@ -291,6 +326,12 @@ function IndustryStep({
   setSelectedSubVerticals,
   verticalSearch,
   setVerticalSearch,
+  showRequestInput,
+  setShowRequestInput,
+  industryRequest,
+  setIndustryRequest,
+  requestSubmitted,
+  onSubmitRequest,
 }: {
   selectedVertical: string;
   setSelectedVertical: (v: string) => void;
@@ -298,6 +339,12 @@ function IndustryStep({
   setSelectedSubVerticals: React.Dispatch<React.SetStateAction<string[]>>;
   verticalSearch: string;
   setVerticalSearch: (v: string) => void;
+  showRequestInput: boolean;
+  setShowRequestInput: (v: boolean) => void;
+  industryRequest: string;
+  setIndustryRequest: (v: string) => void;
+  requestSubmitted: boolean;
+  onSubmitRequest: () => void;
 }) {
   const verticalConfig = CONNECT_VERTICALS.find(v => v.id === selectedVertical);
 
@@ -318,7 +365,7 @@ function IndustryStep({
         <Briefcase className="h-7 w-7 text-[hsl(140_12%_58%)]" />
       </div>
       <div>
-        <h2 className="text-2xl font-bold tracking-tight mb-2">Your Industry</h2>
+        <h2 className="text-2xl font-bold tracking-tight mb-2">Your Industry <span className="text-red-400">*</span></h2>
         <p className="text-sm text-muted-foreground">
           Select the vertical you operate in. This personalizes your leads, pipeline, and AI insights.
         </p>
@@ -343,7 +390,6 @@ function IndustryStep({
             onClick={() => {
               setSelectedVertical(v.id);
               setVerticalSearch("");
-              // Auto-select first 2 sub-verticals
               setSelectedSubVerticals(v.subVerticals.slice(0, 2).map((sv) => sv.id));
             }}
             className={`w-full p-3 rounded-xl border transition-all text-left ${
@@ -362,6 +408,46 @@ function IndustryStep({
           </button>
         ))}
       </div>
+
+      {/* Request another industry */}
+      {!requestSubmitted ? (
+        <div className="max-w-sm mx-auto space-y-2">
+          {!showRequestInput ? (
+            <button
+              onClick={() => setShowRequestInput(true)}
+              className="text-xs text-[hsl(140_12%_58%)] hover:underline font-medium"
+            >
+              Don't see your industry? Request it →
+            </button>
+          ) : (
+            <div className="space-y-2 p-3 rounded-xl border border-border bg-muted/20">
+              <p className="text-xs text-muted-foreground font-medium text-left">What industry are you in?</p>
+              <Input
+                value={industryRequest}
+                onChange={(e) => setIndustryRequest(e.target.value)}
+                placeholder="e.g. Marine Insurance, Cannabis, etc."
+                className="h-9 bg-background border-border text-sm"
+              />
+              <Button
+                onClick={onSubmitRequest}
+                disabled={!industryRequest.trim()}
+                size="sm"
+                className="w-full bg-[hsl(140_12%_42%)] hover:bg-[hsl(140_12%_48%)] text-white border-0"
+              >
+                Submit Request
+              </Button>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="max-w-sm mx-auto p-4 rounded-xl border border-[hsl(140_12%_42%/0.3)] bg-[hsl(140_12%_42%/0.05)]">
+          <CheckCircle className="h-5 w-5 text-[hsl(140_12%_58%)] mx-auto mb-2" />
+          <p className="text-sm font-medium text-foreground">We hear you!</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            We'll work to build your vertical ASAP and notify you via email once it's ready.
+          </p>
+        </div>
+      )}
 
       {/* Sub-verticals */}
       {verticalConfig && verticalConfig.subVerticals.length > 0 && (
@@ -425,7 +511,7 @@ function StatesStep({
         <MapPin className="h-7 w-7 text-[hsl(140_12%_58%)]" />
       </div>
       <div>
-        <h2 className="text-2xl font-bold tracking-tight mb-2">States of Operation</h2>
+        <h2 className="text-2xl font-bold tracking-tight mb-2">States of Operation <span className="text-red-400">*</span></h2>
         <p className="text-sm text-muted-foreground max-w-sm mx-auto">
           Select the states where you do business. This sets your default lead targeting territory.
         </p>

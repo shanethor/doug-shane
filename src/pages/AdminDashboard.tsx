@@ -16,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   Users, FileText, CheckCircle, Clock, Bug, Lightbulb,
   BarChart3, DollarSign, AlertTriangle, Eye, TrendingUp,
-  XCircle, Edit3, ShieldCheck, Building2, Plus, Trash2, Handshake, ScrollText, Network, Sparkles, CalendarDays, Wrench,
+  XCircle, Edit3, ShieldCheck, Building2, Plus, Trash2, Handshake, ScrollText, Network, Sparkles, CalendarDays, Wrench, Globe,
 } from "lucide-react";
 import AdminPartnerReferrals from "@/components/AdminPartnerReferrals";
 import AdminAgencySection from "@/components/AdminAgencySection";
@@ -24,6 +24,7 @@ import AdminPartnerRequests from "@/components/AdminPartnerRequests2";
 import AdminConciergeQueue from "@/components/AdminConciergeQueue";
 import AdminSupportTickets from "@/components/AdminSupportTickets";
 import AdminStudioQueue from "@/components/AdminStudioQueue";
+import AdminIndustryRequests from "@/components/AdminIndustryRequests";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
 import { toast } from "sonner";
@@ -291,6 +292,7 @@ export default function AdminDashboard() {
             <TabsTrigger value="support" className="gap-1.5 text-xs"><Lightbulb className="h-3.5 w-3.5" />Support</TabsTrigger>
             <TabsTrigger value="bookings" className="gap-1.5 text-xs"><CalendarDays className="h-3.5 w-3.5" />Bookings</TabsTrigger>
             <TabsTrigger value="studio" className="gap-1.5 text-xs"><Wrench className="h-3.5 w-3.5" />Studio</TabsTrigger>
+            <TabsTrigger value="industry-requests" className="gap-1.5 text-xs"><Globe className="h-3.5 w-3.5" />Industry Requests</TabsTrigger>
           </TabsList>
         </div>
 
@@ -918,6 +920,11 @@ export default function AdminDashboard() {
         {/* ── Studio ── */}
         <TabsContent value="studio" className="space-y-6">
           <AdminStudioQueue profileNameMap={profileNameMap} />
+        </TabsContent>
+
+        {/* ── Industry Requests ── */}
+        <TabsContent value="industry-requests" className="space-y-6">
+          <AdminIndustryRequests />
         </TabsContent>
       </Tabs>
 
