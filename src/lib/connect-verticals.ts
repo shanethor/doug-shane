@@ -387,6 +387,7 @@ IMPORTANT TERMINOLOGY: Never use 'carrier' alone — always 'motor carrier' (the
     coverageLines: ["Product Liability", "Professional Liability/E&O", "Clinical Trial Insurance", "D&O", "Cyber", "Property", "WC", "Pollution/Environmental"],
     sageContext: "You are advising a life sciences/biotech-focused producer. Key triggers: SEC Reg D filings (biotech fundraising), FDA device registrations, new clinical trial registrations, NIH grant awards. Coverage nuances: clinical trial liability, product liability for medical devices, D&O for venture-backed startups.",
     leadSources: ["SEC EDGAR Reg D filings", "FDA device registrations (510k)", "ClinicalTrials.gov", "NIH grant awards", "Crunchbase biotech funding"],
+    pricing: { basePrice: 50, platinumMax: 119, bronzeMin: 21, avgPremium: 38000, volumePerMonth: 230, freeLeadsPerMonth: 2 },
   },
   {
     id: "energy",
