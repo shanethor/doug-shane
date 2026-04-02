@@ -93,7 +93,15 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasAgent, in
   const packs = getLeadPacks(pricing.basePrice, isSubscriber, hasAgent);
   const freeLeads = getFreeLeads(pricing.freeLeads, hasAgent);
 
-  const availableVerticals = useMemo(() => getVerticalsForIndustry(userIndustry, showAllVerticals), [userIndustry, showAllVerticals]);
+  const availableVerticals = useMemo(() => {
+    const allForIndustry = getVerticalsForIndustry(userIndustry, showAllVerticals);
+    // If user has selected sub-categories, only show verticals whose group matches
+    if (!showAllVerticals && userSubCategories?.length) {
+      const subSet = new Set(userSubCategories.map(s => s.toLowerCase()));
+      return allForIndustry.filter(v => subSet.has(v.group.toLowerCase()) || subSet.has(v.id));
+    }
+    return allForIndustry;
+  }, [userIndustry, showAllVerticals, userSubCategories]);
   const verticalsByGroup = useMemo(() => {
     const map: Record<string, Vertical[]> = {};
     for (const v of availableVerticals) {
