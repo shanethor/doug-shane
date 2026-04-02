@@ -1,6 +1,6 @@
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, ArrowRight, Check, Loader2, Search, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Loader2, Search, Sparkles, ChevronDown, ChevronUp, ShieldCheck } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import ConnectUpsellPopup from "@/components/ConnectUpsellPopup";
 import { CONNECT_VERTICALS, type ConnectVerticalConfig } from "@/lib/connect-verticals";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 
 const MASTER_EMAILS = new Set([
   "shane@houseofthor.com",
@@ -29,6 +30,10 @@ export default function RequestAccess() {
   const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [selectedSubVerticals, setSelectedSubVerticals] = useState<string[]>([]);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const [showOtp, setShowOtp] = useState(false);
+  const [otpCode, setOtpCode] = useState("");
+  const [verifyingOtp, setVerifyingOtp] = useState(false);
+  const [otpToken, setOtpToken] = useState<string | null>(null);
   const verticalRef = useRef<HTMLDivElement>(null);
 
   const verticalConfig = useMemo(
@@ -105,34 +110,154 @@ export default function RequestAccess() {
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/get-started`,
           data: { full_name: fullName, product_user: true, industry: selectedVertical },
         },
       });
       if (error) throw error;
 
-      // Save vertical and sub-verticals to profile
-      if (data.user) {
-        setTimeout(async () => {
-          await supabase
-            .from("profiles")
-            .update({
-              industry: selectedVertical,
-              connect_vertical: selectedVertical,
-              specializations: selectedSubVerticals,
-            } as any)
-            .eq("user_id", data.user!.id);
-        }, 1000);
+      // With auto-confirm, the user is immediately signed in
+      const session = data.session;
+      if (!session) {
+        toast.error("Account created but sign-in failed. Please sign in manually.");
+        return;
       }
 
-      toast.success("Account created! Check your email for a confirmation link.");
-      setShowUpsell(true);
+      // Save vertical and sub-verticals to profile
+      if (data.user) {
+        await supabase
+          .from("profiles")
+          .update({
+            industry: selectedVertical,
+            connect_vertical: selectedVertical,
+            specializations: selectedSubVerticals,
+          } as any)
+          .eq("user_id", data.user.id);
+      }
+
+      // Send OTP verification code
+      setOtpToken(session.access_token);
+      const { data: otpData, error: otpError } = await supabase.functions.invoke("verify-2fa", {
+        body: { action: "send_code" },
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      if (otpError) {
+        console.error("OTP send error:", otpError);
+        toast.error("Could not send verification code. Please try again.");
+        return;
+      }
+
+      toast.success("We've sent a 6-digit code to your email.");
+      setShowOtp(true);
     } catch (err: any) {
       toast.error(err.message);
     } finally {
       setSubmitting(false);
     }
   };
+
+  const handleVerifyOtp = useCallback(async (codeValue?: string) => {
+    const finalCode = codeValue || otpCode;
+    if (finalCode.length !== 6) return;
+    setVerifyingOtp(true);
+    try {
+      const headers: Record<string, string> = {};
+      if (otpToken) headers.Authorization = `Bearer ${otpToken}`;
+
+      const { data, error } = await supabase.functions.invoke("verify-2fa", {
+        body: { action: "verify_code", code: finalCode },
+        ...(otpToken ? { headers } : {}),
+      });
+      if (error) throw error;
+      if (data?.verified) {
+        toast.success("Email verified!");
+        setShowOtp(false);
+        setShowUpsell(true);
+      } else {
+        toast.error(data?.error || "Invalid code. Please try again.");
+        setOtpCode("");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Verification failed");
+      setOtpCode("");
+    } finally {
+      setVerifyingOtp(false);
+    }
+  }, [otpCode, otpToken]);
+
+  const handleResendCode = async () => {
+    try {
+      const headers: Record<string, string> = {};
+      if (otpToken) headers.Authorization = `Bearer ${otpToken}`;
+      await supabase.functions.invoke("verify-2fa", {
+        body: { action: "send_code" },
+        ...(otpToken ? { headers } : {}),
+      });
+      toast.success("New code sent to your email.");
+    } catch {
+      toast.error("Failed to resend code.");
+    }
+  };
+
+  // OTP Verification screen
+  if (showOtp) {
+    return (
+      <div className="min-h-screen bg-[#08080A] text-[#FAFAFA] flex items-center justify-center px-4 py-12">
+        <div className="w-full max-w-md text-center">
+          <div className="w-14 h-14 rounded-full bg-[hsl(140_12%_42%/0.1)] border border-[hsl(140_12%_42%/0.2)] flex items-center justify-center mx-auto mb-5">
+            <ShieldCheck className="w-6 h-6 text-[hsl(140_12%_58%)]" />
+          </div>
+          <h1 className="text-2xl font-bold tracking-tight mb-2">Verify your email</h1>
+          <p className="text-sm text-[#71717A] leading-relaxed max-w-sm mx-auto mb-8">
+            We sent a 6-digit code to <span className="text-white font-medium">{email}</span>. Enter it below to continue.
+          </p>
+
+          <div className="flex justify-center mb-6">
+            <InputOTP
+              maxLength={6}
+              value={otpCode}
+              onChange={(val) => {
+                setOtpCode(val);
+                if (val.length === 6) handleVerifyOtp(val);
+              }}
+              disabled={verifyingOtp}
+            >
+              <InputOTPGroup>
+                <InputOTPSlot index={0} className="bg-white/5 border-white/10 text-white text-lg w-12 h-14" />
+                <InputOTPSlot index={1} className="bg-white/5 border-white/10 text-white text-lg w-12 h-14" />
+                <InputOTPSlot index={2} className="bg-white/5 border-white/10 text-white text-lg w-12 h-14" />
+                <InputOTPSlot index={3} className="bg-white/5 border-white/10 text-white text-lg w-12 h-14" />
+                <InputOTPSlot index={4} className="bg-white/5 border-white/10 text-white text-lg w-12 h-14" />
+                <InputOTPSlot index={5} className="bg-white/5 border-white/10 text-white text-lg w-12 h-14" />
+              </InputOTPGroup>
+            </InputOTP>
+          </div>
+
+          {verifyingOtp && (
+            <div className="flex items-center justify-center gap-2 text-sm text-[#71717A] mb-4">
+              <Loader2 className="h-4 w-4 animate-spin" /> Verifying…
+            </div>
+          )}
+
+          <button
+            onClick={() => handleVerifyOtp()}
+            disabled={otpCode.length !== 6 || verifyingOtp}
+            className="w-full py-3 rounded-xl text-sm font-semibold bg-[hsl(140_12%_42%)] text-[#08080A] hover:bg-[hsl(140_12%_52%)] transition-colors disabled:opacity-50 flex items-center justify-center gap-2 mb-4"
+          >
+            {verifyingOtp ? <Loader2 className="h-4 w-4 animate-spin" /> : "Verify"}
+          </button>
+
+          <button
+            onClick={handleResendCode}
+            className="text-xs text-[#52525B] hover:text-[#71717A] transition-colors"
+          >
+            Didn't receive a code? <span className="underline">Resend</span>
+          </button>
+        </div>
+
+        <ConnectUpsellPopup open={showUpsell} onClose={() => setShowUpsell(false)} />
+      </div>
+    );
+  }
 
   if (isForgotPassword) {
     return (
