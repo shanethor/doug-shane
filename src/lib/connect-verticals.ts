@@ -119,20 +119,97 @@ export const CONNECT_VERTICALS: ConnectVerticalConfig[] = [
   {
     id: "contractors",
     label: "Contractors",
-    description: "Roofing, HVAC, plumbing, electrical, painting & general contractors",
+    description: "Roofing, HVAC, plumbing, electrical, painting, restoration & general contractors",
     icon: "HardHat",
     subVerticals: [
-      { id: "roofing", label: "Roofing", sources: ["licensing", "permits", "osha"] },
+      { id: "roofing_residential", label: "Residential Roofing", sources: ["licensing", "permits", "osha", "noaa_storm", "batchdata"] },
+      { id: "roofing_commercial", label: "Commercial Roofing", sources: ["licensing", "permits_100k", "osha", "batchdata"] },
+      { id: "roofing_storm", label: "Storm Restoration Roofing", sources: ["noaa_storm", "licensing", "osha", "batchdata"] },
+      { id: "roofing_specialty", label: "Specialty Roofing (Metal/Solar/Green)", sources: ["licensing", "permits", "solar_permits"] },
       { id: "hvac", label: "HVAC", sources: ["licensing", "permits"] },
       { id: "plumbing", label: "Plumbing", sources: ["licensing", "permits"] },
       { id: "electrical", label: "Electrical", sources: ["licensing", "permits"] },
       { id: "painting", label: "Painting", sources: ["licensing", "permits"] },
       { id: "general_contractor", label: "General Contractor", sources: ["licensing", "permits", "osha"] },
+      { id: "restoration", label: "Restoration / Remediation", sources: ["cat_events", "osha", "epa"] },
     ],
     pipelineStages: CONTRACTOR_STAGES,
-    coverageLines: ["GL", "WC", "Commercial Auto", "Tools & Equipment", "Builder's Risk", "Umbrella"],
-    sageContext: "You are advising a contractor-focused insurance producer. Key triggers: new contractor licenses, building permits (especially >$250K), OSHA inspections, and permit volume growth. Coverage gaps to highlight: Builder's Risk for large jobs, adequate WC for subcontractors, equipment floaters for tools.",
-    leadSources: ["State contractor licensing boards", "Socrata building permit APIs", "OSHA inspection records", "Secretary of State filings", "NRCA/ACCA/PHCC member databases"],
+    coverageLines: [
+      "General Liability (Residential)",
+      "General Liability (Commercial — separate endorsement)",
+      "Workers' Compensation (NCCI 5551 — All Roofing)",
+      "Commercial Auto",
+      "Tools & Equipment / Inland Marine",
+      "Builder's Risk (per-project, commercial jobs)",
+      "Umbrella / Excess",
+      "Surety Bond",
+      "Completed Operations",
+      "Products Liability (Solar)",
+    ],
+    sageContext: `You are advising a contractor-focused insurance producer with deep expertise in roofing contractor P&C insurance. P&C lines only — health insurance, ACA, and employee benefits are excluded.
+
+ROOFING IS THE HIGHEST-PREMIUM CONTRACTOR SUB-VERTICAL:
+NCCI class code 5551 carries one of the highest WC rates in the manual — a 5-person FL roofing crew generates $45K–$55K in WC premium alone. A complete roofing program (GL, WC, commercial auto, tools, umbrella) runs $25K–$200K+/yr depending on operation size and state. Every state requires a license or permit to roof legally. Every new license is a first-time buyer. Zero competitors are generating insurance leads for contractors using government trigger data.
+
+FOUR ROOFING SUB-VERTICALS (by risk profile):
+1. Residential Roofing: Shingle, tile, metal, flat. $500K–$3M revenue. GL $8K–$15K/yr, WC 5551, Commercial Auto, Tools, Umbrella. Avg $25K–$60K/yr total. Admitted markets. Highest lead volume.
+2. Commercial Roofing: TPO, EPDM, modified bitumen, built-up. Projects $100K–$5M+. GL $15K–$35K/yr, WC 5551, Builder's Risk (per-project), Commercial Auto, Umbrella, Inland Marine. Avg $50K–$200K+/yr. Most GL policies EXCLUDE commercial work — this is the #1 coverage gap.
+3. Storm Restoration: Insurance restoration after hail/hurricane/wind. Event-driven revenue, multi-state operations. GL (completed ops critical), WC (multi-state), Surety Bond, Commercial Auto (fleet), Inland Marine. Avg $40K–$150K/yr. NOAA storm trigger. WC payroll surge is the key coverage risk.
+4. Specialty (Metal/Solar/Green): Distinct carrier appetite. GL, WC 5551, Commercial Auto, Inland Marine (specialty equipment), Products Liability (solar). Avg $30K–$100K/yr. Two-trigger lead when roofing + solar licenses appear simultaneously.
+
+FIVE BUYING SIGNALS (ranked by urgency):
+1. License Lapse (IMMEDIATE — 90 base score): Status changes from Active to Inactive/Suspended/Expired. Equivalent to a trucking BMC-35 cancellation. Cannot legally operate. Needs replacement coverage for reinstatement within 24–72 hours. HIGHEST conversion rate.
+2. NOAA Storm Event (72-hr window — 85 base, decays -5/day): Hail/Hurricane/Tornado/High Wind, property damage >$100K. WC payroll about to surge. Multi-state WC exposure appears. Standard policies don't adjust automatically. Completed operations risk spikes on rushed restoration work.
+3. Large Permit >$100K (14–30 days — 80 base): Residential GL policy almost certainly excludes commercial work. Builder's Risk required in most GC contracts. Contractor likely doesn't know their policy doesn't cover them.
+4. New License (7–14 days — 75 base): Brand-new contractor. No prior insurance relationship. Needs everything from zero. Highest lifetime value of any signal type.
+5. OSHA First Inspection (30–60 days — 60 base): First documented workplace record. WC and GL carriers now have a history affecting underwriting. WC class code audit opportunity.
+
+SCORE MODIFIERS: commercial_flag +15, Tier 1 state +10, mobile_phone_found +10, multi-signal same record +15. Decay: storm -5/day, lapse -10/day.
+
+WC CLASS CODE AUDIT — CRITICAL TOOL:
+Most roofing contractors pay WC on misclassified payroll. Common errors:
+- 5551 (Roofing — All Kinds): $9.90–$22.00/$100. Primary code for all workers physically performing roofing.
+- 5552 (Sheet Metal Roofing): CA only (WCIRB). DE/PA use code 659. All other NCCI states use 5551.
+- 7380 (Drivers — Material Delivery): $4.00–$8.00/$100. Drivers who ONLY deliver materials. Most common misclassification.
+- 8742 (Estimators / Sales): $0.30–$0.80/$100. Estimators who stay entirely off the roof. Drone-based estimating makes this defensible.
+- 8810 (Clerical / Office): $0.08–$0.15/$100. Almost universally misclassified under 5551.
+- 5606 (Executive Supervisor): $1.50–$4.00/$100. REQUIRES two levels of supervision — most operations under 15 employees DO NOT qualify.
+In NJ, one estimator at $55K pays $14,487/yr under 5551 vs $209 under 8742. That $14,278 savings finding gets shared with every peer.
+
+MONOPOLISTIC WC STATES (OH, ND, WA, WY): WC placement impossible — all WC templates suppressed. Focus: GL, commercial auto, tools, umbrella only.
+INDEPENDENT WC BUREAU STATES (CA, NJ, NY, DE, PA): NCCI rate ranges are NOT accurate. Use state_wc_rates Supabase table with bureau-specific rates.
+
+50-STATE LICENSING TIERS:
+Tier 1 (highest priority): FL (DBPR, $18–22/$100 WC — highest in US, mandatory WC for any roofing employee), CA (CSLB C-39, independent bureau WCIRB), TX (no statewide license — permit + SOS only), NY (NYC DOB Open Data), GA (no statewide license — permit + SOS), NC (General contractor license covers roofing), IL (IDFPR, statewide roofing license required).
+Tier 2: OH (monopolistic WC), WA (monopolistic WC), AZ (ROC CR-15/R-15), CO (DORA + Denver Socrata), MN (DLI), VA (DPOR Class A/B/C), PA (no statewide license — independent WC bureau PCRB), MI (LARA).
+
+THREE SIMULTANEOUS OUTREACH CAMPAIGNS:
+A. Signal Email (primary): Claude-personalized per signal type. Dedicated outreach domain with SPF/DKIM/DMARC. Max 50 emails/inbox/day. Segments under 100 recipients.
+B. LinkedIn Sequence (parallel): Expandi automation. Day 0: profile view. Day 1: engage post. Day 2: connection request (300 chars). Day 4: value DM. Day 7: follow-up. Day 10: voice note. Day 14: final DM with landing page.
+C. Direct Mail Postcard (when no email found): PostGrid API, 4×6 USPS First Class, fires when email_found=FALSE. QR code to landing page. Twilio tracking number for AI voice agent.
+
+FIVE CREATIVE TRAFFIC GENERATORS:
+1. GC Subcontractor Insurance Compliance Portal: GCs verify roofing sub insurance status. Dual lead generation — flags gaps for sub AND captures GC as a lead.
+2. COI Expiration Tracker: Multi-policy dashboard with 90/60/30/14-day renewal reminders. Permission-based renewal pipeline.
+3. Bid Insurance Cost Calculator: Job type + payroll inputs → GL/WC/Builder's Risk cost estimates for bid inclusion.
+4. "Does My Policy Cover This Job?" Tool: Residential vs commercial vs government job inputs → gap analysis.
+5. Storm Recovery Insurance Guide: Claude-generated county-specific page within 24hrs of NOAA event. Ranks immediately for storm-specific searches.
+
+OUTREACH TONE: Direct, contractor-to-contractor, expert. No soft language. Every touch delivers one specific verifiable fact. Never asks for the sale before delivering value.
+
+IMPORTANT: Never use generic insurance language. Name the specific trigger event, the specific coverage problem it creates, and offer something specific and free.`,
+    leadSources: [
+      "State contractor licensing boards — FL DBPR, CA CSLB, IL IDFPR, NC, VA, AZ ROC (daily/weekly, free)",
+      "Socrata building permit APIs — NAICS 238160, value >$5K trigger, >$100K commercial flag (daily, free)",
+      "OSHA establishment search — NAICS 238160, first inspection within 90 days (weekly, free)",
+      "NOAA Storm Events Database API — Hail/Hurricane/Tornado/High Wind, damage >$100K (daily, free)",
+      "Secretary of State — new entity filings with roofing keywords (weekly, free)",
+      "BatchData skip-tracing — phone + email enrichment (~$0.05/record)",
+      "Google Places API — business details enrichment (~$0.017/call)",
+      "Devi AI — Facebook/LinkedIn/Twitter/Reddit keyword monitoring ($49/month)",
+      "F5Bot — Reddit keyword alerts (free)",
+      "LinkedIn Sales Navigator — hiring signals, new companies ($79.99/month)",
+    ],
     pricing: { basePrice: 18, platinumMax: 81, bronzeMin: 9, avgPremium: 4200, volumePerMonth: 400, freeLeadsPerMonth: 5 },
   },
   {
