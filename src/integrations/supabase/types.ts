@@ -2512,6 +2512,42 @@ export type Database = {
         }
         Relationships: []
       }
+      industry_requests: {
+        Row: {
+          admin_notes: string | null
+          created_at: string
+          email: string
+          full_name: string | null
+          id: string
+          requested_industry: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          created_at?: string
+          email: string
+          full_name?: string | null
+          id?: string
+          requested_industry: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_notes?: string | null
+          created_at?: string
+          email?: string
+          full_name?: string | null
+          id?: string
+          requested_industry?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       insurance_applications: {
         Row: {
           created_at: string
