@@ -198,6 +198,67 @@ export default function RequestAccess() {
     }
   };
 
+  // OTP Verification screen
+  if (showOtp) {
+    return (
+      <div className="min-h-screen bg-[#08080A] text-[#FAFAFA] flex items-center justify-center px-4 py-12">
+        <div className="w-full max-w-md text-center">
+          <div className="w-14 h-14 rounded-full bg-[hsl(140_12%_42%/0.1)] border border-[hsl(140_12%_42%/0.2)] flex items-center justify-center mx-auto mb-5">
+            <ShieldCheck className="w-6 h-6 text-[hsl(140_12%_58%)]" />
+          </div>
+          <h1 className="text-2xl font-bold tracking-tight mb-2">Verify your email</h1>
+          <p className="text-sm text-[#71717A] leading-relaxed max-w-sm mx-auto mb-8">
+            We sent a 6-digit code to <span className="text-white font-medium">{email}</span>. Enter it below to continue.
+          </p>
+
+          <div className="flex justify-center mb-6">
+            <InputOTP
+              maxLength={6}
+              value={otpCode}
+              onChange={(val) => {
+                setOtpCode(val);
+                if (val.length === 6) handleVerifyOtp(val);
+              }}
+              disabled={verifyingOtp}
+            >
+              <InputOTPGroup>
+                <InputOTPSlot index={0} className="bg-white/5 border-white/10 text-white text-lg w-12 h-14" />
+                <InputOTPSlot index={1} className="bg-white/5 border-white/10 text-white text-lg w-12 h-14" />
+                <InputOTPSlot index={2} className="bg-white/5 border-white/10 text-white text-lg w-12 h-14" />
+                <InputOTPSlot index={3} className="bg-white/5 border-white/10 text-white text-lg w-12 h-14" />
+                <InputOTPSlot index={4} className="bg-white/5 border-white/10 text-white text-lg w-12 h-14" />
+                <InputOTPSlot index={5} className="bg-white/5 border-white/10 text-white text-lg w-12 h-14" />
+              </InputOTPGroup>
+            </InputOTP>
+          </div>
+
+          {verifyingOtp && (
+            <div className="flex items-center justify-center gap-2 text-sm text-[#71717A] mb-4">
+              <Loader2 className="h-4 w-4 animate-spin" /> Verifying…
+            </div>
+          )}
+
+          <button
+            onClick={() => handleVerifyOtp()}
+            disabled={otpCode.length !== 6 || verifyingOtp}
+            className="w-full py-3 rounded-xl text-sm font-semibold bg-[hsl(140_12%_42%)] text-[#08080A] hover:bg-[hsl(140_12%_52%)] transition-colors disabled:opacity-50 flex items-center justify-center gap-2 mb-4"
+          >
+            {verifyingOtp ? <Loader2 className="h-4 w-4 animate-spin" /> : "Verify"}
+          </button>
+
+          <button
+            onClick={handleResendCode}
+            className="text-xs text-[#52525B] hover:text-[#71717A] transition-colors"
+          >
+            Didn't receive a code? <span className="underline">Resend</span>
+          </button>
+        </div>
+
+        <ConnectUpsellPopup open={showUpsell} onClose={() => setShowUpsell(false)} />
+      </div>
+    );
+  }
+
   if (isForgotPassword) {
     return (
       <div className="min-h-screen bg-[#08080A] text-[#FAFAFA] flex items-center justify-center px-4 py-12">
