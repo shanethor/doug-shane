@@ -35,7 +35,13 @@ export default function ConnectOnboarding() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
-  const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const [theme, setTheme] = useState<"dark" | "light">(() => {
+    // Ensure DOM matches default on mount
+    const stored = localStorage.getItem("aura-dark-mode");
+    const isDark = stored ? stored === "true" : true; // default dark
+    document.documentElement.classList.toggle("dark", isDark);
+    return isDark ? "dark" : "light";
+  });
   
   const [selectedVertical, setSelectedVertical] = useState<string>("");
   const [selectedSubVerticals, setSelectedSubVerticals] = useState<string[]>([]);
@@ -544,7 +550,7 @@ function VisionStep() {
 
       <div className="space-y-2.5 text-left max-w-sm mx-auto">
         {[
-          { label: "AURA Agent", desc: "A fully autonomous AI sales agent that manages outreach, follow-ups, and nurturing on your behalf.", status: "Coming Q3 2026" },
+          { label: "AURA Agent", desc: "A fully autonomous AI sales agent that manages outreach, follow-ups, and nurturing on your behalf.", status: "Live Beta" },
           { label: "Deep Pipeline Analytics", desc: "Predictive insights on deal velocity, conversion probability, and optimal follow-up timing.", status: "In Development" },
           { label: "Carrier & Partner Marketplace", desc: "Direct connections to carriers, wholesalers, and strategic partners — powered by your network data.", status: "Planned" },
           { label: "Mobile App", desc: "Full AURA Connect experience on iOS and Android with push notifications and voice commands.", status: "Planned" },
