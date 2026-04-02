@@ -65,6 +65,7 @@ import StudioDemo from "./pages/StudioDemo";
 import LeadLanding from "./pages/LeadLanding";
 import ProductAuth from "./pages/ProductAuth";
 import ConnectProduct from "./pages/ConnectProduct";
+import ConnectOnboarding from "./pages/ConnectOnboarding";
 import StudioProduct from "./pages/StudioProduct";
 import ProductSettings from "./pages/ProductSettings";
 import PostCheckoutOnboard from "./pages/PostCheckoutOnboard";
@@ -170,6 +171,7 @@ const App = () => (
           <Route path="/get-started" element={<ProductAuth />} />
 
           {/* ── AURA Connect product ── */}
+          <Route path="/connect/onboarding" element={<ProductProtectedRoute><ConnectOnboarding /></ProductProtectedRoute>} />
           <Route path="/connect" element={<ProductProtectedRoute><ConnectProduct /></ProductProtectedRoute>} />
           <Route path="/connect/*" element={<ProductProtectedRoute><ConnectProduct /></ProductProtectedRoute>} />
 

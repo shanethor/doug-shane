@@ -54,7 +54,7 @@ export default function ConnectUpsellPopup({ open, onClose }: Props) {
         {/* CTA */}
         <div className="px-6 pb-6 space-y-3">
           <Link
-            to="/connect"
+            to="/connect/onboarding"
             onClick={onClose}
             className="w-full py-3 rounded-xl text-sm font-semibold bg-[hsl(140_12%_42%)] text-[#08080A] hover:bg-[hsl(140_12%_52%)] transition-colors flex items-center justify-center gap-2 no-underline"
           >
@@ -69,7 +69,7 @@ export default function ConnectUpsellPopup({ open, onClose }: Props) {
           <button
             onClick={() => {
               onClose();
-              navigate("/connect/leads");
+              navigate("/connect/onboarding");
             }}
             className="w-full text-center text-xs text-[#52525B] hover:text-[#71717A] transition-colors py-1"
           >
