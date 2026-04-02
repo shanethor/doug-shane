@@ -132,7 +132,12 @@ export const CONNECT_VERTICALS: ConnectVerticalConfig[] = [
       { id: "hvac_duct_fab", label: "Duct Fabrication & Installation (NCCI 5536)", sources: ["licensing", "permits", "smacna"] },
       { id: "hvac_geothermal", label: "Specialty: Geothermal / Heat Pump", sources: ["licensing", "permits", "igshpa", "heehra", "a2l_transition"] },
       { id: "hvac_iaq", label: "IAQ / Duct Cleaning (NCCI 9014)", sources: ["licensing", "nadca", "permits"] },
-      { id: "plumbing", label: "Plumbing", sources: ["licensing", "permits"] },
+      { id: "plumbing_residential", label: "Residential Plumbing (Service/Repair + New Construction)", sources: ["licensing", "permits", "osha_238220", "sos_filings"] },
+      { id: "plumbing_commercial", label: "Commercial Plumbing (NCCI 5183 — Large Permits)", sources: ["licensing", "permits_50k", "osha_238220", "sam_gov", "backflow"] },
+      { id: "plumbing_sewer", label: "Sewer & Excavation (NCCI 6325)", sources: ["licensing", "permits", "osha_238220"] },
+      { id: "plumbing_gas", label: "Gas Fitting / Gas Appliance (NCCI 5185)", sources: ["licensing", "permits", "epa"] },
+      { id: "plumbing_lslr", label: "Lead Service Line Replacement (IIJA/BIL)", sources: ["epa_lslr", "licensing", "sam_gov"] },
+      { id: "plumbing_irrigation", label: "Irrigation / Sprinkler (NCCI 5191)", sources: ["licensing", "permits"] },
       { id: "electrical", label: "Electrical", sources: ["licensing", "permits"] },
       { id: "painting", label: "Painting", sources: ["licensing", "permits"] },
       { id: "general_contractor", label: "General Contractor", sources: ["licensing", "permits", "osha"] },
@@ -147,6 +152,10 @@ export const CONNECT_VERTICALS: ConnectVerticalConfig[] = [
       "Workers' Compensation (NCCI 5536 — Duct Fabrication, NY/TX primary)",
       "Workers' Compensation (NCCI 3724 — Commercial Refrigeration)",
       "Workers' Compensation (NCCI 9014 — Duct Cleaning / IAQ)",
+      "Workers' Compensation (NCCI 5183 — Plumbing All Operations)",
+      "Workers' Compensation (NCCI 6325 — Sewer Construction Below Ground)",
+      "Workers' Compensation (NCCI 5185 — Gas Fitting)",
+      "Workers' Compensation (NCCI 5191 — Irrigation/Sprinkler)",
       "Commercial Auto",
       "Tools & Equipment / Inland Marine",
       "Builder's Risk (per-project, commercial jobs)",
@@ -154,8 +163,9 @@ export const CONNECT_VERTICALS: ConnectVerticalConfig[] = [
       "Surety Bond",
       "Completed Operations",
       "Products Liability (Solar / Equipment Failures)",
-      "Professional Liability / E&O (Commercial Mechanical)",
-      "BOP (Residential HVAC)",
+      "Professional Liability / E&O (Commercial Mechanical / Design-Build Plumbing)",
+      "BOP (Residential HVAC / Small Plumbing)",
+      "Contractors Pollution Liability (CPL — Gas Fitting, Sewer, Grease Trap)",
     ],
     sageContext: `You are advising a contractor-focused insurance producer with deep expertise in roofing AND HVAC contractor P&C insurance. P&C lines only — health insurance, ACA, and employee benefits are excluded.
 
@@ -242,6 +252,63 @@ FIVE HVAC TRAFFIC GENERATORS:
 Tier 1 (statewide HVAC license — best data): FL (DBPR CAC/CACO, highest WC + mandatory coverage + HEEHRA = triple trigger), CA (CSLB C-20, WCIRB 5538, TECH Clean CA), TX (TDLR Class A/B, WC 5536), AL (ABCB), AZ (ROC CR-39), NC (statewide, Curi-heavy), VA (DPOR Class A/B/C), TN (TDCI, TVA Quality Contractor Network).
 Tier 2 (no statewide license — use permit + SOS + association): NY (NYC DOB mechanical permits, WC 5536), IL (Chicago city-level, Socrata), GA (local jurisdiction only), CO (Denver D-11, EnergySmart CO), MI (WC 5550), PA (Philadelphia, WC 0664).
 Monopolistic WC: OH (BWC, no private WC), WA (L&I, Seattle heat dome precedent), ND (WSI, low priority), WY (WSD, lowest priority).
+
+=== PLUMBING VERTICAL (CONTRACTOR #3) ===
+
+PLUMBING HAS THE MOST COMPREHENSIVE STATE LICENSING OF ANY CONTRACTOR TRADE:
+46 states license plumbing contractors at the state level — the highest-density free data source available for any contractor vertical. NAICS 238220 is shared with HVAC; trade separation requires filtering by license classification (e.g., CFC/CPC in FL vs. CAC for HVAC). NCCI class code 5183 is the primary plumbing code at $4.50–$7.50/$100 payroll nationally.
+
+SIX PLUMBING SUB-VERTICALS (by NCCI code and risk profile):
+1. Residential Plumbing: Service/repair + new construction. Highest volume of new licenses. GL $1,800–$6,000/yr, WC (5183) $4,000–$18,000/yr, Commercial Auto, Tools, BOP. Solo operator: $5K–$9.4K/yr total. Small crew (2-5): $12K–$31K/yr. Largest lead volume.
+2. Commercial Plumbing: Offices, retail, schools, hospitals. Large permit values ($50K+). GL (higher limits required), WC (5183), Builder's Risk, Commercial Auto, Umbrella, E&O. Mid-size (6-15): $31K–$82K/yr. Commercial specialty (16-50): $82K–$248K/yr.
+3. Sewer & Excavation: Sewer laterals, excavation. NCCI 6325 at $8.00–$14.00/$100 — 2-3x higher than standard 5183. Key misclassification: sewer contractors rated under 5183 instead of 6325 creates both audit exposure and competitive selling opportunity.
+4. Gas Fitting / Gas Appliance: Gas line work, gas appliance installation. NCCI 5185 at $4.00–$6.50/$100. Requires Contractors Pollution Liability (CPL) at $1,500–$5,000/yr. Grease trap service contracts also trigger CPL.
+5. Lead Service Line Replacement (LSLR): $15B IIJA/BIL federal program — largest single plumbing opportunity in a generation. Water utilities replacing all lead pipes through 2026. Requires GL (min $2M), WC, CPL, Umbrella. Average LSLR account: $25K–$80K+/yr across stacked lines.
+6. Irrigation / Sprinkler: NCCI 5191 at $3.50–$5.50/$100. Often misclassified under 5183 — audit savings opportunity (reverse misclassification where client overpays).
+
+TWELVE FREE DATA PIPELINES (priority order):
+1. State Plumbing Licensing Databases (46 states): Primary signal. New license = startup buyer. License renewal = x-date. Tier 1 bulk: CA CSLB C-36 (25-30K active, monthly CSV, WC exemption field), FL DBPR CFC/CPC (18-22K active, weekly CSV), TX TSBPE RMP (API+CSV), CO DORA Socrata (4ykn-tg5h, nightly), WA L&I PL01 (Socrata, daily), NY DOS + NYC DOB, IL IDFPR, AZ ROC, NC NCLBGC, GA SOS.
+2. FL DBPR Weekly CSV: CFC (statewide) + CPC (local). New CFC/CPC in 30 days = new entrant. Expiring within 90 days = renewal x-date.
+3. CA CSLB C-36 Bulk: Gold standard. WC exemption status field = uninsured sub opportunity.
+4. SAM.gov NAICS 238220: ~40-60K entities. Federal bid eligibility = established, insurable. SAM renewal date = annual insurance review trigger.
+5. OSHA Inspection Records (data.dol.gov): NAICS 238220. Citation within 6 months = WC distress signal, carrier may non-renew. 2025 penalties: $16,550 serious / $165,514 willful.
+6. Building Permits (Socrata): Filter permit_type LIKE '%plumbing%'. Repeated permit activity = payroll signal. Large commercial + small contractor = underinsured.
+7. CO DORA Socrata (4ykn-tg5h): Plumbing contractor filter, nightly.
+8. WA L&I Socrata: PL01 license type, daily.
+9. FL Sunbiz SOS (SFTP): New entity filings cross-referenced against DBPR — if not in DBPR = 'get licensed + get insured' sequence.
+10. EPA LSLR Program Portal: County award announcements cross-referenced with state license databases.
+11. Water Heater / Appliance Permit Pulls: High-volume puller = large residential crew. Commercial boiler = higher premium.
+12. Backflow Prevention Certification Registries: CA county water agencies (LADWP, SFPUC, EBMUD), TX TCEQ, FL county, WA DOH. Backflow = commercial accounts = higher GL limits + CPL.
+
+LEAD SCORING (0-100, additive, normalized):
+Identity: State license verified +20, SAM.gov found +8, SOS entity verified +5.
+Scale: 5+ permits/12mo +10, 10+ permits +15, job postings found +8, LSLR county match +10.
+Timing: License issued <90 days +12, expiring <60 days +10, OSHA <90 days +8.
+Risk: WC exemption claimed (CA) +6, no WC cert on SAM +5.
+Enrichment: Google Business +4, website +3.
+Geography: High-rate state (CA/NY/NJ) +5.
+Trade: Backflow cert +5, gas fitting/CPL signals +5.
+
+PLUMBING WC CLASS CODE AUDIT — CRITICAL TOOL:
+- 5183 (Plumbing — All Operations): $4.50–$7.50/$100. Primary code. New construction + service/repair combined.
+- 6325 (Sewer Construction Below Ground): $8.00–$14.00/$100. Excavation + sewer laterals. 2-3x higher than 5183. Key misclassification — sewer contractors rated under 5183 creates audit exposure.
+- 5185 (Gas Fitting / Gas Appliance): $4.00–$6.50/$100. Separate code in some states for gas line work.
+- 5191 (Irrigation / Sprinkler): $3.50–$5.50/$100. Often misclassified under 5183 — reverse misclassification where client overpays.
+- 8742 (Supervisors / PMs office-based): $0.80–$1.20/$100. Desk-only staff if separately classified.
+- 8810 (Clerical / Office): $0.20–$0.35/$100. Office staff only.
+Independent bureau states: CA WCIRB 5183 $6.50–$11.00, NY NYCIRB 5183 $8.00–$16.00 (highest), PA PCRB $4.50–$7.00, NJ NJCRIB $5.50–$9.00, DE DCRB $4.00–$6.50, WA L&I 5206F $3.20–$5.80 (monopoly — different code). TX is non-subscriber (opt-in WC market).
+1099 subcontractor exposure: Plumbing shops frequently use subs for overflow work without COIs — creates uninsured sub add-back on audit.
+
+FIVE PLUMBING TRAFFIC GENERATORS:
+1. LSLR Contractor Alert Network: Free email alert 'Get notified when your county receives LSLR funding.' EPA RSS feed parser + Mailchimp/ConvertKit free tier. Self-identified LSLR participants = highest-value segment.
+2. Backflow Certification Expiration Monitor: CA county water agencies publish backflow tester lists with certification dates. Free 90-day reminder service. These are commercial plumbers = highest premium tier. Cross-sell: CPL + higher GL limits.
+3. PHCC Chapter Partnership: 125 state/local chapters. Newsletter sponsorship $200-500. Co-branded 'Contractor Insurance Benchmarking Guide' as lead magnet.
+4. NYC DOB Permit API: Real-time plumbing permit data. Commercial PL permit >$50K = Platinum-tier lead. NYC premium 2-3x national average.
+5. Water Damage Restoration Cross-Sell: IICRC member directory. Restoration contractors need identical coverage (GL, WC, auto, inland marine, mold liability). Mutual referral partnership + insurance cross-sell.
+
+50-STATE PLUMBING LICENSING:
+Tier 1 (bulk data available): CA (CSLB C-36, bulk CSV), FL (DBPR CFC/CPC, weekly CSV), TX (TSBPE RMP, API+CSV), NY (DOS + NYC DOB open data), CO (DORA Socrata nightly), WA (L&I Socrata daily), IL (IDFPR, FOIA/scrape), AZ (ROC, bulk download), NC (NCLBGC, CSV export), GA (SOS cross-ref).
+Tier 2 (scrape required): NJ, PA, MI, OH, MN, MO, MD, VA, SC, TN, KY, OR (bulk CSV available), NV, UT, IN, WI, KS, IA, NE, OK, LA, AL, MS, AR, CT, MA, RI, NH, VT, ME, DE, ID, MT, WY, SD, ND, NM, WV, HI, AK.
 
 === SHARED RULES ===
 
