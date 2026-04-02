@@ -32,6 +32,7 @@ import {
   VERTICALS, SHARED_SOURCES, getVerticalsForIndustry, getVerticalsByGroup,
   type LeadSource, type Vertical,
 } from "@/lib/lead-verticals";
+import { getVerticalConfig, LEAD_SCORE_TIERS, type VerticalLeadPricing } from "@/lib/connect-verticals";
 
 const ICON_MAP: Record<LeadSource["icon"], any> = {
   file: FileText, building: Building2, target: Target, globe: Globe,
@@ -49,16 +50,19 @@ const US_STATES = [
   "Vermont", "Virginia", "Washington", "West Virginia", "Wisconsin", "Wyoming",
 ];
 
-/* ── Industry pricing ── */
-const INDUSTRY_PRICING: Record<string, { basePrice: number; label: string; freeLeads: number }> = {
-  insurance: { basePrice: 25, label: "Insurance", freeLeads: 5 },
-  mortgage: { basePrice: 100, label: "Mortgage", freeLeads: 2 },
-  real_estate: { basePrice: 100, label: "Real Estate", freeLeads: 2 },
-  property: { basePrice: 100, label: "Property", freeLeads: 2 },
-  trucking: { basePrice: 45, label: "Trucking / Commercial Fleet", freeLeads: 3 },
-  consulting: { basePrice: 15, label: "Consulting / Professional Services", freeLeads: 10 },
-  general: { basePrice: 15, label: "General Business", freeLeads: 10 },
-};
+/* ── Vertical-aware pricing lookup ── */
+function getVerticalPricing(userIndustry: string): { basePrice: number; label: string; freeLeads: number; avgPremium: number } {
+  const config = getVerticalConfig(userIndustry);
+  if (config) {
+    return {
+      basePrice: config.pricing.basePrice,
+      label: config.label,
+      freeLeads: config.pricing.freeLeadsPerMonth,
+      avgPremium: config.pricing.avgPremium,
+    };
+  }
+  return { basePrice: 25, label: "General", freeLeads: 5, avgPremium: 5000 };
+}
 
 function getLeadPacks(basePrice: number, isSubscriber: boolean, hasAgent: boolean) {
   const discount = hasAgent ? 0.5 : isSubscriber ? 0.6 : 1;
@@ -82,7 +86,7 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasAgent, in
   initialSpecializations?: string[] | null;
   showAllVerticals?: boolean;
 }) {
-  const pricing = INDUSTRY_PRICING[userIndustry] || INDUSTRY_PRICING.general;
+  const pricing = getVerticalPricing(userIndustry);
   const packs = getLeadPacks(pricing.basePrice, isSubscriber, hasAgent);
   const freeLeads = getFreeLeads(pricing.freeLeads, hasAgent);
 
@@ -269,8 +273,15 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasAgent, in
             {pricing.label} Lead Packages
           </CardTitle>
           <p className="text-[10px] text-muted-foreground">
-            Base price: ${pricing.basePrice}/lead • Enriched with full company & contact profiles
+            Base price: ${pricing.basePrice}/lead • Avg premium: ${pricing.avgPremium.toLocaleString()} • All leads exclusive (1 buyer)
           </p>
+          <div className="flex flex-wrap gap-1 mt-1">
+            {LEAD_SCORE_TIERS.map(t => (
+              <Badge key={t.tier} variant="outline" className={`text-[9px] ${t.color} border-current/20`}>
+                {t.tier} {t.multiplier}×
+              </Badge>
+            ))}
+          </div>
           {isSubscriber ? (
              <Badge variant="outline" className={`text-[9px] mt-1 ${hasAgent ? "text-orange-500 border-orange-500/30" : "text-emerald-600 border-emerald-600/30"}`}>
                {hasAgent ? "🚀 Agent Member — 50% discount applied" : "🎉 Connect Member — 40% discount applied"}
@@ -980,7 +991,7 @@ export default function LeadGenerator() {
 
   if (loading) return <Skeleton className="h-40 w-full" />;
 
-  const pricing = INDUSTRY_PRICING[userIndustry] || INDUSTRY_PRICING.general;
+  const pricing = getVerticalPricing(userIndustry);
   const showPromo = !hasAgent && studioQual?.qualified;
 
   return (
