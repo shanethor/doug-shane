@@ -186,10 +186,14 @@ export default function DemoSpotlightTab() {
             <div className="w-7 h-7 rounded-md flex items-center justify-center shrink-0" style={{ background: "hsl(140 12% 42% / 0.15)" }}>
               <Sparkles className="h-3.5 w-3.5" style={{ color: "hsl(140 12% 58%)" }} />
             </div>
-            <div>
-              <p className="text-xs font-semibold text-white mb-0.5">Create marketing content to grow your network.</p>
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-0.5">
+                <p className="text-xs font-semibold text-white">Create marketing content to grow your network.</p>
+                <Badge className="text-[8px] px-1.5 py-0 bg-primary/20 text-primary border-primary/30 font-semibold">Beta</Badge>
+              </div>
               <p className="text-[10px] leading-relaxed" style={{ color: "hsl(240 5% 56%)" }}>
                 Edit ready-made templates instantly, or use AI to generate something completely custom.
+                We're expanding with more templates, AI-powered image sourcing, and advanced design tools soon.
               </p>
             </div>
           </div>
