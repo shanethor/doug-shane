@@ -282,7 +282,6 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasAgent, in
               </Badge>
             ))}
           </div>
-          </p>
           {isSubscriber ? (
              <Badge variant="outline" className={`text-[9px] mt-1 ${hasAgent ? "text-orange-500 border-orange-500/30" : "text-emerald-600 border-emerald-600/30"}`}>
                {hasAgent ? "🚀 Agent Member — 50% discount applied" : "🎉 Connect Member — 40% discount applied"}
