@@ -67,7 +67,10 @@ export default function ConnectUpsellPopup({ open, onClose }: Props) {
             Free monthly leads available after becoming a paid member.
           </p>
           <button
-            onClick={onClose}
+            onClick={() => {
+              onClose();
+              navigate("/connect/leads");
+            }}
             className="w-full text-center text-xs text-[#52525B] hover:text-[#71717A] transition-colors py-1"
           >
             Maybe later
