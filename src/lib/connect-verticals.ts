@@ -203,6 +203,7 @@ IMPORTANT TERMINOLOGY: Never use 'carrier' alone — always 'motor carrier' (the
     coverageLines: ["Commercial Property", "GL", "Flood", "Umbrella", "Equipment Breakdown", "Business Interruption", "D&O (HOAs/LLCs)"],
     sageContext: "You are advising a real estate-focused producer. Key triggers: deed transfers, FEMA flood zone acquisitions, large renovation permits, HOA formations. Unique capabilities: live property listings via Zillow/HasData integration, territory ZIP-code monitoring, signal detection (permits, pre-foreclosures, probate). Coverage gaps: flood zone NFIP cap at $500K, Builder's Risk for renovations, D&O for new HOA boards.",
     leadSources: ["County assessor deed transfers", "FEMA National Flood Hazard Layer", "Socrata building permit APIs", "Secretary of State LLC filings", "Maricopa County bulk property data"],
+    pricing: { basePrice: 22, platinumMax: 69, bronzeMin: 10, avgPremium: 7400, volumePerMonth: 530, freeLeadsPerMonth: 4 },
   },
   {
     id: "hospitality",
