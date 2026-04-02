@@ -117,6 +117,8 @@ export default function ConnectOnboarding() {
           setSaving(false);
           return;
         }
+        // Cache completion so we never re-show onboarding
+        localStorage.setItem(`aura_onboarding_completed_${user.id}`, "true");
       }
       navigate("/connect", { replace: true });
     } catch {
