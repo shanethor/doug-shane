@@ -19,6 +19,7 @@ import ConnectRewardsPage from "@/pages/ConnectRewards";
 import ConnectPropertyDashboard from "@/pages/ConnectPropertyDashboard";
 import { ComingSoonGate } from "@/components/connect/ComingSoonGate";
 import { useEarlyAccessWhitelist } from "@/hooks/useEarlyAccessWhitelist";
+import ConnectDashboard from "@/pages/ConnectDashboard";
 
 
 // Cinematic intro overlay
