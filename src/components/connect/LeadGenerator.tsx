@@ -236,8 +236,9 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasAgent, in
   const handlePurchase = async () => {
     setPurchasing(true);
     try {
+      const packData = packs.find(p => p.leads === selectedPack);
       const { data, error } = await supabase.functions.invoke("create-lead-checkout", {
-        body: { pack: selectedPack },
+        body: { pack: selectedPack, price: (packData?.price ?? 0) * 100, vertical: pricing.label },
       });
       if (error) throw new Error(error.message);
       if (data?.url) window.open(data.url, "_blank");
@@ -993,8 +994,9 @@ function PurchaseSection({ userIndustry, isSubscriber, hasAgent }: {
   const handlePurchase = async () => {
     setPurchasing(true);
     try {
+      const packData = packs.find(p => p.leads === selectedPack);
       const { data, error } = await supabase.functions.invoke("create-lead-checkout", {
-        body: { pack: selectedPack },
+        body: { pack: selectedPack, price: (packData?.price ?? 0) * 100, vertical: pricing.label },
       });
       if (error) throw new Error(error.message);
       if (data?.url) window.open(data.url, "_blank");
