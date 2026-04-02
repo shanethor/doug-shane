@@ -19,6 +19,7 @@ import ConnectRewardsPage from "@/pages/ConnectRewards";
 import ConnectPropertyDashboard from "@/pages/ConnectPropertyDashboard";
 import { ComingSoonGate } from "@/components/connect/ComingSoonGate";
 import { useEarlyAccessWhitelist } from "@/hooks/useEarlyAccessWhitelist";
+import ConnectDashboard from "@/pages/ConnectDashboard";
 
 
 // Cinematic intro overlay
@@ -129,6 +130,7 @@ export default function ConnectProduct() {
   // Determine which page to render based on path
   const path = location.pathname;
   const getPage = () => {
+    if (path.startsWith("/connect/dashboard")) return "dashboard";
     if (path.startsWith("/connect/property")) return "property";
     if (path.startsWith("/connect/intelligence")) return "intelligence";
     if (path.startsWith("/connect/rewards")) return "rewards";
@@ -170,8 +172,9 @@ export default function ConnectProduct() {
             transform: introComplete ? "translateY(0)" : "translateY(20px)",
             transition: "all 1.2s cubic-bezier(0.16, 1, 0.3, 1)",
           }}>
+            {page === "dashboard" && <ConnectDashboard />}
             {page === "leads" && <ConnectLeads />}
-            {page !== "leads" && !canAccessFullSite ? (
+            {page !== "leads" && page !== "dashboard" && !canAccessFullSite ? (
               <ComingSoonGate pageName={page.charAt(0).toUpperCase() + page.slice(1)} />
             ) : (
               <>
