@@ -208,19 +208,75 @@ IMPORTANT TERMINOLOGY: Never use 'carrier' alone — always 'motor carrier' (the
   {
     id: "hospitality",
     label: "Hospitality and Food Service",
-    description: "Restaurants, bars, hotels, breweries, catering, and food trucks",
+    description: "Restaurants, bars, hotels, event venues, catering, breweries, and food trucks",
     icon: "UtensilsCrossed",
     subVerticals: [
-      { id: "restaurants", label: "Restaurants", sources: ["liquor_license", "health_permits", "sos_filings"] },
-      { id: "bars_nightclubs", label: "Bars & Nightclubs", sources: ["liquor_license"] },
-      { id: "hotels_lodging", label: "Hotels & Lodging", sources: ["sos_filings", "permits"] },
-      { id: "breweries_wineries", label: "Breweries & Wineries", sources: ["ttb_permits", "liquor_license"] },
-      { id: "catering", label: "Catering & Food Trucks", sources: ["health_permits", "sos_filings"] },
+      { id: "restaurants", label: "Full-Service Restaurants (NAICS 722511)", sources: ["abc_new_license", "abc_cancellation", "health_inspection", "sos_naics72", "building_permits_hosp", "google_new_listing", "ownership_transfer"] },
+      { id: "bars_nightclubs", label: "Bars / Nightclubs / Taverns (NAICS 722410)", sources: ["abc_new_license", "abc_cancellation", "health_inspection", "sos_naics72", "ownership_transfer", "review_spike"] },
+      { id: "hotels_lodging", label: "Hotels / Motels (NAICS 721110)", sources: ["hotel_permits", "sos_naics72", "abc_new_license", "osha", "commercial_property_sales", "ownership_transfer"] },
+      { id: "event_venues", label: "Event Venues / Banquet Halls (NAICS 722320)", sources: ["event_permits", "abc_new_license", "fire_marshal", "sos_naics72"] },
+      { id: "catering", label: "Catering / Food Service", sources: ["health_inspection", "sos_naics72", "abc_new_license", "mobile_vendor_permits"] },
+      { id: "fast_casual", label: "Fast Casual / QSR (NAICS 722513)", sources: ["sos_naics72", "health_inspection", "building_permits_hosp"] },
+      { id: "breweries_wineries", label: "Breweries / Wineries / Distilleries", sources: ["ttb_permits", "abc_new_license", "sos_naics72", "building_permits_hosp"] },
     ],
     pipelineStages: HOSPITALITY_STAGES,
-    coverageLines: ["GL", "Liquor Liability", "Property", "WC", "Commercial Auto", "Assault & Battery", "Dram Shop", "Business Income"],
-    sageContext: "You are advising a hospitality-focused producer. Key triggers: new liquor license approvals, health department food service permits, TTB federal brewery/winery permits, Google Maps listings with zero reviews (soft opens). Critical coverage gap: GL excludes liquor liability entirely — Dram Shop laws carry unlimited personal liability in most states. Ownership transfers mean no coverage from Day 1.",
-    leadSources: ["State Liquor Control Boards", "County health department food permits", "TTB Federal Permit database", "Secretary of State filings", "Google Maps / Yelp new listings"],
+    coverageLines: [
+      "General Liability", "Liquor Liability", "Commercial Property", "Workers' Comp",
+      "Commercial Auto", "Assault & Battery Endorsement", "Dram Shop", "Business Interruption",
+      "Food Contamination / Product Liability", "EPLI", "Cyber Liability (POS Systems)",
+      "Management Liability", "Umbrella / Excess", "Builder's Risk (Renovations)",
+    ],
+    sageContext: `You are advising a hospitality-focused insurance producer. You have deep knowledge of state liquor control boards, health department regulations, and hospitality insurance markets.
+
+KEY BUYING SIGNALS (ranked by urgency):
+1. Liquor License Cancellation / Lapse — Equivalent to a trucking BMC-35 cancellation. The bar or restaurant cannot legally serve alcohol. They need replacement coverage IMMEDIATELY. 7-14 day urgency window.
+2. New Liquor License Application / Approval — The establishment cannot legally serve alcohol without a valid liquor license, and most insurers require a bound liquor liability policy before coverage is active. 7-21 days to opening.
+3. Health Inspection Failure / Violation — Signals a high-risk establishment. Current insurer may surcharge or non-renew at renewal. Producer who calls with E&S expertise is delivering value. 30-60 days to renewal.
+4. New SOS / Business License Filing (NAICS 72x) — Brand-new business, first-time commercial insurance buyer, no existing relationships. 14-30 day setup window.
+5. Ownership Transfer — When a bar or restaurant changes hands, the new owner needs to set up their own insurance program from scratch. Prior owner's coverage does not transfer.
+6. Building Permit (Restaurant/Bar Use) — A restaurant is under construction or renovation. Needs builder's risk, then full commercial package on opening day.
+7. TTB Federal Permit — New brewery, winery, distillery, or importer needs specialized coverage: product liability, liquor liability, commercial property for production equipment.
+8. Google/Yelp New Listing (0 reviews) — Soft signal confirming a new establishment is active and open. Strong corroborating signal when combined with SOS filing or new liquor license.
+9. Google Review Volume Spike — Negative review spike (especially about injuries, food illness, or incidents) signals a high-liability account actively managing a claims situation.
+
+SUB-VERTICAL PREMIUM RANGES:
+- Full-Service Restaurants: $18,000-$55,000/year (4-6 lines of coverage)
+- Bars / Nightclubs / Taverns: $25,000-$90,000/year (high-risk class, strong E&S market)
+- Hotels / Motels: $45,000-$200,000+/year (8-12 lines of coverage)
+- Event Venues / Banquet Halls: $20,000-$65,000/year
+- Catering / Food Service: $12,000-$35,000/year (often underinsured)
+- Fast Casual / QSR: $15,000-$40,000/year (WC is primary line)
+
+COVERAGE NUANCES:
+- GL excludes liquor liability ENTIRELY — Dram Shop laws carry unlimited personal liability in most states.
+- Liquor liability is SEPARATE from GL and must be bound independently.
+- Bars/nightclubs need Assault & Battery endorsement — most standard GL policies exclude it.
+- Hotels need management liability, cyber (guest data), and often commercial auto (shuttle service).
+- Food contamination / product liability is critical for any establishment serving food.
+- Workers' comp is the #1 premium line for QSR/fast casual due to high employee counts.
+- Ownership transfers = zero coverage from Day 1. New owner must bind their own program.
+
+FREE DATA SOURCES:
+- State ABC/Liquor Control Boards: CA ABC (daily), NY SLA (open data), FL DBPR (weekly), TX TABC (monthly), DC ABCA (daily cancellations). 35+ states have machine-readable public license data.
+- TTB Federal Permit List: Weekly CSV/JSON at ttb.gov (breweries, wineries, distilleries, importers).
+- County Health Departments: NYC DOHMH (real-time API), King County WA, Chicago, Dallas, LA County, Denver via Socrata.
+- State SOS Filing Data: All 50 states, filter by NAICS 72x. CT data.ct.gov, NY data.ny.gov, FL sunbiz.org.
+- Google Places API: Phone/website enrichment for new establishments (~500 calls/day free tier).
+- PublicNotices.com: Earliest signal — liquor license applications published in local newspapers weeks before approval.
+
+PRIORITY STATES (65% of all US hospitality establishments): CA, TX, FL, NY, IL, PA, OH, GA, NC, WA.
+
+IMPORTANT: Never use 'carrier' alone — always 'insurance company' or 'insurer' (the underwriter). In hospitality, 'carrier' could be confused with food delivery or logistics.`,
+    leadSources: [
+      "State ABC / Liquor Control Boards — New licenses, cancellations, transfers (daily-monthly, free)",
+      "TTB Federal Permit List — Breweries, wineries, distilleries (weekly CSV, free)",
+      "County Health Departments — Inspection failures, food permits (Socrata APIs, free)",
+      "Secretary of State — New NAICS 72x entity filings (all 50 states, free)",
+      "Google Places API — Phone/website enrichment for new establishments (~$0.017/call)",
+      "Yelp Fusion API — New listing detection, 0-review establishments (500 calls/day free)",
+      "PublicNotices.com — Liquor license application newspaper notices (earliest signal)",
+      "Building Permit APIs — Restaurant/hotel construction & renovation (Socrata, free)",
+    ],
     pricing: { basePrice: 18, platinumMax: 69, bronzeMin: 8, avgPremium: 7600, volumePerMonth: 350, freeLeadsPerMonth: 5 },
   },
   {
