@@ -30,6 +30,10 @@ export default function RequestAccess() {
   const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [selectedSubVerticals, setSelectedSubVerticals] = useState<string[]>([]);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const [showOtp, setShowOtp] = useState(false);
+  const [otpCode, setOtpCode] = useState("");
+  const [verifyingOtp, setVerifyingOtp] = useState(false);
+  const [otpToken, setOtpToken] = useState<string | null>(null);
   const verticalRef = useRef<HTMLDivElement>(null);
 
   const verticalConfig = useMemo(
