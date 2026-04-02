@@ -85,26 +85,21 @@ export default function ConnectDashboard() {
       const [leadsRes, profileRes] = await Promise.all([
         supabase
           .from("leads")
-          .select("id, stage, premium, created_at, stage_changed_at")
+          .select("id, stage, target_premium, created_at, stage_changed_at")
           .eq("owner_user_id", user.id),
-        supabase
-          .from("profiles")
-          .select("full_name, industry, specializations, states_of_operation, connect_vertical")
-          .eq("user_id", user.id)
-          .maybeSingle(),
+        profileRes,
       ]);
 
       const leads = leadsRes.data || [];
-      const closedWon = leads.filter(l => l.stage === "closed_won");
-      const closedLost = leads.filter(l => l.stage === "closed_lost");
-      const active = leads.filter(l => !["closed_won", "closed_lost"].includes(l.stage || ""));
-      const totalPremium = closedWon.reduce((s, l) => s + (l.premium || 0), 0);
+      const closedWon = leads.filter((l: any) => l.stage === "closed_won");
+      const closedLost = leads.filter((l: any) => l.stage === "closed_lost");
+      const active = leads.filter((l: any) => !["closed_won", "closed_lost"].includes(l.stage || ""));
+      const totalPremium = closedWon.reduce((s: number, l: any) => s + (l.target_premium || 0), 0);
 
-      // Avg days to close for won deals
       const closeDays = closedWon
-        .filter(l => l.created_at && l.stage_changed_at)
-        .map(l => (new Date(l.stage_changed_at!).getTime() - new Date(l.created_at).getTime()) / 86400000);
-      const avgDays = closeDays.length ? Math.round(closeDays.reduce((a, b) => a + b, 0) / closeDays.length) : 0;
+        .filter((l: any) => l.created_at && l.stage_changed_at)
+        .map((l: any) => (new Date(l.stage_changed_at).getTime() - new Date(l.created_at).getTime()) / 86400000);
+      const avgDays = closeDays.length ? Math.round(closeDays.reduce((a: number, b: number) => a + b, 0) / closeDays.length) : 0;
 
       setStats({
         totalLeads: leads.length,
