@@ -101,7 +101,10 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasAgent, in
     return map;
   }, [availableVerticals]);
 
-  const [geo, setGeo] = useState("All States");
+  const [geo, setGeo] = useState(() => {
+    if (userStates?.length === 1) return userStates[0];
+    return "All States";
+  });
   const [selectedVerticals, setSelectedVerticals] = useState<string[]>(() => {
     if (initialSpecializations?.length) {
       // Filter to only those that are valid for this industry
