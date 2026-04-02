@@ -24,6 +24,7 @@ import AdminPartnerRequests from "@/components/AdminPartnerRequests2";
 import AdminConciergeQueue from "@/components/AdminConciergeQueue";
 import AdminSupportTickets from "@/components/AdminSupportTickets";
 import AdminStudioQueue from "@/components/AdminStudioQueue";
+import AdminIndustryRequests from "@/components/AdminIndustryRequests";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, BarChart, Bar } from "recharts";
 import { toast } from "sonner";
