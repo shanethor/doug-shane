@@ -78,9 +78,9 @@ const PIPELINE_CONFIGS: Record<string, { label: string; stages: StageConfig[] }>
   trucking: {
     label: "Trucking / Commercial Fleet",
     stages: [
-      { key: "prospect", label: "New Authority", color: "bg-blue-500/10 text-blue-600 border-blue-500/20" },
-      { key: "quoting", label: "Filing Review", color: "bg-amber-500/10 text-amber-600 border-amber-500/20" },
-      { key: "presenting", label: "Quote Sent", color: "bg-orange-500/10 text-orange-600 border-orange-500/20" },
+      { key: "prospect", label: "Signal Detected", color: "bg-cyan-500/10 text-cyan-600 border-cyan-500/20" },
+      { key: "quoting", label: "Contacted", color: "bg-sky-500/10 text-sky-600 border-sky-500/20" },
+      { key: "presenting", label: "In Conversation", color: "bg-amber-500/10 text-amber-600 border-amber-500/20" },
       { key: "bound", label: "Bound", color: "bg-green-500/10 text-green-600 border-green-500/20" },
       { key: "lost", label: "Lost", color: "bg-red-500/10 text-red-600 border-red-500/20" },
     ],
