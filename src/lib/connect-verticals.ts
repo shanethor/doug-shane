@@ -405,6 +405,7 @@ IMPORTANT TERMINOLOGY: Never use 'carrier' alone — always 'motor carrier' (the
     coverageLines: ["GL", "Property", "WC", "Pollution/Environmental", "Professional Liability", "Builder's Risk", "Equipment Breakdown", "Business Interruption"],
     sageContext: "You are advising an energy/utilities-focused producer. Key triggers: solar/wind installation permits, FERC regulatory filings, new oil & gas well permits, DOE grant awards for EV infrastructure. Coverage nuances: pollution/environmental liability, equipment breakdown for generation assets, builder's risk during construction.",
     leadSources: ["State oil & gas commissions", "FERC regulatory filings", "Solar/wind building permits", "DOE grant awards", "Utility interconnection applications"],
+    pricing: { basePrice: 50, platinumMax: 119, bronzeMin: 21, avgPremium: 42000, volumePerMonth: 175, freeLeadsPerMonth: 2 },
   },
   {
     id: "moving_storage",
