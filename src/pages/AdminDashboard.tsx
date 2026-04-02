@@ -16,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import {
   Users, FileText, CheckCircle, Clock, Bug, Lightbulb,
   BarChart3, DollarSign, AlertTriangle, Eye, TrendingUp,
-  XCircle, Edit3, ShieldCheck, Building2, Plus, Trash2, Handshake, ScrollText, Network, Sparkles, CalendarDays, Wrench,
+  XCircle, Edit3, ShieldCheck, Building2, Plus, Trash2, Handshake, ScrollText, Network, Sparkles, CalendarDays, Wrench, Globe,
 } from "lucide-react";
 import AdminPartnerReferrals from "@/components/AdminPartnerReferrals";
 import AdminAgencySection from "@/components/AdminAgencySection";
