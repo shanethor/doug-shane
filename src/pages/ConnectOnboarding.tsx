@@ -326,6 +326,12 @@ function IndustryStep({
   setSelectedSubVerticals,
   verticalSearch,
   setVerticalSearch,
+  showRequestInput,
+  setShowRequestInput,
+  industryRequest,
+  setIndustryRequest,
+  requestSubmitted,
+  onSubmitRequest,
 }: {
   selectedVertical: string;
   setSelectedVertical: (v: string) => void;
@@ -333,6 +339,12 @@ function IndustryStep({
   setSelectedSubVerticals: React.Dispatch<React.SetStateAction<string[]>>;
   verticalSearch: string;
   setVerticalSearch: (v: string) => void;
+  showRequestInput: boolean;
+  setShowRequestInput: (v: boolean) => void;
+  industryRequest: string;
+  setIndustryRequest: (v: string) => void;
+  requestSubmitted: boolean;
+  onSubmitRequest: () => void;
 }) {
   const verticalConfig = CONNECT_VERTICALS.find(v => v.id === selectedVertical);
 
@@ -353,7 +365,7 @@ function IndustryStep({
         <Briefcase className="h-7 w-7 text-[hsl(140_12%_58%)]" />
       </div>
       <div>
-        <h2 className="text-2xl font-bold tracking-tight mb-2">Your Industry</h2>
+        <h2 className="text-2xl font-bold tracking-tight mb-2">Your Industry <span className="text-red-400">*</span></h2>
         <p className="text-sm text-muted-foreground">
           Select the vertical you operate in. This personalizes your leads, pipeline, and AI insights.
         </p>
@@ -378,7 +390,6 @@ function IndustryStep({
             onClick={() => {
               setSelectedVertical(v.id);
               setVerticalSearch("");
-              // Auto-select first 2 sub-verticals
               setSelectedSubVerticals(v.subVerticals.slice(0, 2).map((sv) => sv.id));
             }}
             className={`w-full p-3 rounded-xl border transition-all text-left ${
@@ -397,6 +408,46 @@ function IndustryStep({
           </button>
         ))}
       </div>
+
+      {/* Request another industry */}
+      {!requestSubmitted ? (
+        <div className="max-w-sm mx-auto space-y-2">
+          {!showRequestInput ? (
+            <button
+              onClick={() => setShowRequestInput(true)}
+              className="text-xs text-[hsl(140_12%_58%)] hover:underline font-medium"
+            >
+              Don't see your industry? Request it →
+            </button>
+          ) : (
+            <div className="space-y-2 p-3 rounded-xl border border-border bg-muted/20">
+              <p className="text-xs text-muted-foreground font-medium text-left">What industry are you in?</p>
+              <Input
+                value={industryRequest}
+                onChange={(e) => setIndustryRequest(e.target.value)}
+                placeholder="e.g. Marine Insurance, Cannabis, etc."
+                className="h-9 bg-background border-border text-sm"
+              />
+              <Button
+                onClick={onSubmitRequest}
+                disabled={!industryRequest.trim()}
+                size="sm"
+                className="w-full bg-[hsl(140_12%_42%)] hover:bg-[hsl(140_12%_48%)] text-white border-0"
+              >
+                Submit Request
+              </Button>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="max-w-sm mx-auto p-4 rounded-xl border border-[hsl(140_12%_42%/0.3)] bg-[hsl(140_12%_42%/0.05)]">
+          <CheckCircle className="h-5 w-5 text-[hsl(140_12%_58%)] mx-auto mb-2" />
+          <p className="text-sm font-medium text-foreground">We hear you!</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            We'll work to build your vertical ASAP and notify you via email once it's ready.
+          </p>
+        </div>
+      )}
 
       {/* Sub-verticals */}
       {verticalConfig && verticalConfig.subVerticals.length > 0 && (
