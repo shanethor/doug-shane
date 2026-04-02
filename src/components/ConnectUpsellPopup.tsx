@@ -69,7 +69,7 @@ export default function ConnectUpsellPopup({ open, onClose }: Props) {
           <button
             onClick={() => {
               onClose();
-              navigate("/connect/leads");
+              navigate("/connect/onboarding");
             }}
             className="w-full text-center text-xs text-[#52525B] hover:text-[#71717A] transition-colors py-1"
           >

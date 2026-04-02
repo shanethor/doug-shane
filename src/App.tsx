@@ -171,6 +171,7 @@ const App = () => (
           <Route path="/get-started" element={<ProductAuth />} />
 
           {/* ── AURA Connect product ── */}
+          <Route path="/connect/onboarding" element={<ProductProtectedRoute><ConnectOnboarding /></ProductProtectedRoute>} />
           <Route path="/connect" element={<ProductProtectedRoute><ConnectProduct /></ProductProtectedRoute>} />
           <Route path="/connect/*" element={<ProductProtectedRoute><ConnectProduct /></ProductProtectedRoute>} />
 

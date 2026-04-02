@@ -123,8 +123,20 @@ export default function ProductAuth() {
         if (error) throw error;
 
         const signedInEmail = data.user?.email?.toLowerCase() ?? "";
-        if (!MASTER_EMAILS.includes(signedInEmail)) {
-          navigate("/request-access", { replace: true });
+        if (MASTER_EMAILS.includes(signedInEmail)) {
+          navigate("/connect", { replace: true });
+        } else {
+          // Check if onboarding is completed
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("onboarding_completed")
+            .eq("user_id", data.user!.id)
+            .single();
+          if (profile?.onboarding_completed) {
+            navigate("/connect", { replace: true });
+          } else {
+            navigate("/connect/onboarding", { replace: true });
+          }
         }
       }
     } catch (err: any) {
