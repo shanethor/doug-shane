@@ -579,6 +579,8 @@ export default function ConnectPipelineTab() {
     fetchLeads();
   };
 
+  const { vertical: connectVertical } = useUserVertical();
+
   useEffect(() => {
     if (!user) return;
     supabase.from("profiles").select("industry").eq("user_id", user.id).single().then(({ data }) => {
@@ -588,9 +590,14 @@ export default function ConnectPipelineTab() {
   }, [user]);
 
   useEffect(() => {
-    const fromBranch = branchToIndustry(branch);
-    setIndustry(fromBranch || profileIndustry || null);
-  }, [branch, profileIndustry]);
+    // Priority: connect_vertical > branch mapping > profile industry
+    if (connectVertical && PIPELINE_CONFIGS[connectVertical]) {
+      setIndustry(connectVertical);
+    } else {
+      const fromBranch = branchToIndustry(branch);
+      setIndustry(fromBranch || profileIndustry || null);
+    }
+  }, [branch, profileIndustry, connectVertical]);
 
   const fetchLeads = useCallback(async () => {
     if (!user) return;
