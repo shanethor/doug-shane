@@ -1,7 +1,7 @@
 import { useAuth } from "@/hooks/useAuth";
 import { Navigate } from "react-router-dom";
 
-const MASTER_EMAILS = [
+export const MASTER_EMAILS = [
   "shane@houseofthor.com",
   "dwenz17@gmail.com",
 ];
@@ -18,11 +18,6 @@ export function ProductProtectedRoute({ children }: { children: React.ReactNode 
   }
 
   if (!user) {
-    return <Navigate to="/get-started" replace />;
-  }
-
-  const email = user.email?.toLowerCase() ?? "";
-  if (!MASTER_EMAILS.includes(email)) {
     return <Navigate to="/get-started" replace />;
   }
 
