@@ -98,11 +98,15 @@ export default function Settings() {
           setAiProvider((data[0] as any).ai_provider || "lovable");
           setOpenaiKey((data[0] as any).openai_api_key_encrypted || "");
           if ((data[0] as any).timezone) setTimezone((data[0] as any).timezone);
-          // Sync dark mode from DB
-          const dbDark = !!(data[0] as any).dark_mode;
-          setDarkMode(dbDark);
-          document.documentElement.classList.toggle("dark", dbDark);
-          localStorage.setItem("aura-dark-mode", dbDark ? "true" : "false");
+          // Sync dark mode from DB only if explicitly set
+          if ((data[0] as any).dark_mode !== null && (data[0] as any).dark_mode !== undefined) {
+            const dbDark = !!(data[0] as any).dark_mode;
+            setDarkMode(dbDark);
+            document.documentElement.classList.toggle("dark", dbDark);
+            localStorage.setItem("aura-dark-mode", dbDark ? "true" : "false");
+          } else {
+            setDarkMode(document.documentElement.classList.contains("dark"));
+          }
 
           // Handle intake email alias
           const existingAlias = (data[0] as any).intake_email_alias;
