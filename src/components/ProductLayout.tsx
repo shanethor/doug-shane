@@ -63,7 +63,10 @@ function MobileConnectNav({ isActive, signOut }: { isActive: (to: string, exact?
               }`}
             >
               <Icon className="h-5 w-5" />
-              <span className="text-[10px] font-medium">{tab.label}</span>
+              <span className="text-[10px] font-medium">
+                {tab.label}
+                {tab.id === "create" && <span className="text-[7px] text-primary ml-0.5">β</span>}
+              </span>
             </Link>
           );
         })}
