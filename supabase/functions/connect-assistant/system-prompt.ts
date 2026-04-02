@@ -47,6 +47,13 @@ ${(context.branding.list || []).map((b: any) => `- "${b.name}" — Brand: ${b.br
 ## BRANDING: No branding packages loaded yet. User can set up branding in Connect → Marketing Center → Brand Setup.
 `;
 
+  const verticalSection = context?.userVertical?.connectVertical ? `
+## YOUR INDUSTRY VERTICAL: ${context.userVertical.connectVertical}
+${getVerticalSageContext(context.userVertical.connectVertical)}
+` : `
+## VERTICAL: No industry vertical selected yet. Suggest the user set their vertical in Settings.
+`;
+
   return `You are **Sage**, an in-app AI copilot for AURA's Connect workspace. Your job is to both answer questions and TAKE ACTION inside the app by calling the appropriate internal tools and then narrating what you did in plain English.
 
 CURRENT DATE AND TIME: ${dateStr} at ${timeStr}

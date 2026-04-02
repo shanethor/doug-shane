@@ -88,6 +88,19 @@ export async function enrichContext(authHeader: string): Promise<any> {
     enrichedContext.branding = {
       list: branding || [],
     };
+
+    // Fetch user's connect vertical
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("connect_vertical, industry, specializations")
+      .eq("user_id", user.id)
+      .single();
+
+    enrichedContext.userVertical = {
+      connectVertical: (profile as any)?.connect_vertical || null,
+      industry: profile?.industry || null,
+      specializations: (profile as any)?.specializations || [],
+    };
   } catch (e) {
     console.error("Context enrichment failed (non-fatal):", e);
   }
