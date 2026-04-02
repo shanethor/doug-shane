@@ -58,11 +58,6 @@ export default function ConnectOnboarding() {
       });
   }, [user?.id]);
 
-  useEffect(() => {
-    setAnimateIn(true);
-    const t = setTimeout(() => setAnimateIn(false), 600);
-    return () => clearTimeout(t);
-  }, [step]);
 
   const verticalConfig = useMemo(
     () => CONNECT_VERTICALS.find(v => v.id === selectedVertical),
