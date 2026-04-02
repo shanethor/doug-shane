@@ -742,6 +742,7 @@ For each business, determine:
       "MassGIS Parcels": 1,
       "NJ MOD-IV / Sales": 1,
       "RI Coastal (FEMA)": 1,
+      "Google Maps": 1,
       Reddit: 2,
       "Business Filings": 2,
       "Permit Database": 2,
