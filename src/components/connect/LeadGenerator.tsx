@@ -978,6 +978,102 @@ function ResultsTable() {
   );
 }
 
+/* ── Purchase section shown after free leads generated ── */
+function PurchaseSection({ userIndustry, isSubscriber, hasAgent }: {
+  userIndustry: string;
+  isSubscriber: boolean;
+  hasAgent: boolean;
+}) {
+  const pricing = getVerticalPricing(userIndustry);
+  const packs = getLeadPacks(pricing.basePrice, isSubscriber, hasAgent);
+  const [selectedPack, setSelectedPack] = useState(50);
+  const [purchasing, setPurchasing] = useState(false);
+
+  const handlePurchase = async () => {
+    setPurchasing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("create-lead-checkout", {
+        body: { pack: selectedPack },
+      });
+      if (error) throw new Error(error.message);
+      if (data?.url) window.open(data.url, "_blank");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to start checkout");
+    } finally {
+      setPurchasing(false);
+    }
+  };
+
+  const selectedPackData = packs.find(p => p.leads === selectedPack);
+
+  return (
+    <Card className="animate-fade-in">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-sm flex items-center gap-2">
+          <Rocket className="h-4 w-4 text-primary" />
+          Want more? Purchase {pricing.label} Lead Packs
+        </CardTitle>
+        <p className="text-[10px] text-muted-foreground">
+          Base price: ${pricing.basePrice}/lead • Avg premium: ${pricing.avgPremium.toLocaleString()} • All leads exclusive
+        </p>
+        {isSubscriber ? (
+          <Badge variant="outline" className={`text-[9px] mt-1 ${hasAgent ? "text-orange-500 border-orange-500/30" : "text-emerald-600 border-emerald-600/30"}`}>
+            {hasAgent ? "🚀 Agent — 50% discount" : "🎉 Connect — 40% discount"}
+          </Badge>
+        ) : (
+          <Badge variant="outline" className="text-[9px] mt-1 text-amber-600 border-amber-600/30">
+            <Lock className="h-2.5 w-2.5 mr-1" /> Subscribe for 40% off
+          </Badge>
+        )}
+      </CardHeader>
+      <CardContent className="space-y-2">
+        {packs.map((pack) => (
+          <button
+            key={pack.leads}
+            onClick={() => setSelectedPack(pack.leads)}
+            className={`w-full flex items-center justify-between rounded-lg border p-3 text-left transition-all ${
+              selectedPack === pack.leads
+                ? "border-primary bg-primary/5 ring-1 ring-primary/20"
+                : "border-border hover:border-primary/40 hover:bg-muted/30"
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <div className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold ${
+                selectedPack === pack.leads ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+              }`}>
+                {pack.leads}
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-semibold">{pack.leads} Leads</span>
+                  {pack.popular && <Badge className="text-[9px] px-1.5 py-0">Most Popular</Badge>}
+                  {isSubscriber && <Badge variant="secondary" className={`text-[9px] px-1.5 py-0 ${hasAgent ? "text-orange-500" : "text-emerald-600"}`}>{hasAgent ? "50% Off" : "40% Off"}</Badge>}
+                </div>
+                <span className="text-[10px] text-muted-foreground">
+                  ${Math.round(pack.price / pack.leads)}/lead
+                </span>
+              </div>
+            </div>
+            <div className="text-right">
+              {isSubscriber && (
+                <span className="text-[11px] text-muted-foreground line-through">${pack.originalPrice.toLocaleString()}</span>
+              )}
+              <span className="text-sm font-bold ml-1.5">${pack.price.toLocaleString()}</span>
+            </div>
+          </button>
+        ))}
+        <Button onClick={handlePurchase} disabled={purchasing} className="w-full gap-1.5 mt-2">
+          {purchasing ? (
+            <><Loader2 className="h-4 w-4 animate-spin" /> Opening checkout…</>
+          ) : (
+            <>Purchase {selectedPack} Leads — ${selectedPackData?.price.toLocaleString()}</>
+          )}
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
 const MASTER_EMAILS = ["shane@houseofthor.com", "dwenz17@gmail.com"];
 
 export default function LeadGenerator() {
