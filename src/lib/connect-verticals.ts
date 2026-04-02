@@ -333,6 +333,7 @@ IMPORTANT TERMINOLOGY: Never use 'carrier' alone — always 'motor carrier' (the
     coverageLines: ["D&O", "GL", "Property", "WC", "Sexual Abuse & Molestation", "Volunteer Accident", "Event Liability"],
     sageContext: "You are advising a nonprofit/religious-focused producer. Key triggers: Form 990 filings (1.8M nonprofits, board members personally exposed without D&O), new IRS tax-exempt determinations, Secretary of State filings. Critical: volunteer board members are personally liable without D&O coverage. Sexual abuse & molestation coverage is essential for youth-serving organizations.",
     leadSources: ["ProPublica Nonprofit Explorer (Form 990)", "IRS Tax Exempt Organization Search", "Secretary of State filings"],
+    pricing: { basePrice: 22, platinumMax: 69, bronzeMin: 10, avgPremium: 9200, volumePerMonth: 530, freeLeadsPerMonth: 4 },
   },
   {
     id: "agriculture",
