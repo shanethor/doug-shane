@@ -5,7 +5,7 @@ import { useEarlyAccessWhitelist } from "@/hooks/useEarlyAccessWhitelist";
 import {
   Network, Wrench, Settings, LogOut, BarChart3, Mail,
   Sparkles, Zap, Calendar, PanelLeftClose, PanelLeft, Lock, Brain,
-  MoreHorizontal, Target, Gift, Home, Crown,
+  MoreHorizontal, Target, Gift, Home, Crown, LayoutDashboard,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
@@ -15,6 +15,7 @@ import { SageFloatingChat } from "@/components/SageFloatingChat";
 
 
 const CONNECT_NAV = [
+  { to: "/connect/dashboard", label: "Dashboard", icon: LayoutDashboard, premium: false, beta: false },
   { to: "/connect", label: "Connect", icon: Network, exact: true, premium: false, beta: false },
   { to: "/connect/intelligence", label: "Intelligence", icon: Brain, premium: false, beta: false },
   { to: "/connect/pipeline", label: "Pipeline", icon: BarChart3, premium: false, beta: false },
@@ -27,6 +28,7 @@ const CONNECT_NAV = [
 ];
 
 const ICON_MAP: Record<string, any> = {
+  dashboard: LayoutDashboard,
   connect: Network,
   intelligence: Brain,
   pipeline: BarChart3,
