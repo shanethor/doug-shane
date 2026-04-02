@@ -185,6 +185,7 @@ IMPORTANT TERMINOLOGY: Never use 'carrier' alone — always 'motor carrier' (the
       "QCMobile API — Full carrier detail & BASIC scores (free, Login.gov required)",
       "Google Places API — Phone/website enrichment (~65-70% hit rate)",
     ],
+    pricing: { basePrice: 30, platinumMax: 81, bronzeMin: 14, avgPremium: 14500, volumePerMonth: 460, freeLeadsPerMonth: 3 },
   },
   {
     id: "real_estate",
