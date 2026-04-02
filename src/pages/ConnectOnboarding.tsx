@@ -511,7 +511,7 @@ function StatesStep({
         <MapPin className="h-7 w-7 text-[hsl(140_12%_58%)]" />
       </div>
       <div>
-        <h2 className="text-2xl font-bold tracking-tight mb-2">States of Operation</h2>
+        <h2 className="text-2xl font-bold tracking-tight mb-2">States of Operation <span className="text-red-400">*</span></h2>
         <p className="text-sm text-muted-foreground max-w-sm mx-auto">
           Select the states where you do business. This sets your default lead targeting territory.
         </p>
