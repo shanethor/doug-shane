@@ -421,6 +421,7 @@ IMPORTANT TERMINOLOGY: Never use 'carrier' alone — always 'motor carrier' (the
     coverageLines: ["Commercial Auto", "Cargo/Goods in Transit", "GL", "Property", "WC", "Inland Marine", "Bailee's Customer"],
     sageContext: "You are advising a moving/storage-focused producer. Key triggers: new FMCSA household goods mover registrations, new self-storage facility permits, DOT inspections. Coverage nuances: bailee's customer coverage (liability for stored goods), cargo/goods-in-transit for movers, inland marine for valuable items.",
     leadSources: ["FMCSA household goods mover registrations", "Self-storage building permits", "DOT inspection records", "Secretary of State filings"],
+    pricing: { basePrice: 25, platinumMax: 65, bronzeMin: 14, avgPremium: 11400, volumePerMonth: 350, freeLeadsPerMonth: 4 },
   },
   {
     id: "franchise",
