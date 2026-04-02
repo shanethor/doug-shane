@@ -36,7 +36,7 @@ export default function ConnectOnboarding() {
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [theme, setTheme] = useState<"dark" | "light">("dark");
-  const [animateIn, setAnimateIn] = useState(true);
+  
   const [selectedVertical, setSelectedVertical] = useState<string>("");
   const [selectedSubVerticals, setSelectedSubVerticals] = useState<string[]>([]);
   const [selectedStates, setSelectedStates] = useState<string[]>([]);
