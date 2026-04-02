@@ -5,7 +5,7 @@ import { useEarlyAccessWhitelist } from "@/hooks/useEarlyAccessWhitelist";
 import {
   Network, Wrench, Settings, LogOut, BarChart3, Mail,
   Sparkles, Zap, Calendar, PanelLeftClose, PanelLeft, Lock, Brain,
-  MoreHorizontal, Target, Gift, Home, Crown,
+  MoreHorizontal, Target, Gift, Home, Crown, LayoutDashboard,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
