@@ -15,15 +15,15 @@ import { SageFloatingChat } from "@/components/SageFloatingChat";
 
 
 const CONNECT_NAV = [
-  { to: "/connect", label: "Connect", icon: Network, exact: true, premium: false },
-  { to: "/connect/intelligence", label: "Intelligence", icon: Brain, premium: false },
-  { to: "/connect/pipeline", label: "Pipeline", icon: BarChart3, premium: false },
-  { to: "/connect/email", label: "Email", icon: Mail, premium: false },
-  { to: "/connect/calendar", label: "Calendar", icon: Calendar, premium: false },
-  { to: "/connect/create", label: "Create", icon: Sparkles, premium: false },
-  { to: "/connect/leads", label: "Leads", icon: Target, premium: false },
-  { to: "/connect/property", label: "Property", icon: Home, premium: true },
-  { to: "/connect/sage", label: "Sage", icon: Zap, premium: false },
+  { to: "/connect", label: "Connect", icon: Network, exact: true, premium: false, beta: false },
+  { to: "/connect/intelligence", label: "Intelligence", icon: Brain, premium: false, beta: false },
+  { to: "/connect/pipeline", label: "Pipeline", icon: BarChart3, premium: false, beta: false },
+  { to: "/connect/email", label: "Email", icon: Mail, premium: false, beta: false },
+  { to: "/connect/calendar", label: "Calendar", icon: Calendar, premium: false, beta: false },
+  { to: "/connect/create", label: "Create", icon: Sparkles, premium: false, beta: true },
+  { to: "/connect/leads", label: "Leads", icon: Target, premium: false, beta: false },
+  { to: "/connect/property", label: "Property", icon: Home, premium: true, beta: false },
+  { to: "/connect/sage", label: "Sage", icon: Zap, premium: false, beta: false },
 ];
 
 const ICON_MAP: Record<string, any> = {
