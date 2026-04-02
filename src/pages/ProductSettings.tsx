@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useTimezone } from "@/hooks/useTimezone";
@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import {
   Save, Loader2, User, CreditCard, Moon, Sun, Mail, ExternalLink,
   Network, Link2, Unlink, CheckCircle, Globe, Smartphone, Apple, RefreshCw,
+  Briefcase, MapPin, Check, Search, LifeBuoy, Lock,
 } from "lucide-react";
 import { ConnectedAccountsStatus } from "@/components/ConnectedAccountsStatus";
 import { ProgressiveUnlocks } from "@/components/ProgressiveUnlocks";
@@ -22,6 +23,18 @@ import { IntelligenceDiscountBanner, IntelligencePricingSection } from "@/compon
 import { getAuthHeaders } from "@/lib/auth-fetch";
 import { useSearchParams } from "react-router-dom";
 import { useConnectNavConfig, ALL_CONNECT_TABS } from "@/hooks/useConnectNavConfig";
+import { CONNECT_VERTICALS } from "@/lib/connect-verticals";
+import HelpTicketDialog from "@/components/HelpTicketDialog";
+
+const MASTER_EMAILS = new Set(["shane@houseofthor.com", "dwenz17@gmail.com"]);
+
+const ALL_US_STATES = [
+  "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA",
+  "HI","ID","IL","IN","IA","KS","KY","LA","ME","MD",
+  "MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ",
+  "NM","NY","NC","ND","OH","OK","OR","PA","RI","SC",
+  "SD","TN","TX","UT","VT","VA","WA","WV","WI","WY",
+];
 
 type EmailConnection = {
   id: string;
@@ -47,6 +60,21 @@ export default function ProductSettings() {
   const { config: navConfig, setConfig: setNavConfig } = useConnectNavConfig();
   const { timezone, setTimezone } = useTimezone();
 
+  // Industry / States
+  const [profileVertical, setProfileVertical] = useState<string | null>(null);
+  const [profileSubVerticals, setProfileSubVerticals] = useState<string[]>([]);
+  const [profileStates, setProfileStates] = useState<string[]>([]);
+  const [hasSubscription, setHasSubscription] = useState(false);
+  const [editingIndustry, setEditingIndustry] = useState(false);
+  const [editVertical, setEditVertical] = useState("");
+  const [editSubVerticals, setEditSubVerticals] = useState<string[]>([]);
+  const [editStates, setEditStates] = useState<string[]>([]);
+  const [verticalSearch, setVerticalSearch] = useState("");
+  const [savingIndustry, setSavingIndustry] = useState(false);
+
+  // Help
+  const [helpOpen, setHelpOpen] = useState(false);
+
   // Email connections
   const [emailConnections, setEmailConnections] = useState<EmailConnection[]>([]);
   const [connectingProvider, setConnectingProvider] = useState<string | null>(null);
@@ -58,6 +86,18 @@ export default function ProductSettings() {
   const [icloudSyncing, setIcloudSyncing] = useState(false);
   const [icloudConnection, setIcloudConnection] = useState<any>(null);
   const [icloudLoaded, setIcloudLoaded] = useState(false);
+
+  const isMaster = user?.email ? MASTER_EMAILS.has(user.email.toLowerCase()) : false;
+
+  const verticalConfig = useMemo(
+    () => CONNECT_VERTICALS.find((v) => v.id === editVertical),
+    [editVertical]
+  );
+
+  const profileVerticalConfig = useMemo(
+    () => CONNECT_VERTICALS.find((v) => v.id === profileVertical),
+    [profileVertical]
+  );
 
   // Auto-scroll to section
   useEffect(() => {
@@ -75,19 +115,34 @@ export default function ProductSettings() {
 
   useEffect(() => {
     if (!user) return;
-    supabase.from("profiles").select("full_name, phone, dark_mode").eq("user_id", user.id).maybeSingle().then(({ data }) => {
-      if (data) {
-        setFullName(data.full_name || "");
-        setPhone(data.phone || "");
-        const dbDark = !!(data as any).dark_mode;
-        setDarkMode(dbDark);
-        document.documentElement.classList.toggle("dark", dbDark);
-        // timezone is handled by useTimezone hook
-      }
-      setLoaded(true);
-    });
-    loadEmailConnections();
-    loadIcloudStatus();
+    supabase
+      .from("profiles")
+      .select("full_name, phone, dark_mode, connect_vertical, specializations, states_of_operation")
+      .eq("user_id", user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) {
+          setFullName(data.full_name || "");
+          setPhone(data.phone || "");
+          const dbDark = !!(data as any).dark_mode;
+          setDarkMode(dbDark);
+          document.documentElement.classList.toggle("dark", dbDark);
+          setProfileVertical(data.connect_vertical || null);
+          setProfileSubVerticals(data.specializations || []);
+          setProfileStates(data.states_of_operation || []);
+        }
+        setLoaded(true);
+      });
+
+    // Check subscription status
+    supabase.functions.invoke("check-subscription").then(({ data }) => {
+      setHasSubscription(!!data?.active);
+    }).catch(() => {});
+
+    if (isMaster) {
+      loadEmailConnections();
+      loadIcloudStatus();
+    }
   }, [user]);
 
   const loadEmailConnections = async () => {
@@ -213,7 +268,7 @@ export default function ProductSettings() {
     setSaving(true);
     const { error } = await supabase.from("profiles").update({
       full_name: fullName, phone,
-    } as any).eq("user_id", user.id);
+    }).eq("user_id", user.id);
     setSaving(false);
     if (error) toast.error("Failed to save");
     else toast.success("Settings saved");
@@ -230,6 +285,34 @@ export default function ProductSettings() {
     finally { setOpeningPortal(false); }
   };
 
+  const startEditIndustry = () => {
+    setEditVertical(profileVertical || "");
+    setEditSubVerticals([...profileSubVerticals]);
+    setEditStates([...profileStates]);
+    setEditingIndustry(true);
+  };
+
+  const saveIndustry = async () => {
+    if (!user) return;
+    setSavingIndustry(true);
+    const { error } = await supabase.from("profiles").update({
+      connect_vertical: editVertical || null,
+      industry: editVertical || null,
+      specializations: editSubVerticals.length > 0 ? editSubVerticals : null,
+      states_of_operation: editStates.length > 0 ? editStates : null,
+    }).eq("user_id", user.id);
+    setSavingIndustry(false);
+    if (error) {
+      toast.error("Failed to save");
+      return;
+    }
+    setProfileVertical(editVertical);
+    setProfileSubVerticals(editSubVerticals);
+    setProfileStates(editStates);
+    setEditingIndustry(false);
+    toast.success("Industry & territory updated");
+  };
+
   const gmailConns = emailConnections.filter(c => c.provider === "gmail");
   const outlookConns = emailConnections.filter(c => c.provider === "outlook");
 
@@ -241,14 +324,30 @@ export default function ProductSettings() {
   const textSecondary = darkMode ? "text-white/30" : "text-muted-foreground";
   const iconMuted = darkMode ? "text-white/30" : "text-muted-foreground";
 
+  const filteredVerticals = CONNECT_VERTICALS.filter(
+    (v) =>
+      v.label.toLowerCase().includes(verticalSearch.toLowerCase()) ||
+      v.description.toLowerCase().includes(verticalSearch.toLowerCase())
+  );
+
   if (!loaded) return (
-    <ProductLayout><div className="flex items-center justify-center py-20"><Loader2 className="h-6 w-6 animate-spin text-white/30" /></div></ProductLayout>
+    <ProductLayout><div className="flex items-center justify-center py-20"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div></ProductLayout>
   );
 
   return (
     <ProductLayout>
       <div className="max-w-2xl mx-auto px-4 md:px-8 py-8 space-y-8">
-        <h1 className={`text-2xl font-light tracking-tight ${darkMode ? "text-white/90" : "text-foreground"}`}>Settings</h1>
+        <div className="flex items-center justify-between">
+          <h1 className={`text-2xl font-light tracking-tight ${darkMode ? "text-white/90" : "text-foreground"}`}>Settings</h1>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setHelpOpen(true)}
+            className="gap-2 text-xs"
+          >
+            <LifeBuoy className="h-3.5 w-3.5" /> Help & Support
+          </Button>
+        </div>
 
         {/* Profile */}
         <div className={sectionStyle}>
@@ -276,6 +375,202 @@ export default function ProductSettings() {
           </Button>
         </div>
 
+        {/* Industry & Territory */}
+        <div className={sectionStyle}>
+          <div className="flex items-center gap-3 mb-2">
+            <Briefcase className={`h-4 w-4 ${iconMuted}`} />
+            <h2 className={headingStyle}>Industry & Territory</h2>
+          </div>
+
+          {!editingIndustry ? (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className={`text-sm ${textPrimary}`}>
+                    {profileVerticalConfig?.label || "No industry selected"}
+                  </p>
+                  {profileSubVerticals.length > 0 && (
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {profileSubVerticals.map((sv) => (
+                        <Badge key={sv} variant="outline" className="text-[9px]">{sv}</Badge>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                {hasSubscription && !isMaster ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setHelpOpen(true)}
+                    className="gap-1.5 text-xs"
+                  >
+                    <Lock className="h-3 w-3" /> Request Change
+                  </Button>
+                ) : (
+                  <Button variant="outline" size="sm" onClick={startEditIndustry} className="text-xs">
+                    Edit
+                  </Button>
+                )}
+              </div>
+
+              <Separator className={darkMode ? "border-white/5" : "border-border"} />
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className={`text-xs ${textSecondary} uppercase tracking-wider mb-1`}>States of Operation</p>
+                  {profileStates.length > 0 ? (
+                    <div className="flex flex-wrap gap-1">
+                      {profileStates.map((st) => (
+                        <Badge key={st} variant="outline" className="text-[9px]">{st}</Badge>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className={`text-sm ${textSecondary}`}>None selected</p>
+                  )}
+                </div>
+                {hasSubscription && !isMaster ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setHelpOpen(true)}
+                    className="gap-1.5 text-xs"
+                  >
+                    <Lock className="h-3 w-3" /> Request Change
+                  </Button>
+                ) : (
+                  <Button variant="outline" size="sm" onClick={startEditIndustry} className="text-xs">
+                    Edit
+                  </Button>
+                )}
+              </div>
+
+              {hasSubscription && !isMaster && (
+                <p className={`text-[10px] ${textSecondary} flex items-center gap-1`}>
+                  <Lock className="h-3 w-3" />
+                  Active subscribers must contact support to change industry or territory settings.
+                </p>
+              )}
+            </div>
+          ) : (
+            /* Editing mode */
+            <div className="space-y-4">
+              {/* Vertical search */}
+              <div className="space-y-2">
+                <Label className={labelStyle}>Industry Vertical</Label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                  <Input
+                    value={verticalSearch}
+                    onChange={(e) => setVerticalSearch(e.target.value)}
+                    placeholder="Search verticals…"
+                    className={`pl-9 ${inputStyle}`}
+                  />
+                </div>
+                <div className="max-h-36 overflow-y-auto space-y-1 border rounded-lg p-2 border-border">
+                  {filteredVerticals.map((v) => (
+                    <button
+                      key={v.id}
+                      onClick={() => {
+                        setEditVertical(v.id);
+                        setEditSubVerticals(v.subVerticals.slice(0, 2).map((sv) => sv.id));
+                        setVerticalSearch("");
+                      }}
+                      className={`w-full text-left p-2 rounded-md text-sm transition-colors ${
+                        editVertical === v.id
+                          ? "bg-[hsl(140_12%_42%/0.1)] text-foreground"
+                          : "hover:bg-muted/30 text-muted-foreground"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        {editVertical === v.id && <Check className="h-3.5 w-3.5 text-[hsl(140_12%_58%)]" />}
+                        <span className="font-medium">{v.label}</span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Sub-verticals */}
+              {verticalConfig && verticalConfig.subVerticals.length > 0 && (
+                <div className="space-y-2">
+                  <Label className={labelStyle}>Specializations</Label>
+                  <div className="grid grid-cols-2 gap-1.5 max-h-28 overflow-y-auto">
+                    {verticalConfig.subVerticals.map((sv) => (
+                      <button
+                        key={sv.id}
+                        onClick={() =>
+                          setEditSubVerticals((prev) =>
+                            prev.includes(sv.id) ? prev.filter((s) => s !== sv.id) : [...prev, sv.id]
+                          )
+                        }
+                        className={`rounded-md border p-2 text-[11px] font-medium transition-all text-left ${
+                          editSubVerticals.includes(sv.id)
+                            ? "border-[hsl(140_12%_42%)] bg-[hsl(140_12%_42%/0.1)] text-foreground"
+                            : "border-border text-muted-foreground hover:border-muted-foreground/30"
+                        }`}
+                      >
+                        {sv.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* States */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className={labelStyle}>States of Operation</Label>
+                  <button
+                    onClick={() =>
+                      editStates.length === ALL_US_STATES.length
+                        ? setEditStates([])
+                        : setEditStates([...ALL_US_STATES])
+                    }
+                    className="text-[10px] font-medium text-[hsl(140_12%_58%)] hover:underline"
+                  >
+                    {editStates.length === ALL_US_STATES.length ? "Deselect All" : "Select All"}
+                  </button>
+                </div>
+                <div className="grid grid-cols-5 gap-1 max-h-32 overflow-y-auto p-1 border rounded-lg border-border">
+                  {ALL_US_STATES.map((st) => (
+                    <button
+                      key={st}
+                      onClick={() =>
+                        setEditStates((prev) =>
+                          prev.includes(st) ? prev.filter((s) => s !== st) : [...prev, st]
+                        )
+                      }
+                      className={`rounded-md border px-1.5 py-1 text-[10px] font-medium transition-all ${
+                        editStates.includes(st)
+                          ? "border-[hsl(140_12%_42%)] bg-[hsl(140_12%_42%/0.12)] text-foreground"
+                          : "border-border text-muted-foreground hover:border-muted-foreground/30"
+                      }`}
+                    >
+                      {st}
+                    </button>
+                  ))}
+                </div>
+                <p className={`text-[10px] ${textSecondary}`}>{editStates.length} states selected</p>
+              </div>
+
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={() => setEditingIndustry(false)} className="flex-1">
+                  Cancel
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={saveIndustry}
+                  disabled={savingIndustry}
+                  className="flex-1 gap-2 bg-[hsl(140,12%,42%)] hover:bg-[hsl(140,12%,48%)] text-white border-0"
+                >
+                  {savingIndustry ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+                  Save Changes
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+
         {/* Timezone */}
         <div className={sectionStyle}>
           <div className="flex items-center gap-3 mb-2">
@@ -293,249 +588,230 @@ export default function ProductSettings() {
           </select>
         </div>
 
-        {/* Network Connections */}
-        <div className={sectionStyle} id="network-connections-section">
-          <div className="flex items-center gap-3 mb-2">
-            <Network className={`h-4 w-4 ${iconMuted}`} />
-            <h2 className={headingStyle}>Connected Accounts</h2>
-          </div>
-          <p className={`text-xs ${textSecondary}`}>
-            Connect your accounts to power AURA Connect's relationship intelligence. More connections = better insights.
-          </p>
-          <ConnectedAccountsStatus variant="full" />
-          <Separator className={darkMode ? "border-white/5" : "border-border"} />
-          <ProgressiveUnlocks />
-          <Separator className={darkMode ? "border-white/5" : "border-border"} />
-          <ConnectRewards />
-        </div>
-
-        {/* Email Accounts */}
-        <div className={sectionStyle} id="email-accounts-section">
-          <div className="flex items-center gap-3 mb-2">
-            <Mail className={`h-4 w-4 ${iconMuted}`} />
-            <h2 className={headingStyle}>Email Accounts</h2>
-          </div>
-          <p className={`text-xs ${textSecondary}`}>
-            Connect Gmail or Outlook to sync your inbox and send emails from AURA Connect.
-          </p>
-
-          {/* Gmail */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="h-7 w-7 rounded-md bg-red-500/10 flex items-center justify-center"><Mail className="h-3.5 w-3.5 text-red-400" /></div>
-                <p className={`text-sm ${textPrimary}`}>Gmail</p>
-              </div>
-              <Button size="sm" onClick={() => connectEmail("gmail")} disabled={connectingProvider === "gmail"} variant="outline" className={`gap-1.5 h-8 text-xs ${darkMode ? "bg-white/5 border-white/10 text-white/60 hover:bg-white/10" : ""}`}>
-                {connectingProvider === "gmail" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Link2 className="h-3.5 w-3.5" />}
-                {gmailConns.length > 0 ? "Add Another" : "Connect"}
-              </Button>
+        {/* Network Connections — Master only */}
+        {isMaster && (
+          <div className={sectionStyle} id="network-connections-section">
+            <div className="flex items-center gap-3 mb-2">
+              <Network className={`h-4 w-4 ${iconMuted}`} />
+              <h2 className={headingStyle}>Connected Accounts</h2>
             </div>
-            {gmailConns.map(conn => (
-              <div key={conn.id} className={`flex items-center justify-between rounded-md border p-2.5 pl-9 ${darkMode ? "border-white/10" : "border-border"}`}>
-                <p className={`text-xs flex items-center gap-1.5 truncate ${textSecondary}`}>
-                  <CheckCircle className="h-3 w-3 text-green-400 shrink-0" />
-                  {conn.email_address}
-                </p>
-                <Button variant="ghost" size="sm" onClick={() => disconnectEmail(conn.id, "Gmail")} className="gap-1 h-7 text-xs text-destructive/60 hover:text-destructive">
-                  <Unlink className="h-3 w-3" />
-                </Button>
-              </div>
-            ))}
-          </div>
-
-          <Separator className={darkMode ? "border-white/5" : "border-border"} />
-
-          {/* Outlook */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="h-7 w-7 rounded-md bg-blue-500/10 flex items-center justify-center"><Mail className="h-3.5 w-3.5 text-blue-400" /></div>
-                <p className={`text-sm ${textPrimary}`}>Outlook / Microsoft 365</p>
-              </div>
-              <Button size="sm" onClick={() => connectEmail("outlook")} disabled={connectingProvider === "outlook"} variant="outline" className={`gap-1.5 h-8 text-xs ${darkMode ? "bg-white/5 border-white/10 text-white/60 hover:bg-white/10" : ""}`}>
-                {connectingProvider === "outlook" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Link2 className="h-3.5 w-3.5" />}
-                {outlookConns.length > 0 ? "Add Another" : "Connect"}
-              </Button>
-            </div>
-            {outlookConns.map(conn => (
-              <div key={conn.id} className={`flex items-center justify-between rounded-md border p-2.5 pl-9 ${darkMode ? "border-white/10" : "border-border"}`}>
-                <p className={`text-xs flex items-center gap-1.5 truncate ${textSecondary}`}>
-                  <CheckCircle className="h-3 w-3 text-green-400 shrink-0" />
-                  {conn.email_address}
-                </p>
-                <Button variant="ghost" size="sm" onClick={() => disconnectEmail(conn.id, "Outlook")} className="gap-1 h-7 text-xs text-destructive/60 hover:text-destructive">
-                  <Unlink className="h-3 w-3" />
-                </Button>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Calendar Sync */}
-        <div className={sectionStyle} id="calendar-sync-section">
-          <div className="flex items-center gap-3 mb-2">
-            <span className={iconMuted}>📅</span>
-            <h2 className={headingStyle}>Calendar Sync</h2>
-          </div>
-          <p className={`text-xs ${textSecondary}`}>
-            Calendar sync uses your connected email account. You can also use AURA's native calendar without external sync.
-          </p>
-          <div className={`flex items-center justify-between rounded-lg border p-3 ${darkMode ? "border-white/10" : "border-border"}`}>
-            <div className="flex items-center gap-3">
-              <div className="h-9 w-9 rounded-lg bg-red-500/10 flex items-center justify-center"><Mail className="h-4 w-4 text-red-400" /></div>
-              <div>
-                <p className={`text-sm ${textPrimary}`}>Google Calendar</p>
-                <p className={`text-xs ${textSecondary}`}>
-                  {gmailConns.length > 0 ? `${gmailConns.length} account${gmailConns.length > 1 ? "s" : ""} syncing` : "Connect Gmail first"}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              {gmailConns.length > 0 ? (
-                <>
-                  <Badge className="text-[10px] bg-green-500/10 text-green-400 border-green-500/20">Connected</Badge>
-                  <Button size="sm" variant="outline" onClick={() => connectEmail("gmail")} className="gap-1.5 h-8 text-xs">
-                    <RefreshCw className="h-3 w-3" /> Reconnect
-                  </Button>
-                </>
-              ) : (
-                <Button size="sm" variant="outline" onClick={() => document.getElementById("email-accounts-section")?.scrollIntoView({ behavior: "smooth" })} className="gap-1.5 h-9">
-                  <Link2 className="h-3.5 w-3.5" /> Setup
-                </Button>
-              )}
-            </div>
-          </div>
-          <div className={`flex items-center justify-between rounded-lg border p-3 ${darkMode ? "border-white/10" : "border-border"}`}>
-            <div className="flex items-center gap-3">
-              <div className="h-9 w-9 rounded-lg bg-blue-500/10 flex items-center justify-center"><Mail className="h-4 w-4 text-blue-400" /></div>
-              <div>
-                <p className={`text-sm ${textPrimary}`}>Outlook Calendar</p>
-                <p className={`text-xs ${textSecondary}`}>
-                  {outlookConns.length > 0 ? `${outlookConns.length} account${outlookConns.length > 1 ? "s" : ""} syncing` : "Connect Outlook first"}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              {outlookConns.length > 0 ? (
-                <>
-                  <Badge className="text-[10px] bg-green-500/10 text-green-400 border-green-500/20">Connected</Badge>
-                  <Button size="sm" variant="outline" onClick={() => connectEmail("outlook")} className="gap-1.5 h-8 text-xs">
-                    <RefreshCw className="h-3 w-3" /> Reconnect
-                  </Button>
-                </>
-              ) : (
-                <Button size="sm" variant="outline" onClick={() => document.getElementById("email-accounts-section")?.scrollIntoView({ behavior: "smooth" })} className="gap-1.5 h-9">
-                  <Link2 className="h-3.5 w-3.5" /> Setup
-                </Button>
-              )}
-            </div>
-          </div>
-          <div className={`rounded-md border p-3 ${darkMode ? "bg-white/[0.03] border-white/5" : "bg-muted/30 border-border"}`}>
-            <p className={`text-[11px] ${textSecondary}`}>
-              <strong className={textPrimary}>Note:</strong> You can use AURA's native calendar without connecting an external account. External sync adds your Google/Outlook events alongside AURA events. Use <strong>Reconnect</strong> if your sync stops working.
+            <p className={`text-xs ${textSecondary}`}>
+              Connect your accounts to power AURA Connect's relationship intelligence. More connections = better insights.
             </p>
+            <ConnectedAccountsStatus variant="full" />
+            <Separator className={darkMode ? "border-white/5" : "border-border"} />
+            <ProgressiveUnlocks />
+            <Separator className={darkMode ? "border-white/5" : "border-border"} />
+            <ConnectRewards />
           </div>
-        </div>
+        )}
 
-        {/* Apple / iCloud Contacts */}
-        <div className={sectionStyle} id="icloud-contacts-section">
-          <div className="flex items-center gap-3 mb-2">
-            <Apple className={`h-4 w-4 ${iconMuted}`} />
-            <h2 className={headingStyle}>Apple / iCloud Contacts</h2>
-          </div>
-          <p className={`text-xs ${textSecondary}`}>
-            Securely sync your Apple Contacts into AURA using Apple's CardDAV interface. Changes in iCloud are kept in sync.
-          </p>
+        {/* Email Accounts — Master only */}
+        {isMaster && (
+          <div className={sectionStyle} id="email-accounts-section">
+            <div className="flex items-center gap-3 mb-2">
+              <Mail className={`h-4 w-4 ${iconMuted}`} />
+              <h2 className={headingStyle}>Email Accounts</h2>
+            </div>
+            <p className={`text-xs ${textSecondary}`}>
+              Connect Gmail or Outlook to sync your inbox and send emails from AURA Connect.
+            </p>
 
-          {icloudConnection ? (
-            <div className="space-y-4">
-              <div className={`flex items-center justify-between rounded-lg border p-3 ${darkMode ? "border-white/10" : "border-border"}`}>
-                <div className="flex items-center gap-3">
-                  <div className="h-9 w-9 rounded-lg bg-gray-500/10 flex items-center justify-center">
-                    <Apple className="h-4 w-4 text-gray-400" />
-                  </div>
-                  <div>
-                    <p className={`text-sm flex items-center gap-1.5 ${textPrimary}`}>
-                      <CheckCircle className="h-3 w-3 text-green-400" />
-                      {icloudConnection.apple_id_email}
-                    </p>
-                    <p className={`text-xs ${textSecondary}`}>
-                      {icloudConnection.contact_count || 0} contacts synced
-                      {icloudConnection.last_sync_at && ` · Last sync ${new Date(icloudConnection.last_sync_at).toLocaleDateString()}`}
-                    </p>
-                  </div>
-                </div>
+            {/* Gmail */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" onClick={syncIcloud} disabled={icloudSyncing} className={`gap-1.5 h-8 text-xs ${darkMode ? "bg-white/5 border-white/10 text-white/60 hover:bg-white/10" : ""}`}>
-                    {icloudSyncing ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
-                    Sync
-                  </Button>
-                  <Button variant="ghost" size="sm" onClick={disconnectIcloud} className="gap-1 h-7 text-xs text-destructive/60 hover:text-destructive">
+                  <div className="h-7 w-7 rounded-md bg-red-500/10 flex items-center justify-center"><Mail className="h-3.5 w-3.5 text-red-400" /></div>
+                  <p className={`text-sm ${textPrimary}`}>Gmail</p>
+                </div>
+                <Button size="sm" onClick={() => connectEmail("gmail")} disabled={connectingProvider === "gmail"} variant="outline" className={`gap-1.5 h-8 text-xs ${darkMode ? "bg-white/5 border-white/10 text-white/60 hover:bg-white/10" : ""}`}>
+                  {connectingProvider === "gmail" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Link2 className="h-3.5 w-3.5" />}
+                  {gmailConns.length > 0 ? "Add Another" : "Connect"}
+                </Button>
+              </div>
+              {gmailConns.map(conn => (
+                <div key={conn.id} className={`flex items-center justify-between rounded-md border p-2.5 pl-9 ${darkMode ? "border-white/10" : "border-border"}`}>
+                  <p className={`text-xs flex items-center gap-1.5 truncate ${textSecondary}`}>
+                    <CheckCircle className="h-3 w-3 text-green-400 shrink-0" />
+                    {conn.email_address}
+                  </p>
+                  <Button variant="ghost" size="sm" onClick={() => disconnectEmail(conn.id, "Gmail")} className="gap-1 h-7 text-xs text-destructive/60 hover:text-destructive">
                     <Unlink className="h-3 w-3" />
                   </Button>
                 </div>
-              </div>
-              <div className="flex items-center justify-between py-1">
-                <div>
-                  <p className={`text-sm ${textPrimary}`}>Auto-sync daily</p>
-                  <p className={`text-xs ${textSecondary}`}>Automatically pull new contacts from iCloud every day</p>
-                </div>
-                <Switch
-                  checked={!!icloudConnection.auto_sync}
-                  onCheckedChange={toggleIcloudAutoSync}
-                />
-              </div>
+              ))}
             </div>
-          ) : (
-            <div className="space-y-3">
-              <div className="space-y-2">
-                <Label className={labelStyle}>Apple ID Email</Label>
-                <Input
-                  value={icloudAppleId}
-                  onChange={e => setIcloudAppleId(e.target.value)}
-                  placeholder="you@icloud.com"
-                  className={inputStyle}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className={labelStyle}>App-Specific Password</Label>
-                <Input
-                  type="password"
-                  value={icloudAppPassword}
-                  onChange={e => setIcloudAppPassword(e.target.value)}
-                  placeholder="xxxx-xxxx-xxxx-xxxx"
-                  className={inputStyle}
-                />
-                <p className={`text-[11px] ${textSecondary}`}>
-                  Generate one at{" "}
-                  <a
-                    href="https://appleid.apple.com/account/manage"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="underline hover:text-foreground"
-                  >
-                    appleid.apple.com → Security → App-Specific Passwords
-                  </a>
-                </p>
-              </div>
-              <Button
-                onClick={connectIcloud}
-                disabled={icloudConnecting}
-                size="sm"
-                className="gap-2 bg-[hsl(140,12%,42%)] hover:bg-[hsl(140,12%,48%)] text-white border-0"
-              >
-                {icloudConnecting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Link2 className="h-3.5 w-3.5" />}
-                Connect & Sync Contacts
-              </Button>
-            </div>
-          )}
-        </div>
 
-        {/* Monthly Pricing */}
-        <div className={sectionStyle}>
-          <IntelligencePricingSection />
-        </div>
+            <Separator className={darkMode ? "border-white/5" : "border-border"} />
+
+            {/* Outlook */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="h-7 w-7 rounded-md bg-blue-500/10 flex items-center justify-center"><Mail className="h-3.5 w-3.5 text-blue-400" /></div>
+                  <p className={`text-sm ${textPrimary}`}>Outlook / Microsoft 365</p>
+                </div>
+                <Button size="sm" onClick={() => connectEmail("outlook")} disabled={connectingProvider === "outlook"} variant="outline" className={`gap-1.5 h-8 text-xs ${darkMode ? "bg-white/5 border-white/10 text-white/60 hover:bg-white/10" : ""}`}>
+                  {connectingProvider === "outlook" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Link2 className="h-3.5 w-3.5" />}
+                  {outlookConns.length > 0 ? "Add Another" : "Connect"}
+                </Button>
+              </div>
+              {outlookConns.map(conn => (
+                <div key={conn.id} className={`flex items-center justify-between rounded-md border p-2.5 pl-9 ${darkMode ? "border-white/10" : "border-border"}`}>
+                  <p className={`text-xs flex items-center gap-1.5 truncate ${textSecondary}`}>
+                    <CheckCircle className="h-3 w-3 text-green-400 shrink-0" />
+                    {conn.email_address}
+                  </p>
+                  <Button variant="ghost" size="sm" onClick={() => disconnectEmail(conn.id, "Outlook")} className="gap-1 h-7 text-xs text-destructive/60 hover:text-destructive">
+                    <Unlink className="h-3 w-3" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Calendar Sync — Master only */}
+        {isMaster && (
+          <div className={sectionStyle} id="calendar-sync-section">
+            <div className="flex items-center gap-3 mb-2">
+              <span className={iconMuted}>📅</span>
+              <h2 className={headingStyle}>Calendar Sync</h2>
+            </div>
+            <p className={`text-xs ${textSecondary}`}>
+              Calendar sync uses your connected email account. You can also use AURA's native calendar without external sync.
+            </p>
+            <div className={`flex items-center justify-between rounded-lg border p-3 ${darkMode ? "border-white/10" : "border-border"}`}>
+              <div className="flex items-center gap-3">
+                <div className="h-9 w-9 rounded-lg bg-red-500/10 flex items-center justify-center"><Mail className="h-4 w-4 text-red-400" /></div>
+                <div>
+                  <p className={`text-sm ${textPrimary}`}>Google Calendar</p>
+                  <p className={`text-xs ${textSecondary}`}>
+                    {gmailConns.length > 0 ? `${gmailConns.length} account${gmailConns.length > 1 ? "s" : ""} syncing` : "Connect Gmail first"}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                {gmailConns.length > 0 ? (
+                  <>
+                    <Badge className="text-[10px] bg-green-500/10 text-green-400 border-green-500/20">Connected</Badge>
+                    <Button size="sm" variant="outline" onClick={() => connectEmail("gmail")} className="gap-1.5 h-8 text-xs">
+                      <RefreshCw className="h-3 w-3" /> Reconnect
+                    </Button>
+                  </>
+                ) : (
+                  <Button size="sm" variant="outline" onClick={() => document.getElementById("email-accounts-section")?.scrollIntoView({ behavior: "smooth" })} className="gap-1.5 h-9">
+                    <Link2 className="h-3.5 w-3.5" /> Setup
+                  </Button>
+                )}
+              </div>
+            </div>
+            <div className={`flex items-center justify-between rounded-lg border p-3 ${darkMode ? "border-white/10" : "border-border"}`}>
+              <div className="flex items-center gap-3">
+                <div className="h-9 w-9 rounded-lg bg-blue-500/10 flex items-center justify-center"><Mail className="h-4 w-4 text-blue-400" /></div>
+                <div>
+                  <p className={`text-sm ${textPrimary}`}>Outlook Calendar</p>
+                  <p className={`text-xs ${textSecondary}`}>
+                    {outlookConns.length > 0 ? `${outlookConns.length} account${outlookConns.length > 1 ? "s" : ""} syncing` : "Connect Outlook first"}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                {outlookConns.length > 0 ? (
+                  <>
+                    <Badge className="text-[10px] bg-green-500/10 text-green-400 border-green-500/20">Connected</Badge>
+                    <Button size="sm" variant="outline" onClick={() => connectEmail("outlook")} className="gap-1.5 h-8 text-xs">
+                      <RefreshCw className="h-3 w-3" /> Reconnect
+                    </Button>
+                  </>
+                ) : (
+                  <Button size="sm" variant="outline" onClick={() => document.getElementById("email-accounts-section")?.scrollIntoView({ behavior: "smooth" })} className="gap-1.5 h-9">
+                    <Link2 className="h-3.5 w-3.5" /> Setup
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Apple / iCloud Contacts — Master only */}
+        {isMaster && (
+          <div className={sectionStyle} id="icloud-contacts-section">
+            <div className="flex items-center gap-3 mb-2">
+              <Apple className={`h-4 w-4 ${iconMuted}`} />
+              <h2 className={headingStyle}>Apple / iCloud Contacts</h2>
+            </div>
+            <p className={`text-xs ${textSecondary}`}>
+              Securely sync your Apple Contacts into AURA using Apple's CardDAV interface.
+            </p>
+
+            {icloudConnection ? (
+              <div className="space-y-4">
+                <div className={`flex items-center justify-between rounded-lg border p-3 ${darkMode ? "border-white/10" : "border-border"}`}>
+                  <div className="flex items-center gap-3">
+                    <div className="h-9 w-9 rounded-lg bg-gray-500/10 flex items-center justify-center">
+                      <Apple className="h-4 w-4 text-gray-400" />
+                    </div>
+                    <div>
+                      <p className={`text-sm flex items-center gap-1.5 ${textPrimary}`}>
+                        <CheckCircle className="h-3 w-3 text-green-400" />
+                        {icloudConnection.apple_id_email}
+                      </p>
+                      <p className={`text-xs ${textSecondary}`}>
+                        {icloudConnection.contact_count || 0} contacts synced
+                        {icloudConnection.last_sync_at && ` · Last sync ${new Date(icloudConnection.last_sync_at).toLocaleDateString()}`}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm" onClick={syncIcloud} disabled={icloudSyncing} className={`gap-1.5 h-8 text-xs ${darkMode ? "bg-white/5 border-white/10 text-white/60 hover:bg-white/10" : ""}`}>
+                      {icloudSyncing ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
+                      Sync
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={disconnectIcloud} className="gap-1 h-7 text-xs text-destructive/60 hover:text-destructive">
+                      <Unlink className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between py-1">
+                  <div>
+                    <p className={`text-sm ${textPrimary}`}>Auto-sync daily</p>
+                    <p className={`text-xs ${textSecondary}`}>Automatically pull new contacts from iCloud every day</p>
+                  </div>
+                  <Switch checked={!!icloudConnection.auto_sync} onCheckedChange={toggleIcloudAutoSync} />
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <Label className={labelStyle}>Apple ID Email</Label>
+                  <Input value={icloudAppleId} onChange={e => setIcloudAppleId(e.target.value)} placeholder="you@icloud.com" className={inputStyle} />
+                </div>
+                <div className="space-y-2">
+                  <Label className={labelStyle}>App-Specific Password</Label>
+                  <Input type="password" value={icloudAppPassword} onChange={e => setIcloudAppPassword(e.target.value)} placeholder="xxxx-xxxx-xxxx-xxxx" className={inputStyle} />
+                  <p className={`text-[11px] ${textSecondary}`}>
+                    Generate one at{" "}
+                    <a href="https://appleid.apple.com/account/manage" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">
+                      appleid.apple.com → Security → App-Specific Passwords
+                    </a>
+                  </p>
+                </div>
+                <Button onClick={connectIcloud} disabled={icloudConnecting} size="sm" className="gap-2 bg-[hsl(140,12%,42%)] hover:bg-[hsl(140,12%,48%)] text-white border-0">
+                  {icloudConnecting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Link2 className="h-3.5 w-3.5" />}
+                  Connect & Sync Contacts
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Monthly Pricing — Master only */}
+        {isMaster && (
+          <div className={sectionStyle}>
+            <IntelligencePricingSection />
+          </div>
+        )}
 
         {/* Subscription */}
         <div className={sectionStyle}>
@@ -543,7 +819,7 @@ export default function ProductSettings() {
             <CreditCard className={`h-4 w-4 ${iconMuted}`} />
             <h2 className={headingStyle}>Subscription</h2>
           </div>
-          <IntelligenceDiscountBanner />
+          {isMaster && <IntelligenceDiscountBanner />}
           <p className={`text-sm ${textSecondary} mt-2`}>Manage your billing, payment method, and subscription plan.</p>
           <Button onClick={handleManageSubscription} disabled={openingPortal} variant="outline" size="sm" className="gap-2">
             {openingPortal ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ExternalLink className="h-3.5 w-3.5" />}
@@ -555,43 +831,47 @@ export default function ProductSettings() {
         <div className={sectionStyle}>
           <h2 className={headingStyle}>Preferences</h2>
 
-          {/* Email Layout */}
-          <div className="space-y-2 py-2">
-            <div className="flex items-center gap-3">
-              <Mail className={`h-4 w-4 ${iconMuted}`} />
-              <div>
-                <p className={`text-sm ${textPrimary}`}>Email Layout</p>
-                <p className={`text-xs ${textSecondary}`}>Choose your default email view style</p>
+          {/* Email Layout — Master only */}
+          {isMaster && (
+            <>
+              <div className="space-y-2 py-2">
+                <div className="flex items-center gap-3">
+                  <Mail className={`h-4 w-4 ${iconMuted}`} />
+                  <div>
+                    <p className={`text-sm ${textPrimary}`}>Email Layout</p>
+                    <p className={`text-xs ${textSecondary}`}>Choose your default email view style</p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  {([
+                    { id: "aura", label: "AURA", desc: "Full-featured with pipeline context" },
+                    { id: "gmail", label: "Gmail", desc: "Familiar Gmail-style layout" },
+                    { id: "outlook", label: "Outlook", desc: "Microsoft Outlook-style layout" },
+                  ]).map(opt => {
+                    const currentLayout = (sessionStorage.getItem("connect-demo-email-layout") || "aura");
+                    const isActive = currentLayout === opt.id;
+                    return (
+                      <button key={opt.id} onClick={() => {
+                        sessionStorage.setItem("connect-demo-email-layout", opt.id);
+                        toast.success(`Email layout set to ${opt.label}`);
+                      }}
+                        className={`flex-1 rounded-lg border p-3 text-left transition-colors ${isActive ? "" : "hover:bg-white/[0.02]"}`}
+                        style={{
+                          borderColor: isActive ? "hsl(140 12% 42%)" : darkMode ? "hsl(0 0% 100% / 0.05)" : "hsl(var(--border))",
+                          background: isActive ? "hsl(140 12% 42% / 0.1)" : "transparent",
+                        }}
+                      >
+                        <p className={`text-sm font-medium ${isActive ? "text-[hsl(140,12%,58%)]" : textPrimary}`}>{opt.label}</p>
+                        <p className={`text-[10px] mt-0.5 ${textSecondary}`}>{opt.desc}</p>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-            <div className="flex gap-2">
-              {([
-                { id: "aura", label: "AURA", desc: "Full-featured with pipeline context" },
-                { id: "gmail", label: "Gmail", desc: "Familiar Gmail-style layout" },
-                { id: "outlook", label: "Outlook", desc: "Microsoft Outlook-style layout" },
-              ]).map(opt => {
-                const currentLayout = (sessionStorage.getItem("connect-demo-email-layout") || "aura");
-                const isActive = currentLayout === opt.id;
-                return (
-                  <button key={opt.id} onClick={() => {
-                    sessionStorage.setItem("connect-demo-email-layout", opt.id);
-                    toast.success(`Email layout set to ${opt.label}`);
-                  }}
-                    className={`flex-1 rounded-lg border p-3 text-left transition-colors ${isActive ? "" : "hover:bg-white/[0.02]"}`}
-                    style={{
-                      borderColor: isActive ? "hsl(140 12% 42%)" : darkMode ? "hsl(0 0% 100% / 0.05)" : "hsl(var(--border))",
-                      background: isActive ? "hsl(140 12% 42% / 0.1)" : "transparent",
-                    }}
-                  >
-                    <p className={`text-sm font-medium ${isActive ? "text-[hsl(140,12%,58%)]" : textPrimary}`}>{opt.label}</p>
-                    <p className={`text-[10px] mt-0.5 ${textSecondary}`}>{opt.desc}</p>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+              <Separator className={darkMode ? "border-white/5" : "border-border"} />
+            </>
+          )}
 
-          <Separator className={darkMode ? "border-white/5" : "border-border"} />
           <div className="flex items-center justify-between py-2">
             <div className="flex items-center gap-3">
               {darkMode ? <Moon className={`h-4 w-4 ${iconMuted}`} /> : <Sun className={`h-4 w-4 ${iconMuted}`} />}
@@ -675,7 +955,28 @@ export default function ProductSettings() {
           </div>
           <p className={`text-[11px] ${textSecondary}`}>Minimum 2, maximum 5 tabs. Remaining tabs appear under "More".</p>
         </div>
+
+        {/* Help & Support */}
+        <div className={sectionStyle}>
+          <div className="flex items-center gap-3 mb-2">
+            <LifeBuoy className={`h-4 w-4 ${iconMuted}`} />
+            <h2 className={headingStyle}>Help & Support</h2>
+          </div>
+          <p className={`text-xs ${textSecondary}`}>
+            Have an issue, question, or feature request? Submit a ticket and our team will get back to you.
+          </p>
+          <Button
+            onClick={() => setHelpOpen(true)}
+            variant="outline"
+            size="sm"
+            className="gap-2"
+          >
+            <LifeBuoy className="h-3.5 w-3.5" /> View / Submit Tickets
+          </Button>
+        </div>
       </div>
+
+      <HelpTicketDialog open={helpOpen} onOpenChange={setHelpOpen} />
     </ProductLayout>
   );
 }
