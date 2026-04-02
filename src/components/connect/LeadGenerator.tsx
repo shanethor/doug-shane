@@ -894,7 +894,7 @@ function ResultsTable() {
                 </TableHeader>
                 <TableBody>
                   {displayLeads.map((lead: EngineLead) => (
-                    <TableRow key={lead.id} className={selectedIds.has(lead.id) ? "bg-primary/5" : ""}>
+                    <TableRow key={lead.id} className={`animate-fade-in ${selectedIds.has(lead.id) ? "bg-primary/5" : ""}`} style={{ animationDelay: `${displayLeads.indexOf(lead) * 60}ms`, animationFillMode: "both" }}>
                       <TableCell className="py-2 w-8">
                         <input type="checkbox" checked={selectedIds.has(lead.id)} onChange={() => toggleOne(lead.id)} className="h-3.5 w-3.5 rounded border-border accent-primary cursor-pointer" />
                       </TableCell>
