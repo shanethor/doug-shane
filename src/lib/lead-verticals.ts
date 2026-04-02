@@ -653,6 +653,118 @@ export const VERTICALS: Vertical[] = [
     ],
   },
 
+  // ── Healthcare P&C (7 sub-verticals from NPI taxonomy routing) ──
+  {
+    id: "hc_sv1_high_surgical",
+    label: "High-Surgical Physicians (OB/GYN, Neuro, Ortho)",
+    group: "Healthcare P&C",
+    sources: [
+      s("npi_weekly", "NPI Weekly Update File (New Enumerations)", "file"),
+      s("npi_taxonomy_surgical", "NPI Taxonomy Codes (207V, 207T, 207X)", "target"),
+      s("state_medical_boards", "State Medical License Boards", "file"),
+      s("care_rrg_pipeline", "CARE RRG Collapse Pipeline (46 States)", "zap"),
+      s("proassurance_pipeline", "ProAssurance Merger Pipeline (TX, NY, OH, PA)", "zap"),
+      s("curi_cyber_pipeline", "Curi Cyber Gap Pipeline", "zap"),
+      s("dea_registration", "DEA Controlled Substance Registration", "file"),
+      s("hhs_breach_portal", "HHS OCR Breach Portal (Competitor Alert)", "zap"),
+      s("google_places_enrich", "Google Places Enrichment", "map"),
+    ],
+  },
+  {
+    id: "hc_sv2_primary_care",
+    label: "Primary Care & Non-Surgical MDs",
+    group: "Healthcare P&C",
+    sources: [
+      s("npi_weekly", "NPI Weekly Update File (New Enumerations)", "file"),
+      s("npi_taxonomy_primary", "NPI Taxonomy Codes (207Q, 207R, 2084)", "target"),
+      s("state_medical_boards", "State Medical License Boards", "file"),
+      s("care_rrg_pipeline", "CARE RRG Collapse Pipeline", "zap"),
+      s("curi_cyber_pipeline", "Curi Cyber Gap Pipeline", "zap"),
+      s("dea_registration", "DEA Controlled Substance Registration", "file"),
+      s("hhs_breach_portal", "HHS OCR Breach Portal (Competitor Alert)", "zap"),
+      s("google_places_enrich", "Google Places Enrichment", "map"),
+    ],
+  },
+  {
+    id: "hc_sv3_dental",
+    label: "Dentists & Oral Surgeons",
+    group: "Healthcare P&C",
+    sources: [
+      s("npi_weekly", "NPI Weekly Update File (New Enumerations)", "file"),
+      s("npi_taxonomy_dental", "NPI Taxonomy Codes (1223, 1267)", "target"),
+      s("state_dental_boards", "State Dental License Boards", "file"),
+      s("dea_registration", "DEA Registration (Oral Surgeons)", "file"),
+      s("hhs_breach_portal", "HHS OCR Breach Portal (Competitor Alert)", "zap"),
+      s("google_places_enrich", "Google Places Enrichment", "map"),
+    ],
+  },
+  {
+    id: "hc_sv4_apps",
+    label: "NPs, PAs & Advanced Practice Providers",
+    group: "Healthcare P&C",
+    sources: [
+      s("npi_weekly", "NPI Weekly Update File (New Enumerations)", "file"),
+      s("npi_taxonomy_app", "NPI Taxonomy Codes (363L, 363A)", "target"),
+      s("state_nursing_boards", "State Nursing / APP License Boards", "file"),
+      s("correctional_facility", "Correctional Facility APP Contracts", "file"),
+      s("hhs_breach_portal", "HHS OCR Breach Portal", "zap"),
+      s("google_places_enrich", "Google Places Enrichment", "map"),
+    ],
+  },
+  {
+    id: "hc_sv5_allied_health",
+    label: "Allied Health (Chiro, PT, OT, Mental Health)",
+    group: "Healthcare P&C",
+    sources: [
+      s("npi_weekly", "NPI Weekly Update File (New Enumerations)", "file"),
+      s("npi_taxonomy_allied", "NPI Taxonomy Codes (111N, 225X, 225100, 1041C)", "target"),
+      s("state_licensing_allied", "State Allied Health License Boards", "file"),
+      s("hhs_breach_portal", "HHS OCR Breach Portal (HIPAA Cyber)", "zap"),
+      s("google_places_enrich", "Google Places Enrichment", "map"),
+    ],
+  },
+  {
+    id: "hc_sv6_med_spa",
+    label: "Med Spas & Aesthetics",
+    group: "Healthcare P&C",
+    sources: [
+      s("npi_weekly", "NPI Weekly Update File (New Enumerations)", "file"),
+      s("sos_new_medspa", "SOS New Entity Filings (Med Spa)", "file"),
+      s("state_medical_boards", "State Medical License Boards", "file"),
+      s("business_licenses_medspa", "County Business Licenses (Aesthetics)", "file"),
+      s("google_new_listing", "Google Places New Med Spa Listings", "map"),
+      s("hhs_breach_portal", "HHS OCR Breach Portal", "zap"),
+    ],
+  },
+  {
+    id: "hc_sv7_group_facilities",
+    label: "Group Practices, ASCs & Facilities",
+    group: "Healthcare P&C",
+    sources: [
+      s("npi_weekly_org", "NPI Weekly File (Entity Type 2 — Organizations)", "file"),
+      s("cms_medicare_enrollment", "CMS Medicare Enrollment Trigger", "file"),
+      s("state_facility_licensing", "State Facility License Applications", "file"),
+      s("care_rrg_pipeline", "CARE RRG Collapse Pipeline", "zap"),
+      s("curi_cyber_pipeline", "Curi Cyber Gap Pipeline", "zap"),
+      s("proassurance_pipeline", "ProAssurance Merger Pipeline", "zap"),
+      s("hhs_oig_exclusion", "HHS OIG Exclusion List", "target"),
+      s("google_places_enrich", "Google Places Enrichment", "map"),
+    ],
+  },
+  {
+    id: "hc_market_disruption",
+    label: "Market Disruption Pipelines (CARE/Curi/ProAssurance)",
+    group: "Healthcare P&C",
+    sources: [
+      s("care_rrg_pipeline", "CARE RRG Liquidation — 1,300 Physicians (46 States)", "zap"),
+      s("curi_cyber_pipeline", "Curi Embedded Cyber Exit — 50,000+ Providers", "zap"),
+      s("proassurance_pipeline", "ProAssurance Merger — TX, NY, OH, PA, NJ, IN, KY", "zap"),
+      s("vermont_dfr", "Vermont DFR Liquidation Docket", "file"),
+      s("state_doi_records", "State DOI Carrier Records", "file"),
+      s("npi_state_cross_ref", "NPI × State Cross-Reference (Disruption Targeting)", "target"),
+    ],
+  },
+
   // ── Auto Dealers ──
   {
     id: "auto_dealers",
@@ -835,7 +947,8 @@ export const VERTICALS: Vertical[] = [
 
 /* ── Map industry to default vertical groups shown ── */
 export const INDUSTRY_VERTICAL_GROUPS: Record<string, string[]> = {
-  insurance: ["Personal Lines", "Commercial Lines", "Contractors", "Commercial Real Estate", "Nonprofit", "Cannabis", "Manufacturing", "Hospitality", "Auto Dealers", "Trucking", "Life Insurance"],
+  insurance: ["Personal Lines", "Commercial Lines", "Contractors", "Commercial Real Estate", "Nonprofit", "Cannabis", "Manufacturing", "Hospitality", "Auto Dealers", "Trucking", "Life Insurance", "Healthcare P&C"],
+  healthcare: ["Healthcare P&C", "Commercial Lines"],
   life_insurance: ["Life Insurance"],
   mortgage: ["Personal Lines", "Life Insurance"],
   real_estate: ["Personal Lines", "Commercial Real Estate", "Life Insurance"],
