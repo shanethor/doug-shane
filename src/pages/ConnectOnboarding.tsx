@@ -71,7 +71,7 @@ export default function ConnectOnboarding() {
     const newTheme = isDark ? "dark" : "light";
     setTheme(newTheme);
     document.documentElement.classList.toggle("dark", isDark);
-    localStorage.setItem("theme", newTheme);
+    localStorage.setItem("aura-dark-mode", isDark ? "true" : "false");
   };
 
   const handleComplete = async () => {

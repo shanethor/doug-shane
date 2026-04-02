@@ -124,9 +124,16 @@ export default function ProductSettings() {
         if (data) {
           setFullName(data.full_name || "");
           setPhone(data.phone || "");
-          const dbDark = !!(data as any).dark_mode;
-          setDarkMode(dbDark);
-          document.documentElement.classList.toggle("dark", dbDark);
+          // Only override theme if user has explicitly set dark_mode in DB
+          if ((data as any).dark_mode !== null && (data as any).dark_mode !== undefined) {
+            const dbDark = !!(data as any).dark_mode;
+            setDarkMode(dbDark);
+            document.documentElement.classList.toggle("dark", dbDark);
+            localStorage.setItem("aura-dark-mode", dbDark ? "true" : "false");
+          } else {
+            // No DB preference — keep current state (defaults to dark)
+            setDarkMode(document.documentElement.classList.contains("dark"));
+          }
           setProfileVertical(data.connect_vertical || null);
           setProfileSubVerticals(data.specializations || []);
           setProfileStates(data.states_of_operation || []);
