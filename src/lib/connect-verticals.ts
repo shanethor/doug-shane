@@ -133,6 +133,7 @@ export const CONNECT_VERTICALS: ConnectVerticalConfig[] = [
     coverageLines: ["GL", "WC", "Commercial Auto", "Tools & Equipment", "Builder's Risk", "Umbrella"],
     sageContext: "You are advising a contractor-focused insurance producer. Key triggers: new contractor licenses, building permits (especially >$250K), OSHA inspections, and permit volume growth. Coverage gaps to highlight: Builder's Risk for large jobs, adequate WC for subcontractors, equipment floaters for tools.",
     leadSources: ["State contractor licensing boards", "Socrata building permit APIs", "OSHA inspection records", "Secretary of State filings", "NRCA/ACCA/PHCC member databases"],
+    pricing: { basePrice: 18, platinumMax: 81, bronzeMin: 9, avgPremium: 4200, volumePerMonth: 400, freeLeadsPerMonth: 5 },
   },
   {
     id: "trucking",
