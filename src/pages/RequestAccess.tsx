@@ -95,8 +95,8 @@ export default function RequestAccess() {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!industry) {
-      toast.error("Please select your industry");
+    if (!selectedVertical) {
+      toast.error("Please select your industry vertical");
       return;
     }
     setSubmitting(true);
@@ -106,17 +106,21 @@ export default function RequestAccess() {
         password,
         options: {
           emailRedirectTo: `${window.location.origin}/get-started`,
-          data: { full_name: fullName, product_user: true, industry: industryKey },
+          data: { full_name: fullName, product_user: true, industry: selectedVertical },
         },
       });
       if (error) throw error;
 
-      // Save specializations to profile
+      // Save vertical and sub-verticals to profile
       if (data.user) {
         setTimeout(async () => {
           await supabase
             .from("profiles")
-            .update({ industry: industryKey, specializations: selectedSpecializations } as any)
+            .update({
+              industry: selectedVertical,
+              connect_vertical: selectedVertical,
+              specializations: selectedSubVerticals,
+            } as any)
             .eq("user_id", data.user!.id);
         }, 1000);
       }
