@@ -35,7 +35,13 @@ export default function ConnectOnboarding() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
-  const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const [theme, setTheme] = useState<"dark" | "light">(() => {
+    // Ensure DOM matches default on mount
+    const stored = localStorage.getItem("aura-dark-mode");
+    const isDark = stored ? stored === "true" : true; // default dark
+    document.documentElement.classList.toggle("dark", isDark);
+    return isDark ? "dark" : "light";
+  });
   
   const [selectedVertical, setSelectedVertical] = useState<string>("");
   const [selectedSubVerticals, setSelectedSubVerticals] = useState<string[]>([]);
