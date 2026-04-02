@@ -49,14 +49,25 @@ export default function ConnectOnboarding() {
   const [verticalSearch, setVerticalSearch] = useState("");
   const [saving, setSaving] = useState(false);
 
+  // If already completed onboarding, redirect away
   useEffect(() => {
     if (!user?.id) return;
+    const cached = localStorage.getItem(`aura_onboarding_completed_${user.id}`);
+    if (cached === "true") {
+      navigate("/connect", { replace: true });
+      return;
+    }
     supabase
       .from("profiles")
-      .select("connect_vertical, specializations, states_of_operation, industry")
+      .select("connect_vertical, specializations, states_of_operation, industry, onboarding_completed")
       .eq("user_id", user.id)
       .single()
       .then(({ data }) => {
+        if (data?.onboarding_completed) {
+          localStorage.setItem(`aura_onboarding_completed_${user.id}`, "true");
+          navigate("/connect", { replace: true });
+          return;
+        }
         if (data?.connect_vertical) setSelectedVertical(data.connect_vertical);
         if (data?.specializations) setSelectedSubVerticals(data.specializations);
         if (data?.states_of_operation) setSelectedStates(data.states_of_operation);
