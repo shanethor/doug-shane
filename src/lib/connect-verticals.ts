@@ -369,6 +369,7 @@ IMPORTANT TERMINOLOGY: Never use 'carrier' alone — always 'motor carrier' (the
     coverageLines: ["Commercial Auto", "GL", "WC", "Hired & Non-Owned Auto", "Umbrella", "Passenger Liability"],
     sageContext: "You are advising a transportation-for-hire producer. Key triggers: new TLC/livery licenses, FMCSA passenger carrier authorities, school bus contract awards, EMS licensing. Coverage nuances: passenger liability limits, hired & non-owned auto for subcontracted vehicles, DOT compliance requirements.",
     leadSources: ["TLC / livery licensing boards", "FMCSA passenger carrier authorities", "State EMS licensing", "DOT registrations"],
+    pricing: { basePrice: 22, platinumMax: 81, bronzeMin: 11, avgPremium: 9600, volumePerMonth: 420, freeLeadsPerMonth: 4 },
   },
   {
     id: "life_sciences",
