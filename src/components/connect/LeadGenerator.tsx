@@ -807,9 +807,10 @@ function ResultsTable() {
             /* ── Mobile: Card-based layout ── */
             <div className="space-y-2">
               {displayLeads.map((lead: EngineLead) => (
-                <div
+                 <div
                   key={lead.id}
-                  className={`rounded-lg border p-3 space-y-2 transition-colors ${selectedIds.has(lead.id) ? "border-primary/40 bg-primary/5" : "border-border"}`}
+                  className={`rounded-lg border p-3 space-y-2 transition-all animate-fade-in ${selectedIds.has(lead.id) ? "border-primary/40 bg-primary/5" : "border-border"}`}
+                  style={{ animationDelay: `${(displayLeads.indexOf(lead)) * 60}ms`, animationFillMode: "both" }}
                 >
                   <div className="flex items-start gap-2">
                     <input
