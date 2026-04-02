@@ -8,17 +8,23 @@ export const MASTER_EMAILS = [
   "dwenz17@gmail.com",
 ];
 
+const ONBOARDING_KEY = "aura_onboarding_completed";
+
 export function ProductProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const location = useLocation();
-  const [checkingOnboarding, setCheckingOnboarding] = useState(true);
-  const [onboardingCompleted, setOnboardingCompleted] = useState<boolean | null>(null);
+
+  // Check localStorage first for instant result (avoids flash)
+  const cachedComplete = user ? localStorage.getItem(`${ONBOARDING_KEY}_${user.id}`) === "true" : false;
+
+  const [checkingOnboarding, setCheckingOnboarding] = useState(!cachedComplete);
+  const [onboardingCompleted, setOnboardingCompleted] = useState<boolean>(cachedComplete);
 
   const isMaster = MASTER_EMAILS.includes(user?.email?.toLowerCase() ?? "");
   const isOnboardingPage = location.pathname === "/connect/onboarding";
 
   useEffect(() => {
-    if (!user || isMaster) {
+    if (!user || isMaster || cachedComplete) {
       setCheckingOnboarding(false);
       return;
     }
@@ -31,12 +37,16 @@ export function ProductProtectedRoute({ children }: { children: React.ReactNode 
       .maybeSingle()
       .then(({ data }) => {
         if (!cancelled) {
-          setOnboardingCompleted(data?.onboarding_completed ?? false);
+          const completed = data?.onboarding_completed ?? false;
+          setOnboardingCompleted(completed);
+          if (completed) {
+            localStorage.setItem(`${ONBOARDING_KEY}_${user.id}`, "true");
+          }
           setCheckingOnboarding(false);
         }
       });
     return () => { cancelled = true; };
-  }, [user?.id, isMaster]);
+  }, [user?.id, isMaster, cachedComplete]);
 
   if (loading || checkingOnboarding) {
     return (
