@@ -1,18 +1,30 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
+import { Input } from "@/components/ui/input";
 import {
   ArrowRight, ArrowLeft, Sun, Moon, Sparkles, Target, Brain,
   Rocket, CheckCircle, Palette, Zap, TrendingUp, Users, Globe,
+  MapPin, Search, Briefcase, Check,
 } from "lucide-react";
 import { toast } from "sonner";
+import { CONNECT_VERTICALS } from "@/lib/connect-verticals";
+
+const ALL_US_STATES = [
+  "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA",
+  "HI","ID","IL","IN","IA","KS","KY","LA","ME","MD",
+  "MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ",
+  "NM","NY","NC","ND","OH","OK","OR","PA","RI","SC",
+  "SD","TN","TX","UT","VT","VA","WA","WV","WI","WY",
+];
 
 const STEPS = [
   { id: "welcome", title: "Welcome to AURA" },
   { id: "theme", title: "Choose Your Look" },
+  { id: "industry", title: "Your Industry" },
+  { id: "states", title: "States of Operation" },
   { id: "leads", title: "Your Lead Engine" },
   { id: "create", title: "Create Studio" },
   { id: "vision", title: "The Future of AURA" },
@@ -25,12 +37,38 @@ export default function ConnectOnboarding() {
   const [step, setStep] = useState(0);
   const [theme, setTheme] = useState<"dark" | "light">("dark");
   const [animateIn, setAnimateIn] = useState(true);
+  const [selectedVertical, setSelectedVertical] = useState<string>("");
+  const [selectedSubVerticals, setSelectedSubVerticals] = useState<string[]>([]);
+  const [selectedStates, setSelectedStates] = useState<string[]>([]);
+  const [verticalSearch, setVerticalSearch] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  // Load existing profile data
+  useEffect(() => {
+    if (!user?.id) return;
+    supabase
+      .from("profiles")
+      .select("connect_vertical, specializations, states_of_operation, industry")
+      .eq("user_id", user.id)
+      .single()
+      .then(({ data }) => {
+        if (data?.connect_vertical) setSelectedVertical(data.connect_vertical);
+        if (data?.specializations) setSelectedSubVerticals(data.specializations);
+        if (data?.states_of_operation) setSelectedStates(data.states_of_operation);
+        if (data?.industry && !data?.connect_vertical) setSelectedVertical(data.industry);
+      });
+  }, [user?.id]);
 
   useEffect(() => {
     setAnimateIn(true);
     const t = setTimeout(() => setAnimateIn(false), 600);
     return () => clearTimeout(t);
   }, [step]);
+
+  const verticalConfig = useMemo(
+    () => CONNECT_VERTICALS.find(v => v.id === selectedVertical),
+    [selectedVertical]
+  );
 
   const goNext = () => step < STEPS.length - 1 && setStep(step + 1);
   const goBack = () => step > 0 && setStep(step - 1);
@@ -43,19 +81,33 @@ export default function ConnectOnboarding() {
   };
 
   const handleComplete = async () => {
+    setSaving(true);
     try {
       if (user) {
-        await supabase
+        const { error } = await supabase
           .from("profiles")
           .update({
             onboarding_completed: true,
             theme_preference: theme,
-          } as any)
+            connect_vertical: selectedVertical || null,
+            industry: selectedVertical || null,
+            specializations: selectedSubVerticals.length > 0 ? selectedSubVerticals : null,
+            states_of_operation: selectedStates.length > 0 ? selectedStates : null,
+          })
           .eq("user_id", user.id);
+
+        if (error) {
+          console.error("Onboarding save error:", error);
+          toast.error("Failed to save — please try again.");
+          setSaving(false);
+          return;
+        }
       }
       navigate("/connect", { replace: true });
     } catch {
       navigate("/connect", { replace: true });
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -92,10 +144,26 @@ export default function ConnectOnboarding() {
         >
           {step === 0 && <WelcomeStep />}
           {step === 1 && <ThemeStep theme={theme} onThemeChange={handleThemeChange} />}
-          {step === 2 && <LeadEngineStep />}
-          {step === 3 && <CreateStep />}
-          {step === 4 && <VisionStep />}
-          {step === 5 && <ReadyStep />}
+          {step === 2 && (
+            <IndustryStep
+              selectedVertical={selectedVertical}
+              setSelectedVertical={setSelectedVertical}
+              selectedSubVerticals={selectedSubVerticals}
+              setSelectedSubVerticals={setSelectedSubVerticals}
+              verticalSearch={verticalSearch}
+              setVerticalSearch={setVerticalSearch}
+            />
+          )}
+          {step === 3 && (
+            <StatesStep
+              selectedStates={selectedStates}
+              setSelectedStates={setSelectedStates}
+            />
+          )}
+          {step === 4 && <LeadEngineStep />}
+          {step === 5 && <CreateStep />}
+          {step === 6 && <VisionStep />}
+          {step === 7 && <ReadyStep />}
         </div>
       </div>
 
@@ -124,9 +192,10 @@ export default function ConnectOnboarding() {
         ) : (
           <Button
             onClick={handleComplete}
+            disabled={saving}
             className="gap-2 bg-[hsl(140_12%_42%)] hover:bg-[hsl(140_12%_48%)] text-white border-0"
           >
-            Enter AURA <Rocket className="h-4 w-4" />
+            {saving ? "Saving…" : "Enter AURA"} <Rocket className="h-4 w-4" />
           </Button>
         )}
       </div>
@@ -214,6 +283,186 @@ function ThemeStep({ theme, onThemeChange }: { theme: string; onThemeChange: (da
           Most AURA users prefer dark mode
         </div>
       )}
+    </div>
+  );
+}
+
+function IndustryStep({
+  selectedVertical,
+  setSelectedVertical,
+  selectedSubVerticals,
+  setSelectedSubVerticals,
+  verticalSearch,
+  setVerticalSearch,
+}: {
+  selectedVertical: string;
+  setSelectedVertical: (v: string) => void;
+  selectedSubVerticals: string[];
+  setSelectedSubVerticals: React.Dispatch<React.SetStateAction<string[]>>;
+  verticalSearch: string;
+  setVerticalSearch: (v: string) => void;
+}) {
+  const verticalConfig = CONNECT_VERTICALS.find(v => v.id === selectedVertical);
+
+  const filtered = CONNECT_VERTICALS.filter(
+    (v) =>
+      v.label.toLowerCase().includes(verticalSearch.toLowerCase()) ||
+      v.description.toLowerCase().includes(verticalSearch.toLowerCase())
+  );
+
+  const toggleSub = (id: string) =>
+    setSelectedSubVerticals((prev) =>
+      prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]
+    );
+
+  return (
+    <div className="text-center space-y-5">
+      <div className="w-16 h-16 rounded-2xl bg-muted/50 border border-border flex items-center justify-center mx-auto">
+        <Briefcase className="h-7 w-7 text-[hsl(140_12%_58%)]" />
+      </div>
+      <div>
+        <h2 className="text-2xl font-bold tracking-tight mb-2">Your Industry</h2>
+        <p className="text-sm text-muted-foreground">
+          Select the vertical you operate in. This personalizes your leads, pipeline, and AI insights.
+        </p>
+      </div>
+
+      {/* Search */}
+      <div className="relative max-w-sm mx-auto">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+        <Input
+          value={verticalSearch}
+          onChange={(e) => setVerticalSearch(e.target.value)}
+          placeholder="Search verticals…"
+          className="pl-9 h-10 bg-muted/30 border-border"
+        />
+      </div>
+
+      {/* Vertical list */}
+      <div className="max-h-48 overflow-y-auto space-y-1.5 text-left max-w-sm mx-auto pr-1">
+        {filtered.map((v) => (
+          <button
+            key={v.id}
+            onClick={() => {
+              setSelectedVertical(v.id);
+              setVerticalSearch("");
+              // Auto-select first 2 sub-verticals
+              setSelectedSubVerticals(v.subVerticals.slice(0, 2).map((sv) => sv.id));
+            }}
+            className={`w-full p-3 rounded-xl border transition-all text-left ${
+              selectedVertical === v.id
+                ? "border-[hsl(140_12%_42%)] bg-[hsl(140_12%_42%/0.08)]"
+                : "border-border hover:border-muted-foreground/30 bg-muted/20"
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              {selectedVertical === v.id && (
+                <Check className="h-4 w-4 text-[hsl(140_12%_58%)] shrink-0" />
+              )}
+              <span className="text-sm font-medium">{v.label}</span>
+            </div>
+            <p className="text-[10px] text-muted-foreground mt-0.5 pl-6">{v.description}</p>
+          </button>
+        ))}
+      </div>
+
+      {/* Sub-verticals */}
+      {verticalConfig && verticalConfig.subVerticals.length > 0 && (
+        <div className="text-left max-w-sm mx-auto space-y-2">
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Specializations</p>
+          <div className="grid grid-cols-2 gap-1.5 max-h-32 overflow-y-auto">
+            {verticalConfig.subVerticals.map((sv) => (
+              <button
+                key={sv.id}
+                onClick={() => toggleSub(sv.id)}
+                className={`rounded-lg border p-2 text-[11px] font-medium transition-all text-left ${
+                  selectedSubVerticals.includes(sv.id)
+                    ? "border-[hsl(140_12%_42%)] bg-[hsl(140_12%_42%/0.1)] text-foreground"
+                    : "border-border text-muted-foreground hover:border-muted-foreground/30"
+                }`}
+              >
+                {sv.label}
+              </button>
+            ))}
+          </div>
+          <p className="text-[10px] text-muted-foreground">
+            {selectedSubVerticals.length} selected
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function StatesStep({
+  selectedStates,
+  setSelectedStates,
+}: {
+  selectedStates: string[];
+  setSelectedStates: React.Dispatch<React.SetStateAction<string[]>>;
+}) {
+  const ALL = [
+    "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA",
+    "HI","ID","IL","IN","IA","KS","KY","LA","ME","MD",
+    "MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ",
+    "NM","NY","NC","ND","OH","OK","OR","PA","RI","SC",
+    "SD","TN","TX","UT","VT","VA","WA","WV","WI","WY",
+  ];
+
+  const toggleAll = () => {
+    if (selectedStates.length === ALL.length) {
+      setSelectedStates([]);
+    } else {
+      setSelectedStates([...ALL]);
+    }
+  };
+
+  const toggle = (st: string) =>
+    setSelectedStates((prev) =>
+      prev.includes(st) ? prev.filter((s) => s !== st) : [...prev, st]
+    );
+
+  return (
+    <div className="text-center space-y-5">
+      <div className="w-16 h-16 rounded-2xl bg-muted/50 border border-border flex items-center justify-center mx-auto">
+        <MapPin className="h-7 w-7 text-[hsl(140_12%_58%)]" />
+      </div>
+      <div>
+        <h2 className="text-2xl font-bold tracking-tight mb-2">States of Operation</h2>
+        <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+          Select the states where you do business. This sets your default lead targeting territory.
+        </p>
+      </div>
+
+      <div className="max-w-sm mx-auto space-y-3">
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-muted-foreground">
+            {selectedStates.length} state{selectedStates.length !== 1 ? "s" : ""} selected
+          </span>
+          <button
+            onClick={toggleAll}
+            className="text-xs font-medium text-[hsl(140_12%_58%)] hover:underline"
+          >
+            {selectedStates.length === ALL.length ? "Deselect All" : "Select All 50 States"}
+          </button>
+        </div>
+
+        <div className="grid grid-cols-5 gap-1.5 max-h-56 overflow-y-auto p-1">
+          {ALL.map((st) => (
+            <button
+              key={st}
+              onClick={() => toggle(st)}
+              className={`rounded-lg border px-2 py-1.5 text-[11px] font-medium transition-all ${
+                selectedStates.includes(st)
+                  ? "border-[hsl(140_12%_42%)] bg-[hsl(140_12%_42%/0.12)] text-foreground"
+                  : "border-border text-muted-foreground hover:border-muted-foreground/30"
+              }`}
+            >
+              {st}
+            </button>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

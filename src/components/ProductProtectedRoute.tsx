@@ -28,7 +28,7 @@ export function ProductProtectedRoute({ children }: { children: React.ReactNode 
       .from("profiles")
       .select("onboarding_completed")
       .eq("user_id", user.id)
-      .single()
+      .maybeSingle()
       .then(({ data }) => {
         if (!cancelled) {
           setOnboardingCompleted(data?.onboarding_completed ?? false);
