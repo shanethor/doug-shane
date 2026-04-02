@@ -28,6 +28,7 @@ const CONNECT_NAV = [
 ];
 
 const ICON_MAP: Record<string, any> = {
+  dashboard: LayoutDashboard,
   connect: Network,
   intelligence: Brain,
   pipeline: BarChart3,
