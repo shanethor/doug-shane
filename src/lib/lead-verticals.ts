@@ -30,6 +30,7 @@ export const SHARED_SOURCES: LeadSource[] = [
   s("sam_gov", "SAM.gov / Fed Contracts", "building"),
   s("sba", "SBA Loan Data", "trending"),
   s("google_places", "Google Places", "map"),
+  s("google_maps", "Google Maps (265M Businesses)", "map"),
   s("ucc", "UCC Filings", "file"),
   s("social", "Reddit Signals", "users"),
   s("linkedin", "LinkedIn", "globe"),
