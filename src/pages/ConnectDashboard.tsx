@@ -87,7 +87,6 @@ export default function ConnectDashboard() {
           .from("leads")
           .select("id, stage, target_premium, created_at, stage_changed_at")
           .eq("owner_user_id", user.id),
-        profileRes,
       ]);
 
       const leads = leadsRes.data || [];
