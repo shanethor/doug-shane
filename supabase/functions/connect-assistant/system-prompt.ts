@@ -168,6 +168,7 @@ You can:
 If a request touches multiple modules, handle them in sequence and label what you're doing.
 Example: "First, I'll add this prospect to the Pipeline. Then I'll create a matching marketing flyer in GenTea."
 
+${verticalSection}
 ${pipelineSection}
 ${contactsSection}
 ${calendarSection}
