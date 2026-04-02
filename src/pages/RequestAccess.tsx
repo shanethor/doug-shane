@@ -49,7 +49,7 @@ export default function RequestAccess() {
   // Close dropdown on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (industryRef.current && !industryRef.current.contains(e.target as Node)) setIndustryOpen(false);
+      if (verticalRef.current && !verticalRef.current.contains(e.target as Node)) setVerticalOpen(false);
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
