@@ -241,6 +241,7 @@ IMPORTANT TERMINOLOGY: Never use 'carrier' alone — always 'motor carrier' (the
     coverageLines: ["Medical Malpractice (Occurrence vs Claims-Made)", "GL", "Cyber/HIPAA", "WC", "Property", "Business Interruption", "Employed Physicians", "Tail Coverage"],
     sageContext: "You are advising a healthcare-focused producer. The NPI Registry is the most powerful free lead database — updated weekly with every new provider. Key triggers: new NPI enumeration dates (first-time malpractice buyers), DEA registrations, CMS Medicare enrollment. Critical: occurrence vs claims-made choice follows providers for life. Med spas have the fastest-growing malpractice claims rate. HIPAA creates mandatory cyber exposure.",
     leadSources: ["NPI Registry (weekly bulk CSV)", "State medical/dental licensing boards", "DEA Controlled Substance Registration", "CMS Medicare Enrollment", "HHS OIG Exclusion List"],
+    pricing: { basePrice: 35, platinumMax: 94, bronzeMin: 15, avgPremium: 18000, volumePerMonth: 300, freeLeadsPerMonth: 3 },
   },
   {
     id: "professional_services",
