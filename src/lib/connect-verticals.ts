@@ -351,6 +351,7 @@ IMPORTANT TERMINOLOGY: Never use 'carrier' alone — always 'motor carrier' (the
     coverageLines: ["Farm Owners", "Crop Insurance", "Livestock Mortality", "GL", "WC", "Commercial Auto", "Equipment/Inland Marine", "Pollution"],
     sageContext: "You are advising an agriculture-focused producer. Key triggers: USDA census data, new farm entity filings, state cannabis license approvals, TTB winery/distillery permits. Coverage nuances: crop insurance (MPCI vs private), livestock mortality, pollution from agricultural runoff, equipment floaters for farm machinery.",
     leadSources: ["USDA Census of Agriculture", "County agricultural assessor data", "TTB permits (wineries)", "State cannabis licensing boards"],
+    pricing: { basePrice: 28, platinumMax: 81, bronzeMin: 15, avgPremium: 15000, volumePerMonth: 400, freeLeadsPerMonth: 3 },
   },
   {
     id: "transportation_hire",
