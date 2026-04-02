@@ -110,32 +110,91 @@ export default function RequestAccess() {
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/get-started`,
           data: { full_name: fullName, product_user: true, industry: selectedVertical },
         },
       });
       if (error) throw error;
 
-      // Save vertical and sub-verticals to profile
-      if (data.user) {
-        setTimeout(async () => {
-          await supabase
-            .from("profiles")
-            .update({
-              industry: selectedVertical,
-              connect_vertical: selectedVertical,
-              specializations: selectedSubVerticals,
-            } as any)
-            .eq("user_id", data.user!.id);
-        }, 1000);
+      // With auto-confirm, the user is immediately signed in
+      const session = data.session;
+      if (!session) {
+        toast.error("Account created but sign-in failed. Please sign in manually.");
+        return;
       }
 
-      toast.success("Account created! Check your email for a confirmation link.");
-      setShowUpsell(true);
+      // Save vertical and sub-verticals to profile
+      if (data.user) {
+        await supabase
+          .from("profiles")
+          .update({
+            industry: selectedVertical,
+            connect_vertical: selectedVertical,
+            specializations: selectedSubVerticals,
+          } as any)
+          .eq("user_id", data.user.id);
+      }
+
+      // Send OTP verification code
+      setOtpToken(session.access_token);
+      const { data: otpData, error: otpError } = await supabase.functions.invoke("verify-2fa", {
+        body: { action: "send_code" },
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      if (otpError) {
+        console.error("OTP send error:", otpError);
+        toast.error("Could not send verification code. Please try again.");
+        return;
+      }
+
+      toast.success("We've sent a 6-digit code to your email.");
+      setShowOtp(true);
     } catch (err: any) {
       toast.error(err.message);
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleVerifyOtp = useCallback(async (codeValue?: string) => {
+    const finalCode = codeValue || otpCode;
+    if (finalCode.length !== 6) return;
+    setVerifyingOtp(true);
+    try {
+      const headers: Record<string, string> = {};
+      if (otpToken) headers.Authorization = `Bearer ${otpToken}`;
+
+      const { data, error } = await supabase.functions.invoke("verify-2fa", {
+        body: { action: "verify_code", code: finalCode },
+        ...(otpToken ? { headers } : {}),
+      });
+      if (error) throw error;
+      if (data?.verified) {
+        toast.success("Email verified!");
+        setShowOtp(false);
+        setShowUpsell(true);
+      } else {
+        toast.error(data?.error || "Invalid code. Please try again.");
+        setOtpCode("");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Verification failed");
+      setOtpCode("");
+    } finally {
+      setVerifyingOtp(false);
+    }
+  }, [otpCode, otpToken]);
+
+  const handleResendCode = async () => {
+    try {
+      const headers: Record<string, string> = {};
+      if (otpToken) headers.Authorization = `Bearer ${otpToken}`;
+      await supabase.functions.invoke("verify-2fa", {
+        body: { action: "send_code" },
+        ...(otpToken ? { headers } : {}),
+      });
+      toast.success("New code sent to your email.");
+    } catch {
+      toast.error("Failed to resend code.");
     }
   };
 
