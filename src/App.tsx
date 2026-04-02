@@ -65,6 +65,7 @@ import StudioDemo from "./pages/StudioDemo";
 import LeadLanding from "./pages/LeadLanding";
 import ProductAuth from "./pages/ProductAuth";
 import ConnectProduct from "./pages/ConnectProduct";
+import ConnectOnboarding from "./pages/ConnectOnboarding";
 import StudioProduct from "./pages/StudioProduct";
 import ProductSettings from "./pages/ProductSettings";
 import PostCheckoutOnboard from "./pages/PostCheckoutOnboard";
