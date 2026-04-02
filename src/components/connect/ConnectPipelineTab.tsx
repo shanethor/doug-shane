@@ -64,13 +64,84 @@ const PIPELINE_CONFIGS: Record<string, { label: string; stages: StageConfig[] }>
       { key: "lost", label: "Lost", color: "bg-red-500/10 text-red-600 border-red-500/20" },
     ],
   },
+  // ── Connect Vertical Pipeline Configs ──
+  contractors: {
+    label: "Contractors",
+    stages: [
+      { key: "prospect", label: "New Lead", color: "bg-blue-500/10 text-blue-600 border-blue-500/20" },
+      { key: "quoting", label: "Contacted", color: "bg-sky-500/10 text-sky-600 border-sky-500/20" },
+      { key: "presenting", label: "Site Visit", color: "bg-amber-500/10 text-amber-600 border-amber-500/20" },
+      { key: "bound", label: "Quote Sent", color: "bg-orange-500/10 text-orange-600 border-orange-500/20" },
+      { key: "lost", label: "Lost", color: "bg-red-500/10 text-red-600 border-red-500/20" },
+    ],
+  },
+  trucking: {
+    label: "Trucking / Commercial Fleet",
+    stages: [
+      { key: "prospect", label: "New Authority", color: "bg-blue-500/10 text-blue-600 border-blue-500/20" },
+      { key: "quoting", label: "Filing Review", color: "bg-amber-500/10 text-amber-600 border-amber-500/20" },
+      { key: "presenting", label: "Quote Sent", color: "bg-orange-500/10 text-orange-600 border-orange-500/20" },
+      { key: "bound", label: "Bound", color: "bg-green-500/10 text-green-600 border-green-500/20" },
+      { key: "lost", label: "Lost", color: "bg-red-500/10 text-red-600 border-red-500/20" },
+    ],
+  },
   real_estate: {
     label: "Real Estate",
     stages: [
-      { key: "prospect", label: "Lead", color: "bg-blue-500/10 text-blue-600 border-blue-500/20" },
+      { key: "prospect", label: "New Lead", color: "bg-blue-500/10 text-blue-600 border-blue-500/20" },
       { key: "quoting", label: "Showing", color: "bg-amber-500/10 text-amber-600 border-amber-500/20" },
       { key: "presenting", label: "Under Contract", color: "bg-purple-500/10 text-purple-600 border-purple-500/20" },
       { key: "bound", label: "Closed", color: "bg-green-500/10 text-green-600 border-green-500/20" },
+      { key: "lost", label: "Lost", color: "bg-red-500/10 text-red-600 border-red-500/20" },
+    ],
+  },
+  hospitality: {
+    label: "Hospitality & Food Service",
+    stages: [
+      { key: "prospect", label: "New Lead", color: "bg-blue-500/10 text-blue-600 border-blue-500/20" },
+      { key: "quoting", label: "Contacted", color: "bg-sky-500/10 text-sky-600 border-sky-500/20" },
+      { key: "presenting", label: "License Review", color: "bg-amber-500/10 text-amber-600 border-amber-500/20" },
+      { key: "bound", label: "Closed Won", color: "bg-green-500/10 text-green-600 border-green-500/20" },
+      { key: "lost", label: "Lost", color: "bg-red-500/10 text-red-600 border-red-500/20" },
+    ],
+  },
+  healthcare: {
+    label: "Healthcare",
+    stages: [
+      { key: "prospect", label: "New Provider", color: "bg-blue-500/10 text-blue-600 border-blue-500/20" },
+      { key: "quoting", label: "Needs Analysis", color: "bg-amber-500/10 text-amber-600 border-amber-500/20" },
+      { key: "presenting", label: "Proposal Sent", color: "bg-purple-500/10 text-purple-600 border-purple-500/20" },
+      { key: "bound", label: "Credentialed", color: "bg-green-500/10 text-green-600 border-green-500/20" },
+      { key: "lost", label: "Lost", color: "bg-red-500/10 text-red-600 border-red-500/20" },
+    ],
+  },
+  professional_services: {
+    label: "Professional Services",
+    stages: [
+      { key: "prospect", label: "Prospect", color: "bg-blue-500/10 text-blue-600 border-blue-500/20" },
+      { key: "quoting", label: "Discovery", color: "bg-amber-500/10 text-amber-600 border-amber-500/20" },
+      { key: "presenting", label: "Proposal", color: "bg-purple-500/10 text-purple-600 border-purple-500/20" },
+      { key: "bound", label: "Engaged", color: "bg-green-500/10 text-green-600 border-green-500/20" },
+      { key: "lost", label: "Lost", color: "bg-red-500/10 text-red-600 border-red-500/20" },
+    ],
+  },
+  technology: {
+    label: "Technology & Specialty",
+    stages: [
+      { key: "prospect", label: "Lead", color: "bg-blue-500/10 text-blue-600 border-blue-500/20" },
+      { key: "quoting", label: "Demo / Discovery", color: "bg-amber-500/10 text-amber-600 border-amber-500/20" },
+      { key: "presenting", label: "Proposal", color: "bg-purple-500/10 text-purple-600 border-purple-500/20" },
+      { key: "bound", label: "Closed Won", color: "bg-green-500/10 text-green-600 border-green-500/20" },
+      { key: "lost", label: "Lost", color: "bg-red-500/10 text-red-600 border-red-500/20" },
+    ],
+  },
+  manufacturing: {
+    label: "Industrial & Manufacturing",
+    stages: [
+      { key: "prospect", label: "New Lead", color: "bg-blue-500/10 text-blue-600 border-blue-500/20" },
+      { key: "quoting", label: "Site Assessment", color: "bg-amber-500/10 text-amber-600 border-amber-500/20" },
+      { key: "presenting", label: "Proposal", color: "bg-purple-500/10 text-purple-600 border-purple-500/20" },
+      { key: "bound", label: "Bound", color: "bg-green-500/10 text-green-600 border-green-500/20" },
       { key: "lost", label: "Lost", color: "bg-red-500/10 text-red-600 border-red-500/20" },
     ],
   },
@@ -94,7 +165,23 @@ const PIPELINE_CONFIGS: Record<string, { label: string; stages: StageConfig[] }>
       { key: "lost", label: "Lost", color: "bg-red-500/10 text-red-600 border-red-500/20" },
     ],
   },
+  // Verticals that fall through to generic stages
+  specialty_es: { label: "Specialty & E&S", stages: [] },
+  nonprofit: { label: "Nonprofit & Religious", stages: [] },
+  agriculture: { label: "Agriculture & Agribusiness", stages: [] },
+  transportation_hire: { label: "Transportation for Hire", stages: [] },
+  life_sciences: { label: "Life Sciences & Biotech", stages: [] },
+  energy: { label: "Energy & Utilities", stages: [] },
+  moving_storage: { label: "Moving & Storage", stages: [] },
+  franchise: { label: "Franchise Operations", stages: [] },
 };
+
+// Fill empty stage configs with generic stages
+Object.keys(PIPELINE_CONFIGS).forEach(key => {
+  if (PIPELINE_CONFIGS[key].stages.length === 0) {
+    PIPELINE_CONFIGS[key].stages = PIPELINE_CONFIGS.generic.stages;
+  }
+});
 
 function branchToIndustry(branch: string | null): string | null {
   if (branch === "risk") return "insurance";
