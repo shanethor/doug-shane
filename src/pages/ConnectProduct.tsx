@@ -109,7 +109,10 @@ export default function ConnectProduct() {
   const location = useLocation();
   const navigate = useNavigate();
   const { isPageGated } = useEarlyAccessWhitelist();
-  const { subscribed } = useSubscription();
+  const { user } = useAuth();
+  const isMaster = MASTER_EMAILS.includes(user?.email?.toLowerCase() ?? "");
+  const { subscribed, loading: subLoading } = useSubscription();
+  const canAccessFullSite = isMaster || subscribed;
   const [showIntro, setShowIntro] = useState(() => {
     try { return !sessionStorage.getItem("connect-entered"); } catch { return true; }
   });
