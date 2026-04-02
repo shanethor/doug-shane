@@ -43,7 +43,6 @@ export default function ConnectOnboarding() {
   const [verticalSearch, setVerticalSearch] = useState("");
   const [saving, setSaving] = useState(false);
 
-  // Load existing profile data
   useEffect(() => {
     if (!user?.id) return;
     supabase
