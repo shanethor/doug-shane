@@ -920,6 +920,11 @@ export default function AdminDashboard() {
         <TabsContent value="studio" className="space-y-6">
           <AdminStudioQueue profileNameMap={profileNameMap} />
         </TabsContent>
+
+        {/* ── Industry Requests ── */}
+        <TabsContent value="industry-requests" className="space-y-6">
+          <AdminIndustryRequests />
+        </TabsContent>
       </Tabs>
 
       {/* Reject policy dialog */}
