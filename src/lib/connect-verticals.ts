@@ -315,6 +315,99 @@ FIVE PLUMBING TRAFFIC GENERATORS:
 Tier 1 (bulk data available): CA (CSLB C-36, bulk CSV), FL (DBPR CFC/CPC, weekly CSV), TX (TSBPE RMP, API+CSV), NY (DOS + NYC DOB open data), CO (DORA Socrata nightly), WA (L&I Socrata daily), IL (IDFPR, FOIA/scrape), AZ (ROC, bulk download), NC (NCLBGC, CSV export), GA (SOS cross-ref).
 Tier 2 (scrape required): NJ, PA, MI, OH, MN, MO, MD, VA, SC, TN, KY, OR (bulk CSV available), NV, UT, IN, WI, KS, IA, NE, OK, LA, AL, MS, AR, CT, MA, RI, NH, VT, ME, DE, ID, MT, WY, SD, ND, NM, WV, HI, AK.
 
+=== ELECTRICAL CONTRACTOR VERTICAL (CONTRACTOR #4) ===
+
+ELECTRICAL CONTRACTORS ARE ONE OF THE MOST DATA-RICH, PREMIUM-DENSE VERTICALS:
+NAICS 238210 covers 70,000+ firms, 700,000+ employees. Total P&C spend: $1,600–$5,700 (solo) to $22,000–$120,000+ (mid-size 6-15 employees). WC + GL + commercial auto are the three core lines. Contractors insurance market: $44.34B (2024) growing 10.07% CAGR to $78.86B by 2030. 44 of 50 states have statewide electrical contractor licenses.
+
+SIX ELECTRICAL SUB-VERTICALS (by NCCI code and risk profile):
+1. Residential Electrical (Inside Wiring): NCCI 5190 at ~$2.63/$100 national avg. Primary code for all inside wiring. State range: $1.16 (OR) to $6.85 (NY). Solo: $1,600–$5,700/yr. Small crew (2-5): $6,700–$31,000/yr. Mid-size (6-15): $22,000–$120,000+/yr.
+2. Commercial Electrical: Same NCCI 5190 but higher GL limits, umbrella/excess required. NECA members are union-shop — typically larger, higher premium. Mid-size accounts are the sweet spot.
+3. Low-Voltage / Data Cabling: NCCI 7600 at ~$1.50–$2.00/$100. SIGNIFICANTLY lower than 5190. Key misclassification opportunity: on $500K payroll, 5190→7600 split saves $3,400/yr. In NY: spread is $2.25+/$100 = $11,250+ savings on same $500K payroll. Requires contemporaneous time records or audit reclassification.
+4. Fire Alarm / Security: NCCI 7605 at ~$1.95/$100. Burglar/fire alarm, life safety systems. Lower rate than 5190.
+5. Solar PV / EV Charging: Fastest-growing segment. EVITP certification required for NEVI-funded ($5B) EV charger work — creates a public, trackable list. NABCEP certification for solar. IRA $8.8B home energy rebates creating new contractor entrants. WC code complexity: 5190 (inside wiring) vs 5551 (rooftop solar mounting — $9.90–$15.25+!) vs 3724 (ground-mount solar/heavy apparatus — $3.00–$6.00+). Classification determines whether a 10-person crew pays $15K or $60K+ in WC.
+6. Outside Line Construction: NCCI 7538 at $5.00–$12.00+/$100. Utility transmission/distribution, overhead + underground. Highest rate for electrical contractors. Interchange rule: employee doing BOTH 5190 and 7538 = ENTIRE payroll to 7538 (higher code), no exception.
+
+TEN PRIMARY NCCI CLASSIFICATIONS:
+- 5190 (Electrical Wiring Within Buildings & Drivers): $2.63 avg. PRIMARY code. No voltage distinction within inside work.
+- 7538 (Electric Light or Power Line Construction & Drivers): $5.00–$12.00+. Outside linemen, utility work.
+- 7605 (Burglar/Fire Alarm Installation/Repair): ~$1.95. Security systems, fire alarm, life safety.
+- 7600 (Telecommunications — Cable TV/Satellite/Data): ~$1.50–$2.00. Low-voltage, data cabling, structured wiring, fiber.
+- 3724 (Electrical Apparatus Installation/Repair): ~$3.00–$6.00+. Heavy machinery, ground-mount solar PV.
+- 5551 (Roofing — All Kinds & Drivers): $9.90–$15.25+. Rooftop solar panel MOUNTING — physical roofing exposure.
+- 9516 (Electronic Equipment Installation/Repair): ~$2.17. Home theater, AV, smart home, EV charger (pending bureau guidance).
+- 8810 (Clerical Office Employees): ~$0.08–$0.14. Office-only staff.
+- 8742 (Outside Sales Representatives): ~$0.20–$0.35. Sales-only, no field work.
+- 7380 (Drivers, Chauffeurs): Varies. Dedicated drivers only; split from governing code with records.
+
+SPLIT CLASSIFICATION DECISION TREE:
+Step 1: Identify all work types per employee during policy period.
+Step 2: If employee ONLY performs inside wiring (5190): entire payroll to 5190.
+Step 3: If employee ONLY performs low-voltage/data work (7600): entire payroll to 7600 IF detailed time records exist.
+Step 4: If employee performs BOTH 5190 and 7600 AND records document time: split payroll by verified hours.
+Step 5: If employee interchanges between 5190 and 7538 (outside line): ENTIRE payroll to 7538 (higher code), NO EXCEPTION.
+Step 6: If employee interchanges between 5190 and 5551 (rooftop solar): ENTIRE payroll to 5551, NO EXCEPTION.
+Step 7: Standard exceptions (8810, 8742, 7380) can always be split out with qualifying records.
+California only: Wage-based split — employees earning >= $36/hr classified to 5140; under $36/hr to 5190.
+AUDIT TRIGGER: Any payroll assigned to 8810 or 7600 without contemporaneous time records WILL be reclassified to 5190 at audit.
+
+STATE-SPECIFIC RATING BUREAU DEVIATIONS:
+CA (WCIRB): 5140 (>=$36/hr wage) / 5190 (<$36/hr) — unique wage-based split. 5195 for comm. cabling. 3724(2) for PV solar. Rate: $2.03–$3.82.
+NY (NYCIRB): 5190 at $6.85 — highest nationally. Loss cost $3.37 eff. 10/1/2025. 'All Operations to Completion' scope.
+NJ (NJCRIB): 5190 at $4.01 — 2nd highest. 7536 (Cable Installation) added as distinct NJ code.
+PA (PCRB): 3-digit codes — 0661 (Wiring), 0656 (Line Const), 0660 (Alarm). Does NOT use 4-digit NCCI codes.
+DE (DCRB): 3-digit codes — 0661, 0656, 0660, 0757 (Telecom). Same system as PA.
+TX: WC voluntary; expanded 5190 includes airport lighting, traffic signals, cathodic protection. $1.57/$100.
+OH (BWC): Monopolistic — state fund only, no private WC carriers.
+WA (L&I): Monopolistic — state fund only, no private WC carriers.
+
+FIFTEEN FREE DATA PIPELINES (priority order):
+1. CA CSLB Data Portal (C-10): ~285,000 licensees, bulk CSV download. Richest single source nationally. Bond + WC fields.
+2. WA L&I Open Data: Bulk download, insurance/bond status visible, status change tracking.
+3. OR CCB Search: Insurance company + expiration date visible. Playwright scraper (form-based, no anti-bot).
+4. IEC National Directory (~4,300 members): Employee count filter (0-5, 6-10, 11-20, 21-30, 31-50, 51+). Weekly delta for new members.
+5. NECA Chapter Directories (~4,000 members): Union-shop, higher avg premium. Build chapter-by-chapter (NorCal, ACC, WDC, Penn-Del-Jersey).
+6. OSHA NAICS 238210 Inspections: 3M+ inspections, updated daily. 10 arc flash incidents/day. Avg WC claim $61K+. Post-violation = urgent new coverage need.
+7. EPA RRP Certified Firm Database: Electricians are covered special trade contractors. Pre-1978 buildings. Pollution liability signal.
+8. EVITP Approved Contractor List: NEVI $5B program. Weekly delta detect new entries. New entries = contractors entering higher-liability EV work.
+9. NABCEP Professional Directory: Certified solar installation pros. New certs = new solar scope needing coverage gap analysis.
+10. IRA State Home Energy Rebate Registries: $8.8B allocation. CO HEAR (live Nov 2025), CA 'Switch Is On', OR ODOE.
+11. Building Permit Electrical Data: NYC DOB, LA DBS, SF DBI, Seattle DCI. Filter electrical permit type.
+12. SAM.gov NAICS 238210: Federal contractors needing bonding + Davis-Bacon WC compliance.
+13. DOE GRIP/Grid Deployment ($10.5B, 105 projects): Geographic signal for electrical contractor surge.
+14. NEC Adoption Tracking (citel.us): 17 states on NEC 2023. New adoption = CE surge + permit increases + insurance review cycles.
+15. FL DBPR/ECL, AZ ROC, NC NCBEEC, TX TDLR: Standard state license scrapes.
+
+LEAD SCORING (0-100, additive):
+OSHA Willful/Repeat <90 days +35, OSHA Serious <90 days +25, OSHA 91-180 days +15.
+EVITP new entry <30 days +30, EPA RRP new cert <60 days +20, NABCEP new cert <60 days +20.
+New license <90 days +25, License renewal due <60 days +20, License expired/lapsed +15.
+IRA/state rebate enrollment +20, State high-rate multiplier (NY/NJ/CA/FL) +10.
+Employee count 6-15 +10, Employee count 2-5 +5, Enrichment complete +5.
+Prior outreach no response 3+ attempts -10, Stop rule triggered -100.
+
+STATE PREMIUM MULTIPLIERS: NY 1.8-2.6x (highest WC $6.85), NJ 1.4-1.8x ($4.01), CA 1.3-1.6x (WCIRB + PAGA), FL 1.2-1.4x (hurricane), CT/MA 1.2-1.4x, TX 0.85-1.0x ($1.57 + non-subscriber), OR 0.85-1.0x ($1.16 lowest nationally).
+
+FIVE ELECTRICAL TRAFFIC GENERATORS:
+1. Arc Flash Risk Assessment Quiz: 7 questions about panel work, PPE compliance, arc flash studies → coverage gap analysis. OSHA 4472/4474/4475 (Nov 2024) changed standard of care. Goes viral in EC Facebook/LinkedIn groups.
+2. WC Code Optimizer — 5190 vs 7600 Split Calculator: Input payroll by work type → instant savings estimate. On $500K payroll: $3,400/yr savings nationally, $11,250+ in NY. Creates time-record documentation value proposition.
+3. EVITP New Entrant Alert Network: Weekly email alert when new contractors join EVITP list. Self-selected EV infrastructure audience = highest-value segment.
+4. NEC 2023 Compliance Checklist by State: Downloadable PDF per state. 17 states on NEC 2023. States newly adopting = target outreach. Position broker as compliance resource.
+5. 1099 Subcontractor COI Audit Tool: Input number of subs → audit exposure estimate. 1099 sub inclusion at WC audit is the largest uninsured cost exposure in the electrical trade. COI management = natural broker value proposition.
+
+MARKET DISRUPTION EVENTS 2024-2026:
+- Umbrella/excess capacity crisis: Nuclear verdicts in construction reached $2B in 2024. Electrical contractors assembling multi-layer programs.
+- Arc flash liability: OSHA 4472/4474/4475 (Nov 2024) changed standard of care. NFPA 70E 2024 edition updates. 10 arc flash incidents/day nationally.
+- EV/solar classification gaps: No dedicated NCCI code for EV charger installation. Classification by analogy — bureau guidance evolving.
+- FL tort reform (SB 236/HB 837): Reducing nuclear verdict exposure. Premium stabilization expected.
+- CO SB 25-165: New PV installer registration required by Dec 31 2026.
+- TX TDLR: New EV Charging Station program + new solar retailer registration Sept 2026.
+
+50-STATE ELECTRICAL LICENSING:
+Tier 1 (bulk data): CA (CSLB C-10, bulk CSV, ~285K licensees), WA (L&I open data, insurance/bond visible), OR (CCB, insurance expiration visible), CO (DORA, SB 25-165 PV registration), MN (DLI iMS, bond+insurance), FL (DBPR/ECL, ~18K, SB 1142 local→state Jul 2025), AZ (ROC, bond visible), NC (NCBEEC, ~15K).
+Tier 2 (standard search): TX (TDLR), GA, MI, NV, WI, OH (OCILB, $500K GL required), NJ, CT, TN, VA, MD, MA, LA, AL, SC, KY, IA, ID, NE (new online Jul 2025), UT, MT, NM, WY, AK, HI, MS, AR, OK, RI, DE, VT, NH, ME, SD, ND, WV.
+Tier 3 (no statewide license — local only): NY (NYC DOB NOW Feb 2026), PA (Philadelphia L&I, Pittsburgh, PCRB 3-digit codes), IL (Chicago DOB), IN (county/municipality), KS (municipality).
+
 === SHARED RULES ===
 
 MONOPOLISTIC WC STATES (OH, ND, WA, WY): WC placement impossible — all WC templates suppressed. Focus: GL, commercial auto, tools, umbrella only.
