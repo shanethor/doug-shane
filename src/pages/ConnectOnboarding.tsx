@@ -130,7 +130,8 @@ export default function ConnectOnboarding() {
       {/* Content */}
       <div className="flex-1 flex items-center justify-center px-4 py-8">
         <div
-          className={`w-full max-w-lg transition-all duration-500 ease-out ${fadeClass}`}
+          key={step}
+          className="w-full max-w-lg animate-fade-in"
         >
           {step === 0 && <WelcomeStep />}
           {step === 1 && <ThemeStep theme={theme} onThemeChange={handleThemeChange} />}
