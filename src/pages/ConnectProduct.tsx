@@ -130,6 +130,7 @@ export default function ConnectProduct() {
   // Determine which page to render based on path
   const path = location.pathname;
   const getPage = () => {
+    if (path.startsWith("/connect/dashboard")) return "dashboard";
     if (path.startsWith("/connect/property")) return "property";
     if (path.startsWith("/connect/intelligence")) return "intelligence";
     if (path.startsWith("/connect/rewards")) return "rewards";
