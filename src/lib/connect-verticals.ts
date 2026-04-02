@@ -438,6 +438,7 @@ IMPORTANT TERMINOLOGY: Never use 'carrier' alone — always 'motor carrier' (the
     coverageLines: ["GL", "Property", "WC", "Commercial Auto", "Umbrella", "EPLI", "Franchise-Specific E&O", "Business Income"],
     sageContext: "You are advising a franchise-focused producer. Key triggers: new FTC Franchise Disclosure Document (FDD) filings, new franchise entity formations, multi-unit expansion permits. Coverage nuances: franchise agreements often mandate specific coverage minimums, multi-location property schedules, EPLI exposure increases with unit count.",
     leadSources: ["FTC Franchise Disclosure Documents", "Secretary of State franchise entity filings", "Multi-unit building permits"],
+    pricing: { basePrice: 20, platinumMax: 60, bronzeMin: 11, avgPremium: 7800, volumePerMonth: 400, freeLeadsPerMonth: 5 },
   },
 ];
 
