@@ -152,6 +152,10 @@ export const CONNECT_VERTICALS: ConnectVerticalConfig[] = [
       "Workers' Compensation (NCCI 5536 — Duct Fabrication, NY/TX primary)",
       "Workers' Compensation (NCCI 3724 — Commercial Refrigeration)",
       "Workers' Compensation (NCCI 9014 — Duct Cleaning / IAQ)",
+      "Workers' Compensation (NCCI 5183 — Plumbing All Operations)",
+      "Workers' Compensation (NCCI 6325 — Sewer Construction Below Ground)",
+      "Workers' Compensation (NCCI 5185 — Gas Fitting)",
+      "Workers' Compensation (NCCI 5191 — Irrigation/Sprinkler)",
       "Commercial Auto",
       "Tools & Equipment / Inland Marine",
       "Builder's Risk (per-project, commercial jobs)",
@@ -159,8 +163,9 @@ export const CONNECT_VERTICALS: ConnectVerticalConfig[] = [
       "Surety Bond",
       "Completed Operations",
       "Products Liability (Solar / Equipment Failures)",
-      "Professional Liability / E&O (Commercial Mechanical)",
-      "BOP (Residential HVAC)",
+      "Professional Liability / E&O (Commercial Mechanical / Design-Build Plumbing)",
+      "BOP (Residential HVAC / Small Plumbing)",
+      "Contractors Pollution Liability (CPL — Gas Fitting, Sewer, Grease Trap)",
     ],
     sageContext: `You are advising a contractor-focused insurance producer with deep expertise in roofing AND HVAC contractor P&C insurance. P&C lines only — health insurance, ACA, and employee benefits are excluded.
 
