@@ -78,7 +78,7 @@ function getFreeLeads(baseFreeLeads: number, hasAgent: boolean) {
   return hasAgent ? baseFreeLeads * 2 : baseFreeLeads;
 }
 
-function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasAgent, initialSpecializations, showAllVerticals, isMaster, userStates }: {
+function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasAgent, initialSpecializations, showAllVerticals, isMaster, userStates, userSubCategories }: {
   onGenerate: (opts: any) => void;
   userIndustry: string;
   isSubscriber: boolean;
@@ -87,6 +87,7 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasAgent, in
   showAllVerticals?: boolean;
   isMaster?: boolean;
   userStates?: string[] | null;
+  userSubCategories?: string[] | null;
 }) {
   const pricing = getVerticalPricing(userIndustry);
   const packs = getLeadPacks(pricing.basePrice, isSubscriber, hasAgent);
