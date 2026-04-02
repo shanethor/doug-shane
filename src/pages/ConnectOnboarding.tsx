@@ -105,10 +105,6 @@ export default function ConnectOnboarding() {
     }
   };
 
-  const fadeClass = animateIn
-    ? "opacity-0 translate-y-4"
-    : "opacity-100 translate-y-0";
-
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
       {/* Progress bar */}
