@@ -783,6 +783,7 @@ For each business, determine:
       "MassGIS Parcels": "property",
       "NJ MOD-IV / Sales": "property",
       "RI Coastal (FEMA)": "flood",
+      "Google Maps": "google_maps",
     };
 
     // Only keep leads that have at least email or phone
