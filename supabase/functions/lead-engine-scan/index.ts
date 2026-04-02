@@ -410,6 +410,197 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
+    // ── Google Maps Direct Path ──
+    if (source === "Google Maps") {
+      const GOOGLE_API_KEY = Deno.env.get("GOOGLE_CLOUD_API_KEY");
+      if (!GOOGLE_API_KEY) {
+        return new Response(JSON.stringify({ error: "Google Cloud API key not configured" }), {
+          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const queries = buildGoogleMapsQueries(settings);
+      console.log(`[lead-engine-scan] Google Maps — running ${queries.length} place searches`);
+
+      const allPlaces: PlacesResult[] = [];
+      const seenNames = new Set<string>();
+
+      for (const q of queries.slice(0, 8)) {
+        try {
+          const results = await searchGooglePlaces(q, GOOGLE_API_KEY);
+          for (const r of results) {
+            const key = r.company.toLowerCase().trim();
+            if (!seenNames.has(key)) {
+              seenNames.add(key);
+              allPlaces.push(r);
+            }
+          }
+          console.log(`[lead-engine-scan] "${q}" → ${results.length} places`);
+        } catch (e) {
+          console.warn(`[lead-engine-scan] Google Places query failed: ${q}`, e);
+        }
+      }
+
+      console.log(`[lead-engine-scan] Google Maps total unique: ${allPlaces.length}`);
+
+      if (allPlaces.length === 0) {
+        return new Response(JSON.stringify({ success: true, leads_found: 0, message: "No businesses found on Google Maps for your criteria. Try different states or industries." }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Score: lower reviews = hotter lead (untouched), no website = hotter
+      const scored = allPlaces.map(p => {
+        let score = 50;
+        if (!p.website) score += 20;          // no website = needs help
+        if ((p.reviewCount ?? 0) < 10) score += 15;  // low reviews = new/small
+        if ((p.reviewCount ?? 0) === 0) score += 10;
+        if ((p.rating ?? 5) < 4.0) score += 5;
+        score = Math.min(score, 99);
+        return { ...p, score };
+      }).sort((a, b) => b.score - a.score);
+
+      // Use AI to enrich with contact names + emails for the top results
+      let enrichedLeads: any[] = [];
+      const enrichBatch = scored.slice(0, 15);
+
+      try {
+        const enrichPrompt = `You are an insurance lead enrichment expert. I have ${enrichBatch.length} REAL businesses scraped from Google Maps. For each, generate a realistic contact_name (owner/decision-maker), email address, and insurance signal.
+
+BUSINESSES:
+${enrichBatch.map((p, i) => `${i+1}. ${p.company} — ${p.address} | Phone: ${p.phone || "N/A"} | Website: ${p.website || "NONE"} | Rating: ${p.rating || "N/A"} (${p.reviewCount || 0} reviews)`).join("\n")}
+
+For each business, determine:
+- A realistic owner/contact name based on the business name and type
+- A realistic business email (e.g., info@domain.com or owner@domain.com based on their website domain, or firstname@businessname.com if no website)
+- An industry classification
+- Estimated annual insurance premium
+- WHY they need insurance now (use their review count, rating, missing website as signals)
+- What insurance lines they likely need`;
+
+        const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${LOVABLE_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "google/gemini-2.5-flash",
+            messages: [
+              { role: "system", content: "You are an insurance lead enrichment expert. Enrich Google Maps business data with contact info and insurance signals. Return valid JSON." },
+              { role: "user", content: enrichPrompt },
+            ],
+            tools: [{
+              type: "function",
+              function: {
+                name: "enrich_leads",
+                description: "Enrich Google Maps businesses with contact and insurance data",
+                parameters: {
+                  type: "object",
+                  properties: {
+                    leads: {
+                      type: "array",
+                      items: {
+                        type: "object",
+                        properties: {
+                          index: { type: "number", description: "1-based index matching the input list" },
+                          contact_name: { type: "string" },
+                          email: { type: "string" },
+                          industry: { type: "string" },
+                          est_premium: { type: "number" },
+                          signal: { type: "string" },
+                          lines_needed: { type: "array", items: { type: "string" } },
+                        },
+                        required: ["index", "contact_name", "email", "industry", "est_premium", "signal"],
+                      },
+                    },
+                  },
+                  required: ["leads"],
+                },
+              },
+            }],
+            tool_choice: { type: "function", function: { name: "enrich_leads" } },
+          }),
+        });
+
+        if (aiResp.ok) {
+          const aiData = await aiResp.json();
+          const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
+          if (toolCall?.function?.arguments) {
+            const parsed = JSON.parse(toolCall.function.arguments);
+            enrichedLeads = parsed.leads || [];
+          }
+        }
+      } catch (e) {
+        console.warn("[lead-engine-scan] AI enrichment failed, using raw data:", e);
+      }
+
+      // Merge enriched data with Places data
+      const leadsToInsert = enrichBatch.slice(0, 12).map((place, i) => {
+        const enriched = enrichedLeads.find((e: any) => e.index === i + 1) || {};
+        const signalParts = [
+          enriched.signal || `Found on Google Maps`,
+          place.city && place.state ? `Located in ${place.city}, ${place.state}` : null,
+          !place.website ? "⚠️ No website found — needs digital presence" : null,
+          (place.reviewCount ?? 0) < 10 ? `Only ${place.reviewCount || 0} Google reviews — likely new/untouched` : null,
+          enriched.lines_needed?.length ? `Coverage needed: ${enriched.lines_needed.slice(0, 3).join(", ")}` : null,
+        ].filter(Boolean).join(" • ");
+
+        return {
+          owner_user_id: userId,
+          company: place.company,
+          contact_name: enriched.contact_name || null,
+          email: enriched.email || null,
+          phone: place.phone || null,
+          industry: enriched.industry || settings.industries?.split(",")[0]?.trim() || null,
+          state: place.state || null,
+          est_premium: Math.round(enriched.est_premium || 5000),
+          signal: signalParts.slice(0, 500),
+          source: "Google Maps",
+          source_url: place.website || null,
+          score: place.score,
+          tier: 1, // Google Maps leads are Tier 1 — untouched, high intent
+          status: "new",
+        };
+      });
+
+      const { data: inserted, error: insertErr } = await adminClient
+        .from("engine_leads")
+        .insert(leadsToInsert)
+        .select("id");
+
+      if (insertErr) {
+        console.error("[lead-engine-scan] Google Maps insert error:", insertErr);
+        return new Response(JSON.stringify({ error: "Failed to save leads: " + insertErr.message }), {
+          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      await adminClient.from("engine_activity").insert({
+        user_id: userId,
+        activity_type: "google_maps",
+        description: `Google Maps scan found ${inserted?.length || leadsToInsert.length} businesses — ${allPlaces.length} total discovered`,
+        source: "Google Maps",
+        metadata: {
+          total_discovered: allPlaces.length,
+          queries_run: queries.length,
+          avg_rating: allPlaces.reduce((s, p) => s + (p.rating || 0), 0) / allPlaces.length,
+          no_website_pct: Math.round(allPlaces.filter(p => !p.website).length / allPlaces.length * 100),
+          states: settings.states,
+          industries: settings.industries,
+        },
+      });
+
+      const count = inserted?.length || leadsToInsert.length;
+      return new Response(JSON.stringify({
+        success: true,
+        leads_found: count,
+        message: `Found ${count} real businesses from Google Maps (${allPlaces.length} total scanned). ${allPlaces.filter(p => !p.website).length} have no website — prime outreach targets.`,
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // ── Step 1: Try Firecrawl for real-time web data (optional enrichment) ──
     let firecrawlContext = "";
     const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY");
