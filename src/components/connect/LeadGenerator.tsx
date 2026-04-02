@@ -78,13 +78,15 @@ function getFreeLeads(baseFreeLeads: number, hasAgent: boolean) {
   return hasAgent ? baseFreeLeads * 2 : baseFreeLeads;
 }
 
-function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasAgent, initialSpecializations, showAllVerticals }: {
+function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasAgent, initialSpecializations, showAllVerticals, isMaster, userStates }: {
   onGenerate: (opts: any) => void;
   userIndustry: string;
   isSubscriber: boolean;
   hasAgent: boolean;
   initialSpecializations?: string[] | null;
   showAllVerticals?: boolean;
+  isMaster?: boolean;
+  userStates?: string[] | null;
 }) {
   const pricing = getVerticalPricing(userIndustry);
   const packs = getLeadPacks(pricing.basePrice, isSubscriber, hasAgent);
@@ -99,7 +101,10 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasAgent, in
     return map;
   }, [availableVerticals]);
 
-  const [geo, setGeo] = useState("All States");
+  const [geo, setGeo] = useState(() => {
+    if (userStates?.length === 1) return userStates[0];
+    return "All States";
+  });
   const [selectedVerticals, setSelectedVerticals] = useState<string[]>(() => {
     if (initialSpecializations?.length) {
       // Filter to only those that are valid for this industry
@@ -163,7 +168,9 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasAgent, in
     setGenProgress(0);
     setGenStep("Initializing scan…");
     try {
-      const states = geo === "All States" ? [] : [geo];
+      const states = geo === "All States" 
+        ? (userStates?.length ? userStates : []) 
+        : [geo];
       const settings: Record<string, string> = {
         states: states.join(", ") || "NY, CA, TX, FL",
         industries: pricing.label,
@@ -393,64 +400,97 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasAgent, in
         </CardContent>
       </Card>
 
-      {/* Generate controls */}
+      {/* Targeting — master only */}
+      {isMaster && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Target className="h-4 w-4 text-primary" />
+              Targeting
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">Target Geography</label>
+                <Select value={geo} onValueChange={setGeo}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent className="max-h-60">
+                    {US_STATES.map((st) => <SelectItem key={st} value={st}>{st}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">
+                    Focus Sources ({activeSources.length} available)
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const allKeys = activeSources.map(s => s.key);
+                      setFocuses(prev => prev.length === allKeys.length ? [allKeys[0]] : allKeys);
+                    }}
+                    className="text-[10px] font-medium text-primary hover:underline"
+                  >
+                    {focuses.length === activeSources.length ? "Deselect all" : "Select all"}
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 gap-2 max-h-[320px] overflow-y-auto pr-1">
+                  {activeSources.map(({ key, label, icon }) => {
+                    const Icon = ICON_MAP[icon] || FileText;
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => toggleFocus(key)}
+                        className={`flex items-center gap-2 rounded-lg border p-2.5 text-left text-xs font-medium transition-all ${
+                          focuses.includes(key)
+                            ? "border-primary bg-primary/5 text-foreground ring-1 ring-primary/20"
+                            : "border-border text-muted-foreground hover:border-primary/40"
+                        }`}
+                      >
+                        <Icon className={`h-3.5 w-3.5 shrink-0 ${focuses.includes(key) ? "text-primary" : ""}`} />
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="text-[10px] text-muted-foreground mt-1">{focuses.length} source{focuses.length !== 1 ? "s" : ""} selected</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* State filter — non-master users */}
+      {!isMaster && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <MapPin className="h-4 w-4 text-primary" />
+              Geography
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Select value={geo} onValueChange={setGeo}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent className="max-h-60">
+                {US_STATES.map((st) => <SelectItem key={st} value={st}>{st}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            {userStates?.length ? (
+              <p className="text-[10px] text-muted-foreground mt-2">
+                Your states: {userStates.join(", ")}
+              </p>
+            ) : null}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Generate */}
       <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <Target className="h-4 w-4 text-primary" />
-            Targeting
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-3">
-            <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">Target Geography</label>
-              <Select value={geo} onValueChange={setGeo}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent className="max-h-60">
-                  {US_STATES.map((st) => <SelectItem key={st} value={st}>{st}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="text-xs font-medium text-muted-foreground">
-                  Focus Sources ({activeSources.length} available)
-                </label>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const allKeys = activeSources.map(s => s.key);
-                    setFocuses(prev => prev.length === allKeys.length ? [allKeys[0]] : allKeys);
-                  }}
-                  className="text-[10px] font-medium text-primary hover:underline"
-                >
-                  {focuses.length === activeSources.length ? "Deselect all" : "Select all"}
-                </button>
-              </div>
-              <div className="grid grid-cols-2 gap-2 max-h-[320px] overflow-y-auto pr-1">
-                {activeSources.map(({ key, label, icon }) => {
-                  const Icon = ICON_MAP[icon] || FileText;
-                  return (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => toggleFocus(key)}
-                      className={`flex items-center gap-2 rounded-lg border p-2.5 text-left text-xs font-medium transition-all ${
-                        focuses.includes(key)
-                          ? "border-primary bg-primary/5 text-foreground ring-1 ring-primary/20"
-                          : "border-border text-muted-foreground hover:border-primary/40"
-                      }`}
-                    >
-                      <Icon className={`h-3.5 w-3.5 shrink-0 ${focuses.includes(key) ? "text-primary" : ""}`} />
-                      {label}
-                    </button>
-                  );
-                })}
-              </div>
-              <p className="text-[10px] text-muted-foreground mt-1">{focuses.length} source{focuses.length !== 1 ? "s" : ""} selected</p>
-            </div>
-          </div>
+        <CardContent className="pt-4 space-y-3">
           {generating ? (
             <div className="space-y-2">
               <div className="flex items-center justify-between text-xs">
@@ -466,8 +506,8 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasAgent, in
               </p>
             </div>
           ) : (
-            <Button onClick={handleGenerate} className="w-full gap-1.5">
-              <Zap className="h-4 w-4" /> Generate Leads
+            <Button onClick={handleGenerate} className="w-full gap-1.5" size="lg">
+              <Zap className="h-4 w-4" /> Generate Free Leads
             </Button>
           )}
           <p className="text-[10px] text-muted-foreground text-center">
@@ -767,9 +807,10 @@ function ResultsTable() {
             /* ── Mobile: Card-based layout ── */
             <div className="space-y-2">
               {displayLeads.map((lead: EngineLead) => (
-                <div
+                 <div
                   key={lead.id}
-                  className={`rounded-lg border p-3 space-y-2 transition-colors ${selectedIds.has(lead.id) ? "border-primary/40 bg-primary/5" : "border-border"}`}
+                  className={`rounded-lg border p-3 space-y-2 transition-all animate-fade-in ${selectedIds.has(lead.id) ? "border-primary/40 bg-primary/5" : "border-border"}`}
+                  style={{ animationDelay: `${(displayLeads.indexOf(lead)) * 60}ms`, animationFillMode: "both" }}
                 >
                   <div className="flex items-start gap-2">
                     <input
@@ -853,7 +894,7 @@ function ResultsTable() {
                 </TableHeader>
                 <TableBody>
                   {displayLeads.map((lead: EngineLead) => (
-                    <TableRow key={lead.id} className={selectedIds.has(lead.id) ? "bg-primary/5" : ""}>
+                    <TableRow key={lead.id} className={`animate-fade-in ${selectedIds.has(lead.id) ? "bg-primary/5" : ""}`} style={{ animationDelay: `${displayLeads.indexOf(lead) * 60}ms`, animationFillMode: "both" }}>
                       <TableCell className="py-2 w-8">
                         <input type="checkbox" checked={selectedIds.has(lead.id)} onChange={() => toggleOne(lead.id)} className="h-3.5 w-3.5 rounded border-border accent-primary cursor-pointer" />
                       </TableCell>
@@ -938,6 +979,102 @@ function ResultsTable() {
   );
 }
 
+/* ── Purchase section shown after free leads generated ── */
+function PurchaseSection({ userIndustry, isSubscriber, hasAgent }: {
+  userIndustry: string;
+  isSubscriber: boolean;
+  hasAgent: boolean;
+}) {
+  const pricing = getVerticalPricing(userIndustry);
+  const packs = getLeadPacks(pricing.basePrice, isSubscriber, hasAgent);
+  const [selectedPack, setSelectedPack] = useState(50);
+  const [purchasing, setPurchasing] = useState(false);
+
+  const handlePurchase = async () => {
+    setPurchasing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("create-lead-checkout", {
+        body: { pack: selectedPack },
+      });
+      if (error) throw new Error(error.message);
+      if (data?.url) window.open(data.url, "_blank");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to start checkout");
+    } finally {
+      setPurchasing(false);
+    }
+  };
+
+  const selectedPackData = packs.find(p => p.leads === selectedPack);
+
+  return (
+    <Card className="animate-fade-in">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-sm flex items-center gap-2">
+          <Rocket className="h-4 w-4 text-primary" />
+          Want more? Purchase {pricing.label} Lead Packs
+        </CardTitle>
+        <p className="text-[10px] text-muted-foreground">
+          Base price: ${pricing.basePrice}/lead • Avg premium: ${pricing.avgPremium.toLocaleString()} • All leads exclusive
+        </p>
+        {isSubscriber ? (
+          <Badge variant="outline" className={`text-[9px] mt-1 ${hasAgent ? "text-orange-500 border-orange-500/30" : "text-emerald-600 border-emerald-600/30"}`}>
+            {hasAgent ? "🚀 Agent — 50% discount" : "🎉 Connect — 40% discount"}
+          </Badge>
+        ) : (
+          <Badge variant="outline" className="text-[9px] mt-1 text-amber-600 border-amber-600/30">
+            <Lock className="h-2.5 w-2.5 mr-1" /> Subscribe for 40% off
+          </Badge>
+        )}
+      </CardHeader>
+      <CardContent className="space-y-2">
+        {packs.map((pack) => (
+          <button
+            key={pack.leads}
+            onClick={() => setSelectedPack(pack.leads)}
+            className={`w-full flex items-center justify-between rounded-lg border p-3 text-left transition-all ${
+              selectedPack === pack.leads
+                ? "border-primary bg-primary/5 ring-1 ring-primary/20"
+                : "border-border hover:border-primary/40 hover:bg-muted/30"
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <div className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold ${
+                selectedPack === pack.leads ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+              }`}>
+                {pack.leads}
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-semibold">{pack.leads} Leads</span>
+                  {pack.popular && <Badge className="text-[9px] px-1.5 py-0">Most Popular</Badge>}
+                  {isSubscriber && <Badge variant="secondary" className={`text-[9px] px-1.5 py-0 ${hasAgent ? "text-orange-500" : "text-emerald-600"}`}>{hasAgent ? "50% Off" : "40% Off"}</Badge>}
+                </div>
+                <span className="text-[10px] text-muted-foreground">
+                  ${Math.round(pack.price / pack.leads)}/lead
+                </span>
+              </div>
+            </div>
+            <div className="text-right">
+              {isSubscriber && (
+                <span className="text-[11px] text-muted-foreground line-through">${pack.originalPrice.toLocaleString()}</span>
+              )}
+              <span className="text-sm font-bold ml-1.5">${pack.price.toLocaleString()}</span>
+            </div>
+          </button>
+        ))}
+        <Button onClick={handlePurchase} disabled={purchasing} className="w-full gap-1.5 mt-2">
+          {purchasing ? (
+            <><Loader2 className="h-4 w-4 animate-spin" /> Opening checkout…</>
+          ) : (
+            <>Purchase {selectedPack} Leads — ${selectedPackData?.price.toLocaleString()}</>
+          )}
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
 const MASTER_EMAILS = ["shane@houseofthor.com", "dwenz17@gmail.com"];
 
 export default function LeadGenerator() {
@@ -945,8 +1082,10 @@ export default function LeadGenerator() {
   const { subscribed, hasAgent } = useSubscription();
   const [userIndustry, setUserIndustry] = useState<string>("general");
   const [userSpecializations, setUserSpecializations] = useState<string[] | null>(null);
+  const [userStates, setUserStates] = useState<string[] | null>(null);
   const [isMaster, setIsMaster] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [hasGenerated, setHasGenerated] = useState(false);
   const [showAgentDrip, setShowAgentDrip] = useState(false);
   const { data: studioQual } = useStudioQualification();
 
@@ -960,7 +1099,6 @@ export default function LeadGenerator() {
           .select("industry, specializations")
           .eq("user_id", user.id)
           .maybeSingle();
-        // Use connect_vertical first, fall back to industry
         const connectVertical = (profile as any)?.connect_vertical;
         if (connectVertical) {
           setUserIndustry(connectVertical);
@@ -970,10 +1108,19 @@ export default function LeadGenerator() {
         if ((profile as any)?.specializations?.length) {
           setUserSpecializations((profile as any).specializations);
         }
+        if ((profile as any)?.states_of_operation?.length) {
+          setUserStates((profile as any).states_of_operation);
+        }
       }
       setLoading(false);
     })();
   }, []);
+
+  // Check if leads already exist (so we know they've generated before)
+  const { data: existingLeads } = useEngineLeads();
+  useEffect(() => {
+    if (existingLeads?.length) setHasGenerated(true);
+  }, [existingLeads]);
 
   // Drip Aura Agent upsell popup for qualified non-Agent users
   useEffect(() => {
@@ -985,6 +1132,7 @@ export default function LeadGenerator() {
   }, [studioQual?.qualified, hasAgent]);
 
   const handleGenerate = (_opts: any) => {
+    setHasGenerated(true);
     setTimeout(() => qc.invalidateQueries({ queryKey: ["engine-leads"] }), 1500);
     setTimeout(() => qc.invalidateQueries({ queryKey: ["engine-leads"] }), 4000);
   };
@@ -1010,10 +1158,23 @@ export default function LeadGenerator() {
 
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-1 space-y-4">
-          <GenerateControls onGenerate={handleGenerate} userIndustry={userIndustry} isSubscriber={subscribed} hasAgent={hasAgent} initialSpecializations={userSpecializations} showAllVerticals={isMaster} />
+          <GenerateControls
+            onGenerate={handleGenerate}
+            userIndustry={userIndustry}
+            isSubscriber={subscribed}
+            hasAgent={hasAgent}
+            initialSpecializations={userSpecializations}
+            showAllVerticals={isMaster}
+            isMaster={isMaster}
+            userStates={userStates}
+          />
         </div>
         <div className="lg:col-span-2 space-y-4">
           <ResultsTable />
+          {/* Show purchase options only after generating free leads */}
+          {hasGenerated && (
+            <PurchaseSection userIndustry={userIndustry} isSubscriber={subscribed} hasAgent={hasAgent} />
+          )}
           {showPromo && <AuraAgentLeadPromo />}
         </div>
       </div>

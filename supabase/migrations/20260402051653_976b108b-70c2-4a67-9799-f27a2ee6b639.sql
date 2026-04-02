@@ -1,0 +1,1 @@
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS states_of_operation text[] DEFAULT '{}'::text[];
