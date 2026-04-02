@@ -15,7 +15,7 @@ const MASTER_EMAILS = [
 ];
 
 // Pages that are always accessible (not gated)
-const UNGATED_PAGES = ["pipeline", "leads", "studio", "property", "sage"];
+const UNGATED_PAGES = ["pipeline", "leads", "studio", "property", "sage", "create"];
 
 export function useEarlyAccessWhitelist() {
   const { user } = useAuth();
