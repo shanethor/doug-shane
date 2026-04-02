@@ -400,64 +400,97 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasAgent, in
         </CardContent>
       </Card>
 
-      {/* Generate controls */}
+      {/* Targeting — master only */}
+      {isMaster && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Target className="h-4 w-4 text-primary" />
+              Targeting
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">Target Geography</label>
+                <Select value={geo} onValueChange={setGeo}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent className="max-h-60">
+                    {US_STATES.map((st) => <SelectItem key={st} value={st}>{st}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">
+                    Focus Sources ({activeSources.length} available)
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const allKeys = activeSources.map(s => s.key);
+                      setFocuses(prev => prev.length === allKeys.length ? [allKeys[0]] : allKeys);
+                    }}
+                    className="text-[10px] font-medium text-primary hover:underline"
+                  >
+                    {focuses.length === activeSources.length ? "Deselect all" : "Select all"}
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 gap-2 max-h-[320px] overflow-y-auto pr-1">
+                  {activeSources.map(({ key, label, icon }) => {
+                    const Icon = ICON_MAP[icon] || FileText;
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => toggleFocus(key)}
+                        className={`flex items-center gap-2 rounded-lg border p-2.5 text-left text-xs font-medium transition-all ${
+                          focuses.includes(key)
+                            ? "border-primary bg-primary/5 text-foreground ring-1 ring-primary/20"
+                            : "border-border text-muted-foreground hover:border-primary/40"
+                        }`}
+                      >
+                        <Icon className={`h-3.5 w-3.5 shrink-0 ${focuses.includes(key) ? "text-primary" : ""}`} />
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="text-[10px] text-muted-foreground mt-1">{focuses.length} source{focuses.length !== 1 ? "s" : ""} selected</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* State filter — non-master users */}
+      {!isMaster && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm flex items-center gap-2">
+              <MapPin className="h-4 w-4 text-primary" />
+              Geography
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Select value={geo} onValueChange={setGeo}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent className="max-h-60">
+                {US_STATES.map((st) => <SelectItem key={st} value={st}>{st}</SelectItem>)}
+              </SelectContent>
+            </Select>
+            {userStates?.length ? (
+              <p className="text-[10px] text-muted-foreground mt-2">
+                Your states: {userStates.join(", ")}
+              </p>
+            ) : null}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Generate */}
       <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <Target className="h-4 w-4 text-primary" />
-            Targeting
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-3">
-            <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">Target Geography</label>
-              <Select value={geo} onValueChange={setGeo}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent className="max-h-60">
-                  {US_STATES.map((st) => <SelectItem key={st} value={st}>{st}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="text-xs font-medium text-muted-foreground">
-                  Focus Sources ({activeSources.length} available)
-                </label>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const allKeys = activeSources.map(s => s.key);
-                    setFocuses(prev => prev.length === allKeys.length ? [allKeys[0]] : allKeys);
-                  }}
-                  className="text-[10px] font-medium text-primary hover:underline"
-                >
-                  {focuses.length === activeSources.length ? "Deselect all" : "Select all"}
-                </button>
-              </div>
-              <div className="grid grid-cols-2 gap-2 max-h-[320px] overflow-y-auto pr-1">
-                {activeSources.map(({ key, label, icon }) => {
-                  const Icon = ICON_MAP[icon] || FileText;
-                  return (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => toggleFocus(key)}
-                      className={`flex items-center gap-2 rounded-lg border p-2.5 text-left text-xs font-medium transition-all ${
-                        focuses.includes(key)
-                          ? "border-primary bg-primary/5 text-foreground ring-1 ring-primary/20"
-                          : "border-border text-muted-foreground hover:border-primary/40"
-                      }`}
-                    >
-                      <Icon className={`h-3.5 w-3.5 shrink-0 ${focuses.includes(key) ? "text-primary" : ""}`} />
-                      {label}
-                    </button>
-                  );
-                })}
-              </div>
-              <p className="text-[10px] text-muted-foreground mt-1">{focuses.length} source{focuses.length !== 1 ? "s" : ""} selected</p>
-            </div>
-          </div>
+        <CardContent className="pt-4 space-y-3">
           {generating ? (
             <div className="space-y-2">
               <div className="flex items-center justify-between text-xs">
@@ -473,8 +506,8 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasAgent, in
               </p>
             </div>
           ) : (
-            <Button onClick={handleGenerate} className="w-full gap-1.5">
-              <Zap className="h-4 w-4" /> Generate Leads
+            <Button onClick={handleGenerate} className="w-full gap-1.5" size="lg">
+              <Zap className="h-4 w-4" /> Generate Free Leads
             </Button>
           )}
           <p className="text-[10px] text-muted-foreground text-center">
