@@ -985,8 +985,10 @@ export default function LeadGenerator() {
   const { subscribed, hasAgent } = useSubscription();
   const [userIndustry, setUserIndustry] = useState<string>("general");
   const [userSpecializations, setUserSpecializations] = useState<string[] | null>(null);
+  const [userStates, setUserStates] = useState<string[] | null>(null);
   const [isMaster, setIsMaster] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [hasGenerated, setHasGenerated] = useState(false);
   const [showAgentDrip, setShowAgentDrip] = useState(false);
   const { data: studioQual } = useStudioQualification();
 
@@ -1000,7 +1002,6 @@ export default function LeadGenerator() {
           .select("industry, specializations")
           .eq("user_id", user.id)
           .maybeSingle();
-        // Use connect_vertical first, fall back to industry
         const connectVertical = (profile as any)?.connect_vertical;
         if (connectVertical) {
           setUserIndustry(connectVertical);
@@ -1010,10 +1011,19 @@ export default function LeadGenerator() {
         if ((profile as any)?.specializations?.length) {
           setUserSpecializations((profile as any).specializations);
         }
+        if ((profile as any)?.states_of_operation?.length) {
+          setUserStates((profile as any).states_of_operation);
+        }
       }
       setLoading(false);
     })();
   }, []);
+
+  // Check if leads already exist (so we know they've generated before)
+  const { data: existingLeads } = useEngineLeads();
+  useEffect(() => {
+    if (existingLeads?.length) setHasGenerated(true);
+  }, [existingLeads]);
 
   // Drip Aura Agent upsell popup for qualified non-Agent users
   useEffect(() => {
@@ -1025,6 +1035,7 @@ export default function LeadGenerator() {
   }, [studioQual?.qualified, hasAgent]);
 
   const handleGenerate = (_opts: any) => {
+    setHasGenerated(true);
     setTimeout(() => qc.invalidateQueries({ queryKey: ["engine-leads"] }), 1500);
     setTimeout(() => qc.invalidateQueries({ queryKey: ["engine-leads"] }), 4000);
   };
@@ -1050,10 +1061,23 @@ export default function LeadGenerator() {
 
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-1 space-y-4">
-          <GenerateControls onGenerate={handleGenerate} userIndustry={userIndustry} isSubscriber={subscribed} hasAgent={hasAgent} initialSpecializations={userSpecializations} showAllVerticals={isMaster} />
+          <GenerateControls
+            onGenerate={handleGenerate}
+            userIndustry={userIndustry}
+            isSubscriber={subscribed}
+            hasAgent={hasAgent}
+            initialSpecializations={userSpecializations}
+            showAllVerticals={isMaster}
+            isMaster={isMaster}
+            userStates={userStates}
+          />
         </div>
         <div className="lg:col-span-2 space-y-4">
           <ResultsTable />
+          {/* Show purchase options only after generating free leads */}
+          {hasGenerated && (
+            <PurchaseSection userIndustry={userIndustry} isSubscriber={subscribed} hasAgent={hasAgent} />
+          )}
           {showPromo && <AuraAgentLeadPromo />}
         </div>
       </div>
