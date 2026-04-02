@@ -273,7 +273,15 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasAgent, in
             {pricing.label} Lead Packages
           </CardTitle>
           <p className="text-[10px] text-muted-foreground">
-            Base price: ${pricing.basePrice}/lead • Enriched with full company & contact profiles
+            Base price: ${pricing.basePrice}/lead • Avg premium: ${pricing.avgPremium.toLocaleString()} • All leads exclusive (1 buyer)
+          </p>
+          <div className="flex flex-wrap gap-1 mt-1">
+            {LEAD_SCORE_TIERS.map(t => (
+              <Badge key={t.tier} variant="outline" className={`text-[9px] ${t.color} border-current/20`}>
+                {t.tier} {t.multiplier}×
+              </Badge>
+            ))}
+          </div>
           </p>
           {isSubscriber ? (
              <Badge variant="outline" className={`text-[9px] mt-1 ${hasAgent ? "text-orange-500 border-orange-500/30" : "text-emerald-600 border-emerald-600/30"}`}>
