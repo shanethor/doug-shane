@@ -281,22 +281,91 @@ IMPORTANT: Never use 'carrier' alone — always 'insurance company' or 'insurer'
   },
   {
     id: "healthcare",
-    label: "Healthcare",
-    description: "Medical, dental, allied health, mental health, med spas, and home health",
+    label: "Healthcare & Medical P&C",
+    description: "Physicians, dentists, APPs, allied health, med spas, group practices & ASCs — P&C lines only",
     icon: "Stethoscope",
     subVerticals: [
-      { id: "physicians", label: "Physicians", sources: ["npi_registry", "state_medical_boards"] },
-      { id: "dental", label: "Dental", sources: ["npi_registry", "state_dental_boards"] },
-      { id: "mental_health", label: "Mental Health", sources: ["npi_registry"] },
-      { id: "chiropractic_pt", label: "Chiropractic & PT", sources: ["npi_registry"] },
-      { id: "med_spa", label: "Med Spas & Aesthetics", sources: ["npi_registry", "sos_filings"] },
-      { id: "home_health", label: "Home Health Agencies", sources: ["npi_registry", "cms_enrollment"] },
-      { id: "nurse_practitioner", label: "Nurse Practitioners", sources: ["npi_registry"] },
+      { id: "sv1_high_surgical", label: "High-Surgical Physicians (OB/GYN, Neuro, Ortho)", sources: ["npi_registry", "state_medical_boards", "care_rrg", "proassurance_merger"] },
+      { id: "sv2_primary_care", label: "Primary Care & Non-Surgical MDs", sources: ["npi_registry", "state_medical_boards", "curi_cyber", "care_rrg"] },
+      { id: "sv3_dental", label: "Dentists & Oral Surgeons", sources: ["npi_registry", "state_dental_boards"] },
+      { id: "sv4_apps", label: "Nurse Practitioners & APPs", sources: ["npi_registry", "state_nursing_boards"] },
+      { id: "sv5_allied_health", label: "Allied Health (Chiro, PT, OT, Mental Health)", sources: ["npi_registry", "state_licensing"] },
+      { id: "sv6_med_spa", label: "Med Spas & Aesthetics", sources: ["npi_registry", "sos_filings", "state_medical_boards"] },
+      { id: "sv7_group_facilities", label: "Group Practices, ASCs & Facilities", sources: ["npi_registry", "cms_enrollment", "state_facility_licensing"] },
     ],
     pipelineStages: HEALTHCARE_STAGES,
-    coverageLines: ["Medical Malpractice (Occurrence vs Claims-Made)", "GL", "Cyber/HIPAA", "WC", "Property", "Business Interruption", "Employed Physicians", "Tail Coverage"],
-    sageContext: "You are advising a healthcare-focused producer. The NPI Registry is the most powerful free lead database — updated weekly with every new provider. Key triggers: new NPI enumeration dates (first-time malpractice buyers), DEA registrations, CMS Medicare enrollment. Critical: occurrence vs claims-made choice follows providers for life. Med spas have the fastest-growing malpractice claims rate. HIPAA creates mandatory cyber exposure.",
-    leadSources: ["NPI Registry (weekly bulk CSV)", "State medical/dental licensing boards", "DEA Controlled Substance Registration", "CMS Medicare Enrollment", "HHS OIG Exclusion List"],
+    coverageLines: [
+      "Medical Professional Liability (Occurrence)",
+      "Medical Professional Liability (Claims-Made)",
+      "Tail Coverage",
+      "General Liability",
+      "Commercial Property",
+      "Business Interruption",
+      "Cyber / HIPAA Liability",
+      "Workers' Compensation",
+      "Umbrella / Excess",
+      "EPLI",
+      "Dental Malpractice",
+      "Products Liability (Injectables — Med Spa)",
+      "Employed Physicians Liability",
+      "Entity / Vicarious Liability (Groups & ASCs)",
+    ],
+    sageContext: `You are advising a healthcare P&C insurance producer. You have deep knowledge of medical malpractice markets, NPI data, and healthcare regulatory triggers. P&C lines ONLY — health insurance, Medicare, ACA, and employee benefits are explicitly excluded.
+
+THE NPI REGISTRY — PRIMARY DATA SOURCE:
+The NPI Registry (download.cms.gov/nppes/NPI_Files.html) is the most powerful free lead database in commercial insurance. Every healthcare provider must register. CMS publishes a weekly update file with every new provider — all specialties, all 50 states. Nobody in commercial insurance lead generation monitors it as a trigger. Key fields: NPI, Entity Type Code (1=individual, 2=organization), Provider Name, Taxonomy Code (specialty), Practice Address, Enumeration Date, State, Phone. Taxonomy codes route each provider to the correct sub-vertical (SV-1 through SV-7).
+
+SEVEN SUB-VERTICALS (by risk profile):
+SV-1 High-Surgical Physicians: OB/GYN, Neurosurgery, Ortho, General Surgery, CV Surgery, Anesthesiology, Trauma. $30K–$226K+/yr premium (FL OB/GYN: $243,988 per AMA 2025). Hardest to place, nuclear verdict exposure extreme, E&S markets required in many states.
+SV-2 Primary Care & Non-Surgical MDs: Internal Med, Family Med, Peds, Psych, Cards, GI, Derm, Rads. $7.5K–$25K/yr. Highest volume, best lead-to-placement ratio. Most use claims-made — tail coverage is recurring revenue.
+SV-3 Dentists & Oral Surgeons: Separate carrier market from physicians. $2K–$15K/yr. Oral surgeons approach physician-level premiums.
+SV-4 NPs & APPs: CRNAs, NPs, PAs. $1K–$12K/yr. Most don't realize they need coverage if employer policy ends. Tail coverage on departure is the recurring trigger.
+SV-5 Allied Health: Chiro, PT, OT, Mental Health (LCSW, LMFT, Psych), Optometrists, Podiatrists, SLPs. $1K–$8K/yr. Mental health HIPAA cyber exposure is fastest-growing claim category.
+SV-6 Med Spas & Aesthetics: Physician-supervised or NP-run. $5K–$35K/yr. Fastest-growing malpractice claims category. Standard GL excludes medical procedures entirely. Most are catastrophically underinsured. Multiple admitted carriers have exited — E&S required.
+SV-7 Group Practices, ASCs, Urgent Care, Imaging, Dialysis, Behavioral Health Facilities: $25K–$500K+/yr. Entity-level with vicarious liability. Highest total premium per account.
+
+THREE ACTIVE MARKET DISRUPTION EVENTS:
+1. CARE RRG Collapse (April 2025): Placed into liquidation. ~1,300 physicians had policies canceled. RRGs are NOT covered by state guaranty funds — no safety net. Many still lack replacement coverage. Target: physicians in CARE's 46-state footprint, especially SE and Mid-Atlantic.
+2. Curi Embedded Cyber Exit (July 1, 2025): Curi (50,000+ providers, 46 states) discontinued embedded cyber coverage. Providers think they have cyber because they always did — they don't. Target: Curi policyholders in NC, VA, SC, GA, MD, OH, PA, FL, TX. Ongoing for 12-18 months.
+3. ProAssurance / Doctors Company Merger (March 2025): $1.3B acquisition. Policyholders experiencing underwriting reviews, coverage form changes, and non-renewals. Target: ProAssurance policyholders in TX, NY, OH, PA, NJ, IN, KY. 12-18 month window.
+
+STATE TIER SYSTEM:
+Tier 1 (Hottest — highest premiums, hardest placement): FL (OB/GYN $243,988), NY, IL (caps overturned), PA (PCF surcharge), GA (caps overturned).
+Tier 2 (High-Volume): TX, OH, NJ, MD, MA, CO, WA, MI.
+Tier 3 (All remaining 33 states — stable markets, full coverage from Day 1).
+PCF Surcharge States (special handling): IN, KS, LA, NE, NM, PA.
+
+CRITICAL COVERAGE NUANCES:
+- Claims-made vs occurrence is the most important underwriting decision in Year 1. The retroactive date determines what claims are covered — changing it later creates a gap.
+- Tail coverage typically costs 200% of annual premium. Providers don't budget for it.
+- GL specifically excludes medical procedures — med spas with only GL are catastrophically exposed.
+- HIPAA creates mandatory cyber exposure for all covered entities. A single breach can cost $200K+ to remediate.
+- WC class codes for medical practices are frequently wrong (overclassified) — free WC class code audit is a powerful lead magnet.
+- Entity-level coverage for group practices includes vicarious liability — the entity is liable for all employed providers' acts.
+
+FREE DATA SOURCES:
+- CMS NPPES NPI Weekly Update File — free, weekly, no auth (download.cms.gov/nppes/NPI_Files.html)
+- HHS OCR Breach Portal — healthcare breaches affecting 500+ records (hhs.gov/hipaa)
+- State Medical/Dental/Nursing License Boards — most states have open data portals
+- DEA Controlled Substance Registration — federal registration data
+- CMS Medicare Enrollment — Organization NPI + enrollment triggers
+- HHS OIG Exclusion List — excluded providers need specialty coverage
+- State SOS filings — new medical entity formations
+
+OUTREACH TONE: Expert-to-expert. Healthcare providers are highly educated with strong BS detectors and limited time. Every touch delivers specific, verifiable market intelligence. No generic insurance language. Never close — always deliver value first.
+
+IMPORTANT: Never confuse 'carrier' (insurance company) with 'provider' (healthcare professional). Always specify 'insurance company' or 'insurer' for the underwriter.`,
+    leadSources: [
+      "CMS NPPES NPI Weekly Update File — every new healthcare provider, all 50 states (weekly, free)",
+      "HHS OCR Breach Portal — healthcare data breaches affecting 500+ records (daily, free)",
+      "State Medical / Dental / Nursing License Boards — new licenses, disciplinary actions (varies, free)",
+      "DEA Controlled Substance Registration — federal registration data (free)",
+      "CMS Medicare Enrollment — Organization NPI + enrollment triggers (free)",
+      "HHS OIG Exclusion List — excluded providers needing specialty coverage (monthly, free)",
+      "Google Places API — phone/website enrichment for practices (~$0.017/call)",
+      "CARE RRG Liquidation Docket — Vermont DFR public records (free)",
+      "Curi Broker FAQ — public cyber coverage exit confirmation (free)",
+    ],
     pricing: { basePrice: 35, platinumMax: 94, bronzeMin: 15, avgPremium: 18000, volumePerMonth: 300, freeLeadsPerMonth: 3 },
   },
   {
