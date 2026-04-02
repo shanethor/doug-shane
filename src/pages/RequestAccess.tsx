@@ -131,7 +131,7 @@ export default function RequestAccess() {
         return;
       }
 
-      // Save vertical and sub-verticals to profile
+      // Save vertical, sub-verticals, and states to profile
       if (data.user) {
         await supabase
           .from("profiles")
@@ -139,6 +139,7 @@ export default function RequestAccess() {
             industry: selectedVertical,
             connect_vertical: selectedVertical,
             specializations: selectedSubVerticals,
+            states_of_operation: selectedStates,
           } as any)
           .eq("user_id", data.user.id);
       }
