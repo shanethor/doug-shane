@@ -550,7 +550,7 @@ function VisionStep() {
 
       <div className="space-y-2.5 text-left max-w-sm mx-auto">
         {[
-          { label: "AURA Agent", desc: "A fully autonomous AI sales agent that manages outreach, follow-ups, and nurturing on your behalf.", status: "Coming Q3 2026" },
+          { label: "AURA Agent", desc: "A fully autonomous AI sales agent that manages outreach, follow-ups, and nurturing on your behalf.", status: "Live Beta" },
           { label: "Deep Pipeline Analytics", desc: "Predictive insights on deal velocity, conversion probability, and optimal follow-up timing.", status: "In Development" },
           { label: "Carrier & Partner Marketplace", desc: "Direct connections to carriers, wholesalers, and strategic partners — powered by your network data.", status: "Planned" },
           { label: "Mobile App", desc: "Full AURA Connect experience on iOS and Android with push notifications and voice commands.", status: "Planned" },
