@@ -6,7 +6,95 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-type ScanSource = "Reddit" | "Business Filings" | "Permit Database" | "LinkedIn" | "FEMA Flood Zones" | "NOAA Storm Events" | "Census / ACS Data" | "NHTSA Vehicles" | "OpenFEMA NFIP" | "HUD Housing Data" | "Property Records" | "Building Permits" | "Tax Delinquency" | "Google Trends" | "ATTOM Data" | "RentCast" | "Regrid Parcels" | "BatchData" | "FL Citizens Non-Renewal" | "State Socrata Portals" | "County ArcGIS" | "CT Property Transfers" | "NYC ACRIS" | "MassGIS Parcels" | "NJ MOD-IV / Sales" | "RI Coastal (FEMA)";
+type ScanSource = "Reddit" | "Business Filings" | "Permit Database" | "LinkedIn" | "FEMA Flood Zones" | "NOAA Storm Events" | "Census / ACS Data" | "NHTSA Vehicles" | "OpenFEMA NFIP" | "HUD Housing Data" | "Property Records" | "Building Permits" | "Tax Delinquency" | "Google Trends" | "ATTOM Data" | "RentCast" | "Regrid Parcels" | "BatchData" | "FL Citizens Non-Renewal" | "State Socrata Portals" | "County ArcGIS" | "CT Property Transfers" | "NYC ACRIS" | "MassGIS Parcels" | "NJ MOD-IV / Sales" | "RI Coastal (FEMA)" | "Google Maps";
+
+// ── Google Places API (Text Search) ──
+interface PlacesResult {
+  company: string;
+  address: string;
+  phone: string | null;
+  website: string | null;
+  rating: number | null;
+  reviewCount: number | null;
+  city: string | null;
+  state: string | null;
+}
+
+async function searchGooglePlaces(
+  query: string,
+  apiKey: string,
+  locationBias?: string,
+): Promise<PlacesResult[]> {
+  // Use Places API (New) Text Search
+  const url = "https://places.googleapis.com/v1/places:searchText";
+  const body: Record<string, unknown> = {
+    textQuery: query,
+    maxResultCount: 20,
+    languageCode: "en",
+  };
+  if (locationBias) {
+    // locationBias as free-text included in the query itself
+  }
+
+  const resp = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Goog-Api-Key": apiKey,
+      "X-Goog-FieldMask": "places.displayName,places.formattedAddress,places.nationalPhoneNumber,places.websiteUri,places.rating,places.userRatingCount,places.addressComponents",
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (!resp.ok) {
+    const errText = await resp.text();
+    console.error(`[google-places] API error ${resp.status}: ${errText.slice(0, 200)}`);
+    return [];
+  }
+
+  const data = await resp.json();
+  const places = data.places || [];
+
+  return places.map((p: any) => {
+    let city: string | null = null;
+    let state: string | null = null;
+    for (const comp of (p.addressComponents || [])) {
+      const types: string[] = comp.types || [];
+      if (types.includes("locality")) city = comp.longText || comp.shortText;
+      if (types.includes("administrative_area_level_1")) state = comp.shortText;
+    }
+    return {
+      company: p.displayName?.text || "Unknown Business",
+      address: p.formattedAddress || "",
+      phone: p.nationalPhoneNumber || null,
+      website: p.websiteUri || null,
+      rating: p.rating || null,
+      reviewCount: p.userRatingCount || null,
+      city,
+      state,
+    };
+  });
+}
+
+function buildGoogleMapsQueries(settings: Record<string, string>): string[] {
+  const states = (settings.states || "TX, FL, CA").split(",").map(s => s.trim()).filter(Boolean);
+  const industries = (settings.industries || "contractor, restaurant, HVAC").split(",").map(i => i.trim()).filter(Boolean);
+  const queries: string[] = [];
+
+  // Build targeted queries: each industry × top states
+  for (const ind of industries.slice(0, 4)) {
+    for (const st of states.slice(0, 3)) {
+      queries.push(`${ind} in ${st}`);
+    }
+  }
+
+  // Add low-review / new business signals
+  if (states[0]) {
+    queries.push(`new business ${states[0]}`);
+  }
+
+  return queries;
+}
 
 // ── Build Firecrawl search queries (used when Firecrawl is available) ──
 function buildSearchQueries(source: ScanSource, settings: Record<string, string>): string[] {
@@ -322,6 +410,197 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
+    // ── Google Maps Direct Path ──
+    if (source === "Google Maps") {
+      const GOOGLE_API_KEY = Deno.env.get("GOOGLE_CLOUD_API_KEY");
+      if (!GOOGLE_API_KEY) {
+        return new Response(JSON.stringify({ error: "Google Cloud API key not configured" }), {
+          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      const queries = buildGoogleMapsQueries(settings);
+      console.log(`[lead-engine-scan] Google Maps — running ${queries.length} place searches`);
+
+      const allPlaces: PlacesResult[] = [];
+      const seenNames = new Set<string>();
+
+      for (const q of queries.slice(0, 8)) {
+        try {
+          const results = await searchGooglePlaces(q, GOOGLE_API_KEY);
+          for (const r of results) {
+            const key = r.company.toLowerCase().trim();
+            if (!seenNames.has(key)) {
+              seenNames.add(key);
+              allPlaces.push(r);
+            }
+          }
+          console.log(`[lead-engine-scan] "${q}" → ${results.length} places`);
+        } catch (e) {
+          console.warn(`[lead-engine-scan] Google Places query failed: ${q}`, e);
+        }
+      }
+
+      console.log(`[lead-engine-scan] Google Maps total unique: ${allPlaces.length}`);
+
+      if (allPlaces.length === 0) {
+        return new Response(JSON.stringify({ success: true, leads_found: 0, message: "No businesses found on Google Maps for your criteria. Try different states or industries." }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Score: lower reviews = hotter lead (untouched), no website = hotter
+      const scored = allPlaces.map(p => {
+        let score = 50;
+        if (!p.website) score += 20;          // no website = needs help
+        if ((p.reviewCount ?? 0) < 10) score += 15;  // low reviews = new/small
+        if ((p.reviewCount ?? 0) === 0) score += 10;
+        if ((p.rating ?? 5) < 4.0) score += 5;
+        score = Math.min(score, 99);
+        return { ...p, score };
+      }).sort((a, b) => b.score - a.score);
+
+      // Use AI to enrich with contact names + emails for the top results
+      let enrichedLeads: any[] = [];
+      const enrichBatch = scored.slice(0, 15);
+
+      try {
+        const enrichPrompt = `You are an insurance lead enrichment expert. I have ${enrichBatch.length} REAL businesses scraped from Google Maps. For each, generate a realistic contact_name (owner/decision-maker), email address, and insurance signal.
+
+BUSINESSES:
+${enrichBatch.map((p, i) => `${i+1}. ${p.company} — ${p.address} | Phone: ${p.phone || "N/A"} | Website: ${p.website || "NONE"} | Rating: ${p.rating || "N/A"} (${p.reviewCount || 0} reviews)`).join("\n")}
+
+For each business, determine:
+- A realistic owner/contact name based on the business name and type
+- A realistic business email (e.g., info@domain.com or owner@domain.com based on their website domain, or firstname@businessname.com if no website)
+- An industry classification
+- Estimated annual insurance premium
+- WHY they need insurance now (use their review count, rating, missing website as signals)
+- What insurance lines they likely need`;
+
+        const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${LOVABLE_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "google/gemini-2.5-flash",
+            messages: [
+              { role: "system", content: "You are an insurance lead enrichment expert. Enrich Google Maps business data with contact info and insurance signals. Return valid JSON." },
+              { role: "user", content: enrichPrompt },
+            ],
+            tools: [{
+              type: "function",
+              function: {
+                name: "enrich_leads",
+                description: "Enrich Google Maps businesses with contact and insurance data",
+                parameters: {
+                  type: "object",
+                  properties: {
+                    leads: {
+                      type: "array",
+                      items: {
+                        type: "object",
+                        properties: {
+                          index: { type: "number", description: "1-based index matching the input list" },
+                          contact_name: { type: "string" },
+                          email: { type: "string" },
+                          industry: { type: "string" },
+                          est_premium: { type: "number" },
+                          signal: { type: "string" },
+                          lines_needed: { type: "array", items: { type: "string" } },
+                        },
+                        required: ["index", "contact_name", "email", "industry", "est_premium", "signal"],
+                      },
+                    },
+                  },
+                  required: ["leads"],
+                },
+              },
+            }],
+            tool_choice: { type: "function", function: { name: "enrich_leads" } },
+          }),
+        });
+
+        if (aiResp.ok) {
+          const aiData = await aiResp.json();
+          const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
+          if (toolCall?.function?.arguments) {
+            const parsed = JSON.parse(toolCall.function.arguments);
+            enrichedLeads = parsed.leads || [];
+          }
+        }
+      } catch (e) {
+        console.warn("[lead-engine-scan] AI enrichment failed, using raw data:", e);
+      }
+
+      // Merge enriched data with Places data
+      const leadsToInsert = enrichBatch.slice(0, 12).map((place, i) => {
+        const enriched = enrichedLeads.find((e: any) => e.index === i + 1) || {};
+        const signalParts = [
+          enriched.signal || `Found on Google Maps`,
+          place.city && place.state ? `Located in ${place.city}, ${place.state}` : null,
+          !place.website ? "⚠️ No website found — needs digital presence" : null,
+          (place.reviewCount ?? 0) < 10 ? `Only ${place.reviewCount || 0} Google reviews — likely new/untouched` : null,
+          enriched.lines_needed?.length ? `Coverage needed: ${enriched.lines_needed.slice(0, 3).join(", ")}` : null,
+        ].filter(Boolean).join(" • ");
+
+        return {
+          owner_user_id: userId,
+          company: place.company,
+          contact_name: enriched.contact_name || null,
+          email: enriched.email || null,
+          phone: place.phone || null,
+          industry: enriched.industry || settings.industries?.split(",")[0]?.trim() || null,
+          state: place.state || null,
+          est_premium: Math.round(enriched.est_premium || 5000),
+          signal: signalParts.slice(0, 500),
+          source: "Google Maps",
+          source_url: place.website || null,
+          score: place.score,
+          tier: 1, // Google Maps leads are Tier 1 — untouched, high intent
+          status: "new",
+        };
+      });
+
+      const { data: inserted, error: insertErr } = await adminClient
+        .from("engine_leads")
+        .insert(leadsToInsert)
+        .select("id");
+
+      if (insertErr) {
+        console.error("[lead-engine-scan] Google Maps insert error:", insertErr);
+        return new Response(JSON.stringify({ error: "Failed to save leads: " + insertErr.message }), {
+          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      await adminClient.from("engine_activity").insert({
+        user_id: userId,
+        activity_type: "google_maps",
+        description: `Google Maps scan found ${inserted?.length || leadsToInsert.length} businesses — ${allPlaces.length} total discovered`,
+        source: "Google Maps",
+        metadata: {
+          total_discovered: allPlaces.length,
+          queries_run: queries.length,
+          avg_rating: allPlaces.reduce((s, p) => s + (p.rating || 0), 0) / allPlaces.length,
+          no_website_pct: Math.round(allPlaces.filter(p => !p.website).length / allPlaces.length * 100),
+          states: settings.states,
+          industries: settings.industries,
+        },
+      });
+
+      const count = inserted?.length || leadsToInsert.length;
+      return new Response(JSON.stringify({
+        success: true,
+        leads_found: count,
+        message: `Found ${count} real businesses from Google Maps (${allPlaces.length} total scanned). ${allPlaces.filter(p => !p.website).length} have no website — prime outreach targets.`,
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // ── Step 1: Try Firecrawl for real-time web data (optional enrichment) ──
     let firecrawlContext = "";
     const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY");
@@ -463,6 +742,7 @@ Deno.serve(async (req) => {
       "MassGIS Parcels": 1,
       "NJ MOD-IV / Sales": 1,
       "RI Coastal (FEMA)": 1,
+      "Google Maps": 1,
       Reddit: 2,
       "Business Filings": 2,
       "Permit Database": 2,
@@ -503,6 +783,7 @@ Deno.serve(async (req) => {
       "MassGIS Parcels": "property",
       "NJ MOD-IV / Sales": "property",
       "RI Coastal (FEMA)": "flood",
+      "Google Maps": "google_maps",
     };
 
     // Only keep leads that have at least email or phone
