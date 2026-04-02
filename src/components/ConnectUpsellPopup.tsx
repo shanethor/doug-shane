@@ -1,6 +1,6 @@
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Check, Sparkles, X, Zap } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 interface Props {
   open: boolean;
@@ -16,6 +16,7 @@ const PERKS = [
 ];
 
 export default function ConnectUpsellPopup({ open, onClose }: Props) {
+  const navigate = useNavigate();
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="sm:max-w-md bg-[#0C0C0E] border-[hsl(140_12%_42%/0.2)] text-white p-0 overflow-hidden [&>button]:hidden">
@@ -66,7 +67,10 @@ export default function ConnectUpsellPopup({ open, onClose }: Props) {
             Free monthly leads available after becoming a paid member.
           </p>
           <button
-            onClick={onClose}
+            onClick={() => {
+              onClose();
+              navigate("/connect/leads");
+            }}
             className="w-full text-center text-xs text-[#52525B] hover:text-[#71717A] transition-colors py-1"
           >
             Maybe later

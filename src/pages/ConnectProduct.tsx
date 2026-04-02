@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { ProductLayout } from "@/components/ProductLayout";
 import { useSubscription } from "@/hooks/useSubscription";
+import { useAuth } from "@/hooks/useAuth";
+import { MASTER_EMAILS } from "@/components/ProductProtectedRoute";
 import StudioUpsellPage from "@/components/StudioUpsellPage";
 
 // Demo tab components (used as production pages)
@@ -107,7 +109,10 @@ export default function ConnectProduct() {
   const location = useLocation();
   const navigate = useNavigate();
   const { isPageGated } = useEarlyAccessWhitelist();
-  const { subscribed } = useSubscription();
+  const { user } = useAuth();
+  const isMaster = MASTER_EMAILS.includes(user?.email?.toLowerCase() ?? "");
+  const { subscribed, loading: subLoading } = useSubscription();
+  const canAccessFullSite = isMaster || subscribed;
   const [showIntro, setShowIntro] = useState(() => {
     try { return !sessionStorage.getItem("connect-entered"); } catch { return true; }
   });
@@ -165,17 +170,23 @@ export default function ConnectProduct() {
             transform: introComplete ? "translateY(0)" : "translateY(20px)",
             transition: "all 1.2s cubic-bezier(0.16, 1, 0.3, 1)",
           }}>
-            {page === "connect" && (isPageGated("connect") ? <ComingSoonGate pageName="Connect" /> : <DemoConnectTab contentReady={introComplete} />)}
-            {page === "intelligence" && (isPageGated("intelligence") ? <ComingSoonGate pageName="Intelligence" /> : <ConnectIntelligencePage />)}
-            {page === "rewards" && (isPageGated("rewards") ? <ComingSoonGate pageName="Rewards" /> : <ConnectRewardsPage />)}
-            {page === "property" && <ConnectPropertyDashboard />}
             {page === "leads" && <ConnectLeads />}
-            {page === "pipeline" && <ConnectPipelineTab />}
-            {page === "email" && (isPageGated("email") ? <ComingSoonGate pageName="Email" /> : <DemoEmailTab />)}
-            {page === "calendar" && (isPageGated("calendar") ? <ComingSoonGate pageName="Calendar" /> : <SmartCalendar />)}
-            {page === "create" && (isPageGated("create") ? <ComingSoonGate pageName="Create" /> : <DemoSpotlightTab />)}
-            {page === "sage" && (isPageGated("sage") ? <ComingSoonGate pageName="Sage" /> : <DemoAssistantTab onNavigate={handleSageNavigate} />)}
-            {page === "studio" && <StudioUpsellPage isConnectSubscriber={subscribed} />}
+            {page !== "leads" && !canAccessFullSite ? (
+              <ComingSoonGate pageName={page.charAt(0).toUpperCase() + page.slice(1)} />
+            ) : (
+              <>
+                {page === "connect" && (isPageGated("connect") ? <ComingSoonGate pageName="Connect" /> : <DemoConnectTab contentReady={introComplete} />)}
+                {page === "intelligence" && (isPageGated("intelligence") ? <ComingSoonGate pageName="Intelligence" /> : <ConnectIntelligencePage />)}
+                {page === "rewards" && (isPageGated("rewards") ? <ComingSoonGate pageName="Rewards" /> : <ConnectRewardsPage />)}
+                {page === "property" && <ConnectPropertyDashboard />}
+                {page === "pipeline" && <ConnectPipelineTab />}
+                {page === "email" && (isPageGated("email") ? <ComingSoonGate pageName="Email" /> : <DemoEmailTab />)}
+                {page === "calendar" && (isPageGated("calendar") ? <ComingSoonGate pageName="Calendar" /> : <SmartCalendar />)}
+                {page === "create" && (isPageGated("create") ? <ComingSoonGate pageName="Create" /> : <DemoSpotlightTab />)}
+                {page === "sage" && (isPageGated("sage") ? <ComingSoonGate pageName="Sage" /> : <DemoAssistantTab onNavigate={handleSageNavigate} />)}
+                {page === "studio" && <StudioUpsellPage isConnectSubscriber={subscribed} />}
+              </>
+            )}
           </div>
         </div>
       </ProductLayout>
