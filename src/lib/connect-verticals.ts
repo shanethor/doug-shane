@@ -126,7 +126,12 @@ export const CONNECT_VERTICALS: ConnectVerticalConfig[] = [
       { id: "roofing_commercial", label: "Commercial Roofing", sources: ["licensing", "permits_100k", "osha", "batchdata"] },
       { id: "roofing_storm", label: "Storm Restoration Roofing", sources: ["noaa_storm", "licensing", "osha", "batchdata"] },
       { id: "roofing_specialty", label: "Specialty Roofing (Metal/Solar/Green)", sources: ["licensing", "permits", "solar_permits"] },
-      { id: "hvac", label: "HVAC", sources: ["licensing", "permits"] },
+      { id: "hvac_residential", label: "Residential HVAC", sources: ["licensing", "permits", "noaa_heat_cold", "a2l_transition", "heehra"] },
+      { id: "hvac_commercial", label: "Commercial HVAC (Mechanical)", sources: ["licensing", "permits_50k", "osha_238220", "a2l_transition"] },
+      { id: "hvac_refrigeration", label: "Commercial Refrigeration (NCCI 3724)", sources: ["licensing", "permits", "osha_238220"] },
+      { id: "hvac_duct_fab", label: "Duct Fabrication & Installation (NCCI 5536)", sources: ["licensing", "permits", "smacna"] },
+      { id: "hvac_geothermal", label: "Specialty: Geothermal / Heat Pump", sources: ["licensing", "permits", "igshpa", "heehra", "a2l_transition"] },
+      { id: "hvac_iaq", label: "IAQ / Duct Cleaning (NCCI 9014)", sources: ["licensing", "nadca", "permits"] },
       { id: "plumbing", label: "Plumbing", sources: ["licensing", "permits"] },
       { id: "electrical", label: "Electrical", sources: ["licensing", "permits"] },
       { id: "painting", label: "Painting", sources: ["licensing", "permits"] },
@@ -138,15 +143,23 @@ export const CONNECT_VERTICALS: ConnectVerticalConfig[] = [
       "General Liability (Residential)",
       "General Liability (Commercial — separate endorsement)",
       "Workers' Compensation (NCCI 5551 — All Roofing)",
+      "Workers' Compensation (NCCI 5537 — HVAC Install/Service/Repair)",
+      "Workers' Compensation (NCCI 5536 — Duct Fabrication, NY/TX primary)",
+      "Workers' Compensation (NCCI 3724 — Commercial Refrigeration)",
+      "Workers' Compensation (NCCI 9014 — Duct Cleaning / IAQ)",
       "Commercial Auto",
       "Tools & Equipment / Inland Marine",
       "Builder's Risk (per-project, commercial jobs)",
       "Umbrella / Excess",
       "Surety Bond",
       "Completed Operations",
-      "Products Liability (Solar)",
+      "Products Liability (Solar / Equipment Failures)",
+      "Professional Liability / E&O (Commercial Mechanical)",
+      "BOP (Residential HVAC)",
     ],
-    sageContext: `You are advising a contractor-focused insurance producer with deep expertise in roofing contractor P&C insurance. P&C lines only — health insurance, ACA, and employee benefits are excluded.
+    sageContext: `You are advising a contractor-focused insurance producer with deep expertise in roofing AND HVAC contractor P&C insurance. P&C lines only — health insurance, ACA, and employee benefits are excluded.
+
+=== ROOFING VERTICAL (CONTRACTOR #1) ===
 
 ROOFING IS THE HIGHEST-PREMIUM CONTRACTOR SUB-VERTICAL:
 NCCI class code 5551 carries one of the highest WC rates in the manual — a 5-person FL roofing crew generates $45K–$55K in WC premium alone. A complete roofing program (GL, WC, commercial auto, tools, umbrella) runs $25K–$200K+/yr depending on operation size and state. Every state requires a license or permit to roof legally. Every new license is a first-time buyer. Zero competitors are generating insurance leads for contractors using government trigger data.
@@ -157,58 +170,105 @@ FOUR ROOFING SUB-VERTICALS (by risk profile):
 3. Storm Restoration: Insurance restoration after hail/hurricane/wind. Event-driven revenue, multi-state operations. GL (completed ops critical), WC (multi-state), Surety Bond, Commercial Auto (fleet), Inland Marine. Avg $40K–$150K/yr. NOAA storm trigger. WC payroll surge is the key coverage risk.
 4. Specialty (Metal/Solar/Green): Distinct carrier appetite. GL, WC 5551, Commercial Auto, Inland Marine (specialty equipment), Products Liability (solar). Avg $30K–$100K/yr. Two-trigger lead when roofing + solar licenses appear simultaneously.
 
-FIVE BUYING SIGNALS (ranked by urgency):
-1. License Lapse (IMMEDIATE — 90 base score): Status changes from Active to Inactive/Suspended/Expired. Equivalent to a trucking BMC-35 cancellation. Cannot legally operate. Needs replacement coverage for reinstatement within 24–72 hours. HIGHEST conversion rate.
-2. NOAA Storm Event (72-hr window — 85 base, decays -5/day): Hail/Hurricane/Tornado/High Wind, property damage >$100K. WC payroll about to surge. Multi-state WC exposure appears. Standard policies don't adjust automatically. Completed operations risk spikes on rushed restoration work.
-3. Large Permit >$100K (14–30 days — 80 base): Residential GL policy almost certainly excludes commercial work. Builder's Risk required in most GC contracts. Contractor likely doesn't know their policy doesn't cover them.
-4. New License (7–14 days — 75 base): Brand-new contractor. No prior insurance relationship. Needs everything from zero. Highest lifetime value of any signal type.
-5. OSHA First Inspection (30–60 days — 60 base): First documented workplace record. WC and GL carriers now have a history affecting underwriting. WC class code audit opportunity.
+FIVE ROOFING BUYING SIGNALS (ranked by urgency):
+1. License Lapse (IMMEDIATE — 90 base score): Status changes from Active to Inactive/Suspended/Expired. Cannot legally operate. Needs replacement coverage for reinstatement within 24–72 hours. HIGHEST conversion rate.
+2. NOAA Storm Event (72-hr window — 85 base, decays -5/day): Hail/Hurricane/Tornado/High Wind, property damage >$100K. WC payroll about to surge.
+3. Large Permit >$100K (14–30 days — 80 base): Residential GL policy almost certainly excludes commercial work. Builder's Risk required.
+4. New License (7–14 days — 75 base): Brand-new contractor. Needs everything from zero. Highest lifetime value.
+5. OSHA First Inspection (30–60 days — 60 base): First documented workplace record.
 
-SCORE MODIFIERS: commercial_flag +15, Tier 1 state +10, mobile_phone_found +10, multi-signal same record +15. Decay: storm -5/day, lapse -10/day.
+ROOFING WC CLASS CODE AUDIT:
+- 5551 (Roofing — All Kinds): $9.90–$22.00/$100. Primary code.
+- 5552 (Sheet Metal Roofing): CA only (WCIRB). DE/PA use code 659.
+- 7380 (Drivers — Material Delivery): $4.00–$8.00/$100.
+- 8742 (Estimators / Sales): $0.30–$0.80/$100.
+- 8810 (Clerical / Office): $0.08–$0.15/$100.
+- 5606 (Executive Supervisor): $1.50–$4.00/$100.
 
-WC CLASS CODE AUDIT — CRITICAL TOOL:
-Most roofing contractors pay WC on misclassified payroll. Common errors:
-- 5551 (Roofing — All Kinds): $9.90–$22.00/$100. Primary code for all workers physically performing roofing.
-- 5552 (Sheet Metal Roofing): CA only (WCIRB). DE/PA use code 659. All other NCCI states use 5551.
-- 7380 (Drivers — Material Delivery): $4.00–$8.00/$100. Drivers who ONLY deliver materials. Most common misclassification.
-- 8742 (Estimators / Sales): $0.30–$0.80/$100. Estimators who stay entirely off the roof. Drone-based estimating makes this defensible.
-- 8810 (Clerical / Office): $0.08–$0.15/$100. Almost universally misclassified under 5551.
-- 5606 (Executive Supervisor): $1.50–$4.00/$100. REQUIRES two levels of supervision — most operations under 15 employees DO NOT qualify.
-In NJ, one estimator at $55K pays $14,487/yr under 5551 vs $209 under 8742. That $14,278 savings finding gets shared with every peer.
+=== HVAC VERTICAL (CONTRACTOR #2) ===
+
+HVAC IS THE SECOND-LARGEST CONTRACTOR SUB-VERTICAL BY TOTAL PREMIUM:
+Unlike roofing (event-driven by weather), HVAC has TWO guaranteed seasonal peaks — summer cooling and winter heating — plus a THIRD driver unique to this trade: the 2025 A2L refrigerant transition, which created a mandatory equipment and coverage review for every contractor in the country. NCCI class code 5537 averages $3.14/$100 of payroll nationally — lower than roofing but with significantly higher total premium potential per account because HVAC operations tend to be larger. A mid-size HVAC operation with 10 technicians in a hard market state pays $35,000–$75,000+ in annual P&C premium.
+
+SIX HVAC SUB-VERTICALS (by NCCI code and risk profile):
+1. Residential HVAC: New system installs, replacements, service/repair. Highest volume of new licenses. GL, WC (5537), Commercial Auto, Tools & Equipment, BOP. Avg $8K–$37K/yr.
+2. Commercial HVAC: Offices, retail, warehouses, schools, hospitals. Rooftop units, chillers, VAV systems. Projects $50K–$5M+. GL ($2M/$4M required), WC (5537), Builder's Risk (per-project), Commercial Auto, Umbrella, Inland Marine. Avg $40K–$200K+/yr. Most residential policies EXCLUDE commercial mechanical work — #1 coverage gap.
+3. Commercial Refrigeration: Walk-in coolers, commercial refrigeration not connected to HVAC. NCCI 3724 (separate from 5537). GL, WC (3724), Commercial Auto, Tools. Avg $15K–$60K/yr. Key misclassification opportunity.
+4. Duct Fabrication & Installation: Sheet metal duct work, fabrication shops. NCCI 5536 (not 5537). GL, WC (5536), Commercial Auto, Inland Marine. Avg $20K–$80K/yr.
+5. Specialty: Geothermal / Heat Pump: Ground-source heat pumps, A2L refrigerant systems. GL, WC (5537), Commercial Auto, Products Liability, Inland Marine. Avg $20K–$70K/yr. A2L trigger + HEEHRA registration = fastest-growing segment post-IRA.
+6. IAQ / Duct Cleaning: Indoor air quality, duct cleaners. NCCI 9014 (lowest rate) — MAJOR misclassification if rated under 5537. GL, WC (9014), Commercial Auto, Professional Liability. Avg $5K–$20K/yr.
+
+EIGHT HVAC BUYING SIGNALS (ranked by urgency):
+1. New State HVAC License (7–14 days — 75 base): Brand-new HVAC contractor. License cannot be issued without proof of insurance — every new licensee is an active buyer.
+2. License Lapse/Suspension (IMMEDIATE — 90 base): Cannot legally operate. Many lapses directly caused by insurance cancellation. Fastest converting leads.
+3. Large Mechanical Permit >$50K (14–30 days — 80 base, +15 if >$250K): Residential policy excludes commercial mechanical work. Builder's Risk and Professional Liability increasingly required.
+4. A2L Refrigerant Transition (Ongoing 2025–2026 — all existing licenses): EPA final rule effective January 1, 2025. New systems use mildly flammable A2L refrigerants. Most existing GL policies written for R-410A. Coverage question is real and almost no contractor has asked their broker. AuraConnect is the first to raise it.
+5. HEEHRA/HEAR State Program Registration (Ongoing — 75 base): Contractors registering for IRA-funded state programs are growing into heat pump/electrification work, being verified by state as licensed and insured, and about to do higher volume of heat pump installs changing WC and GL exposure.
+6. OSHA First Inspection (30–60 days — 60 base): NAICS 238220. First documented workplace record. Often coincides with first employees — strongest signal operation is growing and underinsured.
+7. NOAA Extreme Heat/Cold Alert (48-hr window — 85 base, -10/day decay): Heat Index Advisory, Excessive Heat Warning, Extreme Cold Warning. HVAC surges happen every summer and every winter (unlike roofing one-time storms). WC payroll exposure increases.
+8. SOS New Entity Filing (7–21 days — 70 base, +5 for HVAC-specific keywords): Filter keywords: HVAC, air conditioning, heating, refrigeration, mechanical, cooling, furnace, heat pump, ductwork, ventilation, climate control, indoor air, IAQ.
+
+SCORE MODIFIERS: commercial_flag +15, Tier 1 state +10, mobile_phone_found +10, multi-signal same record +15, a2l_gap_flag +10. Decay: heat/cold -10/day, lapse -10/day.
+
+HVAC WC CLASS CODE AUDIT — CRITICAL TOOL:
+- NCCI 5537: $3.14/$100 avg. Installation, service, repair of HVAC systems. Primary code. All-inclusive — includes wiring and sheet metal when done by same contractor.
+- NCCI 5536: Varies (NY/TX rate). Duct fabrication and installation. NY, TX, and some states use this as primary HVAC code instead of 5537.
+- NCCI 3724: $3.03/$100 avg. Commercial refrigeration NOT connected to HVAC (walk-in coolers, reach-in display cases). Frequently misclassified with 5537.
+- NCCI 9014: <$1.50/$100 avg. Duct cleaning ONLY. No installation work. NADCA members frequently pay 5537 rates when 9014 applies. A 4-person TX duct cleaning company saves $7,200/yr reclassifying from 5537 to 9014.
+- NCCI 9519: <$2.00/$100 avg. Portable AC service and installation only.
+- 8742 (Sales/Estimating): $0.30–$0.80/$100. Same classification as roofing estimators.
+- 8810 (Clerical/Office): $0.08–$0.15/$100. Frequently misclassified under 5537.
+- 7380 (Drivers/Material Delivery): $4.00–$8.00/$100. Not performing HVAC work.
+
+INDEPENDENT WC BUREAU STATES FOR HVAC: CA: 5538, NJ: 5538, NY: 5536, PA/DE: 0664, TX: 5536, MI: 5550. Use state_wc_rates Supabase table — NOT NCCI 5537 benchmarks.
+MONOPOLISTIC WC STATES (OH, ND, WA, WY): WC placement impossible — suppress all WC templates. Focus: GL, commercial auto, tools, umbrella only.
+
+SIX HVAC TRADE ASSOCIATIONS (all free public directories):
+1. ACCA (acca.org): QA Accreditation = strongest signal. Requires GL, WC, commercial auto proof.
+2. PHCC (phccweb.org): 125 state/local chapters. Combined plumbing+HVAC = higher total premium (5183+5537).
+3. SMACNA (smacna.org): Commercial-only HVAC. Highest-premium accounts. $2M/$4M GL, Builder's Risk on every project.
+4. NATE (natex.org): EPA 608-certified technician list. New certifications = growing operations.
+5. NADCA (nadca.com): Duct cleaning. Highest WC misclassification rate — 9014 vs 5537 audit target.
+6. IGSHPA: Geothermal heat pump specialists. Drilling operations exclusion is the key coverage gap.
+
+FIVE HVAC TRAFFIC GENERATORS:
+1. A2L Refrigerant Coverage Gap Checker: 3 questions about current refrigerant/GL policy → Claude analysis → consent gate. Zero competition. Goes viral in HVAC Facebook groups.
+2. State Rebate Navigator: DSIRE API → zip code input → state + utility rebates for heat pump HVAC. Contractors bookmark it for every sales call. Account creation = lead.
+3. WC Class Code Audit Tool (HVAC): 5537 vs 5536 vs 3724 vs 9014 vs 9519 comparison. NADCA members save $7,200/yr. Savings finding gets shared immediately.
+4. COI Requirement Interpreter: Contractor pastes GC/property manager COI requirements → Claude translates in plain English → Green/Yellow/Red gap status.
+5. Seasonal Surge Insurance Playbook: Summer (May 1) + Winter (Oct 15) playbooks per state. WC payroll surge planning, temporary tech coverage, carbon monoxide claims.
+
+50-STATE HVAC LICENSING TIERS:
+Tier 1 (statewide HVAC license — best data): FL (DBPR CAC/CACO, highest WC + mandatory coverage + HEEHRA = triple trigger), CA (CSLB C-20, WCIRB 5538, TECH Clean CA), TX (TDLR Class A/B, WC 5536), AL (ABCB), AZ (ROC CR-39), NC (statewide, Curi-heavy), VA (DPOR Class A/B/C), TN (TDCI, TVA Quality Contractor Network).
+Tier 2 (no statewide license — use permit + SOS + association): NY (NYC DOB mechanical permits, WC 5536), IL (Chicago city-level, Socrata), GA (local jurisdiction only), CO (Denver D-11, EnergySmart CO), MI (WC 5550), PA (Philadelphia, WC 0664).
+Monopolistic WC: OH (BWC, no private WC), WA (L&I, Seattle heat dome precedent), ND (WSI, low priority), WY (WSD, lowest priority).
+
+=== SHARED RULES ===
 
 MONOPOLISTIC WC STATES (OH, ND, WA, WY): WC placement impossible — all WC templates suppressed. Focus: GL, commercial auto, tools, umbrella only.
-INDEPENDENT WC BUREAU STATES (CA, NJ, NY, DE, PA): NCCI rate ranges are NOT accurate. Use state_wc_rates Supabase table with bureau-specific rates.
-
-50-STATE LICENSING TIERS:
-Tier 1 (highest priority): FL (DBPR, $18–22/$100 WC — highest in US, mandatory WC for any roofing employee), CA (CSLB C-39, independent bureau WCIRB), TX (no statewide license — permit + SOS only), NY (NYC DOB Open Data), GA (no statewide license — permit + SOS), NC (General contractor license covers roofing), IL (IDFPR, statewide roofing license required).
-Tier 2: OH (monopolistic WC), WA (monopolistic WC), AZ (ROC CR-15/R-15), CO (DORA + Denver Socrata), MN (DLI), VA (DPOR Class A/B/C), PA (no statewide license — independent WC bureau PCRB), MI (LARA).
 
 THREE SIMULTANEOUS OUTREACH CAMPAIGNS:
 A. Signal Email (primary): Claude-personalized per signal type. Dedicated outreach domain with SPF/DKIM/DMARC. Max 50 emails/inbox/day. Segments under 100 recipients.
 B. LinkedIn Sequence (parallel): Expandi automation. Day 0: profile view. Day 1: engage post. Day 2: connection request (300 chars). Day 4: value DM. Day 7: follow-up. Day 10: voice note. Day 14: final DM with landing page.
 C. Direct Mail Postcard (when no email found): PostGrid API, 4×6 USPS First Class, fires when email_found=FALSE. QR code to landing page. Twilio tracking number for AI voice agent.
 
-FIVE CREATIVE TRAFFIC GENERATORS:
-1. GC Subcontractor Insurance Compliance Portal: GCs verify roofing sub insurance status. Dual lead generation — flags gaps for sub AND captures GC as a lead.
-2. COI Expiration Tracker: Multi-policy dashboard with 90/60/30/14-day renewal reminders. Permission-based renewal pipeline.
-3. Bid Insurance Cost Calculator: Job type + payroll inputs → GL/WC/Builder's Risk cost estimates for bid inclusion.
-4. "Does My Policy Cover This Job?" Tool: Residential vs commercial vs government job inputs → gap analysis.
-5. Storm Recovery Insurance Guide: Claude-generated county-specific page within 24hrs of NOAA event. Ranks immediately for storm-specific searches.
-
 OUTREACH TONE: Direct, contractor-to-contractor, expert. No soft language. Every touch delivers one specific verifiable fact. Never asks for the sale before delivering value.
 
 IMPORTANT: Never use generic insurance language. Name the specific trigger event, the specific coverage problem it creates, and offer something specific and free.`,
     leadSources: [
-      "State contractor licensing boards — FL DBPR, CA CSLB, IL IDFPR, NC, VA, AZ ROC (daily/weekly, free)",
-      "Socrata building permit APIs — NAICS 238160, value >$5K trigger, >$100K commercial flag (daily, free)",
-      "OSHA establishment search — NAICS 238160, first inspection within 90 days (weekly, free)",
-      "NOAA Storm Events Database API — Hail/Hurricane/Tornado/High Wind, damage >$100K (daily, free)",
-      "Secretary of State — new entity filings with roofing keywords (weekly, free)",
+      "State contractor licensing boards — FL DBPR, CA CSLB, TX TDLR, IL IDFPR, NC, VA, AZ ROC (daily/weekly, free)",
+      "Socrata building permit APIs — NAICS 238160 (roofing) + 238220 (HVAC), value triggers (daily, free)",
+      "OSHA establishment search — NAICS 238160 + 238220, first inspection within 90 days (weekly, free)",
+      "NOAA Storm Events + Extreme Heat/Cold — Hail/Hurricane/Wind + Heat Index/Extreme Cold (daily, free)",
+      "Secretary of State — new entity filings with roofing + HVAC keywords (weekly, free)",
+      "HEEHRA/HEAR state contractor registration lists — state energy offices (monthly, free)",
+      "Trade associations — ACCA, PHCC, SMACNA, NADCA, NATE, IGSHPA, NRCA (quarterly scrape, free)",
       "BatchData skip-tracing — phone + email enrichment (~$0.05/record)",
       "Google Places API — business details enrichment (~$0.017/call)",
       "Devi AI — Facebook/LinkedIn/Twitter/Reddit keyword monitoring ($49/month)",
       "F5Bot — Reddit keyword alerts (free)",
       "LinkedIn Sales Navigator — hiring signals, new companies ($79.99/month)",
+      "DSIRE database — state + utility rebate programs for HVAC heat pump contractors (free API)",
     ],
     pricing: { basePrice: 18, platinumMax: 81, bronzeMin: 9, avgPremium: 4200, volumePerMonth: 400, freeLeadsPerMonth: 5 },
   },
