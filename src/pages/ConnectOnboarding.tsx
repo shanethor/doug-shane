@@ -159,11 +159,31 @@ export default function ConnectOnboarding() {
           {step === 2 && (
             <IndustryStep
               selectedVertical={selectedVertical}
-              setSelectedVertical={setSelectedVertical}
+              setSelectedVertical={(v) => { setSelectedVertical(v); setShowRequestInput(false); setRequestSubmitted(false); }}
               selectedSubVerticals={selectedSubVerticals}
               setSelectedSubVerticals={setSelectedSubVerticals}
               verticalSearch={verticalSearch}
               setVerticalSearch={setVerticalSearch}
+              showRequestInput={showRequestInput}
+              setShowRequestInput={setShowRequestInput}
+              industryRequest={industryRequest}
+              setIndustryRequest={setIndustryRequest}
+              requestSubmitted={requestSubmitted}
+              onSubmitRequest={async () => {
+                if (!industryRequest.trim()) return;
+                try {
+                  await supabase.from("industry_requests" as any).insert({
+                    user_id: user?.id,
+                    email: user?.email || "",
+                    full_name: user?.user_metadata?.full_name || "",
+                    requested_industry: industryRequest.trim(),
+                  } as any);
+                  setRequestSubmitted(true);
+                  toast.success("Request submitted! We'll notify you when your vertical is ready.");
+                } catch {
+                  toast.error("Failed to submit request.");
+                }
+              }}
             />
           )}
           {step === 3 && (
