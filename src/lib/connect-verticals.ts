@@ -221,6 +221,7 @@ IMPORTANT TERMINOLOGY: Never use 'carrier' alone — always 'motor carrier' (the
     coverageLines: ["GL", "Liquor Liability", "Property", "WC", "Commercial Auto", "Assault & Battery", "Dram Shop", "Business Income"],
     sageContext: "You are advising a hospitality-focused producer. Key triggers: new liquor license approvals, health department food service permits, TTB federal brewery/winery permits, Google Maps listings with zero reviews (soft opens). Critical coverage gap: GL excludes liquor liability entirely — Dram Shop laws carry unlimited personal liability in most states. Ownership transfers mean no coverage from Day 1.",
     leadSources: ["State Liquor Control Boards", "County health department food permits", "TTB Federal Permit database", "Secretary of State filings", "Google Maps / Yelp new listings"],
+    pricing: { basePrice: 18, platinumMax: 69, bronzeMin: 8, avgPremium: 7600, volumePerMonth: 350, freeLeadsPerMonth: 5 },
   },
   {
     id: "healthcare",
