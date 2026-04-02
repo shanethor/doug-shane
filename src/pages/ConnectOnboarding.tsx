@@ -70,7 +70,22 @@ export default function ConnectOnboarding() {
     [selectedVertical]
   );
 
-  const goNext = () => step < STEPS.length - 1 && setStep(step + 1);
+  const [industryRequest, setIndustryRequest] = useState("");
+  const [requestSubmitted, setRequestSubmitted] = useState(false);
+  const [showRequestInput, setShowRequestInput] = useState(false);
+
+  const goNext = () => {
+    // Enforce required steps
+    if (step === 2 && !selectedVertical && !requestSubmitted) {
+      toast.error("Please select an industry or request one to continue.");
+      return;
+    }
+    if (step === 3 && selectedStates.length === 0) {
+      toast.error("Please select at least one state to continue.");
+      return;
+    }
+    step < STEPS.length - 1 && setStep(step + 1);
+  };
   const goBack = () => step > 0 && setStep(step - 1);
 
   const handleThemeChange = (isDark: boolean) => {
