@@ -77,15 +77,86 @@ export const VERTICALS: Vertical[] = [
       s("property_mgmt_listings", "Property Mgmt Listings", "globe"),
     ],
   },
+  // ── Life Insurance (7 trigger lanes from build plan) ──
   {
-    id: "personal_life",
-    label: "Life Insurance",
-    group: "Personal Lines",
+    id: "life_new_llc",
+    label: "New LLC / Business Formation",
+    group: "Life Insurance",
     sources: [
-      s("marriage_records", "Marriage License Filings", "file"),
+      s("sos_new_llc", "SOS New LLC / Corp Filings", "file"),
+      s("multi_member_llc", "Multi-Member LLC Filings (Buy-Sell)", "building"),
+      s("sba", "SBA Loan Recipients", "trending"),
+      s("ucc", "UCC Filings (Business Debt)", "file"),
+      s("sec_form_d", "SEC Form D (Startup Funding)", "file"),
+      s("google_new_listing", "Google Places New Business Listings", "map"),
+    ],
+  },
+  {
+    id: "life_home_purchase",
+    label: "New Home Purchase",
+    group: "Life Insurance",
+    sources: [
+      s("mortgage_originations", "New Mortgage Originations", "trending"),
+      s("property_transfers", "Property Deed Transfers", "building"),
+      s("county_recorder", "County Recorder Filings", "file"),
+      s("mls_closed", "MLS Closed Sales Data", "building"),
+    ],
+  },
+  {
+    id: "life_healthcare_pro",
+    label: "New Doctor / Dentist / NPI",
+    group: "Life Insurance",
+    sources: [
+      s("npi_registry", "NPI Registry (Weekly CSV)", "file"),
+      s("state_medical_license", "State Medical/Dental License Boards", "file"),
+      s("dea_registration", "DEA Controlled Substance Registration", "file"),
+      s("cms_enrollment", "CMS Medicare Enrollment", "file"),
+      s("residency_match", "NRMP Residency Match Data", "file"),
+    ],
+  },
+  {
+    id: "life_attorney",
+    label: "New Attorney / Bar Admission",
+    group: "Life Insurance",
+    sources: [
+      s("bar_admissions", "State Bar Admission Lists", "file"),
+      s("sos_new_llc", "New Law Firm Entity Filings", "file"),
+      s("court_records", "Court Admission Records", "file"),
+      s("linkedin", "LinkedIn New Attorney Profiles", "globe"),
+    ],
+  },
+  {
+    id: "life_startup_funding",
+    label: "Startup Funding / EDGAR Form D",
+    group: "Life Insurance",
+    sources: [
+      s("sec_form_d", "SEC EDGAR Form D Filings", "file"),
+      s("crunchbase", "Crunchbase Funding Rounds", "trending"),
+      s("sos_new_llc", "New C-Corp / LLC Filings", "file"),
+      s("ucc", "UCC Filings (Venture Debt)", "file"),
+    ],
+  },
+  {
+    id: "life_new_parent",
+    label: "New Parents (Paid Traffic)",
+    group: "Life Insurance",
+    sources: [
       s("birth_records", "Birth Record Signals", "file"),
-      s("mortgage_originations", "New Mortgage Signals", "trending"),
-      s("business_ownership", "New Business Owners", "building"),
+      s("facebook_lead_ads", "Facebook Lead Ads (New Parents)", "users"),
+      s("google_ads", "Google Search Ads (Life Insurance)", "globe"),
+      s("marriage_records", "Marriage License Filings", "file"),
+    ],
+  },
+  {
+    id: "life_real_estate_investor",
+    label: "Real Estate Investors",
+    group: "Life Insurance",
+    sources: [
+      s("property_transfers", "Multi-Property Deed Transfers", "building"),
+      s("rental_registrations", "Rental Property Registrations", "building"),
+      s("ucc", "UCC Filings (Property Debt)", "file"),
+      s("sos_new_llc", "Real Estate LLC Formations", "file"),
+      s("county_recorder", "County Recorder (Multi-Parcel)", "file"),
     ],
   },
   {
@@ -764,9 +835,10 @@ export const VERTICALS: Vertical[] = [
 
 /* ── Map industry to default vertical groups shown ── */
 export const INDUSTRY_VERTICAL_GROUPS: Record<string, string[]> = {
-  insurance: ["Personal Lines", "Commercial Lines", "Contractors", "Commercial Real Estate", "Nonprofit", "Cannabis", "Manufacturing", "Hospitality", "Auto Dealers", "Trucking"],
-  mortgage: ["Personal Lines"],
-  real_estate: ["Personal Lines", "Commercial Real Estate"],
+  insurance: ["Personal Lines", "Commercial Lines", "Contractors", "Commercial Real Estate", "Nonprofit", "Cannabis", "Manufacturing", "Hospitality", "Auto Dealers", "Trucking", "Life Insurance"],
+  life_insurance: ["Life Insurance"],
+  mortgage: ["Personal Lines", "Life Insurance"],
+  real_estate: ["Personal Lines", "Commercial Real Estate", "Life Insurance"],
   property: ["Commercial Real Estate"],
   consulting: ["Commercial Lines", "Manufacturing"],
   general: ["Commercial Lines", "Contractors"],

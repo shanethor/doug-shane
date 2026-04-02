@@ -496,6 +496,106 @@ IMPORTANT: Never use 'carrier' alone — always 'insurance company' or 'insurer'
     leadSources: ["FTC Franchise Disclosure Documents", "Secretary of State franchise entity filings", "Multi-unit building permits"],
     pricing: { basePrice: 20, platinumMax: 60, bronzeMin: 11, avgPremium: 7800, volumePerMonth: 400, freeLeadsPerMonth: 5 },
   },
+  {
+    id: "life_insurance",
+    label: "Life Insurance",
+    description: "Life insurance leads via 7 trigger lanes — new LLCs, home purchases, NPI professionals, attorneys, startup funding, new parents, and real estate investors",
+    icon: "HeartPulse",
+    subVerticals: [
+      { id: "new_llc", label: "New LLC / Business Formation", sources: ["sos_new_llc", "multi_member_llc", "sba", "ucc", "sec_form_d"] },
+      { id: "home_purchase", label: "New Home Purchase", sources: ["mortgage_originations", "property_transfers", "county_recorder", "mls_closed"] },
+      { id: "healthcare_pro", label: "New Doctor / Dentist / NPI", sources: ["npi_registry", "state_medical_license", "dea_registration", "cms_enrollment"] },
+      { id: "attorney", label: "New Attorney / Bar Admission", sources: ["bar_admissions", "sos_new_llc", "court_records"] },
+      { id: "startup_funding", label: "Startup Funding / EDGAR Form D", sources: ["sec_form_d", "crunchbase", "sos_new_llc"] },
+      { id: "new_parent", label: "New Parents", sources: ["birth_records", "facebook_lead_ads", "marriage_records"] },
+      { id: "real_estate_investor", label: "Real Estate Investors", sources: ["property_transfers", "rental_registrations", "ucc", "sos_new_llc"] },
+    ],
+    pipelineStages: [
+      { key: "trigger_detected", label: "Trigger Detected", color: "cyan" },
+      { key: "pre_consent", label: "Pre-Consent Outreach", color: "sky" },
+      { key: "consent_captured", label: "Consent Captured", color: "green" },
+      { key: "quiz_completed", label: "Quiz Completed", color: "emerald" },
+      { key: "fa_assigned", label: "FA Assigned", color: "purple" },
+      { key: "meeting_set", label: "Meeting Set", color: "yellow" },
+      { key: "application", label: "Application", color: "orange" },
+      { key: "issued", label: "Policy Issued", color: "green" },
+    ],
+    coverageLines: [
+      "Term Life (10/15/20/30-year)", "Whole Life", "Universal Life", "Indexed Universal Life",
+      "Key Person Life", "Buy-Sell Funding (Cross-Purchase / Entity)", "Disability Income (DI)",
+      "Group Term / Voluntary Benefits", "Final Expense", "Premium Finance (Large Cases)",
+    ],
+    sageContext: `You are advising a life insurance-focused financial advisor or producer. You specialize in trigger-based lead generation and consultative sales for life and disability insurance.
+
+TRIGGER LANES (7 unique lead sources):
+1. New LLC / Business Formation — SOS filings across all 50 states. Multi-member LLCs need buy-sell funding (whole life). Sole owners need income replacement (term). The gap: no LLC attorney tells new owners what happens to their ownership stake the day they die.
+2. New Home Purchase — Mortgage originations create an immediate, quantifiable gap. 30-year term matching mortgage duration. Hook: "Your lender is protected by a 30-year mortgage. You are not."
+3. New Doctor / Dentist / NPI — NPI Registry (weekly bulk CSV) is the most powerful free trigger. Healthcare professionals are 3x more likely to become disabled than die before retirement. Income worth $4M+ over career. Employer coverage is not portable.
+4. New Attorney / Bar Admission — State bar admission lists. A law license is worth $3M–$8M over a 30-year career. 100% uninsured at admission. Hook: "You passed the bar. Your license is protected. Your income is not."
+5. Startup Funding / EDGAR Form D — SEC filings. Investors are protected by portfolio diversification. Founders are all-in. Key person insurance + estate liquidity planning.
+6. New Parents — Birth signals + paid traffic. The most emotional trigger. "Your income is the only thing standing between them and nothing." 20-year term, $500K–$1M face value.
+7. Real Estate Investors — Multi-property owners. Policy loans as investment capital. Estate planning. "Who collects the rent? Who manages the properties? Who services the mortgages?"
+
+PRODUCT ROUTING:
+Term Life triggers: New home purchase, new parent (sole earner), sole-owner LLC, new professional (employed), new FMCSA authority, quiz answer showing <3 months runway + dependents.
+Whole Life triggers: Multi-partner LLC (buy-sell), physician/dentist private practice, EDGAR Form D (startup funding + key person), real estate investor (multiple properties), age 40-60 targeting (legacy planning).
+
+COMPLIANCE (CRITICAL):
+- Cold outreach legal channels: Email (CAN-SPAM), live human calls (DNC scrub, 8AM-9PM local), physical mail, LinkedIn/social DM.
+- Requires PRIOR EXPRESS WRITTEN CONSENT (PEWC): Automated SMS/text, Voice AI calls, ringless voicemail.
+- Tier 4 (Red) states — NO cold automated outreach: Florida (FTSA), California (CCPA), Texas (SB 140), Oklahoma (mini-TCPA), Maryland (mini-TCPA). Email + live calls + mail ONLY.
+- Voice AI post-consent: Legal in all 50 states. Must disclose as automated. Hours: 8AM-9PM (CT: 9AM-8PM). Offer opt-out during call.
+- STOP from ANY channel must suppress ALL channels immediately (FCC April 2025 rule).
+
+CONSENT GATE:
+The landing page captures phone number + TCPA consent language + TrustedForm documentation. Two entry points: (A) 4-minute voice AI call, (B) live chat quiz. Both capture consent and fire the same analysis pipeline. Once consent is captured, the full 48-hour cadence fires: email + SMS + voice AI.
+
+CADENCE:
+Phase 1 (pre-consent): Email + live human calls only. Days 0-21. 5 emails, 3 live calls, 1 LinkedIn DM, 1 direct mail piece.
+Phase 2 (post-consent): Full 48-hour rotation — email, SMS, voice AI. Runs indefinitely until prospect opts out, responds, or is assigned to FA.
+LATER keyword: Pauses cadence 30 days without revoking consent. Reduces opt-outs.
+
+CREATIVE FUNNELS (7):
+1. The Gap Calculator (Facebook + Instagram) — Calculator UI, not an ad.
+2. The Public Record Mirror (SOS + NPI triggers) — Personalized email referencing specific public filing.
+3. Call This Number (Direct mail QR + SMS) — Phone call CTA, not a link.
+4. LinkedIn Article as Bait — Organic content targeting trigger-specific keywords.
+5. What Would Actually Happen (YouTube + Reels) — 45-60 second advisor-to-camera videos.
+6. The Referral Partner Send — Co-branded links via real estate agents, CPAs, attorneys.
+7. The 48-Hour Postcard + Text Sequence — Physical mail + SMS hit same day.
+
+PREMIUM RANGES:
+- New LLC (sole owner): $800–$2,500/year (term)
+- New LLC (multi-partner buy-sell): $3,000–$15,000/year (whole life)
+- New Home Purchase: $600–$1,800/year (30-year term)
+- New Physician/Dentist: $2,000–$8,000/year (whole life + DI)
+- New Attorney: $1,200–$4,000/year (term or whole)
+- Startup Funding (key person): $5,000–$25,000/year (whole + premium finance)
+- New Parents: $400–$1,200/year (20-year term)
+- Real Estate Investors: $3,000–$12,000/year (whole life + estate planning)
+
+FREE DATA SOURCES:
+- Secretary of State (all 50 states) — new LLC/Corp filings, NAICS codes.
+- NPI Registry (NPPES) — weekly bulk CSV at cms.gov. Every new provider nationally.
+- SEC EDGAR Form D — new startup funding filings, free API.
+- State Bar Admission Lists — published quarterly/annually by state bars.
+- County Recorder/Assessor — deed transfers, mortgage recordings.
+- FMCSA — new motor carrier authority (trucking crossover).
+
+MONTHLY INFRASTRUCTURE COSTS (at scale):
+Supabase Pro $25 | Claude API $20-40 | Resend $40-80 | Twilio $80-150 | ElevenLabs $22 | TrustedForm $99-199 | DNCScrub $50-100 | Direct mail $1,350-1,950 | Paid ads $3,500-7,000 | Total: $5,200-$9,600/month (drops to $2,000 without paid ads).`,
+    leadSources: [
+      "Secretary of State — New LLC/Corp filings, all 50 states (free, daily-weekly)",
+      "NPI Registry (NPPES) — Weekly bulk CSV of new healthcare providers (free)",
+      "SEC EDGAR Form D — New startup funding filings (free API)",
+      "State Bar Admission Lists — New attorneys (free, quarterly-annual)",
+      "County Recorder / Assessor — Deed transfers, mortgage recordings (free)",
+      "FMCSA — New motor carrier authority filings (free)",
+      "Facebook Lead Ads — New parent targeting ($15-30 CPL)",
+      "Google Search Ads — Life insurance intent keywords ($25-60 CPL)",
+    ],
+    pricing: { basePrice: 22, platinumMax: 75, bronzeMin: 10, avgPremium: 4200, volumePerMonth: 500, freeLeadsPerMonth: 5 },
+  },
 ];
 
 /* ── Lookup helpers ── */
