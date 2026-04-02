@@ -213,41 +213,44 @@ export default function RequestAccess() {
             />
           </div>
 
-          {/* Industry selector */}
-          <div className="space-y-2" ref={industryRef}>
-            <Label className="text-xs uppercase tracking-wider text-[#71717A]">Industry</Label>
+          {/* Vertical selector */}
+          <div className="space-y-2" ref={verticalRef}>
+            <Label className="text-xs uppercase tracking-wider text-[#71717A]">Industry Vertical</Label>
             <div className="relative">
               <button
                 type="button"
-                onClick={() => setIndustryOpen(!industryOpen)}
+                onClick={() => setVerticalOpen(!verticalOpen)}
                 className="w-full h-11 px-3 text-left text-sm bg-white/5 border border-white/10 rounded-md text-white flex items-center justify-between"
               >
-                <span className={industry ? "text-white" : "text-white/20"}>
-                  {industry || "Select your industry"}
+                <span className={selectedVertical ? "text-white" : "text-white/20"}>
+                  {verticalConfig?.label || "Select your industry vertical"}
                 </span>
                 <Search className="w-4 h-4 text-white/30" />
               </button>
-              {industryOpen && (
-                <div className="absolute z-50 w-full mt-1 bg-[#18181B] border border-white/10 rounded-lg shadow-xl max-h-60 overflow-hidden bottom-full mb-1">
+              {verticalOpen && (
+                <div className="absolute z-50 w-full mt-1 bg-[#18181B] border border-white/10 rounded-lg shadow-xl max-h-72 overflow-hidden bottom-full mb-1">
                   <div className="p-2 border-b border-white/10">
                     <Input
-                      value={industrySearch}
-                      onChange={(e) => setIndustrySearch(e.target.value)}
-                      placeholder="Search industries..."
+                      value={verticalSearch}
+                      onChange={(e) => setVerticalSearch(e.target.value)}
+                      placeholder="Search verticals..."
                       className="h-9 bg-white/5 border-white/10 text-white text-sm placeholder:text-white/20"
                       autoFocus
                     />
                   </div>
-                  <div className="overflow-y-auto max-h-48">
-                    {filteredIndustries.map((ind) => (
+                  <div className="overflow-y-auto max-h-56">
+                    {filteredVerticals.map((v) => (
                       <button
-                        key={ind}
+                        key={v.id}
                         type="button"
-                        onClick={() => { setIndustry(ind); setIndustryOpen(false); setIndustrySearch(""); }}
-                        className={`w-full text-left px-3 py-2 text-sm hover:bg-white/5 flex items-center gap-2 ${industry === ind ? "text-[hsl(140_12%_58%)]" : "text-[#A1A1AA]"}`}
+                        onClick={() => { setSelectedVertical(v.id); setVerticalOpen(false); setVerticalSearch(""); }}
+                        className={`w-full text-left px-3 py-2.5 text-sm hover:bg-white/5 flex flex-col gap-0.5 ${selectedVertical === v.id ? "text-[hsl(140_12%_58%)]" : "text-[#A1A1AA]"}`}
                       >
-                        {industry === ind && <Check className="w-3.5 h-3.5 shrink-0" />}
-                        {ind}
+                        <div className="flex items-center gap-2">
+                          {selectedVertical === v.id && <Check className="w-3.5 h-3.5 shrink-0" />}
+                          <span className="font-medium">{v.label}</span>
+                        </div>
+                        <span className="text-[10px] text-[#52525B] pl-5">{v.description}</span>
                       </button>
                     ))}
                   </div>
@@ -256,48 +259,29 @@ export default function RequestAccess() {
             </div>
           </div>
 
-          {/* Specializations - shown after industry selection */}
-          {industry && availableVerticals.length > 0 && (
+          {/* Sub-verticals — shown after vertical selection */}
+          {verticalConfig && verticalConfig.subVerticals.length > 0 && (
             <div className="space-y-2">
               <Label className="text-xs uppercase tracking-wider text-[#71717A]">Specializations</Label>
-              <p className="text-[10px] text-[#52525B]">Select the verticals you'll be sourcing leads for</p>
+              <p className="text-[10px] text-[#52525B]">Select the sub-verticals you'll focus on</p>
               <div className="rounded-lg border border-white/10 bg-white/[0.02] p-3 space-y-2 max-h-48 overflow-y-auto">
-                {Object.entries(verticalsByGroup).map(([group, verts]) => (
-                  <div key={group}>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {verticalConfig.subVerticals.map(sv => (
                     <button
+                      key={sv.id}
                       type="button"
-                      onClick={() => toggleGroup(group)}
-                      className="w-full flex items-center justify-between py-1 text-xs font-medium text-[#A1A1AA] hover:text-white transition-colors"
+                      onClick={() => toggleSubVertical(sv.id)}
+                      className={`rounded-md border p-2 text-left text-[11px] font-medium transition-all ${
+                        selectedSubVerticals.includes(sv.id)
+                          ? "border-[hsl(140_12%_42%)] bg-[hsl(140_12%_42%/0.1)] text-white"
+                          : "border-white/10 text-[#71717A] hover:border-white/20"
+                      }`}
                     >
-                      <span>{group}</span>
-                      <div className="flex items-center gap-1.5">
-                        <Badge variant="secondary" className="text-[9px] px-1.5 py-0 bg-white/5 text-[#71717A]">
-                          {verts.filter(v => selectedSpecializations.includes(v.id)).length}/{verts.length}
-                        </Badge>
-                        {expandedGroups.has(group) ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-                      </div>
+                      {sv.label}
                     </button>
-                    {expandedGroups.has(group) && (
-                      <div className="grid grid-cols-2 gap-1.5 pb-2">
-                        {verts.map(v => (
-                          <button
-                            key={v.id}
-                            type="button"
-                            onClick={() => toggleVertical(v.id)}
-                            className={`rounded-md border p-2 text-left text-[11px] font-medium transition-all ${
-                              selectedSpecializations.includes(v.id)
-                                ? "border-[hsl(140_12%_42%)] bg-[hsl(140_12%_42%/0.1)] text-white"
-                                : "border-white/10 text-[#71717A] hover:border-white/20"
-                            }`}
-                          >
-                            {v.label}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))}
-                <p className="text-[10px] text-[#52525B]">{selectedSpecializations.length} specialization{selectedSpecializations.length !== 1 ? "s" : ""} selected</p>
+                  ))}
+                </div>
+                <p className="text-[10px] text-[#52525B]">{selectedSubVerticals.length} specialization{selectedSubVerticals.length !== 1 ? "s" : ""} selected</p>
               </div>
             </div>
           )}
