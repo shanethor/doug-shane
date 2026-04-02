@@ -65,22 +65,15 @@ export default function RequestAccess() {
     }
   }, [user?.email, navigate]);
 
-  const filteredIndustries = INDUSTRIES.filter((i) =>
-    i.toLowerCase().includes(industrySearch.toLowerCase())
+  const filteredVerticals = CONNECT_VERTICALS.filter((v) =>
+    v.label.toLowerCase().includes(verticalSearch.toLowerCase()) ||
+    v.description.toLowerCase().includes(verticalSearch.toLowerCase())
   );
 
-  const toggleVertical = (id: string) => {
-    setSelectedSpecializations(prev =>
+  const toggleSubVertical = (id: string) => {
+    setSelectedSubVerticals(prev =>
       prev.includes(id) ? prev.filter(v => v !== id) : [...prev, id]
     );
-  };
-
-  const toggleGroup = (group: string) => {
-    setExpandedGroups(prev => {
-      const next = new Set(prev);
-      next.has(group) ? next.delete(group) : next.add(group);
-      return next;
-    });
   };
 
   const handleForgotPassword = async (e: React.FormEvent) => {
