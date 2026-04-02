@@ -16,6 +16,7 @@ const PERKS = [
 ];
 
 export default function ConnectUpsellPopup({ open, onClose }: Props) {
+  const navigate = useNavigate();
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="sm:max-w-md bg-[#0C0C0E] border-[hsl(140_12%_42%/0.2)] text-white p-0 overflow-hidden [&>button]:hidden">
