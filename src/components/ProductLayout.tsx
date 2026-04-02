@@ -15,6 +15,7 @@ import { SageFloatingChat } from "@/components/SageFloatingChat";
 
 
 const CONNECT_NAV = [
+  { to: "/connect/dashboard", label: "Dashboard", icon: LayoutDashboard, premium: false, beta: false },
   { to: "/connect", label: "Connect", icon: Network, exact: true, premium: false, beta: false },
   { to: "/connect/intelligence", label: "Intelligence", icon: Brain, premium: false, beta: false },
   { to: "/connect/pipeline", label: "Pipeline", icon: BarChart3, premium: false, beta: false },
