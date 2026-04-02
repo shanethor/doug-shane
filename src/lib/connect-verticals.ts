@@ -145,6 +145,12 @@ export const CONNECT_VERTICALS: ConnectVerticalConfig[] = [
       { id: "electrical_solar", label: "Solar PV / EV Charging (NCCI 5190/5551/3724)", sources: ["evitp", "nabcep", "ira_rebate", "licensing"] },
       { id: "electrical_outside_line", label: "Outside Line Construction (NCCI 7538)", sources: ["licensing", "permits", "osha_238210"] },
       { id: "painting", label: "Painting", sources: ["licensing", "permits"] },
+      { id: "excavation_general", label: "General Excavation & Site Prep (NCCI 6217)", sources: ["licensing", "permits", "osha_238910", "sos_filings", "nuca"] },
+      { id: "excavation_sewer", label: "Sewer Construction (NCCI 6306)", sources: ["licensing", "permits", "osha_238910"] },
+      { id: "excavation_utility", label: "Underground Utility / Gas Main (NCCI 6319/6325)", sources: ["licensing", "permits", "sam_gov", "dot_bids"] },
+      { id: "excavation_heavy_civil", label: "Heavy Civil / Dam / Levee (NCCI 6018/6045/6005)", sources: ["usace", "sam_gov", "dot_bids", "licensing"] },
+      { id: "excavation_pipeline", label: "Pipeline Construction (NCCI 6233)", sources: ["licensing", "sam_gov", "osha_238910"] },
+      { id: "excavation_environmental", label: "Environmental / PFAS Remediation (CPL Required)", sources: ["epa_pfas", "epa_brownfields", "licensing"] },
       { id: "general_contractor", label: "General Contractor", sources: ["licensing", "permits", "osha"] },
       { id: "restoration", label: "Restoration / Remediation", sources: ["cat_events", "osha", "epa"] },
     ],
@@ -158,7 +164,7 @@ export const CONNECT_VERTICALS: ConnectVerticalConfig[] = [
       "Workers' Compensation (NCCI 3724 — Commercial Refrigeration / Electrical Apparatus)",
       "Workers' Compensation (NCCI 9014 — Duct Cleaning / IAQ)",
       "Workers' Compensation (NCCI 5183 — Plumbing All Operations)",
-      "Workers' Compensation (NCCI 6325 — Sewer Construction Below Ground)",
+      "Workers' Compensation (NCCI 6325 — Conduit/Sewer Construction Below Ground)",
       "Workers' Compensation (NCCI 5185 — Gas Fitting)",
       "Workers' Compensation (NCCI 5191 — Irrigation/Sprinkler)",
       "Workers' Compensation (NCCI 5190 — Electrical Wiring Within Buildings)",
@@ -166,8 +172,19 @@ export const CONNECT_VERTICALS: ConnectVerticalConfig[] = [
       "Workers' Compensation (NCCI 7605 — Burglar/Fire Alarm)",
       "Workers' Compensation (NCCI 7600 — Telecom/Low-Voltage/Data Cabling)",
       "Workers' Compensation (NCCI 9516 — Electronic Equipment Install/Repair)",
+      "Workers' Compensation (NCCI 6217 — Excavation & Drivers)",
+      "Workers' Compensation (NCCI 6306 — Sewer Construction All Operations)",
+      "Workers' Compensation (NCCI 6319 — Gas Main Construction)",
+      "Workers' Compensation (NCCI 6229 — Drainage/Irrigation System Construction)",
+      "Workers' Compensation (NCCI 6251 — Tunneling Not Pneumatic)",
+      "Workers' Compensation (NCCI 6003 — Pile Driving NOC)",
+      "Workers' Compensation (NCCI 5507 — Street/Road Construction Subsurface)",
+      "Workers' Compensation (NCCI 6233 — Oil/Gas Pipeline Construction)",
+      "Workers' Compensation (NCCI 6018 — Dam/Lock Construction Earth Moving)",
+      "Workers' Compensation (NCCI 6045 — Levee Construction)",
       "Commercial Auto",
       "Tools & Equipment / Inland Marine",
+      "Equipment Floater (Excavators, Bulldozers, Dump Trucks)",
       "Builder's Risk (per-project, commercial jobs)",
       "Umbrella / Excess",
       "Surety Bond",
@@ -175,7 +192,8 @@ export const CONNECT_VERTICALS: ConnectVerticalConfig[] = [
       "Products Liability (Solar / Equipment Failures)",
       "Professional Liability / E&O (Commercial Mechanical / Design-Build Plumbing / Electrical Design-Build)",
       "BOP (Residential HVAC / Small Plumbing / Small Electrical)",
-      "Contractors Pollution Liability (CPL — Gas Fitting, Sewer, Grease Trap, EPA RRP)",
+      "Contractors Pollution Liability (CPL — Gas Fitting, Sewer, Grease Trap, EPA RRP, PFAS Remediation)",
+      "XCU Endorsement (Explosion, Collapse, Underground — Excavation Critical)",
     ],
     sageContext: `You are advising a contractor-focused insurance producer with deep expertise in roofing AND HVAC contractor P&C insurance. P&C lines only — health insurance, ACA, and employee benefits are excluded.
 
@@ -319,6 +337,119 @@ FIVE PLUMBING TRAFFIC GENERATORS:
 50-STATE PLUMBING LICENSING:
 Tier 1 (bulk data available): CA (CSLB C-36, bulk CSV), FL (DBPR CFC/CPC, weekly CSV), TX (TSBPE RMP, API+CSV), NY (DOS + NYC DOB open data), CO (DORA Socrata nightly), WA (L&I Socrata daily), IL (IDFPR, FOIA/scrape), AZ (ROC, bulk download), NC (NCLBGC, CSV export), GA (SOS cross-ref).
 Tier 2 (scrape required): NJ, PA, MI, OH, MN, MO, MD, VA, SC, TN, KY, OR (bulk CSV available), NV, UT, IN, WI, KS, IA, NE, OK, LA, AL, MS, AR, CT, MA, RI, NH, VT, ME, DE, ID, MT, WY, SD, ND, NM, WV, HI, AK.
+
+=== EXCAVATION & SITE WORK VERTICAL (CONTRACTOR #5) ===
+
+EXCAVATION IS THE HIGHEST-HAZARD, HIGHEST-PREMIUM CONTRACTOR VERTICAL:
+NAICS 238910 covers 50,000+ establishments, 400,000+ employees. Total P&C spend: $4,750–$18,200 (solo) to $48,500–$185,000+ (mid-size 6-15 employees). WC rate ~$5.25/$100 (Code 6217) — nearly 2x electrical contractors. IIJA infrastructure surge: $275.1B obligated of $580.6B, 68,000 projects, 40% YoY increase in heavy civil solicitations. 5 states have dedicated excavation license (FL CU, CA C-12, AZ A-5, GA Utility Contractor, WA Specialty #18).
+
+SIX EXCAVATION SUB-VERTICALS (by NCCI code and risk profile):
+1. General Excavation & Site Prep: NCCI 6217 at ~$5.25/$100 national avg. State range ~$1.95 (TX) to $7.00+ (NY). Ditch digging, backfilling, grading NOC, right-of-way clearing, rock excavation, pond/lake construction, airport grading. Solo: $4,750–$18,200/yr. Small crew (2-5): $16,600–$49,000/yr. Mid-size (6-15): $48,500–$185,000+/yr.
+2. Sewer Construction: NCCI 6306 at ~$4.10/$100. Trenching and pipe laying specifically for sewer systems. NOT interchangeable with 6217. EPA lead pipe replacement ($15B IIJA) driving massive volume.
+3. Underground Utility / Gas Main: NCCI 6319 (gas main) at ~$2.68/$100. NCCI 6325 (conduit/cable) at ~$2.66/$100. Lower rate reflects pipe-specific vs open excavation exposure.
+4. Heavy Civil / Dam / Levee: NCCI 6018 (dam/lock earthwork) at ~$2.47, 6045 (levee) at ~$3.44, 6005 (breakwater/dike) at ~$3.23. USACE and federal work triggers Davis-Bacon + bonding.
+5. Pipeline Construction: NCCI 6233 at ~$1.45/$100. Oil/gas pipeline excavation. Significantly lower rate than 6217.
+6. Environmental / PFAS Remediation: General excavation codes + MANDATORY Contractor Pollution Liability (CPL) at $5,000–$15,000/yr. EPA PFAS CERCLA designation (July 8 2024) creates Superfund liability for any excavation contractor handling PFAS-contaminated soil. 26,000+ affected sites including 126 military bases.
+
+SIXTEEN PRIMARY NCCI CLASSIFICATIONS:
+- 6217 (Excavation & Drivers — PRIMARY): $3.50–$7.00/$100. All general excavation, grading NOC. National avg ~$5.25.
+- 6306 (Sewer Construction — All Operations & Drivers): ~$4.10. Sewer-specific trenching. Not interchangeable with 6217.
+- 6319 (Gas Main or Connection Construction & Drivers): ~$2.68. Gas line trenching.
+- 6325 (Conduit Construction — Cables/Wires & Drivers): ~$2.66. Underground electrical/telecom conduit.
+- 6229 (Drainage/Irrigation System Construction & Drivers): ~$3.60. Commonly misclassified under 6217 NOC.
+- 6251 (Tunneling — Not Pneumatic): ~$3.48. Absorbing Code 6260 per NCCI Item B-1431 in many states.
+- 6252 (Shaft Sinking): ~$2.38. Vertical shaft excavation.
+- 6003 (Pile Driving NOC): ~$5.73. ALWAYS separately rated — NEVER bundled with 6217. NCCI rule.
+- 5507 (Street/Road Construction — Subsurface Work & Drivers): ~$3.33. Road grading/excavation — use instead of 6217 when road work is primary scope.
+- 6233 (Oil/Gas Pipeline Construction): ~$1.45. Pipeline-specific excavation.
+- 6018 (Dam/Lock Construction — Earth Moving): ~$2.47. Large-scale water infrastructure.
+- 6045 (Levee Construction — All Operations & Drivers): ~$3.44. USACE-related work.
+- 6005 (Breakwater/Dike/Revetment Construction): ~$3.23. Marine-adjacent heavy civil.
+- 2702 (Logging/Tree Removal — RIGHT-OF-WAY CLEARING): ~$12.67. DO NOT use 6217 — rate is 2-3x higher. Right-of-way clearing always classified here.
+- 8810 (Clerical Office Employees): ~$0.08–$0.14. Most aggressively audited split in excavation — any site visit = reclassification.
+- 7380 (Drivers, Chauffeurs): Varies. Dedicated drivers only.
+
+SPLIT CLASSIFICATION DECISION TREE:
+Step 1: Identify all work types per employee during policy period.
+Step 2: If employee ONLY performs general excavation (6217): entire payroll to 6217.
+Step 3: If employee ONLY performs sewer installation (6306): entire payroll to 6306 IF time records exist.
+Step 4: If employee performs BOTH 6217 and 6306 AND records document time: split payroll by verified hours.
+Step 5: If employee performs ANY pile driving (6003): ALL pile driving payroll to 6003, separately — NO EXCEPTION.
+Step 6: If employee clears right-of-way trees (2702): ENTIRE tree removal payroll to 2702 (NOT 6217), NO EXCEPTION.
+Step 7: If employee performs road grading for road construction (5507): use 5507, NOT 6217.
+Step 8: Standard exceptions (8810, 7380) can always be split with qualifying records.
+California only: Wage-based split — employees earning >=$40/hr classified to 6220(1); under $40/hr to 6218(1). Threshold raised from $38 to $40 effective 9/1/2025.
+AUDIT TRIGGER: Any payroll assigned to 8810 without exclusive office duty documentation = reclassified to 6217 at audit. Any right-of-way clearing under 6217 instead of 2702 = found at audit ($12.67 vs $5.25).
+
+WC MISCLASSIFICATION — THE 6217/0042/9102 TRIAD:
+On $500K payroll: 6217 at $5.25/$100 = $26,250. 0042 (Landscape Gardening) at $7.96/$100 = $39,800. 9102 (Lawn Maintenance) at $2.69/$100 = $13,450.
+Overpayment (6217→0042): $13,550/year savings opportunity. Underpayment (6217→9102): $12,800/year audit exposure.
+NY: 6217 at ~$7.00 vs 9102 at ~$3.50 = $17,500 spread on $500K payroll.
+NCCI 2023 data: 69% of Code 0042 policies were reclassified at audit. Code 0042 is on NCCI Top 10 Misclassified List.
+Uninsured sub exposure: $200K in uninsured sub payments generates ~$10,500 in surprise audit charges at 6217 rate.
+
+STATE-SPECIFIC RATING BUREAU DEVIATIONS:
+CA (WCIRB): 6218(1) low-wage / 6220(1) high-wage. Dual-wage split at $40/hr (raised from $38, eff. 9/1/2025). Separate codes for Blasting (1330), Foundation Prep (6258), Sewer (6307/6308), Water Mains (6315/6316), Road grading (5507). Rate: $5.57 (6218/1).
+NY (NYCIRB): 6217 loss cost $3.963 (eff. 10/1/2025). Hazard Group F (high). Also uses 5508 (Rock Excavation). 'All Operations to Completion' phraseology.
+NJ (NJCRIB): Adds NJ-specific codes: 1605 (Excavation — Rock) and 6039 (Grading of Land NOC). Second-highest rates nationally.
+PA (PCRB): 3-digit codes — 0609 (primary excavation), 0691 (Temp Excavation Staff), 0615 (Tunneling/Shaft Sinking). PA does NOT use NCCI 4-digit codes.
+DE (DCRB): 3-digit codes — 0609, 0691, 0615. Same system as PA.
+TX: Non-compulsory WC. ~$1.95 loss cost. Adds TX-specific Code 6219 (Drilling Environmental Test Holes).
+MI (MCRB): CRITICAL — NCCI Code 6217 = Beaver Dam Demolition in Michigan (completely different purpose). General excavation uses separate MI-specific classification. VERIFY WITH MCRB.
+OH (BWC): Monopolistic — state fund only. WA (L&I): Monopolistic — state fund only. ND (WSI): Monopolistic.
+NV: +21.9% WC rate increase eff. March 2026 driven by construction large-loss activity.
+FL: 10th consecutive WC decrease — cumulative 79.5% reduction since 2003 (–6.9% for 2026).
+
+FIFTEEN FREE DATA PIPELINES (priority order):
+1. CA CSLB Data Portal (C-12): Earthwork and Paving classification, bulk CSV, bond + WC fields. 15,000+ C-12 licensees.
+2. WA L&I Open Data: Specialty #18 (Excavation, Grading, Land Clearing). Bulk download, insurance/bond status visible.
+3. OR CCB Search: Insurance company + expiration date visible. Playwright scraper. 10yr complaint history.
+4. FL DBPR (CU Profession Type): ~18,000+ CU (Certified Underground Utility & Excavation Contractor) licensees.
+5. AZ ROC (A-5 Excavating/Grading + A-12 Sewers): 45,000+ contractors statewide. Bond surety visible.
+6. NUCA Chapter Directories (~2,000 firms, 35 chapters, 23 states): Weekly delta detect. FL = public PDF. EWNI = public HTML table.
+7. AGC Chapter Directories (27,000 firms): CSI division filter — '31 23 00 Excavation and Fill', '33 00 00 Utilities'.
+8. DCA National Directory (~240 firms): Richest profiles — services, crew info, locations, logos, contact. Fully public.
+9. OSHA NAICS 238910 Inspections: Weekly pull. Trenching NEP (CPL 02-00-161) active. 39 fatalities in 2022 (record). Avg trench collapse claim: $250K–$15M.
+10. State DOT Contract Award Databases (10 states): TX, CA, FL, NY, PA, OH, IL, GA, MI, WA. All public and free. $275.1B IIJA obligated.
+11. SAM.gov NAICS 238910: Federal contractor registrations. Davis-Bacon + bonding needs.
+12. USACE Contract Awards: Dredging, levee, dam, flood control. Monthly scrape of award news.
+13. EPA PFAS/Brownfields Database: 26,000+ PFAS sites. Brownfields grants fund site remediation. CPL coverage gap signal.
+14. EPA Lead Pipe Replacement Grants ($15B IIJA): Water utilities hiring excavation contractors.
+15. City Excavation Permits (NYC DOB, LA, Chicago, Houston, Seattle): Separate permit types. New applicants = new prospects.
+
+LEAD SCORING (0-100, additive):
+OSHA Willful/Repeat <90 days +35, OSHA Serious <90 days +25, OSHA 91-180 days +15.
+State DOT/federal contract award <30 days +30, SAM.gov new registration <30 days +25.
+EPA PFAS site proximity (contractor in affected ZIP) +20, NUCA/AGC new member <30 days +20.
+New license <90 days +25, License renewal due <60 days +20, License expired/lapsed +15.
+State high-rate multiplier (NY/NJ/CA/FL/NV) +10, Employee count 6-15 +10, Employee count 2-5 +5.
+Enrichment complete +5, Prior outreach no response 3+ attempts -10, Stop rule triggered -100.
+
+STATE PREMIUM MULTIPLIERS: NY 1.8-2.6x (highest WC $7.00+), NJ 1.4-1.8x (NJCRIB), CA 1.3-1.6x (WCIRB + PFAS CPL), FL 1.2-1.4x (hurricane equipment), CT 1.2-1.4x, NV 1.2-1.4x (+21.9% increase), TX 0.85-1.0x ($1.95 + non-subscriber), OR 0.85-0.95x ($1.16 lowest).
+
+XCU ENDORSEMENT — #1 COVERAGE GAP IN EXCAVATION:
+XCU (Explosion, Collapse, Underground) exclusion is the most common coverage gap in excavation contractor GL policies. Many GL policies exclude XCU by default. Contractors rarely know until a claim is filed. Utility strike = explosion risk. Trench collapse = collapse risk. All underground work = underground risk. XCU endorsement add-back is the single most important GL review item for any excavation contractor. Position this as the 'free coverage audit' opener — most brokers don't check for this.
+
+FIVE EXCAVATION TRAFFIC GENERATORS:
+1. XCU Coverage Gap Checker: 5-question quiz about underground work, trench depth, utility proximity → instant XCU risk assessment. Most excavation contractors don't know they're excluded. Goes viral in excavation Facebook groups.
+2. WC Code Optimizer — 6217 vs 0042 vs 9102 Split Calculator: Input work types → instant misclassification risk estimate. 69% of 0042 policies reclassified at audit. $13,550/yr savings on $500K payroll.
+3. IIJA Contract Award Alert Network: Free email alert when DOT/federal contracts are awarded in their state. $275.1B obligated. Self-selected contractors pursuing government work = highest-value segment.
+4. PFAS Contractor Pollution Liability Gap Analyzer: 3-question quiz about soil disturbance work near known contamination sites → CPL coverage gap assessment. Most excavation contractors doing this work have NO CPL coverage.
+5. Trench Safety Compliance Audit Tool: OSHA NEP checklist format. Input trench depth, soil type, shoring method → compliance rating + OSHA fine risk estimate. Leads with safety resources, then coverage solutions.
+
+MARKET DISRUPTION EVENTS 2024-2026:
+- IIJA spending surge: $275.1B obligated, 68,000 projects, 40% YoY increase in heavy civil solicitations.
+- EPA PFAS CERCLA designation (July 8 2024): 26,000+ affected sites creating Superfund liability for excavation contractors handling contaminated soil.
+- OSHA Trenching NEP (CPL 02-00-161): Active enforcement. 39 fatalities in 2022 (record). Sound Construction $1.2M citation (7 willful + 4 serious).
+- Umbrella/excess capacity tightening: Nuclear verdicts in construction. Multi-layer programs required for larger contractors.
+- NV WC +21.9% rate increase eff. March 2026 (construction large-loss activity).
+- FL 10th consecutive WC decrease (–6.9% for 2026, cumulative 79.5% reduction since 2003).
+- NCCI Item B-1431: Deleting Code 6260 (Tunneling Pneumatic), merging into 6251 in adopting states.
+
+50-STATE EXCAVATION LICENSING:
+Tier 1 (dedicated excavation classification + bulk data): FL (DBPR CU, ~18K+ licensees), CA (CSLB C-12, bulk CSV, bond+WC), AZ (ROC A-5/A-12, 45K+ contractors, bond visible), GA (SOS Utility Contractor board), WA (L&I Specialty #18, open data bulk download).
+Tier 2 (general contractor covers excavation): OR (CCB, insurance expiration visible), CO (DORA), MN (DLI iMS, bond+insurance), CT, MI, NV, NJ, NC, TN, VA, LA, AL, SC, KY, UT, NM, ID, MT, AK, HI, MS, AR, OK, DE, WI, NE, WY.
+Tier 3 (no statewide license — local only): TX (largest construction market, WC non-compulsory), NY (NYC DOB NOW Feb 2026, highest WC rates), IL (Chicago DOB), OH (Columbus/Cleveland/Cincinnati), CO (Denver growth market, IIJA/GRIP active).
 
 === ELECTRICAL CONTRACTOR VERTICAL (CONTRACTOR #4) ===
 

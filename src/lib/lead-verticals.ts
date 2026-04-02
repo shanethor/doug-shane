@@ -272,7 +272,90 @@ export const VERTICALS: Vertical[] = [
     ],
   },
 
-  // ── Contractors (8 trades) ──
+  // ── Excavation & Site Work (6 sub-verticals, 15+ data pipelines, full v2.0 spec) ──
+  {
+    id: "excavation_general",
+    label: "General Excavation & Site Prep (NCCI 6217 — $5.25/$100 Avg)",
+    group: "Contractors",
+    sources: [
+      s("ex_new_license", "New State Excavation/GC License (FL CU, CA C-12, WA Specialty #18, AZ A-5)", "file"),
+      s("ex_license_renewal", "License Expiring Within 60 Days (X-Date Capture)", "zap"),
+      s("osha_238910", "OSHA Inspection NAICS 238910 (Trenching NEP — 39 Fatalities 2022)", "target"),
+      s("sos_excavation", "SOS New Entity Filings — Excavation/Grading/Site Work Keywords", "file"),
+      s("nuca_directories", "NUCA Chapter Directories (~2,000 Firms, 35 Chapters — Free)", "users"),
+      s("agc_directories", "AGC Chapter Directories (CSI 31 23 00 Excavation Filter — 27K Firms)", "users"),
+      s("dca_directory", "DCA National Directory (~240 Firms — Rich Public Profiles)", "users"),
+      s("city_excavation_permits", "City Excavation Permits (NYC DOB, LA, Chicago, Houston, Seattle)", "building"),
+      s("batchdata_enrich", "BatchData Skip-Tracing ($0.05/record)", "users"),
+      s("google_places_enrich", "Google Places Enrichment ($0.017/call)", "map"),
+    ],
+  },
+  {
+    id: "excavation_sewer",
+    label: "Sewer Construction (NCCI 6306 — ~$4.10/$100)",
+    group: "Contractors",
+    sources: [
+      s("ex_new_license", "New State Excavation/GC License", "file"),
+      s("osha_238910", "OSHA Inspection NAICS 238910", "target"),
+      s("nuca_directories", "NUCA Chapter Directories", "users"),
+      s("epa_lslr_excavation", "EPA Lead Pipe Replacement Grants ($15B IIJA)", "globe"),
+      s("socrata_permits_sewer", "Sewer/Utility Permits", "building"),
+      s("batchdata_enrich", "BatchData Skip-Tracing", "users"),
+    ],
+  },
+  {
+    id: "excavation_utility",
+    label: "Underground Utility / Gas Main (NCCI 6319/6325)",
+    group: "Contractors",
+    sources: [
+      s("ex_new_license", "New State Excavation/GC License", "file"),
+      s("osha_238910", "OSHA Inspection NAICS 238910", "target"),
+      s("dot_bid_tabs", "State DOT Contract Award Databases (10 States — Free)", "globe"),
+      s("sam_gov_238910", "SAM.gov NAICS 238910 — Federal Contractors (Davis-Bacon)", "globe"),
+      s("nuca_directories", "NUCA Chapter Directories", "users"),
+      s("pcca_directory", "PCCA Power & Communication Contractors", "users"),
+      s("batchdata_enrich", "BatchData Skip-Tracing", "users"),
+    ],
+  },
+  {
+    id: "excavation_heavy_civil",
+    label: "Heavy Civil / Dam / Levee (NCCI 6018/6045/6005 — USACE)",
+    group: "Contractors",
+    sources: [
+      s("usace_awards", "USACE Contract Awards (Dredging, Levee, Dam, Flood Control)", "globe"),
+      s("sam_gov_238910", "SAM.gov NAICS 238910/237110/237310", "globe"),
+      s("dot_bid_tabs", "State DOT Contract Award Databases", "globe"),
+      s("ex_new_license", "New State Excavation/GC License", "file"),
+      s("osha_238910", "OSHA Inspection NAICS 238910", "target"),
+      s("batchdata_enrich", "BatchData Skip-Tracing", "users"),
+    ],
+  },
+  {
+    id: "excavation_environmental",
+    label: "Environmental / PFAS Remediation (CPL $5K–$15K/yr Required)",
+    group: "Contractors",
+    sources: [
+      s("epa_pfas_sites", "EPA PFAS/CERCLA Sites (26,000+ Sites, 126 Military Bases)", "globe"),
+      s("epa_brownfields", "EPA Brownfields Grants (Site Remediation — 2,000+ Communities)", "globe"),
+      s("epa_superfund", "EPA Superfund Sites in Remedial Action Phase", "globe"),
+      s("ex_new_license", "New State Excavation/GC License", "file"),
+      s("osha_238910", "OSHA Inspection NAICS 238910", "target"),
+      s("batchdata_enrich", "BatchData Skip-Tracing", "users"),
+    ],
+  },
+  {
+    id: "excavation_traffic_generators",
+    label: "Excavation Traffic Generators & Tools",
+    group: "Contractors",
+    sources: [
+      s("xcu_coverage_checker", "XCU Coverage Gap Checker (Explosion/Collapse/Underground Quiz)", "trending"),
+      s("wc_code_optimizer_excavation", "WC Code Optimizer — 6217 vs 0042 vs 9102 Split Calculator ($13,550/yr Savings)", "target"),
+      s("iija_contract_alert", "IIJA Contract Award Alert Network ($275B Obligated — Free Email)", "trending"),
+      s("pfas_cpl_gap_analyzer", "PFAS Contractor Pollution Liability Gap Analyzer", "target"),
+      s("trench_safety_audit_tool", "Trench Safety Compliance Audit Tool (OSHA NEP Checklist)", "trending"),
+    ],
+  },
+  // ── Contractors (General + Other Trades) ──
   {
     id: "contractor_general",
     label: "General Contractors",
