@@ -330,7 +330,10 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasAgent, in
               )}
             </div>
           ))}
-          <p className="text-[10px] text-muted-foreground">{selectedVerticals.length} specialization{selectedVerticals.length !== 1 ? "s" : ""} active</p>
+          <p className="text-[10px] text-muted-foreground">
+            {selectedVerticals.length} specialization{selectedVerticals.length !== 1 ? "s" : ""} active
+            {selectedVerticals.length > 0 && ` — ${availableVerticals.filter(v => selectedVerticals.includes(v.id)).map(v => v.label).slice(0, 3).join(", ")}${selectedVerticals.length > 3 ? ` +${selectedVerticals.length - 3} more` : ""}`}
+          </p>
         </CardContent>
       </Card>
 
