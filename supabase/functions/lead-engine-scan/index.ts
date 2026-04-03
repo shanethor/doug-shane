@@ -867,6 +867,7 @@ Deno.serve(async (req) => {
       score: calculateLeadScore(l),
       tier: tierMap[source] || 2,
       status: "new",
+      batch_id: batchId,
     }));
 
     const { data: inserted, error: insertErr } = await adminClient
