@@ -948,7 +948,9 @@ function ResultsTable({ latestBatchId }: { latestBatchId: string | null }) {
                         </div>
                       </TableCell>
                     </TableRow>
-                  ))}
+                      </React.Fragment>
+                    );
+                  })}
                 </TableBody>
               </Table>
               {showMoreButton}
