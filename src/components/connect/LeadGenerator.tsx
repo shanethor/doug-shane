@@ -148,11 +148,19 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasAgent, in
     return sources;
   }, [selectedVerticals]);
 
-  const toggleVertical = (id: string) => {
-    setSelectedVerticals(prev =>
-      prev.includes(id) ? prev.filter(v => v !== id) : [...prev, id]
-    );
-  };
+  const toggleVertical = useCallback((id: string) => {
+    setSelectedVerticals(prev => {
+      const next = prev.includes(id) ? prev.filter(v => v !== id) : [...prev, id];
+      // Persist to profile (fire-and-forget)
+      (async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await supabase.from("profiles").update({ specializations: next } as any).eq("user_id", user.id);
+        }
+      })();
+      return next;
+    });
+  }, []);
 
   const toggleGroup = (group: string) => {
     setExpandedGroups(prev => {
