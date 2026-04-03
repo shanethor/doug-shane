@@ -739,8 +739,10 @@ function ResultsTable({ latestBatchId }: { latestBatchId: string | null }) {
       <CardContent className={isMobile ? "px-3 pb-3" : "p-0"}>
         {(() => {
           const INITIAL_COUNT = 10;
-          const displayLeads = showAll ? filtered : filtered.slice(0, INITIAL_COUNT);
-          const hiddenCount = filtered.length - INITIAL_COUNT;
+          // Combine: latest batch first, then previous
+          const orderedLeads = [...latestLeads, ...previousLeads];
+          const displayLeads = showAll ? orderedLeads : orderedLeads.slice(0, INITIAL_COUNT);
+          const hiddenCount = orderedLeads.length - INITIAL_COUNT;
           const showMoreButton = !showAll && hiddenCount > 0 && (
             <div className="flex justify-center py-3">
               <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => setShowAll(true)}>
@@ -748,13 +750,15 @@ function ResultsTable({ latestBatchId }: { latestBatchId: string | null }) {
               </Button>
             </div>
           );
-          const showLessButton = showAll && filtered.length > INITIAL_COUNT && (
+          const showLessButton = showAll && orderedLeads.length > INITIAL_COUNT && (
             <div className="flex justify-center py-3">
               <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => setShowAll(false)}>
                 <ChevronUp className="h-3 w-3" /> Show less
               </Button>
             </div>
           );
+
+          const isNewLead = (lead: EngineLead) => latestBatchId && lead.batch_id === latestBatchId;
 
           return isMobile ? (
             /* ── Mobile: Card-based layout ── */
