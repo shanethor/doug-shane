@@ -919,6 +919,7 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({
       success: true,
       leads_found: count,
+      batch_id: batchId,
       message: `Extracted ${count} real leads from ${source} search results. Contact data is being enriched via Serper/Apollo/PDL.`,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
