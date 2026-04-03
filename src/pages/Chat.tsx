@@ -486,7 +486,41 @@ export default function Chat() {
     };
   }, []);
 
+  // Auto-save conversation to DB after messages change
+  useEffect(() => {
+    if (!user || messages.length < 2) return;
+    if (conversationSaveTimer.current) clearTimeout(conversationSaveTimer.current);
+    conversationSaveTimer.current = setTimeout(async () => {
+      const title = messages.find(m => m.role === "user")?.content?.slice(0, 80) || "New conversation";
+      const serializable = messages.map(m => ({ role: m.role, content: m.content }));
+      if (conversationId) {
+        await supabase.from("sage_conversations").update({
+          messages: serializable as any,
+          title,
+          updated_at: new Date().toISOString(),
+        }).eq("id", conversationId);
+      } else {
+        const { data } = await supabase.from("sage_conversations").insert({
+          user_id: user.id,
+          title,
+          messages: serializable as any,
+        }).select("id").single();
+        if (data) setConversationId(data.id);
+      }
+    }, 2000);
+    return () => { if (conversationSaveTimer.current) clearTimeout(conversationSaveTimer.current); };
+  }, [messages, user, conversationId]);
 
+  const handleLoadConversation = useCallback((id: string, msgs: any[]) => {
+    setConversationId(id);
+    setMessages(msgs.map((m: any) => ({ role: m.role, content: m.content })));
+  }, []);
+
+  const handleNewChat = useCallback(() => {
+    setConversationId(null);
+    setMessages([]);
+    setInput("");
+  }, []);
 
 
   // Calculate coverage from form_data for a given submission
