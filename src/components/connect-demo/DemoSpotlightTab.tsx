@@ -74,6 +74,37 @@ const TYPE_COLORS: Record<string, string> = {
   announcement: "border-[hsl(20_50%_50%/0.4)] text-[hsl(20_50%_65%)] bg-[hsl(20_50%_50%/0.1)]",
 };
 
+// ── Category filter bar for template gallery ──────────────────────────────────
+const CATEGORY_FILTERS = [
+  { value: "",             label: "All" },
+  { value: "flyer",        label: "Flyer" },
+  { value: "social",       label: "Social" },
+  { value: "newsletter",   label: "Newsletter" },
+  { value: "presentation", label: "Presentation" },
+  { value: "poster",       label: "Poster" },
+];
+
+function TemplateCategoryFilter({ selectedType, onChange }: { selectedType: string; onChange: (v: string) => void }) {
+  return (
+    <div className="flex gap-1 flex-wrap">
+      {CATEGORY_FILTERS.map(f => (
+        <button
+          key={f.value}
+          onClick={() => onChange(f.value)}
+          className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold transition-colors"
+          style={{
+            background: selectedType === f.value ? "hsl(140 12% 42%)" : "hsl(240 6% 14%)",
+            color: selectedType === f.value ? "#fff" : "hsl(240 5% 50%)",
+            border: `1px solid ${selectedType === f.value ? "hsl(140 12% 42%)" : "hsl(240 6% 22%)"}`,
+          }}
+        >
+          {f.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export default function DemoSpotlightTab() {
   const [view, setView] = useState<ViewMode>("home");
   const [homeTab, setHomeTab] = useState<HomeTab>("templates");
@@ -232,19 +263,35 @@ export default function DemoSpotlightTab() {
         {/* ── TEMPLATES TAB ── */}
         {homeTab === "templates" && (
           <CardContent className="p-3">
-            <div className="grid grid-cols-2 gap-2">
-              {SPOTLIGHT_TEMPLATES.map((tpl) => (
+            {/* ── Category filter bar ── */}
+            <TemplateCategoryFilter selectedType={selectedType} onChange={setSelectedType} />
+
+            <div className="grid grid-cols-2 gap-2 mt-2">
+              {SPOTLIGHT_TEMPLATES
+                .filter(tpl => !selectedType || tpl.category === selectedType ||
+                  (selectedType === "social" && ["instagram", "facebook", "linkedin"].includes(tpl.category ?? "")))
+                .map((tpl) => (
                 <button
                   key={tpl.id}
                   onClick={() => { setActiveTemplateId(tpl.id); setView("template_editor"); }}
                   className="group relative rounded-xl overflow-hidden text-left cursor-pointer"
                   style={{ aspectRatio: "4/3", border: "1px solid hsl(240 6% 18%)" }}
                 >
-                  {/* Preview image */}
-                  {TEMPLATE_IMAGES[tpl.id] ? (
+                  {/* Preview image — prefer thumbnailUrl, then local asset, then color bg */}
+                  {tpl.thumbnailUrl ? (
+                    <img src={tpl.thumbnailUrl} alt={tpl.name} className="w-full h-full object-cover" />
+                  ) : TEMPLATE_IMAGES[tpl.id] ? (
                     <img src={TEMPLATE_IMAGES[tpl.id]} alt={tpl.name} className="w-full h-full object-cover" />
                   ) : (
                     <div className="w-full h-full" style={{ background: tpl.thumbnailBg }} />
+                  )}
+
+                  {/* Category badge */}
+                  {tpl.category && (
+                    <div className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-wide"
+                      style={{ background: "rgba(0,0,0,0.65)", color: "hsl(140 12% 62%)" }}>
+                      {tpl.category}
+                    </div>
                   )}
 
                   {/* Hover overlay */}
