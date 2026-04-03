@@ -788,9 +788,12 @@ function ResultsTable({ latestBatchId }: { latestBatchId: string | null }) {
                       className="h-4 w-4 rounded border-border accent-primary cursor-pointer mt-0.5 shrink-0"
                     />
                     <div className="flex-1 min-w-0" onClick={() => setSelectedLead(lead)}>
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="text-sm font-medium truncate">{lead.company}</p>
-                        <FitScoreBadge score={lead.score || 0} />
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-1.5">
+                            <p className="text-sm font-medium truncate">{lead.company}</p>
+                            {isNewLead(lead) && <Badge className="text-[8px] px-1.5 py-0 bg-emerald-500/15 text-emerald-500 border-emerald-500/30">NEW</Badge>}
+                          </div>
+                          <FitScoreBadge score={lead.score || 0} />
                       </div>
                       {lead.industry && <p className="text-[11px] text-muted-foreground">{lead.industry}</p>}
                       {lead.state && <p className="text-[10px] text-muted-foreground">{lead.state}</p>}
