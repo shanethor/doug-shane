@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Search, User, Building2, Phone, Mail, MapPin, DollarSign,
   ExternalLink, X, Share2, Check, FileText, Calendar, StickyNote,
-  Shield, AlertTriangle, Clock, Download,
+  Shield, AlertTriangle, Clock, Download, ArrowLeft,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { format, parseISO } from "date-fns";
