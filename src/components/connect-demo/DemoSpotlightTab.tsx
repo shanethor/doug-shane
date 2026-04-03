@@ -18,8 +18,20 @@ import riskTipImg from "@/assets/templates/risk-tip.jpg";
 import referralAskImg from "@/assets/templates/referral-ask.jpg";
 import seasonalPromoImg from "@/assets/templates/seasonal-promo.jpg";
 
-// Lazy-load to prevent Lovable HMR from parsing heavy canvas deps at startup
+// Lazy-load heavy canvas editors
 const TemplateEditor = lazy(() => import("@/components/connect/TemplateEditor"));
+const DesignEditor  = lazy(() => import("@/components/connect/DesignEditor"));
+
+interface DbDesignTemplate {
+  id: string;
+  name: string;
+  category: string;
+  description: string | null;
+  base_width: number;
+  base_height: number;
+  design_json: any;
+  is_default: boolean;
+}
 
 const TEMPLATE_IMAGES: Record<string, string> = {
   "new-client-welcome": newClientWelcomeImg,
@@ -30,7 +42,7 @@ const TEMPLATE_IMAGES: Record<string, string> = {
   "seasonal-promo": seasonalPromoImg,
 };
 
-type ViewMode = "home" | "template_editor" | "generate_wizard" | "brand_setup";
+type ViewMode = "home" | "template_editor" | "design_editor" | "generate_wizard" | "brand_setup";
 type HomeTab = "templates" | "generate";
 
 const SAMPLE_BRANDS: BrandPackage[] = [
@@ -108,6 +120,10 @@ function TemplateCategoryFilter({ selectedType, onChange }: { selectedType: stri
 export default function DemoSpotlightTab() {
   const [view, setView] = useState<ViewMode>("home");
   const [homeTab, setHomeTab] = useState<HomeTab>("templates");
+  const [dbTemplates, setDbTemplates] = useState<Record<string, DbDesignTemplate>>({});
+  const [designEditorProps, setDesignEditorProps] = useState<{
+    templateId: string; designJson: any; width: number; height: number; title: string;
+  } | null>(null);
   const [activeTemplateId, setActiveTemplateId] = useState<string | null>(null);
   const [showAllCreations, setShowAllCreations] = useState(false);
   const [realHistory, setRealHistory] = useState<any[]>([]);
@@ -126,6 +142,18 @@ export default function DemoSpotlightTab() {
     } catch {}
   }, []);
 
+  // Load design_templates from Supabase (our Fabric.js JSON templates)
+  const loadDbTemplates = useCallback(async () => {
+    try {
+      const { data } = await supabase.from("design_templates" as any).select("*");
+      if (data) {
+        const map: Record<string, DbDesignTemplate> = {};
+        (data as DbDesignTemplate[]).forEach(t => { map[t.id] = t; });
+        setDbTemplates(map);
+      }
+    } catch { /* silent — falls back to legacy editor */ }
+  }, []);
+
   const loadBrands = useCallback(async () => {
     try {
       const { data } = await supabase.from("branding_packages").select("*").order("created_at", { ascending: false });
@@ -139,7 +167,7 @@ export default function DemoSpotlightTab() {
     } catch {}
   }, []);
 
-  useEffect(() => { loadBrands(); loadHistory(); }, [loadBrands, loadHistory]);
+  useEffect(() => { loadBrands(); loadHistory(); loadDbTemplates(); }, [loadBrands, loadHistory, loadDbTemplates]);
 
   const allBrands = [...realBrands, ...SAMPLE_BRANDS.filter(sb => !realBrands.some(rb => rb.name === sb.name))];
   const allFlyers = [...realHistory, ...SAMPLE_FLYERS];
@@ -171,7 +199,31 @@ export default function DemoSpotlightTab() {
     );
   }
 
-  // ── VIEW: Template editor (Canva-like) ──
+  // ── VIEW: Full Fabric.js Design Editor (new Canva templates) ──
+  if (view === "design_editor" && designEditorProps) {
+    const defaultBrand = (realBrands.length > 0 ? realBrands : SAMPLE_BRANDS)[0];
+    return (
+      <Suspense fallback={
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="h-6 w-6 animate-spin" style={{ color: "hsl(140 12% 58%)" }} />
+        </div>
+      }>
+        <DesignEditor
+          templateId={designEditorProps.templateId}
+          initialDesignJson={designEditorProps.designJson}
+          width={designEditorProps.width}
+          height={designEditorProps.height}
+          title={designEditorProps.title}
+          brandColors={defaultBrand?.brand_colors}
+          brandName={defaultBrand?.brand_name}
+          disclaimer={defaultBrand?.disclaimer}
+          onBack={() => { setView("home"); setHomeTab("templates"); }}
+        />
+      </Suspense>
+    );
+  }
+
+  // ── VIEW: Legacy Template editor (original 6 text-based templates) ──
   if (view === "template_editor" && activeTemplateId) {
     return (
       <Card style={{ background: "hsl(240 8% 9%)", borderColor: "hsl(240 6% 14%)" }}>
@@ -274,7 +326,24 @@ export default function DemoSpotlightTab() {
                 .map((tpl) => (
                 <button
                   key={tpl.id}
-                  onClick={() => { setActiveTemplateId(tpl.id); setView("template_editor"); }}
+                  onClick={() => {
+                    const dbTpl = dbTemplates[tpl.id];
+                    if (dbTpl) {
+                      // Use the full Fabric.js canvas editor for DB-backed templates
+                      setDesignEditorProps({
+                        templateId: dbTpl.id,
+                        designJson: dbTpl.design_json,
+                        width: dbTpl.base_width,
+                        height: dbTpl.base_height,
+                        title: dbTpl.name,
+                      });
+                      setView("design_editor");
+                    } else {
+                      // Fall back to legacy text editor for original 6 templates
+                      setActiveTemplateId(tpl.id);
+                      setView("template_editor");
+                    }
+                  }}
                   className="group flex flex-col text-left cursor-pointer rounded-xl overflow-hidden transition-all duration-150 hover:scale-[1.02] hover:shadow-lg"
                   style={{ border: "1px solid hsl(240 6% 16%)", background: "hsl(240 8% 7%)" }}
                 >
