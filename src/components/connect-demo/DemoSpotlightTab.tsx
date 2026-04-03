@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import SpotlightFlyerWizard from "@/components/connect/SpotlightFlyerWizard";
 import SpotlightBrandSetup, { type BrandPackage } from "@/components/connect/SpotlightBrandSetup";
 import { SPOTLIGHT_TEMPLATES } from "@/components/connect/spotlight-templates";
+import { getTemplateDesign } from "@/components/connect/template-designs";
 import newClientWelcomeImg from "@/assets/templates/new-client-welcome.jpg";
 import renewalReminderImg from "@/assets/templates/renewal-reminder.jpg";
 import eventInviteImg from "@/assets/templates/event-invite.jpg";
@@ -19,19 +20,8 @@ import referralAskImg from "@/assets/templates/referral-ask.jpg";
 import seasonalPromoImg from "@/assets/templates/seasonal-promo.jpg";
 
 // Lazy-load heavy canvas editors
-const TemplateEditor = lazy(() => import("@/components/connect/TemplateEditor"));
 const DesignEditor  = lazy(() => import("@/components/connect/DesignEditor"));
-
-interface DbDesignTemplate {
-  id: string;
-  name: string;
-  category: string;
-  description: string | null;
-  base_width: number;
-  base_height: number;
-  design_json: any;
-  is_default: boolean;
-}
+const TemplateEditor = lazy(() => import("@/components/connect/TemplateEditor"));
 
 const TEMPLATE_IMAGES: Record<string, string> = {
   "new-client-welcome": newClientWelcomeImg,
@@ -120,7 +110,6 @@ function TemplateCategoryFilter({ selectedType, onChange }: { selectedType: stri
 export default function DemoSpotlightTab() {
   const [view, setView] = useState<ViewMode>("home");
   const [homeTab, setHomeTab] = useState<HomeTab>("templates");
-  const [dbTemplates, setDbTemplates] = useState<Record<string, DbDesignTemplate>>({});
   const [designEditorProps, setDesignEditorProps] = useState<{
     templateId: string; designJson: any; width: number; height: number; title: string;
   } | null>(null);
@@ -142,18 +131,6 @@ export default function DemoSpotlightTab() {
     } catch {}
   }, []);
 
-  // Load design_templates from Supabase (our Fabric.js JSON templates)
-  const loadDbTemplates = useCallback(async () => {
-    try {
-      const { data } = await supabase.from("design_templates" as any).select("*");
-      if (data) {
-        const map: Record<string, DbDesignTemplate> = {};
-        (data as unknown as DbDesignTemplate[]).forEach(t => { map[t.id] = t; });
-        setDbTemplates(map);
-      }
-    } catch { /* silent — falls back to legacy editor */ }
-  }, []);
-
   const loadBrands = useCallback(async () => {
     try {
       const { data } = await supabase.from("branding_packages").select("*").order("created_at", { ascending: false });
@@ -167,7 +144,7 @@ export default function DemoSpotlightTab() {
     } catch {}
   }, []);
 
-  useEffect(() => { loadBrands(); loadHistory(); loadDbTemplates(); }, [loadBrands, loadHistory, loadDbTemplates]);
+  useEffect(() => { loadBrands(); loadHistory(); }, [loadBrands, loadHistory]);
 
   const allBrands = [...realBrands, ...SAMPLE_BRANDS.filter(sb => !realBrands.some(rb => rb.name === sb.name))];
   const allFlyers = [...realHistory, ...SAMPLE_FLYERS];
@@ -327,19 +304,19 @@ export default function DemoSpotlightTab() {
                 <button
                   key={tpl.id}
                   onClick={() => {
-                    const dbTpl = dbTemplates[tpl.id];
-                    if (dbTpl) {
-                      // Use the full Fabric.js canvas editor for DB-backed templates
+                    // Try embedded design JSON first (20 new templates)
+                    const design = getTemplateDesign(tpl.id);
+                    if (design) {
                       setDesignEditorProps({
-                        templateId: dbTpl.id,
-                        designJson: dbTpl.design_json,
-                        width: dbTpl.base_width,
-                        height: dbTpl.base_height,
-                        title: dbTpl.name,
+                        templateId: tpl.id,
+                        designJson: design.designJson,
+                        width: design.width,
+                        height: design.height,
+                        title: tpl.name,
                       });
                       setView("design_editor");
                     } else {
-                      // Fall back to legacy text editor for original 6 templates
+                      // Legacy text editor for original 6 templates only
                       setActiveTemplateId(tpl.id);
                       setView("template_editor");
                     }
