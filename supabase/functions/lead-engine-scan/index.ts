@@ -518,7 +518,10 @@ Deno.serve(async (req) => {
       });
     }
 
-    console.log(`[lead-engine-scan] Starting ${source} scan for user ${userId} | states=${settings.states} | industries=${settings.industries}`);
+    // Generate a unique batch ID for this scan run
+    const batchId = `batch_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`;
+
+    console.log(`[lead-engine-scan] Starting ${source} scan for user ${userId} | batch=${batchId} | states=${settings.states} | industries=${settings.industries}`);
 
     const adminClient = createClient(
       Deno.env.get("SUPABASE_URL")!,
