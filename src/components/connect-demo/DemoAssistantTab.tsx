@@ -443,6 +443,15 @@ export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: st
               </button>
             ))}
           </div>
+
+          {/* Previous chats */}
+          <div className="w-full max-w-2xl mt-6" style={{ animation: "sageFadeIn 0.6s cubic-bezier(0.16,1,0.3,1) 0.45s both" }}>
+            <PreviousChats
+              onLoad={handleLoadConversation}
+              onNewChat={handleNewChat}
+              currentConversationId={conversationId}
+            />
+          </div>
         </div>
       ) : (
         <>
