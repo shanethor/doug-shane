@@ -595,9 +595,9 @@ Deno.serve(async (req) => {
         return {
           owner_user_id: userId,
           company: place.company,
-          contact_name: null,   // Will be filled by enrichment
-          email: null,           // Will be filled by enrichment
-          phone: place.phone,    // Real phone from Google Places
+          contact_name: null,
+          email: null,
+          phone: place.phone,
           industry: settings.industries?.split(",")[0]?.trim() || null,
           state: place.state || null,
           est_premium: 5000,
@@ -607,6 +607,7 @@ Deno.serve(async (req) => {
           score: place.score,
           tier: 1,
           status: "new",
+          batch_id: batchId,
         };
       });
 
