@@ -1035,6 +1035,7 @@ export default function LeadGenerator() {
   const [loading, setLoading] = useState(true);
   const [hasGenerated, setHasGenerated] = useState(false);
   const [showAgentDrip, setShowAgentDrip] = useState(false);
+  const [latestBatchId, setLatestBatchId] = useState<string | null>(null);
   const { data: studioQual } = useStudioQualification();
 
   useEffect(() => {
