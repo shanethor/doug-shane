@@ -607,6 +607,10 @@ function ResultsTable({ latestBatchId }: { latestBatchId: string | null }) {
     return matchesSearch && matchesScore && matchesContact;
   });
 
+  // Separate latest batch from previous leads
+  const latestLeads = latestBatchId ? filtered.filter(l => l.batch_id === latestBatchId) : [];
+  const previousLeads = latestBatchId ? filtered.filter(l => l.batch_id !== latestBatchId) : filtered;
+
   const allSelected = filtered.length > 0 && filtered.every((l: EngineLead) => selectedIds.has(l.id));
   const someSelected = filtered.some((l: EngineLead) => selectedIds.has(l.id));
 
