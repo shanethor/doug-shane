@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Loader2, Send, LifeBuoy, Clock, CheckCircle, MessageSquare, Plus } from "lucide-react";
+import { Loader2, Send, LifeBuoy, Clock, CheckCircle, MessageSquare, Plus, ArrowLeft } from "lucide-react";
 import { format } from "date-fns";
 
 const STATUS_COLORS: Record<string, string> = {
