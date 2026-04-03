@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -11,67 +11,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { SPOTLIGHT_TEMPLATES } from "./spotlight-templates";
 import type { BrandPackage } from "./SpotlightBrandSetup";
 import type { TemplateCanvasData, TemplateCanvasProps } from "./template-types";
-
-// Layouts
-import ReferralAskLayout from "./template-layouts/ReferralAskLayout";
-import RenewalReminderLayout from "./template-layouts/RenewalReminderLayout";
-import NewClientWelcomeLayout from "./template-layouts/NewClientWelcomeLayout";
-import RiskTipLayout from "./template-layouts/RiskTipLayout";
-import EventInviteLayout from "./template-layouts/EventInviteLayout";
-import SeasonalPromoLayout from "./template-layouts/SeasonalPromoLayout";
-import FamilyInsuranceFlyerLayout from "./template-layouts/FamilyInsuranceFlyerLayout";
-import InsuranceAgencyServiceFlyerLayout from "./template-layouts/InsuranceAgencyServiceFlyerLayout";
-import LifeInsuranceFlyerTealLayout from "./template-layouts/LifeInsuranceFlyerTealLayout";
-import LifeInsuranceFlyerRedLayout from "./template-layouts/LifeInsuranceFlyerRedLayout";
-import FinancialAdvisorFlyerCleanLayout from "./template-layouts/FinancialAdvisorFlyerCleanLayout";
-import LifeInsuranceFlyerPinkLayout from "./template-layouts/LifeInsuranceFlyerPinkLayout";
-import FinancialAdvisorInstagramBWLayout from "./template-layouts/FinancialAdvisorInstagramBWLayout";
-import FinancialAdvisorInstagramBlueLayout from "./template-layouts/FinancialAdvisorInstagramBlueLayout";
-import FinancialAdvisorInstagramGreenLayout from "./template-layouts/FinancialAdvisorInstagramGreenLayout";
-import NetworkingStepsInfographicLayout from "./template-layouts/NetworkingStepsInfographicLayout";
-import NewsletterEmailHeaderLayout from "./template-layouts/NewsletterEmailHeaderLayout";
-import BusinessNewsletterDarkBlueLayout from "./template-layouts/BusinessNewsletterDarkBlueLayout";
-import BusinessNewsletterGreyLayout from "./template-layouts/BusinessNewsletterGreyLayout";
-import BusinessNewsletterOrangeLayout from "./template-layouts/BusinessNewsletterOrangeLayout";
-import NetworkingPresentationVibrantLayout from "./template-layouts/NetworkingPresentationVibrantLayout";
-import ReferralProgramPresentationLayout from "./template-layouts/ReferralProgramPresentationLayout";
-import NetworkingPresentationBlueLayout from "./template-layouts/NetworkingPresentationBlueLayout";
-import NetworkingEventFacebookLayout from "./template-layouts/NetworkingEventFacebookLayout";
-import NetworkingEventLinkedInLayout from "./template-layouts/NetworkingEventLinkedInLayout";
-import NetworkingEventPosterLayout from "./template-layouts/NetworkingEventPosterLayout";
+import { getTemplateLayoutLoader } from "./template-layouts/loaders";
 
 // Re-export for consumers that imported from here directly
 export type { TemplateCanvasData, TemplateCanvasProps } from "./template-types";
-
-const LAYOUT_MAP: Record<string, React.ComponentType<TemplateCanvasProps>> = {
-  "referral-ask": ReferralAskLayout,
-  "renewal-reminder": RenewalReminderLayout,
-  "new-client-welcome": NewClientWelcomeLayout,
-  "risk-tip": RiskTipLayout,
-  "event-invite": EventInviteLayout,
-  "seasonal-promo": SeasonalPromoLayout,
-  // Canva-inspired templates
-  "family-insurance-flyer": FamilyInsuranceFlyerLayout,
-  "insurance-agency-service-flyer": InsuranceAgencyServiceFlyerLayout,
-  "life-insurance-flyer-teal": LifeInsuranceFlyerTealLayout,
-  "life-insurance-flyer-red": LifeInsuranceFlyerRedLayout,
-  "financial-advisor-flyer-clean": FinancialAdvisorFlyerCleanLayout,
-  "life-insurance-flyer-pink": LifeInsuranceFlyerPinkLayout,
-  "financial-advisor-instagram-bw": FinancialAdvisorInstagramBWLayout,
-  "financial-advisor-instagram-blue": FinancialAdvisorInstagramBlueLayout,
-  "financial-advisor-instagram-green": FinancialAdvisorInstagramGreenLayout,
-  "networking-steps-infographic": NetworkingStepsInfographicLayout,
-  "newsletter-email-header": NewsletterEmailHeaderLayout,
-  "business-newsletter-dark-blue": BusinessNewsletterDarkBlueLayout,
-  "business-newsletter-grey": BusinessNewsletterGreyLayout,
-  "business-newsletter-orange": BusinessNewsletterOrangeLayout,
-  "networking-presentation-vibrant": NetworkingPresentationVibrantLayout,
-  "referral-program-presentation": ReferralProgramPresentationLayout,
-  "networking-presentation-blue": NetworkingPresentationBlueLayout,
-  "networking-event-facebook": NetworkingEventFacebookLayout,
-  "networking-event-linkedin": NetworkingEventLinkedInLayout,
-  "networking-event-poster": NetworkingEventPosterLayout,
-};
 
 const PRESET_PALETTES = [
   ["#8A9A8C", "#5a6a5c", "#F5F5F0"],
@@ -93,6 +36,7 @@ interface Props {
 export default function TemplateEditor({ templateId, brands, onBack }: Props) {
   const template = SPOTLIGHT_TEMPLATES.find(t => t.id === templateId)!;
   const defaultBrand = brands.find(b => b.is_default) || brands[0];
+  const [Layout, setLayout] = useState<React.ComponentType<TemplateCanvasProps> | null>(null);
 
   const [data, setData] = useState<TemplateCanvasData>({
     title: template.title,
@@ -115,7 +59,27 @@ export default function TemplateEditor({ templateId, brands, onBack }: Props) {
   const canvasRef = useRef<HTMLDivElement>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
 
-  const Layout = LAYOUT_MAP[templateId] || ReferralAskLayout;
+  useEffect(() => {
+    let cancelled = false;
+
+    setLayout(null);
+    getTemplateLayoutLoader(templateId)()
+      .then((module) => {
+        if (!cancelled) {
+          setLayout(() => module.default);
+        }
+      })
+      .catch((error) => {
+        console.error("Failed to load template layout", error);
+        if (!cancelled) {
+          toast.error("Template layout failed to load.");
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [templateId]);
 
   const update = useCallback((patch: Partial<TemplateCanvasData>) => {
     setData(d => ({ ...d, ...patch }));
@@ -168,6 +132,11 @@ export default function TemplateEditor({ templateId, brands, onBack }: Props) {
 
   // Export to PNG via html2canvas
   const handleExport = async () => {
+    if (!Layout) {
+      toast.error("Template is still loading");
+      return;
+    }
+
     setExporting(true);
     try {
       const html2canvas = (await import("html2canvas")).default;
@@ -230,6 +199,14 @@ export default function TemplateEditor({ templateId, brands, onBack }: Props) {
   };
 
   const darkInput: React.CSSProperties = { background: "hsl(240 6% 7%)", borderColor: "hsl(240 6% 16%)", color: "#F5F5F0" };
+
+  if (!Layout) {
+    return (
+      <div className="flex h-full min-h-[420px] items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-full">
