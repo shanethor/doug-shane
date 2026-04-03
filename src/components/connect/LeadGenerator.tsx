@@ -866,14 +866,31 @@ function ResultsTable({ latestBatchId }: { latestBatchId: string | null }) {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {displayLeads.map((lead: EngineLead) => (
-                    <TableRow key={lead.id} className={`animate-fade-in ${selectedIds.has(lead.id) ? "bg-primary/5" : ""}`} style={{ animationDelay: `${displayLeads.indexOf(lead) * 60}ms`, animationFillMode: "both" }}>
+                  {displayLeads.map((lead: EngineLead, idx: number) => {
+                    const isFirstPrevious = latestBatchId && latestLeads.length > 0 && lead.batch_id !== latestBatchId && (idx === 0 || displayLeads[idx - 1]?.batch_id === latestBatchId);
+                    return (
+                      <React.Fragment key={lead.id}>
+                        {isFirstPrevious && (
+                          <TableRow>
+                            <TableCell colSpan={7} className="py-3">
+                              <div className="flex items-center gap-2">
+                                <div className="h-px flex-1 bg-border" />
+                                <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Previous Generated Leads</span>
+                                <div className="h-px flex-1 bg-border" />
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        )}
+                        <TableRow className={`animate-fade-in ${selectedIds.has(lead.id) ? "bg-primary/5" : ""}`} style={{ animationDelay: `${idx * 60}ms`, animationFillMode: "both" }}>
                       <TableCell className="py-2 w-8">
                         <input type="checkbox" checked={selectedIds.has(lead.id)} onChange={() => toggleOne(lead.id)} className="h-3.5 w-3.5 rounded border-border accent-primary cursor-pointer" />
                       </TableCell>
                       <TableCell className="py-2">
                         <div className="cursor-pointer group" onClick={() => setSelectedLead(lead)}>
-                          <p className="text-xs font-medium group-hover:text-primary transition-colors">{lead.company}</p>
+                          <div className="flex items-center gap-1.5">
+                            <p className="text-xs font-medium group-hover:text-primary transition-colors">{lead.company}</p>
+                            {isNewLead(lead) && <Badge className="text-[8px] px-1.5 py-0 bg-emerald-500/15 text-emerald-500 border-emerald-500/30">NEW</Badge>}
+                          </div>
                           {lead.industry && <p className="text-[10px] text-muted-foreground">{lead.industry}</p>}
                           {lead.signal && <p className="text-[9px] text-muted-foreground mt-0.5 max-w-[180px] truncate" title={lead.signal}>{lead.signal}</p>}
                         </div>
