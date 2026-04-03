@@ -396,6 +396,30 @@ async function enrichLead(
   return result;
 }
 
+// ── Score leads based on real data completeness ──
+function calculateLeadScore(lead: any): number {
+  let score = 50; // Base score
+
+  // Positive signals (real data present)
+  if (lead.email) score += 15;
+  if (lead.phone && !/555-\d{4}/.test(lead.phone)) score += 10;
+  if (lead.contact_name) score += 10;
+  if (lead.website) score += 5;
+  if (lead.state) score += 3;
+  if (lead.industry) score += 2;
+
+  // Penalty for missing critical contact data
+  if (!lead.email) score -= 10;
+  if (!lead.phone) score -= 5;
+  if (!lead.contact_name) score -= 5;
+
+  // Fake phone penalty
+  if (lead.phone && /555-\d{4}/.test(lead.phone)) score -= 15;
+
+  // Clamp to 1-99
+  return Math.max(1, Math.min(99, score));
+}
+
 // ── Enrich a batch of leads (max concurrency 3) ──
 async function enrichLeadsBatch(
   leads: Array<{ company: string; state: string | null; industry: string | null; idx: number }>,
