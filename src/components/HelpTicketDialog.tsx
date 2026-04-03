@@ -321,8 +321,8 @@ export default function HelpTicketDialog({
               </div>
             )}
 
-            <Button variant="outline" size="sm" onClick={() => setView("list")} className="w-full">
-              ← Back to Tickets
+            <Button variant="outline" size="sm" onClick={() => setView("list")} className="w-full gap-1.5">
+              <ArrowLeft className="h-3.5 w-3.5" /> Back to Tickets
             </Button>
           </div>
         )}

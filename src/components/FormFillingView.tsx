@@ -1849,8 +1849,8 @@ export default function FormFillingView({ submissionId, initialMessages, initial
             {isInferring ? "Inferring…" : "AI Infer & Fill"}
           </Button>
           {!isMobile && (
-            <Button variant="ghost" size="sm" className="text-[10px] h-6 px-2" onClick={onBack}>
-              ← Back
+            <Button variant="ghost" size="sm" className="text-[10px] h-6 px-2 gap-1" onClick={onBack}>
+              <ChevronLeft className="h-3 w-3" /> Back
             </Button>
           )}
         </div>

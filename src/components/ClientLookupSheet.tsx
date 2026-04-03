@@ -147,8 +147,8 @@ export function ClientLookupSheet({ trigger, onSelect, closeOnSelect = false }: 
           </div>
         ) : (
           <div className="mt-4 space-y-4">
-            <Button variant="ghost" size="sm" onClick={() => setSelected(null)} className="gap-1 text-xs">
-              ← Back to search
+            <Button variant="ghost" size="sm" onClick={() => setSelected(null)} className="gap-1.5 text-xs">
+              <ArrowLeft className="h-3.5 w-3.5" /> Back to search
             </Button>
 
             {/* Client Summary */}
