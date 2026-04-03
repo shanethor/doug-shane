@@ -1,385 +1,566 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Separator } from "@/components/ui/separator";
+import { Input } from "@/components/ui/input";
 import {
-  TrendingUp, TrendingDown, DollarSign, Target, Clock, Bot,
-  BarChart3, ArrowUpRight, Users, Zap, RefreshCw, Settings,
-  HelpCircle, CreditCard, User, Shield
+  Target, DollarSign, ArrowRight, Users, Zap, AlertTriangle,
+  Sparkles, Send, Image, Palette, Clock, Plus, BarChart3,
+  Loader2, FileText, ArrowUpRight, Calendar as CalendarIcon,
+  PenLine, ChevronRight, MessageSquare, Activity,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
+import { useUserVertical } from "@/hooks/useUserVertical";
+import { SPOTLIGHT_TEMPLATES } from "@/components/connect/spotlight-templates";
+import { formatDistanceToNow } from "date-fns";
+import ReactMarkdown from "react-markdown";
 
-/* ---------- AI time-saved ticker ---------- */
-function useTimeSavedTicker() {
-  // Base: 2.4 hrs saved per lead interaction, ticks up in real-time
-  const [seconds, setSeconds] = useState(0);
-  const [baseHours, setBaseHours] = useState(0);
+const DEFAULT_STAGE_PROB: Record<string, number> = {
+  new_lead: 5, prospect: 10, signal_detected: 10, new_provider: 5,
+  contacted: 20, showing: 20,
+  quoting: 30, quote_sent: 30, proposal_sent: 30,
+  presenting: 60, negotiating: 60,
+  sold: 100, won: 100, closed_won: 100, bound: 100,
+  lost: 0, closed_lost: 0,
+};
 
-  useEffect(() => {
-    // Simulate accumulated time based on account age
-    const created = new Date().getTime();
-    const daysSinceJoin = Math.max(1, Math.floor((Date.now() - created) / 86400000));
-    setBaseHours(daysSinceJoin * 1.2); // ~1.2 hrs/day average
-  }, []);
+const STAGE_COLORS: Record<string, string> = {
+  new_lead: "bg-blue-500/15 text-blue-400 border-blue-500/20",
+  signal_detected: "bg-cyan-500/15 text-cyan-400 border-cyan-500/20",
+  new_provider: "bg-blue-500/15 text-blue-400 border-blue-500/20",
+  contacted: "bg-sky-500/15 text-sky-400 border-sky-500/20",
+  showing: "bg-sky-500/15 text-sky-400 border-sky-500/20",
+  quoting: "bg-amber-500/15 text-amber-400 border-amber-500/20",
+  quote_sent: "bg-amber-500/15 text-amber-400 border-amber-500/20",
+  proposal_sent: "bg-amber-500/15 text-amber-400 border-amber-500/20",
+  presenting: "bg-orange-500/15 text-orange-400 border-orange-500/20",
+  negotiating: "bg-orange-500/15 text-orange-400 border-orange-500/20",
+  sold: "bg-emerald-500/15 text-emerald-400 border-emerald-500/20",
+  won: "bg-emerald-500/15 text-emerald-400 border-emerald-500/20",
+  bound: "bg-emerald-500/15 text-emerald-400 border-emerald-500/20",
+  lost: "bg-muted text-muted-foreground border-border",
+};
 
-  useEffect(() => {
-    const interval = setInterval(() => setSeconds(s => s + 1), 1000);
-    return () => clearInterval(interval);
-  }, []);
+const SCORE_TIERS = [
+  { min: 80, label: "Platinum", color: "bg-violet-500/20 text-violet-300 border-violet-500/30" },
+  { min: 55, label: "Gold", color: "bg-amber-500/20 text-amber-300 border-amber-500/30" },
+  { min: 30, label: "Silver", color: "bg-zinc-500/20 text-zinc-300 border-zinc-500/30" },
+  { min: 0, label: "Bronze", color: "bg-orange-800/20 text-orange-400 border-orange-800/30" },
+];
 
-  const totalMinutes = baseHours * 60 + seconds / 60;
-  const hours = Math.floor(totalMinutes / 60);
-  const mins = Math.floor(totalMinutes % 60);
-  const secs = seconds % 60;
-
-  return { hours, mins, secs, totalMinutes };
-}
-
-/* ---------- Stat Card ---------- */
-function StatCard({ icon: Icon, label, value, sub, trend, color = "primary" }: {
-  icon: any; label: string; value: string; sub?: string; trend?: "up" | "down" | "neutral"; color?: string;
-}) {
-  return (
-    <Card className="bg-card border-border">
-      <CardContent className="pt-5 pb-4 px-5">
-        <div className="flex items-start justify-between mb-3">
-          <div className="p-2 rounded-lg bg-muted/50">
-            <Icon className="h-4 w-4 text-muted-foreground" />
-          </div>
-          {trend === "up" && <Badge variant="outline" className="text-emerald-500 border-emerald-500/30 text-[10px]"><TrendingUp className="h-3 w-3 mr-1" />Up</Badge>}
-          {trend === "down" && <Badge variant="outline" className="text-red-400 border-red-400/30 text-[10px]"><TrendingDown className="h-3 w-3 mr-1" />Down</Badge>}
-        </div>
-        <p className="text-2xl font-bold text-foreground">{value}</p>
-        <p className="text-xs text-muted-foreground mt-1">{label}</p>
-        {sub && <p className="text-[10px] text-muted-foreground/60 mt-0.5">{sub}</p>}
-      </CardContent>
-    </Card>
-  );
+function getScoreTier(score: number) {
+  return SCORE_TIERS.find(t => score >= t.min) || SCORE_TIERS[3];
 }
 
 export default function ConnectDashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const ticker = useTimeSavedTicker();
+  const { vertical, config } = useUserVertical();
 
-  const [stats, setStats] = useState({
-    totalLeads: 0,
-    closedWon: 0,
-    closedLost: 0,
-    totalPremium: 0,
-    leadSpend: 0,
-    activeDeals: 0,
-    avgDaysToClose: 0,
-  });
   const [profile, setProfile] = useState<any>(null);
+  const [leads, setLeads] = useState<any[]>([]);
+  const [auditEvents, setAuditEvents] = useState<any[]>([]);
+  const [weekStats, setWeekStats] = useState({ leadsAdded: 0, leadsGenerated: 0, contentCreated: 0, sageChats: 0 });
   const [loading, setLoading] = useState(true);
+  const [staleDismissed, setStaleDismissed] = useState(false);
+
+  // Sage quick ask state
+  const [sageInput, setSageInput] = useState("");
+  const [sageResponse, setSageResponse] = useState("");
+  const [sageLoading, setSageLoading] = useState(false);
+  const abortRef = useRef<AbortController | null>(null);
+
+  // Check localStorage for stale dismiss
+  useEffect(() => {
+    const dismissed = localStorage.getItem("stale_dismissed_at");
+    if (dismissed && Date.now() - Number(dismissed) < 86400000) setStaleDismissed(true);
+  }, []);
 
   useEffect(() => {
     if (!user?.id) return;
 
-    const loadData = async () => {
-      const [leadsRes, profileRes] = await Promise.all([
-        supabase
-          .from("leads")
-          .select("id, stage, target_premium, created_at, stage_changed_at")
-          .eq("owner_user_id", user.id),
-        supabase
-          .from("profiles")
-          .select("full_name, industry, specializations, states_of_operation, connect_vertical")
-          .eq("user_id", user.id)
-          .maybeSingle(),
+    const load = async () => {
+      const startOfWeek = new Date();
+      startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
+      startOfWeek.setHours(0, 0, 0, 0);
+      const weekStr = startOfWeek.toISOString();
+
+      const [profileRes, leadsRes, auditRes, weekLeadsRes, weekGenRes, sageConvRes] = await Promise.all([
+        supabase.from("profiles").select("full_name, connect_vertical, monthly_target").eq("user_id", user.id).maybeSingle(),
+        supabase.from("leads").select("id, account_name, contact_name, stage, target_premium, win_probability, score, source, created_at, updated_at, est_premium").eq("owner_user_id", user.id),
+        supabase.from("audit_log").select("id, action, object_id, object_type, metadata, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(6),
+        supabase.from("leads").select("id", { count: "exact", head: true }).eq("owner_user_id", user.id).gte("created_at", weekStr),
+        supabase.from("leads").select("id", { count: "exact", head: true }).eq("owner_user_id", user.id).not("source", "is", null).gte("created_at", weekStr),
+        supabase.from("sage_conversations").select("id", { count: "exact", head: true }).eq("user_id", user.id).gte("created_at", weekStr),
       ]);
 
-      const leads = leadsRes.data || [];
-      const closedWon = leads.filter((l: any) => l.stage === "closed_won");
-      const closedLost = leads.filter((l: any) => l.stage === "closed_lost");
-      const active = leads.filter((l: any) => !["closed_won", "closed_lost"].includes(l.stage || ""));
-      const totalPremium = closedWon.reduce((s: number, l: any) => s + (l.target_premium || 0), 0);
-
-      const closeDays = closedWon
-        .filter((l: any) => l.created_at && l.stage_changed_at)
-        .map((l: any) => (new Date(l.stage_changed_at).getTime() - new Date(l.created_at).getTime()) / 86400000);
-      const avgDays = closeDays.length ? Math.round(closeDays.reduce((a: number, b: number) => a + b, 0) / closeDays.length) : 0;
-
-      setStats({
-        totalLeads: leads.length,
-        closedWon: closedWon.length,
-        closedLost: closedLost.length,
-        totalPremium,
-        leadSpend: 0, // placeholder — would come from Stripe
-        activeDeals: active.length,
-        avgDaysToClose: avgDays,
-      });
       setProfile(profileRes.data);
+      setLeads(leadsRes.data || []);
+      setAuditEvents(auditRes.data || []);
+      setWeekStats({
+        leadsAdded: weekLeadsRes.count || 0,
+        leadsGenerated: weekGenRes.count || 0,
+        contentCreated: 0,
+        sageChats: sageConvRes.count || 0,
+      });
       setLoading(false);
     };
-
-    loadData();
+    load();
   }, [user?.id]);
 
-  const closingRate = stats.totalLeads > 0
-    ? Math.round((stats.closedWon / stats.totalLeads) * 100)
-    : 0;
+  // Computed data
+  const stages = config?.pipelineStages || [];
+  const activeStages = stages.filter(s => s.key !== "lost" && s.key !== "closed_lost");
 
-  const roi = stats.leadSpend > 0
-    ? ((stats.totalPremium - stats.leadSpend) / stats.leadSpend * 100).toFixed(0)
-    : "∞";
+  const stageCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const l of leads) {
+      const s = l.stage || "new_lead";
+      counts[s] = (counts[s] || 0) + 1;
+    }
+    return counts;
+  }, [leads]);
+
+  const weightedValue = useMemo(() => {
+    return leads
+      .filter(l => !["lost", "closed_lost", "sold", "won", "bound", "closed_won"].includes(l.stage || ""))
+      .reduce((sum, l) => {
+        const premium = l.target_premium || l.est_premium || 0;
+        const prob = l.win_probability ?? DEFAULT_STAGE_PROB[l.stage || "new_lead"] ?? 10;
+        return sum + (premium * prob / 100);
+      }, 0);
+  }, [leads]);
+
+  const monthlyTarget = profile?.monthly_target || 50000;
+  const progressPct = Math.min(100, Math.round((weightedValue / monthlyTarget) * 100));
+
+  const activeLeadCount = leads.filter(l => !["lost", "closed_lost", "sold", "won", "bound"].includes(l.stage || "")).length;
+  const presentingValue = leads
+    .filter(l => ["presenting", "negotiating"].includes(l.stage || ""))
+    .reduce((s, l) => s + (l.target_premium || l.est_premium || 0), 0);
+
+  // Stale leads (no update in 48h)
+  const staleLeads = useMemo(() => {
+    const cutoff = Date.now() - 48 * 3600000;
+    return leads.filter(l => {
+      if (["lost", "closed_lost", "sold", "won", "bound"].includes(l.stage || "")) return false;
+      const lastActivity = new Date(l.updated_at || l.created_at).getTime();
+      return lastActivity < cutoff;
+    });
+  }, [leads]);
+
+  // Top 3 generated leads
+  const topLeads = useMemo(() => {
+    return leads
+      .filter(l => l.source && (l.score ?? 0) >= 55)
+      .sort((a, b) => (b.score || 0) - (a.score || 0))
+      .slice(0, 3);
+  }, [leads]);
+
+  // Template chips
+  const templateChips = useMemo(() => {
+    return SPOTLIGHT_TEMPLATES.slice(0, 3);
+  }, []);
+
+  // Sage contextual suggestions
+  const sageSuggestions = useMemo(() => {
+    const suggestions: { label: string; message: string }[] = [];
+    if (staleLeads.length > 0) {
+      suggestions.push({ label: `What should I say to ${staleLeads[0].account_name}?`, message: `What should I say to ${staleLeads[0].account_name} after ${Math.round((Date.now() - new Date(staleLeads[0].updated_at || staleLeads[0].created_at).getTime()) / 86400000)} days of silence?` });
+    }
+    if (topLeads.length > 0) {
+      suggestions.push({ label: `Draft outreach for ${topLeads[0].account_name}`, message: `Draft an outreach email for ${topLeads[0].account_name}` });
+    }
+    suggestions.push({ label: "Show my pipeline status", message: "Show me my current pipeline status with numbers and next steps." });
+    return suggestions.slice(0, 3);
+  }, [staleLeads, topLeads]);
+
+  // Audit event labeling
+  const labelAuditEvent = (event: any) => {
+    const meta = event.metadata || {};
+    const name = meta.account_name || meta.lead_name || "";
+    switch (event.action) {
+      case "create": return { icon: Plus, text: `Added ${name || "a lead"} to Pipeline`, color: "text-emerald-400" };
+      case "stage_move": return { icon: ArrowRight, text: `Moved ${name} to ${(meta.new_stage || "").replace(/_/g, " ")}`, color: "text-sky-400" };
+      case "auto_renewal_promote": return { icon: Zap, text: `${name} auto-promoted from Lost`, color: "text-amber-400" };
+      case "lead_generated": return { icon: Sparkles, text: `Generated ${meta.count || ""} new leads`, color: "text-violet-400" };
+      case "enrich_lead": return { icon: Target, text: `Enriched data for ${name}`, color: "text-cyan-400" };
+      default: return { icon: Activity, text: `${event.action?.replace(/_/g, " ")} — ${name || event.object_type}`, color: "text-muted-foreground" };
+    }
+  };
+
+  // Sage quick ask
+  const sendSage = useCallback(async (text: string) => {
+    if (!text.trim() || sageLoading) return;
+    setSageInput("");
+    setSageResponse("");
+    setSageLoading(true);
+
+    try {
+      let token = "";
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.access_token) token = session.access_token;
+      } catch {}
+
+      const ac = new AbortController();
+      abortRef.current = ac;
+
+      const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/connect-assistant`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ messages: [{ role: "user", content: text }] }),
+        signal: ac.signal,
+      });
+
+      if (!resp.ok) throw new Error("Failed");
+      if (!resp.body) throw new Error("No body");
+
+      const reader = resp.body.getReader();
+      const decoder = new TextDecoder();
+      let buf = "", full = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        let nl: number;
+        while ((nl = buf.indexOf("\n")) !== -1) {
+          let line = buf.slice(0, nl);
+          buf = buf.slice(nl + 1);
+          if (line.endsWith("\r")) line = line.slice(0, -1);
+          if (!line.startsWith("data: ") || line.trim() === "") continue;
+          const json = line.slice(6).trim();
+          if (json === "[DONE]") break;
+          try {
+            const parsed = JSON.parse(json);
+            const c = parsed.choices?.[0]?.delta?.content;
+            if (c) { full += c; setSageResponse(full); }
+          } catch {}
+        }
+      }
+    } catch (e: any) {
+      if (e.name !== "AbortError") setSageResponse("Sorry, something went wrong. Try again.");
+    } finally {
+      setSageLoading(false);
+    }
+  }, [sageLoading]);
+
+  // Add to pipeline handler
+  const addToPipeline = async (leadId: string, name: string) => {
+    const firstStage = activeStages[0]?.key || "new_lead";
+    const { error } = await supabase.from("leads").update({ stage: firstStage } as any).eq("id", leadId);
+    if (!error) {
+      setLeads(prev => prev.map(l => l.id === leadId ? { ...l, stage: firstStage } : l));
+      // Could show toast — but keeping minimal
+    }
+  };
+
+  const today = new Date();
+  const dateStr = today.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
+  const firstName = profile?.full_name?.split(" ")[0] || "";
+  const verticalLabel = config?.label || vertical || "";
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 pb-12">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+    <div className="max-w-6xl mx-auto space-y-5 pb-12">
+
+      {/* ═══ ZONE A — Header ═══ */}
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-foreground">
-            Welcome back{profile?.full_name ? `, ${profile.full_name.split(" ")[0]}` : ""}
+            Welcome back{firstName ? `, ${firstName}` : ""}
           </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Here's how your business is performing.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Badge variant="outline" className="text-xs text-muted-foreground border-border">
-            {profile?.connect_vertical || profile?.industry || "General"}
-          </Badge>
-          {profile?.states_of_operation?.length > 0 && (
-            <Badge variant="outline" className="text-xs text-muted-foreground border-border">
-              {profile.states_of_operation.length} state{profile.states_of_operation.length !== 1 ? "s" : ""}
-            </Badge>
+          {verticalLabel && (
+            <div className="flex items-center gap-2 mt-1.5">
+              <Badge variant="outline" className="text-xs border-primary/30 text-primary">
+                {verticalLabel}
+              </Badge>
+            </div>
           )}
         </div>
+        <p className="text-sm text-muted-foreground">{dateStr}</p>
       </div>
 
-      {/* AI Time Saved Ticker */}
-      <Card className="bg-gradient-to-r from-[hsl(140_12%_42%/0.08)] to-[hsl(140_12%_42%/0.02)] border-[hsl(140_12%_42%/0.2)]">
-        <CardContent className="py-4 px-5">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-[hsl(140_12%_42%/0.15)]">
-                <Bot className="h-5 w-5 text-[hsl(140_12%_58%)]" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground font-medium">Time Saved with AURA AI</p>
-                <div className="flex items-baseline gap-1 mt-0.5">
-                  <span className="text-3xl font-bold tabular-nums text-foreground">
-                    {ticker.hours}
-                  </span>
-                  <span className="text-sm text-muted-foreground">hrs</span>
-                  <span className="text-3xl font-bold tabular-nums text-foreground ml-1">
-                    {String(ticker.mins).padStart(2, "0")}
-                  </span>
-                  <span className="text-sm text-muted-foreground">min</span>
-                  <span className="text-lg font-semibold tabular-nums text-muted-foreground/60 ml-1">
-                    {String(ticker.secs).padStart(2, "0")}
-                  </span>
-                  <span className="text-[10px] text-muted-foreground/60">sec</span>
-                </div>
-              </div>
-            </div>
-            <div className="text-right hidden sm:block">
-              <p className="text-xs text-muted-foreground">Automated tasks</p>
-              <p className="text-lg font-semibold text-foreground">{Math.floor(ticker.totalMinutes / 3)}</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Core Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <StatCard
-          icon={Target}
-          label="Closing Rate"
-          value={`${closingRate}%`}
-          sub={`${stats.closedWon} won / ${stats.totalLeads} total`}
-          trend={closingRate >= 20 ? "up" : closingRate > 0 ? "down" : "neutral"}
-        />
-        <StatCard
-          icon={DollarSign}
-          label="Total Sales Closed"
-          value={`$${stats.totalPremium.toLocaleString()}`}
-          sub="Lifetime premium written"
-          trend={stats.totalPremium > 0 ? "up" : "neutral"}
-        />
-        <StatCard
-          icon={BarChart3}
-          label="Lead Spend"
-          value={`$${stats.leadSpend.toLocaleString()}`}
-          sub={`ROI: ${roi}%`}
-        />
-        <StatCard
-          icon={Users}
-          label="Active Deals"
-          value={String(stats.activeDeals)}
-          sub={`Avg ${stats.avgDaysToClose} days to close`}
-        />
+      {/* Section Nav Pills */}
+      <div className="flex flex-wrap gap-2">
+        {[
+          { label: "Pipeline", to: "/connect/pipeline", icon: BarChart3 },
+          { label: "Leads", to: "/connect/leads", icon: Target },
+          { label: "Create", to: "/connect/create", icon: Palette },
+          { label: "Sage", to: "/connect/sage", icon: Sparkles },
+        ].map(n => (
+          <Button key={n.label} variant="outline" size="sm" className="gap-1.5 text-xs border-border text-muted-foreground hover:text-foreground hover:bg-muted/50" onClick={() => navigate(n.to)}>
+            <n.icon className="h-3.5 w-3.5" />
+            {n.label}
+          </Button>
+        ))}
       </div>
 
-      {/* Closing Performance */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <Card className="bg-card border-border">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-foreground flex items-center gap-2">
-              <Target className="h-4 w-4 text-muted-foreground" />
-              Closing Breakdown
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <div className="flex justify-between text-xs mb-1.5">
-                <span className="text-muted-foreground">Won</span>
-                <span className="text-emerald-400 font-medium">{stats.closedWon}</span>
-              </div>
-              <Progress value={stats.totalLeads > 0 ? (stats.closedWon / stats.totalLeads) * 100 : 0} className="h-2 bg-muted" />
-            </div>
-            <div>
-              <div className="flex justify-between text-xs mb-1.5">
-                <span className="text-muted-foreground">Lost</span>
-                <span className="text-red-400 font-medium">{stats.closedLost}</span>
-              </div>
-              <Progress value={stats.totalLeads > 0 ? (stats.closedLost / stats.totalLeads) * 100 : 0} className="h-2 bg-muted [&>div]:bg-red-400/60" />
-            </div>
-            <div>
-              <div className="flex justify-between text-xs mb-1.5">
-                <span className="text-muted-foreground">In Progress</span>
-                <span className="text-foreground font-medium">{stats.activeDeals}</span>
-              </div>
-              <Progress value={stats.totalLeads > 0 ? (stats.activeDeals / stats.totalLeads) * 100 : 0} className="h-2 bg-muted [&>div]:bg-amber-400/60" />
-            </div>
-            <Separator className="bg-border" />
-            <div className="flex justify-between text-xs">
-              <span className="text-muted-foreground">Total Leads</span>
-              <span className="text-foreground font-semibold">{stats.totalLeads}</span>
-            </div>
-          </CardContent>
-        </Card>
+      {/* ═══ ZONE B — Pipeline Snapshot ═══ */}
+      <div className="space-y-3">
+        {/* B1: Stage Counts */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          {(activeStages.length > 0 ? activeStages.slice(0, 4) : [
+            { key: "new_lead", label: "New Lead" },
+            { key: "contacted", label: "Contacted" },
+            { key: "quoting", label: "Quoting" },
+            { key: "sold", label: "Sold" },
+          ]).map(stage => (
+            <button
+              key={stage.key}
+              onClick={() => navigate("/connect/pipeline")}
+              className={`rounded-xl border p-4 text-left transition-all hover:scale-[1.02] ${STAGE_COLORS[stage.key] || "bg-muted/30 text-foreground border-border"}`}
+            >
+              <p className="text-2xl font-bold">{stageCounts[stage.key] || 0}</p>
+              <p className="text-xs mt-0.5 opacity-80">{stage.label}</p>
+            </button>
+          ))}
+        </div>
 
+        {/* B2: Weighted Pipeline Value */}
         <Card className="bg-card border-border">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-foreground flex items-center gap-2">
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
-              Sales vs Spend
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
-              <div>
-                <p className="text-xs text-muted-foreground">Revenue Closed</p>
-                <p className="text-xl font-bold text-emerald-400">${stats.totalPremium.toLocaleString()}</p>
+          <CardContent className="py-4 px-5">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <DollarSign className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-medium text-foreground">Weighted Pipeline Value</span>
               </div>
-              <ArrowUpRight className="h-5 w-5 text-emerald-400" />
-            </div>
-            <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
-              <div>
-                <p className="text-xs text-muted-foreground">Lead Investment</p>
-                <p className="text-xl font-bold text-foreground">${stats.leadSpend.toLocaleString()}</p>
-              </div>
-              <Zap className="h-5 w-5 text-amber-400" />
-            </div>
-            <Separator className="bg-border" />
-            <div className="flex justify-between items-center">
-              <span className="text-xs text-muted-foreground">Net Return</span>
-              <span className={`text-sm font-bold ${stats.totalPremium >= stats.leadSpend ? "text-emerald-400" : "text-red-400"}`}>
-                ${(stats.totalPremium - stats.leadSpend).toLocaleString()}
+              <span className="text-xs text-muted-foreground">
+                ${Math.round(weightedValue).toLocaleString()} / ${monthlyTarget.toLocaleString()} target
               </span>
             </div>
+            <Progress value={progressPct} className="h-2.5 bg-muted" />
+            <p className="text-[11px] text-muted-foreground mt-2">
+              {activeLeadCount} active lead{activeLeadCount !== 1 ? "s" : ""} · ${presentingValue.toLocaleString()} at presenting stage
+            </p>
+          </CardContent>
+        </Card>
+
+        {/* B3: Stale Alert */}
+        {staleLeads.length > 0 && !staleDismissed && (
+          <div className="flex items-center justify-between rounded-xl border border-amber-500/20 bg-amber-500/5 px-4 py-3">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-amber-400" />
+              <span className="text-sm text-amber-300 font-medium">
+                {staleLeads.length} lead{staleLeads.length !== 1 ? "s" : ""} need attention
+              </span>
+              <span className="text-xs text-amber-400/60 hidden sm:inline">
+                — {staleLeads.slice(0, 3).map(l => l.account_name).join(", ")}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="sm" className="h-7 text-xs text-amber-400 hover:text-amber-300" onClick={() => navigate("/connect/pipeline")}>
+                View <ChevronRight className="h-3 w-3 ml-0.5" />
+              </Button>
+              <Button variant="ghost" size="sm" className="h-7 text-[10px] text-muted-foreground" onClick={() => { setStaleDismissed(true); localStorage.setItem("stale_dismissed_at", String(Date.now())); }}>
+                Dismiss
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ═══ Middle Row: Leads + Create ═══ */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+
+        {/* ═══ ZONE C — Today's Signals ═══ */}
+        <Card className="bg-card border-border">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-foreground flex items-center gap-2">
+              <Target className="h-4 w-4 text-muted-foreground" />
+              Today's Signals
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {topLeads.length === 0 ? (
+              <div className="text-center py-6">
+                <Sparkles className="h-8 w-8 mx-auto text-muted-foreground/40 mb-2" />
+                <p className="text-sm text-muted-foreground">No leads generated yet</p>
+                <Button size="sm" className="mt-3 gap-1.5 text-xs" onClick={() => navigate("/connect/leads")}>
+                  Generate your first leads <ArrowRight className="h-3 w-3" />
+                </Button>
+              </div>
+            ) : (
+              <>
+                {topLeads.map(lead => {
+                  const tier = getScoreTier(lead.score || 0);
+                  return (
+                    <div key={lead.id} className="flex items-center justify-between p-2.5 rounded-lg bg-muted/20 group">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium text-foreground truncate">{lead.account_name}</span>
+                          <Badge variant="outline" className={`text-[9px] ${tier.color}`}>{tier.label}</Badge>
+                        </div>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          {lead.contact_name && <span className="text-[10px] text-muted-foreground">{lead.contact_name}</span>}
+                          {lead.source && <Badge variant="secondary" className="text-[9px] h-4">{lead.source}</Badge>}
+                        </div>
+                      </div>
+                      <Button size="sm" variant="ghost" className="h-7 text-[10px] gap-1 text-primary opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => addToPipeline(lead.id, lead.account_name)}>
+                        <Plus className="h-3 w-3" /> Add
+                      </Button>
+                    </div>
+                  );
+                })}
+                <div className="pt-1">
+                  <Badge variant="outline" className="text-[9px] text-amber-400 border-amber-500/20">
+                    Contact data may be AI-generated — verify before outreach
+                  </Badge>
+                </div>
+                <button onClick={() => navigate("/connect/leads")} className="flex items-center gap-1 text-xs text-primary hover:underline pt-1">
+                  View all leads <ArrowRight className="h-3 w-3" />
+                </button>
+              </>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* ═══ ZONE D — Create Launchpad ═══ */}
+        <Card className="bg-card border-border">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-foreground flex items-center gap-2">
+              <Palette className="h-4 w-4 text-muted-foreground" />
+              Create Launchpad
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="p-3 rounded-lg bg-muted/20 text-center">
+              <Image className="h-8 w-8 mx-auto text-muted-foreground/40 mb-2" />
+              <p className="text-xs text-muted-foreground">Start from a template to create marketing content</p>
+              <Button size="sm" className="mt-2 gap-1.5 text-xs" onClick={() => navigate("/connect/create")}>
+                Open Create <ArrowRight className="h-3 w-3" />
+              </Button>
+            </div>
+            <div>
+              <p className="text-[10px] text-muted-foreground font-medium mb-2">Quick-start templates</p>
+              <div className="flex flex-wrap gap-1.5">
+                {templateChips.map(t => (
+                  <button
+                    key={t.id}
+                    onClick={() => navigate("/connect/create")}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] border border-border bg-muted/20 hover:bg-muted/40 transition-colors text-foreground"
+                  >
+                    <t.icon className="h-3 w-3 text-muted-foreground" />
+                    {t.name}
+                  </button>
+                ))}
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Quick Actions */}
+      {/* ═══ ZONE E — Sage Quick Ask ═══ */}
       <Card className="bg-card border-border">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium text-foreground">Quick Actions</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            <Button
-              variant="outline"
-              className="h-auto py-3 flex-col gap-1.5 border-border text-muted-foreground hover:text-foreground hover:bg-muted/50"
-              onClick={() => navigate("/app/settings")}
-            >
-              <Settings className="h-4 w-4" />
-              <span className="text-xs">Settings</span>
-            </Button>
-            <Button
-              variant="outline"
-              className="h-auto py-3 flex-col gap-1.5 border-border text-muted-foreground hover:text-foreground hover:bg-muted/50"
-              onClick={() => navigate("/app/settings")}
-            >
-              <User className="h-4 w-4" />
-              <span className="text-xs">Profile</span>
-            </Button>
-            <Button
-              variant="outline"
-              className="h-auto py-3 flex-col gap-1.5 border-border text-muted-foreground hover:text-foreground hover:bg-muted/50"
-              onClick={() => navigate("/connect/pipeline")}
-            >
-              <BarChart3 className="h-4 w-4" />
-              <span className="text-xs">Pipeline</span>
-            </Button>
-            <Button
-              variant="outline"
-              className="h-auto py-3 flex-col gap-1.5 border-border text-muted-foreground hover:text-foreground hover:bg-muted/50"
-              onClick={() => navigate("/connect/leads")}
-            >
-              <Zap className="h-4 w-4" />
-              <span className="text-xs">Get Leads</span>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Account Info */}
-      <Card className="bg-card border-border">
-        <CardHeader className="pb-3">
+        <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium text-foreground flex items-center gap-2">
-            <Shield className="h-4 w-4 text-muted-foreground" />
-            Account
+            <Sparkles className="h-4 w-4 text-primary" />
+            Ask Sage
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-            <div className="flex justify-between items-center p-2.5 rounded-lg bg-muted/20">
-              <span className="text-muted-foreground text-xs">Email</span>
-              <span className="text-xs text-foreground font-medium truncate ml-2">{user?.email}</span>
-            </div>
-            <div className="flex justify-between items-center p-2.5 rounded-lg bg-muted/20">
-              <span className="text-muted-foreground text-xs">Industry</span>
-              <span className="text-xs text-foreground font-medium">{profile?.connect_vertical || profile?.industry || "—"}</span>
-            </div>
-            <div className="flex justify-between items-center p-2.5 rounded-lg bg-muted/20">
-              <span className="text-muted-foreground text-xs">Specializations</span>
-              <span className="text-xs text-foreground font-medium truncate ml-2">
-                {profile?.specializations?.length ? profile.specializations.join(", ") : "—"}
-              </span>
-            </div>
-            <div className="flex justify-between items-center p-2.5 rounded-lg bg-muted/20">
-              <span className="text-muted-foreground text-xs">States</span>
-              <span className="text-xs text-foreground font-medium truncate ml-2">
-                {profile?.states_of_operation?.length ? profile.states_of_operation.join(", ") : "—"}
-              </span>
-            </div>
+          <div className="flex items-center gap-2">
+            <Input
+              value={sageInput}
+              onChange={(e) => setSageInput(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendSage(sageInput); } }}
+              placeholder="Ask Sage anything about your pipeline, leads, or content..."
+              className="text-sm bg-muted/20 border-border"
+            />
+            <Button size="icon" className="shrink-0 h-9 w-9" disabled={!sageInput.trim() && !sageLoading} onClick={() => sendSage(sageInput)}>
+              {sageLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+            </Button>
           </div>
-          <div className="flex gap-2 pt-1">
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-xs gap-1.5 border-border text-muted-foreground hover:text-foreground"
-              onClick={() => navigate("/app/settings")}
-            >
-              <CreditCard className="h-3 w-3" /> Manage Subscription
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-xs gap-1.5 border-border text-muted-foreground hover:text-foreground"
-              onClick={() => navigate("/app/settings")}
-            >
-              <HelpCircle className="h-3 w-3" /> Get Help
-            </Button>
+
+          {/* Contextual chips */}
+          <div className="flex flex-wrap gap-1.5">
+            {sageSuggestions.map((s, i) => (
+              <button
+                key={i}
+                onClick={() => sendSage(s.message)}
+                className="px-3 py-1.5 rounded-lg text-[11px] border border-border bg-muted/20 hover:bg-muted/40 transition-colors text-muted-foreground hover:text-foreground truncate max-w-[250px]"
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Response panel */}
+          {(sageResponse || sageLoading) && (
+            <div className="max-h-[200px] overflow-y-auto rounded-lg border border-border bg-muted/10 p-3">
+              {sageLoading && !sageResponse && (
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" /> Sage is thinking...
+                </div>
+              )}
+              {sageResponse && (
+                <div className="prose prose-sm prose-invert max-w-none text-xs [&_p]:my-1 [&_li]:my-0.5 [&_strong]:text-foreground">
+                  <ReactMarkdown>{sageResponse}</ReactMarkdown>
+                </div>
+              )}
+              <button onClick={() => navigate("/connect/sage")} className="flex items-center gap-1 text-[10px] text-primary hover:underline mt-2">
+                Open full Sage <ArrowRight className="h-3 w-3" />
+              </button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* ═══ ZONE F — Activity Feed + This Week ═══ */}
+      <Card className="bg-card border-border">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm font-medium text-foreground flex items-center gap-2">
+            <Activity className="h-4 w-4 text-muted-foreground" />
+            Recent Activity
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {auditEvents.length === 0 ? (
+            <p className="text-xs text-muted-foreground py-4 text-center">No recent activity — start by adding a lead to your pipeline.</p>
+          ) : (
+            <div className="space-y-1.5">
+              {auditEvents.map(event => {
+                const { icon: Icon, text, color } = labelAuditEvent(event);
+                return (
+                  <div key={event.id} className="flex items-center gap-3 py-2 px-2.5 rounded-lg hover:bg-muted/20 transition-colors">
+                    <Icon className={`h-3.5 w-3.5 shrink-0 ${color}`} />
+                    <span className="text-xs text-foreground flex-1">{text}</span>
+                    <span className="text-[10px] text-muted-foreground shrink-0">
+                      {formatDistanceToNow(new Date(event.created_at), { addSuffix: true })}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* This Week micro-stats */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-border">
+            {[
+              { label: "Leads Added", value: weekStats.leadsAdded, icon: Plus },
+              { label: "Generated", value: weekStats.leadsGenerated, icon: Sparkles },
+              { label: "Content", value: weekStats.contentCreated, icon: PenLine },
+              { label: "Sage Chats", value: weekStats.sageChats, icon: MessageSquare },
+            ].map(s => (
+              <div key={s.label} className="flex items-center gap-2 p-2.5 rounded-lg bg-muted/20">
+                <s.icon className="h-3.5 w-3.5 text-muted-foreground" />
+                <div>
+                  <p className="text-lg font-bold text-foreground leading-none">{s.value}</p>
+                  <p className="text-[10px] text-muted-foreground">{s.label}</p>
+                </div>
+              </div>
+            ))}
           </div>
         </CardContent>
       </Card>
