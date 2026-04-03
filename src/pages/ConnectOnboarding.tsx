@@ -110,7 +110,7 @@ export default function ConnectOnboarding() {
     setSaving(true);
     try {
       if (user) {
-        const { error } = await supabase
+        const { error, count } = await supabase
           .from("profiles")
           .update({
             onboarding_completed: true,
@@ -120,7 +120,9 @@ export default function ConnectOnboarding() {
             specializations: selectedSubVerticals.length > 0 ? selectedSubVerticals : null,
             states_of_operation: selectedStates.length > 0 ? selectedStates : null,
           })
-          .eq("user_id", user.id);
+          .eq("user_id", user.id)
+          .select("onboarding_completed")
+          .single();
 
         if (error) {
           console.error("Onboarding save error:", error);
@@ -132,8 +134,9 @@ export default function ConnectOnboarding() {
         localStorage.setItem(`aura_onboarding_completed_${user.id}`, "true");
       }
       navigate("/connect", { replace: true });
-    } catch {
-      navigate("/connect", { replace: true });
+    } catch (err) {
+      console.error("Onboarding completion error:", err);
+      toast.error("Something went wrong — please try again.");
     } finally {
       setSaving(false);
     }
