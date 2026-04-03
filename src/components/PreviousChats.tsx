@@ -62,7 +62,6 @@ export default function PreviousChats({ onLoad, onNewChat, currentConversationId
   };
 
   if (!user || loading) return null;
-  if (conversations.length === 0) return null;
 
   return (
     <div className="w-full max-w-2xl space-y-2">
