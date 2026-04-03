@@ -1,25 +1,34 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, lazy, Suspense } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { ProductLayout } from "@/components/ProductLayout";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useAuth } from "@/hooks/useAuth";
 import { MASTER_EMAILS } from "@/components/ProductProtectedRoute";
-import StudioUpsellPage from "@/components/StudioUpsellPage";
-
-// Demo tab components (used as production pages)
-import DemoConnectTab from "@/components/connect-demo/DemoConnectTab";
-import ConnectPipelineTab from "@/components/connect/ConnectPipelineTab";
-import DemoEmailTab from "@/components/connect-demo/DemoEmailTab";
-import SmartCalendar from "@/components/connect/SmartCalendar";
-import DemoSpotlightTab from "@/components/connect-demo/DemoSpotlightTab";
-import DemoAssistantTab from "@/components/connect-demo/DemoAssistantTab";
-import ConnectIntelligencePage from "@/pages/ConnectIntelligence";
-import ConnectLeads from "@/pages/ConnectLeads";
-import ConnectRewardsPage from "@/pages/ConnectRewards";
-import ConnectPropertyDashboard from "@/pages/ConnectPropertyDashboard";
 import { ComingSoonGate } from "@/components/connect/ComingSoonGate";
 import { useEarlyAccessWhitelist } from "@/hooks/useEarlyAccessWhitelist";
-import ConnectDashboard from "@/pages/ConnectDashboard";
+import { Loader2 } from "lucide-react";
+
+// Lazy-load heavy sub-pages to keep the ConnectProduct chunk small
+const StudioUpsellPage = lazy(() => import("@/components/StudioUpsellPage"));
+const DemoConnectTab = lazy(() => import("@/components/connect-demo/DemoConnectTab"));
+const ConnectPipelineTab = lazy(() => import("@/components/connect/ConnectPipelineTab"));
+const DemoEmailTab = lazy(() => import("@/components/connect-demo/DemoEmailTab"));
+const SmartCalendar = lazy(() => import("@/components/connect/SmartCalendar"));
+const DemoSpotlightTab = lazy(() => import("@/components/connect-demo/DemoSpotlightTab"));
+const DemoAssistantTab = lazy(() => import("@/components/connect-demo/DemoAssistantTab"));
+const ConnectIntelligencePage = lazy(() => import("@/pages/ConnectIntelligence"));
+const ConnectLeads = lazy(() => import("@/pages/ConnectLeads"));
+const ConnectRewardsPage = lazy(() => import("@/pages/ConnectRewards"));
+const ConnectPropertyDashboard = lazy(() => import("@/pages/ConnectPropertyDashboard"));
+const ConnectDashboard = lazy(() => import("@/pages/ConnectDashboard"));
+
+function PageLoader() {
+  return (
+    <div className="flex items-center justify-center min-h-[300px]">
+      <Loader2 className="h-6 w-6 animate-spin text-primary" />
+    </div>
+  );
+}
 
 
 // Cinematic intro overlay
@@ -172,24 +181,26 @@ export default function ConnectProduct() {
             transform: introComplete ? "translateY(0)" : "translateY(20px)",
             transition: "all 1.2s cubic-bezier(0.16, 1, 0.3, 1)",
           }}>
-            {page === "dashboard" && <ConnectDashboard />}
-            {page === "leads" && <ConnectLeads />}
-            {page !== "leads" && page !== "dashboard" && !canAccessFullSite ? (
-              <ComingSoonGate pageName={page.charAt(0).toUpperCase() + page.slice(1)} />
-            ) : (
-              <>
-                {page === "connect" && (isPageGated("connect") ? <ComingSoonGate pageName="Connect" /> : <DemoConnectTab contentReady={introComplete} />)}
-                {page === "intelligence" && (isPageGated("intelligence") ? <ComingSoonGate pageName="Intelligence" /> : <ConnectIntelligencePage />)}
-                {page === "rewards" && (isPageGated("rewards") ? <ComingSoonGate pageName="Rewards" /> : <ConnectRewardsPage />)}
-                {page === "property" && <ConnectPropertyDashboard />}
-                {page === "pipeline" && <ConnectPipelineTab />}
-                {page === "email" && (isPageGated("email") ? <ComingSoonGate pageName="Email" /> : <DemoEmailTab />)}
-                {page === "calendar" && (isPageGated("calendar") ? <ComingSoonGate pageName="Calendar" /> : <SmartCalendar />)}
-                {page === "create" && (isPageGated("create") ? <ComingSoonGate pageName="Create" /> : <DemoSpotlightTab />)}
-                {page === "sage" && (isPageGated("sage") ? <ComingSoonGate pageName="Sage" /> : <DemoAssistantTab onNavigate={handleSageNavigate} />)}
-                {page === "studio" && <StudioUpsellPage isConnectSubscriber={subscribed} />}
-              </>
-            )}
+            <Suspense fallback={<PageLoader />}>
+              {page === "dashboard" && <ConnectDashboard />}
+              {page === "leads" && <ConnectLeads />}
+              {page !== "leads" && page !== "dashboard" && !canAccessFullSite ? (
+                <ComingSoonGate pageName={page.charAt(0).toUpperCase() + page.slice(1)} />
+              ) : (
+                <>
+                  {page === "connect" && (isPageGated("connect") ? <ComingSoonGate pageName="Connect" /> : <DemoConnectTab contentReady={introComplete} />)}
+                  {page === "intelligence" && (isPageGated("intelligence") ? <ComingSoonGate pageName="Intelligence" /> : <ConnectIntelligencePage />)}
+                  {page === "rewards" && (isPageGated("rewards") ? <ComingSoonGate pageName="Rewards" /> : <ConnectRewardsPage />)}
+                  {page === "property" && <ConnectPropertyDashboard />}
+                  {page === "pipeline" && <ConnectPipelineTab />}
+                  {page === "email" && (isPageGated("email") ? <ComingSoonGate pageName="Email" /> : <DemoEmailTab />)}
+                  {page === "calendar" && (isPageGated("calendar") ? <ComingSoonGate pageName="Calendar" /> : <SmartCalendar />)}
+                  {page === "create" && (isPageGated("create") ? <ComingSoonGate pageName="Create" /> : <DemoSpotlightTab />)}
+                  {page === "sage" && (isPageGated("sage") ? <ComingSoonGate pageName="Sage" /> : <DemoAssistantTab onNavigate={handleSageNavigate} />)}
+                  {page === "studio" && <StudioUpsellPage isConnectSubscriber={subscribed} />}
+                </>
+              )}
+            </Suspense>
           </div>
         </div>
       </ProductLayout>
