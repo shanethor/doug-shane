@@ -220,6 +220,7 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasAgent, in
           });
           if (error) console.warn(`Scan error for ${source}:`, error.message);
           totalFound += data?.leads_found ?? 0;
+          if (data?.batch_id) batchIds.push(data.batch_id);
         } catch (err: any) {
           console.warn(`Failed scanning ${source}:`, err.message);
         }
