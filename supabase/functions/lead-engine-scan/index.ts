@@ -675,6 +675,7 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({
         success: true,
         leads_found: count,
+        batch_id: batchId,
         message: `Found ${count} real businesses from Google Maps (${allPlaces.length} total scanned). Contact data is being enriched via verified sources.`,
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
