@@ -234,7 +234,7 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasAgent, in
       setGenProgress(100);
       setGenStep("Complete!");
 
-      onGenerate({ geo, volume: selectedPack, focuses, leads_found: totalFound });
+      onGenerate({ geo, volume: selectedPack, focuses, leads_found: totalFound, batch_ids: batchIds });
       if (totalFound > 0) {
         toast.success(`Found ${totalFound} new leads across ${sourceNames.join(", ")}`);
       } else {
