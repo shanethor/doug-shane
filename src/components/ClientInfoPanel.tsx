@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Search, User, Building2, Phone, Mail, MapPin, DollarSign,
   ExternalLink, X, Share2, Check, FileText, Calendar, StickyNote,
-  Shield, AlertTriangle, Clock, Download,
+  Shield, AlertTriangle, Clock, Download, ArrowLeft,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { format, parseISO } from "date-fns";
@@ -215,8 +215,8 @@ export function ClientInfoPanel({ onClose, onShare, sharedClient }: ClientInfoPa
           ) : (
             /* Detail view */
             <div className="space-y-3">
-              <Button variant="ghost" size="sm" onClick={() => setSelected(null)} className="gap-1 text-[10px] h-6 px-2">
-                ← Back
+              <Button variant="ghost" size="sm" onClick={() => setSelected(null)} className="gap-1.5 text-[10px] h-6 px-2">
+                <ArrowLeft className="h-3 w-3" /> Back
               </Button>
 
               {/* Client header card */}

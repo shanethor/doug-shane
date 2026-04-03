@@ -327,7 +327,7 @@ export default function ProductAuth() {
 
           <div className="mt-8 pt-6 border-t border-white/10 text-center">
             <a href="/" className="text-xs text-white/30 hover:text-white/50 transition-colors">
-              ← Back to home
+              ‹ Back to home
             </a>
           </div>
         </div>

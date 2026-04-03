@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Zap, X, Send, Loader2, Minus, Maximize2, LifeBuoy } from "lucide-react";
+import { Zap, X, Send, Loader2, Minus, Maximize2, LifeBuoy, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import ReactMarkdown from "react-markdown";
@@ -325,7 +325,7 @@ export function SageFloatingChat() {
       {/* New ticket form */}
       {view === "ticket-form" && (
         <div className="flex-1 overflow-y-auto p-3 space-y-3 min-h-0">
-          <button onClick={() => setView("support")} className="text-[10px] hover:underline" style={{ color: "hsl(140 12% 58%)" }}>← Back to tickets</button>
+          <button onClick={() => setView("support")} className="flex items-center gap-1 text-[10px] hover:underline" style={{ color: "hsl(140 12% 58%)" }}><ArrowLeft className="h-3 w-3" /> Back to tickets</button>
           <p className="text-sm font-semibold text-white">New Support Ticket</p>
           <div className="space-y-2">
             <Input value={ticketTitle} onChange={(e) => setTicketTitle(e.target.value)} placeholder="Title" className="h-8 text-xs bg-transparent border-white/10 text-white placeholder:text-white/30" />

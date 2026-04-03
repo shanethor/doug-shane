@@ -289,7 +289,7 @@ export default function PostCheckoutOnboard() {
 
         <div className="mt-8 text-center">
           <a href="/" className="text-xs text-white/30 hover:text-white/50 transition-colors">
-            ← Back to home
+            ‹ Back to home
           </a>
         </div>
       </div>

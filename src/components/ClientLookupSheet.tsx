@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Search, User, Building2, Phone, Mail, MapPin, DollarSign, FileText, ExternalLink, X } from "lucide-react";
+import { Search, User, Building2, Phone, Mail, MapPin, DollarSign, FileText, ExternalLink, X, ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
 import { format, parseISO } from "date-fns";
 
@@ -147,8 +147,8 @@ export function ClientLookupSheet({ trigger, onSelect, closeOnSelect = false }: 
           </div>
         ) : (
           <div className="mt-4 space-y-4">
-            <Button variant="ghost" size="sm" onClick={() => setSelected(null)} className="gap-1 text-xs">
-              ← Back to search
+            <Button variant="ghost" size="sm" onClick={() => setSelected(null)} className="gap-1.5 text-xs">
+              <ArrowLeft className="h-3.5 w-3.5" /> Back to search
             </Button>
 
             {/* Client Summary */}

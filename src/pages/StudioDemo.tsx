@@ -334,7 +334,7 @@ export default function StudioDemo() {
               to="/"
               className="text-sm text-[#71717A] hover:text-white transition-colors no-underline"
             >
-              ← Back to home
+              ‹ Back to home
             </Link>
           </div>
         </div>

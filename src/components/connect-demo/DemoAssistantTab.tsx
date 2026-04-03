@@ -1,12 +1,13 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Send, Sparkles, FileUp, Users, Mail, BarChart3, Globe, Loader2, Paperclip, X, Network, PlusCircle, Calendar, Palette, Image, Megaphone } from "lucide-react";
+import { Send, Sparkles, FileUp, Users, Mail, BarChart3, Globe, Loader2, Paperclip, X, Network, PlusCircle, Calendar, Palette, Image, Megaphone, ArrowLeft } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { executeCalendarActions, extractCalendarActions } from "@/lib/calendar-action-utils";
+import PreviousChats from "@/components/PreviousChats";
 
 type Msg = { role: "user" | "assistant"; content: string };
 
@@ -156,9 +157,47 @@ export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: st
   const [loading, setLoading] = useState(false);
   const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
   const [dragOver, setDragOver] = useState(false);
+  const [conversationId, setConversationId] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const conversationSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Auto-save conversation
+  useEffect(() => {
+    if (!user || messages.length < 2) return;
+    if (conversationSaveTimer.current) clearTimeout(conversationSaveTimer.current);
+    conversationSaveTimer.current = setTimeout(async () => {
+      const title = messages.find(m => m.role === "user")?.content?.slice(0, 80) || "New conversation";
+      const serializable = messages.map(m => ({ role: m.role, content: m.content }));
+      if (conversationId) {
+        await supabase.from("sage_conversations").update({
+          messages: serializable as any,
+          title,
+          updated_at: new Date().toISOString(),
+        }).eq("id", conversationId);
+      } else {
+        const { data } = await supabase.from("sage_conversations").insert({
+          user_id: user.id,
+          title,
+          messages: serializable as any,
+        }).select("id").single();
+        if (data) setConversationId(data.id);
+      }
+    }, 2000);
+    return () => { if (conversationSaveTimer.current) clearTimeout(conversationSaveTimer.current); };
+  }, [messages, user, conversationId]);
+
+  const handleLoadConversation = useCallback((id: string, msgs: any[]) => {
+    setConversationId(id);
+    setMessages(msgs.map((m: any) => ({ role: m.role, content: m.content })));
+  }, []);
+
+  const handleNewChat = useCallback(() => {
+    setConversationId(null);
+    setMessages([]);
+    setInput("");
+  }, []);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
@@ -403,6 +442,15 @@ export default function DemoAssistantTab({ onNavigate }: { onNavigate?: (tab: st
                 {s.label}
               </button>
             ))}
+          </div>
+
+          {/* Previous chats */}
+          <div className="w-full max-w-2xl mt-6" style={{ animation: "sageFadeIn 0.6s cubic-bezier(0.16,1,0.3,1) 0.45s both" }}>
+            <PreviousChats
+              onLoad={handleLoadConversation}
+              onNewChat={handleNewChat}
+              currentConversationId={conversationId}
+            />
           </div>
         </div>
       ) : (

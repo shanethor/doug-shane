@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
-  Brain, Loader2, Calendar, Download, ArrowRight,
+  Brain, Loader2, Calendar, Download, ArrowRight, ArrowLeft,
   Sparkles, Phone, Linkedin, CheckCircle, Send, Edit,
   Star,
 } from "lucide-react";
@@ -274,7 +274,7 @@ export default function MeetingPrepSection({ compact = false, clientNamePrefill 
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-semibold">Feeder List Results</h3>
             <div className="flex gap-2">
-              <Button variant="ghost" size="sm" className="h-7 text-[10px]" onClick={() => { setSelectedList(null); setProspects([]); }}>← Back</Button>
+              <Button variant="ghost" size="sm" className="h-7 text-[10px] gap-1" onClick={() => { setSelectedList(null); setProspects([]); }}><ArrowLeft className="h-3 w-3" /> Back</Button>
               <Button variant="outline" size="sm" className="h-7 text-[10px]"><Download className="h-3 w-3 mr-1" /> Export</Button>
             </div>
           </div>
