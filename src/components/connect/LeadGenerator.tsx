@@ -197,6 +197,7 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasAgent, in
 
       let totalFound = 0;
       const sourceNames: string[] = [];
+      const batchIds: string[] = [];
       const totalSources = focuses.length;
       const basePerSource = 70 / totalSources;
 
