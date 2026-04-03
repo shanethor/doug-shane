@@ -42,75 +42,59 @@ export default function LeadOutreachPanel({ lead, onClose }: Props) {
   const [sent, setSent] = useState(false);
   const [converting, setConverting] = useState(false);
 
-  // ── Find contact info via Gemini ──
+  // ── Find contact info via enrich-lead waterfall (Serper → Apollo → PDL) ──
   const handleFindContact = async () => {
     setFindingContact(true);
     try {
-      const { data, error } = await supabase.functions.invoke("spotlight-flyer", {
+      const { data, error } = await supabase.functions.invoke("enrich-lead", {
         body: {
-          action: "extract_document_profile",
-          file_base64: btoa(JSON.stringify({
-            company: lead.company,
-            industry: lead.industry,
-            state: lead.state,
-            signal: lead.signal,
-          })),
-          file_mime: "application/json",
-          file_name: `${lead.company}-research.json`,
+          company: lead.company,
+          contact_name: lead.contact_name,
+          email: lead.email,
+          state: lead.state,
+          industry: lead.industry,
         },
       });
 
-      // Use the AI gateway directly for contact research
-      const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_LOVABLE_API_KEY || ""}`,
-        },
-        body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
-          messages: [
-            {
-              role: "system",
-              content: "You are a business contact research assistant. Based on company info, suggest realistic contact details. Return ONLY valid JSON.",
-            },
-            {
-              role: "user",
-              content: `Research contact info for: ${lead.company} (${lead.industry}) in ${lead.state || "US"}. Signal: ${lead.signal}. Return JSON with: {contact_name, email, phone, website, linkedin_url, notes}`,
-            },
-          ],
-        }),
-      });
+      if (error) throw new Error(error.message);
+      if (data?.error) throw new Error(data.error);
 
-      // Since we can't hit AI gateway directly from frontend, use the edge function
-      const { data: researchData } = await supabase.functions.invoke("connection-brief", {
-        body: {
-          name: lead.contact_name || lead.company,
-          notes: `Company: ${lead.company}. Industry: ${lead.industry}. State: ${lead.state}. Need contact email and phone. ${lead.signal || ""}`,
-        },
-      });
+      let foundFields: string[] = [];
 
-      // Extract what we can
-      if (researchData?.brief?.who_they_are) {
-        const w = researchData.brief.who_they_are;
-        if (w.name && !contactName) setContactName(w.name);
+      if (data?.contact_name && !contactName) {
+        setContactName(data.contact_name);
+        foundFields.push("contact name");
+      }
+      if (data?.email) {
+        setEmail(data.email);
+        foundFields.push("email");
+      }
+      if (data?.phone) {
+        setPhone(data.phone);
+        foundFields.push("phone");
+      }
+      if (data?.linkedin_url) {
+        setWebsite(data.linkedin_url);
+        foundFields.push("LinkedIn");
       }
 
-      // Generate a realistic email based on company name pattern
-      if (!email && lead.company) {
-        const cleanName = lead.company
-          .toLowerCase()
-          .replace(/\s+(llc|inc|corp|co|ltd|group|services|solutions)\.*$/i, "")
-          .replace(/[^a-z0-9]/g, "")
-          .slice(0, 20);
-        const suggested = `owner@${cleanName}.com`;
-        setEmail(suggested);
-        toast.info(`Suggested email: ${suggested} — verify before sending`);
+      // Also update the lead record in the database
+      const updates: Record<string, unknown> = {};
+      if (data?.contact_name && !lead.contact_name) updates.contact_name = data.contact_name;
+      if (data?.email && !lead.email) updates.email = data.email;
+      if (data?.phone && !lead.phone) updates.phone = data.phone;
+
+      if (Object.keys(updates).length > 0) {
+        updateLead.mutate({ id: lead.id, ...updates } as any);
+      }
+
+      if (foundFields.length > 0) {
+        toast.success(`Found ${foundFields.join(", ")} for ${lead.company}`);
       } else {
-        toast.info("Fill in contact details manually or from your research");
+        toast.info("No additional contact info found — try adding details manually");
       }
     } catch (err: any) {
-      toast.error("Contact lookup failed — add details manually");
+      toast.error(err.message || "Contact research failed — add details manually");
     } finally {
       setFindingContact(false);
     }
