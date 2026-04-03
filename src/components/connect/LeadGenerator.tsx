@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useIsMobile } from "@/hooks/use-mobile";
 import LeadOutreachPanel from "./LeadOutreachPanel";
@@ -148,11 +148,19 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasAgent, in
     return sources;
   }, [selectedVerticals]);
 
-  const toggleVertical = (id: string) => {
-    setSelectedVerticals(prev =>
-      prev.includes(id) ? prev.filter(v => v !== id) : [...prev, id]
-    );
-  };
+  const toggleVertical = useCallback((id: string) => {
+    setSelectedVerticals(prev => {
+      const next = prev.includes(id) ? prev.filter(v => v !== id) : [...prev, id];
+      // Persist to profile (fire-and-forget)
+      (async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await supabase.from("profiles").update({ specializations: next } as any).eq("user_id", user.id);
+        }
+      })();
+      return next;
+    });
+  }, []);
 
   const toggleGroup = (group: string) => {
     setExpandedGroups(prev => {
@@ -330,7 +338,10 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasAgent, in
               )}
             </div>
           ))}
-          <p className="text-[10px] text-muted-foreground">{selectedVerticals.length} specialization{selectedVerticals.length !== 1 ? "s" : ""} active</p>
+          <p className="text-[10px] text-muted-foreground">
+            {selectedVerticals.length} specialization{selectedVerticals.length !== 1 ? "s" : ""} active
+            {selectedVerticals.length > 0 && ` — ${availableVerticals.filter(v => selectedVerticals.includes(v.id)).map(v => v.label).slice(0, 3).join(", ")}${selectedVerticals.length > 3 ? ` +${selectedVerticals.length - 3} more` : ""}`}
+          </p>
         </CardContent>
       </Card>
 
@@ -1070,8 +1081,18 @@ export default function LeadGenerator() {
 
   const handleGenerate = (_opts: any) => {
     setHasGenerated(true);
-    setTimeout(() => qc.invalidateQueries({ queryKey: ["engine-leads"] }), 1500);
-    setTimeout(() => qc.invalidateQueries({ queryKey: ["engine-leads"] }), 4000);
+    // Immediately invalidate all lead-related queries to refresh the table
+    qc.invalidateQueries({ queryKey: ["engine-leads"] });
+    qc.invalidateQueries({ queryKey: ["engine-tier-summary"] });
+    qc.invalidateQueries({ queryKey: ["engine-kpis"] });
+    // Also refetch after enrichment has had time to complete
+    setTimeout(() => {
+      qc.invalidateQueries({ queryKey: ["engine-leads"] });
+      qc.invalidateQueries({ queryKey: ["engine-tier-summary"] });
+    }, 5000);
+    setTimeout(() => {
+      qc.invalidateQueries({ queryKey: ["engine-leads"] });
+    }, 12000);
   };
 
   if (loading) return <Skeleton className="h-40 w-full" />;
