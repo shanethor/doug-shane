@@ -24,7 +24,14 @@ export function ProductProtectedRoute({ children }: { children: React.ReactNode 
   const isOnboardingPage = location.pathname === "/connect/onboarding";
 
   useEffect(() => {
-    if (!user || isMaster || cachedComplete) {
+    if (!user || isMaster) {
+      setCheckingOnboarding(false);
+      return;
+    }
+
+    // Trust localStorage cache — avoids race conditions after onboarding completion
+    if (cachedComplete) {
+      setOnboardingCompleted(true);
       setCheckingOnboarding(false);
       return;
     }
