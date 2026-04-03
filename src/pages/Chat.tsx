@@ -30,6 +30,7 @@ import { generateIntakeLink, generatePersonalIntakeLink } from "@/lib/intake-lin
 import { findStaleClients } from "@/lib/stale-clients";
 import { PersonalIntakeDialog } from "@/components/PersonalIntakeDialog";
 import { fuzzyMatch } from "@/lib/fuzzy-match";
+import PreviousChats from "@/components/PreviousChats";
 import Pipeline from "@/pages/Pipeline";
 
 type ButtonMarker = { label: string; action: string };
