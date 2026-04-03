@@ -215,8 +215,8 @@ export function ClientInfoPanel({ onClose, onShare, sharedClient }: ClientInfoPa
           ) : (
             /* Detail view */
             <div className="space-y-3">
-              <Button variant="ghost" size="sm" onClick={() => setSelected(null)} className="gap-1 text-[10px] h-6 px-2">
-                ← Back
+              <Button variant="ghost" size="sm" onClick={() => setSelected(null)} className="gap-1.5 text-[10px] h-6 px-2">
+                <ArrowLeft className="h-3 w-3" /> Back
               </Button>
 
               {/* Client header card */}
