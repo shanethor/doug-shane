@@ -869,7 +869,7 @@ function ResultsTable({ latestBatchId }: { latestBatchId: string | null }) {
                   {displayLeads.map((lead: EngineLead, idx: number) => {
                     const isFirstPrevious = latestBatchId && latestLeads.length > 0 && lead.batch_id !== latestBatchId && (idx === 0 || displayLeads[idx - 1]?.batch_id === latestBatchId);
                     return (
-                      <React.Fragment key={lead.id}>
+                      <Fragment key={lead.id}>
                         {isFirstPrevious && (
                           <TableRow>
                             <TableCell colSpan={7} className="py-3">
@@ -948,7 +948,7 @@ function ResultsTable({ latestBatchId }: { latestBatchId: string | null }) {
                         </div>
                       </TableCell>
                     </TableRow>
-                      </React.Fragment>
+                      </Fragment>
                     );
                   })}
                 </TableBody>
