@@ -842,7 +842,9 @@ function ResultsTable({ latestBatchId }: { latestBatchId: string | null }) {
                     </div>
                   </div>
                 </div>
-              ))}
+                  </div>
+                );
+              })}
               {showMoreButton}
               {showLessButton}
             </div>
