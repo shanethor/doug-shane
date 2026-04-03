@@ -148,7 +148,7 @@ export default function DemoSpotlightTab() {
       const { data } = await supabase.from("design_templates" as any).select("*");
       if (data) {
         const map: Record<string, DbDesignTemplate> = {};
-        (data as DbDesignTemplate[]).forEach(t => { map[t.id] = t; });
+        (data as unknown as DbDesignTemplate[]).forEach(t => { map[t.id] = t; });
         setDbTemplates(map);
       }
     } catch { /* silent — falls back to legacy editor */ }
