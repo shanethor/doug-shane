@@ -30,6 +30,7 @@ import { generateIntakeLink, generatePersonalIntakeLink } from "@/lib/intake-lin
 import { findStaleClients } from "@/lib/stale-clients";
 import { PersonalIntakeDialog } from "@/components/PersonalIntakeDialog";
 import { fuzzyMatch } from "@/lib/fuzzy-match";
+import PreviousChats from "@/components/PreviousChats";
 import Pipeline from "@/pages/Pipeline";
 
 type ButtonMarker = { label: string; action: string };
@@ -467,6 +468,8 @@ export default function Chat() {
   const inCoverageLoopRef = useRef(false);
   const [coverageInfo, setCoverageInfo] = useState<{ filled: number; total: number; percent: number } | null>(null);
   const [showFeatureSuggestion, setShowFeatureSuggestion] = useState(false);
+  const [conversationId, setConversationId] = useState<string | null>(null);
+  const conversationSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingPipelineActionRef = useRef<{ action: PipelineAction; leads: { id: string; account_name: string; stage: string }[] } | null>(null);
   const [showPersonalIntakeDialog, setShowPersonalIntakeDialog] = useState(false);
   const [personalIntakeLoading, setPersonalIntakeLoading] = useState(false);
@@ -483,7 +486,41 @@ export default function Chat() {
     };
   }, []);
 
+  // Auto-save conversation to DB after messages change
+  useEffect(() => {
+    if (!user || messages.length < 2) return;
+    if (conversationSaveTimer.current) clearTimeout(conversationSaveTimer.current);
+    conversationSaveTimer.current = setTimeout(async () => {
+      const title = messages.find(m => m.role === "user")?.content?.slice(0, 80) || "New conversation";
+      const serializable = messages.map(m => ({ role: m.role, content: m.content }));
+      if (conversationId) {
+        await supabase.from("sage_conversations").update({
+          messages: serializable as any,
+          title,
+          updated_at: new Date().toISOString(),
+        }).eq("id", conversationId);
+      } else {
+        const { data } = await supabase.from("sage_conversations").insert({
+          user_id: user.id,
+          title,
+          messages: serializable as any,
+        }).select("id").single();
+        if (data) setConversationId(data.id);
+      }
+    }, 2000);
+    return () => { if (conversationSaveTimer.current) clearTimeout(conversationSaveTimer.current); };
+  }, [messages, user, conversationId]);
 
+  const handleLoadConversation = useCallback((id: string, msgs: any[]) => {
+    setConversationId(id);
+    setMessages(msgs.map((m: any) => ({ role: m.role, content: m.content })));
+  }, []);
+
+  const handleNewChat = useCallback(() => {
+    setConversationId(null);
+    setMessages([]);
+    setInput("");
+  }, []);
 
 
   // Calculate coverage from form_data for a given submission
@@ -2472,6 +2509,13 @@ export default function Chat() {
                 <Sparkles className="h-3.5 w-3.5" />
                 <span>Suggest a feature to our team</span>
               </button>
+
+              {/* Previous chats */}
+              <PreviousChats
+                onLoad={handleLoadConversation}
+                onNewChat={handleNewChat}
+                currentConversationId={conversationId}
+              />
               </>)}
               {/* Intent buttons — shown when files dropped or form filling intent detected */}
               {showIntentButtons && (
