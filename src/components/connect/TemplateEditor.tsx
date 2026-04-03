@@ -19,6 +19,26 @@ import NewClientWelcomeLayout from "./template-layouts/NewClientWelcomeLayout";
 import RiskTipLayout from "./template-layouts/RiskTipLayout";
 import EventInviteLayout from "./template-layouts/EventInviteLayout";
 import SeasonalPromoLayout from "./template-layouts/SeasonalPromoLayout";
+import FamilyInsuranceFlyerLayout from "./template-layouts/FamilyInsuranceFlyerLayout";
+import InsuranceAgencyServiceFlyerLayout from "./template-layouts/InsuranceAgencyServiceFlyerLayout";
+import LifeInsuranceFlyerTealLayout from "./template-layouts/LifeInsuranceFlyerTealLayout";
+import LifeInsuranceFlyerRedLayout from "./template-layouts/LifeInsuranceFlyerRedLayout";
+import FinancialAdvisorFlyerCleanLayout from "./template-layouts/FinancialAdvisorFlyerCleanLayout";
+import LifeInsuranceFlyerPinkLayout from "./template-layouts/LifeInsuranceFlyerPinkLayout";
+import FinancialAdvisorInstagramBWLayout from "./template-layouts/FinancialAdvisorInstagramBWLayout";
+import FinancialAdvisorInstagramBlueLayout from "./template-layouts/FinancialAdvisorInstagramBlueLayout";
+import FinancialAdvisorInstagramGreenLayout from "./template-layouts/FinancialAdvisorInstagramGreenLayout";
+import NetworkingStepsInfographicLayout from "./template-layouts/NetworkingStepsInfographicLayout";
+import NewsletterEmailHeaderLayout from "./template-layouts/NewsletterEmailHeaderLayout";
+import BusinessNewsletterDarkBlueLayout from "./template-layouts/BusinessNewsletterDarkBlueLayout";
+import BusinessNewsletterGreyLayout from "./template-layouts/BusinessNewsletterGreyLayout";
+import BusinessNewsletterOrangeLayout from "./template-layouts/BusinessNewsletterOrangeLayout";
+import NetworkingPresentationVibrantLayout from "./template-layouts/NetworkingPresentationVibrantLayout";
+import ReferralProgramPresentationLayout from "./template-layouts/ReferralProgramPresentationLayout";
+import NetworkingPresentationBlueLayout from "./template-layouts/NetworkingPresentationBlueLayout";
+import NetworkingEventFacebookLayout from "./template-layouts/NetworkingEventFacebookLayout";
+import NetworkingEventLinkedInLayout from "./template-layouts/NetworkingEventLinkedInLayout";
+import NetworkingEventPosterLayout from "./template-layouts/NetworkingEventPosterLayout";
 
 // Re-export for consumers that imported from here directly
 export type { TemplateCanvasData, TemplateCanvasProps } from "./template-types";
@@ -30,6 +50,27 @@ const LAYOUT_MAP: Record<string, React.ComponentType<TemplateCanvasProps>> = {
   "risk-tip": RiskTipLayout,
   "event-invite": EventInviteLayout,
   "seasonal-promo": SeasonalPromoLayout,
+  // Canva-inspired templates
+  "family-insurance-flyer": FamilyInsuranceFlyerLayout,
+  "insurance-agency-service-flyer": InsuranceAgencyServiceFlyerLayout,
+  "life-insurance-flyer-teal": LifeInsuranceFlyerTealLayout,
+  "life-insurance-flyer-red": LifeInsuranceFlyerRedLayout,
+  "financial-advisor-flyer-clean": FinancialAdvisorFlyerCleanLayout,
+  "life-insurance-flyer-pink": LifeInsuranceFlyerPinkLayout,
+  "financial-advisor-instagram-bw": FinancialAdvisorInstagramBWLayout,
+  "financial-advisor-instagram-blue": FinancialAdvisorInstagramBlueLayout,
+  "financial-advisor-instagram-green": FinancialAdvisorInstagramGreenLayout,
+  "networking-steps-infographic": NetworkingStepsInfographicLayout,
+  "newsletter-email-header": NewsletterEmailHeaderLayout,
+  "business-newsletter-dark-blue": BusinessNewsletterDarkBlueLayout,
+  "business-newsletter-grey": BusinessNewsletterGreyLayout,
+  "business-newsletter-orange": BusinessNewsletterOrangeLayout,
+  "networking-presentation-vibrant": NetworkingPresentationVibrantLayout,
+  "referral-program-presentation": ReferralProgramPresentationLayout,
+  "networking-presentation-blue": NetworkingPresentationBlueLayout,
+  "networking-event-facebook": NetworkingEventFacebookLayout,
+  "networking-event-linkedin": NetworkingEventLinkedInLayout,
+  "networking-event-poster": NetworkingEventPosterLayout,
 };
 
 const PRESET_PALETTES = [
