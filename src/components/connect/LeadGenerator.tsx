@@ -1080,13 +1080,15 @@ export default function LeadGenerator() {
     return () => clearTimeout(timer);
   }, [studioQual?.qualified, hasAgent]);
 
-  const handleGenerate = (_opts: any) => {
+  const handleGenerate = (opts: any) => {
     setHasGenerated(true);
-    // Immediately invalidate all lead-related queries to refresh the table
+    // Track the latest batch IDs from the scan
+    if (opts?.batch_ids?.length) {
+      setLatestBatchId(opts.batch_ids[opts.batch_ids.length - 1]);
+    }
     qc.invalidateQueries({ queryKey: ["engine-leads"] });
     qc.invalidateQueries({ queryKey: ["engine-tier-summary"] });
     qc.invalidateQueries({ queryKey: ["engine-kpis"] });
-    // Also refetch after enrichment has had time to complete
     setTimeout(() => {
       qc.invalidateQueries({ queryKey: ["engine-leads"] });
       qc.invalidateQueries({ queryKey: ["engine-tier-summary"] });
