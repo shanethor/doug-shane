@@ -62,7 +62,6 @@ export default function PreviousChats({ onLoad, onNewChat, currentConversationId
   };
 
   if (!user || loading) return null;
-  if (conversations.length === 0) return null;
 
   return (
     <div className="w-full max-w-2xl space-y-2">
@@ -84,41 +83,45 @@ export default function PreviousChats({ onLoad, onNewChat, currentConversationId
           New chat
         </Button>
       </div>
-      <ScrollArea className="max-h-[200px]">
-        <div className="space-y-1">
-          {conversations.map((conv) => {
-            const msgCount = Array.isArray(conv.messages) ? conv.messages.length : 0;
-            const isActive = conv.id === currentConversationId;
-            return (
-              <button
-                key={conv.id}
-                onClick={() => onLoad(conv.id, conv.messages)}
-                className={`flex items-center gap-3 w-full rounded-lg px-3 py-2.5 text-left transition-colors group ${
-                  isActive
-                    ? "bg-primary/10 border border-primary/20"
-                    : "hover:bg-muted/60 border border-transparent"
-                }`}
-              >
-                <MessageSquare className="h-4 w-4 text-muted-foreground shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate text-foreground">
-                    {conv.title}
-                  </p>
-                  <p className="text-[10px] text-muted-foreground">
-                    {msgCount} messages · {formatTime(conv.updated_at)}
-                  </p>
-                </div>
+      {conversations.length === 0 ? (
+        <p className="text-[11px] text-muted-foreground py-3 text-center">No previous chats yet. Start a conversation and it will appear here.</p>
+      ) : (
+        <ScrollArea className="max-h-[200px]">
+          <div className="space-y-1">
+            {conversations.map((conv) => {
+              const msgCount = Array.isArray(conv.messages) ? conv.messages.length : 0;
+              const isActive = conv.id === currentConversationId;
+              return (
                 <button
-                  onClick={(e) => deleteConversation(conv.id, e)}
-                  className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-destructive/10 hover:text-destructive transition-all"
+                  key={conv.id}
+                  onClick={() => onLoad(conv.id, conv.messages)}
+                  className={`flex items-center gap-3 w-full rounded-lg px-3 py-2.5 text-left transition-colors group ${
+                    isActive
+                      ? "bg-primary/10 border border-primary/20"
+                      : "hover:bg-muted/60 border border-transparent"
+                  }`}
                 >
-                  <Trash2 className="h-3.5 w-3.5" />
+                  <MessageSquare className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate text-foreground">
+                      {conv.title}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {msgCount} messages · {formatTime(conv.updated_at)}
+                    </p>
+                  </div>
+                  <button
+                    onClick={(e) => deleteConversation(conv.id, e)}
+                    className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-destructive/10 hover:text-destructive transition-all"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
                 </button>
-              </button>
-            );
-          })}
-        </div>
-      </ScrollArea>
+              );
+            })}
+          </div>
+        </ScrollArea>
+      )}
     </div>
   );
 }
