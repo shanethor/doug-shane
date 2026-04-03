@@ -168,12 +168,36 @@ export default function TemplateEditor({ templateId, brands, onBack }: Props) {
 
   // Export to PNG via html2canvas
   const handleExport = async () => {
-    if (!canvasRef.current) return;
     setExporting(true);
     try {
-      // Dynamically import html2canvas to keep initial bundle lean
       const html2canvas = (await import("html2canvas")).default;
-      const canvas = await html2canvas(canvasRef.current, {
+
+      let targetEl: HTMLElement | null = canvasRef.current;
+
+      // For Canva-sourced templates (thumbnailUrl set), render the layout
+      // into a temporary off-screen container at full size so html2canvas
+      // captures it at high fidelity instead of the sr-only hidden div.
+      let tempContainer: HTMLDivElement | null = null;
+      if (template.thumbnailUrl) {
+        const { createRoot } = await import("react-dom/client");
+        const React = await import("react");
+        tempContainer = document.createElement("div");
+        tempContainer.style.cssText = "position:fixed;left:-9999px;top:0;width:800px;height:auto;z-index:-1;";
+        document.body.appendChild(tempContainer);
+        const root = createRoot(tempContainer);
+        await new Promise<void>(resolve => {
+          root.render(
+            React.createElement(Layout, { data, onFieldClick: () => {}, activeField: null })
+          );
+          // Give React a tick to flush
+          setTimeout(resolve, 80);
+        });
+        targetEl = tempContainer.firstElementChild as HTMLElement || tempContainer;
+      }
+
+      if (!targetEl) { toast.error("Nothing to export"); return; }
+
+      const canvas = await html2canvas(targetEl, {
         scale: 3,
         useCORS: true,
         backgroundColor: null,
@@ -184,6 +208,11 @@ export default function TemplateEditor({ templateId, brands, onBack }: Props) {
       link.href = canvas.toDataURL("image/png");
       link.click();
       toast.success("Downloaded!");
+
+      // Clean up temp container
+      if (tempContainer) {
+        tempContainer.remove();
+      }
     } catch {
       toast.error("Export failed — try again");
     } finally {
@@ -232,21 +261,63 @@ export default function TemplateEditor({ templateId, brands, onBack }: Props) {
 
       <div className="flex flex-col lg:flex-row flex-1 overflow-hidden gap-0">
         {/* LEFT — Canvas preview */}
-        <div className="lg:w-[55%] flex flex-col items-center justify-start p-4 overflow-y-auto" style={{ background: "hsl(240 6% 6%)" }}>
-          <div className="w-full max-w-[360px]">
-            {/* Click-to-edit hint */}
-            <p className="text-center text-[9px] mb-2.5" style={{ color: "hsl(240 5% 40%)" }}>
-              Click any text on the card to edit it
-            </p>
-            <div
-              ref={canvasRef}
-              className="w-full rounded-2xl overflow-hidden shadow-2xl"
-              onClick={() => setActiveField(null)}
-              style={{ cursor: "default" }}
-            >
-              <Layout data={data} onFieldClick={(f) => { setActiveField(f); setActivePanel("text"); }} activeField={activeField} />
+        <div className="lg:w-[55%] flex flex-col items-center justify-start overflow-y-auto" style={{ background: "hsl(240 6% 6%)" }}>
+
+          {/* ── If template has a Canva reference image, show it as the primary design preview ── */}
+          {template.thumbnailUrl ? (
+            <div className="w-full flex flex-col">
+              {/* Design preview — full quality Canva image */}
+              <div className="relative w-full" style={{ background: "hsl(240 6% 8%)" }}>
+                <img
+                  src={template.thumbnailUrl}
+                  alt={template.name}
+                  className="w-full object-contain"
+                  style={{ maxHeight: 480 }}
+                />
+                {/* Live text overlay badge — shows what text will be on export */}
+                <div
+                  className="absolute bottom-0 left-0 right-0 px-4 py-3"
+                  style={{ background: "linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 100%)" }}
+                >
+                  <p className="text-white font-bold text-sm leading-tight line-clamp-2">{data.title}</p>
+                  <p className="text-white/60 text-xs mt-0.5">{data.cta}</p>
+                </div>
+              </div>
+
+              {/* Export note */}
+              <div className="px-4 py-3 flex items-start gap-2.5" style={{ background: "hsl(240 6% 9%)", borderTop: "1px solid hsl(240 6% 14%)" }}>
+                <div className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" style={{ color: "hsl(140 12% 50%)" }}>
+                  <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm.75 4a.75.75 0 0 0-1.5 0v3.25H3.75a.75.75 0 0 0 0 1.5h3.5v3.25a.75.75 0 0 0 1.5 0V9.75h3.5a.75.75 0 0 0 0-1.5h-3.5V5z"/></svg>
+                </div>
+                <p className="text-[10px] leading-relaxed" style={{ color: "hsl(240 5% 45%)" }}>
+                  Edit your text and brand on the right, then <strong style={{ color: "white" }}>Export PNG</strong> to download the final design.
+                  The exported file matches the design above with your customized text applied.
+                </p>
+              </div>
+
+              {/* Hidden html2canvas target — renders layout for export only */}
+              <div className="sr-only" aria-hidden="true">
+                <div ref={canvasRef}>
+                  <Layout data={data} onFieldClick={() => {}} activeField={null} />
+                </div>
+              </div>
             </div>
-          </div>
+          ) : (
+            /* ── Original templates: render live editable layout ── */
+            <div className="w-full max-w-[360px] p-4">
+              <p className="text-center text-[9px] mb-2.5" style={{ color: "hsl(240 5% 40%)" }}>
+                Click any text on the card to edit it
+              </p>
+              <div
+                ref={canvasRef}
+                className="w-full rounded-2xl overflow-hidden shadow-2xl"
+                onClick={() => setActiveField(null)}
+                style={{ cursor: "default" }}
+              >
+                <Layout data={data} onFieldClick={(f) => { setActiveField(f); setActivePanel("text"); }} activeField={activeField} />
+              </div>
+            </div>
+          )}
         </div>
 
         {/* RIGHT — Edit panel */}
