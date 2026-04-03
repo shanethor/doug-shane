@@ -266,7 +266,8 @@ export default function DemoSpotlightTab() {
             {/* ── Category filter bar ── */}
             <TemplateCategoryFilter selectedType={selectedType} onChange={setSelectedType} />
 
-            <div className="grid grid-cols-2 gap-2 mt-2">
+            {/* ── Template card grid — 3 columns, contained cards ── */}
+            <div className="grid grid-cols-3 gap-2 mt-3">
               {SPOTLIGHT_TEMPLATES
                 .filter(tpl => !selectedType || tpl.category === selectedType ||
                   (selectedType === "social" && ["instagram", "facebook", "linkedin"].includes(tpl.category ?? "")))
@@ -274,44 +275,68 @@ export default function DemoSpotlightTab() {
                 <button
                   key={tpl.id}
                   onClick={() => { setActiveTemplateId(tpl.id); setView("template_editor"); }}
-                  className="group relative rounded-xl overflow-hidden text-left cursor-pointer"
-                  style={{ aspectRatio: "4/3", border: "1px solid hsl(240 6% 18%)" }}
+                  className="group flex flex-col text-left cursor-pointer rounded-xl overflow-hidden transition-all duration-150 hover:scale-[1.02] hover:shadow-lg"
+                  style={{ border: "1px solid hsl(240 6% 16%)", background: "hsl(240 8% 7%)" }}
                 >
-                  {/* Preview image — prefer thumbnailUrl, then local asset, then color bg */}
-                  {tpl.thumbnailUrl ? (
-                    <img src={tpl.thumbnailUrl} alt={tpl.name} className="w-full h-full object-cover" />
-                  ) : TEMPLATE_IMAGES[tpl.id] ? (
-                    <img src={TEMPLATE_IMAGES[tpl.id]} alt={tpl.name} className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full" style={{ background: tpl.thumbnailBg }} />
-                  )}
+                  {/* ── Contained preview thumbnail ── */}
+                  <div
+                    className="relative w-full overflow-hidden flex items-center justify-center"
+                    style={{ height: 110, background: "hsl(240 6% 11%)" }}
+                  >
+                    {tpl.thumbnailUrl ? (
+                      <img
+                        src={tpl.thumbnailUrl}
+                        alt={tpl.name}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                      />
+                    ) : TEMPLATE_IMAGES[tpl.id] ? (
+                      <img
+                        src={TEMPLATE_IMAGES[tpl.id]}
+                        alt={tpl.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div
+                        className="w-full h-full flex items-center justify-center"
+                        style={{ background: tpl.thumbnailBg }}
+                      >
+                        <tpl.icon className="h-8 w-8 text-white/30" />
+                      </div>
+                    )}
 
-                  {/* Category badge */}
-                  {tpl.category && (
-                    <div className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-wide"
-                      style={{ background: "rgba(0,0,0,0.65)", color: "hsl(140 12% 62%)" }}>
-                      {tpl.category}
-                    </div>
-                  )}
+                    {/* Category pill — top right */}
+                    {tpl.category && (
+                      <span
+                        className="absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded-full text-[8px] font-bold uppercase tracking-wide"
+                        style={{ background: "rgba(0,0,0,0.70)", color: "hsl(140 12% 65%)", backdropFilter: "blur(4px)" }}
+                      >
+                        {tpl.category}
+                      </span>
+                    )}
 
-                  {/* Hover overlay */}
-                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-all duration-150 flex items-center justify-center">
-                    <div className="opacity-0 group-hover:opacity-100 transition-opacity px-3 py-1.5 rounded-lg text-[10px] font-semibold text-white" style={{ background: "hsl(140 12% 42%)" }}>
-                      Edit Template
+                    {/* Hover: Edit overlay */}
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-150 flex items-center justify-center">
+                      <span
+                        className="opacity-0 group-hover:opacity-100 transition-opacity text-[10px] font-semibold text-white px-2.5 py-1 rounded-lg"
+                        style={{ background: "hsl(140 12% 42%)" }}
+                      >
+                        Edit
+                      </span>
                     </div>
                   </div>
 
-                  {/* Name/tagline */}
-                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/75 via-black/25 to-transparent p-2">
-                    <p className="text-[11px] font-bold text-white leading-tight">{tpl.name}</p>
-                    <p className="text-[9px] text-white/60 leading-tight mt-0.5 line-clamp-1">{tpl.tagline}</p>
+                  {/* ── Card footer — name + tagline ── */}
+                  <div className="px-2 py-2 flex-1">
+                    <p className="text-[10px] font-bold leading-tight text-white line-clamp-2">{tpl.name}</p>
+                    <p className="text-[9px] leading-tight mt-0.5 line-clamp-1" style={{ color: "hsl(240 5% 45%)" }}>{tpl.tagline}</p>
                   </div>
                 </button>
               ))}
             </div>
 
-            <p className="text-center text-[9px] mt-3" style={{ color: "hsl(240 5% 38%)" }}>
-              Click any template to open the editor — no AI generation needed
+            <p className="text-center text-[9px] mt-3" style={{ color: "hsl(240 5% 35%)" }}>
+              Click any template to customize text and export as PNG
             </p>
           </CardContent>
         )}
