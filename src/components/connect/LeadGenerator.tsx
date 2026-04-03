@@ -669,6 +669,11 @@ function ResultsTable({ latestBatchId }: { latestBatchId: string | null }) {
             <CardTitle className="text-sm flex items-center gap-2">
               <TrendingUp className="h-4 w-4 text-primary" />
               Generated Leads ({filtered.length})
+              {latestLeads.length > 0 && (
+                <Badge className="text-[9px] px-1.5 py-0 bg-emerald-500/15 text-emerald-500 border-emerald-500/30 ml-1">
+                  {latestLeads.length} new
+                </Badge>
+              )}
             </CardTitle>
             {isMobile && (
               <div className="flex items-center gap-1.5">
