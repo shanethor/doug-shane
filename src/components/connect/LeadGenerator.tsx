@@ -1132,7 +1132,7 @@ export default function LeadGenerator() {
           />
         </div>
         <div className="lg:col-span-2 space-y-4">
-          <ResultsTable />
+          <ResultsTable latestBatchId={latestBatchId} />
           {/* Show purchase options only after generating free leads */}
           {hasGenerated && (
             <PurchaseSection userIndustry={userIndustry} isSubscriber={subscribed} hasAgent={hasAgent} />
