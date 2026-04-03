@@ -475,7 +475,7 @@ function FitScoreBadge({ score }: { score: number }) {
   );
 }
 
-function ResultsTable() {
+function ResultsTable({ latestBatchId }: { latestBatchId: string | null }) {
   const isMobile = useIsMobile();
   const { data: leads, isLoading } = useEngineLeads();
   const updateLead = useUpdateEngineLead();
