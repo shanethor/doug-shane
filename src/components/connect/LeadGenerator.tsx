@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, Fragment } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useIsMobile } from "@/hooks/use-mobile";
 import LeadOutreachPanel from "./LeadOutreachPanel";
@@ -197,6 +197,7 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasAgent, in
 
       let totalFound = 0;
       const sourceNames: string[] = [];
+      const batchIds: string[] = [];
       const totalSources = focuses.length;
       const basePerSource = 70 / totalSources;
 
@@ -219,6 +220,7 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasAgent, in
           });
           if (error) console.warn(`Scan error for ${source}:`, error.message);
           totalFound += data?.leads_found ?? 0;
+          if (data?.batch_id) batchIds.push(data.batch_id);
         } catch (err: any) {
           console.warn(`Failed scanning ${source}:`, err.message);
         }
@@ -234,7 +236,7 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasAgent, in
       setGenProgress(100);
       setGenStep("Complete!");
 
-      onGenerate({ geo, volume: selectedPack, focuses, leads_found: totalFound });
+      onGenerate({ geo, volume: selectedPack, focuses, leads_found: totalFound, batch_ids: batchIds });
       if (totalFound > 0) {
         toast.success(`Found ${totalFound} new leads across ${sourceNames.join(", ")}`);
       } else {
@@ -475,7 +477,7 @@ function FitScoreBadge({ score }: { score: number }) {
   );
 }
 
-function ResultsTable() {
+function ResultsTable({ latestBatchId }: { latestBatchId: string | null }) {
   const isMobile = useIsMobile();
   const { data: leads, isLoading } = useEngineLeads();
   const updateLead = useUpdateEngineLead();
@@ -605,6 +607,10 @@ function ResultsTable() {
     return matchesSearch && matchesScore && matchesContact;
   });
 
+  // Separate latest batch from previous leads
+  const latestLeads = latestBatchId ? filtered.filter(l => l.batch_id === latestBatchId) : [];
+  const previousLeads = latestBatchId ? filtered.filter(l => l.batch_id !== latestBatchId) : filtered;
+
   const allSelected = filtered.length > 0 && filtered.every((l: EngineLead) => selectedIds.has(l.id));
   const someSelected = filtered.some((l: EngineLead) => selectedIds.has(l.id));
 
@@ -663,6 +669,11 @@ function ResultsTable() {
             <CardTitle className="text-sm flex items-center gap-2">
               <TrendingUp className="h-4 w-4 text-primary" />
               Generated Leads ({filtered.length})
+              {latestLeads.length > 0 && (
+                <Badge className="text-[9px] px-1.5 py-0 bg-emerald-500/15 text-emerald-500 border-emerald-500/30 ml-1">
+                  {latestLeads.length} new
+                </Badge>
+              )}
             </CardTitle>
             {isMobile && (
               <div className="flex items-center gap-1.5">
@@ -733,8 +744,10 @@ function ResultsTable() {
       <CardContent className={isMobile ? "px-3 pb-3" : "p-0"}>
         {(() => {
           const INITIAL_COUNT = 10;
-          const displayLeads = showAll ? filtered : filtered.slice(0, INITIAL_COUNT);
-          const hiddenCount = filtered.length - INITIAL_COUNT;
+          // Combine: latest batch first, then previous
+          const orderedLeads = [...latestLeads, ...previousLeads];
+          const displayLeads = showAll ? orderedLeads : orderedLeads.slice(0, INITIAL_COUNT);
+          const hiddenCount = orderedLeads.length - INITIAL_COUNT;
           const showMoreButton = !showAll && hiddenCount > 0 && (
             <div className="flex justify-center py-3">
               <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => setShowAll(true)}>
@@ -742,7 +755,7 @@ function ResultsTable() {
               </Button>
             </div>
           );
-          const showLessButton = showAll && filtered.length > INITIAL_COUNT && (
+          const showLessButton = showAll && orderedLeads.length > INITIAL_COUNT && (
             <div className="flex justify-center py-3">
               <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => setShowAll(false)}>
                 <ChevronUp className="h-3 w-3" /> Show less
@@ -750,11 +763,24 @@ function ResultsTable() {
             </div>
           );
 
+          const isNewLead = (lead: EngineLead) => latestBatchId && lead.batch_id === latestBatchId;
+
           return isMobile ? (
             /* ── Mobile: Card-based layout ── */
             <div className="space-y-2">
-              {displayLeads.map((lead: EngineLead) => (
-                 <div
+              {displayLeads.map((lead: EngineLead, idx: number) => {
+                // Show "Previous Generated Leads" divider
+                const isFirstPrevious = latestBatchId && latestLeads.length > 0 && lead.batch_id !== latestBatchId && (idx === 0 || displayLeads[idx - 1]?.batch_id === latestBatchId);
+                return (
+                  <div key={lead.id}>
+                    {isFirstPrevious && (
+                      <div className="flex items-center gap-2 py-3 mt-2">
+                        <div className="h-px flex-1 bg-border" />
+                        <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Previous Generated Leads</span>
+                        <div className="h-px flex-1 bg-border" />
+                      </div>
+                    )}
+                    <div
                   key={lead.id}
                   className={`rounded-lg border p-3 space-y-2 transition-all animate-fade-in ${selectedIds.has(lead.id) ? "border-primary/40 bg-primary/5" : "border-border"}`}
                   style={{ animationDelay: `${(displayLeads.indexOf(lead)) * 60}ms`, animationFillMode: "both" }}
@@ -767,9 +793,12 @@ function ResultsTable() {
                       className="h-4 w-4 rounded border-border accent-primary cursor-pointer mt-0.5 shrink-0"
                     />
                     <div className="flex-1 min-w-0" onClick={() => setSelectedLead(lead)}>
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="text-sm font-medium truncate">{lead.company}</p>
-                        <FitScoreBadge score={lead.score || 0} />
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-1.5">
+                            <p className="text-sm font-medium truncate">{lead.company}</p>
+                            {isNewLead(lead) && <Badge className="text-[8px] px-1.5 py-0 bg-emerald-500/15 text-emerald-500 border-emerald-500/30">NEW</Badge>}
+                          </div>
+                          <FitScoreBadge score={lead.score || 0} />
                       </div>
                       {lead.industry && <p className="text-[11px] text-muted-foreground">{lead.industry}</p>}
                       {lead.state && <p className="text-[10px] text-muted-foreground">{lead.state}</p>}
@@ -818,7 +847,9 @@ function ResultsTable() {
                     </div>
                   </div>
                 </div>
-              ))}
+                  </div>
+                );
+              })}
               {showMoreButton}
               {showLessButton}
             </div>
@@ -840,14 +871,31 @@ function ResultsTable() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {displayLeads.map((lead: EngineLead) => (
-                    <TableRow key={lead.id} className={`animate-fade-in ${selectedIds.has(lead.id) ? "bg-primary/5" : ""}`} style={{ animationDelay: `${displayLeads.indexOf(lead) * 60}ms`, animationFillMode: "both" }}>
+                  {displayLeads.map((lead: EngineLead, idx: number) => {
+                    const isFirstPrevious = latestBatchId && latestLeads.length > 0 && lead.batch_id !== latestBatchId && (idx === 0 || displayLeads[idx - 1]?.batch_id === latestBatchId);
+                    return (
+                      <Fragment key={lead.id}>
+                        {isFirstPrevious && (
+                          <TableRow>
+                            <TableCell colSpan={7} className="py-3">
+                              <div className="flex items-center gap-2">
+                                <div className="h-px flex-1 bg-border" />
+                                <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Previous Generated Leads</span>
+                                <div className="h-px flex-1 bg-border" />
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        )}
+                        <TableRow className={`animate-fade-in ${selectedIds.has(lead.id) ? "bg-primary/5" : ""}`} style={{ animationDelay: `${idx * 60}ms`, animationFillMode: "both" }}>
                       <TableCell className="py-2 w-8">
                         <input type="checkbox" checked={selectedIds.has(lead.id)} onChange={() => toggleOne(lead.id)} className="h-3.5 w-3.5 rounded border-border accent-primary cursor-pointer" />
                       </TableCell>
                       <TableCell className="py-2">
                         <div className="cursor-pointer group" onClick={() => setSelectedLead(lead)}>
-                          <p className="text-xs font-medium group-hover:text-primary transition-colors">{lead.company}</p>
+                          <div className="flex items-center gap-1.5">
+                            <p className="text-xs font-medium group-hover:text-primary transition-colors">{lead.company}</p>
+                            {isNewLead(lead) && <Badge className="text-[8px] px-1.5 py-0 bg-emerald-500/15 text-emerald-500 border-emerald-500/30">NEW</Badge>}
+                          </div>
                           {lead.industry && <p className="text-[10px] text-muted-foreground">{lead.industry}</p>}
                           {lead.signal && <p className="text-[9px] text-muted-foreground mt-0.5 max-w-[180px] truncate" title={lead.signal}>{lead.signal}</p>}
                         </div>
@@ -905,7 +953,9 @@ function ResultsTable() {
                         </div>
                       </TableCell>
                     </TableRow>
-                  ))}
+                      </Fragment>
+                    );
+                  })}
                 </TableBody>
               </Table>
               {showMoreButton}
@@ -1035,6 +1085,7 @@ export default function LeadGenerator() {
   const [loading, setLoading] = useState(true);
   const [hasGenerated, setHasGenerated] = useState(false);
   const [showAgentDrip, setShowAgentDrip] = useState(false);
+  const [latestBatchId, setLatestBatchId] = useState<string | null>(null);
   const { data: studioQual } = useStudioQualification();
 
   useEffect(() => {
@@ -1079,13 +1130,15 @@ export default function LeadGenerator() {
     return () => clearTimeout(timer);
   }, [studioQual?.qualified, hasAgent]);
 
-  const handleGenerate = (_opts: any) => {
+  const handleGenerate = (opts: any) => {
     setHasGenerated(true);
-    // Immediately invalidate all lead-related queries to refresh the table
+    // Track the latest batch IDs from the scan
+    if (opts?.batch_ids?.length) {
+      setLatestBatchId(opts.batch_ids[opts.batch_ids.length - 1]);
+    }
     qc.invalidateQueries({ queryKey: ["engine-leads"] });
     qc.invalidateQueries({ queryKey: ["engine-tier-summary"] });
     qc.invalidateQueries({ queryKey: ["engine-kpis"] });
-    // Also refetch after enrichment has had time to complete
     setTimeout(() => {
       qc.invalidateQueries({ queryKey: ["engine-leads"] });
       qc.invalidateQueries({ queryKey: ["engine-tier-summary"] });
@@ -1129,7 +1182,7 @@ export default function LeadGenerator() {
           />
         </div>
         <div className="lg:col-span-2 space-y-4">
-          <ResultsTable />
+          <ResultsTable latestBatchId={latestBatchId} />
           {/* Show purchase options only after generating free leads */}
           {hasGenerated && (
             <PurchaseSection userIndustry={userIndustry} isSubscriber={subscribed} hasAgent={hasAgent} />

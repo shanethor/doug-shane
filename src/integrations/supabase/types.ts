@@ -1933,6 +1933,7 @@ export type Database = {
         Row: {
           action: string | null
           assigned_to: string | null
+          batch_id: string | null
           company: string
           contact_name: string | null
           created_at: string
@@ -1959,6 +1960,7 @@ export type Database = {
         Insert: {
           action?: string | null
           assigned_to?: string | null
+          batch_id?: string | null
           company: string
           contact_name?: string | null
           created_at?: string
@@ -1985,6 +1987,7 @@ export type Database = {
         Update: {
           action?: string | null
           assigned_to?: string | null
+          batch_id?: string | null
           company?: string
           contact_name?: string | null
           created_at?: string

@@ -22,6 +22,7 @@ export type EngineLead = {
   assigned_to: string | null;
   action: string | null;
   lead_id: string | null;
+  batch_id: string | null;
   detected_at: string;
   created_at: string;
   updated_at: string;

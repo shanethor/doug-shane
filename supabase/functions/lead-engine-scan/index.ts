@@ -518,7 +518,10 @@ Deno.serve(async (req) => {
       });
     }
 
-    console.log(`[lead-engine-scan] Starting ${source} scan for user ${userId} | states=${settings.states} | industries=${settings.industries}`);
+    // Generate a unique batch ID for this scan run
+    const batchId = `batch_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`;
+
+    console.log(`[lead-engine-scan] Starting ${source} scan for user ${userId} | batch=${batchId} | states=${settings.states} | industries=${settings.industries}`);
 
     const adminClient = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -592,9 +595,9 @@ Deno.serve(async (req) => {
         return {
           owner_user_id: userId,
           company: place.company,
-          contact_name: null,   // Will be filled by enrichment
-          email: null,           // Will be filled by enrichment
-          phone: place.phone,    // Real phone from Google Places
+          contact_name: null,
+          email: null,
+          phone: place.phone,
           industry: settings.industries?.split(",")[0]?.trim() || null,
           state: place.state || null,
           est_premium: 5000,
@@ -604,6 +607,7 @@ Deno.serve(async (req) => {
           score: place.score,
           tier: 1,
           status: "new",
+          batch_id: batchId,
         };
       });
 
@@ -671,6 +675,7 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({
         success: true,
         leads_found: count,
+        batch_id: batchId,
         message: `Found ${count} real businesses from Google Maps (${allPlaces.length} total scanned). Contact data is being enriched via verified sources.`,
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -863,6 +868,7 @@ Deno.serve(async (req) => {
       score: calculateLeadScore(l),
       tier: tierMap[source] || 2,
       status: "new",
+      batch_id: batchId,
     }));
 
     const { data: inserted, error: insertErr } = await adminClient
@@ -913,6 +919,7 @@ Deno.serve(async (req) => {
     return new Response(JSON.stringify({
       success: true,
       leads_found: count,
+      batch_id: batchId,
       message: `Extracted ${count} real leads from ${source} search results. Contact data is being enriched via Serper/Apollo/PDL.`,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
