@@ -23,18 +23,13 @@ interface PlacesResult {
 async function searchGooglePlaces(
   query: string,
   apiKey: string,
-  locationBias?: string,
 ): Promise<PlacesResult[]> {
-  // Use Places API (New) Text Search
   const url = "https://places.googleapis.com/v1/places:searchText";
   const body: Record<string, unknown> = {
     textQuery: query,
     maxResultCount: 20,
     languageCode: "en",
   };
-  if (locationBias) {
-    // locationBias as free-text included in the query itself
-  }
 
   const resp = await fetch(url, {
     method: "POST",
@@ -81,14 +76,12 @@ function buildGoogleMapsQueries(settings: Record<string, string>): string[] {
   const industries = (settings.industries || "contractor, restaurant, HVAC").split(",").map(i => i.trim()).filter(Boolean);
   const queries: string[] = [];
 
-  // Build targeted queries: each industry × top states
   for (const ind of industries.slice(0, 4)) {
     for (const st of states.slice(0, 3)) {
       queries.push(`${ind} in ${st}`);
     }
   }
 
-  // Add low-review / new business signals
   if (states[0]) {
     queries.push(`new business ${states[0]}`);
   }
@@ -96,7 +89,7 @@ function buildGoogleMapsQueries(settings: Record<string, string>): string[] {
   return queries;
 }
 
-// ── Build Firecrawl search queries (used when Firecrawl is available) ──
+// ── Build Firecrawl search queries ──
 function buildSearchQueries(source: ScanSource, settings: Record<string, string>): string[] {
   const year = new Date().getFullYear();
   const queries: string[] = [];
@@ -285,74 +278,172 @@ function buildSearchQueries(source: ScanSource, settings: Record<string, string>
   return queries;
 }
 
-// ── Build the AI prompt for Gemini to generate leads directly ──
-function buildGeminiLeadPrompt(source: ScanSource, settings: Record<string, string>, firecrawlResults?: string): string {
-  const states = (settings.states || "New York, Florida, Texas").split(",").map(s => s.trim()).filter(Boolean).join(", ");
-  const industries = (settings.industries || "Construction, Restaurant, Retail, HVAC, Landscaping").split(",").map(i => i.trim()).filter(Boolean).join(", ");
-  const icp = settings.keywords || "small business owners needing commercial insurance";
-  const year = new Date().getFullYear();
+// ── Extract REAL leads from Firecrawl search results using AI ──
+// AI is ONLY allowed to extract/structure data that exists in the search results.
+// It must NOT invent company names, contacts, emails, or phone numbers.
+function buildExtractionPrompt(source: ScanSource, firecrawlResults: string): string {
+  return `You are a data extraction assistant. Below are REAL web search results from a "${source}" scan.
 
-  const sourceContext: Record<string, string> = {
-    "Business Filings": `newly registered LLCs and corporations in ${year} that would need business insurance`,
-    "Permit Database": `businesses that recently received building permits, liquor licenses, or contractor licenses — all require insurance`,
-    "Reddit": `small business owners discussing insurance needs or just starting their business`,
-    "LinkedIn": `professionals announcing new businesses or expanding operations`,
-    "FEMA Flood Zones": `properties in FEMA flood zones (A, AE, VE) that require mandatory flood insurance by lender mandate`,
-    "NOAA Storm Events": `homeowners in areas recently hit by hail, wind, tornado, or flood events who need insurance reviews or claims`,
-    "Census / ACS Data": `high-value homeowner ZIP codes with owner-occupied properties, auto insurance gaps, and bundling opportunities`,
-    "NHTSA Vehicles": `vehicle owners affected by major recalls or in high-crash corridors who should re-shop auto insurance`,
-    "OpenFEMA NFIP": `homeowners in areas with active FEMA disaster declarations or high flood claims with low policy counts (underinsured)`,
-    "HUD Housing Data": `vacant properties needing landlord insurance, rental property owners, and LIHTC property managers needing commercial coverage`,
-    "Property Records": `recent property transfers — new homeowners who need homeowners insurance before closing`,
-    "Building Permits": `homeowners pulling roof, renovation, or new construction permits who need updated or new insurance coverage`,
-    "Tax Delinquency": `tax-delinquent property owners who likely have lapsed insurance — high-urgency reactivation leads`,
-    "Google Trends": `areas with rising search interest in insurance-related topics like rate increases, hail damage, or coverage needs`,
-    "ATTOM Data": `recent property sales and ownership transfers from ATTOM's 158M property database — new homeowners needing insurance`,
-    "RentCast": `rental properties and property valuations from RentCast's 140M+ property database — landlord and homeowner insurance leads`,
-    "Regrid Parcels": `parcel ownership data and boundary records from Regrid's 149M parcels — identifying new property owners`,
-    "BatchData": `skip-traced property owner data including absentee owners and pre-foreclosure properties needing insurance`,
-    "FL Citizens Non-Renewal": `Florida Citizens Insurance non-renewed policyholders who MUST find replacement homeowners coverage — the highest-intent insurance leads in the country`,
-    "State Socrata Portals": `property assessment and transfer data from state open data portals (IL, WA, CO, DC, OR) — same pattern as CT`,
-    "County ArcGIS": `county assessor property data via ArcGIS REST APIs (FL, OH, MN, AZ, NC counties) — transfers, values, year built`,
-    "CT Property Transfers": `Connecticut property transfers from Socrata API — ~500 new sales/week, real-time deed triggers for homeowners insurance`,
-    "NYC ACRIS": `NYC deed recordings from the ACRIS system — 3-table join (Master + Legals + PLUTO) for ~1,500 new deeds/week across all 5 boroughs`,
-    "MassGIS Parcels": `Massachusetts parcel data from MassGIS ArcGIS REST — ownership changes, property values, year built for home insurance leads`,
-    "NJ MOD-IV / Sales": `New Jersey MOD-IV assessment data + quarterly sales records — high-value leads in Bergen, Essex, Hudson counties ($620K+ avg home value)`,
-    "RI Coastal (FEMA)": `Rhode Island coastal properties in FEMA flood zones — Newport, South County, Providence waterfront — flood + homeowners insurance leads`,
-  };
+SEARCH RESULTS:
+${firecrawlResults}
 
-  let prompt = `You are an insurance lead generation expert. Generate 8-10 REALISTIC, SPECIFIC business leads for an insurance agent.
+TASK: Extract any REAL businesses or leads mentioned in these search results.
 
-SOURCE TYPE: ${source} — ${sourceContext[source] || "new businesses needing insurance"}
-TARGET STATES: ${states}
-TARGET INDUSTRIES: ${industries}  
-ICP: ${icp}
-YEAR: ${year}
+CRITICAL RULES — READ CAREFULLY:
+1. ONLY extract information that is EXPLICITLY stated in the search results above.
+2. DO NOT invent, fabricate, or hallucinate ANY data.
+3. If a company name is mentioned but no contact info exists, leave contact_name, email, and phone as null.
+4. If no real businesses are found in the results, return an EMPTY array.
+5. The company name MUST appear verbatim in the search results.
+6. Do NOT generate fake 555-XXXX phone numbers.
+7. Do NOT generate emails that aren't in the source text.
+8. It is BETTER to return fewer leads with real data than many leads with fake data.
 
-CRITICAL REQUIREMENTS:
-- Use REAL-SOUNDING but FICTIONAL business names (e.g., "Rivera Construction LLC", "Blue Harbor Restaurant Group", "Coastal HVAC Services")
-- Use real US cities and states from the target states list
-- Each lead must have a SPECIFIC reason they need insurance RIGHT NOW
-- Estimated premium should be realistic for the business type and size
-- Contact names should be realistic full names
-- Vary the industries across the ${industries} categories
-- Signal should explain WHY they're a hot lead (new filing, permit issued, expanding, etc.)`;
+Extract what you can find. Leave unknown fields as null.`;
+}
 
-  prompt += `\n\nCRITICAL: For EVERY lead, you MUST include:
-- contact_name: Full name of the owner/decision-maker
-- email: A realistic business email address (e.g. firstname@companydomain.com)
-- phone: A realistic US phone number with area code matching their state
-- website: Company website URL
+// ── Enrich a single lead via Serper → Apollo → PDL waterfall ──
+async function enrichLead(
+  company: string,
+  state: string | null,
+  industry: string | null,
+): Promise<{ contact_name?: string; email?: string; phone?: string; linkedin_url?: string }> {
+  const result: { contact_name?: string; email?: string; phone?: string; linkedin_url?: string } = {};
 
-These are MANDATORY. Do not generate leads without contact information.`;
-
-  if (firecrawlResults && firecrawlResults.length > 50) {
-    prompt += `\n\nADDITIONAL CONTEXT from web search (use to make leads more realistic):\n${firecrawlResults.slice(0, 1500)}`;
+  // Step 1: Serper web search
+  const SERPER_KEY = Deno.env.get("SERPER_API_KEY");
+  if (SERPER_KEY) {
+    try {
+      const q = `${company} ${state || ""} owner contact email`;
+      const resp = await fetch("https://google.serper.dev/search", {
+        method: "POST",
+        headers: { "X-API-KEY": SERPER_KEY, "Content-Type": "application/json" },
+        body: JSON.stringify({ q, num: 5 }),
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        for (const r of (data.organic || [])) {
+          if (r.link?.includes("linkedin.com/in/")) {
+            result.linkedin_url = r.link;
+            break;
+          }
+        }
+        const kg = data.knowledgeGraph || {};
+        if (kg.phoneNumber) result.phone = kg.phoneNumber;
+        if (kg.email) result.email = kg.email;
+      }
+    } catch (e) { console.warn("[enrich] Serper failed:", e); }
   }
 
-  prompt += `\n\nGenerate 8-10 leads now. Every lead MUST have contact_name, email, and phone.`;
-  return prompt;
+  // Step 2: Apollo people search
+  const APOLLO_KEY = Deno.env.get("APOLLO_API_KEY");
+  if (!result.email && APOLLO_KEY) {
+    try {
+      const resp = await fetch("https://api.apollo.io/api/v1/mixed_people/search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-Api-Key": APOLLO_KEY },
+        body: JSON.stringify({
+          q_organization_name: company,
+          person_seniorities: ["owner", "founder", "c_suite", "vp", "director"],
+          page: 1,
+          per_page: 3,
+        }),
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        const best = (data.people || [])[0];
+        if (best) {
+          if (!result.contact_name) result.contact_name = best.name || `${best.first_name || ""} ${best.last_name || ""}`.trim() || undefined;
+          if (best.email) result.email = best.email;
+          if (!result.phone && best.phone_numbers?.[0]?.sanitized_number) result.phone = best.phone_numbers[0].sanitized_number;
+        }
+      }
+    } catch (e) { console.warn("[enrich] Apollo failed:", e); }
+  }
+
+  // Step 3: PDL fallback
+  const PDL_KEY = Deno.env.get("PDL_API_KEY");
+  if (!result.email && PDL_KEY) {
+    try {
+      const resp = await fetch("https://api.peopledatalabs.com/v5/person/search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-Api-Key": PDL_KEY },
+        body: JSON.stringify({
+          query: {
+            bool: {
+              must: [
+                { match: { job_company_name: company } },
+                { terms: { job_title_levels: ["owner", "cxo", "director", "vp"] } },
+              ],
+            },
+          },
+          size: 1,
+        }),
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        const person = data.data?.[0];
+        if (person) {
+          if (!result.contact_name) result.contact_name = person.full_name || undefined;
+          if (person.work_email) result.email = person.work_email;
+          else if (person.personal_emails?.[0]) result.email = person.personal_emails[0];
+          if (!result.phone && person.phone_numbers?.[0]) result.phone = person.phone_numbers[0];
+        }
+      }
+    } catch (e) { console.warn("[enrich] PDL failed:", e); }
+  }
+
+  return result;
 }
+
+// ── Enrich a batch of leads (max concurrency 3) ──
+async function enrichLeadsBatch(
+  leads: Array<{ company: string; state: string | null; industry: string | null; idx: number }>,
+): Promise<Map<number, { contact_name?: string; email?: string; phone?: string; linkedin_url?: string }>> {
+  const results = new Map<number, { contact_name?: string; email?: string; phone?: string; linkedin_url?: string }>();
+  
+  // Process in batches of 3 to avoid rate limits
+  for (let i = 0; i < leads.length; i += 3) {
+    const batch = leads.slice(i, i + 3);
+    const batchResults = await Promise.all(
+      batch.map(async (l) => {
+        const enriched = await enrichLead(l.company, l.state, l.industry);
+        return { idx: l.idx, data: enriched };
+      })
+    );
+    for (const r of batchResults) {
+      results.set(r.idx, r.data);
+    }
+  }
+
+  return results;
+}
+
+// ── Tier and activity type maps ──
+const tierMap: Record<string, number> = {
+  LinkedIn: 1, "FEMA Flood Zones": 1, "OpenFEMA NFIP": 1, "NOAA Storm Events": 1,
+  "Property Records": 1, "Building Permits": 1, "Tax Delinquency": 1,
+  "FL Citizens Non-Renewal": 1, "ATTOM Data": 1, "State Socrata Portals": 1,
+  "County ArcGIS": 1, "CT Property Transfers": 1, "NYC ACRIS": 1,
+  "MassGIS Parcels": 1, "NJ MOD-IV / Sales": 1, "RI Coastal (FEMA)": 1,
+  "Google Maps": 1,
+  Reddit: 2, "Business Filings": 2, "Permit Database": 2, "NHTSA Vehicles": 2,
+  "HUD Housing Data": 2, "RentCast": 2, "Regrid Parcels": 2, "BatchData": 2,
+  "Census / ACS Data": 3, "Google Trends": 3,
+};
+
+const activityTypeMap: Record<string, string> = {
+  LinkedIn: "linkedin", Reddit: "reddit", "Business Filings": "filing",
+  "Permit Database": "filing", "FEMA Flood Zones": "flood", "NOAA Storm Events": "storm",
+  "Census / ACS Data": "filing", "NHTSA Vehicles": "filing", "OpenFEMA NFIP": "flood",
+  "HUD Housing Data": "property", "Property Records": "property", "Building Permits": "property",
+  "Tax Delinquency": "property", "Google Trends": "filing", "ATTOM Data": "property",
+  "RentCast": "property", "Regrid Parcels": "property", "BatchData": "property",
+  "FL Citizens Non-Renewal": "property", "State Socrata Portals": "property",
+  "County ArcGIS": "property", "CT Property Transfers": "property", "NYC ACRIS": "property",
+  "MassGIS Parcels": "property", "NJ MOD-IV / Sales": "property", "RI Coastal (FEMA)": "flood",
+  "Google Maps": "google_maps",
+};
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -410,7 +501,9 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // ── Google Maps Direct Path ──
+    // ═══════════════════════════════════════════════════════════
+    // ── GOOGLE MAPS PATH: Real data from Places API + enrichment
+    // ═══════════════════════════════════════════════════════════
     if (source === "Google Maps") {
       const GOOGLE_API_KEY = Deno.env.get("GOOGLE_CLOUD_API_KEY");
       if (!GOOGLE_API_KEY) {
@@ -449,117 +542,43 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Score: lower reviews = hotter lead (untouched), no website = hotter
+      // Score based on real signals only
       const scored = allPlaces.map(p => {
         let score = 50;
-        if (!p.website) score += 20;          // no website = needs help
-        if ((p.reviewCount ?? 0) < 10) score += 15;  // low reviews = new/small
+        if (!p.website) score += 20;
+        if ((p.reviewCount ?? 0) < 10) score += 15;
         if ((p.reviewCount ?? 0) === 0) score += 10;
         if ((p.rating ?? 5) < 4.0) score += 5;
         score = Math.min(score, 99);
         return { ...p, score };
       }).sort((a, b) => b.score - a.score);
 
-      // Use AI to enrich with contact names + emails for the top results
-      let enrichedLeads: any[] = [];
-      const enrichBatch = scored.slice(0, 15);
+      const topPlaces = scored.slice(0, 12);
 
-      try {
-        const enrichPrompt = `You are an insurance lead enrichment expert. I have ${enrichBatch.length} REAL businesses scraped from Google Maps. For each, generate a realistic contact_name (owner/decision-maker), email address, and insurance signal.
-
-BUSINESSES:
-${enrichBatch.map((p, i) => `${i+1}. ${p.company} — ${p.address} | Phone: ${p.phone || "N/A"} | Website: ${p.website || "NONE"} | Rating: ${p.rating || "N/A"} (${p.reviewCount || 0} reviews)`).join("\n")}
-
-For each business, determine:
-- A realistic owner/contact name based on the business name and type
-- A realistic business email (e.g., info@domain.com or owner@domain.com based on their website domain, or firstname@businessname.com if no website)
-- An industry classification
-- Estimated annual insurance premium
-- WHY they need insurance now (use their review count, rating, missing website as signals)
-- What insurance lines they likely need`;
-
-        const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${LOVABLE_API_KEY}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: "google/gemini-2.5-flash",
-            messages: [
-              { role: "system", content: "You are an insurance lead enrichment expert. Enrich Google Maps business data with contact info and insurance signals. Return valid JSON." },
-              { role: "user", content: enrichPrompt },
-            ],
-            tools: [{
-              type: "function",
-              function: {
-                name: "enrich_leads",
-                description: "Enrich Google Maps businesses with contact and insurance data",
-                parameters: {
-                  type: "object",
-                  properties: {
-                    leads: {
-                      type: "array",
-                      items: {
-                        type: "object",
-                        properties: {
-                          index: { type: "number", description: "1-based index matching the input list" },
-                          contact_name: { type: "string" },
-                          email: { type: "string" },
-                          industry: { type: "string" },
-                          est_premium: { type: "number" },
-                          signal: { type: "string" },
-                          lines_needed: { type: "array", items: { type: "string" } },
-                        },
-                        required: ["index", "contact_name", "email", "industry", "est_premium", "signal"],
-                      },
-                    },
-                  },
-                  required: ["leads"],
-                },
-              },
-            }],
-            tool_choice: { type: "function", function: { name: "enrich_leads" } },
-          }),
-        });
-
-        if (aiResp.ok) {
-          const aiData = await aiResp.json();
-          const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
-          if (toolCall?.function?.arguments) {
-            const parsed = JSON.parse(toolCall.function.arguments);
-            enrichedLeads = parsed.leads || [];
-          }
-        }
-      } catch (e) {
-        console.warn("[lead-engine-scan] AI enrichment failed, using raw data:", e);
-      }
-
-      // Merge enriched data with Places data
-      const leadsToInsert = enrichBatch.slice(0, 12).map((place, i) => {
-        const enriched = enrichedLeads.find((e: any) => e.index === i + 1) || {};
+      // Insert leads with ONLY real Google Places data (no AI-fabricated contacts)
+      const leadsToInsert = topPlaces.map((place) => {
         const signalParts = [
-          enriched.signal || `Found on Google Maps`,
+          `Found on Google Maps`,
           place.city && place.state ? `Located in ${place.city}, ${place.state}` : null,
           !place.website ? "⚠️ No website found — needs digital presence" : null,
           (place.reviewCount ?? 0) < 10 ? `Only ${place.reviewCount || 0} Google reviews — likely new/untouched` : null,
-          enriched.lines_needed?.length ? `Coverage needed: ${enriched.lines_needed.slice(0, 3).join(", ")}` : null,
+          place.rating ? `Rating: ${place.rating}/5` : null,
         ].filter(Boolean).join(" • ");
 
         return {
           owner_user_id: userId,
           company: place.company,
-          contact_name: enriched.contact_name || null,
-          email: enriched.email || null,
-          phone: place.phone || null,
-          industry: enriched.industry || settings.industries?.split(",")[0]?.trim() || null,
+          contact_name: null,   // Will be filled by enrichment
+          email: null,           // Will be filled by enrichment
+          phone: place.phone,    // Real phone from Google Places
+          industry: settings.industries?.split(",")[0]?.trim() || null,
           state: place.state || null,
-          est_premium: Math.round(enriched.est_premium || 5000),
+          est_premium: 5000,
           signal: signalParts.slice(0, 500),
           source: "Google Maps",
           source_url: place.website || null,
           score: place.score,
-          tier: 1, // Google Maps leads are Tier 1 — untouched, high intent
+          tier: 1,
           status: "new",
         };
       });
@@ -567,7 +586,7 @@ For each business, determine:
       const { data: inserted, error: insertErr } = await adminClient
         .from("engine_leads")
         .insert(leadsToInsert)
-        .select("id");
+        .select("id, company, state, industry");
 
       if (insertErr) {
         console.error("[lead-engine-scan] Google Maps insert error:", insertErr);
@@ -576,10 +595,43 @@ For each business, determine:
         });
       }
 
+      // ── Enrich inserted leads via Serper → Apollo → PDL waterfall ──
+      if (inserted && inserted.length > 0) {
+        console.log(`[lead-engine-scan] Enriching ${inserted.length} Google Maps leads via waterfall...`);
+        const enrichBatch = inserted.map((lead: any, idx: number) => ({
+          company: lead.company,
+          state: lead.state,
+          industry: lead.industry,
+          idx,
+          id: lead.id,
+        }));
+
+        const enrichResults = await enrichLeadsBatch(enrichBatch);
+
+        // Update each lead with enriched data
+        for (const lead of enrichBatch) {
+          const enriched = enrichResults.get(lead.idx);
+          if (enriched && (enriched.contact_name || enriched.email || enriched.phone)) {
+            const updates: Record<string, unknown> = {};
+            if (enriched.contact_name) updates.contact_name = enriched.contact_name;
+            if (enriched.email) updates.email = enriched.email;
+            if (enriched.phone) updates.phone = enriched.phone;
+
+            await adminClient
+              .from("engine_leads")
+              .update(updates)
+              .eq("id", lead.id);
+          }
+        }
+
+        const enrichedCount = Array.from(enrichResults.values()).filter(r => r.email || r.contact_name).length;
+        console.log(`[lead-engine-scan] Enrichment complete: ${enrichedCount}/${inserted.length} leads enriched with real contact data`);
+      }
+
       await adminClient.from("engine_activity").insert({
         user_id: userId,
         activity_type: "google_maps",
-        description: `Google Maps scan found ${inserted?.length || leadsToInsert.length} businesses — ${allPlaces.length} total discovered`,
+        description: `Google Maps scan found ${inserted?.length || leadsToInsert.length} businesses — enriching via Serper/Apollo/PDL`,
         source: "Google Maps",
         metadata: {
           total_discovered: allPlaces.length,
@@ -595,52 +647,85 @@ For each business, determine:
       return new Response(JSON.stringify({
         success: true,
         leads_found: count,
-        message: `Found ${count} real businesses from Google Maps (${allPlaces.length} total scanned). ${allPlaces.filter(p => !p.website).length} have no website — prime outreach targets.`,
+        message: `Found ${count} real businesses from Google Maps (${allPlaces.length} total scanned). Contact data is being enriched via verified sources.`,
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // ── Step 1: Try Firecrawl for real-time web data (optional enrichment) ──
-    let firecrawlContext = "";
+    // ═══════════════════════════════════════════════════════════
+    // ── FIRECRAWL PATH: Extract real data from web search results
+    // ═══════════════════════════════════════════════════════════
     const FIRECRAWL_API_KEY = Deno.env.get("FIRECRAWL_API_KEY");
 
-    if (FIRECRAWL_API_KEY) {
-      const searchQueries = buildSearchQueries(source, settings);
-      console.log(`[lead-engine-scan] Firecrawl available — running ${searchQueries.length} searches`);
-
-      const firecrawlResults: string[] = [];
-      const searchPromises = searchQueries.slice(0, 3).map(async (query) => {
-        try {
-          const resp = await fetch("https://api.firecrawl.dev/v1/search", {
-            method: "POST",
-            headers: {
-              "Authorization": `Bearer ${FIRECRAWL_API_KEY}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ query, limit: 3, tbs: "qdr:m" }),
-          });
-          const data = await resp.json();
-          console.log(`[lead-engine-scan] Firecrawl "${query}": success=${data.success}, results=${data.data?.length ?? 0}`);
-          if (data.success && data.data?.length > 0) {
-            return data.data.map((r: any) => `${r.title || ""}\n${r.description || ""}\n${r.url || ""}`).join("\n---\n");
-          }
-          return "";
-        } catch (e) {
-          console.warn(`[lead-engine-scan] Firecrawl failed for: ${query}`, e);
-          return "";
-        }
+    if (!FIRECRAWL_API_KEY) {
+      return new Response(JSON.stringify({
+        success: true,
+        leads_found: 0,
+        message: `${source} scan requires web search capabilities. Please configure Firecrawl to enable this data source.`,
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
-
-      const results = await Promise.all(searchPromises);
-      firecrawlContext = results.filter(Boolean).join("\n\n");
-      console.log(`[lead-engine-scan] Firecrawl context length: ${firecrawlContext.length} chars`);
-    } else {
-      console.log("[lead-engine-scan] No Firecrawl key — using Gemini-only generation");
     }
 
-    // ── Step 2: Use Gemini to generate realistic leads ──
-    const prompt = buildGeminiLeadPrompt(source, settings, firecrawlContext);
+    const searchQueries = buildSearchQueries(source, settings);
+    console.log(`[lead-engine-scan] Firecrawl — running ${searchQueries.length} searches for ${source}`);
+
+    // Collect raw search results
+    const allSearchResults: Array<{ title: string; description: string; url: string }> = [];
+    const searchPromises = searchQueries.slice(0, 4).map(async (query) => {
+      try {
+        const resp = await fetch("https://api.firecrawl.dev/v1/search", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${FIRECRAWL_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ query, limit: 5, tbs: "qdr:m" }),
+        });
+        if (resp.status === 402) {
+          console.warn("[lead-engine-scan] Firecrawl credits exhausted");
+          return [];
+        }
+        const data = await resp.json();
+        if (data.success && data.data?.length > 0) {
+          return data.data.map((r: any) => ({
+            title: r.title || "",
+            description: r.description || "",
+            url: r.url || "",
+          }));
+        }
+        return [];
+      } catch (e) {
+        console.warn(`[lead-engine-scan] Firecrawl failed for: ${query}`, e);
+        return [];
+      }
+    });
+
+    const searchResults = await Promise.all(searchPromises);
+    for (const batch of searchResults) {
+      allSearchResults.push(...batch);
+    }
+
+    console.log(`[lead-engine-scan] Total Firecrawl results: ${allSearchResults.length}`);
+
+    if (allSearchResults.length === 0) {
+      return new Response(JSON.stringify({
+        success: true,
+        leads_found: 0,
+        message: `No results found for ${source}. Try different states, industries, or keywords.`,
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Format results for AI extraction (NOT generation)
+    const firecrawlText = allSearchResults.map((r, i) =>
+      `[${i + 1}] Title: ${r.title}\nSnippet: ${r.description}\nURL: ${r.url}`
+    ).join("\n\n");
+
+    // Use AI to EXTRACT (not generate) leads from real search results
+    const extractionPrompt = buildExtractionPrompt(source, firecrawlText);
 
     const aiResp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -651,163 +736,107 @@ For each business, determine:
       body: JSON.stringify({
         model: "google/gemini-2.5-flash",
         messages: [
-          { role: "system", content: "You are an insurance lead generation expert. Generate realistic, specific business leads for insurance agents. Always return valid JSON." },
-          { role: "user", content: prompt },
+          {
+            role: "system",
+            content: "You are a strict data extraction tool. You ONLY extract information that explicitly appears in the provided text. You NEVER invent, fabricate, or hallucinate data. If information is not present, use null. Return fewer results rather than fake results.",
+          },
+          { role: "user", content: extractionPrompt },
         ],
         tools: [{
           type: "function",
           function: {
-            name: "generate_leads",
-            description: "Generate a list of realistic business leads for insurance prospecting",
+            name: "extract_leads",
+            description: "Extract real business leads found in search results. Only include data that appears verbatim in the source text.",
             parameters: {
               type: "object",
               properties: {
                 leads: {
                   type: "array",
-                  minItems: 5,
                   items: {
                     type: "object",
                     properties: {
-                      company: { type: "string", description: "Business name (realistic but fictional)" },
-                      contact_name: { type: "string", description: "Owner or decision maker full name" },
-                      email: { type: "string", description: "Business email address (e.g. firstname@companydomain.com)" },
-                      phone: { type: "string", description: "US phone number with area code (e.g. (305) 555-1234)" },
-                      website: { type: "string", description: "Company website URL" },
-                      industry: { type: "string", description: "Business type (e.g. General Contractor, Italian Restaurant, HVAC Service)" },
-                      state: { type: "string", description: "2-letter US state abbreviation" },
-                      city: { type: "string", description: "City name" },
-                      est_premium: { type: "number", description: "Estimated annual insurance premium in dollars" },
-                      signal: { type: "string", description: "Why this is a hot lead — specific trigger (new filing, permit issued, expanding, etc.)" },
-                      source_url: { type: "string", description: "Realistic source URL (e.g. state SOS filing site, permit database) or null" },
-                      employee_count: { type: "string", description: "Estimated employee count (e.g. '5-15 employees')" },
-                      lines_needed: { type: "array", items: { type: "string" }, description: "Insurance lines they likely need (e.g. General Liability, Workers Comp, Commercial Auto)" },
+                      company: { type: "string", description: "Company name as it appears in search results" },
+                      contact_name: { type: ["string", "null"], description: "Contact name if found in results, otherwise null" },
+                      email: { type: ["string", "null"], description: "Email if found in results, otherwise null" },
+                      phone: { type: ["string", "null"], description: "Phone if found in results, otherwise null" },
+                      website: { type: ["string", "null"], description: "Website URL from results" },
+                      industry: { type: ["string", "null"], description: "Industry/business type if mentioned" },
+                      state: { type: ["string", "null"], description: "US state if mentioned" },
+                      city: { type: ["string", "null"], description: "City if mentioned" },
+                      signal: { type: "string", description: "Why this is an insurance lead based on the search context" },
+                      source_result_index: { type: "number", description: "Index of the search result this was extracted from" },
                     },
-                    required: ["company", "contact_name", "email", "phone", "industry", "state", "est_premium", "signal"],
-                    additionalProperties: false,
+                    required: ["company", "signal"],
                   },
                 },
               },
               required: ["leads"],
-              additionalProperties: false,
             },
           },
         }],
-        tool_choice: { type: "function", function: { name: "generate_leads" } },
+        tool_choice: { type: "function", function: { name: "extract_leads" } },
       }),
     });
 
     if (!aiResp.ok) {
       const errText = await aiResp.text();
-      console.error("[lead-engine-scan] Gemini error:", aiResp.status, errText.slice(0, 300));
+      console.error("[lead-engine-scan] AI extraction error:", aiResp.status, errText.slice(0, 300));
       if (aiResp.status === 429) return new Response(JSON.stringify({ error: "Rate limit — try again in a moment." }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       if (aiResp.status === 402) return new Response(JSON.stringify({ error: "AI credits exhausted." }), { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
-      return new Response(JSON.stringify({ error: "AI generation failed" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      return new Response(JSON.stringify({ error: "AI extraction failed" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
 
     const aiData = await aiResp.json();
-    let generatedLeads: any[] = [];
+    let extractedLeads: any[] = [];
     try {
       const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
       if (toolCall?.function?.arguments) {
         const parsed = JSON.parse(toolCall.function.arguments);
-        generatedLeads = parsed.leads || [];
+        extractedLeads = parsed.leads || [];
       }
     } catch (e) {
-      console.error("[lead-engine-scan] Failed to parse AI response:", e);
+      console.error("[lead-engine-scan] Failed to parse AI extraction:", e);
     }
 
-    console.log(`[lead-engine-scan] Gemini generated ${generatedLeads.length} leads`);
+    // Filter out leads with suspicious patterns (555-XXXX phones, fabricated-looking emails)
+    const validatedLeads = extractedLeads.filter((l: any) => {
+      if (!l.company || l.company === "Unknown Business") return false;
+      // Reject 555-XXXX pattern phones (these are always fake)
+      if (l.phone && /555-\d{4}/.test(l.phone)) {
+        l.phone = null;
+      }
+      return true;
+    });
 
-    if (generatedLeads.length === 0) {
-      return new Response(JSON.stringify({ success: true, leads_found: 0, message: "AI could not generate leads for this criteria — try adjusting your ICP or geography" }), {
+    console.log(`[lead-engine-scan] Extracted ${validatedLeads.length} real leads from ${allSearchResults.length} search results`);
+
+    if (validatedLeads.length === 0) {
+      return new Response(JSON.stringify({
+        success: true,
+        leads_found: 0,
+        message: `No specific business leads could be extracted from ${source} search results. Try different parameters.`,
+      }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // ── Step 3: Score and insert into engine_leads ──
-    const tierMap: Record<string, number> = {
-      LinkedIn: 1,
-      "FEMA Flood Zones": 1,
-      "OpenFEMA NFIP": 1,
-      "NOAA Storm Events": 1,
-      "Property Records": 1,
-      "Building Permits": 1,
-      "Tax Delinquency": 1,
-      "FL Citizens Non-Renewal": 1,
-      "ATTOM Data": 1,
-      "State Socrata Portals": 1,
-      "County ArcGIS": 1,
-      "CT Property Transfers": 1,
-      "NYC ACRIS": 1,
-      "MassGIS Parcels": 1,
-      "NJ MOD-IV / Sales": 1,
-      "RI Coastal (FEMA)": 1,
-      "Google Maps": 1,
-      Reddit: 2,
-      "Business Filings": 2,
-      "Permit Database": 2,
-      "NHTSA Vehicles": 2,
-      "HUD Housing Data": 2,
-      "RentCast": 2,
-      "Regrid Parcels": 2,
-      "BatchData": 2,
-      "Census / ACS Data": 3,
-      "Google Trends": 3,
-      "PropStream": 2,
-    };
-
-    const activityTypeMap: Record<string, string> = {
-      LinkedIn: "linkedin",
-      Reddit: "reddit",
-      "Business Filings": "filing",
-      "Permit Database": "filing",
-      "FEMA Flood Zones": "flood",
-      "NOAA Storm Events": "storm",
-      "Census / ACS Data": "filing",
-      "NHTSA Vehicles": "filing",
-      "OpenFEMA NFIP": "flood",
-      "HUD Housing Data": "property",
-      "Property Records": "property",
-      "Building Permits": "property",
-      "Tax Delinquency": "property",
-      "Google Trends": "filing",
-      "ATTOM Data": "property",
-      "RentCast": "property",
-      "Regrid Parcels": "property",
-      "BatchData": "property",
-      "FL Citizens Non-Renewal": "property",
-      "State Socrata Portals": "property",
-      "County ArcGIS": "property",
-      "CT Property Transfers": "property",
-      "NYC ACRIS": "property",
-      "MassGIS Parcels": "property",
-      "NJ MOD-IV / Sales": "property",
-      "RI Coastal (FEMA)": "flood",
-      "Google Maps": "google_maps",
-    };
-
-    // Only keep leads that have at least email or phone
-    const contactableLeads = generatedLeads.filter((l: any) => l.email || l.phone);
-    console.log(`[lead-engine-scan] ${contactableLeads.length}/${generatedLeads.length} leads have contact info`);
-
-    const leadsToInsert = contactableLeads.slice(0, 12).map((l: any) => ({
+    // Insert with only real extracted data
+    const leadsToInsert = validatedLeads.slice(0, 12).map((l: any) => ({
       owner_user_id: userId,
-      company: l.company || "Unknown Business",
+      company: l.company,
       contact_name: l.contact_name || null,
       email: l.email || null,
       phone: l.phone || null,
-      industry: l.industry || null,
+      industry: l.industry || settings.industries?.split(",")[0]?.trim() || null,
       state: l.state || null,
-      est_premium: Math.round(l.est_premium || 5000),
+      est_premium: 5000,
       signal: [
         l.signal || `Found via ${source}`,
-        l.city ? `Located in ${l.city}, ${l.state}` : null,
-        l.employee_count ? `${l.employee_count}` : null,
-        l.lines_needed?.length ? `Coverage needed: ${l.lines_needed.slice(0, 3).join(", ")}` : null,
-      ].filter(Boolean).join(" • "),
+        l.city ? `Located in ${l.city}, ${l.state || ""}` : null,
+      ].filter(Boolean).join(" • ").slice(0, 500),
       source,
-      source_url: l.website || l.source_url || null,
-      score: Math.floor(55 + Math.random() * 35),
+      source_url: l.website || (l.source_result_index != null ? allSearchResults[l.source_result_index - 1]?.url : null) || null,
+      score: Math.floor(55 + Math.random() * 25),
       tier: tierMap[source] || 2,
       status: "new",
     }));
@@ -815,35 +844,40 @@ For each business, determine:
     const { data: inserted, error: insertErr } = await adminClient
       .from("engine_leads")
       .insert(leadsToInsert)
-      .select("id");
+      .select("id, company, state, industry");
 
     if (insertErr) {
       console.error("[lead-engine-scan] Insert error:", insertErr);
-      // Try inserting without the signal field if it's too long
       const trimmedLeads = leadsToInsert.map(l => ({ ...l, signal: String(l.signal || "").slice(0, 500) }));
       const { data: retryInserted, error: retryErr } = await adminClient
         .from("engine_leads")
         .insert(trimmedLeads)
-        .select("id");
+        .select("id, company, state, industry");
       if (retryErr) {
         console.error("[lead-engine-scan] Retry insert error:", retryErr);
         return new Response(JSON.stringify({ error: "Failed to save leads: " + retryErr.message }), {
           status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-      console.log(`[lead-engine-scan] Inserted ${retryInserted?.length || 0} leads (retry)`);
+      // Use retry results for enrichment
+      if (retryInserted) {
+        await enrichInsertedLeads(retryInserted, adminClient);
+      }
+    } else if (inserted) {
+      // ── Enrich via Serper → Apollo → PDL waterfall ──
+      await enrichInsertedLeads(inserted, adminClient);
     }
 
     // Log activity
     await adminClient.from("engine_activity").insert({
       user_id: userId,
       activity_type: activityTypeMap[source] || "default",
-      description: `${source} scan generated ${inserted?.length || leadsToInsert.length} new leads`,
+      description: `${source} scan extracted ${inserted?.length || leadsToInsert.length} real leads — enriching via verified sources`,
       source,
       metadata: {
-        gemini_generated: true,
-        firecrawl_enriched: firecrawlContext.length > 50,
-        leads_count: generatedLeads.length,
+        firecrawl_results: allSearchResults.length,
+        extracted_leads: extractedLeads.length,
+        validated_leads: validatedLeads.length,
         states: settings.states,
         industries: settings.industries,
       },
@@ -855,7 +889,7 @@ For each business, determine:
     return new Response(JSON.stringify({
       success: true,
       leads_found: count,
-      message: `Generated ${count} leads from ${source}${firecrawlContext.length > 50 ? " (web-enriched)" : " (AI-generated)"}`,
+      message: `Extracted ${count} real leads from ${source} search results. Contact data is being enriched via Serper/Apollo/PDL.`,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
@@ -867,3 +901,38 @@ For each business, determine:
     });
   }
 });
+
+// Helper: enrich inserted leads in background
+async function enrichInsertedLeads(
+  inserted: Array<{ id: string; company: string; state: string | null; industry: string | null }>,
+  adminClient: any,
+) {
+  console.log(`[lead-engine-scan] Enriching ${inserted.length} leads via Serper → Apollo → PDL waterfall...`);
+  const enrichBatch = inserted.map((lead, idx) => ({
+    company: lead.company,
+    state: lead.state,
+    industry: lead.industry,
+    idx,
+    id: lead.id,
+  }));
+
+  const enrichResults = await enrichLeadsBatch(enrichBatch);
+
+  for (const lead of enrichBatch) {
+    const enriched = enrichResults.get(lead.idx);
+    if (enriched && (enriched.contact_name || enriched.email || enriched.phone)) {
+      const updates: Record<string, unknown> = {};
+      if (enriched.contact_name) updates.contact_name = enriched.contact_name;
+      if (enriched.email) updates.email = enriched.email;
+      if (enriched.phone) updates.phone = enriched.phone;
+
+      await adminClient
+        .from("engine_leads")
+        .update(updates)
+        .eq("id", lead.id);
+    }
+  }
+
+  const enrichedCount = Array.from(enrichResults.values()).filter(r => r.email || r.contact_name).length;
+  console.log(`[lead-engine-scan] Enrichment complete: ${enrichedCount}/${inserted.length} leads enriched with verified data`);
+}
