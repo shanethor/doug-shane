@@ -2509,6 +2509,13 @@ export default function Chat() {
                 <Sparkles className="h-3.5 w-3.5" />
                 <span>Suggest a feature to our team</span>
               </button>
+
+              {/* Previous chats */}
+              <PreviousChats
+                onLoad={handleLoadConversation}
+                onNewChat={handleNewChat}
+                currentConversationId={conversationId}
+              />
               </>)}
               {/* Intent buttons — shown when files dropped or form filling intent detected */}
               {showIntentButtons && (
