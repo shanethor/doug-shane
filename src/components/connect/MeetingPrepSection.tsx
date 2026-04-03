@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
-  Brain, Loader2, Calendar, Download, ArrowRight,
+  Brain, Loader2, Calendar, Download, ArrowRight, ArrowLeft,
   Sparkles, Phone, Linkedin, CheckCircle, Send, Edit,
   Star,
 } from "lucide-react";
