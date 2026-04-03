@@ -468,6 +468,8 @@ export default function Chat() {
   const inCoverageLoopRef = useRef(false);
   const [coverageInfo, setCoverageInfo] = useState<{ filled: number; total: number; percent: number } | null>(null);
   const [showFeatureSuggestion, setShowFeatureSuggestion] = useState(false);
+  const [conversationId, setConversationId] = useState<string | null>(null);
+  const conversationSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingPipelineActionRef = useRef<{ action: PipelineAction; leads: { id: string; account_name: string; stage: string }[] } | null>(null);
   const [showPersonalIntakeDialog, setShowPersonalIntakeDialog] = useState(false);
   const [personalIntakeLoading, setPersonalIntakeLoading] = useState(false);
