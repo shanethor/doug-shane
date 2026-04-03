@@ -836,7 +836,7 @@ Deno.serve(async (req) => {
       ].filter(Boolean).join(" • ").slice(0, 500),
       source,
       source_url: l.website || (l.source_result_index != null ? allSearchResults[l.source_result_index - 1]?.url : null) || null,
-      score: Math.floor(55 + Math.random() * 25),
+      score: calculateLeadScore(l),
       tier: tierMap[source] || 2,
       status: "new",
     }));
