@@ -763,8 +763,19 @@ function ResultsTable({ latestBatchId }: { latestBatchId: string | null }) {
           return isMobile ? (
             /* ── Mobile: Card-based layout ── */
             <div className="space-y-2">
-              {displayLeads.map((lead: EngineLead) => (
-                 <div
+              {displayLeads.map((lead: EngineLead, idx: number) => {
+                // Show "Previous Generated Leads" divider
+                const isFirstPrevious = latestBatchId && latestLeads.length > 0 && lead.batch_id !== latestBatchId && (idx === 0 || displayLeads[idx - 1]?.batch_id === latestBatchId);
+                return (
+                  <div key={lead.id}>
+                    {isFirstPrevious && (
+                      <div className="flex items-center gap-2 py-3 mt-2">
+                        <div className="h-px flex-1 bg-border" />
+                        <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Previous Generated Leads</span>
+                        <div className="h-px flex-1 bg-border" />
+                      </div>
+                    )}
+                    <div
                   key={lead.id}
                   className={`rounded-lg border p-3 space-y-2 transition-all animate-fade-in ${selectedIds.has(lead.id) ? "border-primary/40 bg-primary/5" : "border-border"}`}
                   style={{ animationDelay: `${(displayLeads.indexOf(lead)) * 60}ms`, animationFillMode: "both" }}
