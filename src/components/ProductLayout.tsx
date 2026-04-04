@@ -157,9 +157,11 @@ export function ProductLayout({
 }) {
   const { signOut } = useAuth();
   const { branch } = useUserBranch();
-  const { isPageGated, canSeeProperty } = useEarlyAccessWhitelist();
+  const { isPageGated, canSeeProperty, isMaster } = useEarlyAccessWhitelist();
+  const { subscribed } = useSubscription();
   const location = useLocation();
   const showProperty = canSeeProperty();
+  const isFullAccess = isMaster || subscribed;
   const [collapsed, setCollapsed] = useState(() => {
     try { return localStorage.getItem("sidebar-collapsed") === "true"; } catch { return false; }
   });
