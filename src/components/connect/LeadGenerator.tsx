@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, Fragment } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
-import LeadOutreachPanel from "./LeadOutreachPanel";
 import SageGameplan from "./SageGameplan";
 import AuraAgentLeadPromo from "./AuraAgentLeadPromo";
 import AuraAgentUpsellModal from "@/components/AuraAgentUpsellModal";
@@ -15,11 +15,11 @@ import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
-  Rocket, Building2, Globe, MapPin, Target, Search, FileText,
-  Plus, ArrowUpRight, Eye, Trash2, Zap,
+  Rocket, MapPin, Target, Search,
+  ArrowUpRight, Eye, Trash2, Zap,
   Sparkles, Users, TrendingUp,
-  Loader2, Mail, Phone, RefreshCw, Gift, Lock, ChevronDown, ChevronUp,
-  Download,
+  Mail, Phone, RefreshCw, Gift, Lock, ChevronDown, ChevronUp,
+  Download, FileText, Building2, Globe,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -29,12 +29,30 @@ import {
   type EngineLead,
 } from "@/hooks/useLeadEngine";
 import {
-  VERTICALS, SHARED_SOURCES, getVerticalsForIndustry, getVerticalsByGroup,
-  type LeadSource, type Vertical,
-} from "@/lib/lead-verticals";
-import { getVerticalConfig, LEAD_SCORE_TIERS, type VerticalLeadPricing } from "@/lib/connect-verticals";
+  CONNECT_VERTICALS,
+  getVerticalConfig,
+  type ConnectSubVertical,
+} from "@/lib/connect-verticals";
 
-const ICON_MAP: Record<LeadSource["icon"], any> = {
+type LeadSourceIcon = "file" | "building" | "target" | "globe" | "zap" | "users" | "rocket" | "trending" | "map";
+type ScanSource = "Reddit" | "Business Filings" | "Permit Database" | "LinkedIn" | "FEMA Flood Zones" | "NOAA Storm Events" | "Census / ACS Data" | "NHTSA Vehicles" | "OpenFEMA NFIP" | "HUD Housing Data" | "Property Records" | "Building Permits" | "Tax Delinquency" | "Google Trends" | "ATTOM Data" | "RentCast" | "Regrid Parcels" | "BatchData" | "FL Citizens Non-Renewal" | "State Socrata Portals" | "County ArcGIS" | "CT Property Transfers" | "NYC ACRIS" | "MassGIS Parcels" | "NJ MOD-IV / Sales" | "RI Coastal (FEMA)" | "Google Maps";
+
+type DisplaySource = {
+  key: string;
+  label: string;
+  icon: LeadSourceIcon;
+  scanSource: ScanSource;
+};
+
+const DEFAULT_SCAN_SOURCES: DisplaySource[] = [
+  { key: "google_maps", label: "Google Maps", icon: "map", scanSource: "Google Maps" },
+  { key: "new_business", label: "Business Filings", icon: "file", scanSource: "Business Filings" },
+  { key: "permits", label: "Permit Database", icon: "building", scanSource: "Permit Database" },
+  { key: "linkedin", label: "LinkedIn", icon: "globe", scanSource: "LinkedIn" },
+  { key: "social", label: "Reddit Signals", icon: "users", scanSource: "Reddit" },
+];
+
+const ICON_MAP: Record<LeadSourceIcon, any> = {
   file: FileText, building: Building2, target: Target, globe: Globe,
   zap: Zap, users: Users, rocket: Rocket, trending: TrendingUp, map: MapPin,
 };
@@ -49,6 +67,19 @@ const US_STATES = [
   "Rhode Island", "South Carolina", "South Dakota", "Tennessee", "Texas", "Utah",
   "Vermont", "Virginia", "Washington", "West Virginia", "Wisconsin", "Wyoming",
 ];
+
+const cleanSearchLabel = (label: string) =>
+  label
+    .replace(/\s*\(.*?\)\s*/g, " ")
+    .replace(/\s*—.*$/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+const getAvailableConnectVerticals = (userIndustry: string, showAll = false) => {
+  if (showAll) return CONNECT_VERTICALS;
+  const current = getVerticalConfig(userIndustry);
+  return current ? [current] : [];
+};
 
 /* ── Vertical-aware pricing lookup ── */
 function getVerticalPricing(userIndustry: string): { basePrice: number; label: string; freeLeads: number; avgPremium: number } {
