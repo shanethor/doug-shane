@@ -74,16 +74,16 @@ export default function PostCheckoutOnboard() {
         }, 1000);
       }
 
-      // Send 2FA verification code
+      // Send 2FA verification code (user is auto-confirmed and signed in)
       setSending2fa(true);
       try {
         await supabase.functions.invoke("verify-2fa", {
-          body: { email, action: "send" },
+          body: { action: "send_code" },
         });
         setStep("verify-2fa");
       } catch {
-        // If 2FA service unavailable, skip to email verification
-        setStep("verify-email");
+        // If 2FA service unavailable, go straight to dashboard
+        navigate("/get-started");
       }
       setSending2fa(false);
     } catch (err: any) {
