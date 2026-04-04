@@ -1057,9 +1057,9 @@ function PurchaseSection({ userIndustry, isSubscriber, hasAgent, onGenerate }: {
         entity_types: "LLC, Corp",
       };
 
-      const source = "Business Filings";
+      const source = "Google Maps";
       setProgress(10);
-      setStep(`Scanning ${source}…`);
+      setStep(`Scanning businesses on Google Maps…`);
 
       let totalFound = 0;
       const batchIds: string[] = [];
