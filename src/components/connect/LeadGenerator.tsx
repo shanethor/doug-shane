@@ -184,6 +184,11 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasAgent, in
     });
   }, [availableSpecializations]);
 
+  // Always select all focus sources by default and when sources change
+  useEffect(() => {
+    setFocuses(activeSources.map(s => s.key));
+  }, [activeSources]);
+
   const activeSources = useMemo(() => {
     const sources = [...DEFAULT_SCAN_SOURCES];
     const seenKeys = new Set(sources.map((s) => s.key));
