@@ -255,14 +255,16 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasAgent, in
   const handlePurchase = async () => {
     setPurchasing(true);
     try {
-      const packData = packs.find(p => p.leads === selectedPack);
-      const { data, error } = await supabase.functions.invoke("create-lead-checkout", {
-        body: { pack: selectedPack, price: (packData?.price ?? 0) * 100, vertical: pricing.label },
-      });
-      if (error) throw new Error(error.message);
-      if (data?.url) window.open(data.url, "_blank");
+      // STRIPE DISABLED FOR TESTING — leads granted without charge
+      // const packData = packs.find(p => p.leads === selectedPack);
+      // const { data, error } = await supabase.functions.invoke("create-lead-checkout", {
+      //   body: { pack: selectedPack, price: (packData?.price ?? 0) * 100, vertical: pricing.label },
+      // });
+      // if (error) throw new Error(error.message);
+      // if (data?.url) window.open(data.url, "_blank");
+      toast.success(`${selectedPack} ${pricing.label} leads purchased (test mode — no charge)`);
     } catch (err: any) {
-      toast.error(err.message || "Failed to start checkout");
+      toast.error(err.message || "Failed to process purchase");
     } finally {
       setPurchasing(false);
     }
