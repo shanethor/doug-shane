@@ -19,7 +19,7 @@ const FEATURES = [
 ];
 
 const MASTER_EMAILS = ["shane@houseofthor.com", "dwenz17@gmail.com"];
-const SKIP_2FA_EMAILS = ["shane@houseofthor.com", "dwenz17@gmail.com", "john@smith.com"];
+const SKIP_2FA_EMAILS = ["shane@houseofthor.com", "dwenz17@gmail.com", "john@smith.com", "jane@smith.com"];
 
 function useProductRoute(user: any) {
   const email = user?.email?.toLowerCase() ?? "";
