@@ -1290,7 +1290,7 @@ export default function LeadGenerator() {
         <div className="lg:col-span-2 space-y-4">
           <ResultsTable latestBatchId={latestBatchId} />
           {/* Show purchase options — always visible so users can buy leads */}
-          <PurchaseSection userIndustry={userIndustry} isSubscriber={subscribed} hasAgent={hasAgent} />
+          <PurchaseSection userIndustry={userIndustry} isSubscriber={subscribed} hasAgent={hasAgent} onGenerate={handleGenerate} />
           {showPromo && <AuraAgentLeadPromo />}
         </div>
       </div>
