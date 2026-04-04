@@ -120,9 +120,15 @@ export default function ProductAuth() {
           }, 1000);
         }
 
-        // With auto-confirm, user is immediately signed in — send 2FA code
-        await send2FACode();
-        setStep("verify-2fa");
+        // With auto-confirm, user is immediately signed in — send 2FA code (skip for test accounts)
+        const signedInEmail = signUpData.user?.email?.toLowerCase() ?? email.toLowerCase();
+        if (SKIP_2FA_EMAILS.includes(signedInEmail)) {
+          set2FAVerified(false);
+          navigate("/connect/onboarding", { replace: true });
+        } else {
+          await send2FACode();
+          setStep("verify-2fa");
+        }
       } else {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
