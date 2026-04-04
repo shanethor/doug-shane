@@ -230,7 +230,7 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasAgent, in
     setFocuses(activeSources.map(s => s.key));
   }, [activeSources]);
 
-
+  const verticalSearchTerms = useMemo(() => {
     const terms = selectedVerticals
       .map((id) => availableSpecializations.find((s) => s.id === id)?.label)
       .filter(Boolean)
