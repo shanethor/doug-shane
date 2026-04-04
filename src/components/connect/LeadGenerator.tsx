@@ -125,21 +125,36 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasAgent, in
   const freeLeads = getFreeLeads(pricing.freeLeads, hasAgent);
 
   const availableVerticals = useMemo(() => {
-    const allForIndustry = getVerticalsForIndustry(userIndustry, showAllVerticals);
-    // If user has selected sub-categories, only show verticals whose group matches
-    if (!showAllVerticals && userSubCategories?.length) {
-      const subSet = new Set(userSubCategories.map(s => s.toLowerCase()));
-      return allForIndustry.filter(v => subSet.has(v.group.toLowerCase()) || subSet.has(v.id));
-    }
-    return allForIndustry;
+    const allForIndustry = getAvailableConnectVerticals(userIndustry, !!showAllVerticals);
+    if (!showAllVerticals || !userSubCategories?.length) return allForIndustry;
+
+    const subSet = new Set(userSubCategories.map((s) => s.toLowerCase()));
+    return allForIndustry.filter(
+      (vertical) =>
+        subSet.has(vertical.id.toLowerCase()) ||
+        vertical.subVerticals.some((sub) => subSet.has(sub.id.toLowerCase())),
+    );
   }, [userIndustry, showAllVerticals, userSubCategories]);
+
+  const availableSpecializations = useMemo(
+    () =>
+      availableVerticals.flatMap((vertical) =>
+        vertical.subVerticals.map((sub) => ({
+          ...sub,
+          group: vertical.label,
+          verticalId: vertical.id,
+        })),
+      ),
+    [availableVerticals],
+  );
+
   const verticalsByGroup = useMemo(() => {
-    const map: Record<string, Vertical[]> = {};
-    for (const v of availableVerticals) {
-      (map[v.group] ??= []).push(v);
+    const map: Record<string, Array<ConnectSubVertical & { group: string; verticalId: string }>> = {};
+    for (const specialization of availableSpecializations) {
+      (map[specialization.group] ??= []).push(specialization);
     }
     return map;
-  }, [availableVerticals]);
+  }, [availableSpecializations]);
 
   const [geo, setGeo] = useState(() => {
     if (userStates?.length === 1) return userStates[0];
@@ -147,11 +162,10 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasAgent, in
   });
   const [selectedVerticals, setSelectedVerticals] = useState<string[]>(() => {
     if (initialSpecializations?.length) {
-      // Filter to only those that are valid for this industry
-      const valid = initialSpecializations.filter(id => availableVerticals.some(v => v.id === id));
-      return valid.length > 0 ? valid : availableVerticals.slice(0, 2).map(v => v.id);
+      const valid = initialSpecializations.filter((id) => availableSpecializations.some((s) => s.id === id));
+      if (valid.length > 0) return valid;
     }
-    return availableVerticals.slice(0, 2).map(v => v.id);
+    return availableSpecializations.slice(0, 2).map((s) => s.id);
   });
   const [focuses, setFocuses] = useState<string[]>(["new_business"]);
   const [selectedPack, setSelectedPack] = useState(50);
@@ -159,43 +173,65 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasAgent, in
   const [genProgress, setGenProgress] = useState(0);
   const [genStep, setGenStep] = useState("");
   const [purchasing, setPurchasing] = useState(false);
-  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set(availableVerticals.map((v) => v.label)));
 
-  // Collect all sources for selected verticals + shared
+  useEffect(() => {
+    setSelectedVerticals((prev) => {
+      const valid = prev.filter((id) => availableSpecializations.some((s) => s.id === id));
+      if (valid.length > 0) return valid;
+      return availableSpecializations.slice(0, 2).map((s) => s.id);
+    });
+  }, [availableSpecializations]);
+
   const activeSources = useMemo(() => {
-    const sources = [...SHARED_SOURCES];
-    const seenKeys = new Set(sources.map(s => s.key));
-    for (const vId of selectedVerticals) {
-      const vertical = VERTICALS.find(v => v.id === vId);
-      if (vertical) {
-        for (const src of vertical.sources) {
-          if (!seenKeys.has(src.key)) {
-            seenKeys.add(src.key);
-            sources.push(src);
-          }
+    const sources = [...DEFAULT_SCAN_SOURCES];
+    const seenKeys = new Set(sources.map((s) => s.key));
+
+    const toDisplaySource = (key: string): DisplaySource => {
+      const normalized = key.toLowerCase();
+      if (normalized.includes("google")) return { key, label: "Google Maps", icon: "map", scanSource: "Google Maps" };
+      if (normalized.includes("linkedin")) return { key, label: "LinkedIn", icon: "globe", scanSource: "LinkedIn" };
+      if (normalized.includes("reddit") || normalized.includes("social") || normalized.includes("devi") || normalized.includes("f5bot")) {
+        return { key, label: "Reddit Signals", icon: "users", scanSource: "Reddit" };
+      }
+      if (normalized.includes("storm") || normalized.includes("hail") || normalized.includes("hurricane") || normalized.includes("noaa")) {
+        return { key, label: "NOAA Storm Events", icon: "zap", scanSource: "NOAA Storm Events" };
+      }
+      if (normalized.includes("fema") || normalized.includes("flood")) {
+        return { key, label: "FEMA Flood Zones", icon: "zap", scanSource: "FEMA Flood Zones" };
+      }
+      if (normalized.includes("property") || normalized.includes("deed") || normalized.includes("mortgage") || normalized.includes("recorder") || normalized.includes("assessor")) {
+        return { key, label: "Property Records", icon: "building", scanSource: "Property Records" };
+      }
+      if (normalized.includes("permit") || normalized.includes("inspection") || normalized.includes("license") || normalized.includes("licensing") || normalized.includes("abc") || normalized.includes("ttb") || normalized.includes("health") || normalized.includes("osha")) {
+        return { key, label: "Permit Database", icon: "building", scanSource: "Permit Database" };
+      }
+      return { key, label: "Business Filings", icon: "file", scanSource: "Business Filings" };
+    };
+
+    for (const specializationId of selectedVerticals) {
+      const specialization = availableSpecializations.find((s) => s.id === specializationId);
+      for (const sourceKey of specialization?.sources || []) {
+        const source = toDisplaySource(sourceKey);
+        if (!seenKeys.has(source.key)) {
+          seenKeys.add(source.key);
+          sources.push(source);
         }
       }
     }
-    return sources;
-  }, [selectedVerticals]);
 
-  // Build specific industry search terms from selected verticals
+    return sources;
+  }, [selectedVerticals, availableSpecializations]);
+
   const verticalSearchTerms = useMemo(() => {
-    const terms: string[] = [];
-    for (const vId of selectedVerticals) {
-      const vertical = VERTICALS.find(v => v.id === vId);
-      if (!vertical) continue;
-      // Convert vertical labels to Google Maps-friendly search terms
-      const label = vertical.label
-        .replace(/\s*\(.*?\)\s*/g, "") // strip parentheticals like (NCCI 6217...)
-        .replace(/\s*—.*$/g, "")       // strip em-dash suffixes
-        .trim();
-      if (label) terms.push(label);
-    }
-    // Also add the group as a fallback (e.g. "Contractors")
+    const terms = selectedVerticals
+      .map((id) => availableSpecializations.find((s) => s.id === id)?.label)
+      .filter(Boolean)
+      .map((label) => cleanSearchLabel(label!));
+
     if (terms.length === 0) terms.push(pricing.label);
     return terms;
-  }, [selectedVerticals, pricing.label]);
+  }, [selectedVerticals, availableSpecializations, pricing.label]);
 
   const toggleVertical = useCallback((id: string) => {
     setSelectedVerticals(prev => {
