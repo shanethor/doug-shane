@@ -98,16 +98,16 @@ export default function PostCheckoutOnboard() {
     setSubmitting(true);
     try {
       const { data, error } = await supabase.functions.invoke("verify-2fa", {
-        body: { email, code: code2fa, action: "verify" },
+        body: { action: "verify_code", code: code2fa },
       });
       if (error) throw error;
-      if (!data?.valid) {
-        toast.error("Invalid code. Please try again.");
+      if (!data?.verified) {
+        toast.error(data?.error || "Invalid code. Please try again.");
         setSubmitting(false);
         return;
       }
-      toast.success("Verified! Check your email to confirm your account, then sign in.");
-      navigate("/get-started");
+      toast.success("Verified! Welcome to AURA.");
+      navigate("/connect/onboarding", { replace: true });
     } catch (err: any) {
       toast.error(err.message);
     } finally {
