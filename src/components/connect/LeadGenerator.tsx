@@ -298,8 +298,8 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasAgent, in
         : [geo];
       const settings: Record<string, string> = {
         states: states.join(", ") || "NY, CA, TX, FL",
-        industries: pricing.label,
-        keywords: `${pricing.label} leads`,
+        industries: verticalSearchTerms.join(", "),
+        keywords: `${verticalSearchTerms[0] || pricing.label} leads`,
         entity_types: "LLC, Corp",
       };
 
