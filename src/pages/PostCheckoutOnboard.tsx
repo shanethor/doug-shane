@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Loader2, ArrowRight, Check, ShieldCheck } from "lucide-react";
 
-type Step = "create-account" | "verify-email" | "verify-2fa";
+type Step = "create-account" | "verify-2fa";
 
 export default function PostCheckoutOnboard() {
   const navigate = useNavigate();
