@@ -1073,7 +1073,7 @@ function PurchaseSection({ userIndustry, isSubscriber, hasAgent }: {
   );
 }
 
-const MASTER_EMAILS = ["shane@houseofthor.com", "dwenz17@gmail.com"];
+const MASTER_EMAILS = ["shane@houseofthor.com", "dwenz17@gmail.com", "john@smith.com"];
 
 export default function LeadGenerator() {
   const qc = useQueryClient();
