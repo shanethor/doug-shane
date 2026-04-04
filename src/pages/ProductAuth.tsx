@@ -54,8 +54,11 @@ export default function ProductAuth() {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  const filteredIndustries = INDUSTRIES.filter((i) =>
-    i.toLowerCase().includes(industrySearch.toLowerCase())
+  const filteredVerticals = useMemo(() =>
+    CONNECT_VERTICALS.filter((v) =>
+      v.label.toLowerCase().includes(industrySearch.toLowerCase()) ||
+      v.description.toLowerCase().includes(industrySearch.toLowerCase())
+    ), [industrySearch]
   );
 
   if (loading || (user && routeChecking)) return (
