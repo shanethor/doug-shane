@@ -225,7 +225,12 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasAgent, in
     return sources;
   }, [selectedVerticals, availableSpecializations]);
 
-  const verticalSearchTerms = useMemo(() => {
+  // Always select all focus sources by default and when sources change
+  useEffect(() => {
+    setFocuses(activeSources.map(s => s.key));
+  }, [activeSources]);
+
+
     const terms = selectedVerticals
       .map((id) => availableSpecializations.find((s) => s.id === id)?.label)
       .filter(Boolean)
