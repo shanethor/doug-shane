@@ -1176,9 +1176,13 @@ function PurchaseSection({ userIndustry, isSubscriber, hasAgent, onGenerate, use
   const [step, setStep] = useState("");
 
   const verticalSearchTerms = useMemo(() => {
-    const terms = [pricing.label];
-    return terms;
-  }, [pricing.label]);
+    // Use specializations if available, otherwise fall back to pricing label
+    if (userSpecializations?.length) {
+      const cleaned = userSpecializations.map(s => cleanSearchLabel(s)).filter(Boolean);
+      if (cleaned.length > 0) return cleaned;
+    }
+    return [pricing.label];
+  }, [pricing.label, userSpecializations]);
 
   const handlePurchase = async () => {
     setPurchasing(true);
@@ -1217,8 +1221,10 @@ function PurchaseSection({ userIndustry, isSubscriber, hasAgent, onGenerate, use
       }
       setProgress(50);
 
-      // Additional focus sources — use standard sources for the vertical
-      const sourceLabels = ["Business Filings", "Permit Database", "Industry Directory"].filter(l => l !== "Google Maps");
+      // Additional focus sources — same sources used by Generate Free Leads
+      const sourceLabels = DEFAULT_SCAN_SOURCES
+        .map(s => s.label)
+        .filter(l => l !== "Google Maps");
       for (let i = 0; i < sourceLabels.length; i++) {
         const source = sourceLabels[i];
         setStep(`Scanning ${source}…`);
