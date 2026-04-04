@@ -90,12 +90,12 @@ export default function ProductAuth() {
         });
         if (error) throw error;
 
-        // Save industry to profile
+        // Save vertical to profile (matches onboarding's connect_vertical field)
         if (signUpData.user) {
           setTimeout(async () => {
             await supabase
               .from("profiles")
-              .update({ industry: industryKey } as any)
+              .update({ industry: industryKey, connect_vertical: industryKey } as any)
               .eq("user_id", signUpData.user!.id);
           }, 1000);
         }
