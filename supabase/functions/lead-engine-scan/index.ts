@@ -24,28 +24,10 @@ async function searchGooglePlaces(
   query: string,
   apiKey: string,
 ): Promise<PlacesResult[]> {
-  const url = "https://places.googleapis.com/v1/places:searchText";
-  const body: Record<string, unknown> = {
-    textQuery: query,
-    maxResultCount: 20,
-    languageCode: "en",
-    locationRestriction: {
-      rectangle: {
-        low: { latitude: 24.396308, longitude: -125.0 },
-        high: { latitude: 49.384358, longitude: -66.93457 },
-      },
-    },
-  };
+  // Use legacy Text Search API (widely enabled)
+  const url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(query)}&key=${apiKey}`;
 
-  const resp = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Goog-Api-Key": apiKey,
-      "X-Goog-FieldMask": "places.displayName,places.formattedAddress,places.nationalPhoneNumber,places.websiteUri,places.rating,places.userRatingCount,places.addressComponents",
-    },
-    body: JSON.stringify(body),
-  });
+  const resp = await fetch(url);
 
   if (!resp.ok) {
     const errText = await resp.text();
@@ -54,23 +36,38 @@ async function searchGooglePlaces(
   }
 
   const data = await resp.json();
-  const places = data.places || [];
+  if (data.status !== "OK" && data.status !== "ZERO_RESULTS") {
+    console.error(`[google-places] API status: ${data.status} — ${data.error_message || ""}`);
+    return [];
+  }
+
+  const places = data.results || [];
 
   return places.map((p: any) => {
+    // Extract city and state from formatted_address
     let city: string | null = null;
     let state: string | null = null;
-    for (const comp of (p.addressComponents || [])) {
-      const types: string[] = comp.types || [];
-      if (types.includes("locality")) city = comp.longText || comp.shortText;
-      if (types.includes("administrative_area_level_1")) state = comp.shortText;
+    const addr = p.formatted_address || "";
+    // Pattern: "City, ST ZIP, USA"
+    const match = addr.match(/,\s*([^,]+),\s*([A-Z]{2})\s+\d/);
+    if (match) {
+      city = match[1].trim();
+      state = match[2];
+    } else {
+      // Try: "City, ST, USA"
+      const match2 = addr.match(/,\s*([^,]+),\s*([A-Z]{2}),/);
+      if (match2) {
+        city = match2[1].trim();
+        state = match2[2];
+      }
     }
     return {
-      company: p.displayName?.text || "Unknown Business",
-      address: p.formattedAddress || "",
-      phone: p.nationalPhoneNumber || null,
-      website: p.websiteUri || null,
+      company: p.name || "Unknown Business",
+      address: addr,
+      phone: null, // Legacy API doesn't return phone in textsearch
+      website: null,
       rating: p.rating || null,
-      reviewCount: p.userRatingCount || null,
+      reviewCount: p.user_ratings_total || null,
       city,
       state,
     };
@@ -621,38 +618,107 @@ Deno.serve(async (req) => {
     // ═══════════════════════════════════════════════════════════
     if (source === "Google Maps") {
       const GOOGLE_API_KEY = Deno.env.get("GOOGLE_CLOUD_API_KEY");
-      if (!GOOGLE_API_KEY) {
-        return new Response(JSON.stringify({ error: "Google Cloud API key not configured" }), {
-          status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-
+      const SERPER_KEY = Deno.env.get("SERPER_API_KEY");
+      
       const queries = buildGoogleMapsQueries(settings);
       console.log(`[lead-engine-scan] Google Maps — running ${queries.length} place searches`);
 
       const allPlaces: PlacesResult[] = [];
       const seenNames = new Set<string>();
 
-      for (const q of queries.slice(0, 8)) {
-        try {
-          const results = await searchGooglePlaces(q, GOOGLE_API_KEY);
-          for (const r of results) {
-            const key = r.company.toLowerCase().trim();
-            if (!seenNames.has(key)) {
-              seenNames.add(key);
-              allPlaces.push(r);
+      // Try Google Places API first
+      if (GOOGLE_API_KEY) {
+        for (const q of queries.slice(0, 8)) {
+          try {
+            const results = await searchGooglePlaces(q, GOOGLE_API_KEY);
+            for (const r of results) {
+              const key = r.company.toLowerCase().trim();
+              if (!seenNames.has(key)) {
+                seenNames.add(key);
+                allPlaces.push(r);
+              }
             }
+            if (results.length > 0) console.log(`[lead-engine-scan] "${q}" → ${results.length} places`);
+          } catch (e) {
+            console.warn(`[lead-engine-scan] Google Places query failed: ${q}`, e);
           }
-          console.log(`[lead-engine-scan] "${q}" → ${results.length} places`);
-        } catch (e) {
-          console.warn(`[lead-engine-scan] Google Places query failed: ${q}`, e);
+        }
+      }
+
+      // Fallback: use Serper web search to find real businesses
+      if (allPlaces.length === 0 && SERPER_KEY) {
+        console.log(`[lead-engine-scan] Google Places returned 0 — falling back to Serper business search`);
+        for (const q of queries.slice(0, 6)) {
+          try {
+            const resp = await fetch("https://google.serper.dev/search", {
+              method: "POST",
+              headers: { "X-API-KEY": SERPER_KEY, "Content-Type": "application/json" },
+              body: JSON.stringify({ q, num: 10, gl: "us" }),
+            });
+            if (!resp.ok) { await resp.text(); continue; }
+            const data = await resp.json();
+            // Extract local/places results from Serper
+            const places = data.places || [];
+            for (const p of places) {
+              const name = p.title || p.name || "";
+              if (!name) continue;
+              const key = name.toLowerCase().trim();
+              if (seenNames.has(key)) continue;
+              seenNames.add(key);
+              // Parse state from address
+              let state: string | null = null;
+              let city: string | null = null;
+              const addr = p.address || "";
+              const stMatch = addr.match(/,\s*([A-Z]{2})\s+\d/);
+              if (stMatch) state = stMatch[1];
+              const cityMatch = addr.match(/,\s*([^,]+),\s*[A-Z]{2}/);
+              if (cityMatch) city = cityMatch[1].trim();
+              allPlaces.push({
+                company: name,
+                address: addr,
+                phone: p.phoneNumber || p.phone || null,
+                website: p.website || p.link || null,
+                rating: p.rating || null,
+                reviewCount: p.ratingCount || null,
+                city,
+                state,
+              });
+            }
+            // Also extract from organic results that look like business listings
+            for (const r of (data.organic || []).slice(0, 5)) {
+              const title = r.title || "";
+              // Skip aggregator sites
+              if (/yelp|yellowpages|bbb|manta|mapquest|tripadvisor/i.test(r.link || "")) continue;
+              if (!title || seenNames.has(title.toLowerCase().trim())) continue;
+              // Only include if it looks like a real business (not a list article)
+              if (/top \d|best \d|\d+ best/i.test(title)) continue;
+              seenNames.add(title.toLowerCase().trim());
+              let state: string | null = null;
+              const snippet = r.snippet || "";
+              const stMatch = snippet.match(/\b([A-Z]{2})\b/);
+              if (stMatch && STATE_FULL_NAMES[stMatch[1]]) state = stMatch[1];
+              allPlaces.push({
+                company: title.replace(/\s*[-|–]\s*.*$/, "").trim(),
+                address: "",
+                phone: null,
+                website: r.link || null,
+                rating: null,
+                reviewCount: null,
+                city: null,
+                state,
+              });
+            }
+            console.log(`[lead-engine-scan] Serper "${q}" → found ${places.length} places + organic`);
+          } catch (e) {
+            console.warn(`[lead-engine-scan] Serper query failed:`, e);
+          }
         }
       }
 
       console.log(`[lead-engine-scan] Google Maps total unique: ${allPlaces.length}`);
 
       if (allPlaces.length === 0) {
-        return new Response(JSON.stringify({ success: true, leads_found: 0, message: "No businesses found on Google Maps for your criteria. Try different states or industries." }), {
+        return new Response(JSON.stringify({ success: true, leads_found: 0, message: "No businesses found for your criteria. Try different states or industries." }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
