@@ -207,13 +207,32 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasAgent, in
       await new Promise(r => setTimeout(r, 600));
       setGenProgress(10);
 
+      // Always run Google Maps first for reliable results
+      const googleMapsSource = "Google Maps";
+      setGenStep(`Scanning businesses on Google Maps…`);
+      setGenProgress(10);
+      try {
+        const { data, error } = await supabase.functions.invoke("lead-engine-scan", {
+          body: { source: googleMapsSource, settings, enrich: true },
+        });
+        if (error) console.warn(`Scan error for Google Maps:`, error.message);
+        totalFound += data?.leads_found ?? 0;
+        if (data?.batch_id) batchIds.push(data.batch_id);
+        sourceNames.push(googleMapsSource);
+      } catch (err: any) {
+        console.warn(`Failed scanning Google Maps:`, err.message);
+      }
+      setGenProgress(50);
+
+      // Then run additional focus sources
       for (let i = 0; i < focuses.length; i++) {
         const focusKey = focuses[i];
         const src = activeSources.find(s => s.key === focusKey);
         const source = src?.label || "Business Filings";
+        if (source === googleMapsSource) continue;
         sourceNames.push(source);
         setGenStep(`Scanning ${source}…`);
-        setGenProgress(10 + Math.round(basePerSource * i));
+        setGenProgress(50 + Math.round(30 * (i / focuses.length)));
         try {
           const { data, error } = await supabase.functions.invoke("lead-engine-scan", {
             body: { source, settings, enrich: true },
@@ -224,7 +243,6 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasAgent, in
         } catch (err: any) {
           console.warn(`Failed scanning ${source}:`, err.message);
         }
-        setGenProgress(10 + Math.round(basePerSource * (i + 1)));
       }
 
       setGenProgress(80);
