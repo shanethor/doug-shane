@@ -168,7 +168,7 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasAgent, in
     }
     return availableSpecializations.slice(0, 2).map((s) => s.id);
   });
-  const [focuses, setFocuses] = useState<string[]>(["new_business"]);
+  const [focuses, setFocuses] = useState<string[]>([]);
   const [selectedPack, setSelectedPack] = useState(50);
   const [generating, setGenerating] = useState(false);
   const [genProgress, setGenProgress] = useState(0);
@@ -183,6 +183,7 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasAgent, in
       return availableSpecializations.slice(0, 2).map((s) => s.id);
     });
   }, [availableSpecializations]);
+
 
   const activeSources = useMemo(() => {
     const sources = [...DEFAULT_SCAN_SOURCES];
@@ -223,6 +224,11 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasAgent, in
 
     return sources;
   }, [selectedVerticals, availableSpecializations]);
+
+  // Always select all focus sources by default and when sources change
+  useEffect(() => {
+    setFocuses(activeSources.map(s => s.key));
+  }, [activeSources]);
 
   const verticalSearchTerms = useMemo(() => {
     const terms = selectedVerticals
