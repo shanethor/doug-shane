@@ -1073,7 +1073,7 @@ function PurchaseSection({ userIndustry, isSubscriber, hasAgent }: {
   );
 }
 
-const MASTER_EMAILS = ["shane@houseofthor.com", "dwenz17@gmail.com"];
+const MASTER_EMAILS = ["shane@houseofthor.com", "dwenz17@gmail.com", "john@smith.com"];
 
 export default function LeadGenerator() {
   const qc = useQueryClient();
@@ -1183,10 +1183,8 @@ export default function LeadGenerator() {
         </div>
         <div className="lg:col-span-2 space-y-4">
           <ResultsTable latestBatchId={latestBatchId} />
-          {/* Show purchase options only after generating free leads */}
-          {hasGenerated && (
-            <PurchaseSection userIndustry={userIndustry} isSubscriber={subscribed} hasAgent={hasAgent} />
-          )}
+          {/* Show purchase options — always visible so users can buy leads */}
+          <PurchaseSection userIndustry={userIndustry} isSubscriber={subscribed} hasAgent={hasAgent} />
           {showPromo && <AuraAgentLeadPromo />}
         </div>
       </div>

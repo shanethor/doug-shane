@@ -117,22 +117,33 @@ export default function ProductSettings() {
     if (!user) return;
     supabase
       .from("profiles")
-      .select("full_name, phone, dark_mode, connect_vertical, specializations, states_of_operation")
+      .select("full_name, phone, dark_mode, connect_vertical, specializations, states_of_operation, theme_preference")
       .eq("user_id", user.id)
       .maybeSingle()
       .then(({ data }) => {
         if (data) {
           setFullName(data.full_name || "");
           setPhone(data.phone || "");
-          // Only override theme if user has explicitly set dark_mode in DB
-          if ((data as any).dark_mode !== null && (data as any).dark_mode !== undefined) {
-            const dbDark = !!(data as any).dark_mode;
+          // Respect existing theme: check DB dark_mode, then theme_preference from onboarding, then localStorage
+          const dbDarkMode = (data as any).dark_mode;
+          const themePreference = (data as any).theme_preference;
+          if (dbDarkMode !== null && dbDarkMode !== undefined) {
+            const dbDark = !!dbDarkMode;
             setDarkMode(dbDark);
             document.documentElement.classList.toggle("dark", dbDark);
             localStorage.setItem("aura-dark-mode", dbDark ? "true" : "false");
+          } else if (themePreference) {
+            // Use onboarding theme preference
+            const isDark = themePreference === "dark";
+            setDarkMode(isDark);
+            document.documentElement.classList.toggle("dark", isDark);
+            localStorage.setItem("aura-dark-mode", isDark ? "true" : "false");
           } else {
-            // No DB preference — keep current state (defaults to dark)
-            setDarkMode(document.documentElement.classList.contains("dark"));
+            // No DB preference — keep current localStorage state (defaults to dark)
+            const storedTheme = localStorage.getItem("aura-dark-mode");
+            const isDark = storedTheme !== null ? storedTheme === "true" : true;
+            setDarkMode(isDark);
+            document.documentElement.classList.toggle("dark", isDark);
           }
           setProfileVertical(data.connect_vertical || null);
           setProfileSubVerticals(data.specializations || []);
