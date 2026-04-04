@@ -77,8 +77,28 @@ async function searchGooglePlaces(
   });
 }
 
+// Map common abbreviations to full state names for better Google Places results
+const STATE_FULL_NAMES: Record<string, string> = {
+  AL: "Alabama", AK: "Alaska", AZ: "Arizona", AR: "Arkansas", CA: "California",
+  CO: "Colorado", CT: "Connecticut", DE: "Delaware", FL: "Florida", GA: "Georgia",
+  HI: "Hawaii", ID: "Idaho", IL: "Illinois", IN: "Indiana", IA: "Iowa",
+  KS: "Kansas", KY: "Kentucky", LA: "Louisiana", ME: "Maine", MD: "Maryland",
+  MA: "Massachusetts", MI: "Michigan", MN: "Minnesota", MS: "Mississippi", MO: "Missouri",
+  MT: "Montana", NE: "Nebraska", NV: "Nevada", NH: "New Hampshire", NJ: "New Jersey",
+  NM: "New Mexico", NY: "New York", NC: "North Carolina", ND: "North Dakota", OH: "Ohio",
+  OK: "Oklahoma", OR: "Oregon", PA: "Pennsylvania", RI: "Rhode Island", SC: "South Carolina",
+  SD: "South Dakota", TN: "Tennessee", TX: "Texas", UT: "Utah", VT: "Vermont",
+  VA: "Virginia", WA: "Washington", WV: "West Virginia", WI: "Wisconsin", WY: "Wyoming",
+};
+
+function expandState(s: string): string {
+  const upper = s.toUpperCase().trim();
+  return STATE_FULL_NAMES[upper] || s;
+}
+
 function buildGoogleMapsQueries(settings: Record<string, string>): string[] {
-  const states = (settings.states || "TX, FL, CA").split(",").map(s => s.trim()).filter(Boolean);
+  const rawStates = (settings.states || "TX, FL, CA").split(",").map(s => s.trim()).filter(Boolean);
+  const states = rawStates.map(expandState);
   const rawIndustries = (settings.industries || "contractor, restaurant, HVAC").split(",").map(i => i.trim()).filter(Boolean);
   const queries: string[] = [];
 
@@ -86,7 +106,6 @@ function buildGoogleMapsQueries(settings: Record<string, string>): string[] {
   const industries: string[] = [];
   for (const ind of rawIndustries) {
     if (/\//.test(ind)) {
-      // Split "Trucking / Commercial Fleet" → ["Trucking", "Commercial Fleet"]
       industries.push(...ind.split("/").map(s => s.trim()).filter(Boolean));
     } else {
       industries.push(ind);
@@ -95,24 +114,35 @@ function buildGoogleMapsQueries(settings: Record<string, string>): string[] {
 
   // Vertical-specific search term mappings for industries that need specialized queries
   const verticalSearchExpansions: Record<string, string[]> = {
-    "trucking": ["trucking company", "freight carrier", "motor carrier", "logistics company"],
-    "commercial fleet": ["fleet management company", "commercial trucking", "freight hauling"],
+    "trucking": ["trucking company", "freight carrier", "motor carrier", "logistics company", "truck fleet"],
+    "commercial fleet": ["fleet management company", "commercial trucking", "freight hauling company"],
     "motor carriers": ["motor carrier", "trucking company"],
-    "owner-operators": ["owner operator trucking"],
+    "motor carriers (for-hire)": ["for hire motor carrier", "trucking company"],
+    "owner-operators": ["owner operator trucking", "independent trucker"],
     "freight brokers": ["freight broker", "freight brokerage"],
-    "fleet operations": ["fleet operations", "commercial fleet"],
-    "last mile": ["last mile delivery", "courier service"],
+    "fleet operations": ["fleet operations company", "commercial fleet management"],
+    "fleet operations (6+ units)": ["fleet management company", "large trucking fleet"],
+    "last mile": ["last mile delivery company", "courier service"],
+    "last mile / hot shot": ["last mile delivery", "hot shot trucking", "courier service"],
     "hot shot": ["hot shot trucking", "hotshot delivery"],
     "intermodal": ["intermodal transportation", "drayage company"],
-    "hazmat carriers": ["hazmat trucking", "hazardous materials carrier"],
-    "tanker operations": ["tanker trucking", "liquid bulk carrier"],
-    "refrigerated": ["reefer trucking", "refrigerated transport"],
-    "restaurant": ["restaurant", "new restaurant"],
+    "intermodal / drayage": ["intermodal transportation company", "drayage trucking"],
+    "hazmat carriers": ["hazmat trucking company", "hazardous materials carrier"],
+    "tanker operations": ["tanker trucking company", "liquid bulk carrier"],
+    "refrigerated": ["reefer trucking company", "refrigerated transport"],
+    "refrigerated / reefer": ["refrigerated trucking company", "reefer carrier"],
+    "restaurant": ["restaurant", "new restaurant opening"],
     "hospitality": ["hotel", "hospitality business"],
     "cannabis": ["cannabis dispensary", "marijuana business"],
     "manufacturing": ["manufacturing company", "factory"],
     "auto dealers": ["auto dealer", "car dealership"],
     "nonprofit": ["nonprofit organization", "charity"],
+    "general contractor": ["general contractor", "construction company"],
+    "roofing": ["roofing contractor", "roofing company"],
+    "plumbing": ["plumbing contractor", "plumber"],
+    "hvac": ["HVAC contractor", "heating and cooling company"],
+    "electrician": ["electrical contractor", "electrician"],
+    "excavation": ["excavation company", "earthwork contractor"],
   };
 
   // Build specific queries for each industry/trade in each state
@@ -122,26 +152,25 @@ function buildGoogleMapsQueries(settings: Record<string, string>): string[] {
 
     if (expansions) {
       // Use specialized search terms for known verticals
-      for (const term of expansions.slice(0, 2)) {
+      for (const term of expansions.slice(0, 3)) {
         for (const st of states.slice(0, 4)) {
           queries.push(`${term} in ${st}`);
         }
       }
     } else {
       for (const st of states.slice(0, 4)) {
-        // Add "contractor" suffix only for construction-related trades
         const isConstructionTrade = /contractor|roofing|plumbing|hvac|electrician|excavation|flooring|solar|drywall|insulation|glazing|elevator|fire sprinkler/i.test(ind);
         const tradeQuery = isConstructionTrade
           ? `${ind} contractor in ${st}`
-          : `${ind} in ${st}`;
+          : `${ind} company in ${st}`;
         queries.push(tradeQuery);
       }
     }
   }
 
-  // Fallback: if no specific industries, do a general search
+  // Fallback
   if (industries.length === 0 && states[0]) {
-    queries.push(`new business ${states[0]}`);
+    queries.push(`new business in ${states[0]}`);
   }
 
   // Cap total queries to avoid API overuse
