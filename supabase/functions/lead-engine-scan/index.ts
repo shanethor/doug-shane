@@ -24,29 +24,10 @@ async function searchGooglePlaces(
   query: string,
   apiKey: string,
 ): Promise<PlacesResult[]> {
-  const url = "https://places.googleapis.com/v1/places:searchText";
-  const body: Record<string, unknown> = {
-    textQuery: query,
-    maxResultCount: 20,
-    languageCode: "en",
-    locationRestriction: {
-      rectangle: {
-        low: { latitude: 24.396308, longitude: -125.0 },
-        high: { latitude: 49.384358, longitude: -66.93457 },
-      },
-    },
-  };
+  // Use legacy Text Search API (widely enabled)
+  const url = `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${encodeURIComponent(query)}&key=${apiKey}`;
 
-  const resp = await fetch(url, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Goog-Api-Key": apiKey,
-      "X-Goog-FieldMask": "places.displayName,places.formattedAddress,places.nationalPhoneNumber,places.websiteUri,places.rating,places.userRatingCount,places.addressComponents",
-      "Referer": "https://buildingaura.site",
-    },
-    body: JSON.stringify(body),
-  });
+  const resp = await fetch(url);
 
   if (!resp.ok) {
     const errText = await resp.text();
@@ -55,23 +36,38 @@ async function searchGooglePlaces(
   }
 
   const data = await resp.json();
-  const places = data.places || [];
+  if (data.status !== "OK" && data.status !== "ZERO_RESULTS") {
+    console.error(`[google-places] API status: ${data.status} — ${data.error_message || ""}`);
+    return [];
+  }
+
+  const places = data.results || [];
 
   return places.map((p: any) => {
+    // Extract city and state from formatted_address
     let city: string | null = null;
     let state: string | null = null;
-    for (const comp of (p.addressComponents || [])) {
-      const types: string[] = comp.types || [];
-      if (types.includes("locality")) city = comp.longText || comp.shortText;
-      if (types.includes("administrative_area_level_1")) state = comp.shortText;
+    const addr = p.formatted_address || "";
+    // Pattern: "City, ST ZIP, USA"
+    const match = addr.match(/,\s*([^,]+),\s*([A-Z]{2})\s+\d/);
+    if (match) {
+      city = match[1].trim();
+      state = match[2];
+    } else {
+      // Try: "City, ST, USA"
+      const match2 = addr.match(/,\s*([^,]+),\s*([A-Z]{2}),/);
+      if (match2) {
+        city = match2[1].trim();
+        state = match2[2];
+      }
     }
     return {
-      company: p.displayName?.text || "Unknown Business",
-      address: p.formattedAddress || "",
-      phone: p.nationalPhoneNumber || null,
-      website: p.websiteUri || null,
+      company: p.name || "Unknown Business",
+      address: addr,
+      phone: null, // Legacy API doesn't return phone in textsearch
+      website: null,
       rating: p.rating || null,
-      reviewCount: p.userRatingCount || null,
+      reviewCount: p.user_ratings_total || null,
       city,
       state,
     };
