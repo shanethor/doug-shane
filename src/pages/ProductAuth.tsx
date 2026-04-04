@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate, useSearchParams, Navigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Loader2, ArrowRight, Zap, Users, BarChart3, Mail, Sparkles, Search, Check } from "lucide-react";
+import { CONNECT_VERTICALS } from "@/lib/connect-verticals";
 
 const FEATURES = [
   { icon: Users, label: "Network Intelligence" },
@@ -18,28 +19,7 @@ const FEATURES = [
 
 const MASTER_EMAILS = ["shane@houseofthor.com", "dwenz17@gmail.com"];
 
-const INDUSTRIES = [
-  "Insurance", "Mortgage", "Real Estate", "Property", "Consulting", "General Business",
-  "Accounting", "Advertising & Marketing", "Agriculture", "Architecture", "Automotive",
-  "Banking & Finance", "Biotechnology", "Construction", "Cybersecurity", "E-Commerce",
-  "Education", "Energy & Utilities", "Engineering", "Entertainment", "Environmental Services",
-  "Fashion & Apparel", "Financial Planning", "Fitness & Wellness", "Food & Beverage",
-  "Healthcare", "Hospitality", "Human Resources", "Information Technology", "Law / Legal",
-  "Logistics & Supply Chain", "Manufacturing", "Nonprofit", "Pharmaceuticals",
-  "Professional Services", "Recruiting & Staffing", "Restaurant", "Retail",
-  "SaaS / Software", "Telecommunications", "Transportation", "Wealth Management", "Other",
-];
-
-const INDUSTRY_KEY_MAP: Record<string, string> = {
-  "Insurance": "insurance",
-  "Mortgage": "mortgage",
-  "Real Estate": "real_estate",
-  "Property": "property",
-  "Consulting": "consulting",
-  "General Business": "general",
-  "Financial Planning": "financial_advisor",
-  "Wealth Management": "financial_advisor",
-};
+// Industries are now sourced from the canonical CONNECT_VERTICALS list
 
 function useProductRoute(user: any) {
   const email = user?.email?.toLowerCase() ?? "";
@@ -74,8 +54,11 @@ export default function ProductAuth() {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  const filteredIndustries = INDUSTRIES.filter((i) =>
-    i.toLowerCase().includes(industrySearch.toLowerCase())
+  const filteredVerticals = useMemo(() =>
+    CONNECT_VERTICALS.filter((v) =>
+      v.label.toLowerCase().includes(industrySearch.toLowerCase()) ||
+      v.description.toLowerCase().includes(industrySearch.toLowerCase())
+    ), [industrySearch]
   );
 
   if (loading || (user && routeChecking)) return (
@@ -96,7 +79,7 @@ export default function ProductAuth() {
           setSubmitting(false);
           return;
         }
-        const industryKey = INDUSTRY_KEY_MAP[industry] || "general";
+        const industryKey = industry; // industry state now stores the vertical id directly
         const { data: signUpData, error } = await supabase.auth.signUp({
           email,
           password,
@@ -107,12 +90,12 @@ export default function ProductAuth() {
         });
         if (error) throw error;
 
-        // Save industry to profile
+        // Save vertical to profile (matches onboarding's connect_vertical field)
         if (signUpData.user) {
           setTimeout(async () => {
             await supabase
               .from("profiles")
-              .update({ industry: industryKey } as any)
+              .update({ industry: industryKey, connect_vertical: industryKey } as any)
               .eq("user_id", signUpData.user!.id);
           }, 1000);
         }
@@ -242,7 +225,7 @@ export default function ProductAuth() {
                     className="w-full h-11 px-3 text-left text-sm bg-white/5 border border-white/10 rounded-md text-white flex items-center justify-between"
                   >
                     <span className={industry ? "text-white" : "text-white/20"}>
-                      {industry || "Select your industry"}
+                      {industry ? CONNECT_VERTICALS.find(v => v.id === industry)?.label ?? industry : "Select your industry"}
                     </span>
                     <Search className="w-4 h-4 text-white/30" />
                   </button>
@@ -258,15 +241,18 @@ export default function ProductAuth() {
                         />
                       </div>
                       <div className="overflow-y-auto max-h-48">
-                        {filteredIndustries.map((ind) => (
+                        {filteredVerticals.map((v) => (
                           <button
-                            key={ind}
+                            key={v.id}
                             type="button"
-                            onClick={() => { setIndustry(ind); setIndustryOpen(false); setIndustrySearch(""); }}
-                            className={`w-full text-left px-3 py-2 text-sm hover:bg-white/5 flex items-center gap-2 ${industry === ind ? "text-[hsl(140_12%_58%)]" : "text-[#A1A1AA]"}`}
+                            onClick={() => { setIndustry(v.id); setIndustryOpen(false); setIndustrySearch(""); }}
+                            className={`w-full text-left px-3 py-2 text-sm hover:bg-white/5 flex items-center gap-2 ${industry === v.id ? "text-[hsl(140_12%_58%)]" : "text-[#A1A1AA]"}`}
                           >
-                            {industry === ind && <Check className="w-3.5 h-3.5 shrink-0" />}
-                            {ind}
+                            {industry === v.id && <Check className="w-3.5 h-3.5 shrink-0" />}
+                            <div>
+                              <span className="block">{v.label}</span>
+                              <span className="block text-[10px] text-white/30">{v.description}</span>
+                            </div>
                           </button>
                         ))}
                       </div>
