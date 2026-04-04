@@ -134,7 +134,7 @@ export default function PostCheckoutOnboard() {
 
         <h1 className="text-2xl font-light tracking-tight text-center mb-2">
           {step === "create-account" && "Create Your Account"}
-          {step === "verify-email" && "Check Your Email"}
+          
           {step === "verify-2fa" && "Verify Your Identity"}
         </h1>
         <p className="text-sm text-white/40 text-center mb-8">
