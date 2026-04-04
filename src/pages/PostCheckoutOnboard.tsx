@@ -134,12 +134,12 @@ export default function PostCheckoutOnboard() {
 
         <h1 className="text-2xl font-light tracking-tight text-center mb-2">
           {step === "create-account" && "Create Your Account"}
-          {step === "verify-email" && "Check Your Email"}
+          
           {step === "verify-2fa" && "Verify Your Identity"}
         </h1>
         <p className="text-sm text-white/40 text-center mb-8">
           {step === "create-account" && "Set up your credentials to access AURA Connect"}
-          {step === "verify-email" && "We've sent a confirmation link to your email"}
+          
           {step === "verify-2fa" && "Enter the 6-digit code sent to your email"}
         </p>
 
@@ -269,23 +269,7 @@ export default function PostCheckoutOnboard() {
           </form>
         )}
 
-        {step === "verify-email" && (
-          <div className="text-center space-y-6">
-            <div className="w-16 h-16 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mx-auto">
-              <Check className="w-7 h-7 text-emerald-400" />
-            </div>
-            <p className="text-sm text-white/50">
-              We've sent a confirmation link to <span className="text-white">{email}</span>.
-              Please check your inbox and click the link, then sign in.
-            </p>
-            <Button
-              onClick={() => navigate("/get-started")}
-              className="bg-[hsl(140,12%,42%)] hover:bg-[hsl(140,12%,48%)] text-white border-0 gap-2"
-            >
-              Go to Sign In <ArrowRight className="h-4 w-4" />
-            </Button>
-          </div>
-        )}
+        
 
         <div className="mt-8 text-center">
           <a href="/" className="text-xs text-white/30 hover:text-white/50 transition-colors">
