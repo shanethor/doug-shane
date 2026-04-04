@@ -19,28 +19,7 @@ const FEATURES = [
 
 const MASTER_EMAILS = ["shane@houseofthor.com", "dwenz17@gmail.com"];
 
-const INDUSTRIES = [
-  "Insurance", "Mortgage", "Real Estate", "Property", "Consulting", "General Business",
-  "Accounting", "Advertising & Marketing", "Agriculture", "Architecture", "Automotive",
-  "Banking & Finance", "Biotechnology", "Construction", "Cybersecurity", "E-Commerce",
-  "Education", "Energy & Utilities", "Engineering", "Entertainment", "Environmental Services",
-  "Fashion & Apparel", "Financial Planning", "Fitness & Wellness", "Food & Beverage",
-  "Healthcare", "Hospitality", "Human Resources", "Information Technology", "Law / Legal",
-  "Logistics & Supply Chain", "Manufacturing", "Nonprofit", "Pharmaceuticals",
-  "Professional Services", "Recruiting & Staffing", "Restaurant", "Retail",
-  "SaaS / Software", "Telecommunications", "Transportation", "Wealth Management", "Other",
-];
-
-const INDUSTRY_KEY_MAP: Record<string, string> = {
-  "Insurance": "insurance",
-  "Mortgage": "mortgage",
-  "Real Estate": "real_estate",
-  "Property": "property",
-  "Consulting": "consulting",
-  "General Business": "general",
-  "Financial Planning": "financial_advisor",
-  "Wealth Management": "financial_advisor",
-};
+// Industries are now sourced from the canonical CONNECT_VERTICALS list
 
 function useProductRoute(user: any) {
   const email = user?.email?.toLowerCase() ?? "";
