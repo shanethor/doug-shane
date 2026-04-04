@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate, useSearchParams, Navigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Loader2, ArrowRight, Zap, Users, BarChart3, Mail, Sparkles, Search, Check } from "lucide-react";
+import { CONNECT_VERTICALS } from "@/lib/connect-verticals";
 
 const FEATURES = [
   { icon: Users, label: "Network Intelligence" },
