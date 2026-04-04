@@ -148,6 +148,24 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasAgent, in
     return sources;
   }, [selectedVerticals]);
 
+  // Build specific industry search terms from selected verticals
+  const verticalSearchTerms = useMemo(() => {
+    const terms: string[] = [];
+    for (const vId of selectedVerticals) {
+      const vertical = VERTICALS.find(v => v.id === vId);
+      if (!vertical) continue;
+      // Convert vertical labels to Google Maps-friendly search terms
+      const label = vertical.label
+        .replace(/\s*\(.*?\)\s*/g, "") // strip parentheticals like (NCCI 6217...)
+        .replace(/\s*—.*$/g, "")       // strip em-dash suffixes
+        .trim();
+      if (label) terms.push(label);
+    }
+    // Also add the group as a fallback (e.g. "Contractors")
+    if (terms.length === 0) terms.push(pricing.label);
+    return terms;
+  }, [selectedVerticals, pricing.label]);
+
   const toggleVertical = useCallback((id: string) => {
     setSelectedVerticals(prev => {
       const next = prev.includes(id) ? prev.filter(v => v !== id) : [...prev, id];
@@ -190,8 +208,8 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasAgent, in
         : [geo];
       const settings: Record<string, string> = {
         states: states.join(", ") || "NY, CA, TX, FL",
-        industries: pricing.label,
-        keywords: `${pricing.label} leads`,
+        industries: verticalSearchTerms.join(", "),
+        keywords: `${verticalSearchTerms[0] || pricing.label} leads`,
         entity_types: "LLC, Corp",
       };
 
@@ -280,8 +298,8 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasAgent, in
         : [geo];
       const settings: Record<string, string> = {
         states: states.join(", ") || "NY, CA, TX, FL",
-        industries: pricing.label,
-        keywords: `${pricing.label} leads`,
+        industries: verticalSearchTerms.join(", "),
+        keywords: `${verticalSearchTerms[0] || pricing.label} leads`,
         entity_types: "LLC, Corp",
       };
 

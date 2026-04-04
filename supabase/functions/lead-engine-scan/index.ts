@@ -76,13 +76,19 @@ function buildGoogleMapsQueries(settings: Record<string, string>): string[] {
   const industries = (settings.industries || "contractor, restaurant, HVAC").split(",").map(i => i.trim()).filter(Boolean);
   const queries: string[] = [];
 
-  for (const ind of industries.slice(0, 4)) {
-    for (const st of states.slice(0, 3)) {
-      queries.push(`${ind} in ${st}`);
+  // Build specific queries for each industry/trade in each state
+  for (const ind of industries.slice(0, 6)) {
+    for (const st of states.slice(0, 4)) {
+      // Add "contractor" suffix for trade terms that don't already include it
+      const tradeQuery = /contractor|roofing|plumbing|hvac|electrician|excavation/i.test(ind)
+        ? `${ind} contractor in ${st}`
+        : `${ind} in ${st}`;
+      queries.push(tradeQuery);
     }
   }
 
-  if (states[0]) {
+  // Fallback: if no specific industries, do a general search
+  if (industries.length === 0 && states[0]) {
     queries.push(`new business ${states[0]}`);
   }
 
