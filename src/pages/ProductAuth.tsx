@@ -79,7 +79,7 @@ export default function ProductAuth() {
           setSubmitting(false);
           return;
         }
-        const industryKey = INDUSTRY_KEY_MAP[industry] || "general";
+        const industryKey = industry; // industry state now stores the vertical id directly
         const { data: signUpData, error } = await supabase.auth.signUp({
           email,
           password,
