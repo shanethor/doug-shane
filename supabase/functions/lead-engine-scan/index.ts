@@ -73,17 +73,63 @@ async function searchGooglePlaces(
 
 function buildGoogleMapsQueries(settings: Record<string, string>): string[] {
   const states = (settings.states || "TX, FL, CA").split(",").map(s => s.trim()).filter(Boolean);
-  const industries = (settings.industries || "contractor, restaurant, HVAC").split(",").map(i => i.trim()).filter(Boolean);
+  const rawIndustries = (settings.industries || "contractor, restaurant, HVAC").split(",").map(i => i.trim()).filter(Boolean);
   const queries: string[] = [];
 
+  // Expand composite labels like "Trucking / Commercial Fleet" into individual search terms
+  const industries: string[] = [];
+  for (const ind of rawIndustries) {
+    if (/\//.test(ind)) {
+      // Split "Trucking / Commercial Fleet" → ["Trucking", "Commercial Fleet"]
+      industries.push(...ind.split("/").map(s => s.trim()).filter(Boolean));
+    } else {
+      industries.push(ind);
+    }
+  }
+
+  // Vertical-specific search term mappings for industries that need specialized queries
+  const verticalSearchExpansions: Record<string, string[]> = {
+    "trucking": ["trucking company", "freight carrier", "motor carrier", "logistics company"],
+    "commercial fleet": ["fleet management company", "commercial trucking", "freight hauling"],
+    "motor carriers": ["motor carrier", "trucking company"],
+    "owner-operators": ["owner operator trucking"],
+    "freight brokers": ["freight broker", "freight brokerage"],
+    "fleet operations": ["fleet operations", "commercial fleet"],
+    "last mile": ["last mile delivery", "courier service"],
+    "hot shot": ["hot shot trucking", "hotshot delivery"],
+    "intermodal": ["intermodal transportation", "drayage company"],
+    "hazmat carriers": ["hazmat trucking", "hazardous materials carrier"],
+    "tanker operations": ["tanker trucking", "liquid bulk carrier"],
+    "refrigerated": ["reefer trucking", "refrigerated transport"],
+    "restaurant": ["restaurant", "new restaurant"],
+    "hospitality": ["hotel", "hospitality business"],
+    "cannabis": ["cannabis dispensary", "marijuana business"],
+    "manufacturing": ["manufacturing company", "factory"],
+    "auto dealers": ["auto dealer", "car dealership"],
+    "nonprofit": ["nonprofit organization", "charity"],
+  };
+
   // Build specific queries for each industry/trade in each state
-  for (const ind of industries.slice(0, 6)) {
-    for (const st of states.slice(0, 4)) {
-      // Add "contractor" suffix for trade terms that don't already include it
-      const tradeQuery = /contractor|roofing|plumbing|hvac|electrician|excavation/i.test(ind)
-        ? `${ind} contractor in ${st}`
-        : `${ind} in ${st}`;
-      queries.push(tradeQuery);
+  for (const ind of industries.slice(0, 8)) {
+    const lowerInd = ind.toLowerCase();
+    const expansions = verticalSearchExpansions[lowerInd];
+
+    if (expansions) {
+      // Use specialized search terms for known verticals
+      for (const term of expansions.slice(0, 2)) {
+        for (const st of states.slice(0, 4)) {
+          queries.push(`${term} in ${st}`);
+        }
+      }
+    } else {
+      for (const st of states.slice(0, 4)) {
+        // Add "contractor" suffix only for construction-related trades
+        const isConstructionTrade = /contractor|roofing|plumbing|hvac|electrician|excavation|flooring|solar|drywall|insulation|glazing|elevator|fire sprinkler/i.test(ind);
+        const tradeQuery = isConstructionTrade
+          ? `${ind} contractor in ${st}`
+          : `${ind} in ${st}`;
+        queries.push(tradeQuery);
+      }
     }
   }
 
@@ -92,7 +138,8 @@ function buildGoogleMapsQueries(settings: Record<string, string>): string[] {
     queries.push(`new business ${states[0]}`);
   }
 
-  return queries;
+  // Cap total queries to avoid API overuse
+  return queries.slice(0, 20);
 }
 
 // ── Build Firecrawl search queries ──
