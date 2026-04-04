@@ -1173,59 +1173,10 @@ function PurchaseSection({ userIndustry, isSubscriber, hasAgent, onGenerate }: {
   const [progress, setProgress] = useState(0);
   const [step, setStep] = useState("");
 
-  const handlePurchase = async () => {
-    setPurchasing(true);
-    setProgress(0);
-    setStep("Initializing scan…");
-    try {
-      const settings: Record<string, string> = {
-        states: "NY, CA, TX, FL",
-        industries: pricing.label,
-        keywords: `${pricing.label} leads`,
-        entity_types: "LLC, Corp",
-      };
-
-      const source = "Google Maps";
-      setProgress(10);
-      setStep(`Scanning businesses on Google Maps…`);
-
-      let totalFound = 0;
-      const batchIds: string[] = [];
-
-      try {
-        const { data, error } = await supabase.functions.invoke("lead-engine-scan", {
-          body: { source, settings, enrich: true },
-        });
-        if (error) console.warn(`Scan error:`, error.message);
-        totalFound += data?.leads_found ?? 0;
-        if (data?.batch_id) batchIds.push(data.batch_id);
-      } catch (err: any) {
-        console.warn(`Failed scanning:`, err.message);
-      }
-
-      setProgress(80);
-      setStep("Enriching contacts…");
-      await new Promise(r => setTimeout(r, 800));
-      setProgress(95);
-      setStep("Scoring…");
-      await new Promise(r => setTimeout(r, 400));
-      setProgress(100);
-      setStep("Complete!");
-
-      onGenerate?.({ volume: selectedPack, leads_found: totalFound, batch_ids: batchIds });
-      if (totalFound > 0) {
-        toast.success(`Found ${totalFound} new leads`);
-      } else {
-        toast.info("No leads found — try again shortly");
-      }
-    } catch (err: any) {
-      toast.error(err.message || "Failed to process purchase");
-    } finally {
-      await new Promise(r => setTimeout(r, 600));
-      setPurchasing(false);
-      setProgress(0);
-      setStep("");
-    }
+  const handlePurchase = () => {
+    // Delegate to the same full scanning logic used by "Generate Free Leads"
+    // so all focus sources are scanned, not just Google Maps
+    onGenerate?.({ volume: selectedPack });
   };
 
   const selectedPackData = packs.find(p => p.leads === selectedPack);
