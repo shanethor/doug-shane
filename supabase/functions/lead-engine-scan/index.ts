@@ -43,6 +43,7 @@ async function searchGooglePlaces(
       "Content-Type": "application/json",
       "X-Goog-Api-Key": apiKey,
       "X-Goog-FieldMask": "places.displayName,places.formattedAddress,places.nationalPhoneNumber,places.websiteUri,places.rating,places.userRatingCount,places.addressComponents",
+      "Referer": "https://buildingaura.site",
     },
     body: JSON.stringify(body),
   });
