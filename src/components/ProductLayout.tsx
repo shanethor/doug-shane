@@ -238,10 +238,9 @@ export function ProductLayout({
                      <span className="flex items-center gap-2">
                        {item.label}
                        {gated && <span className="text-[8px] px-1 py-0.5 rounded bg-muted text-muted-foreground">Soon</span>}
-                       {lockedForFree && <span className="text-[8px] px-1 py-0.5 rounded bg-muted text-muted-foreground">Pro</span>}
-                       {!gated && !lockedForFree && item.beta && <span className="text-[8px] px-1 py-0.5 rounded bg-primary/20 text-primary font-semibold">Beta</span>}
-                       {!gated && !lockedForFree && item.premium && <Crown className="h-3 w-3 text-amber-400" />}
-                       {!gated && !lockedForFree && isLeadsPage && !isFullAccess && <Badge className="text-[7px] px-1 py-0 bg-emerald-500/15 text-emerald-500 border-emerald-500/30">Free</Badge>}
+                        {lockedForFree && <span className="text-[8px] px-1 py-0.5 rounded bg-muted text-muted-foreground">Connect</span>}
+                        {!gated && !lockedForFree && item.beta && <span className="text-[8px] px-1 py-0.5 rounded bg-primary/20 text-primary font-semibold">Beta</span>}
+                        {!gated && !lockedForFree && item.premium && <Crown className="h-3 w-3 text-amber-400" />}
                     </span>
                   )}
                </Link>
