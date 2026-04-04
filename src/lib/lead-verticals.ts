@@ -1692,6 +1692,14 @@ export const INDUSTRY_VERTICAL_GROUPS: Record<string, string[]> = {
   real_estate: ["Personal Lines", "Commercial Real Estate", "Life Insurance"],
   property: ["Commercial Real Estate"],
   consulting: ["Commercial Lines", "Manufacturing"],
+  trucking: ["Trucking", "Commercial Lines"],
+  contractors: ["Contractors", "Commercial Lines"],
+  restaurant: ["Hospitality", "Commercial Lines"],
+  hospitality: ["Hospitality", "Commercial Lines"],
+  cannabis: ["Cannabis", "Commercial Lines"],
+  manufacturing: ["Manufacturing", "Commercial Lines"],
+  auto_dealers: ["Auto Dealers", "Commercial Lines"],
+  nonprofit: ["Nonprofit", "Commercial Lines"],
   general: ["Commercial Lines", "Contractors"],
 };
 
