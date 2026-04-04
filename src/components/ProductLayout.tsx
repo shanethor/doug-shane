@@ -217,7 +217,7 @@ export function ProductLayout({
              const gated = isPageGated(pageKey);
              // For non-subscribed users, only "leads" is available (plus gated logic)
              const isLeadsPage = pageKey === "leads";
-             const lockedForFree = !isFullAccess && !gated && !isLeadsPage && pageKey !== "pipeline";
+             const lockedForFree = !isFullAccess && !gated && !isLeadsPage;
              return (
                <Link
                  key={item.to}
