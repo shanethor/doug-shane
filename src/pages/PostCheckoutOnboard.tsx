@@ -139,7 +139,7 @@ export default function PostCheckoutOnboard() {
         </h1>
         <p className="text-sm text-white/40 text-center mb-8">
           {step === "create-account" && "Set up your credentials to access AURA Connect"}
-          {step === "verify-email" && "We've sent a confirmation link to your email"}
+          
           {step === "verify-2fa" && "Enter the 6-digit code sent to your email"}
         </p>
 
