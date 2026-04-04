@@ -29,6 +29,12 @@ async function searchGooglePlaces(
     textQuery: query,
     maxResultCount: 20,
     languageCode: "en",
+    locationRestriction: {
+      rectangle: {
+        low: { latitude: 24.396308, longitude: -125.0 },
+        high: { latitude: 49.384358, longitude: -66.93457 },
+      },
+    },
   };
 
   const resp = await fetch(url, {
