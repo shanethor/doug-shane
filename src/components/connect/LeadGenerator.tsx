@@ -168,7 +168,7 @@ function GenerateControls({ onGenerate, userIndustry, isSubscriber, hasAgent, in
     }
     return availableSpecializations.slice(0, 2).map((s) => s.id);
   });
-  const [focuses, setFocuses] = useState<string[]>(["new_business"]);
+  const [focuses, setFocuses] = useState<string[]>([]);
   const [selectedPack, setSelectedPack] = useState(50);
   const [generating, setGenerating] = useState(false);
   const [genProgress, setGenProgress] = useState(0);
