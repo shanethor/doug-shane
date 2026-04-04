@@ -8,10 +8,12 @@ import {
   MoreHorizontal, Target, Gift, Home, Crown, LayoutDashboard,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { useConnectNavConfig, ALL_CONNECT_TABS } from "@/hooks/useConnectNavConfig";
 import { SageFloatingChat } from "@/components/SageFloatingChat";
+import { useSubscription } from "@/hooks/useSubscription";
 
 
 const CONNECT_NAV = [
