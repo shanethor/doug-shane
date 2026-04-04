@@ -81,7 +81,7 @@ export function useEngineLeads(tier?: number) {
       let q = supabase
         .from("engine_leads")
         .select("*")
-        .order("score", { ascending: false });
+        .order("detected_at", { ascending: false });
       if (tier) q = q.eq("tier", tier);
       const { data, error } = await q;
       if (error) throw error;

@@ -137,7 +137,9 @@ export function LeadCard({ lead, onAction, onDelete, onEdit, compact }: LeadCard
         <div className="flex items-center justify-between text-[11px]">
           <span className="text-muted-foreground flex items-center gap-1">
             <CalendarClock className="h-3 w-3" />
-            Detected {formatDistanceToNow(new Date(lead.detected_at), { addSuffix: true })}
+            {new Date(lead.detected_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+            {" · "}
+            {formatDistanceToNow(new Date(lead.detected_at), { addSuffix: true })}
           </span>
           {lead.assigned_to && (
             <span className="text-muted-foreground">
