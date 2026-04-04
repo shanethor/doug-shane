@@ -215,6 +215,9 @@ export function ProductLayout({
              const active = isActive(item.to, item.exact);
              const pageKey = item.to === "/connect" ? "connect" : item.to.replace("/connect/", "");
              const gated = isPageGated(pageKey);
+             // For non-subscribed users, only "leads" is available (plus gated logic)
+             const isLeadsPage = pageKey === "leads";
+             const lockedForFree = !isFullAccess && !gated && !isLeadsPage && pageKey !== "pipeline";
              return (
                <Link
                  key={item.to}
@@ -225,24 +228,25 @@ export function ProductLayout({
                  } ${
                    active
                      ? "bg-sidebar-accent text-sidebar-foreground font-medium"
-                     : gated
+                     : gated || lockedForFree
                        ? "text-sidebar-foreground/20 hover:text-sidebar-foreground/30 hover:bg-sidebar-accent/30"
                        : "text-sidebar-foreground/40 hover:text-sidebar-foreground/70 hover:bg-sidebar-accent/50"
                  }`}
                >
-                 {gated ? <Lock className="h-4 w-4 shrink-0 opacity-40" /> : <item.icon className="h-4 w-4 shrink-0" />}
+                 {gated ? <Lock className="h-4 w-4 shrink-0 opacity-40" /> : lockedForFree ? <Lock className="h-4 w-4 shrink-0 opacity-30" /> : <item.icon className="h-4 w-4 shrink-0" />}
                   {!collapsed && (
                      <span className="flex items-center gap-2">
                        {item.label}
                        {gated && <span className="text-[8px] px-1 py-0.5 rounded bg-muted text-muted-foreground">Soon</span>}
-                       {!gated && item.beta && <span className="text-[8px] px-1 py-0.5 rounded bg-primary/20 text-primary font-semibold">Beta</span>}
-                       {!gated && item.premium && <Crown className="h-3 w-3 text-amber-400" />}
+                       {lockedForFree && <span className="text-[8px] px-1 py-0.5 rounded bg-muted text-muted-foreground">Pro</span>}
+                       {!gated && !lockedForFree && item.beta && <span className="text-[8px] px-1 py-0.5 rounded bg-primary/20 text-primary font-semibold">Beta</span>}
+                       {!gated && !lockedForFree && item.premium && <Crown className="h-3 w-3 text-amber-400" />}
+                       {!gated && !lockedForFree && isLeadsPage && !isFullAccess && <Badge className="text-[7px] px-1 py-0 bg-emerald-500/15 text-emerald-500 border-emerald-500/30">Free</Badge>}
                     </span>
                   )}
                </Link>
              );
            })}
-
            {/* Studio add-on — hidden from nav, dripped via qualification popups */}
         </nav>
 

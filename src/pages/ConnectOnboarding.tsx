@@ -363,6 +363,7 @@ function IndustryStep({
   onSubmitRequest: () => void;
 }) {
   const verticalConfig = CONNECT_VERTICALS.find(v => v.id === selectedVertical);
+  const [industryExpanded, setIndustryExpanded] = useState(!selectedVertical);
 
   const filtered = CONNECT_VERTICALS.filter(
     (v) =>
@@ -374,6 +375,18 @@ function IndustryStep({
     setSelectedSubVerticals((prev) =>
       prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]
     );
+
+  // When vertical is selected, collapse industry and show specializations
+  const handleSelectVertical = (id: string) => {
+    setSelectedVertical(id);
+    setVerticalSearch("");
+    const config = CONNECT_VERTICALS.find(v => v.id === id);
+    if (config) {
+      setSelectedSubVerticals(config.subVerticals.slice(0, 2).map((sv) => sv.id));
+    }
+    setIndustryExpanded(false);
+    setShowRequestInput(false);
+  };
 
   return (
     <div className="text-center space-y-5">
@@ -387,43 +400,65 @@ function IndustryStep({
         </p>
       </div>
 
-      {/* Search */}
-      <div className="relative max-w-sm mx-auto">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-        <Input
-          value={verticalSearch}
-          onChange={(e) => setVerticalSearch(e.target.value)}
-          placeholder="Search verticals…"
-          className="pl-9 h-10 bg-muted/30 border-border"
-        />
-      </div>
+      {/* Industry selection — collapsible after selection */}
+      {selectedVertical && !industryExpanded ? (
+        <button
+          onClick={() => setIndustryExpanded(true)}
+          className="w-full max-w-sm mx-auto p-3 rounded-xl border border-[hsl(140_12%_42%)] bg-[hsl(140_12%_42%/0.08)] flex items-center justify-between text-left transition-all hover:bg-[hsl(140_12%_42%/0.12)]"
+        >
+          <div className="flex items-center gap-2">
+            <Check className="h-4 w-4 text-[hsl(140_12%_58%)] shrink-0" />
+            <span className="text-sm font-medium">{verticalConfig?.label}</span>
+          </div>
+          <span className="text-[10px] text-muted-foreground">Change ›</span>
+        </button>
+      ) : (
+        <div className="space-y-3">
+          {/* Search */}
+          <div className="relative max-w-sm mx-auto">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+            <Input
+              value={verticalSearch}
+              onChange={(e) => setVerticalSearch(e.target.value)}
+              placeholder="Search verticals…"
+              className="pl-9 h-10 bg-muted/30 border-border"
+            />
+          </div>
 
-      {/* Vertical list */}
-      <div className="max-h-48 overflow-y-auto space-y-1.5 text-left max-w-sm mx-auto pr-1">
-        {filtered.map((v) => (
-          <button
-            key={v.id}
-            onClick={() => {
-              setSelectedVertical(v.id);
-              setVerticalSearch("");
-              setSelectedSubVerticals(v.subVerticals.slice(0, 2).map((sv) => sv.id));
-            }}
-            className={`w-full p-3 rounded-xl border transition-all text-left ${
-              selectedVertical === v.id
-                ? "border-[hsl(140_12%_42%)] bg-[hsl(140_12%_42%/0.08)]"
-                : "border-border hover:border-muted-foreground/30 bg-muted/20"
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              {selectedVertical === v.id && (
-                <Check className="h-4 w-4 text-[hsl(140_12%_58%)] shrink-0" />
-              )}
-              <span className="text-sm font-medium">{v.label}</span>
-            </div>
-            <p className="text-[10px] text-muted-foreground mt-0.5 pl-6">{v.description}</p>
-          </button>
-        ))}
-      </div>
+          {/* Vertical list */}
+          <div className="max-h-48 overflow-y-auto space-y-1.5 text-left max-w-sm mx-auto pr-1">
+            {filtered.map((v) => (
+              <button
+                key={v.id}
+                onClick={() => handleSelectVertical(v.id)}
+                className={`w-full p-3 rounded-xl border transition-all text-left ${
+                  selectedVertical === v.id
+                    ? "border-[hsl(140_12%_42%)] bg-[hsl(140_12%_42%/0.08)]"
+                    : "border-border hover:border-muted-foreground/30 bg-muted/20"
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  {selectedVertical === v.id && (
+                    <Check className="h-4 w-4 text-[hsl(140_12%_58%)] shrink-0" />
+                  )}
+                  <span className="text-sm font-medium">{v.label}</span>
+                </div>
+                <p className="text-[10px] text-muted-foreground mt-0.5 pl-6">{v.description}</p>
+              </button>
+            ))}
+          </div>
+
+          {/* Collapse button when a vertical is selected */}
+          {selectedVertical && (
+            <button
+              onClick={() => setIndustryExpanded(false)}
+              className="text-xs text-[hsl(140_12%_58%)] hover:underline font-medium"
+            >
+              Done — continue to specializations ↓
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Request another industry */}
       {!requestSubmitted ? (
@@ -465,11 +500,14 @@ function IndustryStep({
         </div>
       )}
 
-      {/* Sub-verticals */}
+      {/* Sub-verticals — shown prominently when industry is collapsed */}
       {verticalConfig && verticalConfig.subVerticals.length > 0 && (
         <div className="text-left max-w-sm mx-auto space-y-2">
-          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Specializations</p>
-          <div className="grid grid-cols-2 gap-1.5 max-h-32 overflow-y-auto">
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+            Specializations
+            <span className="ml-2 text-foreground">{selectedSubVerticals.length}/{verticalConfig.subVerticals.length}</span>
+          </p>
+          <div className={`grid grid-cols-2 gap-1.5 overflow-y-auto ${!industryExpanded ? "max-h-52" : "max-h-32"}`}>
             {verticalConfig.subVerticals.map((sv) => (
               <button
                 key={sv.id}
@@ -485,7 +523,7 @@ function IndustryStep({
             ))}
           </div>
           <p className="text-[10px] text-muted-foreground">
-            {selectedSubVerticals.length} selected
+            {selectedSubVerticals.length} selected — these focus your lead targeting
           </p>
         </div>
       )}
