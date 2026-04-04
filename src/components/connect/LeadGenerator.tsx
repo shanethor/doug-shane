@@ -1160,11 +1160,13 @@ function ResultsTable({ latestBatchId }: { latestBatchId: string | null }) {
 }
 
 /* ── Purchase section shown after free leads generated ── */
-function PurchaseSection({ userIndustry, isSubscriber, hasAgent, onGenerate }: {
+function PurchaseSection({ userIndustry, isSubscriber, hasAgent, onGenerate, userStates, userSpecializations }: {
   userIndustry: string;
   isSubscriber: boolean;
   hasAgent: boolean;
   onGenerate?: (opts: any) => void;
+  userStates?: string[];
+  userSpecializations?: string[];
 }) {
   const pricing = getVerticalPricing(userIndustry);
   const packs = getLeadPacks(pricing.basePrice, isSubscriber, hasAgent);
@@ -1173,10 +1175,87 @@ function PurchaseSection({ userIndustry, isSubscriber, hasAgent, onGenerate }: {
   const [progress, setProgress] = useState(0);
   const [step, setStep] = useState("");
 
-  const handlePurchase = () => {
-    // Delegate to the same full scanning logic used by "Generate Free Leads"
-    // so all focus sources are scanned, not just Google Maps
-    onGenerate?.({ volume: selectedPack });
+  const verticalSearchTerms = useMemo(() => {
+    const terms = [pricing.label];
+    return terms;
+  }, [pricing.label]);
+
+  const handlePurchase = async () => {
+    setPurchasing(true);
+    setProgress(0);
+    setStep("Initializing purchased scan…");
+    try {
+      const states = userStates?.length ? userStates : [];
+      const settings: Record<string, string> = {
+        states: states.join(", ") || "NY, CA, TX, FL",
+        industries: verticalSearchTerms.join(", "),
+        keywords: `${verticalSearchTerms[0] || pricing.label} leads`,
+        entity_types: "LLC, Corp",
+      };
+
+      let totalFound = 0;
+      const sourceNames: string[] = [];
+      const batchIds: string[] = [];
+
+      setProgress(5);
+      setStep("Connecting to databases…");
+      await new Promise(r => setTimeout(r, 600));
+      setProgress(10);
+
+      // Google Maps first
+      setStep("Scanning businesses on Google Maps…");
+      try {
+        const { data, error } = await supabase.functions.invoke("lead-engine-scan", {
+          body: { source: "Google Maps", settings, enrich: true },
+        });
+        if (error) console.warn("Scan error for Google Maps:", error.message);
+        totalFound += data?.leads_found ?? 0;
+        if (data?.batch_id) batchIds.push(data.batch_id);
+        sourceNames.push("Google Maps");
+      } catch (err: any) {
+        console.warn("Failed scanning Google Maps:", err.message);
+      }
+      setProgress(50);
+
+      // Additional focus sources — use standard sources for the vertical
+      const sourceLabels = ["Business Filings", "Permit Database", "Industry Directory"].filter(l => l !== "Google Maps");
+      for (let i = 0; i < sourceLabels.length; i++) {
+        const source = sourceLabels[i];
+        setStep(`Scanning ${source}…`);
+        setProgress(50 + Math.round(30 * (i / sourceLabels.length)));
+        try {
+          const { data, error } = await supabase.functions.invoke("lead-engine-scan", {
+            body: { source, settings, enrich: true },
+          });
+          if (error) console.warn(`Scan error for ${source}:`, error.message);
+          totalFound += data?.leads_found ?? 0;
+          if (data?.batch_id) batchIds.push(data.batch_id);
+          sourceNames.push(source);
+        } catch (err: any) {
+          console.warn(`Failed scanning ${source}:`, err.message);
+        }
+      }
+
+      setProgress(90);
+      setStep("Scoring & deduplicating…");
+      await new Promise(r => setTimeout(r, 500));
+      setProgress(100);
+      setStep("Complete!");
+
+      onGenerate?.({ volume: selectedPack, leads_found: totalFound, batch_ids: batchIds });
+      if (totalFound > 0) {
+        toast.success(`Found ${totalFound} new leads across ${sourceNames.join(", ")}`);
+      } else {
+        toast.info("No leads found this scan — try different focuses or geography");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Lead generation failed");
+    } finally {
+      await new Promise(r => setTimeout(r, 600));
+      setPurchasing(false);
+      setProgress(0);
+      setStep("");
+    }
   };
 
   const selectedPackData = packs.find(p => p.leads === selectedPack);
@@ -1369,7 +1448,7 @@ export default function LeadGenerator() {
         <div className="lg:col-span-2 space-y-4">
           <ResultsTable latestBatchId={latestBatchId} />
           {/* Show purchase options — always visible so users can buy leads */}
-          <PurchaseSection userIndustry={userIndustry} isSubscriber={subscribed} hasAgent={hasAgent} onGenerate={handleGenerate} />
+          <PurchaseSection userIndustry={userIndustry} isSubscriber={subscribed} hasAgent={hasAgent} onGenerate={handleGenerate} userStates={userStates} userSpecializations={userSpecializations} />
           {showPromo && <AuraAgentLeadPromo />}
         </div>
       </div>
