@@ -225,7 +225,7 @@ export default function ProductAuth() {
                     className="w-full h-11 px-3 text-left text-sm bg-white/5 border border-white/10 rounded-md text-white flex items-center justify-between"
                   >
                     <span className={industry ? "text-white" : "text-white/20"}>
-                      {industry || "Select your industry"}
+                      {industry ? CONNECT_VERTICALS.find(v => v.id === industry)?.label ?? industry : "Select your industry"}
                     </span>
                     <Search className="w-4 h-4 text-white/30" />
                   </button>
@@ -241,15 +241,18 @@ export default function ProductAuth() {
                         />
                       </div>
                       <div className="overflow-y-auto max-h-48">
-                        {filteredIndustries.map((ind) => (
+                        {filteredVerticals.map((v) => (
                           <button
-                            key={ind}
+                            key={v.id}
                             type="button"
-                            onClick={() => { setIndustry(ind); setIndustryOpen(false); setIndustrySearch(""); }}
-                            className={`w-full text-left px-3 py-2 text-sm hover:bg-white/5 flex items-center gap-2 ${industry === ind ? "text-[hsl(140_12%_58%)]" : "text-[#A1A1AA]"}`}
+                            onClick={() => { setIndustry(v.id); setIndustryOpen(false); setIndustrySearch(""); }}
+                            className={`w-full text-left px-3 py-2 text-sm hover:bg-white/5 flex items-center gap-2 ${industry === v.id ? "text-[hsl(140_12%_58%)]" : "text-[#A1A1AA]"}`}
                           >
-                            {industry === ind && <Check className="w-3.5 h-3.5 shrink-0" />}
-                            {ind}
+                            {industry === v.id && <Check className="w-3.5 h-3.5 shrink-0" />}
+                            <div>
+                              <span className="block">{v.label}</span>
+                              <span className="block text-[10px] text-white/30">{v.description}</span>
+                            </div>
                           </button>
                         ))}
                       </div>
