@@ -1032,31 +1032,71 @@ function ResultsTable({ latestBatchId }: { latestBatchId: string | null }) {
 }
 
 /* ── Purchase section shown after free leads generated ── */
-function PurchaseSection({ userIndustry, isSubscriber, hasAgent }: {
+function PurchaseSection({ userIndustry, isSubscriber, hasAgent, onGenerate }: {
   userIndustry: string;
   isSubscriber: boolean;
   hasAgent: boolean;
+  onGenerate?: (opts: any) => void;
 }) {
   const pricing = getVerticalPricing(userIndustry);
   const packs = getLeadPacks(pricing.basePrice, isSubscriber, hasAgent);
   const [selectedPack, setSelectedPack] = useState(50);
   const [purchasing, setPurchasing] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [step, setStep] = useState("");
 
   const handlePurchase = async () => {
     setPurchasing(true);
+    setProgress(0);
+    setStep("Initializing scan…");
     try {
-      // STRIPE DISABLED FOR TESTING — leads granted without charge
-      // const packData = packs.find(p => p.leads === selectedPack);
-      // const { data, error } = await supabase.functions.invoke("create-lead-checkout", {
-      //   body: { pack: selectedPack, price: (packData?.price ?? 0) * 100, vertical: pricing.label },
-      // });
-      // if (error) throw new Error(error.message);
-      // if (data?.url) window.open(data.url, "_blank");
-      toast.success(`${selectedPack} ${pricing.label} leads purchased (test mode — no charge)`);
+      const settings: Record<string, string> = {
+        states: "NY, CA, TX, FL",
+        industries: pricing.label,
+        keywords: `${pricing.label} leads`,
+        entity_types: "LLC, Corp",
+      };
+
+      const source = "Business Filings";
+      setProgress(10);
+      setStep(`Scanning ${source}…`);
+
+      let totalFound = 0;
+      const batchIds: string[] = [];
+
+      try {
+        const { data, error } = await supabase.functions.invoke("lead-engine-scan", {
+          body: { source, settings, enrich: true },
+        });
+        if (error) console.warn(`Scan error:`, error.message);
+        totalFound += data?.leads_found ?? 0;
+        if (data?.batch_id) batchIds.push(data.batch_id);
+      } catch (err: any) {
+        console.warn(`Failed scanning:`, err.message);
+      }
+
+      setProgress(80);
+      setStep("Enriching contacts…");
+      await new Promise(r => setTimeout(r, 800));
+      setProgress(95);
+      setStep("Scoring…");
+      await new Promise(r => setTimeout(r, 400));
+      setProgress(100);
+      setStep("Complete!");
+
+      onGenerate?.({ volume: selectedPack, leads_found: totalFound, batch_ids: batchIds });
+      if (totalFound > 0) {
+        toast.success(`Found ${totalFound} new leads`);
+      } else {
+        toast.info("No leads found — try again shortly");
+      }
     } catch (err: any) {
       toast.error(err.message || "Failed to process purchase");
     } finally {
+      await new Promise(r => setTimeout(r, 600));
       setPurchasing(false);
+      setProgress(0);
+      setStep("");
     }
   };
 
@@ -1118,13 +1158,22 @@ function PurchaseSection({ userIndustry, isSubscriber, hasAgent }: {
             </div>
           </button>
         ))}
-        <Button onClick={handlePurchase} disabled={purchasing} className="w-full gap-1.5 mt-2">
-          {purchasing ? (
-            <><Loader2 className="h-4 w-4 animate-spin" /> Opening checkout…</>
-          ) : (
-            <>Purchase {selectedPack} Leads — ${selectedPackData?.price.toLocaleString()}</>
-          )}
-        </Button>
+        {purchasing ? (
+          <div className="space-y-2 mt-2">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-muted-foreground flex items-center gap-1.5">
+                <Sparkles className="h-3.5 w-3.5 animate-pulse text-primary" />
+                {step}
+              </span>
+              <span className="font-medium text-foreground">{progress}%</span>
+            </div>
+            <Progress value={progress} className="h-2" />
+          </div>
+        ) : (
+          <Button onClick={handlePurchase} disabled={purchasing} className="w-full gap-1.5 mt-2">
+            Purchase {selectedPack} Leads — ${selectedPackData?.price.toLocaleString()}
+          </Button>
+        )}
       </CardContent>
     </Card>
   );
