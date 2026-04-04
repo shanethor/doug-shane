@@ -253,7 +253,7 @@ export default function PostCheckoutOnboard() {
                 setSending2fa(true);
                 try {
                   await supabase.functions.invoke("verify-2fa", {
-                    body: { email, action: "send" },
+                    body: { action: "send_code" },
                   });
                   toast.success("New code sent!");
                 } catch {
