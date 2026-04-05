@@ -82,7 +82,7 @@ function buildGraph() {
     "Doug","James","Priya","Tom","Sarah","Alex","Maria","Chris","Jordan","Sam",
     "Casey","Pat","Quinn","Riley","Morgan","Avery","Blake","Dana","Ellis","Frankie",
     "Harper","Jules","Kai","Logan","Noel","Oakley","Peyton","Reese","Skyler","Tatum",
-    "Val","Wren","Zion","Ari","Rowan","Sage","Emery","Finley","Hayden","Jamie",
+    "Val","Wren","Zion","Ari","Rowan","Clark","Emery","Finley","Hayden","Jamie",
     "Kendall","Lane","Micah","Nico","Parker","Remy","Shea","Taylor","Uma","Vince",
     "Wade","Xander","Yara","Brynn","Cade","Dex","Eve","Flynn","Gia","Hugo",
     "Iris","Jude","Kira","Leo","Mila","Nate","Opal","Rex","Sia","Theo",

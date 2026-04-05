@@ -1096,14 +1096,14 @@ export default function SpotlightFlyerWizard({ onClose, brands, editFlyerId, ini
                   <DialogHeader>
                     <DialogTitle className="flex items-center gap-2 text-sm text-white">
                       <Sparkles className="h-4 w-4" style={{ color: "hsl(140 12% 58%)" }} />
-                      Sage — {sagePostPlatform.charAt(0).toUpperCase() + sagePostPlatform.slice(1)} Post
+                      Clark — {sagePostPlatform.charAt(0).toUpperCase() + sagePostPlatform.slice(1)} Post
                     </DialogTitle>
                   </DialogHeader>
                   <div className="space-y-3 mt-2">
                     {sageGenerating ? (
                       <div className="flex items-center justify-center py-8 gap-2">
                         <Loader2 className="h-5 w-5 animate-spin" style={{ color: "hsl(140 12% 50%)" }} />
-                        <span className="text-xs" style={{ color: "hsl(240 5% 60%)" }}>Sage is crafting your post...</span>
+                        <span className="text-xs" style={{ color: "hsl(240 5% 60%)" }}>Clark is crafting your post...</span>
                       </div>
                     ) : (
                       <>

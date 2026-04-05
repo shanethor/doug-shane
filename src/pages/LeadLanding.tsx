@@ -192,7 +192,7 @@ export default function LeadLanding() {
               <Target className="h-8 w-8" style={{ color: "hsl(140 12% 55%)" }} />
             </div>
             <div className="flex-1 text-center sm:text-left">
-              <h3 className="text-lg font-bold text-white mb-1">Sage Gameplan™ Included</h3>
+              <h3 className="text-lg font-bold text-white mb-1">Clark Gameplan™ Included</h3>
               <p className="text-sm" style={{ color: "hsl(240 5% 55%)" }}>
                 Every purchased lead comes with an AI-powered outreach-to-close gameplan from Sage, 
                 our intelligent assistant. Get personalized email scripts, call frameworks, and 

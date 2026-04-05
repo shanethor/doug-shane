@@ -63,11 +63,11 @@ export default function ConnectDashboard() {
   const [profile, setProfile] = useState<any>(null);
   const [leads, setLeads] = useState<any[]>([]);
   const [auditEvents, setAuditEvents] = useState<any[]>([]);
-  const [weekStats, setWeekStats] = useState({ leadsAdded: 0, leadsGenerated: 0, contentCreated: 0, sageChats: 0 });
+  const [weekStats, setWeekStats] = useState({ leadsAdded: 0, leadsGenerated: 0, contentCreated: 0, clarkChats: 0 });
   const [loading, setLoading] = useState(true);
   const [staleDismissed, setStaleDismissed] = useState(false);
 
-  // Sage quick ask state
+  // Clark quick ask state
   const [sageInput, setSageInput] = useState("");
   const [sageResponse, setSageResponse] = useState("");
   const [sageLoading, setSageLoading] = useState(false);
@@ -104,7 +104,7 @@ export default function ConnectDashboard() {
         leadsAdded: weekLeadsRes.count || 0,
         leadsGenerated: weekGenRes.count || 0,
         contentCreated: 0,
-        sageChats: sageConvRes.count || 0,
+        clarkChats: sageConvRes.count || 0,
       });
       setLoading(false);
     };
@@ -192,8 +192,8 @@ export default function ConnectDashboard() {
     }
   };
 
-  // Sage quick ask
-  const sendSage = useCallback(async (text: string) => {
+  // Clark quick ask
+  const sendClark = useCallback(async (text: string) => {
     if (!text.trim() || sageLoading) return;
     setSageInput("");
     setSageResponse("");
@@ -298,7 +298,7 @@ export default function ConnectDashboard() {
           { label: "Pipeline", to: "/connect/pipeline", icon: BarChart3 },
           { label: "Leads", to: "/connect/leads", icon: Target },
           { label: "Create", to: "/connect/create", icon: Palette },
-          { label: "Sage", to: "/connect/sage", icon: Sparkles },
+          { label: "Clark", to: "/connect/sage", icon: Sparkles },
         ].map(n => (
           <Button key={n.label} variant="outline" size="sm" className="gap-1.5 text-xs border-border text-muted-foreground hover:text-foreground hover:bg-muted/50" onClick={() => navigate(n.to)}>
             <n.icon className="h-3.5 w-3.5" />
@@ -461,12 +461,12 @@ export default function ConnectDashboard() {
         </Card>
       </div>
 
-      {/* ═══ ZONE E — Sage Quick Ask ═══ */}
+      {/* ═══ ZONE E — Clark Quick Ask ═══ */}
       <Card className="bg-card border-border">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium text-foreground flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-primary" />
-            Ask Sage
+            Ask Clark
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
@@ -474,11 +474,11 @@ export default function ConnectDashboard() {
             <Input
               value={sageInput}
               onChange={(e) => setSageInput(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendSage(sageInput); } }}
-              placeholder="Ask Sage anything about your pipeline, leads, or content..."
+              onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendClark(sageInput); } }}
+              placeholder="Ask Clark anything about your pipeline, leads, or content..."
               className="text-sm bg-muted/20 border-border"
             />
-            <Button size="icon" className="shrink-0 h-9 w-9" disabled={!sageInput.trim() && !sageLoading} onClick={() => sendSage(sageInput)}>
+            <Button size="icon" className="shrink-0 h-9 w-9" disabled={!sageInput.trim() && !sageLoading} onClick={() => sendClark(sageInput)}>
               {sageLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
             </Button>
           </div>
@@ -488,7 +488,7 @@ export default function ConnectDashboard() {
             {sageSuggestions.map((s, i) => (
               <button
                 key={i}
-                onClick={() => sendSage(s.message)}
+                onClick={() => sendClark(s.message)}
                 className="px-3 py-1.5 rounded-lg text-[11px] border border-border bg-muted/20 hover:bg-muted/40 transition-colors text-muted-foreground hover:text-foreground truncate max-w-[250px]"
               >
                 {s.label}
@@ -501,7 +501,7 @@ export default function ConnectDashboard() {
             <div className="max-h-[200px] overflow-y-auto rounded-lg border border-border bg-muted/10 p-3">
               {sageLoading && !sageResponse && (
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" /> Sage is thinking...
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" /> Clark is thinking...
                 </div>
               )}
               {sageResponse && (
@@ -510,7 +510,7 @@ export default function ConnectDashboard() {
                 </div>
               )}
               <button onClick={() => navigate("/connect/sage")} className="flex items-center gap-1 text-[10px] text-primary hover:underline mt-2">
-                Open full Sage <ArrowRight className="h-3 w-3" />
+                Open full Clark <ArrowRight className="h-3 w-3" />
               </button>
             </div>
           )}
@@ -551,7 +551,7 @@ export default function ConnectDashboard() {
               { label: "Leads Added", value: weekStats.leadsAdded, icon: Plus },
               { label: "Generated", value: weekStats.leadsGenerated, icon: Sparkles },
               { label: "Content", value: weekStats.contentCreated, icon: PenLine },
-              { label: "Sage Chats", value: weekStats.sageChats, icon: MessageSquare },
+              { label: "Clark Chats", value: weekStats.clarkChats, icon: MessageSquare },
             ].map(s => (
               <div key={s.label} className="flex items-center gap-2 p-2.5 rounded-lg bg-muted/20">
                 <s.icon className="h-3.5 w-3.5 text-muted-foreground" />

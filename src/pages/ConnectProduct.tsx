@@ -201,7 +201,7 @@ export default function ConnectProduct() {
                   {page === "email" && (isPageGated("email") ? <ComingSoonGate pageName="Email" /> : <DemoEmailTab />)}
                   {page === "calendar" && (isPageGated("calendar") ? <ComingSoonGate pageName="Calendar" /> : <SmartCalendar />)}
                   {page === "create" && (isPageGated("create") ? <ComingSoonGate pageName="Create" /> : <DemoSpotlightTab />)}
-                  {page === "sage" && (isPageGated("sage") ? <ComingSoonGate pageName="Sage" /> : <DemoAssistantTab onNavigate={handleSageNavigate} />)}
+                  {page === "sage" && (isPageGated("sage") ? <ComingSoonGate pageName="Clark" /> : <DemoAssistantTab onNavigate={handleSageNavigate} />)}
                   {page === "studio" && <StudioUpsellPage isConnectSubscriber={subscribed} />}
                 </>
               )}

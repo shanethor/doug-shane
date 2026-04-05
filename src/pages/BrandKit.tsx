@@ -136,7 +136,7 @@ export default function BrandKit() {
             <h2 className="text-2xl font-bold">Color Palette</h2>
           </div>
           <p className="text-sm text-muted-foreground">
-            AURA uses a "Sage" palette as its signature color identity. The system supports both light and dark modes with corresponding token swaps. Click any swatch to copy the hex value.
+            AURA uses a "Clark" palette as its signature color identity. The system supports both light and dark modes with corresponding token swaps. Click any swatch to copy the hex value.
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-6">
             {COLORS.map(c => <ColorSwatch key={c.name} color={c} />)}

@@ -362,7 +362,7 @@ export default function LandingPage() {
                     points: [
                       "B2B decision-maker leads matched to your service offering",
                       "Proposal generation and project pipeline tracking",
-                      "Sage AI coaching tailored to consultative selling",
+                      "Clark AI coaching tailored to consultative selling",
                       "Engagement-based outreach with follow-up automation",
                     ],
                   },
@@ -582,11 +582,11 @@ export default function LandingPage() {
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ background: "hsl(140 12% 52%)" }} />
-                      AI brand studio for flyers, social graphics, and Sage‑powered captions and posting.
+                      AI brand studio for flyers, social graphics, and Clark‑powered captions and posting.
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ background: "hsl(140 12% 52%)" }} />
-                      Sage AI assistant for real‑time coaching, content generation, and workflow guidance.
+                      Clark AI assistant for real‑time coaching, content generation, and workflow guidance.
                     </li>
                     <li className="flex items-start gap-2">
                       <span className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ background: "hsl(140 12% 52%)" }} />
@@ -607,7 +607,7 @@ export default function LandingPage() {
                       { label: "Calendar", icon: "📅" },
                       { label: "Outreach", icon: "📤" },
                       { label: "Create", icon: "✨" },
-                      { label: "Sage", icon: "💬" },
+                      { label: "Clark", icon: "💬" },
                     ].map((m) => (
                       <span key={m.label} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border" style={{ borderColor: "hsl(140 12% 42% / 0.2)", background: "hsl(140 12% 42% / 0.06)", color: "hsl(140 12% 72%)" }}>
                         <span>{m.icon}</span>{m.label}
@@ -648,7 +648,7 @@ export default function LandingPage() {
                       { t: "Relationship graph", d: "Map every connection across email, social, and calendar into one unified network." },
                       { t: "AI-powered email", d: "Gmail, Outlook, or AURA view — with smart summarize, AI reply, and pipeline tagging built in." },
                       { t: "Outreach cadences", d: "Tiered contact strategies with automated follow-ups and connection tracking." },
-                      { t: "Create & post", d: "AI brand studio with logo extraction, social resizing, and Sage-powered captions." },
+                      { t: "Create & post", d: "AI brand studio with logo extraction, social resizing, and Clark-powered captions." },
                     ].map((f) => (
                       <div key={f.t} className="p-4 border rounded-xl" style={{ background: "hsl(140 12% 42% / 0.04)", borderColor: "hsl(140 12% 42% / 0.1)" }}>
                         <div className="text-[13px] font-semibold text-white mb-1">{f.t}</div>

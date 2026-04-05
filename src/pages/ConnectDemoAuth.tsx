@@ -270,7 +270,7 @@ const FEATURES = [
   { icon: BarChart3, label: "Pipeline", delay: "0.5s" },
   { icon: Mail, label: "Email & Calendar", delay: "0.7s" },
   { icon: SparklesIcon, label: "Create", delay: "0.9s" },
-  { icon: Zap, label: "Sage", delay: "1.1s" },
+  { icon: Zap, label: "Clark", delay: "1.1s" },
 ];
 const INDUSTRIES = [
   "Accounting", "Advertising & Marketing", "Agriculture", "Architecture", "Automotive",

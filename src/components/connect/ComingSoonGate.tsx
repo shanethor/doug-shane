@@ -18,7 +18,7 @@ const COMING_SOON_FEATURES = [
   { icon: Mail, label: "Email", desc: "Smart inbox with AI classification and auto-responses" },
   { icon: Calendar, label: "Calendar", desc: "Meeting prep, context panels, and smart scheduling" },
   { icon: Sparkles, label: "Create", desc: "Marketing collateral, flyers, and campaign tools" },
-  { icon: Zap, label: "Sage", desc: "AI-powered sales coach and strategy assistant" },
+  { icon: Zap, label: "Clark", desc: "AI-powered sales coach and strategy assistant" },
 ];
 
 const SUBSCRIPTION_PERKS = [
