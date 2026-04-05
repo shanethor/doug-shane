@@ -187,6 +187,7 @@ export default function ConnectProduct() {
           }}>
             <Suspense fallback={<PageLoader />}>
               {page === "dashboard" && <ConnectDashboard />}
+              {page === "lead-detail" && <ConnectLeadDetail />}
               {page === "leads" && <ConnectLeads />}
               {page !== "leads" && page !== "dashboard" && !canAccessFullSite ? (
                 <ComingSoonGate pageName={page.charAt(0).toUpperCase() + page.slice(1)} />
