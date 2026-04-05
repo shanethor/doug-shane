@@ -807,6 +807,7 @@ Deno.serve(async (req) => {
             console.warn(`[lead-engine-scan] Serper query failed:`, e);
           }
         }
+        } // end if (allPlaces.length < 10)
       }
 
       console.log(`[lead-engine-scan] Google Maps total unique: ${allPlaces.length}`);
