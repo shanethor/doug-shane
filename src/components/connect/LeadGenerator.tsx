@@ -3,7 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import SageGameplan from "./SageGameplan";
-import LeadOutreachPanel from "./LeadOutreachPanel";
+import AuraAgentLeadPromo from "./AuraAgentLeadPromo";
 import AuraAgentLeadPromo from "./AuraAgentLeadPromo";
 import AuraAgentUpsellModal from "@/components/AuraAgentUpsellModal";
 import { useStudioQualification } from "@/hooks/useStudioQualification";
