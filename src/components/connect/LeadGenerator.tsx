@@ -1226,6 +1226,7 @@ const MASTER_EMAILS = ["shane@houseofthor.com", "dwenz17@gmail.com"];
 
 export default function LeadGenerator() {
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const { subscribed, hasAgent } = useSubscription();
   const [userIndustry, setUserIndustry] = useState<string>("general");
   const [userSpecializations, setUserSpecializations] = useState<string[] | null>(null);
@@ -1235,6 +1236,7 @@ export default function LeadGenerator() {
   const [hasGenerated, setHasGenerated] = useState(false);
   const [showAgentDrip, setShowAgentDrip] = useState(false);
   const [latestBatchId, setLatestBatchId] = useState<string | null>(null);
+  const [showPurchasePrompt, setShowPurchasePrompt] = useState(false);
   const { data: studioQual } = useStudioQualification();
 
   useEffect(() => {
@@ -1285,6 +1287,10 @@ export default function LeadGenerator() {
     if (opts?.batch_ids?.length) {
       setLatestBatchId(opts.batch_ids[opts.batch_ids.length - 1]);
     }
+    // Show purchase prompt after generation
+    if (opts?.leads_found > 0) {
+      setShowPurchasePrompt(true);
+    }
     qc.invalidateQueries({ queryKey: ["engine-leads"] });
     qc.invalidateQueries({ queryKey: ["engine-tier-summary"] });
     qc.invalidateQueries({ queryKey: ["engine-kpis"] });
@@ -1297,10 +1303,56 @@ export default function LeadGenerator() {
     }, 12000);
   };
 
+  const handlePurchaseLeads = async (count: number) => {
+    // In test mode: just claim the leads (no Stripe charge)
+    // The leads stay in engine_leads for the user; we don't need to move them
+    toast.success(`${count} lead${count !== 1 ? "s" : ""} claimed! They're yours to work.`);
+    setShowPurchasePrompt(false);
+  };
+
+  const handleDeclinePurchase = async () => {
+    // Move all latest-batch leads to unreached_leads pool for admin/other users
+    if (latestBatchId && existingLeads?.length) {
+      const batchLeads = existingLeads.filter(l => l.batch_id === latestBatchId);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user && batchLeads.length > 0) {
+        const unreachedRows = batchLeads.map(l => ({
+          engine_lead_id: l.id,
+          company: l.company,
+          contact_name: l.contact_name,
+          email: l.email,
+          phone: l.phone,
+          state: l.state,
+          industry: l.industry,
+          est_premium: l.est_premium || 0,
+          signal: l.signal,
+          source: l.source,
+          source_url: l.source_url,
+          score: l.score || 0,
+          original_owner_id: user.id,
+          original_batch_id: l.batch_id,
+          vertical: userIndustry,
+          specializations: userSpecializations || [],
+        }));
+        
+        await supabase.from("unreached_leads").insert(unreachedRows as any);
+        
+        // Remove from user's engine_leads
+        for (const l of batchLeads) {
+          await supabase.from("engine_leads").delete().eq("id", l.id);
+        }
+        qc.invalidateQueries({ queryKey: ["engine-leads"] });
+        toast.info(`${batchLeads.length} leads released to the marketplace`);
+      }
+    }
+    setShowPurchasePrompt(false);
+  };
+
   if (loading) return <Skeleton className="h-40 w-full" />;
 
   const pricing = getVerticalPricing(userIndustry);
   const showPromo = !hasAgent && studioQual?.qualified;
+  const latestLeads = latestBatchId && existingLeads ? existingLeads.filter(l => l.batch_id === latestBatchId) : [];
 
   return (
     <div className="space-y-6">
@@ -1332,8 +1384,17 @@ export default function LeadGenerator() {
         </div>
         <div className="lg:col-span-2 space-y-4">
           <ResultsTable latestBatchId={latestBatchId} />
-          {/* Show purchase options — always visible so users can buy leads */}
-          <PurchaseSection userIndustry={userIndustry} isSubscriber={subscribed} hasAgent={hasAgent} onGenerate={handleGenerate} userStates={userStates} userSpecializations={userSpecializations} />
+          {/* Post-generation purchase prompt */}
+          {showPurchasePrompt && latestLeads.length > 0 && (
+            <PurchasePrompt
+              leads={latestLeads}
+              userIndustry={userIndustry}
+              isSubscriber={subscribed}
+              hasAgent={hasAgent}
+              onPurchase={handlePurchaseLeads}
+              onDecline={handleDeclinePurchase}
+            />
+          )}
           {showPromo && <AuraAgentLeadPromo />}
         </div>
       </div>
