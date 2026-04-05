@@ -298,7 +298,7 @@ export default function ConnectDashboard() {
           { label: "Pipeline", to: "/connect/pipeline", icon: BarChart3 },
           { label: "Leads", to: "/connect/leads", icon: Target },
           { label: "Create", to: "/connect/create", icon: Palette },
-          { label: "Clark", to: "/connect/sage", icon: Sparkles },
+          { label: "Clark", to: "/connect/clark", icon: Sparkles },
         ].map(n => (
           <Button key={n.label} variant="outline" size="sm" className="gap-1.5 text-xs border-border text-muted-foreground hover:text-foreground hover:bg-muted/50" onClick={() => navigate(n.to)}>
             <n.icon className="h-3.5 w-3.5" />

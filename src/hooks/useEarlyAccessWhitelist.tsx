@@ -15,7 +15,7 @@ const MASTER_EMAILS = [
 ];
 
 // Pages that are always accessible (not gated)
-const UNGATED_PAGES = ["pipeline", "leads", "studio", "property", "sage", "create"];
+const UNGATED_PAGES = ["pipeline", "leads", "studio", "property", "clark", "create"];
 
 export function useEarlyAccessWhitelist() {
   const { user } = useAuth();
@@ -46,7 +46,7 @@ export function useEarlyAccessWhitelist() {
   /** Returns list of page keys the user can actually access */
   const getAccessiblePages = (): string[] => {
     if (isMaster) {
-      return ["connect", "intelligence", "pipeline", "email", "calendar", "create", "leads", "property", "sage"];
+      return ["connect", "intelligence", "pipeline", "email", "calendar", "create", "leads", "property", "clark"];
     }
     const pages = [...UNGATED_PAGES.filter(p => p !== "property")];
     if (canSeeProperty()) pages.push("property");

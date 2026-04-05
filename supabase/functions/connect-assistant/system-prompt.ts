@@ -43,7 +43,7 @@ Coverage lines: Primary Auto Liability, Physical Damage, Motor Cargo, Bobtail/No
   franchise: "You are advising a franchise-focused producer. Key triggers: new FTC FDD filings, new franchise entity formations, multi-unit expansion permits. Coverage nuances: franchise agreements mandate specific minimums, multi-location property schedules. Coverage lines: GL, Property, WC, Commercial Auto, Umbrella, EPLI, Franchise-Specific E&O.",
 };
 
-function getVerticalSageContext(verticalId: string): string {
+function getVerticalClarkContext(verticalId: string): string {
   return VERTICAL_SAGE_CONTEXT[verticalId] || "General business vertical — provide broad commercial insurance and business development advice.";
 }
 
@@ -98,12 +98,12 @@ ${(context.branding.list || []).map((b: any) => `- "${b.name}" — Brand: ${b.br
 
   const verticalSection = context?.userVertical?.connectVertical ? `
 ## YOUR INDUSTRY VERTICAL: ${context.userVertical.connectVertical}
-${getVerticalSageContext(context.userVertical.connectVertical)}
+${getVerticalClarkContext(context.userVertical.connectVertical)}
 ` : `
 ## VERTICAL: No industry vertical selected yet. Suggest the user set their vertical in Settings.
 `;
 
-  return `You are **Sage**, an in-app AI copilot for AURA's Connect workspace. Your job is to both answer questions and TAKE ACTION inside the app by calling the appropriate internal tools and then narrating what you did in plain English.
+  return `You are **Clark**, an in-app AI copilot for AURA's Connect workspace. Your job is to both answer questions and TAKE ACTION inside the app by calling the appropriate internal tools and then narrating what you did in plain English.
 
 CURRENT DATE AND TIME: ${dateStr} at ${timeStr}
 

@@ -117,7 +117,7 @@ export function SageFloatingChat() {
         }
       }
     } catch (error: any) {
-      console.error("Sage calendar action failed:", error);
+      console.error("Clark calendar action failed:", error);
       toast.error(error?.message || "Failed to create calendar event");
     }
   }, [user]);
@@ -134,7 +134,7 @@ export function SageFloatingChat() {
     abortRef.current = ctrl;
     let full = "";
 
-    // Build accessible pages context so Sage only helps with what the user can see
+    // Build accessible pages context so Clark only helps with what the user can see
     const accessiblePages = getAccessiblePages();
     const scopeContext: Msg = {
       role: "user",
@@ -172,7 +172,7 @@ export function SageFloatingChat() {
     setView("support");
   };
 
-  // Sage popup toggle from settings
+  // Clark popup toggle from settings
   const [enabled, setEnabledState] = useState(() => {
     try { return localStorage.getItem("sage-popup-enabled") !== "false"; } catch { return true; }
   });
@@ -205,7 +205,7 @@ export function SageFloatingChat() {
         onClick={() => setMinimized(false)}
       >
         <Zap className="h-4 w-4" style={{ color: "hsl(140 12% 58%)" }} />
-        <span className="text-xs font-medium text-white">Sage</span>
+        <span className="text-xs font-medium text-white">Clark</span>
         <Maximize2 className="h-3 w-3 text-white/50" />
       </div>
     );
@@ -222,7 +222,7 @@ export function SageFloatingChat() {
       <div className="flex items-center justify-between px-3 py-2 shrink-0" style={{ borderBottom: "1px solid hsl(240 6% 14%)", background: "hsl(240 8% 9%)" }}>
         <div className="flex items-center gap-2">
           <Zap className="h-4 w-4" style={{ color: "hsl(140 12% 58%)" }} />
-          <span className="text-sm font-semibold text-white">Sage</span>
+          <span className="text-sm font-semibold text-white">Clark</span>
         </div>
         <div className="flex items-center gap-1">
           <button onClick={() => setView(view === "support" ? "chat" : "support")} className="p-1.5 rounded hover:bg-white/10" title="Support">

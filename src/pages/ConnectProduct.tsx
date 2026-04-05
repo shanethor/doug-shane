@@ -152,7 +152,7 @@ export default function ConnectProduct() {
     if (path.startsWith("/connect/email")) return "email";
     if (path.startsWith("/connect/calendar")) return "calendar";
     if (path.startsWith("/connect/create")) return "create";
-    if (path.startsWith("/connect/sage")) return "sage";
+    if (path.startsWith("/connect/clark")) return "clark";
     if (path.startsWith("/connect/studio")) return "studio";
     return "connect";
   };
@@ -166,7 +166,7 @@ export default function ConnectProduct() {
       email: "/connect/email",
       calendar: "/connect/calendar",
       spotlight: "/connect/create",
-      assistant: "/connect/sage",
+      assistant: "/connect/clark",
     };
     if (routes[tab]) navigate(routes[tab]);
   };
@@ -201,7 +201,7 @@ export default function ConnectProduct() {
                   {page === "email" && (isPageGated("email") ? <ComingSoonGate pageName="Email" /> : <DemoEmailTab />)}
                   {page === "calendar" && (isPageGated("calendar") ? <ComingSoonGate pageName="Calendar" /> : <SmartCalendar />)}
                   {page === "create" && (isPageGated("create") ? <ComingSoonGate pageName="Create" /> : <DemoSpotlightTab />)}
-                  {page === "sage" && (isPageGated("sage") ? <ComingSoonGate pageName="Clark" /> : <DemoAssistantTab onNavigate={handleSageNavigate} />)}
+                  {page === "clark" && (isPageGated("sage") ? <ComingSoonGate pageName="Clark" /> : <DemoAssistantTab onNavigate={handleSageNavigate} />)}
                   {page === "studio" && <StudioUpsellPage isConnectSubscriber={subscribed} />}
                 </>
               )}
